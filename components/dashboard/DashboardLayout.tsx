@@ -11,17 +11,22 @@ import {
   Package,
   Settings,
   ShoppingCart,
+  Sparkles,
   Store,
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
+import { PRICING_SECTION_HREF, type ProductLimitCheck } from "@/src/config/plans";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   storeName: string | null;
   catalogUrl: string | null;
   userEmail: string | null;
+  planName?: string | null;
+  productLimit?: ProductLimitCheck | null;
 }
 
 interface NavItem {
@@ -67,6 +72,13 @@ function buildNavItems(catalogUrl: string | null): NavItem[] {
       icon: Settings,
       match: (p) => p.startsWith("/dashboard/ajustes"),
     },
+    {
+      href: PRICING_SECTION_HREF,
+      label: "Planes",
+      icon: Sparkles,
+      external: true,
+      match: () => false,
+    },
   ];
 }
 
@@ -84,6 +96,8 @@ export function DashboardLayout({
   storeName,
   catalogUrl,
   userEmail,
+  planName = null,
+  productLimit = null,
 }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -147,19 +161,22 @@ export function DashboardLayout({
             const active = isActive(item);
             const className = navLinkClass(active);
 
-            if (item.external && catalogUrl) {
+            if (item.external && item.href !== "#") {
               return (
                 <a
                   key={item.label}
-                  href={catalogUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={item.href}
+                  {...(item.href.startsWith("http") || item.href.startsWith("/#")
+                    ? {}
+                    : { target: "_blank", rel: "noopener noreferrer" })}
                   className={className}
                   onClick={closeSidebar}
                 >
                   <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
                   <span className="flex-1 truncate">{item.label}</span>
-                  <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-50" aria-hidden="true" />
+                  {item.href.startsWith("/#") ? null : (
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-50" aria-hidden="true" />
+                  )}
                 </a>
               );
             }
@@ -192,11 +209,24 @@ export function DashboardLayout({
         </nav>
 
         <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
+          {planName && (
+            <p className="mb-1 truncate px-2 text-xs font-medium text-teal-700 dark:text-teal-400">
+              {planName}
+            </p>
+          )}
           {userEmail && (
             <p className="mb-3 truncate px-2 text-xs text-zinc-500 dark:text-zinc-400">
               {userEmail}
             </p>
           )}
+          <Link
+            href={PRICING_SECTION_HREF}
+            className={`${navLinkClass(false)} mb-2`}
+            onClick={closeSidebar}
+          >
+            <Sparkles className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+            <span>Ver planes</span>
+          </Link>
           <button
             type="button"
             onClick={() => void handleLogout()}
@@ -223,6 +253,7 @@ export function DashboardLayout({
         </header>
 
         <main className="flex-1 overflow-y-auto p-6 safe-area-inset lg:p-8">
+          {productLimit && <ProductLimitBanner productLimit={productLimit} />}
           {children}
         </main>
       </div>

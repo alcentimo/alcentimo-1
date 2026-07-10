@@ -44,6 +44,19 @@ export const PLAN_LIST: PlanDefinition[] = [
   PLANS.premium,
 ];
 
+/** Enlace a la sección de precios en la landing. */
+export const PRICING_SECTION_HREF = "/#precios";
+
+/** Avisar cuando quedan esta cantidad de slots o menos (p. ej. 12/15 en plan Free). */
+export const PRODUCT_LIMIT_NEAR_REMAINING = 3;
+
+const NEXT_PLAN_DISPLAY_NAME: Record<PlanId, string | null> = {
+  free: "Starter",
+  starter: "Growth",
+  growth: "Premium",
+  premium: null,
+};
+
 export interface ProductLimitCheck {
   planId: PlanId;
   planName: string;
@@ -140,6 +153,24 @@ export function formatProductLimit(productLimit: number | null): string {
   return isUnlimitedProductLimit(productLimit) ? "Ilimitados" : String(productLimit);
 }
 
+export function getUpgradePlanName(planId: PlanId): string | null {
+  return NEXT_PLAN_DISPLAY_NAME[planId];
+}
+
+export function isNearProductLimit(
+  check: ProductLimitCheck,
+  remainingThreshold = PRODUCT_LIMIT_NEAR_REMAINING,
+): boolean {
+  if (check.hasReachedLimit || check.productLimit == null) return false;
+  if (check.remainingSlots == null) return false;
+  return check.remainingSlots <= remainingThreshold;
+}
+
+export function shouldShowProductLimitBanner(check: ProductLimitCheck): boolean {
+  if (check.productLimit == null) return false;
+  return check.hasReachedLimit || isNearProductLimit(check);
+}
+
 export function getProductLimitErrorMessage(check: ProductLimitCheck): string {
   if (check.canCreateMore) return "";
 
@@ -147,5 +178,10 @@ export function getProductLimitErrorMessage(check: ProductLimitCheck): string {
     return "No puedes crear más productos en este momento.";
   }
 
-  return `Has alcanzado el límite de ${check.productLimit} productos de tu ${check.planName}. Actualiza tu plan para publicar más.`;
+  const upgradePlan = getUpgradePlanName(check.planId);
+  if (upgradePlan) {
+    return `Has alcanzado el límite de tu plan actual. Actualiza a ${upgradePlan} para continuar.`;
+  }
+
+  return `Has alcanzado el límite de ${check.productLimit} productos de tu ${check.planName}.`;
 }

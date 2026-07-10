@@ -18,7 +18,12 @@ import {
 } from "@/components/dashboard/ProductVariantsEditor";
 import type { VariantFormInput } from "@/lib/products/variants";
 import type { ProductLimitCheck } from "@/src/config/plans";
-import { formatProductLimit, getProductLimitErrorMessage } from "@/src/config/plans";
+import {
+  formatProductLimit,
+  getProductLimitErrorMessage,
+  isNearProductLimit,
+  PRICING_SECTION_HREF,
+} from "@/src/config/plans";
 
 interface CategoryOption {
   id: string;
@@ -73,6 +78,8 @@ export function ProductForm({
   const hasCustomVariants = variants.length > 0;
   const isAtProductLimit =
     mode === "create" && productLimit != null && !productLimit.canCreateMore;
+  const isNearLimit =
+    mode === "create" && productLimit != null && isNearProductLimit(productLimit);
   const limitMessage =
     productLimit != null ? getProductLimitErrorMessage(productLimit) : "";
 
@@ -219,9 +226,11 @@ export function ProductForm({
       {mode === "create" && productLimit && (
         <div
           className={
-            productLimit.canCreateMore
-              ? "info-box"
-              : "rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100"
+            isAtProductLimit
+              ? "rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100"
+              : isNearLimit
+                ? "rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-950 dark:border-teal-900 dark:bg-teal-950/40 dark:text-teal-100"
+                : "info-box"
           }
         >
           <p className="font-medium">{productLimit.planName}</p>
@@ -234,8 +243,21 @@ export function ProductForm({
               productLimit.canCreateMore &&
               ` · Te quedan ${productLimit.remainingSlots}`}
           </p>
+          {isNearLimit && !isAtProductLimit && (
+            <p className="mt-2 text-xs font-medium">
+              Estás cerca de tu límite de productos.{" "}
+              <Link href={PRICING_SECTION_HREF} className="link-brand font-semibold">
+                Ver planes
+              </Link>
+            </p>
+          )}
           {isAtProductLimit && (
-            <p className="mt-2 text-xs font-medium">{limitMessage}</p>
+            <p className="mt-2 text-xs font-medium">
+              {limitMessage}{" "}
+              <Link href={PRICING_SECTION_HREF} className="link-brand font-semibold">
+                Ver planes
+              </Link>
+            </p>
           )}
         </div>
       )}
