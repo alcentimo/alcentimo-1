@@ -7,12 +7,29 @@ export function AuthPanel() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [signupConfirmationSent, setSignupConfirmationSent] = useState(false);
+
+  function switchMode(nextMode: "login" | "signup") {
+    setMode(nextMode);
+    setError(null);
+    setSignupConfirmationSent(false);
+    setConfirmPassword("");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (mode === "signup") {
+      if (password !== confirmPassword) {
+        setError("Las contraseñas no coinciden.");
+        return;
+      }
+    }
+
     setLoading(true);
 
     const supabase = createClient();
@@ -29,7 +46,37 @@ export function AuthPanel() {
       return;
     }
 
+    if (mode === "signup" && result.data.user && !result.data.session) {
+      setSignupConfirmationSent(true);
+      return;
+    }
+
     window.location.href = "/onboarding";
+  }
+
+  if (signupConfirmationSent) {
+    return (
+      <div className="card-panel mx-auto w-full max-w-md">
+        <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
+          Revisa tu correo
+        </h2>
+        <div className="alert-success mt-4 text-base text-teal-800 sm:text-sm dark:text-teal-200">
+          ¡Casi listo! Hemos enviado un enlace de confirmación a tu correo. Por
+          favor, revísalo para activar tu cuenta.
+        </div>
+        <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
+          Cuando confirmes tu cuenta, podrás iniciar sesión y configurar tu
+          tienda.
+        </p>
+        <button
+          type="button"
+          onClick={() => switchMode("login")}
+          className="btn-primary mt-6 w-full"
+        >
+          Ir a iniciar sesión
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -73,9 +120,25 @@ export function AuthPanel() {
           />
         </div>
 
-        {error && (
-          <p className="alert-error">{error}</p>
+        {mode === "signup" && (
+          <div>
+            <label htmlFor="confirm_password" className="label-field">
+              Confirmar contraseña
+            </label>
+            <input
+              id="confirm_password"
+              type="password"
+              required
+              minLength={6}
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="input-field"
+            />
+          </div>
         )}
+
+        {error && <p className="alert-error">{error}</p>}
 
         <button type="submit" disabled={loading} className="btn-primary">
           {loading ? "Procesando…" : mode === "login" ? "Entrar" : "Registrarme"}
@@ -84,7 +147,7 @@ export function AuthPanel() {
 
       <button
         type="button"
-        onClick={() => setMode(mode === "login" ? "signup" : "login")}
+        onClick={() => switchMode(mode === "login" ? "signup" : "login")}
         className="touch-target mt-5 w-full text-center text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
       >
         {mode === "login" ? (
