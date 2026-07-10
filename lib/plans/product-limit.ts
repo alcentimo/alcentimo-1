@@ -3,6 +3,7 @@ import { getUserPlanIdById } from "@/lib/auth/get-user-profile";
 import {
   buildProductLimitCheck,
   DEFAULT_PLAN_ID,
+  getProductLimitErrorMessage,
   resolvePlanId,
   type PlanId,
   type ProductLimitCheck,
@@ -42,4 +43,15 @@ export async function getStoreProductLimitStatus(
   const resolvedPlanId = planId ? resolvePlanId(planId) : await getStorePlanId(storeId);
   const currentCount = await getStoreProductCount(storeId);
   return buildProductLimitCheck(currentCount, resolvedPlanId);
+}
+
+/** Única restricción por plan: crear más productos activos de los permitidos. */
+export async function assertCanCreateProduct(
+  storeId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const check = await getStoreProductLimitStatus(storeId);
+  if (!check.canCreateMore) {
+    return { ok: false, error: getProductLimitErrorMessage(check) };
+  }
+  return { ok: true };
 }

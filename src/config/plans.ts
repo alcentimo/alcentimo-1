@@ -54,6 +54,11 @@ export interface ProductLimitCheck {
   remainingSlots: number | null;
 }
 
+/** Todos los planes incluyen las mismas funcionalidades; solo varía el tope de productos. */
+export function canUseDashboardFeatures(_planId?: PlanId | null): boolean {
+  return true;
+}
+
 export function isPlanId(value: string): value is PlanId {
   return value in PLANS;
 }

@@ -9,8 +9,7 @@ import { slugify, uniqueSlug } from "@/lib/slugify";
 import { uploadProductImage, buildOptimizationMessage } from "@/lib/storage";
 import { parseVariantFormInputs, parseVariantsJson } from "@/lib/products/variants";
 import { syncProductVariants } from "@/lib/products/sync-variants";
-import { getStoreProductLimitStatus } from "@/lib/plans/product-limit";
-import { getProductLimitErrorMessage } from "@/src/config/plans";
+import { assertCanCreateProduct } from "@/lib/plans/product-limit";
 
 export type ProductFormState = {
   error?: string;
@@ -91,9 +90,9 @@ export async function createProduct(
     return { error: "No tienes permiso para publicar en esta tienda." };
   }
 
-  const productLimit = await getStoreProductLimitStatus(store.id);
-  if (!productLimit.canCreateMore) {
-    return { error: getProductLimitErrorMessage(productLimit) };
+  const productLimitCheck = await assertCanCreateProduct(store.id);
+  if (!productLimitCheck.ok) {
+    return { error: productLimitCheck.error };
   }
 
   const name = String(formData.get("name") ?? "").trim();
@@ -681,6 +680,11 @@ export async function duplicateProduct(
   if (!auth.ok) return { error: auth.error };
 
   const { store } = auth;
+
+  const productLimitCheck = await assertCanCreateProduct(store.id);
+  if (!productLimitCheck.ok) {
+    return { error: productLimitCheck.error };
+  }
 
   const { data: source, error: sourceError } = await supabase
     .from("products")
