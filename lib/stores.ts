@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { getOptionalAuthUser } from "@/lib/auth/optional-auth";
 import type { Store } from "@/lib/database.types";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 
@@ -22,10 +23,7 @@ export async function getUserStore(
   let resolvedUserId = userId;
 
   if (!resolvedUserId) {
-    const {
-      data: { user },
-    } = await client.auth.getUser();
-
+    const user = await getOptionalAuthUser(client);
     if (!user) return null;
     resolvedUserId = user.id;
   }

@@ -2,6 +2,7 @@ import type { Profile } from "@/lib/database.types";
 import type { Store } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
+import { getOptionalAuthUser } from "@/lib/auth/optional-auth";
 import { getUserStore } from "@/lib/stores";
 import {
   getPlanById,
@@ -51,7 +52,10 @@ export async function getUserProfile(
     .eq("id", userId)
     .maybeSingle();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    // Perfil ausente o error de lectura: usar plan FREE por defecto.
+    return null;
+  }
   return data;
 }
 
@@ -67,12 +71,7 @@ export async function getUserPlanId(
 export async function getAuthUserWithPlan(
   client: SupabaseServerClient,
 ): Promise<UserWithPlan | null> {
-  const {
-    data: { user },
-    error: authError,
-  } = await client.auth.getUser();
-
-  if (authError) throw new Error(authError.message);
+  const user = await getOptionalAuthUser(client);
   if (!user) return null;
 
   const profile = await getUserProfile(client, user.id);

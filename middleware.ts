@@ -36,15 +36,18 @@ export async function middleware(request: NextRequest) {
   const isDashboard = pathname.startsWith(DASHBOARD_PREFIX);
   const isLoginPage = pathname === DASHBOARD_LOGIN;
 
+  // Sin sesión: getUser puede devolver error "Auth session missing!" — es esperable.
+  const authenticatedUser = user ?? null;
+
   if (isDashboard) {
-    if (!user && !isLoginPage) {
+    if (!authenticatedUser && !isLoginPage) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = DASHBOARD_LOGIN;
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    if (user && isLoginPage) {
+    if (authenticatedUser && isLoginPage) {
       const next = request.nextUrl.searchParams.get("next");
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname =
