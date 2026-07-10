@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthCallbackUrl } from "@/lib/site-url";
 
 function GoogleIcon() {
   return (
@@ -48,7 +49,7 @@ export function AuthPanel() {
     setGoogleLoading(true);
 
     const supabase = createClient();
-    const redirectTo = `${window.location.origin}/auth/callback?next=/onboarding`;
+    const redirectTo = getAuthCallbackUrl("/onboarding");
 
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -80,11 +81,16 @@ export function AuthPanel() {
     setLoading(true);
 
     const supabase = createClient();
+    const emailRedirectTo = getAuthCallbackUrl("/onboarding");
 
     const result =
       mode === "login"
         ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password });
+        : await supabase.auth.signUp({
+            email,
+            password,
+            options: { emailRedirectTo },
+          });
 
     setLoading(false);
 

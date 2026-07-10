@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
+import { getSiteUrl } from "@/lib/site-url";
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const siteUrl = getSiteUrl(request);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/onboarding";
 
   if (!code) {
     return NextResponse.redirect(
-      `${origin}/dashboard/login?error=auth_callback_missing_code`,
+      `${siteUrl}/dashboard/login?error=auth_callback_missing_code`,
     );
   }
 
@@ -18,7 +20,7 @@ export async function GET(request: Request) {
 
   if (error) {
     return NextResponse.redirect(
-      `${origin}/dashboard/login?error=${encodeURIComponent(error.message)}`,
+      `${siteUrl}/dashboard/login?error=${encodeURIComponent(error.message)}`,
     );
   }
 
@@ -30,5 +32,5 @@ export async function GET(request: Request) {
 
   const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding";
 
-  return NextResponse.redirect(`${origin}${safeNext}`);
+  return NextResponse.redirect(`${siteUrl}${safeNext}`);
 }
