@@ -5,6 +5,7 @@ import {
   Headphones,
   ImageIcon,
   Package,
+  Percent,
   Rocket,
   Sparkles,
   Store,
@@ -14,6 +15,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { formatExchangeRate, formatUsd, formatVes } from "@/lib/format";
+import {
+  PLAN_LIST,
+  type PlanId,
+} from "@/src/config/plans";
 
 interface PricingGridProps {
   exchangeRate: number | null;
@@ -24,11 +29,9 @@ interface PlanFeature {
   icon: LucideIcon;
 }
 
-interface Plan {
-  id: string;
-  name: string;
+interface PlanMarketing {
+  displayName: string;
   description: string;
-  priceUsd: number;
   icon: LucideIcon;
   popular?: boolean;
   cta: string;
@@ -36,65 +39,90 @@ interface Plan {
   features: PlanFeature[];
 }
 
+const PLAN_MARKETING: Record<PlanId, PlanMarketing> = {
+  free: {
+    displayName: "Gratis",
+    description: "Para emprendedores que arrancan su catálogo digital.",
+    icon: Sparkles,
+    cta: "Empezar gratis",
+    ctaHref: "/dashboard/productos/nuevo",
+    features: [
+      { text: "Hasta 15 productos activos", icon: Package },
+      { text: "Catálogo público con enlace único", icon: Store },
+      { text: "Precios USD + Bs automáticos", icon: Tag },
+      { text: "Imágenes comprimidas para móvil", icon: ImageIcon },
+      { text: "1 usuario", icon: Users },
+    ],
+  },
+  starter: {
+    displayName: "Starter",
+    description: "Para negocios en crecimiento que venden todos los días.",
+    icon: Rocket,
+    popular: true,
+    cta: "Elegir Starter",
+    ctaHref: "/dashboard/productos/nuevo",
+    features: [
+      { text: "Hasta 250 productos activos", icon: Package },
+      { text: "Categorías personalizadas", icon: Tag },
+      { text: "Productos destacados", icon: Zap },
+      { text: "Cupones y promociones", icon: Percent },
+      { text: "Variantes de producto", icon: Package },
+      { text: "Soporte por email", icon: Headphones },
+    ],
+  },
+  growth: {
+    displayName: "Growth",
+    description: "Para tiendas con inventario amplio y equipo de ventas.",
+    icon: Crown,
+    cta: "Elegir Growth",
+    ctaHref: "/dashboard/productos/nuevo",
+    features: [
+      { text: "Hasta 1.000 productos activos", icon: Package },
+      { text: "Todo lo de Starter", icon: Check },
+      { text: "Hasta 3 usuarios", icon: Users },
+      { text: "Historial de inventario", icon: Package },
+      { text: "Alertas de stock bajo", icon: Zap },
+      { text: "Soporte prioritario", icon: Headphones },
+    ],
+  },
+  premium: {
+    displayName: "Premium",
+    description: "Para operaciones a escala sin límites de catálogo.",
+    icon: Crown,
+    cta: "Contactar ventas",
+    ctaHref: "/dashboard/login",
+    features: [
+      { text: "Productos ilimitados", icon: Package },
+      { text: "Todo lo de Growth", icon: Check },
+      { text: "Usuarios ilimitados", icon: Users },
+      { text: "Roles admin y vendedor", icon: Users },
+      { text: "Onboarding personalizado", icon: Headphones },
+      { text: "Soporte dedicado", icon: Headphones },
+    ],
+  },
+};
+
 function toVes(usd: number, rate: number | null): string {
   if (rate == null) return "—";
   return formatVes(usd * rate);
 }
 
 export function PricingGrid({ exchangeRate }: PricingGridProps) {
-  const plans: Plan[] = [
-    {
-      id: "inicio",
-      name: "Inicio",
-      description: "Para emprendedores que arrancan su catálogo digital.",
-      priceUsd: 0,
-      icon: Sparkles,
-      cta: "Empezar gratis",
-      ctaHref: "/dashboard/productos/nuevo",
-      features: [
-        { text: "Hasta 25 productos activos", icon: Package },
-        { text: "Catálogo público con enlace único", icon: Store },
-        { text: "Precios USD + Bs automáticos", icon: Tag },
-        { text: "Imágenes comprimidas para móvil", icon: ImageIcon },
-        { text: "1 usuario", icon: Users },
-      ],
-    },
-    {
-      id: "profesional",
-      name: "Profesional",
-      description: "Para negocios en crecimiento que venden todos los días.",
-      priceUsd: 9.99,
-      icon: Rocket,
-      popular: true,
-      cta: "Elegir Profesional",
-      ctaHref: "/dashboard/productos/nuevo",
-      features: [
-        { text: "Productos ilimitados", icon: Package },
-        { text: "Categorías personalizadas", icon: Tag },
-        { text: "Productos destacados", icon: Zap },
-        { text: "Soporte prioritario por email", icon: Headphones },
-        { text: "Hasta 3 usuarios", icon: Users },
-        { text: "Sin marca alcentimo en catálogo", icon: Store },
-      ],
-    },
-    {
-      id: "negocio",
-      name: "Negocio",
-      description: "Para tiendas con inventario grande y equipo de ventas.",
-      priceUsd: 24.99,
-      icon: Crown,
-      cta: "Contactar ventas",
-      ctaHref: "/dashboard/login",
-      features: [
-        { text: "Todo lo de Profesional", icon: Check },
-        { text: "Usuarios ilimitados", icon: Users },
-        { text: "Roles admin y vendedor", icon: Users },
-        { text: "Historial de inventario", icon: Package },
-        { text: "Onboarding personalizado", icon: Headphones },
-        { text: "Soporte dedicado", icon: Headphones },
-      ],
-    },
-  ];
+  const plans = PLAN_LIST.map((plan) => {
+    const marketing = PLAN_MARKETING[plan.id];
+
+    return {
+      id: plan.id,
+      name: marketing.displayName,
+      description: marketing.description,
+      priceUsd: plan.priceUsdYearly,
+      icon: marketing.icon,
+      popular: marketing.popular,
+      cta: marketing.cta,
+      ctaHref: marketing.ctaHref,
+      features: marketing.features,
+    };
+  });
 
   return (
     <section id="precios" className="section-padding bg-zinc-100/50 dark:bg-zinc-900/30">
@@ -105,8 +133,8 @@ export function PricingGrid({ exchangeRate }: PricingGridProps) {
             Invierte en tu negocio, no en complicaciones
           </h2>
           <p className="section-subtitle mx-auto">
-            Suscripción en dólares con equivalente en bolívares al tipo de cambio
-            del día. Tus clientes siempre ven ambos montos en el catálogo.
+            Suscripción anual en dólares con equivalente en bolívares al tipo de
+            cambio del día. Tus clientes siempre ven ambos montos en el catálogo.
           </p>
           {exchangeRate != null && (
             <div className="mt-6 flex justify-center">
@@ -117,7 +145,7 @@ export function PricingGrid({ exchangeRate }: PricingGridProps) {
           )}
         </div>
 
-        <div className="mt-12 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3 lg:gap-8">
+        <div className="mt-12 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
           {plans.map((plan) => {
             const Icon = plan.icon;
             const isPopular = plan.popular === true;
@@ -162,14 +190,14 @@ export function PricingGrid({ exchangeRate }: PricingGridProps) {
                     </span>
                     {plan.priceUsd > 0 && (
                       <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                        /mes
+                        /año
                       </span>
                     )}
                   </div>
                   <p className="price-ves mt-2 text-base">
                     {plan.priceUsd === 0
-                      ? "Sin costo mensual"
-                      : `≈ ${toVes(plan.priceUsd, exchangeRate)}/mes`}
+                      ? "Sin costo anual"
+                      : `≈ ${toVes(plan.priceUsd, exchangeRate)}/año`}
                   </p>
                   {plan.priceUsd > 0 && exchangeRate != null && (
                     <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
