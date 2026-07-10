@@ -1,0 +1,670 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fafafa;
+  --foreground: #18181b;
+  --brand: #0d9488;
+  --brand-hover: #0f766e;
+  --brand-muted: #ccfbf1;
+  --surface: #ffffff;
+  --border: #e4e4e7;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-muted: var(--brand-muted);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #09090b;
+    --foreground: #fafafa;
+    --brand: #2dd4bf;
+    --brand-hover: #5eead4;
+    --brand-muted: #134e4a;
+    --surface: #18181b;
+    --border: #27272a;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe areas for notched phones and home indicators */
+.safe-area-inset {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+.safe-area-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* Fluid page container */
+.page-container {
+  @apply mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8;
+}
+
+/* Touch-friendly targets (min 44px) */
+.touch-target {
+  @apply inline-flex min-h-11 min-w-11 items-center justify-center;
+}
+
+/* ── SaaS design tokens ── */
+
+.section-padding {
+  @apply py-16 sm:py-20 lg:py-24;
+}
+
+.section-label {
+  @apply text-xs font-semibold uppercase tracking-widest text-teal-600 dark:text-teal-400;
+}
+
+.section-title {
+  @apply mt-3 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl dark:text-zinc-50;
+}
+
+.section-subtitle {
+  @apply mt-4 max-w-2xl text-base leading-relaxed text-zinc-600 lg:text-lg dark:text-zinc-400;
+}
+
+.card-surface {
+  @apply rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.product-card {
+  @apply flex flex-col overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.card-panel {
+  @apply rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm sm:p-6 lg:p-8 dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+/* Form controls — mobile-first */
+.input-field {
+  @apply mt-1.5 w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-3.5 py-3 text-base shadow-sm outline-none transition-colors focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 md:py-2.5 md:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-teal-400 dark:focus:ring-teal-400/20;
+}
+
+.label-field {
+  @apply block text-sm font-medium text-zinc-700 dark:text-zinc-300;
+}
+
+/* Buttons */
+.btn-brand {
+  @apply inline-flex min-h-11 items-center justify-center rounded-xl bg-teal-600 px-5 text-base font-semibold text-white shadow-sm transition-all hover:bg-teal-700 active:scale-[0.98] disabled:opacity-60 md:text-sm dark:bg-teal-500 dark:text-zinc-950 dark:hover:bg-teal-400;
+}
+
+.btn-brand-outline {
+  @apply inline-flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-800 shadow-sm transition-all hover:border-zinc-400 hover:bg-zinc-50 active:scale-[0.98] md:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800;
+}
+
+.btn-primary {
+  @apply inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-teal-600 px-5 text-base font-semibold text-white shadow-sm transition-all hover:bg-teal-700 active:scale-[0.98] disabled:opacity-60 md:text-sm dark:bg-teal-500 dark:text-zinc-950 dark:hover:bg-teal-400;
+}
+
+.btn-secondary {
+  @apply inline-flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-800 shadow-sm transition-all hover:border-zinc-400 hover:bg-zinc-50 active:scale-[0.98] md:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800;
+}
+
+.btn-success {
+  @apply inline-flex min-h-11 items-center justify-center rounded-xl bg-teal-700 px-4 text-base font-medium text-white shadow-sm md:text-sm dark:bg-teal-400 dark:text-zinc-950;
+}
+
+/* Catalog product grid: 1 → 2 → 3 → 4 columns */
+.catalog-grid {
+  @apply grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+}
+
+/* Public store catalog — neutral, spacious */
+.store-catalog-shell {
+  @apply min-h-dvh bg-white text-zinc-900;
+}
+
+.store-banner {
+  @apply border-b border-zinc-100 bg-zinc-50 py-2.5 text-center text-xs font-medium uppercase tracking-[0.12em] text-zinc-500;
+}
+
+.store-header {
+  @apply sticky top-0 z-20 border-b border-zinc-200/80 bg-white/95 backdrop-blur-md;
+}
+
+.store-header-inner {
+  @apply mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8;
+}
+
+.store-cart-btn {
+  @apply relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-800 shadow-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50;
+}
+
+.store-cart-badge {
+  @apply absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-zinc-900 px-1 text-[10px] font-bold text-white;
+}
+
+.store-catalog-main {
+  @apply py-8 sm:py-10 lg:py-12;
+}
+
+.store-description {
+  @apply mb-4 max-w-3xl text-base leading-relaxed text-zinc-600;
+}
+
+.store-rate-note {
+  @apply mb-8 inline-flex rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600;
+}
+
+.store-toolbar {
+  @apply mb-8 flex flex-col gap-4 lg:mb-10 lg:flex-row lg:items-center;
+}
+
+.store-search-wrap {
+  @apply relative min-w-0 flex-1;
+}
+
+.store-search-input {
+  @apply w-full rounded-xl border border-zinc-200 bg-white py-3.5 pl-11 pr-4 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200;
+}
+
+.store-category-select {
+  @apply w-full rounded-xl border border-zinc-200 bg-white px-4 py-3.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200 lg:w-56;
+}
+
+.store-result-count {
+  @apply shrink-0 text-sm text-zinc-500 lg:ml-auto;
+}
+
+.store-catalog-layout {
+  @apply grid grid-cols-1 gap-10 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-12;
+}
+
+.store-catalog-products {
+  @apply min-w-0;
+}
+
+.store-product-grid {
+  @apply grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4;
+}
+
+.store-product-card {
+  @apply flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-shadow duration-300 hover:shadow-lg;
+}
+
+.store-product-media {
+  @apply relative aspect-[4/5] overflow-hidden bg-zinc-100;
+}
+
+.store-product-image {
+  @apply object-cover transition-transform duration-500 ease-out group-hover:scale-105;
+}
+
+.store-product-action {
+  @apply absolute inset-x-0 bottom-0 hidden translate-y-full bg-linear-to-t from-black/50 to-transparent p-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:block;
+}
+
+.store-add-btn {
+  @apply pointer-events-auto inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-zinc-900 shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98];
+}
+
+.store-add-btn-mobile {
+  @apply mt-4 inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-zinc-900 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 active:scale-[0.98];
+}
+
+.store-featured-badge {
+  @apply rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-800 shadow-sm backdrop-blur-sm;
+}
+
+.store-stock-badge {
+  @apply rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm backdrop-blur-sm;
+}
+
+.store-stock-badge-out {
+  @apply bg-zinc-900/85 text-white;
+}
+
+.store-stock-badge-low {
+  @apply bg-amber-100/95 text-amber-900;
+}
+
+.store-product-body {
+  @apply flex flex-1 flex-col gap-2 p-5 sm:p-6;
+}
+
+.store-product-category {
+  @apply text-[11px] font-semibold uppercase tracking-wider text-zinc-400;
+}
+
+.store-product-name {
+  @apply line-clamp-2 text-base font-semibold leading-snug text-zinc-900 sm:text-lg;
+}
+
+.store-product-desc {
+  @apply line-clamp-2 text-sm leading-relaxed text-zinc-500;
+}
+
+.store-product-pricing {
+  @apply mt-auto pt-4;
+}
+
+.store-product-price-usd {
+  @apply text-lg font-bold text-zinc-900 sm:text-xl;
+}
+
+.store-product-price-ves {
+  @apply mt-0.5 text-sm text-zinc-400;
+}
+
+.purchase-info-panel {
+  @apply h-fit rounded-2xl border border-zinc-200 bg-zinc-50/50 p-6 shadow-sm xl:sticky xl:top-28;
+}
+
+.purchase-info-title {
+  @apply text-base font-semibold text-zinc-900;
+}
+
+.purchase-info-subtitle {
+  @apply mt-1 text-sm text-zinc-500;
+}
+
+.store-empty-state {
+  @apply flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 px-6 py-20 text-center;
+}
+
+.store-reset-btn {
+  @apply mt-5 rounded-xl border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-800 shadow-sm transition-colors hover:bg-zinc-50;
+}
+
+.store-footer {
+  @apply mt-16 border-t border-zinc-200 bg-white py-8;
+}
+
+.store-cart-overlay {
+  @apply pointer-events-none fixed inset-0 z-50 bg-black/0 opacity-0 transition-all duration-300;
+}
+
+.store-cart-overlay-open {
+  @apply pointer-events-auto bg-black/40 opacity-100 backdrop-blur-[2px];
+}
+
+.store-cart-drawer {
+  @apply fixed inset-y-0 right-0 z-50 flex w-full max-w-md translate-x-full flex-col bg-white shadow-2xl transition-transform duration-300 ease-out;
+}
+
+.store-cart-drawer-open {
+  @apply translate-x-0;
+}
+
+.store-cart-header {
+  @apply flex items-center justify-between border-b border-zinc-100 px-6 py-5;
+}
+
+.store-cart-close {
+  @apply rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800;
+}
+
+.store-cart-empty {
+  @apply flex flex-1 flex-col items-center justify-center px-6 py-16 text-center;
+}
+
+.store-cart-items {
+  @apply flex-1 space-y-4 overflow-y-auto px-6 py-5;
+}
+
+.store-cart-item {
+  @apply flex gap-4 rounded-xl border border-zinc-100 bg-zinc-50/60 p-4;
+}
+
+.store-qty-btn {
+  @apply inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-700 transition-colors hover:bg-zinc-50;
+}
+
+.store-cart-checkout {
+  @apply mt-auto border-t border-zinc-100 bg-white px-6 py-5 shadow-[0_-8px_30px_rgba(0,0,0,0.06)];
+}
+
+.store-cart-checkout-section {
+  @apply space-y-4 pb-5;
+}
+
+.store-cart-checkout-title {
+  @apply text-sm font-semibold text-zinc-900;
+}
+
+.store-cart-field {
+  @apply space-y-1.5;
+}
+
+.store-cart-label {
+  @apply block text-xs font-medium uppercase tracking-wide text-zinc-500;
+}
+
+.store-cart-select {
+  @apply w-full rounded-xl border border-zinc-200 bg-white px-3.5 py-3 text-sm text-zinc-900 shadow-sm outline-none transition-colors focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200;
+}
+
+.store-cart-summary {
+  @apply border-t border-zinc-100 py-4;
+}
+
+.store-cart-warning {
+  @apply mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800;
+}
+
+.store-whatsapp-btn {
+  @apply flex min-h-12 w-full items-center justify-center rounded-xl bg-[#25D366] px-4 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-[1.01] active:scale-[0.99];
+}
+
+.store-whatsapp-btn-disabled {
+  @apply flex min-h-12 w-full cursor-not-allowed items-center justify-center rounded-xl bg-zinc-200 px-4 text-sm font-semibold text-zinc-500;
+}
+
+/* Dashboard shell — sidebar layout (legacy helpers; layout uses Tailwind inline) */
+.dashboard-content {
+  @apply flex-1 overflow-y-auto p-6 lg:p-8;
+}
+
+.inventory-table {
+  @apply w-full table-fixed border-collapse text-left;
+}
+
+.inventory-th {
+  @apply border-b border-zinc-200/80 px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:text-zinc-400;
+}
+
+.inventory-th-product {
+  @apply w-[38%] min-w-[14rem];
+}
+
+.inventory-th-stock {
+  @apply w-[16%] min-w-[8.5rem];
+}
+
+.inventory-th-price {
+  @apply w-[14%] min-w-[7rem];
+}
+
+.inventory-th-actions {
+  @apply w-[12%] min-w-[6.5rem] text-right;
+}
+
+.inventory-td {
+  @apply border-b border-zinc-100/90 px-5 py-5 align-middle dark:border-zinc-800/60;
+}
+
+.inventory-td-actions {
+  @apply text-right;
+}
+
+.inventory-row {
+  @apply bg-white transition-colors hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900/40;
+}
+
+.inventory-row:last-child .inventory-td {
+  @apply border-b-0;
+}
+
+.inventory-toolbar {
+  @apply flex flex-col gap-3 sm:flex-row sm:items-center;
+}
+
+.inventory-search-input {
+  @apply mt-0 w-full min-w-0 rounded-xl border border-zinc-200 bg-white py-3 pl-10 pr-4 text-sm text-zinc-900 shadow-sm outline-none transition-all placeholder:text-zinc-400 hover:border-zinc-300 hover:shadow-md focus:border-teal-600 focus:shadow-md focus:ring-2 focus:ring-teal-600/15 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:hover:border-zinc-600 dark:focus:border-teal-400 dark:focus:ring-teal-400/15;
+}
+
+.inventory-filter-select {
+  @apply mt-0 w-full min-w-0 rounded-xl border border-zinc-200 bg-white px-3.5 py-3 text-sm text-zinc-900 shadow-sm outline-none transition-all hover:border-zinc-300 hover:shadow-md focus:border-teal-600 focus:shadow-md focus:ring-2 focus:ring-teal-600/15 sm:w-56 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:hover:border-zinc-600 dark:focus:border-teal-400 dark:focus:ring-teal-400/15;
+}
+
+.inventory-inline-input {
+  @apply rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm font-medium text-zinc-900 shadow-sm outline-none transition-colors focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-teal-400 dark:focus:ring-teal-400/20;
+}
+
+.price-usd-cell {
+  @apply text-sm font-bold tracking-tight text-zinc-900 dark:text-zinc-50;
+}
+
+.price-ves-cell {
+  @apply text-sm font-normal text-zinc-500 dark:text-zinc-400;
+}
+
+.stock-badge {
+  @apply inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold ring-1 ring-inset;
+}
+
+.stock-badge-out {
+  @apply bg-red-50 text-red-700 ring-red-200/80 dark:bg-red-950/50 dark:text-red-300 dark:ring-red-900/60;
+}
+
+.stock-badge-low {
+  @apply bg-amber-50 text-amber-800 ring-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/50;
+}
+
+.stock-badge-ok {
+  @apply bg-emerald-50 text-emerald-800 ring-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/50;
+}
+
+.kpi-card {
+  @apply rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6;
+}
+
+/* Settings — control panel workspace */
+.settings-workspace {
+  @apply overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.settings-tab-nav {
+  @apply flex gap-1 overflow-x-auto border-b border-zinc-200 bg-zinc-50/80 px-4 dark:border-zinc-800 dark:bg-zinc-900/40 sm:gap-2 sm:px-6;
+}
+
+.settings-tab-link {
+  @apply relative inline-flex min-h-12 shrink-0 items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 sm:px-5;
+}
+
+.settings-tab-link-active {
+  @apply text-teal-700 dark:text-teal-400;
+}
+
+.settings-tab-link-active::after {
+  content: "";
+  @apply absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-teal-600 dark:bg-teal-500;
+}
+
+.settings-workspace-body {
+  @apply p-6 sm:p-8;
+}
+
+.settings-tab-shell {
+  @apply flex min-h-[28rem] flex-col;
+}
+
+.settings-tab-content {
+  @apply flex-1 space-y-10 pb-6;
+}
+
+.settings-section {
+  @apply space-y-5;
+}
+
+.settings-section-header {
+  @apply space-y-1.5;
+}
+
+.settings-section-title {
+  @apply text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500;
+}
+
+.settings-section-grid {
+  @apply grid grid-cols-1 gap-4;
+}
+
+.settings-option-card {
+  @apply rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 sm:p-6;
+}
+
+.settings-option-row {
+  @apply flex items-center justify-between gap-6;
+}
+
+.settings-option-fields {
+  @apply mt-5 border-t border-zinc-100 pt-5 dark:border-zinc-800;
+}
+
+.settings-save-bar {
+  @apply sticky bottom-0 -mx-6 -mb-6 mt-auto flex items-center justify-end gap-4 border-t border-zinc-200 bg-white/95 px-6 py-5 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95 sm:-mx-8 sm:-mb-8 sm:px-8;
+}
+
+.settings-error-banner {
+  @apply mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300;
+}
+
+.settings-toggle {
+  @apply relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border border-zinc-300 bg-zinc-200 p-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-700;
+}
+
+.settings-toggle-on {
+  @apply border-teal-600 bg-teal-600 dark:border-teal-500 dark:bg-teal-500;
+}
+
+.settings-toggle-knob {
+  @apply block h-5 w-5 translate-x-0 rounded-full bg-white shadow-sm transition-transform;
+}
+
+.settings-toggle-on .settings-toggle-knob {
+  @apply translate-x-5;
+}
+
+.page-shell {
+  @apply min-h-dvh bg-zinc-50 dark:bg-zinc-950;
+}
+
+.page-shell-auth {
+  @apply relative min-h-dvh overflow-hidden bg-zinc-50 dark:bg-zinc-950;
+}
+
+.brand-mark {
+  @apply flex shrink-0 items-center justify-center rounded-xl bg-teal-600 text-sm font-bold text-white shadow-sm dark:bg-teal-500 dark:text-zinc-950;
+}
+
+.brand-mark-sm {
+  @apply h-8 w-8;
+}
+
+.brand-mark-md {
+  @apply h-9 w-9;
+}
+
+.brand-subtitle {
+  @apply text-xs font-medium text-zinc-500 dark:text-zinc-400;
+}
+
+.price-box {
+  @apply rounded-xl border border-teal-100/80 bg-teal-50/60 p-3 shadow-sm dark:border-teal-900/50 dark:bg-teal-950/30;
+}
+
+.alert-error {
+  @apply rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300;
+}
+
+.file-input {
+  @apply mt-1.5 block w-full min-w-0 text-base text-zinc-600 file:mr-3 file:min-h-11 file:rounded-xl file:border-0 file:bg-teal-600 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white file:shadow-sm md:text-sm dark:text-zinc-400 dark:file:bg-teal-500 dark:file:text-zinc-950;
+}
+
+/* Price display — USD primary, Bs secondary */
+.price-usd {
+  @apply text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50;
+}
+
+.price-ves {
+  @apply text-sm font-medium text-teal-700 dark:text-teal-400;
+}
+
+.price-rate-badge {
+  @apply inline-flex items-center gap-1 rounded-full border border-teal-200/80 bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800 dark:border-teal-900 dark:bg-teal-950 dark:text-teal-300;
+}
+
+.link-brand {
+  @apply font-medium text-teal-700 transition-colors hover:text-teal-800 hover:underline dark:text-teal-400 dark:hover:text-teal-300;
+}
+
+.info-box {
+  @apply rounded-xl border border-teal-200/80 bg-teal-50/80 p-4 shadow-sm dark:border-teal-900/80 dark:bg-teal-950/40;
+}
+
+.alert-success {
+  @apply rounded-xl border border-teal-200 bg-teal-50 p-5 shadow-sm sm:p-6 dark:border-teal-900 dark:bg-teal-950;
+}
+
+.nav-link {
+  @apply inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl px-3 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50;
+}
+
+.nav-link-active {
+  @apply bg-teal-50 text-teal-800 dark:bg-teal-950 dark:text-teal-300;
+}
+
+.nav-link-brand {
+  @apply inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl px-3 text-sm font-medium text-teal-700 transition-colors hover:bg-teal-50 dark:text-teal-400 dark:hover:bg-teal-950;
+}
+
+/* Pricing cards */
+.pricing-card {
+  @apply rounded-xl p-0 shadow-sm;
+}
+
+.pricing-card-popular {
+  @apply rounded-xl border-2 border-teal-500 bg-white shadow-md ring-4 ring-teal-500/10 dark:border-teal-500 dark:bg-zinc-950 dark:ring-teal-500/5 lg:-translate-y-1;
+}
+
+/* Shared app chrome — dashboard & public catalog */
+.catalog-header {
+  @apply border-b border-zinc-200/80 bg-white/90 shadow-sm backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/90;
+}
+
+.page-header {
+  @apply mb-6 lg:mb-8;
+}
+
+.page-header-title {
+  @apply mt-2 text-xl font-bold text-zinc-900 sm:text-2xl dark:text-zinc-50;
+}
+
+.page-header-desc {
+  @apply mt-2 text-base leading-relaxed text-zinc-500 sm:text-sm lg:text-base dark:text-zinc-400;
+}
+
+.input-prefix-group {
+  @apply mt-1.5 flex min-w-0 overflow-hidden rounded-xl border border-zinc-300 shadow-sm transition-colors focus-within:border-teal-600 focus-within:ring-2 focus-within:ring-teal-600/20 dark:border-zinc-700 dark:focus-within:border-teal-400 dark:focus-within:ring-teal-400/20;
+}
+
+.input-prefix-label {
+  @apply flex shrink-0 items-center bg-zinc-100 px-3 text-xs text-zinc-500 sm:text-sm dark:bg-zinc-800;
+}
+
+.input-prefix-field {
+  @apply min-w-0 flex-1 rounded-r-xl bg-white px-3 py-3 text-base outline-none md:py-2.5 md:text-sm dark:bg-zinc-900;
+}
+
+.bottom-nav {
+  @apply fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200/80 bg-white/95 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.04)] backdrop-blur-md lg:hidden dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:shadow-[0_-4px_16px_rgba(0,0,0,0.2)];
+}
+
+.bottom-nav-item {
+  @apply flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 px-2 text-xs font-medium transition-colors;
+}
+
+.bottom-nav-item-active {
+  @apply text-teal-700 dark:text-teal-400;
+}
+
+.bottom-nav-item-default {
+  @apply text-zinc-500 dark:text-zinc-400;
+}
