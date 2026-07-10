@@ -64,3 +64,12 @@ export async function getUserStore(
 export function getStoreCatalogUrl(slug: string): string {
   return `/tienda/${slug}`;
 }
+
+/** Indica si el usuario ya tiene tienda (dueño o miembro). */
+export async function userHasStore(
+  client: SupabaseServerClient,
+  userId: string,
+): Promise<boolean> {
+  const store = await getUserStore(client, userId);
+  return store != null;
+}

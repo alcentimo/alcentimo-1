@@ -29,7 +29,7 @@ export function AuthPanel() {
       return;
     }
 
-    window.location.href = "/dashboard";
+    window.location.href = "/onboarding";
   }
 
   return (
