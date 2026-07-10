@@ -4,7 +4,7 @@ import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import { getSiteUrl } from "@/lib/site-url";
 
 export async function GET(request: Request) {
-  const siteUrl = getSiteUrl(request);
+  const siteUrl = getSiteUrl();
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/onboarding";
