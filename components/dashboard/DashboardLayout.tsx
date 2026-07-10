@@ -18,7 +18,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
-import { PRICING_SECTION_HREF, type ProductLimitCheck } from "@/src/config/plans";
+import { DASHBOARD_PLANS_HREF, type ProductLimitCheck } from "@/src/config/plans";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -73,11 +73,10 @@ function buildNavItems(catalogUrl: string | null): NavItem[] {
       match: (p) => p.startsWith("/dashboard/ajustes"),
     },
     {
-      href: PRICING_SECTION_HREF,
+      href: DASHBOARD_PLANS_HREF,
       label: "Planes",
       icon: Sparkles,
-      external: true,
-      match: () => false,
+      match: (p) => p.startsWith("/dashboard/planes"),
     },
   ];
 }
@@ -220,8 +219,8 @@ export function DashboardLayout({
             </p>
           )}
           <Link
-            href={PRICING_SECTION_HREF}
-            className={`${navLinkClass(false)} mb-2`}
+            href={DASHBOARD_PLANS_HREF}
+            className={`${navLinkClass(pathname.startsWith("/dashboard/planes"))} mb-2`}
             onClick={closeSidebar}
           >
             <Sparkles className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />

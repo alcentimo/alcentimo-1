@@ -22,7 +22,7 @@ import {
   formatProductLimit,
   getProductLimitErrorMessage,
   isNearProductLimit,
-  PRICING_SECTION_HREF,
+  DASHBOARD_PLANS_HREF,
 } from "@/src/config/plans";
 
 interface CategoryOption {
@@ -246,7 +246,7 @@ export function ProductForm({
           {isNearLimit && !isAtProductLimit && (
             <p className="mt-2 text-xs font-medium">
               Estás cerca de tu límite de productos.{" "}
-              <Link href={PRICING_SECTION_HREF} className="link-brand font-semibold">
+              <Link href={DASHBOARD_PLANS_HREF} className="link-brand font-semibold">
                 Ver planes
               </Link>
             </p>
@@ -254,7 +254,7 @@ export function ProductForm({
           {isAtProductLimit && (
             <p className="mt-2 text-xs font-medium">
               {limitMessage}{" "}
-              <Link href={PRICING_SECTION_HREF} className="link-brand font-semibold">
+              <Link href={DASHBOARD_PLANS_HREF} className="link-brand font-semibold">
                 Ver planes
               </Link>
             </p>

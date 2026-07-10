@@ -3,7 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import {
   getProductLimitErrorMessage,
   isNearProductLimit,
-  PRICING_SECTION_HREF,
+  DASHBOARD_PLANS_HREF,
   type ProductLimitCheck,
 } from "@/src/config/plans";
 
@@ -45,7 +45,7 @@ export function ProductLimitBanner({ productLimit }: ProductLimitBannerProps) {
         </div>
       </div>
       <Link
-        href={PRICING_SECTION_HREF}
+        href={DASHBOARD_PLANS_HREF}
         className={`inline-flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
           atLimit
             ? "bg-amber-700 text-white hover:bg-amber-800 dark:bg-amber-600 dark:hover:bg-amber-500"

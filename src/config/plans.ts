@@ -47,6 +47,9 @@ export const PLAN_LIST: PlanDefinition[] = [
 /** Enlace a la sección de precios en la landing. */
 export const PRICING_SECTION_HREF = "/#precios";
 
+/** Página interna de planes en el dashboard. */
+export const DASHBOARD_PLANS_HREF = "/dashboard/planes";
+
 /** Avisar cuando quedan esta cantidad de slots o menos (p. ej. 12/15 en plan Free). */
 export const PRODUCT_LIMIT_NEAR_REMAINING = 3;
 
