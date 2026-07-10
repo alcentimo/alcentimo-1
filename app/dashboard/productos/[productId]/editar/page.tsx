@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getUserStore } from "@/lib/stores";
+import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getProductForEdit, getStoreCategories } from "@/lib/products/actions";
 import { ProductForm } from "@/components/dashboard/ProductForm";
@@ -17,15 +17,13 @@ interface EditProductPageProps {
 export default async function EditProductPage({ params }: EditProductPageProps) {
   const { productId } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getDashboardSession(supabase);
 
-  if (!user) {
+  if (!session) {
     redirect(`/dashboard/login?next=/dashboard/productos/${productId}/editar`);
   }
 
-  const store = await getUserStore(supabase);
+  const { store } = session;
   if (!store) {
     redirect("/dashboard/productos/nuevo");
   }

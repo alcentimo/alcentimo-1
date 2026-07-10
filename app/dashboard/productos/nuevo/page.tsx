@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getUserStore } from "@/lib/stores";
+import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getStoreCategories } from "@/lib/products/actions";
+import { getStoreProductLimitStatus } from "@/lib/plans/product-limit";
 import { CreateStoreForm } from "@/components/dashboard/CreateStoreForm";
 import { ProductForm } from "@/components/dashboard/ProductForm";
 import { PageContainer } from "@/components/ui/PageContainer";
@@ -13,16 +14,15 @@ export const dynamic = "force-dynamic";
 
 export default async function NewProductPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getDashboardSession(supabase);
 
-  if (!user) {
+  if (!session) {
     redirect("/dashboard/login?next=/dashboard/productos/nuevo");
   }
 
-  const store = await getUserStore(supabase);
+  const { store } = session;
   const exchangeRate = await getCurrentExchangeRate();
+  const productLimit = store ? await getStoreProductLimitStatus(store.id) : null;
 
   return (
     <PageContainer as="main" narrow className="py-6 sm:py-8 lg:py-10">
@@ -59,6 +59,7 @@ export default async function NewProductPage() {
             store={store}
             categories={await getStoreCategories(store.id)}
             exchangeRate={exchangeRate?.rate ?? null}
+            productLimit={productLimit}
           />
         </div>
       )}

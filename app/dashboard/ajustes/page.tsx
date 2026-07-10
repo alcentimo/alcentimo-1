@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getUserStore } from "@/lib/stores";
+import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { getStoreCoupons } from "@/lib/coupons/actions";
@@ -11,15 +11,13 @@ export const dynamic = "force-dynamic";
 
 export default async function AjustesPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getDashboardSession(supabase);
 
-  if (!user) {
+  if (!session) {
     redirect("/dashboard/login?next=/dashboard/ajustes");
   }
 
-  const store = await getUserStore(supabase);
+  const { store } = session;
 
   let settingsConfig = defaultStoreSettingsConfig();
   let coupons: Awaited<ReturnType<typeof getStoreCoupons>> = [];

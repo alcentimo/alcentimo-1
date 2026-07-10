@@ -17,17 +17,23 @@ export async function getStoreBySlug(slug: string): Promise<Store | null> {
 /** Tienda del usuario autenticado (dueño o miembro). */
 export async function getUserStore(
   client: SupabaseServerClient,
+  userId?: string,
 ): Promise<Store | null> {
-  const {
-    data: { user },
-  } = await client.auth.getUser();
+  let resolvedUserId = userId;
 
-  if (!user) return null;
+  if (!resolvedUserId) {
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+
+    if (!user) return null;
+    resolvedUserId = user.id;
+  }
 
   const { data: owned } = await client
     .from("stores")
     .select("*")
-    .eq("owner_id", user.id)
+    .eq("owner_id", resolvedUserId)
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -37,7 +43,7 @@ export async function getUserStore(
   const { data: membership, error: memberError } = await client
     .from("store_members")
     .select("store_id")
-    .eq("user_id", user.id)
+    .eq("user_id", resolvedUserId)
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();

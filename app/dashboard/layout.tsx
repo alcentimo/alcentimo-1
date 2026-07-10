@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { getUserStore, getStoreCatalogUrl } from "@/lib/stores";
+import { getDashboardSession } from "@/lib/auth/get-user-profile";
+import { getStoreCatalogUrl } from "@/lib/stores";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 
 export const dynamic = "force-dynamic";
@@ -10,21 +11,19 @@ export default async function DashboardRootLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getDashboardSession(supabase);
 
-  if (!user) {
+  if (!session) {
     return <>{children}</>;
   }
 
-  const store = await getUserStore(supabase);
+  const { authUser, store } = session;
 
   return (
     <DashboardLayout
       storeName={store?.name ?? null}
       catalogUrl={store ? getStoreCatalogUrl(store.slug) : null}
-      userEmail={user.email ?? null}
+      userEmail={authUser.email ?? null}
     >
       {children}
     </DashboardLayout>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getUserStore } from "@/lib/stores";
+import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreInventory } from "@/lib/inventory";
 import { formatExchangeRate } from "@/lib/format";
 import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
@@ -11,15 +11,13 @@ export const dynamic = "force-dynamic";
 
 export default async function InventarioPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getDashboardSession(supabase);
 
-  if (!user) {
+  if (!session) {
     redirect("/dashboard/login?next=/dashboard/inventario");
   }
 
-  const store = await getUserStore(supabase);
+  const { store } = session;
 
   if (!store) {
     return (

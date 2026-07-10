@@ -3,11 +3,14 @@
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { requireAuthStore, requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { getUserStore } from "@/lib/stores";
 import { slugify, uniqueSlug } from "@/lib/slugify";
 import { uploadProductImage, buildOptimizationMessage } from "@/lib/storage";
 import { parseVariantFormInputs, parseVariantsJson } from "@/lib/products/variants";
 import { syncProductVariants } from "@/lib/products/sync-variants";
+import { getStoreProductLimitStatus } from "@/lib/plans/product-limit";
+import { getProductLimitErrorMessage } from "@/src/config/plans";
 
 export type ProductFormState = {
   error?: string;
@@ -74,24 +77,23 @@ export async function createProduct(
   formData: FormData,
 ): Promise<ProductFormState> {
   const supabase = await getSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireAuthStore(supabase);
 
-  if (!user) {
-    return { error: "Debes iniciar sesión." };
+  if (!auth.ok) {
+    return { error: auth.error };
   }
 
-  const store = await getUserStore(supabase);
-
-  if (!store) {
-    return { error: "No tienes una tienda asociada. Crea una tienda primero." };
-  }
+  const { store } = auth;
 
   // Ignorar store_id del cliente; usar siempre la tienda de la sesión
   const _clientStoreId = String(formData.get("store_id") ?? "");
   if (_clientStoreId && _clientStoreId !== store.id) {
     return { error: "No tienes permiso para publicar en esta tienda." };
+  }
+
+  const productLimit = await getStoreProductLimitStatus(store.id);
+  if (!productLimit.canCreateMore) {
+    return { error: getProductLimitErrorMessage(productLimit) };
   }
 
   const name = String(formData.get("name") ?? "").trim();
@@ -320,14 +322,10 @@ export async function updateProduct(
   formData: FormData,
 ): Promise<ProductFormState> {
   const supabase = await getSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) return { error: auth.error };
 
-  if (!user) return { error: "Debes iniciar sesión." };
-
-  const store = await getUserStore(supabase);
-  if (!store) return { error: "No tienes una tienda asociada." };
+  const { store } = auth;
 
   const productId = String(formData.get("product_id") ?? "").trim();
   if (!productId) return { error: "Producto no válido." };
@@ -476,11 +474,8 @@ export async function createStore(
   formData: FormData,
 ): Promise<StoreFormState> {
   const supabase = await getSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { error: "Debes iniciar sesión." };
+  const auth = await requireAuthUser(supabase);
+  if (!auth.ok) return { error: auth.error };
 
   const name = String(formData.get("name") ?? "").trim();
   const slugInput = String(formData.get("slug") ?? "").trim();
@@ -490,7 +485,7 @@ export async function createStore(
   if (!slug) return { error: "El slug no es válido." };
 
   const { error } = await supabase.from("stores").insert({
-    owner_id: user.id,
+    owner_id: auth.authUser.id,
     name,
     slug,
   });
@@ -528,14 +523,10 @@ export type DeleteProductState = {
 
 export async function deleteProduct(productId: string): Promise<DeleteProductState> {
   const supabase = await getSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) return { error: auth.error };
 
-  if (!user) return { error: "Debes iniciar sesión." };
-
-  const store = await getUserStore(supabase);
-  if (!store) return { error: "No tienes una tienda asociada." };
+  const { store } = auth;
 
   const { data: product, error: lookupError } = await supabase
     .from("products")
@@ -606,14 +597,10 @@ export async function updateProductStock(
   stockQuantity: number,
 ): Promise<InventoryActionState> {
   const supabase = await getSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) return { error: auth.error };
 
-  if (!user) return { error: "Debes iniciar sesión." };
-
-  const store = await getUserStore(supabase);
-  if (!store) return { error: "No tienes una tienda asociada." };
+  const { store } = auth;
 
   if (!Number.isFinite(stockQuantity) || stockQuantity < 0) {
     return { error: "Stock inválido." };
@@ -645,14 +632,10 @@ export async function updateProductPriceUsd(
   priceUsd: number,
 ): Promise<InventoryActionState> {
   const supabase = await getSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) return { error: auth.error };
 
-  if (!user) return { error: "Debes iniciar sesión." };
-
-  const store = await getUserStore(supabase);
-  if (!store) return { error: "No tienes una tienda asociada." };
+  const { store } = auth;
 
   if (!Number.isFinite(priceUsd) || priceUsd < 0) {
     return { error: "Precio inválido." };
@@ -694,14 +677,10 @@ export async function duplicateProduct(
   productId: string,
 ): Promise<InventoryActionState> {
   const supabase = await getSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) return { error: auth.error };
 
-  if (!user) return { error: "Debes iniciar sesión." };
-
-  const store = await getUserStore(supabase);
-  if (!store) return { error: "No tienes una tienda asociada." };
+  const { store } = auth;
 
   const { data: source, error: sourceError } = await supabase
     .from("products")

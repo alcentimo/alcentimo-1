@@ -9,6 +9,15 @@ export type InventoryMovementType =
 
 export type StoreMemberRole = "owner" | "admin" | "staff";
 
+export type ProfilePlanDb = "FREE" | "STARTER" | "GROWTH" | "PREMIUM";
+
+export interface Profile {
+  id: string;
+  plan: ProfilePlanDb | string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Store {
   id: string;
   owner_id: string;
@@ -325,6 +334,16 @@ export type StoreSettingsInsert = {
 export interface Database {
   public: {
     Tables: {
+      profiles: {
+        Row: Profile;
+        Insert: Pick<Profile, "id"> & {
+          plan?: ProfilePlanDb | string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Profile>;
+        Relationships: [];
+      };
       stores: {
         Row: Store;
         Insert: StoreInsert;

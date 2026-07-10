@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getUserStore } from "@/lib/stores";
+import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import {
   mergeStoreSettingsConfig,
   normalizeStoreSettingsConfig,
@@ -25,18 +25,13 @@ async function persistSettingsPatch(
   patch: Partial<StoreSettingsConfig>,
 ): Promise<SettingsActionResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireAuthStore(supabase);
 
-  if (!user) {
-    return { error: "Debes iniciar sesión." };
+  if (!auth.ok) {
+    return { error: auth.error };
   }
 
-  const store = await getUserStore(supabase);
-  if (!store) {
-    return { error: "No tienes una tienda asociada." };
-  }
+  const { store } = auth;
 
   const current = await getStoreSettingsConfig(supabase, store.id);
   const merged = mergeStoreSettingsConfig(current, patch);

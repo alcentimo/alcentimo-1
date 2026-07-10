@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus, Package, AlertTriangle, DollarSign } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getUserStore } from "@/lib/stores";
+import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreInventory } from "@/lib/inventory";
 import { countOutOfStock, countLowStock } from "@/lib/inventory/stock-status";
 import { InventoryAlerts } from "@/components/dashboard/InventoryAlerts";
@@ -12,15 +12,13 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardHomePage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getDashboardSession(supabase);
 
-  if (!user) {
+  if (!session) {
     redirect("/dashboard/login");
   }
 
-  const store = await getUserStore(supabase);
+  const { store } = session;
 
   let productCount = 0;
   let outOfStockCount = 0;

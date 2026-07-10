@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import { getUserStore } from "@/lib/stores";
 import { supabase } from "@/lib/supabase";
 import type { Coupon, CouponInsert } from "@/lib/database.types";
@@ -66,13 +67,10 @@ export async function createCoupon(input: {
   productIds: string[];
 }): Promise<CouponActionResult> {
   const supabaseClient = await createClient();
-  const {
-    data: { user },
-  } = await supabaseClient.auth.getUser();
-  if (!user) return { error: "Debes iniciar sesión." };
+  const auth = await requireAuthStore(supabaseClient);
+  if (!auth.ok) return { error: auth.error };
 
-  const store = await getUserStore(supabaseClient);
-  if (!store) return { error: "No tienes una tienda asociada." };
+  const { store } = auth;
 
   const code = input.code.trim().toUpperCase();
   if (!/^[A-Z0-9_-]+$/.test(code)) {
