@@ -30,13 +30,11 @@ interface DashboardLayoutProps {
 }
 
 /** Rutas de auth/recuperación sin menú lateral ni chrome del panel. */
-const STANDALONE_AUTH_PATHS = [
-  "/dashboard/restablecer-contrasena",
-  "/dashboard/recuperar-contrasena",
-] as const;
-
 function isStandaloneAuthPath(pathname: string): boolean {
-  return STANDALONE_AUTH_PATHS.some((path) => pathname === path);
+  return (
+    pathname === "/dashboard/recuperar-contrasena" ||
+    pathname.startsWith("/dashboard/restablecer-contrasena")
+  );
 }
 
 interface NavItem {

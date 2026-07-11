@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   establishRecoverySession,
@@ -8,68 +9,102 @@ import {
 } from "@/lib/auth/recovery-url";
 import { createClient } from "@/lib/supabase/client";
 
+const MIN_PASSWORD_LENGTH = 8;
+
+function formatAuthError(message: string): string {
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes("expired") ||
+    lower.includes("expirado") ||
+    (lower.includes("invalid") &&
+      (lower.includes("token") || lower.includes("session")))
+  ) {
+    return "El enlace ha expirado o ya no es válido. Solicita uno nuevo.";
+  }
+
+  if (lower.includes("same password") || lower.includes("misma contraseña")) {
+    return "La nueva contraseña debe ser diferente a la anterior.";
+  }
+
+  if (lower.includes("weak") || lower.includes("débil")) {
+    return "La contraseña es demasiado débil. Usa al menos 8 caracteres.";
+  }
+
+  return message;
+}
+
 export function ResetPasswordPanel() {
+  const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [hasSession, setHasSession] = useState(false);
-  const [passwordUpdated, setPasswordUpdated] = useState(false);
 
   useEffect(() => {
     async function bootstrapRecoverySession() {
-      const urlDebug = getRecoveryUrlDebug();
+      try {
+        const urlDebug = getRecoveryUrlDebug();
 
-      console.group("[reset-password] URL recibida");
-      console.log("href:", urlDebug.href);
-      console.log("pathname:", urlDebug.pathname);
-      console.log("search:", urlDebug.search || "(vacío)");
-      console.log("hash length:", urlDebug.hashLength);
-      console.log("code presente:", Boolean(urlDebug.code));
-      console.log("code (enmascarado):", urlDebug.maskedCode);
-      console.log("code length:", urlDebug.codeLength);
-      console.log("token_hash (enmascarado):", urlDebug.maskedTokenHash);
-      console.log("token_hash length:", urlDebug.tokenHashLength);
-      console.log("type (query):", urlDebug.type);
-      console.log("type (hash):", urlDebug.hashType);
-      console.log("hash access_token:", urlDebug.hasHashAccessToken);
-      console.log("hash refresh_token:", urlDebug.hasHashRefreshToken);
-      if (urlDebug.errorParam) {
-        console.warn("error en URL:", urlDebug.errorParam);
-      }
-      console.groupEnd();
+        console.group("[reset-password] URL recibida");
+        console.log("href:", urlDebug.href);
+        console.log("pathname:", urlDebug.pathname);
+        console.log("search:", urlDebug.search || "(vacío)");
+        console.log("hash length:", urlDebug.hashLength);
+        console.log("code presente:", Boolean(urlDebug.code));
+        console.log("code (enmascarado):", urlDebug.maskedCode);
+        console.log("code length:", urlDebug.codeLength);
+        console.log("token_hash (enmascarado):", urlDebug.maskedTokenHash);
+        console.log("token_hash length:", urlDebug.tokenHashLength);
+        console.log("type (query):", urlDebug.type);
+        console.log("type (hash):", urlDebug.hashType);
+        console.log("hash access_token:", urlDebug.hasHashAccessToken);
+        console.log("hash refresh_token:", urlDebug.hasHashRefreshToken);
+        if (urlDebug.errorParam) {
+          console.warn("error en URL:", urlDebug.errorParam);
+        }
+        console.groupEnd();
 
-      const supabase = createClient();
-      const recoveryResult = await establishRecoverySession(supabase);
+        const supabase = createClient();
+        const recoveryResult = await establishRecoverySession(supabase);
 
-      console.log("[reset-password] establishRecoverySession:", recoveryResult);
+        console.log("[reset-password] establishRecoverySession:", recoveryResult);
 
-      if (!recoveryResult.ok) {
-        if (recoveryResult.method === "redirect-auth-confirm") {
+        if (!recoveryResult.ok) {
+          if (recoveryResult.method === "redirect-auth-confirm") {
+            return;
+          }
+          setHasSession(false);
+          setError(formatAuthError(recoveryResult.error));
+          setCheckingSession(false);
           return;
         }
+
+        const { data, error: sessionError } = await supabase.auth.getUser();
+
+        if (sessionError || !data.user) {
+          console.warn("[reset-password] getUser falló:", sessionError?.message);
+          setHasSession(false);
+          setError(
+            formatAuthError(
+              sessionError?.message ??
+                "No pudimos validar tu sesión de recuperación.",
+            ),
+          );
+        } else {
+          console.log("[reset-password] sesión válida para:", data.user.email);
+          setHasSession(true);
+        }
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Error inesperado al cargar.";
         setHasSession(false);
-        setError(recoveryResult.error);
+        setError(formatAuthError(message));
+      } finally {
         setCheckingSession(false);
-        return;
       }
-
-      const { data, error: sessionError } = await supabase.auth.getUser();
-
-      if (sessionError || !data.user) {
-        console.warn("[reset-password] getUser falló:", sessionError?.message);
-        setHasSession(false);
-        setError(
-          sessionError?.message ??
-            "No pudimos validar tu sesión de recuperación.",
-        );
-      } else {
-        console.log("[reset-password] sesión válida para:", data.user.email);
-        setHasSession(true);
-      }
-
-      setCheckingSession(false);
     }
 
     void bootstrapRecoverySession();
@@ -79,6 +114,11 @@ export function ResetPasswordPanel() {
     e.preventDefault();
     setError(null);
 
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(`La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden.");
       return;
@@ -86,17 +126,25 @@ export function ResetPasswordPanel() {
 
     setLoading(true);
 
-    const supabase = createClient();
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    try {
+      const supabase = createClient();
+      const { error: updateError } = await supabase.auth.updateUser({ password });
 
-    setLoading(false);
+      if (updateError) {
+        setError(formatAuthError(updateError.message));
+        return;
+      }
 
-    if (updateError) {
-      setError(updateError.message);
-      return;
+      await supabase.auth.signOut({ scope: "global" });
+      router.push("/dashboard/restablecer-contrasena/exito");
+      router.refresh();
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "No se pudo actualizar la contraseña.";
+      setError(formatAuthError(message));
+    } finally {
+      setLoading(false);
     }
-
-    setPasswordUpdated(true);
   }
 
   if (checkingSession) {
@@ -133,30 +181,13 @@ export function ResetPasswordPanel() {
     );
   }
 
-  if (passwordUpdated) {
-    return (
-      <div className="card-panel mx-auto w-full max-w-md">
-        <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
-          Contraseña actualizada
-        </h2>
-        <div className="alert-success mt-4 text-base text-teal-800 sm:text-sm dark:text-teal-200">
-          Tu contraseña se actualizó correctamente. Ya puedes usar tu cuenta
-          con la nueva contraseña.
-        </div>
-        <Link href="/dashboard" className="btn-primary mt-6 block w-full text-center">
-          Ir al panel
-        </Link>
-      </div>
-    );
-  }
-
   return (
     <div className="card-panel mx-auto w-full max-w-md">
       <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
         Nueva contraseña
       </h2>
       <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-        Elige una contraseña segura para tu cuenta.
+        Elige una contraseña segura de al menos {MIN_PASSWORD_LENGTH} caracteres.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5">
@@ -168,11 +199,12 @@ export function ResetPasswordPanel() {
             id="password"
             type="password"
             required
-            minLength={6}
+            minLength={MIN_PASSWORD_LENGTH}
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="input-field"
+            disabled={loading}
           />
         </div>
 
@@ -184,18 +216,19 @@ export function ResetPasswordPanel() {
             id="confirm_password"
             type="password"
             required
-            minLength={6}
+            minLength={MIN_PASSWORD_LENGTH}
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             className="input-field"
+            disabled={loading}
           />
         </div>
 
         {error && <p className="alert-error">{error}</p>}
 
         <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? "Guardando…" : "Actualizar contraseña"}
+          {loading ? "Actualizando…" : "Actualizar contraseña"}
         </button>
       </form>
     </div>

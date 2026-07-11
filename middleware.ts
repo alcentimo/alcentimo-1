@@ -5,6 +5,7 @@ const DASHBOARD_PREFIX = "/dashboard";
 const DASHBOARD_LOGIN = "/dashboard/login";
 const RECOVER_PASSWORD_PATH = "/dashboard/recuperar-contrasena";
 const RESET_PASSWORD_PATH = "/dashboard/restablecer-contrasena";
+const RESET_PASSWORD_SUCCESS_PATH = "/dashboard/restablecer-contrasena/exito";
 const ONBOARDING_PATH = "/onboarding";
 const AUTH_CONFIRM_PATH = "/auth/confirm";
 const AUTH_CALLBACK_PATH = "/auth/callback";
@@ -99,8 +100,13 @@ export async function middleware(request: NextRequest) {
   const isLoginPage = pathname === DASHBOARD_LOGIN;
   const isRecoverPasswordPage = pathname === RECOVER_PASSWORD_PATH;
   const isResetPasswordPage = pathname === RESET_PASSWORD_PATH;
+  const isResetPasswordSuccessPage = pathname === RESET_PASSWORD_SUCCESS_PATH;
+  const isResetPasswordFlow =
+    isResetPasswordPage || isResetPasswordSuccessPage;
   const isPublicAuthPage =
-    isLoginPage || isRecoverPasswordPage || isResetPasswordPage;
+    isLoginPage ||
+    isRecoverPasswordPage ||
+    isResetPasswordFlow;
   const isOnboarding = pathname === ONBOARDING_PATH;
 
   // Sin sesión: getUser puede devolver error "Auth session missing!" — es esperable.
@@ -134,7 +140,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Tras intercambiar el code, el usuario puede no tener tienda aún: no forzar onboarding.
-    if (authenticatedUser && !isLoginPage && !isResetPasswordPage) {
+    if (authenticatedUser && !isLoginPage && !isResetPasswordFlow) {
       const hasStore = await userHasStoreInMiddleware(
         supabase,
         authenticatedUser.id,
