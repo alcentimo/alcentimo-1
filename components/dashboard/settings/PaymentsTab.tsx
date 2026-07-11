@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
+import { PaymentQrImageField } from "@/components/payments/PaymentQrImageField";
 import { SettingsOptionCard } from "@/components/dashboard/settings/SettingsOptionCard";
 import {
   SettingsSection,
@@ -11,7 +12,7 @@ import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { savePaymentsSettings } from "@/lib/settings/actions";
 import {
-  PAYMENT_METHODS,
+  PAYMENT_METHOD_GROUPS,
   getPaymentMethod,
 } from "@/src/config/payment-methods";
 import type {
@@ -129,21 +130,39 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
         {config.enabled && meta.fields.length > 0 && (
           <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {meta.fields.map((field) => (
-                <div key={field.key} className={field.fullWidth ? "sm:col-span-2" : ""}>
-                  <label htmlFor={`pay-${key}-${field.key}`} className="label-field">
-                    {field.label}
-                  </label>
-                  <input
+              {meta.fields.map((field) =>
+                field.type === "qr-image" ? (
+                  <PaymentQrImageField
+                    key={field.key}
                     id={`pay-${key}-${field.key}`}
-                    type="text"
+                    label={field.label}
                     value={config.fields[field.key] ?? ""}
-                    onChange={(e) => updateField(key, field.key, e.target.value)}
-                    placeholder={field.placeholder}
-                    className="input-field mt-2"
+                    onChange={(url) => updateField(key, field.key, url)}
                   />
-                </div>
-              ))}
+                ) : (
+                  <div
+                    key={field.key}
+                    className={field.fullWidth ? "sm:col-span-2" : ""}
+                  >
+                    <label
+                      htmlFor={`pay-${key}-${field.key}`}
+                      className="label-field"
+                    >
+                      {field.label}
+                    </label>
+                    <input
+                      id={`pay-${key}-${field.key}`}
+                      type="text"
+                      value={config.fields[field.key] ?? ""}
+                      onChange={(e) =>
+                        updateField(key, field.key, e.target.value)
+                      }
+                      placeholder={field.placeholder}
+                      className="input-field mt-2"
+                    />
+                  </div>
+                ),
+              )}
             </div>
           </div>
         )}
@@ -158,14 +177,17 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
       saving={savingForm}
       onSave={handleSaveForm}
     >
-      <SettingsSection
-        title="Métodos de pago"
-        description="Elige qué formas de pago verán tus clientes al hacer pedidos."
-      >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {PAYMENT_METHODS.map((method) => renderPaymentCard(method.key))}
-        </div>
-      </SettingsSection>
+      {PAYMENT_METHOD_GROUPS.map((group) => (
+        <SettingsSection
+          key={group.title}
+          title={group.title}
+          description={group.description}
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {group.keys.map((key) => renderPaymentCard(key))}
+          </div>
+        </SettingsSection>
+      ))}
 
       <SettingsSection
         title="Venta a cuotas"

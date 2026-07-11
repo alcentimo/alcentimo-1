@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Minus, Plus, ShoppingBag, X } from "lucide-react";
 import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
+import { PaymentCheckoutDetails } from "@/components/payments/PaymentCheckoutDetails";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
 import { cartItemKey, type CartItem } from "@/lib/catalog/cart-types";
@@ -140,6 +141,14 @@ export function CartDrawer({
   const paymentLabel =
     paymentOptions.find((option) => option.value === selectedPayment)?.label ??
     "";
+
+  const selectedPaymentDetails = useMemo(() => {
+    if (!selectedPayment || selectedPayment === INSTALLMENTS_KEY) return null;
+    return (
+      purchaseInfo.payments.find((payment) => payment.key === selectedPayment) ??
+      null
+    );
+  }, [purchaseInfo.payments, selectedPayment]);
 
   const canCheckout =
     items.length > 0 &&
@@ -508,6 +517,12 @@ export function CartDrawer({
                         ),
                       )}
                     </div>
+                    {selectedPaymentDetails && (
+                      <PaymentCheckoutDetails
+                        methodKey={selectedPaymentDetails.key}
+                        fields={selectedPaymentDetails.fields}
+                      />
+                    )}
                   </div>
                 )}
               </div>

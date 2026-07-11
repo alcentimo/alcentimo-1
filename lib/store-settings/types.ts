@@ -18,7 +18,10 @@ export type PaymentMethodKey =
   | "cashea"
   | "transferencia"
   | "efectivoUsd"
-  | "puntoVenta";
+  | "puntoVenta"
+  | "crypto"
+  | "paypal"
+  | "binance";
 
 export interface PaymentMethodConfig {
   enabled: boolean;

@@ -16,20 +16,26 @@ const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
 
 const PAYMENT_METHOD_KEYS: PaymentMethodKey[] = [
   "pagoMovil",
-  "zelle",
-  "cashea",
   "transferencia",
+  "zelle",
   "efectivoUsd",
   "puntoVenta",
+  "paypal",
+  "binance",
+  "crypto",
+  "cashea",
 ];
 
 const DEFAULT_PAYMENT_FIELDS: Record<PaymentMethodKey, Record<string, string>> = {
-  pagoMovil: { bank: "", phone: "", ci: "" },
+  pagoMovil: { bank: "", phone: "", ci: "", qrImageUrl: "" },
   zelle: { email: "", holder: "" },
   cashea: { merchantId: "" },
   transferencia: { bank: "", account: "", holder: "" },
   efectivoUsd: {},
   puntoVenta: { note: "" },
+  paypal: { email: "" },
+  binance: { payId: "", note: "" },
+  crypto: { walletAddress: "", network: "" },
 };
 
 export function defaultStoreSettingsConfig(): StoreSettingsConfig {

@@ -6,8 +6,10 @@ import {
 } from "@/lib/image-compress";
 
 export const PRODUCT_IMAGES_BUCKET = "product-images";
+export const STORE_ASSETS_BUCKET = "store-assets";
 
 const MAX_INPUT_SIZE = 5 * 1024 * 1024; // 5 MB (entrada del usuario)
+const MAX_QR_INPUT_SIZE = 2 * 1024 * 1024; // 2 MB para QR
 
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
@@ -66,6 +68,55 @@ export async function uploadProductImage(
     url: data.publicUrl,
     optimization,
   };
+}
+
+export interface UploadStoreAssetResult {
+  url?: string;
+  error?: string;
+}
+
+/** Sube imágenes de configuración (QR Pago Móvil, etc.) al bucket store-assets. */
+export async function uploadStoreAssetImage(
+  supabase: SupabaseClient,
+  storeId: string,
+  file: File,
+  folder: string,
+): Promise<UploadStoreAssetResult> {
+  if (!ALLOWED_TYPES.has(file.type)) {
+    return { error: "Formato no permitido. Usa JPG, PNG, WebP o GIF." };
+  }
+
+  if (file.size > MAX_QR_INPUT_SIZE) {
+    return { error: "La imagen supera el límite de 2 MB." };
+  }
+
+  const inputBuffer = Buffer.from(await file.arrayBuffer());
+
+  let optimization: ImageOptimizationResult;
+  try {
+    optimization = await compressProductImage(inputBuffer);
+  } catch {
+    return { error: "No se pudo procesar la imagen. Prueba con otro archivo." };
+  }
+
+  const safeFolder = folder.replace(/[^a-z0-9-]/gi, "");
+  const path = `${storeId}/${safeFolder}/${crypto.randomUUID()}.webp`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(STORE_ASSETS_BUCKET)
+    .upload(path, optimization.buffer, {
+      cacheControl: "31536000",
+      upsert: false,
+      contentType: "image/webp",
+    });
+
+  if (uploadError) {
+    return { error: uploadError.message };
+  }
+
+  const { data } = supabase.storage.from(STORE_ASSETS_BUCKET).getPublicUrl(path);
+
+  return { url: data.publicUrl };
 }
 
 export function buildOptimizationMessage(

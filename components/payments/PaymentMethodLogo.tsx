@@ -1,5 +1,5 @@
 import { Banknote, Building2, CreditCard, Smartphone } from "lucide-react";
-import { SiZelle } from "react-icons/si";
+import { SiBinance, SiBitcoin, SiPaypal, SiZelle } from "react-icons/si";
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
 import { BrandLogoTile } from "@/components/ui/BrandLogoTile";
 
@@ -58,6 +58,24 @@ export function PaymentMethodLogo({
       return (
         <BrandLogoTile className={className} backgroundClassName="bg-[#334155]">
           <CreditCard className={`${size} text-white`} strokeWidth={2.25} />
+        </BrandLogoTile>
+      );
+    case "paypal":
+      return (
+        <BrandLogoTile className={className} backgroundClassName="bg-[#003087]">
+          <SiPaypal className={`${size} text-white`} />
+        </BrandLogoTile>
+      );
+    case "binance":
+      return (
+        <BrandLogoTile className={className} backgroundClassName="bg-[#F0B90B]">
+          <SiBinance className={`${size} text-zinc-900`} />
+        </BrandLogoTile>
+      );
+    case "crypto":
+      return (
+        <BrandLogoTile className={className} backgroundClassName="bg-[#F7931A]">
+          <SiBitcoin className={`${size} text-white`} />
         </BrandLogoTile>
       );
     default:

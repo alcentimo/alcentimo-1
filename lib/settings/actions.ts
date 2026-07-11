@@ -8,6 +8,7 @@ import {
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
+import { uploadStoreAssetImage } from "@/lib/storage";
 import type {
   ContactSettings,
   PaymentsSettings,
@@ -80,4 +81,22 @@ export async function savePromotionsSettings(
 ): Promise<SettingsActionResult> {
   const normalized = normalizeStoreSettingsConfig({ promotions });
   return persistSettingsPatch({ promotions: normalized.promotions });
+}
+
+export async function uploadPaymentQrImage(
+  formData: FormData,
+): Promise<{ url?: string; error?: string }> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+
+  if (!auth.ok) {
+    return { error: auth.error };
+  }
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Selecciona una imagen de código QR." };
+  }
+
+  return uploadStoreAssetImage(supabase, auth.store.id, file, "payment-qr");
 }
