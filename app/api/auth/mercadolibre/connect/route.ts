@@ -8,6 +8,7 @@ import {
 } from "@/lib/inbox/mercadolibre-oauth";
 
 export const runtime = "nodejs";
+export const maxDuration = 15;
 
 export async function GET(request: Request) {
   const appId = process.env.ML_APP_ID;

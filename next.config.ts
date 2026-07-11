@@ -7,8 +7,16 @@ const withPWA = require("next-pwa")({
   skipWaiting: true,
 });
 
+const oauthSecurityHeaders = [
+  { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "X-Frame-Options", value: "DENY" },
+];
+
 const nextConfig: NextConfig = {
   turbopack: {},
+  poweredByHeader: false,
   serverExternalPackages: ["sharp"],
   images: {
     remotePatterns: [
@@ -22,6 +30,41 @@ const nextConfig: NextConfig = {
         hostname: "**",
       },
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: "/api/auth/:path*",
+        headers: oauthSecurityHeaders,
+      },
+      {
+        source: "/api/integrations/:path*",
+        headers: oauthSecurityHeaders,
+      },
+      {
+        source: "/api/webhooks/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate",
+          },
+        ],
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: "/api/integrations/mercadolibre/connect",
+        destination: "/api/auth/mercadolibre/connect",
+        permanent: false,
+      },
+      {
+        source: "/api/integrations/mercadolibre/callback",
+        destination: "/api/auth/mercadolibre/callback",
+        permanent: false,
+      },
+    ];
   },
 };
 

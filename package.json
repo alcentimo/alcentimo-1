@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/generate-icons.mjs && next build --webpack",
+    "vercel-build": "node scripts/verify-vercel-env.mjs && npm run build",
     "start": "next start",
     "lint": "eslint",
     "generate-icons": "node scripts/generate-icons.mjs",
-    "dev:create-user": "node scripts/create-dev-user.mjs"
+    "dev:create-user": "node scripts/create-dev-user.mjs",
+    "verify:vercel-env": "node scripts/verify-vercel-env.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

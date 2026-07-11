@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   extractWhatsAppMessageText,
@@ -7,6 +7,7 @@ import {
 } from "@/lib/inbox/meta-webhook";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -66,13 +67,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  try {
-    await ingestMetaWebhookPayload(payload);
-  } catch (err) {
-    console.error("[webhooks/meta] ingest error:", err);
-  }
+  after(async () => {
+    try {
+      await ingestMetaWebhookPayload(payload);
+    } catch (err) {
+      console.error("[webhooks/meta] ingest error:", err);
+    }
+  });
 
-  // Meta reintenta si no recibe 200 rápido; respondemos aunque falle un mensaje puntual.
+  // Meta reintenta si no recibe 200 rápido; respondemos de inmediato.
   return NextResponse.json({ ok: true });
 }
 

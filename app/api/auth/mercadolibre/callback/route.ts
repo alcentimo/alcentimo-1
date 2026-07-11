@@ -11,6 +11,7 @@ import {
 import { getChannelIntegration } from "@/src/config/channel-integrations";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 export async function GET(request: Request) {
   const siteUrl =
