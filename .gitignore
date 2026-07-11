@@ -58,3 +58,8 @@ Thumbs.db
 **/public/workbox-*.js.map
 **/public/worker-*.js
 **/public/worker-*.js.map
+
+.vercel
+.env.local
+.env*.local
+.env.vercel.*

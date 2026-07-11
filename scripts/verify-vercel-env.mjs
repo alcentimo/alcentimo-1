@@ -10,8 +10,9 @@ const CORE = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "NEXT_PUBLIC_SITE_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
 ];
+
+const SERVER = ["SUPABASE_SERVICE_ROLE_KEY"];
 
 const META = [
   "META_APP_ID",
@@ -46,6 +47,7 @@ if (!isVercel) {
 console.log(`[vercel-env] Verificando variables (${process.env.VERCEL_ENV})…`);
 
 const missingCore = logSection("core", CORE);
+const missingServer = logSection("servidor", SERVER);
 const missingMeta = logSection("Meta / WhatsApp", META);
 const missingMl = logSection("MercadoLibre", MERCADOLIBRE);
 
@@ -57,18 +59,33 @@ if (siteUrl && !/^https:\/\//i.test(siteUrl)) {
   );
 }
 
-const allMissing = [...missingCore, ...missingMeta, ...missingMl];
+const blockingMissing = [...missingCore];
 
-if (isProduction && allMissing.length > 0) {
+if (isProduction && missingServer.length > 0) {
+  console.warn(
+    "[vercel-env] Faltan variables de servidor (OAuth/webhooks no funcionarán):",
+    missingServer.join(", "),
+  );
+}
+
+const integrationMissing = [...missingMeta, ...missingMl];
+if (integrationMissing.length > 0) {
+  console.warn(
+    "[vercel-env] Integraciones pendientes (el build continúa):",
+    integrationMissing.join(", "),
+  );
+}
+
+if (isProduction && blockingMissing.length > 0) {
   console.error(
     "[vercel-env] Build abortado: configura las variables en Vercel → Settings → Environment Variables.",
   );
   process.exit(1);
 }
 
-if (allMissing.length > 0) {
+if (blockingMissing.length > 0 && !isProduction) {
   console.warn(
-    "[vercel-env] Preview deployment: build continúa, pero las integraciones no funcionarán hasta configurar las variables.",
+    "[vercel-env] Preview deployment: build continúa, pero faltan variables core.",
   );
 }
 
