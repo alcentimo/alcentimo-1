@@ -18,6 +18,9 @@ declare namespace NodeJS {
     ML_APP_SECRET?: string;
     ML_SITE_TLD?: string;
 
+    /** API de importación POS / ventas externas — solo servidor */
+    API_SECRET_KEY?: string;
+
     /** Inyectadas automáticamente por Vercel */
     VERCEL?: "1";
     VERCEL_ENV?: "production" | "preview" | "development";
