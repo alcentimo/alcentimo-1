@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import {
+  establishRecoverySession,
+  getRecoveryUrlDebug,
+} from "@/lib/auth/recovery-url";
 import { createClient } from "@/lib/supabase/client";
 
 export function ResetPasswordPanel() {
@@ -14,20 +18,58 @@ export function ResetPasswordPanel() {
   const [passwordUpdated, setPasswordUpdated] = useState(false);
 
   useEffect(() => {
-    async function verifySession() {
+    async function bootstrapRecoverySession() {
+      const urlDebug = getRecoveryUrlDebug();
+
+      console.group("[reset-password] URL recibida");
+      console.log("href:", urlDebug.href);
+      console.log("pathname:", urlDebug.pathname);
+      console.log("search:", urlDebug.search || "(vacío)");
+      console.log("hash length:", urlDebug.hashLength);
+      console.log("code presente:", Boolean(urlDebug.code));
+      console.log("code (enmascarado):", urlDebug.maskedCode);
+      console.log("code length:", urlDebug.codeLength);
+      console.log("token_hash (enmascarado):", urlDebug.maskedTokenHash);
+      console.log("token_hash length:", urlDebug.tokenHashLength);
+      console.log("type (query):", urlDebug.type);
+      console.log("type (hash):", urlDebug.hashType);
+      console.log("hash access_token:", urlDebug.hasHashAccessToken);
+      console.log("hash refresh_token:", urlDebug.hasHashRefreshToken);
+      if (urlDebug.errorParam) {
+        console.warn("error en URL:", urlDebug.errorParam);
+      }
+      console.groupEnd();
+
       const supabase = createClient();
+      const recoveryResult = await establishRecoverySession(supabase);
+
+      console.log("[reset-password] establishRecoverySession:", recoveryResult);
+
+      if (!recoveryResult.ok) {
+        setHasSession(false);
+        setError(recoveryResult.error);
+        setCheckingSession(false);
+        return;
+      }
+
       const { data, error: sessionError } = await supabase.auth.getUser();
 
       if (sessionError || !data.user) {
+        console.warn("[reset-password] getUser falló:", sessionError?.message);
         setHasSession(false);
+        setError(
+          sessionError?.message ??
+            "No pudimos validar tu sesión de recuperación.",
+        );
       } else {
+        console.log("[reset-password] sesión válida para:", data.user.email);
         setHasSession(true);
       }
 
       setCheckingSession(false);
     }
 
-    void verifySession();
+    void bootstrapRecoverySession();
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -71,8 +113,12 @@ export function ResetPasswordPanel() {
           Enlace inválido o expirado
         </h2>
         <p className="alert-error mt-4">
-          No pudimos validar tu sesión de recuperación. Solicita un nuevo
-          enlace para restablecer tu contraseña.
+          {error ??
+            "No pudimos validar tu sesión de recuperación. Solicita un nuevo enlace para restablecer tu contraseña."}
+        </p>
+        <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+          Abre la consola del navegador (F12) para ver los detalles de depuración
+          de la URL recibida.
         </p>
         <Link
           href="/dashboard/recuperar-contrasena"

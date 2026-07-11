@@ -8,6 +8,7 @@ import { PricingGrid } from "@/components/landing/PricingGrid";
 import { StoreDirectory } from "@/components/landing/StoreDirectory";
 import { CtaBanner } from "@/components/landing/CtaBanner";
 import { LandingFooter } from "@/components/landing/LandingFooter";
+import { RecoveryUrlRedirect } from "@/components/auth/RecoveryUrlRedirect";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export default async function Home() {
 
   return (
     <>
+      <RecoveryUrlRedirect />
       <LandingNav />
       <main className="min-h-dvh bg-zinc-50 dark:bg-zinc-950">
         <Hero exchangeRate={exchangeRate} />

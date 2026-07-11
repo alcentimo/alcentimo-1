@@ -60,12 +60,15 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const code = request.nextUrl.searchParams.get("code");
+  const tokenHash = request.nextUrl.searchParams.get("token_hash");
   const authType = request.nextUrl.searchParams.get("type");
+  const hasAuthParams = Boolean(code || tokenHash);
 
   // Supabase puede redirigir a /?code=... si la Site URL es la raíz del dominio.
-  if (code && pathname !== "/auth/callback") {
+  if (hasAuthParams && pathname !== "/auth/callback") {
     const isRecovery =
       authType === "recovery" ||
+      Boolean(tokenHash) ||
       pathname === RESET_PASSWORD_PATH ||
       pathname === "/";
 

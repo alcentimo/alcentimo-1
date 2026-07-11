@@ -1,34 +1,11 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ResetPasswordPanel } from "@/components/dashboard/ResetPasswordPanel";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { BrandLogo } from "@/components/ui/BrandLogo";
-import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-type ResetPasswordPageProps = {
-  searchParams: Promise<{ code?: string }>;
-};
-
-export default async function ResetPasswordPage({
-  searchParams,
-}: ResetPasswordPageProps) {
-  const params = await searchParams;
-
-  if (params.code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(params.code);
-
-    if (error) {
-      redirect(
-        `/dashboard/recuperar-contrasena?error=${encodeURIComponent(error.message)}`,
-      );
-    }
-
-    redirect("/dashboard/restablecer-contrasena");
-  }
-
+export default function ResetPasswordPage() {
   return (
     <main className="page-shell-auth flex min-h-dvh flex-col justify-center safe-area-inset">
       <div
