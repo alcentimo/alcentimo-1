@@ -1,9 +1,9 @@
 import { createHmac, randomBytes } from "node:crypto";
-import type { ChannelProviderKey } from "@/src/config/channel-integrations";
+import type { MetaProviderKey } from "@/src/config/channel-integrations";
 
 const GRAPH_API_VERSION = "v21.0";
 
-const PROVIDER_SCOPES: Record<ChannelProviderKey, string[]> = {
+const PROVIDER_SCOPES: Record<MetaProviderKey, string[]> = {
   whatsapp: [
     "business_management",
     "whatsapp_business_management",
@@ -24,7 +24,7 @@ export function getMetaRedirectUri(siteUrl: string): string {
 
 export function createMetaOAuthState(input: {
   storeId: string;
-  provider: ChannelProviderKey;
+  provider: MetaProviderKey;
 }): { state: string; cookieValue: string } {
   const appSecret = process.env.META_APP_SECRET;
   if (!appSecret) {
@@ -53,7 +53,7 @@ export function createMetaOAuthState(input: {
 
 export function parseMetaOAuthState(state: string): {
   storeId: string;
-  provider: ChannelProviderKey;
+  provider: MetaProviderKey;
 } | null {
   const appSecret = process.env.META_APP_SECRET;
   if (!appSecret) return null;
@@ -73,7 +73,7 @@ export function parseMetaOAuthState(state: string): {
 
     const data = JSON.parse(decoded.payload) as {
       storeId?: string;
-      provider?: ChannelProviderKey;
+      provider?: MetaProviderKey;
     };
 
     if (!data.storeId || !data.provider) return null;
@@ -88,7 +88,7 @@ export function buildMetaOAuthUrl(input: {
   appId: string;
   redirectUri: string;
   state: string;
-  provider: ChannelProviderKey;
+  provider: MetaProviderKey;
 }): string {
   const params = new URLSearchParams({
     client_id: input.appId,

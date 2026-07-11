@@ -14,7 +14,29 @@ export async function getStoreIntegrations(
 
   if (error) throw error;
 
-  return (data ?? []) as ChannelIntegration[];
+  return (data ?? []).map(sanitizeIntegrationForClient) as ChannelIntegration[];
+}
+
+const SENSITIVE_CONFIG_KEYS = new Set([
+  "access_token",
+  "refresh_token",
+  "token_expires_at",
+]);
+
+function sanitizeIntegrationForClient(
+  integration: ChannelIntegration,
+): ChannelIntegration {
+  if (integration.provider !== "mercadolibre" || !integration.config) {
+    return integration;
+  }
+
+  const safeConfig = Object.fromEntries(
+    Object.entries(integration.config).filter(
+      ([key]) => !SENSITIVE_CONFIG_KEYS.has(key),
+    ),
+  );
+
+  return { ...integration, config: safeConfig };
 }
 
 export function hasActiveIntegrations(

@@ -14,6 +14,7 @@ const VALID_CHANNELS = new Set<ChannelProviderKey>([
   "whatsapp",
   "instagram",
   "messenger",
+  "mercadolibre",
 ]);
 
 function resolveStatus(searchParams: {
@@ -35,6 +36,12 @@ function resolveStatus(searchParams: {
           "Meta aún no está configurado en el servidor. Añade META_APP_ID y META_APP_SECRET en Vercel.",
         tone: "error",
       };
+    case "ml_not_configured":
+      return {
+        message:
+          "MercadoLibre aún no está configurado en el servidor. Añade ML_APP_ID y ML_APP_SECRET en Vercel.",
+        tone: "error",
+      };
     case "oauth_denied":
       return {
         message: "Autorización cancelada. Puedes intentarlo de nuevo cuando quieras.",
@@ -43,7 +50,13 @@ function resolveStatus(searchParams: {
     case "connect_failed":
       return {
         message:
-          "No se pudo completar la conexión. Verifica tu app de Meta Business e inténtalo otra vez.",
+          "No se pudo completar la conexión con Meta. Verifica tu app de Meta Business e inténtalo otra vez.",
+        tone: "error",
+      };
+    case "ml_connect_failed":
+      return {
+        message:
+          "No se pudo completar la conexión con MercadoLibre. Verifica tu app en el panel de desarrolladores e inténtalo otra vez.",
         tone: "error",
       };
     case "invalid_provider":
@@ -96,7 +109,8 @@ export default async function IntegracionesPage({
         <p className="section-label">Configuración</p>
         <h1 className="page-header-title">Integraciones</h1>
         <p className="page-header-desc">
-          Conecta WhatsApp, Instagram y Facebook para centralizar tus mensajes
+          Conecta WhatsApp, Instagram, Facebook y MercadoLibre para centralizar
+          tus mensajes y ventas
           {store ? ` · ${store.name}` : ""}.
         </p>
       </header>

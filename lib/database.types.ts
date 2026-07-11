@@ -334,7 +334,7 @@ export type StoreSettingsInsert = {
 export interface ChannelIntegration {
   id: string;
   store_id: string;
-  provider: "whatsapp" | "messenger" | "instagram";
+  provider: "whatsapp" | "messenger" | "instagram" | "mercadolibre";
   external_account_id: string;
   display_name: string | null;
   config: Record<string, unknown>;

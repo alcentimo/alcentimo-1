@@ -2,40 +2,24 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import {
-  buildMetaOAuthUrl,
-  createMetaOAuthState,
-  getMetaRedirectUri,
-} from "@/lib/inbox/meta-oauth";
-import type { MetaProviderKey } from "@/src/config/channel-integrations";
+  buildMlOAuthUrl,
+  createMlOAuthState,
+  getMlRedirectUri,
+} from "@/lib/inbox/mercadolibre-oauth";
 
 export const runtime = "nodejs";
 
-const VALID_PROVIDERS = new Set<MetaProviderKey>([
-  "whatsapp",
-  "instagram",
-  "messenger",
-]);
-
 export async function GET(request: Request) {
-  const appId = process.env.META_APP_ID;
+  const appId = process.env.ML_APP_ID;
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
 
   if (!appId) {
     return NextResponse.redirect(
       new URL(
-        "/dashboard/ajustes/integraciones?error=meta_not_configured",
+        "/dashboard/ajustes/integraciones?error=ml_not_configured",
         siteUrl,
       ),
-    );
-  }
-
-  const { searchParams } = new URL(request.url);
-  const provider = searchParams.get("provider") as MetaProviderKey | null;
-
-  if (!provider || !VALID_PROVIDERS.has(provider)) {
-    return NextResponse.redirect(
-      new URL("/dashboard/ajustes/integraciones?error=invalid_provider", siteUrl),
     );
   }
 
@@ -51,21 +35,19 @@ export async function GET(request: Request) {
     );
   }
 
-  const { state, cookieValue } = createMetaOAuthState({
+  const { state, cookieValue } = createMlOAuthState({
     storeId: auth.store.id,
-    provider,
   });
 
-  const redirectUri = getMetaRedirectUri(siteUrl);
-  const oauthUrl = buildMetaOAuthUrl({
+  const redirectUri = getMlRedirectUri(siteUrl);
+  const oauthUrl = buildMlOAuthUrl({
     appId,
     redirectUri,
     state,
-    provider,
   });
 
   const response = NextResponse.redirect(oauthUrl);
-  response.cookies.set("meta_oauth_state", cookieValue, {
+  response.cookies.set("ml_oauth_state", cookieValue, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

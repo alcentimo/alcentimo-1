@@ -1,4 +1,8 @@
-export type InboxProvider = "whatsapp" | "messenger" | "instagram";
+export type InboxProvider =
+  | "whatsapp"
+  | "messenger"
+  | "instagram"
+  | "mercadolibre";
 
 export type InboxConversationStatus = "open" | "pending" | "closed";
 
