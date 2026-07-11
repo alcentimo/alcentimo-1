@@ -7,7 +7,8 @@
     "build": "node scripts/generate-icons.mjs && next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "generate-icons": "node scripts/generate-icons.mjs"
+    "generate-icons": "node scripts/generate-icons.mjs",
+    "dev:create-user": "node scripts/create-dev-user.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const DASHBOARD_PREFIX = "/dashboard";
 const DASHBOARD_LOGIN = "/dashboard/login";
+const RECOVER_PASSWORD_PATH = "/dashboard/recuperar-contrasena";
+const RESET_PASSWORD_PATH = "/dashboard/restablecer-contrasena";
 const ONBOARDING_PATH = "/onboarding";
 
 async function userHasStoreInMiddleware(
@@ -59,6 +61,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isDashboard = pathname.startsWith(DASHBOARD_PREFIX);
   const isLoginPage = pathname === DASHBOARD_LOGIN;
+  const isRecoverPasswordPage = pathname === RECOVER_PASSWORD_PATH;
+  const isResetPasswordPage = pathname === RESET_PASSWORD_PATH;
+  const isPublicAuthPage =
+    isLoginPage || isRecoverPasswordPage || isResetPasswordPage;
   const isOnboarding = pathname === ONBOARDING_PATH;
 
   // Sin sesión: getUser puede devolver error "Auth session missing!" — es esperable.
@@ -83,14 +89,14 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isDashboard) {
-    if (!authenticatedUser && !isLoginPage) {
+    if (!authenticatedUser && !isPublicAuthPage) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = DASHBOARD_LOGIN;
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    if (authenticatedUser && !isLoginPage) {
+    if (authenticatedUser && !isLoginPage && !isResetPasswordPage) {
       const hasStore = await userHasStoreInMiddleware(
         supabase,
         authenticatedUser.id,

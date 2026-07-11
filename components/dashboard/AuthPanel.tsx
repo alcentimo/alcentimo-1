@@ -1,8 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+import { devSignUpAndSignIn } from "@/lib/auth/dev-signup";
 import { createClient } from "@/lib/supabase/client";
 import { getAuthCallbackUrl } from "@/lib/site-url";
+
+const devSkipEmailConfirmation =
+  process.env.NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION === "true";
 
 function GoogleIcon() {
   return (
@@ -80,6 +85,19 @@ export function AuthPanel() {
 
     setLoading(true);
 
+    if (mode === "signup" && devSkipEmailConfirmation) {
+      const devResult = await devSignUpAndSignIn(email, password);
+      setLoading(false);
+
+      if (!devResult.ok) {
+        setError(devResult.error);
+        return;
+      }
+
+      window.location.href = "/onboarding";
+      return;
+    }
+
     const supabase = createClient();
     const emailRedirectTo = getAuthCallbackUrl("/onboarding");
 
@@ -95,7 +113,14 @@ export function AuthPanel() {
     setLoading(false);
 
     if (result.error) {
-      setError(result.error.message);
+      const message = result.error.message;
+      if (message.toLowerCase().includes("rate limit")) {
+        setError(
+          "Límite de envío de correos alcanzado. En desarrollo, desactiva «Confirm email» en Supabase (Authentication → Providers → Email) o habilita NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION=true en .env.local.",
+        );
+        return;
+      }
+      setError(message);
       return;
     }
 
@@ -142,6 +167,12 @@ export function AuthPanel() {
       <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
         Accede al panel para gestionar tu catálogo.
       </p>
+
+      {devSkipEmailConfirmation && mode === "signup" && (
+        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+          Modo desarrollo: el registro no envía correo de confirmación.
+        </p>
+      )}
 
       <button
         type="button"
@@ -192,6 +223,13 @@ export function AuthPanel() {
             onChange={(e) => setPassword(e.target.value)}
             className="input-field"
           />
+          {mode === "login" && (
+            <p className="mt-2 text-right">
+              <Link href="/dashboard/recuperar-contrasena" className="link-brand text-sm">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </p>
+          )}
         </div>
 
         {mode === "signup" && (

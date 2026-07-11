@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { AuthPanel } from "@/components/dashboard/AuthPanel";
+import { ForgotPasswordPanel } from "@/components/dashboard/ForgotPasswordPanel";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardLoginPage() {
+export default function RecoverPasswordPage() {
   return (
     <main className="page-shell-auth flex min-h-dvh flex-col justify-center safe-area-inset">
       <div
@@ -18,22 +18,17 @@ export default function DashboardLoginPage() {
           <BrandLogo href="/" centered className="justify-center" />
           <p className="section-label mt-6">Panel del negocio</p>
           <h1 className="mt-2 text-2xl font-bold text-zinc-900 sm:text-3xl dark:text-zinc-50">
-            Gestiona tu inventario
+            Recupera el acceso
           </h1>
           <p className="mt-2 text-base text-zinc-500 sm:text-sm lg:text-base dark:text-zinc-400">
-            Inicia sesión para publicar productos y compartir tu catálogo.
+            Te ayudamos a restablecer tu contraseña de forma segura.
           </p>
         </div>
-        <AuthPanel />
-        <p className="mt-4 text-center text-sm">
-          <Link href="/dashboard/recuperar-contrasena" className="link-brand">
-            ¿Olvidaste tu contraseña?
-          </Link>
-        </p>
+        <ForgotPasswordPanel />
         <p className="mt-6 text-center text-sm text-zinc-500">
-          ¿No tienes cuenta?{" "}
-          <Link href="/#precios" className="link-brand">
-            Conoce los planes
+          ¿Recordaste tu contraseña?{" "}
+          <Link href="/dashboard/login" className="link-brand">
+            Inicia sesión
           </Link>
         </p>
       </PageContainer>
