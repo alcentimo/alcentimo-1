@@ -22,6 +22,7 @@ export interface ShippingMethodCardProps {
   /** Acción lateral (p. ej. switch en ajustes). */
   action?: ReactNode;
   className?: string;
+  logoClassName?: string;
 }
 
 function resolveCopy(
@@ -48,6 +49,7 @@ export function ShippingMethodCard({
   disabled = false,
   action,
   className = "",
+  logoClassName = "h-11 w-11 shrink-0",
 }: ShippingMethodCardProps) {
   const copy = resolveCopy(carrierKey, description, estimatedTime);
   const isInteractive = selectable && !disabled;
@@ -64,7 +66,7 @@ export function ShippingMethodCard({
 
   const content = (
     <>
-      <ShippingCarrierLogo carrierKey={carrierKey} className="h-11 w-11 shrink-0" />
+      <ShippingCarrierLogo carrierKey={carrierKey} className={logoClassName} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
           {copy.label}

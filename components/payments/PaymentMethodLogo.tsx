@@ -10,7 +10,8 @@ interface PaymentMethodLogoProps {
 
 function iconSize(className: string): string {
   if (className.includes("h-11") || className.includes("w-11")) return "h-6 w-6";
-  if (className.includes("h-9") || className.includes("w-9")) return "h-5 w-5";
+  if (className.includes("h-10") || className.includes("w-10")) return "h-[54%] w-[54%]";
+  if (className.includes("h-9") || className.includes("w-9")) return "h-[52%] w-[52%]";
   return "h-[58%] w-[58%]";
 }
 

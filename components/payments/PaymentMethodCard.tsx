@@ -12,6 +12,7 @@ export interface PaymentMethodCardProps {
   disabled?: boolean;
   action?: ReactNode;
   className?: string;
+  logoClassName?: string;
 }
 
 export function PaymentMethodCard({
@@ -23,6 +24,7 @@ export function PaymentMethodCard({
   disabled = false,
   action,
   className = "",
+  logoClassName = "h-11 w-11 shrink-0",
 }: PaymentMethodCardProps) {
   const method = getPaymentMethod(methodKey);
   const isInteractive = selectable && !disabled;
@@ -39,7 +41,7 @@ export function PaymentMethodCard({
 
   const content = (
     <>
-      <PaymentMethodLogo methodKey={methodKey} className="h-11 w-11 shrink-0" />
+      <PaymentMethodLogo methodKey={methodKey} className={logoClassName} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
           {method.label}

@@ -275,6 +275,30 @@ body {
   @apply mt-1 text-sm text-zinc-500;
 }
 
+.purchase-info-section-title {
+  @apply text-sm font-semibold text-zinc-900;
+}
+
+.purchase-info-method-list {
+  @apply mt-3 space-y-2.5;
+}
+
+.purchase-info-method-card {
+  @apply p-3;
+}
+
+.purchase-info-method-card-attached {
+  @apply rounded-b-none;
+}
+
+.purchase-info-payment-item {
+  @apply space-y-0;
+}
+
+.purchase-info-field-list {
+  @apply -mt-px space-y-1 rounded-b-xl border border-t-0 border-zinc-200 bg-white px-3 py-2.5 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950;
+}
+
 .store-empty-state {
   @apply flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 px-6 py-20 text-center;
 }
