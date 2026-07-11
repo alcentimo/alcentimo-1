@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageSquare,
   Package,
   Settings,
   ShoppingCart,
@@ -66,6 +67,12 @@ function buildNavItems(catalogUrl: string | null): NavItem[] {
       label: "Ventas",
       icon: ShoppingCart,
       match: (p) => p.startsWith("/dashboard/ventas"),
+    },
+    {
+      href: "/dashboard/mensajes",
+      label: "Mensajes",
+      icon: MessageSquare,
+      match: (p) => p.startsWith("/dashboard/mensajes"),
     },
     {
       href: catalogUrl ?? "#",

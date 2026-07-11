@@ -331,6 +331,29 @@ export type StoreSettingsInsert = {
   updated_at?: string;
 };
 
+export interface ChannelIntegration {
+  id: string;
+  store_id: string;
+  provider: "whatsapp" | "messenger" | "instagram";
+  external_account_id: string;
+  display_name: string | null;
+  config: Record<string, unknown>;
+  webhook_verify_token: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChannelMessage {
+  id: string;
+  integration_id: string;
+  sender_id: string;
+  message_text: string | null;
+  direction: "inbound" | "outbound";
+  status: "read" | "unread";
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -424,6 +447,31 @@ export interface Database {
         Row: Coupon;
         Insert: CouponInsert;
         Update: Partial<CouponInsert>;
+        Relationships: [];
+      };
+      channel_integrations: {
+        Row: ChannelIntegration;
+        Insert: Omit<
+          ChannelIntegration,
+          "id" | "created_at" | "updated_at" | "config" | "is_active"
+        > & {
+          id?: string;
+          config?: Record<string, unknown>;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<ChannelIntegration>;
+        Relationships: [];
+      };
+      channel_messages: {
+        Row: ChannelMessage;
+        Insert: Omit<ChannelMessage, "id" | "created_at" | "status"> & {
+          id?: string;
+          status?: "read" | "unread";
+          created_at?: string;
+        };
+        Update: Partial<ChannelMessage>;
         Relationships: [];
       };
     };
