@@ -29,6 +29,16 @@ interface DashboardLayoutProps {
   productLimit?: ProductLimitCheck | null;
 }
 
+/** Rutas de auth/recuperación sin menú lateral ni chrome del panel. */
+const STANDALONE_AUTH_PATHS = [
+  "/dashboard/restablecer-contrasena",
+  "/dashboard/recuperar-contrasena",
+] as const;
+
+function isStandaloneAuthPath(pathname: string): boolean {
+  return STANDALONE_AUTH_PATHS.some((path) => pathname === path);
+}
+
 interface NavItem {
   href: string;
   label: string;
@@ -125,6 +135,12 @@ export function DashboardLayout({
 
   function isActive(item: NavItem) {
     return item.match?.(pathname) ?? pathname === item.href;
+  }
+
+  if (isStandaloneAuthPath(pathname)) {
+    return (
+      <div className="relative min-h-dvh bg-zinc-50 dark:bg-zinc-950">{children}</div>
+    );
   }
 
   return (
