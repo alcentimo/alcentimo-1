@@ -1,6 +1,13 @@
-import { Store, Truck } from "lucide-react";
+import { Home, Truck } from "lucide-react";
 import type { ShippingCarrierKey } from "@/lib/store-settings/types";
 import { BrandLogoTile } from "@/components/ui/BrandLogoTile";
+import {
+  DomesaBrandMark,
+  LibertyExpressBrandMark,
+  MrwBrandMark,
+  TealcaBrandMark,
+  ZoomDeliveryBrandMark,
+} from "@/components/shipping/CarrierBrandMarks";
 
 interface ShippingCarrierLogoProps {
   carrierKey: ShippingCarrierKey;
@@ -8,12 +15,19 @@ interface ShippingCarrierLogoProps {
 }
 
 function iconSize(className: string): string {
+  if (className.includes("h-14") || className.includes("w-14")) return "h-8 w-8";
+  if (className.includes("h-12") || className.includes("w-12")) return "h-7 w-7";
   if (className.includes("h-11") || className.includes("w-11")) return "h-6 w-6";
   if (className.includes("h-9") || className.includes("w-9")) return "h-5 w-5";
   return "h-[58%] w-[58%]";
 }
 
-/** Logotipos de transportistas y métodos de envío (colores oficiales de marca). */
+/**
+ * Logotipos de encomiendas (SVG con colores oficiales) y entrega local (Lucide).
+ *
+ * MRW, Tealca, Zoom, Domesa y Liberty Express no existen en react-icons/si;
+ * usamos marcas SVG dedicadas en lugar de SiZoom (videoconferencia).
+ */
 export function ShippingCarrierLogo({
   carrierKey,
   className = "h-10 w-10",
@@ -22,48 +36,15 @@ export function ShippingCarrierLogo({
 
   switch (carrierKey) {
     case "mrw":
-      return (
-        <BrandLogoTile className={className} backgroundClassName="bg-[#E30613]">
-          <span className="text-[11px] font-bold uppercase tracking-tight text-white">
-            MRW
-          </span>
-        </BrandLogoTile>
-      );
+      return <MrwBrandMark className={className} />;
     case "tealca":
-      return (
-        <BrandLogoTile className={className} backgroundClassName="bg-[#0054A6]">
-          <span className="px-0.5 text-[8px] font-bold uppercase tracking-tight text-white">
-            Tealca
-          </span>
-        </BrandLogoTile>
-      );
+      return <TealcaBrandMark className={className} />;
     case "zoom":
-      return (
-        <BrandLogoTile className={className} backgroundClassName="bg-[#F7941D]">
-          <span className="px-0.5 text-[10px] font-bold uppercase tracking-tight text-zinc-900">
-            ZOOM
-          </span>
-        </BrandLogoTile>
-      );
+      return <ZoomDeliveryBrandMark className={className} />;
     case "domesa":
-      return (
-        <BrandLogoTile className={className} backgroundClassName="bg-[#006B3F]">
-          <span className="px-0.5 text-[8px] font-bold uppercase tracking-tight text-white">
-            Domesa
-          </span>
-        </BrandLogoTile>
-      );
+      return <DomesaBrandMark className={className} />;
     case "libertyExpress":
-      return (
-        <BrandLogoTile className={className} backgroundClassName="bg-[#6B21A8]">
-          <span className="flex flex-col items-center leading-none text-white">
-            <span className="text-[7px] font-bold tracking-wide">LIBERTY</span>
-            <span className="mt-0.5 text-[6px] font-semibold text-violet-200">
-              EXPRESS
-            </span>
-          </span>
-        </BrandLogoTile>
-      );
+      return <LibertyExpressBrandMark className={className} />;
     case "delivery":
       return (
         <BrandLogoTile className={className} backgroundClassName="bg-[#0D9488]">
@@ -73,7 +54,7 @@ export function ShippingCarrierLogo({
     case "pickup":
       return (
         <BrandLogoTile className={className} backgroundClassName="bg-[#475569]">
-          <Store className={`${size} text-white`} strokeWidth={2.25} />
+          <Home className={`${size} text-white`} strokeWidth={2.25} />
         </BrandLogoTile>
       );
     default:
