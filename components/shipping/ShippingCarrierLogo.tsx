@@ -1,153 +1,86 @@
+import { Store, Truck } from "lucide-react";
 import type { ShippingCarrierKey } from "@/lib/store-settings/types";
+import { BrandLogoTile } from "@/components/ui/BrandLogoTile";
 
 interface ShippingCarrierLogoProps {
   carrierKey: ShippingCarrierKey;
   className?: string;
 }
 
-/** Marcas estilizadas (iniciales/colores) — sin dependencia de APIs externas. */
+function iconSize(className: string): string {
+  if (className.includes("h-11") || className.includes("w-11")) return "h-6 w-6";
+  if (className.includes("h-9") || className.includes("w-9")) return "h-5 w-5";
+  return "h-[58%] w-[58%]";
+}
+
+/** Logotipos de transportistas y métodos de envío (colores oficiales de marca). */
 export function ShippingCarrierLogo({
   carrierKey,
   className = "h-10 w-10",
 }: ShippingCarrierLogoProps) {
+  const size = iconSize(className);
+
   switch (carrierKey) {
     case "mrw":
       return (
-        <svg
-          viewBox="0 0 40 40"
-          className={className}
-          aria-hidden="true"
-          role="img"
-        >
-          <rect width="40" height="40" rx="10" fill="#E30613" />
-          <text
-            x="20"
-            y="25"
-            textAnchor="middle"
-            fill="#FFFFFF"
-            fontSize="13"
-            fontWeight="700"
-            fontFamily="Arial, Helvetica, sans-serif"
-          >
+        <BrandLogoTile className={className} backgroundClassName="bg-[#E30613]">
+          <span className="text-[11px] font-bold uppercase tracking-tight text-white">
             MRW
-          </text>
-        </svg>
+          </span>
+        </BrandLogoTile>
       );
     case "tealca":
       return (
-        <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
-          <rect width="40" height="40" rx="10" fill="#0054A6" />
-          <text
-            x="20"
-            y="25"
-            textAnchor="middle"
-            fill="#FFFFFF"
-            fontSize="9"
-            fontWeight="700"
-            fontFamily="Arial, Helvetica, sans-serif"
-          >
-            TEALCA
-          </text>
-        </svg>
+        <BrandLogoTile className={className} backgroundClassName="bg-[#0054A6]">
+          <span className="px-0.5 text-[8px] font-bold uppercase tracking-tight text-white">
+            Tealca
+          </span>
+        </BrandLogoTile>
       );
     case "zoom":
       return (
-        <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
-          <rect width="40" height="40" rx="10" fill="#F7941D" />
-          <text
-            x="20"
-            y="25"
-            textAnchor="middle"
-            fill="#1A1A1A"
-            fontSize="12"
-            fontWeight="700"
-            fontFamily="Arial, Helvetica, sans-serif"
-          >
+        <BrandLogoTile className={className} backgroundClassName="bg-[#F7941D]">
+          <span className="px-0.5 text-[10px] font-bold uppercase tracking-tight text-zinc-900">
             ZOOM
-          </text>
-        </svg>
+          </span>
+        </BrandLogoTile>
       );
     case "domesa":
       return (
-        <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
-          <rect width="40" height="40" rx="10" fill="#006B3F" />
-          <text
-            x="20"
-            y="25"
-            textAnchor="middle"
-            fill="#FFFFFF"
-            fontSize="8.5"
-            fontWeight="700"
-            fontFamily="Arial, Helvetica, sans-serif"
-          >
-            DOMESA
-          </text>
-        </svg>
+        <BrandLogoTile className={className} backgroundClassName="bg-[#006B3F]">
+          <span className="px-0.5 text-[8px] font-bold uppercase tracking-tight text-white">
+            Domesa
+          </span>
+        </BrandLogoTile>
       );
     case "libertyExpress":
       return (
-        <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
-          <rect width="40" height="40" rx="10" fill="#6B21A8" />
-          <text
-            x="20"
-            y="18"
-            textAnchor="middle"
-            fill="#FFFFFF"
-            fontSize="7"
-            fontWeight="700"
-            fontFamily="Arial, Helvetica, sans-serif"
-          >
-            LIBERTY
-          </text>
-          <text
-            x="20"
-            y="28"
-            textAnchor="middle"
-            fill="#E9D5FF"
-            fontSize="6"
-            fontWeight="600"
-            fontFamily="Arial, Helvetica, sans-serif"
-          >
-            EXPRESS
-          </text>
-        </svg>
+        <BrandLogoTile className={className} backgroundClassName="bg-[#6B21A8]">
+          <span className="flex flex-col items-center leading-none text-white">
+            <span className="text-[7px] font-bold tracking-wide">LIBERTY</span>
+            <span className="mt-0.5 text-[6px] font-semibold text-violet-200">
+              EXPRESS
+            </span>
+          </span>
+        </BrandLogoTile>
       );
     case "delivery":
       return (
-        <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
-          <rect width="40" height="40" rx="10" fill="#0D9488" />
-          <path
-            d="M8 26h2.5l1.8-5.5H26l2.2 5.5H31l-3.2-8H13.5L11 14H7v12zm8.5 4a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6zm10 0a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6z"
-            fill="#FFFFFF"
-          />
-        </svg>
+        <BrandLogoTile className={className} backgroundClassName="bg-[#0D9488]">
+          <Truck className={`${size} text-white`} strokeWidth={2.25} />
+        </BrandLogoTile>
       );
     case "pickup":
       return (
-        <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
-          <rect width="40" height="40" rx="10" fill="#475569" />
-          <path
-            d="M10 16h20v14H10V16zm3 3v8h5v-8h-5zm7 0v8h5v-8h-5zM14 12h12l2 4H12l2-4z"
-            fill="#FFFFFF"
-          />
-        </svg>
+        <BrandLogoTile className={className} backgroundClassName="bg-[#475569]">
+          <Store className={`${size} text-white`} strokeWidth={2.25} />
+        </BrandLogoTile>
       );
     default:
       return (
-        <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
-          <rect width="40" height="40" rx="10" fill="#71717A" />
-          <text
-            x="20"
-            y="25"
-            textAnchor="middle"
-            fill="#FFFFFF"
-            fontSize="10"
-            fontWeight="700"
-            fontFamily="Arial, Helvetica, sans-serif"
-          >
-            ?
-          </text>
-        </svg>
+        <BrandLogoTile className={className} backgroundClassName="bg-zinc-500">
+          <span className="text-xs font-bold text-white">?</span>
+        </BrandLogoTile>
       );
   }
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { ChannelLogo } from "@/components/inbox/ChannelLogo";
 import { PaymentMethodLogo } from "@/components/payments/PaymentMethodLogo";
 import { ShippingCarrierLogo } from "@/components/shipping/ShippingCarrierLogo";
 import { PAYMENT_METHODS } from "@/src/config/payment-methods";
@@ -29,9 +30,7 @@ export function IntegrationsSection() {
             className="group flex flex-col gap-4 rounded-xl border border-emerald-200/80 bg-linear-to-r from-emerald-50 to-teal-50 p-5 shadow-sm transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:justify-between sm:p-6 dark:border-emerald-900/50 dark:from-emerald-950/40 dark:to-teal-950/30"
           >
             <div className="flex items-start gap-4">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
-                <MessageCircle className="h-6 w-6" aria-hidden="true" />
-              </span>
+              <ChannelLogo provider="whatsapp" className="h-12 w-12 shrink-0" />
               <div className="text-left">
                 <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                   WhatsApp

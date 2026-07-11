@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { MessageCircle } from "lucide-react";
+import { ChannelLogo } from "@/components/inbox/ChannelLogo";
 import {
   SettingsSection,
   SettingsTabShell,
@@ -55,9 +55,7 @@ export function GeneralTab({ initialContact }: GeneralTabProps) {
         description="Los clientes usarán este número al finalizar compras desde tu catálogo público."
       >
         <div className="settings-option-card">
-          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#25D366]/10 text-[#128C7E]">
-            <MessageCircle className="h-5 w-5" aria-hidden="true" />
-          </div>
+          <ChannelLogo provider="whatsapp" className="mb-4 h-11 w-11" />
 
           <label htmlFor="store-whatsapp" className="label-field">
             Número de WhatsApp
