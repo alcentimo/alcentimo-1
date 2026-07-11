@@ -9,6 +9,10 @@ import {
 } from "@/lib/store-settings/defaults";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { uploadStoreAssetImage } from "@/lib/storage";
+import {
+  getFirstPaymentValidationError,
+  validatePaymentsSettings,
+} from "@/lib/payments/validate-payment-fields";
 import type {
   ContactSettings,
   PaymentsSettings,
@@ -66,6 +70,16 @@ export async function savePaymentsSettings(
   payments: PaymentsSettings,
 ): Promise<SettingsActionResult> {
   const normalized = normalizeStoreSettingsConfig({ payments });
+  const validationErrors = validatePaymentsSettings(normalized.payments);
+
+  if (Object.keys(validationErrors).length > 0) {
+    return {
+      error:
+        getFirstPaymentValidationError(validationErrors) ??
+        "Revisa los campos de los métodos de pago activos.",
+    };
+  }
+
   return persistSettingsPatch({ payments: normalized.payments });
 }
 

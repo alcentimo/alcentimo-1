@@ -8,6 +8,10 @@ export interface PaymentMethodFieldDefinition {
   placeholder: string;
   fullWidth?: boolean;
   type?: PaymentMethodFieldType;
+  /** Muestra botón «Copiar» en el checkout del catálogo. */
+  copyable?: boolean;
+  /** Campo opcional aunque el método esté activo. */
+  optional?: boolean;
 }
 
 export interface PaymentMethodDefinition {
@@ -31,8 +35,18 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     description: "Cobra en bolívares vía Pago Móvil bancario.",
     fields: [
       { key: "bank", label: "Banco", placeholder: "Ej: Banesco" },
-      { key: "phone", label: "Teléfono", placeholder: "Ej: 0414-1234567" },
-      { key: "ci", label: "Cédula / RIF", placeholder: "Ej: V-12.345.678" },
+      {
+        key: "phone",
+        label: "Teléfono",
+        placeholder: "Ej: 0414-1234567",
+        copyable: true,
+      },
+      {
+        key: "ci",
+        label: "Cédula / RIF",
+        placeholder: "Ej: V-12.345.678",
+        copyable: true,
+      },
       {
         key: "qrImageUrl",
         label: "Código QR del banco",
@@ -48,7 +62,12 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     description: "Transferencia directa a cuenta nacional.",
     fields: [
       { key: "bank", label: "Banco", placeholder: "Ej: Mercantil" },
-      { key: "account", label: "Número de cuenta", placeholder: "0105-..." },
+      {
+        key: "account",
+        label: "Número de cuenta",
+        placeholder: "0105-...",
+        copyable: true,
+      },
       {
         key: "holder",
         label: "Titular",
@@ -61,7 +80,12 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     label: "Zelle",
     description: "Recibe pagos en USD por Zelle.",
     fields: [
-      { key: "email", label: "Correo Zelle", placeholder: "tu@email.com" },
+      {
+        key: "email",
+        label: "Correo Zelle",
+        placeholder: "tu@email.com",
+        copyable: true,
+      },
       { key: "holder", label: "Titular", placeholder: "Nombre del titular" },
     ],
   },
@@ -81,6 +105,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
         label: "Nota para el cliente",
         placeholder: "Ej: Solo tarjetas nacionales",
         fullWidth: true,
+        optional: true,
       },
     ],
   },
@@ -94,6 +119,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
         label: "Correo de PayPal",
         placeholder: "pagos@tutienda.com",
         fullWidth: true,
+        copyable: true,
       },
     ],
   },
@@ -107,12 +133,14 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
         label: "Binance Pay ID / Pay ID",
         placeholder: "Ej: 123456789",
         fullWidth: true,
+        copyable: true,
       },
       {
         key: "note",
         label: "Nota (opcional)",
         placeholder: "Ej: Solo USDT en red BEP20",
         fullWidth: true,
+        optional: true,
       },
     ],
   },
@@ -126,6 +154,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
         label: "Dirección de billetera",
         placeholder: "0x… o dirección de tu wallet",
         fullWidth: true,
+        copyable: true,
       },
       {
         key: "network",
@@ -144,6 +173,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
         key: "merchantId",
         label: "ID comercio",
         placeholder: "ID asignado por Cashea",
+        copyable: true,
       },
     ],
   },

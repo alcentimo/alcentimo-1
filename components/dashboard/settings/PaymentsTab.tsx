@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { PaymentConfigField } from "@/components/payments/PaymentConfigField";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { PaymentQrImageField } from "@/components/payments/PaymentQrImageField";
 import { SettingsOptionCard } from "@/components/dashboard/settings/SettingsOptionCard";
@@ -10,6 +11,11 @@ import {
 } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
+import {
+  getFirstPaymentValidationError,
+  validatePaymentsSettings,
+  type PaymentFieldErrors,
+} from "@/lib/payments/validate-payment-fields";
 import { savePaymentsSettings } from "@/lib/settings/actions";
 import {
   PAYMENT_METHOD_GROUPS,
@@ -24,12 +30,18 @@ interface PaymentsTabProps {
   initialSettings: PaymentsSettings;
 }
 
+function fieldErrorKey(methodKey: PaymentMethodKey, fieldKey: string): string {
+  return `${methodKey}.${fieldKey}`;
+}
+
 export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
   const [payments, setPayments] = useState(initialSettings.methods);
   const [installments, setInstallments] = useState(initialSettings.installments);
   const [savingToggle, setSavingToggle] = useState<string | null>(null);
   const [savingForm, setSavingForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<PaymentFieldErrors>({});
   const [, startTransition] = useTransition();
 
   function buildPayload(
@@ -48,6 +60,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
     toggleKey?: string,
   ) {
     setError(null);
+    setSuccess(null);
     if (mode === "toggle" && toggleKey) setSavingToggle(toggleKey);
     if (mode === "form") setSavingForm(true);
 
@@ -70,6 +83,13 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
       [key]: { ...payments[key], enabled },
     };
     setPayments(nextMethods);
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      for (const fieldKey of Object.keys(next)) {
+        if (fieldKey.startsWith(`${key}.`)) delete next[fieldKey];
+      }
+      return next;
+    });
     persist(buildPayload(nextMethods, installments), "toggle", `method-${key}`);
   }
 
@@ -87,19 +107,58 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
         fields: { ...prev[key].fields, [fieldKey]: value },
       },
     }));
+    setFieldErrors((prev) => {
+      const errorKey = fieldErrorKey(key, fieldKey);
+      if (!prev[errorKey]) return prev;
+      const next = { ...prev };
+      delete next[errorKey];
+      return next;
+    });
+    setSuccess(null);
+  }
+
+  function setFieldError(
+    methodKey: PaymentMethodKey,
+    fieldKey: string,
+    message: string | null,
+  ) {
+    const errorKey = fieldErrorKey(methodKey, fieldKey);
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[errorKey] = message;
+      else delete next[errorKey];
+      return next;
+    });
   }
 
   function handleSaveForm() {
     setError(null);
+    setSuccess(null);
+
+    const payload = buildPayload(payments, installments);
+    const validationErrors = validatePaymentsSettings(payload);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
+      setError(
+        getFirstPaymentValidationError(validationErrors) ??
+          "Revisa los campos de los métodos de pago activos.",
+      );
+      return;
+    }
+
+    setFieldErrors({});
     setSavingForm(true);
     startTransition(async () => {
-      const result = await savePaymentsSettings(buildPayload(payments, installments));
+      const result = await savePaymentsSettings(payload);
       setSavingForm(false);
       if (result.error) {
         setError(result.error);
         setPayments(initialSettings.methods);
         setInstallments(initialSettings.installments);
+        return;
       }
+      setSuccess("Configuración de pagos guardada correctamente.");
     });
   }
 
@@ -140,27 +199,18 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
                     onChange={(url) => updateField(key, field.key, url)}
                   />
                 ) : (
-                  <div
+                  <PaymentConfigField
                     key={field.key}
-                    className={field.fullWidth ? "sm:col-span-2" : ""}
-                  >
-                    <label
-                      htmlFor={`pay-${key}-${field.key}`}
-                      className="label-field"
-                    >
-                      {field.label}
-                    </label>
-                    <input
-                      id={`pay-${key}-${field.key}`}
-                      type="text"
-                      value={config.fields[field.key] ?? ""}
-                      onChange={(e) =>
-                        updateField(key, field.key, e.target.value)
-                      }
-                      placeholder={field.placeholder}
-                      className="input-field mt-2"
-                    />
-                  </div>
+                    methodKey={key}
+                    field={field}
+                    enabled={config.enabled}
+                    value={config.fields[field.key] ?? ""}
+                    error={fieldErrors[fieldErrorKey(key, field.key)]}
+                    onChange={(value) => updateField(key, field.key, value)}
+                    onBlurValidate={(message) =>
+                      setFieldError(key, field.key, message)
+                    }
+                  />
                 ),
               )}
             </div>
@@ -177,6 +227,15 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
       saving={savingForm}
       onSave={handleSaveForm}
     >
+      {success && (
+        <p
+          className="mb-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-300"
+          role="status"
+        >
+          {success}
+        </p>
+      )}
+
       {PAYMENT_METHOD_GROUPS.map((group) => (
         <SettingsSection
           key={group.title}
