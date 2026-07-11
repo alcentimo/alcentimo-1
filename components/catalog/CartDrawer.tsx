@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { Minus, Plus, ShoppingBag, X } from "lucide-react";
+import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { cartItemKey, type CartItem } from "@/lib/catalog/cart-types";
 import { formatUsd, formatVes } from "@/lib/format";
@@ -439,22 +440,21 @@ export function CartDrawer({
 
                 {purchaseInfo.shipping.length > 0 && (
                   <div className="store-cart-field">
-                    <label htmlFor="cart-shipping" className="store-cart-label">
-                      Método de envío
-                    </label>
-                    <select
-                      id="cart-shipping"
-                      value={selectedShipping}
-                      onChange={(e) => setSelectedShipping(e.target.value)}
-                      className="store-cart-select"
-                    >
-                      <option value="">Seleccionar envío…</option>
+                    <p className="store-cart-label">Método de envío</p>
+                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {purchaseInfo.shipping.map((option) => (
-                        <option key={option.key} value={option.key}>
-                          {option.label}
-                        </option>
+                        <ShippingMethodCard
+                          key={option.key}
+                          carrierKey={option.key}
+                          details={option.details}
+                          description={option.description}
+                          estimatedTime={option.estimatedTime}
+                          selectable
+                          selected={selectedShipping === option.key}
+                          onSelect={() => setSelectedShipping(option.key)}
+                        />
                       ))}
-                    </select>
+                    </div>
                   </div>
                 )}
 

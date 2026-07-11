@@ -1,17 +1,13 @@
+import {
+  getShippingMethod,
+  LOCAL_SHIPPING_METHODS,
+  NATIONAL_CARRIER_METHODS,
+} from "@/src/config/shipping-methods";
 import type {
   PaymentMethodKey,
   ShippingCarrierKey,
   StoreSettingsConfig,
 } from "@/lib/store-settings/types";
-
-const SHIPPING_LABELS: Record<ShippingCarrierKey, string> = {
-  mrw: "MRW",
-  tealca: "Tealca",
-  zoom: "Zoom",
-  domesa: "Domesa",
-  delivery: "Delivery",
-  pickup: "Retiro en tienda",
-};
 
 const PAYMENT_LABELS: Record<PaymentMethodKey, string> = {
   pagoMovil: "Pago Móvil",
@@ -25,6 +21,8 @@ const PAYMENT_LABELS: Record<PaymentMethodKey, string> = {
 export interface PublicShippingOption {
   key: ShippingCarrierKey;
   label: string;
+  description: string;
+  estimatedTime?: string;
   details?: string;
 }
 
@@ -46,19 +44,36 @@ export interface PublicPurchaseInfo {
   whatsappPhone: string;
 }
 
+function buildShippingOption(
+  key: ShippingCarrierKey,
+  config: StoreSettingsConfig,
+): PublicShippingOption {
+  const method = getShippingMethod(key);
+  const deliveryDetails =
+    key === "delivery" && config.shipping.deliveryDetails.trim()
+      ? config.shipping.deliveryDetails.trim()
+      : undefined;
+
+  return {
+    key,
+    label: method.label,
+    description: method.description,
+    estimatedTime: method.estimatedTime,
+    details: deliveryDetails,
+  };
+}
+
 export function buildPublicPurchaseInfo(
   config: StoreSettingsConfig,
 ): PublicPurchaseInfo {
-  const shipping = (Object.keys(SHIPPING_LABELS) as ShippingCarrierKey[])
+  const carrierKeys = [
+    ...NATIONAL_CARRIER_METHODS.map((m) => m.key),
+    ...LOCAL_SHIPPING_METHODS.map((m) => m.key),
+  ] as ShippingCarrierKey[];
+
+  const shipping = carrierKeys
     .filter((key) => config.shipping.carriers[key])
-    .map((key) => ({
-      key,
-      label: SHIPPING_LABELS[key],
-      details:
-        key === "delivery" && config.shipping.deliveryDetails.trim()
-          ? config.shipping.deliveryDetails.trim()
-          : undefined,
-    }));
+    .map((key) => buildShippingOption(key, config));
 
   const payments = (Object.keys(PAYMENT_LABELS) as PaymentMethodKey[])
     .filter((key) => config.payments.methods[key].enabled)

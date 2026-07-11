@@ -3,6 +3,7 @@ export type ShippingCarrierKey =
   | "tealca"
   | "zoom"
   | "domesa"
+  | "libertyExpress"
   | "delivery"
   | "pickup";
 

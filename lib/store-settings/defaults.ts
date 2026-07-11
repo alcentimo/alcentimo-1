@@ -9,6 +9,7 @@ const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "tealca",
   "zoom",
   "domesa",
+  "libertyExpress",
   "delivery",
   "pickup",
 ];

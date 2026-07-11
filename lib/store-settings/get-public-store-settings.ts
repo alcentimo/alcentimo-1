@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import {
   defaultStoreSettingsConfig,
@@ -8,6 +9,8 @@ import type { StoreSettingsConfig } from "@/lib/store-settings/types";
 export async function getPublicStoreSettingsConfig(
   storeId: string,
 ): Promise<StoreSettingsConfig> {
+  noStore();
+
   const { data, error } = await supabase
     .from("store_settings")
     .select("config")

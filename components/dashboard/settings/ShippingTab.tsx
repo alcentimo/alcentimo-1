@@ -1,43 +1,23 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { SettingsOptionCard } from "@/components/dashboard/settings/SettingsOptionCard";
+import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
+import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import {
   SettingsSection,
   SettingsTabShell,
 } from "@/components/dashboard/settings/SettingsLayout";
+import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { saveShippingSettings } from "@/lib/settings/actions";
+import {
+  LOCAL_SHIPPING_METHODS,
+  NATIONAL_CARRIER_METHODS,
+  getShippingMethod,
+} from "@/src/config/shipping-methods";
 import type {
   ShippingCarrierKey,
   ShippingSettings,
 } from "@/lib/store-settings/types";
-
-const CARRIER_OPTIONS: {
-  key: ShippingCarrierKey;
-  label: string;
-  description: string;
-}[] = [
-  {
-    key: "mrw",
-    label: "MRW",
-    description: "Envíos por agencia MRW a nivel nacional.",
-  },
-  {
-    key: "tealca",
-    label: "Tealca",
-    description: "Cobertura vía Tealca en ciudades principales.",
-  },
-  {
-    key: "zoom",
-    label: "Zoom",
-    description: "Entregas con Zoom Delivery o agencia aliada.",
-  },
-  {
-    key: "domesa",
-    label: "Domesa",
-    description: "Opción de encomienda Domesa para tu catálogo.",
-  },
-];
 
 interface ShippingTabProps {
   initialSettings: ShippingSettings;
@@ -97,6 +77,47 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
     persist(buildPayload(carriers, deliveryDetails), "form");
   }
 
+  function renderCarrierCard(key: ShippingCarrierKey) {
+    const isSaving = savingToggle === key;
+
+    return (
+      <div key={key} className="relative">
+        <ShippingMethodCard
+          carrierKey={key}
+          action={
+            <SettingsSwitch
+              id={`ship-${key}`}
+              label={getShippingMethod(key).label}
+              checked={carriers[key]}
+              onChange={(v) => setCarrier(key, v)}
+              disabled={isSaving}
+            />
+          }
+        />
+        {isSaving && (
+          <div className="mt-2 px-1">
+            <SavingHint visible />
+          </div>
+        )}
+        {key === "delivery" && carriers.delivery && (
+          <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+            <label htmlFor="delivery-details" className="label-field">
+              Detalles del delivery
+            </label>
+            <textarea
+              id="delivery-details"
+              rows={3}
+              value={deliveryDetails}
+              onChange={(e) => setDeliveryDetails(e.target.value)}
+              placeholder="Ej: Delivery en Valencia — costo según zona, pedido mínimo $5"
+              className="input-field mt-2 resize-none"
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <SettingsTabShell
       error={error}
@@ -108,57 +129,22 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
         title="Empresas de encomienda"
         description="Activa las opciones de envío nacional que ofreces a tus clientes."
       >
-        {CARRIER_OPTIONS.map((option) => (
-          <SettingsOptionCard
-            key={option.key}
-            id={`ship-${option.key}`}
-            label={option.label}
-            description={option.description}
-            checked={carriers[option.key]}
-            disabled={savingToggle === option.key}
-            saving={savingToggle === option.key}
-            onChange={(v) => setCarrier(option.key, v)}
-          />
-        ))}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {NATIONAL_CARRIER_METHODS.map((method) =>
+            renderCarrierCard(method.key),
+          )}
+        </div>
       </SettingsSection>
 
       <SettingsSection
         title="Entrega local"
         description="Configura delivery propio y retiro en tienda."
       >
-        <SettingsOptionCard
-          id="ship-delivery"
-          label="Delivery"
-          description="Ofrece entrega a domicilio en tu zona."
-          checked={carriers.delivery}
-          disabled={savingToggle === "delivery"}
-          saving={savingToggle === "delivery"}
-          onChange={(v) => setCarrier("delivery", v)}
-        >
-          <div>
-            <label htmlFor="delivery-details" className="label-field">
-              Detalles del delivery
-            </label>
-            <textarea
-              id="delivery-details"
-              rows={3}
-              value={deliveryDetails}
-              onChange={(e) => setDeliveryDetails(e.target.value)}
-              placeholder="Ej: Delivery en Valencia — costo según zona, pedido mínimo $5"
-              className="input-field resize-none"
-            />
-          </div>
-        </SettingsOptionCard>
-
-        <SettingsOptionCard
-          id="ship-pickup"
-          label="Retiro en tienda"
-          description="El cliente recoge el pedido en tu local."
-          checked={carriers.pickup}
-          disabled={savingToggle === "pickup"}
-          saving={savingToggle === "pickup"}
-          onChange={(v) => setCarrier("pickup", v)}
-        />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {LOCAL_SHIPPING_METHODS.map((method) =>
+            renderCarrierCard(method.key),
+          )}
+        </div>
       </SettingsSection>
     </SettingsTabShell>
   );

@@ -518,6 +518,18 @@ body {
   @apply mt-5 border-t border-zinc-100 pt-5 dark:border-zinc-800;
 }
 
+.shipping-method-card {
+  @apply flex items-start gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-all dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.shipping-method-card-interactive {
+  @apply cursor-pointer hover:border-teal-300 hover:shadow-md dark:hover:border-teal-700;
+}
+
+.shipping-method-card-selected {
+  @apply border-teal-500 ring-2 ring-teal-100 dark:border-teal-500 dark:ring-teal-950/60;
+}
+
 .settings-save-bar {
   @apply sticky bottom-0 -mx-6 -mb-6 mt-auto flex items-center justify-end gap-4 border-t border-zinc-200 bg-white/95 px-6 py-5 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95 sm:-mx-8 sm:-mb-8 sm:px-8;
 }
