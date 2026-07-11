@@ -33,7 +33,7 @@ function resolveStatus(searchParams: {
     case "meta_not_configured":
       return {
         message:
-          "Meta aún no está configurado en el servidor. Añade META_APP_ID y META_APP_SECRET en Vercel.",
+          "Meta aún no está configurado en el servidor. En Vercel define META_APP_ID y META_APP_SECRET con el App ID y App Secret reales de developers.facebook.com (no uses pending-configuration).",
         tone: "error",
       };
     case "ml_not_configured":

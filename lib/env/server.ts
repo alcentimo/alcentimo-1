@@ -18,6 +18,15 @@ function optionalEnv(name: string): string | undefined {
   return value || undefined;
 }
 
+/** Valores inyectados por scripts/inject-vercel-env.mjs cuando falta config real. */
+const ENV_PLACEHOLDER_VALUES = new Set(["pending-configuration", "changeme", "xxx"]);
+
+export function isConfiguredEnvValue(
+  value: string | undefined,
+): value is string {
+  return Boolean(value && !ENV_PLACEHOLDER_VALUES.has(value));
+}
+
 export function getPublicSiteUrl(fallbackOrigin?: string): string {
   return (
     optionalEnv("NEXT_PUBLIC_SITE_URL") ??
@@ -34,13 +43,17 @@ export function getSupabasePublicConfig() {
 }
 
 export function getMetaOAuthConfig() {
+  const appId = optionalEnv("META_APP_ID");
+  const appSecret = optionalEnv("META_APP_SECRET");
+  const webhookVerifyToken = optionalEnv("META_WEBHOOK_VERIFY_TOKEN");
+
   return {
-    appId: optionalEnv("META_APP_ID"),
-    appSecret: optionalEnv("META_APP_SECRET"),
-    webhookVerifyToken: optionalEnv("META_WEBHOOK_VERIFY_TOKEN"),
-    isConfigured: Boolean(
-      optionalEnv("META_APP_ID") && optionalEnv("META_APP_SECRET"),
-    ),
+    appId: isConfiguredEnvValue(appId) ? appId : undefined,
+    appSecret: isConfiguredEnvValue(appSecret) ? appSecret : undefined,
+    webhookVerifyToken: isConfiguredEnvValue(webhookVerifyToken)
+      ? webhookVerifyToken
+      : undefined,
+    isConfigured: isConfiguredEnvValue(appId) && isConfiguredEnvValue(appSecret),
   };
 }
 

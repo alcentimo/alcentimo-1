@@ -22,8 +22,16 @@ const META = [
 
 const MERCADOLIBRE = ["ML_APP_ID", "ML_APP_SECRET"];
 
+const PLACEHOLDER_VALUES = new Set(["pending-configuration", "changeme", "xxx"]);
+
 function missing(vars) {
   return vars.filter((name) => !process.env[name]?.trim());
+}
+
+function placeholder(vars) {
+  return vars.filter((name) =>
+    PLACEHOLDER_VALUES.has(process.env[name]?.trim() ?? ""),
+  );
 }
 
 function logSection(title, vars) {
@@ -49,6 +57,12 @@ console.log(`[vercel-env] Verificando variables (${process.env.VERCEL_ENV})…`)
 const missingCore = logSection("core", CORE);
 const missingServer = logSection("servidor", SERVER);
 const missingMeta = logSection("Meta / WhatsApp", META);
+const placeholderMeta = placeholder(META);
+if (placeholderMeta.length > 0) {
+  console.warn(
+    `[vercel-env] Meta usa valores placeholder (${placeholderMeta.join(", ")}). OAuth de WhatsApp/Instagram/Messenger fallará hasta configurar IDs reales.`,
+  );
+}
 const missingMl = logSection("MercadoLibre", MERCADOLIBRE);
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
