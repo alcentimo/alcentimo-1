@@ -46,6 +46,9 @@ export function ResetPasswordPanel() {
       console.log("[reset-password] establishRecoverySession:", recoveryResult);
 
       if (!recoveryResult.ok) {
+        if (recoveryResult.method === "redirect-auth-confirm") {
+          return;
+        }
         setHasSession(false);
         setError(recoveryResult.error);
         setCheckingSession(false);

@@ -38,7 +38,8 @@ export function getAuthCallbackUrl(next = "/onboarding"): string {
   return `${siteUrl}/auth/callback?next=${encodeURIComponent(safeNext)}`;
 }
 
-/** Destino del enlace de recuperación de contraseña (debe estar en Redirect URLs de Supabase). */
+/** Destino del enlace de recuperación (Supabase añade token_hash/type o code). */
 export function getPasswordResetRedirectUrl(): string {
-  return `${getSiteUrl()}/dashboard/restablecer-contrasena`;
+  const siteUrl = getSiteUrl();
+  return `${siteUrl}/auth/confirm?next=${encodeURIComponent("/dashboard/restablecer-contrasena")}`;
 }

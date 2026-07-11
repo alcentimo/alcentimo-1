@@ -68,9 +68,21 @@ export type EstablishRecoveryResult =
   | { ok: true; method: string }
   | { ok: false; error: string; method: string };
 
+function redirectToServerConfirm(
+  search: string,
+): EstablishRecoveryResult {
+  const params = new URLSearchParams(search);
+  if (!params.has("next")) {
+    params.set("next", "/dashboard/restablecer-contrasena");
+  }
+  window.location.replace(`/auth/confirm?${params.toString()}`);
+  return { ok: false, error: "Redirigiendo a confirmación…", method: "redirect-auth-confirm" };
+}
+
 /**
- * Establece sesión de recuperación desde query (?code=, ?token_hash=) o hash (#access_token=).
- * Debe ejecutarse en el cliente: el hash nunca llega al servidor.
+ * Establece sesión de recuperación en el cliente.
+ * Query params (?code=, ?token_hash=) se delegan al servidor (/auth/confirm).
+ * Hash (#access_token=) se procesa aquí — el servidor nunca lo recibe.
  */
 export async function establishRecoverySession(
   supabase: SupabaseClient,
@@ -80,27 +92,9 @@ export async function establishRecoverySession(
 
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
-  const type = searchParams.get("type") ?? hashParams.get("type");
 
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
-      return { ok: false, error: error.message, method: "exchangeCodeForSession" };
-    }
-    cleanRecoveryUrl();
-    return { ok: true, method: "exchangeCodeForSession" };
-  }
-
-  if (tokenHash && type === "recovery") {
-    const { error } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: "recovery",
-    });
-    if (error) {
-      return { ok: false, error: error.message, method: "verifyOtp" };
-    }
-    cleanRecoveryUrl();
-    return { ok: true, method: "verifyOtp" };
+  if (code || tokenHash) {
+    return redirectToServerConfirm(window.location.search);
   }
 
   const accessToken = hashParams.get("access_token");

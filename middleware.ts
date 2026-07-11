@@ -6,6 +6,8 @@ const DASHBOARD_LOGIN = "/dashboard/login";
 const RECOVER_PASSWORD_PATH = "/dashboard/recuperar-contrasena";
 const RESET_PASSWORD_PATH = "/dashboard/restablecer-contrasena";
 const ONBOARDING_PATH = "/onboarding";
+const AUTH_CONFIRM_PATH = "/auth/confirm";
+const AUTH_CALLBACK_PATH = "/auth/callback";
 
 async function userHasStoreInMiddleware(
   supabase: ReturnType<typeof createServerClient>,
@@ -65,7 +67,11 @@ export async function middleware(request: NextRequest) {
   const hasAuthParams = Boolean(code || tokenHash);
 
   // Supabase puede redirigir a /?code=... si la Site URL es la raíz del dominio.
-  if (hasAuthParams && pathname !== "/auth/callback") {
+  if (
+    hasAuthParams &&
+    pathname !== AUTH_CALLBACK_PATH &&
+    pathname !== AUTH_CONFIRM_PATH
+  ) {
     const isRecovery =
       authType === "recovery" ||
       Boolean(tokenHash) ||
@@ -73,18 +79,16 @@ export async function middleware(request: NextRequest) {
       pathname === "/";
 
     if (isRecovery) {
-      // Ya en la página de restablecimiento: dejar pasar para exchangeCodeForSession.
-      if (pathname === RESET_PASSWORD_PATH) {
-        return supabaseResponse;
+      const confirmUrl = request.nextUrl.clone();
+      confirmUrl.pathname = AUTH_CONFIRM_PATH;
+      if (!confirmUrl.searchParams.has("next")) {
+        confirmUrl.searchParams.set("next", RESET_PASSWORD_PATH);
       }
-
-      const recoveryUrl = request.nextUrl.clone();
-      recoveryUrl.pathname = RESET_PASSWORD_PATH;
-      return NextResponse.redirect(recoveryUrl);
+      return NextResponse.redirect(confirmUrl);
     }
 
     const callbackUrl = request.nextUrl.clone();
-    callbackUrl.pathname = "/auth/callback";
+    callbackUrl.pathname = AUTH_CALLBACK_PATH;
     if (!callbackUrl.searchParams.has("next")) {
       callbackUrl.searchParams.set("next", ONBOARDING_PATH);
     }

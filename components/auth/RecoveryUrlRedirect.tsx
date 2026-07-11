@@ -3,8 +3,9 @@
 import { useEffect } from "react";
 
 /**
- * Si Supabase redirige a / con tokens en query o hash, envía al usuario
- * a la página de restablecimiento preservando parámetros (el hash no viaja al servidor).
+ * Si Supabase redirige a / con tokens en query o hash, envía al handler correcto.
+ * Query (?code=, ?token_hash=) → /auth/confirm (servidor + cookies).
+ * Hash (#access_token=) → restablecer-contrasena (solo cliente).
  */
 export function RecoveryUrlRedirect() {
   useEffect(() => {
@@ -22,7 +23,16 @@ export function RecoveryUrlRedirect() {
       hash.includes("type=recovery") ||
       hash.includes("refresh_token");
 
-    if (hasQueryAuth || hasHashAuth) {
+    if (hasQueryAuth) {
+      const params = new URLSearchParams(search);
+      if (!params.has("next")) {
+        params.set("next", "/dashboard/restablecer-contrasena");
+      }
+      window.location.replace(`/auth/confirm?${params.toString()}`);
+      return;
+    }
+
+    if (hasHashAuth) {
       window.location.replace(
         `/dashboard/restablecer-contrasena${search}${hash}`,
       );
