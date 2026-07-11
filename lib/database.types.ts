@@ -354,6 +354,34 @@ export interface ChannelMessage {
   created_at: string;
 }
 
+export interface Venta {
+  id: string;
+  store_id: string;
+  usuario_id: string;
+  producto_id: string;
+  variant_id: string | null;
+  cantidad: number;
+  monto: number;
+  metodo_pago: string;
+  canal_venta: string;
+  external_reference: string | null;
+  notas: string | null;
+  created_at: string;
+}
+
+export interface VentaInsert {
+  store_id: string;
+  usuario_id: string;
+  producto_id: string;
+  variant_id?: string | null;
+  cantidad: number;
+  monto: number;
+  metodo_pago: string;
+  canal_venta: string;
+  external_reference?: string | null;
+  notas?: string | null;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -472,6 +500,12 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<ChannelMessage>;
+        Relationships: [];
+      };
+      ventas: {
+        Row: Venta;
+        Insert: VentaInsert & { id?: string; created_at?: string };
+        Update: Partial<Venta>;
         Relationships: [];
       };
     };
