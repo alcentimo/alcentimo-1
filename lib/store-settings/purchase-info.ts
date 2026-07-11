@@ -3,20 +3,14 @@ import {
   LOCAL_SHIPPING_METHODS,
   NATIONAL_CARRIER_METHODS,
 } from "@/src/config/shipping-methods";
+import { getPaymentMethod, PAYMENT_METHODS } from "@/src/config/payment-methods";
 import type {
   PaymentMethodKey,
   ShippingCarrierKey,
   StoreSettingsConfig,
 } from "@/lib/store-settings/types";
 
-const PAYMENT_LABELS: Record<PaymentMethodKey, string> = {
-  pagoMovil: "Pago Móvil",
-  zelle: "Zelle",
-  cashea: "Cashea",
-  transferencia: "Transferencia bancaria",
-  efectivoUsd: "Efectivo USD",
-  puntoVenta: "Punto de venta",
-};
+const PAYMENT_METHOD_KEYS = PAYMENT_METHODS.map((method) => method.key);
 
 export interface PublicShippingOption {
   key: ShippingCarrierKey;
@@ -75,13 +69,13 @@ export function buildPublicPurchaseInfo(
     .filter((key) => config.shipping.carriers[key])
     .map((key) => buildShippingOption(key, config));
 
-  const payments = (Object.keys(PAYMENT_LABELS) as PaymentMethodKey[])
-    .filter((key) => config.payments.methods[key].enabled)
-    .map((key) => ({
-      key,
-      label: PAYMENT_LABELS[key],
-      fields: config.payments.methods[key].fields,
-    }));
+  const payments = PAYMENT_METHOD_KEYS.filter(
+    (key) => config.payments.methods[key].enabled,
+  ).map((key) => ({
+    key,
+    label: getPaymentMethod(key).label,
+    fields: config.payments.methods[key].fields,
+  }));
 
   const installments = config.payments.installments.enabled
     ? config.payments.installments

@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { Minus, Plus, ShoppingBag, X } from "lucide-react";
 import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
+import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
+import type { PaymentMethodKey } from "@/lib/store-settings/types";
 import { cartItemKey, type CartItem } from "@/lib/catalog/cart-types";
 import { formatUsd, formatVes } from "@/lib/format";
 import {
@@ -460,22 +462,52 @@ export function CartDrawer({
 
                 {paymentOptions.length > 0 && (
                   <div className="store-cart-field">
-                    <label htmlFor="cart-payment" className="store-cart-label">
-                      Método de pago
-                    </label>
-                    <select
-                      id="cart-payment"
-                      value={selectedPayment}
-                      onChange={(e) => setSelectedPayment(e.target.value)}
-                      className="store-cart-select"
-                    >
-                      <option value="">Seleccionar pago…</option>
-                      {paymentOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <p className="store-cart-label">Método de pago</p>
+                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {paymentOptions.map((option) =>
+                        option.value === INSTALLMENTS_KEY ? (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setSelectedPayment(option.value)}
+                            aria-pressed={selectedPayment === option.value}
+                            className={[
+                              "shipping-method-card relative flex w-full items-start gap-3 text-left",
+                              selectedPayment === option.value
+                                ? "shipping-method-card-selected"
+                                : "",
+                              "shipping-method-card-interactive",
+                            ].join(" ")}
+                          >
+                            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-violet-600 text-xs font-bold text-white">
+                              Cuotas
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-zinc-900">
+                                {option.label}
+                              </p>
+                              <p className="mt-0.5 text-xs text-zinc-500">
+                                Pago fraccionado según condiciones de la tienda.
+                              </p>
+                            </div>
+                            {selectedPayment === option.value && (
+                              <span
+                                className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-teal-600 ring-2 ring-teal-100"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </button>
+                        ) : (
+                          <PaymentMethodCard
+                            key={option.value}
+                            methodKey={option.value as PaymentMethodKey}
+                            selectable
+                            selected={selectedPayment === option.value}
+                            onSelect={() => setSelectedPayment(option.value)}
+                          />
+                        ),
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

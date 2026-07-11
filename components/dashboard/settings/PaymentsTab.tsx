@@ -1,79 +1,23 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { SettingsOptionCard } from "@/components/dashboard/settings/SettingsOptionCard";
 import {
   SettingsSection,
   SettingsTabShell,
 } from "@/components/dashboard/settings/SettingsLayout";
+import { SavingHint } from "@/components/dashboard/settings/SavingHint";
+import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { savePaymentsSettings } from "@/lib/settings/actions";
+import {
+  PAYMENT_METHODS,
+  getPaymentMethod,
+} from "@/src/config/payment-methods";
 import type {
   PaymentMethodKey,
   PaymentsSettings,
 } from "@/lib/store-settings/types";
-
-const PAYMENT_LABELS: Record<
-  PaymentMethodKey,
-  {
-    label: string;
-    description: string;
-    fields: { key: string; label: string; placeholder: string }[];
-  }
-> = {
-  pagoMovil: {
-    label: "Pago Móvil",
-    description: "Cobra en bolívares vía Pago Móvil bancario.",
-    fields: [
-      { key: "bank", label: "Banco", placeholder: "Ej: Banesco" },
-      { key: "phone", label: "Teléfono", placeholder: "Ej: 0414-1234567" },
-      { key: "ci", label: "Cédula / RIF", placeholder: "Ej: V-12.345.678" },
-    ],
-  },
-  zelle: {
-    label: "Zelle",
-    description: "Recibe pagos en USD por Zelle.",
-    fields: [
-      { key: "email", label: "Correo Zelle", placeholder: "tu@email.com" },
-      { key: "holder", label: "Titular", placeholder: "Nombre del titular" },
-    ],
-  },
-  cashea: {
-    label: "Cashea",
-    description: "Permite compras con financiamiento Cashea.",
-    fields: [
-      {
-        key: "merchantId",
-        label: "ID comercio",
-        placeholder: "ID asignado por Cashea",
-      },
-    ],
-  },
-  transferencia: {
-    label: "Transferencia bancaria",
-    description: "Transferencia directa a cuenta nacional.",
-    fields: [
-      { key: "bank", label: "Banco", placeholder: "Ej: Mercantil" },
-      { key: "account", label: "Número de cuenta", placeholder: "0105-..." },
-      { key: "holder", label: "Titular", placeholder: "Razón social o nombre" },
-    ],
-  },
-  efectivoUsd: {
-    label: "Efectivo USD",
-    description: "Acepta dólares en efectivo al entregar.",
-    fields: [],
-  },
-  puntoVenta: {
-    label: "Punto de venta",
-    description: "Tarjeta débito/crédito en tu local.",
-    fields: [
-      {
-        key: "note",
-        label: "Nota para el cliente",
-        placeholder: "Ej: Solo tarjetas nacionales",
-      },
-    ],
-  },
-};
 
 interface PaymentsTabProps {
   initialSettings: PaymentsSettings;
@@ -158,6 +102,55 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
     });
   }
 
+  function renderPaymentCard(key: PaymentMethodKey) {
+    const meta = getPaymentMethod(key);
+    const config = payments[key];
+    const isSaving = savingToggle === `method-${key}`;
+
+    return (
+      <div key={key} className="relative">
+        <PaymentMethodCard
+          methodKey={key}
+          action={
+            <SettingsSwitch
+              id={`pay-${key}`}
+              label={meta.label}
+              checked={config.enabled}
+              onChange={(v) => togglePayment(key, v)}
+              disabled={isSaving}
+            />
+          }
+        />
+        {isSaving && (
+          <div className="mt-2 px-1">
+            <SavingHint visible />
+          </div>
+        )}
+        {config.enabled && meta.fields.length > 0 && (
+          <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {meta.fields.map((field) => (
+                <div key={field.key} className={field.fullWidth ? "sm:col-span-2" : ""}>
+                  <label htmlFor={`pay-${key}-${field.key}`} className="label-field">
+                    {field.label}
+                  </label>
+                  <input
+                    id={`pay-${key}-${field.key}`}
+                    type="text"
+                    value={config.fields[field.key] ?? ""}
+                    onChange={(e) => updateField(key, field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                    className="input-field mt-2"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <SettingsTabShell
       error={error}
@@ -169,47 +162,9 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
         title="Métodos de pago"
         description="Elige qué formas de pago verán tus clientes al hacer pedidos."
       >
-        {(Object.keys(PAYMENT_LABELS) as PaymentMethodKey[]).map((key) => {
-          const meta = PAYMENT_LABELS[key];
-          const config = payments[key];
-          const isSaving = savingToggle === `method-${key}`;
-
-          return (
-            <SettingsOptionCard
-              key={key}
-              id={`pay-${key}`}
-              label={meta.label}
-              description={meta.description}
-              checked={config.enabled}
-              disabled={isSaving}
-              saving={isSaving}
-              onChange={(v) => togglePayment(key, v)}
-            >
-              {meta.fields.length > 0 && (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {meta.fields.map((field) => (
-                    <div
-                      key={field.key}
-                      className={field.key === "note" ? "sm:col-span-2" : ""}
-                    >
-                      <label htmlFor={`pay-${key}-${field.key}`} className="label-field">
-                        {field.label}
-                      </label>
-                      <input
-                        id={`pay-${key}-${field.key}`}
-                        type="text"
-                        value={config.fields[field.key] ?? ""}
-                        onChange={(e) => updateField(key, field.key, e.target.value)}
-                        placeholder={field.placeholder}
-                        className="input-field"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </SettingsOptionCard>
-          );
-        })}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {PAYMENT_METHODS.map((method) => renderPaymentCard(method.key))}
+        </div>
       </SettingsSection>
 
       <SettingsSection
