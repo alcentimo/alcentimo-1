@@ -1,5 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ingestInboundMessage } from "@/lib/inbox/ingest-inbound-message";
 import {
   buildInboundMessageFromNotification,
   isSupportedMlTopic,
@@ -9,8 +10,6 @@ import { resolveMlIntegration } from "@/lib/mercadolibre";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
-
-type AdminClient = ReturnType<typeof createAdminClient>;
 
 /**
  * Webhook MercadoLibre: preguntas y ventas.
@@ -38,7 +37,6 @@ export async function POST(request: Request) {
     }
   });
 
-  // ML reintenta si no recibe HTTP 200 en ~20s; respondemos de inmediato.
   return NextResponse.json({ ok: true });
 }
 
@@ -68,39 +66,16 @@ async function ingestMlNotifications(
 
     if (!inbound) continue;
 
-    await insertInboundMessage(admin, {
-      integrationId: integration.id,
+    await ingestInboundMessage(admin, {
       storeId: integration.store_id,
+      integrationId: integration.id,
+      provider: "mercadolibre",
       senderId: inbound.senderId,
-      messageText: inbound.messageText,
+      platformMessageId: inbound.platformMessageId,
+      body: inbound.messageText,
+      messageType: "text",
+      sentAt: inbound.sentAt,
+      rawPayload: notification as unknown as Record<string, unknown>,
     });
-  }
-}
-
-async function insertInboundMessage(
-  admin: AdminClient,
-  input: {
-    integrationId: string;
-    storeId: string;
-    senderId: string;
-    messageText: string;
-  },
-): Promise<void> {
-  const { error } = await admin.from("channel_messages").insert({
-    integration_id: input.integrationId,
-    sender_id: input.senderId,
-    message_text: input.messageText,
-    direction: "inbound",
-    status: "unread",
-  });
-
-  if (error) {
-    console.error("[webhooks/mercadolibre] insert failed:", {
-      storeId: input.storeId,
-      integrationId: input.integrationId,
-      senderId: input.senderId,
-      error,
-    });
-    throw error;
   }
 }

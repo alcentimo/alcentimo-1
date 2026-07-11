@@ -7,7 +7,7 @@ import {
   formatMessageTime,
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
-import { markChannelMessagesRead } from "@/lib/inbox/actions";
+import { markInboxConversationRead } from "@/lib/inbox/actions";
 import { MessagesEmptyState } from "@/components/dashboard/MessagesEmptyState";
 
 interface MessagesPanelProps {
@@ -21,17 +21,17 @@ export function MessagesPanel({
 }: MessagesPanelProps) {
   const [conversations, setConversations] =
     useState(initialConversations);
-  const [selectedSenderId, setSelectedSenderId] = useState<string | null>(
-    initialConversations[0]?.senderId ?? null,
-  );
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(initialConversations[0]?.conversationId ?? null);
   const [, startTransition] = useTransition();
 
   const selectedConversation = useMemo(
     () =>
       conversations.find(
-        (conversation) => conversation.senderId === selectedSenderId,
+        (conversation) => conversation.conversationId === selectedConversationId,
       ) ?? null,
-    [conversations, selectedSenderId],
+    [conversations, selectedConversationId],
   );
 
   const totalUnread = useMemo(
@@ -44,21 +44,19 @@ export function MessagesPanel({
   );
 
   useEffect(() => {
-    if (!selectedSenderId && conversations.length > 0) {
-      setSelectedSenderId(conversations[0].senderId);
+    if (!selectedConversationId && conversations.length > 0) {
+      setSelectedConversationId(conversations[0].conversationId);
     }
-  }, [conversations, selectedSenderId]);
+  }, [conversations, selectedConversationId]);
 
   function handleSelectConversation(conversation: MessageConversation) {
-    setSelectedSenderId(conversation.senderId);
+    setSelectedConversationId(conversation.conversationId);
 
     if (conversation.unreadCount === 0) return;
 
     startTransition(() => {
-      void markChannelMessagesRead(
-        conversation.integrationId,
-        conversation.senderId,
-      ).then((result) => {
+      void markInboxConversationRead(conversation.conversationId).then(
+        (result) => {
         if (result.error) {
           console.error("[MessagesPanel] mark read error:", result.error);
           return;
@@ -66,7 +64,7 @@ export function MessagesPanel({
 
         setConversations((current) =>
           current.map((item) =>
-            item.senderId === conversation.senderId
+            item.conversationId === conversation.conversationId
               ? {
                   ...item,
                   unreadCount: 0,
@@ -80,7 +78,8 @@ export function MessagesPanel({
               : item,
           ),
         );
-      });
+      },
+      );
     });
   }
 
@@ -163,12 +162,13 @@ export function MessagesPanel({
               aria-label="Lista de conversaciones"
             >
               {conversations.map((conversation) => {
-                const isActive = conversation.senderId === selectedSenderId;
+                const isActive =
+                  conversation.conversationId === selectedConversationId;
                 const preview =
                   conversation.lastMessage?.trim() || "Mensaje sin texto";
 
                 return (
-                  <li key={conversation.senderId}>
+                  <li key={conversation.conversationId}>
                     <button
                       type="button"
                       onClick={() => handleSelectConversation(conversation)}

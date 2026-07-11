@@ -62,3 +62,31 @@ export function extractWhatsAppMessageText(
 
   return null;
 }
+
+const WHATSAPP_MEDIA_TYPES = new Set([
+  "image",
+  "audio",
+  "video",
+  "document",
+  "sticker",
+  "location",
+]);
+
+/** Tipo de mensaje WhatsApp Cloud API → inbox message_type. */
+export function resolveWhatsAppMessageType(
+  type: unknown,
+): "text" | "image" | "audio" | "video" | "document" | "sticker" | "location" | "unknown" {
+  if (typeof type !== "string") return "unknown";
+  if (type === "text" || type === "button" || type === "interactive") return "text";
+  if (WHATSAPP_MEDIA_TYPES.has(type)) {
+    return type as "image" | "audio" | "video" | "document" | "sticker" | "location";
+  }
+  return "unknown";
+}
+
+/** Convierte timestamp Unix (segundos) de Meta a ISO. */
+export function metaTimestampToIso(timestamp: unknown): string | undefined {
+  const value = typeof timestamp === "string" ? Number(timestamp) : timestamp;
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  return new Date(value * 1000).toISOString();
+}

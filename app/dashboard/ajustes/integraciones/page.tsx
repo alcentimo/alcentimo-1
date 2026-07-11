@@ -53,6 +53,12 @@ function resolveStatus(searchParams: {
           "No se pudo completar la conexión con Meta. Verifica tu app de Meta Business e inténtalo otra vez.",
         tone: "error",
       };
+    case "meta_assets_not_found":
+      return {
+        message:
+          "Meta autorizó la app, pero no encontramos un número de WhatsApp, página o cuenta de Instagram vinculada. Verifica que tu cuenta de negocio tenga el activo configurado en Meta Business Suite.",
+        tone: "error",
+      };
     case "ml_connect_failed":
       return {
         message:

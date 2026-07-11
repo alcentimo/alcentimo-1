@@ -1,10 +1,14 @@
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ingestInboundMessage } from "@/lib/inbox/ingest-inbound-message";
 import {
   extractWhatsAppMessageText,
+  metaTimestampToIso,
   parseMetaVerifyQuery,
+  resolveWhatsAppMessageType,
   verifyMetaWebhookSignature,
 } from "@/lib/inbox/meta-webhook";
+import type { InboxProvider } from "@/lib/inbox/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -37,7 +41,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Meta exige devolver hub.challenge en texto plano para validar la URL.
   return new NextResponse(challenge, {
     status: 200,
     headers: { "Content-Type": "text/plain" },
@@ -75,11 +78,9 @@ export async function POST(request: Request) {
     }
   });
 
-  // Meta reintenta si no recibe 200 rápido; respondemos de inmediato.
   return NextResponse.json({ ok: true });
 }
 
-/** Acepta token global (env) o token por tienda en channel_integrations. */
 async function isVerifyTokenAccepted(token: string): Promise<boolean> {
   const envToken = process.env.META_WEBHOOK_VERIFY_TOKEN;
   if (envToken && token === envToken) return true;
@@ -98,7 +99,7 @@ async function isVerifyTokenAccepted(token: string): Promise<boolean> {
 
 async function findIntegration(
   admin: AdminClient,
-  provider: "whatsapp" | "messenger" | "instagram",
+  provider: InboxProvider,
   externalAccountId: string,
 ): Promise<ChannelIntegration | null> {
   if (!externalAccountId) return null;
@@ -159,15 +160,11 @@ async function ingestWhatsAppEntry(
     const metadata = value.metadata as { phone_number_id?: string } | undefined;
     const phoneNumberId = String(metadata?.phone_number_id ?? "");
     const messages = (value.messages as unknown[]) ?? [];
+    const contacts = (value.contacts as Array<Record<string, unknown>>) ?? [];
 
     if (!phoneNumberId || messages.length === 0) continue;
 
-    const integration = await findIntegration(
-      admin,
-      "whatsapp",
-      phoneNumberId,
-    );
-
+    const integration = await findIntegration(admin, "whatsapp", phoneNumberId);
     if (!integration) {
       console.warn(
         "[webhooks/meta] WhatsApp integration not found for phone_number_id:",
@@ -181,15 +178,27 @@ async function ingestWhatsAppEntry(
 
       const m = msg as Record<string, unknown>;
       const senderId = String(m.from ?? "");
-      const messageText = extractWhatsAppMessageText(m);
+      const platformMessageId = String(m.id ?? "");
+      if (!senderId || !platformMessageId) continue;
 
-      if (!senderId) continue;
+      const contactMeta = contacts.find(
+        (item) => String(item.wa_id ?? "") === senderId,
+      );
+      const profileName =
+        (contactMeta?.profile as { name?: string } | undefined)?.name ?? null;
 
-      await insertInboundMessage(admin, {
-        integrationId: integration.id,
+      await ingestInboundMessage(admin, {
         storeId: integration.store_id,
+        integrationId: integration.id,
+        provider: "whatsapp",
         senderId,
-        messageText,
+        platformMessageId,
+        body: extractWhatsAppMessageText(m),
+        messageType: resolveWhatsAppMessageType(m.type),
+        sentAt: metaTimestampToIso(m.timestamp),
+        contactDisplayName: profileName,
+        contactPhone: senderId,
+        rawPayload: m,
       });
     }
   }
@@ -200,7 +209,8 @@ async function ingestMessagingEntry(
   entry: Record<string, unknown>,
   object: string,
 ): Promise<void> {
-  const provider = object === "instagram" ? "instagram" : "messenger";
+  const provider: InboxProvider =
+    object === "instagram" ? "instagram" : "messenger";
   const pageId = String(entry.id ?? "");
   const messagingEvents = (entry.messaging as unknown[]) ?? [];
 
@@ -221,44 +231,26 @@ async function ingestMessagingEntry(
     if (!message) continue;
 
     const senderId = String((e.sender as { id?: string })?.id ?? "");
-    const messageText =
-      typeof message.text === "string" ? message.text : null;
+    const platformMessageId = String(message.mid ?? message.id ?? "");
+    if (!senderId || !platformMessageId) continue;
 
-    if (!senderId) continue;
+    const body =
+      typeof message.text === "string"
+        ? message.text
+        : typeof (message.attachments as unknown[])?.length === "number"
+          ? "[Adjunto]"
+          : null;
 
-    await insertInboundMessage(admin, {
-      integrationId: integration.id,
+    await ingestInboundMessage(admin, {
       storeId: integration.store_id,
+      integrationId: integration.id,
+      provider,
       senderId,
-      messageText,
+      platformMessageId,
+      body,
+      messageType: body ? "text" : "unknown",
+      sentAt: metaTimestampToIso(e.timestamp),
+      rawPayload: e,
     });
-  }
-}
-
-async function insertInboundMessage(
-  admin: AdminClient,
-  input: {
-    integrationId: string;
-    storeId: string;
-    senderId: string;
-    messageText: string | null;
-  },
-): Promise<void> {
-  const { error } = await admin.from("channel_messages").insert({
-    integration_id: input.integrationId,
-    sender_id: input.senderId,
-    message_text: input.messageText,
-    direction: "inbound",
-    status: "unread",
-  });
-
-  if (error) {
-    console.error("[webhooks/meta] insert failed:", {
-      storeId: input.storeId,
-      integrationId: input.integrationId,
-      senderId: input.senderId,
-      error,
-    });
-    throw error;
   }
 }

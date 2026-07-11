@@ -130,9 +130,16 @@ export function resolveOrderSenderId(order: MlOrder): string {
 export async function buildInboundMessageFromNotification(
   notification: MlNotification,
   lookup: { externalAccountId: string },
-): Promise<{ senderId: string; messageText: string } | null> {
+): Promise<{
+  senderId: string;
+  messageText: string;
+  platformMessageId: string;
+  sentAt?: string;
+} | null> {
   const resourceId = extractMlResourceId(notification.resource);
   if (!resourceId) return null;
+
+  const sentAt = notification.sent ?? notification.received;
 
   if (notification.topic === "questions") {
     const question = await fetchMlQuestion(resourceId, lookup);
@@ -141,6 +148,8 @@ export async function buildInboundMessageFromNotification(
     return {
       senderId: resolveQuestionSenderId(question),
       messageText: formatQuestionMessage(question),
+      platformMessageId: `ml:question:${question.id}`,
+      sentAt,
     };
   }
 
@@ -153,12 +162,16 @@ export async function buildInboundMessageFromNotification(
       return {
         senderId: `order:${resourceId}`,
         messageText: `[Venta #${resourceId}] Notificación recibida (${notification.topic})`,
+        platformMessageId: `ml:order:${resourceId}:${notification.topic}`,
+        sentAt,
       };
     }
 
     return {
       senderId: resolveOrderSenderId(order),
       messageText: formatOrderMessage(order, notification.topic),
+      platformMessageId: `ml:order:${order.id}:${notification.topic}`,
+      sentAt,
     };
   }
 

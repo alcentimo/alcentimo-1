@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import {
-  buildMessageConversations,
-  getStoreChannelMessages,
+  getStoreInboxConversations,
 } from "@/lib/inbox/get-store-messages";
 import {
   getStoreIntegrations,
@@ -44,11 +43,10 @@ export default async function MensajesPage() {
     );
   }
 
-  const [messages, integrations] = await Promise.all([
-    getStoreChannelMessages(supabase, store.id),
+  const [conversations, integrations] = await Promise.all([
+    getStoreInboxConversations(supabase, store.id),
     getStoreIntegrations(supabase, store.id),
   ]);
-  const conversations = buildMessageConversations(messages);
   const activeIntegrations = hasActiveIntegrations(integrations);
 
   return (

@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  discoverMetaIntegrationAssets,
+  exchangeForLongLivedUserToken,
+} from "@/lib/inbox/meta-graph-api";
+import {
   exchangeMetaOAuthCode,
   getMetaRedirectUri,
   parseMetaOAuthState,
@@ -53,37 +57,77 @@ export async function GET(request: Request) {
 
   try {
     const redirectUri = getMetaRedirectUri(siteUrl);
-    const { accessToken } = await exchangeMetaOAuthCode({ code, redirectUri });
+    const { accessToken: shortLivedToken } = await exchangeMetaOAuthCode({
+      code,
+      redirectUri,
+    });
+    const accessToken = await exchangeForLongLivedUserToken(shortLivedToken);
+    const assets = await discoverMetaIntegrationAssets(
+      parsedState.provider,
+      accessToken,
+    );
+
+    if (!assets) {
+      redirectBase.searchParams.set("error", "meta_assets_not_found");
+      return clearCookie(NextResponse.redirect(redirectBase));
+    }
+
     const admin = createAdminClient();
     const channel = getChannelIntegration(parsedState.provider);
 
     const { data: existing } = await admin
       .from("channel_integrations")
-      .select("id")
+      .select("id, external_account_id")
       .eq("store_id", parsedState.storeId)
       .eq("provider", parsedState.provider)
       .maybeSingle();
 
     let integrationId = existing?.id;
 
+    const integrationPatch = {
+      external_account_id: assets.externalAccountId,
+      display_name: assets.displayName ?? channel.label,
+      config: assets.config,
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    };
+
     if (integrationId) {
-      await admin
+      const { error: updateError } = await admin
         .from("channel_integrations")
-        .update({
-          is_active: true,
-          display_name: channel.label,
-          updated_at: new Date().toISOString(),
-        })
+        .update(integrationPatch)
         .eq("id", integrationId);
+
+      if (updateError) {
+        if (updateError.code === "23505") {
+          const { data: conflict } = await admin
+            .from("channel_integrations")
+            .select("id")
+            .eq("store_id", parsedState.storeId)
+            .eq("provider", parsedState.provider)
+            .eq("external_account_id", assets.externalAccountId)
+            .maybeSingle();
+
+          if (conflict?.id) {
+            integrationId = conflict.id;
+            await admin
+              .from("channel_integrations")
+              .update(integrationPatch)
+              .eq("id", integrationId);
+          } else {
+            throw updateError;
+          }
+        } else {
+          throw updateError;
+        }
+      }
     } else {
       const { data: created, error: createError } = await admin
         .from("channel_integrations")
         .insert({
           store_id: parsedState.storeId,
           provider: parsedState.provider,
-          external_account_id: `pending-${parsedState.provider}`,
-          display_name: channel.label,
-          is_active: true,
+          ...integrationPatch,
         })
         .select("id")
         .single();
@@ -97,7 +141,7 @@ export async function GET(request: Request) {
 
     await admin.from("channel_integration_secrets").upsert({
       integration_id: integrationId,
-      access_token: accessToken,
+      access_token: assets.accessToken,
       updated_at: new Date().toISOString(),
     });
 
