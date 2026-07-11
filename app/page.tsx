@@ -4,6 +4,7 @@ import type { Store } from "@/lib/database.types";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { Hero } from "@/components/landing/Hero";
 import { Features } from "@/components/landing/Features";
+import { IntegrationsSection } from "@/components/landing/IntegrationsSection";
 import { PricingGrid } from "@/components/landing/PricingGrid";
 import { StoreDirectory } from "@/components/landing/StoreDirectory";
 import { CtaBanner } from "@/components/landing/CtaBanner";
@@ -34,6 +35,7 @@ export default async function Home() {
       <main className="min-h-dvh bg-zinc-50 dark:bg-zinc-950">
         <Hero exchangeRate={exchangeRate} />
         <Features />
+        <IntegrationsSection />
         <PricingGrid exchangeRate={exchangeRate} />
         <StoreDirectory stores={stores} />
         <CtaBanner />
