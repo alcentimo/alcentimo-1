@@ -70,6 +70,11 @@ export async function middleware(request: NextRequest) {
       pathname === "/";
 
     if (isRecovery) {
+      // Ya en la página de restablecimiento: dejar pasar para exchangeCodeForSession.
+      if (pathname === RESET_PASSWORD_PATH) {
+        return supabaseResponse;
+      }
+
       const recoveryUrl = request.nextUrl.clone();
       recoveryUrl.pathname = RESET_PASSWORD_PATH;
       return NextResponse.redirect(recoveryUrl);
@@ -113,6 +118,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isDashboard) {
+    // Rutas públicas de auth: accesibles sin sesión (login, recuperar, restablecer).
     if (!authenticatedUser && !isPublicAuthPage) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = DASHBOARD_LOGIN;
@@ -120,6 +126,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
+    // Tras intercambiar el code, el usuario puede no tener tienda aún: no forzar onboarding.
     if (authenticatedUser && !isLoginPage && !isResetPasswordPage) {
       const hasStore = await userHasStoreInMiddleware(
         supabase,
