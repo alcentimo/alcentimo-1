@@ -6,6 +6,10 @@ import {
   buildMessageConversations,
   getStoreChannelMessages,
 } from "@/lib/inbox/get-store-messages";
+import {
+  getStoreIntegrations,
+  hasActiveIntegrations,
+} from "@/lib/inbox/get-store-integrations";
 import { MessagesPanel } from "@/components/dashboard/MessagesPanel";
 import { PageContainer } from "@/components/ui/PageContainer";
 
@@ -40,8 +44,12 @@ export default async function MensajesPage() {
     );
   }
 
-  const messages = await getStoreChannelMessages(supabase, store.id);
+  const [messages, integrations] = await Promise.all([
+    getStoreChannelMessages(supabase, store.id),
+    getStoreIntegrations(supabase, store.id),
+  ]);
   const conversations = buildMessageConversations(messages);
+  const activeIntegrations = hasActiveIntegrations(integrations);
 
   return (
     <PageContainer as="div" className="py-6 sm:py-8">
@@ -53,7 +61,10 @@ export default async function MensajesPage() {
         </p>
       </header>
 
-      <MessagesPanel initialConversations={conversations} />
+      <MessagesPanel
+        initialConversations={conversations}
+        hasActiveIntegrations={activeIntegrations}
+      />
     </PageContainer>
   );
 }

@@ -8,12 +8,17 @@ import {
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
 import { markChannelMessagesRead } from "@/lib/inbox/actions";
+import { MessagesEmptyState } from "@/components/dashboard/MessagesEmptyState";
 
 interface MessagesPanelProps {
   initialConversations: MessageConversation[];
+  hasActiveIntegrations: boolean;
 }
 
-export function MessagesPanel({ initialConversations }: MessagesPanelProps) {
+export function MessagesPanel({
+  initialConversations,
+  hasActiveIntegrations,
+}: MessagesPanelProps) {
   const [conversations, setConversations] =
     useState(initialConversations);
   const [selectedSenderId, setSelectedSenderId] = useState<string | null>(
@@ -81,18 +86,7 @@ export function MessagesPanel({ initialConversations }: MessagesPanelProps) {
 
   if (conversations.length === 0) {
     return (
-      <div className="card-panel border-dashed text-center">
-        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-400">
-          <MessageSquare className="h-6 w-6" aria-hidden="true" />
-        </span>
-        <p className="mt-4 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-          Aún no hay mensajes
-        </p>
-        <p className="mt-2 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Cuando un cliente escriba por WhatsApp o Meta, la conversación
-          aparecerá aquí automáticamente.
-        </p>
-      </div>
+      <MessagesEmptyState hasActiveIntegrations={hasActiveIntegrations} />
     );
   }
 

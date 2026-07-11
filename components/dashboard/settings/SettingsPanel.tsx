@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { CreditCard, Settings2, Tag, Truck } from "lucide-react";
+import { CreditCard, Link2, Settings2, Tag, Truck } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
 import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
 import { PaymentsTab } from "@/components/dashboard/settings/PaymentsTab";
@@ -34,7 +36,9 @@ export function SettingsPanel({
   products,
   initialConfig,
 }: SettingsPanelProps) {
+  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<SettingsTabId>("general");
+  const integrationsActive = pathname.startsWith("/dashboard/ajustes/integraciones");
 
   return (
     <div className="settings-workspace">
@@ -45,7 +49,7 @@ export function SettingsPanel({
       >
         {TABS.map((tab) => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+          const isActive = activeTab === tab.id && !integrationsActive;
 
           return (
             <button
@@ -63,6 +67,15 @@ export function SettingsPanel({
             </button>
           );
         })}
+        <Link
+          href="/dashboard/ajustes/integraciones"
+          role="tab"
+          aria-selected={integrationsActive}
+          className={`settings-tab-link ${integrationsActive ? "settings-tab-link-active" : ""}`}
+        >
+          <Link2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>Integraciones</span>
+        </Link>
       </nav>
 
       <div className="settings-workspace-body">
