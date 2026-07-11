@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getAuthCallbackUrl } from "@/lib/site-url";
+import { getPasswordResetRedirectUrl } from "@/lib/site-url";
 
 export function ForgotPasswordPanel() {
   const [email, setEmail] = useState("");
@@ -17,7 +17,7 @@ export function ForgotPasswordPanel() {
     setLoading(true);
 
     const supabase = createClient();
-    const redirectTo = getAuthCallbackUrl("/dashboard/restablecer-contrasena");
+    const redirectTo = getPasswordResetRedirectUrl();
 
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       email,

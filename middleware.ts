@@ -59,6 +59,30 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+  const code = request.nextUrl.searchParams.get("code");
+  const authType = request.nextUrl.searchParams.get("type");
+
+  // Supabase puede redirigir a /?code=... si la Site URL es la raíz del dominio.
+  if (code && pathname !== "/auth/callback") {
+    const isRecovery =
+      authType === "recovery" ||
+      pathname === RESET_PASSWORD_PATH ||
+      pathname === "/";
+
+    if (isRecovery) {
+      const recoveryUrl = request.nextUrl.clone();
+      recoveryUrl.pathname = RESET_PASSWORD_PATH;
+      return NextResponse.redirect(recoveryUrl);
+    }
+
+    const callbackUrl = request.nextUrl.clone();
+    callbackUrl.pathname = "/auth/callback";
+    if (!callbackUrl.searchParams.has("next")) {
+      callbackUrl.searchParams.set("next", ONBOARDING_PATH);
+    }
+    return NextResponse.redirect(callbackUrl);
+  }
+
   const isDashboard = pathname.startsWith(DASHBOARD_PREFIX);
   const isLoginPage = pathname === DASHBOARD_LOGIN;
   const isRecoverPasswordPage = pathname === RECOVER_PASSWORD_PATH;
