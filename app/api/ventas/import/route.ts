@@ -1,15 +1,22 @@
 import { NextResponse } from "next/server";
 import {
-  isApiSecretConfigured,
-  verifyApiSecret,
-} from "@/lib/api/verify-api-secret";
-import {
   importVentaFromApi,
   parseImportVentaPayload,
 } from "@/lib/sales/import-venta-api";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
+
+function extractApiKey(request: Request): string | null {
+  const authorization = request.headers.get("authorization");
+  if (authorization?.startsWith("Bearer ")) {
+    const token = authorization.slice("Bearer ".length).trim();
+    return token || null;
+  }
+
+  const xApiKey = request.headers.get("x-api-key")?.trim();
+  return xApiKey || null;
+}
 
 /**
  * Puerta de entrada para POS externos, cajas registradoras e importadores CSV.
@@ -30,15 +37,19 @@ export const runtime = "nodejs";
  * }
  */
 export async function POST(request: Request) {
-  if (!isApiSecretConfigured()) {
+  const expectedKey = process.env.API_SECRET_KEY?.trim();
+
+  if (!expectedKey) {
     return NextResponse.json(
       { error: "API_SECRET_KEY no configurada en el servidor." },
       { status: 503 },
     );
   }
 
-  if (!verifyApiSecret(request)) {
-    return NextResponse.json({ error: "API key inválida o ausente." }, { status: 401 });
+  const providedKey = extractApiKey(request);
+
+  if (!providedKey || providedKey !== expectedKey) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let body: unknown;
