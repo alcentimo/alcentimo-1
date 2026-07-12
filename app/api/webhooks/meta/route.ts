@@ -70,6 +70,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  console.log("[webhooks/meta] evento messages recibido:", JSON.stringify(payload));
+
   after(async () => {
     try {
       await ingestMetaWebhookPayload(payload);
@@ -102,6 +104,26 @@ async function findIntegration(
   }
 
   return data;
+}
+
+async function saveChannelMessage(
+  admin: AdminClient,
+  integrationId: string,
+  senderId: string,
+  messageText: string | null,
+): Promise<void> {
+  const { error } = await admin.from("channel_messages").insert({
+    integration_id: integrationId,
+    sender_id: senderId,
+    message_text: messageText,
+    direction: "inbound",
+    status: "unread",
+  });
+
+  if (error) {
+    console.error("[webhooks/meta] channel_messages insert failed:", error);
+    throw error;
+  }
 }
 
 async function ingestMetaWebhookPayload(payload: unknown): Promise<void> {
@@ -141,6 +163,9 @@ async function ingestWhatsAppEntry(
     const value = (change as { value?: Record<string, unknown> }).value;
     if (!value) continue;
 
+    const field = (change as { field?: string }).field;
+    if (field && field !== "messages") continue;
+
     const metadata = value.metadata as { phone_number_id?: string } | undefined;
     const phoneNumberId = String(metadata?.phone_number_id ?? "");
     const messages = (value.messages as unknown[]) ?? [];
@@ -170,6 +195,17 @@ async function ingestWhatsAppEntry(
       );
       const profileName =
         (contactMeta?.profile as { name?: string } | undefined)?.name ?? null;
+      const body = extractWhatsAppMessageText(m);
+
+      console.log("[webhooks/meta] mensaje WhatsApp:", {
+        integrationId: integration.id,
+        senderId,
+        platformMessageId,
+        body,
+        raw: m,
+      });
+
+      await saveChannelMessage(admin, integration.id, senderId, body);
 
       await ingestInboundMessage(admin, {
         storeId: integration.store_id,
@@ -177,7 +213,7 @@ async function ingestWhatsAppEntry(
         provider: "whatsapp",
         senderId,
         platformMessageId,
-        body: extractWhatsAppMessageText(m),
+        body,
         messageType: resolveWhatsAppMessageType(m.type),
         sentAt: metaTimestampToIso(m.timestamp),
         contactDisplayName: profileName,
@@ -224,6 +260,17 @@ async function ingestMessagingEntry(
         : typeof (message.attachments as unknown[])?.length === "number"
           ? "[Adjunto]"
           : null;
+
+    console.log("[webhooks/meta] mensaje Messenger/Instagram:", {
+      provider,
+      integrationId: integration.id,
+      senderId,
+      platformMessageId,
+      body,
+      raw: e,
+    });
+
+    await saveChannelMessage(admin, integration.id, senderId, body);
 
     await ingestInboundMessage(admin, {
       storeId: integration.store_id,
