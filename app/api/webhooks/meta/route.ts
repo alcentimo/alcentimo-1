@@ -29,6 +29,15 @@ type ChannelIntegration = {
  */
 const META_WEBHOOK_VERIFY_TOKEN = "micodigosecreto2026";
 
+function isVerifyTokenValid(received: string | null): boolean {
+  if (!received) return false;
+  const candidates = [
+    process.env.META_WEBHOOK_VERIFY_TOKEN,
+    META_WEBHOOK_VERIFY_TOKEN,
+  ].filter(Boolean) as string[];
+  return candidates.some((expected) => received === expected);
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   console.log("Verificación Meta recibida:", request.url, Object.fromEntries(searchParams));
@@ -37,7 +46,7 @@ export async function GET(request: Request) {
   const verifyToken = searchParams.get("hub.verify_token");
   const hubChallenge = searchParams.get("hub.challenge") ?? "";
 
-  if (mode === "subscribe" && verifyToken === META_WEBHOOK_VERIFY_TOKEN) {
+  if (mode === "subscribe" && isVerifyTokenValid(verifyToken)) {
     return new Response(hubChallenge, {
       status: 200,
       headers: { "Content-Type": "text/plain" },
