@@ -24,27 +24,27 @@ type ChannelIntegration = {
  *
  * Meta Developer Console:
  * - Callback URL: https://www.alcentimo.com/api/webhooks/meta
- * - Verify token: META_WEBHOOK_VERIFY_TOKEN
+ * - Verify token: micodigosecreto2026 (debe coincidir con Meta y Vercel)
  * - Suscripciones: messages (WhatsApp), messaging (Page / Instagram)
  */
+const META_WEBHOOK_VERIFY_TOKEN = "micodigosecreto2026";
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  console.log("Verificación Meta recibida:", request.url, Object.fromEntries(searchParams));
+
   const mode = searchParams.get("hub.mode");
   const verifyToken = searchParams.get("hub.verify_token");
-  const hubChallenge = searchParams.get("hub.challenge");
+  const hubChallenge = searchParams.get("hub.challenge") ?? "";
 
-  if (mode !== "subscribe" || !verifyToken || !hubChallenge) {
-    return new Response(null, { status: 403 });
+  if (mode === "subscribe" && verifyToken === META_WEBHOOK_VERIFY_TOKEN) {
+    return new Response(hubChallenge, {
+      status: 200,
+      headers: { "Content-Type": "text/plain" },
+    });
   }
 
-  if (verifyToken !== process.env.META_WEBHOOK_VERIFY_TOKEN) {
-    return new Response(null, { status: 403 });
-  }
-
-  return new Response(hubChallenge, {
-    status: 200,
-    headers: { "Content-Type": "text/plain" },
-  });
+  return new Response(null, { status: 403 });
 }
 
 export async function POST(request: Request) {
