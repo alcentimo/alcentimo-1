@@ -4,7 +4,6 @@ import { ingestInboundMessage } from "@/lib/inbox/ingest-inbound-message";
 import {
   extractWhatsAppMessageText,
   metaTimestampToIso,
-  parseMetaVerifyQuery,
   resolveWhatsAppMessageType,
   verifyMetaWebhookSignature,
 } from "@/lib/inbox/meta-webhook";
@@ -24,47 +23,25 @@ type ChannelIntegration = {
  * Webhook unificado Meta: WhatsApp Cloud API + Messenger + Instagram.
  *
  * Meta Developer Console:
- * - Callback URL: https://alcentimo.com/api/webhooks/meta
- * - Verify token: META_WEBHOOK_VERIFY_TOKEN (env) o channel_integrations.webhook_verify_token
+ * - Callback URL: https://www.alcentimo.com/api/webhooks/meta
+ * - Verify token: META_WEBHOOK_VERIFY_TOKEN (env)
  * - Suscripciones: messages (WhatsApp), messaging (Page / Instagram)
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const { mode, token, challenge } = parseMetaVerifyQuery(searchParams);
+  const mode = searchParams.get("hub.mode");
+  const verifyToken = searchParams.get("hub.verify_token");
+  const hubChallenge = searchParams.get("hub.challenge");
 
-  // DEBUG TEMPORAL — quitar tras diagnosticar verificación Meta
-  const envToken = process.env.META_WEBHOOK_VERIFY_TOKEN;
-  console.log(
-    "[webhooks/meta] process.env.META_WEBHOOK_VERIFY_TOKEN =",
-    JSON.stringify(envToken ?? null),
-  );
-  console.log("[webhooks/meta] GET verify attempt", {
-    url: request.url,
-    mode,
-    tokenLength: token?.length ?? 0,
-    tokenPreview: token ? `${token.slice(0, 4)}…${token.slice(-4)}` : null,
-    challengeLength: challenge?.length ?? 0,
-    challengePreview: challenge ? `${challenge.slice(0, 8)}…` : null,
-    envTokenSet: Boolean(envToken),
-    envTokenLength: envToken?.length ?? 0,
-    envTokenPreview: envToken ? `${envToken.slice(0, 4)}…${envToken.slice(-4)}` : null,
-    envMatch: Boolean(envToken && token && token === envToken),
-    hasSupabaseUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
-    hasServiceRole: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-  });
-
-  if (mode !== "subscribe" || !token || !challenge) {
-    console.log("[webhooks/meta] rejected: missing mode/token/challenge");
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (mode !== "subscribe" || !verifyToken || !hubChallenge) {
+    return new Response("Forbidden", { status: 403 });
   }
 
-  const isValid = await isVerifyTokenAccepted(token);
-  console.log("[webhooks/meta] isVerifyTokenAccepted:", isValid);
-  if (!isValid) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (verifyToken !== process.env.META_WEBHOOK_VERIFY_TOKEN) {
+    return new Response("Forbidden", { status: 403 });
   }
 
-  return new NextResponse(challenge, {
+  return new Response(hubChallenge, {
     status: 200,
     headers: { "Content-Type": "text/plain" },
   });
@@ -102,28 +79,6 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ ok: true });
-}
-
-async function isVerifyTokenAccepted(token: string): Promise<boolean> {
-  const envToken = process.env.META_WEBHOOK_VERIFY_TOKEN;
-  console.log(
-    "[webhooks/meta] isVerifyTokenAccepted lee process.env.META_WEBHOOK_VERIFY_TOKEN =",
-    JSON.stringify(envToken ?? null),
-    "| hub.verify_token recibido =",
-    JSON.stringify(token),
-  );
-  if (envToken && token === envToken) return true;
-
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("channel_integrations")
-    .select("id")
-    .eq("webhook_verify_token", token)
-    .eq("is_active", true)
-    .limit(1)
-    .maybeSingle();
-
-  return Boolean(data);
 }
 
 async function findIntegration(
