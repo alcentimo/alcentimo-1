@@ -24,13 +24,22 @@ type ChannelIntegration = {
  *
  * Meta Developer Console:
  * - Callback URL: https://www.alcentimo.com/api/webhooks/meta
- * PRUEBA TEMPORAL: GET sin validación de token — restaurar antes de producción.
+ * - Verify token: META_WEBHOOK_VERIFY_TOKEN
+ * - Suscripciones: messages (WhatsApp), messaging (Page / Instagram)
  */
 export async function GET(request: Request) {
-  console.log("Verificación Meta recibida:", request.url);
-
   const { searchParams } = new URL(request.url);
-  const hubChallenge = searchParams.get("hub.challenge") ?? "";
+  const mode = searchParams.get("hub.mode");
+  const verifyToken = searchParams.get("hub.verify_token");
+  const hubChallenge = searchParams.get("hub.challenge");
+
+  if (mode !== "subscribe" || !verifyToken || !hubChallenge) {
+    return new Response(null, { status: 403 });
+  }
+
+  if (verifyToken !== process.env.META_WEBHOOK_VERIFY_TOKEN) {
+    return new Response(null, { status: 403 });
+  }
 
   return new Response(hubChallenge, {
     status: 200,
