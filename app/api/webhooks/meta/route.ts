@@ -27,12 +27,21 @@ type ChannelIntegration = {
  * Meta Developer Console:
  * - Callback URL: https://www.alcentimo.com/api/webhooks/meta
  * - Verify token: VERIFY_TOKEN (env) — alias: META_WEBHOOK_VERIFY_TOKEN
+ * - App secret: APP_SECRET (env) — alias: META_APP_SECRET
  * - Suscripciones: messages (WhatsApp), messaging (Page / Instagram)
  */
 function getWebhookVerifyToken(): string | undefined {
   return (
     process.env.VERIFY_TOKEN?.trim() ??
     process.env.META_WEBHOOK_VERIFY_TOKEN?.trim()
+  );
+}
+
+/** App Secret de Meta para validar X-Hub-Signature-256 en POST. */
+function getMetaAppSecret(): string | undefined {
+  return (
+    process.env.APP_SECRET?.trim() ??
+    process.env.META_APP_SECRET?.trim()
   );
 }
 
@@ -58,15 +67,28 @@ export async function GET(request: Request) {
 
 /** POST — eventos entrantes (messages / messaging). */
 export async function POST(request: Request) {
-  const appSecret = process.env.META_APP_SECRET?.trim();
+  const appSecret = getMetaAppSecret();
   if (!appSecret) {
+    console.error(
+      "[webhooks/meta] APP_SECRET / META_APP_SECRET no configurado en el servidor.",
+    );
     return new Response(null, { status: 500 });
   }
 
   const rawBody = await request.text();
-  const signature = request.headers.get("x-hub-signature-256");
+  const signature =
+    request.headers.get("x-hub-signature-256") ??
+    request.headers.get("X-Hub-Signature-256");
+
+  if (!signature) {
+    console.error("[webhooks/meta] Falta cabecera X-Hub-Signature-256.");
+    return new Response(null, { status: 401 });
+  }
 
   if (!verifyMetaWebhookSignature(rawBody, signature, appSecret)) {
+    console.error(
+      "[webhooks/meta] Firma inválida — revisa que APP_SECRET coincida con el App Secret de Meta.",
+    );
     return new Response(null, { status: 401 });
   }
 

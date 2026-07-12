@@ -12,7 +12,9 @@ export function verifyMetaWebhookSignature(
     .update(rawBody, "utf8")
     .digest("hex");
 
-  const received = signatureHeader.slice("sha256=".length);
+  const received = signatureHeader.slice("sha256=".length).trim();
+
+  if (expected.length !== received.length) return false;
 
   try {
     return timingSafeEqual(
