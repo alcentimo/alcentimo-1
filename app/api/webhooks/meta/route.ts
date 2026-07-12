@@ -1,7 +1,8 @@
-import { NextResponse, after } from "next/server";
+import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ingestInboundMessage } from "@/lib/inbox/ingest-inbound-message";
 import {
+  extractMetaInboundMessages,
   extractWhatsAppMessageText,
   metaTimestampToIso,
   parseMetaVerifyQuery,
@@ -57,30 +58,35 @@ export async function GET(request: Request) {
 
 /** POST — eventos entrantes (messages / messaging). */
 export async function POST(request: Request) {
-  const appSecret = process.env.META_APP_SECRET;
+  const appSecret = process.env.META_APP_SECRET?.trim();
   if (!appSecret) {
-    return NextResponse.json(
-      { error: "META_APP_SECRET not configured" },
-      { status: 500 },
-    );
+    return new Response(null, { status: 500 });
   }
 
   const rawBody = await request.text();
   const signature = request.headers.get("x-hub-signature-256");
 
   if (!verifyMetaWebhookSignature(rawBody, signature, appSecret)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    return new Response(null, { status: 401 });
   }
 
   let payload: unknown;
   try {
     payload = JSON.parse(rawBody);
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return new Response(null, { status: 400 });
   }
 
-  console.log("[webhooks/meta] evento messages recibido:", JSON.stringify(payload));
+  const inboundMessages = extractMetaInboundMessages(payload);
+  for (const msg of inboundMessages) {
+    console.log("[webhooks/meta] evento messages:", {
+      channel: msg.channel,
+      senderId: msg.senderId,
+      messageText: msg.messageText,
+    });
+  }
 
+  // Procesamiento pesado (Supabase) en background — no bloquea el 200 a Meta
   after(async () => {
     try {
       await ingestMetaWebhookPayload(payload);
@@ -89,7 +95,7 @@ export async function POST(request: Request) {
     }
   });
 
-  return NextResponse.json({ ok: true });
+  return new Response(null, { status: 200 });
 }
 
 async function findIntegration(

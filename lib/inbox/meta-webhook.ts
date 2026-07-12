@@ -90,3 +90,76 @@ export function metaTimestampToIso(timestamp: unknown): string | undefined {
   if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
   return new Date(value * 1000).toISOString();
 }
+
+export type MetaInboundMessagePreview = {
+  channel: "whatsapp" | "messenger" | "instagram";
+  senderId: string;
+  messageText: string | null;
+};
+
+/** Extrae sender.id y message.text del payload sin I/O (para ack rápido a Meta). */
+export function extractMetaInboundMessages(
+  payload: unknown,
+): MetaInboundMessagePreview[] {
+  if (!payload || typeof payload !== "object") return [];
+
+  const object = (payload as { object?: string }).object;
+  const entries = (payload as { entry?: unknown[] }).entry ?? [];
+  const results: MetaInboundMessagePreview[] = [];
+
+  for (const entry of entries) {
+    if (!entry || typeof entry !== "object") continue;
+    const entryRecord = entry as Record<string, unknown>;
+
+    if (object === "whatsapp_business_account") {
+      for (const change of (entryRecord.changes as unknown[]) ?? []) {
+        if (!change || typeof change !== "object") continue;
+        const changeRecord = change as Record<string, unknown>;
+        if (changeRecord.field && changeRecord.field !== "messages") continue;
+
+        const value = changeRecord.value as Record<string, unknown> | undefined;
+        if (!value) continue;
+
+        for (const msg of (value.messages as unknown[]) ?? []) {
+          if (!msg || typeof msg !== "object") continue;
+          const message = msg as Record<string, unknown>;
+          const senderId = String(message.from ?? "");
+          if (!senderId) continue;
+
+          results.push({
+            channel: "whatsapp",
+            senderId,
+            messageText: extractWhatsAppMessageText(message),
+          });
+        }
+      }
+      continue;
+    }
+
+    if (object === "page" || object === "instagram") {
+      const channel: MetaInboundMessagePreview["channel"] =
+        object === "instagram" ? "instagram" : "messenger";
+
+      for (const event of (entryRecord.messaging as unknown[]) ?? []) {
+        if (!event || typeof event !== "object") continue;
+        const eventRecord = event as Record<string, unknown>;
+        const message = eventRecord.message as
+          | Record<string, unknown>
+          | undefined;
+        if (!message) continue;
+
+        const senderId = String(
+          (eventRecord.sender as { id?: string } | undefined)?.id ?? "",
+        );
+        if (!senderId) continue;
+
+        const messageText =
+          typeof message.text === "string" ? message.text : null;
+
+        results.push({ channel, senderId, messageText });
+      }
+    }
+  }
+
+  return results;
+}
