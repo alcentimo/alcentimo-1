@@ -27,6 +27,8 @@ type ChannelIntegration = {
  * PRUEBA TEMPORAL: GET sin validación de token — restaurar antes de producción.
  */
 export async function GET(request: Request) {
+  console.log("Verificación Meta recibida:", request.url);
+
   const { searchParams } = new URL(request.url);
   const hubChallenge = searchParams.get("hub.challenge") ?? "";
 
