@@ -34,6 +34,10 @@ export async function GET(request: Request) {
 
   // DEBUG TEMPORAL — quitar tras diagnosticar verificación Meta
   const envToken = process.env.META_WEBHOOK_VERIFY_TOKEN;
+  console.log(
+    "[webhooks/meta] process.env.META_WEBHOOK_VERIFY_TOKEN =",
+    JSON.stringify(envToken ?? null),
+  );
   console.log("[webhooks/meta] GET verify attempt", {
     url: request.url,
     mode,
@@ -102,6 +106,12 @@ export async function POST(request: Request) {
 
 async function isVerifyTokenAccepted(token: string): Promise<boolean> {
   const envToken = process.env.META_WEBHOOK_VERIFY_TOKEN;
+  console.log(
+    "[webhooks/meta] isVerifyTokenAccepted lee process.env.META_WEBHOOK_VERIFY_TOKEN =",
+    JSON.stringify(envToken ?? null),
+    "| hub.verify_token recibido =",
+    JSON.stringify(token),
+  );
   if (envToken && token === envToken) return true;
 
   const admin = createAdminClient();
