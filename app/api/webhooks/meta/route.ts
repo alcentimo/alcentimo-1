@@ -4,6 +4,7 @@ import { ingestInboundMessage } from "@/lib/inbox/ingest-inbound-message";
 import {
   extractWhatsAppMessageText,
   metaTimestampToIso,
+  parseMetaVerifyQuery,
   resolveWhatsAppMessageType,
   verifyMetaWebhookSignature,
 } from "@/lib/inbox/meta-webhook";
@@ -24,38 +25,37 @@ type ChannelIntegration = {
  *
  * Meta Developer Console:
  * - Callback URL: https://www.alcentimo.com/api/webhooks/meta
- * - Verify token: micodigosecreto2026 (debe coincidir con Meta y Vercel)
+ * - Verify token: VERIFY_TOKEN (env) — alias: META_WEBHOOK_VERIFY_TOKEN
  * - Suscripciones: messages (WhatsApp), messaging (Page / Instagram)
  */
-const META_WEBHOOK_VERIFY_TOKEN = "micodigosecreto2026";
-
-function isVerifyTokenValid(received: string | null): boolean {
-  if (!received) return false;
-  const candidates = [
-    process.env.META_WEBHOOK_VERIFY_TOKEN,
-    META_WEBHOOK_VERIFY_TOKEN,
-  ].filter(Boolean) as string[];
-  return candidates.some((expected) => received === expected);
+function getWebhookVerifyToken(): string | undefined {
+  return (
+    process.env.VERIFY_TOKEN?.trim() ??
+    process.env.META_WEBHOOK_VERIFY_TOKEN?.trim()
+  );
 }
 
+/** GET — verificación del webhook (hub.mode, hub.verify_token, hub.challenge). */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  console.log("Verificación Meta recibida:", request.url, Object.fromEntries(searchParams));
+  const { mode, token, challenge } = parseMetaVerifyQuery(searchParams);
 
-  const mode = searchParams.get("hub.mode");
-  const verifyToken = searchParams.get("hub.verify_token");
-  const hubChallenge = searchParams.get("hub.challenge") ?? "";
-
-  if (mode === "subscribe" && isVerifyTokenValid(verifyToken)) {
-    return new Response(hubChallenge, {
-      status: 200,
-      headers: { "Content-Type": "text/plain" },
-    });
+  if (mode !== "subscribe" || !token || !challenge) {
+    return new Response(null, { status: 403 });
   }
 
-  return new Response(null, { status: 403 });
+  const expectedToken = getWebhookVerifyToken();
+  if (!expectedToken || token !== expectedToken) {
+    return new Response(null, { status: 403 });
+  }
+
+  return new Response(challenge, {
+    status: 200,
+    headers: { "Content-Type": "text/plain" },
+  });
 }
 
+/** POST — eventos entrantes (messages / messaging). */
 export async function POST(request: Request) {
   const appSecret = process.env.META_APP_SECRET;
   if (!appSecret) {

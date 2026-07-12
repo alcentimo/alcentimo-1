@@ -11,6 +11,9 @@ declare namespace NodeJS {
     /** Meta / WhatsApp Business — solo servidor */
     META_APP_ID?: string;
     META_APP_SECRET?: string;
+    /** Token de verificación del webhook Meta (preferido). */
+    VERIFY_TOKEN?: string;
+    /** Alias legacy del verify token del webhook Meta. */
     META_WEBHOOK_VERIFY_TOKEN?: string;
 
     /** MercadoLibre — solo servidor */
