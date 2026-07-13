@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { ShoppingBag, Tag } from "lucide-react";
+import { ShoppingBag, Tag, PanelRightClose } from "lucide-react";
 import {
   formatMessageTime,
   formatSenderLabel,
@@ -28,6 +28,7 @@ interface ConversationContextPanelProps {
     conversationId: string,
     patch: Partial<MessageConversation>,
   ) => void;
+  onCollapse?: () => void;
 }
 
 function formatCurrency(amount: number): string {
@@ -42,6 +43,7 @@ export function ConversationContextPanel({
   storeCountry,
   recentSales,
   onConversationPatch,
+  onCollapse,
 }: ConversationContextPanelProps) {
   const [tagInput, setTagInput] = useState("");
   const [isUpdatingStatus, startStatusTransition] = useTransition();
@@ -114,9 +116,22 @@ export function ConversationContextPanel({
   return (
     <aside className="inbox-context-panel">
       <header className="border-b border-zinc-200/90 px-4 py-4 dark:border-zinc-800 sm:px-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-          Cliente
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            Cliente
+          </p>
+          {onCollapse && (
+            <button
+              type="button"
+              onClick={onCollapse}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              title="Ocultar panel"
+              aria-label="Ocultar panel de cliente"
+            >
+              <PanelRightClose className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
+        </div>
         <div className="mt-3 flex items-center gap-3">
           {conversation.avatarUrl ? (
             <img

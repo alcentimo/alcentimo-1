@@ -539,14 +539,102 @@ body {
 }
 
 .inbox-shell {
-  @apply grid min-h-[36rem] overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
+  @apply grid min-h-[calc(100dvh-11rem)] overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
   grid-template-columns: minmax(0, 1fr);
 }
 
 @media (min-width: 1024px) {
   .inbox-shell {
-    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr) minmax(0, 18rem);
+    grid-template-columns: minmax(0, 16rem) minmax(0, 1fr) minmax(0, 17rem);
   }
+
+  .inbox-shell--crm-collapsed {
+    grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+  }
+}
+
+.inbox-list-panel {
+  @apply flex min-h-0 flex-col border-b border-zinc-200/90 dark:border-zinc-800 lg:border-b-0 lg:border-r;
+}
+
+.inbox-list-toolbar {
+  @apply shrink-0 space-y-2 border-b border-zinc-200/90 px-3 py-2.5 dark:border-zinc-800;
+}
+
+.inbox-smart-tabs {
+  @apply grid grid-cols-2 gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900;
+}
+
+.inbox-smart-tab {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-50;
+}
+
+.inbox-smart-tab-active {
+  @apply bg-white text-zinc-900 shadow-sm dark:bg-zinc-950 dark:text-zinc-50;
+}
+
+.inbox-smart-tab-count {
+  @apply inline-flex min-w-4 items-center justify-center rounded-full bg-zinc-200 px-1 text-[10px] font-bold tabular-nums text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200;
+}
+
+.inbox-smart-tab-active .inbox-smart-tab-count {
+  @apply bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300;
+}
+
+.inbox-search-input {
+  @apply w-full rounded-lg border border-zinc-200 bg-white py-1.5 pl-8 pr-2.5 text-xs text-zinc-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:ring-teal-950/50;
+}
+
+.inbox-filter-bar {
+  @apply grid grid-cols-1 gap-1.5 sm:grid-cols-3;
+}
+
+.inbox-filter-select {
+  @apply w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-[11px] font-medium text-zinc-700 shadow-sm outline-none transition focus:border-teal-500 focus:ring-1 focus:ring-teal-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200 dark:focus:ring-teal-950/50;
+}
+
+.inbox-conversation-list-compact {
+  @apply min-h-0 flex-1 overflow-y-auto;
+}
+
+.inbox-conversation-item-compact {
+  @apply relative flex w-full items-center gap-2 border-b border-zinc-100 px-2.5 py-2 text-left transition-colors duration-100 last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800/70 dark:hover:bg-zinc-900/50;
+}
+
+.inbox-conversation-item-compact-active {
+  @apply bg-teal-50/90 dark:bg-teal-950/30;
+}
+
+.inbox-conversation-item-compact-unread {
+  @apply border-l-2 border-l-sky-500 pl-[calc(0.625rem-2px)];
+}
+
+.inbox-quick-actions {
+  @apply absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-md border border-zinc-200/90 bg-white/95 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100 dark:border-zinc-700 dark:bg-zinc-950/95;
+}
+
+.inbox-quick-action-btn {
+  @apply inline-flex h-6 w-6 items-center justify-center rounded text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100;
+}
+
+.inbox-stats-bar {
+  @apply flex flex-wrap items-center gap-4 rounded-xl border border-zinc-200/80 bg-white px-4 py-2.5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:gap-6 sm:px-5;
+}
+
+.inbox-stat {
+  @apply inline-flex items-center gap-2;
+}
+
+.inbox-stat-label {
+  @apply text-xs font-medium text-zinc-500 dark:text-zinc-400;
+}
+
+.inbox-stat-value {
+  @apply text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50;
+}
+
+.inbox-crm-toggle {
+  @apply absolute right-3 top-3 z-10 hidden h-8 w-8 items-center justify-center rounded-lg border border-zinc-200/90 bg-white text-zinc-500 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100 lg:inline-flex;
 }
 
 .inbox-conversation-list {
