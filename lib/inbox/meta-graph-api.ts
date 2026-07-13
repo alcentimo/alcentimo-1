@@ -4,7 +4,7 @@ const GRAPH_API_VERSION = "v21.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 
 interface GraphErrorBody {
-  error?: { message?: string; code?: number };
+  error?: { message?: string; code?: number; type?: string };
 }
 
 export interface MetaDiscoveredAssets {
@@ -15,11 +15,33 @@ export interface MetaDiscoveredAssets {
   accessToken: string;
 }
 
+interface GraphFetchResult<T> {
+  ok: boolean;
+  status: number;
+  data: T & GraphErrorBody;
+  path: string;
+}
+
 async function graphGet<T>(
   path: string,
   accessToken: string,
   params?: Record<string, string>,
 ): Promise<T> {
+  const result = await graphGetSafe<T>(path, accessToken, params);
+  if (!result.ok) {
+    throw new Error(
+      result.data.error?.message ?? `Meta Graph API error (${result.status})`,
+    );
+  }
+  return result.data;
+}
+
+/** Fetch sin lanzar excepción — útil para descubrimiento con múltiples endpoints. */
+async function graphGetSafe<T>(
+  path: string,
+  accessToken: string,
+  params?: Record<string, string>,
+): Promise<GraphFetchResult<T>> {
   const url = new URL(`${GRAPH_BASE}${path}`);
   url.searchParams.set("access_token", accessToken);
   if (params) {
@@ -31,13 +53,42 @@ async function graphGet<T>(
   const response = await fetch(url.toString());
   const data = (await response.json()) as T & GraphErrorBody;
 
-  if (!response.ok) {
-    throw new Error(
-      data.error?.message ?? `Meta Graph API error (${response.status})`,
-    );
+  return {
+    ok: response.ok,
+    status: response.status,
+    data,
+    path,
+  };
+}
+
+function redactToken(value: string): string {
+  if (value.length <= 12) return "***";
+  return `${value.slice(0, 6)}…${value.slice(-4)}`;
+}
+
+function sanitizeForLog(payload: unknown): unknown {
+  if (payload == null) return payload;
+  if (Array.isArray(payload)) {
+    return payload.map(sanitizeForLog);
+  }
+  if (typeof payload !== "object") return payload;
+
+  const record = payload as Record<string, unknown>;
+  const sanitized: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(record)) {
+    if (key === "access_token" && typeof value === "string") {
+      sanitized[key] = redactToken(value);
+      continue;
+    }
+    if (typeof value === "object") {
+      sanitized[key] = sanitizeForLog(value);
+      continue;
+    }
+    sanitized[key] = value;
   }
 
-  return data;
+  return sanitized;
 }
 
 /** Intercambia un token de corta duración por uno de larga duración (~60 días). */
@@ -96,7 +147,7 @@ interface BusinessNode {
 async function discoverWhatsAppAssets(
   accessToken: string,
 ): Promise<MetaDiscoveredAssets | null> {
-  const response = await graphGet<{ data?: BusinessNode[] }>(
+  const result = await graphGetSafe<{ data?: BusinessNode[] }>(
     "/me/businesses",
     accessToken,
     {
@@ -105,7 +156,15 @@ async function discoverWhatsAppAssets(
     },
   );
 
-  for (const business of response.data ?? []) {
+  if (!result.ok) {
+    console.warn("[meta/discovery] WhatsApp lookup skipped", {
+      status: result.status,
+      error: result.data.error ?? null,
+    });
+    return null;
+  }
+
+  for (const business of result.data.data ?? []) {
     for (const waba of business.owned_whatsapp_business_accounts?.data ?? []) {
       const phone = waba.phone_numbers?.data?.[0];
       if (!phone?.id) continue;
@@ -126,6 +185,7 @@ async function discoverWhatsAppAssets(
           phone_number_id: phone.id,
           display_phone_number: phone.display_phone_number ?? null,
           verified_name: phone.verified_name ?? null,
+          linked_via: "whatsapp",
         },
         accessToken,
       };
@@ -152,8 +212,67 @@ interface BusinessWithPages {
   client_pages?: { data?: PageAccount[] };
 }
 
+export interface MetaPageDiscoverySnapshot {
+  meAccounts: GraphFetchResult<{ data?: PageAccount[] }>;
+  meAccountsNested: GraphFetchResult<{
+    accounts?: { data?: PageAccount[] };
+  }>;
+  meBusinesses: GraphFetchResult<{ data?: BusinessWithPages[] }>;
+  normalizedPages: PageAccount[];
+}
+
 function pageKey(page: PageAccount): string | null {
-  return page.id?.trim() || null;
+  const id = page.id?.trim();
+  if (id) return id;
+  const name = page.name?.trim();
+  return name ? `name:${name}` : null;
+}
+
+function isPageLike(value: unknown): value is PageAccount {
+  if (!value || typeof value !== "object") return false;
+  const record = value as Record<string, unknown>;
+  const hasId = typeof record.id === "string" && record.id.trim().length > 0;
+  const hasName = typeof record.name === "string" && record.name.trim().length > 0;
+  return hasId || hasName;
+}
+
+/** Extrae páginas de estructuras variables que devuelve Graph API. */
+function extractPagesFromPayload(payload: unknown, depth = 0): PageAccount[] {
+  if (payload == null || depth > 6) return [];
+
+  if (Array.isArray(payload)) {
+    const pages: PageAccount[] = [];
+    for (const item of payload) {
+      if (isPageLike(item)) {
+        pages.push(item);
+      }
+      pages.push(...extractPagesFromPayload(item, depth + 1));
+    }
+    return pages;
+  }
+
+  if (typeof payload !== "object") return [];
+
+  const record = payload as Record<string, unknown>;
+  const pages: PageAccount[] = [];
+
+  for (const key of ["data", "accounts", "pages", "owned_pages", "client_pages"]) {
+    if (key in record) {
+      pages.push(...extractPagesFromPayload(record[key], depth + 1));
+    }
+  }
+
+  if (isPageLike(record)) {
+    pages.push(record);
+  }
+
+  for (const value of Object.values(record)) {
+    if (typeof value === "object" && value !== null) {
+      pages.push(...extractPagesFromPayload(value, depth + 1));
+    }
+  }
+
+  return pages;
 }
 
 function mergePages(...groups: PageAccount[][]): PageAccount[] {
@@ -172,48 +291,101 @@ function mergePages(...groups: PageAccount[][]): PageAccount[] {
   return merged;
 }
 
-/** Lista páginas autorizadas vía /me/accounts y portafolios Business. */
-async function listAllAuthorizedPages(accessToken: string): Promise<PageAccount[]> {
-  const directPages = await graphGet<{ data?: PageAccount[] }>(
+function buildFacebookPageAssets(
+  page: PageAccount,
+  userAccessToken: string,
+): MetaDiscoveredAssets | null {
+  const pageId = page.id?.trim();
+  const pageName = page.name?.trim() ?? null;
+
+  if (!pageId && !pageName) return null;
+
+  return {
+    externalAccountId: pageId ?? `page-name:${pageName}`,
+    displayName: pageName,
+    config: {
+      page_id: pageId ?? null,
+      page_name: pageName,
+      linked_via: "facebook_page",
+    },
+    accessToken: page.access_token?.trim() || userAccessToken,
+  };
+}
+
+/**
+ * Consulta varios endpoints y registra la respuesta cruda antes de validar.
+ */
+export async function inspectMetaPageDiscovery(
+  accessToken: string,
+): Promise<MetaPageDiscoverySnapshot> {
+  const meAccounts = await graphGetSafe<{ data?: PageAccount[] }>(
     "/me/accounts",
     accessToken,
     {
       fields: "id,name,access_token,instagram_business_account{id,username}",
     },
-  ).then((response) => response.data ?? []).catch(() => [] as PageAccount[]);
+  );
 
-  const businessPages = await graphGet<{ data?: BusinessWithPages[] }>(
+  const meAccountsNested = await graphGetSafe<{
+    accounts?: { data?: PageAccount[] };
+  }>("/me", accessToken, {
+    fields: "id,name,accounts{id,name,access_token}",
+  });
+
+  const meBusinesses = await graphGetSafe<{ data?: BusinessWithPages[] }>(
     "/me/businesses",
     accessToken,
     {
       fields:
         "id,name,owned_pages{id,name,access_token},client_pages{id,name,access_token}",
     },
-  )
-    .then((response) => {
-      const pages: PageAccount[] = [];
-      for (const business of response.data ?? []) {
-        pages.push(...(business.owned_pages?.data ?? []));
-        pages.push(...(business.client_pages?.data ?? []));
-      }
-      return pages;
-    })
-    .catch(() => [] as PageAccount[]);
+  );
 
-  return mergePages(directPages, businessPages);
+  const normalizedPages = mergePages(
+    extractPagesFromPayload(meAccounts.data),
+    extractPagesFromPayload(meAccountsNested.data),
+    extractPagesFromPayload(meBusinesses.data),
+  );
+
+  console.log("[meta/discovery] Raw Meta page discovery snapshot", {
+    meAccounts: {
+      ok: meAccounts.ok,
+      status: meAccounts.status,
+      error: meAccounts.data.error ?? null,
+      body: sanitizeForLog(meAccounts.data),
+    },
+    meAccountsNested: {
+      ok: meAccountsNested.ok,
+      status: meAccountsNested.status,
+      error: meAccountsNested.data.error ?? null,
+      body: sanitizeForLog(meAccountsNested.data),
+    },
+    meBusinesses: {
+      ok: meBusinesses.ok,
+      status: meBusinesses.status,
+      error: meBusinesses.data.error ?? null,
+      body: sanitizeForLog(meBusinesses.data),
+    },
+    normalizedPageCount: normalizedPages.length,
+    normalizedPages: normalizedPages.map((page) => ({
+      id: page.id ?? null,
+      name: page.name ?? null,
+      hasPageToken: Boolean(page.access_token),
+    })),
+  });
+
+  return {
+    meAccounts,
+    meAccountsNested,
+    meBusinesses,
+    normalizedPages,
+  };
 }
 
-function buildFacebookPageAssets(page: PageAccount): MetaDiscoveredAssets {
-  return {
-    externalAccountId: page.id!,
-    displayName: page.name ?? null,
-    config: {
-      page_id: page.id,
-      page_name: page.name ?? null,
-      linked_via: "facebook_page",
-    },
-    accessToken: page.access_token ?? "",
-  };
+/** Lista páginas autorizadas con parsing flexible. */
+async function listAllAuthorizedPages(accessToken: string): Promise<PageAccount[]> {
+  const snapshot = await inspectMetaPageDiscovery(accessToken);
+  return snapshot.normalizedPages;
 }
 
 /**
@@ -224,15 +396,13 @@ export async function discoverFacebookPageAssets(
   accessToken: string,
 ): Promise<MetaDiscoveredAssets | null> {
   const pages = await listAllAuthorizedPages(accessToken);
-  const page = pages.find((candidate) => pageKey(candidate));
-  if (!page?.id) return null;
+  const page =
+    pages.find((candidate) => candidate.id?.trim()) ??
+    pages.find((candidate) => candidate.name?.trim());
 
-  const assets = buildFacebookPageAssets(page);
-  if (!assets.accessToken) {
-    assets.accessToken = accessToken;
-  }
+  if (!page) return null;
 
-  return assets;
+  return buildFacebookPageAssets(page, accessToken);
 }
 
 async function listManagedPages(accessToken: string): Promise<PageAccount[]> {
@@ -273,40 +443,61 @@ async function discoverInstagramAssets(
 }
 
 /**
- * Descubre activos tras OAuth. Si el canal específico (WhatsApp/Instagram) no
- * está disponible, acepta cualquier Página de Facebook autorizada.
+ * Descubre activos tras OAuth. Prioriza cualquier Página de Facebook autorizada;
+ * WhatsApp e Instagram son opcionales.
  */
 export async function discoverMetaIntegrationAssets(
   provider: MetaProviderKey,
   accessToken: string,
 ): Promise<MetaDiscoveredAssets | null> {
-  let assets: MetaDiscoveredAssets | null = null;
+  console.log("[meta/discovery] Starting asset discovery", { provider });
+
+  const pageAssets = await discoverFacebookPageAssets(accessToken);
+  if (pageAssets) {
+    console.log("[meta/discovery] Facebook Page accepted", {
+      provider,
+      pageId: pageAssets.externalAccountId,
+      pageName: pageAssets.displayName,
+    });
+
+    if (provider === "messenger") {
+      return pageAssets;
+    }
+
+    return {
+      ...pageAssets,
+      config: {
+        ...pageAssets.config,
+        requested_provider: provider,
+        fallback_from_provider: provider,
+      },
+    };
+  }
+
+  let providerAssets: MetaDiscoveredAssets | null = null;
 
   switch (provider) {
     case "whatsapp":
-      assets = await discoverWhatsAppAssets(accessToken);
-      break;
-    case "messenger":
-      assets = await discoverMessengerAssets(accessToken);
+      providerAssets = await discoverWhatsAppAssets(accessToken);
       break;
     case "instagram":
-      assets = await discoverInstagramAssets(accessToken);
+      providerAssets = await discoverInstagramAssets(accessToken);
+      break;
+    case "messenger":
+      providerAssets = null;
       break;
     default:
-      assets = null;
+      providerAssets = null;
   }
 
-  if (assets) return assets;
+  if (providerAssets) {
+    console.log("[meta/discovery] Provider-specific asset accepted", {
+      provider,
+      externalAccountId: providerAssets.externalAccountId,
+    });
+    return providerAssets;
+  }
 
-  const pageAssets = await discoverFacebookPageAssets(accessToken);
-  if (!pageAssets) return null;
-
-  return {
-    ...pageAssets,
-    config: {
-      ...pageAssets.config,
-      requested_provider: provider,
-      fallback_from_provider: provider,
-    },
-  };
+  console.warn("[meta/discovery] No pages or provider assets found", { provider });
+  return null;
 }

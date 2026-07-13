@@ -73,6 +73,12 @@ export async function GET(request: Request) {
       redirectUri,
     });
     const accessToken = await exchangeForLongLivedUserToken(shortLivedToken);
+
+    console.log("[meta/callback] Token exchange OK — discovering Meta assets", {
+      provider: parsedState.provider,
+      storeId: parsedState.storeId,
+    });
+
     const assets = await discoverMetaIntegrationAssets(
       parsedState.provider,
       accessToken,
