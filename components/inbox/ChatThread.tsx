@@ -6,6 +6,7 @@ import {
 } from "@/lib/inbox/get-store-messages";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import type { CatalogListItem } from "@/lib/database.types";
+import type { ClientActivityEvent } from "@/lib/inbox/contact-crm";
 import { MessageBubble } from "@/components/inbox/MessageBubble";
 import { ChatComposer } from "@/components/inbox/ChatComposer";
 import {
@@ -49,6 +50,7 @@ export function ChatThread({
     conversation.displayName,
   );
   const conversationId = conversation.conversationId;
+  const currentActivityLog = conversation.activityLog;
 
   function handleConversationAction(patch: {
     isArchived?: boolean;
@@ -56,6 +58,12 @@ export function ChatThread({
     assignedTeam?: string | null;
   }) {
     onConversationPatch(conversationId, patch);
+  }
+
+  function handleActivityLogged(event: ClientActivityEvent) {
+    onConversationPatch(conversationId, {
+      activityLog: [event, ...currentActivityLog].slice(0, 20),
+    });
   }
 
   return (
@@ -93,6 +101,8 @@ export function ChatThread({
         onDraftChange={setDraft}
         products={products}
         storeSlug={storeSlug}
+        conversationId={conversationId}
+        onActivityLogged={handleActivityLogged}
       />
     </div>
   );

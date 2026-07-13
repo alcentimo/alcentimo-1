@@ -9,13 +9,21 @@ import {
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import type { VentaWithProduct } from "@/lib/sales/types";
 import type { InboxSalesStatus } from "@/lib/inbox/sales-status";
+import type { ClientActivityEvent } from "@/lib/inbox/contact-crm";
 import {
+  buildClientActivityFeed,
+  getSalesStatusActivityLabel,
+} from "@/lib/inbox/contact-crm";
+import {
+  updateInboxContactPrivateNotes,
   updateInboxContactTags,
   updateInboxConversationSalesStatus,
 } from "@/lib/inbox/actions";
 import { getContactPurchaseHistory, isPersistedConversation } from "@/lib/inbox/contact-context";
 import { ContextModuleCard } from "@/components/inbox/ContextModuleCard";
 import { SalesStatusSelect } from "@/components/inbox/SalesStatusSelect";
+import { ContactCopyField } from "@/components/inbox/ContactCopyField";
+import { ClientActivityList } from "@/components/inbox/ClientActivityList";
 
 interface ConversationContextPanelProps {
   conversation: MessageConversation | null;
@@ -35,29 +43,22 @@ function formatCurrency(amount: number): string {
   });
 }
 
-function FieldRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="inbox-context-field">
-      <span className="inbox-context-field-label">{label}</span>
-      <span className="inbox-context-field-value">{value}</span>
-    </div>
-  );
-}
-
 export function ConversationContextPanel({
   conversation,
-  storeCountry,
   recentSales,
   salesByConversationId = {},
   onConversationPatch,
 }: ConversationContextPanelProps) {
   const [tagInput, setTagInput] = useState("");
+  const [notesDraft, setNotesDraft] = useState("");
   const [isUpdatingStatus, startStatusTransition] = useTransition();
   const [isUpdatingTags, startTagsTransition] = useTransition();
+  const [isSavingNotes, startNotesTransition] = useTransition();
 
   useEffect(() => {
     setTagInput("");
-  }, [conversation?.conversationId]);
+    setNotesDraft(conversation?.privateNotes ?? "");
+  }, [conversation?.conversationId, conversation?.privateNotes]);
 
   const purchaseHistory = useMemo(() => {
     if (!conversation) return [];
@@ -67,6 +68,31 @@ export function ConversationContextPanel({
 
     return getContactPurchaseHistory(conversation, recentSales);
   }, [conversation, recentSales, salesByConversationId]);
+
+  const activityFeed = useMemo(() => {
+    if (!conversation) return [];
+    return buildClientActivityFeed(conversation, purchaseHistory);
+  }, [conversation, purchaseHistory]);
+
+  useEffect(() => {
+    if (!conversation?.contactId) return;
+
+    const timeout = window.setTimeout(() => {
+      if (notesDraft === conversation.privateNotes) return;
+
+      startNotesTransition(async () => {
+        const result = await updateInboxContactPrivateNotes(
+          conversation.contactId!,
+          notesDraft,
+        );
+        if (result.error) {
+          console.error("[ConversationContextPanel]", result.error);
+        }
+      });
+    }, 700);
+
+    return () => window.clearTimeout(timeout);
+  }, [conversation, notesDraft]);
 
   if (!conversation) {
     return (
@@ -89,9 +115,20 @@ export function ConversationContextPanel({
   const conversationId = conversation.conversationId;
   const contactId = conversation.contactId;
   const currentTags = conversation.tags;
+  const currentActivityLog = conversation.activityLog;
+  const phoneValue = conversation.phoneE164 ?? conversation.senderId;
 
   function handleSalesStatusChange(salesStatus: InboxSalesStatus) {
-    onConversationPatch(conversationId, { salesStatus });
+    const activityEntry: ClientActivityEvent = {
+      id: `status-local-${Date.now()}`,
+      label: getSalesStatusActivityLabel(salesStatus),
+      createdAt: new Date().toISOString(),
+    };
+
+    onConversationPatch(conversationId, {
+      salesStatus,
+      activityLog: [activityEntry, ...currentActivityLog].slice(0, 20),
+    });
 
     if (!canPersist) return;
 
@@ -104,6 +141,11 @@ export function ConversationContextPanel({
         console.error("[ConversationContextPanel]", result.error);
       }
     });
+  }
+
+  function handleNotesChange(value: string) {
+    setNotesDraft(value);
+    onConversationPatch(conversationId, { privateNotes: value });
   }
 
   function handleAddTag() {
@@ -128,21 +170,22 @@ export function ConversationContextPanel({
     <div className="flex min-h-0 flex-1 flex-col">
       <header className="inbox-context-profile">
         <p className="inbox-context-profile-name">{customerLabel}</p>
-        <p className="inbox-context-profile-meta">
-          {conversation.phoneE164 ?? conversation.senderId}
-        </p>
         <SalesStatusSelect
           value={conversation.salesStatus}
           disabled={isUpdatingStatus}
           onChange={handleSalesStatusChange}
         />
-        <div className="inbox-context-fields mt-2">
-          <FieldRow label="País" value={conversation.country ?? storeCountry ?? "—"} />
-          <FieldRow label="Último msg" value={formatMessageTime(conversation.lastMessageAt)} />
+        <div className="inbox-contact-copy-grid mt-2">
+          <ContactCopyField kind="phone" label="Teléfono" value={phoneValue} />
+          <ContactCopyField kind="email" label="Email" value={conversation.email} />
         </div>
       </header>
 
       <div className="inbox-context-scroll overflow-y-auto">
+        <ContextModuleCard title="Actividad">
+          <ClientActivityList events={activityFeed} />
+        </ContextModuleCard>
+
         <ContextModuleCard title="Pedidos">
           <Link href="/dashboard/ventas" className="inbox-order-create-btn">
             + Crear Pedido
@@ -151,7 +194,7 @@ export function ConversationContextPanel({
             <p className="inbox-context-module-empty">Sin pedidos vinculados.</p>
           ) : (
             <ul className="inbox-context-module-list">
-              {purchaseHistory.map((sale) => (
+              {purchaseHistory.slice(0, 2).map((sale) => (
                 <li key={sale.id} className="inbox-context-module-row">
                   <p className="inbox-context-module-row-title">{sale.product_name}</p>
                   <p className="inbox-context-module-row-meta">
@@ -162,6 +205,17 @@ export function ConversationContextPanel({
               ))}
             </ul>
           )}
+        </ContextModuleCard>
+
+        <ContextModuleCard title="Notas">
+          <textarea
+            value={notesDraft}
+            onChange={(event) => handleNotesChange(event.target.value)}
+            rows={3}
+            placeholder="Información interna del cliente…"
+            disabled={!conversation.contactId || isSavingNotes}
+            className="inbox-context-notes-input"
+          />
         </ContextModuleCard>
 
         <ContextModuleCard title="Etiquetas">

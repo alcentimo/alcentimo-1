@@ -5,6 +5,12 @@ import type {
 } from "@/lib/inbox/types";
 import type { InboxSalesStatus } from "@/lib/inbox/sales-status";
 import { normalizeSalesStatus } from "@/lib/inbox/sales-status";
+import {
+  parseActivityLog,
+  readContactEmail,
+  readPrivateNotes,
+  type ClientActivityEvent,
+} from "@/lib/inbox/contact-crm";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface MessageConversation {
@@ -13,6 +19,9 @@ export interface MessageConversation {
   senderId: string;
   displayName: string | null;
   phoneE164: string | null;
+  email: string | null;
+  privateNotes: string;
+  activityLog: ClientActivityEvent[];
   avatarUrl: string | null;
   provider: InboxProvider;
   integrationId: string;
@@ -127,6 +136,9 @@ function mapConversationRow(
     readMetadataString(conversationMetadata, contactMetadata, "country") ??
     storeCountry;
   const salesStatus = normalizeSalesStatus(conversationMetadata?.sales_status);
+  const privateNotes = readPrivateNotes(contactMetadata);
+  const email = readContactEmail(contactMetadata);
+  const activityLog = parseActivityLog(conversationMetadata?.activity_log);
   const isPriority =
     conversation.status === "pending" ||
     conversation.unread_count > 0 ||
@@ -138,6 +150,9 @@ function mapConversationRow(
     senderId,
     displayName: contact?.display_name ?? null,
     phoneE164: contact?.phone_e164 ?? null,
+    email,
+    privateNotes,
+    activityLog,
     avatarUrl: contact?.avatar_url ?? null,
     provider: conversation.provider,
     integrationId: conversation.integration_id ?? "",
@@ -175,6 +190,9 @@ function mapLegacyConversation(
     senderId: senderId ?? "unknown",
     displayName: null,
     phoneE164: null,
+    email: null,
+    privateNotes: "",
+    activityLog: [],
     avatarUrl: null,
     provider,
     integrationId: integrationId ?? "",

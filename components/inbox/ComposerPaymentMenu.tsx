@@ -7,7 +7,7 @@ interface ComposerPaymentMenuProps {
   open: boolean;
   storeSlug: string;
   onClose: () => void;
-  onSelectSnippet: (snippet: string) => void;
+  onSelectSnippet: (snippet: string, activityLabel: string) => void;
 }
 
 export function ComposerPaymentMenu({
@@ -55,6 +55,7 @@ export function ComposerPaymentMenu({
       action: () => {
         onSelectSnippet(
           `Puedes ver todos nuestros productos y pagar aquí: ${storeUrl}`,
+          "Link enviado",
         );
         onClose();
       },
@@ -67,6 +68,7 @@ export function ComposerPaymentMenu({
       action: () => {
         onSelectSnippet(
           "Te envío el enlace de pago seguro para completar tu pedido. ¿Prefieres transferencia, pago móvil o efectivo?",
+          "Link de pago solicitado",
         );
         onClose();
       },

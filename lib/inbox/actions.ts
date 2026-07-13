@@ -7,6 +7,11 @@ import type { InboxConversationStatus } from "@/lib/inbox/types";
 import type { InboxSalesStatus } from "@/lib/inbox/sales-status";
 import { isInboxSalesStatus } from "@/lib/inbox/sales-status";
 import { isPersistedConversation } from "@/lib/inbox/contact-context";
+import {
+  appendActivityEntries,
+  createActivityEntry,
+  getSalesStatusActivityLabel,
+} from "@/lib/inbox/contact-crm";
 
 const VALID_STATUSES = new Set<InboxConversationStatus>([
   "open",
@@ -186,7 +191,130 @@ export async function updateInboxConversationSalesStatus(
     return { error: "Estado de venta no válido." };
   }
 
-  return updateConversationMetadata(conversationId, { sales_status: salesStatus });
+  const ownership = await getOwnedConversation(conversationId);
+  if (ownership.error || !ownership.storeId) {
+    return { error: ownership.error };
+  }
+
+  const supabase = await createClient();
+  const { data: conversation } = await supabase
+    .from("inbox_conversations")
+    .select("metadata")
+    .eq("id", conversationId)
+    .eq("store_id", ownership.storeId)
+    .maybeSingle();
+
+  if (!conversation) {
+    return { error: "Conversación no encontrada." };
+  }
+
+  const metadata = {
+    ...((conversation.metadata as Record<string, unknown> | null) ?? {}),
+    sales_status: salesStatus,
+    activity_log: appendActivityEntries(
+      (conversation.metadata as Record<string, unknown> | null)?.activity_log,
+      [createActivityEntry(getSalesStatusActivityLabel(salesStatus), "status")],
+    ),
+  };
+
+  const { error } = await supabase
+    .from("inbox_conversations")
+    .update({ metadata, updated_at: new Date().toISOString() })
+    .eq("id", conversationId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard/mensajes");
+  return {};
+}
+
+export async function updateInboxContactPrivateNotes(
+  contactId: string,
+  privateNotes: string,
+): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const store = await getUserStore(supabase);
+
+  if (!store) {
+    return { error: "No tienes una tienda asociada." };
+  }
+
+  const { data: contact } = await supabase
+    .from("inbox_contacts")
+    .select("id, metadata")
+    .eq("id", contactId)
+    .eq("store_id", store.id)
+    .maybeSingle();
+
+  if (!contact) {
+    return { error: "Contacto no encontrado." };
+  }
+
+  const metadata = {
+    ...((contact.metadata as Record<string, unknown> | null) ?? {}),
+    private_notes: privateNotes,
+  };
+
+  const { error } = await supabase
+    .from("inbox_contacts")
+    .update({ metadata, updated_at: new Date().toISOString() })
+    .eq("id", contactId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard/mensajes");
+  return {};
+}
+
+export async function appendInboxConversationActivity(
+  conversationId: string,
+  label: string,
+  type = "event",
+): Promise<{ error?: string }> {
+  if (!label.trim()) {
+    return { error: "Actividad no válida." };
+  }
+
+  const ownership = await getOwnedConversation(conversationId);
+  if (ownership.error || !ownership.storeId) {
+    return { error: ownership.error };
+  }
+
+  const supabase = await createClient();
+  const { data: conversation } = await supabase
+    .from("inbox_conversations")
+    .select("metadata")
+    .eq("id", conversationId)
+    .eq("store_id", ownership.storeId)
+    .maybeSingle();
+
+  if (!conversation) {
+    return { error: "Conversación no encontrada." };
+  }
+
+  const metadata = {
+    ...((conversation.metadata as Record<string, unknown> | null) ?? {}),
+    activity_log: appendActivityEntries(
+      (conversation.metadata as Record<string, unknown> | null)?.activity_log,
+      [createActivityEntry(label.trim(), type)],
+    ),
+  };
+
+  const { error } = await supabase
+    .from("inbox_conversations")
+    .update({ metadata, updated_at: new Date().toISOString() })
+    .eq("id", conversationId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard/mensajes");
+  return {};
 }
 
 export async function updateInboxContactTags(

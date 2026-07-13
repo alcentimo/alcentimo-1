@@ -8,6 +8,9 @@ import {
   Send,
 } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
+import type { ClientActivityEvent } from "@/lib/inbox/contact-crm";
+import { appendInboxConversationActivity } from "@/lib/inbox/actions";
+import { isPersistedConversation } from "@/lib/inbox/contact-context";
 import { ComposerCatalogModal } from "@/components/inbox/ComposerCatalogModal";
 import { ComposerPaymentMenu } from "@/components/inbox/ComposerPaymentMenu";
 import { ComposerTemplatesMenu } from "@/components/inbox/ComposerTemplatesMenu";
@@ -17,6 +20,8 @@ interface ChatComposerProps {
   onDraftChange: (value: string) => void;
   products: CatalogListItem[];
   storeSlug: string;
+  conversationId: string | null;
+  onActivityLogged?: (event: ClientActivityEvent) => void;
 }
 
 export function ChatComposer({
@@ -24,6 +29,8 @@ export function ChatComposer({
   onDraftChange,
   products,
   storeSlug,
+  conversationId,
+  onActivityLogged,
 }: ChatComposerProps) {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -31,6 +38,29 @@ export function ChatComposer({
 
   function applySnippet(snippet: string) {
     onDraftChange(draft.trim() ? `${draft.trim()}\n\n${snippet}` : snippet);
+  }
+
+  function logActivity(label: string, type = "event") {
+    const event: ClientActivityEvent = {
+      id: `local-${Date.now()}`,
+      label,
+      createdAt: new Date().toISOString(),
+    };
+
+    onActivityLogged?.(event);
+
+    if (!conversationId || !isPersistedConversation(conversationId)) return;
+
+    void appendInboxConversationActivity(conversationId, label, type);
+  }
+
+  function applySnippetWithActivity(
+    snippet: string,
+    activityLabel: string,
+    activityType = "event",
+  ) {
+    applySnippet(snippet);
+    logActivity(activityLabel, activityType);
   }
 
   function closeMenus() {
@@ -81,7 +111,9 @@ export function ChatComposer({
                   open={paymentOpen}
                   storeSlug={storeSlug}
                   onClose={() => setPaymentOpen(false)}
-                  onSelectSnippet={applySnippet}
+                  onSelectSnippet={(snippet, activityLabel) =>
+                    applySnippetWithActivity(snippet, activityLabel, "payment")
+                  }
                 />
               </div>
 
@@ -105,7 +137,9 @@ export function ChatComposer({
                 <ComposerTemplatesMenu
                   open={templatesOpen}
                   onClose={() => setTemplatesOpen(false)}
-                  onSelectTemplate={applySnippet}
+                  onSelectTemplate={(text) =>
+                    applySnippetWithActivity(text, "Plantilla insertada", "template")
+                  }
                 />
               </div>
             </div>
@@ -133,7 +167,9 @@ export function ChatComposer({
         open={catalogOpen}
         products={products}
         onClose={() => setCatalogOpen(false)}
-        onSelectProduct={applySnippet}
+        onSelectProduct={(snippet) =>
+          applySnippetWithActivity(snippet, "Producto compartido", "catalog")
+        }
       />
     </>
   );
