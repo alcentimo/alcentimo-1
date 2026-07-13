@@ -201,7 +201,6 @@ export async function GET(request: Request) {
         assets.accessToken,
       );
       console.log("[meta/callback] Page webhook subscription result", {
-        pageId,
         pageName: assets.displayName,
         ...subscribeResult,
       });
