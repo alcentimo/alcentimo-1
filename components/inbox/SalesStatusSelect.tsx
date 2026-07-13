@@ -10,19 +10,21 @@ interface SalesStatusSelectProps {
   value: InboxSalesStatus;
   disabled?: boolean;
   onChange: (status: InboxSalesStatus) => void;
+  className?: string;
 }
 
 export function SalesStatusSelect({
   value,
   disabled = false,
   onChange,
+  className = "",
 }: SalesStatusSelectProps) {
   return (
     <select
       value={value}
       disabled={disabled}
       onChange={(event) => onChange(event.target.value as InboxSalesStatus)}
-      className={`${getSalesStatusSelectClass(value)} mt-2 w-full`}
+      className={`${getSalesStatusSelectClass(value)} ${className}`.trim()}
       aria-label="Estado del cliente"
     >
       {SALES_STATUS_OPTIONS.map((option) => (

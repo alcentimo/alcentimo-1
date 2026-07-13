@@ -14,6 +14,7 @@ import {
   buildClientActivityFeed,
   getSalesStatusActivityLabel,
 } from "@/lib/inbox/contact-crm";
+import { formatOrderReference } from "@/lib/inbox/order-display";
 import {
   updateInboxContactPrivateNotes,
   updateInboxContactTags,
@@ -22,8 +23,9 @@ import {
 import { getContactPurchaseHistory, isPersistedConversation } from "@/lib/inbox/contact-context";
 import { ContextModuleCard } from "@/components/inbox/ContextModuleCard";
 import { SalesStatusSelect } from "@/components/inbox/SalesStatusSelect";
-import { ContactCopyField } from "@/components/inbox/ContactCopyField";
+import { ContactCopyStrip } from "@/components/inbox/ContactCopyStrip";
 import { ClientActivityList } from "@/components/inbox/ClientActivityList";
+import { ScheduleFollowUpButton } from "@/components/inbox/ScheduleFollowUpButton";
 
 interface ConversationContextPanelProps {
   conversation: MessageConversation | null;
@@ -41,6 +43,13 @@ function formatCurrency(amount: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+function getProfileTitle(conversation: MessageConversation): string {
+  const displayName = conversation.displayName?.trim();
+  if (displayName) return displayName;
+
+  return formatSenderLabel(conversation.senderId, conversation.displayName);
 }
 
 export function ConversationContextPanel({
@@ -73,6 +82,8 @@ export function ConversationContextPanel({
     if (!conversation) return [];
     return buildClientActivityFeed(conversation, purchaseHistory);
   }, [conversation, purchaseHistory]);
+
+  const latestOrder = purchaseHistory[0] ?? null;
 
   useEffect(() => {
     if (!conversation?.contactId) return;
@@ -107,10 +118,7 @@ export function ConversationContextPanel({
     );
   }
 
-  const customerLabel = formatSenderLabel(
-    conversation.senderId,
-    conversation.displayName,
-  );
+  const profileTitle = getProfileTitle(conversation);
   const canPersist = isPersistedConversation(conversation.conversationId);
   const conversationId = conversation.conversationId;
   const contactId = conversation.contactId;
@@ -143,6 +151,12 @@ export function ConversationContextPanel({
     });
   }
 
+  function handleActivityLogged(event: ClientActivityEvent) {
+    onConversationPatch(conversationId, {
+      activityLog: [event, ...currentActivityLog].slice(0, 20),
+    });
+  }
+
   function handleNotesChange(value: string) {
     setNotesDraft(value);
     onConversationPatch(conversationId, { privateNotes: value });
@@ -169,42 +183,80 @@ export function ConversationContextPanel({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <header className="inbox-context-profile">
-        <p className="inbox-context-profile-name">{customerLabel}</p>
-        <SalesStatusSelect
-          value={conversation.salesStatus}
-          disabled={isUpdatingStatus}
-          onChange={handleSalesStatusChange}
-        />
-        <div className="inbox-contact-copy-grid mt-2">
-          <ContactCopyField kind="phone" label="Teléfono" value={phoneValue} />
-          <ContactCopyField kind="email" label="Email" value={conversation.email} />
+        <p className="inbox-context-profile-name">{profileTitle}</p>
+
+        <div className="inbox-context-status-row mt-2">
+          <SalesStatusSelect
+            value={conversation.salesStatus}
+            disabled={isUpdatingStatus}
+            onChange={handleSalesStatusChange}
+            className="min-w-0 flex-1"
+          />
+          <ScheduleFollowUpButton
+            conversationId={conversationId}
+            disabled={isUpdatingStatus}
+            onScheduled={handleActivityLogged}
+          />
         </div>
+
+        <ContactCopyStrip
+          phone={phoneValue}
+          email={conversation.email}
+        />
       </header>
 
       <div className="inbox-context-scroll overflow-y-auto">
-        <ContextModuleCard title="Actividad">
-          <ClientActivityList events={activityFeed} />
+        <ContextModuleCard title="Pedidos">
+          {latestOrder ? (
+            <div className="inbox-context-module-list">
+              <div className="inbox-order-highlight">
+                <div className="inbox-order-highlight-top">
+                  <span className="inbox-order-highlight-ref">
+                    {formatOrderReference(latestOrder)}
+                  </span>
+                  <span className="inbox-order-highlight-amount">
+                    {formatCurrency(latestOrder.monto)}
+                  </span>
+                </div>
+                <p className="inbox-order-highlight-meta">
+                  {latestOrder.product_name} · {latestOrder.cantidad} u ·{" "}
+                  {formatMessageTime(latestOrder.created_at)}
+                </p>
+              </div>
+
+              {purchaseHistory.length > 1 && (
+                <ul className="inbox-context-module-list">
+                  {purchaseHistory.slice(1, 3).map((sale) => (
+                    <li key={sale.id} className="inbox-context-module-row">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="inbox-order-row-ref">
+                          {formatOrderReference(sale)}
+                        </span>
+                        <span className="inbox-order-row-amount">
+                          {formatCurrency(sale.monto)}
+                        </span>
+                      </div>
+                      <p className="inbox-context-module-row-meta">
+                        {sale.product_name}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <Link href="/dashboard/ventas" className="inbox-order-create-link">
+                + Crear Pedido
+              </Link>
+            </div>
+          ) : (
+            <Link href="/dashboard/ventas" className="inbox-order-create-btn">
+              + Crear Pedido
+            </Link>
+          )}
         </ContextModuleCard>
 
-        <ContextModuleCard title="Pedidos">
-          <Link href="/dashboard/ventas" className="inbox-order-create-btn">
-            + Crear Pedido
-          </Link>
-          {purchaseHistory.length === 0 ? (
-            <p className="inbox-context-module-empty">Sin pedidos vinculados.</p>
-          ) : (
-            <ul className="inbox-context-module-list">
-              {purchaseHistory.slice(0, 2).map((sale) => (
-                <li key={sale.id} className="inbox-context-module-row">
-                  <p className="inbox-context-module-row-title">{sale.product_name}</p>
-                  <p className="inbox-context-module-row-meta">
-                    {formatCurrency(sale.monto)} · {sale.cantidad} u ·{" "}
-                    {formatMessageTime(sale.created_at)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
+        <ContextModuleCard title="Actividad">
+          <ClientActivityList events={activityFeed} />
         </ContextModuleCard>
 
         <ContextModuleCard title="Notas">
