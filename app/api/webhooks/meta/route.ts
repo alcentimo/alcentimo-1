@@ -13,6 +13,7 @@ import {
   applyMetaDeliveryEvent,
   applyMetaReadEvent,
 } from "@/lib/inbox/meta-message-events";
+import { findOrRepairMessengerIntegration } from "@/lib/inbox/persist-meta-integration";
 import type { InboxProvider } from "@/lib/inbox/types";
 
 export const runtime = "nodejs";
@@ -457,7 +458,11 @@ async function ingestMessagingEntry(
     console.log("[webhooks/meta] entry sin eventos messaging:", { provider, pageId });
   }
 
-  const integration = await findIntegration(admin, provider, pageId);
+  const integration =
+    provider === "messenger"
+      ? await findOrRepairMessengerIntegration(admin, pageId)
+      : await findIntegration(admin, provider, pageId);
+
   if (!integration) {
     console.warn("[webhooks/meta] SKIP razón:", {
       provider,
@@ -465,7 +470,7 @@ async function ingestMessagingEntry(
       pageIdFromPayload: pageId,
       messagingEventCount: messagingEvents.length,
       condicion:
-        "!findIntegration(admin, provider, pageId) — no hay fila en channel_integrations",
+        "!findIntegration / findOrRepairMessengerIntegration — no hay fila en channel_integrations",
       solucion: `INSERT en channel_integrations con provider='${provider}' y external_account_id='${pageId}'`,
     });
     return;

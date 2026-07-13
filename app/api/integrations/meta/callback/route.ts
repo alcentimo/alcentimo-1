@@ -15,6 +15,11 @@ import {
 } from "@/lib/inbox/meta-oauth";
 import { getChannelIntegration } from "@/src/config/channel-integrations";
 import { subscribeMetaPageWebhooks } from "@/lib/inbox/meta-page-subscribe";
+import {
+  getMessengerPageIdFromAssets,
+  upsertChannelIntegration,
+  upsertChannelIntegrationSecret,
+} from "@/lib/inbox/persist-meta-integration";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -104,100 +109,50 @@ export async function GET(request: Request) {
     const admin = createAdminClient();
     const channel = getChannelIntegration(parsedState.provider);
 
-    const { data: existing } = await admin
-      .from("channel_integrations")
-      .select("id, external_account_id")
-      .eq("store_id", parsedState.storeId)
-      .eq("provider", parsedState.provider)
-      .maybeSingle();
+    const persisted = await upsertChannelIntegration(admin, {
+      storeId: parsedState.storeId,
+      provider: parsedState.provider,
+      assets,
+      displayNameFallback: channel.label,
+    });
 
-    let integrationId = existing?.id;
+    await upsertChannelIntegrationSecret(
+      admin,
+      persisted.id,
+      assets.accessToken,
+    );
 
-    const integrationPatch = {
-      external_account_id: assets.externalAccountId,
-      display_name: assets.displayName ?? channel.label,
-      config: assets.config,
-      is_active: true,
-      updated_at: new Date().toISOString(),
-    };
-
-    if (integrationId) {
-      const { error: updateError } = await admin
-        .from("channel_integrations")
-        .update(integrationPatch)
-        .eq("id", integrationId);
-
-      if (updateError) {
-        if (updateError.code === "23505") {
-          const { data: conflict } = await admin
-            .from("channel_integrations")
-            .select("id")
-            .eq("store_id", parsedState.storeId)
-            .eq("provider", parsedState.provider)
-            .eq("external_account_id", assets.externalAccountId)
-            .maybeSingle();
-
-          if (conflict?.id) {
-            integrationId = conflict.id;
-            await admin
-              .from("channel_integrations")
-              .update(integrationPatch)
-              .eq("id", integrationId);
-          } else {
-            throw updateError;
-          }
-        } else {
-          throw updateError;
-        }
-      }
-    } else {
-      const { data: created, error: createError } = await admin
-        .from("channel_integrations")
-        .insert({
-          store_id: parsedState.storeId,
-          provider: parsedState.provider,
-          ...integrationPatch,
-        })
-        .select("id")
-        .single();
-
-      if (createError || !created) {
-        throw createError ?? new Error("Failed to create integration");
-      }
-
-      integrationId = created.id;
-    }
-
-    const { error: secretsError } = await admin
-      .from("channel_integration_secrets")
-      .upsert(
-        {
-          integration_id: integrationId,
-          access_token: assets.accessToken,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "integration_id" },
+    const messengerPageId = getMessengerPageIdFromAssets(assets);
+    if (messengerPageId && parsedState.provider !== "messenger") {
+      const messengerRow = await upsertChannelIntegration(admin, {
+        storeId: parsedState.storeId,
+        provider: "messenger",
+        assets,
+        displayNameFallback: getChannelIntegration("messenger").label,
+      });
+      await upsertChannelIntegrationSecret(
+        admin,
+        messengerRow.id,
+        assets.accessToken,
       );
-
-    if (secretsError) {
-      throw secretsError;
+      console.log("[meta/callback] Messenger row synced for Facebook Page", {
+        messengerIntegrationId: messengerRow.id,
+        pageId: messengerPageId,
+        requestedProvider: parsedState.provider,
+      });
     }
 
     console.log("[meta/callback] Integration saved", {
       provider: parsedState.provider,
       storeId: parsedState.storeId,
-      integrationId,
-      externalAccountId: assets.externalAccountId,
+      integrationId: persisted.id,
+      externalAccountId: persisted.external_account_id,
+      messengerPageId,
     });
 
-    const pageId =
-      typeof assets.config.page_id === "string"
-        ? assets.config.page_id
-        : assets.externalAccountId;
-
-    if (pageId && parsedState.provider === "messenger") {
+    if (messengerPageId) {
       const subscribeResult = await subscribeMetaPageWebhooks(
-        pageId,
+        messengerPageId,
         assets.accessToken,
       );
       console.log("[meta/callback] Page webhook subscription result", {
