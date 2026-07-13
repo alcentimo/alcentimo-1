@@ -49,6 +49,165 @@ interface InboxMessageRow {
   sent_at: string | null;
 }
 
+interface ChannelMessageRow {
+  id: string;
+  integration_id: string;
+  sender_id: string;
+  message_text: string | null;
+  direction: "inbound" | "outbound";
+  status: "read" | "unread";
+  created_at: string;
+}
+
+function mapChannelMessageRow(row: ChannelMessageRow): ChannelMessage {
+  return {
+    id: row.id,
+    integration_id: row.integration_id,
+    sender_id: row.sender_id,
+    message_text: row.message_text,
+    direction: row.direction,
+    status: row.status,
+    created_at: row.created_at,
+  };
+}
+
+function conversationThreadKey(integrationId: string, senderId: string): string {
+  return `${integrationId}:${senderId}`;
+}
+
+async function fetchChannelMessagesForStore(
+  supabase: SupabaseClient,
+  storeId: string,
+): Promise<ChannelMessage[]> {
+  const { data: integrations, error: integrationsError } = await supabase
+    .from("channel_integrations")
+    .select("id")
+    .eq("store_id", storeId);
+
+  if (integrationsError) throw integrationsError;
+
+  const integrationIds = (integrations ?? []).map((row) => row.id);
+  if (integrationIds.length === 0) return [];
+
+  const { data: rows, error: messagesError } = await supabase
+    .from("channel_messages")
+    .select(
+      "id, integration_id, sender_id, message_text, direction, status, created_at",
+    )
+    .in("integration_id", integrationIds)
+    .order("created_at", { ascending: true });
+
+  if (messagesError) throw messagesError;
+
+  return ((rows ?? []) as ChannelMessageRow[]).map(mapChannelMessageRow);
+}
+
+function groupChannelMessagesByThread(
+  messages: ChannelMessage[],
+): Map<string, ChannelMessage[]> {
+  const map = new Map<string, ChannelMessage[]>();
+
+  for (const message of messages) {
+    const key = conversationThreadKey(message.integration_id, message.sender_id);
+    const bucket = map.get(key) ?? [];
+    bucket.push(message);
+    map.set(key, bucket);
+  }
+
+  return map;
+}
+
+function mergeChannelMessagesIntoConversations(
+  conversations: MessageConversation[],
+  channelMessages: ChannelMessage[],
+): MessageConversation[] {
+  if (channelMessages.length === 0) return conversations;
+
+  const byThread = groupChannelMessagesByThread(channelMessages);
+
+  return conversations.map((conversation) => {
+    const legacyMessages = conversation.integrationId
+      ? (byThread.get(
+          conversationThreadKey(
+            conversation.integrationId,
+            conversation.senderId,
+          ),
+        ) ?? [])
+      : channelMessages.filter(
+          (message) => message.sender_id === conversation.senderId,
+        );
+
+    if (conversation.messages.length > 0) {
+      if (conversation.lastMessage?.trim()) return conversation;
+
+      const lastLegacy = legacyMessages.at(-1);
+      return {
+        ...conversation,
+        lastMessage:
+          conversation.lastMessage ??
+          lastLegacy?.message_text ??
+          conversation.lastMessage,
+      };
+    }
+
+    if (legacyMessages.length === 0) return conversation;
+
+    const lastLegacy = legacyMessages.at(-1);
+
+    return {
+      ...conversation,
+      messages: legacyMessages,
+      lastMessage:
+        conversation.lastMessage ??
+        lastLegacy?.message_text ??
+        null,
+      lastMessageAt:
+        conversation.lastMessageAt &&
+        Date.parse(conversation.lastMessageAt) > 0
+          ? conversation.lastMessageAt
+          : (lastLegacy?.created_at ?? conversation.lastMessageAt),
+      unreadCount:
+        conversation.unreadCount > 0
+          ? conversation.unreadCount
+          : legacyMessages.filter(
+              (message) =>
+                message.direction === "inbound" && message.status === "unread",
+            ).length,
+    };
+  });
+}
+
+function applyIntegrationProviders(
+  conversations: MessageConversation[],
+  providerByIntegrationId: Map<string, MessageConversation["provider"]>,
+): MessageConversation[] {
+  return conversations.map((conversation) => ({
+    ...conversation,
+    provider:
+      providerByIntegrationId.get(conversation.integrationId) ??
+      conversation.provider,
+  }));
+}
+
+async function fetchIntegrationProviders(
+  supabase: SupabaseClient,
+  storeId: string,
+): Promise<Map<string, MessageConversation["provider"]>> {
+  const { data, error } = await supabase
+    .from("channel_integrations")
+    .select("id, provider")
+    .eq("store_id", storeId);
+
+  if (error) throw error;
+
+  return new Map(
+    (data ?? []).map((row) => [
+      row.id,
+      row.provider as MessageConversation["provider"],
+    ]),
+  );
+}
+
 function mapInboxMessageToChannelMessage(
   message: InboxMessageRow,
   conversation: InboxConversationRow,
@@ -105,12 +264,27 @@ export async function getStoreInboxConversations(
   if (conversationsError) throw conversationsError;
 
   const conversations = (conversationRows ?? []) as InboxConversationRow[];
-  if (conversations.length === 0) return [];
+  const providerByIntegrationId = await fetchIntegrationProviders(
+    supabase,
+    storeId,
+  );
+
+  if (conversations.length === 0) {
+    const channelMessages = await fetchChannelMessagesForStore(supabase, storeId);
+    if (channelMessages.length > 0) {
+      return applyIntegrationProviders(
+        buildMessageConversations(channelMessages),
+        providerByIntegrationId,
+      );
+    }
+    return [];
+  }
 
   const conversationIds = conversations.map((row) => row.id);
   const { data: messageRows, error: messagesError } = await supabase
     .from("inbox_messages")
     .select("id, conversation_id, body, direction, status, created_at, sent_at")
+    .eq("store_id", storeId)
     .in("conversation_id", conversationIds)
     .order("created_at", { ascending: true });
 
@@ -123,7 +297,7 @@ export async function getStoreInboxConversations(
     messagesByConversation.set(message.conversation_id, bucket);
   }
 
-  return conversations.map((conversation) => {
+  const inboxConversations = conversations.map((conversation) => {
     const contact = resolveContact(conversation.inbox_contacts);
     const senderId = contact?.external_id ?? "unknown";
     const threadMessages = messagesByConversation.get(conversation.id) ?? [];
@@ -144,6 +318,25 @@ export async function getStoreInboxConversations(
       ),
     };
   });
+
+  const channelMessages = await fetchChannelMessagesForStore(supabase, storeId);
+  const merged = mergeChannelMessagesIntoConversations(
+    inboxConversations,
+    channelMessages,
+  );
+
+  const hasInboxMessages = merged.some(
+    (conversation) => conversation.messages.length > 0,
+  );
+
+  if (!hasInboxMessages && channelMessages.length > 0) {
+    return applyIntegrationProviders(
+      buildMessageConversations(channelMessages),
+      providerByIntegrationId,
+    );
+  }
+
+  return merged;
 }
 
 export function buildMessageConversations(
