@@ -1,11 +1,27 @@
-import type { ChannelMessage, InboxProvider } from "@/lib/inbox/types";
+import type {
+  ChannelMessage,
+  InboxConversationStatus,
+  InboxProvider,
+} from "@/lib/inbox/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface MessageConversation {
   conversationId: string;
+  contactId: string | null;
   senderId: string;
+  displayName: string | null;
+  phoneE164: string | null;
+  avatarUrl: string | null;
   provider: InboxProvider;
   integrationId: string;
+  status: InboxConversationStatus;
+  assignedTeam: string | null;
+  tags: string[];
+  country: string | null;
+  isArchived: boolean;
+  isSpam: boolean;
+  isPriority: boolean;
+  createdAt: string | null;
   lastMessage: string | null;
   lastMessageAt: string;
   unreadCount: number;
@@ -16,27 +32,164 @@ interface InboxConversationRow {
   id: string;
   integration_id: string | null;
   provider: InboxProvider;
+  status: InboxConversationStatus;
   unread_count: number;
   last_message_at: string | null;
   last_message_preview: string | null;
+  created_at: string;
+  metadata: Record<string, unknown> | null;
   inbox_contacts:
     | {
+        id: string;
         external_id: string;
         display_name: string | null;
+        phone_e164: string | null;
+        avatar_url: string | null;
+        metadata: Record<string, unknown> | null;
       }
     | {
+        id: string;
         external_id: string;
         display_name: string | null;
+        phone_e164: string | null;
+        avatar_url: string | null;
+        metadata: Record<string, unknown> | null;
       }[]
     | null;
 }
 
 function resolveContact(
   contact: InboxConversationRow["inbox_contacts"],
-): { external_id: string; display_name: string | null } | null {
+): {
+  id: string;
+  external_id: string;
+  display_name: string | null;
+  phone_e164: string | null;
+  avatar_url: string | null;
+  metadata: Record<string, unknown> | null;
+} | null {
   if (!contact) return null;
   if (Array.isArray(contact)) return contact[0] ?? null;
   return contact;
+}
+
+function readStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string");
+}
+
+function readMetadataFlag(
+  conversationMetadata: Record<string, unknown> | null,
+  contactMetadata: Record<string, unknown> | null,
+  key: string,
+): boolean {
+  return Boolean(conversationMetadata?.[key] ?? contactMetadata?.[key]);
+}
+
+function readMetadataString(
+  conversationMetadata: Record<string, unknown> | null,
+  contactMetadata: Record<string, unknown> | null,
+  key: string,
+): string | null {
+  const value = conversationMetadata?.[key] ?? contactMetadata?.[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function mapConversationRow(
+  conversation: InboxConversationRow,
+  threadMessages: ChannelMessage[],
+  storeCountry: string | null,
+): MessageConversation {
+  const contact = resolveContact(conversation.inbox_contacts);
+  const senderId = contact?.external_id ?? "unknown";
+  const contactMetadata = contact?.metadata ?? null;
+  const conversationMetadata = conversation.metadata ?? null;
+  const tags = [
+    ...readStringArray(contactMetadata?.tags),
+    ...readStringArray(conversationMetadata?.tags),
+  ];
+  const uniqueTags = [...new Set(tags)];
+  const isArchived = readMetadataFlag(
+    conversationMetadata,
+    contactMetadata,
+    "archived",
+  );
+  const isSpam = readMetadataFlag(conversationMetadata, contactMetadata, "spam");
+  const assignedTeam = readMetadataString(
+    conversationMetadata,
+    contactMetadata,
+    "assigned_team",
+  );
+  const country =
+    readMetadataString(conversationMetadata, contactMetadata, "country") ??
+    storeCountry;
+  const isPriority =
+    conversation.status === "pending" ||
+    conversation.unread_count > 0 ||
+    readMetadataFlag(conversationMetadata, contactMetadata, "priority");
+
+  return {
+    conversationId: conversation.id,
+    contactId: contact?.id ?? null,
+    senderId,
+    displayName: contact?.display_name ?? null,
+    phoneE164: contact?.phone_e164 ?? null,
+    avatarUrl: contact?.avatar_url ?? null,
+    provider: conversation.provider,
+    integrationId: conversation.integration_id ?? "",
+    status: conversation.status,
+    assignedTeam,
+    tags: uniqueTags,
+    country,
+    isArchived,
+    isSpam,
+    isPriority,
+    createdAt: conversation.created_at,
+    lastMessage: conversation.last_message_preview,
+    lastMessageAt:
+      conversation.last_message_at ??
+      threadMessages.at(-1)?.created_at ??
+      new Date(0).toISOString(),
+    unreadCount: conversation.unread_count,
+    messages: threadMessages,
+  };
+}
+
+function mapLegacyConversation(
+  key: string,
+  messages: ChannelMessage[],
+  provider: InboxProvider,
+  storeCountry: string | null,
+): MessageConversation {
+  const [integrationId, senderId] = key.split(":");
+  const lastMessage = messages.at(-1);
+
+  return {
+    conversationId: key,
+    contactId: null,
+    senderId: senderId ?? "unknown",
+    displayName: null,
+    phoneE164: null,
+    avatarUrl: null,
+    provider,
+    integrationId: integrationId ?? "",
+    status: "open",
+    assignedTeam: null,
+    tags: [],
+    country: storeCountry,
+    isArchived: false,
+    isSpam: false,
+    isPriority: messages.some(
+      (message) => message.direction === "inbound" && message.status === "unread",
+    ),
+    createdAt: messages[0]?.created_at ?? null,
+    lastMessage: lastMessage?.message_text ?? null,
+    lastMessageAt: lastMessage?.created_at ?? new Date(0).toISOString(),
+    unreadCount: messages.filter(
+      (message) => message.direction === "inbound" && message.status === "unread",
+    ).length,
+    messages,
+  };
 }
 
 interface InboxMessageRow {
@@ -241,7 +394,10 @@ export async function getStoreChannelMessages(
 export async function getStoreInboxConversations(
   supabase: SupabaseClient,
   storeId: string,
+  options?: { storeCountry?: string | null },
 ): Promise<MessageConversation[]> {
+  const storeCountry = options?.storeCountry ?? null;
+
   const { data: conversationRows, error: conversationsError } = await supabase
     .from("inbox_conversations")
     .select(
@@ -249,12 +405,19 @@ export async function getStoreInboxConversations(
       id,
       integration_id,
       provider,
+      status,
       unread_count,
       last_message_at,
       last_message_preview,
+      created_at,
+      metadata,
       inbox_contacts (
+        id,
         external_id,
-        display_name
+        display_name,
+        phone_e164,
+        avatar_url,
+        metadata
       )
     `,
     )
@@ -273,7 +436,7 @@ export async function getStoreInboxConversations(
     const channelMessages = await fetchChannelMessagesForStore(supabase, storeId);
     if (channelMessages.length > 0) {
       return applyIntegrationProviders(
-        buildMessageConversations(channelMessages),
+        buildMessageConversations(channelMessages, storeCountry),
         providerByIntegrationId,
       );
     }
@@ -298,25 +461,11 @@ export async function getStoreInboxConversations(
   }
 
   const inboxConversations = conversations.map((conversation) => {
-    const contact = resolveContact(conversation.inbox_contacts);
-    const senderId = contact?.external_id ?? "unknown";
-    const threadMessages = messagesByConversation.get(conversation.id) ?? [];
+    const threadMessages = (messagesByConversation.get(conversation.id) ?? []).map(
+      (message) => mapInboxMessageToChannelMessage(message, conversation),
+    );
 
-    return {
-      conversationId: conversation.id,
-      senderId,
-      provider: conversation.provider,
-      integrationId: conversation.integration_id ?? "",
-      lastMessage: conversation.last_message_preview,
-      lastMessageAt:
-        conversation.last_message_at ??
-        threadMessages.at(-1)?.created_at ??
-        new Date(0).toISOString(),
-      unreadCount: conversation.unread_count,
-      messages: threadMessages.map((message) =>
-        mapInboxMessageToChannelMessage(message, conversation),
-      ),
-    };
+    return mapConversationRow(conversation, threadMessages, storeCountry);
   });
 
   const channelMessages = await fetchChannelMessagesForStore(supabase, storeId);
@@ -331,7 +480,7 @@ export async function getStoreInboxConversations(
 
   if (!hasInboxMessages && channelMessages.length > 0) {
     return applyIntegrationProviders(
-      buildMessageConversations(channelMessages),
+      buildMessageConversations(channelMessages, storeCountry),
       providerByIntegrationId,
     );
   }
@@ -341,48 +490,31 @@ export async function getStoreInboxConversations(
 
 export function buildMessageConversations(
   messages: ChannelMessage[],
+  storeCountry: string | null = null,
 ): MessageConversation[] {
-  const map = new Map<string, MessageConversation>();
+  const map = new Map<string, ChannelMessage[]>();
 
   for (const message of messages) {
     const key = `${message.integration_id}:${message.sender_id}`;
-    const existing = map.get(key);
-
-    if (!existing) {
-      map.set(key, {
-        conversationId: key,
-        senderId: message.sender_id,
-        provider: "whatsapp",
-        integrationId: message.integration_id,
-        lastMessage: message.message_text,
-        lastMessageAt: message.created_at,
-        unreadCount:
-          message.direction === "inbound" && message.status === "unread" ? 1 : 0,
-        messages: [message],
-      });
-      continue;
-    }
-
-    existing.messages.push(message);
-
-    if (Date.parse(message.created_at) > Date.parse(existing.lastMessageAt)) {
-      existing.lastMessage = message.message_text;
-      existing.lastMessageAt = message.created_at;
-      existing.integrationId = message.integration_id;
-    }
-
-    if (message.direction === "inbound" && message.status === "unread") {
-      existing.unreadCount += 1;
-    }
+    const bucket = map.get(key) ?? [];
+    bucket.push(message);
+    map.set(key, bucket);
   }
 
-  for (const conversation of map.values()) {
-    conversation.messages.sort(
+  const conversations = Array.from(map.entries()).map(([key, threadMessages]) => {
+    threadMessages.sort(
       (a, b) => Date.parse(a.created_at) - Date.parse(b.created_at),
     );
-  }
 
-  return Array.from(map.values()).sort(
+    return mapLegacyConversation(
+      key,
+      threadMessages,
+      "whatsapp",
+      storeCountry,
+    );
+  });
+
+  return conversations.sort(
     (a, b) => Date.parse(b.lastMessageAt) - Date.parse(a.lastMessageAt),
   );
 }

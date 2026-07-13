@@ -1,23 +1,26 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { MessageCircle, MessageSquare, User } from "lucide-react";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
-import {
-  formatMessageTime,
-  formatSenderLabel,
-} from "@/lib/inbox/get-store-messages";
 import { markInboxConversationRead } from "@/lib/inbox/actions";
 import { MessagesEmptyState } from "@/components/dashboard/MessagesEmptyState";
+import { ConversationList } from "@/components/inbox/ConversationList";
+import { ChatThread } from "@/components/inbox/ChatThread";
+import { ConversationContextPanel } from "@/components/inbox/ConversationContextPanel";
+import type { VentaWithProduct } from "@/lib/sales/types";
 
 interface MessagesPanelProps {
   initialConversations: MessageConversation[];
   hasActiveIntegrations: boolean;
+  storeCountry?: string | null;
+  recentSales?: VentaWithProduct[];
 }
 
 export function MessagesPanel({
   initialConversations,
   hasActiveIntegrations,
+  storeCountry = null,
+  recentSales = [],
 }: MessagesPanelProps) {
   const [conversations, setConversations] =
     useState(initialConversations);
@@ -49,6 +52,17 @@ export function MessagesPanel({
     }
   }, [conversations, selectedConversationId]);
 
+  function patchConversation(
+    conversationId: string,
+    patch: Partial<MessageConversation>,
+  ) {
+    setConversations((current) =>
+      current.map((item) =>
+        item.conversationId === conversationId ? { ...item, ...patch } : item,
+      ),
+    );
+  }
+
   function handleSelectConversation(conversation: MessageConversation) {
     setSelectedConversationId(conversation.conversationId);
 
@@ -57,28 +71,21 @@ export function MessagesPanel({
     startTransition(() => {
       void markInboxConversationRead(conversation.conversationId).then(
         (result) => {
-        if (result.error) {
-          console.error("[MessagesPanel] mark read error:", result.error);
-          return;
-        }
+          if (result.error) {
+            console.error("[MessagesPanel] mark read error:", result.error);
+            return;
+          }
 
-        setConversations((current) =>
-          current.map((item) =>
-            item.conversationId === conversation.conversationId
-              ? {
-                  ...item,
-                  unreadCount: 0,
-                  messages: item.messages.map((message) =>
-                    message.direction === "inbound" &&
-                    message.status === "unread"
-                      ? { ...message, status: "read" as const }
-                      : message,
-                  ),
-                }
-              : item,
-          ),
-        );
-      },
+          patchConversation(conversation.conversationId, {
+            unreadCount: 0,
+            isPriority: conversation.status === "pending",
+            messages: conversation.messages.map((message) =>
+              message.direction === "inbound" && message.status === "unread"
+                ? { ...message, status: "read" as const }
+                : message,
+            ),
+          });
+        },
       );
     });
   }
@@ -90,7 +97,7 @@ export function MessagesPanel({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <article className="kpi-card">
           <div className="flex items-start justify-between gap-3">
@@ -105,9 +112,6 @@ export function MessagesPanel({
                 Clientes con mensajes activos
               </p>
             </div>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600 shadow-sm dark:bg-zinc-800 dark:text-zinc-300">
-              <MessageCircle className="h-5 w-5" aria-hidden="true" />
-            </span>
           </div>
         </article>
 
@@ -123,8 +127,8 @@ export function MessagesPanel({
               <p
                 className={`mt-1 text-xs font-medium ${
                   totalUnread > 0
-                    ? "text-amber-700 dark:text-amber-400"
-                    : "text-teal-700 dark:text-teal-400"
+                    ? "text-sky-700 dark:text-sky-400"
+                    : "text-emerald-700 dark:text-emerald-400"
                 }`}
               >
                 {totalUnread > 0
@@ -132,158 +136,30 @@ export function MessagesPanel({
                   : "Bandeja al día"}
               </p>
             </div>
-            <span
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm ${
-                totalUnread > 0
-                  ? "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-                  : "bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-400"
-              }`}
-            >
-              <MessageSquare className="h-5 w-5" aria-hidden="true" />
-            </span>
           </div>
         </article>
       </div>
 
-      <section className="card-surface overflow-hidden">
-        <div className="grid min-h-[32rem] lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-          <aside className="border-b border-zinc-200 dark:border-zinc-800 lg:border-b-0 lg:border-r">
-            <div className="border-b border-zinc-200 px-4 py-4 dark:border-zinc-800 sm:px-5">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                Clientes
-              </h2>
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                Selecciona una conversación para ver el hilo.
-              </p>
-            </div>
+      <section className="inbox-shell">
+        <ConversationList
+          conversations={conversations}
+          selectedConversationId={selectedConversationId}
+          onSelectConversation={handleSelectConversation}
+        />
 
-            <ul
-              className="max-h-[28rem] overflow-y-auto lg:max-h-[calc(32rem-4.5rem)]"
-              aria-label="Lista de conversaciones"
-            >
-              {conversations.map((conversation) => {
-                const isActive =
-                  conversation.conversationId === selectedConversationId;
-                const preview =
-                  conversation.lastMessage?.trim() || "Mensaje sin texto";
-
-                return (
-                  <li key={conversation.conversationId}>
-                    <button
-                      type="button"
-                      onClick={() => handleSelectConversation(conversation)}
-                      className={`flex w-full items-start gap-3 border-b border-zinc-100 px-4 py-4 text-left transition-colors last:border-b-0 dark:border-zinc-800/80 sm:px-5 ${
-                        isActive
-                          ? "bg-teal-50/80 dark:bg-teal-950/30"
-                          : "hover:bg-zinc-50 dark:hover:bg-zinc-900/40"
-                      }`}
-                    >
-                      <span
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                          isActive
-                            ? "bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300"
-                            : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-                        }`}
-                      >
-                        <User className="h-5 w-5" aria-hidden="true" />
-                      </span>
-
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                            {formatSenderLabel(conversation.senderId)}
-                          </span>
-                          <span className="shrink-0 text-[11px] text-zinc-500 dark:text-zinc-400">
-                            {formatMessageTime(conversation.lastMessageAt)}
-                          </span>
-                        </span>
-                        <span className="mt-1 flex items-center justify-between gap-2">
-                          <span className="truncate text-sm text-zinc-500 dark:text-zinc-400">
-                            {preview}
-                          </span>
-                          {conversation.unreadCount > 0 && (
-                            <span className="inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-teal-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                              {conversation.unreadCount}
-                            </span>
-                          )}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </aside>
-
-          <div className="flex min-h-[24rem] flex-col bg-zinc-50/60 dark:bg-zinc-900/20">
-            {selectedConversation ? (
-              <>
-                <header className="border-b border-zinc-200 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 sm:px-6">
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                    {formatSenderLabel(selectedConversation.senderId)}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    {selectedConversation.messages.length} mensaje
-                    {selectedConversation.messages.length !== 1 ? "s" : ""}
-                  </p>
-                </header>
-
-                <div className="flex-1 space-y-3 overflow-y-auto px-4 py-5 sm:px-6">
-                  {selectedConversation.messages.map((message) => {
-                    const isOutbound = message.direction === "outbound";
-
-                    return (
-                      <div
-                        key={message.id}
-                        className={`flex ${isOutbound ? "justify-end" : "justify-start"}`}
-                      >
-                        <article
-                          className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm sm:max-w-[70%] ${
-                            isOutbound
-                              ? "rounded-br-md bg-teal-600 text-white"
-                              : "rounded-bl-md border border-zinc-200 bg-white text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                          }`}
-                        >
-                          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-                            {message.message_text?.trim() || "Mensaje sin texto"}
-                          </p>
-                          <p
-                            className={`mt-2 text-[11px] ${
-                              isOutbound
-                                ? "text-teal-100"
-                                : "text-zinc-400 dark:text-zinc-500"
-                            }`}
-                          >
-                            {formatMessageTime(message.created_at)}
-                            {!isOutbound && message.status === "unread" && (
-                              <span className="ml-2 font-medium text-teal-600 dark:text-teal-400">
-                                · Nuevo
-                              </span>
-                            )}
-                          </p>
-                        </article>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-1 items-center justify-center px-6 py-12 text-center">
-                <div>
-                  <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                    <MessageSquare className="h-6 w-6" aria-hidden="true" />
-                  </span>
-                  <p className="mt-4 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                    Selecciona un cliente
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                    El hilo de mensajes aparecerá en este panel.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
+        <div className="flex min-h-[28rem] min-w-0 flex-col bg-zinc-50/70 dark:bg-zinc-900/20">
+          <ChatThread
+            conversation={selectedConversation}
+            onConversationPatch={patchConversation}
+          />
         </div>
+
+        <ConversationContextPanel
+          conversation={selectedConversation}
+          storeCountry={storeCountry}
+          recentSales={recentSales}
+          onConversationPatch={patchConversation}
+        />
       </section>
     </div>
   );

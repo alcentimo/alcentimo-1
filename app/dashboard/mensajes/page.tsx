@@ -9,6 +9,7 @@ import {
   getStoreIntegrations,
   hasActiveIntegrations,
 } from "@/lib/inbox/get-store-integrations";
+import { getStoreSales } from "@/lib/sales/get-store-sales";
 import { MessagesPanel } from "@/components/dashboard/MessagesPanel";
 import { PageContainer } from "@/components/ui/PageContainer";
 
@@ -43,25 +44,30 @@ export default async function MensajesPage() {
     );
   }
 
-  const [conversations, integrations] = await Promise.all([
-    getStoreInboxConversations(supabase, store.id),
+  const [conversations, integrations, recentSales] = await Promise.all([
+    getStoreInboxConversations(supabase, store.id, {
+      storeCountry: store.country,
+    }),
     getStoreIntegrations(supabase, store.id),
+    getStoreSales(store.id, 100),
   ]);
   const activeIntegrations = hasActiveIntegrations(integrations);
 
   return (
-    <PageContainer as="div" className="py-6 sm:py-8">
+    <PageContainer as="div" className="max-w-[88rem] py-6 sm:py-8">
       <header className="page-header">
         <p className="section-label">Atención al cliente</p>
         <h1 className="page-header-title">Mensajes</h1>
         <p className="page-header-desc">
-          Conversaciones de WhatsApp y Meta para {store.name}.
+          Centraliza conversaciones, contexto del cliente y seguimiento en un solo lugar.
         </p>
       </header>
 
       <MessagesPanel
         initialConversations={conversations}
         hasActiveIntegrations={activeIntegrations}
+        storeCountry={store.country}
+        recentSales={recentSales}
       />
     </PageContainer>
   );
