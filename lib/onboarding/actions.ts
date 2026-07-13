@@ -9,6 +9,10 @@ import { userHasStore } from "@/lib/stores";
 import { slugify, uniqueSlug } from "@/lib/slugify";
 import { STORE_CATEGORY_OPTIONS } from "@/lib/onboarding/categories";
 import { isStoreCountryOption } from "@/lib/onboarding/countries";
+import {
+  COUNTRY_UNAVAILABLE_MESSAGE,
+  isCountryEnabled,
+} from "@/lib/country-config";
 
 export type OnboardingFormState = {
   error?: string;
@@ -65,6 +69,10 @@ export async function completeOnboarding(
 
   if (!isStoreCountryOption(country)) {
     return { error: "País no válido." };
+  }
+
+  if (!isCountryEnabled(country)) {
+    return { error: COUNTRY_UNAVAILABLE_MESSAGE };
   }
 
   if (!category) {

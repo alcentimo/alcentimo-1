@@ -24,6 +24,8 @@ export interface CountryCurrencyConfig {
 
 export interface CountryConfig {
   country: StoreCountryOption;
+  /** Control de lanzamiento por país (onboarding y acceso al panel). */
+  enabled: boolean;
   currency: CountryCurrencyConfig;
   paymentMethodKeys: readonly PaymentMethodKey[];
   shippingCarrierKeys: readonly ShippingCarrierKey[];
@@ -117,6 +119,7 @@ const ARGENTINA_SALES_PAYMENTS: SalesPaymentMethodKey[] = [
 export const COUNTRY_CONFIGS: Record<StoreCountryOption, CountryConfig> = {
   Venezuela: {
     country: "Venezuela",
+    enabled: true,
     currency: {
       baseCurrency: "USD",
       baseCurrencyLabel: "Precio base USD",
@@ -132,6 +135,7 @@ export const COUNTRY_CONFIGS: Record<StoreCountryOption, CountryConfig> = {
   },
   Colombia: {
     country: "Colombia",
+    enabled: false,
     currency: {
       baseCurrency: "USD",
       baseCurrencyLabel: "Precio base USD",
@@ -147,6 +151,7 @@ export const COUNTRY_CONFIGS: Record<StoreCountryOption, CountryConfig> = {
   },
   Argentina: {
     country: "Argentina",
+    enabled: false,
     currency: {
       baseCurrency: "USD",
       baseCurrencyLabel: "Precio base USD",
@@ -163,6 +168,20 @@ export const COUNTRY_CONFIGS: Record<StoreCountryOption, CountryConfig> = {
 };
 
 export const DEFAULT_STORE_COUNTRY: StoreCountryOption = "Venezuela";
+
+export const COUNTRY_UNAVAILABLE_MESSAGE =
+  "Próximamente disponible. Este país estará habilitado en una próxima actualización.";
+
+const STORE_COUNTRY_LIST = Object.keys(COUNTRY_CONFIGS) as StoreCountryOption[];
+
+export function isCountryEnabled(country: StoreCountryOption): boolean {
+  return getCountryConfig(country).enabled;
+}
+
+/** Países visibles en onboarding y seleccionables al crear tienda. */
+export function getEnabledStoreCountries(): StoreCountryOption[] {
+  return STORE_COUNTRY_LIST.filter((country) => COUNTRY_CONFIGS[country].enabled);
+}
 
 /** Normaliza el valor persistido en `stores.country` (incluye tiendas legacy sin país). */
 export function resolveStoreCountry(

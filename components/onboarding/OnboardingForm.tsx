@@ -6,7 +6,10 @@ import {
   type OnboardingFormState,
 } from "@/lib/onboarding/actions";
 import { STORE_CATEGORY_OPTIONS } from "@/lib/onboarding/categories";
-import { STORE_COUNTRY_OPTIONS } from "@/lib/onboarding/countries";
+import { getEnabledStoreCountries } from "@/lib/country-config";
+import type { StoreCountryOption } from "@/lib/onboarding/countries";
+
+const ENABLED_COUNTRY_OPTIONS = getEnabledStoreCountries();
 
 const initialState: OnboardingFormState = {};
 
@@ -16,7 +19,9 @@ export function OnboardingForm() {
     initialState,
   );
   const [category, setCategory] = useState("");
-  const [country, setCountry] = useState("");
+  const [country, setCountry] = useState<StoreCountryOption | "">(
+    ENABLED_COUNTRY_OPTIONS[0] ?? "",
+  );
 
   return (
     <form action={formAction} className="card-panel mx-auto w-full max-w-md space-y-5">
@@ -52,13 +57,15 @@ export function OnboardingForm() {
           name="country"
           required
           value={country}
-          onChange={(e) => setCountry(e.target.value)}
+          onChange={(e) =>
+            setCountry(e.target.value as StoreCountryOption | "")
+          }
           className="input-field"
         >
           <option value="" disabled>
             Selecciona un país
           </option>
-          {STORE_COUNTRY_OPTIONS.map((option) => (
+          {ENABLED_COUNTRY_OPTIONS.map((option) => (
             <option key={option} value={option}>
               {option}
             </option>
