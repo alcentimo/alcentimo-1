@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { ShoppingBag, Tag, PanelRightClose } from "lucide-react";
+import { ShoppingBag, Tag } from "lucide-react";
 import {
   formatMessageTime,
   formatSenderLabel,
@@ -28,7 +28,7 @@ interface ConversationContextPanelProps {
     conversationId: string,
     patch: Partial<MessageConversation>,
   ) => void;
-  onCollapse?: () => void;
+  compact?: boolean;
 }
 
 function formatCurrency(amount: number): string {
@@ -43,7 +43,7 @@ export function ConversationContextPanel({
   storeCountry,
   recentSales,
   onConversationPatch,
-  onCollapse,
+  compact = false,
 }: ConversationContextPanelProps) {
   const [tagInput, setTagInput] = useState("");
   const [isUpdatingStatus, startStatusTransition] = useTransition();
@@ -59,14 +59,14 @@ export function ConversationContextPanel({
 
   if (!conversation) {
     return (
-      <aside className="inbox-context-panel inbox-context-panel-empty">
+      <div className="inbox-context-panel-empty flex flex-1 flex-col justify-center px-5 py-8">
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
           Contexto del cliente
         </p>
         <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
           Selecciona una conversación para ver perfil, compras y estado.
         </p>
-      </aside>
+      </div>
     );
   }
 
@@ -114,24 +114,11 @@ export function ConversationContextPanel({
   }
 
   return (
-    <aside className="inbox-context-panel">
-      <header className="border-b border-zinc-200/90 px-4 py-4 dark:border-zinc-800 sm:px-5">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            Cliente
-          </p>
-          {onCollapse && (
-            <button
-              type="button"
-              onClick={onCollapse}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-              title="Ocultar panel"
-              aria-label="Ocultar panel de cliente"
-            >
-              <PanelRightClose className="h-4 w-4" aria-hidden="true" />
-            </button>
-          )}
-        </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <header className="border-b border-zinc-200/90 px-4 py-3 dark:border-zinc-800 sm:px-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          Cliente
+        </p>
         <div className="mt-3 flex items-center gap-3">
           {conversation.avatarUrl ? (
             <img
@@ -212,6 +199,7 @@ export function ConversationContextPanel({
           </dl>
         </section>
 
+        {!compact && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <Tag className="h-4 w-4 text-zinc-400" aria-hidden="true" />
@@ -262,7 +250,9 @@ export function ConversationContextPanel({
             </button>
           </div>
         </section>
+        )}
 
+        {!compact && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <ShoppingBag className="h-4 w-4 text-zinc-400" aria-hidden="true" />
@@ -294,7 +284,8 @@ export function ConversationContextPanel({
             </ul>
           )}
         </section>
+        )}
       </div>
-    </aside>
+    </div>
   );
 }

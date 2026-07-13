@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Search } from "lucide-react";
 import {
   formatMessageTime,
@@ -11,9 +11,7 @@ import { ChannelBadge } from "@/components/inbox/ChannelBadge";
 import { ConversationQuickActions } from "@/components/inbox/ConversationQuickActions";
 import {
   countSmartTab,
-  DEFAULT_INBOX_FILTERS,
   filterConversations,
-  type InboxChannelFilter,
   type InboxListFilters,
   type InboxPriorityFilter,
   type InboxSmartTab,
@@ -28,15 +26,10 @@ interface ConversationListProps {
     conversationId: string,
     patch: Partial<MessageConversation>,
   ) => void;
+  filters: InboxListFilters;
+  onFiltersChange: (filters: InboxListFilters) => void;
+  channelFocusMode?: boolean;
 }
-
-const CHANNEL_OPTIONS: { value: InboxChannelFilter; label: string }[] = [
-  { value: "all", label: "Todos los canales" },
-  { value: "messenger", label: "Facebook (FB)" },
-  { value: "instagram", label: "Instagram (IG)" },
-  { value: "mercadolibre", label: "MercadoLibre (ML)" },
-  { value: "whatsapp", label: "WhatsApp (WA)" },
-];
 
 const STATUS_OPTIONS: { value: InboxStatusFilter; label: string }[] = [
   { value: "all", label: "Todos los estados" },
@@ -70,9 +63,10 @@ export function ConversationList({
   selectedConversationId,
   onSelectConversation,
   onConversationPatch,
+  filters,
+  onFiltersChange,
+  channelFocusMode = false,
 }: ConversationListProps) {
-  const [filters, setFilters] = useState<InboxListFilters>(DEFAULT_INBOX_FILTERS);
-
   const filteredConversations = useMemo(
     () => filterConversations(conversations, filters, formatSenderLabel),
     [conversations, filters],
@@ -88,8 +82,12 @@ export function ConversationList({
   );
 
   return (
-    <aside className="inbox-list-panel">
-      <div className="inbox-list-toolbar">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div
+        className={`inbox-list-toolbar ${
+          channelFocusMode ? "inbox-list-toolbar--focus" : ""
+        }`}
+      >
         <div className="inbox-smart-tabs" role="tablist" aria-label="Bandeja inteligente">
           {SMART_TABS.map((tab) => {
             const isActive = filters.smartTab === tab.key;
@@ -102,7 +100,7 @@ export function ConversationList({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() =>
-                  setFilters((current) => updateFilter(current, "smartTab", tab.key))
+                  onFiltersChange(updateFilter(filters, "smartTab", tab.key))
                 }
                 className={`inbox-smart-tab ${isActive ? "inbox-smart-tab-active" : ""}`}
               >
@@ -122,8 +120,8 @@ export function ConversationList({
             type="search"
             value={filters.searchQuery}
             onChange={(event) =>
-              setFilters((current) =>
-                updateFilter(current, "searchQuery", event.target.value),
+              onFiltersChange(
+                updateFilter(filters, "searchQuery", event.target.value),
               )
             }
             placeholder="Buscar…"
@@ -131,70 +129,51 @@ export function ConversationList({
           />
         </label>
 
-        <div className="inbox-filter-bar">
-          <select
-            value={filters.channel}
-            onChange={(event) =>
-              setFilters((current) =>
-                updateFilter(
-                  current,
-                  "channel",
-                  event.target.value as InboxChannelFilter,
-                ),
-              )
-            }
-            className="inbox-filter-select"
-            aria-label="Filtrar por canal"
-          >
-            {CHANNEL_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+        {!channelFocusMode && (
+          <div className="inbox-filter-bar">
+            <select
+              value={filters.status}
+              onChange={(event) =>
+                onFiltersChange(
+                  updateFilter(
+                    filters,
+                    "status",
+                    event.target.value as InboxStatusFilter,
+                  ),
+                )
+              }
+              className="inbox-filter-select"
+              aria-label="Filtrar por estado"
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
 
-          <select
-            value={filters.status}
-            onChange={(event) =>
-              setFilters((current) =>
-                updateFilter(
-                  current,
-                  "status",
-                  event.target.value as InboxStatusFilter,
-                ),
-              )
-            }
-            className="inbox-filter-select"
-            aria-label="Filtrar por estado"
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={filters.priority}
-            onChange={(event) =>
-              setFilters((current) =>
-                updateFilter(
-                  current,
-                  "priority",
-                  event.target.value as InboxPriorityFilter,
-                ),
-              )
-            }
-            className="inbox-filter-select"
-            aria-label="Filtrar por prioridad"
-          >
-            {PRIORITY_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+            <select
+              value={filters.priority}
+              onChange={(event) =>
+                onFiltersChange(
+                  updateFilter(
+                    filters,
+                    "priority",
+                    event.target.value as InboxPriorityFilter,
+                  ),
+                )
+              }
+              className="inbox-filter-select"
+              aria-label="Filtrar por prioridad"
+            >
+              {PRIORITY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
           {filteredConversations.length} conversaciones
@@ -269,6 +248,6 @@ export function ConversationList({
           })
         )}
       </ul>
-    </aside>
+    </div>
   );
 }

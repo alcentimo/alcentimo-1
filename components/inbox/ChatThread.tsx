@@ -19,11 +19,13 @@ interface ChatThreadProps {
     conversationId: string,
     patch: Partial<MessageConversation>,
   ) => void;
+  focusMode?: boolean;
 }
 
 export function ChatThread({
   conversation,
   onConversationPatch,
+  focusMode = false,
 }: ChatThreadProps) {
   const [draft, setDraft] = useState("");
 
@@ -89,7 +91,11 @@ export function ChatThread({
         </span>
       </header>
 
-      <div className="inbox-chat-thread">
+      <div
+        className={`inbox-chat-thread ${
+          focusMode ? "inbox-chat-thread--focus" : ""
+        }`}
+      >
         {conversation.messages.map((message) => (
           <MessageBubble
             key={message.id}
@@ -119,7 +125,11 @@ export function ChatThread({
             Enviar
           </button>
         </div>
-        <p className="mt-2 text-[11px] text-zinc-400 dark:text-zinc-500">
+        <p
+          className={`mt-2 text-[11px] text-zinc-400 dark:text-zinc-500 ${
+            focusMode ? "sr-only" : ""
+          }`}
+        >
           Las respuestas salientes estarán disponibles pronto.
         </p>
       </footer>

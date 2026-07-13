@@ -1,14 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import { markInboxConversationRead } from "@/lib/inbox/actions";
-import { countSmartTab } from "@/lib/inbox/inbox-filters";
+import {
+  countSmartTab,
+  DEFAULT_INBOX_FILTERS,
+  type InboxListFilters,
+} from "@/lib/inbox/inbox-filters";
+import {
+  buildWorkspaceGridStyle,
+  isChannelFocusActive,
+} from "@/lib/inbox/workspace-persistence";
 import { MessagesEmptyState } from "@/components/dashboard/MessagesEmptyState";
 import { ConversationList } from "@/components/inbox/ConversationList";
 import { ChatThread } from "@/components/inbox/ChatThread";
 import { ConversationContextPanel } from "@/components/inbox/ConversationContextPanel";
+import { ChannelFocusSelector } from "@/components/inbox/ChannelFocusSelector";
+import { InboxDockPanel } from "@/components/inbox/InboxDockPanel";
+import { InboxDockTab } from "@/components/inbox/InboxDockTab";
+import { useInboxWorkspace } from "@/components/inbox/useInboxWorkspace";
 import type { VentaWithProduct } from "@/lib/sales/types";
 
 interface MessagesPanelProps {
@@ -29,8 +40,12 @@ export function MessagesPanel({
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(initialConversations[0]?.conversationId ?? null);
-  const [crmCollapsed, setCrmCollapsed] = useState(false);
+  const [listFilters, setListFilters] =
+    useState<InboxListFilters>(DEFAULT_INBOX_FILTERS);
   const [, startTransition] = useTransition();
+
+  const workspace = useInboxWorkspace();
+  const channelFocusActive = isChannelFocusActive(workspace.channelFocus);
 
   const selectedConversation = useMemo(
     () =>
@@ -57,6 +72,30 @@ export function MessagesPanel({
   const activeCount = useMemo(
     () => countSmartTab(conversations, "active"),
     [conversations],
+  );
+
+  const mergedFilters = useMemo<InboxListFilters>(
+    () => ({
+      ...listFilters,
+      channel: workspace.channelFocus,
+    }),
+    [listFilters, workspace.channelFocus],
+  );
+
+  const workspaceGridStyle = useMemo(
+    () =>
+      buildWorkspaceGridStyle({
+        listCollapsed: workspace.listCollapsed,
+        chatCollapsed: workspace.chatCollapsed,
+        contextCollapsed: workspace.contextCollapsed,
+        channelFocus: workspace.channelFocus,
+      }),
+    [
+      workspace.listCollapsed,
+      workspace.chatCollapsed,
+      workspace.contextCollapsed,
+      workspace.channelFocus,
+    ],
   );
 
   useEffect(() => {
@@ -111,78 +150,134 @@ export function MessagesPanel({
 
   return (
     <div className="space-y-4">
-      <div className="inbox-stats-bar">
-        <div className="inbox-stat">
-          <span className="inbox-stat-label">Total</span>
-          <span className="inbox-stat-value">{conversations.length}</span>
+      {!channelFocusActive && (
+        <div className="inbox-stats-bar">
+          <div className="inbox-stat">
+            <span className="inbox-stat-label">Total</span>
+            <span className="inbox-stat-value">{conversations.length}</span>
+          </div>
+          <div className="inbox-stat">
+            <span className="inbox-stat-label">Por revisar</span>
+            <span className="inbox-stat-value text-sky-600 dark:text-sky-400">
+              {reviewCount}
+            </span>
+          </div>
+          <div className="inbox-stat">
+            <span className="inbox-stat-label">En curso</span>
+            <span className="inbox-stat-value text-teal-700 dark:text-teal-400">
+              {activeCount}
+            </span>
+          </div>
+          <div className="inbox-stat">
+            <span className="inbox-stat-label">Sin leer</span>
+            <span
+              className={`inbox-stat-value ${
+                totalUnread > 0
+                  ? "text-sky-600 dark:text-sky-400"
+                  : "text-emerald-600 dark:text-emerald-400"
+              }`}
+            >
+              {totalUnread}
+            </span>
+          </div>
         </div>
-        <div className="inbox-stat">
-          <span className="inbox-stat-label">Por revisar</span>
-          <span className="inbox-stat-value text-sky-600 dark:text-sky-400">
-            {reviewCount}
-          </span>
-        </div>
-        <div className="inbox-stat">
-          <span className="inbox-stat-label">En curso</span>
-          <span className="inbox-stat-value text-teal-700 dark:text-teal-400">
-            {activeCount}
-          </span>
-        </div>
-        <div className="inbox-stat">
-          <span className="inbox-stat-label">Sin leer</span>
-          <span
-            className={`inbox-stat-value ${
-              totalUnread > 0
-                ? "text-sky-600 dark:text-sky-400"
-                : "text-emerald-600 dark:text-emerald-400"
-            }`}
-          >
-            {totalUnread}
-          </span>
-        </div>
-      </div>
+      )}
 
-      <section
-        className={`inbox-shell ${crmCollapsed ? "inbox-shell--crm-collapsed" : ""}`}
+      <div
+        className={`inbox-workspace-wrap ${
+          channelFocusActive ? "inbox-workspace-wrap--focus" : ""
+        }`}
       >
-        <ConversationList
-          conversations={conversations}
-          selectedConversationId={selectedConversationId}
-          onSelectConversation={handleSelectConversation}
-          onConversationPatch={patchConversation}
-        />
-
-        <div className="relative flex min-h-0 min-w-0 flex-col bg-zinc-50/70 dark:bg-zinc-900/20">
-          <button
-            type="button"
-            onClick={() => setCrmCollapsed((current) => !current)}
-            className="inbox-crm-toggle"
-            title={crmCollapsed ? "Mostrar datos del cliente" : "Ocultar panel CRM"}
-            aria-label={crmCollapsed ? "Mostrar datos del cliente" : "Ocultar panel CRM"}
-          >
-            {crmCollapsed ? (
-              <PanelRightOpen className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <PanelRightClose className="h-4 w-4" aria-hidden="true" />
-            )}
-          </button>
-
-          <ChatThread
-            conversation={selectedConversation}
-            onConversationPatch={patchConversation}
+        <div className="inbox-workspace-toolbar">
+          <ChannelFocusSelector
+            value={workspace.channelFocus}
+            onChange={workspace.setChannelFocus}
           />
+          {channelFocusActive && (
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Vista optimizada para responder con máximo espacio en el chat.
+            </p>
+          )}
         </div>
 
-        {!crmCollapsed && (
-          <ConversationContextPanel
-            conversation={selectedConversation}
-            storeCountry={storeCountry}
-            recentSales={recentSales}
-            onConversationPatch={patchConversation}
-            onCollapse={() => setCrmCollapsed(true)}
-          />
-        )}
-      </section>
+        <section
+          className={`inbox-workspace ${
+            channelFocusActive ? "inbox-workspace--focus" : ""
+          } ${!workspace.hydrated ? "inbox-workspace--hydrating" : ""}`}
+          style={workspaceGridStyle}
+        >
+          {workspace.listCollapsed ? (
+            <InboxDockTab
+              side="left"
+              label="Lista"
+              onExpand={() => workspace.setListCollapsed(false)}
+            />
+          ) : (
+            <InboxDockPanel
+              title="Lista"
+              side="left"
+              onCollapse={() => workspace.setListCollapsed(true)}
+              className="inbox-list-panel"
+            >
+              <ConversationList
+                conversations={conversations}
+                selectedConversationId={selectedConversationId}
+                onSelectConversation={handleSelectConversation}
+                onConversationPatch={patchConversation}
+                filters={mergedFilters}
+                onFiltersChange={setListFilters}
+                channelFocusMode={channelFocusActive}
+              />
+            </InboxDockPanel>
+          )}
+
+          {workspace.chatCollapsed ? (
+            <InboxDockTab
+              side="center"
+              label="Chat"
+              onExpand={() => workspace.setChatCollapsed(false)}
+            />
+          ) : (
+            <InboxDockPanel
+              title="Chat"
+              side="center"
+              onCollapse={() => workspace.setChatCollapsed(true)}
+              className={`inbox-chat-panel ${
+                channelFocusActive ? "inbox-chat-panel--focus" : ""
+              }`}
+            >
+              <ChatThread
+                conversation={selectedConversation}
+                onConversationPatch={patchConversation}
+                focusMode={channelFocusActive}
+              />
+            </InboxDockPanel>
+          )}
+
+          {workspace.contextCollapsed ? (
+            <InboxDockTab
+              side="right"
+              label="CRM"
+              onExpand={() => workspace.setContextCollapsed(false)}
+            />
+          ) : (
+            <InboxDockPanel
+              title="Contexto"
+              side="right"
+              onCollapse={() => workspace.setContextCollapsed(true)}
+              className="inbox-context-panel"
+            >
+              <ConversationContextPanel
+                conversation={selectedConversation}
+                storeCountry={storeCountry}
+                recentSales={recentSales}
+                onConversationPatch={patchConversation}
+                compact={channelFocusActive}
+              />
+            </InboxDockPanel>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

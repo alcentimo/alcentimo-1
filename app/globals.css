@@ -538,27 +538,127 @@ body {
   @apply flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 sm:p-6;
 }
 
-.inbox-shell {
-  @apply grid min-h-[calc(100dvh-11rem)] overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
+.inbox-workspace-wrap {
+  @apply space-y-2;
+}
+
+.inbox-workspace-wrap--focus .inbox-workspace-toolbar {
+  @apply border-teal-200/80 bg-teal-50/40 dark:border-teal-900/40 dark:bg-teal-950/20;
+}
+
+.inbox-workspace-toolbar {
+  @apply flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200/80 bg-white px-3 py-2.5 shadow-sm transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-950 sm:px-4;
+}
+
+.inbox-channel-focus {
+  @apply flex flex-wrap items-center gap-3;
+}
+
+.inbox-channel-focus-select {
+  @apply rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 shadow-sm outline-none transition-all duration-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:ring-teal-950/50;
+}
+
+.inbox-channel-focus-select--active {
+  @apply border-teal-300 bg-teal-50/60 text-teal-900 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-200;
+}
+
+.inbox-channel-focus-badge {
+  @apply inline-flex items-center gap-2 rounded-full bg-white px-2.5 py-1 shadow-sm ring-1 ring-teal-100 dark:bg-zinc-950 dark:ring-teal-900/50;
+}
+
+.inbox-workspace {
+  @apply grid min-h-[calc(100dvh-11rem)] overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-sm transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-950;
   grid-template-columns: minmax(0, 1fr);
 }
 
+.inbox-workspace--hydrating {
+  transition: none;
+}
+
 @media (min-width: 1024px) {
-  .inbox-shell {
+  .inbox-workspace {
     grid-template-columns: minmax(0, 16rem) minmax(0, 1fr) minmax(0, 17rem);
   }
 
-  .inbox-shell--crm-collapsed {
-    grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+  .inbox-workspace--focus {
+    @apply border-teal-200/70 dark:border-teal-900/40;
   }
 }
 
-.inbox-list-panel {
-  @apply flex min-h-0 flex-col border-b border-zinc-200/90 dark:border-zinc-800 lg:border-b-0 lg:border-r;
+.inbox-dock-panel {
+  @apply flex min-h-0 min-w-0 flex-col overflow-hidden transition-all duration-300;
+}
+
+.inbox-dock-panel--left {
+  @apply border-b border-zinc-200/90 dark:border-zinc-800 lg:border-b-0 lg:border-r;
+}
+
+.inbox-dock-panel--center {
+  @apply bg-zinc-50/70 dark:bg-zinc-900/20;
+}
+
+.inbox-dock-panel--right {
+  @apply border-t border-zinc-200/90 dark:border-zinc-800 lg:border-l lg:border-t-0;
+}
+
+.inbox-dock-panel-header {
+  @apply flex shrink-0 items-center justify-between gap-2 border-b border-zinc-200/90 bg-white px-3 py-2 dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.inbox-dock-panel-body {
+  @apply flex min-h-0 flex-1 flex-col overflow-hidden;
+}
+
+.inbox-dock-collapse-btn {
+  @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-zinc-400 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200;
+}
+
+.inbox-dock-tab {
+  @apply flex min-h-0 min-w-0 flex-col items-center justify-center gap-2 border-zinc-200/90 bg-zinc-50/80 px-1 py-3 text-zinc-500 transition-all duration-300 hover:bg-teal-50 hover:text-teal-700 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400 dark:hover:bg-teal-950/30 dark:hover:text-teal-300;
+}
+
+.inbox-dock-tab--left {
+  @apply border-b dark:border-zinc-800 lg:border-b-0 lg:border-r;
+}
+
+.inbox-dock-tab--center {
+  @apply border-b bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:border-b-0 lg:border-x;
+}
+
+.inbox-dock-tab--right {
+  @apply border-t dark:border-zinc-800 lg:border-l lg:border-t-0;
+}
+
+.inbox-dock-tab-label {
+  @apply text-[10px] font-bold uppercase tracking-widest;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.inbox-chat-panel--focus .inbox-dock-panel-body {
+  @apply bg-gradient-to-b from-teal-50/20 to-transparent dark:from-teal-950/10;
+}
+
+.inbox-chat-thread--focus {
+  @apply px-6 py-6 sm:px-10;
+}
+
+.inbox-list-toolbar--focus {
+  @apply py-2;
+}
+
+@media (max-width: 1023px) {
+  .inbox-workspace {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .inbox-dock-tab-label {
+    writing-mode: horizontal-tb;
+  }
 }
 
 .inbox-list-toolbar {
-  @apply shrink-0 space-y-2 border-b border-zinc-200/90 px-3 py-2.5 dark:border-zinc-800;
+  @apply shrink-0 space-y-2 border-b border-zinc-200/90 px-3 py-2 dark:border-zinc-800;
 }
 
 .inbox-smart-tabs {
@@ -586,7 +686,7 @@ body {
 }
 
 .inbox-filter-bar {
-  @apply grid grid-cols-1 gap-1.5 sm:grid-cols-3;
+  @apply grid grid-cols-2 gap-1.5;
 }
 
 .inbox-filter-select {
@@ -633,10 +733,6 @@ body {
   @apply text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50;
 }
 
-.inbox-crm-toggle {
-  @apply absolute right-3 top-3 z-10 hidden h-8 w-8 items-center justify-center rounded-lg border border-zinc-200/90 bg-white text-zinc-500 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100 lg:inline-flex;
-}
-
 .inbox-conversation-list {
   @apply max-h-[28rem] overflow-y-auto lg:max-h-[calc(36rem-9.5rem)];
 }
@@ -658,11 +754,11 @@ body {
 }
 
 .inbox-context-panel {
-  @apply flex min-h-[20rem] flex-col border-t border-zinc-200/90 dark:border-zinc-800 lg:min-h-0 lg:border-l lg:border-t-0;
+  @apply min-h-0;
 }
 
 .inbox-context-panel-empty {
-  @apply items-start justify-center px-5 py-8;
+  @apply text-left;
 }
 
 .settings-option-card {
