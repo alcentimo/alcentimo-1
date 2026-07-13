@@ -20,6 +20,7 @@ import type { ProductFacebookPostSummary } from "@/lib/facebook/get-store-facebo
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/cn";
+import { Loader2 } from "lucide-react";
 
 interface ChatThreadProps {
   conversation: MessageConversation | null;
@@ -43,7 +44,8 @@ export function ChatThread({
   onPostPublished,
 }: ChatThreadProps) {
   const threadRef = useRef<HTMLDivElement>(null);
-  const { getDraft, setDraft, patchConversation } = useInboxSession();
+  const { getDraft, setDraft, patchConversation, messagesLoadingId } =
+    useInboxSession();
 
   useEffect(() => {
     const conversationId = conversation?.conversationId;
@@ -95,6 +97,7 @@ export function ChatThread({
   );
   const conversationId = conversation.conversationId;
   const draft = getDraft(conversationId);
+  const isLoadingMessages = messagesLoadingId === conversationId;
 
   function handleConversationAction(patch: {
     isArchived?: boolean;
@@ -173,9 +176,17 @@ export function ChatThread({
         aria-live="polite"
         aria-relevant="additions"
       >
-        {conversation.messages.length === 0 ? (
+        {isLoadingMessages && (
+          <div className="inbox-pro-chat-thread-loading" role="status">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            Cargando mensajes…
+          </div>
+        )}
+
+        {!isLoadingMessages && conversation.messages.length === 0 ? (
           <p className="inbox-pro-chat-thread-empty">
-            Aún no hay mensajes en esta conversación.
+            No hay mensajes en esta conversación. Escribe abajo para iniciar el
+            chat.
           </p>
         ) : (
           conversation.messages.map((message) => (

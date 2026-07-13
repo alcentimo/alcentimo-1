@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { MessagesEmptyState } from "@/components/dashboard/MessagesEmptyState";
 import { ChatThread } from "@/components/inbox/ChatThread";
 import { ConversationContextPanel } from "@/components/inbox/ConversationContextPanel";
@@ -27,8 +28,7 @@ export interface MessagesPanelProps {
 }
 
 /**
- * Bandeja de mensajes — layout profesional de 3 columnas (Zendesk / Slack).
- * InboxSessionProvider envuelve toda la UI; la lógica de backend no cambia.
+ * Bandeja de mensajes — layout de 3 columnas con carga funcional prioritaria.
  */
 export function MessagesPanel(props: MessagesPanelProps) {
   return (
@@ -50,9 +50,10 @@ function MessagesPanelWorkspace({
   salesByConversationId = {},
 }: MessagesPanelProps) {
   const {
-    facebookConversations,
+    conversations,
     selectedConversation,
     listFilters,
+    listLoading,
     crmLoading,
     setListFilters,
   } = useInboxSession();
@@ -69,7 +70,10 @@ function MessagesPanelWorkspace({
     }));
   }
 
-  if (initialConversations.length === 0) {
+  const hasAnyData =
+    conversations.length > 0 || initialConversations.length > 0;
+
+  if (!listLoading && !hasAnyData) {
     return (
       <div className="inbox-pro inbox-pro--empty" data-inbox-session="pro-v1">
         <MessagesEmptyState hasActiveIntegrations={hasActiveIntegrations} />
@@ -77,23 +81,15 @@ function MessagesPanelWorkspace({
     );
   }
 
-  if (facebookConversations.length === 0) {
-    return (
-      <div className="inbox-pro inbox-pro--empty" data-inbox-session="pro-v1">
-        <div className="inbox-pro-empty-card">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-            Sin conversaciones de Messenger
-          </h2>
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            Conecta Messenger en Integraciones para empezar a recibir mensajes.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="inbox-pro" data-inbox-session="pro-v1">
+      {listLoading && conversations.length === 0 && (
+        <p className="inbox-pro-global-loading" role="status">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          Sincronizando bandeja…
+        </p>
+      )}
+
       <div className="inbox-pro-workspace">
         <aside
           className="inbox-pro-column inbox-pro-column--list"

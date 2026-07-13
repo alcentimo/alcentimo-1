@@ -15,22 +15,29 @@ import {
   DEFAULT_INBOX_FILTERS,
   type InboxListFilters,
 } from "@/lib/inbox/inbox-filters";
-import { fetchInboxContactCrm, markInboxConversationRead } from "@/lib/inbox/actions";
-import { isMetaInboxProvider } from "@/components/inbox/MessengerChannelLabel";
+import {
+  fetchInboxContactCrm,
+  fetchInboxContactsList,
+  fetchInboxConversationMessages,
+  markInboxConversationRead,
+} from "@/lib/inbox/actions";
+import { isPersistedConversation } from "@/lib/inbox/contact-context";
 
 interface InboxSessionContextValue {
   conversations: MessageConversation[];
-  facebookConversations: MessageConversation[];
   selectedConversationId: string | null;
   selectedConversation: MessageConversation | null;
   listFilters: InboxListFilters;
+  listLoading: boolean;
+  listError: string | null;
+  messagesLoadingId: string | null;
   crmLoading: boolean;
-  hasInitializedSelection: boolean;
   getDraft: (conversationId: string) => string;
   setDraft: (conversationId: string, value: string) => void;
   setListFilters: (
     value: InboxListFilters | ((current: InboxListFilters) => InboxListFilters),
   ) => void;
+  refreshInboxContacts: () => Promise<void>;
   selectConversation: (conversationId: string) => void;
   patchConversation: (
     conversationId: string,
@@ -64,17 +71,14 @@ export function InboxSessionProvider({
   const [listFilters, setListFiltersState] =
     useState<InboxListFilters>(DEFAULT_INBOX_FILTERS);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [crmLoading, setCrmLoading] = useState(false);
-  const hasInitializedSelection = useRef(false);
-  const crmRequestId = useRef(0);
-
-  const facebookConversations = useMemo(
-    () =>
-      conversations.filter((conversation) =>
-        isMetaInboxProvider(conversation.provider),
-      ),
-    [conversations],
+  const [listLoading, setListLoading] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
+  const [messagesLoadingId, setMessagesLoadingId] = useState<string | null>(
+    null,
   );
+  const [crmLoading, setCrmLoading] = useState(false);
+  const crmRequestId = useRef(0);
+  const messagesRequestId = useRef(0);
 
   const selectedConversation = useMemo(
     () =>
@@ -127,9 +131,58 @@ export function InboxSessionProvider({
     }));
   }, []);
 
+  const refreshInboxContacts = useCallback(async () => {
+    setListLoading(true);
+    setListError(null);
+
+    const result = await fetchInboxContactsList();
+
+    setListLoading(false);
+
+    if (result.error) {
+      setListError(result.error);
+      console.error("[InboxSession] contacts load error:", result.error);
+      return;
+    }
+
+    if (result.conversations) {
+      setConversations(result.conversations);
+    }
+  }, []);
+
+  const loadConversationMessages = useCallback(
+    async (conversationId: string) => {
+      if (!isPersistedConversation(conversationId)) {
+        setMessagesLoadingId(null);
+        return;
+      }
+
+      const requestId = ++messagesRequestId.current;
+      setMessagesLoadingId(conversationId);
+
+      const result = await fetchInboxConversationMessages(conversationId);
+
+      if (requestId !== messagesRequestId.current) return;
+
+      setMessagesLoadingId(null);
+
+      if (result.error) {
+        console.error("[InboxSession] messages load error:", result.error);
+        return;
+      }
+
+      if (result.messages) {
+        patchConversation(conversationId, { messages: result.messages });
+      }
+    },
+    [patchConversation],
+  );
+
   const selectConversation = useCallback(
     (conversationId: string) => {
       setSelectedConversationId(conversationId);
+
+      void loadConversationMessages(conversationId);
 
       const conversation = conversations.find(
         (item) => item.conversationId === conversationId,
@@ -145,13 +198,15 @@ export function InboxSessionProvider({
         ),
       });
 
+      if (!isPersistedConversation(conversationId)) return;
+
       void markInboxConversationRead(conversationId).then((result) => {
         if (result.error) {
           console.error("[InboxSession] mark read error:", result.error);
         }
       });
     },
-    [conversations, patchConversation],
+    [conversations, loadConversationMessages, patchConversation],
   );
 
   const applyConversationPatch = useCallback(
@@ -177,19 +232,27 @@ export function InboxSessionProvider({
   );
 
   useEffect(() => {
-    if (hasInitializedSelection.current) return;
-    if (facebookConversations.length === 0) return;
+    if (conversations.length === 0) return;
+
+    if (
+      selectedConversationId &&
+      conversations.some(
+        (conversation) =>
+          conversation.conversationId === selectedConversationId,
+      )
+    ) {
+      return;
+    }
 
     const preferred =
-      facebookConversations.find((conversation) => conversation.unreadCount > 0)
-        ?.conversationId ?? facebookConversations[0]?.conversationId;
+      conversations.find((conversation) => conversation.unreadCount > 0)
+        ?.conversationId ?? conversations[0]?.conversationId;
 
     if (preferred) {
       setSelectedConversationId(preferred);
+      void loadConversationMessages(preferred);
     }
-
-    hasInitializedSelection.current = true;
-  }, [facebookConversations]);
+  }, [conversations, selectedConversationId, loadConversationMessages]);
 
   useEffect(() => {
     const contactId = selectedConversation?.contactId;
@@ -223,29 +286,34 @@ export function InboxSessionProvider({
   const value = useMemo<InboxSessionContextValue>(
     () => ({
       conversations,
-      facebookConversations,
       selectedConversationId,
       selectedConversation,
       listFilters,
+      listLoading,
+      listError,
+      messagesLoadingId,
       crmLoading,
-      hasInitializedSelection: hasInitializedSelection.current,
       getDraft,
       setDraft,
       setListFilters,
+      refreshInboxContacts,
       selectConversation,
       patchConversation,
       applyConversationPatch,
     }),
     [
       conversations,
-      facebookConversations,
       selectedConversationId,
       selectedConversation,
       listFilters,
+      listLoading,
+      listError,
+      messagesLoadingId,
       crmLoading,
       getDraft,
       setDraft,
       setListFilters,
+      refreshInboxContacts,
       selectConversation,
       patchConversation,
       applyConversationPatch,

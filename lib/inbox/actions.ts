@@ -21,7 +21,11 @@ import {
   resolveMetaPageId,
   sendMetaTextMessage,
 } from "@/lib/inbox/messenger-client";
-import { mapInboxMessageRowToChannelMessage } from "@/lib/inbox/get-store-messages";
+import {
+  getStoreInboxConversations,
+  mapInboxMessageRowToChannelMessage,
+  type MessageConversation,
+} from "@/lib/inbox/get-store-messages";
 
 const VALID_STATUSES = new Set<InboxConversationStatus>([
   "open",
@@ -57,6 +61,31 @@ async function getOwnedConversation(
   }
 
   return { storeId: store.id };
+}
+
+export async function fetchInboxContactsList(): Promise<{
+  error?: string;
+  conversations?: MessageConversation[];
+}> {
+  const supabase = await createClient();
+  const store = await getUserStore(supabase);
+
+  if (!store) {
+    return { error: "No tienes una tienda asociada." };
+  }
+
+  try {
+    const conversations = await getStoreInboxConversations(supabase, store.id, {
+      storeCountry: store.country,
+    });
+    return { conversations };
+  } catch (err) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "No se pudieron cargar los contactos del inbox.";
+    return { error: message };
+  }
 }
 
 export async function fetchInboxConversationMessages(

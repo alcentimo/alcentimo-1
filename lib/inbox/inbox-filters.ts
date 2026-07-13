@@ -1,7 +1,7 @@
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import type { InboxProvider } from "@/lib/inbox/types";
 
-export type InboxSmartTab = "review" | "active";
+export type InboxSmartTab = "all" | "review" | "active";
 
 export type InboxChannelFilter = "all" | InboxProvider;
 
@@ -18,8 +18,8 @@ export interface InboxListFilters {
 }
 
 export const DEFAULT_INBOX_FILTERS: InboxListFilters = {
-  smartTab: "review",
-  channel: "messenger",
+  smartTab: "all",
+  channel: "all",
   status: "all",
   priority: "all",
   searchQuery: "",
@@ -48,6 +48,7 @@ export function matchesSmartTab(
   conversation: MessageConversation,
   tab: InboxSmartTab,
 ): boolean {
+  if (tab === "all") return true;
   if (conversation.isArchived || conversation.isSpam) return false;
 
   if (tab === "review") {
@@ -94,7 +95,9 @@ export function filterConversations(
   const query = filters.searchQuery.trim().toLowerCase();
 
   return conversations.filter((conversation) => {
-    if (conversation.isArchived || conversation.isSpam) return false;
+    if (filters.smartTab !== "all" && (conversation.isArchived || conversation.isSpam)) {
+      return false;
+    }
     if (!matchesSmartTab(conversation, filters.smartTab)) return false;
     if (!matchesChannelFilter(conversation, filters.channel)) return false;
     if (!matchesStatusFilter(conversation, filters.status)) return false;

@@ -16,6 +16,7 @@ interface InboxConversationSidebarProps {
 }
 
 const SMART_TABS: { key: InboxSmartTab; label: string }[] = [
+  { key: "all", label: "Todos" },
   { key: "review", label: "Por revisar" },
   { key: "active", label: "En curso" },
 ];
