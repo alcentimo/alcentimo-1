@@ -16,7 +16,7 @@ import { ConversationContextPanel } from "@/components/inbox/ConversationContext
 import { FbInboxTopBar } from "@/components/inbox/FbInboxTopBar";
 import { InboxDockPanel } from "@/components/inbox/InboxDockPanel";
 import { InboxDockTab } from "@/components/inbox/InboxDockTab";
-import { isMessengerProvider } from "@/components/inbox/MessengerChannelLabel";
+import { isMetaInboxProvider } from "@/components/inbox/MessengerChannelLabel";
 import { useInboxWorkspace } from "@/components/inbox/useInboxWorkspace";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { VentaWithProduct } from "@/lib/sales/types";
@@ -52,9 +52,10 @@ export function MessagesPanel({
   const workspace = useInboxWorkspace();
 
   const facebookConversations = useMemo(
-    () => conversations.filter((conversation) =>
-      isMessengerProvider(conversation.provider),
-    ),
+    () =>
+      conversations.filter((conversation) =>
+        isMetaInboxProvider(conversation.provider),
+      ),
     [conversations],
   );
 
@@ -168,6 +169,7 @@ export function MessagesPanel({
           onFiltersChange={setListFilters}
           reviewCount={reviewCount}
           activeCount={activeCount}
+          isSynced={hasActiveIntegrations}
         />
         <div className="rounded-xl bg-white px-6 py-12 text-center shadow-sm dark:bg-slate-950">
           <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -189,6 +191,7 @@ export function MessagesPanel({
         reviewCount={reviewCount}
         activeCount={activeCount}
         pendingCount={reviewCount}
+        isSynced={hasActiveIntegrations}
       />
 
       <section

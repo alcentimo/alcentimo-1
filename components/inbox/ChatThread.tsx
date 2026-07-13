@@ -1,18 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { ClientActivityEvent } from "@/lib/inbox/contact-crm";
+import type { ChannelMessage } from "@/lib/inbox/types";
+import { fetchInboxConversationMessages } from "@/lib/inbox/actions";
 import { MessageBubble } from "@/components/inbox/MessageBubble";
 import { ChatComposer } from "@/components/inbox/ChatComposer";
+import { ChannelBadge } from "@/components/inbox/ChannelBadge";
 import {
   getConversationStatusLabel,
   getConversationStatusTone,
 } from "@/components/inbox/conversation-status";
+import { isPersistedConversation } from "@/lib/inbox/contact-context";
 
 interface ChatThreadProps {
   conversation: MessageConversation | null;
@@ -31,6 +35,28 @@ export function ChatThread({
   onConversationPatch,
 }: ChatThreadProps) {
   const [draft, setDraft] = useState("");
+
+  useEffect(() => {
+    const conversationId = conversation?.conversationId;
+    if (!conversationId || !isPersistedConversation(conversationId)) {
+      return;
+    }
+
+    async function refreshDeliveryStatus() {
+      const result = await fetchInboxConversationMessages(conversationId!);
+      if (!result.messages) return;
+
+      onConversationPatch(conversationId!, {
+        messages: result.messages,
+      });
+    }
+
+    const interval = window.setInterval(() => {
+      void refreshDeliveryStatus();
+    }, 12000);
+
+    return () => window.clearInterval(interval);
+  }, [conversation?.conversationId, onConversationPatch]);
 
   if (!conversation) {
     return (
@@ -51,6 +77,7 @@ export function ChatThread({
   );
   const conversationId = conversation.conversationId;
   const currentActivityLog = conversation.activityLog;
+  const currentMessages = conversation.messages;
 
   function handleConversationAction(patch: {
     isArchived?: boolean;
@@ -66,16 +93,27 @@ export function ChatThread({
     });
   }
 
+  function handleMessageSent(message: ChannelMessage) {
+    onConversationPatch(conversationId, {
+      messages: [...currentMessages, message],
+      lastMessage: message.message_text,
+      lastMessageAt: message.created_at,
+    });
+  }
+
   return (
     <div className="inbox-chat-workspace">
       <header className="inbox-chat-header inbox-chat-header--messenger">
-        <div className="min-w-0">
-          <p className="inbox-chat-customer-name truncate">
-            {customerLabel}
-          </p>
-          <p className="inbox-chat-customer-meta truncate">
-            {conversation.phoneE164 ?? conversation.senderId}
-          </p>
+        <div className="flex min-w-0 items-center gap-2">
+          <ChannelBadge provider={conversation.provider} compact />
+          <div className="min-w-0">
+            <p className="inbox-chat-customer-name truncate">
+              {customerLabel}
+            </p>
+            <p className="inbox-chat-customer-meta truncate">
+              {conversation.phoneE164 ?? conversation.senderId}
+            </p>
+          </div>
         </div>
 
         <span
@@ -103,6 +141,7 @@ export function ChatThread({
         storeSlug={storeSlug}
         conversationId={conversationId}
         onActivityLogged={handleActivityLogged}
+        onMessageSent={handleMessageSent}
       />
     </div>
   );

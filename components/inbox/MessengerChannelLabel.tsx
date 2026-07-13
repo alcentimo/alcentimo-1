@@ -35,3 +35,7 @@ export function MessengerChannelLabel({
 export function isMessengerProvider(provider: InboxProvider): boolean {
   return provider === "messenger";
 }
+
+export function isMetaInboxProvider(provider: InboxProvider): boolean {
+  return provider === "messenger" || provider === "instagram";
+}

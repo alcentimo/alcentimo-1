@@ -571,6 +571,14 @@ body {
   @apply text-base font-semibold tracking-tight text-slate-900 dark:text-slate-50 sm:text-lg;
 }
 
+.fb-inbox-sync-indicator {
+  @apply mt-0.5 flex items-center gap-1.5 text-[10px] font-medium text-slate-500 dark:text-slate-400;
+}
+
+.fb-inbox-sync-dot {
+  @apply h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.18)];
+}
+
 .fb-inbox-pending-badge {
   @apply rounded-full bg-[#1877F2]/10 px-2 py-0.5 text-[10px] font-medium tabular-nums text-[#1877F2] dark:bg-[#1877F2]/20 dark:text-[#6db3ff];
 }
@@ -1002,7 +1010,27 @@ body {
 }
 
 .inbox-chat-composer-send {
-  @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-0 bg-slate-100 text-slate-300 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-100 dark:bg-slate-800 dark:text-slate-600;
+  @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-0 bg-[#1877F2] text-white shadow-sm transition hover:bg-[#166fe5] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300 dark:disabled:bg-slate-800 dark:disabled:text-slate-600;
+}
+
+.inbox-chat-composer-error {
+  @apply px-3 pb-2 text-[11px] text-rose-600 dark:text-rose-400;
+}
+
+.inbox-bubble-delivery-status {
+  @apply font-medium text-blue-100/80;
+}
+
+.inbox-bubble-delivery-status--delivered {
+  @apply text-blue-100;
+}
+
+.inbox-bubble-delivery-status--read {
+  @apply text-blue-50;
+}
+
+.inbox-bubble-delivery-status--failed {
+  @apply text-rose-200;
 }
 
 .inbox-bubble-outbound {

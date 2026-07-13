@@ -9,6 +9,10 @@ import {
   resolveWhatsAppMessageType,
   verifyMetaWebhookSignature,
 } from "@/lib/inbox/meta-webhook";
+import {
+  applyMetaDeliveryEvent,
+  applyMetaReadEvent,
+} from "@/lib/inbox/meta-message-events";
 import type { InboxProvider } from "@/lib/inbox/types";
 
 export const runtime = "nodejs";
@@ -448,13 +452,57 @@ async function ingestMessagingEntry(
     }
 
     const e = event as Record<string, unknown>;
+    const delivery = e.delivery as
+      | { mids?: string[]; watermark?: number }
+      | undefined;
+
+    if (delivery?.mids?.length) {
+      try {
+        await applyMetaDeliveryEvent(
+          admin,
+          integration.store_id,
+          delivery.mids,
+          e.timestamp ?? delivery.watermark,
+        );
+      } catch (err) {
+        console.error("[webhooks/meta] delivery update error:", err);
+      }
+      continue;
+    }
+
+    const read = e.read as { watermark?: number } | undefined;
+    if (read?.watermark) {
+      const senderId = String((e.sender as { id?: string })?.id ?? "");
+      try {
+        await applyMetaReadEvent(
+          admin,
+          integration.store_id,
+          integration.id,
+          senderId,
+          read.watermark,
+        );
+      } catch (err) {
+        console.error("[webhooks/meta] read update error:", err);
+      }
+      continue;
+    }
+
     const message = e.message as Record<string, unknown> | undefined;
     if (!message) {
       console.log("[webhooks/meta] SKIP razón:", {
         provider,
         pageId,
-        condicion: "!event.message — evento delivery/read/postback sin mensaje",
+        condicion: "!event.message — evento sin mensaje procesable",
         evento: e,
+      });
+      continue;
+    }
+
+    if (message.is_echo === true) {
+      console.log("[webhooks/meta] SKIP echo saliente:", {
+        provider,
+        pageId,
+        mid: message.mid ?? message.id,
       });
       continue;
     }

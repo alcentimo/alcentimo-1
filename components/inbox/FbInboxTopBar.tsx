@@ -10,6 +10,7 @@ interface FbInboxTopBarProps {
   reviewCount: number;
   activeCount: number;
   pendingCount?: number;
+  isSynced?: boolean;
 }
 
 const SMART_TABS: { key: InboxSmartTab; label: string }[] = [
@@ -31,17 +32,28 @@ export function FbInboxTopBar({
   reviewCount,
   activeCount,
   pendingCount = 0,
+  isSynced = false,
 }: FbInboxTopBarProps) {
   return (
     <header className="fb-inbox-top-bar">
       <div className="fb-inbox-top-bar-brand">
         <ImmersiveModeToggle />
-        <h1 className="fb-inbox-title">Bandeja de Facebook</h1>
-        {pendingCount > 0 && (
-          <span className="fb-inbox-pending-badge">
-            {pendingCount}
-          </span>
-        )}
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="fb-inbox-title">Bandeja de Facebook</h1>
+            {pendingCount > 0 && (
+              <span className="fb-inbox-pending-badge">
+                {pendingCount}
+              </span>
+            )}
+          </div>
+          {isSynced && (
+            <p className="fb-inbox-sync-indicator">
+              <span className="fb-inbox-sync-dot" aria-hidden="true" />
+              Sincronizado con Facebook
+            </p>
+          )}
+        </div>
       </div>
 
       <div

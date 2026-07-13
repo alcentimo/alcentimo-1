@@ -1,6 +1,7 @@
 import type {
   ChannelMessage,
   InboxConversationStatus,
+  InboxMessageStatus,
   InboxProvider,
 } from "@/lib/inbox/types";
 import type { InboxSalesStatus } from "@/lib/inbox/sales-status";
@@ -224,6 +225,8 @@ interface InboxMessageRow {
   status: string;
   created_at: string;
   sent_at: string | null;
+  delivered_at: string | null;
+  read_at: string | null;
 }
 
 interface ChannelMessageRow {
@@ -392,6 +395,8 @@ function mapInboxMessageToChannelMessage(
   const contact = resolveContact(conversation.inbox_contacts);
   const senderId = contact?.external_id ?? "unknown";
   const integrationId = conversation.integration_id ?? "";
+  const isInbound = message.direction === "inbound";
+  const inboxStatus = message.status as InboxMessageStatus;
 
   return {
     id: message.id,
@@ -399,10 +404,28 @@ function mapInboxMessageToChannelMessage(
     sender_id: senderId,
     message_text: message.body,
     direction: message.direction,
-    status:
-      message.direction === "inbound" && message.status === "received"
-        ? "unread"
-        : "read",
+    status: isInbound && inboxStatus === "received" ? "unread" : "read",
+    deliveryStatus: isInbound ? undefined : inboxStatus,
+    created_at: message.sent_at ?? message.created_at,
+  };
+}
+
+export function mapInboxMessageRowToChannelMessage(
+  message: InboxMessageRow,
+  integrationId: string,
+  senderId: string,
+): ChannelMessage {
+  const isInbound = message.direction === "inbound";
+  const inboxStatus = message.status as InboxMessageStatus;
+
+  return {
+    id: message.id,
+    integration_id: integrationId,
+    sender_id: senderId,
+    message_text: message.body,
+    direction: message.direction,
+    status: isInbound && inboxStatus === "received" ? "unread" : "read",
+    deliveryStatus: isInbound ? undefined : inboxStatus,
     created_at: message.sent_at ?? message.created_at,
   };
 }
@@ -474,7 +497,9 @@ export async function getStoreInboxConversations(
   const conversationIds = conversations.map((row) => row.id);
   const { data: messageRows, error: messagesError } = await supabase
     .from("inbox_messages")
-    .select("id, conversation_id, body, direction, status, created_at, sent_at")
+    .select(
+      "id, conversation_id, body, direction, status, created_at, sent_at, delivered_at, read_at",
+    )
     .eq("store_id", storeId)
     .in("conversation_id", conversationIds)
     .order("created_at", { ascending: true });

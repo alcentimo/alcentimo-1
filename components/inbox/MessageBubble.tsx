@@ -2,6 +2,10 @@
 
 import { formatMessageTime } from "@/lib/inbox/get-store-messages";
 import type { ChannelMessage } from "@/lib/inbox/types";
+import {
+  formatOutboundMessageStatus,
+  getOutboundStatusTone,
+} from "@/lib/inbox/message-status";
 import { MessageActionMenu } from "@/components/inbox/MessageActionMenu";
 
 interface MessageBubbleProps {
@@ -21,6 +25,9 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const isOutbound = message.direction === "outbound";
   const isNew = !isOutbound && message.status === "unread";
+  const deliveryLabel = isOutbound
+    ? formatOutboundMessageStatus(message.deliveryStatus ?? "sent")
+    : null;
 
   return (
     <div className={`group flex ${isOutbound ? "justify-end" : "justify-start"}`}>
@@ -48,6 +55,13 @@ export function MessageBubble({
           }`}
         >
           <span>{formatMessageTime(message.created_at)}</span>
+          {deliveryLabel && (
+            <span
+              className={getOutboundStatusTone(message.deliveryStatus ?? "sent")}
+            >
+              {deliveryLabel}
+            </span>
+          )}
           {isNew && (
             <span className="inbox-bubble-new-badge">Nuevo</span>
           )}

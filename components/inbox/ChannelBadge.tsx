@@ -40,6 +40,7 @@ const CHANNEL_META: Record<
 interface ChannelBadgeProps {
   provider: InboxProvider;
   compact?: boolean;
+  micro?: boolean;
   showLabel?: boolean;
   className?: string;
 }
@@ -52,12 +53,13 @@ export function getChannelShortLabel(provider: InboxProvider): string {
 export function ChannelBadge({
   provider,
   compact = true,
+  micro = false,
   showLabel = false,
   className = "",
 }: ChannelBadgeProps) {
   const meta = CHANNEL_META[provider];
-  const sizeClass = compact ? "h-5 w-5" : "h-6 w-6";
-  const iconClass = compact ? "h-3 w-3" : "h-3.5 w-3.5";
+  const sizeClass = micro ? "h-4 w-4" : compact ? "h-5 w-5" : "h-6 w-6";
+  const iconClass = micro ? "h-2.5 w-2.5" : compact ? "h-3 w-3" : "h-3.5 w-3.5";
 
   function renderIcon() {
     switch (provider) {

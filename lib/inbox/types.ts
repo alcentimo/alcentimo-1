@@ -50,6 +50,8 @@ export interface ChannelMessage {
   message_text: string | null;
   direction: ChannelMessageDirection;
   status: ChannelMessageStatus;
+  /** Estado de entrega Meta para mensajes salientes. */
+  deliveryStatus?: InboxMessageStatus;
   created_at: string;
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import {
   BookOpen,
   Link2,
@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { ClientActivityEvent } from "@/lib/inbox/contact-crm";
-import { appendInboxConversationActivity } from "@/lib/inbox/actions";
+import type { ChannelMessage } from "@/lib/inbox/types";
+import { appendInboxConversationActivity, sendInboxMessage } from "@/lib/inbox/actions";
 import { isPersistedConversation } from "@/lib/inbox/contact-context";
 import { ComposerCatalogModal } from "@/components/inbox/ComposerCatalogModal";
 import { ComposerPaymentMenu } from "@/components/inbox/ComposerPaymentMenu";
@@ -22,6 +23,7 @@ interface ChatComposerProps {
   storeSlug: string;
   conversationId: string | null;
   onActivityLogged?: (event: ClientActivityEvent) => void;
+  onMessageSent?: (message: ChannelMessage) => void;
 }
 
 export function ChatComposer({
@@ -31,10 +33,13 @@ export function ChatComposer({
   storeSlug,
   conversationId,
   onActivityLogged,
+  onMessageSent,
 }: ChatComposerProps) {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [isSending, startSendTransition] = useTransition();
 
   function applySnippet(snippet: string) {
     onDraftChange(draft.trim() ? `${draft.trim()}\n\n${snippet}` : snippet);
@@ -67,6 +72,33 @@ export function ChatComposer({
     setPaymentOpen(false);
     setTemplatesOpen(false);
   }
+
+  function handleSend() {
+    const trimmed = draft.trim();
+    if (!trimmed || !conversationId || isSending) return;
+
+    setSendError(null);
+    startSendTransition(async () => {
+      const result = await sendInboxMessage(conversationId, trimmed);
+      if (result.error) {
+        setSendError(result.error);
+        return;
+      }
+
+      if (result.message) {
+        onMessageSent?.(result.message);
+      }
+
+      onDraftChange("");
+      logActivity("Mensaje enviado", "message");
+    });
+  }
+
+  const canSend =
+    Boolean(conversationId) &&
+    Boolean(draft.trim()) &&
+    !isSending &&
+    isPersistedConversation(conversationId ?? "");
 
   return (
     <>
@@ -146,6 +178,12 @@ export function ChatComposer({
             <textarea
               value={draft}
               onChange={(event) => onDraftChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  handleSend();
+                }
+              }}
               rows={2}
               placeholder="Escribe para cerrar la venta…"
               className="inbox-chat-composer-input"
@@ -153,14 +191,18 @@ export function ChatComposer({
           </div>
           <button
             type="button"
-            disabled
+            disabled={!canSend}
+            onClick={handleSend}
             className="inbox-chat-composer-send"
-            title="Respuestas salientes próximamente"
+            title={canSend ? "Enviar mensaje" : "Escribe un mensaje para enviar"}
             aria-label="Enviar mensaje"
           >
             <Send className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
+        {sendError && (
+          <p className="inbox-chat-composer-error">{sendError}</p>
+        )}
       </footer>
 
       <ComposerCatalogModal

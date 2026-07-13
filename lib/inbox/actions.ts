@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getUserStore } from "@/lib/stores";
-import type { InboxConversationStatus } from "@/lib/inbox/types";
+import type { ChannelMessage, InboxConversationStatus } from "@/lib/inbox/types";
 import type { InboxSalesStatus } from "@/lib/inbox/sales-status";
 import { isInboxSalesStatus } from "@/lib/inbox/sales-status";
 import { isPersistedConversation } from "@/lib/inbox/contact-context";
@@ -12,6 +12,12 @@ import {
   createActivityEntry,
   getSalesStatusActivityLabel,
 } from "@/lib/inbox/contact-crm";
+import { getIntegrationAccessToken } from "@/lib/inbox/integration-token";
+import {
+  resolveMetaPageId,
+  sendMetaTextMessage,
+} from "@/lib/inbox/messenger-client";
+import { mapInboxMessageRowToChannelMessage } from "@/lib/inbox/get-store-messages";
 
 const VALID_STATUSES = new Set<InboxConversationStatus>([
   "open",
@@ -47,6 +53,207 @@ async function getOwnedConversation(
   }
 
   return { storeId: store.id };
+}
+
+export async function fetchInboxConversationMessages(
+  conversationId: string,
+): Promise<{ error?: string; messages?: ChannelMessage[] }> {
+  const ownership = await getOwnedConversation(conversationId);
+  if (ownership.error || !ownership.storeId) {
+    return { error: ownership.error };
+  }
+
+  const supabase = await createClient();
+  const { data: conversation, error: conversationError } = await supabase
+    .from("inbox_conversations")
+    .select(
+      `
+      id,
+      integration_id,
+      inbox_contacts (
+        external_id
+      )
+    `,
+    )
+    .eq("id", conversationId)
+    .eq("store_id", ownership.storeId)
+    .maybeSingle();
+
+  if (conversationError) {
+    return { error: conversationError.message };
+  }
+
+  if (!conversation) {
+    return { error: "Conversación no encontrada." };
+  }
+
+  const contact = conversation.inbox_contacts as
+    | { external_id?: string }
+    | { external_id?: string }[]
+    | null;
+  const senderId = Array.isArray(contact)
+    ? (contact[0]?.external_id ?? "unknown")
+    : (contact?.external_id ?? "unknown");
+
+  const { data: rows, error: messagesError } = await supabase
+    .from("inbox_messages")
+    .select(
+      "id, conversation_id, body, direction, status, created_at, sent_at, delivered_at, read_at",
+    )
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true });
+
+  if (messagesError) {
+    return { error: messagesError.message };
+  }
+
+  const messages = (rows ?? []).map((row) =>
+    mapInboxMessageRowToChannelMessage(
+      row,
+      conversation.integration_id ?? "",
+      senderId,
+    ),
+  );
+
+  return { messages };
+}
+
+export async function sendInboxMessage(
+  conversationId: string,
+  body: string,
+): Promise<{ error?: string; message?: ChannelMessage }> {
+  const trimmedBody = body.trim();
+  if (!trimmedBody) {
+    return { error: "Escribe un mensaje antes de enviar." };
+  }
+
+  const ownership = await getOwnedConversation(conversationId);
+  if (ownership.error || !ownership.storeId) {
+    return { error: ownership.error };
+  }
+
+  const supabase = await createClient();
+  const { data: conversation, error: conversationError } = await supabase
+    .from("inbox_conversations")
+    .select(
+      `
+      id,
+      provider,
+      integration_id,
+      inbox_contacts (
+        external_id
+      )
+    `,
+    )
+    .eq("id", conversationId)
+    .eq("store_id", ownership.storeId)
+    .maybeSingle();
+
+  if (conversationError) {
+    return { error: conversationError.message };
+  }
+
+  if (!conversation) {
+    return { error: "Conversación no encontrada." };
+  }
+
+  if (!conversation.integration_id) {
+    return { error: "Esta conversación no tiene integración de Meta vinculada." };
+  }
+
+  const { data: integration, error: integrationError } = await supabase
+    .from("channel_integrations")
+    .select("id, provider, external_account_id, config, is_active")
+    .eq("id", conversation.integration_id)
+    .eq("store_id", ownership.storeId)
+    .maybeSingle();
+
+  if (integrationError) {
+    return { error: integrationError.message };
+  }
+
+  if (!integration?.is_active) {
+    return { error: "La integración de Meta no está activa." };
+  }
+
+  if (
+    integration.provider !== "messenger" &&
+    integration.provider !== "instagram"
+  ) {
+    return { error: "Solo Messenger e Instagram admiten respuesta desde aquí." };
+  }
+
+  const contact = conversation.inbox_contacts as
+    | { external_id?: string }
+    | { external_id?: string }[]
+    | null;
+  const recipientId = Array.isArray(contact)
+    ? contact[0]?.external_id
+    : contact?.external_id;
+
+  if (!recipientId?.trim()) {
+    return { error: "No se encontró el destinatario de Meta." };
+  }
+
+  const accessToken = await getIntegrationAccessToken(integration.id);
+  if (!accessToken) {
+    return { error: "Token de Meta no disponible. Reconecta la integración." };
+  }
+
+  const pageId = resolveMetaPageId(
+    integration.provider as "messenger" | "instagram",
+    integration.external_account_id,
+    integration.config,
+  );
+
+  let messageId: string;
+  try {
+    const result = await sendMetaTextMessage({
+      pageId,
+      accessToken,
+      recipientId: recipientId.trim(),
+      body: trimmedBody,
+      provider: integration.provider as "messenger" | "instagram",
+    });
+    messageId = result.messageId;
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "No se pudo enviar el mensaje.";
+    return { error: message };
+  }
+
+  const sentAt = new Date().toISOString();
+  const { data: inserted, error: insertError } = await supabase
+    .from("inbox_messages")
+    .insert({
+      store_id: ownership.storeId,
+      conversation_id: conversationId,
+      direction: "outbound",
+      sender_type: "agent",
+      body: trimmedBody,
+      message_type: "text",
+      external_message_id: messageId,
+      status: "sent",
+      sent_at: sentAt,
+    })
+    .select(
+      "id, conversation_id, body, direction, status, created_at, sent_at, delivered_at, read_at",
+    )
+    .single();
+
+  if (insertError || !inserted) {
+    return { error: insertError?.message ?? "Mensaje enviado pero no guardado." };
+  }
+
+  revalidatePath("/dashboard/mensajes");
+
+  return {
+    message: mapInboxMessageRowToChannelMessage(
+      inserted,
+      conversation.integration_id ?? integration.id,
+      recipientId.trim(),
+    ),
+  };
 }
 
 export async function markInboxConversationRead(
