@@ -5,6 +5,8 @@ import { Loader2, RotateCcw, Send } from "lucide-react";
 import type { ChannelMessage } from "@/lib/inbox/types";
 import { sendInboxMessage } from "@/lib/inbox/actions";
 import { isPersistedConversation } from "@/lib/inbox/contact-context";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
 type SendState = "idle" | "sending" | "sent" | "error";
 
@@ -128,8 +130,8 @@ export function MessageInput({
   }
 
   return (
-    <div className="inbox-message-input">
-      <textarea
+    <div className="inbox-pro-message-input">
+      <Textarea
         ref={textareaRef}
         value={draft}
         onChange={(event) => onDraftChange(event.target.value)}
@@ -139,51 +141,52 @@ export function MessageInput({
             handleSend();
           }
         }}
-        rows={2}
+        rows={3}
         placeholder={
           canPersist
-            ? "Escribe para cerrar la venta…"
+            ? "Escribe tu respuesta…"
             : "Esta conversación aún no está sincronizada en el inbox."
         }
         disabled={!canPersist || sendState === "sending"}
-        className="inbox-chat-composer-input"
+        className="min-h-[88px] resize-none"
       />
 
-      <div className="inbox-message-input-actions">
-        <div className="inbox-message-input-status" aria-live="polite">
+      <div className="inbox-pro-message-input-footer">
+        <div className="inbox-pro-message-input-status" aria-live="polite">
           {sendState === "sending" && (
-            <span className="inbox-message-input-status--sending">
+            <span className="inbox-pro-message-input-status--sending">
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
               Enviando…
             </span>
           )}
           {sendState === "sent" && (
-            <span className="inbox-message-input-status--sent">Enviado</span>
+            <span className="inbox-pro-message-input-status--sent">Enviado</span>
           )}
           {sendState === "error" && sendError && (
-            <span className="inbox-message-input-status--error">{sendError}</span>
+            <span className="inbox-pro-message-input-status--error">{sendError}</span>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {sendState === "error" && lastFailedBody && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={handleRetryLast}
-              className="inbox-message-input-retry"
-              title="Restaurar mensaje fallido"
+              className="h-8 gap-1.5"
             >
               <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
               Reintentar
-            </button>
+            </Button>
           )}
 
-          <button
+          <Button
             type="button"
             disabled={!canSend}
             onClick={handleSend}
-            className="inbox-chat-composer-send"
-            title={canSend ? "Enviar mensaje" : "Escribe un mensaje para enviar"}
+            size="sm"
+            className="h-9 gap-2 px-4"
             aria-label="Enviar mensaje"
           >
             {sendState === "sending" ? (
@@ -191,7 +194,8 @@ export function MessageInput({
             ) : (
               <Send className="h-4 w-4" aria-hidden="true" />
             )}
-          </button>
+            Enviar
+          </Button>
         </div>
       </div>
     </div>

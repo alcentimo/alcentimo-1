@@ -14,7 +14,7 @@ import { getStoreFacebookPostsByProduct } from "@/lib/facebook/get-store-faceboo
 import { buildConversationSalesMap } from "@/lib/inbox/contact-sales";
 import { getStoreSales } from "@/lib/sales/get-store-sales";
 import { getStoreInventory } from "@/lib/inventory";
-import { MensajesInboxView } from "@/components/dashboard/MensajesInboxView";
+import { MessagesPanel } from "@/components/dashboard/MessagesPanel";
 import { MensajesPageShell } from "@/components/dashboard/MensajesPageShell";
 import { PageContainer } from "@/components/ui/PageContainer";
 
@@ -69,7 +69,7 @@ export default async function MensajesPage() {
 
   return (
     <MensajesPageShell>
-      <MensajesInboxView
+      <MessagesPanel
         initialConversations={conversations}
         hasActiveIntegrations={activeIntegrations}
         hasMessengerIntegration={Boolean(messengerIntegration)}

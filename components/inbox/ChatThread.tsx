@@ -17,6 +17,9 @@ import {
 import { isPersistedConversation } from "@/lib/inbox/contact-context";
 import { useInboxSession } from "@/components/inbox/InboxSessionProvider";
 import type { ProductFacebookPostSummary } from "@/lib/facebook/get-store-facebook-posts";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/cn";
 
 interface ChatThreadProps {
   conversation: MessageConversation | null;
@@ -73,13 +76,15 @@ export function ChatThread({
 
   if (!conversation) {
     return (
-      <div className="inbox-chat-empty">
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
-          Elige un chat para vender
-        </p>
-        <p className="mt-1 text-xs text-slate-400">
-          Responde rápido y cierra el pedido.
-        </p>
+      <div className="inbox-pro-chat-empty">
+        <div className="inbox-pro-chat-empty-inner">
+          <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+            Selecciona una conversación
+          </p>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Elige un chat de la lista para ver el historial y responder.
+          </p>
+        </div>
       </div>
     );
   }
@@ -130,9 +135,9 @@ export function ChatThread({
   }
 
   return (
-    <div className="inbox-chat-workspace">
-      <header className="inbox-chat-header inbox-chat-header--messenger">
-        <div className="flex min-w-0 items-center gap-2">
+    <div className="inbox-pro-chat">
+      <header className="inbox-pro-chat-header">
+        <div className="flex min-w-0 items-center gap-3">
           <ContactAvatar
             avatarUrl={conversation.avatarUrl}
             displayName={conversation.displayName}
@@ -142,35 +147,46 @@ export function ChatThread({
             showChannelBadge
           />
           <div className="min-w-0">
-            <p className="inbox-chat-customer-name truncate">{customerLabel}</p>
-            <p className="inbox-chat-customer-meta truncate">
+            <p className="inbox-pro-chat-customer-name truncate">
+              {customerLabel}
+            </p>
+            <p className="inbox-pro-chat-customer-meta truncate">
               {conversation.phoneE164 ?? conversation.senderId}
             </p>
           </div>
         </div>
 
-        <span
-          className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getConversationStatusTone(conversation.status)}`}
+        <Badge
+          variant="outline"
+          className={cn("shrink-0", getConversationStatusTone(conversation.status))}
         >
           {getConversationStatusLabel(conversation.status)}
-        </span>
+        </Badge>
       </header>
+
+      <Separator />
 
       <div
         ref={threadRef}
-        className="inbox-chat-thread inbox-chat-thread--sales"
+        className="inbox-pro-chat-thread"
         role="log"
         aria-live="polite"
         aria-relevant="additions"
       >
-        {conversation.messages.map((message) => (
-          <MessageBubble
-            key={message.id}
-            message={message}
-            conversationId={conversation.conversationId}
-            onConversationAction={handleConversationAction}
-          />
-        ))}
+        {conversation.messages.length === 0 ? (
+          <p className="inbox-pro-chat-thread-empty">
+            Aún no hay mensajes en esta conversación.
+          </p>
+        ) : (
+          conversation.messages.map((message) => (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              conversationId={conversation.conversationId}
+              onConversationAction={handleConversationAction}
+            />
+          ))
+        )}
       </div>
 
       <ChatComposer

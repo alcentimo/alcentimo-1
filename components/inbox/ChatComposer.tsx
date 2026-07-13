@@ -96,90 +96,85 @@ export function ChatComposer({
 
   return (
     <>
-      <footer className="inbox-chat-composer-wrap">
-        <div className="inbox-chat-composer">
-          <div className="inbox-composer-field">
-            <div
-              className="inbox-composer-toolbar"
-              role="toolbar"
-              aria-label="Acciones de venta"
+      <footer className="inbox-pro-composer">
+        <div className="inbox-pro-composer-toolbar" role="toolbar" aria-label="Acciones de venta">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                closeMenus();
+                setCatalogOpen(true);
+              }}
+              className={`inbox-pro-composer-tool ${catalogOpen ? "inbox-pro-composer-tool--active" : ""}`}
+              title="Catálogo"
+              aria-label="Abrir catálogo de productos"
             >
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    closeMenus();
-                    setCatalogOpen(true);
-                  }}
-                  className={`inbox-composer-tool-btn ${catalogOpen ? "inbox-composer-tool-btn--active" : ""}`}
-                  title="Catálogo"
-                  aria-label="Abrir catálogo de productos"
-                >
-                  <BookOpen className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                </button>
-              </div>
+              <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Catálogo</span>
+            </button>
+          </div>
 
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTemplatesOpen(false);
-                    setPaymentOpen((current) => !current);
-                  }}
-                  className={`inbox-composer-tool-btn ${paymentOpen ? "inbox-composer-tool-btn--active" : ""}`}
-                  title="Link de pago"
-                  aria-label="Opciones de link de pago"
-                  aria-expanded={paymentOpen}
-                >
-                  <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                </button>
-                <ComposerPaymentMenu
-                  open={paymentOpen}
-                  storeSlug={storeSlug}
-                  onClose={() => setPaymentOpen(false)}
-                  onSelectSnippet={(snippet, activityLabel) =>
-                    applySnippetWithActivity(snippet, activityLabel, "payment")
-                  }
-                />
-              </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setTemplatesOpen(false);
+                setPaymentOpen((current) => !current);
+              }}
+              className={`inbox-pro-composer-tool ${paymentOpen ? "inbox-pro-composer-tool--active" : ""}`}
+              title="Link de pago"
+              aria-label="Opciones de link de pago"
+              aria-expanded={paymentOpen}
+            >
+              <Link2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Pago</span>
+            </button>
+            <ComposerPaymentMenu
+              open={paymentOpen}
+              storeSlug={storeSlug}
+              onClose={() => setPaymentOpen(false)}
+              onSelectSnippet={(snippet, activityLabel) =>
+                applySnippetWithActivity(snippet, activityLabel, "payment")
+              }
+            />
+          </div>
 
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPaymentOpen(false);
-                    setTemplatesOpen((current) => !current);
-                  }}
-                  className={`inbox-composer-tool-btn ${templatesOpen ? "inbox-composer-tool-btn--active" : ""}`}
-                  title="Plantillas"
-                  aria-label="Plantillas de respuesta rápida"
-                  aria-expanded={templatesOpen}
-                >
-                  <MessageSquareText
-                    className="h-3.5 w-3.5 shrink-0"
-                    aria-hidden="true"
-                  />
-                </button>
-                <ComposerTemplatesMenu
-                  open={templatesOpen}
-                  onClose={() => setTemplatesOpen(false)}
-                  onSelectTemplate={(text) =>
-                    applySnippetWithActivity(text, "Plantilla insertada", "template")
-                  }
-                />
-              </div>
-            </div>
-
-            <MessageInput
-              conversationId={conversationId}
-              draft={draft}
-              onDraftChange={onDraftChange}
-              onMessageSent={handleMessageSent}
-              onOptimisticMessage={onOptimisticMessage}
-              onRemoveOptimisticMessage={onRemoveOptimisticMessage}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setPaymentOpen(false);
+                setTemplatesOpen((current) => !current);
+              }}
+              className={`inbox-pro-composer-tool ${templatesOpen ? "inbox-pro-composer-tool--active" : ""}`}
+              title="Plantillas"
+              aria-label="Plantillas de respuesta rápida"
+              aria-expanded={templatesOpen}
+            >
+              <MessageSquareText
+                className="h-4 w-4 shrink-0"
+                aria-hidden="true"
+              />
+              <span>Plantillas</span>
+            </button>
+            <ComposerTemplatesMenu
+              open={templatesOpen}
+              onClose={() => setTemplatesOpen(false)}
+              onSelectTemplate={(text) =>
+                applySnippetWithActivity(text, "Plantilla insertada", "template")
+              }
             />
           </div>
         </div>
+
+        <MessageInput
+          conversationId={conversationId}
+          draft={draft}
+          onDraftChange={onDraftChange}
+          onMessageSent={handleMessageSent}
+          onOptimisticMessage={onOptimisticMessage}
+          onRemoveOptimisticMessage={onRemoveOptimisticMessage}
+        />
       </footer>
 
       <ComposerCatalogModal

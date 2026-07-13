@@ -8,9 +8,9 @@ import {
 import { ConversationQuickActions } from "@/components/inbox/ConversationQuickActions";
 import { ContactAvatar } from "@/components/inbox/ContactAvatar";
 import { useInboxSession } from "@/components/inbox/InboxSessionProvider";
-import {
-  filterConversations,
-} from "@/lib/inbox/inbox-filters";
+import { filterConversations } from "@/lib/inbox/inbox-filters";
+import { cn } from "@/lib/cn";
+import { Badge } from "@/components/ui/badge";
 
 export function ConversationList() {
   const {
@@ -31,9 +31,9 @@ export function ConversationList() {
   );
 
   return (
-    <ul className="inbox-conversation-list-compact" aria-label="Conversaciones de Facebook">
+    <ul className="inbox-pro-conversation-list" aria-label="Conversaciones">
       {filteredConversations.length === 0 ? (
-        <li className="px-3 py-10 text-center text-[11px] text-slate-400 dark:text-slate-500">
+        <li className="inbox-pro-conversation-empty">
           Sin conversaciones con estos filtros.
         </li>
       ) : (
@@ -53,41 +53,44 @@ export function ConversationList() {
               <button
                 type="button"
                 onClick={() => selectConversation(conversation.conversationId)}
-                className={`inbox-conversation-item-compact ${
-                  isActive ? "inbox-conversation-item-compact-active" : ""
-                } ${isUnread ? "inbox-conversation-item-compact-unread" : ""}`}
+                className={cn(
+                  "inbox-pro-conversation-item",
+                  isActive && "inbox-pro-conversation-item--active",
+                  isUnread && "inbox-pro-conversation-item--unread",
+                )}
               >
                 <ContactAvatar
                   avatarUrl={conversation.avatarUrl}
                   displayName={conversation.displayName}
                   senderId={conversation.senderId}
                   provider={conversation.provider}
-                  size="sm"
-                  className="mt-0.5 shrink-0"
+                  size="md"
+                  className="shrink-0"
                 />
 
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     <span
-                      className={`inbox-conversation-name min-w-0 flex-1 truncate text-[13px] leading-tight ${
-                        isUnread ? "inbox-conversation-name--unread" : ""
-                      }`}
+                      className={cn(
+                        "inbox-pro-conversation-name truncate",
+                        isUnread && "inbox-pro-conversation-name--unread",
+                      )}
                     >
                       {customerLabel}
                     </span>
-                    <span className="inbox-conversation-time shrink-0 text-[11px] tabular-nums">
+                    <span className="inbox-pro-conversation-time shrink-0 tabular-nums">
                       {formatMessageTime(conversation.lastMessageAt)}
                     </span>
                   </span>
 
-                  <span className="mt-0.5 flex items-center gap-2">
-                    <span className="inbox-conversation-preview min-w-0 flex-1 truncate text-[12px] leading-tight">
+                  <span className="mt-1 flex items-center gap-2">
+                    <span className="inbox-pro-conversation-preview truncate">
                       {preview}
                     </span>
                     {isUnread && (
-                      <span className="inline-flex min-w-4 shrink-0 items-center justify-center rounded-full bg-[#1877F2] px-1 py-0.5 text-[9px] font-bold text-white">
+                      <Badge className="min-w-5 shrink-0 justify-center px-1.5">
                         {conversation.unreadCount}
-                      </span>
+                      </Badge>
                     )}
                   </span>
                 </span>

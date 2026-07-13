@@ -7,9 +7,7 @@ import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import type { VentaWithProduct } from "@/lib/sales/types";
 import type { InboxSalesStatus } from "@/lib/inbox/sales-status";
 import { getSalesStatusActivityLabel } from "@/lib/inbox/contact-crm";
-import {
-  updateInboxConversationSalesStatus,
-} from "@/lib/inbox/actions";
+import { updateInboxConversationSalesStatus } from "@/lib/inbox/actions";
 import { isPersistedConversation } from "@/lib/inbox/contact-context";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { ContextModuleCard } from "@/components/inbox/ContextModuleCard";
@@ -19,6 +17,7 @@ import { ContactAvatar } from "@/components/inbox/ContactAvatar";
 import { ContactQuickNotes } from "@/components/inbox/ContactQuickNotes";
 import { ContactTagsEditor } from "@/components/inbox/ContactTagsEditor";
 import { useInboxSession } from "@/components/inbox/InboxSessionProvider";
+import { Separator } from "@/components/ui/separator";
 
 interface ConversationContextPanelProps {
   conversation: MessageConversation | null;
@@ -48,12 +47,12 @@ export function ConversationContextPanel({
 
   if (!conversation) {
     return (
-      <div className="inbox-context-panel-empty flex flex-1 flex-col justify-center px-4 py-8">
-        <p className="text-xs font-medium text-slate-600">
-          Selecciona un chat
+      <div className="inbox-pro-context-empty">
+        <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+          Contexto del cliente
         </p>
-        <p className="mt-1 text-xs text-slate-400">
-          Gestiona pedidos, notas y etiquetas del cliente.
+        <p className="mt-2 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+          Selecciona un chat para ver detalles, etiquetas, notas y pedidos.
         </p>
       </div>
     );
@@ -93,8 +92,8 @@ export function ConversationContextPanel({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <header className="inbox-context-profile">
+    <div className="inbox-pro-context">
+      <header className="inbox-pro-context-header">
         <div className="flex items-center gap-3">
           <ContactAvatar
             avatarUrl={conversation.avatarUrl}
@@ -103,17 +102,18 @@ export function ConversationContextPanel({
             provider={conversation.provider}
             size="md"
           />
-          <p className="inbox-context-profile-name min-w-0 flex-1">
-            {profileTitle}
-          </p>
+          <div className="min-w-0 flex-1">
+            <p className="inbox-pro-context-name truncate">{profileTitle}</p>
+            <p className="inbox-pro-context-meta truncate">Cliente</p>
+          </div>
         </div>
 
-        <div className="inbox-context-status-row mt-2">
+        <div className="mt-4">
           <SalesStatusSelect
             value={conversation.salesStatus}
             disabled={isUpdatingStatus}
             onChange={handleSalesStatusChange}
-            className="min-w-0 flex-1"
+            className="w-full"
           />
         </div>
 
@@ -124,14 +124,16 @@ export function ConversationContextPanel({
         />
       </header>
 
-      <div className="inbox-context-scroll overflow-y-auto">
+      <Separator />
+
+      <div className="inbox-pro-context-scroll">
         <ContextModuleCard title="Pedidos">
-          <Link href="/dashboard/ventas" className="inbox-order-create-btn">
-            + Crear Pedido
+          <Link href="/dashboard/ventas" className="inbox-pro-order-btn">
+            + Crear pedido
           </Link>
-          <p className="inbox-context-module-empty mt-2">
+          <p className="inbox-pro-context-hint mt-3">
             Historial completo en{" "}
-            <Link href="/dashboard/ventas" className="text-[#1877F2] hover:underline">
+            <Link href="/dashboard/ventas" className="inbox-pro-link">
               Ventas
             </Link>
             .
