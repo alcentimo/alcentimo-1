@@ -3,37 +3,24 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import {
-  formatMessageTime,
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import type { VentaWithProduct } from "@/lib/sales/types";
 import type { InboxSalesStatus } from "@/lib/inbox/sales-status";
-import type { ClientActivityEvent } from "@/lib/inbox/contact-crm";
 import {
-  buildClientActivityFeed,
   getSalesStatusActivityLabel,
 } from "@/lib/inbox/contact-crm";
-import {
-  formatOrderReference,
-  formatOrderStatus,
-  getOrderStatusTone,
-} from "@/lib/inbox/order-display";
 import {
   updateInboxContactPrivateNotes,
   updateInboxContactTags,
   updateInboxConversationSalesStatus,
 } from "@/lib/inbox/actions";
-import { getContactPurchaseHistory, isPersistedConversation } from "@/lib/inbox/contact-context";
-import {
-  getContactTotalSalesValue,
-} from "@/lib/inbox/contact-sales";
+import { isPersistedConversation } from "@/lib/inbox/contact-context";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { ContextModuleCard } from "@/components/inbox/ContextModuleCard";
 import { SalesStatusSelect } from "@/components/inbox/SalesStatusSelect";
 import { ContactCopyStrip } from "@/components/inbox/ContactCopyStrip";
-import { ClientActivityList } from "@/components/inbox/ClientActivityList";
-import { ScheduleFollowUpButton } from "@/components/inbox/ScheduleFollowUpButton";
 
 interface ConversationContextPanelProps {
   conversation: MessageConversation | null;
@@ -46,13 +33,6 @@ interface ConversationContextPanelProps {
   ) => void;
 }
 
-function formatCurrency(amount: number): string {
-  return amount.toLocaleString("es-VE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
 function getProfileTitle(conversation: MessageConversation): string {
   const displayName = conversation.displayName?.trim();
   if (displayName) return displayName;
@@ -62,41 +42,18 @@ function getProfileTitle(conversation: MessageConversation): string {
 
 export function ConversationContextPanel({
   conversation,
-  recentSales,
-  salesByConversationId = {},
   onConversationPatch,
 }: ConversationContextPanelProps) {
   const [tagInput, setTagInput] = useState("");
   const [notesDraft, setNotesDraft] = useState("");
   const [isUpdatingStatus, startStatusTransition] = useTransition();
   const [isUpdatingTags, startTagsTransition] = useTransition();
-  const [isSavingNotes, startNotesTransition] = useTransition();
+  const [, startNotesTransition] = useTransition();
 
   useEffect(() => {
     setTagInput("");
     setNotesDraft(conversation?.privateNotes ?? "");
   }, [conversation?.conversationId, conversation?.privateNotes]);
-
-  const purchaseHistory = useMemo(() => {
-    if (!conversation) return [];
-
-    const indexed = salesByConversationId[conversation.conversationId];
-    if (indexed) return indexed;
-
-    return getContactPurchaseHistory(conversation, recentSales);
-  }, [conversation, recentSales, salesByConversationId]);
-
-  const activityFeed = useMemo(() => {
-    if (!conversation) return [];
-    return buildClientActivityFeed(conversation, purchaseHistory);
-  }, [conversation, purchaseHistory]);
-
-  const latestOrder = purchaseHistory[0] ?? null;
-
-  const totalSalesValue = useMemo(() => {
-    if (!conversation) return 0;
-    return getContactTotalSalesValue(conversation, recentSales);
-  }, [conversation, recentSales]);
 
   const whatsappUrl = useMemo(() => {
     if (!conversation) return null;
@@ -131,7 +88,7 @@ export function ConversationContextPanel({
           Selecciona un chat
         </p>
         <p className="mt-1 text-xs text-slate-400">
-          Datos del cliente y pedidos aquí.
+          Gestiona pedidos, notas y etiquetas del cliente.
         </p>
       </div>
     );
@@ -146,15 +103,16 @@ export function ConversationContextPanel({
   const phoneValue = conversation.phoneE164 ?? conversation.senderId;
 
   function handleSalesStatusChange(salesStatus: InboxSalesStatus) {
-    const activityEntry: ClientActivityEvent = {
-      id: `status-local-${Date.now()}`,
-      label: getSalesStatusActivityLabel(salesStatus),
-      createdAt: new Date().toISOString(),
-    };
-
     onConversationPatch(conversationId, {
       salesStatus,
-      activityLog: [activityEntry, ...currentActivityLog].slice(0, 20),
+      activityLog: [
+        {
+          id: `status-local-${Date.now()}`,
+          label: getSalesStatusActivityLabel(salesStatus),
+          createdAt: new Date().toISOString(),
+        },
+        ...currentActivityLog,
+      ].slice(0, 20),
     });
 
     if (!canPersist) return;
@@ -167,12 +125,6 @@ export function ConversationContextPanel({
       if (result.error) {
         console.error("[ConversationContextPanel]", result.error);
       }
-    });
-  }
-
-  function handleActivityLogged(event: ClientActivityEvent) {
-    onConversationPatch(conversationId, {
-      activityLog: [event, ...currentActivityLog].slice(0, 20),
     });
   }
 
@@ -203,16 +155,6 @@ export function ConversationContextPanel({
     <div className="flex min-h-0 flex-1 flex-col">
       <header className="inbox-context-profile">
         <p className="inbox-context-profile-name">{profileTitle}</p>
-        <p
-          className={`inbox-context-profile-sales ${
-            totalSalesValue > 0 ? "inbox-context-profile-sales--vip" : ""
-          }`}
-        >
-          Ventas totales:{" "}
-          <span className="inbox-context-profile-sales-value">
-            ${formatCurrency(totalSalesValue)}
-          </span>
-        </p>
 
         <div className="inbox-context-status-row mt-2">
           <SalesStatusSelect
@@ -220,11 +162,6 @@ export function ConversationContextPanel({
             disabled={isUpdatingStatus}
             onChange={handleSalesStatusChange}
             className="min-w-0 flex-1"
-          />
-          <ScheduleFollowUpButton
-            conversationId={conversationId}
-            disabled={isUpdatingStatus}
-            onScheduled={handleActivityLogged}
           />
         </div>
 
@@ -237,66 +174,16 @@ export function ConversationContextPanel({
 
       <div className="inbox-context-scroll overflow-y-auto">
         <ContextModuleCard title="Pedidos">
-          {latestOrder ? (
-            <div className="inbox-context-module-list">
-              <div className="inbox-order-highlight">
-                <div className="inbox-order-highlight-top">
-                  <div className="min-w-0">
-                    <span className="inbox-order-highlight-ref">
-                      {formatOrderReference(latestOrder)}
-                    </span>
-                    <span className={`${getOrderStatusTone()} mt-0.5`}>
-                      {formatOrderStatus(latestOrder)}
-                    </span>
-                  </div>
-                  <span className="inbox-order-highlight-amount">
-                    {formatCurrency(latestOrder.monto)}
-                  </span>
-                </div>
-                <p className="inbox-order-highlight-meta">
-                  {latestOrder.product_name} · {latestOrder.cantidad} u ·{" "}
-                  {formatMessageTime(latestOrder.created_at)}
-                </p>
-              </div>
-
-              {purchaseHistory.length > 1 && (
-                <ul className="inbox-context-module-list">
-                  {purchaseHistory.slice(1, 3).map((sale) => (
-                    <li key={sale.id} className="inbox-context-module-row">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <span className="inbox-order-row-ref">
-                            {formatOrderReference(sale)}
-                          </span>
-                          <span className={`${getOrderStatusTone()} mt-0.5`}>
-                            {formatOrderStatus(sale)}
-                          </span>
-                        </div>
-                        <span className="inbox-order-row-amount">
-                          {formatCurrency(sale.monto)}
-                        </span>
-                      </div>
-                      <p className="inbox-context-module-row-meta">
-                        {sale.product_name}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <Link href="/dashboard/ventas" className="inbox-order-create-link">
-                + Crear Pedido
-              </Link>
-            </div>
-          ) : (
-            <Link href="/dashboard/ventas" className="inbox-order-create-btn">
-              + Crear Pedido
+          <Link href="/dashboard/ventas" className="inbox-order-create-btn">
+            + Crear Pedido
+          </Link>
+          <p className="inbox-context-module-empty mt-2">
+            Historial completo en{" "}
+            <Link href="/dashboard/ventas" className="text-[#1877F2] hover:underline">
+              Ventas
             </Link>
-          )}
-        </ContextModuleCard>
-
-        <ContextModuleCard title="Actividad">
-          <ClientActivityList events={activityFeed} />
+            .
+          </p>
         </ContextModuleCard>
 
         <ContextModuleCard title="Notas">
@@ -305,7 +192,7 @@ export function ConversationContextPanel({
             onChange={(event) => handleNotesChange(event.target.value)}
             rows={3}
             placeholder="Información interna del cliente…"
-            disabled={!conversation.contactId || isSavingNotes}
+            disabled={!conversation.contactId}
             className="inbox-context-notes-input"
           />
         </ContextModuleCard>

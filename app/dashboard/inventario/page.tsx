@@ -4,7 +4,6 @@ import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreInventory } from "@/lib/inventory";
-import { formatExchangeRate } from "@/lib/format";
 import { getStoreIntegrations, getIntegrationForProvider } from "@/lib/inbox/get-store-integrations";
 import { getStoreFacebookPostsByProduct } from "@/lib/facebook/get-store-facebook-posts";
 import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
@@ -56,16 +55,8 @@ export default async function InventarioPage() {
             <p className="section-label">Inventario</p>
             <h1 className="page-header-title">Productos y stock</h1>
             <p className="page-header-desc">
-              {products.length} producto{products.length !== 1 ? "s" : ""} en{" "}
-              {store.name}
+              Gestiona tu catálogo y niveles de inventario.
             </p>
-            {exchangeRate?.rate != null && (
-              <div className="mt-3">
-                <span className="price-rate-badge gap-1.5 px-3 py-1.5">
-                  Tasa: Bs. {formatExchangeRate(exchangeRate.rate)} / USD
-                </span>
-              </div>
-            )}
           </div>
           <Link
             href="/dashboard/productos/nuevo"

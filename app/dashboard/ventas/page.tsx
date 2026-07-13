@@ -40,17 +40,16 @@ export default async function VentasPage() {
 
   const [{ products, exchangeRate }, sales] = await Promise.all([
     getStoreInventory(store.slug),
-    getStoreSales(store.id),
+    getStoreSales(store.id, 200),
   ]);
 
   return (
     <PageContainer as="div" className="py-6 sm:py-8">
       <header className="page-header">
         <p className="section-label">Ventas</p>
-        <h1 className="page-header-title">Registro de ventas</h1>
+        <h1 className="page-header-title">Pedidos y ventas</h1>
         <p className="page-header-desc">
-          Registra ventas por canal, controla métodos de pago y consulta el historial
-          de {store.name}.
+          Historial completo de pedidos de {store.name}, separado de la bandeja de mensajes.
         </p>
       </header>
 

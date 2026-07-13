@@ -18,7 +18,7 @@ export function SalesHistory({ sales }: SalesHistoryProps) {
     return (
       <div className="card-panel border-dashed text-center">
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Aún no hay ventas registradas. Crea la primera con el formulario de arriba.
+          Aún no hay pedidos registrados. Usa el formulario de abajo para crear el primero.
         </p>
       </div>
     );
@@ -28,10 +28,10 @@ export function SalesHistory({ sales }: SalesHistoryProps) {
     <section className="space-y-4">
       <header>
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Historial reciente
+          Todos los pedidos
         </h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Últimas {sales.length} venta{sales.length !== 1 ? "s" : ""} registradas.
+          Historial completo de ventas registradas en tu tienda.
         </p>
       </header>
 

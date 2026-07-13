@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import { markInboxConversationRead } from "@/lib/inbox/actions";
 import {
-  countSmartTab,
   DEFAULT_INBOX_FILTERS,
   type InboxListFilters,
 } from "@/lib/inbox/inbox-filters";
@@ -94,16 +93,6 @@ export function MessagesPanel({
     [facebookConversations, selectedConversationId],
   );
 
-  const reviewCount = useMemo(
-    () => countSmartTab(facebookConversations, "review"),
-    [facebookConversations],
-  );
-
-  const activeCount = useMemo(
-    () => countSmartTab(facebookConversations, "active"),
-    [facebookConversations],
-  );
-
   const workspaceGridStyle = useMemo(
     () =>
       buildWorkspaceGridStyle({
@@ -184,8 +173,6 @@ export function MessagesPanel({
         <FbInboxTopBar
           filters={listFilters}
           onFiltersChange={setListFilters}
-          reviewCount={reviewCount}
-          activeCount={activeCount}
           isSynced={hasActiveIntegrations}
         />
         <div className="rounded-xl bg-white px-6 py-12 text-center shadow-sm dark:bg-slate-950">
@@ -205,9 +192,6 @@ export function MessagesPanel({
       <FbInboxTopBar
         filters={listFilters}
         onFiltersChange={setListFilters}
-        reviewCount={reviewCount}
-        activeCount={activeCount}
-        pendingCount={reviewCount}
         isSynced={hasActiveIntegrations}
       />
 
@@ -269,12 +253,12 @@ export function MessagesPanel({
         {workspace.contextCollapsed ? (
           <InboxDockTab
             side="right"
-            label="Cliente"
+            label="Negociación"
             onExpand={() => workspace.setContextCollapsed(false)}
           />
         ) : (
           <InboxDockPanel
-            title="Cliente"
+            title="Gestión de la Negociación"
             side="right"
             onCollapse={() => workspace.setContextCollapsed(true)}
             minimal

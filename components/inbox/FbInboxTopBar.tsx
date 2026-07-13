@@ -7,9 +7,6 @@ import { ImmersiveModeToggle } from "@/components/inbox/ImmersiveModeToggle";
 interface FbInboxTopBarProps {
   filters: InboxListFilters;
   onFiltersChange: (filters: InboxListFilters) => void;
-  reviewCount: number;
-  activeCount: number;
-  pendingCount?: number;
   isSynced?: boolean;
 }
 
@@ -29,9 +26,6 @@ function updateFilter<K extends keyof InboxListFilters>(
 export function FbInboxTopBar({
   filters,
   onFiltersChange,
-  reviewCount,
-  activeCount,
-  pendingCount = 0,
   isSynced = false,
 }: FbInboxTopBarProps) {
   return (
@@ -39,14 +33,7 @@ export function FbInboxTopBar({
       <div className="fb-inbox-top-bar-brand">
         <ImmersiveModeToggle />
         <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-2">
-            <h1 className="fb-inbox-title">Bandeja de Facebook</h1>
-            {pendingCount > 0 && (
-              <span className="fb-inbox-pending-badge">
-                {pendingCount}
-              </span>
-            )}
-          </div>
+          <h1 className="fb-inbox-title">Bandeja de Facebook</h1>
           {isSynced && (
             <p className="fb-inbox-sync-indicator">
               <span className="fb-inbox-sync-dot" aria-hidden="true" />
@@ -64,7 +51,6 @@ export function FbInboxTopBar({
         <div className="fb-inbox-smart-tabs" role="tablist" aria-label="Estado">
           {SMART_TABS.map((tab) => {
             const isActive = filters.smartTab === tab.key;
-            const count = tab.key === "review" ? reviewCount : activeCount;
 
             return (
               <button
@@ -78,7 +64,6 @@ export function FbInboxTopBar({
                 className={`fb-inbox-smart-tab ${isActive ? "fb-inbox-smart-tab--active" : ""}`}
               >
                 {tab.label}
-                <span className="fb-inbox-smart-tab-count">{count}</span>
               </button>
             );
           })}

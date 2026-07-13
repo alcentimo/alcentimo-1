@@ -595,16 +595,10 @@ export function InventoryPanel({
           </table>
         </div>
 
-        <div className="flex flex-col gap-1 border-t border-zinc-200/70 bg-zinc-50/50 px-5 py-3.5 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-400">
+        <div className="border-t border-zinc-200/70 bg-zinc-50/50 px-5 py-3.5 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-400">
           <span>
-            Mostrando {filtered.length} de {products.length} producto
-            {products.length !== 1 ? "s" : ""}
+            {filtered.length} producto{filtered.length !== 1 ? "s" : ""} en lista
           </span>
-          {exchangeRate != null && (
-            <span>
-              Precios en Bs con tasa Bs. {formatExchangeRate(exchangeRate)} / USD
-            </span>
-          )}
         </div>
       </div>
 
