@@ -552,11 +552,11 @@ body {
 }
 
 .fb-inbox {
-  @apply space-y-4;
+  @apply space-y-2;
 }
 
 .fb-inbox-top-bar {
-  @apply flex flex-wrap items-center gap-2 gap-y-2 rounded-xl border-0 bg-white px-3 py-2 shadow-sm dark:bg-slate-950 sm:gap-3;
+  @apply flex flex-wrap items-center gap-2 gap-y-2 rounded-xl border-0 bg-white px-3 py-1.5 shadow-sm dark:bg-slate-950 sm:gap-3;
 }
 
 .fb-inbox-top-bar-brand {
@@ -667,12 +667,40 @@ body {
   @apply text-slate-500 dark:text-slate-400;
 }
 
-.fb-inbox .inbox-conversation-item-compact {
-  @apply hover:bg-slate-50/80 dark:hover:bg-slate-900/30;
-}
-
 .fb-inbox .inbox-conversation-item-compact-active {
   @apply bg-slate-100/70 dark:bg-slate-800/40;
+}
+
+.fb-inbox-workspace .inbox-dock-panel-header--minimal {
+  @apply px-1.5 py-0.5;
+}
+
+.fb-inbox .inbox-conversation-item-compact {
+  @apply px-2 py-1.5 hover:bg-slate-50/80 dark:hover:bg-slate-900/30;
+}
+
+.fb-inbox-workspace .inbox-chat-header {
+  @apply px-3 py-2;
+}
+
+.fb-inbox-workspace .inbox-chat-thread {
+  @apply px-3 py-3;
+}
+
+.fb-inbox-workspace .inbox-chat-composer-wrap {
+  @apply px-3 pb-3;
+}
+
+.fb-inbox .inbox-context-profile {
+  @apply px-2.5 pb-2 pt-2;
+}
+
+.fb-inbox .inbox-context-scroll {
+  @apply px-2.5 pb-2;
+}
+
+.fb-inbox .inbox-context-module {
+  @apply p-2.5;
 }
 
 .fb-inbox .inbox-chat-customer-name {
@@ -750,7 +778,7 @@ body {
 }
 
 .inbox-dock-panel-header--minimal {
-  @apply px-2 py-1;
+  @apply px-1.5 py-0.5;
 }
 
 .inbox-dock-panel-title {
@@ -858,7 +886,7 @@ body {
 }
 
 .inbox-conversation-item-compact {
-  @apply relative flex w-full items-center gap-2 px-2.5 py-2 text-left transition-colors duration-100 hover:bg-slate-50 dark:hover:bg-slate-900/30;
+  @apply relative flex w-full items-center gap-2 px-2 py-1.5 text-left transition-colors duration-100 hover:bg-slate-50 dark:hover:bg-slate-900/30;
 }
 
 .inbox-conversation-item-compact-active {
@@ -926,7 +954,7 @@ body {
 }
 
 .inbox-chat-thread {
-  @apply flex-1 space-y-3 overflow-y-auto px-4 py-4 md:px-6 md:py-5;
+  @apply flex-1 space-y-3 overflow-y-auto px-3 py-3;
 }
 
 .inbox-chat-thread--sales {
@@ -938,7 +966,7 @@ body {
 }
 
 .inbox-chat-header {
-  @apply flex shrink-0 items-center justify-between gap-3 px-4 py-2.5 md:px-6;
+  @apply flex shrink-0 items-center justify-between gap-3 px-3 py-2;
 }
 
 .inbox-chat-header--messenger {
@@ -946,11 +974,11 @@ body {
 }
 
 .inbox-chat-composer-wrap {
-  @apply shrink-0 px-4 pb-4;
+  @apply shrink-0 px-3 pb-3;
 }
 
 .inbox-chat-composer {
-  @apply flex items-end gap-2.5;
+  @apply flex items-end gap-2;
 }
 
 .inbox-composer-field {
@@ -958,19 +986,19 @@ body {
 }
 
 .inbox-composer-toolbar {
-  @apply flex items-center gap-0.5 px-1.5 py-1;
+  @apply flex items-center gap-0.5 px-1 py-0.5;
 }
 
 .inbox-composer-tool-btn {
-  @apply inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-50 hover:text-[#1877F2] dark:hover:bg-slate-800 dark:hover:text-[#6db3ff];
+  @apply inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-50 hover:text-[#1877F2] dark:hover:bg-slate-800 dark:hover:text-[#6db3ff];
 }
 
 .inbox-chat-composer-input {
-  @apply min-h-[2.75rem] w-full resize-none border-0 bg-transparent px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-50 dark:placeholder:text-slate-500;
+  @apply h-12 w-full resize-none border-0 bg-transparent px-2.5 py-1 text-sm leading-5 text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-50 dark:placeholder:text-slate-500;
 }
 
 .inbox-chat-composer-send {
-  @apply inline-flex h-[2.75rem] w-[2.75rem] shrink-0 items-center justify-center rounded-xl border-0 bg-slate-100 text-slate-300 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-100 dark:bg-slate-800 dark:text-slate-600;
+  @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-0 bg-slate-100 text-slate-300 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-100 dark:bg-slate-800 dark:text-slate-600;
 }
 
 .inbox-bubble-outbound {
@@ -986,7 +1014,7 @@ body {
 }
 
 .inbox-context-profile {
-  @apply shrink-0 px-3 pb-3 pt-2.5;
+  @apply shrink-0 px-2.5 pb-2 pt-2;
 }
 
 .inbox-context-profile-name {
@@ -998,11 +1026,11 @@ body {
 }
 
 .inbox-context-scroll {
-  @apply space-y-3 pt-1;
+  @apply space-y-2 px-2.5 pb-2 pt-1;
 }
 
 .inbox-context-module {
-  @apply rounded-lg border-0 bg-slate-50 p-3 dark:bg-slate-900/50;
+  @apply rounded-lg border-0 bg-slate-50 p-2.5 dark:bg-slate-900/50;
 }
 
 .inbox-context-module-title {

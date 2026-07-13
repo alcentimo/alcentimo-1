@@ -153,7 +153,7 @@ export function ConversationContextPanel({
         </div>
       </header>
 
-      <div className="inbox-context-scroll overflow-y-auto px-3 pb-3">
+      <div className="inbox-context-scroll overflow-y-auto">
         <ContextModuleCard title="Pedidos">
           {purchaseHistory.length === 0 ? (
             <p className="inbox-context-module-empty">Sin pedidos vinculados.</p>
