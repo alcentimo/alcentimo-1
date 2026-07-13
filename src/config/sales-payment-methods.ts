@@ -5,19 +5,9 @@ export type SalesPaymentMethodKey =
   | "divisa"
   | "zelle"
   | "punto_venta"
-  | "pse"
-  | "nequi"
-  | "daviplata"
-  | "efecty_baloto"
-  | "mercado_pago"
-  | "transferencia_cbu"
-  | "tarjeta"
-  | "tarjeta_ar"
-  | "pago_facil_rapipago"
-  | "billeteras_digitales"
   | "otro";
 
-/** Identificador de logo compartido con PaymentMethodLogo / PaymentBrandMarks. */
+/** Identificador de logo compartido con PaymentMethodLogo. */
 export type SalesPaymentLogoKey =
   | "efectivo"
   | "transferencia"
@@ -25,16 +15,6 @@ export type SalesPaymentLogoKey =
   | "divisa"
   | "zelle"
   | "punto_venta"
-  | "pse"
-  | "tarjetas"
-  | "nequi"
-  | "daviplata"
-  | "efectyBaloto"
-  | "mercadoPago"
-  | "transferenciaCbu"
-  | "tarjetasAr"
-  | "pagoFacilRapipago"
-  | "billeterasDigitales"
   | "otro";
 
 export interface SalesPaymentMethodDefinition {
@@ -67,56 +47,6 @@ export const SALES_PAYMENT_METHODS: SalesPaymentMethodDefinition[] = [
     label: "Punto de venta",
     dbValue: "Punto de Venta",
     logoKey: "punto_venta",
-  },
-  { key: "pse", label: "PSE", dbValue: "PSE", logoKey: "pse" },
-  {
-    key: "tarjeta",
-    label: "Tarjetas (Crédito/Débito)",
-    dbValue: "Tarjeta",
-    logoKey: "tarjetas",
-  },
-  { key: "nequi", label: "Nequi", dbValue: "Nequi", logoKey: "nequi" },
-  {
-    key: "daviplata",
-    label: "Daviplata",
-    dbValue: "Daviplata",
-    logoKey: "daviplata",
-  },
-  {
-    key: "efecty_baloto",
-    label: "Efecty / Baloto",
-    dbValue: "Efecty / Baloto",
-    logoKey: "efectyBaloto",
-  },
-  {
-    key: "mercado_pago",
-    label: "Mercado Pago",
-    dbValue: "Mercado Pago",
-    logoKey: "mercadoPago",
-  },
-  {
-    key: "transferencia_cbu",
-    label: "Transferencia Bancaria (CBU/CVU)",
-    dbValue: "Transferencia CBU/CVU",
-    logoKey: "transferenciaCbu",
-  },
-  {
-    key: "tarjeta_ar",
-    label: "Tarjetas (Visa/Master/Cabal/Naranja)",
-    dbValue: "Tarjeta AR",
-    logoKey: "tarjetasAr",
-  },
-  {
-    key: "pago_facil_rapipago",
-    label: "Efectivo (Pago Fácil/Rapipago)",
-    dbValue: "Pago Facil / Rapipago",
-    logoKey: "pagoFacilRapipago",
-  },
-  {
-    key: "billeteras_digitales",
-    label: "Billeteras Digitales (Ualá/MODO/Cuenta DNI)",
-    dbValue: "Billeteras Digitales",
-    logoKey: "billeterasDigitales",
   },
   { key: "otro", label: "Otro", dbValue: "Otro", logoKey: "otro" },
 ];

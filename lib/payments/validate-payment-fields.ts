@@ -70,7 +70,7 @@ function validateField(
   if (fieldKey === "payId" && methodKey === "binance") {
     return validateBinancePayId(value);
   }
-  if (fieldKey === "phone" && (methodKey === "pagoMovil" || methodKey === "nequi" || methodKey === "daviplata")) {
+  if (fieldKey === "phone" && methodKey === "pagoMovil") {
     return validatePhone(value);
   }
   if (

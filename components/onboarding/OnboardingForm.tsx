@@ -6,10 +6,7 @@ import {
   type OnboardingFormState,
 } from "@/lib/onboarding/actions";
 import { STORE_CATEGORY_OPTIONS } from "@/lib/onboarding/categories";
-import { getEnabledStoreCountries } from "@/lib/country-config";
-import type { StoreCountryOption } from "@/lib/onboarding/countries";
-
-const ENABLED_COUNTRY_OPTIONS = getEnabledStoreCountries();
+import { DEFAULT_STORE_COUNTRY } from "@/lib/onboarding/countries";
 
 const initialState: OnboardingFormState = {};
 
@@ -19,18 +16,17 @@ export function OnboardingForm() {
     initialState,
   );
   const [category, setCategory] = useState("");
-  const [country, setCountry] = useState<StoreCountryOption | "">(
-    ENABLED_COUNTRY_OPTIONS[0] ?? "",
-  );
 
   return (
     <form action={formAction} className="card-panel mx-auto w-full max-w-md space-y-5">
+      <input type="hidden" name="country" value={DEFAULT_STORE_COUNTRY} />
+
       <div>
         <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
           Configura tu tienda
         </h2>
         <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-          Cuéntanos sobre tu negocio para crear tu catálogo digital.
+          Cuéntanos sobre tu negocio para crear tu catálogo digital en Venezuela.
         </p>
       </div>
 
@@ -46,31 +42,6 @@ export function OnboardingForm() {
           placeholder="Ej: Ferretería El Progreso"
           className="input-field"
         />
-      </div>
-
-      <div>
-        <label htmlFor="country" className="label-field">
-          País <span className="text-red-500">*</span>
-        </label>
-        <select
-          id="country"
-          name="country"
-          required
-          value={country}
-          onChange={(e) =>
-            setCountry(e.target.value as StoreCountryOption | "")
-          }
-          className="input-field"
-        >
-          <option value="" disabled>
-            Selecciona un país
-          </option>
-          {ENABLED_COUNTRY_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
       </div>
 
       <div>

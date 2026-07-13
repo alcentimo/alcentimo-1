@@ -10,16 +10,6 @@ const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "zoom",
   "domesa",
   "libertyExpress",
-  "servientrega",
-  "interRapidisimo",
-  "coordinadora",
-  "enviame",
-  "mipaquete",
-  "correoArgentino",
-  "andreani",
-  "oca",
-  "mensajeriaExpress",
-  "pickit",
   "delivery",
   "pickup",
 ];
@@ -34,16 +24,6 @@ const PAYMENT_METHOD_KEYS: PaymentMethodKey[] = [
   "binance",
   "crypto",
   "cashea",
-  "pse",
-  "tarjetas",
-  "nequi",
-  "daviplata",
-  "efectyBaloto",
-  "mercadoPago",
-  "transferenciaCbu",
-  "tarjetasAr",
-  "pagoFacilRapipago",
-  "billeterasDigitales",
 ];
 
 const DEFAULT_PAYMENT_FIELDS: Record<PaymentMethodKey, Record<string, string>> = {
@@ -56,16 +36,6 @@ const DEFAULT_PAYMENT_FIELDS: Record<PaymentMethodKey, Record<string, string>> =
   paypal: { email: "" },
   binance: { payId: "", note: "" },
   crypto: { walletAddress: "", network: "" },
-  pse: { bank: "", commerceCode: "" },
-  tarjetas: { note: "" },
-  nequi: { phone: "", holder: "" },
-  daviplata: { phone: "", holder: "" },
-  efectyBaloto: { agreementCode: "", note: "" },
-  mercadoPago: { alias: "", holder: "" },
-  transferenciaCbu: { cbu: "", cvu: "", holder: "", bank: "" },
-  tarjetasAr: { note: "" },
-  pagoFacilRapipago: { agreementCode: "", note: "" },
-  billeterasDigitales: { uala: "", modo: "", cuentaDni: "", holder: "" },
 };
 
 export function defaultStoreSettingsConfig(): StoreSettingsConfig {

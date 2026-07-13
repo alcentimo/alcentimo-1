@@ -1,13 +1,15 @@
-import type { StoreCountryOption } from "@/lib/onboarding/countries";
-import { isStoreCountryOption } from "@/lib/onboarding/countries";
+import {
+  DEFAULT_STORE_COUNTRY,
+  type StoreCountryOption,
+} from "@/lib/onboarding/countries";
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
 import type { ShippingCarrierKey } from "@/lib/store-settings/types";
 import type { SalesPaymentMethodKey } from "@/src/config/sales-payment-methods";
-import { PAYMENT_METHOD_GROUPS, COLOMBIA_PAYMENT_METHOD_GROUPS, ARGENTINA_PAYMENT_METHOD_GROUPS } from "@/src/config/payment-methods";
+import { PAYMENT_METHOD_GROUPS } from "@/src/config/payment-methods";
 import { SHIPPING_METHODS } from "@/src/config/shipping-methods";
 import { SALES_PAYMENT_METHODS } from "@/src/config/sales-payment-methods";
 
-export type CountryCurrencyCode = "USD" | "VES" | "COP" | "ARS";
+export type CountryCurrencyCode = "USD" | "VES";
 
 export interface CountryCurrencyConfig {
   /** Moneda en la que se guardan los precios (schema actual: USD). */
@@ -17,15 +19,13 @@ export interface CountryCurrencyConfig {
   localCurrency: CountryCurrencyCode;
   localCurrencyLabel: string;
   locale: string;
-  /** Muestra columna de equivalente local (ej. Bs, COP, ARS). */
+  /** Muestra columna de equivalente local (ej. Bs). */
   showLocalEquivalent: boolean;
   salesTotalLabel: string;
 }
 
 export interface CountryConfig {
   country: StoreCountryOption;
-  /** Control de lanzamiento por país (onboarding y acceso al panel). */
-  enabled: boolean;
   currency: CountryCurrencyConfig;
   paymentMethodKeys: readonly PaymentMethodKey[];
   shippingCarrierKeys: readonly ShippingCarrierKey[];
@@ -42,40 +42,6 @@ const VENEZUELA_PAYMENTS: PaymentMethodKey[] = [
   "binance",
   "crypto",
   "cashea",
-];
-
-const COLOMBIA_PAYMENTS: PaymentMethodKey[] = [
-  "pse",
-  "tarjetas",
-  "nequi",
-  "daviplata",
-  "efectyBaloto",
-];
-
-const COLOMBIA_SHIPPING: ShippingCarrierKey[] = [
-  "servientrega",
-  "interRapidisimo",
-  "coordinadora",
-  "enviame",
-  "mipaquete",
-  "delivery",
-  "pickup",
-];
-
-const ARGENTINA_PAYMENTS: PaymentMethodKey[] = [
-  "mercadoPago",
-  "transferenciaCbu",
-  "tarjetasAr",
-  "pagoFacilRapipago",
-  "billeterasDigitales",
-];
-
-const ARGENTINA_SHIPPING: ShippingCarrierKey[] = [
-  "correoArgentino",
-  "andreani",
-  "oca",
-  "pickit",
-  "mensajeriaExpress",
 ];
 
 const VENEZUELA_SHIPPING: ShippingCarrierKey[] = [
@@ -98,156 +64,82 @@ const VENEZUELA_SALES_PAYMENTS: SalesPaymentMethodKey[] = [
   "otro",
 ];
 
-const COLOMBIA_SALES_PAYMENTS: SalesPaymentMethodKey[] = [
-  "pse",
-  "tarjeta",
-  "nequi",
-  "daviplata",
-  "efecty_baloto",
-  "otro",
-];
-
-const ARGENTINA_SALES_PAYMENTS: SalesPaymentMethodKey[] = [
-  "mercado_pago",
-  "transferencia_cbu",
-  "tarjeta_ar",
-  "pago_facil_rapipago",
-  "billeteras_digitales",
-  "otro",
-];
-
-export const COUNTRY_CONFIGS: Record<StoreCountryOption, CountryConfig> = {
-  Venezuela: {
-    country: "Venezuela",
-    enabled: true,
-    currency: {
-      baseCurrency: "USD",
-      baseCurrencyLabel: "Precio base USD",
-      localCurrency: "VES",
-      localCurrencyLabel: "Equivalente en Bs",
-      locale: "es-VE",
-      showLocalEquivalent: true,
-      salesTotalLabel: "Total (USD)",
-    },
-    paymentMethodKeys: VENEZUELA_PAYMENTS,
-    shippingCarrierKeys: VENEZUELA_SHIPPING,
-    salesPaymentMethodKeys: VENEZUELA_SALES_PAYMENTS,
+export const COUNTRY_CONFIG: CountryConfig = {
+  country: "Venezuela",
+  currency: {
+    baseCurrency: "USD",
+    baseCurrencyLabel: "Precio base USD",
+    localCurrency: "VES",
+    localCurrencyLabel: "Equivalente en Bs",
+    locale: "es-VE",
+    showLocalEquivalent: true,
+    salesTotalLabel: "Total (USD)",
   },
-  Colombia: {
-    country: "Colombia",
-    enabled: false,
-    currency: {
-      baseCurrency: "USD",
-      baseCurrencyLabel: "Precio base USD",
-      localCurrency: "COP",
-      localCurrencyLabel: "Referencia en COP",
-      locale: "es-CO",
-      showLocalEquivalent: false,
-      salesTotalLabel: "Total (USD)",
-    },
-    paymentMethodKeys: COLOMBIA_PAYMENTS,
-    shippingCarrierKeys: COLOMBIA_SHIPPING,
-    salesPaymentMethodKeys: COLOMBIA_SALES_PAYMENTS,
-  },
-  Argentina: {
-    country: "Argentina",
-    enabled: false,
-    currency: {
-      baseCurrency: "USD",
-      baseCurrencyLabel: "Precio base USD",
-      localCurrency: "ARS",
-      localCurrencyLabel: "Referencia en ARS",
-      locale: "es-AR",
-      showLocalEquivalent: false,
-      salesTotalLabel: "Total (USD)",
-    },
-    paymentMethodKeys: ARGENTINA_PAYMENTS,
-    shippingCarrierKeys: ARGENTINA_SHIPPING,
-    salesPaymentMethodKeys: ARGENTINA_SALES_PAYMENTS,
-  },
+  paymentMethodKeys: VENEZUELA_PAYMENTS,
+  shippingCarrierKeys: VENEZUELA_SHIPPING,
+  salesPaymentMethodKeys: VENEZUELA_SALES_PAYMENTS,
 };
 
-export const DEFAULT_STORE_COUNTRY: StoreCountryOption = "Venezuela";
-
-export const COUNTRY_UNAVAILABLE_MESSAGE =
-  "Próximamente disponible. Este país estará habilitado en una próxima actualización.";
-
-const STORE_COUNTRY_LIST = Object.keys(COUNTRY_CONFIGS) as StoreCountryOption[];
-
-export function isCountryEnabled(country: StoreCountryOption): boolean {
-  return getCountryConfig(country).enabled;
-}
-
-/** Países visibles en onboarding y seleccionables al crear tienda. */
-export function getEnabledStoreCountries(): StoreCountryOption[] {
-  return STORE_COUNTRY_LIST.filter((country) => COUNTRY_CONFIGS[country].enabled);
-}
+export { DEFAULT_STORE_COUNTRY };
 
 /** Normaliza el valor persistido en `stores.country` (incluye tiendas legacy sin país). */
 export function resolveStoreCountry(
-  country: string | null | undefined,
+  _country: string | null | undefined,
 ): StoreCountryOption {
-  if (country && isStoreCountryOption(country)) return country;
   return DEFAULT_STORE_COUNTRY;
 }
 
-export function getCountryConfig(country: StoreCountryOption): CountryConfig {
-  return COUNTRY_CONFIGS[country];
+export function getCountryConfig(
+  _country?: StoreCountryOption,
+): CountryConfig {
+  return COUNTRY_CONFIG;
 }
 
 export function getPaymentMethodKeysForCountry(
-  country: StoreCountryOption,
+  _country?: StoreCountryOption,
 ): PaymentMethodKey[] {
-  return [...getCountryConfig(country).paymentMethodKeys];
+  return [...COUNTRY_CONFIG.paymentMethodKeys];
 }
 
 export function getShippingCarrierKeysForCountry(
-  country: StoreCountryOption,
+  _country?: StoreCountryOption,
 ): ShippingCarrierKey[] {
-  return [...getCountryConfig(country).shippingCarrierKeys];
+  return [...COUNTRY_CONFIG.shippingCarrierKeys];
 }
 
 export function getSalesPaymentMethodKeysForCountry(
-  country: StoreCountryOption,
+  _country?: StoreCountryOption,
 ): SalesPaymentMethodKey[] {
-  return [...getCountryConfig(country).salesPaymentMethodKeys];
+  return [...COUNTRY_CONFIG.salesPaymentMethodKeys];
 }
 
-export function getPaymentGroupsForCountry(country: StoreCountryOption) {
-  if (country === "Colombia") {
-    return COLOMBIA_PAYMENT_METHOD_GROUPS;
-  }
-
-  if (country === "Argentina") {
-    return ARGENTINA_PAYMENT_METHOD_GROUPS;
-  }
-
-  const allowed = new Set(getCountryConfig(country).paymentMethodKeys);
+export function getPaymentGroupsForCountry(_country?: StoreCountryOption) {
+  const allowed = new Set(COUNTRY_CONFIG.paymentMethodKeys);
   return PAYMENT_METHOD_GROUPS.map((group) => ({
     ...group,
     keys: group.keys.filter((key) => allowed.has(key)),
   })).filter((group) => group.keys.length > 0);
 }
 
-export function getShippingMethodsForCountry(country: StoreCountryOption) {
-  const allowed = new Set(getCountryConfig(country).shippingCarrierKeys);
+export function getShippingMethodsForCountry(_country?: StoreCountryOption) {
+  const allowed = new Set(COUNTRY_CONFIG.shippingCarrierKeys);
   return SHIPPING_METHODS.filter((method) => allowed.has(method.key));
 }
 
-export function getNationalCarriersForCountry(country: StoreCountryOption) {
-  return getShippingMethodsForCountry(country).filter(
+export function getNationalCarriersForCountry(_country?: StoreCountryOption) {
+  return getShippingMethodsForCountry().filter(
     (method) => method.category === "carrier",
   );
 }
 
-export function getLocalShippingForCountry(country: StoreCountryOption) {
-  return getShippingMethodsForCountry(country).filter(
+export function getLocalShippingForCountry(_country?: StoreCountryOption) {
+  return getShippingMethodsForCountry().filter(
     (method) => method.category === "local",
   );
 }
 
-export function getSalesPaymentMethodsForCountry(country: StoreCountryOption) {
-  const allowed = new Set(getCountryConfig(country).salesPaymentMethodKeys);
+export function getSalesPaymentMethodsForCountry(_country?: StoreCountryOption) {
+  const allowed = new Set(COUNTRY_CONFIG.salesPaymentMethodKeys);
   return SALES_PAYMENT_METHODS.filter((method) => allowed.has(method.key));
 }
 

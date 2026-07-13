@@ -8,11 +8,10 @@ import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { userHasStore } from "@/lib/stores";
 import { slugify, uniqueSlug } from "@/lib/slugify";
 import { STORE_CATEGORY_OPTIONS } from "@/lib/onboarding/categories";
-import { isStoreCountryOption } from "@/lib/onboarding/countries";
 import {
-  COUNTRY_UNAVAILABLE_MESSAGE,
-  isCountryEnabled,
-} from "@/lib/country-config";
+  DEFAULT_STORE_COUNTRY,
+  isStoreCountryOption,
+} from "@/lib/onboarding/countries";
 
 export type OnboardingFormState = {
   error?: string;
@@ -63,16 +62,12 @@ export async function completeOnboarding(
     return { error: "El nombre de la tienda es obligatorio." };
   }
 
-  if (!country) {
-    return { error: "Selecciona el país de tu negocio." };
-  }
-
-  if (!isStoreCountryOption(country)) {
+  if (!country || !isStoreCountryOption(country)) {
     return { error: "País no válido." };
   }
 
-  if (!isCountryEnabled(country)) {
-    return { error: COUNTRY_UNAVAILABLE_MESSAGE };
+  if (country !== DEFAULT_STORE_COUNTRY) {
+    return { error: "Alcentimo solo está disponible en Venezuela." };
   }
 
   if (!category) {

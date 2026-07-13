@@ -2,19 +2,9 @@ import { Home, Truck } from "lucide-react";
 import type { ShippingCarrierKey } from "@/lib/store-settings/types";
 import { BrandLogoTile } from "@/components/ui/BrandLogoTile";
 import {
-  AndreaniBrandMark,
-  CoordinadoraBrandMark,
-  CorreoArgentinoBrandMark,
   DomesaBrandMark,
-  EnviameBrandMark,
-  InterRapidisimoBrandMark,
   LibertyExpressBrandMark,
-  MensajeriaExpressBrandMark,
-  MipaqueteBrandMark,
   MrwBrandMark,
-  OcaBrandMark,
-  PickitBrandMark,
-  ServientregaBrandMark,
   TealcaBrandMark,
   ZoomDeliveryBrandMark,
 } from "@/components/shipping/CarrierBrandMarks";
@@ -56,26 +46,6 @@ export function ShippingCarrierLogo({
       return <DomesaBrandMark className={className} />;
     case "libertyExpress":
       return <LibertyExpressBrandMark className={className} />;
-    case "servientrega":
-      return <ServientregaBrandMark className={className} />;
-    case "interRapidisimo":
-      return <InterRapidisimoBrandMark className={className} />;
-    case "coordinadora":
-      return <CoordinadoraBrandMark className={className} />;
-    case "enviame":
-      return <EnviameBrandMark className={className} />;
-    case "mipaquete":
-      return <MipaqueteBrandMark className={className} />;
-    case "correoArgentino":
-      return <CorreoArgentinoBrandMark className={className} />;
-    case "andreani":
-      return <AndreaniBrandMark className={className} />;
-    case "oca":
-      return <OcaBrandMark className={className} />;
-    case "pickit":
-      return <PickitBrandMark className={className} />;
-    case "mensajeriaExpress":
-      return <MensajeriaExpressBrandMark className={className} />;
     case "delivery":
       return (
         <BrandLogoTile className={className} backgroundClassName="bg-[#0D9488]">
