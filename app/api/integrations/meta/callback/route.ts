@@ -151,14 +151,47 @@ export async function GET(request: Request) {
     });
 
     if (messengerPageId) {
-      const subscribeResult = await subscribeMetaPageWebhooks(
-        messengerPageId,
-        assets.accessToken,
-      );
-      console.log("[meta/callback] Page webhook subscription result", {
-        pageName: assets.displayName,
-        ...subscribeResult,
-      });
+      try {
+        const subscribeResult = await subscribeMetaPageWebhooks(
+          messengerPageId,
+          assets.accessToken,
+        );
+
+        if (subscribeResult.success) {
+          console.log("[meta/callback] Page webhook subscription OK", {
+            pageName: assets.displayName,
+            pageId: subscribeResult.pageId,
+            subscribedFields: subscribeResult.subscribedFields,
+            tokenType: subscribeResult.tokenType,
+          });
+        } else {
+          console.error("[meta/callback] Page webhook subscription failed (OAuth continúa)", {
+            pageName: assets.displayName,
+            pageId: subscribeResult.pageId,
+            httpStatus: subscribeResult.httpStatus,
+            error: subscribeResult.error,
+            graphError: subscribeResult.graphError,
+            tokenType: subscribeResult.tokenType,
+            tokenScopes: subscribeResult.tokenScopes,
+            rawResponse: subscribeResult.raw,
+          });
+        }
+      } catch (subscribeErr) {
+        const subscribeMessage =
+          subscribeErr instanceof Error
+            ? subscribeErr.message
+            : "Unknown page subscribe error";
+
+        console.error(
+          "[meta/callback] Excepción en suscripción de página (OAuth continúa)",
+          {
+            pageId: messengerPageId,
+            pageName: assets.displayName,
+            message: subscribeMessage,
+            stack: subscribeErr instanceof Error ? subscribeErr.stack : undefined,
+          },
+        );
+      }
     }
 
     redirectBase.searchParams.set("connected", parsedState.provider);
