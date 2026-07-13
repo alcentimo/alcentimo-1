@@ -42,6 +42,15 @@ const nextConfig: NextConfig = {
         headers: oauthSecurityHeaders,
       },
       {
+        source: "/c/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate",
+          },
+        ],
+      },
+      {
         source: "/dashboard/:path*",
         headers: [
           {

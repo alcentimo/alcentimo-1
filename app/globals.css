@@ -2114,3 +2114,137 @@ body {
     @apply px-3 py-4;
   }
 }
+
+/* ── Catálogo transaccional público (/c/[slug]) ── */
+
+.txn-catalog-root {
+  @apply min-h-dvh bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50;
+}
+
+.txn-catalog-loading {
+  @apply flex min-h-dvh items-center justify-center text-sm text-zinc-500;
+}
+
+.txn-catalog {
+  @apply mx-auto flex min-h-dvh max-w-6xl flex-col;
+}
+
+.txn-catalog-header {
+  @apply sticky top-0 z-20 border-b border-zinc-200/80 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95;
+}
+
+.txn-catalog-header-inner {
+  @apply flex items-start justify-between gap-4 px-4 py-4 sm:px-6;
+}
+
+.txn-catalog-eyebrow {
+  @apply text-xs font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400;
+}
+
+.txn-catalog-title {
+  @apply mt-1 text-2xl font-bold tracking-tight;
+}
+
+.txn-catalog-desc {
+  @apply mt-1 max-w-2xl text-sm text-zinc-500 dark:text-zinc-400;
+}
+
+.txn-cart-btn {
+  @apply relative inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white;
+}
+
+.txn-cart-badge {
+  @apply inline-flex min-w-5 items-center justify-center rounded-full bg-teal-500 px-1.5 py-0.5 text-[11px] font-bold text-white;
+}
+
+.txn-catalog-main {
+  @apply flex-1 px-4 py-6 sm:px-6;
+}
+
+.txn-product-grid {
+  @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3;
+}
+
+.txn-catalog-empty {
+  @apply rounded-2xl border border-dashed border-zinc-200 bg-white px-6 py-16 text-center dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.txn-cart-overlay {
+  @apply fixed inset-0 z-50 flex justify-end;
+}
+
+.txn-cart-backdrop {
+  @apply absolute inset-0 bg-black/40;
+}
+
+.txn-checkout {
+  @apply relative z-10 flex h-full w-full max-w-md flex-col bg-white shadow-2xl dark:bg-zinc-950;
+}
+
+.txn-checkout-header {
+  @apply flex items-start justify-between gap-3 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800;
+}
+
+.txn-checkout-title {
+  @apply text-lg font-semibold;
+}
+
+.txn-checkout-subtitle {
+  @apply text-sm text-zinc-500;
+}
+
+.txn-icon-btn {
+  @apply rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-900;
+}
+
+.txn-checkout-empty {
+  @apply flex flex-1 flex-col items-center justify-center px-6 py-16 text-center;
+}
+
+.txn-checkout-items {
+  @apply flex-1 space-y-3 overflow-y-auto px-4 py-4;
+}
+
+.txn-checkout-item {
+  @apply flex items-center gap-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800;
+}
+
+.txn-qty-btn {
+  @apply inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900;
+}
+
+.txn-remove-btn {
+  @apply text-xs font-medium text-red-600 hover:underline dark:text-red-400;
+}
+
+.txn-checkout-total {
+  @apply flex items-center justify-between border-t border-zinc-200 px-4 py-3 text-sm dark:border-zinc-800;
+}
+
+.txn-checkout-form {
+  @apply space-y-4 border-t border-zinc-200 px-4 py-4 dark:border-zinc-800;
+}
+
+.txn-field {
+  @apply flex flex-col gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-200;
+}
+
+.txn-input {
+  @apply rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm font-normal outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:ring-teal-950/40;
+}
+
+.txn-file-input {
+  @apply text-sm font-normal text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium dark:text-zinc-300 dark:file:bg-zinc-800;
+}
+
+.txn-checkout-error {
+  @apply rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300;
+}
+
+.txn-submit-btn {
+  @apply w-full rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.txn-checkout-hint {
+  @apply text-center text-xs text-zinc-500;
+}

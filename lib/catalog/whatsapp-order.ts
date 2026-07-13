@@ -57,3 +57,32 @@ export function buildOrderWhatsAppMessage(options: {
 
   return lines.join("\n");
 }
+
+export function buildTransactionalWhatsAppMessage(options: {
+  storeName: string;
+  customerName: string;
+  items: Array<{
+    product_name: string;
+    variant_name: string;
+    quantity: number;
+    line_total_usd: number;
+  }>;
+  totalUsd: number;
+  proofUrl: string;
+}): string {
+  const productLines = options.items.map((item) => {
+    const variantSuffix =
+      item.variant_name !== "Estándar" ? ` (${item.variant_name})` : "";
+    return `• ${item.quantity}x ${item.product_name}${variantSuffix} — ${formatUsd(item.line_total_usd)}`;
+  });
+
+  return [
+    `Hola, soy *${options.customerName}* y acabo de hacer un pedido en ${options.storeName}:`,
+    "",
+    ...productLines,
+    "",
+    `*Total: ${formatUsd(options.totalUsd)}*`,
+    "",
+    `Comprobante de pago: ${options.proofUrl}`,
+  ].join("\n");
+}

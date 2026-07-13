@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  ClipboardList,
   ExternalLink,
   LayoutDashboard,
   LogOut,
@@ -66,6 +67,12 @@ function buildNavItems(catalogUrl: string | null): NavItem[] {
       match: (p) =>
         p.startsWith("/dashboard/inventario") ||
         p.startsWith("/dashboard/productos"),
+    },
+    {
+      href: "/dashboard/pedidos",
+      label: "Pedidos",
+      icon: ClipboardList,
+      match: (p) => p.startsWith("/dashboard/pedidos"),
     },
     {
       href: "/dashboard/ventas",

@@ -65,6 +65,10 @@ export function getStoreCatalogUrl(slug: string): string {
   return `/tienda/${slug}`;
 }
 
+export function getTransactionalCatalogUrl(slug: string): string {
+  return `/c/${slug}`;
+}
+
 /** Indica si el usuario ya tiene tienda (dueño o miembro). */
 export async function userHasStore(
   client: SupabaseServerClient,

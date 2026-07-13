@@ -373,6 +373,19 @@ export interface ChannelMessage {
   created_at: string;
 }
 
+export type OrderStatusDb = "pending" | "confirmed" | "cancelled";
+
+export interface Order {
+  id: string;
+  store_id: string;
+  customer_name: string;
+  items: unknown;
+  total_usd: number;
+  payment_proof_url: string | null;
+  status: OrderStatusDb;
+  created_at: string;
+}
+
 export interface Venta {
   id: string;
   store_id: string;
@@ -525,6 +538,16 @@ export interface Database {
         Row: Venta;
         Insert: VentaInsert & { id?: string; created_at?: string };
         Update: Partial<Venta>;
+        Relationships: [];
+      };
+      orders: {
+        Row: Order;
+        Insert: Omit<Order, "created_at" | "status"> & {
+          id?: string;
+          status?: OrderStatusDb;
+          created_at?: string;
+        };
+        Update: Partial<Order>;
         Relationships: [];
       };
       facebook_page_posts: {
