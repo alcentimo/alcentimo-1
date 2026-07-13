@@ -297,6 +297,7 @@ function buildFacebookPageAssets(
 ): MetaDiscoveredAssets | null {
   const pageId = page.id?.trim();
   const pageName = page.name?.trim() ?? null;
+  const pageAccessToken = page.access_token?.trim();
 
   if (!pageId && !pageName) return null;
 
@@ -307,8 +308,130 @@ function buildFacebookPageAssets(
       page_id: pageId ?? null,
       page_name: pageName,
       linked_via: "facebook_page",
+      token_type: pageAccessToken ? "PAGE" : "USER",
     },
-    accessToken: page.access_token?.trim() || userAccessToken,
+    accessToken: pageAccessToken || userAccessToken,
+  };
+}
+
+export interface MetaPageAccessCredentials {
+  pageId: string;
+  pageName: string | null;
+  pageAccessToken: string;
+  source: "me/accounts" | "discovery";
+}
+
+async function getMetaUserId(userAccessToken: string): Promise<string | null> {
+  const result = await graphGetSafe<{ id?: string }>("/me", userAccessToken, {
+    fields: "id",
+  });
+
+  if (!result.ok) {
+    return null;
+  }
+
+  return result.data.id?.trim() ?? null;
+}
+
+/**
+ * Obtiene el Page Access Token desde /me/accounts para la página indicada.
+ * subscribed_apps requiere token de PÁGINA, no el token de usuario.
+ */
+export async function resolvePageAccessTokenFromAccounts(
+  userAccessToken: string,
+  preferredPageId?: string | null,
+): Promise<MetaPageAccessCredentials | null> {
+  const normalizedPreferredPageId = preferredPageId?.trim() || null;
+  const metaUserId = await getMetaUserId(userAccessToken);
+  const safePreferredPageId =
+    normalizedPreferredPageId && normalizedPreferredPageId !== metaUserId
+      ? normalizedPreferredPageId
+      : null;
+
+  const meAccounts = await graphGetSafe<{ data?: PageAccount[] }>(
+    "/me/accounts",
+    userAccessToken,
+    { fields: "id,name,access_token" },
+  );
+
+  console.log("[meta/page-token] /me/accounts", {
+    ok: meAccounts.ok,
+    status: meAccounts.status,
+    metaUserId,
+    preferredPageId: normalizedPreferredPageId,
+    safePreferredPageId,
+    pageCount: meAccounts.data.data?.length ?? 0,
+    pages: (meAccounts.data.data ?? []).map((page) => ({
+      id: page.id ?? null,
+      name: page.name ?? null,
+      hasPageToken: Boolean(page.access_token?.trim()),
+    })),
+    error: meAccounts.data.error ?? null,
+  });
+
+  let pagesWithToken = (meAccounts.data.data ?? []).filter(
+    (page) =>
+      page.id?.trim() &&
+      page.access_token?.trim() &&
+      page.id.trim() !== metaUserId,
+  );
+
+  if (pagesWithToken.length === 0) {
+    pagesWithToken = (await listAllAuthorizedPages(userAccessToken)).filter(
+      (page) =>
+        page.id?.trim() &&
+        page.access_token?.trim() &&
+        page.id.trim() !== metaUserId,
+    );
+  }
+
+  if (pagesWithToken.length === 0) {
+    console.warn("[meta/page-token] No pages with access_token found", {
+      preferredPageId: normalizedPreferredPageId,
+      metaUserId,
+    });
+    return null;
+  }
+
+  const selected =
+    (safePreferredPageId
+      ? pagesWithToken.find((page) => page.id?.trim() === safePreferredPageId)
+      : null) ?? pagesWithToken[0];
+
+  const pageId = selected.id?.trim();
+  const pageAccessToken = selected.access_token?.trim();
+
+  if (!pageId || !pageAccessToken) {
+    return null;
+  }
+
+  return {
+    pageId,
+    pageName: selected.name?.trim() ?? null,
+    pageAccessToken,
+    source: meAccounts.ok ? "me/accounts" : "discovery",
+  };
+}
+
+/**
+ * Aplica credenciales de página sobre los activos descubiertos (token + page_id).
+ */
+export function applyPageAccessCredentialsToAssets(
+  assets: MetaDiscoveredAssets,
+  credentials: MetaPageAccessCredentials,
+): MetaDiscoveredAssets {
+  return {
+    ...assets,
+    externalAccountId: credentials.pageId,
+    displayName: credentials.pageName ?? assets.displayName,
+    accessToken: credentials.pageAccessToken,
+    config: {
+      ...assets.config,
+      page_id: credentials.pageId,
+      page_name: credentials.pageName ?? assets.config.page_name ?? null,
+      token_type: "PAGE",
+      page_token_source: credentials.source,
+    },
   };
 }
 
@@ -397,6 +520,7 @@ export async function discoverFacebookPageAssets(
 ): Promise<MetaDiscoveredAssets | null> {
   const pages = await listAllAuthorizedPages(accessToken);
   const page =
+    pages.find((candidate) => candidate.id?.trim() && candidate.access_token?.trim()) ??
     pages.find((candidate) => candidate.id?.trim()) ??
     pages.find((candidate) => candidate.name?.trim());
 

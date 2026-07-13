@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  applyPageAccessCredentialsToAssets,
   discoverMetaIntegrationAssets,
   exchangeForLongLivedUserToken,
+  resolvePageAccessTokenFromAccounts,
 } from "@/lib/inbox/meta-graph-api";
 import {
   exchangeMetaOAuthCode,
@@ -86,7 +88,7 @@ export async function GET(request: Request) {
       storeId: parsedState.storeId,
     });
 
-    const assets = await discoverMetaIntegrationAssets(
+    let assets = await discoverMetaIntegrationAssets(
       parsedState.provider,
       accessToken,
     );
@@ -98,6 +100,44 @@ export async function GET(request: Request) {
       });
       redirectBase.searchParams.set("error", "meta_assets_not_found");
       return clearCookie(NextResponse.redirect(redirectBase));
+    }
+
+    const preferredPageId = getMessengerPageIdFromAssets(assets);
+    const pageCredentials = await resolvePageAccessTokenFromAccounts(
+      accessToken,
+      preferredPageId,
+    );
+
+    if (pageCredentials) {
+      if (parsedState.provider === "messenger") {
+        assets = applyPageAccessCredentialsToAssets(assets, pageCredentials);
+      } else {
+        assets = {
+          ...assets,
+          config: {
+            ...assets.config,
+            page_id: pageCredentials.pageId,
+            page_name: pageCredentials.pageName ?? assets.config.page_name,
+            messenger_page_id: pageCredentials.pageId,
+            page_token_source: pageCredentials.source,
+          },
+        };
+      }
+
+      console.log("[meta/callback] Page Access Token resuelto desde /me/accounts", {
+        pageId: pageCredentials.pageId,
+        pageName: pageCredentials.pageName,
+        source: pageCredentials.source,
+        tokenType: "PAGE",
+        provider: parsedState.provider,
+      });
+    } else {
+      console.warn("[meta/callback] No se obtuvo Page Access Token desde /me/accounts", {
+        preferredPageId,
+        assetsPageId: assets.config.page_id ?? null,
+        assetsExternalAccountId: assets.externalAccountId,
+        assetsTokenType: assets.config.token_type ?? "unknown",
+      });
     }
 
     if (assets.config.fallback_from_provider) {
@@ -123,18 +163,24 @@ export async function GET(request: Request) {
       assets.accessToken,
     );
 
-    const messengerPageId = getMessengerPageIdFromAssets(assets);
+    const messengerPageId =
+      pageCredentials?.pageId ?? getMessengerPageIdFromAssets(assets);
+
     if (messengerPageId && parsedState.provider !== "messenger") {
+      const messengerAssets = pageCredentials
+        ? applyPageAccessCredentialsToAssets(assets, pageCredentials)
+        : assets;
+
       const messengerRow = await upsertChannelIntegration(admin, {
         storeId: parsedState.storeId,
         provider: "messenger",
-        assets,
+        assets: messengerAssets,
         displayNameFallback: getChannelIntegration("messenger").label,
       });
       await upsertChannelIntegrationSecret(
         admin,
         messengerRow.id,
-        assets.accessToken,
+        pageCredentials?.pageAccessToken ?? messengerAssets.accessToken,
       );
       console.log("[meta/callback] Messenger row synced for Facebook Page", {
         messengerIntegrationId: messengerRow.id,
@@ -151,8 +197,7 @@ export async function GET(request: Request) {
       messengerPageId,
     });
 
-    const pageIdForSubscribe =
-      messengerPageId ??
+    const pageIdForSubscribe = pageCredentials?.pageId ?? messengerPageId ??
       (isNumericMetaPageId(persisted.external_account_id)
         ? persisted.external_account_id
         : null) ??
@@ -161,7 +206,8 @@ export async function GET(request: Request) {
         ? assets.config.page_id
         : null);
 
-    const pageAccessToken = assets.accessToken?.trim() ?? "";
+    const pageAccessToken =
+      pageCredentials?.pageAccessToken ?? assets.accessToken?.trim() ?? "";
 
     console.log("[meta/callback] Preparando suscripción de webhooks tras OAuth", {
       provider: parsedState.provider,
@@ -170,6 +216,8 @@ export async function GET(request: Request) {
       persistedExternalAccountId: persisted.external_account_id,
       assetsPageId: assets.config.page_id ?? null,
       hasPageAccessToken: Boolean(pageAccessToken),
+      tokenType: assets.config.token_type ?? "unknown",
+      pageTokenSource: assets.config.page_token_source ?? null,
     });
 
     if (pageIdForSubscribe && pageAccessToken) {

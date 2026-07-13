@@ -1,5 +1,10 @@
 const GRAPH_API_VERSION = "v21.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
+const NUMERIC_PAGE_ID = /^\d+$/;
+
+function isNumericPageId(value: string | null | undefined): value is string {
+  return Boolean(value && NUMERIC_PAGE_ID.test(value));
+}
 
 /** Campos de webhook a nivel de Página (Messenger). */
 export const META_PAGE_WEBHOOK_FIELDS = [
@@ -223,6 +228,19 @@ export async function subscribeMetaPageWebhooks(
     return { ...baseResult, error };
   }
 
+  if (!isNumericPageId(pageId.trim())) {
+    const error =
+      "pageId debe ser el ID numérico de la Página de Facebook, no el ID del usuario";
+    logPageSubscribeFailure({
+      reason: "validation",
+      pageId,
+      requestPath,
+      subscribedFields,
+      formattedError: error,
+    });
+    return { ...baseResult, error };
+  }
+
   if (!pageAccessToken?.trim()) {
     const error =
       "Page Access Token vacío — OAuth debe devolver access_token de la página, no solo token de usuario";
@@ -234,6 +252,29 @@ export async function subscribeMetaPageWebhooks(
       formattedError: error,
     });
     return { ...baseResult, error };
+  }
+
+  const tokenDebugBeforeRequest = await debugMetaAccessToken(pageAccessToken);
+  if (tokenDebugBeforeRequest.type === "USER") {
+    const error =
+      "subscribed_apps requiere Page Access Token; se recibió User Access Token";
+    logPageSubscribeFailure({
+      reason: "validation",
+      pageId,
+      requestPath,
+      subscribedFields,
+      tokenPreview: previewToken(pageAccessToken),
+      tokenType: tokenDebugBeforeRequest.type,
+      tokenScopes: tokenDebugBeforeRequest.scopes,
+      formattedError: error,
+      tokenDebug: tokenDebugBeforeRequest.raw ?? tokenDebugBeforeRequest.error,
+    });
+    return {
+      ...baseResult,
+      error,
+      tokenType: tokenDebugBeforeRequest.type,
+      tokenScopes: tokenDebugBeforeRequest.scopes,
+    };
   }
 
   try {
