@@ -448,9 +448,13 @@ export async function updateInboxContactPrivateNotes(
     return { error: "No tienes una tienda asociada." };
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: contact } = await supabase
     .from("inbox_contacts")
-    .select("id, metadata")
+    .select("id")
     .eq("id", contactId)
     .eq("store_id", store.id)
     .maybeSingle();
@@ -459,15 +463,34 @@ export async function updateInboxContactPrivateNotes(
     return { error: "Contacto no encontrado." };
   }
 
-  const metadata = {
-    ...((contact.metadata as Record<string, unknown> | null) ?? {}),
-    private_notes: privateNotes,
-  };
+  const normalizedNotes = privateNotes.trim();
 
-  const { error } = await supabase
-    .from("inbox_contacts")
-    .update({ metadata, updated_at: new Date().toISOString() })
-    .eq("id", contactId);
+  if (!normalizedNotes) {
+    const { error } = await supabase
+      .from("contact_notes")
+      .delete()
+      .eq("contact_id", contactId)
+      .eq("store_id", store.id);
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    revalidatePath("/dashboard/mensajes");
+    return {};
+  }
+
+  const { error } = await supabase.from("contact_notes").upsert(
+    {
+      store_id: store.id,
+      contact_id: contactId,
+      body: normalizedNotes,
+      created_by: user?.id ?? null,
+      updated_by: user?.id ?? null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "contact_id" },
+  );
 
   if (error) {
     return { error: error.message };
@@ -535,9 +558,13 @@ export async function updateInboxContactTags(
     return { error: "No tienes una tienda asociada." };
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: contact } = await supabase
     .from("inbox_contacts")
-    .select("id, metadata")
+    .select("id")
     .eq("id", contactId)
     .eq("store_id", store.id)
     .maybeSingle();
@@ -546,18 +573,41 @@ export async function updateInboxContactTags(
     return { error: "Contacto no encontrado." };
   }
 
-  const metadata = {
-    ...((contact.metadata as Record<string, unknown> | null) ?? {}),
-    tags,
-  };
+  const normalizedTags = [
+    ...new Set(
+      tags
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .map((tag) => tag.slice(0, 48)),
+    ),
+  ];
 
-  const { error } = await supabase
-    .from("inbox_contacts")
-    .update({ metadata, updated_at: new Date().toISOString() })
-    .eq("id", contactId);
+  const { error: deleteError } = await supabase
+    .from("contact_tags")
+    .delete()
+    .eq("contact_id", contactId)
+    .eq("store_id", store.id);
 
-  if (error) {
-    return { error: error.message };
+  if (deleteError) {
+    return { error: deleteError.message };
+  }
+
+  if (normalizedTags.length === 0) {
+    revalidatePath("/dashboard/mensajes");
+    return {};
+  }
+
+  const { error: insertError } = await supabase.from("contact_tags").insert(
+    normalizedTags.map((label) => ({
+      store_id: store.id,
+      contact_id: contactId,
+      label,
+      created_by: user?.id ?? null,
+    })),
+  );
+
+  if (insertError) {
+    return { error: insertError.message };
   }
 
   revalidatePath("/dashboard/mensajes");

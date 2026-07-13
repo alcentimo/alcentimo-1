@@ -9,9 +9,12 @@ import { normalizeSalesStatus } from "@/lib/inbox/sales-status";
 import {
   parseActivityLog,
   readContactEmail,
-  readPrivateNotes,
   type ClientActivityEvent,
 } from "@/lib/inbox/contact-crm";
+import {
+  fetchContactCrmByContactIds,
+  resolveContactCrmSnapshot,
+} from "@/lib/inbox/contact-crm-data";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface MessageConversation {
@@ -86,11 +89,6 @@ function resolveContact(
   return contact;
 }
 
-function readStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === "string");
-}
-
 function readMetadataFlag(
   conversationMetadata: Record<string, unknown> | null,
   contactMetadata: Record<string, unknown> | null,
@@ -112,16 +110,18 @@ function mapConversationRow(
   conversation: InboxConversationRow,
   threadMessages: ChannelMessage[],
   storeCountry: string | null,
+  crmByContactId?: Map<string, import("@/lib/inbox/contact-crm-data").ContactCrmSnapshot>,
 ): MessageConversation {
   const contact = resolveContact(conversation.inbox_contacts);
   const senderId = contact?.external_id ?? "unknown";
   const contactMetadata = contact?.metadata ?? null;
   const conversationMetadata = conversation.metadata ?? null;
-  const tags = [
-    ...readStringArray(contactMetadata?.tags),
-    ...readStringArray(conversationMetadata?.tags),
-  ];
-  const uniqueTags = [...new Set(tags)];
+  const contactCrm = resolveContactCrmSnapshot(
+    contact?.id,
+    contactMetadata,
+    conversationMetadata,
+    crmByContactId,
+  );
   const isArchived = readMetadataFlag(
     conversationMetadata,
     contactMetadata,
@@ -137,7 +137,8 @@ function mapConversationRow(
     readMetadataString(conversationMetadata, contactMetadata, "country") ??
     storeCountry;
   const salesStatus = normalizeSalesStatus(conversationMetadata?.sales_status);
-  const privateNotes = readPrivateNotes(contactMetadata);
+  const privateNotes = contactCrm.privateNotes;
+  const uniqueTags = contactCrm.tags;
   const email = readContactEmail(contactMetadata);
   const activityLog = parseActivityLog(conversationMetadata?.activity_log);
   const isPriority =
@@ -521,9 +522,32 @@ export async function getStoreInboxConversations(
     return mapConversationRow(conversation, threadMessages, storeCountry);
   });
 
+  const contactIdsForCrm = [
+    ...new Set(
+      inboxConversations
+        .map((conversation) => conversation.contactId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const crmByContactId = await fetchContactCrmByContactIds(
+    supabase,
+    storeId,
+    contactIdsForCrm,
+  );
+  const inboxConversationsWithCrm = inboxConversations.map((conversation) => {
+    if (!conversation.contactId) return conversation;
+    const crm = crmByContactId.get(conversation.contactId);
+    if (!crm) return conversation;
+    return {
+      ...conversation,
+      privateNotes: crm.privateNotes,
+      tags: crm.tags,
+    };
+  });
+
   const channelMessages = await fetchChannelMessagesForStore(supabase, storeId);
   const merged = mergeChannelMessagesIntoConversations(
-    inboxConversations,
+    inboxConversationsWithCrm,
     channelMessages,
   );
 
@@ -542,13 +566,49 @@ export async function getStoreInboxConversations(
     );
   }
 
-  return enrichConversationsWithContacts(supabase, storeId, merged);
+  return enrichConversationsWithContacts(supabase, storeId, merged, crmByContactId);
+}
+
+async function applyContactCrmToConversations(
+  supabase: SupabaseClient,
+  storeId: string,
+  conversations: MessageConversation[],
+  existingCrmByContactId?: Map<string, import("@/lib/inbox/contact-crm-data").ContactCrmSnapshot>,
+): Promise<MessageConversation[]> {
+  const contactIds = [
+    ...new Set(
+      conversations
+        .map((conversation) => conversation.contactId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+
+  if (contactIds.length === 0) {
+    return conversations;
+  }
+
+  const crmByContactId =
+    existingCrmByContactId ??
+    (await fetchContactCrmByContactIds(supabase, storeId, contactIds));
+
+  return conversations.map((conversation) => {
+    if (!conversation.contactId) return conversation;
+    const crm = crmByContactId.get(conversation.contactId);
+    if (!crm) return conversation;
+
+    return {
+      ...conversation,
+      privateNotes: crm.privateNotes,
+      tags: crm.tags,
+    };
+  });
 }
 
 async function enrichConversationsWithContacts(
   supabase: SupabaseClient,
   storeId: string,
   conversations: MessageConversation[],
+  existingCrmByContactId?: Map<string, import("@/lib/inbox/contact-crm-data").ContactCrmSnapshot>,
 ): Promise<MessageConversation[]> {
   if (conversations.length === 0) return conversations;
 
@@ -612,7 +672,7 @@ async function enrichConversationsWithContacts(
     (contacts ?? []).map((contact) => [contact.external_id, contact]),
   );
 
-  return conversations.map((conversation) => {
+  const enriched = conversations.map((conversation) => {
     const contact =
       (conversation.contactId
         ? contactById.get(conversation.contactId)
@@ -622,7 +682,12 @@ async function enrichConversationsWithContacts(
 
     const contactMetadata =
       (contact.metadata as Record<string, unknown> | null) ?? null;
-    const tags = readStringArray(contactMetadata?.tags);
+    const contactCrm = resolveContactCrmSnapshot(
+      contact.id,
+      contactMetadata,
+      null,
+      existingCrmByContactId,
+    );
 
     return {
       ...conversation,
@@ -630,9 +695,17 @@ async function enrichConversationsWithContacts(
       displayName: conversation.displayName ?? contact.display_name,
       phoneE164: conversation.phoneE164 ?? contact.phone_e164,
       avatarUrl: conversation.avatarUrl ?? contact.avatar_url,
-      tags: tags.length > 0 ? tags : conversation.tags,
+      privateNotes: contactCrm.privateNotes || conversation.privateNotes,
+      tags: contactCrm.tags.length > 0 ? contactCrm.tags : conversation.tags,
     };
   });
+
+  return await applyContactCrmToConversations(
+    supabase,
+    storeId,
+    enriched,
+    existingCrmByContactId,
+  );
 }
 
 export function buildMessageConversations(

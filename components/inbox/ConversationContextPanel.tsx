@@ -138,9 +138,16 @@ export function ConversationContextPanel({
     const nextTag = tagInput.trim();
     if (!nextTag || currentTags.includes(nextTag)) return;
 
-    const nextTags = [...currentTags, nextTag];
-    onConversationPatch(conversationId, { tags: nextTags });
+    persistTags([...currentTags, nextTag]);
     setTagInput("");
+  }
+
+  function handleRemoveTag(tagToRemove: string) {
+    persistTags(currentTags.filter((tag) => tag !== tagToRemove));
+  }
+
+  function persistTags(nextTags: string[]) {
+    onConversationPatch(conversationId, { tags: nextTags });
 
     if (!contactId) return;
 
@@ -198,27 +205,41 @@ export function ConversationContextPanel({
           </p>
         </ContextModuleCard>
 
-        <ContextModuleCard title="Notas">
+        <ContextModuleCard title="Notas rápidas">
+          <p className="inbox-context-module-hint">
+            Solo visible para tu equipo. El cliente no las ve.
+          </p>
           <textarea
             value={notesDraft}
             onChange={(event) => handleNotesChange(event.target.value)}
-            rows={3}
-            placeholder="Información interna del cliente…"
+            rows={4}
+            placeholder="Ej. prefiere entrega por la tarde, cliente VIP…"
             disabled={!conversation.contactId}
             className="inbox-context-notes-input"
           />
         </ContextModuleCard>
 
         <ContextModuleCard title="Etiquetas">
+          <p className="inbox-context-module-hint">
+            Organiza contactos con etiquetas internas del equipo.
+          </p>
           <div className="inbox-context-module-list">
             <div className="flex flex-wrap gap-1.5">
               {conversation.tags.length === 0 ? (
                 <p className="inbox-context-module-empty">Sin etiquetas.</p>
               ) : (
                 conversation.tags.map((tag) => (
-                  <span key={tag} className="inbox-context-tag">
-                    {tag}
-                  </span>
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    disabled={!conversation.contactId || isUpdatingTags}
+                    className="inbox-context-tag inbox-context-tag--removable"
+                    title="Quitar etiqueta"
+                  >
+                    <span>{tag}</span>
+                    <span aria-hidden="true">×</span>
+                  </button>
                 ))
               )}
             </div>
