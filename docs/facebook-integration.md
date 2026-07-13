@@ -219,7 +219,7 @@ messenger: [
 
 | Variable | Uso |
 |----------|-----|
-| `META_APP_ID` | OAuth + Graph |
+| `META_APP_ID` | OAuth + Graph (App ID actual: `2966164503744998`) |
 | `META_APP_SECRET` | OAuth, firma webhook, state HMAC |
 | `META_WEBHOOK_VERIFY_TOKEN` / `VERIFY_TOKEN` | Verificación GET del webhook |
 | `NEXT_PUBLIC_SITE_URL` | Redirect OAuth — debe coincidir **exactamente** con Meta (con o sin `www`, según tu dominio canónico) |
