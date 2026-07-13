@@ -882,31 +882,48 @@ body {
 }
 
 .inbox-composer-field {
-  @apply relative min-w-0 flex-1 overflow-visible rounded-lg bg-slate-50 dark:bg-slate-800/50;
+  @apply relative min-w-0 flex-1 overflow-visible rounded-lg bg-white shadow-sm;
 }
 
 .composer-slash-menu {
-  @apply absolute bottom-full left-0 right-0 z-20 mb-1 max-h-44 overflow-y-auto rounded-lg border-0 bg-white p-1 shadow-sm dark:bg-slate-900;
+  @apply absolute bottom-full left-0 right-0 z-20 mb-1 max-h-52 overflow-y-auto rounded-lg bg-white p-1.5 shadow-[0_4px_20px_rgba(15,23,42,0.08)];
 }
 
 .composer-slash-menu-empty {
   @apply px-3 py-2 text-[11px] text-slate-400;
 }
 
+.composer-slash-menu-section + .composer-slash-menu-section {
+  @apply mt-1 border-t border-slate-100 pt-1;
+}
+
+.composer-slash-menu-category {
+  @apply px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400;
+}
+
+.composer-slash-menu-list {
+  @apply space-y-0.5;
+}
+
 .composer-slash-menu-item {
-  @apply flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800;
+  @apply flex w-full items-center rounded-md px-2 py-1.5 text-left transition-colors;
 }
 
+.composer-slash-menu-item:hover,
 .composer-slash-menu-item--active {
-  @apply bg-slate-100 dark:bg-slate-800;
+  @apply bg-sky-50;
 }
 
-.composer-slash-menu-kbd {
-  @apply rounded border-0 bg-slate-100 px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:bg-slate-800;
+.composer-slash-menu-item-label {
+  @apply block truncate text-xs font-medium text-slate-800;
+}
+
+.composer-slash-menu-item-desc {
+  @apply block truncate text-[10px] text-slate-400;
 }
 
 .inbox-composer-kbd-hint {
-  @apply mt-1.5 hidden text-[10px] text-slate-400 sm:block dark:text-slate-500;
+  @apply sr-only;
 }
 
 .inbox-composer-kbd-hint kbd,
@@ -923,7 +940,7 @@ body {
 }
 
 .inbox-chat-composer-input {
-  @apply min-h-[2.75rem] w-full resize-none border-0 bg-transparent px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-50 dark:placeholder:text-slate-500;
+  @apply min-h-[2.75rem] w-full resize-none border-0 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400;
 }
 
 .inbox-chat-composer-send {

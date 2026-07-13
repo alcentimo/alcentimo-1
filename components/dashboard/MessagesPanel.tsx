@@ -25,6 +25,7 @@ import { isMessengerProvider } from "@/components/inbox/MessengerChannelLabel";
 import { useInboxWorkspace } from "@/components/inbox/useInboxWorkspace";
 import { useInboxKeyboardNav } from "@/components/inbox/useInboxKeyboardNav";
 import type { VentaWithProduct } from "@/lib/sales/types";
+import type { ComposerCatalogProduct } from "@/lib/inbox/composer-catalog-types";
 
 interface MessagesPanelProps {
   initialConversations: MessageConversation[];
@@ -32,6 +33,7 @@ interface MessagesPanelProps {
   storeCountry?: string | null;
   recentSales?: VentaWithProduct[];
   salesByConversationId?: Record<string, VentaWithProduct[]>;
+  catalogProducts?: ComposerCatalogProduct[];
 }
 
 export function MessagesPanel({
@@ -40,6 +42,7 @@ export function MessagesPanel({
   storeCountry = null,
   recentSales = [],
   salesByConversationId = {},
+  catalogProducts = [],
 }: MessagesPanelProps) {
   const [conversations, setConversations] =
     useState(initialConversations);
@@ -283,6 +286,7 @@ export function MessagesPanel({
               onConversationPatch={patchConversation}
               onSendMessage={handleSendMessage}
               onSlashMenuOpenChange={setSlashMenuOpen}
+              catalogProducts={catalogProducts}
             />
           </InboxDockPanel>
         )}

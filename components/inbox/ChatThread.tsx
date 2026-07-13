@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
+import type { ComposerCatalogProduct } from "@/lib/inbox/composer-catalog-types";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import { MessageBubble } from "@/components/inbox/MessageBubble";
 import { ChatComposer } from "@/components/inbox/ChatComposer";
@@ -20,6 +21,7 @@ interface ChatThreadProps {
   ) => void;
   onSendMessage?: (conversationId: string, text: string) => void;
   onSlashMenuOpenChange?: (open: boolean) => void;
+  catalogProducts?: ComposerCatalogProduct[];
 }
 
 export function ChatThread({
@@ -27,6 +29,7 @@ export function ChatThread({
   onConversationPatch,
   onSendMessage,
   onSlashMenuOpenChange,
+  catalogProducts = [],
 }: ChatThreadProps) {
   const [draft, setDraft] = useState("");
 
@@ -101,6 +104,7 @@ export function ChatThread({
         onDraftChange={setDraft}
         onSend={handleSend}
         onSlashMenuOpenChange={onSlashMenuOpenChange}
+        catalogProducts={catalogProducts}
       />
     </div>
   );
