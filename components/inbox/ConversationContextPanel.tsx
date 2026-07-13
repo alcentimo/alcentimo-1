@@ -21,6 +21,7 @@ import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { ContextModuleCard } from "@/components/inbox/ContextModuleCard";
 import { SalesStatusSelect } from "@/components/inbox/SalesStatusSelect";
 import { ContactCopyStrip } from "@/components/inbox/ContactCopyStrip";
+import { ContactAvatar } from "@/components/inbox/ContactAvatar";
 
 interface ConversationContextPanelProps {
   conversation: MessageConversation | null;
@@ -154,7 +155,18 @@ export function ConversationContextPanel({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <header className="inbox-context-profile">
-        <p className="inbox-context-profile-name">{profileTitle}</p>
+        <div className="flex items-center gap-3">
+          <ContactAvatar
+            avatarUrl={conversation.avatarUrl}
+            displayName={conversation.displayName}
+            senderId={conversation.senderId}
+            provider={conversation.provider}
+            size="md"
+          />
+          <p className="inbox-context-profile-name min-w-0 flex-1">
+            {profileTitle}
+          </p>
+        </div>
 
         <div className="inbox-context-status-row mt-2">
           <SalesStatusSelect

@@ -7,6 +7,36 @@ export interface MetaMessengerUserProfile {
   profilePicUrl: string | null;
 }
 
+function extractProfilePicUrl(payload: Record<string, unknown>): string | null {
+  const profilePic = payload.profile_pic;
+
+  if (typeof profilePic === "string" && profilePic.trim()) {
+    return profilePic.trim();
+  }
+
+  if (profilePic && typeof profilePic === "object") {
+    const record = profilePic as Record<string, unknown>;
+    if (typeof record.url === "string" && record.url.trim()) {
+      return record.url.trim();
+    }
+
+    const nestedData = record.data as Record<string, unknown> | undefined;
+    if (typeof nestedData?.url === "string" && nestedData.url.trim()) {
+      return nestedData.url.trim();
+    }
+  }
+
+  const picture = payload.picture;
+  if (picture && typeof picture === "object") {
+    const pictureData = (picture as { data?: { url?: string } }).data;
+    if (typeof pictureData?.url === "string" && pictureData.url.trim()) {
+      return pictureData.url.trim();
+    }
+  }
+
+  return null;
+}
+
 /**
  * Perfil del usuario de Messenger/Instagram (PSID o IGSID).
  * Requiere Page Access Token con pages_messaging.
@@ -25,15 +55,19 @@ export async function fetchMetaMessengerUserProfile(
   const url = new URL(
     `https://graph.facebook.com/${GRAPH_API_VERSION}/${normalizedPsid}`,
   );
-  url.searchParams.set("fields", "name,first_name,last_name,profile_pic");
+  url.searchParams.set(
+    "fields",
+    "name,first_name,last_name,profile_pic,picture.width(100).height(100)",
+  );
   url.searchParams.set("access_token", token);
 
   const response = await fetch(url.toString());
-  const data = (await response.json()) as {
+  const data = (await response.json()) as Record<string, unknown> & {
     name?: string;
     first_name?: string;
     last_name?: string;
-    profile_pic?: string;
+    profile_pic?: string | { url?: string; data?: { url?: string } };
+    picture?: { data?: { url?: string } };
     error?: { message?: string; code?: number; type?: string };
   };
 
@@ -55,12 +89,13 @@ export async function fetchMetaMessengerUserProfile(
       .filter(Boolean)
       .join(" ") ||
     null;
-  const profilePicUrl = data.profile_pic?.trim() ?? null;
+  const profilePicUrl = extractProfilePicUrl(data);
 
   console.log("[meta/profile] Perfil de usuario obtenido", {
     psid: normalizedPsid,
     hasName: Boolean(name),
     hasProfilePic: Boolean(profilePicUrl),
+    profilePicPreview: profilePicUrl ? profilePicUrl.slice(0, 80) : null,
   });
 
   return { name, profilePicUrl };

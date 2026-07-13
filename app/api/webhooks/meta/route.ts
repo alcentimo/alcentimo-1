@@ -258,6 +258,17 @@ async function resolveMessagingContactProfile(
   }
 
   const profile = await fetchMetaMessengerUserProfile(senderId, accessToken);
+
+  console.log("[webhooks/meta] Perfil de contacto resuelto para ingest", {
+    integrationId,
+    senderId,
+    displayName: profile?.name ?? null,
+    hasAvatarUrl: Boolean(profile?.profilePicUrl),
+    avatarUrlPreview: profile?.profilePicUrl
+      ? profile.profilePicUrl.slice(0, 80)
+      : null,
+  });
+
   return {
     contactDisplayName: profile?.name ?? null,
     contactAvatarUrl: profile?.profilePicUrl ?? null,

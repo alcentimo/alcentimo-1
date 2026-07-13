@@ -917,6 +917,30 @@ body {
   @apply border-l-2 border-l-[#1877F2]/80 pl-[calc(0.625rem-2px)];
 }
 
+.inbox-contact-avatar {
+  @apply relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-200 text-slate-600 ring-1 ring-slate-200/80 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700;
+}
+
+.inbox-contact-avatar--sm {
+  @apply h-8 w-8 text-[10px] font-semibold;
+}
+
+.inbox-contact-avatar--md {
+  @apply h-10 w-10 text-xs font-semibold;
+}
+
+.inbox-contact-avatar-image {
+  @apply h-full w-full object-cover;
+}
+
+.inbox-contact-avatar-fallback {
+  @apply flex h-full w-full items-center justify-center uppercase tracking-tight;
+}
+
+.inbox-contact-avatar-channel {
+  @apply absolute -bottom-0.5 -right-0.5 rounded-full bg-white p-0.5 shadow-sm ring-1 ring-slate-200 dark:bg-slate-950 dark:ring-slate-700;
+}
+
 .inbox-messenger-label {
   @apply inline-flex max-w-full items-center gap-1 rounded-full font-semibold text-[#1877F2] ring-1 ring-[#1877F2]/20 dark:text-[#4d9fff] dark:ring-[#1877F2]/30;
 }

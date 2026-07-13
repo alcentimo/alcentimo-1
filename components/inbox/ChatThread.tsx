@@ -11,7 +11,7 @@ import type { ChannelMessage } from "@/lib/inbox/types";
 import { fetchInboxConversationMessages } from "@/lib/inbox/actions";
 import { MessageBubble } from "@/components/inbox/MessageBubble";
 import { ChatComposer } from "@/components/inbox/ChatComposer";
-import { ChannelBadge } from "@/components/inbox/ChannelBadge";
+import { ContactAvatar } from "@/components/inbox/ContactAvatar";
 import {
   getConversationStatusLabel,
   getConversationStatusTone,
@@ -117,7 +117,14 @@ export function ChatThread({
     <div className="inbox-chat-workspace">
       <header className="inbox-chat-header inbox-chat-header--messenger">
         <div className="flex min-w-0 items-center gap-2">
-          <ChannelBadge provider={conversation.provider} compact />
+          <ContactAvatar
+            avatarUrl={conversation.avatarUrl}
+            displayName={conversation.displayName}
+            senderId={conversation.senderId}
+            provider={conversation.provider}
+            size="md"
+            showChannelBadge
+          />
           <div className="min-w-0">
             <p className="inbox-chat-customer-name truncate">
               {customerLabel}

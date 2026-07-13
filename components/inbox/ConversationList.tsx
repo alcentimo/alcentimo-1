@@ -7,7 +7,7 @@ import {
 } from "@/lib/inbox/get-store-messages";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import { ConversationQuickActions } from "@/components/inbox/ConversationQuickActions";
-import { ChannelBadge } from "@/components/inbox/ChannelBadge";
+import { ContactAvatar } from "@/components/inbox/ContactAvatar";
 import {
   filterConversations,
   type InboxListFilters,
@@ -63,9 +63,12 @@ export function ConversationList({
                   isActive ? "inbox-conversation-item-compact-active" : ""
                 } ${isUnread ? "inbox-conversation-item-compact-unread" : ""}`}
               >
-                <ChannelBadge
+                <ContactAvatar
+                  avatarUrl={conversation.avatarUrl}
+                  displayName={conversation.displayName}
+                  senderId={conversation.senderId}
                   provider={conversation.provider}
-                  micro
+                  size="sm"
                   className="mt-0.5 shrink-0"
                 />
 
