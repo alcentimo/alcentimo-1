@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreInventory } from "@/lib/inventory";
 import { formatExchangeRate } from "@/lib/format";
+import { getStoreIntegrations, getIntegrationForProvider } from "@/lib/inbox/get-store-integrations";
+import { getStoreFacebookPostsByProduct } from "@/lib/facebook/get-store-facebook-posts";
 import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +40,13 @@ export default async function InventarioPage() {
     );
   }
 
-  const { products, exchangeRate } = await getStoreInventory(store.slug);
+  const [{ products, exchangeRate }, integrations, publishedPostsResult] =
+    await Promise.all([
+      getStoreInventory(store.slug),
+      getStoreIntegrations(supabase, store.id),
+      getStoreFacebookPostsByProduct(supabase, store.id).catch(() => ({})),
+    ]);
+  const messengerIntegration = getIntegrationForProvider(integrations, "messenger");
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -72,6 +80,8 @@ export default async function InventarioPage() {
       <InventoryPanel
         products={products}
         exchangeRate={exchangeRate?.rate ?? null}
+        hasMessengerIntegration={Boolean(messengerIntegration)}
+        publishedPosts={publishedPostsResult}
       />
     </div>
   );

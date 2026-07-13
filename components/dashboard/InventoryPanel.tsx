@@ -3,10 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   ChevronDown,
   Copy,
+  ExternalLink,
   Loader2,
   Package,
   Pencil,
@@ -16,6 +17,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
+import type { ProductFacebookPostSummary } from "@/lib/facebook/get-store-facebook-posts";
 import { formatExchangeRate, formatUsd, formatVes } from "@/lib/format";
 import {
   getLowStockThreshold,
@@ -27,10 +29,13 @@ import {
   updateProductPriceUsd,
   updateProductStock,
 } from "@/lib/products/actions";
+import { FacebookPostModal } from "@/components/facebook/FacebookPostModal";
 
 interface InventoryPanelProps {
   products: CatalogListItem[];
   exchangeRate: number | null;
+  hasMessengerIntegration?: boolean;
+  publishedPosts?: Record<string, ProductFacebookPostSummary>;
 }
 
 type SavingField = "stock" | "price" | null;
@@ -255,9 +260,15 @@ function ProductRowActions({
 function InventoryRow({
   product,
   exchangeRate,
+  hasMessengerIntegration,
+  publishedPost,
+  onPublish,
 }: {
   product: CatalogListItem;
   exchangeRate: number | null;
+  hasMessengerIntegration: boolean;
+  publishedPost?: ProductFacebookPostSummary;
+  onPublish: () => void;
 }) {
   const router = useRouter();
   const [editMode, setEditMode] = useState(false);
@@ -405,12 +416,40 @@ function InventoryRow({
       </td>
 
       <td className="inventory-td inventory-td-actions">
-        <ProductRowActions
-          productId={product.product_id}
-          productName={product.product_name}
-          onEdit={() => router.push(`/dashboard/productos/${product.product_id}/editar`)}
-          onQuickEdit={() => setEditMode(true)}
-        />
+        <div className="flex flex-col items-end gap-1.5">
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            <button
+              type="button"
+              onClick={onPublish}
+              disabled={!hasMessengerIntegration}
+              title={
+                hasMessengerIntegration
+                  ? "Publicar en tu página de Facebook"
+                  : "Conecta Facebook en Integraciones"
+              }
+              className="inventory-fb-publish-btn"
+            >
+              Publicar en FB
+            </button>
+            <ProductRowActions
+              productId={product.product_id}
+              productName={product.product_name}
+              onEdit={() => router.push(`/dashboard/productos/${product.product_id}/editar`)}
+              onQuickEdit={() => setEditMode(true)}
+            />
+          </div>
+          {publishedPost && (
+            <a
+              href={publishedPost.permalinkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inventory-fb-published-link"
+            >
+              <ExternalLink className="h-3 w-3" aria-hidden="true" />
+              Publicado
+            </a>
+          )}
+        </div>
         {rowError && (
           <p className="mt-1 text-right text-xs text-red-600 dark:text-red-400">
             {rowError}
@@ -421,9 +460,22 @@ function InventoryRow({
   );
 }
 
-export function InventoryPanel({ products, exchangeRate }: InventoryPanelProps) {
+export function InventoryPanel({
+  products,
+  exchangeRate,
+  hasMessengerIntegration = false,
+  publishedPosts = {},
+}: InventoryPanelProps) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
+  const [publishProduct, setPublishProduct] = useState<CatalogListItem | null>(
+    null,
+  );
+  const [localPublishedPosts, setLocalPublishedPosts] = useState(publishedPosts);
+
+  useEffect(() => {
+    setLocalPublishedPosts(publishedPosts);
+  }, [publishedPosts]);
 
   const categories = useMemo(() => {
     const names = new Set<string>();
@@ -533,6 +585,9 @@ export function InventoryPanel({ products, exchangeRate }: InventoryPanelProps) 
                     key={product.product_id}
                     product={product}
                     exchangeRate={exchangeRate}
+                    hasMessengerIntegration={hasMessengerIntegration}
+                    publishedPost={localPublishedPosts[product.product_id]}
+                    onPublish={() => setPublishProduct(product)}
                   />
                 ))
               )}
@@ -552,6 +607,18 @@ export function InventoryPanel({ products, exchangeRate }: InventoryPanelProps) 
           )}
         </div>
       </div>
+
+      <FacebookPostModal
+        open={Boolean(publishProduct)}
+        product={publishProduct}
+        onClose={() => setPublishProduct(null)}
+        onPublished={(productId, permalinkUrl, publishedAt) => {
+          setLocalPublishedPosts((current) => ({
+            ...current,
+            [productId]: { postId: productId, permalinkUrl, publishedAt },
+          }));
+        }}
+      />
     </div>
   );
 }

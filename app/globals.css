@@ -417,7 +417,7 @@ body {
 }
 
 .inventory-th-actions {
-  @apply w-[12%] min-w-[6.5rem] text-right;
+  @apply w-[18%] min-w-[9.5rem] text-right;
 }
 
 .inventory-td {
@@ -450,6 +450,14 @@ body {
 
 .inventory-inline-input {
   @apply rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm font-medium text-zinc-900 shadow-sm outline-none transition-colors focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-teal-400 dark:focus:ring-teal-400/20;
+}
+
+.inventory-fb-publish-btn {
+  @apply inline-flex min-h-9 items-center rounded-xl border-0 bg-[#1877F2]/10 px-2.5 py-1.5 text-[11px] font-semibold text-[#1877F2] transition hover:bg-[#1877F2]/15 disabled:cursor-not-allowed disabled:opacity-45 dark:bg-[#1877F2]/20 dark:text-[#6db3ff];
+}
+
+.inventory-fb-published-link {
+  @apply inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200;
 }
 
 .price-usd-cell {
@@ -1457,6 +1465,10 @@ body {
 
 .inbox-composer-publish-input {
   @apply mt-1.5 w-full resize-none rounded-lg border-0 bg-slate-100 px-2.5 py-2 text-xs leading-relaxed text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-[#1877F2]/20 dark:bg-slate-900 dark:text-slate-50;
+}
+
+.inbox-composer-publish-select {
+  @apply mt-1.5 w-full rounded-lg border-0 bg-slate-100 px-2.5 py-2 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-[#1877F2]/20 dark:bg-slate-900 dark:text-slate-50;
 }
 
 .inbox-composer-publish-error {

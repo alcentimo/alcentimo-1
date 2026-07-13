@@ -1,20 +1,30 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
+import type { FacebookPostCallToAction } from "@/lib/facebook/call-to-action";
 import { getIntegrationAccessToken } from "@/lib/inbox/integration-token";
 import { resolveMetaPageId } from "@/lib/inbox/messenger-client";
 import {
-  createPagePhotoPost,
   fetchFacebookPostPermalink,
+  publishPageProductPost,
 } from "@/lib/facebook/page-posts";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
+
+const VALID_CTA = new Set<FacebookPostCallToAction>([
+  "none",
+  "message",
+  "shop",
+  "learn_more",
+]);
 
 interface PublishFacebookPostBody {
   productId?: string;
   message?: string;
   imageUrl?: string;
+  callToAction?: FacebookPostCallToAction;
 }
 
 export async function POST(request: Request) {
@@ -35,6 +45,11 @@ export async function POST(request: Request) {
   const productId = body.productId?.trim();
   const message = body.message?.trim();
   const imageUrl = body.imageUrl?.trim();
+  const callToAction: FacebookPostCallToAction = VALID_CTA.has(
+    body.callToAction ?? "none",
+  )
+    ? (body.callToAction ?? "none")
+    : "none";
 
   if (!productId) {
     return NextResponse.json({ error: "Producto no válido." }, { status: 400 });
@@ -84,18 +99,25 @@ export async function POST(request: Request) {
     integration.config,
   );
 
+  const actionLink = `${getSiteUrl()}/tienda/${auth.store.slug}`;
+
   let graphPostId: string;
   let rawResponse: Record<string, unknown>;
 
   try {
-    const result = await createPagePhotoPost({
+    const result = await publishPageProductPost({
       pageId,
       accessToken,
       message,
       imageUrl,
+      callToAction,
+      actionLink,
     });
     graphPostId = result.graphPostId;
-    rawResponse = result.raw;
+    rawResponse = {
+      ...result.raw,
+      call_to_action: callToAction,
+    };
   } catch (error) {
     const publishError =
       error instanceof Error ? error.message : "No se pudo publicar en Facebook.";
