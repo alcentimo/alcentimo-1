@@ -1,19 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useTransition } from "react";
 import Link from "next/link";
-import {
-  formatSenderLabel,
-} from "@/lib/inbox/get-store-messages";
+import { formatSenderLabel } from "@/lib/inbox/get-store-messages";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import type { VentaWithProduct } from "@/lib/sales/types";
 import type { InboxSalesStatus } from "@/lib/inbox/sales-status";
+import { getSalesStatusActivityLabel } from "@/lib/inbox/contact-crm";
 import {
-  getSalesStatusActivityLabel,
-} from "@/lib/inbox/contact-crm";
-import {
-  updateInboxContactPrivateNotes,
-  updateInboxContactTags,
   updateInboxConversationSalesStatus,
 } from "@/lib/inbox/actions";
 import { isPersistedConversation } from "@/lib/inbox/contact-context";
@@ -22,6 +16,8 @@ import { ContextModuleCard } from "@/components/inbox/ContextModuleCard";
 import { SalesStatusSelect } from "@/components/inbox/SalesStatusSelect";
 import { ContactCopyStrip } from "@/components/inbox/ContactCopyStrip";
 import { ContactAvatar } from "@/components/inbox/ContactAvatar";
+import { ContactQuickNotes } from "@/components/inbox/ContactQuickNotes";
+import { ContactTagsEditor } from "@/components/inbox/ContactTagsEditor";
 
 interface ConversationContextPanelProps {
   conversation: MessageConversation | null;
@@ -45,42 +41,13 @@ export function ConversationContextPanel({
   conversation,
   onConversationPatch,
 }: ConversationContextPanelProps) {
-  const [tagInput, setTagInput] = useState("");
-  const [notesDraft, setNotesDraft] = useState("");
   const [isUpdatingStatus, startStatusTransition] = useTransition();
-  const [isUpdatingTags, startTagsTransition] = useTransition();
-  const [, startNotesTransition] = useTransition();
-
-  useEffect(() => {
-    setTagInput("");
-    setNotesDraft(conversation?.privateNotes ?? "");
-  }, [conversation?.conversationId, conversation?.privateNotes]);
 
   const whatsappUrl = useMemo(() => {
     if (!conversation) return null;
     const phone = conversation.phoneE164 ?? conversation.senderId;
     return buildWhatsAppOrderUrl(phone, "");
   }, [conversation]);
-
-  useEffect(() => {
-    if (!conversation?.contactId) return;
-
-    const timeout = window.setTimeout(() => {
-      if (notesDraft === conversation.privateNotes) return;
-
-      startNotesTransition(async () => {
-        const result = await updateInboxContactPrivateNotes(
-          conversation.contactId!,
-          notesDraft,
-        );
-        if (result.error) {
-          console.error("[ConversationContextPanel]", result.error);
-        }
-      });
-    }, 700);
-
-    return () => window.clearTimeout(timeout);
-  }, [conversation, notesDraft]);
 
   if (!conversation) {
     return (
@@ -99,7 +66,6 @@ export function ConversationContextPanel({
   const canPersist = isPersistedConversation(conversation.conversationId);
   const conversationId = conversation.conversationId;
   const contactId = conversation.contactId;
-  const currentTags = conversation.tags;
   const currentActivityLog = conversation.activityLog;
   const phoneValue = conversation.phoneE164 ?? conversation.senderId;
 
@@ -123,36 +89,6 @@ export function ConversationContextPanel({
         conversationId,
         salesStatus,
       );
-      if (result.error) {
-        console.error("[ConversationContextPanel]", result.error);
-      }
-    });
-  }
-
-  function handleNotesChange(value: string) {
-    setNotesDraft(value);
-    onConversationPatch(conversationId, { privateNotes: value });
-  }
-
-  function handleAddTag() {
-    const nextTag = tagInput.trim();
-    if (!nextTag || currentTags.includes(nextTag)) return;
-
-    persistTags([...currentTags, nextTag]);
-    setTagInput("");
-  }
-
-  function handleRemoveTag(tagToRemove: string) {
-    persistTags(currentTags.filter((tag) => tag !== tagToRemove));
-  }
-
-  function persistTags(nextTags: string[]) {
-    onConversationPatch(conversationId, { tags: nextTags });
-
-    if (!contactId) return;
-
-    startTagsTransition(async () => {
-      const result = await updateInboxContactTags(contactId, nextTags);
       if (result.error) {
         console.error("[ConversationContextPanel]", result.error);
       }
@@ -205,71 +141,23 @@ export function ConversationContextPanel({
           </p>
         </ContextModuleCard>
 
-        <ContextModuleCard title="Notas rápidas">
-          <p className="inbox-context-module-hint">
-            Solo visible para tu equipo. El cliente no las ve.
-          </p>
-          <textarea
-            value={notesDraft}
-            onChange={(event) => handleNotesChange(event.target.value)}
-            rows={4}
-            placeholder="Ej. prefiere entrega por la tarde, cliente VIP…"
-            disabled={!conversation.contactId}
-            className="inbox-context-notes-input"
-          />
-        </ContextModuleCard>
+        <ContactQuickNotes
+          key={`notes-${conversationId}-${contactId ?? "none"}`}
+          contactId={contactId}
+          conversationId={conversationId}
+          initialNotes={conversation.privateNotes}
+          onNotesChange={(privateNotes) =>
+            onConversationPatch(conversationId, { privateNotes })
+          }
+        />
 
-        <ContextModuleCard title="Etiquetas">
-          <p className="inbox-context-module-hint">
-            Organiza contactos con etiquetas internas del equipo.
-          </p>
-          <div className="inbox-context-module-list">
-            <div className="flex flex-wrap gap-1.5">
-              {conversation.tags.length === 0 ? (
-                <p className="inbox-context-module-empty">Sin etiquetas.</p>
-              ) : (
-                conversation.tags.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    disabled={!conversation.contactId || isUpdatingTags}
-                    className="inbox-context-tag inbox-context-tag--removable"
-                    title="Quitar etiqueta"
-                  >
-                    <span>{tag}</span>
-                    <span aria-hidden="true">×</span>
-                  </button>
-                ))
-              )}
-            </div>
-
-            <div className="flex gap-1.5 pt-1">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(event) => setTagInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    handleAddTag();
-                  }
-                }}
-                placeholder="Nueva etiqueta"
-                disabled={!conversation.contactId || isUpdatingTags}
-                className="inbox-context-input inbox-context-input--compact min-w-0 flex-1"
-              />
-              <button
-                type="button"
-                onClick={handleAddTag}
-                disabled={!conversation.contactId || isUpdatingTags}
-                className="inbox-context-tag-add"
-              >
-                +
-              </button>
-            </div>
-          </div>
-        </ContextModuleCard>
+        <ContactTagsEditor
+          key={`tags-${conversationId}-${contactId ?? "none"}`}
+          contactId={contactId}
+          conversationId={conversationId}
+          initialTags={conversation.tags}
+          onTagsChange={(tags) => onConversationPatch(conversationId, { tags })}
+        />
       </div>
     </div>
   );

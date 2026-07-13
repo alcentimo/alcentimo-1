@@ -12,6 +12,10 @@ import {
   createActivityEntry,
   getSalesStatusActivityLabel,
 } from "@/lib/inbox/contact-crm";
+import {
+  fetchContactCrmByContactIds,
+  type ContactCrmSnapshot,
+} from "@/lib/inbox/contact-crm-data";
 import { getIntegrationAccessToken } from "@/lib/inbox/integration-token";
 import {
   resolveMetaPageId,
@@ -435,6 +439,52 @@ export async function updateInboxConversationSalesStatus(
 
   revalidatePath("/dashboard/mensajes");
   return {};
+}
+
+export async function fetchInboxContactCrm(
+  contactId: string,
+): Promise<{ error?: string; data?: ContactCrmSnapshot }> {
+  const normalizedContactId = contactId.trim();
+  if (!normalizedContactId) {
+    return { error: "Contacto no válido." };
+  }
+
+  const supabase = await createClient();
+  const store = await getUserStore(supabase);
+
+  if (!store) {
+    return { error: "No tienes una tienda asociada." };
+  }
+
+  const { data: contact } = await supabase
+    .from("inbox_contacts")
+    .select("id")
+    .eq("id", normalizedContactId)
+    .eq("store_id", store.id)
+    .maybeSingle();
+
+  if (!contact) {
+    return { error: "Contacto no encontrado." };
+  }
+
+  try {
+    const crmByContactId = await fetchContactCrmByContactIds(
+      supabase,
+      store.id,
+      [normalizedContactId],
+    );
+
+    return {
+      data: crmByContactId.get(normalizedContactId) ?? {
+        privateNotes: "",
+        tags: [],
+      },
+    };
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "No se pudo cargar el CRM del contacto.";
+    return { error: message };
+  }
 }
 
 export async function updateInboxContactPrivateNotes(

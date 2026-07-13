@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
-import { markInboxConversationRead } from "@/lib/inbox/actions";
+import { markInboxConversationRead, fetchInboxContactCrm } from "@/lib/inbox/actions";
 import {
   DEFAULT_INBOX_FILTERS,
   type InboxListFilters,
@@ -93,6 +93,8 @@ export function MessagesPanel({
     [facebookConversations, selectedConversationId],
   );
 
+  const selectedContactId = selectedConversation?.contactId ?? null;
+
   const workspaceGridStyle = useMemo(
     () =>
       buildWorkspaceGridStyle({
@@ -122,6 +124,24 @@ export function MessagesPanel({
       facebookConversations[0]?.conversationId ?? null,
     );
   }, [facebookConversations, selectedConversationId]);
+
+  useEffect(() => {
+    if (!selectedConversationId || !selectedContactId) return;
+
+    void fetchInboxContactCrm(selectedContactId).then((result) => {
+      if (result.error) {
+        console.error("[MessagesPanel] contact CRM load error:", result.error);
+        return;
+      }
+
+      if (!result.data) return;
+
+      patchConversation(selectedConversationId, {
+        privateNotes: result.data.privateNotes,
+        tags: result.data.tags,
+      });
+    });
+  }, [selectedConversationId, selectedContactId]);
 
   function patchConversation(
     conversationId: string,

@@ -1186,7 +1186,55 @@ body {
 }
 
 .inbox-context-tag--removable {
-  @apply cursor-pointer transition hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-slate-700 dark:hover:text-slate-100;
+  @apply cursor-pointer transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:opacity-80;
+}
+
+.inbox-contact-tag {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold;
+}
+
+.inbox-contact-tag--removable {
+  @apply cursor-pointer transition hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.inbox-contact-tag--blue {
+  @apply bg-[#1877F2]/12 text-[#1877F2] ring-1 ring-[#1877F2]/20;
+}
+
+.inbox-contact-tag--emerald {
+  @apply bg-emerald-500/12 text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-300;
+}
+
+.inbox-contact-tag--amber {
+  @apply bg-amber-500/12 text-amber-800 ring-1 ring-amber-500/20 dark:text-amber-300;
+}
+
+.inbox-contact-tag--violet {
+  @apply bg-violet-500/12 text-violet-700 ring-1 ring-violet-500/20 dark:text-violet-300;
+}
+
+.inbox-contact-tag--rose {
+  @apply bg-rose-500/12 text-rose-700 ring-1 ring-rose-500/20 dark:text-rose-300;
+}
+
+.inbox-contact-tag--teal {
+  @apply bg-teal-500/12 text-teal-700 ring-1 ring-teal-500/20 dark:text-teal-300;
+}
+
+.inbox-contact-tag--slate {
+  @apply bg-slate-500/12 text-slate-700 ring-1 ring-slate-500/20 dark:text-slate-300;
+}
+
+.inbox-context-notes-status {
+  @apply text-[11px] text-slate-500 dark:text-slate-400;
+}
+
+.inbox-context-notes-save {
+  @apply inline-flex items-center justify-center rounded-md bg-[#1877F2] px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#166fe5] disabled:cursor-not-allowed disabled:opacity-40;
+}
+
+.inbox-context-notes-error {
+  @apply text-[11px] text-red-600 dark:text-red-400;
 }
 
 .inbox-context-tag-add {
