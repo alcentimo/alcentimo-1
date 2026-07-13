@@ -530,6 +530,14 @@ body {
   @apply grid grid-cols-1 gap-4;
 }
 
+.integration-hub-grid {
+  @apply grid grid-cols-1 gap-4 sm:grid-cols-2;
+}
+
+.integration-hub-card {
+  @apply flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 sm:p-6;
+}
+
 .settings-option-card {
   @apply rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 sm:p-6;
 }

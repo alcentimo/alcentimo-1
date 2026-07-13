@@ -2,7 +2,6 @@ import {
   SiFacebook,
   SiInstagram,
   SiMercadopago,
-  SiMessenger,
   SiWhatsapp,
 } from "react-icons/si";
 import type { ChannelProviderKey } from "@/src/config/channel-integrations";
@@ -46,8 +45,8 @@ export function ChannelLogo({
       );
     case "messenger":
       return (
-        <BrandLogoTile className={className} backgroundClassName="bg-[#0866FF]">
-          <SiMessenger className={`${size} text-white`} />
+        <BrandLogoTile className={className} backgroundClassName="bg-[#1877F2]">
+          <SiFacebook className={`${size} text-white`} />
         </BrandLogoTile>
       );
     case "facebook":

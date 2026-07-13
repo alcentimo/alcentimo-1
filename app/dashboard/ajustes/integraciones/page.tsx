@@ -115,8 +115,7 @@ export default async function IntegracionesPage({
         <p className="section-label">Configuración</p>
         <h1 className="page-header-title">Integraciones</h1>
         <p className="page-header-desc">
-          Conecta WhatsApp, Instagram, Facebook y MercadoLibre para centralizar
-          tus mensajes y ventas
+          Conecta tus canales para centralizar toda tu operación en Alcentimo
           {store ? ` · ${store.name}` : ""}.
         </p>
       </header>
