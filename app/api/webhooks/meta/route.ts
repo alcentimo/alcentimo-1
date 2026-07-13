@@ -146,12 +146,12 @@ function summarizeMetaPayload(payload: unknown): Record<string, unknown> {
     entryIds: entries
       .filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object")
       .map((entry) => String(entry.id ?? "")),
-    messagingEventCount: entries.reduce((total, entry) => {
+    messagingEventCount: entries.reduce((total: number, entry) => {
       if (!entry || typeof entry !== "object") return total;
       const messaging = (entry as { messaging?: unknown[] }).messaging ?? [];
       return total + messaging.length;
     }, 0),
-    whatsappChangeCount: entries.reduce((total, entry) => {
+    whatsappChangeCount: entries.reduce((total: number, entry) => {
       if (!entry || typeof entry !== "object") return total;
       const changes = (entry as { changes?: unknown[] }).changes ?? [];
       return total + changes.length;
