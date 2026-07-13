@@ -28,11 +28,12 @@ type ChannelIntegration = {
 /**
  * Webhook unificado Meta: WhatsApp Cloud API + Messenger + Instagram.
  *
- * Meta Developer Console:
- * - Callback URL: https://www.alcentimo.com/api/webhooks/meta
- * - Verify token: VERIFY_TOKEN (env) — alias: META_WEBHOOK_VERIFY_TOKEN
- * - App secret: APP_SECRET (env) — alias: META_APP_SECRET
- * - Suscripciones: messages (WhatsApp), messaging (Page / Instagram)
+ * Meta Developer Console (app 2966164503744998 o la activa):
+ * - Callback URL: https://alcentimo.com/api/webhooks/meta
+ * - Verify token: VERIFY_TOKEN o META_WEBHOOK_VERIFY_TOKEN (mismo valor en Vercel y en Meta)
+ * - App secret: APP_SECRET o META_APP_SECRET (debe coincidir con la app actual)
+ * - Objeto Page → campos: messaging, messaging_postbacks (Meta UI puede mostrar "messages")
+ * - Tras OAuth también se llama POST /{page-id}/subscribed_apps automáticamente
  */
 function getWebhookVerifyToken(): string | undefined {
   return (
@@ -53,16 +54,28 @@ function getMetaAppSecret(): string | undefined {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const { mode, token, challenge } = parseMetaVerifyQuery(searchParams);
+  const expectedToken = getWebhookVerifyToken();
+
+  console.log("[webhooks/meta] GET verify request", {
+    mode,
+    hasChallenge: Boolean(challenge),
+    hasVerifyToken: Boolean(token),
+    hasExpectedToken: Boolean(expectedToken),
+    tokenMatches: Boolean(expectedToken && token && token === expectedToken),
+  });
 
   if (mode !== "subscribe" || !token || !challenge) {
     return new Response(null, { status: 403 });
   }
 
-  const expectedToken = getWebhookVerifyToken();
   if (!expectedToken || token !== expectedToken) {
+    console.error(
+      "[webhooks/meta] Verify token rechazado — revisa VERIFY_TOKEN / META_WEBHOOK_VERIFY_TOKEN en Vercel y en Meta → Webhooks.",
+    );
     return new Response(null, { status: 403 });
   }
 
+  console.log("[webhooks/meta] Verify token OK — devolviendo hub.challenge");
   return new Response(challenge, {
     status: 200,
     headers: { "Content-Type": "text/plain" },
@@ -71,6 +84,19 @@ export async function GET(request: Request) {
 
 /** POST — eventos entrantes (messages / messaging). */
 export async function POST(request: Request) {
+  const receivedAt = new Date().toISOString();
+  console.log("[webhooks/meta] >>> POST entrante de Meta", {
+    receivedAt,
+    path: new URL(request.url).pathname,
+    userAgent: request.headers.get("user-agent"),
+    contentType: request.headers.get("content-type"),
+    contentLength: request.headers.get("content-length"),
+    hasSignatureHeader: Boolean(
+      request.headers.get("x-hub-signature-256") ??
+        request.headers.get("X-Hub-Signature-256"),
+    ),
+  });
+
   const appSecret = getMetaAppSecret();
   if (!appSecret) {
     console.error(
@@ -488,6 +514,47 @@ async function ingestMessagingEntry(
     }
 
     const message = e.message as Record<string, unknown> | undefined;
+    const postback = e.postback as
+      | { payload?: string; title?: string }
+      | undefined;
+
+    if (!message && postback) {
+      const senderId = String((e.sender as { id?: string })?.id ?? "");
+      const platformMessageId = `postback-${senderId}-${String(e.timestamp ?? Date.now())}`;
+      const body = postback.title ?? postback.payload ?? "[Postback]";
+
+      if (senderId) {
+        console.log("[webhooks/meta] postback Messenger/Instagram:", {
+          provider,
+          integrationId: integration.id,
+          senderId,
+          body,
+          raw: e,
+        });
+
+        try {
+          await saveChannelMessage(admin, integration.id, senderId, body);
+          await saveInboxMessage(admin, {
+            storeId: integration.store_id,
+            integrationId: integration.id,
+            provider,
+            senderId,
+            platformMessageId,
+            body,
+            messageType: "text",
+            sentAt: metaTimestampToIso(e.timestamp),
+            rawPayload: e,
+          });
+        } catch (err) {
+          console.error(
+            `[webhooks/meta] error guardando postback ${provider}:`,
+            err,
+          );
+        }
+      }
+      continue;
+    }
+
     if (!message) {
       console.log("[webhooks/meta] SKIP razón:", {
         provider,

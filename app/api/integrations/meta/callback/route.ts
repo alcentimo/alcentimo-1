@@ -14,6 +14,7 @@ import {
   resolveMetaOAuthSiteUrl,
 } from "@/lib/inbox/meta-oauth";
 import { getChannelIntegration } from "@/src/config/channel-integrations";
+import { subscribeMetaPageWebhooks } from "@/lib/inbox/meta-page-subscribe";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -188,6 +189,23 @@ export async function GET(request: Request) {
       integrationId,
       externalAccountId: assets.externalAccountId,
     });
+
+    const pageId =
+      typeof assets.config.page_id === "string"
+        ? assets.config.page_id
+        : assets.externalAccountId;
+
+    if (pageId && parsedState.provider === "messenger") {
+      const subscribeResult = await subscribeMetaPageWebhooks(
+        pageId,
+        assets.accessToken,
+      );
+      console.log("[meta/callback] Page webhook subscription result", {
+        pageId,
+        pageName: assets.displayName,
+        ...subscribeResult,
+      });
+    }
 
     redirectBase.searchParams.set("connected", parsedState.provider);
     return clearCookie(NextResponse.redirect(redirectBase));
