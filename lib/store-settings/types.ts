@@ -9,6 +9,11 @@ export type ShippingCarrierKey =
   | "coordinadora"
   | "enviame"
   | "mipaquete"
+  | "correoArgentino"
+  | "andreani"
+  | "oca"
+  | "mensajeriaExpress"
+  | "pickit"
   | "delivery"
   | "pickup";
 
@@ -31,7 +36,12 @@ export type PaymentMethodKey =
   | "tarjetas"
   | "nequi"
   | "daviplata"
-  | "efectyBaloto";
+  | "efectyBaloto"
+  | "mercadoPago"
+  | "transferenciaCbu"
+  | "tarjetasAr"
+  | "pagoFacilRapipago"
+  | "billeterasDigitales";
 
 export interface PaymentMethodConfig {
   enabled: boolean;

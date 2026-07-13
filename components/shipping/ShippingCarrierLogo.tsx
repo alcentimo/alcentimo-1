@@ -2,13 +2,18 @@ import { Home, Truck } from "lucide-react";
 import type { ShippingCarrierKey } from "@/lib/store-settings/types";
 import { BrandLogoTile } from "@/components/ui/BrandLogoTile";
 import {
+  AndreaniBrandMark,
   CoordinadoraBrandMark,
+  CorreoArgentinoBrandMark,
   DomesaBrandMark,
   EnviameBrandMark,
   InterRapidisimoBrandMark,
   LibertyExpressBrandMark,
+  MensajeriaExpressBrandMark,
   MipaqueteBrandMark,
   MrwBrandMark,
+  OcaBrandMark,
+  PickitBrandMark,
   ServientregaBrandMark,
   TealcaBrandMark,
   ZoomDeliveryBrandMark,
@@ -61,6 +66,16 @@ export function ShippingCarrierLogo({
       return <EnviameBrandMark className={className} />;
     case "mipaquete":
       return <MipaqueteBrandMark className={className} />;
+    case "correoArgentino":
+      return <CorreoArgentinoBrandMark className={className} />;
+    case "andreani":
+      return <AndreaniBrandMark className={className} />;
+    case "oca":
+      return <OcaBrandMark className={className} />;
+    case "pickit":
+      return <PickitBrandMark className={className} />;
+    case "mensajeriaExpress":
+      return <MensajeriaExpressBrandMark className={className} />;
     case "delivery":
       return (
         <BrandLogoTile className={className} backgroundClassName="bg-[#0D9488]">

@@ -294,3 +294,156 @@ export function MipaqueteBrandMark({ className = "h-11 w-11" }: CarrierMarkProps
     </svg>
   );
 }
+
+/** Correo Argentino — azul y amarillo institucional. */
+export function CorreoArgentinoBrandMark({ className = "h-11 w-11" }: CarrierMarkProps) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className={`${markFrame} ${className}`}
+      aria-hidden="true"
+      role="img"
+    >
+      <rect width="48" height="48" fill="#003DA5" />
+      <rect x="0" y="32" width="48" height="16" fill="#FDB913" />
+      <text
+        x="24"
+        y="20"
+        textAnchor="middle"
+        fill="#FFFFFF"
+        fontSize="5.5"
+        fontWeight="800"
+        fontFamily="Arial, Helvetica, sans-serif"
+        letterSpacing="0.04em"
+      >
+        CORREO
+      </text>
+      <text
+        x="24"
+        y="41"
+        textAnchor="middle"
+        fill="#1A1A1A"
+        fontSize="5.5"
+        fontWeight="800"
+        fontFamily="Arial, Helvetica, sans-serif"
+        letterSpacing="0.06em"
+      >
+        ARGENTINO
+      </text>
+    </svg>
+  );
+}
+
+/** Andreani — rojo corporativo (#E30613). */
+export function AndreaniBrandMark({ className = "h-11 w-11" }: CarrierMarkProps) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className={`${markFrame} ${className}`}
+      aria-hidden="true"
+      role="img"
+    >
+      <rect width="48" height="48" fill="#E30613" />
+      <text
+        x="24"
+        y="28"
+        textAnchor="middle"
+        fill="#FFFFFF"
+        fontSize="7.5"
+        fontWeight="800"
+        fontFamily="Arial, Helvetica, sans-serif"
+        letterSpacing="0.06em"
+      >
+        ANDREANI
+      </text>
+    </svg>
+  );
+}
+
+/** OCA — azul (#004B9C). */
+export function OcaBrandMark({ className = "h-11 w-11" }: CarrierMarkProps) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className={`${markFrame} ${className}`}
+      aria-hidden="true"
+      role="img"
+    >
+      <rect width="48" height="48" fill="#004B9C" />
+      <ellipse cx="24" cy="24" rx="12" ry="8" fill="none" stroke="#FFFFFF" strokeWidth="2.5" />
+      <text
+        x="24"
+        y="27"
+        textAnchor="middle"
+        fill="#FFFFFF"
+        fontSize="9"
+        fontWeight="800"
+        fontFamily="Arial, Helvetica, sans-serif"
+      >
+        OCA
+      </text>
+    </svg>
+  );
+}
+
+/** Pickit — naranja puntos de retiro (#FF6B00). */
+export function PickitBrandMark({ className = "h-11 w-11" }: CarrierMarkProps) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className={`${markFrame} ${className}`}
+      aria-hidden="true"
+      role="img"
+    >
+      <rect width="48" height="48" fill="#FF6B00" />
+      <circle cx="24" cy="20" r="6" fill="#FFFFFF" />
+      <path fill="#FFFFFF" d="M24 28c-4 0-7 2-7 4.5V35h14v-2.5C31 30 28 28 24 28z" />
+      <text
+        x="24"
+        y="42"
+        textAnchor="middle"
+        fill="#FFFFFF"
+        fontSize="6.5"
+        fontWeight="700"
+        fontFamily="Arial, Helvetica, sans-serif"
+        letterSpacing="0.1em"
+      >
+        PICKIT
+      </text>
+    </svg>
+  );
+}
+
+/** Mensajería express en moto — teal (#0D9488). */
+export function MensajeriaExpressBrandMark({
+  className = "h-11 w-11",
+}: CarrierMarkProps) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className={`${markFrame} ${className}`}
+      aria-hidden="true"
+      role="img"
+    >
+      <rect width="48" height="48" fill="#0D9488" />
+      <circle cx="16" cy="32" r="4" fill="#FFFFFF" />
+      <circle cx="32" cy="32" r="4" fill="#FFFFFF" />
+      <path
+        fill="#FFFFFF"
+        d="M12 24h20l4 6H12v-6zm6-6h14l4 6H18v-6z"
+      />
+      <text
+        x="24"
+        y="42"
+        textAnchor="middle"
+        fill="#CCFBF1"
+        fontSize="4.8"
+        fontWeight="700"
+        fontFamily="Arial, Helvetica, sans-serif"
+        letterSpacing="0.04em"
+      >
+        MOTO EXPRESS
+      </text>
+    </svg>
+  );
+}

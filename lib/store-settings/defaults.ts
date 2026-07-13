@@ -15,6 +15,11 @@ const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "coordinadora",
   "enviame",
   "mipaquete",
+  "correoArgentino",
+  "andreani",
+  "oca",
+  "mensajeriaExpress",
+  "pickit",
   "delivery",
   "pickup",
 ];
@@ -34,6 +39,11 @@ const PAYMENT_METHOD_KEYS: PaymentMethodKey[] = [
   "nequi",
   "daviplata",
   "efectyBaloto",
+  "mercadoPago",
+  "transferenciaCbu",
+  "tarjetasAr",
+  "pagoFacilRapipago",
+  "billeterasDigitales",
 ];
 
 const DEFAULT_PAYMENT_FIELDS: Record<PaymentMethodKey, Record<string, string>> = {
@@ -51,6 +61,11 @@ const DEFAULT_PAYMENT_FIELDS: Record<PaymentMethodKey, Record<string, string>> =
   nequi: { phone: "", holder: "" },
   daviplata: { phone: "", holder: "" },
   efectyBaloto: { agreementCode: "", note: "" },
+  mercadoPago: { alias: "", holder: "" },
+  transferenciaCbu: { cbu: "", cvu: "", holder: "", bank: "" },
+  tarjetasAr: { note: "" },
+  pagoFacilRapipago: { agreementCode: "", note: "" },
+  billeterasDigitales: { uala: "", modo: "", cuentaDni: "", holder: "" },
 };
 
 export function defaultStoreSettingsConfig(): StoreSettingsConfig {

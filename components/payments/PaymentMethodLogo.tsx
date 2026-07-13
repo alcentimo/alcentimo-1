@@ -1,12 +1,15 @@
 import { Banknote, Building2, CreditCard, Smartphone } from "lucide-react";
-import { SiBinance, SiBitcoin, SiPaypal, SiZelle } from "react-icons/si";
+import { SiBinance, SiBitcoin, SiMercadopago, SiPaypal, SiZelle } from "react-icons/si";
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
 import { BrandLogoTile } from "@/components/ui/BrandLogoTile";
 import {
+  BilleterasDigitalesBrandMark,
   DaviplataBrandMark,
   EfectyBalotoBrandMark,
   NequiBrandMark,
+  PagoFacilRapipagoBrandMark,
   PseBrandMark,
+  TransferenciaCbuBrandMark,
 } from "@/components/payments/PaymentBrandMarks";
 
 interface PaymentMethodLogoProps {
@@ -99,6 +102,24 @@ export function PaymentMethodLogo({
       return <DaviplataBrandMark className={className} />;
     case "efectyBaloto":
       return <EfectyBalotoBrandMark className={className} />;
+    case "mercadoPago":
+      return (
+        <BrandLogoTile className={className} backgroundClassName="bg-[#009EE3]">
+          <SiMercadopago className={`${size} text-white`} />
+        </BrandLogoTile>
+      );
+    case "transferenciaCbu":
+      return <TransferenciaCbuBrandMark className={className} />;
+    case "tarjetasAr":
+      return (
+        <BrandLogoTile className={className} backgroundClassName="bg-[#1D4ED8]">
+          <CreditCard className={`${size} text-white`} strokeWidth={2.25} />
+        </BrandLogoTile>
+      );
+    case "pagoFacilRapipago":
+      return <PagoFacilRapipagoBrandMark className={className} />;
+    case "billeterasDigitales":
+      return <BilleterasDigitalesBrandMark className={className} />;
     default:
       return (
         <BrandLogoTile className={className} backgroundClassName="bg-zinc-500">

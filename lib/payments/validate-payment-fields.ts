@@ -80,7 +80,7 @@ function validateField(
     return validateRequiredText(value, label);
   }
   if (
-    ["bank", "ci", "account", "holder", "merchantId", "commerceCode", "agreementCode"].includes(fieldKey)
+    ["bank", "ci", "account", "holder", "merchantId", "commerceCode", "agreementCode", "cbu", "cvu", "alias"].includes(fieldKey)
   ) {
     return validateRequiredText(value, label);
   }

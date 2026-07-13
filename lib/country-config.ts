@@ -3,7 +3,7 @@ import { isStoreCountryOption } from "@/lib/onboarding/countries";
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
 import type { ShippingCarrierKey } from "@/lib/store-settings/types";
 import type { SalesPaymentMethodKey } from "@/src/config/sales-payment-methods";
-import { PAYMENT_METHOD_GROUPS, COLOMBIA_PAYMENT_METHOD_GROUPS } from "@/src/config/payment-methods";
+import { PAYMENT_METHOD_GROUPS, COLOMBIA_PAYMENT_METHOD_GROUPS, ARGENTINA_PAYMENT_METHOD_GROUPS } from "@/src/config/payment-methods";
 import { SHIPPING_METHODS } from "@/src/config/shipping-methods";
 import { SALES_PAYMENT_METHODS } from "@/src/config/sales-payment-methods";
 
@@ -61,12 +61,19 @@ const COLOMBIA_SHIPPING: ShippingCarrierKey[] = [
 ];
 
 const ARGENTINA_PAYMENTS: PaymentMethodKey[] = [
-  "transferencia",
-  "efectivoUsd",
-  "puntoVenta",
-  "paypal",
-  "binance",
-  "crypto",
+  "mercadoPago",
+  "transferenciaCbu",
+  "tarjetasAr",
+  "pagoFacilRapipago",
+  "billeterasDigitales",
+];
+
+const ARGENTINA_SHIPPING: ShippingCarrierKey[] = [
+  "correoArgentino",
+  "andreani",
+  "oca",
+  "pickit",
+  "mensajeriaExpress",
 ];
 
 const VENEZUELA_SHIPPING: ShippingCarrierKey[] = [
@@ -78,10 +85,6 @@ const VENEZUELA_SHIPPING: ShippingCarrierKey[] = [
   "delivery",
   "pickup",
 ];
-
-/** Argentina: envío local sin carriers nacionales VE. */
-const ARGENTINA_LOCAL_SHIPPING: ShippingCarrierKey[] = ["delivery", "pickup"];
-const ARGENTINA_SHIPPING = ARGENTINA_LOCAL_SHIPPING;
 
 const VENEZUELA_SALES_PAYMENTS: SalesPaymentMethodKey[] = [
   "efectivo",
@@ -103,10 +106,11 @@ const COLOMBIA_SALES_PAYMENTS: SalesPaymentMethodKey[] = [
 ];
 
 const ARGENTINA_SALES_PAYMENTS: SalesPaymentMethodKey[] = [
-  "efectivo",
-  "transferencia",
   "mercado_pago",
-  "tarjeta",
+  "transferencia_cbu",
+  "tarjeta_ar",
+  "pago_facil_rapipago",
+  "billeteras_digitales",
   "otro",
 ];
 
@@ -193,6 +197,10 @@ export function getSalesPaymentMethodKeysForCountry(
 export function getPaymentGroupsForCountry(country: StoreCountryOption) {
   if (country === "Colombia") {
     return COLOMBIA_PAYMENT_METHOD_GROUPS;
+  }
+
+  if (country === "Argentina") {
+    return ARGENTINA_PAYMENT_METHOD_GROUPS;
   }
 
   const allowed = new Set(getCountryConfig(country).paymentMethodKeys);

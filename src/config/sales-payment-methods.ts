@@ -10,7 +10,11 @@ export type SalesPaymentMethodKey =
   | "daviplata"
   | "efecty_baloto"
   | "mercado_pago"
+  | "transferencia_cbu"
   | "tarjeta"
+  | "tarjeta_ar"
+  | "pago_facil_rapipago"
+  | "billeteras_digitales"
   | "otro";
 
 /** Identificador de logo compartido con PaymentMethodLogo / PaymentBrandMarks. */
@@ -26,7 +30,11 @@ export type SalesPaymentLogoKey =
   | "nequi"
   | "daviplata"
   | "efectyBaloto"
-  | "mercado_pago"
+  | "mercadoPago"
+  | "transferenciaCbu"
+  | "tarjetasAr"
+  | "pagoFacilRapipago"
+  | "billeterasDigitales"
   | "otro";
 
 export interface SalesPaymentMethodDefinition {
@@ -84,7 +92,31 @@ export const SALES_PAYMENT_METHODS: SalesPaymentMethodDefinition[] = [
     key: "mercado_pago",
     label: "Mercado Pago",
     dbValue: "Mercado Pago",
-    logoKey: "mercado_pago",
+    logoKey: "mercadoPago",
+  },
+  {
+    key: "transferencia_cbu",
+    label: "Transferencia Bancaria (CBU/CVU)",
+    dbValue: "Transferencia CBU/CVU",
+    logoKey: "transferenciaCbu",
+  },
+  {
+    key: "tarjeta_ar",
+    label: "Tarjetas (Visa/Master/Cabal/Naranja)",
+    dbValue: "Tarjeta AR",
+    logoKey: "tarjetasAr",
+  },
+  {
+    key: "pago_facil_rapipago",
+    label: "Efectivo (Pago Fácil/Rapipago)",
+    dbValue: "Pago Facil / Rapipago",
+    logoKey: "pagoFacilRapipago",
+  },
+  {
+    key: "billeteras_digitales",
+    label: "Billeteras Digitales (Ualá/MODO/Cuenta DNI)",
+    dbValue: "Billeteras Digitales",
+    logoKey: "billeterasDigitales",
   },
   { key: "otro", label: "Otro", dbValue: "Otro", logoKey: "otro" },
 ];

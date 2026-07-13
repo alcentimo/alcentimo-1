@@ -261,6 +261,121 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
       },
     ],
   },
+  {
+    key: "mercadoPago",
+    label: "Mercado Pago",
+    description: "Cobra con tu cuenta o link de Mercado Pago.",
+    fields: [
+      {
+        key: "alias",
+        label: "Alias / CVU Mercado Pago",
+        placeholder: "Ej: tu.tienda.mp",
+        copyable: true,
+      },
+      {
+        key: "holder",
+        label: "Titular",
+        placeholder: "Nombre del titular",
+      },
+    ],
+  },
+  {
+    key: "transferenciaCbu",
+    label: "Transferencia Bancaria (CBU/CVU)",
+    description: "Recibe transferencias desde cualquier banco argentino.",
+    fields: [
+      {
+        key: "cbu",
+        label: "CBU",
+        placeholder: "22 dígitos",
+        copyable: true,
+      },
+      {
+        key: "cvu",
+        label: "CVU (opcional)",
+        placeholder: "Si usas billetera virtual",
+        copyable: true,
+        optional: true,
+      },
+      {
+        key: "holder",
+        label: "Titular",
+        placeholder: "Razón social o nombre",
+      },
+      {
+        key: "bank",
+        label: "Banco",
+        placeholder: "Ej: Banco Galicia",
+      },
+    ],
+  },
+  {
+    key: "tarjetasAr",
+    label: "Tarjetas (Visa/Master/Cabal/Naranja)",
+    description: "Acepta tarjetas de crédito y débito argentinas.",
+    fields: [
+      {
+        key: "note",
+        label: "Nota para el cliente",
+        placeholder: "Ej: Visa, Mastercard, Cabal, Naranja",
+        fullWidth: true,
+        optional: true,
+      },
+    ],
+  },
+  {
+    key: "pagoFacilRapipago",
+    label: "Efectivo (Pago Fácil/Rapipago)",
+    description: "Cobros en efectivo en redes Pago Fácil y Rapipago.",
+    fields: [
+      {
+        key: "agreementCode",
+        label: "Código de barras / convenio",
+        placeholder: "Referencia para el cliente",
+        copyable: true,
+      },
+      {
+        key: "note",
+        label: "Instrucciones (opcional)",
+        placeholder: "Ej: Presentar DNI al pagar",
+        fullWidth: true,
+        optional: true,
+      },
+    ],
+  },
+  {
+    key: "billeterasDigitales",
+    label: "Billeteras Digitales (Ualá/MODO/Cuenta DNI)",
+    description: "Recibe pagos desde billeteras virtuales argentinas.",
+    fields: [
+      {
+        key: "uala",
+        label: "Ualá (alias o CVU)",
+        placeholder: "Ej: mi.tienda.uala",
+        copyable: true,
+        optional: true,
+      },
+      {
+        key: "modo",
+        label: "MODO (alias o CVU)",
+        placeholder: "Ej: tienda.modo",
+        copyable: true,
+        optional: true,
+      },
+      {
+        key: "cuentaDni",
+        label: "Cuenta DNI (opcional)",
+        placeholder: "Referencia Cuenta DNI",
+        copyable: true,
+        optional: true,
+      },
+      {
+        key: "holder",
+        label: "Titular",
+        placeholder: "Nombre del titular",
+      },
+    ],
+  },
 ];
 
 export const PAYMENT_METHOD_GROUPS: PaymentMethodGroupDefinition[] = [
@@ -297,6 +412,20 @@ export const COLOMBIA_PAYMENT_METHOD_GROUPS: PaymentMethodGroupDefinition[] = [
     title: "Billeteras y corresponsales",
     description: "Nequi, Daviplata y puntos Efecty/Baloto.",
     keys: ["nequi", "daviplata", "efectyBaloto"],
+  },
+];
+
+/** Grupos de métodos de pago para tiendas en Argentina (misma estructura de secciones). */
+export const ARGENTINA_PAYMENT_METHOD_GROUPS: PaymentMethodGroupDefinition[] = [
+  {
+    title: "Pagos digitales",
+    description: "Mercado Pago, transferencias y tarjetas en Argentina.",
+    keys: ["mercadoPago", "transferenciaCbu", "tarjetasAr"],
+  },
+  {
+    title: "Efectivo y billeteras",
+    description: "Pago Fácil, Rapipago y billeteras Ualá, MODO y Cuenta DNI.",
+    keys: ["pagoFacilRapipago", "billeterasDigitales"],
   },
 ];
 

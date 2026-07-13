@@ -94,6 +94,41 @@ export const SHIPPING_METHODS: ShippingMethodDefinition[] = [
     estimatedTime: "Según transportadora",
     category: "carrier",
   },
+  {
+    key: "correoArgentino",
+    label: "Correo Argentino",
+    description: "Envíos nacionales con Correo Argentino.",
+    estimatedTime: "3–7 días hábiles",
+    category: "carrier",
+  },
+  {
+    key: "andreani",
+    label: "Andreani",
+    description: "Logística y paquetería Andreani.",
+    estimatedTime: "2–5 días hábiles",
+    category: "carrier",
+  },
+  {
+    key: "oca",
+    label: "OCA",
+    description: "Envíos con OCA a todo el país.",
+    estimatedTime: "2–5 días hábiles",
+    category: "carrier",
+  },
+  {
+    key: "pickit",
+    label: "Puntos de Retiro (Pickit)",
+    description: "El cliente retira en un punto Pickit cercano.",
+    estimatedTime: "1–3 días hábiles",
+    category: "carrier",
+  },
+  {
+    key: "mensajeriaExpress",
+    label: "Mensajería Express (Moto)",
+    description: "Entrega rápida en moto en tu ciudad.",
+    estimatedTime: "Mismo día o 24 h",
+    category: "local",
+  },
 ];
 
 export const SHIPPING_METHOD_BY_KEY: Record<
