@@ -5,7 +5,10 @@ import { isConfiguredEnvValue } from "@/lib/env/server";
 import {
   buildMetaOAuthUrl,
   createMetaOAuthState,
+  getMetaOAuthStateCookieOptions,
   getMetaRedirectUri,
+  META_OAUTH_STATE_COOKIE,
+  resolveMetaOAuthSiteUrl,
 } from "@/lib/inbox/meta-oauth";
 import type { MetaProviderKey } from "@/src/config/channel-integrations";
 
@@ -45,8 +48,7 @@ export async function GET(request: Request) {
     willRedirectToFacebook: Boolean(appId && isConfiguredEnvValue(rawMetaAppSecret)),
   });
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
+  const siteUrl = resolveMetaOAuthSiteUrl(new URL(request.url).origin);
 
   if (!appId || !isConfiguredEnvValue(rawMetaAppSecret)) {
     console.warn(
@@ -89,22 +91,23 @@ export async function GET(request: Request) {
     redirectUri,
     state,
     provider,
+    authType: "rerequest",
   });
 
   console.log("[meta/connect] Redirecting to Meta OAuth", {
     clientId: previewEnvValue(appId),
     redirectUri,
     provider,
+    authType: "rerequest",
+    oauthHost: "www.facebook.com",
   });
 
   const response = NextResponse.redirect(oauthUrl);
-  response.cookies.set("meta_oauth_state", cookieValue, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 10,
-    path: "/",
-  });
+  response.cookies.set(
+    META_OAUTH_STATE_COOKIE,
+    cookieValue,
+    getMetaOAuthStateCookieOptions(siteUrl, 60 * 10),
+  );
 
   return response;
 }

@@ -222,10 +222,34 @@ messenger: [
 | `META_APP_ID` | OAuth + Graph |
 | `META_APP_SECRET` | OAuth, firma webhook, state HMAC |
 | `META_WEBHOOK_VERIFY_TOKEN` / `VERIFY_TOKEN` | Verificación GET del webhook |
-| `NEXT_PUBLIC_SITE_URL` | Redirect OAuth (`https://www.alcentimo.com`) |
+| `NEXT_PUBLIC_SITE_URL` | Redirect OAuth — debe coincidir **exactamente** con Meta (con o sin `www`, según tu dominio canónico) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Ingest webhook con admin client |
 
-**URL de callback en producción:** `https://www.alcentimo.com/api/webhooks/meta`
+**URL de callback OAuth en producción:** `{NEXT_PUBLIC_SITE_URL}/api/integrations/meta/callback`  
+(p. ej. `https://alcentimo.com/api/integrations/meta/callback` — sin barra final)
+
+**URL de webhook en producción:** `{NEXT_PUBLIC_SITE_URL}/api/webhooks/meta`
+
+### 4.1 Error «La app no está activa»
+
+Este mensaje aparece **en la pantalla de Facebook**, antes de que Alcentimo reciba el callback. No está relacionado con la validación de `state` ni con un `redirect_uri` incorrecto (ese caso muestra otro error, p. ej. «URL bloqueada»).
+
+| Causa habitual | Qué hacer |
+|----------------|-----------|
+| App en modo **Desarrollo** y tu usuario no está en **Roles** | developers.facebook.com → tu app → **Roles** → añadir tu cuenta como Administrador o Desarrollador |
+| `META_APP_ID` en Vercel no corresponde a la app donde eres admin | Verificar que el App ID en Vercel coincida con el de la app correcta |
+| App deshabilitada o en revisión por Meta | Revisar alertas en el panel de la app |
+| Confusión entre admin de **Página/Business** y admin de la **App** | Ser admin de una Fan Page no basta; necesitas rol en la app de developers.facebook.com |
+
+`auth_type=rerequest` (ya enviado en el flujo) vuelve a pedir permisos rechazados, pero **no** activa una app inactiva.
+
+### 4.2 Checklist `redirect_uri`
+
+1. `NEXT_PUBLIC_SITE_URL` en Vercel = dominio canónico (mismo protocolo y subdominio que usarás siempre).
+2. Meta → **Inicio de sesión con Facebook → Configuración → URIs de redirección de OAuth válidos** → pegar exactamente:
+   `https://tudominio.com/api/integrations/meta/callback`
+3. El mismo valor se usa en `connect` y en `callback` vía `getMetaRedirectUri()`.
+4. Si usas `www` y apex, la cookie de `state` se comparte con dominio `.tudominio.com` en producción.
 
 ---
 

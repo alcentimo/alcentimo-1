@@ -1,7 +1,9 @@
 import { createHmac, randomBytes } from "node:crypto";
+import { getPublicSiteUrl } from "@/lib/env/server";
 import type { MetaProviderKey } from "@/src/config/channel-integrations";
 
 const GRAPH_API_VERSION = "v21.0";
+export const META_OAUTH_STATE_COOKIE = "meta_oauth_state";
 
 const PROVIDER_SCOPES: Record<MetaProviderKey, string[]> = {
   whatsapp: [
@@ -23,8 +25,64 @@ const PROVIDER_SCOPES: Record<MetaProviderKey, string[]> = {
   ],
 };
 
+export function normalizeMetaOAuthSiteUrl(siteUrl: string): string {
+  return siteUrl.replace(/\/$/, "");
+}
+
+export function resolveMetaOAuthSiteUrl(requestOrigin?: string): string {
+  return normalizeMetaOAuthSiteUrl(getPublicSiteUrl(requestOrigin));
+}
+
 export function getMetaRedirectUri(siteUrl: string): string {
-  return `${siteUrl.replace(/\/$/, "")}/api/integrations/meta/callback`;
+  return `${normalizeMetaOAuthSiteUrl(siteUrl)}/api/integrations/meta/callback`;
+}
+
+/** Dominio padre para que la cookie de state funcione entre www y apex. */
+export function getMetaOAuthCookieDomain(siteUrl: string): string | undefined {
+  if (process.env.NODE_ENV !== "production") return undefined;
+
+  try {
+    const hostname = new URL(siteUrl).hostname;
+    if (
+      hostname === "localhost" ||
+      hostname.endsWith(".vercel.app") ||
+      /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)
+    ) {
+      return undefined;
+    }
+
+    const parts = hostname.split(".");
+    if (parts.length >= 2) {
+      return `.${parts.slice(-2).join(".")}`;
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
+}
+
+export function getMetaOAuthStateCookieOptions(
+  siteUrl: string,
+  maxAgeSeconds: number,
+): {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: "lax";
+  maxAge: number;
+  path: string;
+  domain?: string;
+} {
+  const domain = getMetaOAuthCookieDomain(siteUrl);
+
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: maxAgeSeconds,
+    path: "/",
+    ...(domain ? { domain } : {}),
+  };
 }
 
 export function createMetaOAuthState(input: {
@@ -94,6 +152,8 @@ export function buildMetaOAuthUrl(input: {
   redirectUri: string;
   state: string;
   provider: MetaProviderKey;
+  /** Re-solicita permisos previamente rechazados o no concedidos. */
+  authType?: "rerequest" | "reauthenticate";
 }): string {
   const params = new URLSearchParams({
     client_id: input.appId,
@@ -102,6 +162,10 @@ export function buildMetaOAuthUrl(input: {
     scope: PROVIDER_SCOPES[input.provider].join(","),
     response_type: "code",
   });
+
+  if (input.authType) {
+    params.set("auth_type", input.authType);
+  }
 
   return `https://www.facebook.com/${GRAPH_API_VERSION}/dialog/oauth?${params.toString()}`;
 }

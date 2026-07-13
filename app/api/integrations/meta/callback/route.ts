@@ -7,8 +7,11 @@ import {
 } from "@/lib/inbox/meta-graph-api";
 import {
   exchangeMetaOAuthCode,
+  getMetaOAuthStateCookieOptions,
   getMetaRedirectUri,
+  META_OAUTH_STATE_COOKIE,
   parseMetaOAuthState,
+  resolveMetaOAuthSiteUrl,
 } from "@/lib/inbox/meta-oauth";
 import { getChannelIntegration } from "@/src/config/channel-integrations";
 
@@ -16,35 +19,43 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 export async function GET(request: Request) {
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
+  const siteUrl = resolveMetaOAuthSiteUrl(new URL(request.url).origin);
   const redirectBase = new URL("/dashboard/ajustes/integraciones", siteUrl);
 
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
-  const oauthError = searchParams.get("error_description") ?? searchParams.get("error");
+  const oauthError =
+    searchParams.get("error_description") ?? searchParams.get("error");
 
   const cookieStore = await cookies();
-  const cookieState = cookieStore.get("meta_oauth_state")?.value;
+  const cookieState = cookieStore.get(META_OAUTH_STATE_COOKIE)?.value;
 
   const clearCookie = (response: NextResponse) => {
-    response.cookies.set("meta_oauth_state", "", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+    response.cookies.set(META_OAUTH_STATE_COOKIE, "", {
+      ...getMetaOAuthStateCookieOptions(siteUrl, 0),
       maxAge: 0,
-      path: "/",
     });
     return response;
   };
 
   if (oauthError) {
+    console.warn("[meta/callback] OAuth denied by Meta", {
+      error: oauthError,
+      redirectUri: getMetaRedirectUri(siteUrl),
+    });
     redirectBase.searchParams.set("error", "oauth_denied");
     return clearCookie(NextResponse.redirect(redirectBase));
   }
 
   if (!code || !state || !cookieState || state !== cookieState) {
+    console.warn("[meta/callback] Invalid OAuth state", {
+      hasCode: Boolean(code),
+      hasState: Boolean(state),
+      hasCookieState: Boolean(cookieState),
+      stateMatchesCookie: Boolean(state && cookieState && state === cookieState),
+      redirectUri: getMetaRedirectUri(siteUrl),
+    });
     redirectBase.searchParams.set("error", "invalid_state");
     return clearCookie(NextResponse.redirect(redirectBase));
   }

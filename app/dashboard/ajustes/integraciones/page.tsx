@@ -4,6 +4,8 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreIntegrations } from "@/lib/inbox/get-store-integrations";
+import { getMetaOAuthConfig } from "@/lib/env/server";
+import { getMetaRedirectUri, resolveMetaOAuthSiteUrl } from "@/lib/inbox/meta-oauth";
 import { IntegrationsTab } from "@/components/dashboard/settings/IntegrationsTab";
 import { getChannelIntegration } from "@/src/config/channel-integrations";
 import type { ChannelProviderKey } from "@/src/config/channel-integrations";
@@ -44,7 +46,8 @@ function resolveStatus(searchParams: {
       };
     case "oauth_denied":
       return {
-        message: "Autorización cancelada. Puedes intentarlo de nuevo cuando quieras.",
+        message:
+          "Autorización cancelada o rechazada por Meta. Si ves «La app no está activa», verifica que tu usuario figure como Administrador o Desarrollador en developers.facebook.com → tu app → Roles, y que la app esté en modo Desarrollo con tu cuenta añadida o en modo Live tras App Review.",
         tone: "error",
       };
     case "connect_failed":
@@ -97,6 +100,10 @@ export default async function IntegracionesPage({
   const status = resolveStatus(params);
 
   let integrations: Awaited<ReturnType<typeof getStoreIntegrations>> = [];
+  const metaOAuth = getMetaOAuthConfig();
+  const metaRedirectUri = metaOAuth.isConfigured
+    ? getMetaRedirectUri(resolveMetaOAuthSiteUrl())
+    : null;
 
   if (store) {
     integrations = await getStoreIntegrations(supabase, store.id);
@@ -128,6 +135,27 @@ export default async function IntegracionesPage({
         </div>
       ) : (
         <div className="settings-workspace">
+          {metaRedirectUri ? (
+            <details className="card-panel mb-6 text-sm text-zinc-600 dark:text-zinc-400">
+              <summary className="cursor-pointer font-semibold text-zinc-800 dark:text-zinc-200">
+                Diagnóstico OAuth Meta
+              </summary>
+              <div className="mt-3 space-y-2 leading-relaxed">
+                <p>
+                  En Meta → <strong>Inicio de sesión con Facebook → Configuración</strong>,
+                  la URL de redirección válida debe coincidir <em>exactamente</em> con:
+                </p>
+                <p className="break-all rounded-lg bg-zinc-100 px-3 py-2 font-mono text-xs text-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+                  {metaRedirectUri}
+                </p>
+                <p>
+                  Si el error aparece en la pantalla de Facebook (antes de volver a Alcentimo),
+                  suele deberse al modo de la app (Desarrollo/Live) o a que tu cuenta personal
+                  no está en Roles de la app, no a un fallo del callback.
+                </p>
+              </div>
+            </details>
+          ) : null}
           <div className="settings-workspace-body">
             <IntegrationsTab
               integrations={integrations}

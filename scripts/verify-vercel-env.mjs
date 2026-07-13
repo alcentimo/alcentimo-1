@@ -73,6 +73,14 @@ if (siteUrl && !/^https:\/\//i.test(siteUrl)) {
   );
 }
 
+if (siteUrl && isProduction) {
+  const redirectUri = `${siteUrl.replace(/\/$/, "")}/api/integrations/meta/callback`;
+  console.log(
+    "[vercel-env] Meta OAuth redirect_uri (registrar en Facebook Login → Configuración):",
+    redirectUri,
+  );
+}
+
 const blockingMissing = [...missingCore];
 
 if (isProduction && missingServer.length > 0) {
