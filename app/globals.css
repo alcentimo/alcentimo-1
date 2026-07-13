@@ -1025,6 +1025,22 @@ body {
   @apply truncate text-sm font-semibold text-slate-900 dark:text-slate-50;
 }
 
+.inbox-context-profile-sales {
+  @apply mt-0.5 text-[11px] text-slate-500 dark:text-slate-400;
+}
+
+.inbox-context-profile-sales--vip {
+  @apply text-slate-600 dark:text-slate-300;
+}
+
+.inbox-context-profile-sales-value {
+  @apply font-semibold tabular-nums text-slate-900 dark:text-slate-50;
+}
+
+.inbox-context-profile-sales--vip .inbox-context-profile-sales-value {
+  @apply text-teal-700 dark:text-teal-300;
+}
+
 .inbox-context-profile-meta {
   @apply truncate text-xs text-slate-500 dark:text-slate-400;
 }
@@ -1173,6 +1189,14 @@ body {
   @apply text-emerald-600;
 }
 
+.inbox-contact-strip-btn--whatsapp {
+  @apply text-[#25D366] hover:bg-emerald-50 hover:text-[#128C7E] dark:hover:bg-emerald-950/30;
+}
+
+.inbox-order-status {
+  @apply block text-[10px] font-medium text-emerald-700 dark:text-emerald-300;
+}
+
 .inbox-context-status-row {
   @apply flex items-center gap-1.5;
 }
@@ -1198,7 +1222,7 @@ body {
 }
 
 .inbox-order-highlight-top {
-  @apply flex items-center justify-between gap-2;
+  @apply flex items-start justify-between gap-2;
 }
 
 .inbox-order-highlight-ref,

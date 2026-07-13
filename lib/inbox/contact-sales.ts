@@ -103,7 +103,33 @@ export function getContactPurchaseHistory(
 ): VentaWithProduct[] {
   return sales
     .filter((sale) => saleMatchesConversation(sale, conversation))
+    .sort(
+      (left, right) =>
+        new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
+    )
     .slice(0, limit);
+}
+
+export function getContactMatchedSales(
+  conversation: MessageConversation,
+  sales: VentaWithProduct[],
+): VentaWithProduct[] {
+  return sales
+    .filter((sale) => saleMatchesConversation(sale, conversation))
+    .sort(
+      (left, right) =>
+        new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
+    );
+}
+
+export function getContactTotalSalesValue(
+  conversation: MessageConversation,
+  sales: VentaWithProduct[],
+): number {
+  return getContactMatchedSales(conversation, sales).reduce(
+    (total, sale) => total + sale.monto,
+    0,
+  );
 }
 
 export function buildConversationSalesMap(

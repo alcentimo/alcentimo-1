@@ -14,13 +14,21 @@ import {
   buildClientActivityFeed,
   getSalesStatusActivityLabel,
 } from "@/lib/inbox/contact-crm";
-import { formatOrderReference } from "@/lib/inbox/order-display";
+import {
+  formatOrderReference,
+  formatOrderStatus,
+  getOrderStatusTone,
+} from "@/lib/inbox/order-display";
 import {
   updateInboxContactPrivateNotes,
   updateInboxContactTags,
   updateInboxConversationSalesStatus,
 } from "@/lib/inbox/actions";
 import { getContactPurchaseHistory, isPersistedConversation } from "@/lib/inbox/contact-context";
+import {
+  getContactTotalSalesValue,
+} from "@/lib/inbox/contact-sales";
+import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { ContextModuleCard } from "@/components/inbox/ContextModuleCard";
 import { SalesStatusSelect } from "@/components/inbox/SalesStatusSelect";
 import { ContactCopyStrip } from "@/components/inbox/ContactCopyStrip";
@@ -84,6 +92,17 @@ export function ConversationContextPanel({
   }, [conversation, purchaseHistory]);
 
   const latestOrder = purchaseHistory[0] ?? null;
+
+  const totalSalesValue = useMemo(() => {
+    if (!conversation) return 0;
+    return getContactTotalSalesValue(conversation, recentSales);
+  }, [conversation, recentSales]);
+
+  const whatsappUrl = useMemo(() => {
+    if (!conversation) return null;
+    const phone = conversation.phoneE164 ?? conversation.senderId;
+    return buildWhatsAppOrderUrl(phone, "");
+  }, [conversation]);
 
   useEffect(() => {
     if (!conversation?.contactId) return;
@@ -184,6 +203,16 @@ export function ConversationContextPanel({
     <div className="flex min-h-0 flex-1 flex-col">
       <header className="inbox-context-profile">
         <p className="inbox-context-profile-name">{profileTitle}</p>
+        <p
+          className={`inbox-context-profile-sales ${
+            totalSalesValue > 0 ? "inbox-context-profile-sales--vip" : ""
+          }`}
+        >
+          Ventas totales:{" "}
+          <span className="inbox-context-profile-sales-value">
+            ${formatCurrency(totalSalesValue)}
+          </span>
+        </p>
 
         <div className="inbox-context-status-row mt-2">
           <SalesStatusSelect
@@ -202,6 +231,7 @@ export function ConversationContextPanel({
         <ContactCopyStrip
           phone={phoneValue}
           email={conversation.email}
+          whatsappUrl={whatsappUrl}
         />
       </header>
 
@@ -211,9 +241,14 @@ export function ConversationContextPanel({
             <div className="inbox-context-module-list">
               <div className="inbox-order-highlight">
                 <div className="inbox-order-highlight-top">
-                  <span className="inbox-order-highlight-ref">
-                    {formatOrderReference(latestOrder)}
-                  </span>
+                  <div className="min-w-0">
+                    <span className="inbox-order-highlight-ref">
+                      {formatOrderReference(latestOrder)}
+                    </span>
+                    <span className={`${getOrderStatusTone()} mt-0.5`}>
+                      {formatOrderStatus(latestOrder)}
+                    </span>
+                  </div>
                   <span className="inbox-order-highlight-amount">
                     {formatCurrency(latestOrder.monto)}
                   </span>
@@ -228,10 +263,15 @@ export function ConversationContextPanel({
                 <ul className="inbox-context-module-list">
                   {purchaseHistory.slice(1, 3).map((sale) => (
                     <li key={sale.id} className="inbox-context-module-row">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="inbox-order-row-ref">
-                          {formatOrderReference(sale)}
-                        </span>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="inbox-order-row-ref">
+                            {formatOrderReference(sale)}
+                          </span>
+                          <span className={`${getOrderStatusTone()} mt-0.5`}>
+                            {formatOrderStatus(sale)}
+                          </span>
+                        </div>
                         <span className="inbox-order-row-amount">
                           {formatCurrency(sale.monto)}
                         </span>
