@@ -30,12 +30,12 @@ export default async function OnboardingPage() {
       <PageContainer narrow className="relative py-10 sm:py-14">
         <div className="mb-8 text-center">
           <BrandLogo href="/" centered className="justify-center" />
-          <p className="section-label mt-6">Primeros pasos</p>
+          <p className="section-label mt-6">Configuración rápida</p>
           <h1 className="mt-2 text-2xl font-bold text-zinc-900 sm:text-3xl dark:text-zinc-50">
-            Bienvenido a alcentimo
+            Tu tienda en menos de un minuto
           </h1>
           <p className="mt-2 text-base text-zinc-500 sm:text-sm lg:text-base dark:text-zinc-400">
-            Crea tu tienda en un minuto y empieza a publicar productos.
+            Define el nombre, el tipo de negocio y tu WhatsApp. Nosotros generamos el enlace del catálogo.
           </p>
         </div>
 

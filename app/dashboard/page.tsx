@@ -11,9 +11,15 @@ import { PageContainer } from "@/components/ui/PageContainer";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardHomePage() {
+export default async function DashboardHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ onboarded?: string }>;
+}) {
   const supabase = await createClient();
   const session = await getDashboardSession(supabase);
+  const params = await searchParams;
+  const showOnboardingSuccess = params.onboarded === "1";
 
   if (!session) {
     redirect("/dashboard/login");
@@ -47,6 +53,13 @@ export default async function DashboardHomePage() {
 
   return (
     <PageContainer as="div" className="py-6 sm:py-8">
+      {showOnboardingSuccess ? (
+        <div className="alert-success mb-6" role="status">
+          ¡Tu tienda está lista! Ya puedes publicar productos y recibir pedidos por
+          WhatsApp.
+        </div>
+      ) : null}
+
       <header className="page-header">
         <p className="section-label">Inicio</p>
         <h1 className="page-header-title">Resumen del negocio</h1>

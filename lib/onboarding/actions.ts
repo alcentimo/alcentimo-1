@@ -12,6 +12,11 @@ import {
   DEFAULT_STORE_COUNTRY,
   isStoreCountryOption,
 } from "@/lib/onboarding/countries";
+import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
+import {
+  defaultStoreSettingsConfig,
+  mergeStoreSettingsConfig,
+} from "@/lib/store-settings/defaults";
 
 export type OnboardingFormState = {
   error?: string;
@@ -57,6 +62,7 @@ export async function completeOnboarding(
   const country = String(formData.get("country") ?? "").trim();
   const category = String(formData.get("category") ?? "").trim();
   const customCategory = String(formData.get("custom_category") ?? "").trim();
+  const whatsapp = String(formData.get("whatsapp") ?? "").trim();
 
   if (!name) {
     return { error: "El nombre de la tienda es obligatorio." };
@@ -71,7 +77,7 @@ export async function completeOnboarding(
   }
 
   if (!category) {
-    return { error: "Selecciona una categoría para tu negocio." };
+    return { error: "Selecciona el tipo de tu tienda." };
   }
 
   const categoryName =
@@ -80,7 +86,7 @@ export async function completeOnboarding(
       : category;
 
   if (!categoryName.trim()) {
-    return { error: "Indica la categoría de tu negocio." };
+    return { error: "Indica el tipo de tu negocio." };
   }
 
   if (
@@ -88,6 +94,16 @@ export async function completeOnboarding(
     !STORE_CATEGORY_OPTIONS.includes(category as (typeof STORE_CATEGORY_OPTIONS)[number])
   ) {
     return { error: "Categoría no válida." };
+  }
+
+  if (!whatsapp) {
+    return { error: "Ingresa tu WhatsApp de contacto." };
+  }
+
+  if (!normalizeWhatsAppPhone(whatsapp)) {
+    return {
+      error: "Ingresa un número de WhatsApp válido (mínimo 10 dígitos).",
+    };
   }
 
   const slug = await resolveUniqueStoreSlug(supabase, name);
@@ -111,6 +127,19 @@ export async function completeOnboarding(
     return { error: storeError.message };
   }
 
+  const settingsConfig = mergeStoreSettingsConfig(defaultStoreSettingsConfig(), {
+    contact: { whatsappPhone: whatsapp },
+  });
+
+  const { error: settingsError } = await supabase.from("store_settings").insert({
+    store_id: store.id,
+    config: settingsConfig,
+  });
+
+  if (settingsError) {
+    return { error: settingsError.message };
+  }
+
   const { error: categoryError } = await supabase.from("categories").insert({
     store_id: store.id,
     name: categoryName.trim(),
@@ -123,5 +152,6 @@ export async function completeOnboarding(
 
   revalidatePath("/dashboard");
   revalidatePath("/onboarding");
-  redirect("/dashboard");
+  revalidatePath(`/c/${slug}`);
+  redirect("/dashboard?onboarded=1");
 }

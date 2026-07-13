@@ -31,6 +31,11 @@ export function getSiteUrl(): string {
   return DEFAULT_SITE_URL;
 }
 
+/** Host público sin protocolo (ej. alcentimo.com). */
+export function getPublicSiteHost(): string {
+  return getSiteUrl().replace(/^https?:\/\//, "");
+}
+
 /** Callback OAuth/email: p. ej. https://alcentimo.com/auth/callback?next=%2Fonboarding */
 export function getAuthCallbackUrl(next = "/onboarding"): string {
   const siteUrl = getSiteUrl();
