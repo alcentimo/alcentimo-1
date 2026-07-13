@@ -15,7 +15,12 @@ const PROVIDER_SCOPES: Record<MetaProviderKey, string[]> = {
     "instagram_basic",
     "instagram_manage_messages",
   ],
-  messenger: ["pages_show_list", "pages_messaging", "pages_manage_metadata"],
+  messenger: [
+    "pages_show_list",
+    "pages_messaging",
+    "pages_manage_metadata",
+    "pages_manage_posts",
+  ],
 };
 
 export function getMetaRedirectUri(siteUrl: string): string {

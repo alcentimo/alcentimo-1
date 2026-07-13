@@ -191,6 +191,23 @@ export interface InventoryLog {
   created_at: string;
 }
 
+export interface FacebookPagePost {
+  id: string;
+  store_id: string;
+  integration_id: string | null;
+  product_id: string | null;
+  page_id: string;
+  graph_post_id: string;
+  message: string | null;
+  media_url: string | null;
+  permalink_url: string | null;
+  status: "pending" | "published" | "failed";
+  published_at: string | null;
+  raw_response: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
 /** Fila de la vista `catalog_list_view` — optimizada para el grid */
 export interface CatalogListItem {
   store_id: string;
@@ -508,6 +525,22 @@ export interface Database {
         Row: Venta;
         Insert: VentaInsert & { id?: string; created_at?: string };
         Update: Partial<Venta>;
+        Relationships: [];
+      };
+      facebook_page_posts: {
+        Row: FacebookPagePost;
+        Insert: Omit<
+          FacebookPagePost,
+          "id" | "created_at" | "updated_at" | "status" | "published_at" | "raw_response"
+        > & {
+          id?: string;
+          status?: FacebookPagePost["status"];
+          published_at?: string | null;
+          raw_response?: Record<string, unknown> | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<FacebookPagePost>;
         Relationships: [];
       };
     };

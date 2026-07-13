@@ -1387,6 +1387,110 @@ body {
   @apply px-2 py-6 text-center text-xs text-slate-500 dark:text-slate-400;
 }
 
+.inbox-composer-modal--catalog {
+  @apply max-h-[min(32rem,85dvh)];
+}
+
+.inbox-composer-modal--publish {
+  @apply max-h-[min(34rem,88dvh)];
+}
+
+.inbox-composer-catalog-row {
+  @apply rounded-lg px-1 py-1.5;
+}
+
+.inbox-composer-catalog-row-main {
+  @apply flex items-start gap-2 px-1;
+}
+
+.inbox-composer-catalog-thumb {
+  @apply h-10 w-10 shrink-0 rounded-md object-cover;
+}
+
+.inbox-composer-catalog-thumb--empty {
+  @apply bg-slate-100 dark:bg-slate-800;
+}
+
+.inbox-composer-catalog-actions {
+  @apply mt-1.5 flex flex-wrap gap-1.5 px-1;
+}
+
+.inbox-composer-catalog-action {
+  @apply inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition;
+}
+
+.inbox-composer-catalog-action--chat {
+  @apply bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700;
+}
+
+.inbox-composer-catalog-action--facebook {
+  @apply bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2]/15 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#1877F2]/20 dark:text-[#6db3ff];
+}
+
+.inbox-composer-published-badge {
+  @apply inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300;
+}
+
+.inbox-composer-publish-body {
+  @apply min-h-0 flex-1 space-y-3 overflow-y-auto px-3 pb-2;
+}
+
+.inbox-composer-publish-preview {
+  @apply flex items-start gap-3 rounded-lg bg-slate-50 p-2 dark:bg-slate-900;
+}
+
+.inbox-composer-publish-preview-image {
+  @apply h-16 w-16 shrink-0 rounded-md object-cover;
+}
+
+.inbox-composer-publish-preview-note {
+  @apply text-[11px] leading-snug text-slate-500 dark:text-slate-400;
+}
+
+.inbox-composer-publish-warning {
+  @apply rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] text-amber-800 dark:bg-amber-950/30 dark:text-amber-200;
+}
+
+.inbox-composer-publish-label {
+  @apply block text-[11px] font-medium text-slate-600 dark:text-slate-300;
+}
+
+.inbox-composer-publish-input {
+  @apply mt-1.5 w-full resize-none rounded-lg border-0 bg-slate-100 px-2.5 py-2 text-xs leading-relaxed text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-[#1877F2]/20 dark:bg-slate-900 dark:text-slate-50;
+}
+
+.inbox-composer-publish-error {
+  @apply text-[11px] text-rose-600 dark:text-rose-400;
+}
+
+.inbox-composer-publish-success {
+  @apply flex items-start gap-2 rounded-lg bg-emerald-50 px-2.5 py-2 dark:bg-emerald-950/30;
+}
+
+.inbox-composer-publish-success-title {
+  @apply text-xs font-semibold text-emerald-800 dark:text-emerald-200;
+}
+
+.inbox-composer-publish-success-link {
+  @apply mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 hover:underline dark:text-emerald-300;
+}
+
+.inbox-composer-publish-footer {
+  @apply flex items-center justify-end gap-2 border-t border-slate-100 px-3 py-2.5 dark:border-slate-800;
+}
+
+.inbox-composer-publish-btn {
+  @apply inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.inbox-composer-publish-btn--ghost {
+  @apply text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800;
+}
+
+.inbox-composer-publish-btn--primary {
+  @apply bg-[#1877F2] text-white hover:bg-[#166fe5];
+}
+
 .settings-option-card {
   @apply rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 sm:p-6;
 }

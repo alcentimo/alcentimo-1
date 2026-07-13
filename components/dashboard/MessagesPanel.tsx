@@ -20,13 +20,16 @@ import { isMetaInboxProvider } from "@/components/inbox/MessengerChannelLabel";
 import { useInboxWorkspace } from "@/components/inbox/useInboxWorkspace";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { VentaWithProduct } from "@/lib/sales/types";
+import type { ProductFacebookPostSummary } from "@/lib/facebook/get-store-facebook-posts";
 
 interface MessagesPanelProps {
   initialConversations: MessageConversation[];
   hasActiveIntegrations: boolean;
+  hasMessengerIntegration?: boolean;
   storeCountry?: string | null;
   storeSlug: string;
   catalogProducts?: CatalogListItem[];
+  publishedPosts?: Record<string, ProductFacebookPostSummary>;
   recentSales?: VentaWithProduct[];
   salesByConversationId?: Record<string, VentaWithProduct[]>;
 }
@@ -34,20 +37,34 @@ interface MessagesPanelProps {
 export function MessagesPanel({
   initialConversations,
   hasActiveIntegrations,
+  hasMessengerIntegration = false,
   storeCountry = null,
   storeSlug,
   catalogProducts = [],
+  publishedPosts = {},
   recentSales = [],
   salesByConversationId = {},
 }: MessagesPanelProps) {
   const [conversations, setConversations] =
     useState(initialConversations);
+  const [facebookPosts, setFacebookPosts] = useState(publishedPosts);
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(null);
   const [listFilters, setListFilters] =
     useState<InboxListFilters>(DEFAULT_INBOX_FILTERS);
   const [, startTransition] = useTransition();
+
+  function handlePostPublished(
+    productId: string,
+    permalinkUrl: string,
+    publishedAt: string,
+  ) {
+    setFacebookPosts((current) => ({
+      ...current,
+      [productId]: { postId: productId, permalinkUrl, publishedAt },
+    }));
+  }
 
   const workspace = useInboxWorkspace();
 
@@ -241,7 +258,10 @@ export function MessagesPanel({
               conversation={selectedConversation}
               products={catalogProducts}
               storeSlug={storeSlug}
+              hasMessengerIntegration={hasMessengerIntegration}
+              publishedPosts={facebookPosts}
               onConversationPatch={patchConversation}
+              onPostPublished={handlePostPublished}
             />
           </InboxDockPanel>
         )}

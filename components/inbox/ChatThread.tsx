@@ -18,13 +18,22 @@ import {
 } from "@/components/inbox/conversation-status";
 import { isPersistedConversation } from "@/lib/inbox/contact-context";
 
+import type { ProductFacebookPostSummary } from "@/lib/facebook/get-store-facebook-posts";
+
 interface ChatThreadProps {
   conversation: MessageConversation | null;
   products: CatalogListItem[];
   storeSlug: string;
+  hasMessengerIntegration?: boolean;
+  publishedPosts?: Record<string, ProductFacebookPostSummary>;
   onConversationPatch: (
     conversationId: string,
     patch: Partial<MessageConversation>,
+  ) => void;
+  onPostPublished?: (
+    productId: string,
+    permalinkUrl: string,
+    publishedAt: string,
   ) => void;
 }
 
@@ -32,7 +41,10 @@ export function ChatThread({
   conversation,
   products,
   storeSlug,
+  hasMessengerIntegration = false,
+  publishedPosts = {},
   onConversationPatch,
+  onPostPublished,
 }: ChatThreadProps) {
   const [draft, setDraft] = useState("");
 
@@ -140,8 +152,11 @@ export function ChatThread({
         products={products}
         storeSlug={storeSlug}
         conversationId={conversationId}
+        hasMessengerIntegration={hasMessengerIntegration}
+        publishedPosts={publishedPosts}
         onActivityLogged={handleActivityLogged}
         onMessageSent={handleMessageSent}
+        onPostPublished={onPostPublished}
       />
     </div>
   );
