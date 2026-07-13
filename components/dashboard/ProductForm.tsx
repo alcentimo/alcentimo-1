@@ -11,7 +11,9 @@ import {
 import { compressImageForUpload } from "@/lib/client-image-compress";
 import type { Store } from "@/lib/database.types";
 import { getStoreCatalogUrl } from "@/lib/stores";
-import { formatUsd, formatVes } from "@/lib/format";
+import { formatUsd } from "@/lib/format";
+import { formatCountryCurrency } from "@/lib/country-config";
+import { useCountry } from "@/components/providers/CountryProvider";
 import {
   ProductVariantsEditor,
   serializeVariantsForForm,
@@ -60,6 +62,7 @@ export function ProductForm({
   initialData,
   productLimit = null,
 }: ProductFormProps) {
+  const { config: countryConfig } = useCountry();
   const action = mode === "edit" ? updateProduct : createProduct;
   const [state, formAction, pending] = useActionState(action, initialState);
   const [priceUsd, setPriceUsd] = useState(
@@ -83,11 +86,18 @@ export function ProductForm({
   const limitMessage =
     productLimit != null ? getProductLimitErrorMessage(productLimit) : "";
 
-  const priceVes = useMemo(() => {
+  const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
-    if (!exchangeRate || !Number.isFinite(usd) || usd < 0) return null;
+    if (
+      !countryConfig.currency.showLocalEquivalent ||
+      !exchangeRate ||
+      !Number.isFinite(usd) ||
+      usd < 0
+    ) {
+      return null;
+    }
     return usd * exchangeRate;
-  }, [priceUsd, exchangeRate]);
+  }, [priceUsd, exchangeRate, countryConfig.currency.showLocalEquivalent]);
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -294,7 +304,8 @@ export function ProductForm({
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div>
           <label htmlFor="price_usd" className="label-field">
-            Precio base USD <span className="text-red-500">*</span>
+            {countryConfig.currency.baseCurrencyLabel}{" "}
+            <span className="text-red-500">*</span>
           </label>
           <input
             id="price_usd"
@@ -310,21 +321,30 @@ export function ProductForm({
           />
         </div>
 
-        <div>
-          <p className="label-field">Equivalente en Bs</p>
-          <div className="price-box mt-1.5 flex min-h-11 items-center !p-3.5">
-            <span className="text-base font-semibold text-teal-800 md:text-sm dark:text-teal-200">
-              {priceVes != null ? formatVes(priceVes) : "—"}
-            </span>
-          </div>
-          {exchangeRate && (
-            <p className="mt-1.5">
-              <span className="price-rate-badge">
-                Bs. {exchangeRate.toFixed(2)} / USD · {formatUsd(parseFloat(priceUsd) || 0)}
+        {countryConfig.currency.showLocalEquivalent && (
+          <div>
+            <p className="label-field">{countryConfig.currency.localCurrencyLabel}</p>
+            <div className="price-box mt-1.5 flex min-h-11 items-center !p-3.5">
+              <span className="text-base font-semibold text-teal-800 md:text-sm dark:text-teal-200">
+                {priceLocal != null
+                  ? formatCountryCurrency(
+                      priceLocal,
+                      countryConfig.currency.localCurrency,
+                      countryConfig.currency.locale,
+                    )
+                  : "—"}
               </span>
-            </p>
-          )}
-        </div>
+            </div>
+            {exchangeRate && (
+              <p className="mt-1.5">
+                <span className="price-rate-badge">
+                  Bs. {exchangeRate.toFixed(2)} / USD ·{" "}
+                  {formatUsd(parseFloat(priceUsd) || 0)}
+                </span>
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {!hasCustomVariants && (

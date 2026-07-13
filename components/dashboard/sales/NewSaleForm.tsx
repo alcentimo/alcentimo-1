@@ -5,7 +5,9 @@ import { Plus } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
 import { createSale } from "@/lib/sales/actions";
 import type { CreateSaleFormState } from "@/lib/sales/types";
-import { formatUsd, formatVes } from "@/lib/format";
+import { formatUsd } from "@/lib/format";
+import { formatCountryCurrency } from "@/lib/country-config";
+import { useCountry } from "@/components/providers/CountryProvider";
 import {
   ProductSalePicker,
   type ProductSaleOption,
@@ -15,7 +17,6 @@ import {
   getSalesChannelDbValue,
 } from "@/components/dashboard/sales/SalesChannelSelector";
 import {
-  SALES_PAYMENT_METHODS,
   getSalesPaymentMethod,
   type SalesPaymentMethodKey,
 } from "@/src/config/sales-payment-methods";
@@ -29,12 +30,14 @@ interface NewSaleFormProps {
 const initialState: CreateSaleFormState = {};
 
 export function NewSaleForm({ products, exchangeRate }: NewSaleFormProps) {
+  const { salesPaymentMethods, config: countryConfig } = useCountry();
+  const defaultPaymentKey = salesPaymentMethods[0]?.key ?? "efectivo";
   const [state, formAction, pending] = useActionState(createSale, initialState);
   const [selectedProduct, setSelectedProduct] =
     useState<ProductSaleOption | null>(null);
   const [channelKey, setChannelKey] = useState<SalesChannelKey>("tienda_fisica");
   const [paymentKey, setPaymentKey] =
-    useState<SalesPaymentMethodKey>("efectivo");
+    useState<SalesPaymentMethodKey>(defaultPaymentKey);
   const [quantity, setQuantity] = useState("1");
   const [manualTotal, setManualTotal] = useState(false);
   const [totalInput, setTotalInput] = useState("");
@@ -55,22 +58,28 @@ export function NewSaleForm({ products, exchangeRate }: NewSaleFormProps) {
       ? String(autoTotal)
       : "";
 
-  const totalVes = useMemo(() => {
+  const totalLocal = useMemo(() => {
     const total = Number.parseFloat(displayTotal.replace(",", "."));
-    if (!Number.isFinite(total) || exchangeRate == null) return null;
+    if (
+      !countryConfig.currency.showLocalEquivalent ||
+      !Number.isFinite(total) ||
+      exchangeRate == null
+    ) {
+      return null;
+    }
     return Math.round(total * exchangeRate * 100) / 100;
-  }, [displayTotal, exchangeRate]);
+  }, [displayTotal, exchangeRate, countryConfig.currency.showLocalEquivalent]);
 
   useEffect(() => {
     if (state.success) {
       setSelectedProduct(null);
       setChannelKey("tienda_fisica");
-      setPaymentKey("efectivo");
+      setPaymentKey(defaultPaymentKey);
       setQuantity("1");
       setManualTotal(false);
       setTotalInput("");
     }
-  }, [state.success]);
+  }, [state.success, defaultPaymentKey]);
 
   useEffect(() => {
     if (!manualTotal && autoTotal != null) {
@@ -147,7 +156,7 @@ export function NewSaleForm({ products, exchangeRate }: NewSaleFormProps) {
           }
           className="input-field"
         >
-          {SALES_PAYMENT_METHODS.map((method) => (
+          {salesPaymentMethods.map((method) => (
             <option key={method.key} value={method.key}>
               {method.label}
             </option>
@@ -176,7 +185,7 @@ export function NewSaleForm({ products, exchangeRate }: NewSaleFormProps) {
         <div>
           <div className="flex items-center justify-between gap-2">
             <label className="label-field" htmlFor="monto">
-              Total (USD)
+              {countryConfig.currency.salesTotalLabel}
             </label>
             <button
               type="button"
@@ -204,7 +213,12 @@ export function NewSaleForm({ products, exchangeRate }: NewSaleFormProps) {
           {unitPrice != null && (
             <p className="mt-1 text-xs text-zinc-500">
               Precio unitario: {formatUsd(unitPrice)}
-              {totalVes != null && ` · ${formatVes(totalVes)}`}
+              {totalLocal != null &&
+                ` · ${formatCountryCurrency(
+                  totalLocal,
+                  countryConfig.currency.localCurrency,
+                  countryConfig.currency.locale,
+                )}`}
             </p>
           )}
         </div>

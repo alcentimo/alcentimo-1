@@ -5,6 +5,10 @@ export type SalesPaymentMethodKey =
   | "divisa"
   | "zelle"
   | "punto_venta"
+  | "nequi"
+  | "daviplata"
+  | "mercado_pago"
+  | "tarjeta"
   | "otro";
 
 export interface SalesPaymentMethodDefinition {
@@ -25,6 +29,10 @@ export const SALES_PAYMENT_METHODS: SalesPaymentMethodDefinition[] = [
   { key: "divisa", label: "Divisa (USD)", dbValue: "Divisa" },
   { key: "zelle", label: "Zelle", dbValue: "Zelle" },
   { key: "punto_venta", label: "Punto de venta", dbValue: "Punto de Venta" },
+  { key: "nequi", label: "Nequi", dbValue: "Nequi" },
+  { key: "daviplata", label: "Daviplata", dbValue: "Daviplata" },
+  { key: "mercado_pago", label: "Mercado Pago", dbValue: "Mercado Pago" },
+  { key: "tarjeta", label: "Tarjeta débito/crédito", dbValue: "Tarjeta" },
   { key: "otro", label: "Otro", dbValue: "Otro" },
 ];
 

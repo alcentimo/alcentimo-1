@@ -9,11 +9,12 @@ import {
 } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { saveShippingSettings } from "@/lib/settings/actions";
+import { useCountry } from "@/components/providers/CountryProvider";
 import {
-  LOCAL_SHIPPING_METHODS,
-  NATIONAL_CARRIER_METHODS,
-  getShippingMethod,
-} from "@/src/config/shipping-methods";
+  getLocalShippingForCountry,
+  getNationalCarriersForCountry,
+} from "@/lib/country-config";
+import { getShippingMethod } from "@/src/config/shipping-methods";
 import type {
   ShippingCarrierKey,
   ShippingSettings,
@@ -24,6 +25,9 @@ interface ShippingTabProps {
 }
 
 export function ShippingTab({ initialSettings }: ShippingTabProps) {
+  const { country } = useCountry();
+  const nationalCarriers = getNationalCarriersForCountry(country);
+  const localShipping = getLocalShippingForCountry(country);
   const [carriers, setCarriers] = useState(initialSettings.carriers);
   const [deliveryDetails, setDeliveryDetails] = useState(
     initialSettings.deliveryDetails,
@@ -125,25 +129,23 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
       saving={savingForm}
       onSave={handleSaveForm}
     >
-      <SettingsSection
-        title="Empresas de encomienda"
-        description="Activa las opciones de envío nacional que ofreces a tus clientes."
-      >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {NATIONAL_CARRIER_METHODS.map((method) =>
-            renderCarrierCard(method.key),
-          )}
-        </div>
-      </SettingsSection>
+      {nationalCarriers.length > 0 && (
+        <SettingsSection
+          title="Empresas de encomienda"
+          description="Activa las opciones de envío nacional que ofreces a tus clientes."
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {nationalCarriers.map((method) => renderCarrierCard(method.key))}
+          </div>
+        </SettingsSection>
+      )}
 
       <SettingsSection
         title="Entrega local"
         description="Configura delivery propio y retiro en tienda."
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {LOCAL_SHIPPING_METHODS.map((method) =>
-            renderCarrierCard(method.key),
-          )}
+          {localShipping.map((method) => renderCarrierCard(method.key))}
         </div>
       </SettingsSection>
     </SettingsTabShell>

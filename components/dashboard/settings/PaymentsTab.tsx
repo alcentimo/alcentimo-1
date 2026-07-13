@@ -17,10 +17,8 @@ import {
   type PaymentFieldErrors,
 } from "@/lib/payments/validate-payment-fields";
 import { savePaymentsSettings } from "@/lib/settings/actions";
-import {
-  PAYMENT_METHOD_GROUPS,
-  getPaymentMethod,
-} from "@/src/config/payment-methods";
+import { useCountry } from "@/components/providers/CountryProvider";
+import { getPaymentMethod } from "@/src/config/payment-methods";
 import type {
   PaymentMethodKey,
   PaymentsSettings,
@@ -35,6 +33,7 @@ function fieldErrorKey(methodKey: PaymentMethodKey, fieldKey: string): string {
 }
 
 export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
+  const { paymentGroups } = useCountry();
   const [payments, setPayments] = useState(initialSettings.methods);
   const [installments, setInstallments] = useState(initialSettings.installments);
   const [savingToggle, setSavingToggle] = useState<string | null>(null);
@@ -236,7 +235,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
         </p>
       )}
 
-      {PAYMENT_METHOD_GROUPS.map((group) => (
+      {paymentGroups.map((group) => (
         <SettingsSection
           key={group.title}
           title={group.title}
