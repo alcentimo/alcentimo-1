@@ -100,6 +100,16 @@ export async function POST(request: Request) {
   }
 
   const inboundMessages = extractMetaInboundMessages(payload);
+  const payloadSummary = summarizeMetaPayload(payload);
+  console.log("[webhooks/meta] payload recibido:", payloadSummary);
+
+  if (inboundMessages.length === 0) {
+    console.warn(
+      "[webhooks/meta] Sin mensajes extraíbles del payload (¿delivery/read/postback?).",
+      payloadSummary,
+    );
+  }
+
   for (const msg of inboundMessages) {
     console.log("[webhooks/meta] evento messages:", {
       channel: msg.channel,
@@ -110,8 +120,10 @@ export async function POST(request: Request) {
 
   // Procesamiento pesado (Supabase) en background — no bloquea el 200 a Meta
   after(async () => {
+    console.log("[webhooks/meta] ingest background iniciado");
     try {
       await ingestMetaWebhookPayload(payload);
+      console.log("[webhooks/meta] ingest background completado");
     } catch (err) {
       console.error("[webhooks/meta] ingest error:", err);
     }
@@ -120,12 +132,44 @@ export async function POST(request: Request) {
   return new Response(null, { status: 200 });
 }
 
+function summarizeMetaPayload(payload: unknown): Record<string, unknown> {
+  if (!payload || typeof payload !== "object") {
+    return { valid: false };
+  }
+
+  const record = payload as { object?: string; entry?: unknown[] };
+  const entries = record.entry ?? [];
+
+  return {
+    object: record.object ?? null,
+    entryCount: entries.length,
+    entryIds: entries
+      .filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object")
+      .map((entry) => String(entry.id ?? "")),
+    messagingEventCount: entries.reduce((total, entry) => {
+      if (!entry || typeof entry !== "object") return total;
+      const messaging = (entry as { messaging?: unknown[] }).messaging ?? [];
+      return total + messaging.length;
+    }, 0),
+    whatsappChangeCount: entries.reduce((total, entry) => {
+      if (!entry || typeof entry !== "object") return total;
+      const changes = (entry as { changes?: unknown[] }).changes ?? [];
+      return total + changes.length;
+    }, 0),
+  };
+}
+
 async function findIntegration(
   admin: AdminClient,
   provider: InboxProvider,
   externalAccountId: string,
 ): Promise<ChannelIntegration | null> {
   if (!externalAccountId) return null;
+
+  console.log("[webhooks/meta] buscando integración:", {
+    provider,
+    externalAccountId,
+  });
 
   const { data, error } = await admin
     .from("channel_integrations")
@@ -138,6 +182,15 @@ async function findIntegration(
   if (error) {
     console.error("[webhooks/meta] integration lookup error:", error);
     return null;
+  }
+
+  if (!data) {
+    console.warn("[webhooks/meta] integración no encontrada:", {
+      provider,
+      externalAccountId,
+    });
+  } else {
+    console.log("[webhooks/meta] integración encontrada:", data);
   }
 
   return data;
@@ -161,13 +214,27 @@ async function saveChannelMessage(
     console.error("[webhooks/meta] channel_messages insert failed:", error);
     throw error;
   }
+
+  console.log("[webhooks/meta] channel_messages insert ok:", {
+    integrationId,
+    senderId,
+    messageText,
+  });
 }
 
 async function ingestMetaWebhookPayload(payload: unknown): Promise<void> {
-  if (!payload || typeof payload !== "object") return;
+  if (!payload || typeof payload !== "object") {
+    console.warn("[webhooks/meta] payload inválido, ingest omitido");
+    return;
+  }
 
   const object = (payload as { object?: string }).object;
   const entries = (payload as { entry?: unknown[] }).entry ?? [];
+  console.log("[webhooks/meta] ingest iniciado:", {
+    object,
+    entryCount: entries.length,
+  });
+
   const admin = createAdminClient();
 
   for (const entry of entries) {
@@ -184,7 +251,16 @@ async function ingestMetaWebhookPayload(payload: unknown): Promise<void> {
         entry as Record<string, unknown>,
         object,
       );
+      continue;
     }
+  }
+
+  if (
+    object !== "whatsapp_business_account" &&
+    object !== "page" &&
+    object !== "instagram"
+  ) {
+    console.warn("[webhooks/meta] object no soportado:", object);
   }
 }
 
@@ -208,7 +284,14 @@ async function ingestWhatsAppEntry(
     const messages = (value.messages as unknown[]) ?? [];
     const contacts = (value.contacts as Array<Record<string, unknown>>) ?? [];
 
-    if (!phoneNumberId || messages.length === 0) continue;
+    if (!phoneNumberId || messages.length === 0) {
+      console.log("[webhooks/meta] WhatsApp change sin mensajes:", {
+        phoneNumberId,
+        messageCount: messages.length,
+        field,
+      });
+      continue;
+    }
 
     const integration = await findIntegration(admin, "whatsapp", phoneNumberId);
     if (!integration) {
@@ -256,6 +339,8 @@ async function ingestWhatsAppEntry(
         contactDisplayName: profileName,
         contactPhone: senderId,
         rawPayload: m,
+      }).then((result) => {
+        console.log("[webhooks/meta] inbox_messages ingest:", result);
       });
     }
   }
@@ -271,6 +356,10 @@ async function ingestMessagingEntry(
   const pageId = String(entry.id ?? "");
   const messagingEvents = (entry.messaging as unknown[]) ?? [];
 
+  if (messagingEvents.length === 0) {
+    console.log("[webhooks/meta] entry sin eventos messaging:", { provider, pageId });
+  }
+
   const integration = await findIntegration(admin, provider, pageId);
   if (!integration) {
     console.warn(
@@ -285,7 +374,10 @@ async function ingestMessagingEntry(
 
     const e = event as Record<string, unknown>;
     const message = e.message as Record<string, unknown> | undefined;
-    if (!message) continue;
+    if (!message) {
+      console.log("[webhooks/meta] evento messaging sin message (delivery/read?):", e);
+      continue;
+    }
 
     const senderId = String((e.sender as { id?: string })?.id ?? "");
     const platformMessageId = String(message.mid ?? message.id ?? "");
@@ -319,6 +411,8 @@ async function ingestMessagingEntry(
       messageType: body ? "text" : "unknown",
       sentAt: metaTimestampToIso(e.timestamp),
       rawPayload: e,
+    }).then((result) => {
+      console.log("[webhooks/meta] inbox_messages ingest:", result);
     });
   }
 }
