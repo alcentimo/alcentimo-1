@@ -13,8 +13,7 @@ import { MessagesEmptyState } from "@/components/dashboard/MessagesEmptyState";
 import { ConversationList } from "@/components/inbox/ConversationList";
 import { ChatThread } from "@/components/inbox/ChatThread";
 import { ConversationContextPanel } from "@/components/inbox/ConversationContextPanel";
-import { InboxFilterBar } from "@/components/inbox/InboxFilterBar";
-import { FbInboxHeader } from "@/components/inbox/FbInboxHeader";
+import { FbInboxTopBar } from "@/components/inbox/FbInboxTopBar";
 import { InboxDockPanel } from "@/components/inbox/InboxDockPanel";
 import { InboxDockTab } from "@/components/inbox/InboxDockTab";
 import { isMessengerProvider } from "@/components/inbox/MessengerChannelLabel";
@@ -159,7 +158,12 @@ export function MessagesPanel({
   if (facebookConversations.length === 0) {
     return (
       <div className="fb-inbox">
-        <FbInboxHeader />
+        <FbInboxTopBar
+          filters={listFilters}
+          onFiltersChange={setListFilters}
+          reviewCount={reviewCount}
+          activeCount={activeCount}
+        />
         <div className="rounded-xl bg-white px-6 py-12 text-center shadow-sm dark:bg-slate-950">
           <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
             Aún no hay conversaciones de Facebook Messenger
@@ -174,13 +178,12 @@ export function MessagesPanel({
 
   return (
     <div className="fb-inbox">
-      <FbInboxHeader pendingCount={reviewCount} />
-
-      <InboxFilterBar
+      <FbInboxTopBar
         filters={listFilters}
         onFiltersChange={setListFilters}
         reviewCount={reviewCount}
         activeCount={activeCount}
+        pendingCount={reviewCount}
       />
 
       <section

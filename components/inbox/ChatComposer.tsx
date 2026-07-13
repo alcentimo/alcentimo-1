@@ -44,48 +44,46 @@ export function ChatComposer({ draft, onDraftChange }: ChatComposerProps) {
   return (
     <footer className="inbox-chat-composer-wrap">
       <div className="inbox-chat-composer">
-        <div className="flex items-end gap-2">
-          <div className="inbox-composer-field">
-            <div
-              className="inbox-composer-toolbar"
-              role="toolbar"
-              aria-label="Acciones rápidas de venta"
-            >
-              {QUICK_ACTIONS.map((action) => {
-                const Icon = action.icon;
-
-                return (
-                  <button
-                    key={action.id}
-                    type="button"
-                    onClick={() => applySnippet(action.snippet)}
-                    className="inbox-composer-tool-btn"
-                    title={action.label}
-                    aria-label={action.label}
-                  >
-                    <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  </button>
-                );
-              })}
-            </div>
-            <textarea
-              value={draft}
-              onChange={(event) => onDraftChange(event.target.value)}
-              rows={2}
-              placeholder="Escribe para cerrar la venta…"
-              className="inbox-chat-composer-input"
-            />
-          </div>
-          <button
-            type="button"
-            disabled
-            className="btn-brand inbox-chat-composer-send"
-            title="Respuestas salientes próximamente"
-            aria-label="Enviar mensaje"
+        <div className="inbox-composer-field">
+          <div
+            className="inbox-composer-toolbar"
+            role="toolbar"
+            aria-label="Acciones rápidas de venta"
           >
-            <Send className="h-4 w-4" aria-hidden="true" />
-          </button>
+            {QUICK_ACTIONS.map((action) => {
+              const Icon = action.icon;
+
+              return (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={() => applySnippet(action.snippet)}
+                  className="inbox-composer-tool-btn"
+                  title={action.label}
+                  aria-label={action.label}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                </button>
+              );
+            })}
+          </div>
+          <textarea
+            value={draft}
+            onChange={(event) => onDraftChange(event.target.value)}
+            rows={2}
+            placeholder="Escribe para cerrar la venta…"
+            className="inbox-chat-composer-input"
+          />
         </div>
+        <button
+          type="button"
+          disabled
+          className="inbox-chat-composer-send"
+          title="Respuestas salientes próximamente"
+          aria-label="Enviar mensaje"
+        >
+          <Send className="h-4 w-4" aria-hidden="true" />
+        </button>
       </div>
     </footer>
   );

@@ -72,10 +72,10 @@ export function ConversationContextPanel({
   if (!conversation) {
     return (
       <div className="inbox-context-panel-empty flex flex-1 flex-col justify-center px-4 py-8">
-        <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+        <p className="text-xs font-medium text-slate-600">
           Selecciona un chat
         </p>
-        <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+        <p className="mt-1 text-xs text-slate-400">
           Datos del cliente y pedidos aquí.
         </p>
       </div>
@@ -132,41 +132,37 @@ export function ConversationContextPanel({
         <p className="inbox-context-profile-meta">
           {conversation.phoneE164 ?? conversation.senderId}
         </p>
+        <select
+          value={conversation.status}
+          disabled={isUpdatingStatus}
+          onChange={(event) =>
+            handleStatusChange(event.target.value as InboxConversationStatus)
+          }
+          className="inbox-context-input inbox-context-input--compact mt-2"
+          aria-label="Estado de la conversación"
+        >
+          {CONVERSATION_STATUS_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <div className="inbox-context-fields mt-2">
+          <FieldRow label="País" value={conversation.country ?? storeCountry ?? "—"} />
+          <FieldRow label="Último msg" value={formatMessageTime(conversation.lastMessageAt)} />
+        </div>
       </header>
 
-      <div className="inbox-context-scroll space-y-2.5 overflow-y-auto px-3 pb-4">
-        <ContextModuleCard title="Cliente">
-          <select
-            value={conversation.status}
-            disabled={isUpdatingStatus}
-            onChange={(event) =>
-              handleStatusChange(event.target.value as InboxConversationStatus)
-            }
-            className="inbox-context-input inbox-context-input--compact"
-            aria-label="Estado de la conversación"
-          >
-            {CONVERSATION_STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          <div className="inbox-context-fields">
-            <FieldRow label="País" value={conversation.country ?? storeCountry ?? "—"} />
-            <FieldRow label="Último msg" value={formatMessageTime(conversation.lastMessageAt)} />
-          </div>
-        </ContextModuleCard>
-
+      <div className="inbox-context-scroll overflow-y-auto px-3 pb-3">
         <ContextModuleCard title="Pedidos">
           {purchaseHistory.length === 0 ? (
-            <p className="inbox-context-empty">Sin pedidos vinculados.</p>
+            <p className="inbox-context-module-empty">Sin pedidos vinculados.</p>
           ) : (
-            <ul className="inbox-context-orders">
+            <ul className="inbox-context-module-list">
               {purchaseHistory.map((sale) => (
-                <li key={sale.id} className="inbox-context-order">
-                  <p className="inbox-context-order-name">{sale.product_name}</p>
-                  <p className="inbox-context-order-meta">
+                <li key={sale.id} className="inbox-context-module-row">
+                  <p className="inbox-context-module-row-title">{sale.product_name}</p>
+                  <p className="inbox-context-module-row-meta">
                     {formatCurrency(sale.monto)} · {sale.cantidad} u ·{" "}
                     {formatMessageTime(sale.created_at)}
                   </p>
@@ -177,10 +173,10 @@ export function ConversationContextPanel({
         </ContextModuleCard>
 
         <ContextModuleCard title="Etiquetas">
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-1">
+          <div className="inbox-context-module-list">
+            <div className="flex flex-wrap gap-1.5">
               {conversation.tags.length === 0 ? (
-                <p className="inbox-context-empty">Sin etiquetas.</p>
+                <p className="inbox-context-module-empty">Sin etiquetas.</p>
               ) : (
                 conversation.tags.map((tag) => (
                   <span key={tag} className="inbox-context-tag">
@@ -190,7 +186,7 @@ export function ConversationContextPanel({
               )}
             </div>
 
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 pt-1">
               <input
                 type="text"
                 value={tagInput}
