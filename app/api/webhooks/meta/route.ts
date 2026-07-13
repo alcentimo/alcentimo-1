@@ -189,9 +189,17 @@ async function findIntegration(
   }
 
   if (!data) {
-    console.warn("[webhooks/meta] integración no encontrada:", {
-      provider,
-      externalAccountId,
+    const { data: existingRows } = await admin
+      .from("channel_integrations")
+      .select("id, store_id, provider, external_account_id, is_active")
+      .eq("provider", provider);
+
+    console.warn("[webhooks/meta] SKIP razón: integración no encontrada", {
+      buscadoProvider: provider,
+      buscadoExternalAccountId: externalAccountId,
+      condicion:
+        "Debe existir channel_integrations con provider + external_account_id + is_active=true",
+      filasExistentesMismoProvider: existingRows ?? [],
     });
   } else {
     console.log("[webhooks/meta] integración encontrada:", data);
@@ -421,10 +429,15 @@ async function ingestMessagingEntry(
 
   const integration = await findIntegration(admin, provider, pageId);
   if (!integration) {
-    console.warn(
-      `[webhooks/meta] SKIP ${provider}: integración no encontrada para page id:`,
-      pageId,
-    );
+    console.warn("[webhooks/meta] SKIP razón:", {
+      provider,
+      object,
+      pageIdFromPayload: pageId,
+      messagingEventCount: messagingEvents.length,
+      condicion:
+        "!findIntegration(admin, provider, pageId) — no hay fila en channel_integrations",
+      solucion: `INSERT en channel_integrations con provider='${provider}' y external_account_id='${pageId}'`,
+    });
     return;
   }
 
@@ -437,17 +450,26 @@ async function ingestMessagingEntry(
     const e = event as Record<string, unknown>;
     const message = e.message as Record<string, unknown> | undefined;
     if (!message) {
-      console.log("[webhooks/meta] evento messaging sin message (delivery/read?):", e);
+      console.log("[webhooks/meta] SKIP razón:", {
+        provider,
+        pageId,
+        condicion: "!event.message — evento delivery/read/postback sin mensaje",
+        evento: e,
+      });
       continue;
     }
 
     const senderId = String((e.sender as { id?: string })?.id ?? "");
     const platformMessageId = String(message.mid ?? message.id ?? "");
     if (!senderId || !platformMessageId) {
-      console.log("[webhooks/meta] SKIP messaging sin senderId o platformMessageId:", {
+      console.log("[webhooks/meta] SKIP razón:", {
+        provider,
+        pageId,
+        condicion: "!senderId || !platformMessageId",
         senderId,
         platformMessageId,
-        raw: e,
+        senderFromPayload: e.sender,
+        messageFromPayload: message,
       });
       continue;
     }
@@ -455,9 +477,13 @@ async function ingestMessagingEntry(
     const body =
       typeof message.text === "string"
         ? message.text
-        : typeof (message.attachments as unknown[])?.length === "number"
-          ? "[Adjunto]"
-          : null;
+        : typeof message.text === "object" &&
+            message.text !== null &&
+            typeof (message.text as { body?: string }).body === "string"
+          ? (message.text as { body: string }).body
+          : typeof (message.attachments as unknown[])?.length === "number"
+            ? "[Adjunto]"
+            : null;
 
     console.log("[webhooks/meta] mensaje Messenger/Instagram:", {
       provider,
