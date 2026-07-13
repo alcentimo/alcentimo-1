@@ -709,6 +709,26 @@ body {
   @apply border-l-2 border-l-sky-500 pl-[calc(0.625rem-2px)];
 }
 
+.inbox-conversation-item-compact-messenger {
+  @apply border-l-2 border-l-[#1877F2]/80 pl-[calc(0.625rem-2px)];
+}
+
+.inbox-messenger-label {
+  @apply inline-flex max-w-full items-center gap-1 rounded-full font-semibold text-[#1877F2] ring-1 ring-[#1877F2]/20 dark:text-[#4d9fff] dark:ring-[#1877F2]/30;
+}
+
+.inbox-messenger-label--compact {
+  @apply bg-[#1877F2]/10 px-2 py-0.5 text-[9px] uppercase tracking-wide;
+}
+
+.inbox-messenger-label--prominent {
+  @apply bg-[#1877F2] px-2.5 py-1 text-[11px] text-white shadow-sm ring-0;
+}
+
+.inbox-chat-header--messenger {
+  @apply border-b-[#1877F2]/20 bg-gradient-to-r from-[#1877F2]/5 to-transparent dark:from-[#1877F2]/10;
+}
+
 .inbox-quick-actions {
   @apply absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-md border border-zinc-200/90 bg-white/95 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100 dark:border-zinc-700 dark:bg-zinc-950/95;
 }

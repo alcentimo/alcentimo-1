@@ -17,10 +17,10 @@ const CHANNEL_META: Record<
     title: "WhatsApp",
   },
   messenger: {
-    label: "Facebook",
-    shortLabel: "FB",
+    label: "Facebook Messenger",
+    shortLabel: "Messenger",
     backgroundClassName: "bg-[#1877F2]",
-    title: "Facebook / Messenger",
+    title: "Facebook Messenger",
   },
   instagram: {
     label: "Instagram",

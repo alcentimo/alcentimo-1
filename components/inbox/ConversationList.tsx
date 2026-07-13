@@ -8,6 +8,10 @@ import {
 } from "@/lib/inbox/get-store-messages";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import { ChannelBadge } from "@/components/inbox/ChannelBadge";
+import {
+  isMessengerProvider,
+  MessengerChannelLabel,
+} from "@/components/inbox/MessengerChannelLabel";
 import { ConversationQuickActions } from "@/components/inbox/ConversationQuickActions";
 import {
   countSmartTab,
@@ -197,6 +201,8 @@ export function ConversationList({
               conversation.displayName,
             );
 
+            const isMessenger = isMessengerProvider(conversation.provider);
+
             return (
               <li key={conversation.conversationId} className="group">
                 <button
@@ -204,11 +210,23 @@ export function ConversationList({
                   onClick={() => onSelectConversation(conversation)}
                   className={`inbox-conversation-item-compact ${
                     isActive ? "inbox-conversation-item-compact-active" : ""
-                  } ${isUnread ? "inbox-conversation-item-compact-unread" : ""}`}
+                  } ${isUnread ? "inbox-conversation-item-compact-unread" : ""} ${
+                    isMessenger ? "inbox-conversation-item-compact-messenger" : ""
+                  }`}
                 >
-                  <ChannelBadge provider={conversation.provider} showLabel />
+                  <ChannelBadge
+                    provider={conversation.provider}
+                    showLabel={!isMessenger}
+                    compact={!isMessenger}
+                  />
 
                   <span className="min-w-0 flex-1">
+                    {isMessenger && (
+                      <MessengerChannelLabel
+                        variant="compact"
+                        className="mb-0.5"
+                      />
+                    )}
                     <span className="flex items-center gap-2">
                       <span
                         className={`min-w-0 flex-1 truncate text-[13px] leading-tight ${

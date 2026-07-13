@@ -7,6 +7,10 @@ import {
 } from "@/lib/inbox/get-store-messages";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import { ChannelLogo } from "@/components/inbox/ChannelLogo";
+import {
+  isMessengerProvider,
+  MessengerChannelLabel,
+} from "@/components/inbox/MessengerChannelLabel";
 import { MessageBubble } from "@/components/inbox/MessageBubble";
 import {
   getConversationStatusLabel,
@@ -61,9 +65,15 @@ export function ChatThread({
     onConversationPatch(conversationId, patch);
   }
 
+  const isMessenger = isMessengerProvider(conversation.provider);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="flex items-center justify-between gap-3 border-b border-zinc-200/90 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 sm:px-5">
+      <header
+        className={`flex items-center justify-between gap-3 border-b border-zinc-200/90 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 sm:px-5 ${
+          isMessenger ? "inbox-chat-header--messenger" : ""
+        }`}
+      >
         <div className="flex min-w-0 items-center gap-3">
           {conversation.avatarUrl ? (
             <img
@@ -72,9 +82,15 @@ export function ChatThread({
               className="h-11 w-11 shrink-0 rounded-2xl object-cover shadow-sm"
             />
           ) : (
-            <ChannelLogo provider={conversation.provider} className="h-11 w-11" />
+            <ChannelLogo
+              provider={conversation.provider}
+              className={isMessenger ? "h-12 w-12 shadow-md" : "h-11 w-11"}
+            />
           )}
           <div className="min-w-0">
+            {isMessenger && (
+              <MessengerChannelLabel variant="prominent" className="mb-1" />
+            )}
             <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
               {customerLabel}
             </p>
