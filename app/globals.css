@@ -556,7 +556,15 @@ body {
 }
 
 .dashboard-main--mensajes {
-  @apply bg-slate-50 dark:bg-slate-950;
+  @apply min-h-0 bg-slate-50 dark:bg-slate-950;
+}
+
+.mensajes-page-shell {
+  @apply min-h-0 flex-1;
+}
+
+.mensajes-inbox-view {
+  @apply flex min-h-0 flex-1 flex-col;
 }
 
 .fb-inbox {

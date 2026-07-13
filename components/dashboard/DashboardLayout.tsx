@@ -285,11 +285,11 @@ function DashboardShell({
         )}
 
         <main
-          className={`flex-1 overflow-y-auto safe-area-inset ${
-            immersiveActive
-              ? "dashboard-main--immersive"
-              : "p-6 lg:p-8"
-          } ${isMensajesPath(pathname) ? "dashboard-main--mensajes" : ""}`}
+          className={`flex min-h-0 flex-1 flex-col safe-area-inset ${
+            isMensajesPath(pathname)
+              ? "dashboard-main--mensajes overflow-hidden"
+              : "overflow-y-auto p-6 lg:p-8"
+          } ${immersiveActive ? "dashboard-main--immersive" : ""}`}
         >
           {productLimit && <ProductLimitBanner productLimit={productLimit} />}
           {children}
