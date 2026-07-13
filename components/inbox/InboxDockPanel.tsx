@@ -10,6 +10,7 @@ interface InboxDockPanelProps {
   children: ReactNode;
   className?: string;
   headerExtra?: ReactNode;
+  minimal?: boolean;
 }
 
 function CollapseIcon({ side }: { side: InboxDockPanelProps["side"] }) {
@@ -29,14 +30,17 @@ export function InboxDockPanel({
   children,
   className = "",
   headerExtra,
+  minimal = false,
 }: InboxDockPanelProps) {
   return (
     <div className={`inbox-dock-panel inbox-dock-panel--${side} ${className}`}>
-      <header className="inbox-dock-panel-header">
+      <header
+        className={`inbox-dock-panel-header ${
+          minimal ? "inbox-dock-panel-header--minimal" : ""
+        }`}
+      >
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <h2 className="inbox-dock-panel-title truncate">
-            {title}
-          </h2>
+          <h2 className="inbox-dock-panel-title truncate">{title}</h2>
           {headerExtra}
         </div>
         <button

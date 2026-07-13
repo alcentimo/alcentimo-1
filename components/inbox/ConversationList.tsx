@@ -1,25 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { Search } from "lucide-react";
 import {
   formatMessageTime,
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
-import { ChannelBadge } from "@/components/inbox/ChannelBadge";
-import {
-  isMessengerProvider,
-  MessengerChannelLabel,
-} from "@/components/inbox/MessengerChannelLabel";
 import { ConversationQuickActions } from "@/components/inbox/ConversationQuickActions";
 import {
-  countSmartTab,
   filterConversations,
   type InboxListFilters,
-  type InboxPriorityFilter,
-  type InboxSmartTab,
-  type InboxStatusFilter,
 } from "@/lib/inbox/inbox-filters";
 
 interface ConversationListProps {
@@ -31,35 +21,6 @@ interface ConversationListProps {
     patch: Partial<MessageConversation>,
   ) => void;
   filters: InboxListFilters;
-  onFiltersChange: (filters: InboxListFilters) => void;
-  channelFocusMode?: boolean;
-}
-
-const STATUS_OPTIONS: { value: InboxStatusFilter; label: string }[] = [
-  { value: "all", label: "Todos los estados" },
-  { value: "new", label: "Nuevo" },
-  { value: "open", label: "Abierta" },
-  { value: "pending", label: "Pendiente" },
-  { value: "resolved", label: "Resuelto" },
-];
-
-const PRIORITY_OPTIONS: { value: InboxPriorityFilter; label: string }[] = [
-  { value: "all", label: "Toda prioridad" },
-  { value: "priority", label: "Prioritarios" },
-  { value: "normal", label: "Normal" },
-];
-
-const SMART_TABS: { key: InboxSmartTab; label: string }[] = [
-  { key: "review", label: "Por revisar" },
-  { key: "active", label: "En curso" },
-];
-
-function updateFilter<K extends keyof InboxListFilters>(
-  current: InboxListFilters,
-  key: K,
-  value: InboxListFilters[K],
-): InboxListFilters {
-  return { ...current, [key]: value };
 }
 
 export function ConversationList({
@@ -68,204 +29,78 @@ export function ConversationList({
   onSelectConversation,
   onConversationPatch,
   filters,
-  onFiltersChange,
-  channelFocusMode = false,
 }: ConversationListProps) {
   const filteredConversations = useMemo(
     () => filterConversations(conversations, filters, formatSenderLabel),
     [conversations, filters],
   );
 
-  const reviewCount = useMemo(
-    () => countSmartTab(conversations, "review"),
-    [conversations],
-  );
-  const activeCount = useMemo(
-    () => countSmartTab(conversations, "active"),
-    [conversations],
-  );
-
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div
-        className={`inbox-list-toolbar ${
-          channelFocusMode ? "inbox-list-toolbar--focus" : ""
-        }`}
-      >
-        <div className="inbox-smart-tabs" role="tablist" aria-label="Bandeja inteligente">
-          {SMART_TABS.map((tab) => {
-            const isActive = filters.smartTab === tab.key;
-            const count = tab.key === "review" ? reviewCount : activeCount;
+    <ul className="inbox-conversation-list-compact" aria-label="Conversaciones de Facebook">
+      {filteredConversations.length === 0 ? (
+        <li className="px-3 py-10 text-center text-[11px] text-slate-400 dark:text-slate-500">
+          Sin conversaciones con estos filtros.
+        </li>
+      ) : (
+        filteredConversations.map((conversation) => {
+          const isActive =
+            conversation.conversationId === selectedConversationId;
+          const isUnread = conversation.unreadCount > 0;
+          const preview =
+            conversation.lastMessage?.trim() || "Mensaje sin texto";
+          const customerLabel = formatSenderLabel(
+            conversation.senderId,
+            conversation.displayName,
+          );
 
-            return (
+          return (
+            <li key={conversation.conversationId} className="group">
               <button
-                key={tab.key}
                 type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() =>
-                  onFiltersChange(updateFilter(filters, "smartTab", tab.key))
-                }
-                className={`inbox-smart-tab ${isActive ? "inbox-smart-tab-active" : ""}`}
+                onClick={() => onSelectConversation(conversation)}
+                className={`inbox-conversation-item-compact ${
+                  isActive ? "inbox-conversation-item-compact-active" : ""
+                } ${isUnread ? "inbox-conversation-item-compact-unread" : ""}`}
               >
-                <span>{tab.label}</span>
-                <span className="inbox-smart-tab-count">{count}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <label className="relative block">
-          <Search
-            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400"
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            value={filters.searchQuery}
-            onChange={(event) =>
-              onFiltersChange(
-                updateFilter(filters, "searchQuery", event.target.value),
-              )
-            }
-            placeholder="Buscar…"
-            className="inbox-search-input"
-          />
-        </label>
-
-        {!channelFocusMode && (
-          <div className="inbox-filter-bar">
-            <select
-              value={filters.status}
-              onChange={(event) =>
-                onFiltersChange(
-                  updateFilter(
-                    filters,
-                    "status",
-                    event.target.value as InboxStatusFilter,
-                  ),
-                )
-              }
-              className="inbox-filter-select"
-              aria-label="Filtrar por estado"
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={filters.priority}
-              onChange={(event) =>
-                onFiltersChange(
-                  updateFilter(
-                    filters,
-                    "priority",
-                    event.target.value as InboxPriorityFilter,
-                  ),
-                )
-              }
-              className="inbox-filter-select"
-              aria-label="Filtrar por prioridad"
-            >
-              {PRIORITY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
-          {filteredConversations.length} conversaciones
-        </p>
-      </div>
-
-      <ul className="inbox-conversation-list-compact" aria-label="Lista de conversaciones">
-        {filteredConversations.length === 0 ? (
-          <li className="px-4 py-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
-            No hay conversaciones con estos filtros.
-          </li>
-        ) : (
-          filteredConversations.map((conversation) => {
-            const isActive =
-              conversation.conversationId === selectedConversationId;
-            const isUnread = conversation.unreadCount > 0;
-            const preview =
-              conversation.lastMessage?.trim() || "Mensaje sin texto";
-            const customerLabel = formatSenderLabel(
-              conversation.senderId,
-              conversation.displayName,
-            );
-
-            const isMessenger = isMessengerProvider(conversation.provider);
-
-            return (
-              <li key={conversation.conversationId} className="group">
-                <button
-                  type="button"
-                  onClick={() => onSelectConversation(conversation)}
-                  className={`inbox-conversation-item-compact ${
-                    isActive ? "inbox-conversation-item-compact-active" : ""
-                  } ${isUnread ? "inbox-conversation-item-compact-unread" : ""} ${
-                    isMessenger ? "inbox-conversation-item-compact-messenger" : ""
-                  }`}
-                >
-                  <ChannelBadge
-                    provider={conversation.provider}
-                    showLabel={!isMessenger}
-                    compact={!isMessenger}
-                  />
-
-                  <span className="min-w-0 flex-1">
-                    {isMessenger && (
-                      <MessengerChannelLabel
-                        variant="compact"
-                        className="mb-0.5"
-                      />
-                    )}
-                    <span className="flex items-center gap-2">
-                      <span
-                        className={`min-w-0 flex-1 truncate text-[13px] leading-tight ${
-                          isUnread
-                            ? "font-bold text-zinc-900 dark:text-zinc-50"
-                            : "font-medium text-zinc-700 dark:text-zinc-200"
-                        }`}
-                      >
-                        {customerLabel}
-                      </span>
-                      <span className="shrink-0 text-[10px] tabular-nums text-zinc-400 dark:text-zinc-500">
-                        {formatMessageTime(conversation.lastMessageAt)}
-                      </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={`min-w-0 flex-1 truncate text-[13px] leading-tight ${
+                        isUnread
+                          ? "font-semibold text-slate-900 dark:text-slate-50"
+                          : "font-medium text-slate-700 dark:text-slate-200"
+                      }`}
+                    >
+                      {customerLabel}
                     </span>
-
-                    <span className="mt-0.5 flex items-center gap-2">
-                      <span className="min-w-0 flex-1 truncate text-xs leading-tight text-zinc-500 dark:text-zinc-400">
-                        {preview}
-                      </span>
-                      {isUnread && (
-                        <span className="inline-flex min-w-4 shrink-0 items-center justify-center rounded-full bg-sky-500 px-1 py-0.5 text-[9px] font-bold text-white">
-                          {conversation.unreadCount}
-                        </span>
-                      )}
+                    <span className="shrink-0 text-[10px] tabular-nums text-slate-400">
+                      {formatMessageTime(conversation.lastMessageAt)}
                     </span>
                   </span>
 
-                  <ConversationQuickActions
-                    conversation={conversation}
-                    onPatch={(patch) =>
-                      onConversationPatch(conversation.conversationId, patch)
-                    }
-                  />
-                </button>
-              </li>
-            );
-          })
-        )}
-      </ul>
-    </div>
+                  <span className="mt-0.5 flex items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate text-[11px] leading-tight text-slate-400">
+                      {preview}
+                    </span>
+                    {isUnread && (
+                      <span className="inline-flex min-w-4 shrink-0 items-center justify-center rounded-full bg-[#1877F2] px-1 py-0.5 text-[9px] font-bold text-white">
+                        {conversation.unreadCount}
+                      </span>
+                    )}
+                  </span>
+                </span>
+
+                <ConversationQuickActions
+                  conversation={conversation}
+                  onPatch={(patch) =>
+                    onConversationPatch(conversation.conversationId, patch)
+                  }
+                />
+              </button>
+            </li>
+          );
+        })
+      )}
+    </ul>
   );
 }

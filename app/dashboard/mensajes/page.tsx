@@ -59,15 +59,7 @@ export default async function MensajesPage() {
   );
 
   return (
-    <PageContainer as="div" className="max-w-[88rem] py-6 sm:py-8">
-      <header className="page-header">
-        <p className="section-label">Atención al cliente</p>
-        <h1 className="page-header-title">Mensajes</h1>
-        <p className="page-header-desc">
-          Centraliza conversaciones, contexto del cliente y seguimiento en un solo lugar.
-        </p>
-      </header>
-
+    <PageContainer as="div" className="max-w-[92rem] py-4 sm:py-5">
       <MessagesPanel
         initialConversations={conversations}
         hasActiveIntegrations={activeIntegrations}

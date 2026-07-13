@@ -542,6 +542,63 @@ body {
   @apply space-y-2;
 }
 
+/* ── Facebook sales inbox ── */
+.fb-inbox {
+  @apply space-y-3;
+}
+
+.fb-inbox-header {
+  @apply flex flex-wrap items-baseline justify-between gap-3 px-0.5;
+}
+
+.fb-inbox-title {
+  @apply text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50 sm:text-3xl;
+}
+
+.fb-inbox-pending-badge {
+  @apply rounded-full bg-[#1877F2]/10 px-2.5 py-1 text-[11px] font-medium text-[#1877F2] dark:bg-[#1877F2]/20 dark:text-[#6db3ff];
+}
+
+.fb-inbox-filter-bar {
+  @apply flex flex-wrap items-center gap-2 rounded-xl bg-white px-2 py-1.5 shadow-sm dark:bg-slate-950 sm:gap-3 sm:px-3;
+}
+
+.fb-inbox-smart-tabs {
+  @apply flex shrink-0 items-center gap-0.5;
+}
+
+.fb-inbox-smart-tab {
+  @apply inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-medium text-slate-500 transition hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200;
+}
+
+.fb-inbox-smart-tab--active {
+  @apply bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-50;
+}
+
+.fb-inbox-smart-tab-count {
+  @apply text-[10px] tabular-nums text-slate-400 dark:text-slate-500;
+}
+
+.fb-inbox-smart-tab--active .fb-inbox-smart-tab-count {
+  @apply text-slate-600 dark:text-slate-300;
+}
+
+.fb-inbox-search {
+  @apply relative min-w-0 flex-1;
+}
+
+.fb-inbox-search-icon {
+  @apply pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400;
+}
+
+.fb-inbox-search-input {
+  @apply w-full rounded-lg bg-slate-50 py-1.5 pl-7 pr-2 text-[11px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:bg-white focus:shadow-sm dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900;
+}
+
+.fb-inbox-workspace {
+  @apply min-h-[calc(100dvh-9.5rem)] shadow-sm ring-0;
+}
+
 .inbox-workspace-wrap--focus .inbox-workspace-toolbar {
   @apply border-sky-200/80 bg-sky-50/30 shadow-[0_0_24px_rgba(14,165,233,0.08)] dark:border-sky-900/40 dark:bg-sky-950/20;
 }
@@ -571,7 +628,7 @@ body {
 }
 
 .inbox-workspace {
-  @apply grid min-h-[calc(100dvh-11rem)] overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06),0_8px_24px_rgba(15,23,42,0.04)] ring-1 ring-slate-200/60 transition-all duration-300 dark:bg-slate-950 dark:shadow-[0_1px_3px_rgba(0,0,0,0.2),0_8px_24px_rgba(0,0,0,0.15)] dark:ring-slate-800/80;
+  @apply grid min-h-[calc(100dvh-11rem)] overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 dark:bg-slate-950;
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -582,15 +639,9 @@ body {
 @media (min-width: 768px) {
   .inbox-workspace {
     grid-template-columns:
-      var(--ws-list-col, minmax(0, 14rem))
+      var(--ws-list-col, minmax(0, 12rem))
       var(--ws-chat-col, minmax(0, 1fr))
-      var(--ws-context-col, minmax(0, 15rem));
-  }
-}
-
-@media (min-width: 1024px) {
-  .inbox-workspace--focus {
-    @apply shadow-[0_0_32px_rgba(14,165,233,0.06)] ring-sky-200/50 dark:ring-sky-900/40;
+      var(--ws-context-col, minmax(0, 13rem));
   }
 }
 
@@ -599,23 +650,27 @@ body {
 }
 
 .inbox-dock-panel--left {
-  @apply md:border-r md:border-slate-100 dark:md:border-slate-800/80;
+  @apply md:pr-1;
 }
 
 .inbox-dock-panel--center {
-  @apply bg-slate-50/40 dark:bg-slate-900/15;
+  @apply bg-white dark:bg-slate-950;
 }
 
 .inbox-dock-panel--right {
-  @apply md:border-l md:border-slate-100 dark:md:border-slate-800/80;
+  @apply md:pl-1;
 }
 
 .inbox-dock-panel-header {
-  @apply flex shrink-0 items-center justify-between gap-2 border-b border-slate-100/80 bg-white/90 px-3 py-2 backdrop-blur-sm dark:border-slate-800/60 dark:bg-slate-950/90;
+  @apply flex shrink-0 items-center justify-between gap-2 px-2 py-1.5;
+}
+
+.inbox-dock-panel-header--minimal {
+  @apply px-2 py-1;
 }
 
 .inbox-dock-panel-title {
-  @apply text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400;
+  @apply text-[10px] font-medium text-slate-400 dark:text-slate-500;
 }
 
 .inbox-dock-panel-body {
@@ -631,15 +686,15 @@ body {
 }
 
 .inbox-dock-tab--left {
-  @apply md:border-r md:border-slate-100 dark:md:border-slate-800/80;
+  @apply md:pr-1;
 }
 
 .inbox-dock-tab--center {
-  @apply bg-white dark:bg-slate-950 md:border-x md:border-slate-100 dark:md:border-slate-800/80;
+  @apply bg-white dark:bg-slate-950;
 }
 
 .inbox-dock-tab--right {
-  @apply md:border-l md:border-slate-100 dark:md:border-slate-800/80;
+  @apply md:pl-1;
 }
 
 .inbox-dock-tab-label {
@@ -719,15 +774,15 @@ body {
 }
 
 .inbox-conversation-item-compact {
-  @apply relative flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors duration-100 hover:bg-slate-50 dark:hover:bg-slate-900/40;
+  @apply relative flex w-full items-center gap-2 px-2.5 py-2 text-left transition-colors duration-100 hover:bg-slate-50 dark:hover:bg-slate-900/30;
 }
 
 .inbox-conversation-item-compact-active {
-  @apply bg-sky-50/80 dark:bg-sky-950/25;
+  @apply bg-slate-100/80 dark:bg-slate-800/50;
 }
 
 .inbox-conversation-item-compact-unread {
-  @apply border-l-2 border-l-sky-500 pl-[calc(0.625rem-2px)];
+  @apply pl-2;
 }
 
 .inbox-conversation-item-compact-messenger {
@@ -787,55 +842,51 @@ body {
 }
 
 .inbox-chat-thread {
-  @apply flex-1 space-y-4 overflow-y-auto px-4 py-5 md:px-5 md:py-6;
+  @apply flex-1 space-y-3 overflow-y-auto px-4 py-4 md:px-6 md:py-5;
+}
+
+.inbox-chat-thread--sales {
+  @apply bg-slate-50/50 dark:bg-slate-900/20;
 }
 
 .inbox-chat-workspace {
-  @apply flex min-h-0 flex-1 flex-col;
+  @apply flex min-h-0 flex-1 flex-col bg-white dark:bg-slate-950;
 }
 
 .inbox-chat-header {
-  @apply flex shrink-0 items-center justify-between gap-3 border-b border-slate-100/80 bg-white/80 px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] backdrop-blur-sm dark:border-slate-800/60 dark:bg-slate-950/80 md:px-5;
+  @apply flex shrink-0 items-center justify-between gap-3 px-4 py-2.5 md:px-6;
+}
+
+.inbox-chat-header--messenger {
+  @apply bg-white dark:bg-slate-950;
 }
 
 .inbox-chat-composer-wrap {
-  @apply shrink-0 px-3 pb-3 pt-2 md:px-4 md:pb-4;
+  @apply shrink-0 px-3 pb-3 md:px-4 md:pb-4;
 }
 
 .inbox-chat-composer {
-  @apply rounded-2xl bg-white p-3 shadow-[0_2px_12px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] ring-1 ring-slate-200/70 dark:bg-slate-900 dark:shadow-[0_2px_12px_rgba(0,0,0,0.25)] dark:ring-slate-700/60 md:p-4;
+  @apply rounded-xl bg-white p-2 shadow-sm dark:bg-slate-900;
 }
 
-.inbox-quick-actions-bar {
-  @apply mb-3 flex flex-wrap gap-1.5 sm:gap-2;
+.inbox-composer-field {
+  @apply min-w-0 flex-1 overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-800/50;
 }
 
-.inbox-quick-action-chip {
-  @apply inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-semibold shadow-sm ring-1 transition hover:shadow-md active:scale-[0.98] sm:px-3 sm:text-xs;
+.inbox-composer-toolbar {
+  @apply flex items-center gap-0.5 border-b border-slate-100/80 px-1 py-0.5 dark:border-slate-700/50;
 }
 
-.inbox-quick-action-chip--catalog {
-  @apply bg-sky-50 text-sky-800 ring-sky-200/80 hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-200 dark:ring-sky-800/60 dark:hover:bg-sky-950/60;
-}
-
-.inbox-quick-action-chip--payment {
-  @apply bg-emerald-50 text-emerald-800 ring-emerald-200/80 hover:bg-emerald-100 dark:bg-emerald-950/35 dark:text-emerald-200 dark:ring-emerald-800/50 dark:hover:bg-emerald-950/55;
-}
-
-.inbox-quick-action-chip--address {
-  @apply bg-violet-50 text-violet-800 ring-violet-200/80 hover:bg-violet-100 dark:bg-violet-950/35 dark:text-violet-200 dark:ring-violet-800/50 dark:hover:bg-violet-950/55;
+.inbox-composer-tool-btn {
+  @apply inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-white hover:text-[#1877F2] hover:shadow-sm dark:hover:bg-slate-700 dark:hover:text-[#6db3ff];
 }
 
 .inbox-chat-composer-input {
-  @apply min-h-[3.25rem] flex-1 resize-none rounded-xl border-0 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-900 shadow-inner outline-none transition placeholder:text-slate-400 focus:bg-white focus:shadow-[inset_0_0_0_1px_rgba(14,165,233,0.35)] focus:ring-2 focus:ring-sky-100 dark:bg-slate-800/60 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:bg-slate-900 dark:focus:ring-sky-950/50;
+  @apply min-h-[2.75rem] w-full resize-none border-0 bg-transparent px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-50 dark:placeholder:text-slate-500;
 }
 
 .inbox-chat-composer-send {
-  @apply inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm disabled:opacity-50;
-}
-
-.inbox-chat-composer-hint {
-  @apply mt-2 text-[11px] text-slate-400 dark:text-slate-500;
+  @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-0 disabled:opacity-50;
 }
 
 .inbox-bubble-outbound {
@@ -851,31 +902,83 @@ body {
 }
 
 .inbox-context-profile {
-  @apply shrink-0 border-b border-slate-100/80 dark:border-slate-800/60;
+  @apply shrink-0 px-3 pb-2 pt-3;
+}
+
+.inbox-context-profile-name {
+  @apply truncate text-xs font-semibold text-slate-800 dark:text-slate-100;
+}
+
+.inbox-context-profile-meta {
+  @apply truncate text-[10px] text-slate-400;
 }
 
 .inbox-context-scroll {
-  @apply pt-1;
+  @apply pt-0;
 }
 
 .inbox-context-module {
-  @apply rounded-xl bg-white p-3.5 shadow-[0_1px_3px_rgba(15,23,42,0.05),0_4px_12px_rgba(15,23,42,0.03)] ring-1 ring-slate-200/50 dark:bg-slate-900/80 dark:shadow-[0_1px_3px_rgba(0,0,0,0.2)] dark:ring-slate-700/50 md:p-4;
+  @apply rounded-lg bg-slate-50/80 p-2.5 shadow-sm dark:bg-slate-900/40;
 }
 
-.inbox-context-module-header {
-  @apply mb-3 flex items-center gap-2;
+.inbox-context-module-title {
+  @apply mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500;
 }
 
 .inbox-context-module-body {
   @apply space-y-2;
 }
 
-.inbox-context-module--orders ul {
-  @apply -mx-0.5;
+.inbox-context-field {
+  @apply flex items-center justify-between gap-2 text-[11px];
+}
+
+.inbox-context-field-label {
+  @apply text-slate-400;
+}
+
+.inbox-context-field-value {
+  @apply truncate text-right font-medium text-slate-700 dark:text-slate-200;
+}
+
+.inbox-context-fields {
+  @apply space-y-1 pt-1;
+}
+
+.inbox-context-empty {
+  @apply text-[10px] text-slate-400;
+}
+
+.inbox-context-orders {
+  @apply space-y-1;
+}
+
+.inbox-context-order {
+  @apply rounded-md bg-white px-2 py-1.5 shadow-sm dark:bg-slate-900;
+}
+
+.inbox-context-order-name {
+  @apply truncate text-[11px] font-medium text-slate-800 dark:text-slate-100;
+}
+
+.inbox-context-order-meta {
+  @apply text-[10px] text-slate-400;
+}
+
+.inbox-context-tag {
+  @apply inline-flex rounded-md bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-600 shadow-sm dark:bg-slate-800 dark:text-slate-300;
+}
+
+.inbox-context-tag-add {
+  @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white text-sm font-medium text-slate-500 shadow-sm transition hover:text-[#1877F2] disabled:opacity-40 dark:bg-slate-800 dark:text-slate-300;
 }
 
 .inbox-context-input {
-  @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50 dark:focus:ring-sky-950/50;
+  @apply w-full rounded-lg border-0 bg-white px-2 py-1.5 text-[11px] font-medium text-slate-800 shadow-sm outline-none transition focus:shadow-md disabled:opacity-60 dark:bg-slate-800 dark:text-slate-100;
+}
+
+.inbox-context-input--compact {
+  @apply py-1 text-[11px];
 }
 
 .inbox-purchase-history-card {

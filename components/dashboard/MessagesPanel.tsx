@@ -8,17 +8,15 @@ import {
   DEFAULT_INBOX_FILTERS,
   type InboxListFilters,
 } from "@/lib/inbox/inbox-filters";
-import {
-  buildWorkspaceGridStyle,
-  isChannelFocusActive,
-} from "@/lib/inbox/workspace-persistence";
+import { buildWorkspaceGridStyle } from "@/lib/inbox/workspace-persistence";
 import { MessagesEmptyState } from "@/components/dashboard/MessagesEmptyState";
 import { ConversationList } from "@/components/inbox/ConversationList";
 import { ChatThread } from "@/components/inbox/ChatThread";
 import { ConversationContextPanel } from "@/components/inbox/ConversationContextPanel";
-import { ChannelFocusSelector } from "@/components/inbox/ChannelFocusSelector";
+import { InboxFilterBar } from "@/components/inbox/InboxFilterBar";
 import { InboxDockPanel } from "@/components/inbox/InboxDockPanel";
 import { InboxDockTab } from "@/components/inbox/InboxDockTab";
+import { isMessengerProvider } from "@/components/inbox/MessengerChannelLabel";
 import { useInboxWorkspace } from "@/components/inbox/useInboxWorkspace";
 import type { VentaWithProduct } from "@/lib/sales/types";
 
@@ -41,47 +39,46 @@ export function MessagesPanel({
     useState(initialConversations);
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
-  >(initialConversations[0]?.conversationId ?? null);
+  >(null);
   const [listFilters, setListFilters] =
     useState<InboxListFilters>(DEFAULT_INBOX_FILTERS);
   const [, startTransition] = useTransition();
 
   const workspace = useInboxWorkspace();
-  const channelFocusActive = isChannelFocusActive(workspace.channelFocus);
 
-  const selectedConversation = useMemo(
-    () =>
-      conversations.find(
-        (conversation) => conversation.conversationId === selectedConversationId,
-      ) ?? null,
-    [conversations, selectedConversationId],
-  );
-
-  const totalUnread = useMemo(
-    () =>
-      conversations.reduce(
-        (total, conversation) => total + conversation.unreadCount,
-        0,
-      ),
-    [conversations],
-  );
-
-  const reviewCount = useMemo(
-    () => countSmartTab(conversations, "review"),
-    [conversations],
-  );
-
-  const activeCount = useMemo(
-    () => countSmartTab(conversations, "active"),
+  const facebookConversations = useMemo(
+    () => conversations.filter((conversation) =>
+      isMessengerProvider(conversation.provider),
+    ),
     [conversations],
   );
 
   const mergedFilters = useMemo<InboxListFilters>(
     () => ({
       ...listFilters,
-      channel: workspace.channelFocus,
+      channel: "messenger",
+      status: "all",
+      priority: "all",
     }),
-    [listFilters, workspace.channelFocus],
+    [listFilters],
+  );
+
+  const selectedConversation = useMemo(
+    () =>
+      facebookConversations.find(
+        (conversation) => conversation.conversationId === selectedConversationId,
+      ) ?? null,
+    [facebookConversations, selectedConversationId],
+  );
+
+  const reviewCount = useMemo(
+    () => countSmartTab(facebookConversations, "review"),
+    [facebookConversations],
+  );
+
+  const activeCount = useMemo(
+    () => countSmartTab(facebookConversations, "active"),
+    [facebookConversations],
   );
 
   const workspaceGridStyle = useMemo(
@@ -90,21 +87,29 @@ export function MessagesPanel({
         listCollapsed: workspace.listCollapsed,
         chatCollapsed: workspace.chatCollapsed,
         contextCollapsed: workspace.contextCollapsed,
-        channelFocus: workspace.channelFocus,
+        channelFocus: "messenger",
       }),
     [
       workspace.listCollapsed,
       workspace.chatCollapsed,
       workspace.contextCollapsed,
-      workspace.channelFocus,
     ],
   );
 
   useEffect(() => {
-    if (!selectedConversationId && conversations.length > 0) {
-      setSelectedConversationId(conversations[0].conversationId);
+    if (
+      selectedConversationId &&
+      facebookConversations.some(
+        (conversation) => conversation.conversationId === selectedConversationId,
+      )
+    ) {
+      return;
     }
-  }, [conversations, selectedConversationId]);
+
+    setSelectedConversationId(
+      facebookConversations[0]?.conversationId ?? null,
+    );
+  }, [facebookConversations, selectedConversationId]);
 
   function patchConversation(
     conversationId: string,
@@ -150,137 +155,116 @@ export function MessagesPanel({
     );
   }
 
-  return (
-    <div className="space-y-4">
-      {!channelFocusActive && (
-        <div className="inbox-stats-bar">
-          <div className="inbox-stat">
-            <span className="inbox-stat-label">Total</span>
-            <span className="inbox-stat-value">{conversations.length}</span>
-          </div>
-          <div className="inbox-stat">
-            <span className="inbox-stat-label">Por revisar</span>
-            <span className="inbox-stat-value text-sky-600 dark:text-sky-400">
-              {reviewCount}
-            </span>
-          </div>
-          <div className="inbox-stat">
-            <span className="inbox-stat-label">En curso</span>
-            <span className="inbox-stat-value text-teal-700 dark:text-teal-400">
-              {activeCount}
-            </span>
-          </div>
-          <div className="inbox-stat">
-            <span className="inbox-stat-label">Sin leer</span>
-            <span
-              className={`inbox-stat-value ${
-                totalUnread > 0
-                  ? "text-sky-600 dark:text-sky-400"
-                  : "text-emerald-600 dark:text-emerald-400"
-              }`}
-            >
-              {totalUnread}
-            </span>
-          </div>
+  if (facebookConversations.length === 0) {
+    return (
+      <div className="fb-inbox">
+        <header className="fb-inbox-header">
+          <h1 className="fb-inbox-title">Bandeja de Facebook</h1>
+        </header>
+        <div className="rounded-xl bg-white px-6 py-12 text-center shadow-sm dark:bg-slate-950">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            Aún no hay conversaciones de Facebook Messenger
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Conecta Messenger en Integraciones para empezar a vender.
+          </p>
         </div>
-      )}
-
-      <div
-        className={`inbox-workspace-wrap ${
-          channelFocusActive ? "inbox-workspace-wrap--focus" : ""
-        }`}
-      >
-        <div className="inbox-workspace-toolbar">
-          <ChannelFocusSelector
-            value={workspace.channelFocus}
-            onChange={workspace.setChannelFocus}
-          />
-          {channelFocusActive && (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Vista optimizada para responder con máximo espacio en el chat.
-            </p>
-          )}
-        </div>
-
-        <section
-          className={`inbox-workspace ${
-            channelFocusActive ? "inbox-workspace--focus" : ""
-          } ${!workspace.hydrated ? "inbox-workspace--hydrating" : ""}`}
-          style={workspaceGridStyle}
-        >
-          {workspace.listCollapsed ? (
-            <InboxDockTab
-              side="left"
-              label="Lista"
-              onExpand={() => workspace.setListCollapsed(false)}
-            />
-          ) : (
-            <InboxDockPanel
-              title="Lista"
-              side="left"
-              onCollapse={() => workspace.setListCollapsed(true)}
-              className="inbox-list-panel"
-            >
-              <ConversationList
-                conversations={conversations}
-                selectedConversationId={selectedConversationId}
-                onSelectConversation={handleSelectConversation}
-                onConversationPatch={patchConversation}
-                filters={mergedFilters}
-                onFiltersChange={setListFilters}
-                channelFocusMode={channelFocusActive}
-              />
-            </InboxDockPanel>
-          )}
-
-          {workspace.chatCollapsed ? (
-            <InboxDockTab
-              side="center"
-              label="Chat"
-              onExpand={() => workspace.setChatCollapsed(false)}
-            />
-          ) : (
-            <InboxDockPanel
-              title="Chat"
-              side="center"
-              onCollapse={() => workspace.setChatCollapsed(true)}
-              className={`inbox-chat-panel ${
-                channelFocusActive ? "inbox-chat-panel--focus" : ""
-              }`}
-            >
-              <ChatThread
-                conversation={selectedConversation}
-                onConversationPatch={patchConversation}
-                focusMode={channelFocusActive}
-              />
-            </InboxDockPanel>
-          )}
-
-          {workspace.contextCollapsed ? (
-            <InboxDockTab
-              side="right"
-              label="CRM"
-              onExpand={() => workspace.setContextCollapsed(false)}
-            />
-          ) : (
-            <InboxDockPanel
-              title="Contexto"
-              side="right"
-              onCollapse={() => workspace.setContextCollapsed(true)}
-              className="inbox-context-panel"
-            >
-              <ConversationContextPanel
-                conversation={selectedConversation}
-                storeCountry={storeCountry}
-                recentSales={recentSales}
-                salesByConversationId={salesByConversationId}
-                onConversationPatch={patchConversation}
-                compact={channelFocusActive}
-              />
-            </InboxDockPanel>
-          )}
-        </section>
       </div>
+    );
+  }
+
+  return (
+    <div className="fb-inbox">
+      <header className="fb-inbox-header">
+        <h1 className="fb-inbox-title">Bandeja de Facebook</h1>
+        {reviewCount > 0 && (
+          <span className="fb-inbox-pending-badge">
+            {reviewCount} por responder
+          </span>
+        )}
+      </header>
+
+      <InboxFilterBar
+        filters={listFilters}
+        onFiltersChange={setListFilters}
+        reviewCount={reviewCount}
+        activeCount={activeCount}
+      />
+
+      <section
+        className={`inbox-workspace fb-inbox-workspace ${
+          !workspace.hydrated ? "inbox-workspace--hydrating" : ""
+        }`}
+        style={workspaceGridStyle}
+      >
+        {workspace.listCollapsed ? (
+          <InboxDockTab
+            side="left"
+            label="Chats"
+            onExpand={() => workspace.setListCollapsed(false)}
+          />
+        ) : (
+          <InboxDockPanel
+            title="Chats"
+            side="left"
+            onCollapse={() => workspace.setListCollapsed(true)}
+            minimal
+          >
+            <ConversationList
+              conversations={facebookConversations}
+              selectedConversationId={selectedConversationId}
+              onSelectConversation={handleSelectConversation}
+              onConversationPatch={patchConversation}
+              filters={mergedFilters}
+            />
+          </InboxDockPanel>
+        )}
+
+        {workspace.chatCollapsed ? (
+          <InboxDockTab
+            side="center"
+            label="Chat"
+            onExpand={() => workspace.setChatCollapsed(false)}
+          />
+        ) : (
+          <InboxDockPanel
+            title="Conversación"
+            side="center"
+            onCollapse={() => workspace.setChatCollapsed(true)}
+            minimal
+            className="inbox-chat-panel"
+          >
+            <ChatThread
+              conversation={selectedConversation}
+              onConversationPatch={patchConversation}
+            />
+          </InboxDockPanel>
+        )}
+
+        {workspace.contextCollapsed ? (
+          <InboxDockTab
+            side="right"
+            label="Cliente"
+            onExpand={() => workspace.setContextCollapsed(false)}
+          />
+        ) : (
+          <InboxDockPanel
+            title="Cliente"
+            side="right"
+            onCollapse={() => workspace.setContextCollapsed(true)}
+            minimal
+            className="inbox-context-panel"
+          >
+            <ConversationContextPanel
+              conversation={selectedConversation}
+              storeCountry={storeCountry}
+              recentSales={recentSales}
+              salesByConversationId={salesByConversationId}
+              onConversationPatch={patchConversation}
+            />
+          </InboxDockPanel>
+        )}
+      </section>
     </div>
   );
 }

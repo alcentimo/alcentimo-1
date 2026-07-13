@@ -2,14 +2,6 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import {
-  Clock3,
-  Flag,
-  MessageCircle,
-  ShoppingBag,
-  Tag,
-  UserRound,
-} from "lucide-react";
-import {
   formatMessageTime,
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
@@ -21,11 +13,9 @@ import {
   updateInboxConversationStatus,
 } from "@/lib/inbox/actions";
 import { getContactPurchaseHistory, isPersistedConversation } from "@/lib/inbox/contact-context";
-import { ChannelLogo } from "@/components/inbox/ChannelLogo";
 import { ContextModuleCard } from "@/components/inbox/ContextModuleCard";
 import {
   CONVERSATION_STATUS_OPTIONS,
-  getConversationStatusLabel,
 } from "@/components/inbox/conversation-status";
 
 interface ConversationContextPanelProps {
@@ -37,7 +27,6 @@ interface ConversationContextPanelProps {
     conversationId: string,
     patch: Partial<MessageConversation>,
   ) => void;
-  compact?: boolean;
 }
 
 function formatCurrency(amount: number): string {
@@ -47,24 +36,11 @@ function formatCurrency(amount: number): string {
   });
 }
 
-function FieldRow({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  icon: typeof Flag;
-}) {
+function FieldRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 text-sm">
-      <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-        <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        {label}
-      </span>
-      <span className="truncate text-right font-medium text-slate-900 dark:text-slate-50">
-        {value}
-      </span>
+    <div className="inbox-context-field">
+      <span className="inbox-context-field-label">{label}</span>
+      <span className="inbox-context-field-value">{value}</span>
     </div>
   );
 }
@@ -75,7 +51,6 @@ export function ConversationContextPanel({
   recentSales,
   salesByConversationId = {},
   onConversationPatch,
-  compact = false,
 }: ConversationContextPanelProps) {
   const [tagInput, setTagInput] = useState("");
   const [isUpdatingStatus, startStatusTransition] = useTransition();
@@ -96,12 +71,12 @@ export function ConversationContextPanel({
 
   if (!conversation) {
     return (
-      <div className="inbox-context-panel-empty flex flex-1 flex-col justify-center px-6 py-10">
-        <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-          Contexto del cliente
+      <div className="inbox-context-panel-empty flex flex-1 flex-col justify-center px-4 py-8">
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+          Selecciona un chat
         </p>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Selecciona una conversación para ver perfil y pedidos.
+        <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+          Datos del cliente y pedidos aquí.
         </p>
       </div>
     );
@@ -152,153 +127,95 @@ export function ConversationContextPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="inbox-context-profile px-4 pb-3 pt-4 md:px-5 md:pt-5">
-        <div className="flex items-center gap-3">
-          {conversation.avatarUrl ? (
-            <img
-              src={conversation.avatarUrl}
-              alt=""
-              className="h-11 w-11 rounded-2xl object-cover shadow-sm md:h-12 md:w-12"
-            />
-          ) : (
-            <ChannelLogo provider={conversation.provider} className="h-11 w-11 md:h-12 md:w-12" />
-          )}
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-50 md:text-base">
-              {customerLabel}
-            </p>
-            <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-              {conversation.phoneE164 ?? conversation.senderId}
-            </p>
-          </div>
-        </div>
+      <header className="inbox-context-profile">
+        <p className="inbox-context-profile-name">{customerLabel}</p>
+        <p className="inbox-context-profile-meta">
+          {conversation.phoneE164 ?? conversation.senderId}
+        </p>
       </header>
 
-      <div className="inbox-context-scroll space-y-3 overflow-y-auto px-4 pb-5 md:space-y-4 md:px-5 md:pb-6">
-        <ContextModuleCard title="Datos del cliente" icon={UserRound}>
-          <div className="space-y-3">
-            <select
-              value={conversation.status}
-              disabled={isUpdatingStatus}
-              onChange={(event) =>
-                handleStatusChange(event.target.value as InboxConversationStatus)
-              }
-              className="inbox-context-input"
-              aria-label="Estado de la conversación"
-            >
-              {CONVERSATION_STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {getConversationStatusLabel(conversation.status)}
-              {conversation.assignedTeam
-                ? ` · ${conversation.assignedTeam}`
-                : ""}
-            </p>
+      <div className="inbox-context-scroll space-y-2.5 overflow-y-auto px-3 pb-4">
+        <ContextModuleCard title="Cliente">
+          <select
+            value={conversation.status}
+            disabled={isUpdatingStatus}
+            onChange={(event) =>
+              handleStatusChange(event.target.value as InboxConversationStatus)
+            }
+            className="inbox-context-input inbox-context-input--compact"
+            aria-label="Estado de la conversación"
+          >
+            {CONVERSATION_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
 
-            <div className="space-y-2.5 border-t border-slate-100 pt-3 dark:border-slate-800">
-              <FieldRow icon={UserRound} label="Nombre" value={customerLabel} />
-              <FieldRow
-                icon={Flag}
-                label="País"
-                value={conversation.country ?? storeCountry ?? "Sin definir"}
-              />
-              <FieldRow
-                icon={MessageCircle}
-                label="Canal"
-                value={conversation.provider}
-              />
-              <FieldRow
-                icon={Clock3}
-                label="Último mensaje"
-                value={formatMessageTime(conversation.lastMessageAt)}
-              />
-            </div>
+          <div className="inbox-context-fields">
+            <FieldRow label="País" value={conversation.country ?? storeCountry ?? "—"} />
+            <FieldRow label="Último msg" value={formatMessageTime(conversation.lastMessageAt)} />
           </div>
         </ContextModuleCard>
 
-        {!compact && (
-          <ContextModuleCard
-            title="Historial de pedidos"
-            icon={ShoppingBag}
-            className="inbox-context-module--orders"
-          >
-            {purchaseHistory.length === 0 ? (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Sin pedidos vinculados a este contacto.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {purchaseHistory.map((sale) => (
-                  <li
-                    key={sale.id}
-                    className="rounded-lg bg-white px-3 py-2.5 shadow-sm dark:bg-slate-900"
-                  >
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-50">
-                      {sale.product_name}
-                    </p>
-                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                      {formatCurrency(sale.monto)} · {sale.cantidad} uds ·{" "}
-                      {formatMessageTime(sale.created_at)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </ContextModuleCard>
-        )}
-
-        {!compact && (
-          <ContextModuleCard title="Etiquetas" icon={Tag}>
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {conversation.tags.length === 0 ? (
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Sin etiquetas. Añade una para segmentar leads.
+        <ContextModuleCard title="Pedidos">
+          {purchaseHistory.length === 0 ? (
+            <p className="inbox-context-empty">Sin pedidos vinculados.</p>
+          ) : (
+            <ul className="inbox-context-orders">
+              {purchaseHistory.map((sale) => (
+                <li key={sale.id} className="inbox-context-order">
+                  <p className="inbox-context-order-name">{sale.product_name}</p>
+                  <p className="inbox-context-order-meta">
+                    {formatCurrency(sale.monto)} · {sale.cantidad} u ·{" "}
+                    {formatMessageTime(sale.created_at)}
                   </p>
-                ) : (
-                  conversation.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                    >
-                      <Tag className="h-3 w-3 opacity-60" aria-hidden="true" />
-                      {tag}
-                    </span>
-                  ))
-                )}
-              </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </ContextModuleCard>
 
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={(event) => setTagInput(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      handleAddTag();
-                    }
-                  }}
-                  placeholder="Ej: Lead caliente"
-                  disabled={!conversation.contactId || isUpdatingTags}
-                  className="inbox-context-input min-w-0 flex-1"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddTag}
-                  disabled={!conversation.contactId || isUpdatingTags}
-                  className="btn-brand-outline shrink-0 px-3 py-2 text-sm"
-                >
-                  Añadir
-                </button>
-              </div>
+        <ContextModuleCard title="Etiquetas">
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-1">
+              {conversation.tags.length === 0 ? (
+                <p className="inbox-context-empty">Sin etiquetas.</p>
+              ) : (
+                conversation.tags.map((tag) => (
+                  <span key={tag} className="inbox-context-tag">
+                    {tag}
+                  </span>
+                ))
+              )}
             </div>
-          </ContextModuleCard>
-        )}
+
+            <div className="flex gap-1.5">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(event) => setTagInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleAddTag();
+                  }
+                }}
+                placeholder="Nueva etiqueta"
+                disabled={!conversation.contactId || isUpdatingTags}
+                className="inbox-context-input inbox-context-input--compact min-w-0 flex-1"
+              />
+              <button
+                type="button"
+                onClick={handleAddTag}
+                disabled={!conversation.contactId || isUpdatingTags}
+                className="inbox-context-tag-add"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </ContextModuleCard>
       </div>
     </div>
   );

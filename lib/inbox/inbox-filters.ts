@@ -19,7 +19,7 @@ export interface InboxListFilters {
 
 export const DEFAULT_INBOX_FILTERS: InboxListFilters = {
   smartTab: "review",
-  channel: "all",
+  channel: "messenger",
   status: "all",
   priority: "all",
   searchQuery: "",
