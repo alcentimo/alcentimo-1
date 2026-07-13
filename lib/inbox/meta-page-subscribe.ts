@@ -192,6 +192,12 @@ export async function subscribeMetaPageWebhooks(
   pageAccessToken: string,
   fields: readonly string[] = META_PAGE_WEBHOOK_FIELDS,
 ): Promise<MetaPageSubscribeResult> {
+  console.log("[DEBUG] Iniciando suscripción tras callback...", {
+    pageId,
+    tokenPreview: previewToken(pageAccessToken),
+    subscribedFields: fields,
+  });
+
   const subscribedFields = [
     ...new Set(fields.map((field) => field.trim()).filter(Boolean)),
   ];

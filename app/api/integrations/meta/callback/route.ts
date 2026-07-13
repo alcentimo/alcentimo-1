@@ -17,6 +17,7 @@ import { getChannelIntegration } from "@/src/config/channel-integrations";
 import { subscribeMetaPageWebhooks } from "@/lib/inbox/meta-page-subscribe";
 import {
   getMessengerPageIdFromAssets,
+  isNumericMetaPageId,
   upsertChannelIntegration,
   upsertChannelIntegrationSecret,
 } from "@/lib/inbox/persist-meta-integration";
@@ -150,11 +151,37 @@ export async function GET(request: Request) {
       messengerPageId,
     });
 
-    if (messengerPageId) {
+    const pageIdForSubscribe =
+      messengerPageId ??
+      (isNumericMetaPageId(persisted.external_account_id)
+        ? persisted.external_account_id
+        : null) ??
+      (typeof assets.config.page_id === "string" &&
+      isNumericMetaPageId(assets.config.page_id)
+        ? assets.config.page_id
+        : null);
+
+    const pageAccessToken = assets.accessToken?.trim() ?? "";
+
+    console.log("[meta/callback] Preparando suscripción de webhooks tras OAuth", {
+      provider: parsedState.provider,
+      pageIdForSubscribe,
+      messengerPageId,
+      persistedExternalAccountId: persisted.external_account_id,
+      assetsPageId: assets.config.page_id ?? null,
+      hasPageAccessToken: Boolean(pageAccessToken),
+    });
+
+    if (pageIdForSubscribe && pageAccessToken) {
+      console.log("[DEBUG] Callback: invocando subscribeMetaPageWebhooks", {
+        pageId: pageIdForSubscribe,
+        provider: parsedState.provider,
+      });
+
       try {
         const subscribeResult = await subscribeMetaPageWebhooks(
-          messengerPageId,
-          assets.accessToken,
+          pageIdForSubscribe,
+          pageAccessToken,
         );
 
         if (subscribeResult.success) {
@@ -185,13 +212,22 @@ export async function GET(request: Request) {
         console.error(
           "[meta/callback] Excepción en suscripción de página (OAuth continúa)",
           {
-            pageId: messengerPageId,
+            pageId: pageIdForSubscribe,
             pageName: assets.displayName,
             message: subscribeMessage,
             stack: subscribeErr instanceof Error ? subscribeErr.stack : undefined,
           },
         );
       }
+    } else {
+      console.warn("[meta/callback] Suscripción omitida — falta pageId numérico o token", {
+        provider: parsedState.provider,
+        pageIdForSubscribe,
+        messengerPageId,
+        persistedExternalAccountId: persisted.external_account_id,
+        assetsPageId: assets.config.page_id ?? null,
+        hasPageAccessToken: Boolean(pageAccessToken),
+      });
     }
 
     redirectBase.searchParams.set("connected", parsedState.provider);
