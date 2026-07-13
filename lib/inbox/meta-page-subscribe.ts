@@ -61,6 +61,70 @@ function formatGraphError(error?: MetaGraphApiErrorDetails): string | undefined 
   return parts.join(" | ");
 }
 
+/** Vercel a menudo no muestra objetos anidados; serializamos cada campo en su propia línea. */
+function logPageSubscribeFailure(details: {
+  reason: string;
+  pageId: string;
+  requestPath?: string;
+  httpStatus?: number;
+  subscribedFields?: string[];
+  tokenPreview?: string;
+  tokenType?: string;
+  tokenScopes?: string[];
+  graphError?: MetaGraphApiErrorDetails;
+  formattedError?: string;
+  rawResponse?: unknown;
+  tokenDebug?: unknown;
+  message?: string;
+  stack?: string;
+}): void {
+  console.error("[meta/page-subscribe] Falló suscripción de página");
+  console.error(`[meta/page-subscribe] reason=${details.reason}`);
+  console.error(`[meta/page-subscribe] pageId=${details.pageId}`);
+  if (details.requestPath) {
+    console.error(`[meta/page-subscribe] requestPath=${details.requestPath}`);
+  }
+  if (details.httpStatus != null) {
+    console.error(`[meta/page-subscribe] httpStatus=${details.httpStatus}`);
+  }
+  if (details.subscribedFields?.length) {
+    console.error(
+      `[meta/page-subscribe] subscribedFields=${JSON.stringify(details.subscribedFields)}`,
+    );
+  }
+  if (details.tokenPreview) {
+    console.error(`[meta/page-subscribe] tokenPreview=${details.tokenPreview}`);
+  }
+  console.error(
+    `[meta/page-subscribe] tokenType=${details.tokenType ?? "(desconocido)"}`,
+  );
+  console.error(
+    `[meta/page-subscribe] tokenScopes=${JSON.stringify(details.tokenScopes ?? [])}`,
+  );
+  if (details.formattedError) {
+    console.error(`[meta/page-subscribe] formattedError=${details.formattedError}`);
+  }
+  if (details.graphError) {
+    console.error(
+      `[meta/page-subscribe] graphError=${JSON.stringify(details.graphError)}`,
+    );
+  }
+  console.error(
+    `[meta/page-subscribe] rawResponse=${JSON.stringify(details.rawResponse ?? null)}`,
+  );
+  if (details.tokenDebug !== undefined) {
+    console.error(
+      `[meta/page-subscribe] tokenDebug=${JSON.stringify(details.tokenDebug)}`,
+    );
+  }
+  if (details.message) {
+    console.error(`[meta/page-subscribe] exception=${details.message}`);
+  }
+  if (details.stack) {
+    console.error(`[meta/page-subscribe] stack=${details.stack}`);
+  }
+}
+
 async function debugMetaAccessToken(
   accessToken: string,
 ): Promise<{
@@ -142,18 +206,28 @@ export async function subscribeMetaPageWebhooks(
   };
 
   if (!pageId?.trim()) {
-    return {
-      ...baseResult,
-      error: "pageId vacío — no se puede suscribir la página",
-    };
+    const error = "pageId vacío — no se puede suscribir la página";
+    logPageSubscribeFailure({
+      reason: "validation",
+      pageId: pageId || "(vacío)",
+      requestPath,
+      subscribedFields,
+      formattedError: error,
+    });
+    return { ...baseResult, error };
   }
 
   if (!pageAccessToken?.trim()) {
-    return {
-      ...baseResult,
-      error:
-        "Page Access Token vacío — OAuth debe devolver access_token de la página, no solo token de usuario",
-    };
+    const error =
+      "Page Access Token vacío — OAuth debe devolver access_token de la página, no solo token de usuario";
+    logPageSubscribeFailure({
+      reason: "validation",
+      pageId,
+      requestPath,
+      subscribedFields,
+      formattedError: error,
+    });
+    return { ...baseResult, error };
   }
 
   try {
@@ -213,7 +287,8 @@ export async function subscribeMetaPageWebhooks(
       return result;
     }
 
-    console.error("[meta/page-subscribe] Falló suscripción de página — detalle Graph API", {
+    logPageSubscribeFailure({
+      reason: "graph_api",
       pageId: result.pageId,
       requestPath: result.requestPath,
       httpStatus: result.httpStatus,
@@ -225,8 +300,6 @@ export async function subscribeMetaPageWebhooks(
       formattedError: result.error,
       rawResponse: raw,
       tokenDebug: tokenDebug.raw ?? tokenDebug.error,
-      hint:
-        "Verifica pages_manage_metadata en OAuth, que el token sea de PÁGINA (no solo usuario) y que la app tenga Webhooks → Page → messages/messaging_postbacks.",
     });
 
     return result;
@@ -234,7 +307,8 @@ export async function subscribeMetaPageWebhooks(
     const message = err instanceof Error ? err.message : "Unknown subscribe error";
     const tokenDebug = await debugMetaAccessToken(pageAccessToken);
 
-    console.error("[meta/page-subscribe] Excepción al suscribir página", {
+    logPageSubscribeFailure({
+      reason: "exception",
       pageId,
       requestPath,
       subscribedFields,
