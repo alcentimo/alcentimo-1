@@ -12,6 +12,7 @@ import {
 import { buildConversationSalesMap } from "@/lib/inbox/contact-sales";
 import { getStoreSales } from "@/lib/sales/get-store-sales";
 import { MessagesPanel } from "@/components/dashboard/MessagesPanel";
+import { MensajesPageShell } from "@/components/dashboard/MensajesPageShell";
 import { PageContainer } from "@/components/ui/PageContainer";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +60,7 @@ export default async function MensajesPage() {
   );
 
   return (
-    <PageContainer as="div" className="max-w-[92rem] py-4 sm:py-5">
+    <MensajesPageShell>
       <MessagesPanel
         initialConversations={conversations}
         hasActiveIntegrations={activeIntegrations}
@@ -67,6 +68,6 @@ export default async function MensajesPage() {
         recentSales={recentSales}
         salesByConversationId={salesByConversationId}
       />
-    </PageContainer>
+    </MensajesPageShell>
   );
 }

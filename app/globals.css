@@ -599,6 +599,18 @@ body {
   @apply min-h-[calc(100dvh-9.5rem)] shadow-sm ring-0;
 }
 
+.dashboard-main--immersive {
+  @apply p-0;
+}
+
+.dashboard-main--immersive .fb-inbox-workspace {
+  @apply min-h-[calc(100dvh-4.5rem)];
+}
+
+.fb-inbox-immersive-toggle {
+  @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 shadow-sm transition hover:bg-slate-100 hover:text-[#1877F2] dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-[#6db3ff];
+}
+
 .inbox-workspace-wrap--focus .inbox-workspace-toolbar {
   @apply border-sky-200/80 bg-sky-50/30 shadow-[0_0_24px_rgba(14,165,233,0.08)] dark:border-sky-900/40 dark:bg-sky-950/20;
 }

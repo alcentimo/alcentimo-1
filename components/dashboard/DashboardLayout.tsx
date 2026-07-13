@@ -20,6 +20,7 @@ import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
 import { DASHBOARD_PLANS_HREF, type ProductLimitCheck } from "@/src/config/plans";
+import { ImmersiveModeProvider, useImmersiveMode } from "@/components/inbox/ImmersiveModeProvider";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -36,6 +37,10 @@ function isStandaloneAuthPath(pathname: string): boolean {
     pathname === "/dashboard/recuperar-contrasena" ||
     pathname.startsWith("/dashboard/restablecer-contrasena")
   );
+}
+
+function isMensajesPath(pathname: string): boolean {
+  return pathname.startsWith("/dashboard/mensajes");
 }
 
 interface NavItem {
@@ -105,7 +110,7 @@ function navLinkClass(active: boolean) {
   ].join(" ");
 }
 
-export function DashboardLayout({
+function DashboardShell({
   children,
   storeName,
   catalogUrl,
@@ -116,7 +121,9 @@ export function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isImmersive } = useImmersiveMode();
   const navItems = buildNavItems(catalogUrl);
+  const immersiveActive = isMensajesPath(pathname) && isImmersive;
 
   function closeSidebar() {
     setSidebarOpen(false);
@@ -142,15 +149,13 @@ export function DashboardLayout({
     return item.match?.(pathname) ?? pathname === item.href;
   }
 
-  if (isStandaloneAuthPath(pathname)) {
-    return (
-      <div className="relative min-h-dvh bg-zinc-50 dark:bg-zinc-950">{children}</div>
-    );
-  }
-
   return (
-    <div className="flex h-dvh overflow-hidden bg-zinc-100 dark:bg-zinc-950">
-      {sidebarOpen && (
+    <div
+      className={`flex h-dvh overflow-hidden bg-zinc-100 dark:bg-zinc-950 ${
+        immersiveActive ? "dashboard-shell--immersive" : ""
+      }`}
+    >
+      {sidebarOpen && !immersiveActive && (
         <button
           type="button"
           className="fixed inset-0 z-40 bg-zinc-900/40 backdrop-blur-[2px] lg:hidden"
@@ -161,9 +166,14 @@ export function DashboardLayout({
 
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex h-full w-64 shrink-0 flex-col border-r border-zinc-200 bg-white transition-transform duration-200 ease-out dark:border-zinc-800 dark:bg-zinc-950 lg:static lg:z-auto lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0 shadow-xl" : "-translate-x-full lg:shadow-none"
+          immersiveActive
+            ? "-translate-x-full lg:hidden"
+            : sidebarOpen
+              ? "translate-x-0 shadow-xl"
+              : "-translate-x-full lg:shadow-none"
         }`}
         aria-label="Barra lateral del panel"
+        aria-hidden={immersiveActive}
       >
         <div className="border-b border-zinc-200 px-5 py-5 dark:border-zinc-800">
           <BrandLogo
@@ -259,24 +269,48 @@ export function DashboardLayout({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 lg:hidden dark:border-zinc-800 dark:bg-zinc-950">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            className="touch-target rounded-xl text-zinc-700 dark:text-zinc-300"
-            aria-label="Abrir menú"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <BrandLogo href="/dashboard" size="sm" subtitle={storeName ?? undefined} />
-          <div className="w-11" aria-hidden="true" />
-        </header>
+        {!immersiveActive && (
+          <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 lg:hidden dark:border-zinc-800 dark:bg-zinc-950">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="touch-target rounded-xl text-zinc-700 dark:text-zinc-300"
+              aria-label="Abrir menú"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <BrandLogo href="/dashboard" size="sm" subtitle={storeName ?? undefined} />
+            <div className="w-11" aria-hidden="true" />
+          </header>
+        )}
 
-        <main className="flex-1 overflow-y-auto p-6 safe-area-inset lg:p-8">
+        <main
+          className={`flex-1 overflow-y-auto safe-area-inset ${
+            immersiveActive
+              ? "dashboard-main--immersive"
+              : "p-6 lg:p-8"
+          }`}
+        >
           {productLimit && <ProductLimitBanner productLimit={productLimit} />}
           {children}
         </main>
       </div>
     </div>
+  );
+}
+
+export function DashboardLayout(props: DashboardLayoutProps) {
+  const pathname = usePathname();
+
+  if (isStandaloneAuthPath(pathname)) {
+    return (
+      <div className="relative min-h-dvh bg-zinc-50 dark:bg-zinc-950">{props.children}</div>
+    );
+  }
+
+  return (
+    <ImmersiveModeProvider>
+      <DashboardShell {...props} />
+    </ImmersiveModeProvider>
   );
 }
