@@ -36,8 +36,12 @@ async function userHasStoreInMiddleware(
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Webhooks públicos (Meta, MercadoLibre): sin sesión ni redirecciones de auth
-  if (pathname.startsWith("/api/webhooks")) {
+  // Webhooks y OAuth de integraciones: sin sesión ni redirecciones de auth
+  if (
+    pathname.startsWith("/api/webhooks") ||
+    pathname.startsWith("/api/integrations/meta/") ||
+    pathname.startsWith("/api/auth/mercadolibre/")
+  ) {
     return NextResponse.next();
   }
 
@@ -185,6 +189,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/webhooks|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/webhooks|api/integrations|api/auth/mercadolibre|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

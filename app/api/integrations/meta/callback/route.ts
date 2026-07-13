@@ -150,17 +150,35 @@ export async function GET(request: Request) {
       integrationId = created.id;
     }
 
-    await admin.from("channel_integration_secrets").upsert({
-      integration_id: integrationId,
-      access_token: assets.accessToken,
-      updated_at: new Date().toISOString(),
+    const { error: secretsError } = await admin
+      .from("channel_integration_secrets")
+      .upsert(
+        {
+          integration_id: integrationId,
+          access_token: assets.accessToken,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "integration_id" },
+      );
+
+    if (secretsError) {
+      throw secretsError;
+    }
+
+    console.log("[meta/callback] Integration saved", {
+      provider: parsedState.provider,
+      storeId: parsedState.storeId,
+      integrationId,
+      externalAccountId: assets.externalAccountId,
     });
 
     redirectBase.searchParams.set("connected", parsedState.provider);
     return clearCookie(NextResponse.redirect(redirectBase));
   } catch (err) {
-    console.error("[integrations/meta/callback]", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[integrations/meta/callback]", message, err);
     redirectBase.searchParams.set("error", "connect_failed");
+    redirectBase.searchParams.set("detail", message.slice(0, 200));
     return clearCookie(NextResponse.redirect(redirectBase));
   }
 }
