@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getUserStore } from "@/lib/stores";
 import type { InboxConversationStatus } from "@/lib/inbox/types";
+import type { InboxSalesStatus } from "@/lib/inbox/sales-status";
+import { isInboxSalesStatus } from "@/lib/inbox/sales-status";
 import { isPersistedConversation } from "@/lib/inbox/contact-context";
 
 const VALID_STATUSES = new Set<InboxConversationStatus>([
@@ -174,6 +176,17 @@ export async function assignInboxConversationTeam(
   }
 
   return updateConversationMetadata(conversationId, { assigned_team: team });
+}
+
+export async function updateInboxConversationSalesStatus(
+  conversationId: string,
+  salesStatus: InboxSalesStatus,
+): Promise<{ error?: string }> {
+  if (!isInboxSalesStatus(salesStatus)) {
+    return { error: "Estado de venta no válido." };
+  }
+
+  return updateConversationMetadata(conversationId, { sales_status: salesStatus });
 }
 
 export async function updateInboxContactTags(

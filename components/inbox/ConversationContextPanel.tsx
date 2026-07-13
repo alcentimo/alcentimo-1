@@ -1,22 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import {
   formatMessageTime,
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import type { VentaWithProduct } from "@/lib/sales/types";
-import type { InboxConversationStatus } from "@/lib/inbox/types";
+import type { InboxSalesStatus } from "@/lib/inbox/sales-status";
 import {
   updateInboxContactTags,
-  updateInboxConversationStatus,
+  updateInboxConversationSalesStatus,
 } from "@/lib/inbox/actions";
 import { getContactPurchaseHistory, isPersistedConversation } from "@/lib/inbox/contact-context";
 import { ContextModuleCard } from "@/components/inbox/ContextModuleCard";
-import {
-  CONVERSATION_STATUS_OPTIONS,
-} from "@/components/inbox/conversation-status";
+import { SalesStatusSelect } from "@/components/inbox/SalesStatusSelect";
 
 interface ConversationContextPanelProps {
   conversation: MessageConversation | null;
@@ -91,15 +90,15 @@ export function ConversationContextPanel({
   const contactId = conversation.contactId;
   const currentTags = conversation.tags;
 
-  function handleStatusChange(status: InboxConversationStatus) {
-    onConversationPatch(conversationId, { status });
+  function handleSalesStatusChange(salesStatus: InboxSalesStatus) {
+    onConversationPatch(conversationId, { salesStatus });
 
     if (!canPersist) return;
 
     startStatusTransition(async () => {
-      const result = await updateInboxConversationStatus(
+      const result = await updateInboxConversationSalesStatus(
         conversationId,
-        status,
+        salesStatus,
       );
       if (result.error) {
         console.error("[ConversationContextPanel]", result.error);
@@ -132,21 +131,11 @@ export function ConversationContextPanel({
         <p className="inbox-context-profile-meta">
           {conversation.phoneE164 ?? conversation.senderId}
         </p>
-        <select
-          value={conversation.status}
+        <SalesStatusSelect
+          value={conversation.salesStatus}
           disabled={isUpdatingStatus}
-          onChange={(event) =>
-            handleStatusChange(event.target.value as InboxConversationStatus)
-          }
-          className="inbox-context-input inbox-context-input--compact mt-2"
-          aria-label="Estado de la conversación"
-        >
-          {CONVERSATION_STATUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          onChange={handleSalesStatusChange}
+        />
         <div className="inbox-context-fields mt-2">
           <FieldRow label="País" value={conversation.country ?? storeCountry ?? "—"} />
           <FieldRow label="Último msg" value={formatMessageTime(conversation.lastMessageAt)} />
@@ -155,6 +144,9 @@ export function ConversationContextPanel({
 
       <div className="inbox-context-scroll overflow-y-auto">
         <ContextModuleCard title="Pedidos">
+          <Link href="/dashboard/ventas" className="inbox-order-create-btn">
+            + Crear Pedido
+          </Link>
           {purchaseHistory.length === 0 ? (
             <p className="inbox-context-module-empty">Sin pedidos vinculados.</p>
           ) : (

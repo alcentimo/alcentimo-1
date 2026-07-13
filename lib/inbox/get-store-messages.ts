@@ -3,6 +3,8 @@ import type {
   InboxConversationStatus,
   InboxProvider,
 } from "@/lib/inbox/types";
+import type { InboxSalesStatus } from "@/lib/inbox/sales-status";
+import { normalizeSalesStatus } from "@/lib/inbox/sales-status";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface MessageConversation {
@@ -15,6 +17,7 @@ export interface MessageConversation {
   provider: InboxProvider;
   integrationId: string;
   status: InboxConversationStatus;
+  salesStatus: InboxSalesStatus;
   assignedTeam: string | null;
   tags: string[];
   country: string | null;
@@ -123,6 +126,7 @@ function mapConversationRow(
   const country =
     readMetadataString(conversationMetadata, contactMetadata, "country") ??
     storeCountry;
+  const salesStatus = normalizeSalesStatus(conversationMetadata?.sales_status);
   const isPriority =
     conversation.status === "pending" ||
     conversation.unread_count > 0 ||
@@ -138,6 +142,7 @@ function mapConversationRow(
     provider: conversation.provider,
     integrationId: conversation.integration_id ?? "",
     status: conversation.status,
+    salesStatus,
     assignedTeam,
     tags: uniqueTags,
     country,
@@ -174,6 +179,7 @@ function mapLegacyConversation(
     provider,
     integrationId: integrationId ?? "",
     status: "open",
+    salesStatus: "new",
     assignedTeam: null,
     tags: [],
     country: storeCountry,

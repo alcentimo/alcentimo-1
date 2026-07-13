@@ -18,12 +18,15 @@ import { InboxDockPanel } from "@/components/inbox/InboxDockPanel";
 import { InboxDockTab } from "@/components/inbox/InboxDockTab";
 import { isMessengerProvider } from "@/components/inbox/MessengerChannelLabel";
 import { useInboxWorkspace } from "@/components/inbox/useInboxWorkspace";
+import type { CatalogListItem } from "@/lib/database.types";
 import type { VentaWithProduct } from "@/lib/sales/types";
 
 interface MessagesPanelProps {
   initialConversations: MessageConversation[];
   hasActiveIntegrations: boolean;
   storeCountry?: string | null;
+  storeSlug: string;
+  catalogProducts?: CatalogListItem[];
   recentSales?: VentaWithProduct[];
   salesByConversationId?: Record<string, VentaWithProduct[]>;
 }
@@ -32,6 +35,8 @@ export function MessagesPanel({
   initialConversations,
   hasActiveIntegrations,
   storeCountry = null,
+  storeSlug,
+  catalogProducts = [],
   recentSales = [],
   salesByConversationId = {},
 }: MessagesPanelProps) {
@@ -231,6 +236,8 @@ export function MessagesPanel({
           >
             <ChatThread
               conversation={selectedConversation}
+              products={catalogProducts}
+              storeSlug={storeSlug}
               onConversationPatch={patchConversation}
             />
           </InboxDockPanel>

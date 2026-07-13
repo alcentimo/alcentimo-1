@@ -5,6 +5,7 @@ import {
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
+import type { CatalogListItem } from "@/lib/database.types";
 import { MessageBubble } from "@/components/inbox/MessageBubble";
 import { ChatComposer } from "@/components/inbox/ChatComposer";
 import {
@@ -14,6 +15,8 @@ import {
 
 interface ChatThreadProps {
   conversation: MessageConversation | null;
+  products: CatalogListItem[];
+  storeSlug: string;
   onConversationPatch: (
     conversationId: string,
     patch: Partial<MessageConversation>,
@@ -22,6 +25,8 @@ interface ChatThreadProps {
 
 export function ChatThread({
   conversation,
+  products,
+  storeSlug,
   onConversationPatch,
 }: ChatThreadProps) {
   const [draft, setDraft] = useState("");
@@ -83,7 +88,12 @@ export function ChatThread({
         ))}
       </div>
 
-      <ChatComposer draft={draft} onDraftChange={setDraft} />
+      <ChatComposer
+        draft={draft}
+        onDraftChange={setDraft}
+        products={products}
+        storeSlug={storeSlug}
+      />
     </div>
   );
 }
