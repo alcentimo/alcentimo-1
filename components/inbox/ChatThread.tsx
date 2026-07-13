@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
@@ -18,13 +18,21 @@ interface ChatThreadProps {
     conversationId: string,
     patch: Partial<MessageConversation>,
   ) => void;
+  onSendMessage?: (conversationId: string, text: string) => void;
+  onSlashMenuOpenChange?: (open: boolean) => void;
 }
 
 export function ChatThread({
   conversation,
   onConversationPatch,
+  onSendMessage,
+  onSlashMenuOpenChange,
 }: ChatThreadProps) {
   const [draft, setDraft] = useState("");
+
+  useEffect(() => {
+    setDraft("");
+  }, [conversation?.conversationId]);
 
   if (!conversation) {
     return (
@@ -33,7 +41,7 @@ export function ChatThread({
           Elige un chat para vender
         </p>
         <p className="mt-1 text-xs text-slate-400">
-          Responde rápido y cierra el pedido.
+          <kbd className="inbox-kbd">↑</kbd> <kbd className="inbox-kbd">↓</kbd> para navegar entre chats.
         </p>
       </div>
     );
@@ -51,6 +59,11 @@ export function ChatThread({
     assignedTeam?: string | null;
   }) {
     onConversationPatch(conversationId, patch);
+  }
+
+  function handleSend(text: string) {
+    onSendMessage?.(conversationId, text);
+    setDraft("");
   }
 
   return (
@@ -83,7 +96,12 @@ export function ChatThread({
         ))}
       </div>
 
-      <ChatComposer draft={draft} onDraftChange={setDraft} />
+      <ChatComposer
+        draft={draft}
+        onDraftChange={setDraft}
+        onSend={handleSend}
+        onSlashMenuOpenChange={onSlashMenuOpenChange}
+      />
     </div>
   );
 }

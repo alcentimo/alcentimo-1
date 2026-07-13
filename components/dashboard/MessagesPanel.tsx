@@ -6,8 +6,12 @@ import { markInboxConversationRead } from "@/lib/inbox/actions";
 import {
   countSmartTab,
   DEFAULT_INBOX_FILTERS,
+  filterConversations,
   type InboxListFilters,
 } from "@/lib/inbox/inbox-filters";
+import {
+  formatSenderLabel,
+} from "@/lib/inbox/get-store-messages";
 import { buildWorkspaceGridStyle } from "@/lib/inbox/workspace-persistence";
 import { MessagesEmptyState } from "@/components/dashboard/MessagesEmptyState";
 import { ConversationList } from "@/components/inbox/ConversationList";
@@ -19,6 +23,7 @@ import { InboxDockPanel } from "@/components/inbox/InboxDockPanel";
 import { InboxDockTab } from "@/components/inbox/InboxDockTab";
 import { isMessengerProvider } from "@/components/inbox/MessengerChannelLabel";
 import { useInboxWorkspace } from "@/components/inbox/useInboxWorkspace";
+import { useInboxKeyboardNav } from "@/components/inbox/useInboxKeyboardNav";
 import type { VentaWithProduct } from "@/lib/sales/types";
 
 interface MessagesPanelProps {
@@ -43,6 +48,7 @@ export function MessagesPanel({
   >(null);
   const [listFilters, setListFilters] =
     useState<InboxListFilters>(DEFAULT_INBOX_FILTERS);
+  const [slashMenuOpen, setSlashMenuOpen] = useState(false);
   const [, startTransition] = useTransition();
 
   const workspace = useInboxWorkspace();
@@ -62,6 +68,16 @@ export function MessagesPanel({
       priority: "all",
     }),
     [listFilters],
+  );
+
+  const filteredConversations = useMemo(
+    () =>
+      filterConversations(
+        facebookConversations,
+        mergedFilters,
+        formatSenderLabel,
+      ),
+    [facebookConversations, mergedFilters],
   );
 
   const selectedConversation = useMemo(
@@ -150,6 +166,42 @@ export function MessagesPanel({
     });
   }
 
+  function handleSendMessage(conversationId: string, text: string) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    const conversation = conversations.find(
+      (item) => item.conversationId === conversationId,
+    );
+    if (!conversation) return;
+
+    const now = new Date().toISOString();
+    patchConversation(conversationId, {
+      messages: [
+        ...conversation.messages,
+        {
+          id: `local-outbound-${Date.now()}`,
+          integration_id: conversation.integrationId,
+          sender_id: conversation.senderId,
+          message_text: trimmed,
+          direction: "outbound",
+          status: "read",
+          created_at: now,
+        },
+      ],
+      lastMessage: trimmed,
+      lastMessageAt: now,
+    });
+  }
+
+  useInboxKeyboardNav({
+    conversations: filteredConversations,
+    selectedConversationId,
+    onSelectConversation: handleSelectConversation,
+    enabled: !workspace.listCollapsed && filteredConversations.length > 0,
+    blocked: slashMenuOpen,
+  });
+
   if (conversations.length === 0) {
     return (
       <MessagesEmptyState hasActiveIntegrations={hasActiveIntegrations} />
@@ -229,6 +281,8 @@ export function MessagesPanel({
             <ChatThread
               conversation={selectedConversation}
               onConversationPatch={patchConversation}
+              onSendMessage={handleSendMessage}
+              onSlashMenuOpenChange={setSlashMenuOpen}
             />
           </InboxDockPanel>
         )}
