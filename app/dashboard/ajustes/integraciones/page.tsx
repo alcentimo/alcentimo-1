@@ -59,7 +59,7 @@ function resolveStatus(searchParams: {
     case "meta_assets_not_found":
       return {
         message:
-          "Meta autorizó la app, pero no encontramos un número de WhatsApp, página o cuenta de Instagram vinculada. Verifica que tu cuenta de negocio tenga el activo configurado en Meta Business Suite.",
+          "Meta autorizó la app, pero no encontramos ninguna Página de Facebook vinculada a tu cuenta. En el diálogo de Facebook, asegúrate de seleccionar la página de tu negocio y conceder acceso a páginas.",
         tone: "error",
       };
     case "ml_connect_failed":

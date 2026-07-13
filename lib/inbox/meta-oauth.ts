@@ -8,6 +8,8 @@ export const META_OAUTH_STATE_COOKIE = "meta_oauth_state";
 const PROVIDER_SCOPES: Record<MetaProviderKey, string[]> = {
   whatsapp: [
     "business_management",
+    "pages_show_list",
+    "pages_messaging",
     "whatsapp_business_management",
     "whatsapp_business_messaging",
   ],

@@ -79,8 +79,19 @@ export async function GET(request: Request) {
     );
 
     if (!assets) {
+      console.warn("[meta/callback] No Meta assets found", {
+        provider: parsedState.provider,
+        storeId: parsedState.storeId,
+      });
       redirectBase.searchParams.set("error", "meta_assets_not_found");
       return clearCookie(NextResponse.redirect(redirectBase));
+    }
+
+    if (assets.config.fallback_from_provider) {
+      console.log("[meta/callback] Connected via Facebook Page fallback", {
+        requestedProvider: parsedState.provider,
+        pageId: assets.externalAccountId,
+      });
     }
 
     const admin = createAdminClient();

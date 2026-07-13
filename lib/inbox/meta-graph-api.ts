@@ -145,34 +145,104 @@ interface PageAccount {
   };
 }
 
-async function listManagedPages(accessToken: string): Promise<PageAccount[]> {
-  const response = await graphGet<{ data?: PageAccount[] }>(
+interface BusinessWithPages {
+  id?: string;
+  name?: string;
+  owned_pages?: { data?: PageAccount[] };
+  client_pages?: { data?: PageAccount[] };
+}
+
+function pageKey(page: PageAccount): string | null {
+  return page.id?.trim() || null;
+}
+
+function mergePages(...groups: PageAccount[][]): PageAccount[] {
+  const seen = new Set<string>();
+  const merged: PageAccount[] = [];
+
+  for (const group of groups) {
+    for (const page of group) {
+      const key = pageKey(page);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      merged.push(page);
+    }
+  }
+
+  return merged;
+}
+
+/** Lista páginas autorizadas vía /me/accounts y portafolios Business. */
+async function listAllAuthorizedPages(accessToken: string): Promise<PageAccount[]> {
+  const directPages = await graphGet<{ data?: PageAccount[] }>(
     "/me/accounts",
     accessToken,
     {
       fields: "id,name,access_token,instagram_business_account{id,username}",
     },
-  );
+  ).then((response) => response.data ?? []).catch(() => [] as PageAccount[]);
 
-  return response.data ?? [];
+  const businessPages = await graphGet<{ data?: BusinessWithPages[] }>(
+    "/me/businesses",
+    accessToken,
+    {
+      fields:
+        "id,name,owned_pages{id,name,access_token},client_pages{id,name,access_token}",
+    },
+  )
+    .then((response) => {
+      const pages: PageAccount[] = [];
+      for (const business of response.data ?? []) {
+        pages.push(...(business.owned_pages?.data ?? []));
+        pages.push(...(business.client_pages?.data ?? []));
+      }
+      return pages;
+    })
+    .catch(() => [] as PageAccount[]);
+
+  return mergePages(directPages, businessPages);
+}
+
+function buildFacebookPageAssets(page: PageAccount): MetaDiscoveredAssets {
+  return {
+    externalAccountId: page.id!,
+    displayName: page.name ?? null,
+    config: {
+      page_id: page.id,
+      page_name: page.name ?? null,
+      linked_via: "facebook_page",
+    },
+    accessToken: page.access_token ?? "",
+  };
+}
+
+/**
+ * Acepta la conexión si Meta devolvió al menos una Página de Facebook autorizada.
+ * No requiere WhatsApp ni Instagram.
+ */
+export async function discoverFacebookPageAssets(
+  accessToken: string,
+): Promise<MetaDiscoveredAssets | null> {
+  const pages = await listAllAuthorizedPages(accessToken);
+  const page = pages.find((candidate) => pageKey(candidate));
+  if (!page?.id) return null;
+
+  const assets = buildFacebookPageAssets(page);
+  if (!assets.accessToken) {
+    assets.accessToken = accessToken;
+  }
+
+  return assets;
+}
+
+async function listManagedPages(accessToken: string): Promise<PageAccount[]> {
+  return listAllAuthorizedPages(accessToken);
 }
 
 async function discoverMessengerAssets(
   accessToken: string,
 ): Promise<MetaDiscoveredAssets | null> {
-  const pages = await listManagedPages(accessToken);
-  const page = pages[0];
-  if (!page?.id) return null;
-
-  return {
-    externalAccountId: page.id,
-    displayName: page.name ?? null,
-    config: {
-      page_id: page.id,
-      page_name: page.name ?? null,
-    },
-    accessToken: page.access_token ?? accessToken,
-  };
+  return discoverFacebookPageAssets(accessToken);
 }
 
 async function discoverInstagramAssets(
@@ -203,20 +273,40 @@ async function discoverInstagramAssets(
 }
 
 /**
- * Descubre IDs de webhook (phone_number_id, page_id, ig_user_id) tras OAuth.
+ * Descubre activos tras OAuth. Si el canal específico (WhatsApp/Instagram) no
+ * está disponible, acepta cualquier Página de Facebook autorizada.
  */
 export async function discoverMetaIntegrationAssets(
   provider: MetaProviderKey,
   accessToken: string,
 ): Promise<MetaDiscoveredAssets | null> {
+  let assets: MetaDiscoveredAssets | null = null;
+
   switch (provider) {
     case "whatsapp":
-      return discoverWhatsAppAssets(accessToken);
+      assets = await discoverWhatsAppAssets(accessToken);
+      break;
     case "messenger":
-      return discoverMessengerAssets(accessToken);
+      assets = await discoverMessengerAssets(accessToken);
+      break;
     case "instagram":
-      return discoverInstagramAssets(accessToken);
+      assets = await discoverInstagramAssets(accessToken);
+      break;
     default:
-      return null;
+      assets = null;
   }
+
+  if (assets) return assets;
+
+  const pageAssets = await discoverFacebookPageAssets(accessToken);
+  if (!pageAssets) return null;
+
+  return {
+    ...pageAssets,
+    config: {
+      ...pageAssets.config,
+      requested_provider: provider,
+      fallback_from_provider: provider,
+    },
+  };
 }
