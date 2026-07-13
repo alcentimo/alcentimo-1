@@ -1,7 +1,15 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { ShoppingBag, Tag } from "lucide-react";
+import { useMemo, useState, useTransition, type ReactNode } from "react";
+import {
+  Clock3,
+  Flag,
+  MessageCircle,
+  ShoppingBag,
+  SlidersHorizontal,
+  Tag,
+  UserRound,
+} from "lucide-react";
 import {
   formatMessageTime,
   formatSenderLabel,
@@ -38,6 +46,36 @@ function formatCurrency(amount: number): string {
   });
 }
 
+function ContextFieldLabel({
+  icon: Icon,
+  children,
+}: {
+  icon: typeof Flag;
+  children: ReactNode;
+}) {
+  return (
+    <dt className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+      <Icon className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+      {children}
+    </dt>
+  );
+}
+
+function ContextSectionTitle({
+  icon: Icon,
+  children,
+}: {
+  icon: typeof Flag;
+  children: ReactNode;
+}) {
+  return (
+    <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-50">
+      <Icon className="h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+      {children}
+    </h3>
+  );
+}
+
 export function ConversationContextPanel({
   conversation,
   storeCountry,
@@ -59,11 +97,11 @@ export function ConversationContextPanel({
 
   if (!conversation) {
     return (
-      <div className="inbox-context-panel-empty flex flex-1 flex-col justify-center px-5 py-8">
-        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+      <div className="inbox-context-panel-empty flex flex-1 flex-col justify-center px-6 py-10">
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
           Contexto del cliente
         </p>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Selecciona una conversación para ver perfil, compras y estado.
         </p>
       </div>
@@ -115,43 +153,40 @@ export function ConversationContextPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="border-b border-zinc-200/90 px-4 py-3 dark:border-zinc-800 sm:px-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-          Cliente
-        </p>
-        <div className="mt-3 flex items-center gap-3">
+      <header className="px-5 pb-4 pt-5">
+        <div className="flex items-center gap-3">
           {conversation.avatarUrl ? (
             <img
               src={conversation.avatarUrl}
               alt=""
-              className="h-12 w-12 rounded-2xl object-cover shadow-sm"
+              className="h-12 w-12 rounded-2xl object-cover shadow-sm ring-1 ring-slate-200/80 dark:ring-slate-700"
             />
           ) : (
             <ChannelLogo provider={conversation.provider} className="h-12 w-12" />
           )}
           <div className="min-w-0">
-            <p className="truncate text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            <p className="truncate text-base font-semibold text-slate-900 dark:text-slate-50">
               {customerLabel}
             </p>
-            <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="truncate text-xs text-slate-500 dark:text-slate-400">
               {conversation.phoneE164 ?? conversation.senderId}
             </p>
           </div>
         </div>
       </header>
 
-      <div className="space-y-6 overflow-y-auto px-4 py-5 sm:px-5">
+      <div className="inbox-context-scroll space-y-7 overflow-y-auto px-5 pb-6">
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          <ContextSectionTitle icon={SlidersHorizontal}>
             Estado de la conversación
-          </h3>
+          </ContextSectionTitle>
           <select
             value={conversation.status}
             disabled={isUpdatingStatus}
             onChange={(event) =>
               handleStatusChange(event.target.value as InboxConversationStatus)
             }
-            className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm font-medium text-zinc-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:ring-teal-950/50"
+            className="inbox-context-input"
           >
             {CONVERSATION_STATUS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -159,7 +194,7 @@ export function ConversationContextPanel({
               </option>
             ))}
           </select>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Actual: {getConversationStatusLabel(conversation.status)}
             {conversation.assignedTeam
               ? ` · Asignado a ${conversation.assignedTeam}`
@@ -168,31 +203,31 @@ export function ConversationContextPanel({
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          <ContextSectionTitle icon={UserRound}>
             Datos del cliente
-          </h3>
-          <dl className="space-y-3 text-sm">
+          </ContextSectionTitle>
+          <dl className="space-y-3.5 text-sm">
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-zinc-500 dark:text-zinc-400">Nombre</dt>
-              <dd className="font-medium text-zinc-900 dark:text-zinc-50">
+              <ContextFieldLabel icon={UserRound}>Nombre</ContextFieldLabel>
+              <dd className="font-medium text-slate-900 dark:text-slate-50">
                 {customerLabel}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-zinc-500 dark:text-zinc-400">País</dt>
-              <dd className="font-medium text-zinc-900 dark:text-zinc-50">
+              <ContextFieldLabel icon={Flag}>País</ContextFieldLabel>
+              <dd className="font-medium text-slate-900 dark:text-slate-50">
                 {conversation.country ?? storeCountry ?? "Sin definir"}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-zinc-500 dark:text-zinc-400">Canal</dt>
-              <dd className="font-medium capitalize text-zinc-900 dark:text-zinc-50">
+              <ContextFieldLabel icon={MessageCircle}>Canal</ContextFieldLabel>
+              <dd className="font-medium capitalize text-slate-900 dark:text-slate-50">
                 {conversation.provider}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-zinc-500 dark:text-zinc-400">Último mensaje</dt>
-              <dd className="font-medium text-zinc-900 dark:text-zinc-50">
+              <ContextFieldLabel icon={Clock3}>Último mensaje</ContextFieldLabel>
+              <dd className="font-medium text-slate-900 dark:text-slate-50">
                 {formatMessageTime(conversation.lastMessageAt)}
               </dd>
             </div>
@@ -200,90 +235,83 @@ export function ConversationContextPanel({
         </section>
 
         {!compact && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Tag className="h-4 w-4 text-zinc-400" aria-hidden="true" />
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              Etiquetas
-            </h3>
-          </div>
+          <section className="space-y-3">
+            <ContextSectionTitle icon={Tag}>Etiquetas</ContextSectionTitle>
 
-          <div className="flex flex-wrap gap-2">
-            {conversation.tags.length === 0 ? (
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Sin etiquetas aún.
-              </p>
-            ) : (
-              conversation.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-                >
-                  {tag}
-                </span>
-              ))
-            )}
-          </div>
+            <div className="flex flex-wrap gap-2">
+              {conversation.tags.length === 0 ? (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Sin etiquetas aún.
+                </p>
+              ) : (
+                conversation.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    <Tag className="h-3 w-3 opacity-60" aria-hidden="true" />
+                    {tag}
+                  </span>
+                ))
+              )}
+            </div>
 
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(event) => setTagInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  handleAddTag();
-                }
-              }}
-              placeholder="Nueva etiqueta"
-              disabled={!conversation.contactId || isUpdatingTags}
-              className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:focus:ring-teal-950/50"
-            />
-            <button
-              type="button"
-              onClick={handleAddTag}
-              disabled={!conversation.contactId || isUpdatingTags}
-              className="btn-brand-outline shrink-0 px-3 py-2 text-sm"
-            >
-              Añadir
-            </button>
-          </div>
-        </section>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(event) => setTagInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleAddTag();
+                  }
+                }}
+                placeholder="Nueva etiqueta"
+                disabled={!conversation.contactId || isUpdatingTags}
+                className="inbox-context-input min-w-0 flex-1"
+              />
+              <button
+                type="button"
+                onClick={handleAddTag}
+                disabled={!conversation.contactId || isUpdatingTags}
+                className="btn-brand-outline shrink-0 px-3 py-2 text-sm"
+              >
+                Añadir
+              </button>
+            </div>
+          </section>
         )}
 
         {!compact && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="h-4 w-4 text-zinc-400" aria-hidden="true" />
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          <section className="inbox-purchase-history-card space-y-3">
+            <ContextSectionTitle icon={ShoppingBag}>
               Historial de compras
-            </h3>
-          </div>
+            </ContextSectionTitle>
 
-          {purchaseHistory.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-zinc-200 px-3 py-4 text-xs text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-              No encontramos ventas vinculadas a este contacto todavía.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {purchaseHistory.map((sale) => (
-                <li
-                  key={sale.id}
-                  className="rounded-xl border border-zinc-200/90 bg-white px-3 py-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
-                >
-                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                    {sale.product_name}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    {formatCurrency(sale.monto)} · {sale.cantidad} uds ·{" "}
-                    {formatMessageTime(sale.created_at)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+            {purchaseHistory.length === 0 ? (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                No encontramos ventas vinculadas a este contacto todavía.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {purchaseHistory.map((sale) => (
+                  <li
+                    key={sale.id}
+                    className="rounded-lg bg-white px-3 py-3 shadow-sm ring-1 ring-slate-200/60 dark:bg-slate-900 dark:ring-slate-700/60"
+                  >
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                      {sale.product_name}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      {formatCurrency(sale.monto)} · {sale.cantidad} uds ·{" "}
+                      {formatMessageTime(sale.created_at)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         )}
       </div>
     </div>

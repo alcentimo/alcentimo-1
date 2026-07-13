@@ -70,7 +70,7 @@ export function ChatThread({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <header
-        className={`flex items-center justify-between gap-3 border-b border-zinc-200/90 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 sm:px-5 ${
+        className={`flex items-center justify-between gap-3 bg-white px-5 py-4 dark:bg-slate-950 ${
           isMessenger ? "inbox-chat-header--messenger" : ""
         }`}
       >
@@ -122,7 +122,7 @@ export function ChatThread({
         ))}
       </div>
 
-      <footer className="border-t border-zinc-200/90 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 sm:px-5">
+      <footer className="bg-white px-5 py-4 dark:bg-slate-950">
         <div className="flex items-end gap-3">
           <textarea
             value={draft}

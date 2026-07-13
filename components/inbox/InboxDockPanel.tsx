@@ -34,7 +34,7 @@ export function InboxDockPanel({
     <div className={`inbox-dock-panel inbox-dock-panel--${side} ${className}`}>
       <header className="inbox-dock-panel-header">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <h2 className="truncate text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <h2 className="inbox-dock-panel-title truncate">
             {title}
           </h2>
           {headerExtra}

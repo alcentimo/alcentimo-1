@@ -543,11 +543,11 @@ body {
 }
 
 .inbox-workspace-wrap--focus .inbox-workspace-toolbar {
-  @apply border-teal-200/80 bg-teal-50/40 dark:border-teal-900/40 dark:bg-teal-950/20;
+  @apply border-sky-200/80 bg-sky-50/30 shadow-[0_0_24px_rgba(14,165,233,0.08)] dark:border-sky-900/40 dark:bg-sky-950/20;
 }
 
 .inbox-workspace-toolbar {
-  @apply flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200/80 bg-white px-3 py-2.5 shadow-sm transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-950 sm:px-4;
+  @apply flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all duration-300 dark:border-slate-800 dark:bg-slate-950;
 }
 
 .inbox-channel-focus {
@@ -555,19 +555,23 @@ body {
 }
 
 .inbox-channel-focus-select {
-  @apply rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 shadow-sm outline-none transition-all duration-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:ring-teal-950/50;
+  @apply rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 shadow-sm outline-none transition-all duration-300 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-sky-950/50;
 }
 
 .inbox-channel-focus-select--active {
-  @apply border-teal-300 bg-teal-50/60 text-teal-900 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-200;
+  @apply border-sky-400 bg-sky-50/80 text-sky-900 shadow-[0_0_0_1px_rgba(14,165,233,0.2),0_0_20px_rgba(14,165,233,0.15)] ring-1 ring-sky-200/80 dark:border-sky-600 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-800/60;
 }
 
 .inbox-channel-focus-badge {
-  @apply inline-flex items-center gap-2 rounded-full bg-white px-2.5 py-1 shadow-sm ring-1 ring-teal-100 dark:bg-zinc-950 dark:ring-teal-900/50;
+  @apply inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-slate-200 dark:bg-slate-950 dark:ring-slate-700;
+}
+
+.inbox-channel-focus-badge--active {
+  @apply bg-sky-50 shadow-[0_0_16px_rgba(14,165,233,0.18)] ring-1 ring-sky-300/70 dark:bg-sky-950/40 dark:ring-sky-700/60;
 }
 
 .inbox-workspace {
-  @apply grid min-h-[calc(100dvh-11rem)] overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-sm transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-950;
+  @apply grid min-h-[calc(100dvh-11rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 dark:border-slate-800 dark:bg-slate-950;
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -581,7 +585,7 @@ body {
   }
 
   .inbox-workspace--focus {
-    @apply border-teal-200/70 dark:border-teal-900/40;
+    @apply border-sky-200/70 shadow-[0_0_32px_rgba(14,165,233,0.06)] dark:border-sky-900/40;
   }
 }
 
@@ -590,19 +594,23 @@ body {
 }
 
 .inbox-dock-panel--left {
-  @apply border-b border-zinc-200/90 dark:border-zinc-800 lg:border-b-0 lg:border-r;
+  @apply lg:border-r lg:border-slate-200 dark:lg:border-slate-800;
 }
 
 .inbox-dock-panel--center {
-  @apply bg-zinc-50/70 dark:bg-zinc-900/20;
+  @apply bg-slate-50/50 dark:bg-slate-900/20;
 }
 
 .inbox-dock-panel--right {
-  @apply border-t border-zinc-200/90 dark:border-zinc-800 lg:border-l lg:border-t-0;
+  @apply lg:border-l lg:border-slate-200 dark:lg:border-slate-800;
 }
 
 .inbox-dock-panel-header {
-  @apply flex shrink-0 items-center justify-between gap-2 border-b border-zinc-200/90 bg-white px-3 py-2 dark:border-zinc-800 dark:bg-zinc-950;
+  @apply flex shrink-0 items-center justify-between gap-2 bg-white px-3 py-2 dark:bg-slate-950;
+}
+
+.inbox-dock-panel-title {
+  @apply text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400;
 }
 
 .inbox-dock-panel-body {
@@ -614,19 +622,19 @@ body {
 }
 
 .inbox-dock-tab {
-  @apply flex min-h-0 min-w-0 flex-col items-center justify-center gap-2 border-zinc-200/90 bg-zinc-50/80 px-1 py-3 text-zinc-500 transition-all duration-300 hover:bg-teal-50 hover:text-teal-700 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400 dark:hover:bg-teal-950/30 dark:hover:text-teal-300;
+  @apply flex min-h-0 min-w-0 flex-col items-center justify-center gap-2 bg-slate-50/80 px-1 py-3 text-slate-500 transition-all duration-300 hover:bg-sky-50 hover:text-sky-700 dark:bg-slate-900/40 dark:text-slate-400 dark:hover:bg-sky-950/30 dark:hover:text-sky-300;
 }
 
 .inbox-dock-tab--left {
-  @apply border-b dark:border-zinc-800 lg:border-b-0 lg:border-r;
+  @apply lg:border-r lg:border-slate-200 dark:lg:border-slate-800;
 }
 
 .inbox-dock-tab--center {
-  @apply border-b bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:border-b-0 lg:border-x;
+  @apply bg-white dark:bg-slate-950 lg:border-x lg:border-slate-200 dark:lg:border-slate-800;
 }
 
 .inbox-dock-tab--right {
-  @apply border-t dark:border-zinc-800 lg:border-l lg:border-t-0;
+  @apply lg:border-l lg:border-slate-200 dark:lg:border-slate-800;
 }
 
 .inbox-dock-tab-label {
@@ -658,7 +666,7 @@ body {
 }
 
 .inbox-list-toolbar {
-  @apply shrink-0 space-y-2 border-b border-zinc-200/90 px-3 py-2 dark:border-zinc-800;
+  @apply shrink-0 space-y-2 px-3 py-3;
 }
 
 .inbox-smart-tabs {
@@ -698,11 +706,11 @@ body {
 }
 
 .inbox-conversation-item-compact {
-  @apply relative flex w-full items-center gap-2 border-b border-zinc-100 px-2.5 py-2 text-left transition-colors duration-100 last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800/70 dark:hover:bg-zinc-900/50;
+  @apply relative flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors duration-100 hover:bg-slate-50 dark:hover:bg-slate-900/40;
 }
 
 .inbox-conversation-item-compact-active {
-  @apply bg-teal-50/90 dark:bg-teal-950/30;
+  @apply bg-sky-50/80 dark:bg-sky-950/25;
 }
 
 .inbox-conversation-item-compact-unread {
@@ -726,19 +734,19 @@ body {
 }
 
 .inbox-chat-header--messenger {
-  @apply border-b-[#1877F2]/20 bg-gradient-to-r from-[#1877F2]/5 to-transparent dark:from-[#1877F2]/10;
+  @apply bg-gradient-to-r from-[#1877F2]/5 to-transparent dark:from-[#1877F2]/10;
 }
 
 .inbox-quick-actions {
-  @apply absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-md border border-zinc-200/90 bg-white/95 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100 dark:border-zinc-700 dark:bg-zinc-950/95;
+  @apply absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-md border border-slate-200/90 bg-white/95 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-950/95;
 }
 
 .inbox-quick-action-btn {
-  @apply inline-flex h-6 w-6 items-center justify-center rounded text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100;
+  @apply inline-flex h-6 w-6 items-center justify-center rounded text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100;
 }
 
 .inbox-stats-bar {
-  @apply flex flex-wrap items-center gap-4 rounded-xl border border-zinc-200/80 bg-white px-4 py-2.5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:gap-6 sm:px-5;
+  @apply flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:gap-6 sm:px-5;
 }
 
 .inbox-stat {
@@ -766,7 +774,31 @@ body {
 }
 
 .inbox-chat-thread {
-  @apply flex-1 space-y-3 overflow-y-auto px-4 py-5 sm:px-5;
+  @apply flex-1 space-y-4 overflow-y-auto px-5 py-6;
+}
+
+.inbox-bubble-outbound {
+  @apply rounded-2xl rounded-br-md bg-linear-to-br from-sky-600 via-blue-600 to-blue-700 px-4 py-3 text-white shadow-md shadow-blue-500/15;
+}
+
+.inbox-bubble-inbound {
+  @apply rounded-2xl rounded-bl-md border border-slate-200/90 bg-white px-4 py-3 text-slate-900 shadow-sm dark:border-slate-700/80 dark:bg-slate-900 dark:text-slate-50;
+}
+
+.inbox-bubble-new-badge {
+  @apply inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:bg-sky-950/60 dark:text-sky-300;
+}
+
+.inbox-context-scroll {
+  @apply pt-1;
+}
+
+.inbox-context-input {
+  @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50 dark:focus:ring-sky-950/50;
+}
+
+.inbox-purchase-history-card {
+  @apply rounded-xl bg-slate-50 p-4 dark:bg-slate-900/50;
 }
 
 .inbox-chat-empty {

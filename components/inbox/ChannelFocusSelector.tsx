@@ -51,10 +51,10 @@ export function ChannelFocusSelector({
       </select>
 
       {isFocused && activeOption?.provider && (
-        <div className="inbox-channel-focus-badge">
+        <div className="inbox-channel-focus-badge inbox-channel-focus-badge--active">
           <ChannelBadge provider={activeOption.provider} showLabel />
-          <span className="text-xs font-semibold text-teal-700 dark:text-teal-300">
-            Modo enfoque
+          <span className="text-xs font-semibold text-sky-700 dark:text-sky-300">
+            Modo enfoque activo
           </span>
         </div>
       )}
