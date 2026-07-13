@@ -4,6 +4,11 @@ export type ShippingCarrierKey =
   | "zoom"
   | "domesa"
   | "libertyExpress"
+  | "servientrega"
+  | "interRapidisimo"
+  | "coordinadora"
+  | "enviame"
+  | "mipaquete"
   | "delivery"
   | "pickup";
 
@@ -21,7 +26,12 @@ export type PaymentMethodKey =
   | "puntoVenta"
   | "crypto"
   | "paypal"
-  | "binance";
+  | "binance"
+  | "pse"
+  | "tarjetas"
+  | "nequi"
+  | "daviplata"
+  | "efectyBaloto";
 
 export interface PaymentMethodConfig {
   enabled: boolean;

@@ -10,6 +10,11 @@ const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "zoom",
   "domesa",
   "libertyExpress",
+  "servientrega",
+  "interRapidisimo",
+  "coordinadora",
+  "enviame",
+  "mipaquete",
   "delivery",
   "pickup",
 ];
@@ -24,6 +29,11 @@ const PAYMENT_METHOD_KEYS: PaymentMethodKey[] = [
   "binance",
   "crypto",
   "cashea",
+  "pse",
+  "tarjetas",
+  "nequi",
+  "daviplata",
+  "efectyBaloto",
 ];
 
 const DEFAULT_PAYMENT_FIELDS: Record<PaymentMethodKey, Record<string, string>> = {
@@ -36,6 +46,11 @@ const DEFAULT_PAYMENT_FIELDS: Record<PaymentMethodKey, Record<string, string>> =
   paypal: { email: "" },
   binance: { payId: "", note: "" },
   crypto: { walletAddress: "", network: "" },
+  pse: { bank: "", commerceCode: "" },
+  tarjetas: { note: "" },
+  nequi: { phone: "", holder: "" },
+  daviplata: { phone: "", holder: "" },
+  efectyBaloto: { agreementCode: "", note: "" },
 };
 
 export function defaultStoreSettingsConfig(): StoreSettingsConfig {

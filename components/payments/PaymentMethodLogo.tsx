@@ -2,6 +2,12 @@ import { Banknote, Building2, CreditCard, Smartphone } from "lucide-react";
 import { SiBinance, SiBitcoin, SiPaypal, SiZelle } from "react-icons/si";
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
 import { BrandLogoTile } from "@/components/ui/BrandLogoTile";
+import {
+  DaviplataBrandMark,
+  EfectyBalotoBrandMark,
+  NequiBrandMark,
+  PseBrandMark,
+} from "@/components/payments/PaymentBrandMarks";
 
 interface PaymentMethodLogoProps {
   methodKey: PaymentMethodKey;
@@ -79,6 +85,20 @@ export function PaymentMethodLogo({
           <SiBitcoin className={`${size} text-white`} />
         </BrandLogoTile>
       );
+    case "pse":
+      return <PseBrandMark className={className} />;
+    case "tarjetas":
+      return (
+        <BrandLogoTile className={className} backgroundClassName="bg-[#1E3A8A]">
+          <CreditCard className={`${size} text-white`} strokeWidth={2.25} />
+        </BrandLogoTile>
+      );
+    case "nequi":
+      return <NequiBrandMark className={className} />;
+    case "daviplata":
+      return <DaviplataBrandMark className={className} />;
+    case "efectyBaloto":
+      return <EfectyBalotoBrandMark className={className} />;
     default:
       return (
         <BrandLogoTile className={className} backgroundClassName="bg-zinc-500">

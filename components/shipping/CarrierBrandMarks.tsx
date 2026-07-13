@@ -146,3 +146,151 @@ export function LibertyExpressBrandMark({
     </svg>
   );
 }
+
+/** Servientrega — rosa corporativo (#E4002B). */
+export function ServientregaBrandMark({ className = "h-11 w-11" }: CarrierMarkProps) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className={`${markFrame} ${className}`}
+      aria-hidden="true"
+      role="img"
+    >
+      <rect width="48" height="48" fill="#E4002B" />
+      <path
+        fill="#FFFFFF"
+        d="M12 30V18h5.2c3.2 0 5.4 1.6 5.4 4.2 0 1.8-1 3.2-2.6 3.8L24 30h-3.6l-1.8-3.4h-3.4V30H12zm3.4-6.8h1.8c1.2 0 1.9-.6 1.9-1.5s-.7-1.5-1.9-1.5h-1.8v3z"
+      />
+      <text
+        x="24"
+        y="37"
+        textAnchor="middle"
+        fill="#FFFFFF"
+        fontSize="5"
+        fontWeight="700"
+        fontFamily="Arial, Helvetica, sans-serif"
+        letterSpacing="0.06em"
+      >
+        SERVIENTREGA
+      </text>
+    </svg>
+  );
+}
+
+/** Inter Rapidísimo — azul (#005BAC). */
+export function InterRapidisimoBrandMark({
+  className = "h-11 w-11",
+}: CarrierMarkProps) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className={`${markFrame} ${className}`}
+      aria-hidden="true"
+      role="img"
+    >
+      <rect width="48" height="48" fill="#005BAC" />
+      <path
+        fill="#FFFFFF"
+        d="M14 31V17h8.5c3.8 0 6.5 2 6.5 5.2 0 3.2-2.7 5.2-6.5 5.2H18.8l-1.8 3.6H14zm4.4-7.2h4c1.8 0 2.9-.9 2.9-2.4s-1.1-2.4-2.9-2.4h-4v4.8z"
+      />
+      <text
+        x="24"
+        y="37.5"
+        textAnchor="middle"
+        fill="#BFDBFE"
+        fontSize="4.8"
+        fontWeight="700"
+        fontFamily="Arial, Helvetica, sans-serif"
+        letterSpacing="0.05em"
+      >
+        INTER RAPIDÍSIMO
+      </text>
+    </svg>
+  );
+}
+
+/** Coordinadora — azul y rojo (#003DA5 / #ED1C24). */
+export function CoordinadoraBrandMark({ className = "h-11 w-11" }: CarrierMarkProps) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className={`${markFrame} ${className}`}
+      aria-hidden="true"
+      role="img"
+    >
+      <rect width="48" height="48" fill="#003DA5" />
+      <rect x="0" y="34" width="48" height="14" fill="#ED1C24" />
+      <text
+        x="24"
+        y="22"
+        textAnchor="middle"
+        fill="#FFFFFF"
+        fontSize="6"
+        fontWeight="800"
+        fontFamily="Arial, Helvetica, sans-serif"
+        letterSpacing="0.04em"
+      >
+        COORDINADORA
+      </text>
+    </svg>
+  );
+}
+
+/** Envíame — teal agregador (#00B4A0). */
+export function EnviameBrandMark({ className = "h-11 w-11" }: CarrierMarkProps) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className={`${markFrame} ${className}`}
+      aria-hidden="true"
+      role="img"
+    >
+      <rect width="48" height="48" fill="#00B4A0" />
+      <path
+        fill="#FFFFFF"
+        d="M12 24h18l-4-4v3H14v2h12v3l4-4H12z"
+        opacity="0.95"
+      />
+      <text
+        x="24"
+        y="35"
+        textAnchor="middle"
+        fill="#FFFFFF"
+        fontSize="7"
+        fontWeight="700"
+        fontFamily="Arial, Helvetica, sans-serif"
+        letterSpacing="0.1em"
+      >
+        ENVÍAME
+      </text>
+    </svg>
+  );
+}
+
+/** Mipaquete — naranja agregador (#F97316). */
+export function MipaqueteBrandMark({ className = "h-11 w-11" }: CarrierMarkProps) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      className={`${markFrame} ${className}`}
+      aria-hidden="true"
+      role="img"
+    >
+      <rect width="48" height="48" fill="#F97316" />
+      <rect x="14" y="16" width="20" height="14" rx="2" fill="#FFFFFF" />
+      <path fill="#F97316" d="M14 20h20v2H14z" />
+      <text
+        x="24"
+        y="37"
+        textAnchor="middle"
+        fill="#FFFFFF"
+        fontSize="6.5"
+        fontWeight="700"
+        fontFamily="Arial, Helvetica, sans-serif"
+        letterSpacing="0.08em"
+      >
+        MIPAQUETE
+      </text>
+    </svg>
+  );
+}

@@ -59,6 +59,41 @@ export const SHIPPING_METHODS: ShippingMethodDefinition[] = [
     estimatedTime: "Coordinar horario",
     category: "local",
   },
+  {
+    key: "servientrega",
+    label: "Servientrega",
+    description: "Envíos nacionales con Servientrega.",
+    estimatedTime: "2–5 días hábiles",
+    category: "carrier",
+  },
+  {
+    key: "interRapidisimo",
+    label: "Inter Rapidísimo",
+    description: "Cobertura nacional con Inter Rapidísimo.",
+    estimatedTime: "1–4 días hábiles",
+    category: "carrier",
+  },
+  {
+    key: "coordinadora",
+    label: "Coordinadora",
+    description: "Entregas con Coordinadora Mercantil.",
+    estimatedTime: "2–5 días hábiles",
+    category: "carrier",
+  },
+  {
+    key: "enviame",
+    label: "Envíame",
+    description: "Agregador logístico para múltiples transportadoras.",
+    estimatedTime: "Según transportadora",
+    category: "carrier",
+  },
+  {
+    key: "mipaquete",
+    label: "Mipaquete",
+    description: "Plataforma agregadora de envíos en Colombia.",
+    estimatedTime: "Según transportadora",
+    category: "carrier",
+  },
 ];
 
 export const SHIPPING_METHOD_BY_KEY: Record<

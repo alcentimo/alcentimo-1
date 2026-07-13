@@ -70,7 +70,7 @@ function validateField(
   if (fieldKey === "payId" && methodKey === "binance") {
     return validateBinancePayId(value);
   }
-  if (fieldKey === "phone" && methodKey === "pagoMovil") {
+  if (fieldKey === "phone" && (methodKey === "pagoMovil" || methodKey === "nequi" || methodKey === "daviplata")) {
     return validatePhone(value);
   }
   if (
@@ -80,7 +80,7 @@ function validateField(
     return validateRequiredText(value, label);
   }
   if (
-    ["bank", "ci", "account", "holder", "merchantId"].includes(fieldKey)
+    ["bank", "ci", "account", "holder", "merchantId", "commerceCode", "agreementCode"].includes(fieldKey)
   ) {
     return validateRequiredText(value, label);
   }

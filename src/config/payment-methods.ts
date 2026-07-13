@@ -177,6 +177,90 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
       },
     ],
   },
+  {
+    key: "pse",
+    label: "PSE",
+    description: "Pagos seguros en línea desde cuenta bancaria (Colombia).",
+    fields: [
+      { key: "bank", label: "Banco", placeholder: "Ej: Bancolombia" },
+      {
+        key: "commerceCode",
+        label: "Código de comercio PSE",
+        placeholder: "Código asignado por tu pasarela",
+        copyable: true,
+      },
+    ],
+  },
+  {
+    key: "tarjetas",
+    label: "Tarjetas (Crédito/Débito)",
+    description: "Acepta tarjetas nacionales e internacionales.",
+    fields: [
+      {
+        key: "note",
+        label: "Nota para el cliente",
+        placeholder: "Ej: Visa, Mastercard, Amex",
+        fullWidth: true,
+        optional: true,
+      },
+    ],
+  },
+  {
+    key: "nequi",
+    label: "Nequi",
+    description: "Cobra con tu número o llave Nequi.",
+    fields: [
+      {
+        key: "phone",
+        label: "Número Nequi",
+        placeholder: "Ej: 300 123 4567",
+        copyable: true,
+      },
+      {
+        key: "holder",
+        label: "Titular",
+        placeholder: "Nombre del titular",
+      },
+    ],
+  },
+  {
+    key: "daviplata",
+    label: "Daviplata",
+    description: "Recibe pagos con Daviplata.",
+    fields: [
+      {
+        key: "phone",
+        label: "Número Daviplata",
+        placeholder: "Ej: 300 987 6543",
+        copyable: true,
+      },
+      {
+        key: "holder",
+        label: "Titular",
+        placeholder: "Nombre del titular",
+      },
+    ],
+  },
+  {
+    key: "efectyBaloto",
+    label: "Efecty / Baloto",
+    description: "Cobros en corresponsales y puntos de recaudo.",
+    fields: [
+      {
+        key: "agreementCode",
+        label: "Convenio / referencia",
+        placeholder: "Número de convenio o referencia",
+        copyable: true,
+      },
+      {
+        key: "note",
+        label: "Instrucciones (opcional)",
+        placeholder: "Ej: Presentar referencia en Efecty o Baloto",
+        fullWidth: true,
+        optional: true,
+      },
+    ],
+  },
 ];
 
 export const PAYMENT_METHOD_GROUPS: PaymentMethodGroupDefinition[] = [
@@ -199,6 +283,20 @@ export const PAYMENT_METHOD_GROUPS: PaymentMethodGroupDefinition[] = [
   {
     title: "Financiamiento",
     keys: ["cashea"],
+  },
+];
+
+/** Grupos de métodos de pago para tiendas en Colombia (misma estructura de secciones). */
+export const COLOMBIA_PAYMENT_METHOD_GROUPS: PaymentMethodGroupDefinition[] = [
+  {
+    title: "Pagos en línea",
+    description: "Métodos bancarios y tarjetas en Colombia.",
+    keys: ["pse", "tarjetas"],
+  },
+  {
+    title: "Billeteras y corresponsales",
+    description: "Nequi, Daviplata y puntos Efecty/Baloto.",
+    keys: ["nequi", "daviplata", "efectyBaloto"],
   },
 ];
 
