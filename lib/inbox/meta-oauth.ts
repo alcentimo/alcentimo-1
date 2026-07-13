@@ -5,27 +5,40 @@ import type { MetaProviderKey } from "@/src/config/channel-integrations";
 const GRAPH_API_VERSION = "v21.0";
 export const META_OAUTH_STATE_COOKIE = "meta_oauth_state";
 
+/** Permisos base para listar páginas y suscribir webhooks de Messenger. */
+const META_PAGE_OAUTH_SCOPES = [
+  "pages_show_list",
+  "pages_messaging",
+  "pages_manage_metadata",
+  "pages_manage_posts",
+  "instagram_basic",
+  "business_management",
+] as const;
+
 const PROVIDER_SCOPES: Record<MetaProviderKey, string[]> = {
   whatsapp: [
     "business_management",
     "pages_show_list",
     "pages_messaging",
+    "pages_manage_metadata",
+    "instagram_basic",
     "whatsapp_business_management",
     "whatsapp_business_messaging",
   ],
   instagram: [
     "pages_show_list",
     "pages_messaging",
+    "pages_manage_metadata",
     "instagram_basic",
     "instagram_manage_messages",
+    "business_management",
   ],
-  messenger: [
-    "pages_show_list",
-    "pages_messaging",
-    "pages_manage_metadata",
-    "pages_manage_posts",
-  ],
+  messenger: [...META_PAGE_OAUTH_SCOPES],
 };
+
+export function getMetaOAuthScopes(provider: MetaProviderKey): string[] {
+  return [...PROVIDER_SCOPES[provider]];
+}
 
 export function normalizeMetaOAuthSiteUrl(siteUrl: string): string {
   return siteUrl.replace(/\/$/, "");
@@ -169,7 +182,17 @@ export function buildMetaOAuthUrl(input: {
     params.set("auth_type", input.authType);
   }
 
-  return `https://www.facebook.com/${GRAPH_API_VERSION}/dialog/oauth?${params.toString()}`;
+  const oauthUrl = `https://www.facebook.com/${GRAPH_API_VERSION}/dialog/oauth?${params.toString()}`;
+
+  console.log("[meta/oauth] Authorization URL generada", {
+    provider: input.provider,
+    authType: input.authType ?? null,
+    scopes: PROVIDER_SCOPES[input.provider],
+    redirectUri: input.redirectUri,
+    oauthUrl,
+  });
+
+  return oauthUrl;
 }
 
 export async function exchangeMetaOAuthCode(input: {

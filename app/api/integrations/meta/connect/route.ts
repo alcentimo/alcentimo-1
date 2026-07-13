@@ -5,6 +5,7 @@ import { isConfiguredEnvValue } from "@/lib/env/server";
 import {
   buildMetaOAuthUrl,
   createMetaOAuthState,
+  getMetaOAuthScopes,
   getMetaOAuthStateCookieOptions,
   getMetaRedirectUri,
   META_OAUTH_STATE_COOKIE,
@@ -86,6 +87,7 @@ export async function GET(request: Request) {
   });
 
   const redirectUri = getMetaRedirectUri(siteUrl);
+  const oauthScopes = getMetaOAuthScopes(provider);
   const oauthUrl = buildMetaOAuthUrl({
     appId,
     redirectUri,
@@ -100,6 +102,8 @@ export async function GET(request: Request) {
     provider,
     authType: "rerequest",
     oauthHost: "www.facebook.com",
+    scopes: oauthScopes,
+    oauthUrl,
   });
 
   const response = NextResponse.redirect(oauthUrl);
