@@ -435,9 +435,13 @@ export async function getStoreInboxConversations(
   if (conversations.length === 0) {
     const channelMessages = await fetchChannelMessagesForStore(supabase, storeId);
     if (channelMessages.length > 0) {
-      return applyIntegrationProviders(
-        buildMessageConversations(channelMessages, storeCountry),
-        providerByIntegrationId,
+      return enrichConversationsWithContacts(
+        supabase,
+        storeId,
+        applyIntegrationProviders(
+          buildMessageConversations(channelMessages, storeCountry),
+          providerByIntegrationId,
+        ),
       );
     }
     return [];
@@ -479,13 +483,107 @@ export async function getStoreInboxConversations(
   );
 
   if (!hasInboxMessages && channelMessages.length > 0) {
-    return applyIntegrationProviders(
-      buildMessageConversations(channelMessages, storeCountry),
-      providerByIntegrationId,
+    return enrichConversationsWithContacts(
+      supabase,
+      storeId,
+      applyIntegrationProviders(
+        buildMessageConversations(channelMessages, storeCountry),
+        providerByIntegrationId,
+      ),
     );
   }
 
-  return merged;
+  return enrichConversationsWithContacts(supabase, storeId, merged);
+}
+
+async function enrichConversationsWithContacts(
+  supabase: SupabaseClient,
+  storeId: string,
+  conversations: MessageConversation[],
+): Promise<MessageConversation[]> {
+  if (conversations.length === 0) return conversations;
+
+  const contactIds = [
+    ...new Set(
+      conversations
+        .map((conversation) => conversation.contactId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const unresolvedExternalIds = [
+    ...new Set(
+      conversations
+        .filter(
+          (conversation) =>
+            !conversation.contactId && conversation.senderId !== "unknown",
+        )
+        .map((conversation) => conversation.senderId),
+    ),
+  ];
+
+  if (contactIds.length === 0 && unresolvedExternalIds.length === 0) {
+    return conversations;
+  }
+
+  const [byIdResult, byExternalResult] = await Promise.all([
+    contactIds.length > 0
+      ? supabase
+          .from("inbox_contacts")
+          .select(
+            "id, external_id, display_name, phone_e164, avatar_url, metadata",
+          )
+          .eq("store_id", storeId)
+          .in("id", contactIds)
+      : Promise.resolve({ data: [], error: null }),
+    unresolvedExternalIds.length > 0
+      ? supabase
+          .from("inbox_contacts")
+          .select(
+            "id, external_id, display_name, phone_e164, avatar_url, metadata",
+          )
+          .eq("store_id", storeId)
+          .in("external_id", unresolvedExternalIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (byIdResult.error) throw byIdResult.error;
+  if (byExternalResult.error) throw byExternalResult.error;
+
+  const contacts = [
+    ...((byIdResult.data ?? []) as NonNullable<typeof byIdResult.data>),
+    ...((byExternalResult.data ?? []) as NonNullable<
+      typeof byExternalResult.data
+    >),
+  ];
+
+  const contactById = new Map(
+    (contacts ?? []).map((contact) => [contact.id, contact]),
+  );
+  const contactByExternalId = new Map(
+    (contacts ?? []).map((contact) => [contact.external_id, contact]),
+  );
+
+  return conversations.map((conversation) => {
+    const contact =
+      (conversation.contactId
+        ? contactById.get(conversation.contactId)
+        : null) ?? contactByExternalId.get(conversation.senderId);
+
+    if (!contact) return conversation;
+
+    const contactMetadata =
+      (contact.metadata as Record<string, unknown> | null) ?? null;
+    const tags = readStringArray(contactMetadata?.tags);
+
+    return {
+      ...conversation,
+      contactId: conversation.contactId ?? contact.id,
+      displayName: conversation.displayName ?? contact.display_name,
+      phoneE164: conversation.phoneE164 ?? contact.phone_e164,
+      avatarUrl: conversation.avatarUrl ?? contact.avatar_url,
+      tags: tags.length > 0 ? tags : conversation.tags,
+    };
+  });
 }
 
 export function buildMessageConversations(

@@ -27,6 +27,7 @@ interface MessagesPanelProps {
   hasActiveIntegrations: boolean;
   storeCountry?: string | null;
   recentSales?: VentaWithProduct[];
+  salesByConversationId?: Record<string, VentaWithProduct[]>;
 }
 
 export function MessagesPanel({
@@ -34,6 +35,7 @@ export function MessagesPanel({
   hasActiveIntegrations,
   storeCountry = null,
   recentSales = [],
+  salesByConversationId = {},
 }: MessagesPanelProps) {
   const [conversations, setConversations] =
     useState(initialConversations);
@@ -271,6 +273,7 @@ export function MessagesPanel({
                 conversation={selectedConversation}
                 storeCountry={storeCountry}
                 recentSales={recentSales}
+                salesByConversationId={salesByConversationId}
                 onConversationPatch={patchConversation}
                 compact={channelFocusActive}
               />

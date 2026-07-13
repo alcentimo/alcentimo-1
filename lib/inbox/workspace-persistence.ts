@@ -73,13 +73,15 @@ export function writeInboxWorkspaceState(state: InboxWorkspaceState): void {
 export function buildWorkspaceGridStyle(
   state: InboxWorkspaceState,
 ): CSSProperties {
-  const listCol = state.listCollapsed ? "2.75rem" : "minmax(0,16rem)";
+  const listCol = state.listCollapsed ? "2.75rem" : "minmax(0,15rem)";
   const chatCol = state.chatCollapsed ? "2.75rem" : "minmax(0,1fr)";
-  const contextCol = state.contextCollapsed ? "2.75rem" : "minmax(0,17rem)";
+  const contextCol = state.contextCollapsed ? "2.75rem" : "minmax(0,16rem)";
 
   return {
-    gridTemplateColumns: `${listCol} ${chatCol} ${contextCol}`,
-  };
+    "--ws-list-col": listCol,
+    "--ws-chat-col": chatCol,
+    "--ws-context-col": contextCol,
+  } as CSSProperties;
 }
 
 export function isChannelFocusActive(channelFocus: InboxChannelFilter): boolean {

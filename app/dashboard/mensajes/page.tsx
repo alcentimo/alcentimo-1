@@ -9,6 +9,7 @@ import {
   getStoreIntegrations,
   hasActiveIntegrations,
 } from "@/lib/inbox/get-store-integrations";
+import { buildConversationSalesMap } from "@/lib/inbox/contact-sales";
 import { getStoreSales } from "@/lib/sales/get-store-sales";
 import { MessagesPanel } from "@/components/dashboard/MessagesPanel";
 import { PageContainer } from "@/components/ui/PageContainer";
@@ -52,6 +53,10 @@ export default async function MensajesPage() {
     getStoreSales(store.id, 100),
   ]);
   const activeIntegrations = hasActiveIntegrations(integrations);
+  const salesByConversationId = buildConversationSalesMap(
+    conversations,
+    recentSales,
+  );
 
   return (
     <PageContainer as="div" className="max-w-[88rem] py-6 sm:py-8">
@@ -68,6 +73,7 @@ export default async function MensajesPage() {
         hasActiveIntegrations={activeIntegrations}
         storeCountry={store.country}
         recentSales={recentSales}
+        salesByConversationId={salesByConversationId}
       />
     </PageContainer>
   );

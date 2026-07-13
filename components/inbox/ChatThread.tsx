@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Send } from "lucide-react";
 import {
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
@@ -12,6 +11,7 @@ import {
   MessengerChannelLabel,
 } from "@/components/inbox/MessengerChannelLabel";
 import { MessageBubble } from "@/components/inbox/MessageBubble";
+import { ChatComposer } from "@/components/inbox/ChatComposer";
 import {
   getConversationStatusLabel,
   getConversationStatusTone,
@@ -37,13 +37,10 @@ export function ChatThread({
     return (
       <div className="inbox-chat-empty">
         <div className="text-center">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-zinc-200 bg-white text-zinc-500 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
-            <Send className="h-5 w-5" aria-hidden="true" />
-          </span>
-          <p className="mt-4 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
             Selecciona una conversación
           </p>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             El hilo aparecerá aquí al instante.
           </p>
         </div>
@@ -56,6 +53,7 @@ export function ChatThread({
     conversation.displayName,
   );
   const conversationId = conversation.conversationId;
+  const isMessenger = isMessengerProvider(conversation.provider);
 
   function handleConversationAction(patch: {
     isArchived?: boolean;
@@ -65,12 +63,10 @@ export function ChatThread({
     onConversationPatch(conversationId, patch);
   }
 
-  const isMessenger = isMessengerProvider(conversation.provider);
-
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="inbox-chat-workspace">
       <header
-        className={`flex items-center justify-between gap-3 bg-white px-5 py-4 dark:bg-slate-950 ${
+        className={`inbox-chat-header ${
           isMessenger ? "inbox-chat-header--messenger" : ""
         }`}
       >
@@ -91,10 +87,10 @@ export function ChatThread({
             {isMessenger && (
               <MessengerChannelLabel variant="prominent" className="mb-1" />
             )}
-            <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-50">
               {customerLabel}
             </p>
-            <p className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
               {conversation.phoneE164 ?? conversation.senderId}
             </p>
           </div>
@@ -122,33 +118,11 @@ export function ChatThread({
         ))}
       </div>
 
-      <footer className="bg-white px-5 py-4 dark:bg-slate-950">
-        <div className="flex items-end gap-3">
-          <textarea
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            rows={2}
-            placeholder="Escribe una respuesta…"
-            className="min-h-[2.75rem] flex-1 resize-none rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-teal-500 dark:focus:ring-teal-950/50"
-          />
-          <button
-            type="button"
-            disabled
-            className="btn-brand inline-flex h-11 shrink-0 items-center justify-center gap-2 px-4 opacity-60"
-            title="Respuestas salientes próximamente"
-          >
-            <Send className="h-4 w-4" aria-hidden="true" />
-            Enviar
-          </button>
-        </div>
-        <p
-          className={`mt-2 text-[11px] text-zinc-400 dark:text-zinc-500 ${
-            focusMode ? "sr-only" : ""
-          }`}
-        >
-          Las respuestas salientes estarán disponibles pronto.
-        </p>
-      </footer>
+      <ChatComposer
+        draft={draft}
+        onDraftChange={setDraft}
+        focusMode={focusMode}
+      />
     </div>
   );
 }

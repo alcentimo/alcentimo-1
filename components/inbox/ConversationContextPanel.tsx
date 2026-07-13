@@ -1,12 +1,11 @@
 "use client";
 
-import { useMemo, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   Clock3,
   Flag,
   MessageCircle,
   ShoppingBag,
-  SlidersHorizontal,
   Tag,
   UserRound,
 } from "lucide-react";
@@ -23,6 +22,7 @@ import {
 } from "@/lib/inbox/actions";
 import { getContactPurchaseHistory, isPersistedConversation } from "@/lib/inbox/contact-context";
 import { ChannelLogo } from "@/components/inbox/ChannelLogo";
+import { ContextModuleCard } from "@/components/inbox/ContextModuleCard";
 import {
   CONVERSATION_STATUS_OPTIONS,
   getConversationStatusLabel,
@@ -32,6 +32,7 @@ interface ConversationContextPanelProps {
   conversation: MessageConversation | null;
   storeCountry: string | null;
   recentSales: VentaWithProduct[];
+  salesByConversationId?: Record<string, VentaWithProduct[]>;
   onConversationPatch: (
     conversationId: string,
     patch: Partial<MessageConversation>,
@@ -46,33 +47,25 @@ function formatCurrency(amount: number): string {
   });
 }
 
-function ContextFieldLabel({
+function FieldRow({
+  label,
+  value,
   icon: Icon,
-  children,
 }: {
+  label: string;
+  value: string;
   icon: typeof Flag;
-  children: ReactNode;
 }) {
   return (
-    <dt className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-      <Icon className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
-      {children}
-    </dt>
-  );
-}
-
-function ContextSectionTitle({
-  icon: Icon,
-  children,
-}: {
-  icon: typeof Flag;
-  children: ReactNode;
-}) {
-  return (
-    <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-50">
-      <Icon className="h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
-      {children}
-    </h3>
+    <div className="flex items-center justify-between gap-3 text-sm">
+      <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+        <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        {label}
+      </span>
+      <span className="truncate text-right font-medium text-slate-900 dark:text-slate-50">
+        {value}
+      </span>
+    </div>
   );
 }
 
@@ -80,6 +73,7 @@ export function ConversationContextPanel({
   conversation,
   storeCountry,
   recentSales,
+  salesByConversationId = {},
   onConversationPatch,
   compact = false,
 }: ConversationContextPanelProps) {
@@ -87,13 +81,18 @@ export function ConversationContextPanel({
   const [isUpdatingStatus, startStatusTransition] = useTransition();
   const [isUpdatingTags, startTagsTransition] = useTransition();
 
-  const purchaseHistory = useMemo(
-    () =>
-      conversation
-        ? getContactPurchaseHistory(conversation, recentSales)
-        : [],
-    [conversation, recentSales],
-  );
+  useEffect(() => {
+    setTagInput("");
+  }, [conversation?.conversationId]);
+
+  const purchaseHistory = useMemo(() => {
+    if (!conversation) return [];
+
+    const indexed = salesByConversationId[conversation.conversationId];
+    if (indexed) return indexed;
+
+    return getContactPurchaseHistory(conversation, recentSales);
+  }, [conversation, recentSales, salesByConversationId]);
 
   if (!conversation) {
     return (
@@ -102,7 +101,7 @@ export function ConversationContextPanel({
           Contexto del cliente
         </p>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Selecciona una conversación para ver perfil, compras y estado.
+          Selecciona una conversación para ver perfil y pedidos.
         </p>
       </div>
     );
@@ -153,19 +152,19 @@ export function ConversationContextPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="px-5 pb-4 pt-5">
+      <header className="inbox-context-profile px-4 pb-3 pt-4 md:px-5 md:pt-5">
         <div className="flex items-center gap-3">
           {conversation.avatarUrl ? (
             <img
               src={conversation.avatarUrl}
               alt=""
-              className="h-12 w-12 rounded-2xl object-cover shadow-sm ring-1 ring-slate-200/80 dark:ring-slate-700"
+              className="h-11 w-11 rounded-2xl object-cover shadow-sm md:h-12 md:w-12"
             />
           ) : (
-            <ChannelLogo provider={conversation.provider} className="h-12 w-12" />
+            <ChannelLogo provider={conversation.provider} className="h-11 w-11 md:h-12 md:w-12" />
           )}
           <div className="min-w-0">
-            <p className="truncate text-base font-semibold text-slate-900 dark:text-slate-50">
+            <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-50 md:text-base">
               {customerLabel}
             </p>
             <p className="truncate text-xs text-slate-500 dark:text-slate-400">
@@ -175,135 +174,73 @@ export function ConversationContextPanel({
         </div>
       </header>
 
-      <div className="inbox-context-scroll space-y-7 overflow-y-auto px-5 pb-6">
-        <section className="space-y-3">
-          <ContextSectionTitle icon={SlidersHorizontal}>
-            Estado de la conversación
-          </ContextSectionTitle>
-          <select
-            value={conversation.status}
-            disabled={isUpdatingStatus}
-            onChange={(event) =>
-              handleStatusChange(event.target.value as InboxConversationStatus)
-            }
-            className="inbox-context-input"
-          >
-            {CONVERSATION_STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Actual: {getConversationStatusLabel(conversation.status)}
-            {conversation.assignedTeam
-              ? ` · Asignado a ${conversation.assignedTeam}`
-              : ""}
-          </p>
-        </section>
+      <div className="inbox-context-scroll space-y-3 overflow-y-auto px-4 pb-5 md:space-y-4 md:px-5 md:pb-6">
+        <ContextModuleCard title="Datos del cliente" icon={UserRound}>
+          <div className="space-y-3">
+            <select
+              value={conversation.status}
+              disabled={isUpdatingStatus}
+              onChange={(event) =>
+                handleStatusChange(event.target.value as InboxConversationStatus)
+              }
+              className="inbox-context-input"
+              aria-label="Estado de la conversación"
+            >
+              {CONVERSATION_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {getConversationStatusLabel(conversation.status)}
+              {conversation.assignedTeam
+                ? ` · ${conversation.assignedTeam}`
+                : ""}
+            </p>
 
-        <section className="space-y-3">
-          <ContextSectionTitle icon={UserRound}>
-            Datos del cliente
-          </ContextSectionTitle>
-          <dl className="space-y-3.5 text-sm">
-            <div className="flex items-center justify-between gap-3">
-              <ContextFieldLabel icon={UserRound}>Nombre</ContextFieldLabel>
-              <dd className="font-medium text-slate-900 dark:text-slate-50">
-                {customerLabel}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <ContextFieldLabel icon={Flag}>País</ContextFieldLabel>
-              <dd className="font-medium text-slate-900 dark:text-slate-50">
-                {conversation.country ?? storeCountry ?? "Sin definir"}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <ContextFieldLabel icon={MessageCircle}>Canal</ContextFieldLabel>
-              <dd className="font-medium capitalize text-slate-900 dark:text-slate-50">
-                {conversation.provider}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <ContextFieldLabel icon={Clock3}>Último mensaje</ContextFieldLabel>
-              <dd className="font-medium text-slate-900 dark:text-slate-50">
-                {formatMessageTime(conversation.lastMessageAt)}
-              </dd>
-            </div>
-          </dl>
-        </section>
-
-        {!compact && (
-          <section className="space-y-3">
-            <ContextSectionTitle icon={Tag}>Etiquetas</ContextSectionTitle>
-
-            <div className="flex flex-wrap gap-2">
-              {conversation.tags.length === 0 ? (
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Sin etiquetas aún.
-                </p>
-              ) : (
-                conversation.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                  >
-                    <Tag className="h-3 w-3 opacity-60" aria-hidden="true" />
-                    {tag}
-                  </span>
-                ))
-              )}
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(event) => setTagInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    handleAddTag();
-                  }
-                }}
-                placeholder="Nueva etiqueta"
-                disabled={!conversation.contactId || isUpdatingTags}
-                className="inbox-context-input min-w-0 flex-1"
+            <div className="space-y-2.5 border-t border-slate-100 pt-3 dark:border-slate-800">
+              <FieldRow icon={UserRound} label="Nombre" value={customerLabel} />
+              <FieldRow
+                icon={Flag}
+                label="País"
+                value={conversation.country ?? storeCountry ?? "Sin definir"}
               />
-              <button
-                type="button"
-                onClick={handleAddTag}
-                disabled={!conversation.contactId || isUpdatingTags}
-                className="btn-brand-outline shrink-0 px-3 py-2 text-sm"
-              >
-                Añadir
-              </button>
+              <FieldRow
+                icon={MessageCircle}
+                label="Canal"
+                value={conversation.provider}
+              />
+              <FieldRow
+                icon={Clock3}
+                label="Último mensaje"
+                value={formatMessageTime(conversation.lastMessageAt)}
+              />
             </div>
-          </section>
-        )}
+          </div>
+        </ContextModuleCard>
 
         {!compact && (
-          <section className="inbox-purchase-history-card space-y-3">
-            <ContextSectionTitle icon={ShoppingBag}>
-              Historial de compras
-            </ContextSectionTitle>
-
+          <ContextModuleCard
+            title="Historial de pedidos"
+            icon={ShoppingBag}
+            className="inbox-context-module--orders"
+          >
             {purchaseHistory.length === 0 ? (
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                No encontramos ventas vinculadas a este contacto todavía.
+                Sin pedidos vinculados a este contacto.
               </p>
             ) : (
               <ul className="space-y-2">
                 {purchaseHistory.map((sale) => (
                   <li
                     key={sale.id}
-                    className="rounded-lg bg-white px-3 py-3 shadow-sm ring-1 ring-slate-200/60 dark:bg-slate-900 dark:ring-slate-700/60"
+                    className="rounded-lg bg-white px-3 py-2.5 shadow-sm dark:bg-slate-900"
                   >
                     <p className="text-sm font-medium text-slate-900 dark:text-slate-50">
                       {sale.product_name}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                       {formatCurrency(sale.monto)} · {sale.cantidad} uds ·{" "}
                       {formatMessageTime(sale.created_at)}
                     </p>
@@ -311,7 +248,56 @@ export function ConversationContextPanel({
                 ))}
               </ul>
             )}
-          </section>
+          </ContextModuleCard>
+        )}
+
+        {!compact && (
+          <ContextModuleCard title="Etiquetas" icon={Tag}>
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {conversation.tags.length === 0 ? (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Sin etiquetas. Añade una para segmentar leads.
+                  </p>
+                ) : (
+                  conversation.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    >
+                      <Tag className="h-3 w-3 opacity-60" aria-hidden="true" />
+                      {tag}
+                    </span>
+                  ))
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(event) => setTagInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      handleAddTag();
+                    }
+                  }}
+                  placeholder="Ej: Lead caliente"
+                  disabled={!conversation.contactId || isUpdatingTags}
+                  className="inbox-context-input min-w-0 flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  disabled={!conversation.contactId || isUpdatingTags}
+                  className="btn-brand-outline shrink-0 px-3 py-2 text-sm"
+                >
+                  Añadir
+                </button>
+              </div>
+            </div>
+          </ContextModuleCard>
         )}
       </div>
     </div>
