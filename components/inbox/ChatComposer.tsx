@@ -5,16 +5,16 @@ import {
   BookOpen,
   Link2,
   MessageSquareText,
-  Send,
 } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { ClientActivityEvent } from "@/lib/inbox/contact-crm";
 import type { ChannelMessage } from "@/lib/inbox/types";
-import { appendInboxConversationActivity, sendInboxMessage } from "@/lib/inbox/actions";
+import { appendInboxConversationActivity } from "@/lib/inbox/actions";
 import { isPersistedConversation } from "@/lib/inbox/contact-context";
 import { ComposerCatalogModal } from "@/components/inbox/ComposerCatalogModal";
 import { ComposerPaymentMenu } from "@/components/inbox/ComposerPaymentMenu";
 import { ComposerTemplatesMenu } from "@/components/inbox/ComposerTemplatesMenu";
+import { MessageInput } from "@/components/inbox/MessageInput";
 import type { ProductFacebookPostSummary } from "@/lib/facebook/get-store-facebook-posts";
 
 interface ChatComposerProps {
@@ -27,6 +27,8 @@ interface ChatComposerProps {
   publishedPosts?: Record<string, ProductFacebookPostSummary>;
   onActivityLogged?: (event: ClientActivityEvent) => void;
   onMessageSent?: (message: ChannelMessage) => void;
+  onOptimisticMessage?: (message: ChannelMessage) => void;
+  onRemoveOptimisticMessage?: (messageId: string) => void;
   onPostPublished?: (
     productId: string,
     permalinkUrl: string,
@@ -44,13 +46,14 @@ export function ChatComposer({
   publishedPosts = {},
   onActivityLogged,
   onMessageSent,
+  onOptimisticMessage,
+  onRemoveOptimisticMessage,
   onPostPublished,
 }: ChatComposerProps) {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
-  const [sendError, setSendError] = useState<string | null>(null);
-  const [isSending, startSendTransition] = useTransition();
+  const [, startActivityTransition] = useTransition();
 
   function applySnippet(snippet: string) {
     onDraftChange(draft.trim() ? `${draft.trim()}\n\n${snippet}` : snippet);
@@ -67,7 +70,9 @@ export function ChatComposer({
 
     if (!conversationId || !isPersistedConversation(conversationId)) return;
 
-    void appendInboxConversationActivity(conversationId, label, type);
+    startActivityTransition(async () => {
+      await appendInboxConversationActivity(conversationId, label, type);
+    });
   }
 
   function applySnippetWithActivity(
@@ -84,32 +89,10 @@ export function ChatComposer({
     setTemplatesOpen(false);
   }
 
-  function handleSend() {
-    const trimmed = draft.trim();
-    if (!trimmed || !conversationId || isSending) return;
-
-    setSendError(null);
-    startSendTransition(async () => {
-      const result = await sendInboxMessage(conversationId, trimmed);
-      if (result.error) {
-        setSendError(result.error);
-        return;
-      }
-
-      if (result.message) {
-        onMessageSent?.(result.message);
-      }
-
-      onDraftChange("");
-      logActivity("Mensaje enviado", "message");
-    });
+  function handleMessageSent(message: ChannelMessage) {
+    onMessageSent?.(message);
+    logActivity("Mensaje enviado", "message");
   }
-
-  const canSend =
-    Boolean(conversationId) &&
-    Boolean(draft.trim()) &&
-    !isSending &&
-    isPersistedConversation(conversationId ?? "");
 
   return (
     <>
@@ -186,34 +169,17 @@ export function ChatComposer({
                 />
               </div>
             </div>
-            <textarea
-              value={draft}
-              onChange={(event) => onDraftChange(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  handleSend();
-                }
-              }}
-              rows={2}
-              placeholder="Escribe para cerrar la venta…"
-              className="inbox-chat-composer-input"
+
+            <MessageInput
+              conversationId={conversationId}
+              draft={draft}
+              onDraftChange={onDraftChange}
+              onMessageSent={handleMessageSent}
+              onOptimisticMessage={onOptimisticMessage}
+              onRemoveOptimisticMessage={onRemoveOptimisticMessage}
             />
           </div>
-          <button
-            type="button"
-            disabled={!canSend}
-            onClick={handleSend}
-            className="inbox-chat-composer-send"
-            title={canSend ? "Enviar mensaje" : "Escribe un mensaje para enviar"}
-            aria-label="Enviar mensaje"
-          >
-            <Send className="h-4 w-4" aria-hidden="true" />
-          </button>
         </div>
-        {sendError && (
-          <p className="inbox-chat-composer-error">{sendError}</p>
-        )}
       </footer>
 
       <ComposerCatalogModal

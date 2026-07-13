@@ -1,12 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
-import type { MessageConversation } from "@/lib/inbox/get-store-messages";
-import { markInboxConversationRead, fetchInboxContactCrm } from "@/lib/inbox/actions";
-import {
-  DEFAULT_INBOX_FILTERS,
-  type InboxListFilters,
-} from "@/lib/inbox/inbox-filters";
+import { useMemo, useState } from "react";
 import { buildWorkspaceGridStyle } from "@/lib/inbox/workspace-persistence";
 import { MessagesEmptyState } from "@/components/dashboard/MessagesEmptyState";
 import { ConversationList } from "@/components/inbox/ConversationList";
@@ -15,11 +9,12 @@ import { ConversationContextPanel } from "@/components/inbox/ConversationContext
 import { FbInboxTopBar } from "@/components/inbox/FbInboxTopBar";
 import { InboxDockPanel } from "@/components/inbox/InboxDockPanel";
 import { InboxDockTab } from "@/components/inbox/InboxDockTab";
-import { isMetaInboxProvider } from "@/components/inbox/MessengerChannelLabel";
+import { InboxSessionProvider, useInboxSession } from "@/components/inbox/InboxSessionProvider";
 import { useInboxWorkspace } from "@/components/inbox/useInboxWorkspace";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { VentaWithProduct } from "@/lib/sales/types";
 import type { ProductFacebookPostSummary } from "@/lib/facebook/get-store-facebook-posts";
+import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 
 interface MessagesPanelProps {
   initialConversations: MessageConversation[];
@@ -33,67 +28,46 @@ interface MessagesPanelProps {
   salesByConversationId?: Record<string, VentaWithProduct[]>;
 }
 
-export function MessagesPanel({
+export function MessagesPanel(props: MessagesPanelProps) {
+  return (
+    <InboxSessionProvider initialConversations={props.initialConversations}>
+      <MessagesPanelContent {...props} />
+    </InboxSessionProvider>
+  );
+}
+
+function MessagesPanelContent({
   initialConversations,
   hasActiveIntegrations,
   hasMessengerIntegration = false,
   storeCountry = null,
   storeSlug,
   catalogProducts = [],
-  publishedPosts = {},
+  publishedPosts: initialPublishedPosts = {},
   recentSales = [],
   salesByConversationId = {},
 }: MessagesPanelProps) {
-  const [conversations, setConversations] =
-    useState(initialConversations);
-  const [facebookPosts, setFacebookPosts] = useState(publishedPosts);
-  const [selectedConversationId, setSelectedConversationId] = useState<
-    string | null
-  >(null);
-  const [listFilters, setListFilters] =
-    useState<InboxListFilters>(DEFAULT_INBOX_FILTERS);
-  const [, startTransition] = useTransition();
+  const {
+    conversations,
+    facebookConversations,
+    selectedConversation,
+    listFilters,
+    crmLoading,
+    setListFilters,
+  } = useInboxSession();
+  const [publishedPosts, setPublishedPosts] = useState(initialPublishedPosts);
+  const workspace = useInboxWorkspace();
 
   function handlePostPublished(
     productId: string,
     permalinkUrl: string,
     publishedAt: string,
   ) {
-    setFacebookPosts((current) => ({
+    setPublishedPosts((current) => ({
       ...current,
       [productId]: { postId: productId, permalinkUrl, publishedAt },
     }));
   }
-
-  const workspace = useInboxWorkspace();
-
-  const facebookConversations = useMemo(
-    () =>
-      conversations.filter((conversation) =>
-        isMetaInboxProvider(conversation.provider),
-      ),
-    [conversations],
-  );
-
-  const mergedFilters = useMemo<InboxListFilters>(
-    () => ({
-      ...listFilters,
-      channel: "messenger",
-      status: "all",
-      priority: "all",
-    }),
-    [listFilters],
-  );
-
-  const selectedConversation = useMemo(
-    () =>
-      facebookConversations.find(
-        (conversation) => conversation.conversationId === selectedConversationId,
-      ) ?? null,
-    [facebookConversations, selectedConversationId],
-  );
-
-  const selectedContactId = selectedConversation?.contactId ?? null;
 
   const workspaceGridStyle = useMemo(
     () =>
@@ -110,78 +84,7 @@ export function MessagesPanel({
     ],
   );
 
-  useEffect(() => {
-    if (
-      selectedConversationId &&
-      facebookConversations.some(
-        (conversation) => conversation.conversationId === selectedConversationId,
-      )
-    ) {
-      return;
-    }
-
-    setSelectedConversationId(
-      facebookConversations[0]?.conversationId ?? null,
-    );
-  }, [facebookConversations, selectedConversationId]);
-
-  useEffect(() => {
-    if (!selectedConversationId || !selectedContactId) return;
-
-    void fetchInboxContactCrm(selectedContactId).then((result) => {
-      if (result.error) {
-        console.error("[MessagesPanel] contact CRM load error:", result.error);
-        return;
-      }
-
-      if (!result.data) return;
-
-      patchConversation(selectedConversationId, {
-        privateNotes: result.data.privateNotes,
-        tags: result.data.tags,
-      });
-    });
-  }, [selectedConversationId, selectedContactId]);
-
-  function patchConversation(
-    conversationId: string,
-    patch: Partial<MessageConversation>,
-  ) {
-    setConversations((current) =>
-      current.map((item) =>
-        item.conversationId === conversationId ? { ...item, ...patch } : item,
-      ),
-    );
-  }
-
-  function handleSelectConversation(conversation: MessageConversation) {
-    setSelectedConversationId(conversation.conversationId);
-
-    if (conversation.unreadCount === 0) return;
-
-    startTransition(() => {
-      void markInboxConversationRead(conversation.conversationId).then(
-        (result) => {
-          if (result.error) {
-            console.error("[MessagesPanel] mark read error:", result.error);
-            return;
-          }
-
-          patchConversation(conversation.conversationId, {
-            unreadCount: 0,
-            isPriority: conversation.status === "pending",
-            messages: conversation.messages.map((message) =>
-              message.direction === "inbound" && message.status === "unread"
-                ? { ...message, status: "read" as const }
-                : message,
-            ),
-          });
-        },
-      );
-    });
-  }
-
-  if (conversations.length === 0) {
+  if (initialConversations.length === 0) {
     return (
       <MessagesEmptyState hasActiveIntegrations={hasActiveIntegrations} />
     );
@@ -208,7 +111,7 @@ export function MessagesPanel({
   }
 
   return (
-    <div className="fb-inbox">
+    <div className="fb-inbox fb-inbox--session">
       <FbInboxTopBar
         filters={listFilters}
         onFiltersChange={setListFilters}
@@ -234,13 +137,7 @@ export function MessagesPanel({
             onCollapse={() => workspace.setListCollapsed(true)}
             minimal
           >
-            <ConversationList
-              conversations={facebookConversations}
-              selectedConversationId={selectedConversationId}
-              onSelectConversation={handleSelectConversation}
-              onConversationPatch={patchConversation}
-              filters={mergedFilters}
-            />
+            <ConversationList />
           </InboxDockPanel>
         )}
 
@@ -263,8 +160,7 @@ export function MessagesPanel({
               products={catalogProducts}
               storeSlug={storeSlug}
               hasMessengerIntegration={hasMessengerIntegration}
-              publishedPosts={facebookPosts}
-              onConversationPatch={patchConversation}
+              publishedPosts={publishedPosts}
               onPostPublished={handlePostPublished}
             />
           </InboxDockPanel>
@@ -284,12 +180,16 @@ export function MessagesPanel({
             minimal
             className="inbox-context-panel"
           >
+            {crmLoading && selectedConversation?.contactId && (
+              <p className="inbox-context-loading" role="status">
+                Cargando notas y etiquetas…
+              </p>
+            )}
             <ConversationContextPanel
               conversation={selectedConversation}
               storeCountry={storeCountry}
               recentSales={recentSales}
               salesByConversationId={salesByConversationId}
-              onConversationPatch={patchConversation}
             />
           </InboxDockPanel>
         )}

@@ -5,35 +5,29 @@ import {
   formatMessageTime,
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
-import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import { ConversationQuickActions } from "@/components/inbox/ConversationQuickActions";
 import { ContactAvatar } from "@/components/inbox/ContactAvatar";
+import { useInboxSession } from "@/components/inbox/InboxSessionProvider";
 import {
   filterConversations,
-  type InboxListFilters,
 } from "@/lib/inbox/inbox-filters";
 
-interface ConversationListProps {
-  conversations: MessageConversation[];
-  selectedConversationId: string | null;
-  onSelectConversation: (conversation: MessageConversation) => void;
-  onConversationPatch: (
-    conversationId: string,
-    patch: Partial<MessageConversation>,
-  ) => void;
-  filters: InboxListFilters;
-}
+export function ConversationList() {
+  const {
+    facebookConversations,
+    selectedConversationId,
+    listFilters,
+    selectConversation,
+  } = useInboxSession();
 
-export function ConversationList({
-  conversations,
-  selectedConversationId,
-  onSelectConversation,
-  onConversationPatch,
-  filters,
-}: ConversationListProps) {
   const filteredConversations = useMemo(
-    () => filterConversations(conversations, filters, formatSenderLabel),
-    [conversations, filters],
+    () =>
+      filterConversations(
+        facebookConversations,
+        listFilters,
+        formatSenderLabel,
+      ),
+    [facebookConversations, listFilters],
   );
 
   return (
@@ -58,7 +52,7 @@ export function ConversationList({
             <li key={conversation.conversationId} className="group">
               <button
                 type="button"
-                onClick={() => onSelectConversation(conversation)}
+                onClick={() => selectConversation(conversation.conversationId)}
                 className={`inbox-conversation-item-compact ${
                   isActive ? "inbox-conversation-item-compact-active" : ""
                 } ${isUnread ? "inbox-conversation-item-compact-unread" : ""}`}
@@ -98,12 +92,7 @@ export function ConversationList({
                   </span>
                 </span>
 
-                <ConversationQuickActions
-                  conversation={conversation}
-                  onPatch={(patch) =>
-                    onConversationPatch(conversation.conversationId, patch)
-                  }
-                />
+                <ConversationQuickActions conversation={conversation} />
               </button>
             </li>
           );

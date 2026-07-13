@@ -18,16 +18,13 @@ import { ContactCopyStrip } from "@/components/inbox/ContactCopyStrip";
 import { ContactAvatar } from "@/components/inbox/ContactAvatar";
 import { ContactQuickNotes } from "@/components/inbox/ContactQuickNotes";
 import { ContactTagsEditor } from "@/components/inbox/ContactTagsEditor";
+import { useInboxSession } from "@/components/inbox/InboxSessionProvider";
 
 interface ConversationContextPanelProps {
   conversation: MessageConversation | null;
   storeCountry: string | null;
   recentSales: VentaWithProduct[];
   salesByConversationId?: Record<string, VentaWithProduct[]>;
-  onConversationPatch: (
-    conversationId: string,
-    patch: Partial<MessageConversation>,
-  ) => void;
 }
 
 function getProfileTitle(conversation: MessageConversation): string {
@@ -39,8 +36,8 @@ function getProfileTitle(conversation: MessageConversation): string {
 
 export function ConversationContextPanel({
   conversation,
-  onConversationPatch,
 }: ConversationContextPanelProps) {
+  const { patchConversation } = useInboxSession();
   const [isUpdatingStatus, startStatusTransition] = useTransition();
 
   const whatsappUrl = useMemo(() => {
@@ -70,7 +67,7 @@ export function ConversationContextPanel({
   const phoneValue = conversation.phoneE164 ?? conversation.senderId;
 
   function handleSalesStatusChange(salesStatus: InboxSalesStatus) {
-    onConversationPatch(conversationId, {
+    patchConversation(conversationId, {
       salesStatus,
       activityLog: [
         {
@@ -147,7 +144,7 @@ export function ConversationContextPanel({
           conversationId={conversationId}
           initialNotes={conversation.privateNotes}
           onNotesChange={(privateNotes) =>
-            onConversationPatch(conversationId, { privateNotes })
+            patchConversation(conversationId, { privateNotes })
           }
         />
 
@@ -156,7 +153,7 @@ export function ConversationContextPanel({
           contactId={contactId}
           conversationId={conversationId}
           initialTags={conversation.tags}
-          onTagsChange={(tags) => onConversationPatch(conversationId, { tags })}
+          onTagsChange={(tags) => patchConversation(conversationId, { tags })}
         />
       </div>
     </div>

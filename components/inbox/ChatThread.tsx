@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  formatSenderLabel,
-} from "@/lib/inbox/get-store-messages";
+import { useEffect, useRef } from "react";
+import { formatSenderLabel } from "@/lib/inbox/get-store-messages";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { ClientActivityEvent } from "@/lib/inbox/contact-crm";
@@ -17,7 +15,7 @@ import {
   getConversationStatusTone,
 } from "@/components/inbox/conversation-status";
 import { isPersistedConversation } from "@/lib/inbox/contact-context";
-
+import { useInboxSession } from "@/components/inbox/InboxSessionProvider";
 import type { ProductFacebookPostSummary } from "@/lib/facebook/get-store-facebook-posts";
 
 interface ChatThreadProps {
@@ -26,10 +24,6 @@ interface ChatThreadProps {
   storeSlug: string;
   hasMessengerIntegration?: boolean;
   publishedPosts?: Record<string, ProductFacebookPostSummary>;
-  onConversationPatch: (
-    conversationId: string,
-    patch: Partial<MessageConversation>,
-  ) => void;
   onPostPublished?: (
     productId: string,
     permalinkUrl: string,
@@ -43,10 +37,10 @@ export function ChatThread({
   storeSlug,
   hasMessengerIntegration = false,
   publishedPosts = {},
-  onConversationPatch,
   onPostPublished,
 }: ChatThreadProps) {
-  const [draft, setDraft] = useState("");
+  const threadRef = useRef<HTMLDivElement>(null);
+  const { getDraft, setDraft, patchConversation } = useInboxSession();
 
   useEffect(() => {
     const conversationId = conversation?.conversationId;
@@ -58,7 +52,7 @@ export function ChatThread({
       const result = await fetchInboxConversationMessages(conversationId!);
       if (!result.messages) return;
 
-      onConversationPatch(conversationId!, {
+      patchConversation(conversationId!, {
         messages: result.messages,
       });
     }
@@ -68,7 +62,14 @@ export function ChatThread({
     }, 12000);
 
     return () => window.clearInterval(interval);
-  }, [conversation?.conversationId, onConversationPatch]);
+  }, [conversation?.conversationId, patchConversation]);
+
+  useEffect(() => {
+    const node = threadRef.current;
+    if (!node || !conversation) return;
+
+    node.scrollTop = node.scrollHeight;
+  }, [conversation?.conversationId, conversation?.messages.length]);
 
   if (!conversation) {
     return (
@@ -88,29 +89,44 @@ export function ChatThread({
     conversation.displayName,
   );
   const conversationId = conversation.conversationId;
-  const currentActivityLog = conversation.activityLog;
-  const currentMessages = conversation.messages;
+  const draft = getDraft(conversationId);
 
   function handleConversationAction(patch: {
     isArchived?: boolean;
     isSpam?: boolean;
     assignedTeam?: string | null;
   }) {
-    onConversationPatch(conversationId, patch);
+    patchConversation(conversationId, patch);
   }
 
   function handleActivityLogged(event: ClientActivityEvent) {
-    onConversationPatch(conversationId, {
-      activityLog: [event, ...currentActivityLog].slice(0, 20),
-    });
+    patchConversation(conversationId, (current) => ({
+      activityLog: [event, ...current.activityLog].slice(0, 20),
+    }));
   }
 
   function handleMessageSent(message: ChannelMessage) {
-    onConversationPatch(conversationId, {
-      messages: [...currentMessages, message],
+    patchConversation(conversationId, (current) => ({
+      messages: [...current.messages, message],
       lastMessage: message.message_text,
       lastMessageAt: message.created_at,
-    });
+    }));
+  }
+
+  function handleOptimisticMessage(message: ChannelMessage) {
+    patchConversation(conversationId, (current) => ({
+      messages: [...current.messages, message],
+      lastMessage: message.message_text,
+      lastMessageAt: message.created_at,
+    }));
+  }
+
+  function handleRemoveOptimisticMessage(messageId: string) {
+    patchConversation(conversationId, (current) => ({
+      messages: current.messages.filter(
+        (message) => message.id !== messageId,
+      ),
+    }));
   }
 
   return (
@@ -126,9 +142,7 @@ export function ChatThread({
             showChannelBadge
           />
           <div className="min-w-0">
-            <p className="inbox-chat-customer-name truncate">
-              {customerLabel}
-            </p>
+            <p className="inbox-chat-customer-name truncate">{customerLabel}</p>
             <p className="inbox-chat-customer-meta truncate">
               {conversation.phoneE164 ?? conversation.senderId}
             </p>
@@ -142,7 +156,13 @@ export function ChatThread({
         </span>
       </header>
 
-      <div className="inbox-chat-thread inbox-chat-thread--sales">
+      <div
+        ref={threadRef}
+        className="inbox-chat-thread inbox-chat-thread--sales"
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+      >
         {conversation.messages.map((message) => (
           <MessageBubble
             key={message.id}
@@ -155,7 +175,7 @@ export function ChatThread({
 
       <ChatComposer
         draft={draft}
-        onDraftChange={setDraft}
+        onDraftChange={(value) => setDraft(conversationId, value)}
         products={products}
         storeSlug={storeSlug}
         conversationId={conversationId}
@@ -163,6 +183,8 @@ export function ChatThread({
         publishedPosts={publishedPosts}
         onActivityLogged={handleActivityLogged}
         onMessageSent={handleMessageSent}
+        onOptimisticMessage={handleOptimisticMessage}
+        onRemoveOptimisticMessage={handleRemoveOptimisticMessage}
         onPostPublished={onPostPublished}
       />
     </div>

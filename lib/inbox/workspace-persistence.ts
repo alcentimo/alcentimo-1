@@ -73,9 +73,9 @@ export function writeInboxWorkspaceState(state: InboxWorkspaceState): void {
 export function buildWorkspaceGridStyle(
   state: InboxWorkspaceState,
 ): CSSProperties {
-  const listCol = state.listCollapsed ? "2.25rem" : "minmax(0,12rem)";
+  const listCol = state.listCollapsed ? "2.25rem" : "minmax(0,16rem)";
   const chatCol = state.chatCollapsed ? "2.25rem" : "minmax(0,1fr)";
-  const contextCol = state.contextCollapsed ? "2.25rem" : "minmax(0,13rem)";
+  const contextCol = state.contextCollapsed ? "2.25rem" : "minmax(0,18rem)";
 
   return {
     "--ws-list-col": listCol,

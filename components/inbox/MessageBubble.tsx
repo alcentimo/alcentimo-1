@@ -24,10 +24,13 @@ export function MessageBubble({
   onConversationAction,
 }: MessageBubbleProps) {
   const isOutbound = message.direction === "outbound";
+  const isPending = message.id.startsWith("pending-");
   const isNew = !isOutbound && message.status === "unread";
-  const deliveryLabel = isOutbound
-    ? formatOutboundMessageStatus(message.deliveryStatus ?? "sent")
-    : null;
+  const deliveryLabel = isPending
+    ? "Enviando…"
+    : isOutbound
+      ? formatOutboundMessageStatus(message.deliveryStatus ?? "sent")
+      : null;
 
   return (
     <div className={`group flex ${isOutbound ? "justify-end" : "justify-start"}`}>

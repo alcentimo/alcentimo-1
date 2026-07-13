@@ -8,6 +8,7 @@ import {
 } from "@/lib/inbox/actions";
 import { isPersistedConversation } from "@/lib/inbox/contact-context";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
+import { useInboxSession } from "@/components/inbox/InboxSessionProvider";
 
 const TEAM_OPTIONS = [
   { value: "ventas", label: "Ventas" },
@@ -17,31 +18,27 @@ const TEAM_OPTIONS = [
 
 interface ConversationQuickActionsProps {
   conversation: MessageConversation;
-  onPatch: (patch: Partial<MessageConversation>) => void;
 }
 
 export function ConversationQuickActions({
   conversation,
-  onPatch,
 }: ConversationQuickActionsProps) {
-  const [pending, setPending] = useState(false);
+  const { applyConversationPatch } = useInboxSession();
   const [showTeams, setShowTeams] = useState(false);
+  const [pending, setPending] = useState(false);
   const canPersist = isPersistedConversation(conversation.conversationId);
 
   async function handleArchive(event: MouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
-    if (!canPersist) return;
+    if (!canPersist || pending) return;
 
     setPending(true);
-    const result = await archiveInboxConversation(conversation.conversationId);
+    await applyConversationPatch(
+      conversation.conversationId,
+      { isArchived: true },
+      () => archiveInboxConversation(conversation.conversationId),
+    );
     setPending(false);
-
-    if (result.error) {
-      console.error("[ConversationQuickActions]", result.error);
-      return;
-    }
-
-    onPatch({ isArchived: true });
   }
 
   async function handleAssign(
@@ -49,22 +46,16 @@ export function ConversationQuickActions({
     team: (typeof TEAM_OPTIONS)[number]["value"],
   ) {
     event.stopPropagation();
-    if (!canPersist) return;
+    if (!canPersist || pending) return;
 
     setPending(true);
-    const result = await assignInboxConversationTeam(
+    setShowTeams(false);
+    await applyConversationPatch(
       conversation.conversationId,
-      team,
+      { assignedTeam: team },
+      () => assignInboxConversationTeam(conversation.conversationId, team),
     );
     setPending(false);
-    setShowTeams(false);
-
-    if (result.error) {
-      console.error("[ConversationQuickActions]", result.error);
-      return;
-    }
-
-    onPatch({ assignedTeam: team });
   }
 
   return (
