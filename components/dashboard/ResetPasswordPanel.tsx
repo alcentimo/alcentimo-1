@@ -8,6 +8,7 @@ import {
   getRecoveryUrlDebug,
 } from "@/lib/auth/recovery-url";
 import { createClient } from "@/lib/supabase/client";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -195,15 +196,13 @@ export function ResetPasswordPanel() {
           <label htmlFor="password" className="label-field">
             Nueva contraseña
           </label>
-          <input
+          <PasswordInput
             id="password"
-            type="password"
             required
             minLength={MIN_PASSWORD_LENGTH}
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="input-field"
             disabled={loading}
           />
         </div>
@@ -212,15 +211,13 @@ export function ResetPasswordPanel() {
           <label htmlFor="confirm_password" className="label-field">
             Confirmar contraseña
           </label>
-          <input
+          <PasswordInput
             id="confirm_password"
-            type="password"
             required
             minLength={MIN_PASSWORD_LENGTH}
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="input-field"
             disabled={loading}
           />
         </div>

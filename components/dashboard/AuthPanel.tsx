@@ -5,6 +5,7 @@ import { useState } from "react";
 import { devSignUpAndSignIn } from "@/lib/auth/dev-signup";
 import { createClient } from "@/lib/supabase/client";
 import { getAuthCallbackUrl } from "@/lib/site-url";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 const devSkipEmailConfirmation =
   process.env.NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION === "true";
@@ -213,15 +214,13 @@ export function AuthPanel() {
           <label htmlFor="password" className="label-field">
             Contraseña
           </label>
-          <input
+          <PasswordInput
             id="password"
-            type="password"
             required
             minLength={6}
             autoComplete={mode === "login" ? "current-password" : "new-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="input-field"
           />
           {mode === "login" && (
             <p className="mt-2 text-right">
@@ -237,15 +236,13 @@ export function AuthPanel() {
             <label htmlFor="confirm_password" className="label-field">
               Confirmar contraseña
             </label>
-            <input
+            <PasswordInput
               id="confirm_password"
-              type="password"
               required
               minLength={6}
               autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="input-field"
             />
           </div>
         )}
