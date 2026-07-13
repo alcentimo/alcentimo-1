@@ -16,6 +16,7 @@ export interface IngestInboundInput {
   rawPayload?: Record<string, unknown>;
   contactDisplayName?: string | null;
   contactPhone?: string | null;
+  contactAvatarUrl?: string | null;
 }
 
 export interface IngestInboundResult {
@@ -72,6 +73,7 @@ async function upsertContact(
     };
     if (input.contactDisplayName) patch.display_name = input.contactDisplayName;
     if (input.contactPhone) patch.phone_e164 = input.contactPhone;
+    if (input.contactAvatarUrl) patch.avatar_url = input.contactAvatarUrl;
 
     if (Object.keys(patch).length > 1) {
       await admin.from("inbox_contacts").update(patch).eq("id", existing.id);
@@ -87,6 +89,7 @@ async function upsertContact(
       external_id: input.senderId,
       display_name: input.contactDisplayName ?? null,
       phone_e164: input.contactPhone ?? null,
+      avatar_url: input.contactAvatarUrl ?? null,
     })
     .select("id")
     .single();

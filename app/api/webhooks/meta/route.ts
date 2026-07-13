@@ -1,6 +1,8 @@
 import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ingestInboundMessage } from "@/lib/inbox/ingest-inbound-message";
+import { getIntegrationAccessToken } from "@/lib/inbox/integration-token";
+import { fetchMetaMessengerUserProfile } from "@/lib/inbox/messenger-client";
 import {
   extractMetaInboundMessages,
   extractWhatsAppMessageText,
@@ -237,6 +239,29 @@ async function findIntegration(
   }
 
   return data;
+}
+
+async function resolveMessagingContactProfile(
+  integrationId: string,
+  senderId: string,
+): Promise<{
+  contactDisplayName: string | null;
+  contactAvatarUrl: string | null;
+}> {
+  const accessToken = await getIntegrationAccessToken(integrationId);
+  if (!accessToken) {
+    console.warn("[webhooks/meta] Sin Page Access Token para perfil de contacto", {
+      integrationId,
+      senderId,
+    });
+    return { contactDisplayName: null, contactAvatarUrl: null };
+  }
+
+  const profile = await fetchMetaMessengerUserProfile(senderId, accessToken);
+  return {
+    contactDisplayName: profile?.name ?? null,
+    contactAvatarUrl: profile?.profilePicUrl ?? null,
+  };
 }
 
 async function saveChannelMessage(
@@ -538,6 +563,11 @@ async function ingestMessagingEntry(
         });
 
         try {
+          const contactProfile = await resolveMessagingContactProfile(
+            integration.id,
+            senderId,
+          );
+
           await saveChannelMessage(admin, integration.id, senderId, body);
           await saveInboxMessage(admin, {
             storeId: integration.store_id,
@@ -548,6 +578,8 @@ async function ingestMessagingEntry(
             body,
             messageType: "text",
             sentAt: metaTimestampToIso(e.timestamp),
+            contactDisplayName: contactProfile.contactDisplayName,
+            contactAvatarUrl: contactProfile.contactAvatarUrl,
             rawPayload: e,
           });
         } catch (err) {
@@ -615,6 +647,11 @@ async function ingestMessagingEntry(
     });
 
     try {
+      const contactProfile = await resolveMessagingContactProfile(
+        integration.id,
+        senderId,
+      );
+
       await saveChannelMessage(admin, integration.id, senderId, body);
       await saveInboxMessage(admin, {
         storeId: integration.store_id,
@@ -625,6 +662,8 @@ async function ingestMessagingEntry(
         body,
         messageType: body ? "text" : "unknown",
         sentAt: metaTimestampToIso(e.timestamp),
+        contactDisplayName: contactProfile.contactDisplayName,
+        contactAvatarUrl: contactProfile.contactAvatarUrl,
         rawPayload: e,
       });
     } catch (err) {
