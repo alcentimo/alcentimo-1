@@ -543,12 +543,20 @@ body {
 }
 
 /* ── Facebook sales inbox ── */
+.fb-inbox-shell {
+  @apply min-h-full bg-slate-50 dark:bg-slate-950;
+}
+
+.dashboard-main--mensajes {
+  @apply bg-slate-50 dark:bg-slate-950;
+}
+
 .fb-inbox {
-  @apply space-y-3;
+  @apply space-y-4;
 }
 
 .fb-inbox-top-bar {
-  @apply flex flex-wrap items-center gap-2 gap-y-2 rounded-xl bg-white px-3 py-2 shadow-sm dark:bg-slate-950 sm:gap-3;
+  @apply flex flex-wrap items-center gap-2 gap-y-2 rounded-xl border-0 bg-white px-3 py-2 shadow-sm dark:bg-slate-950 sm:gap-3;
 }
 
 .fb-inbox-top-bar-brand {
@@ -596,11 +604,11 @@ body {
 }
 
 .fb-inbox-search-input {
-  @apply w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-2.5 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-slate-300 focus:ring-1 focus:ring-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-slate-800;
+  @apply w-full rounded-lg border-0 bg-slate-100 py-1.5 pl-8 pr-2.5 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:bg-white focus:shadow-sm dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900;
 }
 
 .fb-inbox-workspace.inbox-workspace {
-  @apply min-h-[calc(100dvh-7.5rem)] gap-4 overflow-visible rounded-none bg-transparent p-0 shadow-none ring-0;
+  @apply min-h-[calc(100dvh-7.5rem)] gap-6 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none ring-0;
 }
 
 .dashboard-main--immersive {
@@ -616,7 +624,7 @@ body {
 }
 
 .fb-inbox-workspace .inbox-dock-panel {
-  @apply rounded-xl bg-white shadow-sm dark:bg-slate-950;
+  @apply rounded-xl border-0 bg-white shadow-sm dark:bg-slate-950;
 }
 
 .fb-inbox-workspace .inbox-dock-panel--left,
@@ -626,7 +634,7 @@ body {
 }
 
 .fb-inbox-workspace .inbox-dock-tab {
-  @apply rounded-xl bg-white shadow-sm hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900;
+  @apply rounded-xl border-0 bg-white shadow-sm hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900;
 }
 
 .fb-inbox-workspace .inbox-dock-tab--left,
@@ -640,7 +648,39 @@ body {
 }
 
 .fb-inbox-workspace .inbox-chat-header--messenger {
-  @apply border-b border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-950;
+  @apply border-0 bg-white dark:bg-slate-950;
+}
+
+.fb-inbox .inbox-conversation-name {
+  @apply font-medium text-slate-900 dark:text-slate-50;
+}
+
+.fb-inbox .inbox-conversation-name--unread {
+  @apply font-semibold text-slate-950 dark:text-white;
+}
+
+.fb-inbox .inbox-conversation-time {
+  @apply text-slate-500 dark:text-slate-400;
+}
+
+.fb-inbox .inbox-conversation-preview {
+  @apply text-slate-500 dark:text-slate-400;
+}
+
+.fb-inbox .inbox-conversation-item-compact {
+  @apply hover:bg-slate-50/80 dark:hover:bg-slate-900/30;
+}
+
+.fb-inbox .inbox-conversation-item-compact-active {
+  @apply bg-slate-100/70 dark:bg-slate-800/40;
+}
+
+.fb-inbox .inbox-chat-customer-name {
+  @apply text-sm font-semibold text-slate-900 dark:text-slate-50;
+}
+
+.fb-inbox .inbox-chat-customer-meta {
+  @apply text-xs text-slate-500 dark:text-slate-400;
 }
 
 .inbox-workspace-wrap--focus .inbox-workspace-toolbar {
@@ -914,11 +954,11 @@ body {
 }
 
 .inbox-composer-field {
-  @apply min-w-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950;
+  @apply min-w-0 flex-1 overflow-hidden rounded-xl border-0 bg-slate-50 shadow-sm dark:bg-slate-900;
 }
 
 .inbox-composer-toolbar {
-  @apply flex items-center gap-0.5 border-b border-slate-100 px-1.5 py-1 dark:border-slate-800;
+  @apply flex items-center gap-0.5 px-1.5 py-1;
 }
 
 .inbox-composer-tool-btn {
@@ -930,7 +970,7 @@ body {
 }
 
 .inbox-chat-composer-send {
-  @apply inline-flex h-[2.75rem] w-[2.75rem] shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-600;
+  @apply inline-flex h-[2.75rem] w-[2.75rem] shrink-0 items-center justify-center rounded-xl border-0 bg-slate-100 text-slate-300 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-100 dark:bg-slate-800 dark:text-slate-600;
 }
 
 .inbox-bubble-outbound {
@@ -946,23 +986,23 @@ body {
 }
 
 .inbox-context-profile {
-  @apply shrink-0 border-b border-slate-100 px-3 pb-3 pt-2.5 dark:border-slate-800;
+  @apply shrink-0 px-3 pb-3 pt-2.5;
 }
 
 .inbox-context-profile-name {
-  @apply truncate text-sm font-semibold text-slate-800 dark:text-slate-100;
+  @apply truncate text-sm font-semibold text-slate-900 dark:text-slate-50;
 }
 
 .inbox-context-profile-meta {
-  @apply truncate text-xs text-slate-400;
+  @apply truncate text-xs text-slate-500 dark:text-slate-400;
 }
 
 .inbox-context-scroll {
-  @apply space-y-2 pt-2;
+  @apply space-y-3 pt-1;
 }
 
 .inbox-context-module {
-  @apply rounded-lg border border-slate-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-950;
+  @apply rounded-lg border-0 bg-slate-50 p-3 dark:bg-slate-900/50;
 }
 
 .inbox-context-module-title {
@@ -974,7 +1014,7 @@ body {
 }
 
 .inbox-context-module-empty {
-  @apply text-xs text-slate-400;
+  @apply text-xs text-slate-500 dark:text-slate-400;
 }
 
 .inbox-context-module-list {
@@ -982,15 +1022,15 @@ body {
 }
 
 .inbox-context-module-row {
-  @apply rounded-md bg-slate-50 px-2.5 py-2 dark:bg-slate-900/50;
+  @apply rounded-md border-0 bg-white px-2.5 py-2 shadow-sm dark:bg-slate-950;
 }
 
 .inbox-context-module-row-title {
-  @apply truncate text-xs font-medium text-slate-800 dark:text-slate-100;
+  @apply truncate text-xs font-medium text-slate-900 dark:text-slate-100;
 }
 
 .inbox-context-module-row-meta {
-  @apply text-xs text-slate-400;
+  @apply text-xs text-slate-500 dark:text-slate-400;
 }
 
 .inbox-context-field {
@@ -998,11 +1038,11 @@ body {
 }
 
 .inbox-context-field-label {
-  @apply text-slate-400;
+  @apply text-slate-500 dark:text-slate-400;
 }
 
 .inbox-context-field-value {
-  @apply truncate text-right text-[13px] font-medium text-slate-600 dark:text-slate-300;
+  @apply truncate text-right text-[13px] font-medium text-slate-900 dark:text-slate-100;
 }
 
 .inbox-context-fields {
@@ -1030,15 +1070,15 @@ body {
 }
 
 .inbox-context-tag {
-  @apply inline-flex rounded-md bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300;
+  @apply inline-flex rounded-md border-0 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-300;
 }
 
 .inbox-context-tag-add {
-  @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-sm font-medium text-slate-500 transition hover:border-slate-300 hover:text-[#1877F2] disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300;
+  @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-0 bg-white text-sm font-medium text-slate-500 shadow-sm transition hover:text-[#1877F2] disabled:opacity-40 dark:bg-slate-800 dark:text-slate-300;
 }
 
 .inbox-context-input {
-  @apply w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-800 outline-none transition focus:border-slate-300 focus:ring-1 focus:ring-slate-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-800;
+  @apply w-full rounded-lg border-0 bg-white px-2 py-1.5 text-xs font-medium text-slate-900 shadow-sm outline-none transition focus:shadow-md disabled:opacity-60 dark:bg-slate-800 dark:text-slate-100;
 }
 
 .inbox-context-input--compact {

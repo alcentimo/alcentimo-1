@@ -289,7 +289,7 @@ function DashboardShell({
             immersiveActive
               ? "dashboard-main--immersive"
               : "p-6 lg:p-8"
-          }`}
+          } ${isMensajesPath(pathname) ? "dashboard-main--mensajes" : ""}`}
         >
           {productLimit && <ProductLimitBanner productLimit={productLimit} />}
           {children}

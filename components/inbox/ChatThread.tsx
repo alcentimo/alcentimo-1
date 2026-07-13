@@ -57,10 +57,10 @@ export function ChatThread({
     <div className="inbox-chat-workspace">
       <header className="inbox-chat-header inbox-chat-header--messenger">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <p className="inbox-chat-customer-name truncate">
             {customerLabel}
           </p>
-          <p className="truncate text-[11px] text-slate-400">
+          <p className="inbox-chat-customer-meta truncate">
             {conversation.phoneE164 ?? conversation.senderId}
           </p>
         </div>

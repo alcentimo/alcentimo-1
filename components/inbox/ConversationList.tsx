@@ -65,21 +65,19 @@ export function ConversationList({
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     <span
-                      className={`min-w-0 flex-1 truncate text-[13px] leading-tight ${
-                        isUnread
-                          ? "font-semibold text-slate-900 dark:text-slate-50"
-                          : "font-medium text-slate-700 dark:text-slate-200"
+                      className={`inbox-conversation-name min-w-0 flex-1 truncate text-[13px] leading-tight ${
+                        isUnread ? "inbox-conversation-name--unread" : ""
                       }`}
                     >
                       {customerLabel}
                     </span>
-                    <span className="shrink-0 text-[10px] tabular-nums text-slate-400">
+                    <span className="inbox-conversation-time shrink-0 text-[11px] tabular-nums">
                       {formatMessageTime(conversation.lastMessageAt)}
                     </span>
                   </span>
 
                   <span className="mt-0.5 flex items-center gap-2">
-                    <span className="min-w-0 flex-1 truncate text-[11px] leading-tight text-slate-400">
+                    <span className="inbox-conversation-preview min-w-0 flex-1 truncate text-[12px] leading-tight">
                       {preview}
                     </span>
                     {isUnread && (
