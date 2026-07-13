@@ -6,6 +6,7 @@ import {
   type OnboardingFormState,
 } from "@/lib/onboarding/actions";
 import { STORE_CATEGORY_OPTIONS } from "@/lib/onboarding/categories";
+import { STORE_COUNTRY_OPTIONS } from "@/lib/onboarding/countries";
 
 const initialState: OnboardingFormState = {};
 
@@ -15,6 +16,7 @@ export function OnboardingForm() {
     initialState,
   );
   const [category, setCategory] = useState("");
+  const [country, setCountry] = useState("");
 
   return (
     <form action={formAction} className="card-panel mx-auto w-full max-w-md space-y-5">
@@ -39,6 +41,29 @@ export function OnboardingForm() {
           placeholder="Ej: Ferretería El Progreso"
           className="input-field"
         />
+      </div>
+
+      <div>
+        <label htmlFor="country" className="label-field">
+          País <span className="text-red-500">*</span>
+        </label>
+        <select
+          id="country"
+          name="country"
+          required
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          className="input-field"
+        >
+          <option value="" disabled>
+            Selecciona un país
+          </option>
+          {STORE_COUNTRY_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>

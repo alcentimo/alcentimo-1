@@ -25,6 +25,7 @@ export interface Store {
   slug: string;
   description: string | null;
   logo_url: string | null;
+  country: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -310,6 +311,7 @@ export type StoreInsert = {
   slug: string;
   description?: string | null;
   logo_url?: string | null;
+  country?: string | null;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;

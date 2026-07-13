@@ -8,6 +8,7 @@ import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { userHasStore } from "@/lib/stores";
 import { slugify, uniqueSlug } from "@/lib/slugify";
 import { STORE_CATEGORY_OPTIONS } from "@/lib/onboarding/categories";
+import { isStoreCountryOption } from "@/lib/onboarding/countries";
 
 export type OnboardingFormState = {
   error?: string;
@@ -50,11 +51,20 @@ export async function completeOnboarding(
   }
 
   const name = String(formData.get("name") ?? "").trim();
+  const country = String(formData.get("country") ?? "").trim();
   const category = String(formData.get("category") ?? "").trim();
   const customCategory = String(formData.get("custom_category") ?? "").trim();
 
   if (!name) {
     return { error: "El nombre de la tienda es obligatorio." };
+  }
+
+  if (!country) {
+    return { error: "Selecciona el país de tu negocio." };
+  }
+
+  if (!isStoreCountryOption(country)) {
+    return { error: "País no válido." };
   }
 
   if (!category) {
@@ -86,6 +96,7 @@ export async function completeOnboarding(
       owner_id: auth.authUser.id,
       name,
       slug,
+      country,
     })
     .select("id")
     .single();
