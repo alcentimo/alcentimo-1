@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import {
   formatMessageTime,
   formatSenderLabel,
@@ -30,16 +30,10 @@ export function ConversationList({
   onConversationPatch,
   filters,
 }: ConversationListProps) {
-  const activeItemRef = useRef<HTMLButtonElement>(null);
-
   const filteredConversations = useMemo(
     () => filterConversations(conversations, filters, formatSenderLabel),
     [conversations, filters],
   );
-
-  useEffect(() => {
-    activeItemRef.current?.scrollIntoView({ block: "nearest" });
-  }, [selectedConversationId]);
 
   return (
     <ul className="inbox-conversation-list-compact" aria-label="Conversaciones de Facebook">
@@ -62,7 +56,6 @@ export function ConversationList({
           return (
             <li key={conversation.conversationId} className="group">
               <button
-                ref={isActive ? activeItemRef : undefined}
                 type="button"
                 onClick={() => onSelectConversation(conversation)}
                 className={`inbox-conversation-item-compact ${

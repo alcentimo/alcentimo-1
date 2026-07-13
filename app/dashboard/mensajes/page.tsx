@@ -9,7 +9,6 @@ import {
   getStoreIntegrations,
   hasActiveIntegrations,
 } from "@/lib/inbox/get-store-integrations";
-import { getComposerCatalogProducts } from "@/lib/inbox/get-composer-catalog";
 import { buildConversationSalesMap } from "@/lib/inbox/contact-sales";
 import { getStoreSales } from "@/lib/sales/get-store-sales";
 import { MessagesPanel } from "@/components/dashboard/MessagesPanel";
@@ -47,14 +46,12 @@ export default async function MensajesPage() {
     );
   }
 
-  const [conversations, integrations, recentSales, catalogProducts] =
-    await Promise.all([
+  const [conversations, integrations, recentSales] = await Promise.all([
     getStoreInboxConversations(supabase, store.id, {
       storeCountry: store.country,
     }),
     getStoreIntegrations(supabase, store.id),
     getStoreSales(store.id, 100),
-    getComposerCatalogProducts(store.slug),
   ]);
   const activeIntegrations = hasActiveIntegrations(integrations);
   const salesByConversationId = buildConversationSalesMap(
@@ -70,7 +67,6 @@ export default async function MensajesPage() {
         storeCountry={store.country}
         recentSales={recentSales}
         salesByConversationId={salesByConversationId}
-        catalogProducts={catalogProducts}
       />
     </MensajesPageShell>
   );

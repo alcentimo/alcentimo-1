@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   formatSenderLabel,
 } from "@/lib/inbox/get-store-messages";
-import type { ComposerCatalogProduct } from "@/lib/inbox/composer-catalog-types";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 import { MessageBubble } from "@/components/inbox/MessageBubble";
 import { ChatComposer } from "@/components/inbox/ChatComposer";
@@ -19,23 +18,13 @@ interface ChatThreadProps {
     conversationId: string,
     patch: Partial<MessageConversation>,
   ) => void;
-  onSendMessage?: (conversationId: string, text: string) => void;
-  onSlashMenuOpenChange?: (open: boolean) => void;
-  catalogProducts?: ComposerCatalogProduct[];
 }
 
 export function ChatThread({
   conversation,
   onConversationPatch,
-  onSendMessage,
-  onSlashMenuOpenChange,
-  catalogProducts = [],
 }: ChatThreadProps) {
   const [draft, setDraft] = useState("");
-
-  useEffect(() => {
-    setDraft("");
-  }, [conversation?.conversationId]);
 
   if (!conversation) {
     return (
@@ -44,7 +33,7 @@ export function ChatThread({
           Elige un chat para vender
         </p>
         <p className="mt-1 text-xs text-slate-400">
-          <kbd className="inbox-kbd">↑</kbd> <kbd className="inbox-kbd">↓</kbd> para navegar entre chats.
+          Responde rápido y cierra el pedido.
         </p>
       </div>
     );
@@ -62,11 +51,6 @@ export function ChatThread({
     assignedTeam?: string | null;
   }) {
     onConversationPatch(conversationId, patch);
-  }
-
-  function handleSend(text: string) {
-    onSendMessage?.(conversationId, text);
-    setDraft("");
   }
 
   return (
@@ -99,13 +83,7 @@ export function ChatThread({
         ))}
       </div>
 
-      <ChatComposer
-        draft={draft}
-        onDraftChange={setDraft}
-        onSend={handleSend}
-        onSlashMenuOpenChange={onSlashMenuOpenChange}
-        catalogProducts={catalogProducts}
-      />
+      <ChatComposer draft={draft} onDraftChange={setDraft} />
     </div>
   );
 }
