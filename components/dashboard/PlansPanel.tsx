@@ -5,8 +5,9 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { PlanCheckoutDialog } from "@/components/dashboard/plans/PlanCheckoutDialog";
 import {
-  ANNUAL_BILLING_DISCOUNT,
-  formatPlanPrice,
+  formatAnnualSavingsLabel,
+  formatPlanPriceForTier,
+  getRecommendedAnnualSavingsLabel,
   PLAN_PRICING_TIERS,
   type BillingPeriod,
   type PlanPricingTier,
@@ -60,23 +61,14 @@ function PlanCtaButton({
     );
   }
 
-  if (tier.recommended) {
-    return (
-      <button
-        type="button"
-        onClick={() => onCheckout(tier)}
-        className="btn-brand mt-6 inline-flex w-full items-center justify-center px-4 py-3.5 text-sm font-semibold shadow-sm"
-      >
-        {tier.cta}
-      </button>
-    );
-  }
-
   return (
     <button
       type="button"
       onClick={() => onCheckout(tier)}
-      className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 transition-colors hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:border-neutral-600"
+      className={cn(
+        "btn-brand mt-6 inline-flex w-full items-center justify-center px-4 py-3.5 text-sm font-semibold shadow-sm",
+        !tier.recommended && "md:py-3",
+      )}
     >
       {tier.cta}
     </button>
@@ -93,6 +85,8 @@ export function PlansPanel({
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutTier, setCheckoutTier] = useState<PlanPricingTier | null>(null);
+
+  const recommendedSavings = getRecommendedAnnualSavingsLabel();
 
   function openCheckout(tier: PlanPricingTier) {
     setCheckoutTier(tier);
@@ -126,11 +120,11 @@ export function PlansPanel({
       </section>
 
       <section>
-        <div className="flex flex-col items-center gap-4 text-center">
+        <div className="flex flex-col items-center gap-3 text-center">
           <BillingToggle billing={billing} onChange={setBilling} />
-          {billing === "annual" && (
-            <p className="text-xs text-teal-700 dark:text-teal-400">
-              Ahorra {Math.round(ANNUAL_BILLING_DISCOUNT * 100)}% pagando anual
+          {billing === "annual" && recommendedSavings && (
+            <p className="text-sm font-medium text-teal-700 dark:text-teal-400">
+              {recommendedSavings} con facturación anual
             </p>
           )}
         </div>
@@ -188,13 +182,16 @@ function BillingToggle({
         type="button"
         onClick={() => onChange("annual")}
         className={cn(
-          "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+          "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
           billing === "annual"
             ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-950 dark:text-neutral-50"
             : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400",
         )}
       >
         Anual
+        <span className="rounded-full bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold text-teal-800 dark:bg-teal-950 dark:text-teal-300">
+          -20%
+        </span>
       </button>
     </div>
   );
@@ -211,8 +208,12 @@ function PricingCard({
   isCurrent: boolean;
   onCheckout: (tier: PlanPricingTier) => void;
 }) {
-  const priceLabel = formatPlanPrice(tier.monthlyUsd, billing);
+  const priceLabel = formatPlanPriceForTier(tier, billing);
   const isFree = tier.monthlyUsd === 0;
+  const savingsLabel =
+    billing === "annual" ? formatAnnualSavingsLabel(tier) : null;
+  const annualTotal =
+    billing === "annual" && tier.annualUsd != null ? tier.annualUsd : null;
 
   return (
     <article
@@ -246,9 +247,21 @@ function PricingCard({
             <span className="text-sm text-neutral-500 dark:text-neutral-400">/mes</span>
           )}
         </div>
-        {!isFree && billing === "annual" && (
-          <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
-            Facturado anualmente
+        {!isFree && billing === "annual" && annualTotal != null && (
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            Facturado ${annualTotal} al año
+          </p>
+        )}
+        {savingsLabel && (
+          <p
+            className={cn(
+              "mt-2 text-xs font-semibold",
+              tier.recommended
+                ? "text-teal-700 dark:text-teal-400"
+                : "text-neutral-600 dark:text-neutral-400",
+            )}
+          >
+            {savingsLabel}
           </p>
         )}
         <p className="mt-3 text-sm font-medium text-neutral-700 dark:text-neutral-300">

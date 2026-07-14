@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import type { PaymentReportPlanId } from "@/lib/database.types";
 import {
-  getDisplayedMonthlyPrice,
+  getTierChargeUsd,
   PLAN_PRICING_TIERS,
   type BillingPeriod,
 } from "@/src/config/plan-pricing-ui";
@@ -60,7 +60,7 @@ export async function submitPaymentReport(input: {
     return { error: "No se pudo calcular el monto del plan." };
   }
 
-  const amountUsd = getDisplayedMonthlyPrice(tier.monthlyUsd, billingPeriod);
+  const amountUsd = getTierChargeUsd(tier, billingPeriod);
 
   const { error } = await supabase.from("payment_reports").insert({
     user_id: auth.authUser.id,

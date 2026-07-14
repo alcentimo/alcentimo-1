@@ -18,7 +18,7 @@ import { submitPaymentReport } from "@/lib/plans/payment-report-actions";
 import { formatVes } from "@/lib/format";
 import {
   formatPlanCheckoutSummary,
-  getDisplayedMonthlyPrice,
+  getTierChargeUsd,
   type BillingPeriod,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
@@ -89,10 +89,10 @@ export function PlanCheckoutDialog({
 
   if (!tier || tier.monthlyUsd <= 0) return null;
 
-  const monthlyUsd = getDisplayedMonthlyPrice(tier.monthlyUsd, billing);
+  const chargeUsd = getTierChargeUsd(tier, billing);
   const vesEquivalent =
     exchangeRate != null && exchangeRate > 0
-      ? monthlyUsd * exchangeRate
+      ? chargeUsd * exchangeRate
       : null;
 
   return (
@@ -116,7 +116,7 @@ export function PlanCheckoutDialog({
                     Resumen
                   </p>
                   <p className="mt-2 text-base font-semibold text-neutral-900 dark:text-neutral-50">
-                    {formatPlanCheckoutSummary(tier.displayName, tier.monthlyUsd, billing)}
+                    {formatPlanCheckoutSummary(tier, billing)}
                   </p>
                   {vesEquivalent != null && (
                     <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">

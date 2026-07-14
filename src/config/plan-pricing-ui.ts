@@ -2,21 +2,20 @@ import type { PlanId } from "@/src/config/plans";
 
 export type BillingPeriod = "monthly" | "annual";
 
-/** Descuento al pagar anual (20 % → precio mensual equivalente). */
-export const ANNUAL_BILLING_DISCOUNT = 0.2;
+export const PAID_PLAN_CTA = "Empezar ahora";
 
 export interface PlanPricingTier {
   planId: PlanId;
   displayName: string;
   tagline: string;
-  /** Precio de referencia en USD / mes (facturación mensual). */
+  /** Precio cobrado cada mes (facturación mensual). */
   monthlyUsd: number;
+  /** Total cobrado al año; `null` si no aplica (plan gratis). */
+  annualUsd: number | null;
   productLimitLabel: string;
   recommended?: boolean;
   features: string[];
   cta: string;
-  /** Si true, el CTA abre correo de ventas en lugar de checkout. */
-  contactSales?: boolean;
 }
 
 /** Tres planes mostrados en /dashboard/planes (mapean a IDs internos). */
@@ -26,6 +25,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     displayName: "Gratis",
     tagline: "Ideal para empezar",
     monthlyUsd: 0,
+    annualUsd: null,
     productLimitLabel: "Hasta 15 productos",
     features: [
       "Catálogo público con enlace único",
@@ -38,7 +38,8 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     planId: "starter",
     displayName: "Pro",
     tagline: "Para negocios en crecimiento",
-    monthlyUsd: 5,
+    monthlyUsd: 8,
+    annualUsd: 75,
     productLimitLabel: "Hasta 250 productos",
     recommended: true,
     features: [
@@ -46,47 +47,89 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
       "Más capacidad de catálogo",
       "Soporte por email",
     ],
-    cta: "Empezar ahora",
-    contactSales: true,
+    cta: PAID_PLAN_CTA,
   },
   {
     planId: "premium",
     displayName: "Business",
     tagline: "Para marcas establecidas",
     monthlyUsd: 15,
+    annualUsd: 144,
     productLimitLabel: "Productos ilimitados",
     features: [
       "Todo lo del plan Pro",
       "Usuarios y roles de equipo",
       "Soporte dedicado",
     ],
-    cta: "Elegir plan",
-    contactSales: true,
+    cta: PAID_PLAN_CTA,
   },
 ];
 
-export function getDisplayedMonthlyPrice(
-  monthlyUsd: number,
+/** Precio mensual mostrado en la tarjeta (equivalente si es anual). */
+export function getTierMonthlyDisplay(
+  tier: PlanPricingTier,
   period: BillingPeriod,
 ): number {
-  if (monthlyUsd <= 0) return 0;
-  if (period === "monthly") return monthlyUsd;
-  return Math.round(monthlyUsd * (1 - ANNUAL_BILLING_DISCOUNT) * 100) / 100;
+  if (tier.monthlyUsd <= 0) return 0;
+  if (period === "monthly") return tier.monthlyUsd;
+  if (tier.annualUsd == null) return tier.monthlyUsd;
+  return Math.round((tier.annualUsd / 12) * 100) / 100;
 }
 
-export function formatPlanPrice(monthlyUsd: number, period: BillingPeriod): string {
-  const value = getDisplayedMonthlyPrice(monthlyUsd, period);
+/** Monto real a cobrar (1 mes o total anual). */
+export function getTierChargeUsd(
+  tier: PlanPricingTier,
+  period: BillingPeriod,
+): number {
+  if (tier.monthlyUsd <= 0) return 0;
+  if (period === "monthly") return tier.monthlyUsd;
+  return tier.annualUsd ?? tier.monthlyUsd * 12;
+}
+
+/** Ahorro en USD al elegir facturación anual vs 12 meses sueltos. */
+export function getTierAnnualSavings(tier: PlanPricingTier): number | null {
+  if (tier.monthlyUsd <= 0 || tier.annualUsd == null) return null;
+  const savings = tier.monthlyUsd * 12 - tier.annualUsd;
+  return savings > 0 ? savings : null;
+}
+
+export function formatPlanPriceForTier(
+  tier: PlanPricingTier,
+  period: BillingPeriod,
+): string {
+  const value = getTierMonthlyDisplay(tier, period);
   if (value === 0) return "Gratis";
   return `$${Number.isInteger(value) ? value : value.toFixed(2)}`;
 }
 
+export function formatAnnualSavingsLabel(tier: PlanPricingTier): string | null {
+  const savings = getTierAnnualSavings(tier);
+  if (savings == null) return null;
+  const formatted = Number.isInteger(savings) ? String(savings) : savings.toFixed(0);
+  return `Ahorras $${formatted} al año`;
+}
+
 export function formatPlanCheckoutSummary(
-  displayName: string,
-  monthlyUsd: number,
+  tier: PlanPricingTier,
   period: BillingPeriod,
 ): string {
-  const price = formatPlanPrice(monthlyUsd, period);
-  if (monthlyUsd <= 0) return `Plan ${displayName}`;
-  const suffix = period === "annual" ? " (facturado anualmente)" : "";
-  return `Plan ${displayName} — ${price}/mes${suffix}`;
+  if (tier.monthlyUsd <= 0) return `Plan ${tier.displayName}`;
+
+  if (period === "monthly") {
+    return `Plan ${tier.displayName} — $${tier.monthlyUsd}/mes`;
+  }
+
+  const monthlyEquivalent = getTierMonthlyDisplay(tier, period);
+  const annualTotal = tier.annualUsd ?? tier.monthlyUsd * 12;
+  const equivLabel = Number.isInteger(monthlyEquivalent)
+    ? monthlyEquivalent
+    : monthlyEquivalent.toFixed(2);
+
+  return `Plan ${tier.displayName} — $${equivLabel}/mes ($${annualTotal} al año)`;
+}
+
+/** Ahorro destacado del plan recomendado (Pro) para el toggle anual. */
+export function getRecommendedAnnualSavingsLabel(): string | null {
+  const recommended = PLAN_PRICING_TIERS.find((tier) => tier.recommended);
+  return recommended ? formatAnnualSavingsLabel(recommended) : null;
 }
