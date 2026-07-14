@@ -25,16 +25,6 @@
       "maxDuration": 30
     }
   },
-  "crons": [
-    {
-      "path": "/api/cron/sync-bcv-rate?slot=midnight",
-      "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/cron/sync-bcv-rate?slot=retry",
-      "schedule": "0 10 * * *"
-    }
-  ],
   "headers": [
     {
       "source": "/api/webhooks/(.*)",
