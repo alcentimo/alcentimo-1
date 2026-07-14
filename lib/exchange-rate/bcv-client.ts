@@ -1,7 +1,6 @@
 const BCV_API_ENDPOINTS = [
-  "https://pydolarvenezuela-api.vercel.app/api/v1/dollar?page=bcv",
-  "https://pydolarvenezuela-api.vercel.app/api/v2/tipo-cambio",
-  "https://bcv-exchange-rates.vercel.app/get_bcv_exchange_rates",
+  "https://bcv.today/api/v1/rate.json",
+  "https://ve.dolarapi.com/v1/dolares/oficial",
 ] as const;
 
 const FETCH_TIMEOUT_MS = 12_000;
@@ -25,12 +24,16 @@ function extractRateFromPayload(payload: unknown): number | null {
   const data = payload as Record<string, unknown>;
 
   const directCandidates = [
+    data.USD,
     data.price,
     data.tasa,
     data.rate,
     data.valor,
     data.value,
     data.price_bcv,
+    data.promedio,
+    data.monto,
+    data.mid,
   ];
 
   for (const candidate of directCandidates) {

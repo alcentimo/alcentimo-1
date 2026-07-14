@@ -27,9 +27,8 @@ loadEnvFile(resolve(process.cwd(), ".env.local"));
 loadEnvFile(resolve(process.cwd(), ".env"));
 
 const BCV_API_ENDPOINTS = [
-  "https://pydolarvenezuela-api.vercel.app/api/v1/dollar?page=bcv",
-  "https://pydolarvenezuela-api.vercel.app/api/v2/tipo-cambio",
-  "https://bcv-exchange-rates.vercel.app/get_bcv_exchange_rates",
+  "https://bcv.today/api/v1/rate.json",
+  "https://ve.dolarapi.com/v1/dolares/oficial",
 ];
 
 function parseNumericRate(value) {
@@ -44,7 +43,17 @@ function parseNumericRate(value) {
 
 function extractRate(payload) {
   if (!payload || typeof payload !== "object") return null;
-  const direct = [payload.price, payload.tasa, payload.rate, payload.valor, payload.value];
+  const direct = [
+    payload.USD,
+    payload.price,
+    payload.tasa,
+    payload.rate,
+    payload.valor,
+    payload.value,
+    payload.promedio,
+    payload.monto,
+    payload.mid,
+  ];
   for (const candidate of direct) {
     const parsed = parseNumericRate(candidate);
     if (parsed) return parsed;
