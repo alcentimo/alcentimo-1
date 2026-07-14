@@ -4,6 +4,7 @@ import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getStoreInventory } from "@/lib/inventory";
 import { getStoreCategories } from "@/lib/products/actions";
+import { getStoreProductFieldConfig } from "@/lib/products/store-field-config";
 import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -39,10 +40,11 @@ export default async function InventarioPage() {
     );
   }
 
-  const [{ products }, exchangeRate, categories] = await Promise.all([
+  const [{ products }, exchangeRate, categories, fieldConfig] = await Promise.all([
     getStoreInventory(store.slug),
     getCurrentExchangeRate(),
     getStoreCategories(store.id),
+    getStoreProductFieldConfig(store.id),
   ]);
 
   return (
@@ -60,6 +62,8 @@ export default async function InventarioPage() {
         categories={categories}
         exchangeRate={exchangeRate?.rate ?? null}
         initialProducts={products}
+        fieldLabels={fieldConfig.fieldLabels}
+        storeCategoryLabel={fieldConfig.categoryLabel}
       />
     </div>
   );

@@ -27,6 +27,8 @@ interface ProductFormSheetProps {
   store: Store;
   categories: CategoryOption[];
   exchangeRate: number | null;
+  fieldLabels?: string[];
+  storeCategoryLabel?: string | null;
   mode: "create" | "edit";
   productId?: string;
   onSaved: () => void;
@@ -38,6 +40,8 @@ export function ProductFormSheet({
   store,
   categories,
   exchangeRate,
+  fieldLabels = [],
+  storeCategoryLabel = null,
   mode,
   productId,
   onSaved,
@@ -107,6 +111,8 @@ export function ProductFormSheet({
               store={store}
               categories={categories}
               exchangeRate={exchangeRate}
+              fieldLabels={fieldLabels}
+              storeCategoryLabel={storeCategoryLabel}
               mode="create"
               onSuccess={handleSuccess}
               onCancel={() => onOpenChange(false)}
@@ -119,6 +125,8 @@ export function ProductFormSheet({
               store={store}
               categories={categories}
               exchangeRate={exchangeRate}
+              fieldLabels={fieldLabels}
+              storeCategoryLabel={storeCategoryLabel}
               mode="edit"
               initialData={editData}
               onSuccess={handleSuccess}

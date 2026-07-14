@@ -18,6 +18,12 @@ import {
   ProductVariantsEditor,
   serializeVariantsForForm,
 } from "@/components/dashboard/ProductVariantsEditor";
+import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
+import {
+  pickExtraFieldValues,
+  serializeExtraFieldsJson,
+  type ProductExtraFieldsMap,
+} from "@/lib/products/extra-fields";
 import type { VariantFormInput } from "@/lib/products/variants";
 
 interface CategoryOption {
@@ -30,6 +36,8 @@ interface ProductFormProps {
   store: Store;
   categories: CategoryOption[];
   exchangeRate: number | null;
+  fieldLabels?: string[];
+  storeCategoryLabel?: string | null;
   mode?: "create" | "edit";
   initialData?: ProductEditData;
 }
@@ -50,6 +58,8 @@ export function ProductForm({
   store,
   categories,
   exchangeRate,
+  fieldLabels = [],
+  storeCategoryLabel = null,
   mode = "create",
   initialData,
 }: ProductFormProps) {
@@ -66,6 +76,9 @@ export function ProductForm({
   const [imageBusy, setImageBusy] = useState(false);
   const [imageProcessed, setImageProcessed] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [extraFields, setExtraFields] = useState<ProductExtraFieldsMap>(() =>
+    pickExtraFieldValues(initialData?.extraFields ?? {}, fieldLabels),
+  );
   const catalogUrl = getStoreCatalogUrl(store.slug);
   const hasCustomVariants = variants.length > 0;
 
@@ -95,6 +108,7 @@ export function ProductForm({
         initialData?.variants.map((variant) => variant.id),
       ),
     );
+    formData.set("extra_fields_json", serializeExtraFieldsJson(extraFields));
 
     if (compressedImageFile) {
       formData.set("image", compressedImageFile);
@@ -214,6 +228,14 @@ export function ProductForm({
           className="input-field"
         />
       </div>
+
+      <ProductExtraFieldsSection
+        fieldLabels={fieldLabels}
+        values={extraFields}
+        onChange={setExtraFields}
+        categoryLabel={storeCategoryLabel}
+        disabled={isBusy}
+      />
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div>

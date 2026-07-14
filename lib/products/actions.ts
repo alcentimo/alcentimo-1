@@ -10,6 +10,13 @@ import { uploadProductImage, buildOptimizationMessage } from "@/lib/storage";
 import { parseVariantFormInputs, parseVariantsJson } from "@/lib/products/variants";
 import { syncProductVariants } from "@/lib/products/sync-variants";
 import { assertCanCreateProduct } from "@/lib/plans/product-limit";
+import {
+  buildProductMetadata,
+  parseExtraFieldsFromMetadata,
+  parseExtraFieldsJson,
+  pickExtraFieldValues,
+} from "@/lib/products/extra-fields";
+import { getStoreProductFieldConfig } from "@/lib/products/store-field-config";
 
 export type ProductFormState = {
   error?: string;
@@ -31,6 +38,7 @@ export interface ProductEditData {
   defaultVariantId: string;
   variants: import("@/lib/products/variants").ProductVariantJson[];
   thumbUrl: string | null;
+  extraFields: Record<string, string>;
 }
 
 export type StoreFormState = {
@@ -127,6 +135,17 @@ export async function createProduct(
     return { error: "Ingresa un umbral de alerta válido (0 o más)." };
   }
 
+  const fieldConfig = await getStoreProductFieldConfig(store.id);
+  const extraFieldsParsed = parseExtraFieldsJson(
+    String(formData.get("extra_fields_json") ?? ""),
+  );
+  if (extraFieldsParsed.error) return { error: extraFieldsParsed.error };
+  const metadata = buildProductMetadata(
+    null,
+    extraFieldsParsed.fields,
+    fieldConfig.fieldLabels,
+  );
+
   if (!categoryId) {
     const ensured = await ensureDefaultCategory(store.id);
     if (ensured.error || !ensured.categoryId) {
@@ -171,6 +190,7 @@ export async function createProduct(
       slug: productSlug,
       short_description: shortDescription || null,
       description: description || null,
+      metadata,
     })
     .select("id")
     .single();
@@ -272,7 +292,7 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
   const { data: product, error: productError } = await supabase
     .from("products")
     .select(
-      "id, name, short_description, description, category_id, variants, product_images(thumb_url, is_primary)",
+      "id, name, short_description, description, category_id, metadata, variants, product_images(thumb_url, is_primary)",
     )
     .eq("id", productId)
     .eq("store_id", store.id)
@@ -300,6 +320,10 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     is_primary: boolean;
   }[];
   const primaryImage = images.find((img) => img.is_primary) ?? images[0];
+  const fieldConfig = await getStoreProductFieldConfig(store.id);
+  const storedExtraFields = parseExtraFieldsFromMetadata(
+    product.metadata as Record<string, unknown> | null,
+  );
 
   return {
     productId: product.id as string,
@@ -313,6 +337,7 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     defaultVariantId: defaultVariant.id as string,
     variants: parseVariantsJson(product.variants),
     thumbUrl: primaryImage?.thumb_url ?? null,
+    extraFields: pickExtraFieldValues(storedExtraFields, fieldConfig.fieldLabels),
   };
 }
 
@@ -331,7 +356,7 @@ export async function updateProduct(
 
   const { data: existingProduct, error: lookupError } = await supabase
     .from("products")
-    .select("id, slug")
+    .select("id, slug, metadata")
     .eq("id", productId)
     .eq("store_id", store.id)
     .maybeSingle();
@@ -380,6 +405,17 @@ export async function updateProduct(
   if (categoryError) return { error: categoryError.message };
   if (!category) return { error: "La categoría no pertenece a tu tienda." };
 
+  const fieldConfig = await getStoreProductFieldConfig(store.id);
+  const extraFieldsParsed = parseExtraFieldsJson(
+    String(formData.get("extra_fields_json") ?? ""),
+  );
+  if (extraFieldsParsed.error) return { error: extraFieldsParsed.error };
+  const metadata = buildProductMetadata(
+    existingProduct.metadata as Record<string, unknown> | null,
+    extraFieldsParsed.fields,
+    fieldConfig.fieldLabels,
+  );
+
   const { error: productUpdateError } = await supabase
     .from("products")
     .update({
@@ -387,6 +423,7 @@ export async function updateProduct(
       short_description: shortDescription || null,
       description: description || null,
       category_id: categoryId,
+      metadata,
     })
     .eq("id", productId)
     .eq("store_id", store.id);

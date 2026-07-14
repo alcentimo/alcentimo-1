@@ -27,6 +27,8 @@ interface InventoryPanelProps {
   categories: CategoryOption[];
   exchangeRate: number | null;
   initialProducts: CatalogListItem[];
+  fieldLabels?: string[];
+  storeCategoryLabel?: string | null;
 }
 
 function StockBadge({
@@ -173,6 +175,8 @@ export function InventoryPanel({
   categories,
   exchangeRate,
   initialProducts,
+  fieldLabels = [],
+  storeCategoryLabel = null,
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
   const [search, setSearch] = useState("");
@@ -366,6 +370,8 @@ export function InventoryPanel({
         store={store}
         categories={categories}
         exchangeRate={exchangeRate}
+        fieldLabels={fieldLabels}
+        storeCategoryLabel={storeCategoryLabel}
         mode={sheetMode}
         productId={editingProductId}
         onSaved={refreshProducts}

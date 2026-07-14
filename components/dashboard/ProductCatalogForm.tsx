@@ -16,6 +16,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
+import {
+  pickExtraFieldValues,
+  serializeExtraFieldsJson,
+  type ProductExtraFieldsMap,
+} from "@/lib/products/extra-fields";
 
 interface CategoryOption {
   id: string;
@@ -27,6 +33,8 @@ interface ProductCatalogFormProps {
   store: Store;
   categories: CategoryOption[];
   exchangeRate: number | null;
+  fieldLabels?: string[];
+  storeCategoryLabel?: string | null;
   mode?: "create" | "edit";
   initialData?: ProductEditData;
   onSuccess: () => void;
@@ -39,6 +47,8 @@ export function ProductCatalogForm({
   store,
   categories,
   exchangeRate,
+  fieldLabels = [],
+  storeCategoryLabel = null,
   mode = "create",
   initialData,
   onSuccess,
@@ -54,6 +64,9 @@ export function ProductCatalogForm({
   const [imageBusy, setImageBusy] = useState(false);
   const [imageProcessed, setImageProcessed] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [extraFields, setExtraFields] = useState<ProductExtraFieldsMap>(() =>
+    pickExtraFieldValues(initialData?.extraFields ?? {}, fieldLabels),
+  );
 
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
@@ -72,6 +85,11 @@ export function ProductCatalogForm({
     if (state.success) onSuccess();
   }, [state.success, onSuccess]);
 
+  useEffect(() => {
+    if (!initialData) return;
+    setExtraFields(pickExtraFieldValues(initialData.extraFields ?? {}, fieldLabels));
+  }, [initialData, fieldLabels]);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLocalError(null);
@@ -80,6 +98,7 @@ export function ProductCatalogForm({
     const formData = new FormData(form);
     formData.set("variants_json", "[]");
     formData.set("low_stock_threshold", String(initialData?.lowStockThreshold ?? 5));
+    formData.set("extra_fields_json", serializeExtraFieldsJson(extraFields));
 
     if (compressedImageFile) {
       formData.set("image", compressedImageFile);
@@ -142,6 +161,29 @@ export function ProductCatalogForm({
           className="payment-field-input mt-1.5"
         />
       </div>
+
+      <div>
+        <Label htmlFor="catalog-short-description" className="payment-field-label">
+          Descripción corta
+        </Label>
+        <Input
+          id="catalog-short-description"
+          name="short_description"
+          maxLength={160}
+          defaultValue={initialData?.shortDescription ?? ""}
+          placeholder="Aparece en el listado del catálogo"
+          className="payment-field-input mt-1.5"
+        />
+      </div>
+
+      <ProductExtraFieldsSection
+        fieldLabels={fieldLabels}
+        values={extraFields}
+        onChange={setExtraFields}
+        categoryLabel={storeCategoryLabel}
+        disabled={isBusy}
+        variant="compact"
+      />
 
       <div>
         <Label htmlFor="catalog-category" className="payment-field-label">
