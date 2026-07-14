@@ -4,12 +4,13 @@ import {
   formatFileSize,
   type ImageOptimizationResult,
 } from "@/lib/image-compress";
+import { PRODUCT_IMAGE_MAX_INPUT_BYTES, PRODUCT_IMAGE_MAX_OUTPUT_BYTES } from "@/lib/product-image";
 
 export const PRODUCT_IMAGES_BUCKET = "product-images";
 export const STORE_ASSETS_BUCKET = "store-assets";
 export const STORE_LOGOS_BUCKET = "store-logos";
 
-const MAX_INPUT_SIZE = 5 * 1024 * 1024; // 5 MB (entrada del usuario)
+const MAX_INPUT_SIZE = PRODUCT_IMAGE_MAX_INPUT_BYTES;
 const MAX_QR_INPUT_SIZE = 2 * 1024 * 1024; // 2 MB para QR
 
 const ALLOWED_TYPES = new Set([
@@ -35,7 +36,9 @@ export async function uploadProductImage(
   }
 
   if (file.size > MAX_INPUT_SIZE) {
-    return { error: "La imagen supera el límite de 5 MB." };
+    return {
+      error: `La imagen supera el límite de ${formatFileSize(MAX_INPUT_SIZE)}. Elige otra o recórtala antes de subir.`,
+    };
   }
 
   const inputBuffer = Buffer.from(await file.arrayBuffer());
@@ -43,8 +46,17 @@ export async function uploadProductImage(
   let optimization: ImageOptimizationResult;
   try {
     optimization = await compressProductImage(inputBuffer);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "IMAGE_TOO_LARGE") {
+      return {
+        error: "No se pudo optimizar la imagen por debajo de 2 MB. Prueba con otra foto.",
+      };
+    }
     return { error: "No se pudo procesar la imagen. Prueba con otro archivo." };
+  }
+
+  if (optimization.compressedSize > PRODUCT_IMAGE_MAX_OUTPUT_BYTES) {
+    return { error: "La imagen optimizada supera 2 MB. Prueba con otra foto." };
   }
 
   const path = `${storeId}/${crypto.randomUUID()}.webp`;

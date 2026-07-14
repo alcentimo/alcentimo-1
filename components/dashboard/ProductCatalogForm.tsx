@@ -10,6 +10,10 @@ import {
   type ProductFormState,
 } from "@/lib/products/actions";
 import { compressImageForUpload } from "@/lib/client-image-compress";
+import {
+  PRODUCT_IMAGE_ASPECT_CLASS,
+  PRODUCT_IMAGE_RECOMMENDED_HINT,
+} from "@/lib/product-image";
 import type { Store } from "@/lib/database.types";
 import { formatCountryCurrency } from "@/lib/country-config";
 import { useCountry } from "@/components/providers/CountryProvider";
@@ -57,6 +61,7 @@ export function ProductCatalogForm({
   );
   const [compressing, setCompressing] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [optimizeHint, setOptimizeHint] = useState<string | null>(null);
 
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
@@ -79,6 +84,7 @@ export function ProductCatalogForm({
     const file = e.target.files?.[0];
     if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
     setLocalError(null);
+    setOptimizeHint(null);
     if (file) {
       setPreviewUrl(URL.createObjectURL(file));
     } else if (initialData?.thumbUrl) {
@@ -101,11 +107,14 @@ export function ProductCatalogForm({
     if (imageFile instanceof File && imageFile.size > 0) {
       try {
         setCompressing(true);
-        const { file: compressed } = await compressImageForUpload(imageFile);
+        const { file: compressed, message } = await compressImageForUpload(imageFile);
         formData.set("image", compressed);
-      } catch {
+        setOptimizeHint(message);
+      } catch (error) {
         setLocalError(
-          "No se pudo comprimir la imagen. Prueba con JPG o PNG de menor tamaño.",
+          error instanceof Error
+            ? error.message
+            : "No se pudo comprimir la imagen. Prueba con JPG o PNG de menor tamaño.",
         );
         setCompressing(false);
         return;
@@ -138,7 +147,7 @@ export function ProductCatalogForm({
       <div className="flex items-start gap-3">
         <div
           className={cn(
-            "relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900",
+            `relative w-14 shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 ${PRODUCT_IMAGE_ASPECT_CLASS}`,
             isBusy && "opacity-70",
           )}
         >
@@ -169,9 +178,18 @@ export function ProductCatalogForm({
             onChange={handleImageChange}
             className="mt-1.5 block w-full text-xs text-zinc-500 file:mr-2 file:rounded-md file:border-0 file:bg-zinc-100 file:px-2.5 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700"
           />
-          <p className="mt-1 text-[11px] text-zinc-400">
-            {mode === "edit" ? "Opcional — conserva la actual si no eliges otra." : "JPG, PNG o WebP."}
+          <p className="mt-1 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
+            {PRODUCT_IMAGE_RECOMMENDED_HINT}
           </p>
+          <p className="mt-0.5 text-[10px] text-zinc-400">
+            Máx. 2 MB · se optimiza automáticamente antes de subir.
+            {mode === "edit" ? " Opcional al editar." : ""}
+          </p>
+          {optimizeHint && (
+            <p className="mt-1.5 text-[10px] text-teal-700 dark:text-teal-400">
+              ✓ {optimizeHint}
+            </p>
+          )}
         </div>
       </div>
 

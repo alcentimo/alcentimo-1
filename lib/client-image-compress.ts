@@ -1,11 +1,12 @@
 import imageCompression from "browser-image-compression";
+import {
+  formatImageSize,
+  PRODUCT_IMAGE_MAX_DIMENSION,
+  PRODUCT_IMAGE_MAX_INPUT_BYTES,
+  PRODUCT_IMAGE_MAX_OUTPUT_BYTES,
+} from "@/lib/product-image";
 
-const MAX_SIZE_MB = 0.5; // 500 KB
-const MAX_WIDTH_OR_HEIGHT = 1200;
-
-function formatKb(bytes: number): string {
-  return `${(bytes / 1024).toFixed(1)} KB`;
-}
+const MAX_OUTPUT_MB = PRODUCT_IMAGE_MAX_OUTPUT_BYTES / (1024 * 1024);
 
 function toWebpFile(blob: Blob, originalName: string): File {
   const baseName = originalName.replace(/\.[^.]+$/, "") || "producto";
@@ -17,28 +18,37 @@ function toWebpFile(blob: Blob, originalName: string): File {
 
 /**
  * Comprime en el navegador antes de enviar al Server Action.
- * Objetivo: WebP ≤ 500 KB para evitar el límite de 1 MB del body.
+ * Redimensiona a máx. 1350px y convierte a WebP ≤ 2 MB.
  */
 export async function compressImageForUpload(
   file: File,
 ): Promise<{ file: File; message: string }> {
+  if (file.size > PRODUCT_IMAGE_MAX_INPUT_BYTES) {
+    throw new Error(
+      `La imagen es demasiado grande (${formatImageSize(file.size)}). Usa un archivo menor a ${formatImageSize(PRODUCT_IMAGE_MAX_INPUT_BYTES)}.`,
+    );
+  }
+
   const originalSize = file.size;
 
   const compressed = await imageCompression(file, {
-    maxSizeMB: MAX_SIZE_MB,
-    maxWidthOrHeight: MAX_WIDTH_OR_HEIGHT,
+    maxSizeMB: MAX_OUTPUT_MB,
+    maxWidthOrHeight: PRODUCT_IMAGE_MAX_DIMENSION,
     useWebWorker: true,
     fileType: "image/webp",
-    initialQuality: 0.82,
-    maxIteration: 12,
+    initialQuality: 0.85,
+    maxIteration: 15,
   });
 
-  const webpFile =
-    compressed.type === "image/webp"
-      ? toWebpFile(compressed, file.name)
-      : toWebpFile(compressed, file.name);
+  const webpFile = toWebpFile(compressed, file.name);
 
-  const message = `Optimizada en tu dispositivo: ${formatKb(originalSize)} → ${formatKb(webpFile.size)} (WebP).`;
+  if (webpFile.size > PRODUCT_IMAGE_MAX_OUTPUT_BYTES) {
+    throw new Error(
+      "No se pudo optimizar la imagen por debajo de 2 MB. Prueba con otra foto.",
+    );
+  }
+
+  const message = `Optimizada: ${formatImageSize(originalSize)} → ${formatImageSize(webpFile.size)} (WebP, máx. 1350px).`;
 
   return { file: webpFile, message };
 }

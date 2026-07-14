@@ -2277,7 +2277,7 @@ body {
 }
 
 .txn-catalog .store-product-media {
-  @apply aspect-square bg-neutral-100;
+  @apply aspect-[4/5] bg-neutral-100;
 }
 
 .txn-catalog .store-product-image {

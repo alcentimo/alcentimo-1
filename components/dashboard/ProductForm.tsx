@@ -9,6 +9,10 @@ import {
   type ProductFormState,
 } from "@/lib/products/actions";
 import { compressImageForUpload } from "@/lib/client-image-compress";
+import {
+  PRODUCT_IMAGE_ASPECT_CLASS,
+  PRODUCT_IMAGE_RECOMMENDED_HINT,
+} from "@/lib/product-image";
 import type { Store } from "@/lib/database.types";
 import { getStoreCatalogUrl } from "@/lib/stores";
 import { formatUsd } from "@/lib/format";
@@ -120,9 +124,11 @@ export function ProductForm({
         const { file: compressed, message } = await compressImageForUpload(imageFile);
         formData.set("image", compressed);
         setClientOptimizeHint(message);
-      } catch {
+      } catch (error) {
         setLocalError(
-          "No se pudo comprimir la imagen. Prueba con JPG o PNG de menor tamaño.",
+          error instanceof Error
+            ? error.message
+            : "No se pudo comprimir la imagen. Prueba con JPG o PNG de menor tamaño.",
         );
         setCompressing(false);
         return;
@@ -366,9 +372,12 @@ export function ProductForm({
           className="file-input"
         />
         <p className="mt-1 text-xs text-zinc-500">
+          {PRODUCT_IMAGE_RECOMMENDED_HINT}. Máx. 2 MB — se comprime automáticamente si pesa más.
+        </p>
+        <p className="mt-0.5 text-[11px] text-zinc-400">
           {mode === "edit"
             ? "Deja vacío para conservar la imagen actual."
-            : "Se comprime en tu dispositivo a WebP (≤ 500 KB) antes de subir."}
+            : "JPG, PNG o WebP."}
         </p>
         {clientOptimizeHint && (
           <p className="mt-2 rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-800 dark:border-teal-900 dark:bg-teal-950 dark:text-teal-200">
@@ -376,7 +385,9 @@ export function ProductForm({
           </p>
         )}
         {previewUrl && (
-          <div className="relative mt-3 aspect-square w-full max-w-[8rem] overflow-hidden rounded-xl border border-zinc-200/80 shadow-sm sm:max-w-[10rem] dark:border-zinc-800">
+          <div
+            className={`relative mt-3 ${PRODUCT_IMAGE_ASPECT_CLASS} w-full max-w-[7rem] overflow-hidden rounded-xl border border-zinc-200/80 shadow-sm sm:max-w-[8.5rem] dark:border-zinc-800`}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={previewUrl} alt="Vista previa" className="h-full w-full object-cover" />
           </div>

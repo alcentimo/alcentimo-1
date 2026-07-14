@@ -1,10 +1,13 @@
 import sharp from "sharp";
+import {
+  PRODUCT_IMAGE_MAX_DIMENSION,
+  PRODUCT_IMAGE_MAX_OUTPUT_BYTES,
+  PRODUCT_IMAGE_TARGET_BYTES,
+} from "@/lib/product-image";
 
-export const IMAGE_MAX_WIDTH = 1200;
-export const IMAGE_MAX_BYTES = 70 * 1024; // 70 KB
-const MIN_QUALITY = 35;
-const START_QUALITY = 82;
-const QUALITY_STEP = 7;
+const MIN_QUALITY = 40;
+const START_QUALITY = 85;
+const QUALITY_STEP = 6;
 
 export interface ImageOptimizationResult {
   buffer: Buffer;
@@ -27,7 +30,12 @@ async function encodeWebp(
 ): Promise<{ buffer: Buffer; width: number; height: number }> {
   const buffer = await sharp(input, { animated: false })
     .rotate()
-    .resize({ width, withoutEnlargement: true })
+    .resize({
+      width,
+      height: PRODUCT_IMAGE_MAX_DIMENSION,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
     .webp({ quality, effort: 4 })
     .toBuffer();
 
@@ -41,10 +49,9 @@ async function encodeWebp(
 }
 
 /**
- * Comprime y redimensiona imágenes de producto para catálogo web.
- * - Máx. 1200px de ancho
- * - Formato WebP
- * - Objetivo: ≤ 70 KB
+ * Comprime imágenes de producto para catálogo web.
+ * - Máx. 1350px (compatible con 1080×1350, ratio 4:5)
+ * - WebP, objetivo ≤ 600 KB, tope 2 MB
  */
 export async function compressProductImage(
   input: Buffer | ArrayBuffer,
@@ -53,18 +60,33 @@ export async function compressProductImage(
   const originalSize = source.length;
 
   let quality = START_QUALITY;
-  let width = IMAGE_MAX_WIDTH;
+  let width = PRODUCT_IMAGE_MAX_DIMENSION;
   let best = await encodeWebp(source, width, quality);
 
-  while (best.buffer.length > IMAGE_MAX_BYTES && quality > MIN_QUALITY) {
+  while (
+    best.buffer.length > PRODUCT_IMAGE_TARGET_BYTES &&
+    quality > MIN_QUALITY
+  ) {
     quality -= QUALITY_STEP;
     best = await encodeWebp(source, width, quality);
   }
 
-  while (best.buffer.length > IMAGE_MAX_BYTES && width > 480) {
-    width -= 200;
+  while (best.buffer.length > PRODUCT_IMAGE_MAX_OUTPUT_BYTES && width > 640) {
+    width -= 160;
     quality = Math.max(MIN_QUALITY, quality - 5);
     best = await encodeWebp(source, width, quality);
+  }
+
+  while (
+    best.buffer.length > PRODUCT_IMAGE_MAX_OUTPUT_BYTES &&
+    quality > MIN_QUALITY
+  ) {
+    quality -= QUALITY_STEP;
+    best = await encodeWebp(source, width, quality);
+  }
+
+  if (best.buffer.length > PRODUCT_IMAGE_MAX_OUTPUT_BYTES) {
+    throw new Error("IMAGE_TOO_LARGE");
   }
 
   return {
@@ -80,5 +102,6 @@ export async function compressProductImage(
 
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
-  return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
