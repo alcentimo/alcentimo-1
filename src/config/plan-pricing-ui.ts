@@ -60,7 +60,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
       "Usuarios y roles de equipo",
       "Soporte dedicado",
     ],
-    cta: "Hablar con ventas",
+    cta: "Elegir plan",
     contactSales: true,
   },
 ];
@@ -78,4 +78,15 @@ export function formatPlanPrice(monthlyUsd: number, period: BillingPeriod): stri
   const value = getDisplayedMonthlyPrice(monthlyUsd, period);
   if (value === 0) return "Gratis";
   return `$${Number.isInteger(value) ? value : value.toFixed(2)}`;
+}
+
+export function formatPlanCheckoutSummary(
+  displayName: string,
+  monthlyUsd: number,
+  period: BillingPeriod,
+): string {
+  const price = formatPlanPrice(monthlyUsd, period);
+  if (monthlyUsd <= 0) return `Plan ${displayName}`;
+  const suffix = period === "annual" ? " (facturado anualmente)" : "";
+  return `Plan ${displayName} — ${price}/mes${suffix}`;
 }

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreProductLimitStatus } from "@/lib/plans/product-limit";
+import { getCurrentExchangeRate } from "@/lib/catalog";
 import { PlansPanel } from "@/components/dashboard/PlansPanel";
 import { PageContainer } from "@/components/ui/PageContainer";
 
@@ -19,6 +20,8 @@ export default async function PlanesPage() {
   const productLimitStatus = store
     ? await getStoreProductLimitStatus(store.id)
     : null;
+  const exchangeRateRow = await getCurrentExchangeRate();
+  const exchangeRate = exchangeRateRow?.rate ?? null;
 
   return (
     <PageContainer as="div" className="mx-auto max-w-6xl py-6 sm:py-8">
@@ -39,6 +42,7 @@ export default async function PlanesPage() {
         }
         productCount={productLimitStatus?.currentCount ?? null}
         productLimit={productLimitStatus?.productLimit ?? null}
+        exchangeRate={exchangeRate}
       />
     </PageContainer>
   );

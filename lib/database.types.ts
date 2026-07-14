@@ -18,6 +18,22 @@ export interface Profile {
   updated_at?: string;
 }
 
+export type PaymentReportStatus = "pending" | "verified" | "rejected";
+export type PaymentReportBillingPeriod = "monthly" | "annual";
+export type PaymentReportPlanId = "starter" | "premium";
+
+export interface PaymentReport {
+  id: string;
+  user_id: string;
+  plan_id: PaymentReportPlanId;
+  billing_period: PaymentReportBillingPeriod;
+  amount_usd: number;
+  reference_number: string;
+  origin_bank: string;
+  status: PaymentReportStatus;
+  created_at: string;
+}
+
 export interface Store {
   id: string;
   owner_id: string;
@@ -425,6 +441,16 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Profile>;
+        Relationships: [];
+      };
+      payment_reports: {
+        Row: PaymentReport;
+        Insert: Omit<PaymentReport, "id" | "status" | "created_at"> & {
+          id?: string;
+          status?: PaymentReportStatus;
+          created_at?: string;
+        };
+        Update: Partial<PaymentReport>;
         Relationships: [];
       };
       stores: {

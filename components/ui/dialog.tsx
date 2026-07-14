@@ -9,9 +9,10 @@ interface DialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: ReactNode;
+  containerClassName?: string;
 }
 
-export function Dialog({ open, onOpenChange, children }: DialogProps) {
+export function Dialog({ open, onOpenChange, children, containerClassName }: DialogProps) {
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;
@@ -40,7 +41,9 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
         aria-label="Cerrar"
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative z-10 w-full max-w-lg">{children}</div>
+      <div className={cn("relative z-10 w-full max-w-lg", containerClassName)}>
+        {children}
+      </div>
     </div>,
     document.body,
   );

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Check } from "lucide-react";
+import { PlanCheckoutDialog } from "@/components/dashboard/plans/PlanCheckoutDialog";
 import {
   ANNUAL_BILLING_DISCOUNT,
   formatPlanPrice,
@@ -18,31 +19,23 @@ interface PlansPanelProps {
   currentPlanName: string;
   productCount?: number | null;
   productLimit?: number | null;
-}
-
-const SALES_EMAIL = "info@alcentimo.com";
-
-function buildUpgradeMailto(planName: string, billing: BillingPeriod): string {
-  const periodLabel = billing === "annual" ? "anual" : "mensual";
-  const subject = encodeURIComponent(`Plan ${planName} (${periodLabel})`);
-  return `mailto:${SALES_EMAIL}?subject=${subject}`;
+  exchangeRate?: number | null;
 }
 
 function isCurrentTier(tierPlanId: PlanId, currentPlanId: PlanId): boolean {
   if (tierPlanId === currentPlanId) return true;
-  // Plan legacy Growth se agrupa con Business en la UI
   if (tierPlanId === "premium" && currentPlanId === "growth") return true;
   return false;
 }
 
 function PlanCtaButton({
   tier,
-  billing,
   isCurrent,
+  onCheckout,
 }: {
   tier: PlanPricingTier;
-  billing: BillingPeriod;
   isCurrent: boolean;
+  onCheckout: (tier: PlanPricingTier) => void;
 }) {
   if (isCurrent) {
     return (
@@ -69,22 +62,24 @@ function PlanCtaButton({
 
   if (tier.recommended) {
     return (
-      <a
-        href={buildUpgradeMailto(tier.displayName, billing)}
+      <button
+        type="button"
+        onClick={() => onCheckout(tier)}
         className="btn-brand mt-6 inline-flex w-full items-center justify-center px-4 py-3.5 text-sm font-semibold shadow-sm"
       >
         {tier.cta}
-      </a>
+      </button>
     );
   }
 
   return (
-    <a
-      href={tier.contactSales ? buildUpgradeMailto(tier.displayName, billing) : "/dashboard"}
+    <button
+      type="button"
+      onClick={() => onCheckout(tier)}
       className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 transition-colors hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:border-neutral-600"
     >
       {tier.cta}
-    </a>
+    </button>
   );
 }
 
@@ -93,8 +88,16 @@ export function PlansPanel({
   currentPlanName,
   productCount = null,
   productLimit = null,
+  exchangeRate = null,
 }: PlansPanelProps) {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkoutTier, setCheckoutTier] = useState<PlanPricingTier | null>(null);
+
+  function openCheckout(tier: PlanPricingTier) {
+    setCheckoutTier(tier);
+    setCheckoutOpen(true);
+  }
 
   return (
     <div className="space-y-10">
@@ -139,10 +142,19 @@ export function PlansPanel({
               tier={tier}
               billing={billing}
               isCurrent={isCurrentTier(tier.planId, currentPlanId)}
+              onCheckout={openCheckout}
             />
           ))}
         </div>
       </section>
+
+      <PlanCheckoutDialog
+        open={checkoutOpen}
+        onOpenChange={setCheckoutOpen}
+        tier={checkoutTier}
+        billing={billing}
+        exchangeRate={exchangeRate}
+      />
     </div>
   );
 }
@@ -192,10 +204,12 @@ function PricingCard({
   tier,
   billing,
   isCurrent,
+  onCheckout,
 }: {
   tier: PlanPricingTier;
   billing: BillingPeriod;
   isCurrent: boolean;
+  onCheckout: (tier: PlanPricingTier) => void;
 }) {
   const priceLabel = formatPlanPrice(tier.monthlyUsd, billing);
   const isFree = tier.monthlyUsd === 0;
@@ -257,7 +271,7 @@ function PricingCard({
         ))}
       </ul>
 
-      <PlanCtaButton tier={tier} billing={billing} isCurrent={isCurrent} />
+      <PlanCtaButton tier={tier} isCurrent={isCurrent} onCheckout={onCheckout} />
     </article>
   );
 }
