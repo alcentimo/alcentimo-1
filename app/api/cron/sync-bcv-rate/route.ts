@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { verifyCronRequest } from "@/lib/cron/verify-cron-request";
 import {
   runBcvSyncAttempt,
   type BcvSyncSlot,
@@ -9,22 +10,27 @@ import {
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-function isAuthorized(request: Request): boolean {
-  const cronSecret = process.env.CRON_SECRET?.trim();
-  if (!cronSecret) return false;
-
-  const authHeader = request.headers.get("authorization");
-  return authHeader === `Bearer ${cronSecret}`;
-}
-
 function parseSyncSlot(request: Request): BcvSyncSlot {
   const slot = new URL(request.url).searchParams.get("slot");
   return slot === "retry" ? "retry" : "midnight";
 }
 
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  const auth = verifyCronRequest(request);
+
+  if (!auth.authorized) {
+    console.error("[cron/sync-bcv-rate] No autorizado:", auth.reason, {
+      hasAuthorizationHeader: Boolean(request.headers.get("authorization")),
+      isVercelCron: request.headers.get("x-vercel-cron") === "1",
+    });
+
+    return NextResponse.json(
+      {
+        error: "No autorizado.",
+        detail: auth.reason,
+      },
+      { status: 401 },
+    );
   }
 
   const slot = parseSyncSlot(request);
@@ -49,6 +55,13 @@ export async function GET(request: Request) {
   }
 
   const status = result.action === "awaiting_retry" ? 502 : 503;
+
+  console.error("[cron/sync-bcv-rate] Sincronización fallida:", {
+    slot: result.slot,
+    action: result.action,
+    syncDate: result.syncDate,
+    error: result.error,
+  });
 
   return NextResponse.json(
     {
