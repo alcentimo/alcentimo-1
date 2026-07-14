@@ -1,26 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import { ImagePlus, Loader2 } from "lucide-react";
+import { useActionState, useMemo, useState } from "react";
 import {
   createProduct,
   updateProduct,
   type ProductEditData,
   type ProductFormState,
 } from "@/lib/products/actions";
-import {
-  PRODUCT_IMAGE_ASPECT_CLASS,
-  PRODUCT_IMAGE_OPTIMIZE_HINT,
-  PRODUCT_IMAGE_RECOMMENDED_HINT,
-} from "@/lib/product-image";
-import {
-  compressSelectedProductImage,
-  PRODUCT_IMAGE_CAMERA_HINT,
-  PRODUCT_IMAGE_FILE_ACCEPT,
-  PRODUCT_IMAGE_FILE_CAPTURE,
-  revokeProductImagePreview,
-} from "@/lib/product-image-picker";
+import { ProductImageField } from "@/components/dashboard/ProductImageField";
 import type { Store } from "@/lib/database.types";
 import { getStoreCatalogUrl } from "@/lib/stores";
 import { formatUsd } from "@/lib/format";
@@ -74,14 +62,9 @@ export function ProductForm({
   const [variants, setVariants] = useState<VariantFormInput[]>(
     initialData ? toVariantInputs(initialData.variants) : [],
   );
-  const [previewUrl, setPreviewUrl] = useState<string | null>(
-    initialData?.thumbUrl ?? null,
-  );
   const [compressedImageFile, setCompressedImageFile] = useState<File | null>(null);
-  const [compressing, setCompressing] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [imageBusy, setImageBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [clientOptimizeHint, setClientOptimizeHint] = useState<string | null>(null);
   const catalogUrl = getStoreCatalogUrl(store.slug);
   const hasCustomVariants = variants.length > 0;
 
@@ -97,43 +80,6 @@ export function ProductForm({
     }
     return usd * exchangeRate;
   }, [priceUsd, exchangeRate, countryConfig.currency.showLocalEquivalent]);
-
-  useEffect(() => {
-    return () => revokeProductImagePreview(previewUrl);
-  }, [previewUrl]);
-
-  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    revokeProductImagePreview(previewUrl);
-    setClientOptimizeHint(null);
-    setLocalError(null);
-    setCompressedImageFile(null);
-
-    if (!file) {
-      if (initialData?.thumbUrl) {
-        setPreviewUrl(initialData.thumbUrl);
-      } else {
-        setPreviewUrl(null);
-      }
-      return;
-    }
-
-    setCompressing(true);
-    const result = await compressSelectedProductImage(file);
-    setCompressing(false);
-
-    if (!result.ok) {
-      setLocalError(result.error);
-      setPreviewUrl(initialData?.thumbUrl ?? null);
-      e.target.value = "";
-      return;
-    }
-
-    setCompressedImageFile(result.file);
-    setPreviewUrl(result.previewUrl);
-    setClientOptimizeHint(result.message);
-    e.target.value = "";
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -158,7 +104,7 @@ export function ProductForm({
     formAction(formData);
   }
 
-  const isBusy = pending || compressing;
+  const isBusy = pending || imageBusy;
   const displayError = localError ?? state.error;
   const submitDisabled = isBusy;
 
@@ -377,68 +323,22 @@ export function ProductForm({
         </select>
       </div>
 
-      <div>
-        <p className="label-field">Foto del producto</p>
-        <input
-          ref={imageInputRef}
-          id="image"
-          type="file"
-          accept={PRODUCT_IMAGE_FILE_ACCEPT}
-          capture={PRODUCT_IMAGE_FILE_CAPTURE}
-          onChange={handleImageChange}
-          className="sr-only"
-          aria-label="Tomar foto o elegir imagen del producto"
-        />
-        <button
-          type="button"
-          onClick={() => imageInputRef.current?.click()}
-          disabled={isBusy}
-          className="btn-brand-outline mt-1 inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 py-2.5 text-sm sm:w-auto"
-        >
-          {compressing ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <ImagePlus className="h-4 w-4" aria-hidden="true" />
-          )}
-          {compressing
-            ? "Optimizando foto…"
-            : previewUrl
-              ? "Cambiar foto"
-              : "Tomar foto o elegir imagen"}
-        </button>
-        <p className="mt-1 text-xs text-zinc-500">
-          {PRODUCT_IMAGE_RECOMMENDED_HINT}. {PRODUCT_IMAGE_OPTIMIZE_HINT}
-        </p>
-        <p className="mt-0.5 text-[11px] text-zinc-400">
-          {PRODUCT_IMAGE_CAMERA_HINT}
-          {mode === "edit" ? " Deja sin cambiar para conservar la imagen actual." : ""}
-        </p>
-        {clientOptimizeHint && (
-          <p className="mt-2 rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-800 dark:border-teal-900 dark:bg-teal-950 dark:text-teal-200">
-            ✓ {clientOptimizeHint}
-          </p>
-        )}
-        {previewUrl && (
-          <div
-            className={`relative mt-3 ${PRODUCT_IMAGE_ASPECT_CLASS} w-full max-w-[7rem] overflow-hidden rounded-xl border border-zinc-200/80 shadow-sm sm:max-w-[8.5rem] dark:border-zinc-800 ${compressing ? "opacity-70" : ""}`}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={previewUrl} alt="Vista previa" className="h-full w-full object-cover" />
-            {compressing && (
-              <div
-                className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-white/75 dark:bg-zinc-950/75"
-                role="status"
-                aria-live="polite"
-              >
-                <Loader2 className="h-5 w-5 animate-spin text-teal-600" aria-hidden="true" />
-                <span className="text-[10px] font-medium text-teal-700 dark:text-teal-300">
-                  Optimizando…
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      <ProductImageField
+        id="image"
+        mode={mode}
+        layout="stacked"
+        initialPreviewUrl={initialData?.thumbUrl ?? null}
+        disabled={pending}
+        onBusyChange={setImageBusy}
+        onImageReady={({ file }) => {
+          setCompressedImageFile(file);
+          setLocalError(null);
+        }}
+        onError={(message) => {
+          setLocalError(message);
+          setCompressedImageFile(null);
+        }}
+      />
 
       {displayError && <p className="alert-error">{displayError}</p>}
 

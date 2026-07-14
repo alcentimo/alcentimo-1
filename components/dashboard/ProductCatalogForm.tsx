@@ -1,26 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
-import { ImagePlus, Loader2 } from "lucide-react";
+import { useActionState, useEffect, useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
 import {
   createProduct,
   updateProduct,
   type ProductEditData,
   type ProductFormState,
 } from "@/lib/products/actions";
-import {
-  PRODUCT_IMAGE_ASPECT_CLASS,
-  PRODUCT_IMAGE_OPTIMIZE_HINT,
-  PRODUCT_IMAGE_RECOMMENDED_HINT,
-} from "@/lib/product-image";
-import {
-  compressSelectedProductImage,
-  PRODUCT_IMAGE_CAMERA_HINT,
-  PRODUCT_IMAGE_FILE_ACCEPT,
-  PRODUCT_IMAGE_FILE_CAPTURE,
-  revokeProductImagePreview,
-} from "@/lib/product-image-picker";
+import { ProductImageField } from "@/components/dashboard/ProductImageField";
 import type { Store } from "@/lib/database.types";
 import { formatCountryCurrency } from "@/lib/country-config";
 import { useCountry } from "@/components/providers/CountryProvider";
@@ -28,7 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/cn";
 
 interface CategoryOption {
   id: string;
@@ -63,14 +50,9 @@ export function ProductCatalogForm({
   const [priceUsd, setPriceUsd] = useState(
     initialData ? String(initialData.priceUsd) : "",
   );
-  const [previewUrl, setPreviewUrl] = useState<string | null>(
-    initialData?.thumbUrl ?? null,
-  );
   const [compressedImageFile, setCompressedImageFile] = useState<File | null>(null);
-  const [compressing, setCompressing] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [imageBusy, setImageBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [optimizeHint, setOptimizeHint] = useState<string | null>(null);
 
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
@@ -88,43 +70,6 @@ export function ProductCatalogForm({
   useEffect(() => {
     if (state.success) onSuccess();
   }, [state.success, onSuccess]);
-
-  useEffect(() => {
-    return () => revokeProductImagePreview(previewUrl);
-  }, [previewUrl]);
-
-  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    revokeProductImagePreview(previewUrl);
-    setLocalError(null);
-    setOptimizeHint(null);
-    setCompressedImageFile(null);
-
-    if (!file) {
-      if (initialData?.thumbUrl) {
-        setPreviewUrl(initialData.thumbUrl);
-      } else {
-        setPreviewUrl(null);
-      }
-      return;
-    }
-
-    setCompressing(true);
-    const result = await compressSelectedProductImage(file);
-    setCompressing(false);
-
-    if (!result.ok) {
-      setLocalError(result.error);
-      setPreviewUrl(initialData?.thumbUrl ?? null);
-      e.target.value = "";
-      return;
-    }
-
-    setCompressedImageFile(result.file);
-    setPreviewUrl(result.previewUrl);
-    setOptimizeHint(result.message);
-    e.target.value = "";
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -144,7 +89,7 @@ export function ProductCatalogForm({
     formAction(formData);
   }
 
-  const isBusy = pending || compressing;
+  const isBusy = pending || imageBusy;
   const displayError = localError ?? state.error;
 
   return (
@@ -162,87 +107,22 @@ export function ProductCatalogForm({
         </>
       )}
 
-      <div className="flex items-start gap-3">
-        <div
-          className={cn(
-            `relative w-14 shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 ${PRODUCT_IMAGE_ASPECT_CLASS}`,
-            isBusy && "opacity-70",
-          )}
-        >
-          {previewUrl ? (
-            <Image
-              src={previewUrl}
-              alt="Vista previa"
-              fill
-              sizes="64px"
-              className="object-cover"
-              unoptimized={previewUrl.startsWith("blob:")}
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-zinc-400">
-              <ImagePlus className="h-5 w-5" aria-hidden="true" />
-            </div>
-          )}
-          {compressing && (
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-white/75 dark:bg-zinc-950/75"
-              role="status"
-              aria-live="polite"
-            >
-              <Loader2 className="h-4 w-4 animate-spin text-teal-600" aria-hidden="true" />
-              <span className="text-[9px] font-medium text-teal-700 dark:text-teal-300">
-                Optimizando…
-              </span>
-            </div>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <Label htmlFor="catalog-image" className="payment-field-label">
-            Foto del producto
-          </Label>
-          <input
-            ref={imageInputRef}
-            id="catalog-image"
-            type="file"
-            accept={PRODUCT_IMAGE_FILE_ACCEPT}
-            capture={PRODUCT_IMAGE_FILE_CAPTURE}
-            onChange={handleImageChange}
-            className="sr-only"
-            aria-label="Tomar foto o elegir imagen del producto"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={isBusy}
-            onClick={() => imageInputRef.current?.click()}
-            className="mt-1.5 inline-flex min-h-10 w-full items-center justify-center gap-2 sm:w-auto"
-          >
-            {compressing ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-            ) : (
-              <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
-            )}
-            {compressing
-              ? "Optimizando…"
-              : previewUrl
-                ? "Cambiar foto"
-                : "Tomar foto o galería"}
-          </Button>
-          <p className="mt-1 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
-            {PRODUCT_IMAGE_RECOMMENDED_HINT}
-          </p>
-          <p className="mt-0.5 text-[10px] text-zinc-400">
-            {PRODUCT_IMAGE_OPTIMIZE_HINT} {PRODUCT_IMAGE_CAMERA_HINT}
-            {mode === "edit" ? " Opcional al editar." : ""}
-          </p>
-          {optimizeHint && (
-            <p className="mt-1.5 text-[10px] text-teal-700 dark:text-teal-400">
-              ✓ {optimizeHint}
-            </p>
-          )}
-        </div>
-      </div>
+      <ProductImageField
+        id="catalog-image"
+        mode={mode}
+        layout="compact"
+        initialPreviewUrl={initialData?.thumbUrl ?? null}
+        disabled={pending}
+        onBusyChange={setImageBusy}
+        onImageReady={({ file }) => {
+          setCompressedImageFile(file);
+          setLocalError(null);
+        }}
+        onError={(message) => {
+          setLocalError(message);
+          setCompressedImageFile(null);
+        }}
+      />
 
       <div>
         <Label htmlFor="catalog-name" className="payment-field-label">

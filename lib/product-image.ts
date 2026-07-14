@@ -13,6 +13,10 @@ export const PRODUCT_IMAGE_RECOMMENDED_HINT =
 export const PRODUCT_IMAGE_OPTIMIZE_HINT =
   "Se optimiza automáticamente a WebP (máx. 800px, <40 KB) para carga rápida en móvil.";
 
+/** Texto sobre recorte automático 4:5. */
+export const PRODUCT_IMAGE_CROP_HINT =
+  "Recorte automático al centro (4:5). En fotos horizontales se ajustan los lados sin que tengas que editar.";
+
 /** Tamaño máximo del archivo final tras optimizar (40 KB). */
 export const PRODUCT_IMAGE_MAX_OUTPUT_BYTES = 40 * 1024;
 

@@ -14,10 +14,18 @@ export type CompressProductImageResult =
   | { ok: false; error: string };
 
 export async function compressSelectedProductImage(
-  rawFile: File,
+  rawFile: File | Blob,
+  fileName = "producto.jpg",
 ): Promise<CompressProductImageResult> {
   try {
-    const { file, message } = await compressImageForUpload(rawFile);
+    const file =
+      rawFile instanceof File
+        ? rawFile
+        : new File([rawFile], fileName.replace(/\.[^.]+$/, "") + ".jpg", {
+            type: rawFile.type || "image/jpeg",
+            lastModified: Date.now(),
+          });
+    const { file: compressed, message } = await compressImageForUpload(file);
     return {
       ok: true,
       file,
