@@ -14,9 +14,32 @@ export interface TransactionalOrderWhatsAppMessageInput {
   orderDetailUrl: string;
 }
 
+const STORAGE_URL_PATTERN =
+  /https?:\/\/[^\s]*supabase\.co[^\s]*/gi;
+
+const PLATFORM_HOST_PATTERN = /(^|\.)alcentimo\.com$/i;
+
+function stripStorageUrls(text: string): string {
+  return text.replace(STORAGE_URL_PATTERN, "").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function isPlatformOrderUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url.trim());
+    if (/supabase\.co|storage\/v1/i.test(parsed.href)) return false;
+    return PLATFORM_HOST_PATTERN.test(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeCustomerText(value: string): string {
+  return stripStorageUrls(value).replace(/\s+/g, " ").trim();
+}
+
 /**
  * Mensaje de notificación de pedido para WhatsApp.
- * No incluye URLs de Storage (evita previsualización de imagen en el chat).
+ * Solo incluye un enlace de la plataforma al final (sin URLs de Storage).
  */
 export function buildTransactionalOrderWhatsAppMessage(
   input: TransactionalOrderWhatsAppMessageInput,
@@ -26,23 +49,25 @@ export function buildTransactionalOrderWhatsAppMessage(
       item.variant_name !== "Estándar"
         ? `${item.product_name} (${item.variant_name})`
         : item.product_name;
-    return `• ${item.quantity} x ${productName} - ${formatUsd(item.line_total_usd)}`;
+    return `• ${item.quantity} x ${sanitizeCustomerText(productName)} - ${formatUsd(item.line_total_usd)}`;
   });
 
-  const orderUrl = input.orderDetailUrl.trim();
-
-  const lines = [
+  const body = [
     "📦 Nuevo Pedido",
     "",
-    `👤 Cliente: ${input.customerName}`,
+    `👤 Cliente: ${sanitizeCustomerText(input.customerName)}`,
     "",
     "📋 Productos:",
     ...productLines,
     "",
     `💰 Total: ${formatUsd(input.totalUsd)}`,
-  ];
+  ].join("\n");
 
-  if (!orderUrl) return lines.join("\n");
+  const orderUrl = stripStorageUrls(input.orderDetailUrl.trim());
+  if (!orderUrl || !isPlatformOrderUrl(orderUrl)) {
+    return stripStorageUrls(body);
+  }
 
-  return `${lines.join("\n")}\n\n🖼️ Ver comprobante y gestionar pedido:\n${orderUrl}`;
+  // Solo el enlace de la plataforma al final → una única vista previa con marca Alcentimo.
+  return `${stripStorageUrls(body)}\n\n${orderUrl}`;
 }

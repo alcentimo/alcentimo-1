@@ -1,6 +1,5 @@
 import { formatUsd } from "@/lib/format";
 import type { CartItem } from "@/lib/catalog/cart-types";
-import { buildTransactionalOrderWhatsAppMessage } from "@/lib/whatsapp-formatter";
 
 export function normalizeWhatsAppPhone(phone: string): string | null {
   const digits = phone.replace(/\D/g, "");
@@ -57,25 +56,4 @@ export function buildOrderWhatsAppMessage(options: {
   );
 
   return lines.join("\n");
-}
-
-/** @deprecated Usar buildTransactionalOrderWhatsAppMessage en lib/whatsapp-formatter.ts */
-export function buildTransactionalWhatsAppMessage(options: {
-  storeName: string;
-  customerName: string;
-  items: Array<{
-    product_name: string;
-    variant_name: string;
-    quantity: number;
-    line_total_usd: number;
-  }>;
-  totalUsd: number;
-  proofUrl: string;
-}): string {
-  return buildTransactionalOrderWhatsAppMessage({
-    customerName: options.customerName,
-    items: options.items,
-    totalUsd: options.totalUsd,
-    orderDetailUrl: options.proofUrl.trim(),
-  });
 }

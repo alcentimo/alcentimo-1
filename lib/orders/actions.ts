@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getStoreBySlug } from "@/lib/stores";
 import { buildTransactionalOrderWhatsAppMessage } from "@/lib/whatsapp-formatter";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
-import { getPublicOrderDetailUrl } from "@/lib/orders/order-links";
+import { getWhatsAppOrderDetailUrl } from "@/lib/orders/order-links";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { uploadOrderPaymentProof } from "@/lib/orders/storage";
@@ -108,7 +108,7 @@ export async function submitTransactionalOrder(
     customerName,
     items: orderItems,
     totalUsd,
-    orderDetailUrl: getPublicOrderDetailUrl(orderId),
+    orderDetailUrl: getWhatsAppOrderDetailUrl(orderId),
   });
 
   const whatsappUrl =
