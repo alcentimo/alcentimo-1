@@ -64,6 +64,7 @@ export function ProductForm({
   );
   const [compressedImageFile, setCompressedImageFile] = useState<File | null>(null);
   const [imageBusy, setImageBusy] = useState(false);
+  const [imageProcessed, setImageProcessed] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const catalogUrl = getStoreCatalogUrl(store.slug);
   const hasCustomVariants = variants.length > 0;
@@ -106,7 +107,9 @@ export function ProductForm({
 
   const isBusy = pending || imageBusy;
   const displayError = localError ?? state.error;
-  const submitDisabled = isBusy;
+  const requiresNewImage = mode === "create";
+  const submitDisabled =
+    isBusy || (requiresNewImage && !imageProcessed);
 
   if (state.success) {
     return (
@@ -330,6 +333,7 @@ export function ProductForm({
         initialPreviewUrl={initialData?.thumbUrl ?? null}
         disabled={pending}
         onBusyChange={setImageBusy}
+        onProcessedChange={setImageProcessed}
         onImageReady={({ file }) => {
           setCompressedImageFile(file);
           setLocalError(null);
@@ -337,8 +341,15 @@ export function ProductForm({
         onError={(message) => {
           setLocalError(message);
           setCompressedImageFile(null);
+          setImageProcessed(false);
         }}
       />
+
+      {requiresNewImage && !imageProcessed && !imageBusy && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Sube y procesa una foto del producto para habilitar la publicación.
+        </p>
+      )}
 
       {displayError && <p className="alert-error">{displayError}</p>}
 
@@ -349,7 +360,9 @@ export function ProductForm({
             : "Publicando producto…"
           : mode === "edit"
             ? "Guardar cambios"
-            : "Publicar producto"}
+            : imageBusy
+              ? "Procesando imagen…"
+              : "Publicar producto"}
       </button>
     </form>
   );

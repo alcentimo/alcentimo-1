@@ -52,6 +52,7 @@ export function ProductCatalogForm({
   );
   const [compressedImageFile, setCompressedImageFile] = useState<File | null>(null);
   const [imageBusy, setImageBusy] = useState(false);
+  const [imageProcessed, setImageProcessed] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const priceLocal = useMemo(() => {
@@ -91,6 +92,7 @@ export function ProductCatalogForm({
 
   const isBusy = pending || imageBusy;
   const displayError = localError ?? state.error;
+  const submitDisabled = isBusy || (mode === "create" && !imageProcessed);
 
   return (
     <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-4">
@@ -114,6 +116,7 @@ export function ProductCatalogForm({
         initialPreviewUrl={initialData?.thumbUrl ?? null}
         disabled={pending}
         onBusyChange={setImageBusy}
+        onProcessedChange={setImageProcessed}
         onImageReady={({ file }) => {
           setCompressedImageFile(file);
           setLocalError(null);
@@ -121,6 +124,7 @@ export function ProductCatalogForm({
         onError={(message) => {
           setLocalError(message);
           setCompressedImageFile(null);
+          setImageProcessed(false);
         }}
       />
 
@@ -226,7 +230,7 @@ export function ProductCatalogForm({
             Cancelar
           </Button>
         )}
-        <Button type="submit" size="sm" disabled={isBusy} className="btn-brand min-w-[7rem]">
+        <Button type="submit" size="sm" disabled={submitDisabled} className="btn-brand min-w-[7rem]">
           {pending ? (
             <>
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />

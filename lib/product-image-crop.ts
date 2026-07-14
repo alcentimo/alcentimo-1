@@ -33,6 +33,20 @@ export function getCenteredCropAreaPercentages(
   };
 }
 
+/** Convierte un área en % (react-easy-crop) a píxeles sobre la imagen original. */
+export function percentCropToPixels(
+  area: Area,
+  mediaWidth: number,
+  mediaHeight: number,
+): Area {
+  return {
+    x: (area.x / 100) * mediaWidth,
+    y: (area.y / 100) * mediaHeight,
+    width: (area.width / 100) * mediaWidth,
+    height: (area.height / 100) * mediaHeight,
+  };
+}
+
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
