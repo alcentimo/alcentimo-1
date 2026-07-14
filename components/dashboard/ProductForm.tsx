@@ -19,13 +19,6 @@ import {
   serializeVariantsForForm,
 } from "@/components/dashboard/ProductVariantsEditor";
 import type { VariantFormInput } from "@/lib/products/variants";
-import type { ProductLimitCheck } from "@/src/config/plans";
-import {
-  formatProductLimit,
-  getProductLimitErrorMessage,
-  isNearProductLimit,
-  DASHBOARD_PLANS_HREF,
-} from "@/src/config/plans";
 
 interface CategoryOption {
   id: string;
@@ -39,7 +32,6 @@ interface ProductFormProps {
   exchangeRate: number | null;
   mode?: "create" | "edit";
   initialData?: ProductEditData;
-  productLimit?: ProductLimitCheck | null;
 }
 
 const initialState: ProductFormState = {};
@@ -60,7 +52,6 @@ export function ProductForm({
   exchangeRate,
   mode = "create",
   initialData,
-  productLimit = null,
 }: ProductFormProps) {
   const { config: countryConfig } = useCountry();
   const action = mode === "edit" ? updateProduct : createProduct;
@@ -79,12 +70,6 @@ export function ProductForm({
   const [clientOptimizeHint, setClientOptimizeHint] = useState<string | null>(null);
   const catalogUrl = getStoreCatalogUrl(store.slug);
   const hasCustomVariants = variants.length > 0;
-  const isAtProductLimit =
-    mode === "create" && productLimit != null && !productLimit.canCreateMore;
-  const isNearLimit =
-    mode === "create" && productLimit != null && isNearProductLimit(productLimit);
-  const limitMessage =
-    productLimit != null ? getProductLimitErrorMessage(productLimit) : "";
 
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
@@ -116,11 +101,6 @@ export function ProductForm({
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLocalError(null);
-
-    if (isAtProductLimit) {
-      setLocalError(limitMessage);
-      return;
-    }
 
     const form = e.currentTarget;
     const formData = new FormData(form);
@@ -156,7 +136,7 @@ export function ProductForm({
 
   const isBusy = pending || compressing;
   const displayError = localError ?? state.error;
-  const submitDisabled = isBusy || isAtProductLimit;
+  const submitDisabled = isBusy;
 
   if (state.success) {
     return (
@@ -191,7 +171,7 @@ export function ProductForm({
               href="/dashboard/inventario"
               className="btn-secondary w-full sm:w-auto"
             >
-              Volver al inventario
+              Volver al catálogo
             </Link>
           )}
         </div>
@@ -232,45 +212,6 @@ export function ProductForm({
           {catalogUrl}
         </Link>
       </div>
-
-      {mode === "create" && productLimit && (
-        <div
-          className={
-            isAtProductLimit
-              ? "rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100"
-              : isNearLimit
-                ? "rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-950 dark:border-teal-900 dark:bg-teal-950/40 dark:text-teal-100"
-                : "info-box"
-          }
-        >
-          <p className="font-medium">{productLimit.planName}</p>
-          <p className="mt-1 text-xs opacity-90">
-            Productos: {productLimit.currentCount}
-            {productLimit.productLimit != null
-              ? ` / ${formatProductLimit(productLimit.productLimit)}`
-              : " · Ilimitados"}
-            {productLimit.remainingSlots != null &&
-              productLimit.canCreateMore &&
-              ` · Te quedan ${productLimit.remainingSlots}`}
-          </p>
-          {isNearLimit && !isAtProductLimit && (
-            <p className="mt-2 text-xs font-medium">
-              Estás cerca de tu límite de productos.{" "}
-              <Link href={DASHBOARD_PLANS_HREF} className="link-brand font-semibold">
-                Ver planes
-              </Link>
-            </p>
-          )}
-          {isAtProductLimit && (
-            <p className="mt-2 text-xs font-medium">
-              {limitMessage}{" "}
-              <Link href={DASHBOARD_PLANS_HREF} className="link-brand font-semibold">
-                Ver planes
-              </Link>
-            </p>
-          )}
-        </div>
-      )}
 
       <div>
         <label htmlFor="name" className="label-field">

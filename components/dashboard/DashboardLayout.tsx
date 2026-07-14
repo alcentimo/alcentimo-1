@@ -5,31 +5,24 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ClipboardList,
-  ExternalLink,
   LayoutDashboard,
   LogOut,
   Menu,
-  MessageSquare,
   Package,
+  Rocket,
   Settings,
-  ShoppingCart,
-  Sparkles,
-  Store,
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/BrandLogo";
-import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
-import { DASHBOARD_PLANS_HREF, type ProductLimitCheck } from "@/src/config/plans";
+import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
 import { ImmersiveModeProvider, useImmersiveMode } from "@/components/inbox/ImmersiveModeProvider";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   storeName: string | null;
-  catalogUrl: string | null;
   userEmail: string | null;
   planName?: string | null;
-  productLimit?: ProductLimitCheck | null;
 }
 
 /** Rutas de auth/recuperación sin menú lateral ni chrome del panel. */
@@ -48,11 +41,10 @@ interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  external?: boolean;
   match?: (pathname: string) => boolean;
 }
 
-function buildNavItems(catalogUrl: string | null): NavItem[] {
+function buildNavItems(): NavItem[] {
   return [
     {
       href: "/dashboard",
@@ -62,7 +54,7 @@ function buildNavItems(catalogUrl: string | null): NavItem[] {
     },
     {
       href: "/dashboard/inventario",
-      label: "Inventario",
+      label: "Catálogo",
       icon: Package,
       match: (p) =>
         p.startsWith("/dashboard/inventario") ||
@@ -75,35 +67,10 @@ function buildNavItems(catalogUrl: string | null): NavItem[] {
       match: (p) => p.startsWith("/dashboard/pedidos"),
     },
     {
-      href: "/dashboard/ventas",
-      label: "Ventas",
-      icon: ShoppingCart,
-      match: (p) => p.startsWith("/dashboard/ventas"),
-    },
-    {
-      href: "/dashboard/mensajes",
-      label: "Mensajes",
-      icon: MessageSquare,
-      match: (p) => p.startsWith("/dashboard/mensajes"),
-    },
-    {
-      href: catalogUrl ?? "#",
-      label: "Mi Catálogo",
-      icon: Store,
-      external: Boolean(catalogUrl),
-      match: () => false,
-    },
-    {
       href: "/dashboard/ajustes",
       label: "Ajustes",
       icon: Settings,
       match: (p) => p.startsWith("/dashboard/ajustes"),
-    },
-    {
-      href: DASHBOARD_PLANS_HREF,
-      label: "Planes",
-      icon: Sparkles,
-      match: (p) => p.startsWith("/dashboard/planes"),
     },
   ];
 }
@@ -120,16 +87,14 @@ function navLinkClass(active: boolean) {
 function DashboardShell({
   children,
   storeName,
-  catalogUrl,
   userEmail,
   planName = null,
-  productLimit = null,
 }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isImmersive } = useImmersiveMode();
-  const navItems = buildNavItems(catalogUrl);
+  const navItems = buildNavItems();
   const immersiveActive = isMensajesPath(pathname) && isImmersive;
 
   function closeSidebar() {
@@ -183,10 +148,7 @@ function DashboardShell({
         aria-hidden={immersiveActive}
       >
         <div className="border-b border-zinc-200 px-5 py-5 dark:border-zinc-800">
-          <BrandLogo
-            href="/dashboard"
-            subtitle={storeName ?? "Panel"}
-          />
+          <BrandLogo href="/dashboard" subtitle={storeName ?? "Panel"} />
         </div>
 
         <nav
@@ -196,51 +158,17 @@ function DashboardShell({
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item);
-            const className = navLinkClass(active);
-
-            if (item.external && item.href !== "#") {
-              return (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  {...(item.href.startsWith("http") || item.href.startsWith("/#")
-                    ? {}
-                    : { target: "_blank", rel: "noopener noreferrer" })}
-                  className={className}
-                  onClick={closeSidebar}
-                >
-                  <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-                  <span className="flex-1 truncate">{item.label}</span>
-                  {item.href.startsWith("/#") ? null : (
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-50" aria-hidden="true" />
-                  )}
-                </a>
-              );
-            }
-
-            if (!item.external) {
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={className}
-                  onClick={closeSidebar}
-                >
-                  <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              );
-            }
 
             return (
-              <span
+              <Link
                 key={item.label}
-                className={`${className} cursor-not-allowed opacity-40`}
-                title="Crea tu tienda primero"
+                href={item.href}
+                className={navLinkClass(active)}
+                onClick={closeSidebar}
               >
                 <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
                 <span className="truncate">{item.label}</span>
-              </span>
+              </Link>
             );
           })}
         </nav>
@@ -257,12 +185,12 @@ function DashboardShell({
             </p>
           )}
           <Link
-            href={DASHBOARD_PLANS_HREF}
-            className={`${navLinkClass(pathname.startsWith("/dashboard/planes"))} mb-2`}
+            href="/activar"
+            className={`${navLinkClass(pathname === "/activar")} mb-2`}
             onClick={closeSidebar}
           >
-            <Sparkles className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-            <span>Ver planes</span>
+            <Rocket className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+            <span>Activar Cuenta</span>
           </Link>
           <button
             type="button"
@@ -272,6 +200,15 @@ function DashboardShell({
             <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
             <span>Cerrar sesión</span>
           </button>
+          <p className="mt-3 px-2 text-center text-[11px] text-zinc-400 dark:text-zinc-500">
+            <Link
+              href={DASHBOARD_PLANS_HREF}
+              className="hover:text-zinc-600 dark:hover:text-zinc-300"
+              onClick={closeSidebar}
+            >
+              Planes
+            </Link>
+          </p>
         </div>
       </aside>
 
@@ -298,7 +235,6 @@ function DashboardShell({
               : "overflow-y-auto p-6 lg:p-8"
           } ${immersiveActive ? "dashboard-main--immersive" : ""}`}
         >
-          {productLimit && <ProductLimitBanner productLimit={productLimit} />}
           {children}
         </main>
       </div>

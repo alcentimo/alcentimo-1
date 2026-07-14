@@ -39,7 +39,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   return (
     <PageContainer as="main" narrow className="py-6 sm:py-8 lg:py-10">
       <header className="page-header">
-        <p className="section-label">Inventario</p>
+        <p className="section-label">Catálogo</p>
         <h1 className="page-header-title">Editar producto</h1>
         <p className="page-header-desc">
           Actualiza nombre, precio, stock, variantes e imagen de tu producto.

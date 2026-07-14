@@ -1,0 +1,65 @@
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { getDashboardSession } from "@/lib/auth/get-user-profile";
+import { getStoreProductLimitStatus } from "@/lib/plans/product-limit";
+import { PlansPanel } from "@/components/dashboard/PlansPanel";
+import { BrandLogo } from "@/components/ui/BrandLogo";
+import { PageContainer } from "@/components/ui/PageContainer";
+
+export const dynamic = "force-dynamic";
+
+export default async function ActivarPage() {
+  const supabase = await createClient();
+  const session = await getDashboardSession(supabase);
+
+  if (!session) {
+    redirect("/dashboard/login?next=/activar");
+  }
+
+  const { authUser, store } = session;
+  const productLimitStatus = store
+    ? await getStoreProductLimitStatus(store.id)
+    : null;
+
+  return (
+    <main className="page-shell-auth min-h-dvh safe-area-inset">
+      <div
+        className="pointer-events-none absolute inset-0 bg-linear-to-b from-teal-50/80 via-zinc-50 to-zinc-50 dark:from-teal-950/30 dark:via-zinc-950 dark:to-zinc-950"
+        aria-hidden="true"
+      />
+
+      <PageContainer className="relative py-10 sm:py-14">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <BrandLogo href="/dashboard" />
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Volver al panel
+          </Link>
+        </div>
+
+        <header className="page-header mb-8 max-w-2xl">
+          <p className="section-label">Activación</p>
+          <h1 className="page-header-title">Activa tu cuenta</h1>
+          <p className="page-header-desc">
+            Elige el plan que mejor se adapte a tu negocio y desbloquea todo el
+            potencial de Alcentimo{store ? ` para ${store.name}` : ""}.
+          </p>
+        </header>
+
+        <PlansPanel
+          currentPlanId={authUser.planId}
+          currentPlanName={
+            authUser.planId === "free" ? "Gratis" : authUser.plan.name
+          }
+          productCount={productLimitStatus?.currentCount ?? null}
+          productLimit={productLimitStatus?.productLimit ?? null}
+        />
+      </PageContainer>
+    </main>
+  );
+}

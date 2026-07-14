@@ -169,9 +169,8 @@ export function isNearProductLimit(
   return check.remainingSlots <= remainingThreshold;
 }
 
-export function shouldShowProductLimitBanner(check: ProductLimitCheck): boolean {
-  if (check.productLimit == null) return false;
-  return check.hasReachedLimit || isNearProductLimit(check);
+export function shouldShowProductLimitBanner(_check: ProductLimitCheck): boolean {
+  return false;
 }
 
 export function getProductLimitErrorMessage(check: ProductLimitCheck): string {

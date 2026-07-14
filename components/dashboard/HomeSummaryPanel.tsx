@@ -1,13 +1,6 @@
 import Link from "next/link";
-import {
-  AlertTriangle,
-  ClipboardList,
-  MessageSquare,
-  Package,
-  TrendingUp,
-} from "lucide-react";
+import { AlertTriangle, ClipboardList, Package } from "lucide-react";
 import type { HomeSummary } from "@/lib/dashboard/get-home-summary";
-import { formatUsd } from "@/lib/format";
 
 interface HomeSummaryPanelProps {
   summary: HomeSummary;
@@ -17,49 +10,24 @@ interface HomeSummaryPanelProps {
 export function HomeSummaryPanel({ summary, storeName }: HomeSummaryPanelProps) {
   const primaryKpis = [
     {
-      label: "Ventas del día",
-      value: formatUsd(summary.todaySalesTotal),
-      hint:
-        summary.todaySalesCount > 0
-          ? `${summary.todaySalesCount} venta${summary.todaySalesCount !== 1 ? "s" : ""} hoy`
-          : "Sin ventas registradas hoy",
-      href: "/dashboard/ventas",
-      icon: TrendingUp,
-      tone: summary.todaySalesTotal > 0 ? "success" : "default",
-    },
-    {
-      label: "Pedidos pendientes",
-      value: String(summary.pendingOrders),
-      hint:
-        summary.pendingOrders > 0
-          ? "Negociaciones nuevas o en curso"
-          : "Sin negociaciones abiertas",
-      href: "/dashboard/mensajes",
-      icon: ClipboardList,
-      tone: summary.pendingOrders > 0 ? "warning" : "default",
-    },
-    {
-      label: "Mensajes sin responder",
-      value: String(summary.unreadMessages),
-      hint:
-        summary.unreadMessages > 0
-          ? "Chats esperando tu respuesta"
-          : "Bandeja al día",
-      href: "/dashboard/mensajes",
-      icon: MessageSquare,
-      tone: summary.unreadMessages > 0 ? "warning" : "success",
-    },
-  ] as const;
-
-  const inventoryKpis = [
-    {
-      label: "Productos",
+      label: "Productos en catálogo",
       value: String(summary.productCount),
       hint: storeName,
       href: "/dashboard/inventario",
       icon: Package,
       tone: "default" as const,
     },
+    {
+      label: "Pedidos",
+      value: "Gestionar",
+      hint: "Revisa pedidos del catálogo público",
+      href: "/dashboard/pedidos",
+      icon: ClipboardList,
+      tone: "default" as const,
+    },
+  ];
+
+  const stockKpis = [
     {
       label: "Agotados",
       value: String(summary.outOfStockCount),
@@ -82,7 +50,7 @@ export function HomeSummaryPanel({ summary, storeName }: HomeSummaryPanelProps) 
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {primaryKpis.map((kpi) => (
           <KpiLinkCard key={kpi.label} {...kpi} />
         ))}
@@ -91,14 +59,14 @@ export function HomeSummaryPanel({ summary, storeName }: HomeSummaryPanelProps) 
       <section>
         <header className="mb-4">
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            Inventario
+            Catálogo
           </h2>
           <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-            Resumen de stock — detalle en Inventario.
+            Resumen de stock — detalle en Catálogo.
           </p>
         </header>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {inventoryKpis.map((kpi) => (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {stockKpis.map((kpi) => (
             <KpiLinkCard key={kpi.label} {...kpi} compact />
           ))}
         </div>
@@ -120,7 +88,7 @@ function KpiLinkCard({
   value: string;
   hint: string;
   href: string;
-  icon: typeof TrendingUp;
+  icon: typeof Package;
   tone: "default" | "warning" | "success";
   compact?: boolean;
 }) {

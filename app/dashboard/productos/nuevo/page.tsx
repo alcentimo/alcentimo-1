@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getStoreCategories } from "@/lib/products/actions";
-import { getStoreProductLimitStatus } from "@/lib/plans/product-limit";
 import { CreateStoreForm } from "@/components/dashboard/CreateStoreForm";
 import { ProductForm } from "@/components/dashboard/ProductForm";
 import { PageContainer } from "@/components/ui/PageContainer";
@@ -22,12 +21,11 @@ export default async function NewProductPage() {
 
   const { store } = session;
   const exchangeRate = await getCurrentExchangeRate();
-  const productLimit = store ? await getStoreProductLimitStatus(store.id) : null;
 
   return (
     <PageContainer as="main" narrow className="py-6 sm:py-8 lg:py-10">
       <header className="page-header">
-        <p className="section-label">Inventario</p>
+        <p className="section-label">Catálogo</p>
         <h1 className="page-header-title">Nuevo producto</h1>
         <p className="page-header-desc">
           Los productos publicados aparecen al instante en tu catálogo público.
@@ -59,7 +57,6 @@ export default async function NewProductPage() {
             store={store}
             categories={await getStoreCategories(store.id)}
             exchangeRate={exchangeRate?.rate ?? null}
-            productLimit={productLimit}
           />
         </div>
       )}

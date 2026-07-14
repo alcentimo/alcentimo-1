@@ -4,8 +4,6 @@ import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreInventory } from "@/lib/inventory";
-import { getStoreIntegrations, getIntegrationForProvider } from "@/lib/inbox/get-store-integrations";
-import { getStoreFacebookPostsByProduct } from "@/lib/facebook/get-store-facebook-posts";
 import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
 
 export const dynamic = "force-dynamic";
@@ -24,10 +22,10 @@ export default async function InventarioPage() {
     return (
       <div className="mx-auto max-w-2xl">
         <header className="page-header">
-          <p className="section-label">Inventario</p>
-          <h1 className="page-header-title">Productos y stock</h1>
+          <p className="section-label">Catálogo</p>
+          <h1 className="page-header-title">Productos</h1>
           <p className="page-header-desc">
-            Crea tu tienda primero para gestionar el inventario.
+            Crea tu tienda primero para gestionar tu catálogo.
           </p>
         </header>
         <div className="card-panel">
@@ -39,23 +37,17 @@ export default async function InventarioPage() {
     );
   }
 
-  const [{ products, exchangeRate }, integrations, publishedPostsResult] =
-    await Promise.all([
-      getStoreInventory(store.slug),
-      getStoreIntegrations(supabase, store.id),
-      getStoreFacebookPostsByProduct(supabase, store.id).catch(() => ({})),
-    ]);
-  const messengerIntegration = getIntegrationForProvider(integrations, "messenger");
+  const { products } = await getStoreInventory(store.slug);
 
   return (
     <div className="mx-auto max-w-6xl">
       <header className="page-header">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="section-label">Inventario</p>
-            <h1 className="page-header-title">Productos y stock</h1>
+            <p className="section-label">Catálogo</p>
+            <h1 className="page-header-title">Productos</h1>
             <p className="page-header-desc">
-              Gestiona tu catálogo y niveles de inventario.
+              Gestiona los productos de tu tienda y sus niveles de stock.
             </p>
           </div>
           <Link
@@ -68,12 +60,7 @@ export default async function InventarioPage() {
         </div>
       </header>
 
-      <InventoryPanel
-        products={products}
-        exchangeRate={exchangeRate?.rate ?? null}
-        hasMessengerIntegration={Boolean(messengerIntegration)}
-        publishedPosts={publishedPostsResult}
-      />
+      <InventoryPanel products={products} />
     </div>
   );
 }

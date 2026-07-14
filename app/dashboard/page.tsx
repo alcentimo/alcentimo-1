@@ -64,7 +64,7 @@ export default async function DashboardHomePage({
         <p className="section-label">Inicio</p>
         <h1 className="page-header-title">Resumen del negocio</h1>
         <p className="page-header-desc">
-          Ventas, mensajes e inventario de {store.name} en un vistazo.
+          Catálogo y pedidos de {store.name} en un vistazo.
         </p>
       </header>
 

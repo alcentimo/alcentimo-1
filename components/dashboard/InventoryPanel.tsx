@@ -2,43 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
-import {
-  ChevronDown,
-  Copy,
-  ExternalLink,
-  Loader2,
-  Package,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-  AlertCircle,
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { Package, Plus, Search } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
-import type { ProductFacebookPostSummary } from "@/lib/facebook/get-store-facebook-posts";
-import { formatExchangeRate, formatUsd, formatVes } from "@/lib/format";
+import { formatUsd } from "@/lib/format";
 import {
   getLowStockThreshold,
   isOutOfStock,
 } from "@/lib/inventory/stock-status";
-import {
-  deleteProduct,
-  duplicateProduct,
-  updateProductPriceUsd,
-  updateProductStock,
-} from "@/lib/products/actions";
-import { FacebookPostModal } from "@/components/facebook/FacebookPostModal";
 
 interface InventoryPanelProps {
   products: CatalogListItem[];
-  exchangeRate: number | null;
-  hasMessengerIntegration?: boolean;
-  publishedPosts?: Record<string, ProductFacebookPostSummary>;
 }
-
-type SavingField = "stock" | "price" | null;
 
 function StockBadge({
   available,
@@ -56,40 +31,6 @@ function StockBadge({
   }
 
   return <span className="stock-badge stock-badge-ok">Disponible</span>;
-}
-
-function StockCell({
-  available,
-  threshold,
-}: {
-  available: number;
-  threshold: number;
-}) {
-  const out = isOutOfStock({ available_stock: available });
-  const low = !out && available <= threshold;
-
-  return (
-    <div className="flex items-center gap-2">
-      {low && (
-        <AlertCircle
-          className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
-          aria-label="Stock bajo"
-        />
-      )}
-      <span
-        className={`text-sm font-semibold tabular-nums ${
-          out
-            ? "text-zinc-400"
-            : low
-              ? "text-amber-700 dark:text-amber-400"
-              : "text-zinc-900 dark:text-zinc-50"
-        }`}
-      >
-        {available}
-      </span>
-      <StockBadge available={available} threshold={threshold} />
-    </div>
-  );
 }
 
 function ProductThumb({
@@ -120,380 +61,73 @@ function ProductThumb({
   );
 }
 
-function SavingHint({ visible }: { visible: boolean }) {
-  if (!visible) return null;
-  return (
-    <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-teal-600 dark:text-teal-400">
-      <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
-      Guardando…
-    </span>
-  );
-}
-
-function ProductRowActions({
-  productId,
-  productName,
-  onEdit,
-  onQuickEdit,
-}: {
-  productId: string;
-  productName: string;
-  onEdit: () => void;
-  onQuickEdit: () => void;
-}) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-
-  function runAction(action: () => Promise<{ error?: string; success?: boolean }>) {
-    setError(null);
-    startTransition(async () => {
-      const result = await action();
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
-      setOpen(false);
-      router.refresh();
-    });
-  }
-
-  function handleDelete() {
-    if (
-      !window.confirm(
-        `¿Eliminar "${productName}"? Esta acción no se puede deshacer.`,
-      )
-    ) {
-      return;
-    }
-    runAction(() => deleteProduct(productId));
-  }
-
-  function handleDuplicate() {
-    runAction(() => duplicateProduct(productId));
-  }
-
-  return (
-    <div className="relative inline-flex flex-col items-end">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        disabled={pending}
-        className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
-        aria-expanded={open}
-        aria-haspopup="menu"
-      >
-        Acciones
-        <ChevronDown className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
-      </button>
-
-      {open && (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-10 cursor-default"
-            aria-label="Cerrar menú"
-            onClick={() => setOpen(false)}
-          />
-          <div
-            role="menu"
-            className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
-          >
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false);
-                onQuickEdit();
-              }}
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-800"
-            >
-              <Pencil className="h-4 w-4 text-zinc-500" />
-              Ajuste rápido
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false);
-                onEdit();
-              }}
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-800"
-            >
-              <Pencil className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-              Editar producto
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={handleDuplicate}
-              disabled={pending}
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-60 dark:text-zinc-200 dark:hover:bg-zinc-800"
-            >
-              <Copy className="h-4 w-4 text-zinc-500" />
-              {pending ? "Duplicando…" : "Duplicar producto"}
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={handleDelete}
-              disabled={pending}
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-950/40"
-            >
-              <Trash2 className="h-4 w-4" />
-              Eliminar
-            </button>
-          </div>
-        </>
-      )}
-
-      {error && (
-        <p className="mt-1 max-w-[10rem] text-right text-xs text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function InventoryRow({
-  product,
-  exchangeRate,
-  hasMessengerIntegration,
-  publishedPost,
-  onPublish,
-}: {
-  product: CatalogListItem;
-  exchangeRate: number | null;
-  hasMessengerIntegration: boolean;
-  publishedPost?: ProductFacebookPostSummary;
-  onPublish: () => void;
-}) {
-  const router = useRouter();
-  const [editMode, setEditMode] = useState(false);
-  const [stock, setStock] = useState(String(product.available_stock));
-  const [priceUsd, setPriceUsd] = useState(
-    product.price_usd != null ? String(product.price_usd) : "",
-  );
-  const [savingField, setSavingField] = useState<SavingField>(null);
-  const [rowError, setRowError] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
-
-  const vesPreview = useMemo(() => {
-    const usd = parseFloat(priceUsd);
-    if (!exchangeRate || !Number.isFinite(usd) || usd < 0) return null;
-    return usd * exchangeRate;
-  }, [priceUsd, exchangeRate]);
-
-  function saveStock() {
-    const parsed = parseInt(stock, 10);
-    if (!Number.isFinite(parsed) || parsed < 0) {
-      setRowError("Stock inválido.");
-      setStock(String(product.available_stock));
-      return;
-    }
-    if (parsed === product.available_stock) return;
-
-    setRowError(null);
-    setSavingField("stock");
-    startTransition(async () => {
-      const result = await updateProductStock(
-        product.product_id,
-        product.default_variant_id,
-        parsed,
-      );
-      setSavingField(null);
-      if (result.error) {
-        setRowError(result.error);
-        setStock(String(product.available_stock));
-        return;
-      }
-      router.refresh();
-    });
-  }
-
-  function savePrice() {
-    const parsed = parseFloat(priceUsd);
-    if (!Number.isFinite(parsed) || parsed < 0) {
-      setRowError("Precio inválido.");
-      setPriceUsd(product.price_usd != null ? String(product.price_usd) : "");
-      return;
-    }
-    if (parsed === product.price_usd) return;
-
-    setRowError(null);
-    setSavingField("price");
-    startTransition(async () => {
-      const result = await updateProductPriceUsd(
-        product.product_id,
-        product.default_variant_id,
-        parsed,
-      );
-      setSavingField(null);
-      if (result.error) {
-        setRowError(result.error);
-        setPriceUsd(product.price_usd != null ? String(product.price_usd) : "");
-        return;
-      }
-      router.refresh();
-    });
-  }
-
-  const displayStock = editMode ? parseInt(stock, 10) || 0 : product.available_stock;
+function InventoryRow({ product }: { product: CatalogListItem }) {
+  const threshold = getLowStockThreshold(product);
 
   return (
     <tr className="inventory-row group">
-      <td className="inventory-td">
-        <div className="flex items-center gap-3">
-          <ProductThumb name={product.product_name} thumbUrl={product.thumb_url} />
-          <div className="min-w-0">
-            <p className="truncate font-medium text-zinc-900 dark:text-zinc-50">
-              {product.product_name}
-            </p>
-            {product.category_name && (
-              <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
-                {product.category_name}
-              </p>
-            )}
-          </div>
-        </div>
+      <td className="inventory-td w-16">
+        <ProductThumb name={product.product_name} thumbUrl={product.thumb_url} />
       </td>
-
       <td className="inventory-td">
-        {editMode ? (
-          <div>
-            <input
-              type="number"
-              min={0}
-              step={1}
-              value={stock}
-              onChange={(e) => setStock(e.target.value)}
-              onBlur={saveStock}
-              onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-              className="inventory-inline-input w-24"
-              aria-label={`Stock de ${product.product_name}`}
-            />
-            <SavingHint visible={savingField === "stock"} />
-          </div>
-        ) : (
-          <StockCell
-            available={displayStock}
-            threshold={getLowStockThreshold(product)}
-          />
-        )}
-      </td>
-
-      <td className="inventory-td">
-        {editMode ? (
-          <div>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={priceUsd}
-              onChange={(e) => setPriceUsd(e.target.value)}
-              onBlur={savePrice}
-              onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-              className="inventory-inline-input w-28"
-              aria-label={`Precio USD de ${product.product_name}`}
-            />
-            <SavingHint visible={savingField === "price"} />
-          </div>
-        ) : (
-          <span className="price-usd-cell">
-            {formatUsd(product.price_usd)}
-          </span>
-        )}
-      </td>
-
-      <td className="inventory-td">
-        <span className="price-ves-cell">
-          {editMode && vesPreview != null
-            ? formatVes(vesPreview)
-            : formatVes(product.price_ves)}
-        </span>
-      </td>
-
-      <td className="inventory-td inventory-td-actions">
-        <div className="flex flex-col items-end gap-1.5">
-          <div className="flex flex-wrap items-center justify-end gap-1.5">
-            <button
-              type="button"
-              onClick={onPublish}
-              disabled={!hasMessengerIntegration}
-              title={
-                hasMessengerIntegration
-                  ? "Publicar en tu página de Facebook"
-                  : "Conecta Facebook en Integraciones"
-              }
-              className="inventory-fb-publish-btn"
-            >
-              Publicar en FB
-            </button>
-            <ProductRowActions
-              productId={product.product_id}
-              productName={product.product_name}
-              onEdit={() => router.push(`/dashboard/productos/${product.product_id}/editar`)}
-              onQuickEdit={() => setEditMode(true)}
-            />
-          </div>
-          {publishedPost && (
-            <a
-              href={publishedPost.permalinkUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inventory-fb-published-link"
-            >
-              <ExternalLink className="h-3 w-3" aria-hidden="true" />
-              Publicado
-            </a>
-          )}
-        </div>
-        {rowError && (
-          <p className="mt-1 text-right text-xs text-red-600 dark:text-red-400">
-            {rowError}
+        <Link
+          href={`/dashboard/productos/${product.product_id}/editar`}
+          className="block min-w-0 transition-colors hover:text-teal-700 dark:hover:text-teal-300"
+        >
+          <p className="truncate font-medium text-zinc-900 group-hover:text-teal-700 dark:text-zinc-50 dark:group-hover:text-teal-300">
+            {product.product_name}
           </p>
-        )}
+          {product.category_name ? (
+            <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+              {product.category_name}
+            </p>
+          ) : null}
+        </Link>
+      </td>
+      <td className="inventory-td">
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-sm font-semibold tabular-nums ${
+              isOutOfStock({ available_stock: product.available_stock })
+                ? "text-zinc-400"
+                : product.available_stock <= threshold
+                  ? "text-amber-700 dark:text-amber-400"
+                  : "text-zinc-900 dark:text-zinc-50"
+            }`}
+          >
+            {product.available_stock}
+          </span>
+          <StockBadge available={product.available_stock} threshold={threshold} />
+        </div>
+      </td>
+      <td className="inventory-td">
+        <span className="price-usd-cell">{formatUsd(product.price_usd)}</span>
       </td>
     </tr>
   );
 }
 
-export function InventoryPanel({
-  products,
-  exchangeRate,
-  hasMessengerIntegration = false,
-  publishedPosts = {},
-}: InventoryPanelProps) {
+export function InventoryPanel({ products }: InventoryPanelProps) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-  const [publishProduct, setPublishProduct] = useState<CatalogListItem | null>(
-    null,
-  );
-  const [localPublishedPosts, setLocalPublishedPosts] = useState(publishedPosts);
-
-  useEffect(() => {
-    setLocalPublishedPosts(publishedPosts);
-  }, [publishedPosts]);
 
   const categories = useMemo(() => {
     const names = new Set<string>();
-    for (const p of products) {
-      if (p.category_name) names.add(p.category_name);
+    for (const product of products) {
+      if (product.category_name) names.add(product.category_name);
     }
     return Array.from(names).sort((a, b) => a.localeCompare(b, "es"));
   }, [products]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return products.filter((p) => {
+    return products.filter((product) => {
       const matchesSearch =
         !q ||
-        p.product_name.toLowerCase().includes(q) ||
-        (p.category_name?.toLowerCase().includes(q) ?? false);
+        product.product_name.toLowerCase().includes(q) ||
+        (product.category_name?.toLowerCase().includes(q) ?? false);
       const matchesCategory =
-        category === "all" || p.category_name === category;
+        category === "all" || product.category_name === category;
       return matchesSearch && matchesCategory;
     });
   }, [products, search, category]);
@@ -505,10 +139,10 @@ export function InventoryPanel({
           <Package className="h-7 w-7" aria-hidden="true" />
         </span>
         <h2 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Sin productos en inventario
+          Sin productos en el catálogo
         </h2>
         <p className="mt-2 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-          Publica tu primer producto para verlo listado aquí con stock y precios.
+          Publica tu primer producto para verlo listado aquí con stock y precio.
         </p>
         <Link href="/dashboard/productos/nuevo" className="btn-brand mt-6 gap-2 shadow-sm">
           <Plus className="h-4 w-4" aria-hidden="true" />
@@ -552,43 +186,33 @@ export function InventoryPanel({
 
       <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
         <div className="overflow-x-auto">
-          <table className="inventory-table min-w-[820px]">
+          <table className="inventory-table min-w-[640px]">
             <thead>
               <tr className="bg-zinc-50/95 dark:bg-zinc-900/70">
+                <th scope="col" className="inventory-th w-16">
+                  Foto
+                </th>
                 <th scope="col" className="inventory-th inventory-th-product">
-                  Producto
+                  Nombre
                 </th>
                 <th scope="col" className="inventory-th inventory-th-stock">
                   Stock
                 </th>
                 <th scope="col" className="inventory-th inventory-th-price">
-                  Precio USD
-                </th>
-                <th scope="col" className="inventory-th inventory-th-price">
-                  Precio Bs
-                </th>
-                <th scope="col" className="inventory-th inventory-th-actions">
-                  Acciones
+                  Precio
                 </th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="inventory-td py-12 text-center text-sm text-zinc-500">
+                  <td colSpan={4} className="inventory-td py-12 text-center text-sm text-zinc-500">
                     No hay productos que coincidan con tu búsqueda.
                   </td>
                 </tr>
               ) : (
                 filtered.map((product) => (
-                  <InventoryRow
-                    key={product.product_id}
-                    product={product}
-                    exchangeRate={exchangeRate}
-                    hasMessengerIntegration={hasMessengerIntegration}
-                    publishedPost={localPublishedPosts[product.product_id]}
-                    onPublish={() => setPublishProduct(product)}
-                  />
+                  <InventoryRow key={product.product_id} product={product} />
                 ))
               )}
             </tbody>
@@ -601,18 +225,6 @@ export function InventoryPanel({
           </span>
         </div>
       </div>
-
-      <FacebookPostModal
-        open={Boolean(publishProduct)}
-        product={publishProduct}
-        onClose={() => setPublishProduct(null)}
-        onPublished={(productId, permalinkUrl, publishedAt) => {
-          setLocalPublishedPosts((current) => ({
-            ...current,
-            [productId]: { postId: productId, permalinkUrl, publishedAt },
-          }));
-        }}
-      />
     </div>
   );
 }
