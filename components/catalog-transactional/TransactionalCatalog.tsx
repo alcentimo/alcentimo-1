@@ -60,10 +60,10 @@ export function TransactionalCatalog({
       <main className="txn-catalog-main">
         {availableProducts.length === 0 ? (
           <div className="txn-catalog-empty">
-            <p className="text-base font-medium text-zinc-800">
+            <p className="text-base font-medium text-neutral-800">
               No hay productos disponibles
             </p>
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className="mt-2 text-sm text-neutral-500">
               Vuelve pronto para ver el catálogo actualizado.
             </p>
           </div>

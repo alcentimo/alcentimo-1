@@ -2180,55 +2180,128 @@ body {
 /* ── Catálogo transaccional público (/c/[slug]) ── */
 
 .txn-catalog-root {
-  @apply min-h-dvh bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50;
+  @apply min-h-dvh bg-white text-neutral-900 antialiased;
 }
 
 .txn-catalog-loading {
-  @apply flex min-h-dvh items-center justify-center text-sm text-zinc-500;
+  @apply flex min-h-dvh items-center justify-center text-sm text-neutral-500;
 }
 
 .txn-catalog {
-  @apply mx-auto flex min-h-dvh max-w-6xl flex-col;
+  @apply mx-auto flex min-h-dvh w-full max-w-7xl flex-col;
 }
 
 .txn-catalog-header {
-  @apply sticky top-0 z-20 border-b border-zinc-200/80 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95;
+  @apply sticky top-0 z-20 border-b border-neutral-200/80 bg-white/90 backdrop-blur-md;
 }
 
 .txn-catalog-header-inner {
-  @apply flex items-start justify-between gap-4 px-4 py-4 sm:px-6;
+  @apply flex items-start justify-between gap-4 px-4 py-5 sm:px-8;
 }
 
 .txn-catalog-eyebrow {
-  @apply text-xs font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400;
+  @apply text-[11px] font-medium uppercase tracking-[0.14em] text-neutral-400;
 }
 
 .txn-catalog-title {
-  @apply mt-1 text-2xl font-bold tracking-tight;
+  @apply mt-1 text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl;
 }
 
 .txn-catalog-desc {
-  @apply mt-1 max-w-2xl text-sm text-zinc-500 dark:text-zinc-400;
+  @apply mt-1.5 max-w-2xl text-sm leading-relaxed text-neutral-500;
 }
 
 .txn-cart-btn {
-  @apply relative inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white;
+  @apply relative inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 shadow-sm transition hover:border-neutral-300 hover:opacity-90;
 }
 
 .txn-cart-badge {
-  @apply inline-flex min-w-5 items-center justify-center rounded-full bg-teal-500 px-1.5 py-0.5 text-[11px] font-bold text-white;
+  @apply inline-flex min-w-5 items-center justify-center rounded-full bg-neutral-900 px-1.5 py-0.5 text-[11px] font-semibold text-white;
 }
 
 .txn-catalog-main {
-  @apply flex-1 px-4 py-6 sm:px-6;
+  @apply flex-1 px-4 py-8 sm:px-8 sm:py-10;
 }
 
 .txn-product-grid {
-  @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3;
+  @apply grid grid-cols-2 gap-5 sm:gap-6 lg:grid-cols-3 lg:gap-7 xl:grid-cols-4;
 }
 
 .txn-catalog-empty {
-  @apply rounded-2xl border border-dashed border-zinc-200 bg-white px-6 py-16 text-center dark:border-zinc-800 dark:bg-zinc-950;
+  @apply rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/50 px-6 py-16 text-center;
+}
+
+/* Tarjetas de producto — estética premium en /c/[slug] */
+.txn-catalog .store-product-card {
+  @apply rounded-2xl border border-neutral-200 bg-white shadow-none transition-shadow duration-300 ease-out hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.12)];
+}
+
+.txn-catalog .store-product-media {
+  @apply aspect-square bg-neutral-100;
+}
+
+.txn-catalog .store-product-image {
+  @apply object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03];
+}
+
+.txn-catalog .store-product-action {
+  @apply absolute inset-x-0 bottom-0 hidden translate-y-2 bg-linear-to-t from-white via-white/95 to-transparent p-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:block;
+}
+
+.txn-catalog .store-add-btn {
+  @apply pointer-events-auto inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-neutral-300 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 shadow-none transition-opacity duration-200 hover:opacity-80 active:opacity-70;
+}
+
+.txn-catalog .store-add-btn-mobile {
+  @apply mt-3 inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-neutral-300 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 shadow-none transition-opacity duration-200 hover:opacity-80 active:opacity-70;
+}
+
+.txn-catalog .store-featured-badge {
+  @apply rounded-md bg-neutral-100/95 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-neutral-500 shadow-none backdrop-blur-sm;
+}
+
+.txn-catalog .store-stock-badge {
+  @apply rounded-md px-2 py-0.5 text-[10px] font-medium shadow-none backdrop-blur-sm;
+}
+
+.txn-catalog .store-stock-badge-out {
+  @apply bg-neutral-800/90 text-white;
+}
+
+.txn-catalog .store-stock-badge-low {
+  @apply bg-neutral-100/95 text-neutral-500;
+}
+
+.txn-catalog .store-product-body {
+  @apply gap-1.5 p-4 sm:p-5;
+}
+
+.txn-catalog .store-product-category {
+  @apply text-[10px] font-medium uppercase tracking-wider text-neutral-400;
+}
+
+.txn-catalog .store-product-name {
+  @apply line-clamp-2 text-lg font-semibold leading-snug text-neutral-900;
+}
+
+.txn-catalog .store-product-desc {
+  @apply line-clamp-2 text-sm leading-relaxed text-neutral-500;
+}
+
+.txn-catalog .store-product-pricing {
+  @apply mt-auto pt-3;
+}
+
+.txn-catalog .store-product-price-usd {
+  @apply text-xl font-bold text-neutral-900;
+}
+
+.txn-catalog .store-product-price-ves {
+  @apply mt-0.5 text-sm text-neutral-500;
+}
+
+.txn-catalog .store-cart-select {
+  @apply rounded-lg border-neutral-200 text-sm text-neutral-700;
 }
 
 .txn-cart-overlay {
