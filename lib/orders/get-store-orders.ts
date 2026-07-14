@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
+import { isValidOrderEstado, type OrderEstado } from "@/lib/orders/order-status";
 import type { CatalogOrder, OrderLineItem } from "@/lib/orders/types";
+
+function parseOrderEstado(value: unknown): OrderEstado {
+  const raw = String(value ?? "pendiente");
+  return isValidOrderEstado(raw) ? raw : "pendiente";
+}
 
 function parseOrderItems(value: unknown): OrderLineItem[] {
   if (!Array.isArray(value)) return [];
@@ -30,7 +36,7 @@ export async function getStoreOrders(
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, store_id, customer_name, items, total_usd, payment_proof_url, status, created_at",
+      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at",
     )
     .eq("store_id", storeId)
     .order("created_at", { ascending: false })
@@ -42,10 +48,11 @@ export async function getStoreOrders(
     id: row.id,
     store_id: row.store_id,
     customer_name: row.customer_name,
+    customer_phone: (row.customer_phone as string | null) ?? null,
     items: parseOrderItems(row.items),
     total_usd: Number(row.total_usd) || 0,
     payment_proof_url: row.payment_proof_url,
-    status: row.status as CatalogOrder["status"],
+    estado: parseOrderEstado(row.estado),
     created_at: row.created_at,
   }));
 }

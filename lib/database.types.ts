@@ -392,16 +392,23 @@ export interface ChannelMessage {
   created_at: string;
 }
 
-export type OrderStatusDb = "pending" | "confirmed" | "cancelled";
+export type OrderEstadoDb =
+  | "pendiente"
+  | "verificando"
+  | "en_preparacion"
+  | "enviado"
+  | "entregado"
+  | "cancelado";
 
 export interface Order {
   id: string;
   store_id: string;
   customer_name: string;
+  customer_phone: string | null;
   items: unknown;
   total_usd: number;
   payment_proof_url: string | null;
-  status: OrderStatusDb;
+  estado: OrderEstadoDb;
   created_at: string;
 }
 
@@ -571,9 +578,9 @@ export interface Database {
       };
       orders: {
         Row: Order;
-        Insert: Omit<Order, "created_at" | "status"> & {
+        Insert: Omit<Order, "created_at" | "estado"> & {
           id?: string;
-          status?: OrderStatusDb;
+          estado?: OrderEstadoDb;
           created_at?: string;
         };
         Update: Partial<Order>;

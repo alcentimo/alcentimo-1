@@ -59,7 +59,9 @@ export default async function DashboardHomePage({
   ]);
 
   const outOfStockProducts = inventory.products.filter(isOutOfStock);
-  const pendingOrders = orders.filter((order) => order.status === "pending");
+  const pendingOrders = orders.filter(
+    (order) => order.estado === "pendiente" || order.estado === "verificando",
+  );
 
   return (
     <PageContainer as="div" className="py-6 sm:py-8">

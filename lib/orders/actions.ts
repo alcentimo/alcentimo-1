@@ -8,6 +8,7 @@ import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { uploadOrderPaymentProof } from "@/lib/orders/storage";
+import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import type { OrderLineItem, SubmitOrderLineInput } from "@/lib/orders/types";
 
 export interface SubmitTransactionalOrderResult {
@@ -33,6 +34,7 @@ export async function submitTransactionalOrder(
 ): Promise<SubmitTransactionalOrderResult> {
   const storeSlug = String(formData.get("storeSlug") ?? "").trim();
   const customerName = String(formData.get("customerName") ?? "").trim();
+  const customerPhone = String(formData.get("customerPhone") ?? "").trim();
   const itemsRaw = String(formData.get("items") ?? "[]");
   const proof = formData.get("paymentProof");
 
@@ -42,6 +44,11 @@ export async function submitTransactionalOrder(
 
   if (!customerName || customerName.length < 2) {
     return { error: "Indica tu nombre para el pedido." };
+  }
+
+  const normalizedPhone = normalizeWhatsAppPhone(customerPhone);
+  if (!normalizedPhone) {
+    return { error: "Indica un teléfono válido (mínimo 10 dígitos)." };
   }
 
   if (!(proof instanceof File) || proof.size === 0) {
@@ -83,10 +90,11 @@ export async function submitTransactionalOrder(
     id: orderId,
     store_id: store.id,
     customer_name: customerName,
+    customer_phone: customerPhone,
     items: orderItems,
     total_usd: totalUsd,
     payment_proof_url: proofUpload.url,
-    status: "pending",
+    estado: "pendiente",
   });
 
   if (insertError) {

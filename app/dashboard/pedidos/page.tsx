@@ -45,7 +45,7 @@ export default async function PedidosPage() {
         <p className="section-label">Catálogo transaccional</p>
         <h1 className="page-header-title">Pedidos</h1>
         <p className="page-header-desc">
-          Pedidos recibidos desde{" "}
+          Central operativa de pedidos desde{" "}
           <Link
             href={`/c/${store.slug}`}
             className="font-medium text-teal-700 hover:underline dark:text-teal-400"
@@ -54,7 +54,7 @@ export default async function PedidosPage() {
           >
             /c/{store.slug}
           </Link>
-          . Incluye comprobante de pago y resumen de productos.
+          . Gestiona estados, contacta clientes y revisa comprobantes sin salir de Alcentimo.
         </p>
       </header>
 

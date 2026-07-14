@@ -24,6 +24,7 @@ export function CheckoutPanel({
   const { items, subtotalUsd, updateQuantity, removeItem, clearCart } =
     useCart();
   const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -58,6 +59,7 @@ export function CheckoutPanel({
     const formData = new FormData();
     formData.set("storeSlug", storeSlug);
     formData.set("customerName", customerName.trim());
+    formData.set("customerPhone", customerPhone.trim());
     formData.set("items", JSON.stringify(orderLines));
     formData.set("paymentProof", proofFile);
 
@@ -188,6 +190,21 @@ export function CheckoutPanel({
                 value={customerName}
                 onChange={(event) => setCustomerName(event.target.value)}
                 placeholder="Tu nombre completo"
+                className="txn-input"
+              />
+            </label>
+
+            <label className="txn-field">
+              <span>Teléfono / WhatsApp</span>
+              <input
+                type="tel"
+                required
+                inputMode="tel"
+                autoComplete="tel"
+                minLength={10}
+                value={customerPhone}
+                onChange={(event) => setCustomerPhone(event.target.value)}
+                placeholder="Ej: 0414-1234567"
                 className="txn-input"
               />
             </label>

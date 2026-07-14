@@ -35,8 +35,8 @@ export async function getHomeSummary(
     (sale) => new Date(sale.created_at) >= monthStart,
   );
 
-  const pendingCatalogOrders = orders.filter(
-    (order) => order.status === "pending",
+  const pendingCatalogOrders = orders.filter((order) =>
+    order.estado === "pendiente" || order.estado === "verificando",
   ).length;
 
   return {
