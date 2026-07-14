@@ -11,6 +11,7 @@ import { PromotionsTab } from "@/components/dashboard/settings/PromotionsTab";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
 import type { Coupon } from "@/lib/coupons/types";
+import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
 
 type SettingsTabId = "general" | "shipping" | "payments" | "promotions";
 
@@ -26,12 +27,14 @@ const TABS: {
 ];
 
 interface SettingsPanelProps {
+  store: GeneralTabStore | null;
   initialCoupons: Coupon[];
   products: CouponProductOption[];
   initialConfig: StoreSettingsConfig;
 }
 
 export function SettingsPanel({
+  store,
   initialCoupons,
   products,
   initialConfig,
@@ -85,7 +88,16 @@ export function SettingsPanel({
             id="settings-panel-general"
             aria-labelledby="settings-tab-general"
           >
-            <GeneralTab initialContact={initialConfig.contact} />
+            <GeneralTab
+              store={
+                store ?? {
+                  name: "",
+                  slug: "mi-tienda",
+                  logo_url: null,
+                }
+              }
+              initialContact={initialConfig.contact}
+            />
           </div>
         )}
         {activeTab === "shipping" && (

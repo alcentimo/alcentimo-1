@@ -8,7 +8,9 @@ import {
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
-import { uploadStoreAssetImage } from "@/lib/storage";
+import { uploadStoreAssetImage, uploadStoreLogoImage } from "@/lib/storage";
+import { isValidStoreSlug } from "@/lib/stores/slug";
+import { slugify } from "@/lib/slugify";
 import {
   getFirstPaymentValidationError,
   validatePaymentsSettings,
@@ -123,4 +125,150 @@ export async function uploadPaymentQrImage(
   }
 
   return uploadStoreAssetImage(supabase, auth.store.id, file, "payment-qr");
+}
+
+export type SlugAvailabilityResult = {
+  available: boolean;
+  error?: string;
+};
+
+export async function checkStoreSlugAvailability(
+  slug: string,
+): Promise<SlugAvailabilityResult> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+
+  if (!auth.ok) {
+    return { available: false, error: auth.error };
+  }
+
+  const trimmed = slug.trim();
+  if (!trimmed) {
+    return { available: false, error: "El enlace no puede estar vacío." };
+  }
+
+  if (!isValidStoreSlug(trimmed)) {
+    return { available: false, error: "El enlace solo puede usar letras minúsculas, números y guiones." };
+  }
+
+  const { data, error } = await supabase
+    .from("stores")
+    .select("id")
+    .eq("slug", trimmed)
+    .maybeSingle();
+
+  if (error) {
+    return { available: false, error: error.message };
+  }
+
+  if (!data || data.id === auth.store.id) {
+    return { available: true };
+  }
+
+  return { available: false };
+}
+
+export async function uploadStoreLogo(
+  formData: FormData,
+): Promise<{ url?: string; error?: string }> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+
+  if (!auth.ok) {
+    return { error: auth.error };
+  }
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Selecciona una imagen para el logo." };
+  }
+
+  return uploadStoreLogoImage(supabase, auth.store.id, file);
+}
+
+export interface GeneralStoreSettingsInput {
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  whatsappPhone?: string;
+}
+
+export async function saveGeneralStoreSettings(
+  input: GeneralStoreSettingsInput,
+): Promise<SettingsActionResult> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+
+  if (!auth.ok) {
+    return { error: auth.error };
+  }
+
+  const { store } = auth;
+  const name = input.name.trim();
+  const slug = slugify(input.slug.trim() || name);
+  const logoUrl = input.logoUrl?.trim() || null;
+
+  if (!name) {
+    return { error: "El nombre de la tienda es obligatorio." };
+  }
+
+  if (!slug || !isValidStoreSlug(slug)) {
+    return { error: "El enlace de la tienda no es válido." };
+  }
+
+  const availability = await checkStoreSlugAvailability(slug);
+  if (!availability.available) {
+    return {
+      error:
+        availability.error ??
+        "Este enlace ya está registrado por otro negocio.",
+    };
+  }
+
+  const previousSlug = store.slug;
+
+  const { error: storeError } = await supabase
+    .from("stores")
+    .update({
+      name,
+      slug,
+      logo_url: logoUrl,
+    })
+    .eq("id", store.id);
+
+  if (storeError) {
+    if (storeError.code === "23505") {
+      return { error: "Este enlace ya está registrado por otro negocio." };
+    }
+    return { error: storeError.message };
+  }
+
+  if (typeof input.whatsappPhone === "string") {
+    const current = await getStoreSettingsConfig(supabase, store.id);
+    const merged = mergeStoreSettingsConfig(current, {
+      contact: normalizeStoreSettingsConfig({
+        contact: { whatsappPhone: input.whatsappPhone.trim() },
+      }).contact,
+    });
+
+    const { error: contactError } = await supabase.from("store_settings").upsert(
+      {
+        store_id: store.id,
+        config: merged,
+      },
+      { onConflict: "store_id" },
+    );
+
+    if (contactError) {
+      return { error: contactError.message };
+    }
+  }
+
+  revalidatePath("/dashboard/ajustes");
+  revalidatePath(`/tienda/${previousSlug}`);
+  revalidatePath(`/tienda/${slug}`);
+  revalidatePath(`/c/${previousSlug}`);
+  revalidatePath(`/c/${slug}`);
+
+  return { success: true };
 }

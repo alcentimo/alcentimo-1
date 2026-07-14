@@ -7,6 +7,7 @@ import {
 
 export const PRODUCT_IMAGES_BUCKET = "product-images";
 export const STORE_ASSETS_BUCKET = "store-assets";
+export const STORE_LOGOS_BUCKET = "store-logos";
 
 const MAX_INPUT_SIZE = 5 * 1024 * 1024; // 5 MB (entrada del usuario)
 const MAX_QR_INPUT_SIZE = 2 * 1024 * 1024; // 2 MB para QR
@@ -115,6 +116,48 @@ export async function uploadStoreAssetImage(
   }
 
   const { data } = supabase.storage.from(STORE_ASSETS_BUCKET).getPublicUrl(path);
+
+  return { url: data.publicUrl };
+}
+
+/** Sube el logo de la tienda al bucket store-logos. */
+export async function uploadStoreLogoImage(
+  supabase: SupabaseClient,
+  storeId: string,
+  file: File,
+): Promise<UploadStoreAssetResult> {
+  if (!ALLOWED_TYPES.has(file.type)) {
+    return { error: "Formato no permitido. Usa JPG, PNG, WebP o GIF." };
+  }
+
+  if (file.size > MAX_QR_INPUT_SIZE) {
+    return { error: "La imagen supera el límite de 2 MB." };
+  }
+
+  const inputBuffer = Buffer.from(await file.arrayBuffer());
+
+  let optimization: ImageOptimizationResult;
+  try {
+    optimization = await compressProductImage(inputBuffer);
+  } catch {
+    return { error: "No se pudo procesar la imagen. Prueba con otro archivo." };
+  }
+
+  const path = `${storeId}/${crypto.randomUUID()}.webp`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(STORE_LOGOS_BUCKET)
+    .upload(path, optimization.buffer, {
+      cacheControl: "31536000",
+      upsert: false,
+      contentType: "image/webp",
+    });
+
+  if (uploadError) {
+    return { error: uploadError.message };
+  }
+
+  const { data } = supabase.storage.from(STORE_LOGOS_BUCKET).getPublicUrl(path);
 
   return { url: data.publicUrl };
 }

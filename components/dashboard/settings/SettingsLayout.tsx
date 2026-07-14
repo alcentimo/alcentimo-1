@@ -51,11 +51,12 @@ export function SettingsSection({
 interface SettingsSaveBarProps {
   label: string;
   saving: boolean;
+  disabled?: boolean;
   onSave: () => void;
   hint?: string;
 }
 
-export function SettingsSaveBar({ label, saving, onSave, hint }: SettingsSaveBarProps) {
+export function SettingsSaveBar({ label, saving, disabled = false, onSave, hint }: SettingsSaveBarProps) {
   return (
     <div className="settings-save-bar settings-save-bar--premium">
       <div className="min-w-0 flex-1">
@@ -73,7 +74,7 @@ export function SettingsSaveBar({ label, saving, onSave, hint }: SettingsSaveBar
       <Button
         type="button"
         onClick={onSave}
-        disabled={saving}
+        disabled={saving || disabled}
         className={cn(
           "btn-brand h-9 min-w-[10rem] px-5 text-xs font-semibold shadow-sm",
           saving && "opacity-90",
@@ -97,6 +98,7 @@ interface SettingsTabShellProps {
   children: ReactNode;
   saveLabel?: string;
   saving?: boolean;
+  saveDisabled?: boolean;
   onSave?: () => void;
   hideSaveBar?: boolean;
   saveHint?: string;
@@ -107,6 +109,7 @@ export function SettingsTabShell({
   children,
   saveLabel = "Guardar cambios",
   saving = false,
+  saveDisabled = false,
   onSave,
   hideSaveBar = false,
   saveHint,
@@ -123,6 +126,7 @@ export function SettingsTabShell({
         <SettingsSaveBar
           label={saveLabel}
           saving={saving}
+          disabled={saveDisabled}
           onSave={onSave}
           hint={saveHint}
         />

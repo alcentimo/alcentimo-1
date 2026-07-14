@@ -47,12 +47,21 @@ export default async function AjustesPage() {
         <p className="section-label">Configuración</p>
         <h1 className="page-header-title">Ajustes</h1>
         <p className="page-header-desc">
-          Configura envíos, métodos de pago y promociones de tu tienda
+          Configura tu tienda, envíos, métodos de pago y promociones
           {store ? ` · ${store.name}` : ""}.
         </p>
       </header>
 
       <SettingsPanel
+        store={
+          store
+            ? {
+                name: store.name,
+                slug: store.slug,
+                logo_url: store.logo_url,
+              }
+            : null
+        }
         initialCoupons={coupons}
         products={products}
         initialConfig={settingsConfig}
