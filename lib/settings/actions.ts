@@ -66,18 +66,28 @@ export async function saveShippingSettings(
   return persistSettingsPatch({ shipping: normalized.shipping });
 }
 
+export type SavePaymentsOptions = {
+  /** Solo valida al guardar el formulario; los toggles omiten validación. */
+  validate?: boolean;
+};
+
 export async function savePaymentsSettings(
   payments: PaymentsSettings,
+  options?: SavePaymentsOptions,
 ): Promise<SettingsActionResult> {
   const normalized = normalizeStoreSettingsConfig({ payments });
-  const validationErrors = validatePaymentsSettings(normalized.payments);
+  const shouldValidate = options?.validate !== false;
 
-  if (Object.keys(validationErrors).length > 0) {
-    return {
-      error:
-        getFirstPaymentValidationError(validationErrors) ??
-        "Revisa los campos de los métodos de pago activos.",
-    };
+  if (shouldValidate) {
+    const validationErrors = validatePaymentsSettings(normalized.payments);
+
+    if (Object.keys(validationErrors).length > 0) {
+      return {
+        error:
+          getFirstPaymentValidationError(validationErrors) ??
+          "Revisa los campos de los métodos de pago activos.",
+      };
+    }
   }
 
   return persistSettingsPatch({ payments: normalized.payments });

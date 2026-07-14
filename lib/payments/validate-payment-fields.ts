@@ -87,6 +87,13 @@ function validateField(
   return null;
 }
 
+function isPaymentMethodEnabled(
+  methods: PaymentsSettings["methods"],
+  methodKey: PaymentMethodKey,
+): boolean {
+  return methods[methodKey]?.enabled === true;
+}
+
 /** Valida métodos habilitados antes de guardar configuración de pagos. */
 export function validatePaymentsSettings(
   payments: PaymentsSettings,
@@ -94,8 +101,9 @@ export function validatePaymentsSettings(
   const errors: PaymentFieldErrors = {};
 
   for (const method of PAYMENT_METHODS) {
+    if (!isPaymentMethodEnabled(payments.methods, method.key)) continue;
+
     const config = payments.methods[method.key];
-    if (!config?.enabled) continue;
 
     for (const field of method.fields) {
       if (field.type === "qr-image") continue;
@@ -126,7 +134,7 @@ export function validateSinglePaymentField(
   value: string,
   enabled: boolean,
 ): string | null {
-  if (!enabled) return null;
+  if (enabled !== true) return null;
 
   const method = getPaymentMethod(methodKey);
   const field = method.fields.find((item) => item.key === fieldKey);

@@ -14,6 +14,7 @@ import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/cn";
 import {
   getFirstPaymentValidationError,
   validatePaymentsSettings,
@@ -33,6 +34,31 @@ interface PaymentsTabProps {
 
 function fieldErrorKey(methodKey: PaymentMethodKey, fieldKey: string): string {
   return `${methodKey}.${fieldKey}`;
+}
+
+function clearMethodFieldErrors(
+  errors: PaymentFieldErrors,
+  methodKey: PaymentMethodKey,
+): PaymentFieldErrors {
+  const next = { ...errors };
+  for (const key of Object.keys(next)) {
+    if (key.startsWith(`${methodKey}.`)) delete next[key];
+  }
+  return next;
+}
+
+function filterErrorsForEnabledMethods(
+  errors: PaymentFieldErrors,
+  methods: PaymentsSettings["methods"],
+): PaymentFieldErrors {
+  const next: PaymentFieldErrors = {};
+  for (const [key, message] of Object.entries(errors)) {
+    const methodKey = key.split(".")[0] as PaymentMethodKey;
+    if (methods[methodKey]?.enabled === true) {
+      next[key] = message;
+    }
+  }
+  return next;
 }
 
 export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
@@ -60,6 +86,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
     payload: PaymentsSettings,
     mode: "toggle" | "form",
     toggleKey?: string,
+    revertOnError?: () => void,
   ) {
     setError(null);
     setSuccess(null);
@@ -67,38 +94,56 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
     if (mode === "form") setSavingForm(true);
 
     startTransition(async () => {
-      const result = await savePaymentsSettings(payload);
+      const result = await savePaymentsSettings(payload, {
+        validate: mode === "form",
+      });
       if (mode === "toggle" && toggleKey) setSavingToggle(null);
       if (mode === "form") setSavingForm(false);
 
       if (result.error) {
         setError(result.error);
-        setPayments(initialSettings.methods);
-        setInstallments(initialSettings.installments);
+        revertOnError?.();
+        if (mode === "form") {
+          setPayments(initialSettings.methods);
+          setInstallments(initialSettings.installments);
+        }
       }
     });
   }
 
   function togglePayment(key: PaymentMethodKey, enabled: boolean) {
+    const previousEnabled = payments[key].enabled;
     const nextMethods = {
       ...payments,
       [key]: { ...payments[key], enabled },
     };
     setPayments(nextMethods);
-    setFieldErrors((prev) => {
-      const next = { ...prev };
-      for (const fieldKey of Object.keys(next)) {
-        if (fieldKey.startsWith(`${key}.`)) delete next[fieldKey];
-      }
-      return next;
-    });
-    persist(buildPayload(nextMethods, installments), "toggle", `method-${key}`);
+    setFieldErrors((prev) => clearMethodFieldErrors(prev, key));
+    persist(
+      buildPayload(nextMethods, installments),
+      "toggle",
+      `method-${key}`,
+      () => {
+        setPayments((prev) => ({
+          ...prev,
+          [key]: { ...prev[key], enabled: previousEnabled },
+        }));
+      },
+    );
   }
 
   function toggleInstallments(enabled: boolean) {
+    const previousEnabled = installments.enabled;
     const nextInstallments = { ...installments, enabled };
     setInstallments(nextInstallments);
-    persist(buildPayload(payments, nextInstallments), "toggle", "installments");
+    persist(
+      buildPayload(payments, nextInstallments),
+      "toggle",
+      "installments",
+      () => {
+        setInstallments((prev) => ({ ...prev, enabled: previousEnabled }));
+      },
+    );
   }
 
   function updateField(key: PaymentMethodKey, fieldKey: string, value: string) {
@@ -124,6 +169,8 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
     fieldKey: string,
     message: string | null,
   ) {
+    if (!payments[methodKey]?.enabled) return;
+
     const errorKey = fieldErrorKey(methodKey, fieldKey);
     setFieldErrors((prev) => {
       const next = { ...prev };
@@ -138,7 +185,10 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
     setSuccess(null);
 
     const payload = buildPayload(payments, installments);
-    const validationErrors = validatePaymentsSettings(payload);
+    const validationErrors = filterErrorsForEnabledMethods(
+      validatePaymentsSettings(payload),
+      payload.methods,
+    );
 
     if (Object.keys(validationErrors).length > 0) {
       setFieldErrors(validationErrors);
@@ -152,7 +202,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
     setFieldErrors({});
     setSavingForm(true);
     startTransition(async () => {
-      const result = await savePaymentsSettings(payload);
+      const result = await savePaymentsSettings(payload, { validate: true });
       setSavingForm(false);
       if (result.error) {
         setError(result.error);
@@ -168,13 +218,27 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
     const meta = getPaymentMethod(key);
     const config = payments[key];
     const isSaving = savingToggle === `method-${key}`;
+    const isActive = config.enabled;
+    const hasFields = meta.fields.length > 0;
 
     return (
-      <Card key={key} className="payment-method-settings-card overflow-hidden">
-        <CardHeader className="border-b border-zinc-100 pb-5 dark:border-zinc-800/80">
+      <Card
+        key={key}
+        className={cn(
+          "payment-method-settings-card overflow-hidden",
+          !isActive && "payment-method-settings-card--inactive",
+        )}
+      >
+        <CardHeader
+          className={cn(
+            "py-3",
+            isActive && hasFields && "border-b border-zinc-100 dark:border-zinc-800/80",
+          )}
+        >
           <PaymentMethodCard
             methodKey={key}
             variant="settings"
+            muted={!isActive}
             action={
               <SettingsSwitch
                 id={`pay-${key}`}
@@ -186,41 +250,57 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
             }
           />
           {isSaving && (
-            <div className="mt-3">
+            <div className="mt-2">
               <SavingHint visible />
             </div>
           )}
         </CardHeader>
 
-        {config.enabled && meta.fields.length > 0 && (
-          <CardContent className="pt-5">
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              {meta.fields.map((field) =>
-                field.type === "qr-image" ? (
-                  <PaymentQrImageField
-                    key={field.key}
-                    id={`pay-${key}-${field.key}`}
-                    label={field.label}
-                    value={config.fields[field.key] ?? ""}
-                    onChange={(url) => updateField(key, field.key, url)}
-                  />
-                ) : (
-                  <PaymentConfigField
-                    key={field.key}
-                    methodKey={key}
-                    field={field}
-                    enabled={config.enabled}
-                    value={config.fields[field.key] ?? ""}
-                    error={fieldErrors[fieldErrorKey(key, field.key)]}
-                    onChange={(value) => updateField(key, field.key, value)}
-                    onBlurValidate={(message) =>
-                      setFieldError(key, field.key, message)
-                    }
-                  />
-                ),
-              )}
+        {hasFields && (
+          <div
+            className={cn(
+              "payment-method-fields",
+              isActive && "payment-method-fields--open",
+            )}
+            aria-hidden={!isActive}
+          >
+            <div className="payment-method-fields-inner">
+              <CardContent className="pt-3">
+                <div
+                  className={cn(
+                    "grid grid-cols-1 gap-3 sm:grid-cols-2",
+                    !isActive && "pointer-events-none opacity-50",
+                  )}
+                >
+                  {meta.fields.map((field) =>
+                    field.type === "qr-image" ? (
+                      <PaymentQrImageField
+                        key={field.key}
+                        id={`pay-${key}-${field.key}`}
+                        label={field.label}
+                        value={config.fields[field.key] ?? ""}
+                        onChange={(url) => updateField(key, field.key, url)}
+                        disabled={!isActive}
+                      />
+                    ) : (
+                      <PaymentConfigField
+                        key={field.key}
+                        methodKey={key}
+                        field={field}
+                        enabled={isActive}
+                        value={config.fields[field.key] ?? ""}
+                        error={fieldErrors[fieldErrorKey(key, field.key)]}
+                        onChange={(value) => updateField(key, field.key, value)}
+                        onBlurValidate={(message) =>
+                          setFieldError(key, field.key, message)
+                        }
+                      />
+                    ),
+                  )}
+                </div>
+              </CardContent>
             </div>
-          </CardContent>
+          </div>
         )}
       </Card>
     );
@@ -236,7 +316,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
     >
       {success && (
         <p
-          className="mb-6 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-300"
+          className="mb-4 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-300"
           role="status"
         >
           {success}
@@ -250,7 +330,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
           description={group.description}
           variant="payments"
         >
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
             {group.keys.map((key) => renderPaymentCard(key))}
           </div>
         </SettingsSection>
@@ -270,7 +350,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
           saving={savingToggle === "installments"}
           onChange={toggleInstallments}
         >
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="installments-min" className="payment-field-label">
                 Monto mínimo (USD)
@@ -284,7 +364,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
                 onChange={(e) =>
                   setInstallments((prev) => ({ ...prev, minUsd: e.target.value }))
                 }
-                className="mt-2 h-10"
+                className="payment-field-input mt-1.5"
               />
             </div>
             <div>
@@ -304,7 +384,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
                     maxInstallments: e.target.value,
                   }))
                 }
-                className="mt-2 h-10"
+                className="payment-field-input mt-1.5"
               />
             </div>
             <div className="sm:col-span-2">
@@ -313,7 +393,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
               </Label>
               <textarea
                 id="installments-conditions"
-                rows={3}
+                rows={2}
                 value={installments.conditions}
                 onChange={(e) =>
                   setInstallments((prev) => ({
@@ -321,7 +401,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
                     conditions: e.target.value,
                   }))
                 }
-                className="input-field mt-2 resize-none"
+                className="input-field payment-field-textarea mt-1.5 resize-none"
               />
             </div>
           </div>

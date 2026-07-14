@@ -10,6 +10,7 @@ interface PaymentQrImageFieldProps {
   label: string;
   value: string;
   onChange: (url: string) => void;
+  disabled?: boolean;
 }
 
 export function PaymentQrImageField({
@@ -17,6 +18,7 @@ export function PaymentQrImageField({
   label,
   value,
   onChange,
+  disabled = false,
 }: PaymentQrImageFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -93,14 +95,13 @@ export function PaymentQrImageField({
   }
 
   return (
-    <div className="sm:col-span-2" onPaste={handlePaste}>
-      <label className="label-field" htmlFor={id}>
+    <div className="sm:col-span-2" onPaste={disabled ? undefined : handlePaste}>
+      <label className="payment-field-label" htmlFor={id}>
         {label}
         <span className="ml-1 font-normal text-zinc-400">(opcional)</span>
       </label>
-      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-        Sube una imagen o pégala desde el portapapeles (Ctrl+V). Tus clientes
-        podrán escanearla al pagar.
+      <p className="mt-0.5 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
+        Sube una imagen o pégala desde el portapapeles (Ctrl+V).
       </p>
 
       {error && (
@@ -119,9 +120,9 @@ export function PaymentQrImageField({
         </p>
       )}
 
-      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start">
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
         {displayUrl ? (
-          <div className="relative h-36 w-36 shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950">
+          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950">
             <Image
               src={displayUrl}
               alt="Vista previa del código QR"
@@ -140,12 +141,12 @@ export function PaymentQrImageField({
             )}
           </div>
         ) : (
-          <div className="flex h-36 w-36 shrink-0 items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-zinc-50 text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900/50">
-            <ImagePlus className="h-8 w-8" aria-hidden="true" />
+          <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900/50">
+            <ImagePlus className="h-6 w-6" aria-hidden="true" />
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <input
             ref={inputRef}
             id={id}
@@ -157,8 +158,8 @@ export function PaymentQrImageField({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            disabled={pending}
-            className="btn-brand-outline inline-flex items-center gap-2 self-start text-sm"
+            disabled={pending || disabled}
+            className="btn-brand-outline inline-flex items-center gap-2 self-start text-xs"
           >
             {pending ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -171,8 +172,8 @@ export function PaymentQrImageField({
             <button
               type="button"
               onClick={handleRemove}
-              disabled={pending}
-              className="inline-flex items-center gap-2 self-start text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400"
+              disabled={pending || disabled}
+              className="inline-flex items-center gap-2 self-start text-xs font-medium text-red-600 hover:text-red-700 dark:text-red-400"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
               Quitar QR

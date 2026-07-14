@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
 import { getPaymentMethod } from "@/src/config/payment-methods";
 import { PaymentMethodLogo } from "@/components/payments/PaymentMethodLogo";
+import { cn } from "@/lib/cn";
 
 export interface PaymentMethodCardProps {
   methodKey: PaymentMethodKey;
@@ -14,6 +15,7 @@ export interface PaymentMethodCardProps {
   className?: string;
   logoClassName?: string;
   variant?: "default" | "settings";
+  muted?: boolean;
 }
 
 export function PaymentMethodCard({
@@ -25,8 +27,9 @@ export function PaymentMethodCard({
   disabled = false,
   action,
   className = "",
-  logoClassName = "h-9 w-9",
+  logoClassName = "h-7 w-7",
   variant = "default",
+  muted = false,
 }: PaymentMethodCardProps) {
   const method = getPaymentMethod(methodKey);
   const isInteractive = selectable && !disabled;
@@ -34,7 +37,7 @@ export function PaymentMethodCard({
 
   const baseClass = [
     isSettings
-      ? "payment-method-card-header flex items-center gap-4"
+      ? "payment-method-card-header flex items-center gap-3"
       : "shipping-method-card relative flex items-start gap-3",
     !isSettings && selected ? "shipping-method-card-selected" : "",
     !isSettings && isInteractive ? "shipping-method-card-interactive" : "",
@@ -49,7 +52,7 @@ export function PaymentMethodCard({
       <span
         className={
           isSettings
-            ? "payment-method-logo-tile flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-100 ring-1 ring-zinc-200/80 dark:bg-zinc-900 dark:ring-zinc-800"
+            ? "payment-method-logo-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100 ring-1 ring-zinc-200/70 dark:bg-zinc-900 dark:ring-zinc-800"
             : "shrink-0"
         }
       >
@@ -59,7 +62,10 @@ export function PaymentMethodCard({
         <p
           className={
             isSettings
-              ? "text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50"
+              ? cn(
+                  "text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50",
+                  muted && "text-zinc-500 dark:text-zinc-400",
+                )
               : "truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50"
           }
         >
@@ -68,7 +74,10 @@ export function PaymentMethodCard({
         <p
           className={
             isSettings
-              ? "mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400"
+              ? cn(
+                  "mt-0.5 text-xs leading-snug text-zinc-500 dark:text-zinc-400",
+                  muted && "text-zinc-400 dark:text-zinc-500",
+                )
               : "mt-0.5 line-clamp-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400"
           }
         >

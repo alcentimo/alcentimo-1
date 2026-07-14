@@ -65,7 +65,8 @@ export function PaymentConfigField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onBlur={handleSelectBlur}
-          className={cn("mt-2 h-10", errorClassName)}
+          disabled={!enabled}
+          className={cn("payment-field-input mt-1.5", errorClassName)}
           aria-invalid={hasError}
           aria-describedby={error ? `${inputId}-error` : undefined}
         >
@@ -86,7 +87,8 @@ export function PaymentConfigField({
           onChange={(e) => onChange(e.target.value)}
           onBlur={handleBlur}
           placeholder={field.placeholder}
-          className={cn("mt-2 h-10", errorClassName)}
+          disabled={!enabled}
+          className={cn("payment-field-input mt-1.5", errorClassName)}
           aria-invalid={hasError}
           aria-describedby={error ? `${inputId}-error` : undefined}
         />

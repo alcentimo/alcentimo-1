@@ -527,15 +527,15 @@ body {
 }
 
 .settings-tab-content--with-save {
-  @apply pb-28;
+  @apply pb-24;
 }
 
 .payment-settings-section {
-  @apply space-y-6;
+  @apply space-y-3;
 }
 
 .payment-settings-section-title {
-  @apply text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+  @apply text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400;
 }
 
 .payment-settings-section-body {
@@ -543,11 +543,41 @@ body {
 }
 
 .payment-field-label {
-  @apply text-sm font-medium text-zinc-700 dark:text-zinc-300;
+  @apply text-xs font-medium text-zinc-600 dark:text-zinc-400;
+}
+
+.payment-field-input {
+  @apply h-8 text-xs;
+}
+
+.payment-field-textarea {
+  @apply min-h-[4.5rem] text-xs;
 }
 
 .payment-method-settings-card {
-  @apply transition-shadow hover:shadow-md;
+  @apply rounded-xl transition-[box-shadow,opacity,background-color] duration-200;
+}
+
+.payment-method-settings-card--inactive {
+  @apply bg-zinc-50/80 dark:bg-zinc-900/40;
+}
+
+.payment-method-fields {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 200ms ease,
+    opacity 150ms ease;
+}
+
+.payment-method-fields--open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.payment-method-fields-inner {
+  overflow: hidden;
 }
 
 .settings-section {

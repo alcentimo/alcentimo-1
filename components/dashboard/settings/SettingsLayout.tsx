@@ -33,7 +33,7 @@ export function SettingsSection({
           <p
             className={
               variant === "payments"
-                ? "text-sm leading-relaxed text-zinc-500 dark:text-zinc-400"
+                ? "text-xs leading-snug text-zinc-500 dark:text-zinc-400"
                 : "text-sm text-zinc-500 dark:text-zinc-400"
             }
           >
@@ -60,7 +60,7 @@ export function SettingsSaveBar({ label, saving, onSave, hint }: SettingsSaveBar
     <div className="settings-save-bar settings-save-bar--premium">
       <div className="min-w-0 flex-1">
         {hint ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">{hint}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">{hint}</p>
         ) : (
           <SavingHint visible={saving} />
         )}
@@ -75,7 +75,7 @@ export function SettingsSaveBar({ label, saving, onSave, hint }: SettingsSaveBar
         onClick={onSave}
         disabled={saving}
         className={cn(
-          "btn-brand h-11 min-w-[11rem] px-6 text-sm font-semibold shadow-md",
+          "btn-brand h-9 min-w-[10rem] px-5 text-xs font-semibold shadow-sm",
           saving && "opacity-90",
         )}
       >
