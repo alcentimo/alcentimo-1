@@ -5,6 +5,7 @@ import type { ProductEditData } from "@/lib/products/actions";
 import { getProductForEdit } from "@/lib/products/actions";
 import type { Store } from "@/lib/database.types";
 import { ProductCatalogForm } from "@/components/dashboard/ProductCatalogForm";
+import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import {
   Sheet,
   SheetBody,
@@ -15,20 +16,12 @@ import {
 } from "@/components/ui/sheet";
 import { Loader2 } from "lucide-react";
 
-interface CategoryOption {
-  id: string;
-  name: string;
-  slug: string;
-}
-
 interface ProductFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   store: Store;
-  categories: CategoryOption[];
   exchangeRate: number | null;
-  fieldLabels?: string[];
-  storeCategoryLabel?: string | null;
+  productFormConfig: StoreProductFormConfig;
   mode: "create" | "edit";
   productId?: string;
   onSaved: () => void;
@@ -38,10 +31,8 @@ export function ProductFormSheet({
   open,
   onOpenChange,
   store,
-  categories,
   exchangeRate,
-  fieldLabels = [],
-  storeCategoryLabel = null,
+  productFormConfig,
   mode,
   productId,
   onSaved,
@@ -109,10 +100,8 @@ export function ProductFormSheet({
             <ProductCatalogForm
               key="create"
               store={store}
-              categories={categories}
               exchangeRate={exchangeRate}
-              fieldLabels={fieldLabels}
-              storeCategoryLabel={storeCategoryLabel}
+              productFormConfig={productFormConfig}
               mode="create"
               onSuccess={handleSuccess}
               onCancel={() => onOpenChange(false)}
@@ -123,10 +112,8 @@ export function ProductFormSheet({
             <ProductCatalogForm
               key={editData.productId}
               store={store}
-              categories={categories}
               exchangeRate={exchangeRate}
-              fieldLabels={fieldLabels}
-              storeCategoryLabel={storeCategoryLabel}
+              productFormConfig={productFormConfig}
               mode="edit"
               initialData={editData}
               onSuccess={handleSuccess}

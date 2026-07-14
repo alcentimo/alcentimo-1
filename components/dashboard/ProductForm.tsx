@@ -19,25 +19,15 @@ import {
   serializeVariantsForForm,
 } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
-import {
-  pickExtraFieldValues,
-  serializeExtraFieldsJson,
-  type ProductExtraFieldsMap,
-} from "@/lib/products/extra-fields";
+import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import type { VariantFormInput } from "@/lib/products/variants";
-
-interface CategoryOption {
-  id: string;
-  name: string;
-  slug: string;
-}
+import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
+import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
 
 interface ProductFormProps {
   store: Store;
-  categories: CategoryOption[];
   exchangeRate: number | null;
-  fieldLabels?: string[];
-  storeCategoryLabel?: string | null;
+  productFormConfig: StoreProductFormConfig;
   mode?: "create" | "edit";
   initialData?: ProductEditData;
 }
@@ -56,10 +46,8 @@ function toVariantInputs(
 
 export function ProductForm({
   store,
-  categories,
   exchangeRate,
-  fieldLabels = [],
-  storeCategoryLabel = null,
+  productFormConfig,
   mode = "create",
   initialData,
 }: ProductFormProps) {
@@ -76,8 +64,17 @@ export function ProductForm({
   const [imageBusy, setImageBusy] = useState(false);
   const [imageProcessed, setImageProcessed] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [extraFields, setExtraFields] = useState<ProductExtraFieldsMap>(() =>
-    pickExtraFieldValues(initialData?.extraFields ?? {}, fieldLabels),
+  const {
+    categorySlug,
+    setCategorySlug,
+    fieldLabels,
+    categoryLabel,
+    extraFields,
+    setExtraFields,
+  } = useProductCategoryFields(
+    productFormConfig,
+    initialData?.categorySlug,
+    initialData?.extraFields,
   );
   const catalogUrl = getStoreCatalogUrl(store.slug);
   const hasCustomVariants = variants.length > 0;
@@ -101,6 +98,7 @@ export function ProductForm({
 
     const form = e.currentTarget;
     const formData = new FormData(form);
+    formData.set("product_category_slug", categorySlug);
     formData.set(
       "variants_json",
       serializeVariantsForForm(
@@ -173,6 +171,7 @@ export function ProductForm({
       className="space-y-5"
     >
       <input type="hidden" name="store_id" value={store.id} readOnly />
+      <input type="hidden" name="product_category_slug" value={categorySlug} readOnly />
       {mode === "edit" && initialData && (
         <>
           <input type="hidden" name="product_id" value={initialData.productId} readOnly />
@@ -190,6 +189,9 @@ export function ProductForm({
           Tu tienda
         </p>
         <p className="mt-1 font-semibold text-zinc-900 dark:text-zinc-50">{store.name}</p>
+        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+          Rubro: {productFormConfig.rubroLabel}
+        </p>
         <Link
           href={catalogUrl}
           target="_blank"
@@ -229,13 +231,28 @@ export function ProductForm({
         />
       </div>
 
-      <ProductExtraFieldsSection
-        fieldLabels={fieldLabels}
-        values={extraFields}
-        onChange={setExtraFields}
-        categoryLabel={storeCategoryLabel}
-        disabled={isBusy}
-      />
+      <div>
+        <label htmlFor="product_category_slug" className="label-field">
+          Categoría <span className="text-red-500">*</span>
+        </label>
+        <select
+          id="product_category_slug"
+          name="product_category_slug"
+          required
+          value={categorySlug}
+          onChange={(e) => setCategorySlug(e.target.value)}
+          className="input-field"
+        >
+          {productFormConfig.productCategories.map((cat) => (
+            <option key={cat.slug} value={cat.slug}>
+              {cat.label}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1.5 text-xs text-zinc-500">
+          Opciones según el rubro de tu tienda ({productFormConfig.rubroLabel}).
+        </p>
+      </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div>
@@ -283,6 +300,14 @@ export function ProductForm({
         )}
       </div>
 
+      <ProductExtraFieldsSection
+        fieldLabels={fieldLabels}
+        values={extraFields}
+        onChange={setExtraFields}
+        categoryLabel={categoryLabel}
+        disabled={isBusy}
+      />
+
       {!hasCustomVariants && (
         <div>
           <label htmlFor="stock_quantity" className="label-field">
@@ -328,25 +353,6 @@ export function ProductForm({
         onChange={setVariants}
         disabled={isBusy}
       />
-
-      <div>
-        <label htmlFor="category_id" className="label-field">
-          Categoría
-        </label>
-        <select
-          id="category_id"
-          name="category_id"
-          defaultValue={initialData?.categoryId ?? ""}
-          className="input-field"
-        >
-          <option value="">General (automática)</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
-      </div>
 
       <ProductImageField
         id="image"

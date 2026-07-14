@@ -17,24 +17,14 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
-import {
-  pickExtraFieldValues,
-  serializeExtraFieldsJson,
-  type ProductExtraFieldsMap,
-} from "@/lib/products/extra-fields";
-
-interface CategoryOption {
-  id: string;
-  name: string;
-  slug: string;
-}
+import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
+import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
+import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
 
 interface ProductCatalogFormProps {
   store: Store;
-  categories: CategoryOption[];
   exchangeRate: number | null;
-  fieldLabels?: string[];
-  storeCategoryLabel?: string | null;
+  productFormConfig: StoreProductFormConfig;
   mode?: "create" | "edit";
   initialData?: ProductEditData;
   onSuccess: () => void;
@@ -45,10 +35,8 @@ const initialState: ProductFormState = {};
 
 export function ProductCatalogForm({
   store,
-  categories,
   exchangeRate,
-  fieldLabels = [],
-  storeCategoryLabel = null,
+  productFormConfig,
   mode = "create",
   initialData,
   onSuccess,
@@ -64,8 +52,17 @@ export function ProductCatalogForm({
   const [imageBusy, setImageBusy] = useState(false);
   const [imageProcessed, setImageProcessed] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [extraFields, setExtraFields] = useState<ProductExtraFieldsMap>(() =>
-    pickExtraFieldValues(initialData?.extraFields ?? {}, fieldLabels),
+  const {
+    categorySlug,
+    setCategorySlug,
+    fieldLabels,
+    categoryLabel,
+    extraFields,
+    setExtraFields,
+  } = useProductCategoryFields(
+    productFormConfig,
+    initialData?.categorySlug,
+    initialData?.extraFields,
   );
 
   const priceLocal = useMemo(() => {
@@ -85,17 +82,13 @@ export function ProductCatalogForm({
     if (state.success) onSuccess();
   }, [state.success, onSuccess]);
 
-  useEffect(() => {
-    if (!initialData) return;
-    setExtraFields(pickExtraFieldValues(initialData.extraFields ?? {}, fieldLabels));
-  }, [initialData, fieldLabels]);
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLocalError(null);
 
     const form = e.currentTarget;
     const formData = new FormData(form);
+    formData.set("product_category_slug", categorySlug);
     formData.set("variants_json", "[]");
     formData.set("extra_fields_json", serializeExtraFieldsJson(extraFields));
 
@@ -115,6 +108,7 @@ export function ProductCatalogForm({
   return (
     <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-4">
       <input type="hidden" name="store_id" value={store.id} readOnly />
+      <input type="hidden" name="product_category_slug" value={categorySlug} readOnly />
       {mode === "edit" && initialData && (
         <>
           <input type="hidden" name="product_id" value={initialData.productId} readOnly />
@@ -175,29 +169,21 @@ export function ProductCatalogForm({
         />
       </div>
 
-      <ProductExtraFieldsSection
-        fieldLabels={fieldLabels}
-        values={extraFields}
-        onChange={setExtraFields}
-        categoryLabel={storeCategoryLabel}
-        disabled={isBusy}
-        variant="compact"
-      />
-
       <div>
         <Label htmlFor="catalog-category" className="payment-field-label">
-          Categoría
+          Categoría <span className="text-red-500">*</span>
         </Label>
         <Select
           id="catalog-category"
-          name="category_id"
-          defaultValue={initialData?.categoryId ?? ""}
+          name="product_category_slug"
+          required
+          value={categorySlug}
+          onChange={(e) => setCategorySlug(e.target.value)}
           className="payment-field-input mt-1.5"
         >
-          <option value="">General (automática)</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
+          {productFormConfig.productCategories.map((cat) => (
+            <option key={cat.slug} value={cat.slug}>
+              {cat.label}
             </option>
           ))}
         </Select>
@@ -242,6 +228,15 @@ export function ProductCatalogForm({
           />
         </div>
       </div>
+
+      <ProductExtraFieldsSection
+        fieldLabels={fieldLabels}
+        values={extraFields}
+        onChange={setExtraFields}
+        categoryLabel={categoryLabel}
+        disabled={isBusy}
+        variant="compact"
+      />
 
       <div>
         <Label htmlFor="catalog-stock" className="payment-field-label">

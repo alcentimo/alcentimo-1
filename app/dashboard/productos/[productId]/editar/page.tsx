@@ -3,8 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
-import { getProductForEdit, getStoreCategories } from "@/lib/products/actions";
-import { getStoreProductFieldConfig } from "@/lib/products/store-field-config";
+import { getProductForEdit } from "@/lib/products/actions";
+import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
 import { ProductForm } from "@/components/dashboard/ProductForm";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { formatExchangeRate } from "@/lib/format";
@@ -29,11 +29,10 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     redirect("/dashboard/productos/nuevo");
   }
 
-  const [product, exchangeRate, categories, fieldConfig] = await Promise.all([
+  const [product, exchangeRate, productFormConfig] = await Promise.all([
     getProductForEdit(productId),
     getCurrentExchangeRate(),
-    getStoreCategories(store.id),
-    getStoreProductFieldConfig(store.id),
+    getStoreProductFormConfig(store.id),
   ]);
 
   if (!product) notFound();
@@ -58,10 +57,8 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
       <div className="card-panel">
         <ProductForm
           store={store}
-          categories={categories}
           exchangeRate={exchangeRate?.rate ?? null}
-          fieldLabels={fieldConfig.fieldLabels}
-          storeCategoryLabel={fieldConfig.categoryLabel}
+          productFormConfig={productFormConfig}
           mode="edit"
           initialData={product}
         />

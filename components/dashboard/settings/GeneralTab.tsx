@@ -11,6 +11,7 @@ import {
 } from "@/components/dashboard/settings/SettingsLayout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import {
   checkStoreSlugAvailability,
@@ -19,12 +20,14 @@ import {
 import { slugify } from "@/lib/slugify";
 import { isValidStoreSlug } from "@/lib/stores/slug";
 import { getPublicSiteHost } from "@/lib/site-url";
+import { STORE_RUBRO_OPTIONS } from "@/src/config/categories";
 import type { ContactSettings } from "@/lib/store-settings/types";
 
 export interface GeneralTabStore {
   name: string;
   slug: string;
   logo_url: string | null;
+  rubro_tienda: string;
 }
 
 interface GeneralTabProps {
@@ -40,6 +43,7 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
   const [savedSlug, setSavedSlug] = useState(store.slug);
   const [logoUrl, setLogoUrl] = useState<string | null>(store.logo_url);
   const [whatsappPhone, setWhatsappPhone] = useState(initialContact.whatsappPhone);
+  const [rubroTienda, setRubroTienda] = useState(store.rubro_tienda);
   const [slugStatus, setSlugStatus] = useState<SlugStatus>("available");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +56,7 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
 
   const canSave =
     storeName.trim().length > 0 &&
+    rubroTienda.trim().length > 0 &&
     isValidStoreSlug(slugPreview) &&
     slugStatus === "available" &&
     !saving;
@@ -99,6 +104,7 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
         slug: slugPreview,
         logoUrl,
         whatsappPhone: whatsappPhone.trim(),
+        rubroTienda,
       });
       setSaving(false);
 
@@ -108,6 +114,7 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
         setSavedSlug(store.slug);
         setLogoUrl(store.logo_url);
         setWhatsappPhone(initialContact.whatsappPhone);
+        setRubroTienda(store.rubro_tienda);
         return;
       }
 
@@ -209,6 +216,31 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
                   ✗ El nombre genera un enlace no válido. Usa letras y números.
                 </p>
               )}
+            </div>
+
+            <div className="mt-3">
+              <Label htmlFor="store-rubro" className="payment-field-label">
+                Giro o rubro de mi tienda <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                id="store-rubro"
+                value={rubroTienda}
+                required
+                onChange={(e) => {
+                  setRubroTienda(e.target.value);
+                  setSuccess(false);
+                }}
+                className="payment-field-input mt-1.5"
+              >
+                {STORE_RUBRO_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+              <p className="mt-1.5 text-[11px] text-zinc-400">
+                Define las categorías y campos extra al crear productos.
+              </p>
             </div>
           </div>
         </div>

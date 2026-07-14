@@ -94,6 +94,7 @@ export function SettingsPanel({
                   name: "",
                   slug: "mi-tienda",
                   logo_url: null,
+                  rubro_tienda: "general",
                 }
               }
               initialContact={initialConfig.contact}

@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
-import { getStoreCategories } from "@/lib/products/actions";
-import { getStoreProductFieldConfig } from "@/lib/products/store-field-config";
+import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
 import { CreateStoreForm } from "@/components/dashboard/CreateStoreForm";
 import { ProductForm } from "@/components/dashboard/ProductForm";
 import { PageContainer } from "@/components/ui/PageContainer";
@@ -22,8 +21,8 @@ export default async function NewProductPage() {
 
   const { store } = session;
   const exchangeRate = await getCurrentExchangeRate();
-  const fieldConfig = store
-    ? await getStoreProductFieldConfig(store.id)
+  const productFormConfig = store
+    ? await getStoreProductFormConfig(store.id)
     : null;
 
   return (
@@ -59,10 +58,8 @@ export default async function NewProductPage() {
         <div className="card-panel">
           <ProductForm
             store={store}
-            categories={await getStoreCategories(store.id)}
             exchangeRate={exchangeRate?.rate ?? null}
-            fieldLabels={fieldConfig?.fieldLabels ?? []}
-            storeCategoryLabel={fieldConfig?.categoryLabel ?? null}
+            productFormConfig={productFormConfig!}
           />
         </div>
       )}

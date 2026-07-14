@@ -42,6 +42,7 @@ export interface Store {
   description: string | null;
   logo_url: string | null;
   country: string | null;
+  rubro_tienda: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;

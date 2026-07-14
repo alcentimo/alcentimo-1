@@ -17,19 +17,13 @@ import { AlertDialog } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 
-interface CategoryOption {
-  id: string;
-  name: string;
-  slug: string;
-}
+import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 
 interface InventoryPanelProps {
   store: Store;
-  categories: CategoryOption[];
   exchangeRate: number | null;
   initialProducts: CatalogListItem[];
-  fieldLabels?: string[];
-  storeCategoryLabel?: string | null;
+  productFormConfig: StoreProductFormConfig;
 }
 
 function StockBadge({
@@ -210,11 +204,9 @@ function InventoryRow({
 
 export function InventoryPanel({
   store,
-  categories,
   exchangeRate,
   initialProducts,
-  fieldLabels = [],
-  storeCategoryLabel = null,
+  productFormConfig,
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
   const [search, setSearch] = useState("");
@@ -438,10 +430,8 @@ export function InventoryPanel({
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         store={store}
-        categories={categories}
         exchangeRate={exchangeRate}
-        fieldLabels={fieldLabels}
-        storeCategoryLabel={storeCategoryLabel}
+        productFormConfig={productFormConfig}
         mode={sheetMode}
         productId={editingProductId}
         onSaved={refreshProducts}

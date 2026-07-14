@@ -11,6 +11,8 @@ import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings"
 import { uploadStoreAssetImage, uploadStoreLogoImage } from "@/lib/storage";
 import { isValidStoreSlug } from "@/lib/stores/slug";
 import { slugify } from "@/lib/slugify";
+import { syncStoreProductCategories } from "@/lib/products/rubro-categories";
+import { isValidStoreRubro, normalizeStoreRubro } from "@/src/config/categories";
 import {
   getFirstPaymentValidationError,
   validatePaymentsSettings,
@@ -191,6 +193,7 @@ export interface GeneralStoreSettingsInput {
   slug: string;
   logoUrl: string | null;
   whatsappPhone?: string;
+  rubroTienda: string;
 }
 
 export async function saveGeneralStoreSettings(
@@ -216,6 +219,11 @@ export async function saveGeneralStoreSettings(
     return { error: "El enlace de la tienda no es válido." };
   }
 
+  const rubroTienda = input.rubroTienda.trim().toLowerCase();
+  if (!isValidStoreRubro(rubroTienda)) {
+    return { error: "Selecciona el giro o rubro de tu tienda." };
+  }
+
   const availability = await checkStoreSlugAvailability(slug);
   if (!availability.available) {
     return {
@@ -233,6 +241,7 @@ export async function saveGeneralStoreSettings(
       name,
       slug,
       logo_url: logoUrl,
+      rubro_tienda: rubroTienda,
     })
     .eq("id", store.id);
 
@@ -242,6 +251,13 @@ export async function saveGeneralStoreSettings(
     }
     return { error: storeError.message };
   }
+
+  const sync = await syncStoreProductCategories(
+    supabase,
+    store.id,
+    normalizeStoreRubro(rubroTienda),
+  );
+  if (sync.error) return { error: sync.error };
 
   if (typeof input.whatsappPhone === "string") {
     const current = await getStoreSettingsConfig(supabase, store.id);
@@ -265,6 +281,8 @@ export async function saveGeneralStoreSettings(
   }
 
   revalidatePath("/dashboard/ajustes");
+  revalidatePath("/dashboard/inventario");
+  revalidatePath("/dashboard/productos/nuevo");
   revalidatePath(`/tienda/${previousSlug}`);
   revalidatePath(`/tienda/${slug}`);
   revalidatePath(`/c/${previousSlug}`);

@@ -59,6 +59,7 @@ export default async function AjustesPage() {
                 name: store.name,
                 slug: store.slug,
                 logo_url: store.logo_url,
+                rubro_tienda: store.rubro_tienda ?? "general",
               }
             : null
         }

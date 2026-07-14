@@ -47,7 +47,7 @@ export function ProductExtraFieldsSection({
           Detalles del producto
         </p>
         <p className={cn("text-zinc-500 dark:text-zinc-400", isCompact ? "mt-1 text-xs" : "mt-1.5 text-sm")}>
-          Campos adaptados a tu rubro
+          Campos adaptados a la categoría
           {categoryLabel ? ` · ${categoryLabel}` : ""}.
         </p>
       </div>

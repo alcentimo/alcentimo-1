@@ -16,7 +16,14 @@ import {
   parseExtraFieldsJson,
   pickExtraFieldValues,
 } from "@/lib/products/extra-fields";
-import { getStoreProductFieldConfig } from "@/lib/products/store-field-config";
+import {
+  getStoreRubroTienda,
+  resolveProductCategoryId,
+} from "@/lib/products/rubro-categories";
+import {
+  getExtraFieldsForProductCategory,
+  getProductCategoriesForRubro,
+} from "@/src/config/categories";
 
 export type ProductFormState = {
   error?: string;
@@ -35,6 +42,7 @@ export interface ProductEditData {
   stockQuantity: number;
   lowStockThreshold: number;
   categoryId: string;
+  categorySlug: string;
   defaultVariantId: string;
   variants: import("@/lib/products/variants").ProductVariantJson[];
   thumbUrl: string | null;
@@ -50,33 +58,27 @@ async function getSupabase(): Promise<SupabaseClient> {
   return createClient();
 }
 
-async function ensureDefaultCategory(
+async function resolveProductCategoryFromForm(
+  supabase: SupabaseClient,
   storeId: string,
-): Promise<{ categoryId?: string; error?: string }> {
-  const supabase = await getSupabase();
+  formData: FormData,
+): Promise<{ categoryId?: string; categorySlug?: string; error?: string }> {
+  const rubro = await getStoreRubroTienda(supabase, storeId);
+  const submittedSlug = String(formData.get("product_category_slug") ?? "").trim();
+  const categorySlug =
+    submittedSlug || getProductCategoriesForRubro(rubro)[0]?.slug || "general";
 
-  const { data: existing, error: existingError } = await supabase
-    .from("categories")
-    .select("id")
-    .eq("store_id", storeId)
-    .eq("slug", "general")
-    .maybeSingle();
+  const resolved = await resolveProductCategoryId(
+    supabase,
+    storeId,
+    rubro,
+    categorySlug,
+  );
+  if (resolved.error || !resolved.categoryId) {
+    return { error: resolved.error ?? "No se pudo asignar la categoría." };
+  }
 
-  if (existingError) return { error: existingError.message };
-  if (existing) return { categoryId: existing.id as string };
-
-  const { data: created, error } = await supabase
-    .from("categories")
-    .insert({
-      store_id: storeId,
-      name: "General",
-      slug: "general",
-    })
-    .select("id")
-    .single();
-
-  if (error) return { error: error.message };
-  return { categoryId: created.id as string };
+  return { categoryId: resolved.categoryId, categorySlug };
 }
 
 export async function createProduct(
@@ -115,7 +117,6 @@ export async function createProduct(
     10,
   );
   const imageFile = formData.get("image");
-  let categoryId = String(formData.get("category_id") ?? "").trim();
   const variantsRaw = String(formData.get("variants_json") ?? "");
   const parsedVariants = parseVariantFormInputs(variantsRaw);
   if (parsedVariants.error) return { error: parsedVariants.error };
@@ -135,24 +136,28 @@ export async function createProduct(
     return { error: "Ingresa un umbral de alerta válido (0 o más)." };
   }
 
-  const fieldConfig = await getStoreProductFieldConfig(store.id);
+  const rubro = await getStoreRubroTienda(supabase, store.id);
+  const categoryResolved = await resolveProductCategoryFromForm(
+    supabase,
+    store.id,
+    formData,
+  );
+  if (categoryResolved.error || !categoryResolved.categoryId) {
+    return { error: categoryResolved.error ?? "No se pudo asignar la categoría." };
+  }
+  const categoryId = categoryResolved.categoryId;
+  const categorySlug = categoryResolved.categorySlug ?? "general";
+
   const extraFieldsParsed = parseExtraFieldsJson(
     String(formData.get("extra_fields_json") ?? ""),
   );
   if (extraFieldsParsed.error) return { error: extraFieldsParsed.error };
+  const fieldLabels = getExtraFieldsForProductCategory(rubro, categorySlug);
   const metadata = buildProductMetadata(
     null,
     extraFieldsParsed.fields,
-    fieldConfig.fieldLabels,
+    fieldLabels,
   );
-
-  if (!categoryId) {
-    const ensured = await ensureDefaultCategory(store.id);
-    if (ensured.error || !ensured.categoryId) {
-      return { error: ensured.error ?? "No se pudo crear la categoría." };
-    }
-    categoryId = ensured.categoryId;
-  }
 
   const { data: category, error: categoryError } = await supabase
     .from("categories")
@@ -292,7 +297,7 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
   const { data: product, error: productError } = await supabase
     .from("products")
     .select(
-      "id, name, short_description, description, category_id, metadata, variants, product_images(thumb_url, is_primary)",
+      "id, name, short_description, description, category_id, metadata, variants, product_images(thumb_url, is_primary), categories(slug)",
     )
     .eq("id", productId)
     .eq("store_id", store.id)
@@ -320,7 +325,14 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     is_primary: boolean;
   }[];
   const primaryImage = images.find((img) => img.is_primary) ?? images[0];
-  const fieldConfig = await getStoreProductFieldConfig(store.id);
+  const rubro = await getStoreRubroTienda(supabase, store.id);
+  const categoryRelation = product.categories as { slug: string } | { slug: string }[] | null;
+  const categorySlug = Array.isArray(categoryRelation)
+    ? categoryRelation[0]?.slug
+    : categoryRelation?.slug;
+  const resolvedCategorySlug =
+    categorySlug ?? getProductCategoriesForRubro(rubro)[0]?.slug ?? "general";
+  const fieldLabels = getExtraFieldsForProductCategory(rubro, resolvedCategorySlug);
   const storedExtraFields = parseExtraFieldsFromMetadata(
     product.metadata as Record<string, unknown> | null,
   );
@@ -334,10 +346,11 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     stockQuantity: Number(defaultVariant.stock_quantity ?? 0),
     lowStockThreshold: Number(defaultVariant.low_stock_threshold ?? 5),
     categoryId: product.category_id as string,
+    categorySlug: resolvedCategorySlug,
     defaultVariantId: defaultVariant.id as string,
     variants: parseVariantsJson(product.variants),
     thumbUrl: primaryImage?.thumb_url ?? null,
-    extraFields: pickExtraFieldValues(storedExtraFields, fieldConfig.fieldLabels),
+    extraFields: pickExtraFieldValues(storedExtraFields, fieldLabels),
   };
 }
 
@@ -373,7 +386,16 @@ export async function updateProduct(
     String(formData.get("low_stock_threshold") ?? "5"),
     10,
   );
-  const categoryId = String(formData.get("category_id") ?? "").trim();
+  const categoryResolved = await resolveProductCategoryFromForm(
+    supabase,
+    store.id,
+    formData,
+  );
+  if (categoryResolved.error || !categoryResolved.categoryId) {
+    return { error: categoryResolved.error ?? "No se pudo asignar la categoría." };
+  }
+  const categoryId = categoryResolved.categoryId;
+  const categorySlug = categoryResolved.categorySlug ?? "general";
   const defaultVariantId = String(formData.get("default_variant_id") ?? "").trim();
   const variantsRaw = String(formData.get("variants_json") ?? "");
   const imageFile = formData.get("image");
@@ -405,15 +427,16 @@ export async function updateProduct(
   if (categoryError) return { error: categoryError.message };
   if (!category) return { error: "La categoría no pertenece a tu tienda." };
 
-  const fieldConfig = await getStoreProductFieldConfig(store.id);
+  const rubro = await getStoreRubroTienda(supabase, store.id);
   const extraFieldsParsed = parseExtraFieldsJson(
     String(formData.get("extra_fields_json") ?? ""),
   );
   if (extraFieldsParsed.error) return { error: extraFieldsParsed.error };
+  const fieldLabels = getExtraFieldsForProductCategory(rubro, categorySlug);
   const metadata = buildProductMetadata(
     existingProduct.metadata as Record<string, unknown> | null,
     extraFieldsParsed.fields,
-    fieldConfig.fieldLabels,
+    fieldLabels,
   );
 
   const { error: productUpdateError } = await supabase
