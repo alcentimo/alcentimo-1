@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "generate-icons": "node scripts/generate-icons.mjs",
+    "generate-import-template": "node scripts/generate-import-template.mjs",
     "dev:create-user": "node scripts/create-dev-user.mjs",
     "verify:vercel-env": "node scripts/verify-vercel-env.mjs",
     "inject:vercel-env": "node scripts/inject-vercel-env.mjs",
@@ -26,7 +27,8 @@
     "react-dom": "19.2.4",
     "react-easy-crop": "^6.2.2",
     "react-icons": "^5.7.0",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

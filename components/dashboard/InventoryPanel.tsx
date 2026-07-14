@@ -2,7 +2,17 @@
 
 import Image from "next/image";
 import { useCallback, useMemo, useState, useTransition } from "react";
-import { Loader2, Minus, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+  Loader2,
+  Download,
+  Minus,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { Store } from "@/lib/database.types";
 import { formatUsd, formatVes } from "@/lib/format";
@@ -13,11 +23,16 @@ import {
 import { deleteProduct, fetchInventoryProducts, adjustProductStock } from "@/lib/products/actions";
 import { hasMultipleVariants } from "@/lib/products/variants";
 import { ProductFormSheet } from "@/components/dashboard/ProductFormSheet";
+import { ProductImportSheet } from "@/components/dashboard/ProductImportSheet";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
+import {
+  PRODUCT_IMPORT_TEMPLATE_FILENAME,
+  PRODUCT_IMPORT_TEMPLATE_PATH,
+} from "@/lib/products/import-schema";
 
 interface InventoryPanelProps {
   store: Store;
@@ -212,6 +227,7 @@ export function InventoryPanel({
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [importSheetOpen, setImportSheetOpen] = useState(false);
   const [sheetMode, setSheetMode] = useState<"create" | "edit">("create");
   const [editingProductId, setEditingProductId] = useState<string | undefined>();
   const [deleteTarget, setDeleteTarget] = useState<CatalogListItem | null>(null);
@@ -344,10 +360,29 @@ export function InventoryPanel({
           </select>
         </div>
 
-        <Button onClick={openCreate} className="btn-brand h-10 shrink-0 gap-2 px-5 text-sm font-semibold shadow-md">
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Nuevo producto
-        </Button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <a
+            href={PRODUCT_IMPORT_TEMPLATE_PATH}
+            download={PRODUCT_IMPORT_TEMPLATE_FILENAME}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Descargar Plantilla
+          </a>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setImportSheetOpen(true)}
+            className="h-10 gap-2 px-4 text-sm font-semibold"
+          >
+            <Upload className="h-4 w-4" aria-hidden="true" />
+            Importar
+          </Button>
+          <Button onClick={openCreate} className="btn-brand h-10 shrink-0 gap-2 px-5 text-sm font-semibold shadow-md">
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Nuevo producto
+          </Button>
+        </div>
       </div>
 
       {products.length === 0 ? (
@@ -425,6 +460,12 @@ export function InventoryPanel({
           </div>
         </div>
       )}
+
+      <ProductImportSheet
+        open={importSheetOpen}
+        onOpenChange={setImportSheetOpen}
+        onImported={refreshProducts}
+      />
 
       <ProductFormSheet
         open={sheetOpen}
