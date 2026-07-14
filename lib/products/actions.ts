@@ -549,6 +549,21 @@ export async function deleteProduct(productId: string): Promise<DeleteProductSta
   return { success: true };
 }
 
+export async function fetchInventoryProducts(): Promise<{
+  products: import("@/lib/database.types").CatalogListItem[];
+  error?: string;
+}> {
+  const supabase = await getSupabase();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) {
+    return { products: [], error: auth.error };
+  }
+
+  const { getStoreInventory } = await import("@/lib/inventory");
+  const { products } = await getStoreInventory(auth.store.slug);
+  return { products };
+}
+
 export type InventoryActionState = {
   error?: string;
   success?: boolean;
@@ -587,6 +602,7 @@ function revalidateInventoryPaths(storeSlug: string) {
   revalidatePath("/dashboard/inventario");
   revalidatePath("/dashboard");
   revalidatePath(`/tienda/${storeSlug}`);
+  revalidatePath(`/c/${storeSlug}`);
   revalidatePath("/dashboard/productos/nuevo");
 }
 

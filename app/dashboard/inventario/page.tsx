@@ -1,10 +1,12 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
+import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getStoreInventory } from "@/lib/inventory";
+import { getStoreCategories } from "@/lib/products/actions";
 import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -29,38 +31,36 @@ export default async function InventarioPage() {
           </p>
         </header>
         <div className="card-panel">
-          <Link href="/dashboard/productos/nuevo" className="btn-brand gap-2 shadow-sm">
-            Configurar mi tienda
+          <Link href="/dashboard/productos/nuevo">
+            <Button className="btn-brand">Configurar mi tienda</Button>
           </Link>
         </div>
       </div>
     );
   }
 
-  const { products } = await getStoreInventory(store.slug);
+  const [{ products }, exchangeRate, categories] = await Promise.all([
+    getStoreInventory(store.slug),
+    getCurrentExchangeRate(),
+    getStoreCategories(store.id),
+  ]);
 
   return (
     <div className="mx-auto max-w-6xl">
       <header className="page-header">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="section-label">Catálogo</p>
-            <h1 className="page-header-title">Productos</h1>
-            <p className="page-header-desc">
-              Gestiona los productos de tu tienda y sus niveles de stock.
-            </p>
-          </div>
-          <Link
-            href="/dashboard/productos/nuevo"
-            className="btn-brand shrink-0 gap-2 shadow-sm sm:self-start"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Nuevo producto
-          </Link>
-        </div>
+        <p className="section-label">Catálogo</p>
+        <h1 className="page-header-title">Productos</h1>
+        <p className="page-header-desc">
+          Gestiona tu catálogo, stock y precios desde un solo lugar.
+        </p>
       </header>
 
-      <InventoryPanel products={products} />
+      <InventoryPanel
+        store={store}
+        categories={categories}
+        exchangeRate={exchangeRate?.rate ?? null}
+        initialProducts={products}
+      />
     </div>
   );
 }
