@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
+import { getActiveBcvSyncAlert } from "@/lib/exchange-rate/get-bcv-sync-alert";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { BcvSyncAlertBanner } from "@/components/dashboard/BcvSyncAlertBanner";
 import { CountryProvider } from "@/components/providers/CountryProvider";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +20,7 @@ export default async function DashboardRootLayout({
   }
 
   const { authUser, store } = session;
+  const bcvSyncAlert = await getActiveBcvSyncAlert(supabase);
 
   return (
     <CountryProvider country={store?.country}>
@@ -26,6 +29,7 @@ export default async function DashboardRootLayout({
         userEmail={authUser.email ?? null}
         planName={authUser.plan.name}
       >
+        {bcvSyncAlert ? <BcvSyncAlertBanner alert={bcvSyncAlert} /> : null}
         {children}
       </DashboardLayout>
     </CountryProvider>

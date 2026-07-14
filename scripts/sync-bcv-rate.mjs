@@ -84,6 +84,34 @@ async function fetchBcvUsdRate() {
   throw new Error(errors.join(" | "));
 }
 
+function getVenezuelaSyncDate(reference = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Caracas",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(reference);
+}
+
+async function logSyncAttempt(admin, { syncDate, success, rate, error }) {
+  await admin.from("tasas_cambio_sync_logs").insert({
+    sync_date: syncDate,
+    slot: "retry",
+    status: success ? "success" : "failure",
+    rate: success ? rate : null,
+    error_message: success ? null : error,
+  });
+}
+
+async function resolveBcvAlerts(admin, syncDate) {
+  await admin
+    .from("platform_alerts")
+    .update({ resolved_at: new Date().toISOString() })
+    .eq("alert_type", "bcv_sync_failure")
+    .eq("sync_date", syncDate)
+    .is("resolved_at", null);
+}
+
 async function main() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
@@ -94,7 +122,13 @@ async function main() {
   }
 
   const rate = await fetchBcvUsdRate();
+  if (!Number.isFinite(rate) || rate <= 0) {
+    console.error("La API BCV devolvió una tasa nula o inválida.");
+    process.exit(1);
+  }
+
   const updatedAt = new Date().toISOString();
+  const syncDate = getVenezuelaSyncDate();
   const effectiveDate = updatedAt.slice(0, 10);
   const admin = createClient(url, serviceRoleKey);
 
@@ -108,6 +142,11 @@ async function main() {
   );
 
   if (tasaError) {
+    await logSyncAttempt(admin, {
+      syncDate,
+      success: false,
+      error: tasaError.message,
+    });
     console.error("Error en tasas_cambio:", tasaError.message);
     process.exit(1);
   }
@@ -137,6 +176,9 @@ async function main() {
       notes: "Actualización automática diaria (API BCV)",
     });
   }
+
+  await logSyncAttempt(admin, { syncDate, success: true, rate });
+  await resolveBcvAlerts(admin, syncDate);
 
   console.log(`Tasa BCV actualizada: ${rate} VES/USD (${updatedAt})`);
 }

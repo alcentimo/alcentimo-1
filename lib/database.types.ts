@@ -72,6 +72,26 @@ export interface TasasCambio {
   ultima_actualizacion: string;
 }
 
+export interface TasasCambioSyncLog {
+  id: string;
+  sync_date: string;
+  slot: "midnight" | "retry";
+  status: "success" | "failure";
+  rate: number | null;
+  error_message: string | null;
+  created_at: string;
+}
+
+export interface PlatformAlert {
+  id: string;
+  alert_type: string;
+  message: string;
+  detail: string | null;
+  sync_date: string;
+  resolved_at: string | null;
+  created_at: string;
+}
+
 export interface Category {
   id: string;
   store_id: string;
@@ -503,6 +523,25 @@ export interface Database {
         Row: TasasCambio;
         Insert: TasasCambio;
         Update: Partial<TasasCambio>;
+        Relationships: [];
+      };
+      tasas_cambio_sync_logs: {
+        Row: TasasCambioSyncLog;
+        Insert: Omit<TasasCambioSyncLog, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<TasasCambioSyncLog>;
+        Relationships: [];
+      };
+      platform_alerts: {
+        Row: PlatformAlert;
+        Insert: Omit<PlatformAlert, "id" | "created_at" | "resolved_at"> & {
+          id?: string;
+          created_at?: string;
+          resolved_at?: string | null;
+        };
+        Update: Partial<PlatformAlert>;
         Relationships: [];
       };
       categories: {

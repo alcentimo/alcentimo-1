@@ -18,6 +18,10 @@ export async function syncBcvTasaToDatabase(
 ): Promise<SyncBcvTasaResult> {
   try {
     const rate = await fetchBcvUsdRate();
+    if (!Number.isFinite(rate) || rate <= 0) {
+      return { success: false, error: "La API BCV devolvió una tasa nula o inválida." };
+    }
+
     const updatedAt = new Date().toISOString();
     const effectiveDate = todayUtcDate();
 

@@ -1817,6 +1817,10 @@ body {
   @apply rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300;
 }
 
+.alert-warning {
+  @apply rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200;
+}
+
 .file-input {
   @apply mt-1.5 block w-full min-w-0 text-base text-zinc-600 file:mr-3 file:min-h-11 file:rounded-xl file:border-0 file:bg-teal-600 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white file:shadow-sm md:text-sm dark:text-zinc-400 dark:file:bg-teal-500 dark:file:text-zinc-950;
 }
