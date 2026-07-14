@@ -71,18 +71,27 @@ export function buildTransactionalWhatsAppMessage(options: {
   proofUrl: string;
 }): string {
   const productLines = options.items.map((item) => {
-    const variantSuffix =
-      item.variant_name !== "Estándar" ? ` (${item.variant_name})` : "";
-    return `• ${item.quantity}x ${item.product_name}${variantSuffix} — ${formatUsd(item.line_total_usd)}`;
+    const productName =
+      item.variant_name !== "Estándar"
+        ? `${item.product_name} (${item.variant_name})`
+        : item.product_name;
+    return `• ${item.quantity} x ${productName} - ${formatUsd(item.line_total_usd)}`;
   });
 
-  return [
-    `Hola, soy *${options.customerName}* y acabo de hacer un pedido en ${options.storeName}:`,
+  const messageBody = [
+    `📦 Nuevo Pedido en ${options.storeName}`,
     "",
+    `👤 Cliente: ${options.customerName}`,
+    "",
+    "📋 Productos:",
     ...productLines,
     "",
-    `*Total: ${formatUsd(options.totalUsd)}*`,
-    "",
-    `Comprobante de pago: ${options.proofUrl}`,
+    `💰 Total: ${formatUsd(options.totalUsd)}`,
   ].join("\n");
+
+  const proofUrl = options.proofUrl.trim();
+  if (!proofUrl) return messageBody;
+
+  // El enlace va al final, en su propia línea y sin espacios extra, para no romper el formato.
+  return `${messageBody}\n\n🖼️ Comprobante de pago:\n${proofUrl}`;
 }
