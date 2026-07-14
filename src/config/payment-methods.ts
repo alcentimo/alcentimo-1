@@ -1,6 +1,6 @@
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
 
-export type PaymentMethodFieldType = "text" | "qr-image";
+export type PaymentMethodFieldType = "text" | "qr-image" | "bank-select";
 
 export interface PaymentMethodFieldDefinition {
   key: string;
@@ -34,7 +34,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     label: "Pago Móvil",
     description: "Cobra en bolívares vía Pago Móvil bancario.",
     fields: [
-      { key: "bank", label: "Banco", placeholder: "Ej: Banesco" },
+      { key: "bank", label: "Banco", placeholder: "Selecciona un banco", type: "bank-select" },
       {
         key: "phone",
         label: "Teléfono",
@@ -61,7 +61,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     label: "Transferencia bancaria",
     description: "Transferencia directa a cuenta nacional.",
     fields: [
-      { key: "bank", label: "Banco", placeholder: "Ej: Mercantil" },
+      { key: "bank", label: "Banco", placeholder: "Selecciona un banco", type: "bank-select" },
       {
         key: "account",
         label: "Número de cuenta",

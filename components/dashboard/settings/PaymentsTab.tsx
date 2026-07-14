@@ -11,6 +11,9 @@ import {
 } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   getFirstPaymentValidationError,
   validatePaymentsSettings,
@@ -167,27 +170,31 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
     const isSaving = savingToggle === `method-${key}`;
 
     return (
-      <div key={key} className="relative">
-        <PaymentMethodCard
-          methodKey={key}
-          action={
-            <SettingsSwitch
-              id={`pay-${key}`}
-              label={meta.label}
-              checked={config.enabled}
-              onChange={(v) => togglePayment(key, v)}
-              disabled={isSaving}
-            />
-          }
-        />
-        {isSaving && (
-          <div className="mt-2 px-1">
-            <SavingHint visible />
-          </div>
-        )}
+      <Card key={key} className="payment-method-settings-card overflow-hidden">
+        <CardHeader className="border-b border-zinc-100 pb-5 dark:border-zinc-800/80">
+          <PaymentMethodCard
+            methodKey={key}
+            variant="settings"
+            action={
+              <SettingsSwitch
+                id={`pay-${key}`}
+                label={meta.label}
+                checked={config.enabled}
+                onChange={(v) => togglePayment(key, v)}
+                disabled={isSaving}
+              />
+            }
+          />
+          {isSaving && (
+            <div className="mt-3">
+              <SavingHint visible />
+            </div>
+          )}
+        </CardHeader>
+
         {config.enabled && meta.fields.length > 0 && (
-          <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <CardContent className="pt-5">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               {meta.fields.map((field) =>
                 field.type === "qr-image" ? (
                   <PaymentQrImageField
@@ -213,9 +220,9 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
                 ),
               )}
             </div>
-          </div>
+          </CardContent>
         )}
-      </div>
+      </Card>
     );
   }
 
@@ -225,10 +232,11 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
       saveLabel="Guardar pagos"
       saving={savingForm}
       onSave={handleSaveForm}
+      saveHint="Los cambios se reflejan en el checkout de tu catálogo público."
     >
       {success && (
         <p
-          className="mb-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-300"
+          className="mb-6 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-300"
           role="status"
         >
           {success}
@@ -240,8 +248,9 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
           key={group.title}
           title={group.title}
           description={group.description}
+          variant="payments"
         >
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-6">
             {group.keys.map((key) => renderPaymentCard(key))}
           </div>
         </SettingsSection>
@@ -250,6 +259,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
       <SettingsSection
         title="Venta a cuotas"
         description="Define condiciones para ofrecer pagos fraccionados."
+        variant="payments"
       >
         <SettingsOptionCard
           id="pay-installments"
@@ -260,12 +270,12 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
           saving={savingToggle === "installments"}
           onChange={toggleInstallments}
         >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
-              <label htmlFor="installments-min" className="label-field">
+              <Label htmlFor="installments-min" className="payment-field-label">
                 Monto mínimo (USD)
-              </label>
-              <input
+              </Label>
+              <Input
                 id="installments-min"
                 type="number"
                 min={0}
@@ -274,14 +284,14 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
                 onChange={(e) =>
                   setInstallments((prev) => ({ ...prev, minUsd: e.target.value }))
                 }
-                className="input-field"
+                className="mt-2 h-10"
               />
             </div>
             <div>
-              <label htmlFor="installments-max" className="label-field">
+              <Label htmlFor="installments-max" className="payment-field-label">
                 Máximo de cuotas
-              </label>
-              <input
+              </Label>
+              <Input
                 id="installments-max"
                 type="number"
                 min={2}
@@ -294,13 +304,13 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
                     maxInstallments: e.target.value,
                   }))
                 }
-                className="input-field"
+                className="mt-2 h-10"
               />
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="installments-conditions" className="label-field">
+              <Label htmlFor="installments-conditions" className="payment-field-label">
                 Condiciones
-              </label>
+              </Label>
               <textarea
                 id="installments-conditions"
                 rows={3}
@@ -311,7 +321,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
                     conditions: e.target.value,
                   }))
                 }
-                className="input-field resize-none"
+                className="input-field mt-2 resize-none"
               />
             </div>
           </div>

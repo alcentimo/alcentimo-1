@@ -13,6 +13,7 @@ export interface PaymentMethodCardProps {
   action?: ReactNode;
   className?: string;
   logoClassName?: string;
+  variant?: "default" | "settings";
 }
 
 export function PaymentMethodCard({
@@ -24,15 +25,19 @@ export function PaymentMethodCard({
   disabled = false,
   action,
   className = "",
-  logoClassName = "h-11 w-11 shrink-0",
+  logoClassName = "h-9 w-9",
+  variant = "default",
 }: PaymentMethodCardProps) {
   const method = getPaymentMethod(methodKey);
   const isInteractive = selectable && !disabled;
+  const isSettings = variant === "settings";
 
   const baseClass = [
-    "shipping-method-card relative flex items-start gap-3",
-    selected ? "shipping-method-card-selected" : "",
-    isInteractive ? "shipping-method-card-interactive" : "",
+    isSettings
+      ? "payment-method-card-header flex items-center gap-4"
+      : "shipping-method-card relative flex items-start gap-3",
+    !isSettings && selected ? "shipping-method-card-selected" : "",
+    !isSettings && isInteractive ? "shipping-method-card-interactive" : "",
     disabled ? "opacity-60" : "",
     className,
   ]
@@ -41,17 +46,37 @@ export function PaymentMethodCard({
 
   const content = (
     <>
-      <PaymentMethodLogo methodKey={methodKey} className={logoClassName} />
+      <span
+        className={
+          isSettings
+            ? "payment-method-logo-tile flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-100 ring-1 ring-zinc-200/80 dark:bg-zinc-900 dark:ring-zinc-800"
+            : "shrink-0"
+        }
+      >
+        <PaymentMethodLogo methodKey={methodKey} className={logoClassName} />
+      </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+        <p
+          className={
+            isSettings
+              ? "text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50"
+              : "truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50"
+          }
+        >
           {method.label}
         </p>
-        <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+        <p
+          className={
+            isSettings
+              ? "mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400"
+              : "mt-0.5 line-clamp-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400"
+          }
+        >
           {description ?? method.description}
         </p>
       </div>
-      {action && <div className="shrink-0 self-start">{action}</div>}
-      {selectable && selected && (
+      {action && <div className="shrink-0 self-center">{action}</div>}
+      {!isSettings && selectable && selected && (
         <span
           className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-teal-600 ring-2 ring-teal-100 dark:ring-teal-900"
           aria-hidden="true"
@@ -74,5 +99,5 @@ export function PaymentMethodCard({
     );
   }
 
-  return <article className={baseClass}>{content}</article>;
+  return <div className={baseClass}>{content}</div>;
 }

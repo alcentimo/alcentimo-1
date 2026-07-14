@@ -3,6 +3,11 @@
 import type { PaymentMethodFieldDefinition } from "@/src/config/payment-methods";
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
 import { validateSinglePaymentField } from "@/lib/payments/validate-payment-fields";
+import { getVenezuelaBankOptions } from "@/src/config/venezuela-banks";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { cn } from "@/lib/cn";
 
 interface PaymentConfigFieldProps {
   methodKey: PaymentMethodKey;
@@ -25,6 +30,10 @@ export function PaymentConfigField({
 }: PaymentConfigFieldProps) {
   const inputId = `pay-${methodKey}-${field.key}`;
   const inputType = field.key === "email" ? "email" : "text";
+  const hasError = Boolean(error);
+  const errorClassName = hasError
+    ? "border-red-400 focus-visible:border-red-500 focus-visible:ring-red-100"
+    : "";
 
   function handleBlur() {
     if (!onBlurValidate) return;
@@ -37,25 +46,52 @@ export function PaymentConfigField({
     onBlurValidate(validationError);
   }
 
+  function handleSelectBlur() {
+    handleBlur();
+  }
+
   return (
     <div className={field.fullWidth ? "sm:col-span-2" : ""}>
-      <label className="label-field" htmlFor={inputId}>
+      <Label htmlFor={inputId} className="payment-field-label">
         {field.label}
         {!field.optional && (
-          <span className="ml-1 font-normal text-zinc-400">*</span>
+          <span className="ml-1 font-normal text-zinc-400 dark:text-zinc-500">*</span>
         )}
-      </label>
-      <input
-        id={inputId}
-        type={inputType}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={handleBlur}
-        placeholder={field.placeholder}
-        className={`input-field mt-2 ${error ? "border-red-400 focus:border-red-500 focus:ring-red-100" : ""}`}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${inputId}-error` : undefined}
-      />
+      </Label>
+
+      {field.type === "bank-select" ? (
+        <Select
+          id={inputId}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={handleSelectBlur}
+          className={cn("mt-2 h-10", errorClassName)}
+          aria-invalid={hasError}
+          aria-describedby={error ? `${inputId}-error` : undefined}
+        >
+          <option value="" disabled>
+            {field.placeholder}
+          </option>
+          {getVenezuelaBankOptions(value).map((bank) => (
+            <option key={bank} value={bank}>
+              {bank}
+            </option>
+          ))}
+        </Select>
+      ) : (
+        <Input
+          id={inputId}
+          type={inputType}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={handleBlur}
+          placeholder={field.placeholder}
+          className={cn("mt-2 h-10", errorClassName)}
+          aria-invalid={hasError}
+          aria-describedby={error ? `${inputId}-error` : undefined}
+        />
+      )}
+
       {error && (
         <p id={`${inputId}-error`} className="mt-1.5 text-xs text-red-600 dark:text-red-400">
           {error}

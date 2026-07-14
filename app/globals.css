@@ -518,8 +518,36 @@ body {
   @apply flex min-h-[28rem] flex-col;
 }
 
+.settings-tab-shell--with-save {
+  @apply relative pb-0;
+}
+
 .settings-tab-content {
   @apply flex-1 space-y-10 pb-6;
+}
+
+.settings-tab-content--with-save {
+  @apply pb-28;
+}
+
+.payment-settings-section {
+  @apply space-y-6;
+}
+
+.payment-settings-section-title {
+  @apply text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+}
+
+.payment-settings-section-body {
+  @apply flex flex-col;
+}
+
+.payment-field-label {
+  @apply text-sm font-medium text-zinc-700 dark:text-zinc-300;
+}
+
+.payment-method-settings-card {
+  @apply transition-shadow hover:shadow-md;
 }
 
 .settings-section {
@@ -1656,7 +1684,11 @@ body {
 }
 
 .settings-save-bar {
-  @apply sticky bottom-0 -mx-6 -mb-6 mt-auto flex items-center justify-end gap-4 border-t border-zinc-200 bg-white/95 px-6 py-5 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95 sm:-mx-8 sm:-mb-8 sm:px-8;
+  @apply sticky bottom-0 z-20 -mx-6 -mb-6 mt-auto flex items-center justify-end gap-4 border-t border-zinc-200 bg-white/95 px-6 py-5 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95 sm:-mx-8 sm:-mb-8 sm:px-8;
+}
+
+.settings-save-bar--premium {
+  @apply items-center justify-between gap-6 border-zinc-200/90 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.12)] dark:border-zinc-800 dark:shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.45)];
 }
 
 .settings-error-banner {
