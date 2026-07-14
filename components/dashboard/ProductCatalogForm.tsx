@@ -97,7 +97,6 @@ export function ProductCatalogForm({
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.set("variants_json", "[]");
-    formData.set("low_stock_threshold", String(initialData?.lowStockThreshold ?? 5));
     formData.set("extra_fields_json", serializeExtraFieldsJson(extraFields));
 
     if (compressedImageFile) {
@@ -246,7 +245,7 @@ export function ProductCatalogForm({
 
       <div>
         <Label htmlFor="catalog-stock" className="payment-field-label">
-          Stock
+          Cantidad en stock <span className="text-red-500">*</span>
         </Label>
         <Input
           id="catalog-stock"
@@ -258,6 +257,24 @@ export function ProductCatalogForm({
           defaultValue={initialData?.stockQuantity ?? 0}
           className="payment-field-input mt-1.5"
         />
+      </div>
+
+      <div>
+        <Label htmlFor="catalog-low-stock" className="payment-field-label">
+          Umbral de alerta de stock
+        </Label>
+        <Input
+          id="catalog-low-stock"
+          name="low_stock_threshold"
+          type="number"
+          min={0}
+          step={1}
+          defaultValue={initialData?.lowStockThreshold ?? 5}
+          className="payment-field-input mt-1.5"
+        />
+        <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+          Se marcará en rojo cuando queden pocas unidades (ej. menos de 3).
+        </p>
       </div>
 
       {displayError && (

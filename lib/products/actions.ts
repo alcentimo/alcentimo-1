@@ -604,6 +604,7 @@ export async function fetchInventoryProducts(): Promise<{
 export type InventoryActionState = {
   error?: string;
   success?: boolean;
+  stock?: number;
 };
 
 async function assertStoreProductVariant(
@@ -675,7 +676,45 @@ export async function updateProductStock(
   if (error) return { error: error.message };
 
   revalidateInventoryPaths(store.slug);
-  return { success: true };
+  return { success: true, stock: Math.floor(stockQuantity) };
+}
+
+export async function adjustProductStock(
+  productId: string,
+  delta: number,
+): Promise<InventoryActionState> {
+  const supabase = await getSupabase();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) return { error: auth.error };
+
+  const { store } = auth;
+
+  if (!Number.isFinite(delta) || delta === 0) {
+    return { error: "Ajuste de stock no válido." };
+  }
+
+  const { data: variant, error: variantError } = await supabase
+    .from("product_variants")
+    .select("id, stock_quantity")
+    .eq("product_id", productId)
+    .eq("is_default", true)
+    .maybeSingle();
+
+  if (variantError) return { error: variantError.message };
+  if (!variant) return { error: "Variante del producto no encontrada." };
+
+  const access = await assertStoreProductVariant(
+    supabase,
+    store.id,
+    productId,
+    variant.id as string,
+  );
+  if ("error" in access) return { error: access.error };
+
+  const current = Number(variant.stock_quantity ?? 0);
+  const nextStock = Math.max(0, Math.floor(current + delta));
+
+  return updateProductStock(productId, variant.id as string, nextStock);
 }
 
 export async function updateProductPriceUsd(

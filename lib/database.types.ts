@@ -101,6 +101,7 @@ export interface Product {
   is_active: boolean;
   is_featured: boolean;
   metadata: Record<string, unknown>;
+  stock: number;
   variants?: ProductVariantJson[];
   created_at: string;
   updated_at: string;
@@ -287,6 +288,7 @@ export type ProductInsert = {
   is_active?: boolean;
   is_featured?: boolean;
   metadata?: Record<string, unknown>;
+  stock?: number;
   variants?: ProductVariantJson[];
   created_at?: string;
   updated_at?: string;

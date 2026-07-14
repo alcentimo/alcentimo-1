@@ -42,7 +42,18 @@ function StockBadge({
     );
   }
 
-  return null;
+  return (
+    <span className="store-stock-badge store-stock-badge-available">
+      Disponible
+    </span>
+  );
+}
+
+function AvailabilityStatus({ availableStock }: { availableStock: number }) {
+  if (availableStock <= 0) {
+    return <p className="store-product-availability store-product-availability-out">Agotado</p>;
+  }
+  return <p className="store-product-availability store-product-availability-in">Disponible</p>;
 }
 
 export function ProductCard({ product, cartQuantity = 0, onAddToCart }: ProductCardProps) {
@@ -137,6 +148,14 @@ export function ProductCard({ product, cartQuantity = 0, onAddToCart }: ProductC
         )}
 
         <h2 className="store-product-name">{product.product_name}</h2>
+
+        <AvailabilityStatus
+          availableStock={
+            showVariantSelector
+              ? selectedVariant?.availableStock ?? 0
+              : product.available_stock
+          }
+        />
 
         {product.short_description && (
           <p className="store-product-desc">{product.short_description}</p>

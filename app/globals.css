@@ -235,6 +235,30 @@ body {
   @apply bg-amber-100/95 text-amber-900;
 }
 
+.store-stock-badge-available {
+  @apply bg-emerald-100/95 text-emerald-800;
+}
+
+.store-product-availability {
+  @apply text-xs font-semibold;
+}
+
+.store-product-availability-in {
+  @apply text-emerald-700 dark:text-emerald-400;
+}
+
+.store-product-availability-out {
+  @apply text-red-600 dark:text-red-400;
+}
+
+.inventory-row-low-stock {
+  @apply bg-red-50/60 dark:bg-red-950/20;
+}
+
+.inventory-row-out-stock {
+  @apply opacity-80;
+}
+
 .store-product-body {
   @apply flex flex-1 flex-col gap-2 p-5 sm:p-6;
 }
@@ -497,7 +521,7 @@ body {
 }
 
 .stock-badge-low {
-  @apply bg-amber-50 text-amber-800 ring-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/50;
+  @apply bg-red-50 text-red-700 ring-red-200/80 dark:bg-red-950/50 dark:text-red-300 dark:ring-red-900/60;
 }
 
 .stock-badge-ok {

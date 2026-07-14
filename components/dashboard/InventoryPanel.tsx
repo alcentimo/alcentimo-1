@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useMemo, useState, useTransition } from "react";
-import { Loader2, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Loader2, Minus, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { Store } from "@/lib/database.types";
 import { formatUsd, formatVes } from "@/lib/format";
@@ -10,7 +10,8 @@ import {
   getLowStockThreshold,
   isOutOfStock,
 } from "@/lib/inventory/stock-status";
-import { deleteProduct, fetchInventoryProducts } from "@/lib/products/actions";
+import { deleteProduct, fetchInventoryProducts, adjustProductStock } from "@/lib/products/actions";
+import { hasMultipleVariants } from "@/lib/products/variants";
 import { ProductFormSheet } from "@/components/dashboard/ProductFormSheet";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -43,7 +44,7 @@ function StockBadge({
   }
 
   if (available <= threshold) {
-    return <span className="stock-badge stock-badge-low">Bajo</span>;
+    return <span className="stock-badge stock-badge-low">Stock bajo</span>;
   }
 
   return null;
@@ -81,13 +82,26 @@ interface InventoryRowProps {
   product: CatalogListItem;
   onEdit: (productId: string) => void;
   onDelete: (product: CatalogListItem) => void;
+  onStockAdjust: (productId: string, delta: number) => void;
+  adjustingStock: boolean;
 }
 
-function InventoryRow({ product, onEdit, onDelete }: InventoryRowProps) {
+function InventoryRow({
+  product,
+  onEdit,
+  onDelete,
+  onStockAdjust,
+  adjustingStock,
+}: InventoryRowProps) {
   const threshold = getLowStockThreshold(product);
+  const out = isOutOfStock({ available_stock: product.available_stock });
+  const low = !out && product.available_stock <= threshold;
+  const quickAdjustDisabled = hasMultipleVariants(product) || adjustingStock;
 
   return (
-    <tr className="inventory-row group">
+    <tr
+      className={`inventory-row group ${low ? "inventory-row-low-stock" : ""} ${out ? "inventory-row-out-stock" : ""}`}
+    >
       <td className="inventory-td w-12">
         <ProductThumb name={product.product_name} thumbUrl={product.thumb_url} />
       </td>
@@ -104,19 +118,43 @@ function InventoryRow({ product, onEdit, onDelete }: InventoryRowProps) {
         </div>
       </td>
       <td className="inventory-td">
-        <div className="flex items-center gap-1.5">
-          <span
-            className={`text-sm font-semibold tabular-nums ${
-              isOutOfStock({ available_stock: product.available_stock })
-                ? "text-zinc-400"
-                : product.available_stock <= threshold
-                  ? "text-amber-700 dark:text-amber-400"
-                  : "text-zinc-900 dark:text-zinc-50"
-            }`}
-          >
-            {product.available_stock}
-          </span>
-          <StockBadge available={product.available_stock} threshold={threshold} />
+        <div className="flex items-center gap-1">
+          {!hasMultipleVariants(product) && (
+            <button
+              type="button"
+              onClick={() => onStockAdjust(product.product_id, -1)}
+              disabled={quickAdjustDisabled || product.available_stock <= 0}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              aria-label={`Restar stock de ${product.product_name}`}
+            >
+              <Minus className="h-3 w-3" aria-hidden="true" />
+            </button>
+          )}
+          <div className="flex min-w-[2.5rem] flex-col items-center">
+            <span
+              className={`text-sm font-semibold tabular-nums ${
+                out
+                  ? "text-zinc-400"
+                  : low
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-zinc-900 dark:text-zinc-50"
+              }`}
+            >
+              {product.available_stock}
+            </span>
+            <StockBadge available={product.available_stock} threshold={threshold} />
+          </div>
+          {!hasMultipleVariants(product) && (
+            <button
+              type="button"
+              onClick={() => onStockAdjust(product.product_id, 1)}
+              disabled={quickAdjustDisabled}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              aria-label={`Sumar stock de ${product.product_name}`}
+            >
+              <Plus className="h-3 w-3" aria-hidden="true" />
+            </button>
+          )}
         </div>
       </td>
       <td className="inventory-td">
@@ -186,6 +224,7 @@ export function InventoryPanel({
   const [editingProductId, setEditingProductId] = useState<string | undefined>();
   const [deleteTarget, setDeleteTarget] = useState<CatalogListItem | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [adjustingProductId, setAdjustingProductId] = useState<string | null>(null);
   const [refreshing, startRefresh] = useTransition();
   const [deleting, startDelete] = useTransition();
 
@@ -229,6 +268,35 @@ export function InventoryPanel({
     setSheetMode("edit");
     setEditingProductId(productId);
     setSheetOpen(true);
+  }
+
+  function handleStockAdjust(productId: string, delta: number) {
+    setAdjustingProductId(productId);
+    startRefresh(async () => {
+      const result = await adjustProductStock(productId, delta);
+      if (result.error) {
+        setAdjustingProductId(null);
+        return;
+      }
+
+      if (result.stock != null) {
+        setProducts((prev) =>
+          prev.map((item) =>
+            item.product_id === productId
+              ? {
+                  ...item,
+                  available_stock: result.stock!,
+                  stock_quantity: result.stock!,
+                }
+              : item,
+          ),
+        );
+      } else {
+        const refreshed = await fetchInventoryProducts();
+        if (!refreshed.error) setProducts(refreshed.products);
+      }
+      setAdjustingProductId(null);
+    });
   }
 
   function handleDeleteConfirm() {
@@ -343,6 +411,8 @@ export function InventoryPanel({
                       product={product}
                       onEdit={openEdit}
                       onDelete={setDeleteTarget}
+                      onStockAdjust={handleStockAdjust}
+                      adjustingStock={adjustingProductId === product.product_id}
                     />
                   ))
                 )}

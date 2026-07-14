@@ -286,7 +286,7 @@ export function ProductForm({
       {!hasCustomVariants && (
         <div>
           <label htmlFor="stock_quantity" className="label-field">
-            Stock disponible <span className="text-red-500">*</span>
+            Cantidad en stock <span className="text-red-500">*</span>
           </label>
           <input
             id="stock_quantity"
@@ -307,7 +307,7 @@ export function ProductForm({
 
       <div>
         <label htmlFor="low_stock_threshold" className="label-field">
-          Alerta de stock bajo
+          Umbral de alerta de stock
         </label>
         <input
           id="low_stock_threshold"
@@ -319,7 +319,7 @@ export function ProductForm({
           className="input-field"
         />
         <p className="mt-1.5 text-xs text-zinc-500">
-          Recibirás alerta en el dashboard cuando el stock sea igual o menor a este valor.
+          El producto se marcará en rojo en el dashboard cuando el stock sea igual o menor a este valor.
         </p>
       </div>
 
