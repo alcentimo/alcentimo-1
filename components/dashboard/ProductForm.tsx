@@ -1,20 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { ImagePlus, Loader2 } from "lucide-react";
 import {
   createProduct,
   updateProduct,
   type ProductEditData,
   type ProductFormState,
 } from "@/lib/products/actions";
-import { compressImageForUpload } from "@/lib/client-image-compress";
 import {
   PRODUCT_IMAGE_ASPECT_CLASS,
   PRODUCT_IMAGE_OPTIMIZE_HINT,
   PRODUCT_IMAGE_RECOMMENDED_HINT,
 } from "@/lib/product-image";
-import { Loader2 } from "lucide-react";
+import {
+  compressSelectedProductImage,
+  PRODUCT_IMAGE_CAMERA_HINT,
+  PRODUCT_IMAGE_FILE_ACCEPT,
+  PRODUCT_IMAGE_FILE_CAPTURE,
+  revokeProductImagePreview,
+} from "@/lib/product-image-picker";
 import type { Store } from "@/lib/database.types";
 import { getStoreCatalogUrl } from "@/lib/stores";
 import { formatUsd } from "@/lib/format";
@@ -71,7 +77,9 @@ export function ProductForm({
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     initialData?.thumbUrl ?? null,
   );
+  const [compressedImageFile, setCompressedImageFile] = useState<File | null>(null);
   const [compressing, setCompressing] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [clientOptimizeHint, setClientOptimizeHint] = useState<string | null>(null);
   const catalogUrl = getStoreCatalogUrl(store.slug);
@@ -90,18 +98,41 @@ export function ProductForm({
     return usd * exchangeRate;
   }, [priceUsd, exchangeRate, countryConfig.currency.showLocalEquivalent]);
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+  useEffect(() => {
+    return () => revokeProductImagePreview(previewUrl);
+  }, [previewUrl]);
+
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+    revokeProductImagePreview(previewUrl);
     setClientOptimizeHint(null);
     setLocalError(null);
-    if (file) {
-      setPreviewUrl(URL.createObjectURL(file));
-    } else if (initialData?.thumbUrl) {
-      setPreviewUrl(initialData.thumbUrl);
-    } else {
-      setPreviewUrl(null);
+    setCompressedImageFile(null);
+
+    if (!file) {
+      if (initialData?.thumbUrl) {
+        setPreviewUrl(initialData.thumbUrl);
+      } else {
+        setPreviewUrl(null);
+      }
+      return;
     }
+
+    setCompressing(true);
+    const result = await compressSelectedProductImage(file);
+    setCompressing(false);
+
+    if (!result.ok) {
+      setLocalError(result.error);
+      setPreviewUrl(initialData?.thumbUrl ?? null);
+      e.target.value = "";
+      return;
+    }
+
+    setCompressedImageFile(result.file);
+    setPreviewUrl(result.previewUrl);
+    setClientOptimizeHint(result.message);
+    e.target.value = "";
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -118,25 +149,10 @@ export function ProductForm({
       ),
     );
 
-    const imageFile = formData.get("image");
-
-    if (imageFile instanceof File && imageFile.size > 0) {
-      try {
-        setCompressing(true);
-        const { file: compressed, message } = await compressImageForUpload(imageFile);
-        formData.set("image", compressed);
-        setClientOptimizeHint(message);
-      } catch (error) {
-        setLocalError(
-          error instanceof Error
-            ? error.message
-            : "No se pudo comprimir la imagen. Prueba con JPG o PNG de menor tamaño.",
-        );
-        setCompressing(false);
-        return;
-      } finally {
-        setCompressing(false);
-      }
+    if (compressedImageFile) {
+      formData.set("image", compressedImageFile);
+    } else {
+      formData.delete("image");
     }
 
     formAction(formData);
@@ -362,24 +378,40 @@ export function ProductForm({
       </div>
 
       <div>
-        <label htmlFor="image" className="label-field">
-          Foto del producto
-        </label>
+        <p className="label-field">Foto del producto</p>
         <input
+          ref={imageInputRef}
           id="image"
-          name="image"
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept={PRODUCT_IMAGE_FILE_ACCEPT}
+          capture={PRODUCT_IMAGE_FILE_CAPTURE}
           onChange={handleImageChange}
-          className="file-input"
+          className="sr-only"
+          aria-label="Tomar foto o elegir imagen del producto"
         />
+        <button
+          type="button"
+          onClick={() => imageInputRef.current?.click()}
+          disabled={isBusy}
+          className="btn-brand-outline mt-1 inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 py-2.5 text-sm sm:w-auto"
+        >
+          {compressing ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <ImagePlus className="h-4 w-4" aria-hidden="true" />
+          )}
+          {compressing
+            ? "Optimizando foto…"
+            : previewUrl
+              ? "Cambiar foto"
+              : "Tomar foto o elegir imagen"}
+        </button>
         <p className="mt-1 text-xs text-zinc-500">
           {PRODUCT_IMAGE_RECOMMENDED_HINT}. {PRODUCT_IMAGE_OPTIMIZE_HINT}
         </p>
         <p className="mt-0.5 text-[11px] text-zinc-400">
-          {mode === "edit"
-            ? "Deja vacío para conservar la imagen actual."
-            : "JPG, PNG o WebP."}
+          {PRODUCT_IMAGE_CAMERA_HINT}
+          {mode === "edit" ? " Deja sin cambiar para conservar la imagen actual." : ""}
         </p>
         {clientOptimizeHint && (
           <p className="mt-2 rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-800 dark:border-teal-900 dark:bg-teal-950 dark:text-teal-200">
@@ -411,15 +443,13 @@ export function ProductForm({
       {displayError && <p className="alert-error">{displayError}</p>}
 
       <button type="submit" disabled={submitDisabled} className="btn-primary">
-        {compressing
-          ? "Comprimiendo imagen…"
-          : pending
-            ? mode === "edit"
-              ? "Guardando cambios…"
-              : "Publicando producto…"
-            : mode === "edit"
-              ? "Guardar cambios"
-              : "Publicar producto"}
+        {pending
+          ? mode === "edit"
+            ? "Guardando cambios…"
+            : "Publicando producto…"
+          : mode === "edit"
+            ? "Guardar cambios"
+            : "Publicar producto"}
       </button>
     </form>
   );
