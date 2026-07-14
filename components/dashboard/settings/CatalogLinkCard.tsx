@@ -28,7 +28,7 @@ export function CatalogLinkCard({ slug, className }: CatalogLinkCardProps) {
   return (
     <div
       className={cn(
-        "general-catalog-link-card flex flex-col gap-3 rounded-xl border border-teal-100/80 bg-teal-50/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-teal-900/40 dark:bg-teal-950/20",
+        "general-catalog-link-card flex flex-col rounded-xl border border-teal-100/80 bg-teal-50/40 sm:flex-row sm:items-center sm:justify-between dark:border-teal-900/40 dark:bg-teal-950/20",
         className,
       )}
     >

@@ -148,7 +148,7 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
         description="Nombre, logo y enlace público de tu catálogo."
         variant="payments"
       >
-        <div className="general-settings-card space-y-4 rounded-xl border border-zinc-200/90 bg-white px-4 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="general-settings-card space-y-3">
           <StoreLogoField
             storeName={storeName}
             value={logoUrl}
@@ -158,7 +158,7 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
             }}
           />
 
-          <div className="border-t border-zinc-100 pt-4 dark:border-zinc-800/80">
+          <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800/80">
             <Label htmlFor="store-name" className="payment-field-label">
               Nombre de la tienda
             </Label>
@@ -219,8 +219,8 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
         description="Número al que llegan los pedidos del catálogo."
         variant="payments"
       >
-        <div className="general-settings-card rounded-xl border border-zinc-200/90 bg-white px-4 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-          <ChannelLogo provider="whatsapp" className="mb-3 h-8 w-8" />
+        <div className="general-settings-card">
+          <ChannelLogo provider="whatsapp" className="mb-2.5 h-7 w-7" />
 
           <Label htmlFor="store-whatsapp" className="payment-field-label">
             Número de WhatsApp

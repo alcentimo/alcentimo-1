@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { ShoppingBag } from "lucide-react";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
@@ -14,6 +15,13 @@ interface TransactionalCatalogProps {
   products: CatalogListItem[];
   exchangeRate: ExchangeRate | null;
   purchaseInfo: PublicPurchaseInfo;
+}
+
+function getStoreInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "T";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return `${words[0][0] ?? ""}${words[1][0] ?? ""}`.toUpperCase();
 }
 
 export function TransactionalCatalog({
@@ -30,17 +38,35 @@ export function TransactionalCatalog({
   );
 
   const whatsappConfigured = Boolean(purchaseInfo.whatsappPhone?.trim());
+  const storeInitials = getStoreInitials(store.name);
 
   return (
     <div className="txn-catalog">
       <header className="txn-catalog-header">
         <div className="txn-catalog-header-inner">
-          <div>
-            <p className="txn-catalog-eyebrow">Catálogo</p>
-            <h1 className="txn-catalog-title">{store.name}</h1>
-            {store.description && (
-              <p className="txn-catalog-desc">{store.description}</p>
+          <div className="txn-catalog-brand">
+            {store.logo_url ? (
+              <div className="txn-store-logo">
+                <Image
+                  src={store.logo_url}
+                  alt={`Logo de ${store.name}`}
+                  fill
+                  sizes="36px"
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <div className="txn-store-logo-fallback" aria-hidden="true">
+                {storeInitials}
+              </div>
             )}
+            <div className="min-w-0">
+              <p className="txn-catalog-eyebrow">Catálogo</p>
+              <h1 className="txn-catalog-title">{store.name}</h1>
+              {store.description && (
+                <p className="txn-catalog-desc">{store.description}</p>
+              )}
+            </div>
           </div>
 
           <button
@@ -48,8 +74,8 @@ export function TransactionalCatalog({
             onClick={() => setCartOpen(true)}
             className="txn-cart-btn"
           >
-            <ShoppingBag className="h-5 w-5" aria-hidden="true" />
-            <span>Carrito</span>
+            <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Carrito</span>
             {itemCount > 0 && (
               <span className="txn-cart-badge">{itemCount}</span>
             )}
@@ -60,10 +86,10 @@ export function TransactionalCatalog({
       <main className="txn-catalog-main">
         {availableProducts.length === 0 ? (
           <div className="txn-catalog-empty">
-            <p className="text-base font-medium text-neutral-800">
+            <p className="text-sm font-medium text-neutral-800">
               No hay productos disponibles
             </p>
-            <p className="mt-2 text-sm text-neutral-500">
+            <p className="mt-1.5 text-xs text-neutral-500">
               Vuelve pronto para ver el catálogo actualizado.
             </p>
           </div>
