@@ -8,9 +8,14 @@ import { cn } from "@/lib/cn";
 interface CatalogLinkCardProps {
   slug: string;
   className?: string;
+  variant?: "settings" | "dashboard";
 }
 
-export function CatalogLinkCard({ slug, className }: CatalogLinkCardProps) {
+export function CatalogLinkCard({
+  slug,
+  className,
+  variant = "settings",
+}: CatalogLinkCardProps) {
   const [copied, setCopied] = useState(false);
   const siteHost = useMemo(() => getPublicSiteHost(), []);
   const catalogUrl = `https://${siteHost}/c/${slug}`;
@@ -23,6 +28,42 @@ export function CatalogLinkCard({ slug, className }: CatalogLinkCardProps) {
     } catch {
       setCopied(false);
     }
+  }
+
+  if (variant === "dashboard") {
+    return (
+      <div
+        className={cn(
+          "rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950 sm:p-5",
+          className,
+        )}
+      >
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">Enlace público de tu tienda</p>
+        <p className="mt-2 break-all text-sm font-medium text-neutral-900 dark:text-neutral-50">
+          {catalogUrl}
+        </p>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className={cn(
+            "btn-brand mt-4 inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-sm font-semibold sm:w-auto sm:min-w-[11rem]",
+            copied && "bg-teal-700",
+          )}
+        >
+          {copied ? (
+            <>
+              <Check className="h-4 w-4" aria-hidden="true" />
+              ¡Copiado!
+            </>
+          ) : (
+            <>
+              <Copy className="h-4 w-4" aria-hidden="true" />
+              Copiar enlace
+            </>
+          )}
+        </button>
+      </div>
+    );
   }
 
   return (

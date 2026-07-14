@@ -5,8 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getHomeSummary } from "@/lib/dashboard/get-home-summary";
 import { getStoreInventory } from "@/lib/inventory";
-import { InventoryAlerts } from "@/components/dashboard/InventoryAlerts";
-import { HomeSummaryPanel } from "@/components/dashboard/HomeSummaryPanel";
+import { isOutOfStock } from "@/lib/inventory/stock-status";
+import { getStoreOrders } from "@/lib/orders/get-store-orders";
+import { DashboardHomePanel } from "@/components/dashboard/DashboardHomePanel";
 import { PageContainer } from "@/components/ui/PageContainer";
 
 export const dynamic = "force-dynamic";
@@ -30,15 +31,20 @@ export default async function DashboardHomePage({
   if (!store) {
     return (
       <PageContainer as="div" className="py-6 sm:py-8">
-        <header className="page-header">
-          <p className="section-label">Inicio</p>
-          <h1 className="page-header-title">Resumen del negocio</h1>
-          <p className="page-header-desc">
-            Crea tu tienda para ver ventas, mensajes e inventario en un solo lugar.
+        <header>
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+            Hola
+          </h1>
+          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+            Crea tu tienda para empezar a vender.
           </p>
         </header>
-        <div className="card-panel">
-          <Link href="/dashboard/productos/nuevo" className="btn-brand gap-2 shadow-sm">
+        <div className="mt-8">
+          <Link
+            href="/dashboard/productos/nuevo"
+            className="btn-brand inline-flex min-h-12 items-center gap-2 px-5 text-base font-semibold"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
             Configurar mi tienda
           </Link>
         </div>
@@ -46,55 +52,30 @@ export default async function DashboardHomePage({
     );
   }
 
-  const [summary, inventory] = await Promise.all([
+  const [summary, inventory, orders] = await Promise.all([
     getHomeSummary(supabase, store.id, store.slug),
     getStoreInventory(store.slug),
+    getStoreOrders(store.id, 50),
   ]);
+
+  const outOfStockProducts = inventory.products.filter(isOutOfStock);
+  const pendingOrders = orders.filter((order) => order.status === "pending");
 
   return (
     <PageContainer as="div" className="py-6 sm:py-8">
       {showOnboardingSuccess ? (
         <div className="alert-success mb-6" role="status">
-          ¡Tu tienda está lista! Ya puedes publicar productos y recibir pedidos por
-          WhatsApp.
+          ¡Tu tienda está lista! Comparte tu enlace y publica tu primer producto.
         </div>
       ) : null}
 
-      <header className="page-header">
-        <p className="section-label">Inicio</p>
-        <h1 className="page-header-title">Resumen del negocio</h1>
-        <p className="page-header-desc">
-          Catálogo y pedidos de {store.name} en un vistazo.
-        </p>
-      </header>
-
-      <HomeSummaryPanel summary={summary} storeName={store.name} />
-
-      {summary.outOfStockCount > 0 || summary.lowStockCount > 0 ? (
-        <section className="mt-8">
-          <InventoryAlerts products={inventory.products} />
-        </section>
-      ) : null}
-
-      <section className="mt-8">
-        <div className="card-panel flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              Acceso rápido
-            </h2>
-            <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-              Publica productos y atiende clientes desde un solo lugar.
-            </p>
-          </div>
-          <Link
-            href="/dashboard/productos/nuevo"
-            className="btn-brand w-full gap-2 shadow-sm sm:w-auto"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Nuevo producto
-          </Link>
-        </div>
-      </section>
+      <DashboardHomePanel
+        summary={summary}
+        storeName={store.name}
+        storeSlug={store.slug}
+        outOfStockProducts={outOfStockProducts}
+        pendingOrders={pendingOrders}
+      />
     </PageContainer>
   );
 }
