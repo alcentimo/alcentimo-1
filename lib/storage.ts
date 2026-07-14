@@ -49,14 +49,14 @@ export async function uploadProductImage(
   } catch (error) {
     if (error instanceof Error && error.message === "IMAGE_TOO_LARGE") {
       return {
-        error: "No se pudo optimizar la imagen por debajo de 2 MB. Prueba con otra foto.",
+        error: "No se pudo optimizar la imagen por debajo de 40 KB. Prueba con otra foto.",
       };
     }
     return { error: "No se pudo procesar la imagen. Prueba con otro archivo." };
   }
 
   if (optimization.compressedSize > PRODUCT_IMAGE_MAX_OUTPUT_BYTES) {
-    return { error: "La imagen optimizada supera 2 MB. Prueba con otra foto." };
+    return { error: "La imagen optimizada supera 40 KB. Prueba con otra foto." };
   }
 
   const path = `${storeId}/${crypto.randomUUID()}.webp`;

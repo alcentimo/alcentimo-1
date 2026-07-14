@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Check, ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { uploadPaymentQrImage } from "@/lib/settings/actions";
+import { compressImageForUpload } from "@/lib/client-image-compress";
+import { PRODUCT_IMAGE_OPTIMIZE_HINT } from "@/lib/product-image";
 
 interface PaymentQrImageFieldProps {
   id: string;
@@ -24,7 +26,10 @@ export function PaymentQrImageField({
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  const isBusy = compressing || pending;
 
   const displayUrl = previewUrl ?? (value || null);
 
@@ -41,16 +46,33 @@ export function PaymentQrImageField({
     }
   }
 
-  function uploadFile(file: File) {
+  async function uploadFile(file: File) {
     setError(null);
     setUploadSuccess(false);
     clearPreview();
+    setCompressing(true);
 
-    const localUrl = URL.createObjectURL(file);
+    let optimizedFile = file;
+    try {
+      const { file: compressed } = await compressImageForUpload(file);
+      optimizedFile = compressed;
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo optimizar la imagen. Prueba con JPG o PNG.",
+      );
+      setCompressing(false);
+      return;
+    } finally {
+      setCompressing(false);
+    }
+
+    const localUrl = URL.createObjectURL(optimizedFile);
     setPreviewUrl(localUrl);
 
     const formData = new FormData();
-    formData.set("file", file);
+    formData.set("file", optimizedFile);
 
     startTransition(async () => {
       const result = await uploadPaymentQrImage(formData);
@@ -101,7 +123,7 @@ export function PaymentQrImageField({
         <span className="ml-1 font-normal text-zinc-400">(opcional)</span>
       </label>
       <p className="mt-0.5 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
-        Sube una imagen o pégala desde el portapapeles (Ctrl+V).
+        Sube una imagen o pégala desde el portapapeles (Ctrl+V). {PRODUCT_IMAGE_OPTIMIZE_HINT}
       </p>
 
       {error && (
@@ -131,12 +153,21 @@ export function PaymentQrImageField({
               className="object-contain p-2"
               unoptimized={Boolean(previewUrl)}
             />
-            {pending && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-zinc-950/70">
+            {(compressing || pending) && (
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-white/70 dark:bg-zinc-950/70"
+                role="status"
+                aria-live="polite"
+              >
                 <Loader2
-                  className="h-8 w-8 animate-spin text-teal-600"
+                  className="h-6 w-6 animate-spin text-teal-600"
                   aria-hidden="true"
                 />
+                {compressing && (
+                  <span className="text-[10px] font-medium text-teal-700 dark:text-teal-300">
+                    Optimizando…
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -158,21 +189,23 @@ export function PaymentQrImageField({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            disabled={pending || disabled}
+            disabled={isBusy || disabled}
             className="btn-brand-outline inline-flex items-center gap-2 self-start text-xs"
           >
-            {pending ? (
+            {compressing ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : pending ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
               <ImagePlus className="h-4 w-4" aria-hidden="true" />
             )}
-            {displayUrl ? "Cambiar QR" : "Cargar imagen QR"}
+            {compressing ? "Optimizando…" : displayUrl ? "Cambiar QR" : "Cargar imagen QR"}
           </button>
           {displayUrl && (
             <button
               type="button"
               onClick={handleRemove}
-              disabled={pending || disabled}
+              disabled={isBusy || disabled}
               className="inline-flex items-center gap-2 self-start text-xs font-medium text-red-600 hover:text-red-700 dark:text-red-400"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />

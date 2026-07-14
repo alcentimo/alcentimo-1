@@ -11,8 +11,10 @@ import {
 import { compressImageForUpload } from "@/lib/client-image-compress";
 import {
   PRODUCT_IMAGE_ASPECT_CLASS,
+  PRODUCT_IMAGE_OPTIMIZE_HINT,
   PRODUCT_IMAGE_RECOMMENDED_HINT,
 } from "@/lib/product-image";
+import { Loader2 } from "lucide-react";
 import type { Store } from "@/lib/database.types";
 import { getStoreCatalogUrl } from "@/lib/stores";
 import { formatUsd } from "@/lib/format";
@@ -372,7 +374,7 @@ export function ProductForm({
           className="file-input"
         />
         <p className="mt-1 text-xs text-zinc-500">
-          {PRODUCT_IMAGE_RECOMMENDED_HINT}. Máx. 2 MB — se comprime automáticamente si pesa más.
+          {PRODUCT_IMAGE_RECOMMENDED_HINT}. {PRODUCT_IMAGE_OPTIMIZE_HINT}
         </p>
         <p className="mt-0.5 text-[11px] text-zinc-400">
           {mode === "edit"
@@ -386,10 +388,22 @@ export function ProductForm({
         )}
         {previewUrl && (
           <div
-            className={`relative mt-3 ${PRODUCT_IMAGE_ASPECT_CLASS} w-full max-w-[7rem] overflow-hidden rounded-xl border border-zinc-200/80 shadow-sm sm:max-w-[8.5rem] dark:border-zinc-800`}
+            className={`relative mt-3 ${PRODUCT_IMAGE_ASPECT_CLASS} w-full max-w-[7rem] overflow-hidden rounded-xl border border-zinc-200/80 shadow-sm sm:max-w-[8.5rem] dark:border-zinc-800 ${compressing ? "opacity-70" : ""}`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={previewUrl} alt="Vista previa" className="h-full w-full object-cover" />
+            {compressing && (
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-white/75 dark:bg-zinc-950/75"
+                role="status"
+                aria-live="polite"
+              >
+                <Loader2 className="h-5 w-5 animate-spin text-teal-600" aria-hidden="true" />
+                <span className="text-[10px] font-medium text-teal-700 dark:text-teal-300">
+                  Optimizando…
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>

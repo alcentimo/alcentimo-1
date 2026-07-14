@@ -12,6 +12,7 @@ import {
 import { compressImageForUpload } from "@/lib/client-image-compress";
 import {
   PRODUCT_IMAGE_ASPECT_CLASS,
+  PRODUCT_IMAGE_OPTIMIZE_HINT,
   PRODUCT_IMAGE_RECOMMENDED_HINT,
 } from "@/lib/product-image";
 import type { Store } from "@/lib/database.types";
@@ -165,6 +166,18 @@ export function ProductCatalogForm({
               <ImagePlus className="h-5 w-5" aria-hidden="true" />
             </div>
           )}
+          {compressing && (
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-white/75 dark:bg-zinc-950/75"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader2 className="h-4 w-4 animate-spin text-teal-600" aria-hidden="true" />
+              <span className="text-[9px] font-medium text-teal-700 dark:text-teal-300">
+                Optimizando…
+              </span>
+            </div>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <Label htmlFor="catalog-image" className="payment-field-label">
@@ -182,7 +195,7 @@ export function ProductCatalogForm({
             {PRODUCT_IMAGE_RECOMMENDED_HINT}
           </p>
           <p className="mt-0.5 text-[10px] text-zinc-400">
-            Máx. 2 MB · se optimiza automáticamente antes de subir.
+            {PRODUCT_IMAGE_OPTIMIZE_HINT}
             {mode === "edit" ? " Opcional al editar." : ""}
           </p>
           {optimizeHint && (
@@ -296,7 +309,12 @@ export function ProductCatalogForm({
           </Button>
         )}
         <Button type="submit" size="sm" disabled={isBusy} className="btn-brand min-w-[7rem]">
-          {isBusy ? (
+          {compressing ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              Optimizando…
+            </>
+          ) : pending ? (
             <>
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
               Guardando…

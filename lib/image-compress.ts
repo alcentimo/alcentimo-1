@@ -3,11 +3,12 @@ import {
   PRODUCT_IMAGE_MAX_DIMENSION,
   PRODUCT_IMAGE_MAX_OUTPUT_BYTES,
   PRODUCT_IMAGE_TARGET_BYTES,
+  PRODUCT_IMAGE_WEBP_QUALITY,
 } from "@/lib/product-image";
 
-const MIN_QUALITY = 40;
-const START_QUALITY = 85;
-const QUALITY_STEP = 6;
+const MIN_QUALITY = 35;
+const START_QUALITY = Math.round(PRODUCT_IMAGE_WEBP_QUALITY * 100);
+const QUALITY_STEP = 5;
 
 export interface ImageOptimizationResult {
   buffer: Buffer;
@@ -49,9 +50,7 @@ async function encodeWebp(
 }
 
 /**
- * Comprime imágenes de producto para catálogo web.
- * - Máx. 1350px (compatible con 1080×1350, ratio 4:5)
- * - WebP, objetivo ≤ 600 KB, tope 2 MB
+ * Respaldo en servidor: WebP, máx. 800px, objetivo < 40 KB.
  */
 export async function compressProductImage(
   input: Buffer | ArrayBuffer,
@@ -71,8 +70,8 @@ export async function compressProductImage(
     best = await encodeWebp(source, width, quality);
   }
 
-  while (best.buffer.length > PRODUCT_IMAGE_MAX_OUTPUT_BYTES && width > 640) {
-    width -= 160;
+  while (best.buffer.length > PRODUCT_IMAGE_MAX_OUTPUT_BYTES && width > 400) {
+    width -= 80;
     quality = Math.max(MIN_QUALITY, quality - 5);
     best = await encodeWebp(source, width, quality);
   }

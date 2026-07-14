@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { ImagePlus, Loader2, Store, Trash2 } from "lucide-react";
 import { uploadStoreLogo } from "@/lib/settings/actions";
+import { compressImageForUpload } from "@/lib/client-image-compress";
+import { PRODUCT_IMAGE_OPTIMIZE_HINT } from "@/lib/product-image";
 import { cn } from "@/lib/cn";
 
 interface StoreLogoFieldProps {
@@ -23,7 +25,10 @@ export function StoreLogoField({ storeName, value, onChange }: StoreLogoFieldPro
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [compressing, setCompressing] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  const isBusy = compressing || pending;
 
   const displayUrl = previewUrl ?? value;
   const initials = getStoreInitials(storeName);
@@ -41,15 +46,32 @@ export function StoreLogoField({ storeName, value, onChange }: StoreLogoFieldPro
     }
   }
 
-  function uploadFile(file: File) {
+  async function uploadFile(file: File) {
     setError(null);
     clearPreview();
+    setCompressing(true);
 
-    const localUrl = URL.createObjectURL(file);
+    let optimizedFile = file;
+    try {
+      const { file: compressed } = await compressImageForUpload(file);
+      optimizedFile = compressed;
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo optimizar la imagen. Prueba con JPG o PNG.",
+      );
+      setCompressing(false);
+      return;
+    } finally {
+      setCompressing(false);
+    }
+
+    const localUrl = URL.createObjectURL(optimizedFile);
     setPreviewUrl(localUrl);
 
     const formData = new FormData();
-    formData.set("file", file);
+    formData.set("file", optimizedFile);
 
     startTransition(async () => {
       const result = await uploadStoreLogo(formData);
@@ -81,7 +103,7 @@ export function StoreLogoField({ storeName, value, onChange }: StoreLogoFieldPro
       <div
         className={cn(
           "relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 ring-1 ring-zinc-200/60 dark:border-zinc-700 dark:bg-zinc-900 dark:ring-zinc-800",
-          pending && "opacity-70",
+          isBusy && "opacity-70",
         )}
       >
         {displayUrl ? (
@@ -104,9 +126,18 @@ export function StoreLogoField({ storeName, value, onChange }: StoreLogoFieldPro
             )}
           </span>
         )}
-        {pending && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-zinc-950/70">
+        {(compressing || pending) && (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-white/70 dark:bg-zinc-950/70"
+            role="status"
+            aria-live="polite"
+          >
             <Loader2 className="h-5 w-5 animate-spin text-teal-600" aria-hidden="true" />
+            {compressing && (
+              <span className="text-[9px] font-medium text-teal-700 dark:text-teal-300">
+                Optimizando…
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -114,7 +145,7 @@ export function StoreLogoField({ storeName, value, onChange }: StoreLogoFieldPro
       <div className="min-w-0 flex-1 space-y-1.5">
         <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Logo de la tienda</p>
         <p className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
-          JPG, PNG o WebP. Máximo 2 MB. Se muestra en tu catálogo público.
+          JPG, PNG o WebP. {PRODUCT_IMAGE_OPTIMIZE_HINT}
         </p>
 
         {error && (
@@ -134,21 +165,23 @@ export function StoreLogoField({ storeName, value, onChange }: StoreLogoFieldPro
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            disabled={pending}
+            disabled={isBusy}
             className="btn-brand-outline inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs"
           >
-            {pending ? (
+            {compressing ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            ) : pending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
             ) : (
               <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
             )}
-            {displayUrl ? "Cambiar logo" : "Subir logo"}
+            {compressing ? "Optimizando…" : displayUrl ? "Cambiar logo" : "Subir logo"}
           </button>
           {displayUrl && (
             <button
               type="button"
               onClick={handleRemove}
-              disabled={pending}
+              disabled={isBusy}
               className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 dark:text-red-400"
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
