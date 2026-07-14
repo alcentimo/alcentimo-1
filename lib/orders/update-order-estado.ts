@@ -40,6 +40,7 @@ export async function updateOrderEstado(
 
   revalidatePath("/dashboard/pedidos");
   revalidatePath("/dashboard");
+  revalidatePath(`/pedidos/${trimmedId}`);
 
   return { success: true };
 }

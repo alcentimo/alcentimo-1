@@ -1,5 +1,6 @@
 import { formatUsd } from "@/lib/format";
 import type { CartItem } from "@/lib/catalog/cart-types";
+import { buildTransactionalOrderWhatsAppMessage } from "@/lib/whatsapp-formatter";
 
 export function normalizeWhatsAppPhone(phone: string): string | null {
   const digits = phone.replace(/\D/g, "");
@@ -58,6 +59,7 @@ export function buildOrderWhatsAppMessage(options: {
   return lines.join("\n");
 }
 
+/** @deprecated Usar buildTransactionalOrderWhatsAppMessage en lib/whatsapp-formatter.ts */
 export function buildTransactionalWhatsAppMessage(options: {
   storeName: string;
   customerName: string;
@@ -70,28 +72,10 @@ export function buildTransactionalWhatsAppMessage(options: {
   totalUsd: number;
   proofUrl: string;
 }): string {
-  const productLines = options.items.map((item) => {
-    const productName =
-      item.variant_name !== "Estándar"
-        ? `${item.product_name} (${item.variant_name})`
-        : item.product_name;
-    return `• ${item.quantity} x ${productName} - ${formatUsd(item.line_total_usd)}`;
+  return buildTransactionalOrderWhatsAppMessage({
+    customerName: options.customerName,
+    items: options.items,
+    totalUsd: options.totalUsd,
+    orderDetailUrl: options.proofUrl.trim(),
   });
-
-  const messageBody = [
-    `📦 Nuevo Pedido en ${options.storeName}`,
-    "",
-    `👤 Cliente: ${options.customerName}`,
-    "",
-    "📋 Productos:",
-    ...productLines,
-    "",
-    `💰 Total: ${formatUsd(options.totalUsd)}`,
-  ].join("\n");
-
-  const proofUrl = options.proofUrl.trim();
-  if (!proofUrl) return messageBody;
-
-  // El enlace va al final, en su propia línea y sin espacios extra, para no romper el formato.
-  return `${messageBody}\n\n🖼️ Comprobante de pago:\n${proofUrl}`;
 }

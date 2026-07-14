@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStoreBySlug } from "@/lib/stores";
-import { buildTransactionalWhatsAppMessage } from "@/lib/catalog/whatsapp-order";
+import { buildTransactionalOrderWhatsAppMessage } from "@/lib/whatsapp-formatter";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
+import { getPublicOrderDetailUrl } from "@/lib/orders/order-links";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { uploadOrderPaymentProof } from "@/lib/orders/storage";
@@ -103,12 +104,11 @@ export async function submitTransactionalOrder(
 
   const settings = await getPublicStoreSettingsConfig(store.id);
   const purchaseInfo = buildPublicPurchaseInfo(settings);
-  const message = buildTransactionalWhatsAppMessage({
-    storeName: store.name,
+  const message = buildTransactionalOrderWhatsAppMessage({
     customerName,
     items: orderItems,
     totalUsd,
-    proofUrl: proofUpload.url,
+    orderDetailUrl: getPublicOrderDetailUrl(orderId),
   });
 
   const whatsappUrl =
@@ -116,6 +116,7 @@ export async function submitTransactionalOrder(
 
   revalidatePath(`/c/${storeSlug}`);
   revalidatePath("/dashboard/pedidos");
+  revalidatePath(`/pedidos/${orderId}`);
 
   return {
     orderId,
