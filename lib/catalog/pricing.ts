@@ -1,4 +1,4 @@
-/** Convierte precio USD a bolívares usando la tasa vigente. */
+/** Convierte precio USD a bolívares usando la tasa vigente (sin redondeo). */
 export function computeUsdToVes(
   priceUsd: number | null | undefined,
   exchangeRate: number | null | undefined,
@@ -11,5 +11,5 @@ export function computeUsdToVes(
     return null;
   }
 
-  return Math.round(priceUsd * exchangeRate * 100) / 100;
+  return priceUsd * exchangeRate;
 }

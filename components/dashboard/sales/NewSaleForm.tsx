@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
 import { createSale } from "@/lib/sales/actions";
 import type { CreateSaleFormState } from "@/lib/sales/types";
-import { formatUsd } from "@/lib/format";
+import { formatUsd, roundMoneyDisplay } from "@/lib/format";
 import { formatCountryCurrency } from "@/lib/country-config";
 import { useCountry } from "@/components/providers/CountryProvider";
 import {
@@ -49,7 +49,7 @@ export function NewSaleForm({ products, exchangeRate }: NewSaleFormProps) {
     if (unitPrice == null || !Number.isFinite(quantityNum) || quantityNum <= 0) {
       return null;
     }
-    return Math.round(unitPrice * quantityNum * 100) / 100;
+    return unitPrice * quantityNum;
   }, [unitPrice, quantityNum]);
 
   const displayTotal = manualTotal
@@ -67,7 +67,7 @@ export function NewSaleForm({ products, exchangeRate }: NewSaleFormProps) {
     ) {
       return null;
     }
-    return Math.round(total * exchangeRate * 100) / 100;
+    return total * exchangeRate;
   }, [displayTotal, exchangeRate, countryConfig.currency.showLocalEquivalent]);
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export function NewSaleForm({ products, exchangeRate }: NewSaleFormProps) {
 
   useEffect(() => {
     if (!manualTotal && autoTotal != null) {
-      setTotalInput(String(autoTotal));
+      setTotalInput(String(roundMoneyDisplay(autoTotal)));
     }
   }, [autoTotal, manualTotal]);
 

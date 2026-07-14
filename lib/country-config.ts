@@ -8,6 +8,7 @@ import type { SalesPaymentMethodKey } from "@/src/config/sales-payment-methods";
 import { PAYMENT_METHOD_GROUPS } from "@/src/config/payment-methods";
 import { SHIPPING_METHODS } from "@/src/config/shipping-methods";
 import { SALES_PAYMENT_METHODS } from "@/src/config/sales-payment-methods";
+import { roundMoneyDisplay } from "@/lib/format";
 
 export type CountryCurrencyCode = "USD" | "VES";
 
@@ -154,7 +155,7 @@ export function formatCountryCurrency(
     return `Bs. ${new Intl.NumberFormat(locale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount)}`;
+    }).format(roundMoneyDisplay(amount))}`;
   }
 
   return new Intl.NumberFormat(locale, {
@@ -162,5 +163,5 @@ export function formatCountryCurrency(
     currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(roundMoneyDisplay(amount));
 }

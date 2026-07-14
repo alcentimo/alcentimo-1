@@ -11,7 +11,7 @@ import {
 import { ProductImageField } from "@/components/dashboard/ProductImageField";
 import type { Store } from "@/lib/database.types";
 import { getStoreCatalogUrl } from "@/lib/stores";
-import { formatUsd } from "@/lib/format";
+import { formatUsd, formatExchangeRate } from "@/lib/format";
 import { formatCountryCurrency } from "@/lib/country-config";
 import { useCountry } from "@/components/providers/CountryProvider";
 import {
@@ -291,7 +291,7 @@ export function ProductForm({
             {exchangeRate && (
               <p className="mt-1.5">
                 <span className="price-rate-badge">
-                  Bs. {exchangeRate.toFixed(2)} / USD ·{" "}
+                  Bs. {formatExchangeRate(exchangeRate)} / USD ·{" "}
                   {formatUsd(parseFloat(priceUsd) || 0)}
                 </span>
               </p>

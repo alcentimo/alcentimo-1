@@ -22,6 +22,7 @@ import {
   getCouponDateStatus,
 } from "@/lib/coupons/dates";
 import type { Coupon, CouponDiscountType } from "@/lib/coupons/types";
+import { formatUsd } from "@/lib/format";
 
 interface PromotionsTabProps {
   initialCoupons: Coupon[];
@@ -59,7 +60,7 @@ export function PromotionsTab({ initialCoupons, products }: PromotionsTabProps) 
   const discountPreview = useMemo(() => {
     if (form.discountType === "fixed") {
       const value = parseFloat(form.discountFixedUsd);
-      return Number.isFinite(value) ? `$${value.toFixed(2)} USD` : "—";
+      return Number.isFinite(value) ? `${formatUsd(value)} USD` : "—";
     }
     const value = parseFloat(form.discountPercent);
     return Number.isFinite(value) ? `${value}%` : "—";

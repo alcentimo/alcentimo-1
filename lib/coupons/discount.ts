@@ -1,5 +1,6 @@
 import type { CartItem } from "@/lib/catalog/cart-types";
 import type { AppliedCoupon, CouponDiscountType } from "@/lib/coupons/types";
+import { formatUsd } from "@/lib/format";
 
 export interface CouponDiscountBreakdown {
   discountUsd: number;
@@ -71,7 +72,7 @@ export function formatCouponDiscountLabel(coupon: {
   discount_fixed_usd: number | null;
 }): string {
   if (coupon.discount_type === "fixed") {
-    return `$${Number(coupon.discount_fixed_usd ?? 0).toFixed(2)} USD`;
+    return `${formatUsd(coupon.discount_fixed_usd ?? 0)} USD`;
   }
   return `${Number(coupon.discount_percent ?? 0)}%`;
 }

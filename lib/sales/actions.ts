@@ -10,6 +10,7 @@ import {
   isValidSalesPaymentDbValue,
 } from "@/src/config/sales-payment-methods";
 import type { CreateSaleFormState } from "@/lib/sales/types";
+import { formatUsd } from "@/lib/format";
 
 function parsePositiveInt(value: FormDataEntryValue | null): number | null {
   if (typeof value !== "string") return null;
@@ -166,6 +167,6 @@ export async function createSale(
   revalidatePath(`/tienda/${store.slug}`);
 
   return {
-    success: `Venta registrada: ${product.name} × ${cantidad} por ${monto.toFixed(2)} USD.`,
+    success: `Venta registrada: ${product.name} × ${cantidad} por ${formatUsd(monto)}.`,
   };
 }
