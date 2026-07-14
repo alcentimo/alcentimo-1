@@ -66,6 +66,12 @@ export interface ExchangeRate {
   created_at: string;
 }
 
+export interface TasasCambio {
+  moneda: string;
+  tasa: number;
+  ultima_actualizacion: string;
+}
+
 export interface Category {
   id: string;
   store_id: string;
@@ -491,6 +497,12 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<ExchangeRate>;
+        Relationships: [];
+      };
+      tasas_cambio: {
+        Row: TasasCambio;
+        Insert: TasasCambio;
+        Update: Partial<TasasCambio>;
         Relationships: [];
       };
       categories: {

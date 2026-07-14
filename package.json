@@ -11,7 +11,8 @@
     "generate-icons": "node scripts/generate-icons.mjs",
     "dev:create-user": "node scripts/create-dev-user.mjs",
     "verify:vercel-env": "node scripts/verify-vercel-env.mjs",
-    "inject:vercel-env": "node scripts/inject-vercel-env.mjs"
+    "inject:vercel-env": "node scripts/inject-vercel-env.mjs",
+    "sync:bcv-rate": "node scripts/sync-bcv-rate.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

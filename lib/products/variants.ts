@@ -1,3 +1,5 @@
+import { computeUsdToVes } from "@/lib/catalog/pricing";
+
 export interface ProductVariantJson {
   id: string;
   name: string;
@@ -107,7 +109,7 @@ export function getCatalogVariantOptions(
         id: product.default_variant_id,
         name: "Estándar",
         priceUsd: basePrice,
-        priceVes: baseVes,
+        priceVes: computeUsdToVes(basePrice, exchangeRate) ?? baseVes,
         availableStock: product.available_stock,
         priceExtraUsd: 0,
       },
@@ -117,11 +119,10 @@ export function getCatalogVariantOptions(
   return variants.map((variant) => {
     const priceUsd = basePrice + variant.price_extra_usd;
     const priceVes =
-      baseVes != null && exchangeRate
-        ? priceUsd * exchangeRate
-        : baseVes != null && product.price_usd
-          ? (priceUsd / product.price_usd) * baseVes
-          : null;
+      computeUsdToVes(priceUsd, exchangeRate) ??
+      (baseVes != null && product.price_usd
+        ? (priceUsd / product.price_usd) * baseVes
+        : null);
 
     return {
       id: variant.id,

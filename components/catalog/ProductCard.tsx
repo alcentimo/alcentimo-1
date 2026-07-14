@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import { Plus } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
-import { formatUsd, formatVes } from "@/lib/format";
+import { formatUsd, formatApproxBs } from "@/lib/format";
+import { computeUsdToVes } from "@/lib/catalog/pricing";
 import { getLowStockThreshold } from "@/lib/inventory/stock-status";
 import {
   getCatalogVariantOptions,
@@ -15,6 +16,7 @@ import type { CatalogVariantOption } from "@/lib/products/variants";
 
 interface ProductCardProps {
   product: CatalogListItem;
+  exchangeRate?: number | null;
   cartQuantity?: number;
   onAddToCart?: (product: CatalogListItem, variant: CatalogVariantOption) => void;
 }
@@ -56,10 +58,17 @@ function AvailabilityStatus({ availableStock }: { availableStock: number }) {
   return <p className="store-product-availability store-product-availability-in">Disponible</p>;
 }
 
-export function ProductCard({ product, cartQuantity = 0, onAddToCart }: ProductCardProps) {
+export function ProductCard({
+  product,
+  exchangeRate = null,
+  cartQuantity = 0,
+  onAddToCart,
+}: ProductCardProps) {
+  const activeExchangeRate = exchangeRate ?? product.exchange_rate_used;
+
   const variantOptions = useMemo(
-    () => getCatalogVariantOptions(product, product.exchange_rate_used),
-    [product],
+    () => getCatalogVariantOptions(product, activeExchangeRate),
+    [product, activeExchangeRate],
   );
   const showVariantSelector = hasMultipleVariants(product);
   const [selectedVariantId, setSelectedVariantId] = useState(
@@ -82,6 +91,12 @@ export function ProductCard({ product, cartQuantity = 0, onAddToCart }: ProductC
     product.compare_at_usd != null &&
     product.price_usd != null &&
     product.compare_at_usd > product.price_usd;
+
+  const selectedPriceUsd = selectedVariant?.priceUsd ?? product.price_usd;
+  const selectedPriceVes =
+    computeUsdToVes(selectedPriceUsd, activeExchangeRate) ??
+    selectedVariant?.priceVes ??
+    product.price_ves;
 
   function handleAdd() {
     if (!canAdd || !selectedVariant) return;
@@ -201,7 +216,7 @@ export function ProductCard({ product, cartQuantity = 0, onAddToCart }: ProductC
             )}
           </div>
           <p className="store-product-price-ves">
-            {formatVes(selectedVariant?.priceVes ?? product.price_ves)}
+            {formatApproxBs(selectedPriceVes)}
           </p>
         </div>
 

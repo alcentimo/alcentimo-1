@@ -25,6 +25,12 @@
       "maxDuration": 30
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/sync-bcv-rate",
+      "schedule": "0 14 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/webhooks/(.*)",

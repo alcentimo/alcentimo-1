@@ -105,7 +105,11 @@ export function CatalogGrid({
         ) : (
           <div className="catalog-grid">
             {products.map((product) => (
-              <ProductCard key={product.product_id} product={product} />
+              <ProductCard
+                key={product.product_id}
+                product={product}
+                exchangeRate={exchangeRate?.rate ?? null}
+              />
             ))}
           </div>
         )}

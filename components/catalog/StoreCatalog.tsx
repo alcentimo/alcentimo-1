@@ -66,6 +66,7 @@ export function StoreCatalog({
   exchangeRate,
   purchaseInfo,
 }: StoreCatalogProps) {
+  const liveExchangeRate = exchangeRate?.rate ?? null;
   const [catalogProducts, setCatalogProducts] = useState(products);
   const [query, setQuery] = useState("");
   const [categorySlug, setCategorySlug] = useState("");
@@ -127,7 +128,7 @@ export function StoreCatalog({
   function addToCart(product: CatalogListItem, variant: CatalogVariantOption) {
     const live = productById.get(product.product_id) ?? product;
     const liveVariant =
-      getCatalogVariantOptions(live, live.exchange_rate_used).find(
+      getCatalogVariantOptions(live, liveExchangeRate).find(
         (option) => option.id === variant.id,
       ) ?? variant;
 
@@ -167,7 +168,7 @@ export function StoreCatalog({
     const live = productById.get(productId);
     if (!live) return;
 
-    const liveVariant = getCatalogVariantOptions(live, live.exchange_rate_used).find(
+    const liveVariant = getCatalogVariantOptions(live, liveExchangeRate).find(
       (option) => option.id === variantId,
     );
     if (!liveVariant) return;
@@ -272,6 +273,7 @@ export function StoreCatalog({
                   <ProductCard
                     key={product.product_id}
                     product={product}
+                    exchangeRate={liveExchangeRate}
                     cartQuantity={getCartQuantity(product.product_id)}
                     onAddToCart={addToCart}
                   />

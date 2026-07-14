@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 
 export interface CatalogPageData {
@@ -42,6 +43,19 @@ function normalizeExchangeRate(row: ExchangeRate): ExchangeRate {
 }
 
 export async function getCurrentExchangeRate(): Promise<ExchangeRate | null> {
+  const tasa = await getLatestUsdTasa(supabase);
+  if (tasa && tasa.tasa > 0) {
+    return {
+      id: `tasas_cambio:${tasa.moneda}`,
+      rate: tasa.tasa,
+      source: "bcv",
+      effective_date: tasa.ultima_actualizacion.slice(0, 10),
+      notes: "Tasa BCV sincronizada automáticamente",
+      store_id: null,
+      created_at: tasa.ultima_actualizacion,
+    };
+  }
+
   const { data, error } = await supabase
     .from("exchange_rate")
     .select("*")

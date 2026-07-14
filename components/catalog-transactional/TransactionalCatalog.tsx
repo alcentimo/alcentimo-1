@@ -27,8 +27,10 @@ function getStoreInitials(name: string): string {
 export function TransactionalCatalog({
   store,
   products,
+  exchangeRate,
   purchaseInfo,
 }: TransactionalCatalogProps) {
+  const liveExchangeRate = exchangeRate?.rate ?? null;
   const { addItem, itemCount } = useCart();
   const [cartOpen, setCartOpen] = useState(false);
 
@@ -99,6 +101,7 @@ export function TransactionalCatalog({
               <ProductCard
                 key={product.product_id}
                 product={product}
+                exchangeRate={liveExchangeRate}
                 onAddToCart={addItem}
               />
             ))}

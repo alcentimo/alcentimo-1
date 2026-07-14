@@ -7,6 +7,15 @@ export function formatUsd(amount: number | null | undefined): string {
   }).format(amount);
 }
 
+export function formatApproxBs(amount: number | null | undefined): string {
+  if (amount == null) return "—";
+  const formatted = new Intl.NumberFormat("es-VE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  return `≈ ${formatted} Bs`;
+}
+
 export function formatVes(amount: number | null | undefined): string {
   if (amount == null) return "—";
   return `Bs. ${new Intl.NumberFormat("es-VE", {
