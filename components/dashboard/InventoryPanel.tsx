@@ -6,6 +6,7 @@ import { memo, useCallback, useMemo, useState, useTransition } from "react";
 import {
   Loader2,
   Download,
+  FileSpreadsheet,
   Minus,
   MoreHorizontal,
   Pencil,
@@ -32,6 +33,8 @@ import {
   PRODUCT_IMPORT_TEMPLATE_FILENAME,
   PRODUCT_IMPORT_TEMPLATE_PATH,
 } from "@/lib/products/import-schema";
+import { exportProductsToExcel } from "@/lib/products/export-actions";
+import { downloadExcelFile } from "@/lib/products/download-export";
 
 const ProductFormSheet = dynamic(
   () =>
@@ -414,6 +417,8 @@ export function InventoryPanel({
   const [adjustingProductId, setAdjustingProductId] = useState<string | null>(null);
   const [refreshing, startRefresh] = useTransition();
   const [deleting, startDelete] = useTransition();
+  const [exporting, startExport] = useTransition();
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const categoriesInList = useMemo(() => {
     const names = new Set<string>();
@@ -498,6 +503,20 @@ export function InventoryPanel({
         if (!refreshed.error) setProducts(refreshed.products);
       }
       setAdjustingProductId(null);
+    });
+  }, []);
+
+  const handleExportExcel = useCallback(() => {
+    startExport(async () => {
+      setExportError(null);
+      const result = await exportProductsToExcel();
+
+      if (!result.ok || !result.fileBase64 || !result.fileName) {
+        setExportError(result.error ?? "No se pudo exportar el catálogo.");
+        return;
+      }
+
+      downloadExcelFile(result.fileBase64, result.fileName);
     });
   }, []);
 
@@ -597,6 +616,21 @@ export function InventoryPanel({
           <Button
             type="button"
             variant="outline"
+            onClick={handleExportExcel}
+            disabled={exporting}
+            aria-label="Exportar catálogo a Excel"
+            className="h-10 gap-2 px-3 text-sm font-semibold sm:px-4"
+          >
+            {exporting ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+            ) : (
+              <FileSpreadsheet className="h-4 w-4 shrink-0" aria-hidden="true" />
+            )}
+            <span className="hidden sm:inline">Exportar a Excel</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => setImportSheetOpen(true)}
             aria-label="Importar productos"
             className="h-10 gap-2 px-3 text-sm font-semibold sm:px-4"
@@ -614,6 +648,12 @@ export function InventoryPanel({
           </Button>
         </div>
       </div>
+
+      {exportError && (
+        <p className="mb-3 text-xs text-red-600 dark:text-red-400" role="alert">
+          {exportError}
+        </p>
+      )}
 
       {products.length === 0 ? (
         <div className="card-panel flex flex-col items-center border-dashed py-12 text-center">
