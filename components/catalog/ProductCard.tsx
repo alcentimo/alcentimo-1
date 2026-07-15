@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import Image from "next/image";
 import { Plus } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
@@ -58,7 +58,7 @@ function AvailabilityStatus({ availableStock }: { availableStock: number }) {
   return <p className="store-product-availability store-product-availability-in">Disponible</p>;
 }
 
-export function ProductCard({
+export const ProductCard = memo(function ProductCard({
   product,
   exchangeRate = null,
   cartQuantity = 0,
@@ -233,4 +233,4 @@ export function ProductCard({
       </div>
     </article>
   );
-}
+});

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { memo, useCallback, useMemo, useState, useTransition } from "react";
 import {
   Loader2,
   Download,
@@ -56,7 +56,7 @@ interface InventoryPanelProps {
   productFormConfig: StoreProductFormConfig;
 }
 
-function StockBadge({
+const StockBadge = memo(function StockBadge({
   available,
   threshold,
 }: {
@@ -72,23 +72,30 @@ function StockBadge({
   }
 
   return null;
-}
+});
 
-function ProductThumb({
+const ProductThumb = memo(function ProductThumb({
   name,
   thumbUrl,
+  size = "sm",
 }: {
   name: string;
   thumbUrl: string | null;
+  size?: "sm" | "md";
 }) {
+  const dimension = size === "md" ? "h-12 w-12" : "h-9 w-9";
+  const imageSizes = size === "md" ? "48px" : "36px";
+
   if (thumbUrl) {
     return (
-      <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-zinc-200/80 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
+      <div
+        className={`relative ${dimension} shrink-0 overflow-hidden rounded-lg border border-zinc-200/80 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800`}
+      >
         <Image
           src={thumbUrl}
           alt={name}
           fill
-          sizes="36px"
+          sizes={imageSizes}
           loading="lazy"
           className="object-cover"
         />
@@ -97,31 +104,178 @@ function ProductThumb({
   }
 
   return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50 text-xs font-semibold text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900">
+    <div
+      className={`flex ${dimension} shrink-0 items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50 text-xs font-semibold text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900`}
+    >
       {name.charAt(0).toUpperCase()}
     </div>
   );
-}
+});
 
-interface InventoryRowProps {
-  product: CatalogListItem;
+const InventoryPriceDisplay = memo(function InventoryPriceDisplay({
+  priceUsd,
+  priceVes,
+}: {
+  priceUsd: number | null;
+  priceVes: number | null;
+}) {
+  return (
+    <div>
+      <span className="price-usd-cell">
+        {priceUsd != null ? formatUsd(priceUsd) : "—"}
+      </span>
+      {priceVes != null && (
+        <p className="price-ves-cell mt-0.5 text-[11px]">{formatVes(priceVes)}</p>
+      )}
+    </div>
+  );
+});
+
+const InventoryActionsMenu = memo(function InventoryActionsMenu({
+  productName,
+  productId,
+  onEdit,
+  onDelete,
+}: {
+  productName: string;
+  productId: string;
   onEdit: (productId: string) => void;
-  onDelete: (product: CatalogListItem) => void;
-  onStockAdjust: (productId: string, delta: number) => void;
-  adjustingStock: boolean;
-}
+  onDelete: (productId: string) => void;
+}) {
+  return (
+    <DropdownMenu
+      align="end"
+      trigger={
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 text-zinc-500"
+          aria-label={`Acciones para ${productName}`}
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      }
+    >
+      {(close) => (
+        <>
+          <DropdownMenuItem
+            onClick={() => {
+              close();
+              onEdit(productId);
+            }}
+          >
+            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+            Editar
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            destructive
+            onClick={() => {
+              close();
+              onDelete(productId);
+            }}
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+            Eliminar
+          </DropdownMenuItem>
+        </>
+      )}
+    </DropdownMenu>
+  );
+});
 
-function InventoryRow({
+const InventoryStockControls = memo(function InventoryStockControls({
+  productName,
+  productId,
+  availableStock,
+  threshold,
+  hasVariants,
+  adjustingStock,
+  onStockAdjust,
+  layout = "inline",
+}: {
+  productName: string;
+  productId: string;
+  availableStock: number;
+  threshold: number;
+  hasVariants: boolean;
+  adjustingStock: boolean;
+  onStockAdjust: (productId: string, delta: number) => void;
+  layout?: "inline" | "spread";
+}) {
+  const out = isOutOfStock({ available_stock: availableStock });
+  const low = !out && availableStock <= threshold;
+  const quickAdjustDisabled = hasVariants || adjustingStock;
+  const containerClass =
+    layout === "spread"
+      ? "flex items-center justify-between gap-3"
+      : "flex items-center gap-1";
+
+  return (
+    <div className={containerClass}>
+      {layout === "spread" && (
+        <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          Stock
+        </span>
+      )}
+      <div className="flex items-center gap-1">
+        {!hasVariants && (
+          <button
+            type="button"
+            onClick={() => onStockAdjust(productId, -1)}
+            disabled={quickAdjustDisabled || availableStock <= 0}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+            aria-label={`Restar stock de ${productName}`}
+          >
+            <Minus className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        )}
+        <div className="flex min-w-[2.75rem] flex-col items-center">
+          <span
+            className={`text-sm font-semibold tabular-nums ${
+              out
+                ? "text-zinc-400"
+                : low
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-zinc-900 dark:text-zinc-50"
+            }`}
+          >
+            {availableStock}
+          </span>
+          <StockBadge available={availableStock} threshold={threshold} />
+        </div>
+        {!hasVariants && (
+          <button
+            type="button"
+            onClick={() => onStockAdjust(productId, 1)}
+            disabled={quickAdjustDisabled}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+            aria-label={`Sumar stock de ${productName}`}
+          >
+            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+});
+
+const InventoryRow = memo(function InventoryRow({
   product,
   onEdit,
   onDelete,
   onStockAdjust,
   adjustingStock,
-}: InventoryRowProps) {
+}: {
+  product: CatalogListItem;
+  onEdit: (productId: string) => void;
+  onDelete: (productId: string) => void;
+  onStockAdjust: (productId: string, delta: number) => void;
+  adjustingStock: boolean;
+}) {
   const threshold = getLowStockThreshold(product);
   const out = isOutOfStock({ available_stock: product.available_stock });
   const low = !out && product.available_stock <= threshold;
-  const quickAdjustDisabled = hasMultipleVariants(product) || adjustingStock;
+  const productHasVariants = hasMultipleVariants(product);
 
   return (
     <tr
@@ -143,95 +297,104 @@ function InventoryRow({
         </div>
       </td>
       <td className="inventory-td">
-        <div className="flex items-center gap-1">
-          {!hasMultipleVariants(product) && (
-            <button
-              type="button"
-              onClick={() => onStockAdjust(product.product_id, -1)}
-              disabled={quickAdjustDisabled || product.available_stock <= 0}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
-              aria-label={`Restar stock de ${product.product_name}`}
-            >
-              <Minus className="h-3 w-3" aria-hidden="true" />
-            </button>
-          )}
-          <div className="flex min-w-[2.5rem] flex-col items-center">
-            <span
-              className={`text-sm font-semibold tabular-nums ${
-                out
-                  ? "text-zinc-400"
-                  : low
-                    ? "text-red-600 dark:text-red-400"
-                    : "text-zinc-900 dark:text-zinc-50"
-              }`}
-            >
-              {product.available_stock}
-            </span>
-            <StockBadge available={product.available_stock} threshold={threshold} />
-          </div>
-          {!hasMultipleVariants(product) && (
-            <button
-              type="button"
-              onClick={() => onStockAdjust(product.product_id, 1)}
-              disabled={quickAdjustDisabled}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
-              aria-label={`Sumar stock de ${product.product_name}`}
-            >
-              <Plus className="h-3 w-3" aria-hidden="true" />
-            </button>
-          )}
-        </div>
+        <InventoryStockControls
+          productName={product.product_name}
+          productId={product.product_id}
+          availableStock={product.available_stock}
+          threshold={threshold}
+          hasVariants={productHasVariants}
+          adjustingStock={adjustingStock}
+          onStockAdjust={onStockAdjust}
+        />
       </td>
       <td className="inventory-td">
-        <div>
-          <span className="price-usd-cell">{formatUsd(product.price_usd)}</span>
-          {product.price_ves != null && (
-            <p className="price-ves-cell mt-0.5 text-[11px]">{formatVes(product.price_ves)}</p>
-          )}
-        </div>
+        <InventoryPriceDisplay
+          priceUsd={product.price_usd}
+          priceVes={product.price_ves}
+        />
       </td>
       <td className="inventory-td inventory-td-actions">
-        <DropdownMenu
-          align="end"
-          trigger={
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-zinc-500"
-              aria-label={`Acciones para ${product.product_name}`}
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          }
-        >
-          {(close) => (
-            <>
-              <DropdownMenuItem
-                onClick={() => {
-                  close();
-                  onEdit(product.product_id);
-                }}
-              >
-                <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                destructive
-                onClick={() => {
-                  close();
-                  onDelete(product);
-                }}
-              >
-                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                Eliminar
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenu>
+        <InventoryActionsMenu
+          productName={product.product_name}
+          productId={product.product_id}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       </td>
     </tr>
   );
-}
+});
+
+const InventoryMobileCard = memo(function InventoryMobileCard({
+  product,
+  onEdit,
+  onDelete,
+  onStockAdjust,
+  adjustingStock,
+}: {
+  product: CatalogListItem;
+  onEdit: (productId: string) => void;
+  onDelete: (productId: string) => void;
+  onStockAdjust: (productId: string, delta: number) => void;
+  adjustingStock: boolean;
+}) {
+  const threshold = getLowStockThreshold(product);
+  const out = isOutOfStock({ available_stock: product.available_stock });
+  const low = !out && product.available_stock <= threshold;
+  const productHasVariants = hasMultipleVariants(product);
+
+  return (
+    <article
+      className={`inventory-mobile-card ${low ? "inventory-mobile-card-low" : ""} ${out ? "inventory-mobile-card-out" : ""}`}
+    >
+      <div className="flex items-start gap-3">
+        <ProductThumb
+          name={product.product_name}
+          thumbUrl={product.thumb_url}
+          size="md"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="line-clamp-2 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                {product.product_name}
+              </p>
+              {product.category_name ? (
+                <p className="mt-0.5 truncate text-[11px] text-zinc-500 dark:text-zinc-400">
+                  {product.category_name}
+                </p>
+              ) : null}
+            </div>
+            <InventoryActionsMenu
+              productName={product.product_name}
+              productId={product.product_id}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          </div>
+          <div className="mt-2">
+            <InventoryPriceDisplay
+              priceUsd={product.price_usd}
+              priceVes={product.price_ves}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+        <InventoryStockControls
+          productName={product.product_name}
+          productId={product.product_id}
+          availableStock={product.available_stock}
+          threshold={threshold}
+          hasVariants={productHasVariants}
+          adjustingStock={adjustingStock}
+          onStockAdjust={onStockAdjust}
+          layout="spread"
+        />
+      </div>
+    </article>
+  );
+});
 
 export function InventoryPanel({
   store,
@@ -273,6 +436,14 @@ export function InventoryPanel({
     });
   }, [products, search, category]);
 
+  const productById = useMemo(() => {
+    const map = new Map<string, CatalogListItem>();
+    for (const product of products) {
+      map.set(product.product_id, product);
+    }
+    return map;
+  }, [products]);
+
   const refreshProducts = useCallback(() => {
     startRefresh(async () => {
       const result = await fetchInventoryProducts();
@@ -282,19 +453,26 @@ export function InventoryPanel({
     });
   }, []);
 
-  function openCreate() {
+  const openCreate = useCallback(() => {
     setSheetMode("create");
     setEditingProductId(undefined);
     setSheetOpen(true);
-  }
+  }, []);
 
-  function openEdit(productId: string) {
+  const openEdit = useCallback((productId: string) => {
     setSheetMode("edit");
     setEditingProductId(productId);
     setSheetOpen(true);
-  }
+  }, []);
 
-  function handleStockAdjust(productId: string, delta: number) {
+  const handleDeleteRequest = useCallback((productId: string) => {
+    const product = productById.get(productId);
+    if (product) {
+      setDeleteTarget(product);
+    }
+  }, [productById]);
+
+  const handleStockAdjust = useCallback((productId: string, delta: number) => {
     setAdjustingProductId(productId);
     startRefresh(async () => {
       const result = await adjustProductStock(productId, delta);
@@ -321,9 +499,9 @@ export function InventoryPanel({
       }
       setAdjustingProductId(null);
     });
-  }
+  }, []);
 
-  function handleDeleteConfirm() {
+  const handleDeleteConfirm = useCallback(() => {
     if (!deleteTarget) return;
     const targetId = deleteTarget.product_id;
     const previous = products;
@@ -341,7 +519,37 @@ export function InventoryPanel({
       setDeleteTarget(null);
       refreshProducts();
     });
-  }
+  }, [deleteTarget, products, refreshProducts]);
+
+  const inventoryList = useMemo(() => {
+    if (filtered.length === 0) {
+      return (
+        <p className="py-10 text-center text-xs text-zinc-500">
+          No hay productos que coincidan con tu búsqueda.
+        </p>
+      );
+    }
+
+    return filtered.map((product) => {
+      const isAdjusting = adjustingProductId === product.product_id;
+      return (
+        <InventoryMobileCard
+          key={product.product_id}
+          product={product}
+          onEdit={openEdit}
+          onDelete={handleDeleteRequest}
+          onStockAdjust={handleStockAdjust}
+          adjustingStock={isAdjusting}
+        />
+      );
+    });
+  }, [
+    filtered,
+    adjustingProductId,
+    openEdit,
+    handleDeleteRequest,
+    handleStockAdjust,
+  ]);
 
   return (
     <>
@@ -422,8 +630,12 @@ export function InventoryPanel({
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-          <div className="overflow-x-auto">
-            <table className="inventory-table inventory-table-dense min-w-[720px]">
+          <div className="inventory-mobile-list" aria-label="Lista de productos">
+            {inventoryList}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
+            <table className="inventory-table inventory-table-dense w-full">
               <thead>
                 <tr className="bg-zinc-50/95 dark:bg-zinc-900/70">
                   <th scope="col" className="inventory-th inventory-th-dense w-12">
@@ -459,7 +671,7 @@ export function InventoryPanel({
                       key={product.product_id}
                       product={product}
                       onEdit={openEdit}
-                      onDelete={setDeleteTarget}
+                      onDelete={handleDeleteRequest}
                       onStockAdjust={handleStockAdjust}
                       adjustingStock={adjustingProductId === product.product_id}
                     />

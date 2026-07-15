@@ -468,6 +468,27 @@ body {
   @apply border-b-0;
 }
 
+.inventory-mobile-list {
+  @apply flex flex-col gap-2 p-2 md:hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.inventory-mobile-card {
+  @apply rounded-xl border border-zinc-200/80 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 7.5rem;
+  contain: layout style paint;
+}
+
+.inventory-mobile-card-low {
+  @apply border-red-200/80 bg-red-50/30 dark:border-red-900/40 dark:bg-red-950/10;
+}
+
+.inventory-mobile-card-out {
+  @apply opacity-80;
+}
+
 .inventory-catalog-header {
   @apply mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
 }

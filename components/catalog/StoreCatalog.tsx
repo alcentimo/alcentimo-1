@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
@@ -111,6 +111,50 @@ export function StoreCatalog({
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  const cartQuantities = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of cartItems) {
+      const productId = item.product.product_id;
+      map.set(productId, (map.get(productId) ?? 0) + item.quantity);
+    }
+    return map;
+  }, [cartItems]);
+
+  const addToCart = useCallback(
+    (product: CatalogListItem, variant: CatalogVariantOption) => {
+      const live = productById.get(product.product_id) ?? product;
+      const liveVariant =
+        getCatalogVariantOptions(live, liveExchangeRate).find(
+          (option) => option.id === variant.id,
+        ) ?? variant;
+
+      if (liveVariant.availableStock <= 0) return;
+
+      const key = cartItemKey(live.product_id, liveVariant.id);
+
+      setCartItems((prev) => {
+        const existing = prev.find(
+          (item) => cartItemKey(item.product.product_id, item.variantId) === key,
+        );
+        const nextQty = (existing?.quantity ?? 0) + 1;
+        if (nextQty > liveVariant.availableStock) return prev;
+
+        if (existing) {
+          return prev.map((item) =>
+            cartItemKey(item.product.product_id, item.variantId) === key
+              ? {
+                  ...buildCartItem(live, liveVariant, nextQty),
+                }
+              : item,
+          );
+        }
+        return [...prev, buildCartItem(live, liveVariant, 1)];
+      });
+      setCartOpen(true);
+    },
+    [liveExchangeRate, productById],
+  );
+
   function getCartQuantity(productId: string, variantId?: string) {
     if (variantId) {
       return (
@@ -120,41 +164,7 @@ export function StoreCatalog({
         )?.quantity ?? 0
       );
     }
-    return cartItems
-      .filter((item) => item.product.product_id === productId)
-      .reduce((sum, item) => sum + item.quantity, 0);
-  }
-
-  function addToCart(product: CatalogListItem, variant: CatalogVariantOption) {
-    const live = productById.get(product.product_id) ?? product;
-    const liveVariant =
-      getCatalogVariantOptions(live, liveExchangeRate).find(
-        (option) => option.id === variant.id,
-      ) ?? variant;
-
-    if (liveVariant.availableStock <= 0) return;
-
-    const key = cartItemKey(live.product_id, liveVariant.id);
-
-    setCartItems((prev) => {
-      const existing = prev.find(
-        (item) => cartItemKey(item.product.product_id, item.variantId) === key,
-      );
-      const nextQty = (existing?.quantity ?? 0) + 1;
-      if (nextQty > liveVariant.availableStock) return prev;
-
-      if (existing) {
-        return prev.map((item) =>
-          cartItemKey(item.product.product_id, item.variantId) === key
-            ? {
-                ...buildCartItem(live, liveVariant, nextQty),
-              }
-            : item,
-        );
-      }
-      return [...prev, buildCartItem(live, liveVariant, 1)];
-    });
-    setCartOpen(true);
+    return cartQuantities.get(productId) ?? 0;
   }
 
   function removeFromCart(productId: string, variantId: string) {
@@ -274,7 +284,7 @@ export function StoreCatalog({
                     key={product.product_id}
                     product={product}
                     exchangeRate={liveExchangeRate}
-                    cartQuantity={getCartQuantity(product.product_id)}
+                    cartQuantity={cartQuantities.get(product.product_id) ?? 0}
                     onAddToCart={addToCart}
                   />
                 ))}
