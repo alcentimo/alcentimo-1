@@ -31,6 +31,7 @@ import { AlertDialog } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { CatalogPdfPreviewDialog } from "@/components/dashboard/CatalogPdfPreviewDialog";
+import { ExportHelpHint } from "@/components/dashboard/ExportHelpHint";
 
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import {
@@ -688,73 +689,76 @@ export function InventoryPanel({
             <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="hidden sm:inline">Descargar Plantilla</span>
           </a>
-          <DropdownMenu
-            align="end"
-            trigger={
-              <Button
-                type="button"
-                variant="outline"
-                disabled={exporting || exportingPdf || exportingCsv}
-                aria-label="Exportar catálogo"
-                className="h-10 gap-2 px-3 text-sm font-semibold sm:px-4"
-              >
-                {exporting || exportingPdf || exportingCsv ? (
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
-                ) : (
-                  <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
-                )}
-                <span className="hidden sm:inline">Exportar</span>
-                <ChevronDown className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
-              </Button>
-            }
-          >
-            {(close) => (
-              <>
-                <DropdownMenuItem
-                  disabled={exporting}
-                  onClick={() => {
-                    close();
-                    handleExportExcel();
-                  }}
+          <div className="inline-flex items-center gap-0.5">
+            <DropdownMenu
+              align="end"
+              trigger={
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={exporting || exportingPdf || exportingCsv}
+                  aria-label="Exportar catálogo"
+                  className="h-10 gap-2 px-3 text-sm font-semibold sm:px-4"
                 >
-                  {exporting ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  {exporting || exportingPdf || exportingCsv ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
                   ) : (
-                    <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden="true" />
+                    <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
                   )}
-                  Exportar Excel
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={exportingPdf}
-                  onClick={() => {
-                    close();
-                    handleExportPdf();
-                  }}
-                >
-                  {exportingPdf ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-                  )}
-                  Exportar PDF
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={exportingCsv}
-                  onClick={() => {
-                    close();
-                    handleExportCsv();
-                  }}
-                >
-                  {exportingCsv ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Table className="h-3.5 w-3.5" aria-hidden="true" />
-                  )}
-                  Exportar CSV
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenu>
+                  <span className="hidden sm:inline">Exportar</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
+                </Button>
+              }
+            >
+              {(close) => (
+                <>
+                  <DropdownMenuItem
+                    disabled={exporting}
+                    onClick={() => {
+                      close();
+                      handleExportExcel();
+                    }}
+                  >
+                    {exporting ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden="true" />
+                    )}
+                    Exportar Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={exportingPdf}
+                    onClick={() => {
+                      close();
+                      handleExportPdf();
+                    }}
+                  >
+                    {exportingPdf ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                    )}
+                    Exportar PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={exportingCsv}
+                    onClick={() => {
+                      close();
+                      handleExportCsv();
+                    }}
+                  >
+                    {exportingCsv ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Table className="h-3.5 w-3.5" aria-hidden="true" />
+                    )}
+                    Exportar CSV
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenu>
+            <ExportHelpHint />
+          </div>
           <Button
             type="button"
             variant="outline"
