@@ -3,20 +3,15 @@ import {
   Check,
   Crown,
   Headphones,
-  ImageIcon,
   Package,
-  Percent,
   Rocket,
   Sparkles,
-  Store,
-  Tag,
   Users,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { formatExchangeRate, formatUsd, formatVes } from "@/lib/format";
 import {
-  PLAN_LIST,
+  PLANS,
   type PlanId,
 } from "@/src/config/plans";
 
@@ -30,6 +25,7 @@ interface PlanFeature {
 }
 
 interface PlanMarketing {
+  planId: PlanId;
   displayName: string;
   description: string;
   icon: LucideIcon;
@@ -39,69 +35,54 @@ interface PlanMarketing {
   features: PlanFeature[];
 }
 
-const PLAN_MARKETING: Record<PlanId, PlanMarketing> = {
-  free: {
-    displayName: "Gratis",
+const LANDING_PLANS: PlanMarketing[] = [
+  {
+    planId: "free",
+    displayName: "Starter",
     description:
-      "Todas las funciones incluidas. La única limitación es el tope de productos.",
+      "Ideal para emprendedores que inician su digitalización. Catálogo base con gestión esencial.",
     icon: Sparkles,
-    cta: "Empezar gratis",
+    cta: "Comenzar gratis",
     ctaHref: "/dashboard/productos/nuevo",
     features: [
-      { text: "Hasta 15 productos activos (única limitación)", icon: Package },
-      { text: "Catálogo público con enlace único", icon: Store },
-      { text: "Precios USD + Bs automáticos", icon: Tag },
-      { text: "Categorías personalizadas", icon: Tag },
-      { text: "Productos destacados", icon: Zap },
-      { text: "Cupones y promociones", icon: Percent },
-      { text: "Variantes de producto", icon: Package },
-      { text: "Alertas de stock bajo", icon: Zap },
-      { text: "Historial de inventario", icon: Package },
-      { text: "Imágenes comprimidas para móvil", icon: ImageIcon },
+      { text: "Hasta 15 productos activos", icon: Package },
+      { text: "Catálogo público con enlace dedicado", icon: Check },
+      { text: "Conversión USD + Bs. en tiempo real", icon: Check },
+      { text: "Gestión esencial de inventario", icon: Check },
     ],
   },
-  starter: {
-    displayName: "Starter",
-    description: "Más catálogo para negocios que ya venden con regularidad.",
+  {
+    planId: "growth",
+    displayName: "Growth",
+    description:
+      "Para operaciones en expansión. Inventario avanzado, multi-usuario y soporte prioritario para optimizar tu flujo de ventas.",
     icon: Rocket,
     popular: true,
-    cta: "Elegir Starter",
-    ctaHref: "/dashboard/productos/nuevo",
-    features: [
-      { text: "Hasta 250 productos activos", icon: Package },
-      { text: "Todas las funciones del plan Gratis", icon: Check },
-      { text: "Soporte por email", icon: Headphones },
-    ],
-  },
-  growth: {
-    displayName: "Growth",
-    description: "Para tiendas con inventario amplio y equipo de ventas.",
-    icon: Crown,
     cta: "Elegir Growth",
-    ctaHref: "/dashboard/productos/nuevo",
+    ctaHref: "/dashboard/planes",
     features: [
       { text: "Hasta 1.000 productos activos", icon: Package },
-      { text: "Todas las funciones del plan Gratis", icon: Check },
-      { text: "Hasta 3 usuarios", icon: Users },
+      { text: "Inventario avanzado y alertas operativas", icon: Check },
+      { text: "Hasta 3 usuarios por organización", icon: Users },
       { text: "Soporte prioritario", icon: Headphones },
     ],
   },
-  premium: {
+  {
+    planId: "premium",
     displayName: "Premium",
-    description: "Para operaciones a escala sin límites de catálogo.",
+    description:
+      "Escalabilidad total. Sin límites de productos, usuarios ilimitados y roles personalizados para grandes equipos. Onboarding directo.",
     icon: Crown,
-    cta: "Contactar ventas",
-    ctaHref: "/dashboard/login",
+    cta: "Elegir Premium",
+    ctaHref: "/dashboard/planes",
     features: [
       { text: "Productos ilimitados", icon: Package },
-      { text: "Todas las funciones del plan Gratis", icon: Check },
       { text: "Usuarios ilimitados", icon: Users },
-      { text: "Roles admin y vendedor", icon: Users },
-      { text: "Onboarding personalizado", icon: Headphones },
-      { text: "Soporte dedicado", icon: Headphones },
+      { text: "Roles personalizados para equipos", icon: Users },
+      { text: "Onboarding directo y soporte dedicado", icon: Headphones },
     ],
   },
-};
+];
 
 function toVes(usd: number, rate: number | null): string {
   if (rate == null) return "—";
@@ -109,11 +90,11 @@ function toVes(usd: number, rate: number | null): string {
 }
 
 export function PricingGrid({ exchangeRate }: PricingGridProps) {
-  const plans = PLAN_LIST.map((plan) => {
-    const marketing = PLAN_MARKETING[plan.id];
+  const plans = LANDING_PLANS.map((marketing) => {
+    const plan = PLANS[marketing.planId];
 
     return {
-      id: plan.id,
+      id: marketing.planId,
       name: marketing.displayName,
       description: marketing.description,
       priceUsd: plan.priceUsdYearly,
@@ -131,11 +112,11 @@ export function PricingGrid({ exchangeRate }: PricingGridProps) {
         <div className="mx-auto max-w-2xl text-center">
           <p className="section-label">Planes y precios</p>
           <h2 className="section-title">
-            Invierte en tu negocio, no en complicaciones
+            Inversión escalable para cada etapa de crecimiento
           </h2>
           <p className="section-subtitle mx-auto">
-            Suscripción anual en dólares con equivalente en bolívares al tipo de
-            cambio del día. Tus clientes siempre ven ambos montos en el catálogo.
+            Suscripción anual en dólares con equivalente en bolívares según la
+            tasa de mercado. Estructura transparente, sin costos ocultos.
           </p>
           {exchangeRate != null && (
             <div className="mt-6 flex justify-center">
@@ -146,7 +127,7 @@ export function PricingGrid({ exchangeRate }: PricingGridProps) {
           )}
         </div>
 
-        <div className="mt-12 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
+        <div className="mt-12 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3 lg:gap-8">
           {plans.map((plan) => {
             const Icon = plan.icon;
             const isPopular = plan.popular === true;
@@ -160,7 +141,7 @@ export function PricingGrid({ exchangeRate }: PricingGridProps) {
               >
                 {isPopular && (
                   <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-teal-600 px-4 py-1 text-xs font-semibold tracking-wide text-white shadow-sm dark:bg-teal-500 dark:text-zinc-950">
-                    Más popular
+                    Recomendado
                   </span>
                 )}
 

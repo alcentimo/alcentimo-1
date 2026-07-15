@@ -14,13 +14,13 @@ export function IntegrationsSection() {
     >
       <div className="page-container">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="section-label">Integraciones y métodos</p>
+          <p className="section-label">Ecosistema de integración</p>
           <h2 className="section-title">
-            Compatible con todo lo que necesitas
+            Conectividad operativa sin fricción
           </h2>
           <p className="section-subtitle mx-auto">
-            Activa los métodos de pago y envío que ya usa tu cliente en
-            Venezuela. Sin integraciones técnicas complicadas.
+            Habilita los métodos de pago y logística que tu mercado exige, con
+            configuración empresarial desde un panel centralizado.
           </p>
         </div>
 
@@ -36,16 +36,16 @@ export function IntegrationsSection() {
                   WhatsApp
                 </p>
                 <p className="mt-1 text-base font-semibold text-zinc-900 sm:text-lg dark:text-zinc-50">
-                  Comparte tu catálogo por WhatsApp con un solo clic
+                  Distribución comercial vía WhatsApp con un solo clic
                 </p>
                 <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  Tus clientes reciben el pedido listo para confirmar, con
-                  productos, envío y pago seleccionados.
+                  Comparte tu catálogo corporativo con pedidos estructurados,
+                  listos para confirmación con productos, envío y pago definidos.
                 </p>
               </div>
             </div>
             <span className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-emerald-700 transition group-hover:gap-2.5 dark:text-emerald-400 sm:self-center">
-              Crear mi catálogo
+              Comenzar gratis
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </span>
           </Link>

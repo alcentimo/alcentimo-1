@@ -3,6 +3,7 @@ import { getCurrentExchangeRate } from "@/lib/catalog";
 import type { Store } from "@/lib/database.types";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { Hero } from "@/components/landing/Hero";
+import { FinancialConsistencyHighlight } from "@/components/landing/FinancialConsistencyHighlight";
 import { Features } from "@/components/landing/Features";
 import { IntegrationsSection } from "@/components/landing/IntegrationsSection";
 import { PricingGrid } from "@/components/landing/PricingGrid";
@@ -34,6 +35,7 @@ export default async function Home() {
       <LandingNav />
       <main className="min-h-dvh bg-zinc-50 dark:bg-zinc-950">
         <Hero exchangeRate={exchangeRate} />
+        <FinancialConsistencyHighlight />
         <Features />
         <IntegrationsSection />
         <PricingGrid exchangeRate={exchangeRate} />

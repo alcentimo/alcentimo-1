@@ -1,10 +1,10 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Package,
+  Globe,
   RefreshCw,
+  Server,
   Share2,
-  WifiOff,
 } from "lucide-react";
 import { formatExchangeRate } from "@/lib/format";
 import { ProductPreview } from "@/components/landing/ProductPreview";
@@ -14,9 +14,9 @@ interface HeroProps {
 }
 
 const stats = [
-  { value: "USD + Bs", label: "Doble precio automático" },
-  { value: "PWA", label: "Funciona sin app store" },
-  { value: "< 100 KB", label: "Imágenes optimizadas" },
+  { value: "Tiempo real", label: "Conversión automática USD ↔ Bs." },
+  { value: "PWA", label: "Arquitectura de alta disponibilidad" },
+  { value: "CDN", label: "Entrega de contenido optimizada" },
 ];
 
 export function Hero({ exchangeRate }: HeroProps) {
@@ -44,16 +44,16 @@ export function Hero({ exchangeRate }: HeroProps) {
             )}
 
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.08] xl:text-5xl dark:text-zinc-50">
-              Software de inventario y ventas{" "}
+              Infraestructura de Gestión para el{" "}
               <span className="text-teal-600 dark:text-teal-400">
-                hecho para Venezuela
+                Comercio Moderno
               </span>
             </h1>
 
             <p className="mt-6 text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
-              Controla stock, publica tu catálogo digital y comparte un enlace
-              único por WhatsApp. Precios en dólares con bolívares calculados
-              al instante — sin hojas de cálculo ni confusiones.
+              Alcentimo centraliza la operatividad de tu negocio, automatiza la
+              conversión de divisas en tiempo real y profesionaliza tu presencia
+              digital con una arquitectura de alta disponibilidad.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
@@ -61,7 +61,7 @@ export function Hero({ exchangeRate }: HeroProps) {
                 href="/dashboard/productos/nuevo"
                 className="btn-brand w-full gap-2 sm:w-auto"
               >
-                Empezar gratis
+                Comenzar gratis
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
@@ -92,15 +92,15 @@ export function Hero({ exchangeRate }: HeroProps) {
         <ul className="mx-auto mt-14 grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3 lg:mt-20">
           <li className="card-surface flex items-start gap-3 p-5">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-400">
-              <Package className="h-5 w-5" aria-hidden="true" />
+              <Server className="h-5 w-5" aria-hidden="true" />
             </span>
             <div>
               <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                Inventario centralizado
+                Operaciones centralizadas
               </p>
               <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                Stock, categorías y alertas de agotado en un solo panel de
-                trabajo.
+                Unifica inventario, catálogo y flujo comercial en una sola
+                plataforma de gestión empresarial.
               </p>
             </div>
           </li>
@@ -111,26 +111,26 @@ export function Hero({ exchangeRate }: HeroProps) {
             </span>
             <div>
               <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                Catálogo listo para compartir
+                Canal digital profesional
               </p>
               <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                URL propia por tienda. Tus clientes ven precios claros en USD y
-                Bs.
+                Despliega un catálogo corporativo con URL propia y precios
+                consistentes en USD y bolívares.
               </p>
             </div>
           </li>
 
           <li className="card-surface flex items-start gap-3 p-5">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-400">
-              <WifiOff className="h-5 w-5" aria-hidden="true" />
+              <Globe className="h-5 w-5" aria-hidden="true" />
             </span>
             <div>
               <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                Ligero en conexiones débiles
+                Rendimiento en cualquier red
               </p>
               <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                PWA sin dependencias pesadas. Imágenes comprimidas para datos
-                limitados.
+                Infraestructura PWA con entrega de contenido optimizada para
+                máxima disponibilidad en condiciones adversas.
               </p>
             </div>
           </li>

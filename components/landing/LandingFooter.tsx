@@ -9,8 +9,8 @@ export function LandingFooter() {
           <div>
             <BrandLogo href="/" size="sm" />
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-              Software de inventario y catálogo digital para comerciantes
-              venezolanos.
+              Infraestructura SaaS de gestión comercial para organizaciones que
+              operan con precisión financiera y presencia digital profesional.
             </p>
           </div>
 
@@ -19,7 +19,7 @@ export function LandingFooter() {
             aria-label="Enlaces del pie de página"
           >
             <Link href="/dashboard/productos/nuevo" className="link-brand">
-              Crear catálogo
+              Comenzar gratis
             </Link>
             <Link href="/dashboard/login" className="link-brand">
               Iniciar sesión

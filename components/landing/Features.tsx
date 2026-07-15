@@ -1,7 +1,7 @@
 import {
   Globe,
   ImageIcon,
-  Package,
+  Layers,
   Shield,
   Store,
   Zap,
@@ -10,39 +10,39 @@ import {
 const features = [
   {
     icon: Store,
-    title: "Tu tienda, tu enlace",
+    title: "Presencia digital propietaria",
     description:
-      "Cada negocio obtiene un catálogo público con URL propia para compartir por WhatsApp o redes.",
+      "Cada organización despliega un catálogo corporativo con dominio dedicado, listo para distribución omnicanal.",
   },
   {
-    icon: Package,
-    title: "Control de inventario",
+    icon: Layers,
+    title: "Gestión integral de inventario",
     description:
-      "Registra stock, recibe alertas de productos agotados y mantén tu vitrina siempre actualizada.",
+      "Visibilidad ejecutiva sobre stock, categorías y alertas operativas para decisiones comerciales informadas.",
   },
   {
     icon: ImageIcon,
-    title: "Imágenes optimizadas",
+    title: "Entrega de contenido inteligente",
     description:
-      "Las fotos se comprimen automáticamente para cargar rápido incluso con señal débil.",
+      "Sistema de entrega de contenido (CDN) inteligente que garantiza carga instantánea en cualquier condición de red.",
   },
   {
     icon: Globe,
-    title: "Catálogo multi-moneda",
+    title: "Arquitectura multi-moneda",
     description:
-      "Precio referencial en USD y equivalente en bolívares visible en cada producto.",
+      "Motor de conversión en tiempo real que mantiene precios referenciales en USD y equivalentes en bolívares sincronizados.",
   },
   {
     icon: Shield,
-    title: "Datos aislados por tienda",
+    title: "Aislamiento de datos multi-tenant",
     description:
-      "Arquitectura multi-tenant: tu información queda separada y protegida de otros negocios.",
+      "Arquitectura empresarial con segregación estricta de datos por organización, garantizando confidencialidad operativa.",
   },
   {
     icon: Zap,
-    title: "Publicación instantánea",
+    title: "Sincronización en tiempo real",
     description:
-      "Agrega un producto en el panel y aparece de inmediato en tu catálogo público.",
+      "Los cambios en el panel se propagan de inmediato al catálogo público, eliminando desfases entre operación y venta.",
   },
 ];
 
@@ -51,13 +51,14 @@ export function Features() {
     <section id="caracteristicas" className="section-padding bg-zinc-100/60 dark:bg-zinc-900/40">
       <div className="page-container">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="section-label">Herramientas de trabajo</p>
+          <p className="section-label">Capacidades de la plataforma</p>
           <h2 className="section-title">
-            Todo lo que necesitas para vender en serio
+            Todo lo que necesitas para escalar con confianza
           </h2>
           <p className="section-subtitle mx-auto">
-            Diseñado para comerciantes venezolanos que necesitan claridad en
-            precios, control de stock y una presencia digital profesional.
+            Una suite SaaS diseñada para organizaciones que exigen precisión
+            financiera, control operativo y una presencia digital de nivel
+            empresarial.
           </p>
         </div>
 
