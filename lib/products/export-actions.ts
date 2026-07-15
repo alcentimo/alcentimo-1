@@ -9,6 +9,10 @@ import {
   encodeProductsWorkbook,
 } from "@/lib/products/export-xlsx";
 import {
+  buildCatalogCsvFileName,
+  encodeProductsCsv,
+} from "@/lib/products/export-csv";
+import {
   buildCatalogPdfFileName,
   encodeProductsCatalogPdf,
 } from "@/lib/products/export-pdf";
@@ -80,6 +84,36 @@ export async function exportProductsToExcel(): Promise<ProductExportResult> {
       error instanceof Error
         ? error.message
         : "No se pudo generar el archivo de exportación.";
+    return { ok: false, error: message };
+  }
+}
+
+export async function exportProductsToCsv(): Promise<ProductExportResult> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+
+  if (!auth.ok) {
+    return { ok: false, error: auth.error };
+  }
+
+  const { store } = auth;
+
+  try {
+    const { products } = await getStoreInventory(store.slug);
+    const buffer = encodeProductsCsv(products);
+    const fileBase64 = buffer.toString("base64");
+
+    return {
+      ok: true,
+      fileBase64,
+      fileName: buildCatalogCsvFileName(store.slug),
+      rowCount: products.length,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "No se pudo generar el catálogo en CSV.";
     return { ok: false, error: message };
   }
 }

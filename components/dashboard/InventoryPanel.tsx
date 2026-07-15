@@ -6,6 +6,7 @@ import { memo, useCallback, useMemo, useState, useTransition } from "react";
 import {
   Loader2,
   Download,
+  ChevronDown,
   FileSpreadsheet,
   FileText,
   Minus,
@@ -13,6 +14,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Table,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -36,12 +38,14 @@ import {
   PRODUCT_IMPORT_TEMPLATE_PATH,
 } from "@/lib/products/import-schema";
 import {
+  exportProductsToCsv,
   exportProductsToExcel,
   exportProductsToPdf,
   getCatalogPdfSourceData,
 } from "@/lib/products/export-actions";
 import {
   createPdfPreviewUrl,
+  downloadCsvFile,
   downloadExcelFile,
   revokePdfPreviewUrl,
 } from "@/lib/products/download-export";
@@ -430,6 +434,7 @@ export function InventoryPanel({
   const [deleting, startDelete] = useTransition();
   const [exporting, startExport] = useTransition();
   const [exportingPdf, startExportPdf] = useTransition();
+  const [exportingCsv, startExportCsv] = useTransition();
   const [exportError, setExportError] = useState<string | null>(null);
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
@@ -533,6 +538,20 @@ export function InventoryPanel({
       }
 
       downloadExcelFile(result.fileBase64, result.fileName);
+    });
+  }, []);
+
+  const handleExportCsv = useCallback(() => {
+    startExportCsv(async () => {
+      setExportError(null);
+      const result = await exportProductsToCsv();
+
+      if (!result.ok || !result.fileBase64 || !result.fileName) {
+        setExportError(result.error ?? "No se pudo exportar el catálogo en CSV.");
+        return;
+      }
+
+      downloadCsvFile(result.fileBase64, result.fileName);
     });
   }, []);
 
@@ -669,36 +688,73 @@ export function InventoryPanel({
             <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="hidden sm:inline">Descargar Plantilla</span>
           </a>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleExportExcel}
-            disabled={exporting}
-            aria-label="Exportar catálogo a Excel"
-            className="h-10 gap-2 px-3 text-sm font-semibold sm:px-4"
+          <DropdownMenu
+            align="end"
+            trigger={
+              <Button
+                type="button"
+                variant="outline"
+                disabled={exporting || exportingPdf || exportingCsv}
+                aria-label="Exportar catálogo"
+                className="h-10 gap-2 px-3 text-sm font-semibold sm:px-4"
+              >
+                {exporting || exportingPdf || exportingCsv ? (
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
+                )}
+                <span className="hidden sm:inline">Exportar</span>
+                <ChevronDown className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
+              </Button>
+            }
           >
-            {exporting ? (
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
-            ) : (
-              <FileSpreadsheet className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {(close) => (
+              <>
+                <DropdownMenuItem
+                  disabled={exporting}
+                  onClick={() => {
+                    close();
+                    handleExportExcel();
+                  }}
+                >
+                  {exporting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  Exportar Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={exportingPdf}
+                  onClick={() => {
+                    close();
+                    handleExportPdf();
+                  }}
+                >
+                  {exportingPdf ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  Exportar PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={exportingCsv}
+                  onClick={() => {
+                    close();
+                    handleExportCsv();
+                  }}
+                >
+                  {exportingCsv ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Table className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  Exportar CSV
+                </DropdownMenuItem>
+              </>
             )}
-            <span className="hidden sm:inline">Exportar a Excel</span>
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleExportPdf}
-            disabled={exportingPdf}
-            aria-label="Vista previa del catálogo en PDF"
-            className="h-10 gap-2 px-3 text-sm font-semibold sm:px-4"
-          >
-            {exportingPdf ? (
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
-            ) : (
-              <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
-            )}
-            <span className="hidden sm:inline">Vista previa PDF</span>
-          </Button>
+          </DropdownMenu>
           <Button
             type="button"
             variant="outline"

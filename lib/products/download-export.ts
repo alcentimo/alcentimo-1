@@ -59,3 +59,7 @@ export function downloadExcelFile(fileBase64: string, fileName: string) {
 export function downloadPdfFile(fileBase64: string, fileName: string) {
   downloadBase64File(fileBase64, fileName, "application/pdf");
 }
+
+export function downloadCsvFile(fileBase64: string, fileName: string) {
+  downloadBase64File(fileBase64, fileName, "text/csv;charset=utf-8");
+}
