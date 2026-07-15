@@ -7,6 +7,7 @@ import {
   Loader2,
   Download,
   FileSpreadsheet,
+  FileText,
   Minus,
   MoreHorizontal,
   Pencil,
@@ -27,14 +28,24 @@ import { hasMultipleVariants } from "@/lib/products/variants";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { CatalogPdfPreviewDialog } from "@/components/dashboard/CatalogPdfPreviewDialog";
 
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import {
   PRODUCT_IMPORT_TEMPLATE_FILENAME,
   PRODUCT_IMPORT_TEMPLATE_PATH,
 } from "@/lib/products/import-schema";
-import { exportProductsToExcel } from "@/lib/products/export-actions";
-import { downloadExcelFile } from "@/lib/products/download-export";
+import {
+  exportProductsToExcel,
+  exportProductsToPdf,
+  getCatalogPdfSourceData,
+} from "@/lib/products/export-actions";
+import {
+  createPdfPreviewUrl,
+  downloadExcelFile,
+  revokePdfPreviewUrl,
+} from "@/lib/products/download-export";
+import { compressCatalogImagesForPdf } from "@/lib/products/pdf-client-images";
 
 const ProductFormSheet = dynamic(
   () =>
@@ -418,7 +429,12 @@ export function InventoryPanel({
   const [refreshing, startRefresh] = useTransition();
   const [deleting, startDelete] = useTransition();
   const [exporting, startExport] = useTransition();
+  const [exportingPdf, startExportPdf] = useTransition();
   const [exportError, setExportError] = useState<string | null>(null);
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [pdfPreviewBase64, setPdfPreviewBase64] = useState<string | null>(null);
+  const [pdfPreviewFileName, setPdfPreviewFileName] = useState<string | null>(null);
 
   const categoriesInList = useMemo(() => {
     const names = new Set<string>();
@@ -518,6 +534,46 @@ export function InventoryPanel({
 
       downloadExcelFile(result.fileBase64, result.fileName);
     });
+  }, []);
+
+  const handleExportPdf = useCallback(() => {
+    startExportPdf(async () => {
+      setExportError(null);
+
+      const source = await getCatalogPdfSourceData();
+      if (!source.ok || !source.products) {
+        setExportError(source.error ?? "No se pudo cargar el catálogo.");
+        return;
+      }
+
+      const clientImages = await compressCatalogImagesForPdf(source.products);
+      const result = await exportProductsToPdf(clientImages);
+
+      if (!result.ok || !result.fileBase64 || !result.fileName) {
+        setExportError(result.error ?? "No se pudo generar el catálogo en PDF.");
+        return;
+      }
+
+      setPdfPreviewUrl((current) => {
+        revokePdfPreviewUrl(current);
+        return createPdfPreviewUrl(result.fileBase64!);
+      });
+      setPdfPreviewBase64(result.fileBase64);
+      setPdfPreviewFileName(result.fileName);
+      setPdfPreviewOpen(true);
+    });
+  }, []);
+
+  const handlePdfPreviewOpenChange = useCallback((open: boolean) => {
+    setPdfPreviewOpen(open);
+    if (!open) {
+      setPdfPreviewUrl((current) => {
+        revokePdfPreviewUrl(current);
+        return null;
+      });
+      setPdfPreviewBase64(null);
+      setPdfPreviewFileName(null);
+    }
   }, []);
 
   const handleDeleteConfirm = useCallback(() => {
@@ -627,6 +683,21 @@ export function InventoryPanel({
               <FileSpreadsheet className="h-4 w-4 shrink-0" aria-hidden="true" />
             )}
             <span className="hidden sm:inline">Exportar a Excel</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExportPdf}
+            disabled={exportingPdf}
+            aria-label="Vista previa del catálogo en PDF"
+            className="h-10 gap-2 px-3 text-sm font-semibold sm:px-4"
+          >
+            {exportingPdf ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+            ) : (
+              <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
+            )}
+            <span className="hidden sm:inline">Vista previa PDF</span>
           </Button>
           <Button
             type="button"
@@ -750,6 +821,14 @@ export function InventoryPanel({
         mode={sheetMode}
         productId={editingProductId}
         onSaved={refreshProducts}
+      />
+
+      <CatalogPdfPreviewDialog
+        open={pdfPreviewOpen}
+        onOpenChange={handlePdfPreviewOpenChange}
+        previewUrl={pdfPreviewUrl}
+        fileBase64={pdfPreviewBase64}
+        fileName={pdfPreviewFileName}
       />
 
       <AlertDialog
