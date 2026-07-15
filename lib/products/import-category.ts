@@ -1,36 +1,12 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { slugify } from "@/lib/slugify";
 import {
-  getProductCategoriesForRubro,
-  type StoreRubro,
-} from "@/src/config/categories";
-import { normalizeProductNameKey } from "@/lib/products/import-sanitize";
+  normalizeImportCategoryName,
+  normalizeProductNameKey,
+} from "@/lib/products/import-sanitize";
 
-/** Resuelve el slug de categoría desde el valor de la columna `categoria`. */
-export function resolveCategorySlugFromImport(
-  rubro: StoreRubro,
-  categoriaValue: string,
-): string | null {
-  const trimmed = categoriaValue.trim();
-  if (!trimmed) return null;
-
-  const options = getProductCategoriesForRubro(rubro);
-  const slugCandidate = slugify(trimmed) || trimmed.toLowerCase();
-
-  const bySlug = options.find((option) => option.slug === slugCandidate);
-  if (bySlug) return bySlug.slug;
-
-  const normalizedLabel = trimmed.toLocaleLowerCase("es");
-  const byLabel = options.find(
-    (option) => option.label.toLocaleLowerCase("es") === normalizedLabel,
-  );
-  if (byLabel) return byLabel.slug;
-
-  return null;
-}
-
-export function formatCategoryHints(rubro: StoreRubro): string {
-  const options = getProductCategoriesForRubro(rubro);
-  return options.map((option) => `${option.slug} (${option.label})`).join(", ");
+export function categorySlugFromImportName(normalizedName: string): string {
+  return slugify(normalizedName) || normalizedName.replace(/\s+/g, "-");
 }
 
 export function findDuplicateImportNames(
@@ -52,4 +28,117 @@ export function findDuplicateImportNames(
   }
 
   return errors;
+}
+
+export type ImportCategoryCache = Map<string, string>;
+
+export function buildImportCategoryCache(
+  categories: { id: string; name: string; slug: string }[],
+): ImportCategoryCache {
+  const cache: ImportCategoryCache = new Map();
+
+  for (const category of categories) {
+    cache.set(normalizeImportCategoryName(category.name), category.id);
+    cache.set(category.slug, category.id);
+  }
+
+  return cache;
+}
+
+/** Busca por nombre/slug normalizado o crea la categoría en la tienda. */
+export async function resolveOrCreateImportCategory(
+  supabase: SupabaseClient,
+  storeId: string,
+  categoria: string,
+  cache: ImportCategoryCache,
+): Promise<{ categoryId?: string; error?: string }> {
+  const normalizedName = normalizeImportCategoryName(categoria);
+  if (!normalizedName) {
+    return { error: "categoria es obligatoria" };
+  }
+
+  const cachedByName = cache.get(normalizedName);
+  if (cachedByName) {
+    return { categoryId: cachedByName };
+  }
+
+  const slug = categorySlugFromImportName(normalizedName);
+  const cachedBySlug = cache.get(slug);
+  if (cachedBySlug) {
+    cache.set(normalizedName, cachedBySlug);
+    return { categoryId: cachedBySlug };
+  }
+
+  const { data: existingBySlug, error: lookupError } = await supabase
+    .from("categories")
+    .select("id, name, slug")
+    .eq("store_id", storeId)
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (lookupError) {
+    return { error: lookupError.message };
+  }
+
+  if (existingBySlug?.id) {
+    const categoryId = existingBySlug.id as string;
+    cache.set(normalizedName, categoryId);
+    cache.set(slug, categoryId);
+    return { categoryId };
+  }
+
+  const { data: existingByName, error: nameLookupError } = await supabase
+    .from("categories")
+    .select("id, name, slug")
+    .eq("store_id", storeId)
+    .ilike("name", normalizedName)
+    .maybeSingle();
+
+  if (nameLookupError) {
+    return { error: nameLookupError.message };
+  }
+
+  if (existingByName?.id) {
+    const categoryId = existingByName.id as string;
+    cache.set(normalizedName, categoryId);
+    cache.set(existingByName.slug as string, categoryId);
+    return { categoryId };
+  }
+
+  const { data: created, error: insertError } = await supabase
+    .from("categories")
+    .insert({
+      store_id: storeId,
+      name: normalizedName,
+      slug,
+    })
+    .select("id, slug")
+    .single();
+
+  if (insertError) {
+    if (insertError.code === "23505") {
+      const { data: raced } = await supabase
+        .from("categories")
+        .select("id, slug")
+        .eq("store_id", storeId)
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (raced?.id) {
+        const categoryId = raced.id as string;
+        cache.set(normalizedName, categoryId);
+        cache.set(slug, categoryId);
+        return { categoryId };
+      }
+    }
+
+    return { error: insertError.message };
+  }
+
+  const categoryId = created.id as string;
+  const createdSlug = created.slug as string;
+  cache.set(normalizedName, categoryId);
+  cache.set(createdSlug, categoryId);
+
+  return { categoryId };
 }

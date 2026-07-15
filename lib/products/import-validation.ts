@@ -8,6 +8,7 @@ import {
 } from "@/lib/products/import-schema";
 import {
   mapHeaders,
+  normalizeImportCategoryName,
   parseImportPrice,
   parseImportStock,
   sanitizeImportImageUrl,
@@ -82,10 +83,13 @@ export function validateProductImportSheet(
       cellValue(row, columnMap.descripcion),
       PRODUCT_IMPORT_LIMITS.descripcion,
     );
-    const categoria = sanitizeImportText(
+    const categoriaRaw = sanitizeImportText(
       cellValue(row, columnMap.categoria),
       PRODUCT_IMPORT_LIMITS.categoria,
     );
+    const categoria = categoriaRaw
+      ? normalizeImportCategoryName(categoriaRaw)
+      : "";
     const precio = parseImportPrice(cellValue(row, columnMap.precio));
     const stock = parseImportStock(cellValue(row, columnMap.stock));
     const urlRaw = cellValue(row, columnMap.url_imagen);

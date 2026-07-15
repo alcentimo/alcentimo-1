@@ -90,3 +90,13 @@ export function mapHeaders(
 export function normalizeProductNameKey(name: string): string {
   return name.trim().toLocaleLowerCase("es");
 }
+
+/** Minúsculas y espacios extra colapsados para categorías de importación. */
+export function normalizeImportCategoryName(value: string): string {
+  return value
+    .replace(CONTROL_CHARS, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("es");
+}
+

@@ -7,15 +7,12 @@ import { slugify, uniqueSlug } from "@/lib/slugify";
 import { assertCanCreateProduct } from "@/lib/plans/product-limit";
 import { buildProductMetadata } from "@/lib/products/extra-fields";
 import {
-  getStoreRubroTienda,
-  resolveProductCategoryId,
-} from "@/lib/products/rubro-categories";
-import {
+  buildImportCategoryCache,
   findDuplicateImportNames,
-  formatCategoryHints,
-  resolveCategorySlugFromImport,
+  resolveOrCreateImportCategory,
 } from "@/lib/products/import-category";
 import {
+  normalizeImportCategoryName,
   normalizeProductNameKey,
   sanitizeImportImageUrl,
   sanitizeImportText,
@@ -45,7 +42,11 @@ function revalidateImportRow(row: ValidatedImportRow): ValidatedImportRow | null
   const descripcionRaw = row.descripcion
     ? sanitizeImportText(row.descripcion, PRODUCT_IMPORT_LIMITS.descripcion)
     : "";
-  const categoria = sanitizeImportText(row.categoria, PRODUCT_IMPORT_LIMITS.categoria);
+  const categoria = row.categoria
+    ? normalizeImportCategoryName(
+        sanitizeImportText(row.categoria, PRODUCT_IMPORT_LIMITS.categoria),
+      )
+    : "";
   const precio = parseImportPrice(row.precio);
   const stock = parseImportStock(row.stock);
   const urlProvided = row.url_imagen
@@ -150,8 +151,23 @@ export async function importProductsBulk(
     return { ok: false, created: 0, updated: 0, errors: duplicateErrors };
   }
 
-  const rubro = await getStoreRubroTienda(supabase, store.id);
-  const categoryHints = formatCategoryHints(rubro);
+  const { data: storeCategories, error: categoriesError } = await supabase
+    .from("categories")
+    .select("id, name, slug")
+    .eq("store_id", store.id);
+
+  if (categoriesError) {
+    return {
+      ok: false,
+      created: 0,
+      updated: 0,
+      errors: [categoriesError.message],
+    };
+  }
+
+  const categoryCache = buildImportCategoryCache(
+    (storeCategories ?? []) as { id: string; name: string; slug: string }[],
+  );
 
   const { data: existingProducts, error: existingError } = await supabase
     .from("products")
@@ -180,19 +196,11 @@ export async function importProductsBulk(
   const errors: string[] = [];
 
   for (const row of sanitizedRows) {
-    const categorySlug = resolveCategorySlugFromImport(rubro, row.categoria);
-    if (!categorySlug) {
-      errors.push(
-        `Fila ${row.rowNumber}: categoría "${row.categoria}" no válida. Usa: ${categoryHints}.`,
-      );
-      continue;
-    }
-
-    const categoryResolved = await resolveProductCategoryId(
+    const categoryResolved = await resolveOrCreateImportCategory(
       supabase,
       store.id,
-      rubro,
-      categorySlug,
+      row.categoria,
+      categoryCache,
     );
     if (categoryResolved.error || !categoryResolved.categoryId) {
       errors.push(
@@ -209,8 +217,6 @@ export async function importProductsBulk(
         productId: existing.id,
         categoryId: categoryResolved.categoryId,
         row,
-        rubro,
-        categorySlug,
       });
 
       if (updateResult.error) {
@@ -233,8 +239,6 @@ export async function importProductsBulk(
       storeSlug: store.slug,
       categoryId: categoryResolved.categoryId,
       row,
-      rubro,
-      categorySlug,
     });
 
     if (createResult.error) {
@@ -271,8 +275,6 @@ async function createImportedProduct(
     storeSlug: string;
     categoryId: string;
     row: ValidatedImportRow;
-    rubro: import("@/src/config/categories").StoreRubro;
-    categorySlug: string;
   },
 ): Promise<{ productId?: string; slug?: string; error?: string }> {
   const { storeId, storeSlug, categoryId, row } = params;
@@ -358,8 +360,6 @@ async function updateImportedProduct(
     productId: string;
     categoryId: string;
     row: ValidatedImportRow;
-    rubro: import("@/src/config/categories").StoreRubro;
-    categorySlug: string;
   },
 ): Promise<{ error?: string }> {
   const { storeId, productId, categoryId, row } = params;
