@@ -189,7 +189,7 @@ export function ProductCatalogForm({
         </Select>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="catalog-price-usd" className="payment-field-label">
             Precio USD
@@ -278,13 +278,25 @@ export function ProductCatalogForm({
         </p>
       )}
 
-      <div className="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+      <div className="flex flex-col-reverse gap-2 border-t border-zinc-100 pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end dark:border-zinc-800">
         {onCancel && (
-          <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={isBusy}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onCancel}
+            disabled={isBusy}
+            className="w-full sm:w-auto"
+          >
             Cancelar
           </Button>
         )}
-        <Button type="submit" size="sm" disabled={submitDisabled} className="btn-brand min-w-[7rem]">
+        <Button
+          type="submit"
+          size="sm"
+          disabled={submitDisabled}
+          className="btn-brand w-full min-w-[7rem] sm:w-auto"
+        >
           {pending ? (
             <>
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />

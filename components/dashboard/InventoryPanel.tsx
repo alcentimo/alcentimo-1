@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useCallback, useMemo, useState, useTransition } from "react";
 import {
@@ -22,8 +23,6 @@ import {
 } from "@/lib/inventory/stock-status";
 import { deleteProduct, fetchInventoryProducts, adjustProductStock } from "@/lib/products/actions";
 import { hasMultipleVariants } from "@/lib/products/variants";
-import { ProductFormSheet } from "@/components/dashboard/ProductFormSheet";
-import { ProductImportSheet } from "@/components/dashboard/ProductImportSheet";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -33,6 +32,22 @@ import {
   PRODUCT_IMPORT_TEMPLATE_FILENAME,
   PRODUCT_IMPORT_TEMPLATE_PATH,
 } from "@/lib/products/import-schema";
+
+const ProductFormSheet = dynamic(
+  () =>
+    import("@/components/dashboard/ProductFormSheet").then(
+      (mod) => mod.ProductFormSheet,
+    ),
+  { ssr: false },
+);
+
+const ProductImportSheet = dynamic(
+  () =>
+    import("@/components/dashboard/ProductImportSheet").then(
+      (mod) => mod.ProductImportSheet,
+    ),
+  { ssr: false },
+);
 
 interface InventoryPanelProps {
   store: Store;
@@ -74,6 +89,7 @@ function ProductThumb({
           alt={name}
           fill
           sizes="36px"
+          loading="lazy"
           className="object-cover"
         />
       </div>
@@ -364,23 +380,29 @@ export function InventoryPanel({
           <a
             href={PRODUCT_IMPORT_TEMPLATE_PATH}
             download={PRODUCT_IMPORT_TEMPLATE_FILENAME}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
+            aria-label="Descargar plantilla de importación"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50 sm:px-4 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
           >
-            <Download className="h-4 w-4" aria-hidden="true" />
-            Descargar Plantilla
+            <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">Descargar Plantilla</span>
           </a>
           <Button
             type="button"
             variant="outline"
             onClick={() => setImportSheetOpen(true)}
-            className="h-10 gap-2 px-4 text-sm font-semibold"
+            aria-label="Importar productos"
+            className="h-10 gap-2 px-3 text-sm font-semibold sm:px-4"
           >
-            <Upload className="h-4 w-4" aria-hidden="true" />
-            Importar
+            <Upload className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">Importar</span>
           </Button>
-          <Button onClick={openCreate} className="btn-brand h-10 shrink-0 gap-2 px-5 text-sm font-semibold shadow-md">
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Nuevo producto
+          <Button
+            onClick={openCreate}
+            className="btn-brand h-10 shrink-0 gap-2 px-4 text-sm font-semibold shadow-md sm:px-5"
+          >
+            <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="sm:hidden">Nuevo</span>
+            <span className="hidden sm:inline">Nuevo producto</span>
           </Button>
         </div>
       </div>

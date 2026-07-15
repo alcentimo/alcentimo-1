@@ -1,4 +1,3 @@
-import imageCompression from "browser-image-compression";
 import {
   formatImageSize,
   PRODUCT_IMAGE_MAX_DIMENSION,
@@ -12,6 +11,24 @@ const QUALITY_STEP = 0.08;
 const MIN_DIMENSION = 480;
 const DIMENSION_STEP = 80;
 const MAX_OUTPUT_MB = PRODUCT_IMAGE_MAX_OUTPUT_BYTES / (1024 * 1024);
+
+type ImageCompressionFn = (
+  file: File,
+  options: Parameters<
+    Awaited<typeof import("browser-image-compression")>["default"]
+  >[1],
+) => Promise<File | Blob>;
+
+let imageCompressionLoader: Promise<ImageCompressionFn> | null = null;
+
+async function getImageCompression(): Promise<ImageCompressionFn> {
+  if (!imageCompressionLoader) {
+    imageCompressionLoader = import("browser-image-compression").then(
+      (mod) => mod.default,
+    );
+  }
+  return imageCompressionLoader;
+}
 
 function toWebpFile(blob: Blob, originalName: string): File {
   const baseName = originalName.replace(/\.[^.]+$/, "") || "imagen";
@@ -28,6 +45,8 @@ function toWebpFile(blob: Blob, originalName: string): File {
 export async function compressImageForUpload(
   file: File,
 ): Promise<{ file: File; message: string }> {
+  const imageCompression = await getImageCompression();
+
   if (file.size > PRODUCT_IMAGE_MAX_INPUT_BYTES) {
     throw new Error(
       `La imagen es demasiado grande (${formatImageSize(file.size)}). Usa un archivo menor a ${formatImageSize(PRODUCT_IMAGE_MAX_INPUT_BYTES)}.`,

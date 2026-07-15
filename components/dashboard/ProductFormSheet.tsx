@@ -72,7 +72,10 @@ export function ProductFormSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent onClose={() => onOpenChange(false)}>
+      <SheetContent
+        onClose={() => onOpenChange(false)}
+        className="max-w-md sm:max-w-lg"
+      >
         <SheetHeader>
           <SheetTitle>{mode === "edit" ? "Editar producto" : "Nuevo producto"}</SheetTitle>
           <SheetDescription>

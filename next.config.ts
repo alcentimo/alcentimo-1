@@ -18,12 +18,29 @@ const nextConfig: NextConfig = {
   turbopack: {},
   poweredByHeader: false,
   serverExternalPackages: ["sharp"],
+  experimental: {
+    optimizePackageImports: ["lucide-react", "react-icons"],
+  },
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86400,
     remotePatterns: [
       {
         protocol: "https",
         hostname: "**.supabase.co",
         pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.fbcdn.net",
+      },
+      {
+        protocol: "https",
+        hostname: "platform-lookaside.fbsbx.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.mlstatic.com",
       },
       {
         protocol: "https",

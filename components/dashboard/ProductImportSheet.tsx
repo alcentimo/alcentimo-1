@@ -127,7 +127,10 @@ export function ProductImportSheet({
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent onClose={() => handleOpenChange(false)}>
+      <SheetContent
+        onClose={() => handleOpenChange(false)}
+        className="max-w-md sm:max-w-lg"
+      >
         <SheetHeader>
           <SheetTitle>Importar productos</SheetTitle>
           <SheetDescription>
@@ -140,7 +143,7 @@ export function ProductImportSheet({
           <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
             <p className="text-xs text-zinc-600 dark:text-zinc-400">
               Columnas requeridas:{" "}
-              <span className="font-medium text-zinc-800 dark:text-zinc-200">
+              <span className="break-words font-medium text-zinc-800 dark:text-zinc-200">
                 nombre, descripcion, precio, stock, url_imagen, categoria
               </span>
             </p>
