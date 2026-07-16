@@ -31,7 +31,15 @@ export default async function CatalogoPage({
   const { store } = session;
   const showOnboardingSuccess = params.onboarded === "1";
   const initialTab =
-    params.tab === "ajustes" ? ("ajustes" as const) : ("inventario" as const);
+    params.nuevo === "1"
+      ? ("inventario" as const)
+      : params.tab === "ajustes"
+        ? ("ajustes" as const)
+        : params.tab === "inventario"
+          ? ("inventario" as const)
+          : params.tab === "guia"
+            ? ("guia" as const)
+            : undefined;
 
   if (!store) {
     return (

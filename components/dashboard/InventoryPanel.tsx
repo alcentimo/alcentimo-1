@@ -77,6 +77,7 @@ interface InventoryPanelProps {
   initialProducts: CatalogListItem[];
   productFormConfig: StoreProductFormConfig;
   autoOpenCreate?: boolean;
+  onProductCountChange?: (count: number) => void;
 }
 
 const StockBadge = memo(function StockBadge({
@@ -425,6 +426,7 @@ export function InventoryPanel({
   initialProducts,
   productFormConfig,
   autoOpenCreate = false,
+  onProductCountChange,
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
   const [search, setSearch] = useState("");
@@ -449,6 +451,10 @@ export function InventoryPanel({
   const [publishedProduct, setPublishedProduct] = useState<PublishedProductResult | null>(
     null,
   );
+
+  useEffect(() => {
+    onProductCountChange?.(products.length);
+  }, [products.length, onProductCountChange]);
 
   const categoriesInList = useMemo(() => {
     const names = new Set<string>();
