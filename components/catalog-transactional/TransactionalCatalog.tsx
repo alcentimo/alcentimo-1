@@ -5,16 +5,20 @@ import Image from "next/image";
 import { ShoppingBag } from "lucide-react";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
+import type { CatalogDesignSettings } from "@/lib/store-settings/types";
+import { getCatalogThemeStyle } from "@/lib/store-settings/catalog-theme";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { CheckoutPanel } from "@/components/catalog-transactional/CheckoutPanel";
 import { isProductOutOfStock } from "@/lib/products/variants";
+import { cn } from "@/lib/cn";
 
 interface TransactionalCatalogProps {
   store: Store;
   products: CatalogListItem[];
   exchangeRate: ExchangeRate | null;
   purchaseInfo: PublicPurchaseInfo;
+  catalogDesign: CatalogDesignSettings;
 }
 
 function getStoreInitials(name: string): string {
@@ -29,6 +33,7 @@ export function TransactionalCatalog({
   products,
   exchangeRate,
   purchaseInfo,
+  catalogDesign,
 }: TransactionalCatalogProps) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { addItem, itemCount } = useCart();
@@ -43,7 +48,13 @@ export function TransactionalCatalog({
   const storeInitials = getStoreInitials(store.name);
 
   return (
-    <div className="txn-catalog">
+    <div
+      className={cn(
+        "txn-catalog",
+        catalogDesign.layout === "list" && "txn-catalog--list",
+      )}
+      style={getCatalogThemeStyle(catalogDesign.primaryColor)}
+    >
       <header className="txn-catalog-header">
         <div className="txn-catalog-header-inner">
           <div className="txn-catalog-brand">
@@ -96,7 +107,13 @@ export function TransactionalCatalog({
             </p>
           </div>
         ) : (
-          <div className="txn-product-grid">
+          <div
+            className={
+              catalogDesign.layout === "list"
+                ? "txn-product-list"
+                : "txn-product-grid"
+            }
+          >
             {availableProducts.map((product) => (
               <ProductCard
                 key={product.product_id}

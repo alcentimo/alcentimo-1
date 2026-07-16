@@ -12,6 +12,7 @@ import {
   serializeVariantsForForm,
 } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
+import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
 import type { Store } from "@/lib/database.types";
@@ -21,7 +22,6 @@ import { formatUsd } from "@/lib/format";
 import { getPublicSiteHost } from "@/lib/site-url";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
@@ -85,6 +85,8 @@ function QuickProductFormSession({
   const {
     categorySlug,
     setCategorySlug,
+    customCategoryName,
+    setCustomCategoryName,
     fieldLabels,
     categoryLabel,
     extraFields,
@@ -151,6 +153,7 @@ function QuickProductFormSession({
 
     formData.set("price_usd", priceUsd.toFixed(4));
     formData.set("product_category_slug", categorySlug);
+    formData.set("custom_category_name", customCategoryName);
     formData.set("variants_json", serializeVariantsForForm(variants));
     formData.set("extra_fields_json", serializeExtraFieldsJson(extraFields));
 
@@ -245,6 +248,27 @@ function QuickProductFormSession({
         }}
       />
 
+      <ProductCategorySelector
+        id="quick-category"
+        rubroLabel={productFormConfig.rubroLabel}
+        categories={productFormConfig.productCategories}
+        categorySlug={categorySlug}
+        customCategoryName={customCategoryName}
+        onCategorySlugChange={setCategorySlug}
+        onCustomCategoryNameChange={setCustomCategoryName}
+      />
+
+      {fieldLabels.length > 0 ? (
+        <ProductExtraFieldsSection
+          fieldLabels={fieldLabels}
+          values={extraFields}
+          onChange={setExtraFields}
+          categoryLabel={categoryLabel}
+          disabled={isBusy}
+          variant="compact"
+        />
+      ) : null}
+
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800">
         <button
           type="button"
@@ -276,34 +300,6 @@ function QuickProductFormSession({
                 className="payment-field-input mt-1.5"
               />
             </div>
-
-            <div>
-              <Label htmlFor="quick-category" className="payment-field-label">
-                Categoría
-              </Label>
-              <Select
-                id="quick-category"
-                name="product_category_slug"
-                value={categorySlug}
-                onChange={(e) => setCategorySlug(e.target.value)}
-                className="payment-field-input mt-1.5"
-              >
-                {productFormConfig.productCategories.map((cat) => (
-                  <option key={cat.slug} value={cat.slug}>
-                    {cat.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            <ProductExtraFieldsSection
-              fieldLabels={fieldLabels}
-              values={extraFields}
-              onChange={setExtraFields}
-              categoryLabel={categoryLabel}
-              disabled={isBusy}
-              variant="compact"
-            />
 
             {!hasCustomVariants && (
               <div>

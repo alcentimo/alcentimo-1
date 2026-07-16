@@ -1,15 +1,16 @@
 /**
- * Configuración de rubro de tienda y categorías de producto adaptativas.
- * Para añadir rubros o categorías, edita solo este archivo.
+ * Rubro de tienda y categorías sugeridas por giro del negocio.
+ * Edita este archivo para añadir rubros, categorías o campos adaptativos.
  */
 
 export const STORE_RUBRO_OPTIONS = [
-  { value: "ropa", label: "Ropa" },
-  { value: "zapateria", label: "Zapatería" },
-  { value: "joyeria", label: "Joyería" },
-  { value: "cosmeticos", label: "Cosméticos" },
+  { value: "ferreteria", label: "Ferretería" },
+  { value: "ropa-moda", label: "Ropa y Moda" },
+  { value: "calzado", label: "Calzado" },
   { value: "tecnologia", label: "Tecnología" },
-  { value: "repuestos", label: "Repuestos" },
+  { value: "alimentos", label: "Alimentos" },
+  { value: "salud-belleza", label: "Salud y Belleza" },
+  { value: "hogar-decoracion", label: "Hogar y Decoración" },
   { value: "general", label: "General" },
 ] as const;
 
@@ -19,6 +20,7 @@ export interface ProductCategoryOption {
   slug: string;
   label: string;
   campos: string[];
+  isCustom?: boolean;
 }
 
 export interface StoreRubroConfig {
@@ -29,43 +31,33 @@ export interface StoreRubroConfig {
 
 export const STORE_RUBRO_CONFIGS: StoreRubroConfig[] = [
   {
-    rubro: "ropa",
-    label: "Ropa",
+    rubro: "ferreteria",
+    label: "Ferretería",
+    categorias: [
+      { slug: "herramientas", label: "Herramientas", campos: ["Marca", "Material", "Medida"] },
+      { slug: "fijacion", label: "Fijación", campos: ["Material", "Medida", "Presentación"] },
+      { slug: "electricidad", label: "Electricidad", campos: ["Marca", "Voltaje", "Compatibilidad"] },
+      { slug: "plomeria", label: "Plomería", campos: ["Material", "Medida", "Marca"] },
+    ],
+  },
+  {
+    rubro: "ropa-moda",
+    label: "Ropa y Moda",
     categorias: [
       { slug: "camisas", label: "Camisas", campos: ["Talla", "Color", "Material"] },
       { slug: "pantalones", label: "Pantalones", campos: ["Talla", "Color", "Material"] },
-      { slug: "chaquetas", label: "Chaquetas", campos: ["Talla", "Color", "Material"] },
+      { slug: "calzado", label: "Calzado", campos: ["Talla", "Color", "Material"] },
       { slug: "accesorios", label: "Accesorios", campos: ["Color", "Material", "Género"] },
     ],
   },
   {
-    rubro: "zapateria",
-    label: "Zapatería",
+    rubro: "calzado",
+    label: "Calzado",
     categorias: [
       { slug: "zapatos", label: "Zapatos", campos: ["Talla", "Color", "Material"] },
       { slug: "botas", label: "Botas", campos: ["Talla", "Color", "Material"] },
       { slug: "sandalias", label: "Sandalias", campos: ["Talla", "Color"] },
-      { slug: "accesorios", label: "Accesorios", campos: ["Color", "Material"] },
-    ],
-  },
-  {
-    rubro: "joyeria",
-    label: "Joyería",
-    categorias: [
-      { slug: "anillos", label: "Anillos", campos: ["Material", "Talla", "Piedra"] },
-      { slug: "collares", label: "Collares", campos: ["Material", "Longitud", "Piedra"] },
-      { slug: "pulseras", label: "Pulseras", campos: ["Material", "Talla"] },
-      { slug: "accesorios", label: "Accesorios", campos: ["Material", "Color"] },
-    ],
-  },
-  {
-    rubro: "cosmeticos",
-    label: "Cosméticos",
-    categorias: [
-      { slug: "maquillaje", label: "Maquillaje", campos: ["Tono", "Tipo de piel", "Presentación"] },
-      { slug: "cuidado-facial", label: "Cuidado facial", campos: ["Tipo de piel", "Presentación"] },
-      { slug: "cuidado-capilar", label: "Cuidado capilar", campos: ["Tipo de cabello", "Presentación"] },
-      { slug: "fragancias", label: "Fragancias", campos: ["Familia olfativa", "Presentación"] },
+      { slug: "deportivos", label: "Deportivos", campos: ["Talla", "Color", "Material"] },
     ],
   },
   {
@@ -79,13 +71,33 @@ export const STORE_RUBRO_CONFIGS: StoreRubroConfig[] = [
     ],
   },
   {
-    rubro: "repuestos",
-    label: "Repuestos",
+    rubro: "alimentos",
+    label: "Alimentos",
     categorias: [
-      { slug: "motor", label: "Motor", campos: ["Marca", "Modelo compatible", "Año"] },
-      { slug: "carroceria", label: "Carrocería", campos: ["Marca", "Modelo compatible"] },
-      { slug: "electricidad", label: "Electricidad", campos: ["Marca", "Modelo compatible", "Voltaje"] },
-      { slug: "accesorios", label: "Accesorios", campos: ["Marca", "Compatibilidad"] },
+      { slug: "abarrotes", label: "Abarrotes", campos: ["Marca", "Peso/Volumen", "Presentación"] },
+      { slug: "bebidas", label: "Bebidas", campos: ["Marca", "Volumen", "Sabor"] },
+      { slug: "frescos", label: "Frescos", campos: ["Peso/Volumen", "Origen"] },
+      { slug: "snacks", label: "Snacks", campos: ["Marca", "Peso/Volumen", "Sabor"] },
+    ],
+  },
+  {
+    rubro: "salud-belleza",
+    label: "Salud y Belleza",
+    categorias: [
+      { slug: "cuidado-personal", label: "Cuidado personal", campos: ["Tipo de piel", "Presentación"] },
+      { slug: "maquillaje", label: "Maquillaje", campos: ["Tono", "Tipo de piel", "Presentación"] },
+      { slug: "fragancias", label: "Fragancias", campos: ["Familia olfativa", "Presentación"] },
+      { slug: "suplementos", label: "Suplementos", campos: ["Presentación", "Contenido"] },
+    ],
+  },
+  {
+    rubro: "hogar-decoracion",
+    label: "Hogar y Decoración",
+    categorias: [
+      { slug: "muebles", label: "Muebles", campos: ["Material", "Color", "Medidas"] },
+      { slug: "decoracion", label: "Decoración", campos: ["Material", "Color", "Estilo"] },
+      { slug: "cocina", label: "Cocina", campos: ["Material", "Capacidad", "Color"] },
+      { slug: "textiles", label: "Textiles", campos: ["Material", "Medidas", "Color"] },
     ],
   },
   {
@@ -101,6 +113,14 @@ export const STORE_RUBRO_CONFIGS: StoreRubroConfig[] = [
 
 const RUBRO_SET = new Set<string>(STORE_RUBRO_OPTIONS.map((item) => item.value));
 
+const LEGACY_RUBRO_ALIASES: Record<string, StoreRubro> = {
+  ropa: "ropa-moda",
+  zapateria: "calzado",
+  joyeria: "salud-belleza",
+  cosmeticos: "salud-belleza",
+  repuestos: "ferreteria",
+};
+
 const CONFIG_BY_RUBRO = new Map(
   STORE_RUBRO_CONFIGS.map((config) => [config.rubro, config]),
 );
@@ -113,6 +133,9 @@ export function isValidStoreRubro(value: string): value is StoreRubro {
 
 export function normalizeStoreRubro(value: string | null | undefined): StoreRubro {
   const trimmed = value?.trim().toLowerCase() ?? "";
+  if (LEGACY_RUBRO_ALIASES[trimmed]) {
+    return LEGACY_RUBRO_ALIASES[trimmed];
+  }
   return isValidStoreRubro(trimmed) ? trimmed : DEFAULT_STORE_RUBRO;
 }
 
@@ -121,7 +144,10 @@ export function getRubroLabel(rubro: StoreRubro): string {
 }
 
 export function getProductCategoriesForRubro(rubro: StoreRubro): ProductCategoryOption[] {
-  return CONFIG_BY_RUBRO.get(rubro)?.categorias ?? CONFIG_BY_RUBRO.get(DEFAULT_STORE_RUBRO)!.categorias;
+  return (
+    CONFIG_BY_RUBRO.get(rubro)?.categorias ??
+    CONFIG_BY_RUBRO.get(DEFAULT_STORE_RUBRO)!.categorias
+  );
 }
 
 export function findProductCategoryOption(

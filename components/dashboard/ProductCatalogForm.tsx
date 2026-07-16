@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
+import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
@@ -55,6 +56,8 @@ export function ProductCatalogForm({
   const {
     categorySlug,
     setCategorySlug,
+    customCategoryName,
+    setCustomCategoryName,
     fieldLabels,
     categoryLabel,
     extraFields,
@@ -89,6 +92,7 @@ export function ProductCatalogForm({
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.set("product_category_slug", categorySlug);
+    formData.set("custom_category_name", customCategoryName);
     formData.set("variants_json", "[]");
     formData.set("extra_fields_json", serializeExtraFieldsJson(extraFields));
 
@@ -169,25 +173,15 @@ export function ProductCatalogForm({
         />
       </div>
 
-      <div>
-        <Label htmlFor="catalog-category" className="payment-field-label">
-          Categoría <span className="text-red-500">*</span>
-        </Label>
-        <Select
-          id="catalog-category"
-          name="product_category_slug"
-          required
-          value={categorySlug}
-          onChange={(e) => setCategorySlug(e.target.value)}
-          className="payment-field-input mt-1.5"
-        >
-          {productFormConfig.productCategories.map((cat) => (
-            <option key={cat.slug} value={cat.slug}>
-              {cat.label}
-            </option>
-          ))}
-        </Select>
-      </div>
+      <ProductCategorySelector
+        id="catalog-category"
+        rubroLabel={productFormConfig.rubroLabel}
+        categories={productFormConfig.productCategories}
+        categorySlug={categorySlug}
+        customCategoryName={customCategoryName}
+        onCategorySlugChange={setCategorySlug}
+        onCustomCategoryNameChange={setCustomCategoryName}
+      />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>

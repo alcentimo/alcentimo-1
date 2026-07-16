@@ -4,6 +4,7 @@ import { getCatalogProducts } from "@/lib/catalog";
 import { getStoreBySlug } from "@/lib/stores";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
+import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import { CartProvider } from "@/components/catalog-transactional/CartProvider";
 import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
 
@@ -23,6 +24,10 @@ async function CatalogContent({ storeSlug }: { storeSlug: string }) {
   ]);
 
   const purchaseInfo = buildPublicPurchaseInfo(settingsConfig);
+  const catalogDesign = resolveCatalogDesign(
+    settingsConfig.catalogDesign,
+    store.rubro_tienda,
+  );
 
   return (
     <CartProvider storeSlug={storeSlug}>
@@ -31,6 +36,7 @@ async function CatalogContent({ storeSlug }: { storeSlug: string }) {
         products={products}
         exchangeRate={exchangeRate}
         purchaseInfo={purchaseInfo}
+        catalogDesign={catalogDesign}
       />
     </CartProvider>
   );

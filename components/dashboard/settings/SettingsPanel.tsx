@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Clock, CreditCard, Link2, Settings2, Tag } from "lucide-react";
+import { Clock, CreditCard, Link2, Palette, Settings2, Tag } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
+import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
 import { PaymentsTab } from "@/components/dashboard/settings/PaymentsTab";
 import { PromotionsTab } from "@/components/dashboard/settings/PromotionsTab";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
+import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { Coupon } from "@/lib/coupons/types";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
 
-type SettingsTabId = "general" | "location" | "payments" | "promotions";
+type SettingsTabId = "general" | "location" | "payments" | "promotions" | "design";
 
 const PRIMARY_TABS: {
   id: SettingsTabId;
@@ -42,6 +44,7 @@ export function SettingsPanel({
   const [activeTab, setActiveTab] = useState<SettingsTabId>("general");
   const integrationsActive = pathname.startsWith("/dashboard/ajustes/integraciones");
   const promotionsActive = activeTab === "promotions" && !integrationsActive;
+  const designActive = activeTab === "design" && !integrationsActive;
 
   const panel = (
     <>
@@ -76,6 +79,18 @@ export function SettingsPanel({
         className="mt-2 flex flex-wrap gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800/80"
         aria-label="Más opciones de configuración"
       >
+        <button
+          type="button"
+          onClick={() => setActiveTab("design")}
+          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+            designActive
+              ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+              : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900/50 dark:hover:text-zinc-200"
+          }`}
+        >
+          <Palette className="h-3.5 w-3.5" aria-hidden="true" />
+          Personalizar diseño
+        </button>
         <button
           type="button"
           onClick={() => setActiveTab("promotions")}
@@ -141,6 +156,21 @@ export function SettingsPanel({
             aria-labelledby="settings-tab-payments"
           >
             <PaymentsTab initialSettings={initialConfig.payments} />
+          </div>
+        )}
+        {designActive && (
+          <div
+            role="tabpanel"
+            id="settings-panel-design"
+            aria-labelledby="settings-tab-design"
+          >
+            <DesignTab
+              initialDesign={resolveCatalogDesign(
+                initialConfig.catalogDesign,
+                store?.rubro_tienda ?? "general",
+              )}
+              storeRubro={store?.rubro_tienda ?? "general"}
+            />
           </div>
         )}
         {promotionsActive && (

@@ -20,6 +20,10 @@ import { isValidStoreSlug } from "@/lib/stores/slug";
 import { getPublicSiteHost } from "@/lib/site-url";
 import { STORE_RUBRO_OPTIONS } from "@/src/config/categories";
 
+function getRubroLabel(value: string): string {
+  return STORE_RUBRO_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
+
 export interface GeneralTabStore {
   name: string;
   slug: string;
@@ -44,7 +48,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
   const [slugStatus, setSlugStatus] = useState<SlugStatus>("available");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const siteHost = useMemo(() => getPublicSiteHost(), []);
@@ -91,8 +95,10 @@ export function GeneralTab({ store }: GeneralTabProps) {
     if (!canSave) return;
 
     setError(null);
-    setSuccess(false);
+    setSuccessMessage(null);
     setSaving(true);
+
+    const previousRubro = store.rubro_tienda;
 
     startTransition(async () => {
       const result = await saveGeneralStoreSettings({
@@ -115,7 +121,12 @@ export function GeneralTab({ store }: GeneralTabProps) {
       }
 
       setSavedSlug(slugPreview);
-      setSuccess(true);
+      const rubroChanged = rubroTienda !== previousRubro;
+      setSuccessMessage(
+        rubroChanged
+          ? `Rubro guardado: ${getRubroLabel(rubroTienda)}. Las categorías sugeridas al crear productos ya están actualizadas para este giro.`
+          : "Cambios guardados correctamente.",
+      );
       router.refresh();
     });
   }
@@ -135,14 +146,14 @@ export function GeneralTab({ store }: GeneralTabProps) {
             : undefined
       }
     >
-      {success && (
+      {successMessage ? (
         <p
           className="mb-4 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-300"
           role="status"
         >
-          Cambios guardados correctamente.
+          {successMessage}
         </p>
-      )}
+      ) : null}
 
       <CatalogLinkCard slug={slugPreview} className="mb-4" />
 
@@ -157,7 +168,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
             value={logoUrl}
             onChange={(url) => {
               setLogoUrl(url);
-              setSuccess(false);
+              setSuccessMessage(null);
             }}
           />
 
@@ -171,7 +182,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
               maxLength={120}
               onChange={(e) => {
                 setStoreName(e.target.value);
-                setSuccess(false);
+                setSuccessMessage(null);
               }}
               placeholder="Ej: Repuestos El Sol"
               className="payment-field-input mt-1.5"
@@ -188,7 +199,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
                 value={description}
                 onChange={(e) => {
                   setDescription(e.target.value);
-                  setSuccess(false);
+                  setSuccessMessage(null);
                 }}
                 placeholder="Ej: Repuestos y accesorios para vehículos con envío a todo el país."
                 className="input-field payment-field-textarea mt-1.5 resize-none"
@@ -240,12 +251,12 @@ export function GeneralTab({ store }: GeneralTabProps) {
 
       <SettingsSection
         title="Rubro de la tienda"
-        description="Define las categorías y campos al crear productos."
+        description="Define las categorías sugeridas y los campos al crear productos."
         variant="payments"
       >
         <div className="general-settings-card">
           <Label htmlFor="store-rubro" className="payment-field-label">
-            Giro o rubro <span className="text-red-500">*</span>
+            Rubro <span className="text-red-500">*</span>
           </Label>
           <Select
             id="store-rubro"
@@ -253,7 +264,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
             required
             onChange={(e) => {
               setRubroTienda(e.target.value);
-              setSuccess(false);
+              setSuccessMessage(null);
             }}
             className="payment-field-input mt-1.5"
           >
@@ -263,6 +274,9 @@ export function GeneralTab({ store }: GeneralTabProps) {
               </option>
             ))}
           </Select>
+          <p className="mt-1.5 text-[11px] text-zinc-400">
+            Al guardar, las categorías sugeridas en Nuevo Producto se adaptan a este rubro.
+          </p>
         </div>
       </SettingsSection>
     </SettingsTabShell>

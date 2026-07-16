@@ -57,6 +57,7 @@ export interface StoreSettingsConfig {
   promotions: StoredPromotion[];
   contact: ContactSettings;
   locationHours: LocationHoursSettings;
+  catalogDesign: CatalogDesignSettings;
 }
 
 export interface ContactSettings {
@@ -85,6 +86,13 @@ export interface LocationHoursSettings {
   schedule: Record<WeekdayKey, DaySchedule>;
   openTime: string;
   closeTime: string;
+}
+
+export type CatalogLayoutMode = "grid" | "list";
+
+export interface CatalogDesignSettings {
+  primaryColor: string;
+  layout: CatalogLayoutMode;
 }
 
 export interface StoreSettingsRow {

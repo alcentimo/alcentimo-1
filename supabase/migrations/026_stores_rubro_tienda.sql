@@ -1,30 +1,21 @@
 -- ============================================================
 -- alcentimo-1 — Rubro de tienda (giro del negocio)
 -- Ejecutar DESPUÉS de 025_products_stock.sql
+-- La restricción CHECK se aplica en 031_store_rubro_expansion.sql
 -- ============================================================
 
 ALTER TABLE public.stores
-  ADD COLUMN IF NOT EXISTS rubro_tienda TEXT NOT NULL DEFAULT 'general';
+  ADD COLUMN IF NOT EXISTS rubro_tienda TEXT;
+
+UPDATE public.stores
+SET rubro_tienda = 'general'
+WHERE rubro_tienda IS NULL;
 
 ALTER TABLE public.stores
-  DROP CONSTRAINT IF EXISTS stores_rubro_tienda_check;
-
-ALTER TABLE public.stores
-  ADD CONSTRAINT stores_rubro_tienda_check
-  CHECK (
-    rubro_tienda IN (
-      'ropa',
-      'zapateria',
-      'joyeria',
-      'cosmeticos',
-      'tecnologia',
-      'repuestos',
-      'general'
-    )
-  );
+  ALTER COLUMN rubro_tienda SET DEFAULT 'general';
 
 COMMENT ON COLUMN public.stores.rubro_tienda IS
-  'Giro o rubro del negocio; define categorías de producto en el dashboard.';
+  'Rubro del negocio; define categorías sugeridas al crear productos.';
 
 -- Mapeo aproximado desde categorías legacy del onboarding
 UPDATE public.stores s

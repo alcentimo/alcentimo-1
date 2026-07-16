@@ -19,6 +19,7 @@ import {
   serializeVariantsForForm,
 } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
+import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import type { VariantFormInput } from "@/lib/products/variants";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
@@ -67,6 +68,8 @@ export function ProductForm({
   const {
     categorySlug,
     setCategorySlug,
+    customCategoryName,
+    setCustomCategoryName,
     fieldLabels,
     categoryLabel,
     extraFields,
@@ -99,6 +102,7 @@ export function ProductForm({
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.set("product_category_slug", categorySlug);
+    formData.set("custom_category_name", customCategoryName);
     formData.set(
       "variants_json",
       serializeVariantsForForm(
@@ -153,7 +157,7 @@ export function ProductForm({
             </Link>
           ) : (
             <Link
-              href="/dashboard/catalogo?tab=inventario"
+              href="/dashboard/catalogo"
               className="btn-secondary w-full sm:w-auto"
             >
               Volver al catálogo
@@ -231,28 +235,17 @@ export function ProductForm({
         />
       </div>
 
-      <div>
-        <label htmlFor="product_category_slug" className="label-field">
-          Categoría <span className="text-red-500">*</span>
-        </label>
-        <select
-          id="product_category_slug"
-          name="product_category_slug"
-          required
-          value={categorySlug}
-          onChange={(e) => setCategorySlug(e.target.value)}
-          className="input-field"
-        >
-          {productFormConfig.productCategories.map((cat) => (
-            <option key={cat.slug} value={cat.slug}>
-              {cat.label}
-            </option>
-          ))}
-        </select>
-        <p className="mt-1.5 text-xs text-zinc-500">
-          Opciones según el rubro de tu tienda ({productFormConfig.rubroLabel}).
-        </p>
-      </div>
+      <ProductCategorySelector
+        id="product_category_slug"
+        rubroLabel={productFormConfig.rubroLabel}
+        categories={productFormConfig.productCategories}
+        categorySlug={categorySlug}
+        customCategoryName={customCategoryName}
+        onCategorySlugChange={setCategorySlug}
+        onCustomCategoryNameChange={setCustomCategoryName}
+        labelClassName="label-field"
+        selectClassName="input-field"
+      />
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div>

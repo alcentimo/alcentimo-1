@@ -19,12 +19,17 @@ import {
 } from "@/lib/payments/validate-payment-fields";
 import type {
   ContactSettings,
+  CatalogDesignSettings,
   LocationHoursSettings,
   PaymentsSettings,
   ShippingSettings,
   StoredPromotion,
   StoreSettingsConfig,
 } from "@/lib/store-settings/types";
+import {
+  normalizeCatalogLayout,
+  normalizeCatalogPrimaryColor,
+} from "@/lib/store-settings/catalog-theme";
 
 export type SettingsActionResult = {
   error?: string;
@@ -61,8 +66,20 @@ async function persistSettingsPatch(
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
   revalidatePath(`/tienda/${store.slug}`);
+  revalidatePath(`/c/${store.slug}`);
 
   return { success: true };
+}
+
+export async function saveCatalogDesignSettings(
+  design: CatalogDesignSettings,
+): Promise<SettingsActionResult> {
+  return persistSettingsPatch({
+    catalogDesign: {
+      primaryColor: normalizeCatalogPrimaryColor(design.primaryColor),
+      layout: normalizeCatalogLayout(design.layout),
+    },
+  });
 }
 
 export async function saveShippingSettings(
@@ -252,7 +269,7 @@ export async function saveGeneralStoreSettings(
 
   const rubroTienda = input.rubroTienda.trim().toLowerCase();
   if (!isValidStoreRubro(rubroTienda)) {
-    return { error: "Selecciona el giro o rubro de tu tienda." };
+    return { error: "Selecciona el rubro de tu tienda." };
   }
 
   const availability = await checkStoreSlugAvailability(slug);

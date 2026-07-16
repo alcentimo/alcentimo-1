@@ -67,6 +67,7 @@ async function resolveProductCategoryFromForm(
 ): Promise<{ categoryId?: string; categorySlug?: string; error?: string }> {
   const rubro = await getStoreRubroTienda(supabase, storeId);
   const submittedSlug = String(formData.get("product_category_slug") ?? "").trim();
+  const customCategoryName = String(formData.get("custom_category_name") ?? "").trim();
   const categorySlug =
     submittedSlug || getProductCategoriesForRubro(rubro)[0]?.slug || "general";
 
@@ -75,6 +76,7 @@ async function resolveProductCategoryFromForm(
     storeId,
     rubro,
     categorySlug,
+    customCategoryName,
   );
   if (resolved.error || !resolved.categoryId) {
     return { error: resolved.error ?? "No se pudo asignar la categoría." };

@@ -1,10 +1,12 @@
 import type {
+  CatalogDesignSettings,
   PaymentMethodKey,
   ShippingCarrierKey,
   StoreSettingsConfig,
   WeekdayKey,
 } from "@/lib/store-settings/types";
 import { WEEKDAY_KEYS } from "@/lib/store-settings/types";
+import { getDefaultPrimaryColorForRubro } from "@/lib/store-settings/catalog-theme";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "mrw",
@@ -85,6 +87,10 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       schedule: defaultWeekdaySchedule(),
       openTime: "09:00",
       closeTime: "18:00",
+    },
+    catalogDesign: {
+      primaryColor: getDefaultPrimaryColorForRubro("general"),
+      layout: "grid",
     },
   };
 }
@@ -168,6 +174,7 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
   const locationRaw = isRecord(raw.locationHours) ? raw.locationHours : {};
   const scheduleRaw = isRecord(locationRaw.schedule) ? locationRaw.schedule : {};
   const schedule = { ...defaults.locationHours.schedule };
+  const designRaw = isRecord(raw.catalogDesign) ? raw.catalogDesign : {};
 
   for (const key of WEEKDAY_KEYS) {
     const dayRaw = scheduleRaw[key];
@@ -231,6 +238,16 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           ? locationRaw.closeTime
           : defaults.locationHours.closeTime,
     },
+    catalogDesign: {
+      primaryColor:
+        typeof designRaw.primaryColor === "string"
+          ? designRaw.primaryColor
+          : defaults.catalogDesign.primaryColor,
+      layout:
+        designRaw.layout === "list" || designRaw.layout === "grid"
+          ? designRaw.layout
+          : defaults.catalogDesign.layout,
+    },
   };
 }
 
@@ -287,5 +304,8 @@ export function mergeStoreSettingsConfig(
             : base.locationHours.schedule,
         }
       : base.locationHours,
+    catalogDesign: patch.catalogDesign
+      ? { ...base.catalogDesign, ...patch.catalogDesign }
+      : base.catalogDesign,
   };
 }

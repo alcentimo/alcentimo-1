@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { slugify } from "@/lib/slugify";
+import { CUSTOM_PRODUCT_CATEGORY_VALUE } from "@/lib/products/category-selection";
 import {
   getProductCategoriesForRubro,
   normalizeStoreRubro,
@@ -21,7 +22,7 @@ export async function getStoreRubroTienda(
   return normalizeStoreRubro(data.rubro_tienda as string | null);
 }
 
-/** Asegura que existan filas en `categories` para las opciones del rubro. */
+/** Asegura que existan filas en `categories` para las opciones sugeridas del rubro. */
 export async function syncStoreProductCategories(
   supabase: SupabaseClient,
   storeId: string,
@@ -52,12 +53,64 @@ export async function syncStoreProductCategories(
   return {};
 }
 
+async function findOrCreateStoreCategory(
+  supabase: SupabaseClient,
+  storeId: string,
+  categoryName: string,
+): Promise<{ categoryId?: string; categorySlug?: string; error?: string }> {
+  const name = categoryName.trim();
+  if (!name) {
+    return { error: "Escribe el nombre de la categoría personalizada." };
+  }
+
+  const normalizedSlug = slugify(name);
+  if (!normalizedSlug) {
+    return { error: "La categoría personalizada no es válida." };
+  }
+
+  const { data: existing, error: lookupError } = await supabase
+    .from("categories")
+    .select("id, slug")
+    .eq("store_id", storeId)
+    .eq("slug", normalizedSlug)
+    .maybeSingle();
+
+  if (lookupError) return { error: lookupError.message };
+  if (existing?.id) {
+    return {
+      categoryId: existing.id as string,
+      categorySlug: existing.slug as string,
+    };
+  }
+
+  const { data: created, error: insertError } = await supabase
+    .from("categories")
+    .insert({
+      store_id: storeId,
+      name,
+      slug: normalizedSlug,
+    })
+    .select("id, slug")
+    .single();
+
+  if (insertError) return { error: insertError.message };
+  return {
+    categoryId: created.id as string,
+    categorySlug: created.slug as string,
+  };
+}
+
 export async function resolveProductCategoryId(
   supabase: SupabaseClient,
   storeId: string,
   rubro: StoreRubro,
   categorySlug: string,
-): Promise<{ categoryId?: string; error?: string }> {
+  customCategoryName?: string,
+): Promise<{ categoryId?: string; categorySlug?: string; error?: string }> {
+  if (categorySlug === CUSTOM_PRODUCT_CATEGORY_VALUE) {
+    return findOrCreateStoreCategory(supabase, storeId, customCategoryName ?? "");
+  }
+
   const normalizedSlug = slugify(categorySlug) || categorySlug.trim().toLowerCase();
   if (!normalizedSlug) {
     return { error: "Selecciona una categoría de producto." };
@@ -66,38 +119,75 @@ export async function resolveProductCategoryId(
   const option = getProductCategoriesForRubro(rubro).find(
     (item) => item.slug === normalizedSlug,
   );
-  if (!option) {
-    return { error: "Categoría no válida para el rubro de tu tienda." };
+
+  if (option) {
+    await syncStoreProductCategories(supabase, storeId, rubro);
+
+    const { data: category, error: lookupError } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("store_id", storeId)
+      .eq("slug", normalizedSlug)
+      .maybeSingle();
+
+    if (lookupError) return { error: lookupError.message };
+    if (category?.id) {
+      return { categoryId: category.id as string, categorySlug: normalizedSlug };
+    }
+
+    const { data: created, error: insertError } = await supabase
+      .from("categories")
+      .insert({
+        store_id: storeId,
+        name: option.label,
+        slug: normalizedSlug,
+      })
+      .select("id")
+      .single();
+
+    if (insertError) return { error: insertError.message };
+    return { categoryId: created.id as string, categorySlug: normalizedSlug };
   }
 
-  await syncStoreProductCategories(supabase, storeId, rubro);
-
-  const { data: category, error: lookupError } = await supabase
+  const { data: storeCategory, error: storeLookupError } = await supabase
     .from("categories")
-    .select("id")
+    .select("id, slug")
     .eq("store_id", storeId)
     .eq("slug", normalizedSlug)
     .maybeSingle();
 
-  if (lookupError) return { error: lookupError.message };
-  if (category?.id) return { categoryId: category.id as string };
+  if (storeLookupError) return { error: storeLookupError.message };
+  if (storeCategory?.id) {
+    return {
+      categoryId: storeCategory.id as string,
+      categorySlug: storeCategory.slug as string,
+    };
+  }
 
-  const { data: created, error: insertError } = await supabase
-    .from("categories")
-    .insert({
-      store_id: storeId,
-      name: option.label,
-      slug: normalizedSlug,
-    })
-    .select("id")
-    .single();
-
-  if (insertError) return { error: insertError.message };
-  return { categoryId: created.id as string };
+  return { error: "Categoría no válida para el rubro de tu tienda." };
 }
 
 export function getProductCategoryOptionsForStore(
   rubro: StoreRubro,
 ): ProductCategoryOption[] {
   return getProductCategoriesForRubro(rubro);
+}
+
+export function mergeStoreProductCategories(
+  rubro: StoreRubro,
+  storeCategories: { slug: string; name: string }[],
+): ProductCategoryOption[] {
+  const suggested = getProductCategoriesForRubro(rubro);
+  const suggestedSlugs = new Set(suggested.map((item) => item.slug));
+
+  const custom = storeCategories
+    .filter((item) => !suggestedSlugs.has(item.slug))
+    .map((item) => ({
+      slug: item.slug,
+      label: item.name,
+      campos: [] as string[],
+      isCustom: true,
+    }));
+
+  return [...suggested, ...custom];
 }
