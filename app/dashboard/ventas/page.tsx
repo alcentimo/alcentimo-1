@@ -46,10 +46,11 @@ export default async function VentasPage() {
   return (
     <PageContainer as="div" className="py-6 sm:py-8">
       <header className="page-header">
-        <p className="section-label">Ventas</p>
-        <h1 className="page-header-title">Pedidos y ventas</h1>
+        <p className="section-label">Inteligencia de negocio</p>
+        <h1 className="page-header-title">Reportes</h1>
         <p className="page-header-desc">
-          Historial completo de pedidos de {store.name}, separado de la bandeja de mensajes.
+          Historial de ventas y pedidos de {store.name} para análisis operativo y
+          seguimiento comercial.
         </p>
       </header>
 

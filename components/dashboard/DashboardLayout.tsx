@@ -3,29 +3,26 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  ClipboardList,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Package,
-  Rocket,
-  Settings,
-  type LucideIcon,
-} from "lucide-react";
+import { LogOut, Menu, Rocket } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import { PublicCatalogQuickLink } from "@/components/dashboard/PublicCatalogQuickLink";
 import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
+import {
+  DASHBOARD_NAV_SECTIONS,
+  isDashboardNavItemActive,
+  type DashboardNavItem,
+} from "@/src/config/dashboard-nav";
 import { ImmersiveModeProvider, useImmersiveMode } from "@/components/inbox/ImmersiveModeProvider";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   storeName: string | null;
+  storeSlug: string | null;
   userEmail: string | null;
   planName?: string | null;
 }
 
-/** Rutas de auth/recuperación sin menú lateral ni chrome del panel. */
 function isStandaloneAuthPath(pathname: string): boolean {
   return (
     pathname === "/dashboard/recuperar-contrasena" ||
@@ -37,56 +34,42 @@ function isMensajesPath(pathname: string): boolean {
   return pathname.startsWith("/dashboard/mensajes");
 }
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-  match?: (pathname: string) => boolean;
-}
-
-function buildNavItems(): NavItem[] {
-  return [
-    {
-      href: "/dashboard",
-      label: "Inicio",
-      icon: LayoutDashboard,
-      match: (p) => p === "/dashboard",
-    },
-    {
-      href: "/dashboard/inventario",
-      label: "Catálogo",
-      icon: Package,
-      match: (p) =>
-        p.startsWith("/dashboard/inventario") ||
-        p.startsWith("/dashboard/productos"),
-    },
-    {
-      href: "/dashboard/pedidos",
-      label: "Pedidos",
-      icon: ClipboardList,
-      match: (p) => p.startsWith("/dashboard/pedidos"),
-    },
-    {
-      href: "/dashboard/ajustes",
-      label: "Ajustes",
-      icon: Settings,
-      match: (p) => p.startsWith("/dashboard/ajustes"),
-    },
-  ];
-}
-
 function navLinkClass(active: boolean) {
   return [
-    "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+    "flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
     active
       ? "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300"
       : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
   ].join(" ");
 }
 
+function SidebarNavLink({
+  item,
+  active,
+  onNavigate,
+}: {
+  item: DashboardNavItem;
+  active: boolean;
+  onNavigate: () => void;
+}) {
+  const Icon = item.icon;
+
+  return (
+    <Link
+      href={item.href}
+      className={navLinkClass(active)}
+      onClick={onNavigate}
+    >
+      <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+      <span className="truncate">{item.label}</span>
+    </Link>
+  );
+}
+
 function DashboardShell({
   children,
   storeName,
+  storeSlug,
   userEmail,
   planName = null,
 }: DashboardLayoutProps) {
@@ -94,7 +77,6 @@ function DashboardShell({
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isImmersive } = useImmersiveMode();
-  const navItems = buildNavItems();
   const immersiveActive = isMensajesPath(pathname) && isImmersive;
 
   function closeSidebar() {
@@ -103,9 +85,11 @@ function DashboardShell({
 
   useEffect(() => {
     if (!sidebarOpen) return;
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setSidebarOpen(false);
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setSidebarOpen(false);
     }
+
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [sidebarOpen]);
@@ -115,10 +99,6 @@ function DashboardShell({
     await supabase.auth.signOut();
     router.push("/dashboard/login");
     router.refresh();
-  }
-
-  function isActive(item: NavItem) {
-    return item.match?.(pathname) ?? pathname === item.href;
   }
 
   return (
@@ -151,26 +131,31 @@ function DashboardShell({
           <BrandLogo href="/dashboard" subtitle={storeName ?? "Panel"} />
         </div>
 
+        <div className="border-b border-zinc-200 py-4 dark:border-zinc-800">
+          <PublicCatalogQuickLink storeSlug={storeSlug} onNavigate={closeSidebar} />
+        </div>
+
         <nav
-          className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4"
+          className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 py-4"
           aria-label="Navegación principal"
         >
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item);
-
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={navLinkClass(active)}
-                onClick={closeSidebar}
-              >
-                <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-                <span className="truncate">{item.label}</span>
-              </Link>
-            );
-          })}
+          {DASHBOARD_NAV_SECTIONS.map((section) => (
+            <div key={section.id}>
+              <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                {section.label}
+              </p>
+              <div className="mt-1 flex flex-col gap-0.5">
+                {section.items.map((item) => (
+                  <SidebarNavLink
+                    key={item.href}
+                    item={item}
+                    active={isDashboardNavItemActive(pathname, item)}
+                    onNavigate={closeSidebar}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
         </nav>
 
         <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
@@ -189,7 +174,7 @@ function DashboardShell({
             className={`${navLinkClass(pathname === "/activar")} mb-2`}
             onClick={closeSidebar}
           >
-            <Rocket className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+            <Rocket className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
             <span>Activar Cuenta</span>
           </Link>
           <button
@@ -197,7 +182,7 @@ function DashboardShell({
             onClick={() => void handleLogout()}
             className={navLinkClass(false)}
           >
-            <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+            <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
             <span>Cerrar sesión</span>
           </button>
           <p className="mt-3 px-2 text-center text-[11px] text-zinc-400 dark:text-zinc-500">

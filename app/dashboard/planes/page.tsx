@@ -26,11 +26,10 @@ export default async function PlanesPage() {
   return (
     <PageContainer as="div" className="mx-auto max-w-6xl py-6 sm:py-8">
       <header className="mb-8 text-center md:text-left">
-        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-          Planes
-        </h1>
+        <p className="section-label">Configuración</p>
+        <h1 className="page-header-title">Equipo y planes</h1>
         <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-          Elige el plan que mejor se adapte a tu tienda
+          Gestiona la capacidad de tu organización, usuarios y plan de suscripción
           {store ? ` · ${store.name}` : ""}.
         </p>
       </header>

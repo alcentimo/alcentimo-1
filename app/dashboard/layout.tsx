@@ -26,6 +26,7 @@ export default async function DashboardRootLayout({
     <CountryProvider country={store?.country}>
       <DashboardLayout
         storeName={store?.name ?? null}
+        storeSlug={store?.slug ?? null}
         userEmail={authUser.email ?? null}
         planName={authUser.plan.name}
       >
