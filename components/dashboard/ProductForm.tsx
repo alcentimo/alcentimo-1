@@ -77,7 +77,7 @@ export function ProductForm({
     initialData?.extraFields,
   );
   const catalogUrl = getStoreCatalogUrl(store.slug);
-  const hasCustomVariants = variants.length > 0;
+  const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
 
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
