@@ -7,12 +7,17 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { userHasStore } from "@/lib/stores";
 import { slugify, uniqueSlug } from "@/lib/slugify";
-import { STORE_CATEGORY_OPTIONS } from "@/lib/onboarding/categories";
+import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
+import { syncStoreProductCategories } from "@/lib/products/rubro-categories";
+import {
+  isValidStoreRubro,
+  normalizeStoreRubro,
+} from "@/src/config/categories";
+import { getDefaultPrimaryColorForRubro } from "@/lib/store-settings/catalog-theme";
 import {
   DEFAULT_STORE_COUNTRY,
   isStoreCountryOption,
 } from "@/lib/onboarding/countries";
-import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import {
   defaultStoreSettingsConfig,
   mergeStoreSettingsConfig,
@@ -60,8 +65,7 @@ export async function completeOnboarding(
 
   const name = String(formData.get("name") ?? "").trim();
   const country = String(formData.get("country") ?? "").trim();
-  const category = String(formData.get("category") ?? "").trim();
-  const customCategory = String(formData.get("custom_category") ?? "").trim();
+  const rubroRaw = String(formData.get("rubro_tienda") ?? "").trim().toLowerCase();
   const whatsapp = String(formData.get("whatsapp") ?? "").trim();
 
   if (!name) {
@@ -76,25 +80,11 @@ export async function completeOnboarding(
     return { error: "Alcentimo solo está disponible en Venezuela." };
   }
 
-  if (!category) {
-    return { error: "Selecciona el tipo de tu tienda." };
+  if (!rubroRaw || !isValidStoreRubro(rubroRaw)) {
+    return { error: "Selecciona el rubro de tu negocio." };
   }
 
-  const categoryName =
-    category === "Otros"
-      ? customCategory
-      : category;
-
-  if (!categoryName.trim()) {
-    return { error: "Indica el tipo de tu negocio." };
-  }
-
-  if (
-    category !== "Otros" &&
-    !STORE_CATEGORY_OPTIONS.includes(category as (typeof STORE_CATEGORY_OPTIONS)[number])
-  ) {
-    return { error: "Categoría no válida." };
-  }
+  const rubroTienda = normalizeStoreRubro(rubroRaw);
 
   if (!whatsapp) {
     return { error: "Ingresa tu WhatsApp de contacto." };
@@ -107,7 +97,6 @@ export async function completeOnboarding(
   }
 
   const slug = await resolveUniqueStoreSlug(supabase, name);
-  const categorySlug = slugify(categoryName) || "general";
 
   const { data: store, error: storeError } = await supabase
     .from("stores")
@@ -116,6 +105,7 @@ export async function completeOnboarding(
       name,
       slug,
       country,
+      rubro_tienda: rubroTienda,
     })
     .select("id")
     .single();
@@ -129,6 +119,10 @@ export async function completeOnboarding(
 
   const settingsConfig = mergeStoreSettingsConfig(defaultStoreSettingsConfig(), {
     contact: { whatsappPhone: whatsapp },
+    catalogDesign: {
+      primaryColor: getDefaultPrimaryColorForRubro(rubroTienda),
+      layout: "grid",
+    },
   });
 
   const { error: settingsError } = await supabase.from("store_settings").insert({
@@ -140,17 +134,14 @@ export async function completeOnboarding(
     return { error: settingsError.message };
   }
 
-  const { error: categoryError } = await supabase.from("categories").insert({
-    store_id: store.id,
-    name: categoryName.trim(),
-    slug: categorySlug,
-  });
-
-  if (categoryError) {
-    return { error: categoryError.message };
+  const sync = await syncStoreProductCategories(supabase, store.id, rubroTienda);
+  if (sync.error) {
+    return { error: sync.error };
   }
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/ajustes");
+  revalidatePath("/dashboard/catalogo");
   revalidatePath("/onboarding");
   revalidatePath(`/c/${slug}`);
   redirect("/dashboard/catalogo?onboarded=1");

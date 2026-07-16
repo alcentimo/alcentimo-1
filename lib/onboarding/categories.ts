@@ -1,9 +1,2 @@
-export const STORE_CATEGORY_OPTIONS = [
-  "Ropa",
-  "Comida",
-  "Tecnología",
-  "Servicios",
-  "Otros",
-] as const;
-
-export type StoreCategoryOption = (typeof STORE_CATEGORY_OPTIONS)[number];
+/** @deprecated Usar STORE_RUBRO_OPTIONS de @/src/config/categories */
+export { STORE_RUBRO_OPTIONS as STORE_CATEGORY_OPTIONS } from "@/src/config/categories";

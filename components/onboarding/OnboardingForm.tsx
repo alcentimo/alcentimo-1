@@ -6,11 +6,11 @@ import {
   completeOnboarding,
   type OnboardingFormState,
 } from "@/lib/onboarding/actions";
-import { STORE_CATEGORY_OPTIONS } from "@/lib/onboarding/categories";
 import { DEFAULT_STORE_COUNTRY } from "@/lib/onboarding/countries";
 import { slugify } from "@/lib/slugify";
 import { getPublicSiteHost } from "@/lib/site-url";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
+import { STORE_RUBRO_OPTIONS } from "@/src/config/categories";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ export function OnboardingForm() {
     initialState,
   );
   const [storeName, setStoreName] = useState("");
-  const [category, setCategory] = useState("");
+  const [rubroTienda, setRubroTienda] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
 
   const slugPreview = slugify(storeName) || "mi-tienda";
@@ -90,41 +90,29 @@ export function OnboardingForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="category" className="label-field">
-          Categoría / tipo de tienda <span className="text-red-500">*</span>
+        <label htmlFor="rubro_tienda" className="label-field">
+          Rubro de tu negocio <span className="text-red-500">*</span>
         </label>
         <Select
-          id="category"
-          name="category"
+          id="rubro_tienda"
+          name="rubro_tienda"
           required
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          value={rubroTienda}
+          onChange={(e) => setRubroTienda(e.target.value)}
         >
           <option value="" disabled>
-            Selecciona una opción
+            Selecciona tu rubro
           </option>
-          {STORE_CATEGORY_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option}
+          {STORE_RUBRO_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </Select>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Define las categorías sugeridas al crear productos. Puedes cambiarlo después en Configuración de Tienda.
+        </p>
       </div>
-
-      {category === "Otros" ? (
-        <div className="space-y-2">
-          <label htmlFor="custom_category" className="label-field">
-            Especifica tu rubro <span className="text-red-500">*</span>
-          </label>
-          <Input
-            id="custom_category"
-            name="custom_category"
-            required
-            maxLength={80}
-            placeholder="Ej: Ferretería"
-          />
-        </div>
-      ) : null}
 
       <div className="space-y-2">
         <label htmlFor="whatsapp" className="label-field">
