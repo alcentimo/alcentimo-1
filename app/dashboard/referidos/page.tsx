@@ -43,7 +43,7 @@ export default async function ReferidosPage() {
             </p>
           </div>
         </div>
-        <Link href="/dashboard/catalogo?tab=ajustes" className="btn-brand-outline shrink-0">
+        <Link href="/dashboard/ajustes" className="btn-brand-outline shrink-0">
           Ir a promociones
         </Link>
       </div>

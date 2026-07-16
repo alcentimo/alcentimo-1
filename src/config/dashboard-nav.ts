@@ -1,6 +1,7 @@
 import {
   BarChart3,
   ClipboardList,
+  Settings2,
   Store,
   type LucideIcon,
 } from "lucide-react";
@@ -17,12 +18,11 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
   {
     href: "/dashboard/catalogo",
     label: "Catálogo",
-    description: "Inventario y ajustes de tu tienda",
+    description: "Inventario y configuración de tu vitrina",
     icon: Store,
     match: (pathname) =>
       pathname.startsWith("/dashboard/catalogo") ||
       pathname.startsWith("/dashboard/inventario") ||
-      pathname.startsWith("/dashboard/ajustes") ||
       pathname.startsWith("/dashboard/productos") ||
       pathname === "/dashboard",
   },
@@ -39,6 +39,13 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     description: "Métricas de rendimiento",
     icon: BarChart3,
     match: (pathname) => pathname.startsWith("/dashboard/analiticas"),
+  },
+  {
+    href: "/dashboard/ajustes",
+    label: "Ajustes",
+    description: "Marca, ubicación, pagos y cuenta",
+    icon: Settings2,
+    match: (pathname) => pathname.startsWith("/dashboard/ajustes"),
   },
 ];
 
