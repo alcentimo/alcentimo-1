@@ -5,6 +5,21 @@ const withPWA = require("next-pwa")({
   disable: process.env.NODE_ENV === "development",
   register: true,
   skipWaiting: true,
+  runtimeCaching: [
+    {
+      urlPattern: ({ request, url }: { request: Request; url: URL }) =>
+        request.mode === "navigate" && url.pathname.startsWith("/c/"),
+      handler: "NetworkFirst",
+      options: {
+        cacheName: "public-catalog-pages",
+        expiration: {
+          maxEntries: 16,
+          maxAgeSeconds: 60,
+        },
+        networkTimeoutSeconds: 10,
+      },
+    },
+  ],
 });
 
 const oauthSecurityHeaders = [

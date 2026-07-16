@@ -1,36 +1,24 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getCatalogProducts } from "@/lib/catalog";
-import { getPublicStoreBySlug } from "@/lib/stores";
-import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
-import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
-import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
+import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
 import { CartProvider } from "@/components/catalog-transactional/CartProvider";
 import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 interface CatalogPageProps {
   params: Promise<{ store_slug: string }>;
 }
 
 async function CatalogContent({ storeSlug }: { storeSlug: string }) {
-  const store = await getPublicStoreBySlug(storeSlug);
-  if (!store) notFound();
+  const data = await getPublicCatalogPageData(storeSlug);
+  if (!data) notFound();
 
-  const [{ products, exchangeRate }, settingsConfig] = await Promise.all([
-    getCatalogProducts({ storeSlug, limit: 500 }),
-    getPublicStoreSettingsConfig(store.id),
-  ]);
-
-  const purchaseInfo = buildPublicPurchaseInfo(settingsConfig);
-  const catalogDesign = resolveCatalogDesign(
-    settingsConfig.catalogDesign,
-    store.rubro_tienda,
-  );
+  const { store, products, exchangeRate, purchaseInfo, catalogDesign } = data;
 
   return (
-    <CartProvider storeSlug={storeSlug}>
+    <CartProvider storeSlug={store.slug}>
       <TransactionalCatalog
         store={store}
         products={products}
@@ -60,14 +48,14 @@ export default async function TransactionalCatalogPage({
 
 export async function generateMetadata({ params }: CatalogPageProps) {
   const { store_slug: storeSlug } = await params;
-  const store = await getPublicStoreBySlug(storeSlug);
+  const data = await getPublicCatalogPageData(storeSlug);
 
-  if (!store) {
+  if (!data) {
     return { title: "Catálogo no encontrado" };
   }
 
   return {
-    title: `${store.name} — Pedidos`,
-    description: `Catálogo y pedidos de ${store.name}`,
+    title: `${data.store.name} — Pedidos`,
+    description: `Catálogo y pedidos de ${data.store.name}`,
   };
 }

@@ -1,14 +1,17 @@
-import { supabase } from "@/lib/supabase";
 import { unstable_noStore as noStore } from "next/cache";
+import { getPublicServerClient } from "@/lib/supabase/public-server";
 import { getOptionalAuthUser } from "@/lib/auth/optional-auth";
 import type { Store } from "@/lib/database.types";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 
 export async function getStoreBySlug(slug: string): Promise<Store | null> {
-  const { data, error } = await supabase
+  const normalizedSlug = slug.trim().toLowerCase();
+  const client = getPublicServerClient();
+
+  const { data, error } = await client
     .from("stores")
     .select("*")
-    .eq("slug", slug)
+    .eq("slug", normalizedSlug)
     .eq("is_active", true)
     .maybeSingle();
 

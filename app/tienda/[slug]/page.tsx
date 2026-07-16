@@ -1,29 +1,21 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getCatalogProducts } from "@/lib/catalog";
-import { getPublicStoreBySlug } from "@/lib/stores";
-import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
-import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
+import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
 import { StoreCatalog } from "@/components/catalog/StoreCatalog";
 import { CatalogSkeleton } from "@/components/catalog/CatalogSkeleton";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 interface StorePageProps {
   params: Promise<{ slug: string }>;
 }
 
 async function StoreCatalogContent({ slug }: { slug: string }) {
-  const store = await getPublicStoreBySlug(slug);
+  const data = await getPublicCatalogPageData(slug);
+  if (!data) notFound();
 
-  if (!store) notFound();
-
-  const [{ products, exchangeRate }, settingsConfig] = await Promise.all([
-    getCatalogProducts({ storeSlug: slug, limit: 500 }),
-    getPublicStoreSettingsConfig(store.id),
-  ]);
-
-  const purchaseInfo = buildPublicPurchaseInfo(settingsConfig);
+  const { store, products, exchangeRate, purchaseInfo } = data;
 
   return (
     <StoreCatalog
@@ -47,14 +39,15 @@ export default async function StorePage({ params }: StorePageProps) {
 
 export async function generateMetadata({ params }: StorePageProps) {
   const { slug } = await params;
-  const store = await getPublicStoreBySlug(slug);
+  const data = await getPublicCatalogPageData(slug);
 
-  if (!store) {
+  if (!data) {
     return { title: "Tienda no encontrada — alcentimo" };
   }
 
   return {
-    title: `${store.name} — alcentimo`,
-    description: store.description ?? `Catálogo digital de ${store.name}`,
+    title: `${data.store.name} — alcentimo`,
+    description:
+      data.store.description ?? `Catálogo digital de ${data.store.name}`,
   };
 }

@@ -73,11 +73,12 @@ export async function getCatalogProducts(
   options: GetCatalogOptions,
 ): Promise<CatalogPageData> {
   const { storeSlug, limit = 24, offset = 0, categorySlug } = options;
+  const normalizedSlug = storeSlug.trim().toLowerCase();
 
   let query = supabase
     .from("catalog_list_view")
     .select("*")
-    .eq("store_slug", storeSlug)
+    .eq("store_slug", normalizedSlug)
     .order("is_featured", { ascending: false })
     .order("updated_at", { ascending: false })
     .range(offset, offset + limit - 1);

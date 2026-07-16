@@ -1,5 +1,5 @@
 import { unstable_noStore as noStore } from "next/cache";
-import { supabase } from "@/lib/supabase";
+import { getPublicServerClient } from "@/lib/supabase/public-server";
 import {
   defaultStoreSettingsConfig,
   normalizeStoreSettingsConfig,
@@ -11,13 +11,16 @@ export async function getPublicStoreSettingsConfig(
 ): Promise<StoreSettingsConfig> {
   noStore();
 
-  const { data, error } = await supabase
+  const client = getPublicServerClient();
+  const { data, error } = await client
     .from("store_settings")
     .select("config")
     .eq("store_id", storeId)
     .maybeSingle();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    throw new Error(`No se pudo leer la configuración pública: ${error.message}`);
+  }
 
   const row = data as { config?: unknown } | null;
 

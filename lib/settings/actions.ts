@@ -65,8 +65,7 @@ async function persistSettingsPatch(
 
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
-  revalidatePath(`/tienda/${store.slug}`);
-  revalidatePath(`/c/${store.slug}`);
+  revalidatePublicStorePaths(store.slug);
 
   return { success: true };
 }
@@ -231,7 +230,51 @@ export async function uploadStoreLogo(
     return { error: "Selecciona una imagen para el logo." };
   }
 
-  return uploadStoreLogoImage(supabase, auth.store.id, file);
+  const upload = await uploadStoreLogoImage(supabase, auth.store.id, file);
+  if (upload.error || !upload.url) {
+    return { error: upload.error ?? "No se pudo subir el logo." };
+  }
+
+  const { error: updateError } = await supabase
+    .from("stores")
+    .update({ logo_url: upload.url })
+    .eq("id", auth.store.id);
+
+  if (updateError) {
+    return { error: updateError.message };
+  }
+
+  revalidatePublicStorePaths(auth.store.slug);
+
+  return { url: upload.url };
+}
+
+export async function clearStoreLogo(): Promise<SettingsActionResult> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+
+  if (!auth.ok) {
+    return { error: auth.error };
+  }
+
+  const { error } = await supabase
+    .from("stores")
+    .update({ logo_url: null })
+    .eq("id", auth.store.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePublicStorePaths(auth.store.slug);
+  return { success: true };
+}
+
+function revalidatePublicStorePaths(slug: string) {
+  revalidatePath("/dashboard/ajustes");
+  revalidatePath("/dashboard/catalogo");
+  revalidatePath(`/c/${slug}`);
+  revalidatePath(`/tienda/${slug}`);
 }
 
 export interface GeneralStoreSettingsInput {
@@ -313,10 +356,10 @@ export async function saveGeneralStoreSettings(
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/inventario");
   revalidatePath("/dashboard/productos/nuevo");
-  revalidatePath(`/tienda/${previousSlug}`);
-  revalidatePath(`/tienda/${slug}`);
-  revalidatePath(`/c/${previousSlug}`);
-  revalidatePath(`/c/${slug}`);
+  revalidatePublicStorePaths(slug);
+  if (previousSlug !== slug) {
+    revalidatePublicStorePaths(previousSlug);
+  }
 
   return { success: true };
 }

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { ImagePlus, Loader2, Store, Trash2 } from "lucide-react";
-import { uploadStoreLogo } from "@/lib/settings/actions";
+import { uploadStoreLogo, clearStoreLogo } from "@/lib/settings/actions";
 import { compressImageForUpload } from "@/lib/client-image-compress";
 import { PRODUCT_IMAGE_OPTIMIZE_HINT } from "@/lib/product-image";
 import { cn } from "@/lib/cn";
@@ -96,6 +96,12 @@ export function StoreLogoField({ storeName, value, onChange }: StoreLogoFieldPro
   function handleRemove() {
     clearPreview();
     onChange(null);
+    startTransition(async () => {
+      const result = await clearStoreLogo();
+      if (result.error) {
+        setError(result.error);
+      }
+    });
   }
 
   return (
@@ -145,7 +151,7 @@ export function StoreLogoField({ storeName, value, onChange }: StoreLogoFieldPro
       <div className="min-w-0 flex-1 space-y-1.5">
         <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Logo de la tienda</p>
         <p className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
-          JPG, PNG o WebP. {PRODUCT_IMAGE_OPTIMIZE_HINT}
+          JPG, PNG o WebP. {PRODUCT_IMAGE_OPTIMIZE_HINT} El logo se publica de inmediato en tu catálogo.
         </p>
 
         {error && (
