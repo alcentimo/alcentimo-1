@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { memo, useCallback, useMemo, useState, useTransition } from "react";
+import { memo, useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import {
   Loader2,
   Download,
@@ -73,6 +73,7 @@ interface InventoryPanelProps {
   exchangeRate: number | null;
   initialProducts: CatalogListItem[];
   productFormConfig: StoreProductFormConfig;
+  autoOpenCreate?: boolean;
 }
 
 const StockBadge = memo(function StockBadge({
@@ -420,6 +421,7 @@ export function InventoryPanel({
   exchangeRate,
   initialProducts,
   productFormConfig,
+  autoOpenCreate = false,
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
   const [search, setSearch] = useState("");
@@ -485,6 +487,12 @@ export function InventoryPanel({
     setEditingProductId(undefined);
     setSheetOpen(true);
   }, []);
+
+  useEffect(() => {
+    if (autoOpenCreate) {
+      openCreate();
+    }
+  }, [autoOpenCreate, openCreate]);
 
   const openEdit = useCallback((productId: string) => {
     setSheetMode("edit");

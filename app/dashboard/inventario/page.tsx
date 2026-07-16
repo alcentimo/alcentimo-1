@@ -10,9 +10,14 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-export default async function InventarioPage() {
+export default async function InventarioPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ nuevo?: string }>;
+}) {
   const supabase = await createClient();
   const session = await getDashboardSession(supabase);
+  const params = await searchParams;
 
   if (!session) {
     redirect("/dashboard/login?next=/dashboard/inventario");
@@ -60,6 +65,7 @@ export default async function InventarioPage() {
         exchangeRate={exchangeRate?.rate ?? null}
         initialProducts={products}
         productFormConfig={productFormConfig}
+        autoOpenCreate={params.nuevo === "1"}
       />
     </div>
   );
