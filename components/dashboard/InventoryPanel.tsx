@@ -77,7 +77,7 @@ interface InventoryPanelProps {
   initialProducts: CatalogListItem[];
   productFormConfig: StoreProductFormConfig;
   autoOpenCreate?: boolean;
-  onProductCountChange?: (count: number) => void;
+  onAutoOpenCreateHandled?: () => void;
 }
 
 const StockBadge = memo(function StockBadge({
@@ -426,7 +426,7 @@ export function InventoryPanel({
   initialProducts,
   productFormConfig,
   autoOpenCreate = false,
-  onProductCountChange,
+  onAutoOpenCreateHandled,
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
   const [search, setSearch] = useState("");
@@ -451,10 +451,6 @@ export function InventoryPanel({
   const [publishedProduct, setPublishedProduct] = useState<PublishedProductResult | null>(
     null,
   );
-
-  useEffect(() => {
-    onProductCountChange?.(products.length);
-  }, [products.length, onProductCountChange]);
 
   const categoriesInList = useMemo(() => {
     const names = new Set<string>();
@@ -511,10 +507,10 @@ export function InventoryPanel({
   }, []);
 
   useEffect(() => {
-    if (autoOpenCreate) {
-      openCreate();
-    }
-  }, [autoOpenCreate, openCreate]);
+    if (!autoOpenCreate) return;
+    openCreate();
+    onAutoOpenCreateHandled?.();
+  }, [autoOpenCreate, openCreate, onAutoOpenCreateHandled]);
 
   const openEdit = useCallback((productId: string) => {
     setSheetMode("edit");

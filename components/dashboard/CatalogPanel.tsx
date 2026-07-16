@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Compass, Package, Settings2 } from "lucide-react";
-import { CatalogGuideTab } from "@/components/dashboard/CatalogGuideTab";
+import { Package, Settings2 } from "lucide-react";
 import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
 import { SettingsPanel } from "@/components/dashboard/settings/SettingsPanel";
-import { getPublicSiteHost } from "@/lib/site-url";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
 import type { CatalogListItem, Store } from "@/lib/database.types";
@@ -14,7 +12,12 @@ import type { Coupon } from "@/lib/coupons/types";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
 
-type CatalogTabId = "guia" | "inventario" | "ajustes";
+type CatalogTabId = "inventario" | "ajustes";
+
+const TABS: { id: CatalogTabId; label: string; icon: typeof Package }[] = [
+  { id: "inventario", label: "Inventario", icon: Package },
+  { id: "ajustes", label: "Ajustes", icon: Settings2 },
+];
 
 interface CatalogPanelProps {
   store: Store;
@@ -25,24 +28,6 @@ interface CatalogPanelProps {
   initialCoupons: Coupon[];
   couponProducts: CouponProductOption[];
   initialConfig: StoreSettingsConfig;
-  autoOpenCreate?: boolean;
-  initialTab?: CatalogTabId;
-}
-
-function buildTabs(showGuide: boolean): {
-  id: CatalogTabId;
-  label: string;
-  icon: typeof Package;
-}[] {
-  const tabs: { id: CatalogTabId; label: string; icon: typeof Package }[] = [];
-  if (showGuide) {
-    tabs.push({ id: "guia", label: "Guía", icon: Compass });
-  }
-  tabs.push(
-    { id: "inventario", label: "Inventario", icon: Package },
-    { id: "ajustes", label: "Ajustes", icon: Settings2 },
-  );
-  return tabs;
 }
 
 export function CatalogPanel({
@@ -54,35 +39,20 @@ export function CatalogPanel({
   initialCoupons,
   couponProducts,
   initialConfig,
-  autoOpenCreate,
-  initialTab = "inventario",
 }: CatalogPanelProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const [productCount, setProductCount] = useState(initialProducts.length);
-  const showGuide = productCount === 0;
-
-  const catalogUrl = useMemo(
-    () => `https://${getPublicSiteHost()}/c/${store.slug}`,
-    [store.slug],
+  const [autoOpenCreate, setAutoOpenCreate] = useState(
+    () => searchParams.get("nuevo") === "1",
   );
 
-  const activeTab: CatalogTabId = useMemo(() => {
-    if (tabParam === "ajustes") return "ajustes";
-    if (tabParam === "inventario") return "inventario";
-    if (showGuide) {
-      if (tabParam === "guia" || !tabParam) return "guia";
-    }
-    if (initialTab === "ajustes") return "ajustes";
-    return "inventario";
-  }, [tabParam, showGuide, initialTab]);
-
-  const tabs = buildTabs(showGuide);
+  const activeTab: CatalogTabId = tabParam === "ajustes" ? "ajustes" : "inventario";
 
   function setTab(tab: CatalogTabId) {
     const params = new URLSearchParams(searchParams.toString());
-    if (tab === "inventario" || (tab === "guia" && !showGuide)) {
+    params.delete("nuevo");
+    if (tab === "inventario") {
       params.delete("tab");
     } else {
       params.set("tab", tab);
@@ -94,15 +64,26 @@ export function CatalogPanel({
   }
 
   useEffect(() => {
-    if (!showGuide && tabParam === "guia") {
-      const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams.toString());
+    let changed = false;
+
+    if (params.get("tab") === "guia") {
       params.delete("tab");
+      changed = true;
+    }
+
+    if (params.get("nuevo") === "1") {
+      params.delete("nuevo");
+      changed = true;
+    }
+
+    if (changed) {
       const query = params.toString();
       router.replace(query ? `/dashboard/catalogo?${query}` : "/dashboard/catalogo", {
         scroll: false,
       });
     }
-  }, [showGuide, tabParam, searchParams, router]);
+  }, [searchParams, router]);
 
   return (
     <div className="settings-workspace">
@@ -111,7 +92,7 @@ export function CatalogPanel({
         role="tablist"
         aria-label="Secciones del catálogo"
       >
-        {tabs.map((tab) => {
+        {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
 
@@ -134,19 +115,6 @@ export function CatalogPanel({
       </nav>
 
       <div className="settings-workspace-body">
-        {showGuide && activeTab === "guia" && (
-          <div
-            role="tabpanel"
-            id="catalog-panel-guia"
-            aria-labelledby="catalog-tab-guia"
-          >
-            <CatalogGuideTab
-              onGoToAjustes={() => setTab("ajustes")}
-              onGoToInventario={() => setTab("inventario")}
-              catalogUrl={catalogUrl}
-            />
-          </div>
-        )}
         {activeTab === "inventario" && (
           <div
             role="tabpanel"
@@ -159,7 +127,7 @@ export function CatalogPanel({
               initialProducts={initialProducts}
               productFormConfig={productFormConfig}
               autoOpenCreate={autoOpenCreate}
-              onProductCountChange={setProductCount}
+              onAutoOpenCreateHandled={() => setAutoOpenCreate(false)}
             />
           </div>
         )}

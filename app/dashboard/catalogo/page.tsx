@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 export default async function CatalogoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ nuevo?: string; onboarded?: string; tab?: string }>;
+  searchParams: Promise<{ onboarded?: string }>;
 }) {
   const supabase = await createClient();
   const session = await getDashboardSession(supabase);
@@ -30,16 +30,6 @@ export default async function CatalogoPage({
 
   const { store } = session;
   const showOnboardingSuccess = params.onboarded === "1";
-  const initialTab =
-    params.nuevo === "1"
-      ? ("inventario" as const)
-      : params.tab === "ajustes"
-        ? ("ajustes" as const)
-        : params.tab === "inventario"
-          ? ("inventario" as const)
-          : params.tab === "guia"
-            ? ("guia" as const)
-            : undefined;
 
   if (!store) {
     return (
@@ -121,8 +111,6 @@ export default async function CatalogoPage({
           initialCoupons={coupons}
           couponProducts={couponProducts}
           initialConfig={settingsConfig ?? defaultStoreSettingsConfig()}
-          autoOpenCreate={params.nuevo === "1"}
-          initialTab={initialTab}
         />
       </Suspense>
     </div>
