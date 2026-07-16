@@ -12,6 +12,8 @@ export interface TransactionalOrderWhatsAppMessageInput {
   items: TransactionalOrderWhatsAppItem[];
   totalUsd: number;
   orderDetailUrl: string;
+  paymentLabel?: string;
+  shippingLabel?: string;
 }
 
 const STORAGE_URL_PATTERN =
@@ -61,13 +63,23 @@ export function buildTransactionalOrderWhatsAppMessage(
     ...productLines,
     "",
     `💰 Total: ${formatUsd(input.totalUsd)}`,
-  ].join("\n");
+  ];
+
+  if (input.paymentLabel?.trim()) {
+    body.push("", `💳 Pago: ${sanitizeCustomerText(input.paymentLabel)}`);
+  }
+
+  if (input.shippingLabel?.trim()) {
+    body.push(`🚚 Envío: ${sanitizeCustomerText(input.shippingLabel)}`);
+  }
+
+  const messageBody = body.join("\n");
 
   const orderUrl = stripStorageUrls(input.orderDetailUrl.trim());
   if (!orderUrl || !isPlatformOrderUrl(orderUrl)) {
-    return stripStorageUrls(body);
+    return stripStorageUrls(messageBody);
   }
 
   // Solo el enlace de la plataforma al final → una única vista previa con marca Alcentimo.
-  return `${stripStorageUrls(body)}\n\n${orderUrl}`;
+  return `${stripStorageUrls(messageBody)}\n\n${orderUrl}`;
 }

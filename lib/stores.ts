@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { unstable_noStore as noStore } from "next/cache";
 import { getOptionalAuthUser } from "@/lib/auth/optional-auth";
 import type { Store } from "@/lib/database.types";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
@@ -13,6 +14,12 @@ export async function getStoreBySlug(slug: string): Promise<Store | null> {
 
   if (error) throw new Error(error.message);
   return data;
+}
+
+/** Tienda pública sin caché — logo, nombre y rubro siempre actualizados. */
+export async function getPublicStoreBySlug(slug: string): Promise<Store | null> {
+  noStore();
+  return getStoreBySlug(slug);
 }
 
 /** Tienda del usuario autenticado (dueño o miembro). */

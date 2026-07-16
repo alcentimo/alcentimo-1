@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getCatalogProducts } from "@/lib/catalog";
-import { getStoreBySlug } from "@/lib/stores";
+import { getPublicStoreBySlug } from "@/lib/stores";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { StoreCatalog } from "@/components/catalog/StoreCatalog";
@@ -14,7 +14,7 @@ interface StorePageProps {
 }
 
 async function StoreCatalogContent({ slug }: { slug: string }) {
-  const store = await getStoreBySlug(slug);
+  const store = await getPublicStoreBySlug(slug);
 
   if (!store) notFound();
 
@@ -47,7 +47,7 @@ export default async function StorePage({ params }: StorePageProps) {
 
 export async function generateMetadata({ params }: StorePageProps) {
   const { slug } = await params;
-  const store = await getStoreBySlug(slug);
+  const store = await getPublicStoreBySlug(slug);
 
   if (!store) {
     return { title: "Tienda no encontrada — alcentimo" };

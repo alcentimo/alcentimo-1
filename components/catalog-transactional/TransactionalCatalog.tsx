@@ -8,6 +8,7 @@ import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings } from "@/lib/store-settings/types";
 import { getCatalogThemeStyle } from "@/lib/store-settings/catalog-theme";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { CheckoutPanel } from "@/components/catalog-transactional/CheckoutPanel";
 import { isProductOutOfStock } from "@/lib/products/variants";
@@ -74,7 +75,10 @@ export function TransactionalCatalog({
               </div>
             )}
             <div className="min-w-0">
-              <p className="txn-catalog-eyebrow">Catálogo</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="txn-catalog-eyebrow">Catálogo</p>
+                <StoreOpenBadge locationHours={purchaseInfo.locationHours} />
+              </div>
               <h1 className="txn-catalog-title">{store.name}</h1>
               {store.description && (
                 <p className="txn-catalog-desc">{store.description}</p>
@@ -137,6 +141,7 @@ export function TransactionalCatalog({
           <CheckoutPanel
             storeSlug={store.slug}
             storeName={store.name}
+            purchaseInfo={purchaseInfo}
             whatsappConfigured={whatsappConfigured}
             onClose={() => setCartOpen(false)}
           />

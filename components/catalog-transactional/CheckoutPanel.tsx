@@ -1,23 +1,37 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { Minus, Plus, ShoppingBag, X } from "lucide-react";
+import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
+import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
+import { PaymentCheckoutDetails } from "@/components/payments/PaymentCheckoutDetails";
 import { cartItemKey } from "@/lib/catalog/cart-types";
 import { formatUsd } from "@/lib/format";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { submitTransactionalOrder } from "@/lib/orders/actions";
 import type { SubmitOrderLineInput } from "@/lib/orders/types";
+import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
+import type { PaymentMethodKey } from "@/lib/store-settings/types";
 
 interface CheckoutPanelProps {
   storeSlug: string;
   storeName: string;
+  purchaseInfo: PublicPurchaseInfo;
   whatsappConfigured: boolean;
   onClose: () => void;
+}
+
+function pickDefaultPaymentKey(
+  payments: PublicPurchaseInfo["payments"],
+): string {
+  const pagoMovil = payments.find((payment) => payment.key === "pagoMovil");
+  return pagoMovil?.key ?? payments[0]?.key ?? "";
 }
 
 export function CheckoutPanel({
   storeSlug,
   storeName,
+  purchaseInfo,
   whatsappConfigured,
   onClose,
 }: CheckoutPanelProps) {
@@ -25,9 +39,33 @@ export function CheckoutPanel({
     useCart();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [selectedShipping, setSelectedShipping] = useState("");
+  const [selectedPayment, setSelectedPayment] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (purchaseInfo.shipping.length === 1) {
+      setSelectedShipping(purchaseInfo.shipping[0].key);
+    }
+    setSelectedPayment(pickDefaultPaymentKey(purchaseInfo.payments));
+  }, [purchaseInfo.payments, purchaseInfo.shipping]);
+
+  const selectedPaymentDetails = useMemo(() => {
+    if (!selectedPayment) return null;
+    return (
+      purchaseInfo.payments.find((payment) => payment.key === selectedPayment) ??
+      null
+    );
+  }, [purchaseInfo.payments, selectedPayment]);
+
+  const shippingLabel =
+    purchaseInfo.shipping.find((option) => option.key === selectedShipping)
+      ?.label ?? "";
+  const paymentLabel =
+    purchaseInfo.payments.find((payment) => payment.key === selectedPayment)
+      ?.label ?? "";
 
   const orderLines = useMemo<SubmitOrderLineInput[]>(
     () =>
@@ -56,12 +94,24 @@ export function CheckoutPanel({
       return;
     }
 
+    if (purchaseInfo.shipping.length > 0 && !selectedShipping) {
+      setError("Selecciona un método de envío.");
+      return;
+    }
+
+    if (purchaseInfo.payments.length > 0 && !selectedPayment) {
+      setError("Selecciona un método de pago.");
+      return;
+    }
+
     const formData = new FormData();
     formData.set("storeSlug", storeSlug);
     formData.set("customerName", customerName.trim());
     formData.set("customerPhone", customerPhone.trim());
     formData.set("items", JSON.stringify(orderLines));
     formData.set("paymentProof", proofFile);
+    if (selectedShipping) formData.set("shippingMethod", selectedShipping);
+    if (selectedPayment) formData.set("paymentMethod", selectedPayment);
 
     startTransition(async () => {
       const result = await submitTransactionalOrder(formData);
@@ -110,7 +160,8 @@ export function CheckoutPanel({
         </div>
       ) : (
         <>
-          <ul className="txn-checkout-items">
+          <div className="txn-checkout-scroll">
+            <ul className="txn-checkout-items">
             {items.map((item) => {
               const key = cartItemKey(item.product.product_id, item.variantId);
               return (
@@ -180,6 +231,56 @@ export function CheckoutPanel({
             <strong>{formatUsd(subtotalUsd)}</strong>
           </div>
 
+          {(purchaseInfo.shipping.length > 0 ||
+            purchaseInfo.payments.length > 0) && (
+            <div className="txn-checkout-options">
+              {purchaseInfo.shipping.length > 0 && (
+                <div className="txn-checkout-section">
+                  <p className="txn-checkout-section-title">Opciones de envío</p>
+                  <div className="txn-checkout-method-grid">
+                    {purchaseInfo.shipping.map((option) => (
+                      <ShippingMethodCard
+                        key={option.key}
+                        carrierKey={option.key}
+                        details={option.details}
+                        description={option.description}
+                        estimatedTime={option.estimatedTime}
+                        selectable
+                        selected={selectedShipping === option.key}
+                        onSelect={() => setSelectedShipping(option.key)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {purchaseInfo.payments.length > 0 && (
+                <div className="txn-checkout-section">
+                  <p className="txn-checkout-section-title">Método de pago</p>
+                  <div className="txn-checkout-method-grid">
+                    {purchaseInfo.payments.map((payment) => (
+                      <PaymentMethodCard
+                        key={payment.key}
+                        methodKey={payment.key as PaymentMethodKey}
+                        selectable
+                        selected={selectedPayment === payment.key}
+                        onSelect={() => setSelectedPayment(payment.key)}
+                      />
+                    ))}
+                  </div>
+                  {selectedPaymentDetails && (
+                    <PaymentCheckoutDetails
+                      methodKey={selectedPaymentDetails.key}
+                      fields={selectedPaymentDetails.fields}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          </div>
+
           <form className="txn-checkout-form" onSubmit={handleSubmit}>
             <label className="txn-field">
               <span>Nombre</span>
@@ -240,6 +341,14 @@ export function CheckoutPanel({
               <p className="txn-checkout-hint">
                 Si WhatsApp no está configurado, el pedido se guardará igual en
                 el panel del dueño.
+              </p>
+            )}
+
+            {(shippingLabel || paymentLabel) && (
+              <p className="txn-checkout-hint">
+                {shippingLabel ? `Envío: ${shippingLabel}` : null}
+                {shippingLabel && paymentLabel ? " · " : null}
+                {paymentLabel ? `Pago: ${paymentLabel}` : null}
               </p>
             )}
           </form>

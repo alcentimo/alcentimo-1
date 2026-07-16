@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getCatalogProducts } from "@/lib/catalog";
-import { getStoreBySlug } from "@/lib/stores";
+import { getPublicStoreBySlug } from "@/lib/stores";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
@@ -15,7 +15,7 @@ interface CatalogPageProps {
 }
 
 async function CatalogContent({ storeSlug }: { storeSlug: string }) {
-  const store = await getStoreBySlug(storeSlug);
+  const store = await getPublicStoreBySlug(storeSlug);
   if (!store) notFound();
 
   const [{ products, exchangeRate }, settingsConfig] = await Promise.all([
@@ -60,7 +60,7 @@ export default async function TransactionalCatalogPage({
 
 export async function generateMetadata({ params }: CatalogPageProps) {
   const { store_slug: storeSlug } = await params;
-  const store = await getStoreBySlug(storeSlug);
+  const store = await getPublicStoreBySlug(storeSlug);
 
   if (!store) {
     return { title: "Catálogo no encontrado" };

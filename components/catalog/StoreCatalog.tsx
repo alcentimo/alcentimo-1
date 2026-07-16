@@ -241,6 +241,7 @@ export function StoreCatalog({
       <StoreHeader
         store={store}
         cartCount={cartCount}
+        locationHours={purchaseInfo.locationHours}
         onCartClick={() => setCartOpen(true)}
       />
 

@@ -3,11 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
+import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import type { Store } from "@/lib/database.types";
+import type { LocationHoursSettings } from "@/lib/store-settings/types";
 
 interface StoreHeaderProps {
   store: Store;
   cartCount: number;
+  locationHours: LocationHoursSettings;
   onCartClick: () => void;
 }
 
@@ -33,7 +36,12 @@ function StoreLogo({ store }: { store: Store }) {
   );
 }
 
-export function StoreHeader({ store, cartCount, onCartClick }: StoreHeaderProps) {
+export function StoreHeader({
+  store,
+  cartCount,
+  locationHours,
+  onCartClick,
+}: StoreHeaderProps) {
   return (
     <>
       <div className="store-banner safe-area-inset">
@@ -44,8 +52,14 @@ export function StoreHeader({ store, cartCount, onCartClick }: StoreHeaderProps)
         <div className="store-header-inner">
           <Link href={`/tienda/${store.slug}`} className="flex min-w-0 items-center gap-3">
             <StoreLogo store={store} />
-            <span className="truncate text-base font-semibold text-zinc-900 sm:text-lg">
-              {store.name}
+            <span className="min-w-0">
+              <span className="block truncate text-base font-semibold text-zinc-900 sm:text-lg">
+                {store.name}
+              </span>
+              <StoreOpenBadge
+                locationHours={locationHours}
+                className="mt-1"
+              />
             </span>
           </Link>
 

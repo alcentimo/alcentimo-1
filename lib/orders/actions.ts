@@ -8,6 +8,9 @@ import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { getWhatsAppOrderDetailUrl } from "@/lib/orders/order-links";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
+import { getPaymentMethod } from "@/src/config/payment-methods";
+import { getShippingMethod } from "@/src/config/shipping-methods";
+import type { PaymentMethodKey, ShippingCarrierKey } from "@/lib/store-settings/types";
 import { uploadOrderPaymentProof } from "@/lib/orders/storage";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import type { OrderLineItem, SubmitOrderLineInput } from "@/lib/orders/types";
@@ -38,6 +41,8 @@ export async function submitTransactionalOrder(
   const customerPhone = String(formData.get("customerPhone") ?? "").trim();
   const itemsRaw = String(formData.get("items") ?? "[]");
   const proof = formData.get("paymentProof");
+  const paymentMethodRaw = String(formData.get("paymentMethod") ?? "").trim();
+  const shippingMethodRaw = String(formData.get("shippingMethod") ?? "").trim();
 
   if (!storeSlug) {
     return { error: "Tienda no válida." };
@@ -104,11 +109,21 @@ export async function submitTransactionalOrder(
 
   const settings = await getPublicStoreSettingsConfig(store.id);
   const purchaseInfo = buildPublicPurchaseInfo(settings);
+
+  const paymentLabel = paymentMethodRaw
+    ? getPaymentMethod(paymentMethodRaw as PaymentMethodKey).label
+    : undefined;
+  const shippingLabel = shippingMethodRaw
+    ? getShippingMethod(shippingMethodRaw as ShippingCarrierKey).label
+    : undefined;
+
   const message = buildTransactionalOrderWhatsAppMessage({
     customerName,
     items: orderItems,
     totalUsd,
     orderDetailUrl: getWhatsAppOrderDetailUrl(orderId),
+    paymentLabel,
+    shippingLabel,
   });
 
   const whatsappUrl =
