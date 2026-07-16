@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Link2, Settings2, Unplug } from "lucide-react";
+import { Link2, Settings2, Unplug } from "lucide-react";
 import { ChannelLogo } from "@/components/inbox/ChannelLogo";
 import type { ChannelIntegration } from "@/lib/inbox/types";
 import { getIntegrationForProvider } from "@/lib/inbox/get-store-integrations";
@@ -108,24 +107,15 @@ function IntegrationHubCard({
               <Settings2 className="h-4 w-4" aria-hidden="true" />
               Configurar
             </a>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <Link
-                href={channel.destinationHref}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-teal-700 transition hover:bg-teal-50 dark:text-teal-400 dark:hover:bg-teal-950/40"
-              >
-                <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                Ir a Mensajes
-              </Link>
-              <button
-                type="button"
-                onClick={() => onDisconnect(channel.key)}
-                disabled={disconnecting}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-950/30"
-              >
-                <Unplug className="h-4 w-4" aria-hidden="true" />
-                {disconnecting ? "Desconectando…" : "Desconectar"}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => onDisconnect(channel.key)}
+              disabled={disconnecting}
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-950/30"
+            >
+              <Unplug className="h-4 w-4" aria-hidden="true" />
+              {disconnecting ? "Desconectando…" : "Desconectar"}
+            </button>
           </>
         ) : (
           <a

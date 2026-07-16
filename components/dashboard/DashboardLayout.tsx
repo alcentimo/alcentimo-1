@@ -7,7 +7,6 @@ import { Menu } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
-import { ImmersiveModeProvider, useImmersiveMode } from "@/components/inbox/ImmersiveModeProvider";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -24,10 +23,6 @@ function isStandaloneAuthPath(pathname: string): boolean {
   );
 }
 
-function isMensajesPath(pathname: string): boolean {
-  return pathname.startsWith("/dashboard/mensajes");
-}
-
 function DashboardShell({
   children,
   storeName,
@@ -38,8 +33,6 @@ function DashboardShell({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isImmersive } = useImmersiveMode();
-  const immersiveActive = isMensajesPath(pathname) && isImmersive;
 
   function closeSidebar() {
     setSidebarOpen(false);
@@ -64,12 +57,8 @@ function DashboardShell({
   }
 
   return (
-    <div
-      className={`flex h-dvh overflow-hidden bg-zinc-100 dark:bg-zinc-950 ${
-        immersiveActive ? "dashboard-shell--immersive" : ""
-      }`}
-    >
-      {sidebarOpen && !immersiveActive && (
+    <div className="flex h-dvh overflow-hidden bg-zinc-100 dark:bg-zinc-950">
+      {sidebarOpen && (
         <button
           type="button"
           className="fixed inset-0 z-40 bg-zinc-900/40 backdrop-blur-[2px] lg:hidden"
@@ -85,34 +74,26 @@ function DashboardShell({
         userEmail={userEmail}
         planName={planName}
         mobileOpen={sidebarOpen}
-        immersiveHidden={immersiveActive}
+        immersiveHidden={false}
         onCloseMobile={closeSidebar}
         onLogout={() => void handleLogout()}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        {!immersiveActive && (
-          <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 lg:hidden dark:border-zinc-800 dark:bg-zinc-950">
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(true)}
-              className="touch-target rounded-xl text-zinc-700 dark:text-zinc-300"
-              aria-label="Abrir menú"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <BrandLogo href="/dashboard" size="sm" subtitle={storeName ?? undefined} />
-            <div className="w-11" aria-hidden="true" />
-          </header>
-        )}
+        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 lg:hidden dark:border-zinc-800 dark:bg-zinc-950">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="touch-target rounded-xl text-zinc-700 dark:text-zinc-300"
+            aria-label="Abrir menú"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <BrandLogo href="/dashboard" size="sm" subtitle={storeName ?? undefined} />
+          <div className="w-11" aria-hidden="true" />
+        </header>
 
-        <main
-          className={`flex min-h-0 flex-1 flex-col safe-area-inset ${
-            isMensajesPath(pathname)
-              ? "dashboard-main--mensajes overflow-hidden"
-              : "overflow-y-auto p-4 sm:p-6 lg:p-8"
-          } ${immersiveActive ? "dashboard-main--immersive" : ""}`}
-        >
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 safe-area-inset sm:p-6 lg:p-8">
           {children}
         </main>
       </div>
@@ -129,9 +110,5 @@ export function DashboardLayout(props: DashboardLayoutProps) {
     );
   }
 
-  return (
-    <ImmersiveModeProvider>
-      <DashboardShell {...props} />
-    </ImmersiveModeProvider>
-  );
+  return <DashboardShell {...props} />;
 }

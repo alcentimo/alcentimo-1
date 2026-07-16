@@ -35,6 +35,5 @@ export async function disconnectChannelIntegration(
   }
 
   revalidatePath("/dashboard/ajustes/integraciones");
-  revalidatePath("/dashboard/mensajes");
   return {};
 }

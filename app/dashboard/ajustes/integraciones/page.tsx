@@ -21,7 +21,7 @@ function resolveStatus(searchParams: {
   if (searchParams.connected && VALID_CHANNELS.has(searchParams.connected as ChannelProviderKey)) {
     const channel = getChannelIntegration(searchParams.connected as ChannelProviderKey);
     return {
-      message: `${channel.label} conectado correctamente. Ya puedes recibir mensajes en tu bandeja.`,
+      message: `${channel.label} conectado correctamente.`,
       tone: "success",
     };
   }

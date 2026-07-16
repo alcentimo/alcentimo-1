@@ -88,7 +88,18 @@ const nextConfig: NextConfig = {
     ];
   },
   async redirects() {
-    return [];
+    return [
+      {
+        source: "/mensajes",
+        destination: "/dashboard",
+        permanent: false,
+      },
+      {
+        source: "/mensajes/:path*",
+        destination: "/dashboard",
+        permanent: false,
+      },
+    ];
   },
 };
 

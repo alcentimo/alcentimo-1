@@ -7,7 +7,6 @@ import {
   RefreshCw,
   UserCog,
   UserPlus,
-  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -59,13 +58,6 @@ export const DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
     id: "customers",
     label: "Clientes y Comunidad",
     items: [
-      {
-        href: "/dashboard/mensajes",
-        label: "Clientes",
-        description: "Lista y perfil de compradores",
-        icon: Users,
-        match: (pathname) => pathname.startsWith("/dashboard/mensajes"),
-      },
       {
         href: "/dashboard/referidos",
         label: "Referidos",

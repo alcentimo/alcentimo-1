@@ -23,13 +23,13 @@ export const CHANNEL_INTEGRATIONS: ChannelIntegrationDefinition[] = [
     label: "WhatsApp",
     headline: "Atiende pedidos y consultas por WhatsApp",
     description:
-      "Recibe mensajes de clientes en tu bandeja de Mensajes y responde desde un solo lugar.",
+      "Conecta WhatsApp para recibir consultas de clientes y centralizar tu operación.",
     accentClass:
       "from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30",
     badgeClass: "bg-emerald-600 text-white",
     category: "messaging",
     connectPath: "/api/integrations/meta/connect?provider=whatsapp",
-    destinationHref: "/dashboard/mensajes",
+    destinationHref: "/dashboard",
   },
 ];
 
