@@ -29,6 +29,8 @@ export type ProductFormState = {
   error?: string;
   success?: boolean;
   catalogUrl?: string;
+  productSlug?: string;
+  productName?: string;
   imageOptimizedMessage?: string;
   productId?: string;
 };
@@ -267,12 +269,15 @@ export async function createProduct(
     if (imageError) return { error: imageError.message };
 
     revalidatePath(`/tienda/${store.slug}`);
+    revalidatePath(`/c/${store.slug}`);
     revalidatePath("/dashboard/productos/nuevo");
     revalidatePath("/dashboard/inventario");
 
     return {
       success: true,
-      catalogUrl: `/tienda/${store.slug}`,
+      catalogUrl: `/c/${store.slug}`,
+      productSlug,
+      productName: name,
       imageOptimizedMessage: optimization
         ? buildOptimizationMessage(optimization)
         : undefined,
@@ -280,12 +285,15 @@ export async function createProduct(
   }
 
   revalidatePath(`/tienda/${store.slug}`);
+  revalidatePath(`/c/${store.slug}`);
   revalidatePath("/dashboard/productos/nuevo");
   revalidatePath("/dashboard/inventario");
 
   return {
     success: true,
-    catalogUrl: `/tienda/${store.slug}`,
+    catalogUrl: `/c/${store.slug}`,
+    productSlug,
+    productName: name,
   };
 }
 

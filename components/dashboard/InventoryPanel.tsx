@@ -17,6 +17,8 @@ import {
   Table,
   Trash2,
   Upload,
+  ExternalLink,
+  X,
 } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { Store } from "@/lib/database.types";
@@ -44,6 +46,7 @@ import {
   exportProductsToPdf,
   getCatalogPdfSourceData,
 } from "@/lib/products/export-actions";
+import type { PublishedProductResult } from "@/components/dashboard/QuickProductForm";
 import {
   createPdfPreviewUrl,
   downloadCsvFile,
@@ -443,6 +446,9 @@ export function InventoryPanel({
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfPreviewBase64, setPdfPreviewBase64] = useState<string | null>(null);
   const [pdfPreviewFileName, setPdfPreviewFileName] = useState<string | null>(null);
+  const [publishedProduct, setPublishedProduct] = useState<PublishedProductResult | null>(
+    null,
+  );
 
   const categoriesInList = useMemo(() => {
     const names = new Set<string>();
@@ -481,6 +487,16 @@ export function InventoryPanel({
       }
     });
   }, []);
+
+  const handleProductSaved = useCallback(
+    (result?: PublishedProductResult) => {
+      refreshProducts();
+      if (result) {
+        setPublishedProduct(result);
+      }
+    },
+    [refreshProducts],
+  );
 
   const openCreate = useCallback(() => {
     setSheetMode("create");
@@ -656,6 +672,40 @@ export function InventoryPanel({
 
   return (
     <>
+      {publishedProduct && (
+        <div
+          className="alert-success mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+          role="status"
+        >
+          <p className="text-sm">
+            <strong>{publishedProduct.productName}</strong> ya está en tu catálogo
+            público.{" "}
+            <span className="text-teal-800/80 dark:text-teal-200/80">
+              ¿Quieres ver cómo se ve?
+            </span>
+          </p>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <a
+              href={publishedProduct.catalogUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+              Ver en mi catálogo
+            </a>
+            <button
+              type="button"
+              onClick={() => setPublishedProduct(null)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-teal-800/70 transition-colors hover:bg-teal-100 hover:text-teal-900 dark:text-teal-200/70 dark:hover:bg-teal-950/50 dark:hover:text-teal-100"
+              aria-label="Cerrar aviso"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="inventory-catalog-header">
         <div className="inventory-toolbar flex-1">
           <div className="relative min-w-0 flex-1">
@@ -888,7 +938,7 @@ export function InventoryPanel({
         productFormConfig={productFormConfig}
         mode={sheetMode}
         productId={editingProductId}
-        onSaved={refreshProducts}
+        onSaved={handleProductSaved}
       />
 
       <CatalogPdfPreviewDialog

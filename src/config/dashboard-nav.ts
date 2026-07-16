@@ -17,6 +17,8 @@ export interface DashboardNavItem {
   description: string;
   icon: LucideIcon;
   match?: (pathname: string) => boolean;
+  /** Leyenda secundaria bajo el ítem (solo sidebar expandido). */
+  caption?: string;
 }
 
 export interface DashboardNavSection {
@@ -32,8 +34,8 @@ export const DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
     items: [
       {
         href: "/dashboard",
-        label: "Inicio",
-        description: "Dashboard principal",
+        label: "Resumen",
+        description: "Vista general del negocio",
         icon: LayoutDashboard,
         match: (pathname) => pathname === "/dashboard",
       },
@@ -41,6 +43,7 @@ export const DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
         href: "/dashboard/inventario",
         label: "Productos",
         description: "Gestión de inventario",
+        caption: "Gestionar catálogo",
         icon: Package,
         match: (pathname) =>
           pathname.startsWith("/dashboard/inventario") ||

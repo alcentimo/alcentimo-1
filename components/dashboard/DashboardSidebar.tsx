@@ -51,20 +51,27 @@ function SidebarNavLink({
   const Icon = item.icon;
 
   return (
-    <Link
-      href={item.href}
-      className={navLinkClass(active, collapsed)}
-      onClick={onNavigate}
-      title={collapsed ? `${item.label} — ${item.description}` : item.description}
-      aria-current={active ? "page" : undefined}
-    >
-      <Icon
-        className={cn("shrink-0", collapsed ? "h-[18px] w-[18px]" : "h-4 w-4")}
-        strokeWidth={active ? 2 : 1.75}
-        aria-hidden="true"
-      />
-      {!collapsed && <span className="truncate">{item.label}</span>}
-    </Link>
+    <div>
+      <Link
+        href={item.href}
+        className={navLinkClass(active, collapsed)}
+        onClick={onNavigate}
+        title={collapsed ? `${item.label} — ${item.description}` : item.description}
+        aria-current={active ? "page" : undefined}
+      >
+        <Icon
+          className={cn("shrink-0", collapsed ? "h-[18px] w-[18px]" : "h-4 w-4")}
+          strokeWidth={active ? 2 : 1.75}
+          aria-hidden="true"
+        />
+        {!collapsed && <span className="truncate">{item.label}</span>}
+      </Link>
+      {item.caption && !collapsed && (
+        <p className="px-3 pb-1 pt-0.5 text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">
+          {item.caption}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -160,13 +167,22 @@ export function DashboardSidebar({
             )}
             <div className="flex flex-col gap-0.5">
               {section.items.map((item) => (
-                <SidebarNavLink
-                  key={item.href}
-                  item={item}
-                  active={isDashboardNavItemActive(pathname, item)}
-                  collapsed={collapsed}
-                  onNavigate={onCloseMobile}
-                />
+                <div key={item.href}>
+                  <SidebarNavLink
+                    item={item}
+                    active={isDashboardNavItemActive(pathname, item)}
+                    collapsed={collapsed}
+                    onNavigate={onCloseMobile}
+                  />
+                  {item.href === "/dashboard" && (
+                    <PublicCatalogQuickLink
+                      storeSlug={storeSlug}
+                      collapsed={collapsed}
+                      onNavigate={onCloseMobile}
+                      className={cn("my-2", collapsed ? "mx-0" : "mx-0")}
+                    />
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -179,12 +195,6 @@ export function DashboardSidebar({
           collapsed ? "space-y-2 px-2 py-3" : "space-y-3 px-0 py-4",
         )}
       >
-        <PublicCatalogQuickLink
-          storeSlug={storeSlug}
-          collapsed={collapsed}
-          onNavigate={onCloseMobile}
-        />
-
         <div className={cn(collapsed ? "space-y-1" : "space-y-1 px-3")}>
           {!collapsed && planName && (
             <p className="truncate px-1 text-xs font-medium text-teal-700 dark:text-teal-400">

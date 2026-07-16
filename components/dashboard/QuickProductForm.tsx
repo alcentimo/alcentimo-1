@@ -18,6 +18,7 @@ import type { Store } from "@/lib/database.types";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { VariantFormInput } from "@/lib/products/variants";
 import { formatUsd } from "@/lib/format";
+import { getPublicSiteHost } from "@/lib/site-url";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -28,11 +29,16 @@ const initialState: ProductFormState = {};
 
 type SaveIntent = "close" | "another";
 
+export interface PublishedProductResult {
+  productName: string;
+  catalogUrl: string;
+}
+
 interface QuickProductFormProps {
   store: Store;
   exchangeRate: number | null;
   productFormConfig: StoreProductFormConfig;
-  onComplete: () => void;
+  onComplete: (result?: PublishedProductResult) => void;
   onRefresh: () => void;
   onCancel?: () => void;
 }
@@ -74,6 +80,7 @@ function QuickProductFormSession({
   const [imageProcessed, setImageProcessed] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const saveIntentRef = useRef<SaveIntent>("close");
+  const submittedNameRef = useRef("");
 
   const {
     categorySlug,
@@ -102,8 +109,15 @@ function QuickProductFormSession({
     }
 
     onRefresh();
-    onComplete();
-  }, [state.success, onComplete, onRefresh, onSavedAndAnother]);
+    onComplete({
+      productName: state.productName ?? submittedNameRef.current,
+      catalogUrl: state.catalogUrl
+        ? state.catalogUrl.startsWith("http")
+          ? state.catalogUrl
+          : `https://${getPublicSiteHost()}${state.catalogUrl}`
+        : `https://${getPublicSiteHost()}/c/${store.slug}`,
+    });
+  }, [state.success, state.catalogUrl, state.productName, onComplete, onRefresh, onSavedAndAnother, store.slug]);
 
   function resetFormState() {
     setPriceBs("");
@@ -132,6 +146,7 @@ function QuickProductFormSession({
 
     const form = e.currentTarget;
     const formData = new FormData(form);
+    submittedNameRef.current = String(formData.get("name") ?? "").trim();
     const priceUsd = bs / exchangeRate;
 
     formData.set("price_usd", priceUsd.toFixed(4));

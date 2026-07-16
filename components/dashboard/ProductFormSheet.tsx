@@ -5,7 +5,7 @@ import type { ProductEditData } from "@/lib/products/actions";
 import { getProductForEdit } from "@/lib/products/actions";
 import type { Store } from "@/lib/database.types";
 import { ProductCatalogForm } from "@/components/dashboard/ProductCatalogForm";
-import { QuickProductForm } from "@/components/dashboard/QuickProductForm";
+import { QuickProductForm, type PublishedProductResult } from "@/components/dashboard/QuickProductForm";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import {
   Sheet,
@@ -32,7 +32,7 @@ interface ProductFormSheetProps {
   productFormConfig: StoreProductFormConfig;
   mode: "create" | "edit";
   productId?: string;
-  onSaved: () => void;
+  onSaved: (result?: PublishedProductResult) => void;
 }
 
 export function ProductFormSheet({
@@ -77,8 +77,8 @@ export function ProductFormSheet({
     });
   }, [open, mode, productId]);
 
-  function handleCreateComplete() {
-    onSaved();
+  function handleCreateComplete(result?: PublishedProductResult) {
+    onSaved(result);
     onOpenChange(false);
   }
 
