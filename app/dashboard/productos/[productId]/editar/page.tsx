@@ -65,7 +65,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
       </div>
 
       <p className="mt-6 text-center text-sm text-zinc-500">
-        <Link href="/dashboard/inventario" className="link-brand">
+        <Link href="/dashboard/catalogo?tab=inventario" className="link-brand">
           ← Volver al inventario
         </Link>
       </p>

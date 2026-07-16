@@ -30,6 +30,7 @@ interface SettingsPanelProps {
   initialCoupons: Coupon[];
   products: CouponProductOption[];
   initialConfig: StoreSettingsConfig;
+  embedded?: boolean;
 }
 
 export function SettingsPanel({
@@ -37,14 +38,15 @@ export function SettingsPanel({
   initialCoupons,
   products,
   initialConfig,
+  embedded = false,
 }: SettingsPanelProps) {
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<SettingsTabId>("general");
   const integrationsActive = pathname.startsWith("/dashboard/ajustes/integraciones");
   const promotionsActive = activeTab === "promotions" && !integrationsActive;
 
-  return (
-    <div className="settings-workspace">
+  const panel = (
+    <>
       <nav
         className="settings-tab-nav"
         role="tablist"
@@ -153,6 +155,10 @@ export function SettingsPanel({
           </div>
         )}
       </div>
-    </div>
+    </>
   );
+
+  if (embedded) return panel;
+
+  return <div className="settings-workspace">{panel}</div>;
 }

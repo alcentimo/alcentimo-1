@@ -58,6 +58,7 @@ async function persistSettingsPatch(
     return { error: error.message };
   }
 
+  revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
   revalidatePath(`/tienda/${store.slug}`);
 
@@ -290,6 +291,8 @@ export async function saveGeneralStoreSettings(
   );
   if (sync.error) return { error: sync.error };
 
+  revalidatePath("/dashboard/catalogo");
+  revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/inventario");
   revalidatePath("/dashboard/productos/nuevo");

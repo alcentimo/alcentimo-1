@@ -53,7 +53,7 @@ function PlanCtaButton({
   if (tier.planId === "free") {
     return (
       <Link
-        href="/dashboard"
+        href="/dashboard/catalogo"
         className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900"
       >
         {tier.cta}

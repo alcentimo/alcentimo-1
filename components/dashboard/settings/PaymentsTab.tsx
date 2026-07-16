@@ -335,11 +335,8 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
             Bolívares (Bs.)
           </p>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Venezuela · Código {currencyConfig.localCurrency}. Configura la tasa diaria en{" "}
-            <a href="/dashboard/tasas" className="text-teal-700 underline dark:text-teal-400">
-              Tasas del día
-            </a>
-            .
+            Venezuela · Código {currencyConfig.localCurrency}. La tasa del día se
+            muestra arriba en el panel y se aplica automáticamente a tus precios.
           </p>
         </div>
       </SettingsSection>

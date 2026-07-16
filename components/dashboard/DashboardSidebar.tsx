@@ -4,10 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LogOut, PanelLeftClose, PanelLeftOpen, Rocket } from "lucide-react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
-import { PublicCatalogQuickLink } from "@/components/dashboard/PublicCatalogQuickLink";
 import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
 import {
-  DASHBOARD_NAV_SECTIONS,
+  DASHBOARD_NAV_ITEMS,
   isDashboardNavItemActive,
   type DashboardNavItem,
 } from "@/src/config/dashboard-nav";
@@ -18,7 +17,6 @@ const SIDEBAR_COLLAPSED_STORAGE_KEY = "alcentimo-dashboard-sidebar-collapsed";
 interface DashboardSidebarProps {
   pathname: string;
   storeName: string | null;
-  storeSlug: string | null;
   userEmail: string | null;
   planName?: string | null;
   mobileOpen: boolean;
@@ -51,34 +49,26 @@ function SidebarNavLink({
   const Icon = item.icon;
 
   return (
-    <div>
-      <Link
-        href={item.href}
-        className={navLinkClass(active, collapsed)}
-        onClick={onNavigate}
-        title={collapsed ? `${item.label} — ${item.description}` : item.description}
-        aria-current={active ? "page" : undefined}
-      >
-        <Icon
-          className={cn("shrink-0", collapsed ? "h-[18px] w-[18px]" : "h-4 w-4")}
-          strokeWidth={active ? 2 : 1.75}
-          aria-hidden="true"
-        />
-        {!collapsed && <span className="truncate">{item.label}</span>}
-      </Link>
-      {item.caption && !collapsed && (
-        <p className="px-3 pb-1 pt-0.5 text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">
-          {item.caption}
-        </p>
-      )}
-    </div>
+    <Link
+      href={item.href}
+      className={navLinkClass(active, collapsed)}
+      onClick={onNavigate}
+      title={collapsed ? `${item.label} — ${item.description}` : item.description}
+      aria-current={active ? "page" : undefined}
+    >
+      <Icon
+        className={cn("shrink-0", collapsed ? "h-[18px] w-[18px]" : "h-4 w-4")}
+        strokeWidth={active ? 2 : 1.75}
+        aria-hidden="true"
+      />
+      {!collapsed && <span className="truncate">{item.label}</span>}
+    </Link>
   );
 }
 
 export function DashboardSidebar({
   pathname,
   storeName,
-  storeSlug,
   userEmail,
   planName = null,
   mobileOpen,
@@ -130,7 +120,7 @@ export function DashboardSidebar({
         )}
       >
         <BrandLogo
-          href="/dashboard"
+          href="/dashboard/catalogo"
           subtitle={collapsed ? undefined : storeName ?? "Panel"}
           showName={!collapsed}
           size={collapsed ? "sm" : "md"}
@@ -153,39 +143,19 @@ export function DashboardSidebar({
 
       <nav
         className={cn(
-          "flex flex-1 flex-col gap-5 overflow-y-auto py-4",
+          "flex flex-1 flex-col gap-1 overflow-y-auto py-4",
           collapsed ? "px-2" : "px-3",
         )}
         aria-label="Navegación principal"
       >
-        {DASHBOARD_NAV_SECTIONS.map((section) => (
-          <div key={section.id}>
-            {!collapsed && (
-              <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-500">
-                {section.label}
-              </p>
-            )}
-            <div className="flex flex-col gap-0.5">
-              {section.items.map((item) => (
-                <div key={item.href}>
-                  <SidebarNavLink
-                    item={item}
-                    active={isDashboardNavItemActive(pathname, item)}
-                    collapsed={collapsed}
-                    onNavigate={onCloseMobile}
-                  />
-                  {item.href === "/dashboard" && (
-                    <PublicCatalogQuickLink
-                      storeSlug={storeSlug}
-                      collapsed={collapsed}
-                      onNavigate={onCloseMobile}
-                      className={cn("my-2", collapsed ? "mx-0" : "mx-0")}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+        {DASHBOARD_NAV_ITEMS.map((item) => (
+          <SidebarNavLink
+            key={item.href}
+            item={item}
+            active={isDashboardNavItemActive(pathname, item)}
+            collapsed={collapsed}
+            onNavigate={onCloseMobile}
+          />
         ))}
       </nav>
 

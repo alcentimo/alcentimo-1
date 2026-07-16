@@ -7,6 +7,7 @@ import { Menu } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,8 @@ interface DashboardLayoutProps {
   storeSlug: string | null;
   userEmail: string | null;
   planName?: string | null;
+  exchangeRate?: number | null;
+  exchangeRateUpdatedAt?: string | null;
 }
 
 function isStandaloneAuthPath(pathname: string): boolean {
@@ -26,9 +29,10 @@ function isStandaloneAuthPath(pathname: string): boolean {
 function DashboardShell({
   children,
   storeName,
-  storeSlug,
   userEmail,
   planName = null,
+  exchangeRate = null,
+  exchangeRateUpdatedAt = null,
 }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -70,7 +74,6 @@ function DashboardShell({
       <DashboardSidebar
         pathname={pathname}
         storeName={storeName}
-        storeSlug={storeSlug}
         userEmail={userEmail}
         planName={planName}
         mobileOpen={sidebarOpen}
@@ -80,17 +83,27 @@ function DashboardShell({
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 lg:hidden dark:border-zinc-800 dark:bg-zinc-950">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            className="touch-target rounded-xl text-zinc-700 dark:text-zinc-300"
-            aria-label="Abrir menú"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <BrandLogo href="/dashboard" size="sm" subtitle={storeName ?? undefined} />
-          <div className="w-11" aria-hidden="true" />
+        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-950 lg:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="touch-target rounded-xl text-zinc-700 lg:hidden dark:text-zinc-300"
+              aria-label="Abrir menú"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <BrandLogo
+              href="/dashboard/catalogo"
+              size="sm"
+              subtitle={storeName ?? undefined}
+              className="lg:hidden"
+            />
+          </div>
+          <DashboardExchangeRateBadge
+            rate={exchangeRate}
+            updatedAt={exchangeRateUpdatedAt}
+          />
         </header>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 safe-area-inset sm:p-6 lg:p-8">

@@ -96,7 +96,7 @@ export default async function IntegracionesPage({
     <div className="mx-auto max-w-4xl">
       <header className="page-header">
         <Link
-          href="/dashboard/ajustes"
+          href="/dashboard/catalogo?tab=ajustes"
           className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-teal-700 transition hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />

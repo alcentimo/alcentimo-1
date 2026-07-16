@@ -55,7 +55,7 @@ export async function completeOnboarding(
   }
 
   if (await userHasStore(supabase, auth.authUser.id)) {
-    redirect("/dashboard");
+    redirect("/dashboard/catalogo");
   }
 
   const name = String(formData.get("name") ?? "").trim();
@@ -153,5 +153,5 @@ export async function completeOnboarding(
   revalidatePath("/dashboard");
   revalidatePath("/onboarding");
   revalidatePath(`/c/${slug}`);
-  redirect("/dashboard?onboarded=1");
+  redirect("/dashboard/catalogo?onboarded=1");
 }

@@ -146,6 +146,7 @@ export async function createCoupon(input: {
 
   if (error) return { error: error.message };
 
+  revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
   return { success: true };
 }
@@ -166,6 +167,7 @@ export async function toggleCouponActive(
 
   if (error) return { error: error.message };
 
+  revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
   return { success: true };
 }
@@ -183,6 +185,7 @@ export async function deleteCoupon(couponId: string): Promise<CouponActionResult
 
   if (error) return { error: error.message };
 
+  revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
   return { success: true };
 }

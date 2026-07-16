@@ -89,7 +89,7 @@ export function InventoryAlerts({ products }: InventoryAlertsProps) {
       )}
 
       <div className="mt-5 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-        <Link href="/dashboard/inventario" className="link-brand text-sm font-medium">
+        <Link href="/dashboard/catalogo?tab=inventario" className="link-brand text-sm font-medium">
           Ver inventario completo →
         </Link>
       </div>

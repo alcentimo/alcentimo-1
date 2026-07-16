@@ -153,7 +153,7 @@ export function ProductForm({
             </Link>
           ) : (
             <Link
-              href="/dashboard/inventario"
+              href="/dashboard/catalogo?tab=inventario"
               className="btn-secondary w-full sm:w-auto"
             >
               Volver al catálogo

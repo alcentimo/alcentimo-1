@@ -32,9 +32,9 @@ export default async function ActivarPage() {
 
       <PageContainer className="relative py-10 sm:py-14">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <BrandLogo href="/dashboard" />
+          <BrandLogo href="/dashboard/catalogo" />
           <Link
-            href="/dashboard"
+            href="/dashboard/catalogo"
             className="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />

@@ -1,13 +1,7 @@
 import {
   BarChart3,
   ClipboardList,
-  FileSpreadsheet,
-  LayoutDashboard,
-  Package,
-  RefreshCw,
-  Settings2,
-  UserCog,
-  UserPlus,
+  Store,
   type LucideIcon,
 } from "lucide-react";
 
@@ -17,106 +11,43 @@ export interface DashboardNavItem {
   description: string;
   icon: LucideIcon;
   match?: (pathname: string) => boolean;
-  /** Leyenda secundaria bajo el ítem (solo sidebar expandido). */
-  caption?: string;
 }
 
-export interface DashboardNavSection {
-  id: string;
-  label: string;
-  items: DashboardNavItem[];
-}
+export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
+  {
+    href: "/dashboard/catalogo",
+    label: "Catálogo",
+    description: "Inventario y ajustes de tu tienda",
+    icon: Store,
+    match: (pathname) =>
+      pathname.startsWith("/dashboard/catalogo") ||
+      pathname.startsWith("/dashboard/inventario") ||
+      pathname.startsWith("/dashboard/ajustes") ||
+      pathname.startsWith("/dashboard/productos") ||
+      pathname === "/dashboard",
+  },
+  {
+    href: "/dashboard/pedidos",
+    label: "Órdenes",
+    description: "Gestión de ventas y pedidos",
+    icon: ClipboardList,
+    match: (pathname) => pathname.startsWith("/dashboard/pedidos"),
+  },
+  {
+    href: "/dashboard/analiticas",
+    label: "Analíticas",
+    description: "Métricas de rendimiento",
+    icon: BarChart3,
+    match: (pathname) => pathname.startsWith("/dashboard/analiticas"),
+  },
+];
 
-export const DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
+/** @deprecated Usar DASHBOARD_NAV_ITEMS */
+export const DASHBOARD_NAV_SECTIONS = [
   {
-    id: "operations",
-    label: "Operaciones",
-    items: [
-      {
-        href: "/dashboard",
-        label: "Resumen",
-        description: "Vista general del negocio",
-        icon: LayoutDashboard,
-        match: (pathname) => pathname === "/dashboard",
-      },
-      {
-        href: "/dashboard/inventario",
-        label: "Productos",
-        description: "Gestión de inventario",
-        caption: "Gestionar catálogo",
-        icon: Package,
-        match: (pathname) =>
-          pathname.startsWith("/dashboard/inventario") ||
-          pathname.startsWith("/dashboard/productos"),
-      },
-      {
-        href: "/dashboard/pedidos",
-        label: "Órdenes",
-        description: "Gestión de ventas y pedidos",
-        icon: ClipboardList,
-        match: (pathname) => pathname.startsWith("/dashboard/pedidos"),
-      },
-    ],
-  },
-  {
-    id: "customers",
-    label: "Clientes y Comunidad",
-    items: [
-      {
-        href: "/dashboard/referidos",
-        label: "Referidos",
-        description: "Programa de referidos",
-        icon: UserPlus,
-        match: (pathname) => pathname.startsWith("/dashboard/referidos"),
-      },
-    ],
-  },
-  {
-    id: "intelligence",
-    label: "Inteligencia de Negocio",
-    items: [
-      {
-        href: "/dashboard/analiticas",
-        label: "Analíticas",
-        description: "Métricas de rendimiento",
-        icon: BarChart3,
-        match: (pathname) => pathname.startsWith("/dashboard/analiticas"),
-      },
-      {
-        href: "/dashboard/ventas",
-        label: "Reportes",
-        description: "Exportación de datos e informes",
-        icon: FileSpreadsheet,
-        match: (pathname) => pathname.startsWith("/dashboard/ventas"),
-      },
-    ],
-  },
-  {
-    id: "configuration",
-    label: "Configuración y Equipo",
-    items: [
-      {
-        href: "/dashboard/tasas",
-        label: "Tasas del día",
-        description: "Configuración de divisas",
-        icon: RefreshCw,
-        match: (pathname) => pathname.startsWith("/dashboard/tasas"),
-      },
-      {
-        href: "/dashboard/ajustes",
-        label: "Ajustes",
-        description: "Marca, ubicación y pagos",
-        icon: Settings2,
-        match: (pathname) => pathname.startsWith("/dashboard/ajustes"),
-      },
-      {
-        href: "/dashboard/planes",
-        label: "Equipo",
-        description: "Gestión de usuarios y accesos",
-        icon: UserCog,
-        match: (pathname) => pathname.startsWith("/dashboard/planes"),
-      },
-    ],
+    id: "main",
+    label: "",
+    items: DASHBOARD_NAV_ITEMS,
   },
 ];
 

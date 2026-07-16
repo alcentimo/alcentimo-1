@@ -271,7 +271,8 @@ export async function createProduct(
     revalidatePath(`/tienda/${store.slug}`);
     revalidatePath(`/c/${store.slug}`);
     revalidatePath("/dashboard/productos/nuevo");
-    revalidatePath("/dashboard/inventario");
+    revalidatePath("/dashboard/catalogo");
+  revalidatePath("/dashboard/inventario");
 
     return {
       success: true,
@@ -287,6 +288,7 @@ export async function createProduct(
   revalidatePath(`/tienda/${store.slug}`);
   revalidatePath(`/c/${store.slug}`);
   revalidatePath("/dashboard/productos/nuevo");
+  revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
 
   return {
@@ -565,6 +567,7 @@ export async function createStore(
   }
 
   revalidatePath("/dashboard/productos/nuevo");
+  revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
 
   return { success: true };
@@ -668,6 +671,7 @@ async function assertStoreProductVariant(
 }
 
 function revalidateInventoryPaths(storeSlug: string) {
+  revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
   revalidatePath("/dashboard");
   revalidatePath(`/tienda/${storeSlug}`);

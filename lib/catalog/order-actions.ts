@@ -49,6 +49,7 @@ export async function processCatalogOrder(
   }
 
   revalidatePath(`/tienda/${storeSlug}`);
+  revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
   revalidatePath("/dashboard");
 

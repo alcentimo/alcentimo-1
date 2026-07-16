@@ -163,6 +163,7 @@ export async function createSale(
   }
 
   revalidatePath("/dashboard/ventas");
+  revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
   revalidatePath(`/tienda/${store.slug}`);
 

@@ -131,7 +131,7 @@ export async function middleware(request: NextRequest) {
 
     if (await userHasStoreInMiddleware(supabase, authenticatedUser.id)) {
       const dashboardUrl = request.nextUrl.clone();
-      dashboardUrl.pathname = "/dashboard";
+      dashboardUrl.pathname = "/dashboard/catalogo";
       dashboardUrl.search = "";
       return NextResponse.redirect(dashboardUrl);
     }

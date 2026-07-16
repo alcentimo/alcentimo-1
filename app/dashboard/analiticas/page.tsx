@@ -28,7 +28,7 @@ export default async function AnaliticasPage() {
     {
       label: "Productos activos",
       value: String(summary.productCount),
-      href: "/dashboard/inventario",
+      href: "/dashboard/catalogo?tab=inventario",
     },
     {
       label: "Órdenes pendientes",
@@ -43,7 +43,7 @@ export default async function AnaliticasPage() {
     {
       label: "Sin stock",
       value: String(summary.outOfStockCount),
-      href: "/dashboard/inventario",
+      href: "/dashboard/catalogo?tab=inventario",
     },
   ];
 

@@ -30,6 +30,8 @@ import { validateProductImportSheet } from "@/lib/products/import-validation";
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
 function revalidateAfterImport(storeSlug: string) {
+  revalidatePath("/dashboard/catalogo");
+  revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
   revalidatePath("/dashboard");
   revalidatePath(`/tienda/${storeSlug}`);
