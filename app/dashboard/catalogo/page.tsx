@@ -66,9 +66,8 @@ export default async function CatalogoPage({
       ) : null}
 
       <DashboardPageHeader
-        sectionLabel="Inventario"
         title="Catálogo"
-        description={`Productos, fotos, precios y stock de ${store.name}.`}
+        description={`Gestiona lo que vendes: productos, fotos, precios y stock de ${store.name}.`}
         storeSlug={store.slug}
       />
 

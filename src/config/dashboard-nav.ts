@@ -18,7 +18,7 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
   {
     href: "/dashboard/catalogo",
     label: "Catálogo",
-    description: "Productos, fotos, precios y stock",
+    description: "Lo que vendes: productos, fotos, precios y stock",
     icon: Store,
     match: (pathname) =>
       pathname.startsWith("/dashboard/catalogo") ||
@@ -43,7 +43,7 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
   {
     href: "/dashboard/ajustes",
     label: "Configuración de Tienda",
-    description: "Marca, ubicación, pagos y promociones",
+    description: "Cómo se ve tu negocio: marca, pagos y horarios",
     icon: Settings2,
     match: (pathname) => pathname.startsWith("/dashboard/ajustes"),
   },

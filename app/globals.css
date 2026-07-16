@@ -503,7 +503,15 @@ body {
 }
 
 .inventory-catalog-header {
-  @apply mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
+  @apply mb-4 flex flex-col gap-3;
+}
+
+.inventory-primary-cta {
+  @apply h-11 w-full gap-2.5 px-6 text-base font-semibold shadow-lg transition-transform hover:scale-[1.01] active:scale-[0.99] sm:w-auto;
+}
+
+.inventory-primary-cta-toolbar {
+  @apply sm:ml-auto;
 }
 
 .inventory-toolbar {

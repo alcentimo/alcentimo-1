@@ -49,8 +49,8 @@ export default async function AjustesPage() {
         title="Configuración de Tienda"
         description={
           store
-            ? `Marca, ubicación, horarios, pagos y promociones · ${store.name}.`
-            : "Marca, ubicación, horarios, pagos y promociones."
+            ? `Cómo se ve tu negocio: marca, ubicación, pagos y horarios · ${store.name}.`
+            : "Cómo se ve tu negocio: marca, ubicación, pagos y horarios."
         }
         storeSlug={store?.slug ?? null}
       />

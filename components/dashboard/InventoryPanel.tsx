@@ -33,7 +33,6 @@ import { AlertDialog } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { CatalogPdfPreviewDialog } from "@/components/dashboard/CatalogPdfPreviewDialog";
-import { ExportHelpHint } from "@/components/dashboard/ExportHelpHint";
 
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import {
@@ -709,134 +708,134 @@ export function InventoryPanel({
       )}
 
       <div className="inventory-catalog-header">
-        <div className="inventory-toolbar flex-1">
-          <div className="relative min-w-0 flex-1">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400"
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar producto…"
-              className="inventory-search-input inventory-search-input-dense"
-              aria-label="Buscar productos"
-            />
-          </div>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="inventory-filter-select inventory-filter-select-dense"
-            aria-label="Filtrar por categoría"
-          >
-            <option value="all">Todas las categorías</option>
-            {categoriesInList.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Button
+          type="button"
+          onClick={openCreate}
+          className="btn-brand inventory-primary-cta inventory-primary-cta-toolbar"
+        >
+          <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
+          Nuevo producto
+        </Button>
 
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <a
-            href={PRODUCT_IMPORT_TEMPLATE_PATH}
-            download={PRODUCT_IMPORT_TEMPLATE_FILENAME}
-            aria-label="Descargar plantilla de importación"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50 sm:px-4 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
-          >
-            <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span className="hidden sm:inline">Descargar Plantilla</span>
-          </a>
-          <div className="inline-flex items-center gap-0.5">
-            <DropdownMenu
-              align="end"
-              trigger={
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={exporting || exportingPdf || exportingCsv}
-                  aria-label="Exportar catálogo"
-                  className="h-10 gap-2 px-3 text-sm font-semibold sm:px-4"
-                >
-                  {exporting || exportingPdf || exportingCsv ? (
-                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  )}
-                  <span className="hidden sm:inline">Exportar</span>
-                  <ChevronDown className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
-                </Button>
-              }
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="inventory-toolbar min-w-0 flex-1">
+            <div className="relative min-w-0 flex-1">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400"
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar producto…"
+                className="inventory-search-input inventory-search-input-dense"
+                aria-label="Buscar productos"
+              />
+            </div>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="inventory-filter-select inventory-filter-select-dense"
+              aria-label="Filtrar por categoría"
             >
-              {(close) => (
-                <>
-                  <DropdownMenuItem
-                    disabled={exporting}
-                    onClick={() => {
-                      close();
-                      handleExportExcel();
-                    }}
-                  >
-                    {exporting ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                    ) : (
-                      <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden="true" />
-                    )}
-                    Exportar Excel
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    disabled={exportingPdf}
-                    onClick={() => {
-                      close();
-                      handleExportPdf();
-                    }}
-                  >
-                    {exportingPdf ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                    ) : (
-                      <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-                    )}
-                    Exportar PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    disabled={exportingCsv}
-                    onClick={() => {
-                      close();
-                      handleExportCsv();
-                    }}
-                  >
-                    {exportingCsv ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                    ) : (
-                      <Table className="h-3.5 w-3.5" aria-hidden="true" />
-                    )}
-                    Exportar CSV
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenu>
-            <ExportHelpHint />
+              <option value="all">Todas las categorías</option>
+              {categoriesInList.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setImportSheetOpen(true)}
-            aria-label="Importar productos"
-            className="h-10 gap-2 px-3 text-sm font-semibold sm:px-4"
+
+          <DropdownMenu
+            align="end"
+            trigger={
+              <Button
+                type="button"
+                variant="outline"
+                disabled={exporting || exportingPdf || exportingCsv}
+                aria-label="Más acciones de inventario"
+                className="h-10 shrink-0 gap-2 px-3 text-sm font-semibold sm:px-4"
+              >
+                {exporting || exportingPdf || exportingCsv ? (
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+                ) : (
+                  <MoreHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
+                )}
+                <span>Más acciones</span>
+                <ChevronDown className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
+              </Button>
+            }
           >
-            <Upload className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span className="hidden sm:inline">Importar</span>
-          </Button>
-          <Button
-            onClick={openCreate}
-            className="btn-brand h-10 shrink-0 gap-2 px-4 text-sm font-semibold shadow-md sm:px-5"
-          >
-            <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span className="sm:hidden">Nuevo</span>
-            <span className="hidden sm:inline">Nuevo producto</span>
-          </Button>
+            {(close) => (
+              <>
+                <DropdownMenuItem
+                  onClick={() => {
+                    close();
+                    setImportSheetOpen(true);
+                  }}
+                >
+                  <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+                  Importar productos
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={exporting}
+                  onClick={() => {
+                    close();
+                    handleExportExcel();
+                  }}
+                >
+                  {exporting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  Exportar Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={exportingPdf}
+                  onClick={() => {
+                    close();
+                    handleExportPdf();
+                  }}
+                >
+                  {exportingPdf ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  Exportar PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={exportingCsv}
+                  onClick={() => {
+                    close();
+                    handleExportCsv();
+                  }}
+                >
+                  {exportingCsv ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Table className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  Exportar CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    close();
+                    const anchor = document.createElement("a");
+                    anchor.href = PRODUCT_IMPORT_TEMPLATE_PATH;
+                    anchor.download = PRODUCT_IMPORT_TEMPLATE_FILENAME;
+                    anchor.click();
+                  }}
+                >
+                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                  Descargar plantilla
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenu>
         </div>
       </div>
 
@@ -854,8 +853,8 @@ export function InventoryPanel({
           <p className="mt-1.5 max-w-sm text-xs text-zinc-500">
             Crea tu primer producto para empezar a vender.
           </p>
-          <Button onClick={openCreate} className="btn-brand mt-5 gap-2">
-            <Plus className="h-4 w-4" aria-hidden="true" />
+          <Button onClick={openCreate} className="btn-brand inventory-primary-cta mt-6">
+            <Plus className="h-5 w-5" aria-hidden="true" />
             Nuevo producto
           </Button>
         </div>
