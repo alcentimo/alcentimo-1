@@ -39,6 +39,7 @@ export async function updateOrderEstado(
   if (error) return { error: error.message };
 
   revalidatePath("/dashboard/pedidos");
+  revalidatePath("/dashboard/analiticas");
   revalidatePath("/dashboard");
   revalidatePath(`/pedidos/${trimmedId}`);
 

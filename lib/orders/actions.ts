@@ -116,6 +116,7 @@ export async function submitTransactionalOrder(
 
   revalidatePath(`/c/${storeSlug}`);
   revalidatePath("/dashboard/pedidos");
+  revalidatePath("/dashboard/analiticas");
   revalidatePath(`/pedidos/${orderId}`);
 
   return {
