@@ -6,6 +6,7 @@ import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { getStoreCoupons } from "@/lib/coupons/actions";
 import { getStoreInventory } from "@/lib/inventory";
 import { SettingsPanel } from "@/components/dashboard/settings/SettingsPanel";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -43,14 +44,16 @@ export default async function AjustesPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <header className="page-header">
-        <p className="section-label">Configuración</p>
-        <h1 className="page-header-title">Ajustes</h1>
-        <p className="page-header-desc">
-          Configura la identidad de tu marca, ubicación, horarios y métodos de pago
-          {store ? ` · ${store.name}` : ""}.
-        </p>
-      </header>
+      <DashboardPageHeader
+        sectionLabel="Administración"
+        title="Configuración de Tienda"
+        description={
+          store
+            ? `Marca, ubicación, horarios, pagos y promociones · ${store.name}.`
+            : "Marca, ubicación, horarios, pagos y promociones."
+        }
+        storeSlug={store?.slug ?? null}
+      />
 
       <SettingsPanel
         store={

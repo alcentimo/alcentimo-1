@@ -6,11 +6,8 @@ import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getStoreInventory } from "@/lib/inventory";
 import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
-import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
-import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
-import { getStoreCoupons } from "@/lib/coupons/actions";
 import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
-import { PublicCatalogQuickLink } from "@/components/dashboard/PublicCatalogQuickLink";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function CatalogoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ onboarded?: string }>;
+  searchParams: Promise<{ onboarded?: string; tab?: string }>;
 }) {
   const supabase = await createClient();
   const session = await getDashboardSession(supabase);
@@ -26,6 +23,10 @@ export default async function CatalogoPage({
 
   if (!session) {
     redirect("/dashboard/login?next=/dashboard/catalogo");
+  }
+
+  if (params.tab === "ajustes") {
+    redirect("/dashboard/ajustes");
   }
 
   const { store } = session;
@@ -38,7 +39,7 @@ export default async function CatalogoPage({
           <p className="section-label">Catálogo</p>
           <h1 className="page-header-title">Tu vitrina</h1>
           <p className="page-header-desc">
-            Crea tu tienda para gestionar productos y ajustes desde un solo lugar.
+            Crea tu tienda para gestionar productos desde un solo lugar.
           </p>
         </header>
         <div className="card-panel">
@@ -50,26 +51,11 @@ export default async function CatalogoPage({
     );
   }
 
-  const [
-    { products },
-    exchangeRate,
-    productFormConfig,
-    settingsConfig,
-    coupons,
-  ] = await Promise.all([
+  const [{ products }, exchangeRate, productFormConfig] = await Promise.all([
     getStoreInventory(store.slug),
     getCurrentExchangeRate(),
     getStoreProductFormConfig(store.id),
-    getStoreSettingsConfig(supabase, store.id),
-    getStoreCoupons(store.id),
   ]);
-
-  const couponProducts = products.map((product) => ({
-    id: product.product_id,
-    name: product.product_name,
-    categoryName: product.category_name,
-    thumbUrl: product.thumb_url,
-  }));
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -79,21 +65,12 @@ export default async function CatalogoPage({
         </div>
       ) : null}
 
-      <header className="page-header">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="section-label">Centro de trabajo</p>
-            <h1 className="page-header-title">Catálogo</h1>
-            <p className="page-header-desc">
-              Gestiona inventario y configuración de {store.name}.
-            </p>
-          </div>
-          <PublicCatalogQuickLink
-            storeSlug={store.slug}
-            className="mx-0 w-full shrink-0 sm:w-auto sm:min-w-[12rem]"
-          />
-        </div>
-      </header>
+      <DashboardPageHeader
+        sectionLabel="Inventario"
+        title="Catálogo"
+        description={`Productos, fotos, precios y stock de ${store.name}.`}
+        storeSlug={store.slug}
+      />
 
       <Suspense fallback={<p className="text-sm text-zinc-500">Cargando catálogo…</p>}>
         <CatalogPanel
@@ -101,16 +78,6 @@ export default async function CatalogoPage({
           exchangeRate={exchangeRate?.rate ?? null}
           initialProducts={products}
           productFormConfig={productFormConfig}
-          settingsStore={{
-            name: store.name,
-            slug: store.slug,
-            logo_url: store.logo_url,
-            description: store.description,
-            rubro_tienda: store.rubro_tienda ?? "general",
-          }}
-          initialCoupons={coupons}
-          couponProducts={couponProducts}
-          initialConfig={settingsConfig ?? defaultStoreSettingsConfig()}
         />
       </Suspense>
     </div>

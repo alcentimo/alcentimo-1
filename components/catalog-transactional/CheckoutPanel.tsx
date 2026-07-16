@@ -78,7 +78,7 @@ export function CheckoutPanel({
         window.open(result.whatsappUrl, "_blank", "noopener,noreferrer");
       } else if (!whatsappConfigured) {
         setError(
-          "Pedido guardado. La tienda aún no configuró WhatsApp en Ajustes.",
+          "Pedido guardado. La tienda aún no configuró WhatsApp en Configuración de Tienda.",
         );
       }
     });

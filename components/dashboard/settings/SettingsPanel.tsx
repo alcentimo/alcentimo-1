@@ -30,7 +30,6 @@ interface SettingsPanelProps {
   initialCoupons: Coupon[];
   products: CouponProductOption[];
   initialConfig: StoreSettingsConfig;
-  embedded?: boolean;
 }
 
 export function SettingsPanel({
@@ -38,7 +37,6 @@ export function SettingsPanel({
   initialCoupons,
   products,
   initialConfig,
-  embedded = false,
 }: SettingsPanelProps) {
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<SettingsTabId>("general");
@@ -50,7 +48,7 @@ export function SettingsPanel({
       <nav
         className="settings-tab-nav"
         role="tablist"
-        aria-label="Secciones de ajustes"
+        aria-label="Secciones de configuración de tienda"
       >
         {PRIMARY_TABS.map((tab) => {
           const Icon = tab.icon;
@@ -76,7 +74,7 @@ export function SettingsPanel({
 
       <nav
         className="mt-2 flex flex-wrap gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800/80"
-        aria-label="Más ajustes"
+        aria-label="Más opciones de configuración"
       >
         <button
           type="button"
@@ -157,8 +155,6 @@ export function SettingsPanel({
       </div>
     </>
   );
-
-  if (embedded) return panel;
 
   return <div className="settings-workspace">{panel}</div>;
 }

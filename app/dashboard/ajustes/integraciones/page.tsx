@@ -7,6 +7,7 @@ import { getStoreIntegrations } from "@/lib/inbox/get-store-integrations";
 import { getMetaOAuthConfig } from "@/lib/env/server";
 import { getMetaRedirectUri, resolveMetaOAuthSiteUrl } from "@/lib/inbox/meta-oauth";
 import { IntegrationsTab } from "@/components/dashboard/settings/IntegrationsTab";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { getChannelIntegration } from "@/src/config/channel-integrations";
 import type { ChannelProviderKey } from "@/src/config/channel-integrations";
 
@@ -94,21 +95,25 @@ export default async function IntegracionesPage({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <header className="page-header">
-        <Link
-          href="/dashboard/ajustes"
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-teal-700 transition hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Volver a ajustes
-        </Link>
-        <p className="section-label">Configuración</p>
-        <h1 className="page-header-title">Integraciones</h1>
-        <p className="page-header-desc">
-          Conecta tus canales para centralizar toda tu operación en Alcentimo
-          {store ? ` · ${store.name}` : ""}.
-        </p>
-      </header>
+      <DashboardPageHeader
+        sectionLabel="Configuración de Tienda"
+        title="Integraciones"
+        description={
+          store
+            ? `Conecta tus canales para centralizar tu operación · ${store.name}.`
+            : "Conecta tus canales para centralizar tu operación."
+        }
+        storeSlug={store?.slug ?? null}
+        before={
+          <Link
+            href="/dashboard/ajustes"
+            className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-teal-700 transition hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Volver a configuración de tienda
+          </Link>
+        }
+      />
 
       {!store ? (
         <div className="card-panel">
