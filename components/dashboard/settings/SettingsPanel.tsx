@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { CreditCard, Link2, Settings2, Tag, Truck } from "lucide-react";
+import { Clock, CreditCard, Link2, Settings2, Tag } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
-import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
+import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
 import { PaymentsTab } from "@/components/dashboard/settings/PaymentsTab";
 import { PromotionsTab } from "@/components/dashboard/settings/PromotionsTab";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
@@ -13,17 +13,16 @@ import type { StoreSettingsConfig } from "@/lib/store-settings/types";
 import type { Coupon } from "@/lib/coupons/types";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
 
-type SettingsTabId = "general" | "shipping" | "payments" | "promotions";
+type SettingsTabId = "general" | "location" | "payments" | "promotions";
 
-const TABS: {
+const PRIMARY_TABS: {
   id: SettingsTabId;
   label: string;
-  icon: typeof Truck;
+  icon: typeof Settings2;
 }[] = [
   { id: "general", label: "General", icon: Settings2 },
-  { id: "shipping", label: "Envío", icon: Truck },
+  { id: "location", label: "Ubicación y Horario", icon: Clock },
   { id: "payments", label: "Pagos", icon: CreditCard },
-  { id: "promotions", label: "Promociones", icon: Tag },
 ];
 
 interface SettingsPanelProps {
@@ -42,6 +41,7 @@ export function SettingsPanel({
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<SettingsTabId>("general");
   const integrationsActive = pathname.startsWith("/dashboard/ajustes/integraciones");
+  const promotionsActive = activeTab === "promotions" && !integrationsActive;
 
   return (
     <div className="settings-workspace">
@@ -50,7 +50,7 @@ export function SettingsPanel({
         role="tablist"
         aria-label="Secciones de ajustes"
       >
-        {TABS.map((tab) => {
+        {PRIMARY_TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id && !integrationsActive;
 
@@ -70,19 +70,39 @@ export function SettingsPanel({
             </button>
           );
         })}
+      </nav>
+
+      <nav
+        className="mt-2 flex flex-wrap gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800/80"
+        aria-label="Más ajustes"
+      >
+        <button
+          type="button"
+          onClick={() => setActiveTab("promotions")}
+          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+            promotionsActive
+              ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+              : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900/50 dark:hover:text-zinc-200"
+          }`}
+        >
+          <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+          Promociones
+        </button>
         <Link
           href="/dashboard/ajustes/integraciones"
-          role="tab"
-          aria-selected={integrationsActive}
-          className={`settings-tab-link ${integrationsActive ? "settings-tab-link-active" : ""}`}
+          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+            integrationsActive
+              ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+              : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900/50 dark:hover:text-zinc-200"
+          }`}
         >
-          <Link2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>Integraciones</span>
+          <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
+          Integraciones
         </Link>
       </nav>
 
       <div className="settings-workspace-body">
-        {activeTab === "general" && (
+        {activeTab === "general" && !integrationsActive && (
           <div
             role="tabpanel"
             id="settings-panel-general"
@@ -94,23 +114,27 @@ export function SettingsPanel({
                   name: "",
                   slug: "mi-tienda",
                   logo_url: null,
+                  description: null,
                   rubro_tienda: "general",
                 }
               }
+            />
+          </div>
+        )}
+        {activeTab === "location" && !integrationsActive && (
+          <div
+            role="tabpanel"
+            id="settings-panel-location"
+            aria-labelledby="settings-tab-location"
+          >
+            <LocationHoursTab
+              initialLocationHours={initialConfig.locationHours}
+              initialShipping={initialConfig.shipping}
               initialContact={initialConfig.contact}
             />
           </div>
         )}
-        {activeTab === "shipping" && (
-          <div
-            role="tabpanel"
-            id="settings-panel-shipping"
-            aria-labelledby="settings-tab-shipping"
-          >
-            <ShippingTab initialSettings={initialConfig.shipping} />
-          </div>
-        )}
-        {activeTab === "payments" && (
+        {activeTab === "payments" && !integrationsActive && (
           <div
             role="tabpanel"
             id="settings-panel-payments"
@@ -119,7 +143,7 @@ export function SettingsPanel({
             <PaymentsTab initialSettings={initialConfig.payments} />
           </div>
         )}
-        {activeTab === "promotions" && (
+        {promotionsActive && (
           <div
             role="tabpanel"
             id="settings-panel-promotions"

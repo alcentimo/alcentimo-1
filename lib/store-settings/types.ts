@@ -56,10 +56,35 @@ export interface StoreSettingsConfig {
   payments: PaymentsSettings;
   promotions: StoredPromotion[];
   contact: ContactSettings;
+  locationHours: LocationHoursSettings;
 }
 
 export interface ContactSettings {
   whatsappPhone: string;
+}
+
+export const WEEKDAY_KEYS = [
+  "mon",
+  "tue",
+  "wed",
+  "thu",
+  "fri",
+  "sat",
+  "sun",
+] as const;
+
+export type WeekdayKey = (typeof WEEKDAY_KEYS)[number];
+
+export interface DaySchedule {
+  enabled: boolean;
+}
+
+export interface LocationHoursSettings {
+  address: string;
+  city: string;
+  schedule: Record<WeekdayKey, DaySchedule>;
+  openTime: string;
+  closeTime: string;
 }
 
 export interface StoreSettingsRow {

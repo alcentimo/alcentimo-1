@@ -2,7 +2,9 @@ import type {
   PaymentMethodKey,
   ShippingCarrierKey,
   StoreSettingsConfig,
+  WeekdayKey,
 } from "@/lib/store-settings/types";
+import { WEEKDAY_KEYS } from "@/lib/store-settings/types";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "mrw",
@@ -25,6 +27,15 @@ const PAYMENT_METHOD_KEYS: PaymentMethodKey[] = [
   "crypto",
   "cashea",
 ];
+
+function defaultWeekdaySchedule(): Record<WeekdayKey, { enabled: boolean }> {
+  return Object.fromEntries(
+    WEEKDAY_KEYS.map((key) => [
+      key,
+      { enabled: key !== "sun" },
+    ]),
+  ) as Record<WeekdayKey, { enabled: boolean }>;
+}
 
 const DEFAULT_PAYMENT_FIELDS: Record<PaymentMethodKey, Record<string, string>> = {
   pagoMovil: { bank: "", phone: "", ci: "", qrImageUrl: "" },
@@ -67,6 +78,13 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
     promotions: [],
     contact: {
       whatsappPhone: "",
+    },
+    locationHours: {
+      address: "",
+      city: "",
+      schedule: defaultWeekdaySchedule(),
+      openTime: "09:00",
+      closeTime: "18:00",
     },
   };
 }
@@ -147,6 +165,16 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
     );
 
   const contactRaw = isRecord(raw.contact) ? raw.contact : {};
+  const locationRaw = isRecord(raw.locationHours) ? raw.locationHours : {};
+  const scheduleRaw = isRecord(locationRaw.schedule) ? locationRaw.schedule : {};
+  const schedule = { ...defaults.locationHours.schedule };
+
+  for (const key of WEEKDAY_KEYS) {
+    const dayRaw = scheduleRaw[key];
+    if (isRecord(dayRaw) && typeof dayRaw.enabled === "boolean") {
+      schedule[key] = { enabled: dayRaw.enabled };
+    }
+  }
 
   return {
     shipping: {
@@ -183,6 +211,25 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
         typeof contactRaw.whatsappPhone === "string"
           ? contactRaw.whatsappPhone
           : defaults.contact.whatsappPhone,
+    },
+    locationHours: {
+      address:
+        typeof locationRaw.address === "string"
+          ? locationRaw.address
+          : defaults.locationHours.address,
+      city:
+        typeof locationRaw.city === "string"
+          ? locationRaw.city
+          : defaults.locationHours.city,
+      schedule,
+      openTime:
+        typeof locationRaw.openTime === "string"
+          ? locationRaw.openTime
+          : defaults.locationHours.openTime,
+      closeTime:
+        typeof locationRaw.closeTime === "string"
+          ? locationRaw.closeTime
+          : defaults.locationHours.closeTime,
     },
   };
 }
@@ -231,5 +278,14 @@ export function mergeStoreSettingsConfig(
       : base.payments,
     promotions: patch.promotions ?? base.promotions,
     contact: patch.contact ? { ...base.contact, ...patch.contact } : base.contact,
+    locationHours: patch.locationHours
+      ? {
+          ...base.locationHours,
+          ...patch.locationHours,
+          schedule: patch.locationHours.schedule
+            ? { ...base.locationHours.schedule, ...patch.locationHours.schedule }
+            : base.locationHours.schedule,
+        }
+      : base.locationHours,
   };
 }

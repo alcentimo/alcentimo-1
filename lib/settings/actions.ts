@@ -19,6 +19,7 @@ import {
 } from "@/lib/payments/validate-payment-fields";
 import type {
   ContactSettings,
+  LocationHoursSettings,
   PaymentsSettings,
   ShippingSettings,
   StoredPromotion,
@@ -102,6 +103,33 @@ export async function saveContactSettings(
 ): Promise<SettingsActionResult> {
   const normalized = normalizeStoreSettingsConfig({ contact });
   return persistSettingsPatch({ contact: normalized.contact });
+}
+
+export interface LocationLogisticsSettingsInput {
+  locationHours: LocationHoursSettings;
+  shipping: ShippingSettings;
+  whatsappPhone?: string;
+}
+
+export async function saveLocationLogisticsSettings(
+  input: LocationLogisticsSettingsInput,
+): Promise<SettingsActionResult> {
+  const normalized = normalizeStoreSettingsConfig({
+    locationHours: input.locationHours,
+    shipping: input.shipping,
+    contact:
+      typeof input.whatsappPhone === "string"
+        ? { whatsappPhone: input.whatsappPhone.trim() }
+        : undefined,
+  });
+
+  return persistSettingsPatch({
+    locationHours: normalized.locationHours,
+    shipping: normalized.shipping,
+    ...(typeof input.whatsappPhone === "string"
+      ? { contact: normalized.contact }
+      : {}),
+  });
 }
 
 export async function savePromotionsSettings(
@@ -192,7 +220,7 @@ export interface GeneralStoreSettingsInput {
   name: string;
   slug: string;
   logoUrl: string | null;
-  whatsappPhone?: string;
+  description?: string;
   rubroTienda: string;
 }
 
@@ -210,6 +238,8 @@ export async function saveGeneralStoreSettings(
   const name = input.name.trim();
   const slug = slugify(input.slug.trim() || name);
   const logoUrl = input.logoUrl?.trim() || null;
+  const description =
+    typeof input.description === "string" ? input.description.trim() : undefined;
 
   if (!name) {
     return { error: "El nombre de la tienda es obligatorio." };
@@ -242,6 +272,7 @@ export async function saveGeneralStoreSettings(
       slug,
       logo_url: logoUrl,
       rubro_tienda: rubroTienda,
+      ...(description !== undefined ? { description: description || null } : {}),
     })
     .eq("id", store.id);
 
@@ -258,27 +289,6 @@ export async function saveGeneralStoreSettings(
     normalizeStoreRubro(rubroTienda),
   );
   if (sync.error) return { error: sync.error };
-
-  if (typeof input.whatsappPhone === "string") {
-    const current = await getStoreSettingsConfig(supabase, store.id);
-    const merged = mergeStoreSettingsConfig(current, {
-      contact: normalizeStoreSettingsConfig({
-        contact: { whatsappPhone: input.whatsappPhone.trim() },
-      }).contact,
-    });
-
-    const { error: contactError } = await supabase.from("store_settings").upsert(
-      {
-        store_id: store.id,
-        config: merged,
-      },
-      { onConflict: "store_id" },
-    );
-
-    if (contactError) {
-      return { error: contactError.message };
-    }
-  }
 
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/inventario");

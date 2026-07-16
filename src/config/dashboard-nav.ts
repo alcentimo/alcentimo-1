@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Package,
   RefreshCw,
+  Settings2,
   UserCog,
   UserPlus,
   type LucideIcon,
@@ -99,13 +100,18 @@ export const DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
         match: (pathname) => pathname.startsWith("/dashboard/tasas"),
       },
       {
+        href: "/dashboard/ajustes",
+        label: "Ajustes",
+        description: "Marca, ubicación y pagos",
+        icon: Settings2,
+        match: (pathname) => pathname.startsWith("/dashboard/ajustes"),
+      },
+      {
         href: "/dashboard/planes",
         label: "Equipo",
         description: "Gestión de usuarios y accesos",
         icon: UserCog,
-        match: (pathname) =>
-          pathname.startsWith("/dashboard/planes") ||
-          pathname.startsWith("/dashboard/ajustes"),
+        match: (pathname) => pathname.startsWith("/dashboard/planes"),
       },
     ],
   },

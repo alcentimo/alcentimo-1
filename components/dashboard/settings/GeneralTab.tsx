@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChannelLogo } from "@/components/inbox/ChannelLogo";
 import { CatalogLinkCard } from "@/components/dashboard/settings/CatalogLinkCard";
 import { StoreLogoField } from "@/components/dashboard/settings/StoreLogoField";
 import {
@@ -12,7 +11,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import {
   checkStoreSlugAvailability,
   saveGeneralStoreSettings,
@@ -21,28 +19,27 @@ import { slugify } from "@/lib/slugify";
 import { isValidStoreSlug } from "@/lib/stores/slug";
 import { getPublicSiteHost } from "@/lib/site-url";
 import { STORE_RUBRO_OPTIONS } from "@/src/config/categories";
-import type { ContactSettings } from "@/lib/store-settings/types";
 
 export interface GeneralTabStore {
   name: string;
   slug: string;
   logo_url: string | null;
+  description: string | null;
   rubro_tienda: string;
 }
 
 interface GeneralTabProps {
   store: GeneralTabStore;
-  initialContact: ContactSettings;
 }
 
 type SlugStatus = "idle" | "checking" | "available" | "taken" | "invalid";
 
-export function GeneralTab({ store, initialContact }: GeneralTabProps) {
+export function GeneralTab({ store }: GeneralTabProps) {
   const router = useRouter();
   const [storeName, setStoreName] = useState(store.name);
+  const [description, setDescription] = useState(store.description ?? "");
   const [savedSlug, setSavedSlug] = useState(store.slug);
   const [logoUrl, setLogoUrl] = useState<string | null>(store.logo_url);
-  const [whatsappPhone, setWhatsappPhone] = useState(initialContact.whatsappPhone);
   const [rubroTienda, setRubroTienda] = useState(store.rubro_tienda);
   const [slugStatus, setSlugStatus] = useState<SlugStatus>("available");
   const [saving, setSaving] = useState(false);
@@ -52,7 +49,6 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
 
   const siteHost = useMemo(() => getPublicSiteHost(), []);
   const slugPreview = slugify(storeName) || store.slug;
-  const normalizedPreview = normalizeWhatsAppPhone(whatsappPhone);
 
   const canSave =
     storeName.trim().length > 0 &&
@@ -103,7 +99,7 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
         name: storeName.trim(),
         slug: slugPreview,
         logoUrl,
-        whatsappPhone: whatsappPhone.trim(),
+        description,
         rubroTienda,
       });
       setSaving(false);
@@ -111,9 +107,9 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
       if (result.error) {
         setError(result.error);
         setStoreName(store.name);
+        setDescription(store.description ?? "");
         setSavedSlug(store.slug);
         setLogoUrl(store.logo_url);
-        setWhatsappPhone(initialContact.whatsappPhone);
         setRubroTienda(store.rubro_tienda);
         return;
       }
@@ -151,8 +147,8 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
       <CatalogLinkCard slug={slugPreview} className="mb-4" />
 
       <SettingsSection
-        title="Perfil de la tienda"
-        description="Nombre, logo y enlace público de tu catálogo."
+        title="Identidad de marca"
+        description="Nombre comercial, logo y descripción que ven tus clientes."
         variant="payments"
       >
         <div className="general-settings-card space-y-3">
@@ -167,7 +163,7 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
 
           <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800/80">
             <Label htmlFor="store-name" className="payment-field-label">
-              Nombre de la tienda
+              Nombre comercial
             </Label>
             <Input
               id="store-name"
@@ -180,6 +176,27 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
               placeholder="Ej: Repuestos El Sol"
               className="payment-field-input mt-1.5"
             />
+
+            <div className="mt-3">
+              <Label htmlFor="store-description" className="payment-field-label">
+                Descripción
+              </Label>
+              <textarea
+                id="store-description"
+                rows={3}
+                maxLength={500}
+                value={description}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  setSuccess(false);
+                }}
+                placeholder="Ej: Repuestos y accesorios para vehículos con envío a todo el país."
+                className="input-field payment-field-textarea mt-1.5 resize-none"
+              />
+              <p className="mt-1.5 text-[11px] text-zinc-400">
+                Aparece en la portada de tu catálogo público.
+              </p>
+            </div>
 
             <div className="mt-3">
               <Label htmlFor="store-slug-preview" className="payment-field-label">
@@ -217,67 +234,35 @@ export function GeneralTab({ store, initialContact }: GeneralTabProps) {
                 </p>
               )}
             </div>
-
-            <div className="mt-3">
-              <Label htmlFor="store-rubro" className="payment-field-label">
-                Giro o rubro de mi tienda <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                id="store-rubro"
-                value={rubroTienda}
-                required
-                onChange={(e) => {
-                  setRubroTienda(e.target.value);
-                  setSuccess(false);
-                }}
-                className="payment-field-input mt-1.5"
-              >
-                {STORE_RUBRO_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-              <p className="mt-1.5 text-[11px] text-zinc-400">
-                Define las categorías y campos extra al crear productos.
-              </p>
-            </div>
           </div>
         </div>
       </SettingsSection>
 
       <SettingsSection
-        title="WhatsApp para pedidos"
-        description="Número al que llegan los pedidos del catálogo."
+        title="Rubro de la tienda"
+        description="Define las categorías y campos al crear productos."
         variant="payments"
       >
         <div className="general-settings-card">
-          <ChannelLogo provider="whatsapp" className="mb-2.5 h-7 w-7" />
-
-          <Label htmlFor="store-whatsapp" className="payment-field-label">
-            Número de WhatsApp
+          <Label htmlFor="store-rubro" className="payment-field-label">
+            Giro o rubro <span className="text-red-500">*</span>
           </Label>
-          <Input
-            id="store-whatsapp"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={whatsappPhone}
+          <Select
+            id="store-rubro"
+            value={rubroTienda}
+            required
             onChange={(e) => {
-              setWhatsappPhone(e.target.value);
+              setRubroTienda(e.target.value);
               setSuccess(false);
             }}
-            placeholder="Ej: 0414-1234567"
             className="payment-field-input mt-1.5"
-          />
-
-          {whatsappPhone.trim() ? (
-            <p className="mt-2 text-[11px] text-zinc-400">
-              {normalizedPreview
-                ? `Formato internacional: +${normalizedPreview}`
-                : "Revisa el número — debe tener al menos 10 dígitos."}
-            </p>
-          ) : null}
+          >
+            {STORE_RUBRO_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
         </div>
       </SettingsSection>
     </SettingsTabShell>

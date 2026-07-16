@@ -22,6 +22,7 @@ import {
 } from "@/lib/payments/validate-payment-fields";
 import { savePaymentsSettings } from "@/lib/settings/actions";
 import { useCountry } from "@/components/providers/CountryProvider";
+import { getCountryConfig } from "@/lib/country-config";
 import { getPaymentMethod } from "@/src/config/payment-methods";
 import type {
   PaymentMethodKey,
@@ -63,6 +64,7 @@ function filterErrorsForEnabledMethods(
 
 export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
   const { paymentGroups } = useCountry();
+  const currencyConfig = getCountryConfig().currency;
   const [payments, setPayments] = useState(initialSettings.methods);
   const [installments, setInstallments] = useState(initialSettings.installments);
   const [savingToggle, setSavingToggle] = useState<string | null>(null);
@@ -323,18 +325,48 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
         </p>
       )}
 
-      {paymentGroups.map((group) => (
-        <SettingsSection
-          key={group.title}
-          title={group.title}
-          description={group.description}
-          variant="payments"
-        >
-          <div className="flex flex-col gap-3">
-            {group.keys.map((key) => renderPaymentCard(key))}
-          </div>
-        </SettingsSection>
-      ))}
+      <SettingsSection
+        title="Moneda local"
+        description="Los precios de tu catálogo se muestran en bolívares según la tasa del día."
+        variant="payments"
+      >
+        <div className="general-settings-card">
+          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+            Bolívares (Bs.)
+          </p>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Venezuela · Código {currencyConfig.localCurrency}. Configura la tasa diaria en{" "}
+            <a href="/dashboard/tasas" className="text-teal-700 underline dark:text-teal-400">
+              Tasas del día
+            </a>
+            .
+          </p>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Métodos de pago"
+        description="Activa los métodos que aceptas y completa los datos para el checkout."
+        variant="payments"
+      >
+        <div className="flex flex-col gap-6">
+          {paymentGroups.map((group) => (
+            <div key={group.title}>
+              <h3 className="mb-1 text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                {group.title}
+              </h3>
+              {group.description ? (
+                <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+                  {group.description}
+                </p>
+              ) : null}
+              <div className="flex flex-col gap-3">
+                {group.keys.map((key) => renderPaymentCard(key))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </SettingsSection>
 
       <SettingsSection
         title="Venta a cuotas"

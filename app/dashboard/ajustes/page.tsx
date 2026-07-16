@@ -47,7 +47,7 @@ export default async function AjustesPage() {
         <p className="section-label">Configuración</p>
         <h1 className="page-header-title">Ajustes</h1>
         <p className="page-header-desc">
-          Configura tu tienda, envíos, métodos de pago y promociones
+          Configura la identidad de tu marca, ubicación, horarios y métodos de pago
           {store ? ` · ${store.name}` : ""}.
         </p>
       </header>
@@ -59,6 +59,7 @@ export default async function AjustesPage() {
                 name: store.name,
                 slug: store.slug,
                 logo_url: store.logo_url,
+                description: store.description,
                 rubro_tienda: store.rubro_tienda ?? "general",
               }
             : null
