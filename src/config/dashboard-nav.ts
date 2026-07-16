@@ -1,10 +1,11 @@
 import {
   BarChart3,
   ClipboardList,
-  FileBarChart,
+  FileSpreadsheet,
   LayoutDashboard,
   Package,
   RefreshCw,
+  UserCog,
   UserPlus,
   Users,
   type LucideIcon,
@@ -13,6 +14,7 @@ import {
 export interface DashboardNavItem {
   href: string;
   label: string;
+  description: string;
   icon: LucideIcon;
   match?: (pathname: string) => boolean;
 }
@@ -31,12 +33,14 @@ export const DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
       {
         href: "/dashboard",
         label: "Inicio",
+        description: "Dashboard principal",
         icon: LayoutDashboard,
         match: (pathname) => pathname === "/dashboard",
       },
       {
         href: "/dashboard/inventario",
         label: "Productos",
+        description: "Gestión de inventario",
         icon: Package,
         match: (pathname) =>
           pathname.startsWith("/dashboard/inventario") ||
@@ -45,6 +49,7 @@ export const DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
       {
         href: "/dashboard/pedidos",
         label: "Órdenes",
+        description: "Gestión de ventas y pedidos",
         icon: ClipboardList,
         match: (pathname) => pathname.startsWith("/dashboard/pedidos"),
       },
@@ -52,17 +57,19 @@ export const DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
   },
   {
     id: "customers",
-    label: "Gestión de Clientes",
+    label: "Clientes y Comunidad",
     items: [
       {
         href: "/dashboard/mensajes",
         label: "Clientes",
+        description: "Lista y perfil de compradores",
         icon: Users,
         match: (pathname) => pathname.startsWith("/dashboard/mensajes"),
       },
       {
         href: "/dashboard/referidos",
         label: "Referidos",
+        description: "Programa de referidos",
         icon: UserPlus,
         match: (pathname) => pathname.startsWith("/dashboard/referidos"),
       },
@@ -75,31 +82,35 @@ export const DASHBOARD_NAV_SECTIONS: DashboardNavSection[] = [
       {
         href: "/dashboard/analiticas",
         label: "Analíticas",
+        description: "Métricas de rendimiento",
         icon: BarChart3,
         match: (pathname) => pathname.startsWith("/dashboard/analiticas"),
       },
       {
         href: "/dashboard/ventas",
         label: "Reportes",
-        icon: FileBarChart,
+        description: "Exportación de datos e informes",
+        icon: FileSpreadsheet,
         match: (pathname) => pathname.startsWith("/dashboard/ventas"),
       },
     ],
   },
   {
     id: "configuration",
-    label: "Configuración",
+    label: "Configuración y Equipo",
     items: [
       {
         href: "/dashboard/tasas",
         label: "Tasas del día",
+        description: "Configuración de divisas",
         icon: RefreshCw,
         match: (pathname) => pathname.startsWith("/dashboard/tasas"),
       },
       {
         href: "/dashboard/planes",
         label: "Equipo",
-        icon: Users,
+        description: "Gestión de usuarios y accesos",
+        icon: UserCog,
         match: (pathname) =>
           pathname.startsWith("/dashboard/planes") ||
           pathname.startsWith("/dashboard/ajustes"),

@@ -7,12 +7,14 @@ import { cn } from "@/lib/cn";
 
 interface PublicCatalogQuickLinkProps {
   storeSlug: string | null;
+  collapsed?: boolean;
   onNavigate?: () => void;
   className?: string;
 }
 
 export function PublicCatalogQuickLink({
   storeSlug,
+  collapsed = false,
   onNavigate,
   className,
 }: PublicCatalogQuickLinkProps) {
@@ -25,11 +27,13 @@ export function PublicCatalogQuickLink({
     return (
       <div
         className={cn(
-          "mx-3 rounded-xl border border-dashed border-zinc-200 px-3 py-2.5 text-xs text-zinc-400 dark:border-zinc-800 dark:text-zinc-500",
+          "rounded-xl border border-dashed border-zinc-200 px-3 py-2.5 text-xs text-zinc-400 dark:border-zinc-800 dark:text-zinc-500",
+          collapsed ? "mx-2 text-center" : "mx-3",
           className,
         )}
+        title="Configura tu tienda para ver el catálogo"
       >
-        Configura tu tienda para ver el catálogo público.
+        {collapsed ? "…" : "Configura tu tienda para ver el catálogo."}
       </div>
     );
   }
@@ -40,13 +44,18 @@ export function PublicCatalogQuickLink({
       target="_blank"
       rel="noopener noreferrer"
       onClick={onNavigate}
+      title="Ver mi catálogo"
+      aria-label="Ver mi catálogo en una nueva pestaña"
       className={cn(
-        "mx-3 flex min-h-10 items-center gap-2.5 rounded-xl border border-teal-200/80 bg-teal-50/70 px-3 py-2.5 text-sm font-medium text-teal-800 transition-colors hover:border-teal-300 hover:bg-teal-50 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-300 dark:hover:border-teal-800 dark:hover:bg-teal-950/50",
+        "flex items-center rounded-xl border border-teal-600/20 bg-teal-600 text-sm font-semibold text-white shadow-sm transition-all hover:bg-teal-700 hover:shadow-md dark:border-teal-500/30 dark:bg-teal-600 dark:hover:bg-teal-500",
+        collapsed
+          ? "mx-2 h-10 w-10 shrink-0 justify-center p-0"
+          : "mx-3 min-h-10 gap-2.5 px-3 py-2.5",
         className,
       )}
     >
       <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
-      <span className="truncate">Ver mi catálogo público</span>
+      {!collapsed && <span className="truncate">Ver mi catálogo</span>}
     </a>
   );
 }
