@@ -15,13 +15,7 @@ export const VERCEL_META_ENV_VARS = [
   "META_WEBHOOK_VERIFY_TOKEN",
 ] as const;
 
-export const VERCEL_MERCADOLIBRE_ENV_VARS = [
-  "ML_APP_ID",
-  "ML_APP_SECRET",
-] as const;
-
 export const VERCEL_OPTIONAL_ENV_VARS = [
-  "ML_SITE_TLD",
   "API_SECRET_KEY",
   "ALLOW_DEV_AUTH_BYPASS",
   "NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION",
@@ -29,4 +23,3 @@ export const VERCEL_OPTIONAL_ENV_VARS = [
 
 export type VercelCoreEnvVar = (typeof VERCEL_CORE_ENV_VARS)[number];
 export type VercelMetaEnvVar = (typeof VERCEL_META_ENV_VARS)[number];
-export type VercelMercadoLibreEnvVar = (typeof VERCEL_MERCADOLIBRE_ENV_VARS)[number];

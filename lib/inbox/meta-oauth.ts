@@ -5,35 +5,12 @@ import type { MetaProviderKey } from "@/src/config/channel-integrations";
 const GRAPH_API_VERSION = "v21.0";
 export const META_OAUTH_STATE_COOKIE = "meta_oauth_state";
 
-/** Permisos base para listar páginas y suscribir webhooks de Messenger. */
-const META_PAGE_OAUTH_SCOPES = [
-  "pages_show_list",
-  "pages_messaging",
-  "pages_manage_metadata",
-  "pages_manage_posts",
-  "instagram_basic",
-  "business_management",
-] as const;
-
 const PROVIDER_SCOPES: Record<MetaProviderKey, string[]> = {
   whatsapp: [
     "business_management",
-    "pages_show_list",
-    "pages_messaging",
-    "pages_manage_metadata",
-    "instagram_basic",
     "whatsapp_business_management",
     "whatsapp_business_messaging",
   ],
-  instagram: [
-    "pages_show_list",
-    "pages_messaging",
-    "pages_manage_metadata",
-    "instagram_basic",
-    "instagram_manage_messages",
-    "business_management",
-  ],
-  messenger: [...META_PAGE_OAUTH_SCOPES],
 };
 
 export function getMetaOAuthScopes(provider: MetaProviderKey): string[] {

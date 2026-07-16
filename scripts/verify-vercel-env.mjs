@@ -20,8 +20,6 @@ const META = [
   "META_WEBHOOK_VERIFY_TOKEN",
 ];
 
-const MERCADOLIBRE = ["ML_APP_ID", "ML_APP_SECRET"];
-
 const PLACEHOLDER_VALUES = new Set(["pending-configuration", "changeme", "xxx"]);
 
 function missing(vars) {
@@ -60,10 +58,9 @@ const missingMeta = logSection("Meta / WhatsApp", META);
 const placeholderMeta = placeholder(META);
 if (placeholderMeta.length > 0) {
   console.warn(
-    `[vercel-env] Meta usa valores placeholder (${placeholderMeta.join(", ")}). OAuth de WhatsApp/Instagram/Messenger fallará hasta configurar IDs reales.`,
+    `[vercel-env] Meta usa valores placeholder (${placeholderMeta.join(", ")}). OAuth de WhatsApp fallará hasta configurar IDs reales.`,
   );
 }
-const missingMl = logSection("MercadoLibre", MERCADOLIBRE);
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
 if (siteUrl && !/^https:\/\//i.test(siteUrl)) {
@@ -90,7 +87,7 @@ if (isProduction && missingServer.length > 0) {
   );
 }
 
-const integrationMissing = [...missingMeta, ...missingMl];
+const integrationMissing = [...missingMeta];
 if (integrationMissing.length > 0) {
   console.warn(
     "[vercel-env] Integraciones pendientes (el build continúa):",

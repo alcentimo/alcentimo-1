@@ -15,7 +15,6 @@ import { ComposerCatalogModal } from "@/components/inbox/ComposerCatalogModal";
 import { ComposerPaymentMenu } from "@/components/inbox/ComposerPaymentMenu";
 import { ComposerTemplatesMenu } from "@/components/inbox/ComposerTemplatesMenu";
 import { MessageInput } from "@/components/inbox/MessageInput";
-import type { ProductFacebookPostSummary } from "@/lib/facebook/get-store-facebook-posts";
 
 interface ChatComposerProps {
   draft: string;
@@ -23,17 +22,10 @@ interface ChatComposerProps {
   products: CatalogListItem[];
   storeSlug: string;
   conversationId: string | null;
-  hasMessengerIntegration?: boolean;
-  publishedPosts?: Record<string, ProductFacebookPostSummary>;
   onActivityLogged?: (event: ClientActivityEvent) => void;
   onMessageSent?: (message: ChannelMessage) => void;
   onOptimisticMessage?: (message: ChannelMessage) => void;
   onRemoveOptimisticMessage?: (messageId: string) => void;
-  onPostPublished?: (
-    productId: string,
-    permalinkUrl: string,
-    publishedAt: string,
-  ) => void;
 }
 
 export function ChatComposer({
@@ -42,13 +34,10 @@ export function ChatComposer({
   products,
   storeSlug,
   conversationId,
-  hasMessengerIntegration = false,
-  publishedPosts = {},
   onActivityLogged,
   onMessageSent,
   onOptimisticMessage,
   onRemoveOptimisticMessage,
-  onPostPublished,
 }: ChatComposerProps) {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -180,16 +169,10 @@ export function ChatComposer({
       <ComposerCatalogModal
         open={catalogOpen}
         products={products}
-        hasMessengerIntegration={hasMessengerIntegration}
-        publishedPosts={publishedPosts}
         onClose={() => setCatalogOpen(false)}
         onSelectProduct={(snippet) =>
           applySnippetWithActivity(snippet, "Producto compartido", "catalog")
         }
-        onPostPublished={(productId, permalinkUrl, publishedAt) => {
-          onPostPublished?.(productId, permalinkUrl, publishedAt);
-          logActivity("Producto publicado en Facebook", "catalog");
-        }}
       />
     </>
   );

@@ -12,12 +12,7 @@ import type { ChannelProviderKey } from "@/src/config/channel-integrations";
 
 export const dynamic = "force-dynamic";
 
-const VALID_CHANNELS = new Set<ChannelProviderKey>([
-  "whatsapp",
-  "instagram",
-  "messenger",
-  "mercadolibre",
-]);
+const VALID_CHANNELS = new Set<ChannelProviderKey>(["whatsapp"]);
 
 function resolveStatus(searchParams: {
   connected?: string;
@@ -38,12 +33,6 @@ function resolveStatus(searchParams: {
           "Meta aún no está configurado en el servidor. En Vercel define META_APP_ID y META_APP_SECRET con el App ID y App Secret reales de developers.facebook.com (no uses pending-configuration).",
         tone: "error",
       };
-    case "ml_not_configured":
-      return {
-        message:
-          "MercadoLibre aún no está configurado en el servidor. Añade ML_APP_ID y ML_APP_SECRET en Vercel.",
-        tone: "error",
-      };
     case "oauth_denied":
       return {
         message:
@@ -59,13 +48,7 @@ function resolveStatus(searchParams: {
     case "meta_assets_not_found":
       return {
         message:
-          "Meta autorizó la app, pero no encontramos ninguna Página de Facebook vinculada a tu cuenta. En el diálogo de Facebook, asegúrate de seleccionar la página de tu negocio y conceder acceso a páginas.",
-        tone: "error",
-      };
-    case "ml_connect_failed":
-      return {
-        message:
-          "No se pudo completar la conexión con MercadoLibre. Verifica tu app en el panel de desarrolladores e inténtalo otra vez.",
+          "Meta autorizó la app, pero no encontramos una cuenta de WhatsApp Business vinculada. Verifica que tu negocio tenga WhatsApp Business configurado en Meta Business Suite.",
         tone: "error",
       };
     case "invalid_provider":

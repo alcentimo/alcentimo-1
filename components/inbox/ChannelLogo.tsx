@@ -1,14 +1,10 @@
-import {
-  SiFacebook,
-  SiInstagram,
-  SiMercadopago,
-  SiWhatsapp,
-} from "react-icons/si";
+import { SiWhatsapp } from "react-icons/si";
 import type { ChannelProviderKey } from "@/src/config/channel-integrations";
+import type { InboxProvider } from "@/lib/inbox/types";
 import { BrandLogoTile } from "@/components/ui/BrandLogoTile";
 
 interface ChannelLogoProps {
-  provider: ChannelProviderKey | "facebook";
+  provider: ChannelProviderKey | InboxProvider;
   className?: string;
 }
 
@@ -20,46 +16,15 @@ function iconSize(className: string): string {
   return "h-[58%] w-[58%]";
 }
 
-/** Logotipos oficiales de canales (Simple Icons / react-icons). */
 export function ChannelLogo({
   provider,
   className = "h-11 w-11",
 }: ChannelLogoProps) {
   const size = iconSize(className);
 
-  switch (provider) {
-    case "whatsapp":
-      return (
-        <BrandLogoTile className={className} backgroundClassName="bg-[#25D366]">
-          <SiWhatsapp className={`${size} text-white`} />
-        </BrandLogoTile>
-      );
-    case "instagram":
-      return (
-        <BrandLogoTile
-          className={className}
-          backgroundClassName="bg-linear-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF]"
-        >
-          <SiInstagram className={`${size} text-white`} />
-        </BrandLogoTile>
-      );
-    case "messenger":
-      return (
-        <BrandLogoTile className={className} backgroundClassName="bg-[#1877F2]">
-          <SiFacebook className={`${size} text-white`} />
-        </BrandLogoTile>
-      );
-    case "facebook":
-      return (
-        <BrandLogoTile className={className} backgroundClassName="bg-[#1877F2]">
-          <SiFacebook className={`${size} text-white`} />
-        </BrandLogoTile>
-      );
-    case "mercadolibre":
-      return (
-        <BrandLogoTile className={className} backgroundClassName="bg-[#FFE600]">
-          <SiMercadopago className={`${size} text-[#2D3277]`} />
-        </BrandLogoTile>
-      );
-  }
+  return (
+    <BrandLogoTile className={className} backgroundClassName="bg-[#25D366]">
+      <SiWhatsapp className={`${size} text-white`} />
+    </BrandLogoTile>
+  );
 }

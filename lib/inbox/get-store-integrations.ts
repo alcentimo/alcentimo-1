@@ -26,7 +26,7 @@ const SENSITIVE_CONFIG_KEYS = new Set([
 function sanitizeIntegrationForClient(
   integration: ChannelIntegration,
 ): ChannelIntegration {
-  if (integration.provider !== "mercadolibre" || !integration.config) {
+  if (!integration.config) {
     return integration;
   }
 

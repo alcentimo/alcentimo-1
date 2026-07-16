@@ -39,8 +39,7 @@ export async function middleware(request: NextRequest) {
   // Webhooks y OAuth de integraciones: sin sesión ni redirecciones de auth
   if (
     pathname.startsWith("/api/webhooks") ||
-    pathname.startsWith("/api/integrations/meta/") ||
-    pathname.startsWith("/api/auth/mercadolibre/")
+    pathname.startsWith("/api/integrations/meta/")
   ) {
     return NextResponse.next();
   }
@@ -189,6 +188,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/webhooks|api/integrations|api/auth/mercadolibre|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/webhooks|api/integrations|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

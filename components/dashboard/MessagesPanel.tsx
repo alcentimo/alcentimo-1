@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { MessagesEmptyState } from "@/components/dashboard/MessagesEmptyState";
 import { ChatThread } from "@/components/inbox/ChatThread";
@@ -12,24 +11,18 @@ import {
 } from "@/components/inbox/InboxSessionProvider";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { VentaWithProduct } from "@/lib/sales/types";
-import type { ProductFacebookPostSummary } from "@/lib/facebook/get-store-facebook-posts";
 import type { MessageConversation } from "@/lib/inbox/get-store-messages";
 
 export interface MessagesPanelProps {
   initialConversations: MessageConversation[];
   hasActiveIntegrations: boolean;
-  hasMessengerIntegration?: boolean;
   storeCountry?: string | null;
   storeSlug: string;
   catalogProducts?: CatalogListItem[];
-  publishedPosts?: Record<string, ProductFacebookPostSummary>;
   recentSales?: VentaWithProduct[];
   salesByConversationId?: Record<string, VentaWithProduct[]>;
 }
 
-/**
- * Bandeja de mensajes — layout de 3 columnas con carga funcional prioritaria.
- */
 export function MessagesPanel(props: MessagesPanelProps) {
   return (
     <InboxSessionProvider initialConversations={props.initialConversations}>
@@ -41,11 +34,9 @@ export function MessagesPanel(props: MessagesPanelProps) {
 function MessagesPanelWorkspace({
   initialConversations,
   hasActiveIntegrations,
-  hasMessengerIntegration = false,
   storeCountry = null,
   storeSlug,
   catalogProducts = [],
-  publishedPosts: initialPublishedPosts = {},
   recentSales = [],
   salesByConversationId = {},
 }: MessagesPanelProps) {
@@ -54,21 +45,8 @@ function MessagesPanelWorkspace({
     selectedConversation,
     listFilters,
     listLoading,
-    crmLoading,
     setListFilters,
   } = useInboxSession();
-  const [publishedPosts, setPublishedPosts] = useState(initialPublishedPosts);
-
-  function handlePostPublished(
-    productId: string,
-    permalinkUrl: string,
-    publishedAt: string,
-  ) {
-    setPublishedPosts((current) => ({
-      ...current,
-      [productId]: { postId: productId, permalinkUrl, publishedAt },
-    }));
-  }
 
   const hasAnyData =
     conversations.length > 0 || initialConversations.length > 0;
@@ -110,9 +88,6 @@ function MessagesPanelWorkspace({
             conversation={selectedConversation}
             products={catalogProducts}
             storeSlug={storeSlug}
-            hasMessengerIntegration={hasMessengerIntegration}
-            publishedPosts={publishedPosts}
-            onPostPublished={handlePostPublished}
           />
         </main>
 
@@ -120,11 +95,6 @@ function MessagesPanelWorkspace({
           className="inbox-pro-column inbox-pro-column--context"
           aria-label="Contexto del cliente"
         >
-          {crmLoading && selectedConversation?.contactId && (
-            <p className="inbox-pro-context-loading" role="status">
-              Cargando notas y etiquetas…
-            </p>
-          )}
           <ConversationContextPanel
             conversation={selectedConversation}
             storeCountry={storeCountry}

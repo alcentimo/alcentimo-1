@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  applyPageAccessCredentialsToAssets,
   discoverMetaIntegrationAssets,
   exchangeForLongLivedUserToken,
-  resolvePageAccessTokenFromAccounts,
 } from "@/lib/inbox/meta-graph-api";
 import {
   exchangeMetaOAuthCode,
@@ -16,10 +14,7 @@ import {
   resolveMetaOAuthSiteUrl,
 } from "@/lib/inbox/meta-oauth";
 import { getChannelIntegration } from "@/src/config/channel-integrations";
-import { subscribeMetaPageWebhooks } from "@/lib/inbox/meta-page-subscribe";
 import {
-  getMessengerPageIdFromAssets,
-  isNumericMetaPageId,
   upsertChannelIntegration,
   upsertChannelIntegrationSecret,
 } from "@/lib/inbox/persist-meta-integration";
@@ -83,68 +78,23 @@ export async function GET(request: Request) {
     });
     const accessToken = await exchangeForLongLivedUserToken(shortLivedToken);
 
-    console.log("[meta/callback] Token exchange OK — discovering Meta assets", {
+    console.log("[meta/callback] Token exchange OK — discovering WhatsApp assets", {
       provider: parsedState.provider,
       storeId: parsedState.storeId,
     });
 
-    let assets = await discoverMetaIntegrationAssets(
+    const assets = await discoverMetaIntegrationAssets(
       parsedState.provider,
       accessToken,
     );
 
     if (!assets) {
-      console.warn("[meta/callback] No Meta assets found", {
+      console.warn("[meta/callback] No WhatsApp assets found", {
         provider: parsedState.provider,
         storeId: parsedState.storeId,
       });
       redirectBase.searchParams.set("error", "meta_assets_not_found");
       return clearCookie(NextResponse.redirect(redirectBase));
-    }
-
-    const preferredPageId = getMessengerPageIdFromAssets(assets);
-    const pageCredentials = await resolvePageAccessTokenFromAccounts(
-      accessToken,
-      preferredPageId,
-    );
-
-    if (pageCredentials) {
-      if (parsedState.provider === "messenger") {
-        assets = applyPageAccessCredentialsToAssets(assets, pageCredentials);
-      } else {
-        assets = {
-          ...assets,
-          config: {
-            ...assets.config,
-            page_id: pageCredentials.pageId,
-            page_name: pageCredentials.pageName ?? assets.config.page_name,
-            messenger_page_id: pageCredentials.pageId,
-            page_token_source: pageCredentials.source,
-          },
-        };
-      }
-
-      console.log("[meta/callback] Page Access Token resuelto desde /me/accounts", {
-        pageId: pageCredentials.pageId,
-        pageName: pageCredentials.pageName,
-        source: pageCredentials.source,
-        tokenType: "PAGE",
-        provider: parsedState.provider,
-      });
-    } else {
-      console.warn("[meta/callback] No se obtuvo Page Access Token desde /me/accounts", {
-        preferredPageId,
-        assetsPageId: assets.config.page_id ?? null,
-        assetsExternalAccountId: assets.externalAccountId,
-        assetsTokenType: assets.config.token_type ?? "unknown",
-      });
-    }
-
-    if (assets.config.fallback_from_provider) {
-      console.log("[meta/callback] Connected via Facebook Page fallback", {
-        requestedProvider: parsedState.provider,
-        pageId: assets.externalAccountId,
-      });
     }
 
     const admin = createAdminClient();
@@ -163,120 +113,12 @@ export async function GET(request: Request) {
       assets.accessToken,
     );
 
-    const messengerPageId =
-      pageCredentials?.pageId ?? getMessengerPageIdFromAssets(assets);
-
-    if (messengerPageId && parsedState.provider !== "messenger") {
-      const messengerAssets = pageCredentials
-        ? applyPageAccessCredentialsToAssets(assets, pageCredentials)
-        : assets;
-
-      const messengerRow = await upsertChannelIntegration(admin, {
-        storeId: parsedState.storeId,
-        provider: "messenger",
-        assets: messengerAssets,
-        displayNameFallback: getChannelIntegration("messenger").label,
-      });
-      await upsertChannelIntegrationSecret(
-        admin,
-        messengerRow.id,
-        pageCredentials?.pageAccessToken ?? messengerAssets.accessToken,
-      );
-      console.log("[meta/callback] Messenger row synced for Facebook Page", {
-        messengerIntegrationId: messengerRow.id,
-        pageId: messengerPageId,
-        requestedProvider: parsedState.provider,
-      });
-    }
-
-    console.log("[meta/callback] Integration saved", {
+    console.log("[meta/callback] WhatsApp integration saved", {
       provider: parsedState.provider,
       storeId: parsedState.storeId,
       integrationId: persisted.id,
       externalAccountId: persisted.external_account_id,
-      messengerPageId,
     });
-
-    const pageIdForSubscribe = pageCredentials?.pageId ?? messengerPageId ??
-      (isNumericMetaPageId(persisted.external_account_id)
-        ? persisted.external_account_id
-        : null) ??
-      (typeof assets.config.page_id === "string" &&
-      isNumericMetaPageId(assets.config.page_id)
-        ? assets.config.page_id
-        : null);
-
-    const pageAccessToken =
-      pageCredentials?.pageAccessToken ?? assets.accessToken?.trim() ?? "";
-
-    console.log("[meta/callback] Preparando suscripción de webhooks tras OAuth", {
-      provider: parsedState.provider,
-      pageIdForSubscribe,
-      messengerPageId,
-      persistedExternalAccountId: persisted.external_account_id,
-      assetsPageId: assets.config.page_id ?? null,
-      hasPageAccessToken: Boolean(pageAccessToken),
-      tokenType: assets.config.token_type ?? "unknown",
-      pageTokenSource: assets.config.page_token_source ?? null,
-    });
-
-    if (pageIdForSubscribe && pageAccessToken) {
-      console.log("[DEBUG] Callback: invocando subscribeMetaPageWebhooks", {
-        pageId: pageIdForSubscribe,
-        provider: parsedState.provider,
-      });
-
-      try {
-        const subscribeResult = await subscribeMetaPageWebhooks(
-          pageIdForSubscribe,
-          pageAccessToken,
-        );
-
-        if (subscribeResult.success) {
-          console.log("[meta/callback] Page webhook subscription OK", {
-            pageName: assets.displayName,
-            pageId: subscribeResult.pageId,
-            subscribedFields: subscribeResult.subscribedFields,
-            tokenType: subscribeResult.tokenType,
-          });
-        } else {
-          console.error("[meta/callback] Page webhook subscription failed (OAuth continúa)", {
-            pageName: assets.displayName,
-            pageId: subscribeResult.pageId,
-            httpStatus: subscribeResult.httpStatus,
-            error: subscribeResult.error,
-            graphError: subscribeResult.graphError,
-            tokenType: subscribeResult.tokenType,
-            tokenScopes: subscribeResult.tokenScopes,
-            rawResponse: subscribeResult.raw,
-          });
-        }
-      } catch (subscribeErr) {
-        const subscribeMessage =
-          subscribeErr instanceof Error
-            ? subscribeErr.message
-            : "Unknown page subscribe error";
-
-        console.error(
-          "[meta/callback] Excepción en suscripción de página (OAuth continúa)",
-          {
-            pageId: pageIdForSubscribe,
-            pageName: assets.displayName,
-            message: subscribeMessage,
-            stack: subscribeErr instanceof Error ? subscribeErr.stack : undefined,
-          },
-        );
-      }
-    } else {
-      console.warn("[meta/callback] Suscripción omitida — falta pageId numérico o token", {
-        provider: parsedState.provider,
-        pageIdForSubscribe,
-        messengerPageId,
-        persistedExternalAccountId: persisted.external_account_id,
-        assetsPageId: assets.config.page_id ?? null,
-        hasPageAccessToken: Boolean(pageAccessToken),
-      });
-    }
 
     redirectBase.searchParams.set("connected", parsedState.provider);
     return clearCookie(NextResponse.redirect(redirectBase));

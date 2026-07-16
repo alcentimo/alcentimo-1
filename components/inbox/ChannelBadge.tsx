@@ -1,9 +1,4 @@
-import {
-  SiFacebook,
-  SiInstagram,
-  SiMercadopago,
-  SiWhatsapp,
-} from "react-icons/si";
+import { SiWhatsapp } from "react-icons/si";
 import type { InboxProvider } from "@/lib/inbox/types";
 
 const CHANNEL_META: Record<
@@ -17,23 +12,22 @@ const CHANNEL_META: Record<
     title: "WhatsApp",
   },
   messenger: {
-    label: "Facebook Messenger",
-    shortLabel: "Messenger",
-    backgroundClassName: "bg-[#1877F2]",
-    title: "Facebook Messenger",
+    label: "Messenger",
+    shortLabel: "MSG",
+    backgroundClassName: "bg-zinc-500",
+    title: "Messenger (legado)",
   },
   instagram: {
     label: "Instagram",
     shortLabel: "IG",
-    backgroundClassName:
-      "bg-linear-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF]",
-    title: "Instagram",
+    backgroundClassName: "bg-zinc-500",
+    title: "Instagram (legado)",
   },
   mercadolibre: {
     label: "MercadoLibre",
     shortLabel: "ML",
-    backgroundClassName: "bg-[#FFE600]",
-    title: "MercadoLibre",
+    backgroundClassName: "bg-zinc-500",
+    title: "MercadoLibre (legado)",
   },
 };
 
@@ -49,7 +43,6 @@ export function getChannelShortLabel(provider: InboxProvider): string {
   return CHANNEL_META[provider].shortLabel;
 }
 
-/** Indicador compacto de canal para listas de alto volumen. */
 export function ChannelBadge({
   provider,
   compact = true,
@@ -61,19 +54,6 @@ export function ChannelBadge({
   const sizeClass = micro ? "h-4 w-4" : compact ? "h-5 w-5" : "h-6 w-6";
   const iconClass = micro ? "h-2.5 w-2.5" : compact ? "h-3 w-3" : "h-3.5 w-3.5";
 
-  function renderIcon() {
-    switch (provider) {
-      case "whatsapp":
-        return <SiWhatsapp className={`${iconClass} text-white`} />;
-      case "instagram":
-        return <SiInstagram className={`${iconClass} text-white`} />;
-      case "messenger":
-        return <SiFacebook className={`${iconClass} text-white`} />;
-      case "mercadolibre":
-        return <SiMercadopago className={`${iconClass} text-[#2D3277]`} />;
-    }
-  }
-
   return (
     <span
       className={`inline-flex shrink-0 items-center gap-1 ${className}`}
@@ -83,7 +63,13 @@ export function ChannelBadge({
         className={`inline-flex items-center justify-center rounded-md shadow-sm ${sizeClass} ${meta.backgroundClassName}`}
         aria-label={meta.title}
       >
-        {renderIcon()}
+        {provider === "whatsapp" ? (
+          <SiWhatsapp className={`${iconClass} text-white`} />
+        ) : (
+          <span className={`${iconClass} text-[10px] font-bold text-white`}>
+            {meta.shortLabel}
+          </span>
+        )}
       </span>
       {showLabel && (
         <span className="text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">

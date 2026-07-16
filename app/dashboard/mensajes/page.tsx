@@ -7,10 +7,8 @@ import {
 } from "@/lib/inbox/get-store-messages";
 import {
   getStoreIntegrations,
-  getIntegrationForProvider,
   hasActiveIntegrations,
 } from "@/lib/inbox/get-store-integrations";
-import { getStoreFacebookPostsByProduct } from "@/lib/facebook/get-store-facebook-posts";
 import { buildConversationSalesMap } from "@/lib/inbox/contact-sales";
 import { getStoreSales } from "@/lib/sales/get-store-sales";
 import { getStoreInventory } from "@/lib/inventory";
@@ -37,7 +35,7 @@ export default async function MensajesPage() {
           <p className="section-label">Atención al cliente</p>
           <h1 className="page-header-title">Mensajes</h1>
           <p className="page-header-desc">
-            Crea tu tienda primero para recibir mensajes de WhatsApp y Meta.
+            Crea tu tienda primero para recibir mensajes de WhatsApp.
           </p>
         </header>
         <div className="card-panel">
@@ -49,19 +47,15 @@ export default async function MensajesPage() {
     );
   }
 
-  const [conversations, integrations, recentSales, inventory, publishedPostsResult] =
-    await Promise.all([
+  const [conversations, integrations, recentSales, inventory] = await Promise.all([
     getStoreInboxConversations(supabase, store.id, {
       storeCountry: store.country,
     }),
     getStoreIntegrations(supabase, store.id),
     getStoreSales(store.id, 100),
     getStoreInventory(store.slug),
-    getStoreFacebookPostsByProduct(supabase, store.id).catch(() => ({})),
   ]);
-  const publishedPosts = publishedPostsResult;
   const activeIntegrations = hasActiveIntegrations(integrations);
-  const messengerIntegration = getIntegrationForProvider(integrations, "messenger");
   const salesByConversationId = buildConversationSalesMap(
     conversations,
     recentSales,
@@ -72,11 +66,9 @@ export default async function MensajesPage() {
       <MessagesPanel
         initialConversations={conversations}
         hasActiveIntegrations={activeIntegrations}
-        hasMessengerIntegration={Boolean(messengerIntegration)}
         storeCountry={store.country}
         storeSlug={store.slug}
         catalogProducts={inventory.products}
-        publishedPosts={publishedPosts}
         recentSales={recentSales}
         salesByConversationId={salesByConversationId}
       />

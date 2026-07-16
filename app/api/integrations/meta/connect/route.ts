@@ -16,11 +16,7 @@ import type { MetaProviderKey } from "@/src/config/channel-integrations";
 export const runtime = "nodejs";
 export const maxDuration = 15;
 
-const VALID_PROVIDERS = new Set<MetaProviderKey>([
-  "whatsapp",
-  "instagram",
-  "messenger",
-]);
+const VALID_PROVIDERS = new Set<MetaProviderKey>(["whatsapp"]);
 
 function previewEnvValue(value: string): string {
   if (!value) return "(vacío)";

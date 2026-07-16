@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-/** Verifica X-Hub-Signature-256 de Meta (WhatsApp / Messenger / Instagram). */
+/** Verifica X-Hub-Signature-256 de Meta (WhatsApp Cloud API). */
 export function verifyMetaWebhookSignature(
   rawBody: string,
   signatureHeader: string | null,
@@ -94,7 +94,7 @@ export function metaTimestampToIso(timestamp: unknown): string | undefined {
 }
 
 export type MetaInboundMessagePreview = {
-  channel: "whatsapp" | "messenger" | "instagram";
+  channel: "whatsapp";
   senderId: string;
   messageText: string | null;
 };
@@ -106,6 +106,8 @@ export function extractMetaInboundMessages(
   if (!payload || typeof payload !== "object") return [];
 
   const object = (payload as { object?: string }).object;
+  if (object !== "whatsapp_business_account") return [];
+
   const entries = (payload as { entry?: unknown[] }).entry ?? [];
   const results: MetaInboundMessagePreview[] = [];
 
@@ -113,52 +115,25 @@ export function extractMetaInboundMessages(
     if (!entry || typeof entry !== "object") continue;
     const entryRecord = entry as Record<string, unknown>;
 
-    if (object === "whatsapp_business_account") {
-      for (const change of (entryRecord.changes as unknown[]) ?? []) {
-        if (!change || typeof change !== "object") continue;
-        const changeRecord = change as Record<string, unknown>;
-        if (changeRecord.field && changeRecord.field !== "messages") continue;
+    for (const change of (entryRecord.changes as unknown[]) ?? []) {
+      if (!change || typeof change !== "object") continue;
+      const changeRecord = change as Record<string, unknown>;
+      if (changeRecord.field && changeRecord.field !== "messages") continue;
 
-        const value = changeRecord.value as Record<string, unknown> | undefined;
-        if (!value) continue;
+      const value = changeRecord.value as Record<string, unknown> | undefined;
+      if (!value) continue;
 
-        for (const msg of (value.messages as unknown[]) ?? []) {
-          if (!msg || typeof msg !== "object") continue;
-          const message = msg as Record<string, unknown>;
-          const senderId = String(message.from ?? "");
-          if (!senderId) continue;
-
-          results.push({
-            channel: "whatsapp",
-            senderId,
-            messageText: extractWhatsAppMessageText(message),
-          });
-        }
-      }
-      continue;
-    }
-
-    if (object === "page" || object === "instagram") {
-      const channel: MetaInboundMessagePreview["channel"] =
-        object === "instagram" ? "instagram" : "messenger";
-
-      for (const event of (entryRecord.messaging as unknown[]) ?? []) {
-        if (!event || typeof event !== "object") continue;
-        const eventRecord = event as Record<string, unknown>;
-        const message = eventRecord.message as
-          | Record<string, unknown>
-          | undefined;
-        if (!message) continue;
-
-        const senderId = String(
-          (eventRecord.sender as { id?: string } | undefined)?.id ?? "",
-        );
+      for (const msg of (value.messages as unknown[]) ?? []) {
+        if (!msg || typeof msg !== "object") continue;
+        const message = msg as Record<string, unknown>;
+        const senderId = String(message.from ?? "");
         if (!senderId) continue;
 
-        const messageText =
-          typeof message.text === "string" ? message.text : null;
-
-        results.push({ channel, senderId, messageText });
+        results.push({
+          channel: "whatsapp",
+          senderId,
+          messageText: extractWhatsAppMessageText(message),
+        });
       }
     }
   }

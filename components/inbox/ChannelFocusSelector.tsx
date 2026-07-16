@@ -10,9 +10,6 @@ const FOCUS_OPTIONS: {
   provider?: InboxProvider;
 }[] = [
   { value: "all", label: "Todos los canales" },
-  { value: "messenger", label: "Solo Facebook Messenger", provider: "messenger" },
-  { value: "instagram", label: "Solo Instagram", provider: "instagram" },
-  { value: "mercadolibre", label: "Solo Mercado Libre", provider: "mercadolibre" },
   { value: "whatsapp", label: "Solo WhatsApp", provider: "whatsapp" },
 ];
 

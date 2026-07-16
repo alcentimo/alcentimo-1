@@ -14,16 +14,10 @@ export const DEFAULT_INBOX_WORKSPACE: InboxWorkspaceState = {
   listCollapsed: false,
   chatCollapsed: false,
   contextCollapsed: false,
-  channelFocus: "messenger",
+  channelFocus: "all",
 };
 
-const VALID_CHANNELS = new Set<InboxChannelFilter>([
-  "all",
-  "messenger",
-  "instagram",
-  "mercadolibre",
-  "whatsapp",
-]);
+const VALID_CHANNELS = new Set<InboxChannelFilter>(["all", "whatsapp"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

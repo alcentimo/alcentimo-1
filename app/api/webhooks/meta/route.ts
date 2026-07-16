@@ -1,21 +1,13 @@
 import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ingestInboundMessage } from "@/lib/inbox/ingest-inbound-message";
-import { getIntegrationAccessToken } from "@/lib/inbox/integration-token";
-import { fetchMetaMessengerUserProfile } from "@/lib/inbox/messenger-client";
 import {
-  extractMetaInboundMessages,
   extractWhatsAppMessageText,
   metaTimestampToIso,
   parseMetaVerifyQuery,
   resolveWhatsAppMessageType,
   verifyMetaWebhookSignature,
 } from "@/lib/inbox/meta-webhook";
-import {
-  applyMetaDeliveryEvent,
-  applyMetaReadEvent,
-} from "@/lib/inbox/meta-message-events";
-import { findOrRepairMessengerIntegration } from "@/lib/inbox/persist-meta-integration";
 import type { InboxProvider } from "@/lib/inbox/types";
 
 export const runtime = "nodejs";
@@ -29,14 +21,11 @@ type ChannelIntegration = {
 };
 
 /**
- * Webhook unificado Meta: WhatsApp Cloud API + Messenger + Instagram.
+ * Webhook Meta — WhatsApp Cloud API.
  *
- * Meta Developer Console (app 2966164503744998 o la activa):
+ * Meta Developer Console:
  * - Callback URL: https://alcentimo.com/api/webhooks/meta
- * - Verify token: VERIFY_TOKEN o META_WEBHOOK_VERIFY_TOKEN (mismo valor en Vercel y en Meta)
- * - App secret: APP_SECRET o META_APP_SECRET (debe coincidir con la app actual)
- * - Objeto Page → campos: messaging, messaging_postbacks (Meta UI puede mostrar "messages")
- * - Tras OAuth también se llama POST /{page-id}/subscribed_apps automáticamente
+ * - Verify token: VERIFY_TOKEN o META_WEBHOOK_VERIFY_TOKEN
  */
 function getWebhookVerifyToken(): string | undefined {
   return (
@@ -132,24 +121,14 @@ export async function POST(request: Request) {
     return new Response(null, { status: 400 });
   }
 
-  const inboundMessages = extractMetaInboundMessages(payload);
   const payloadSummary = summarizeMetaPayload(payload);
-  console.log("[webhooks/meta] payload completo:", JSON.stringify(payload));
   console.log("[webhooks/meta] payload resumen:", payloadSummary);
 
-  if (inboundMessages.length === 0) {
+  if (payloadSummary.object !== "whatsapp_business_account") {
     console.warn(
-      "[webhooks/meta] Sin mensajes extraíbles del payload (¿delivery/read/postback?).",
+      "[webhooks/meta] Payload ignorado: solo se procesan eventos de WhatsApp.",
       payloadSummary,
     );
-  }
-
-  for (const msg of inboundMessages) {
-    console.log("[webhooks/meta] evento messages:", {
-      channel: msg.channel,
-      senderId: msg.senderId,
-      messageText: msg.messageText,
-    });
   }
 
   // Procesamiento pesado (Supabase) en background — no bloquea el 200 a Meta
@@ -183,11 +162,6 @@ function summarizeMetaPayload(payload: unknown): Record<string, unknown> {
     entryIds: entries
       .filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object")
       .map((entry) => String(entry.id ?? "")),
-    messagingEventCount: entries.reduce((total: number, entry) => {
-      if (!entry || typeof entry !== "object") return total;
-      const messaging = (entry as { messaging?: unknown[] }).messaging ?? [];
-      return total + messaging.length;
-    }, 0),
     whatsappChangeCount: entries.reduce((total: number, entry) => {
       if (!entry || typeof entry !== "object") return total;
       const changes = (entry as { changes?: unknown[] }).changes ?? [];
@@ -241,92 +215,6 @@ async function findIntegration(
   return data;
 }
 
-async function resolveMessagingContactProfile(
-  integrationId: string,
-  senderId: string,
-): Promise<{
-  contactDisplayName: string | null;
-  contactAvatarUrl: string | null;
-}> {
-  const accessToken = await getIntegrationAccessToken(integrationId);
-  if (!accessToken) {
-    console.warn("[webhooks/meta] Sin Page Access Token para perfil de contacto", {
-      integrationId,
-      senderId,
-    });
-    return { contactDisplayName: null, contactAvatarUrl: null };
-  }
-
-  const profile = await fetchMetaMessengerUserProfile(senderId, accessToken);
-
-  console.log("[webhooks/meta] Perfil de contacto resuelto para ingest", {
-    integrationId,
-    senderId,
-    displayName: profile?.name ?? null,
-    hasAvatarUrl: Boolean(profile?.profilePicUrl),
-    avatarUrlPreview: profile?.profilePicUrl
-      ? profile.profilePicUrl.slice(0, 80)
-      : null,
-  });
-
-  return {
-    contactDisplayName: profile?.name ?? null,
-    contactAvatarUrl: profile?.profilePicUrl ?? null,
-  };
-}
-
-async function saveChannelMessage(
-  admin: AdminClient,
-  integrationId: string,
-  senderId: string,
-  messageText: string | null,
-): Promise<void> {
-  const row = {
-    integration_id: integrationId,
-    sender_id: senderId,
-    message_text: messageText,
-    direction: "inbound" as const,
-    status: "unread" as const,
-  };
-
-  console.log("[webhooks/meta] PRE-INSERT channel_messages:", row);
-
-  const { error } = await admin.from("channel_messages").insert(row);
-
-  if (error) {
-    console.error("[webhooks/meta] channel_messages insert failed:", error);
-    throw error;
-  }
-
-  console.log("[webhooks/meta] POST-INSERT channel_messages ok:", row);
-}
-
-async function saveInboxMessage(
-  admin: AdminClient,
-  input: Parameters<typeof ingestInboundMessage>[1],
-): Promise<void> {
-  console.log("[webhooks/meta] PRE-INSERT inbox_messages:", {
-    storeId: input.storeId,
-    integrationId: input.integrationId,
-    provider: input.provider,
-    senderId: input.senderId,
-    platformMessageId: input.platformMessageId,
-    body: input.body,
-    messageType: input.messageType,
-  });
-
-  try {
-    const result = await ingestInboundMessage(admin, input);
-    console.log("[webhooks/meta] POST-INSERT inbox_messages:", result);
-  } catch (err) {
-    console.error("[webhooks/meta] inbox_messages insert failed:", err);
-    if (err instanceof Error) {
-      console.error("[webhooks/meta] inbox_messages stack:", err.stack);
-    }
-    throw err;
-  }
-}
-
 async function ingestMetaWebhookPayload(payload: unknown): Promise<void> {
   if (!payload || typeof payload !== "object") {
     console.warn("[webhooks/meta] payload inválido, ingest omitido");
@@ -339,6 +227,11 @@ async function ingestMetaWebhookPayload(payload: unknown): Promise<void> {
     object,
     entryCount: entries.length,
   });
+
+  if (object !== "whatsapp_business_account") {
+    console.warn("[webhooks/meta] object no soportado:", object);
+    return;
+  }
 
   let admin: AdminClient;
   try {
@@ -355,27 +248,41 @@ async function ingestMetaWebhookPayload(payload: unknown): Promise<void> {
       continue;
     }
 
-    if (object === "whatsapp_business_account") {
-      await ingestWhatsAppEntry(admin, entry as Record<string, unknown>);
-      continue;
-    }
-
-    if (object === "page" || object === "instagram") {
-      await ingestMessagingEntry(
-        admin,
-        entry as Record<string, unknown>,
-        object,
-      );
-      continue;
-    }
+    await ingestWhatsAppEntry(admin, entry as Record<string, unknown>);
   }
+}
 
-  if (
-    object !== "whatsapp_business_account" &&
-    object !== "page" &&
-    object !== "instagram"
-  ) {
-    console.warn("[webhooks/meta] object no soportado:", object);
+async function saveChannelMessage(
+  admin: AdminClient,
+  integrationId: string,
+  senderId: string,
+  messageText: string | null,
+): Promise<void> {
+  const row = {
+    integration_id: integrationId,
+    sender_id: senderId,
+    message_text: messageText,
+    direction: "inbound" as const,
+    status: "unread" as const,
+  };
+
+  const { error } = await admin.from("channel_messages").insert(row);
+
+  if (error) {
+    console.error("[webhooks/meta] channel_messages insert failed:", error);
+    throw error;
+  }
+}
+
+async function saveInboxMessage(
+  admin: AdminClient,
+  input: Parameters<typeof ingestInboundMessage>[1],
+): Promise<void> {
+  try {
+    await ingestInboundMessage(admin, input);
+  } catch (err) {
+    console.error("[webhooks/meta] inbox_messages insert failed:", err);
+    throw err;
   }
 }
 
@@ -387,19 +294,16 @@ async function ingestWhatsAppEntry(
 
   for (const change of changes) {
     if (!change || typeof change !== "object") {
-      console.log("[webhooks/meta] SKIP WhatsApp change inválido");
       continue;
     }
 
     const value = (change as { value?: Record<string, unknown> }).value;
     if (!value) {
-      console.log("[webhooks/meta] SKIP WhatsApp change sin value");
       continue;
     }
 
     const field = (change as { field?: string }).field;
     if (field && field !== "messages") {
-      console.log("[webhooks/meta] SKIP WhatsApp field distinto de messages:", field);
       continue;
     }
 
@@ -409,11 +313,6 @@ async function ingestWhatsAppEntry(
     const contacts = (value.contacts as Array<Record<string, unknown>>) ?? [];
 
     if (!phoneNumberId || messages.length === 0) {
-      console.log("[webhooks/meta] WhatsApp change sin mensajes:", {
-        phoneNumberId,
-        messageCount: messages.length,
-        field,
-      });
       continue;
     }
 
@@ -428,7 +327,6 @@ async function ingestWhatsAppEntry(
 
     for (const msg of messages) {
       if (!msg || typeof msg !== "object") {
-        console.log("[webhooks/meta] SKIP WhatsApp message inválido");
         continue;
       }
 
@@ -436,10 +334,6 @@ async function ingestWhatsAppEntry(
       const senderId = String(m.from ?? "");
       const platformMessageId = String(m.id ?? "");
       if (!senderId || !platformMessageId) {
-        console.log("[webhooks/meta] SKIP WhatsApp sin senderId o platformMessageId:", {
-          senderId,
-          platformMessageId,
-        });
         continue;
       }
 
@@ -449,14 +343,6 @@ async function ingestWhatsAppEntry(
       const profileName =
         (contactMeta?.profile as { name?: string } | undefined)?.name ?? null;
       const body = extractWhatsAppMessageText(m);
-
-      console.log("[webhooks/meta] mensaje WhatsApp:", {
-        integrationId: integration.id,
-        senderId,
-        platformMessageId,
-        body,
-        raw: m,
-      });
 
       try {
         await saveChannelMessage(admin, integration.id, senderId, body);
@@ -476,212 +362,6 @@ async function ingestWhatsAppEntry(
       } catch (err) {
         console.error("[webhooks/meta] error guardando mensaje WhatsApp:", err);
       }
-    }
-  }
-}
-
-async function ingestMessagingEntry(
-  admin: AdminClient,
-  entry: Record<string, unknown>,
-  object: string,
-): Promise<void> {
-  const provider: InboxProvider =
-    object === "instagram" ? "instagram" : "messenger";
-  const pageId = String(entry.id ?? "");
-  const messagingEvents = (entry.messaging as unknown[]) ?? [];
-
-  if (messagingEvents.length === 0) {
-    console.log("[webhooks/meta] entry sin eventos messaging:", { provider, pageId });
-  }
-
-  const integration =
-    provider === "messenger"
-      ? await findOrRepairMessengerIntegration(admin, pageId)
-      : await findIntegration(admin, provider, pageId);
-
-  if (!integration) {
-    console.warn("[webhooks/meta] SKIP razón:", {
-      provider,
-      object,
-      pageIdFromPayload: pageId,
-      messagingEventCount: messagingEvents.length,
-      condicion:
-        "!findIntegration / findOrRepairMessengerIntegration — no hay fila en channel_integrations",
-      solucion: `INSERT en channel_integrations con provider='${provider}' y external_account_id='${pageId}'`,
-    });
-    return;
-  }
-
-  for (const event of messagingEvents) {
-    if (!event || typeof event !== "object") {
-      console.log("[webhooks/meta] SKIP messaging event inválido");
-      continue;
-    }
-
-    const e = event as Record<string, unknown>;
-    const delivery = e.delivery as
-      | { mids?: string[]; watermark?: number }
-      | undefined;
-
-    if (delivery?.mids?.length) {
-      try {
-        await applyMetaDeliveryEvent(
-          admin,
-          integration.store_id,
-          delivery.mids,
-          e.timestamp ?? delivery.watermark,
-        );
-      } catch (err) {
-        console.error("[webhooks/meta] delivery update error:", err);
-      }
-      continue;
-    }
-
-    const read = e.read as { watermark?: number } | undefined;
-    if (read?.watermark) {
-      const senderId = String((e.sender as { id?: string })?.id ?? "");
-      try {
-        await applyMetaReadEvent(
-          admin,
-          integration.store_id,
-          integration.id,
-          senderId,
-          read.watermark,
-        );
-      } catch (err) {
-        console.error("[webhooks/meta] read update error:", err);
-      }
-      continue;
-    }
-
-    const message = e.message as Record<string, unknown> | undefined;
-    const postback = e.postback as
-      | { payload?: string; title?: string }
-      | undefined;
-
-    if (!message && postback) {
-      const senderId = String((e.sender as { id?: string })?.id ?? "");
-      const platformMessageId = `postback-${senderId}-${String(e.timestamp ?? Date.now())}`;
-      const body = postback.title ?? postback.payload ?? "[Postback]";
-
-      if (senderId) {
-        console.log("[webhooks/meta] postback Messenger/Instagram:", {
-          provider,
-          integrationId: integration.id,
-          senderId,
-          body,
-          raw: e,
-        });
-
-        try {
-          const contactProfile = await resolveMessagingContactProfile(
-            integration.id,
-            senderId,
-          );
-
-          await saveChannelMessage(admin, integration.id, senderId, body);
-          await saveInboxMessage(admin, {
-            storeId: integration.store_id,
-            integrationId: integration.id,
-            provider,
-            senderId,
-            platformMessageId,
-            body,
-            messageType: "text",
-            sentAt: metaTimestampToIso(e.timestamp),
-            contactDisplayName: contactProfile.contactDisplayName,
-            contactAvatarUrl: contactProfile.contactAvatarUrl,
-            rawPayload: e,
-          });
-        } catch (err) {
-          console.error(
-            `[webhooks/meta] error guardando postback ${provider}:`,
-            err,
-          );
-        }
-      }
-      continue;
-    }
-
-    if (!message) {
-      console.log("[webhooks/meta] SKIP razón:", {
-        provider,
-        pageId,
-        condicion: "!event.message — evento sin mensaje procesable",
-        evento: e,
-      });
-      continue;
-    }
-
-    if (message.is_echo === true) {
-      console.log("[webhooks/meta] SKIP echo saliente:", {
-        provider,
-        pageId,
-        mid: message.mid ?? message.id,
-      });
-      continue;
-    }
-
-    const senderId = String((e.sender as { id?: string })?.id ?? "");
-    const platformMessageId = String(message.mid ?? message.id ?? "");
-    if (!senderId || !platformMessageId) {
-      console.log("[webhooks/meta] SKIP razón:", {
-        provider,
-        pageId,
-        condicion: "!senderId || !platformMessageId",
-        senderId,
-        platformMessageId,
-        senderFromPayload: e.sender,
-        messageFromPayload: message,
-      });
-      continue;
-    }
-
-    const body =
-      typeof message.text === "string"
-        ? message.text
-        : typeof message.text === "object" &&
-            message.text !== null &&
-            typeof (message.text as { body?: string }).body === "string"
-          ? (message.text as { body: string }).body
-          : typeof (message.attachments as unknown[])?.length === "number"
-            ? "[Adjunto]"
-            : null;
-
-    console.log("[webhooks/meta] mensaje Messenger/Instagram:", {
-      provider,
-      integrationId: integration.id,
-      senderId,
-      platformMessageId,
-      body,
-      raw: e,
-    });
-
-    try {
-      const contactProfile = await resolveMessagingContactProfile(
-        integration.id,
-        senderId,
-      );
-
-      await saveChannelMessage(admin, integration.id, senderId, body);
-      await saveInboxMessage(admin, {
-        storeId: integration.store_id,
-        integrationId: integration.id,
-        provider,
-        senderId,
-        platformMessageId,
-        body,
-        messageType: body ? "text" : "unknown",
-        sentAt: metaTimestampToIso(e.timestamp),
-        contactDisplayName: contactProfile.contactDisplayName,
-        contactAvatarUrl: contactProfile.contactAvatarUrl,
-        rawPayload: e,
-      });
-    } catch (err) {
-      console.error(
-        `[webhooks/meta] error guardando mensaje ${provider}:`,
-        err,
-      );
     }
   }
 }

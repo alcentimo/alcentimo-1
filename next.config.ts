@@ -88,18 +88,7 @@ const nextConfig: NextConfig = {
     ];
   },
   async redirects() {
-    return [
-      {
-        source: "/api/integrations/mercadolibre/connect",
-        destination: "/api/auth/mercadolibre/connect",
-        permanent: false,
-      },
-      {
-        source: "/api/integrations/mercadolibre/callback",
-        destination: "/api/auth/mercadolibre/callback",
-        permanent: false,
-      },
-    ];
+    return [];
   },
 };
 

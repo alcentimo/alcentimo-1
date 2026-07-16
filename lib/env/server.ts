@@ -57,17 +57,6 @@ export function getMetaOAuthConfig() {
   };
 }
 
-export function getMercadoLibreOAuthConfig() {
-  return {
-    appId: optionalEnv("ML_APP_ID"),
-    appSecret: optionalEnv("ML_APP_SECRET"),
-    siteTld: optionalEnv("ML_SITE_TLD") ?? "com.ve",
-    isConfigured: Boolean(
-      optionalEnv("ML_APP_ID") && optionalEnv("ML_APP_SECRET"),
-    ),
-  };
-}
-
 export function isVercelDeployment(): boolean {
   return process.env.VERCEL === "1";
 }

@@ -19,11 +19,6 @@ declare namespace NodeJS {
     /** Alias legacy del verify token del webhook Meta. */
     META_WEBHOOK_VERIFY_TOKEN?: string;
 
-    /** MercadoLibre — solo servidor */
-    ML_APP_ID?: string;
-    ML_APP_SECRET?: string;
-    ML_SITE_TLD?: string;
-
     /** API de importación POS / ventas externas — solo servidor */
     API_SECRET_KEY?: string;
 

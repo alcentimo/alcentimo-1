@@ -81,9 +81,6 @@ const vars = {
     process.env.META_WEBHOOK_VERIFY_TOKEN ??
     local.META_WEBHOOK_VERIFY_TOKEN ??
     randomBytes(32).toString("hex"),
-  ML_APP_ID: process.env.ML_APP_ID ?? local.ML_APP_ID ?? PLACEHOLDER,
-  ML_APP_SECRET: process.env.ML_APP_SECRET ?? local.ML_APP_SECRET ?? PLACEHOLDER,
-  ML_SITE_TLD: process.env.ML_SITE_TLD ?? local.ML_SITE_TLD ?? "com.ve",
 };
 
 const required = new Set([
@@ -91,7 +88,6 @@ const required = new Set([
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "NEXT_PUBLIC_SITE_URL",
   "META_WEBHOOK_VERIFY_TOKEN",
-  "ML_SITE_TLD",
 ]);
 
 for (const [name, value] of Object.entries(vars)) {

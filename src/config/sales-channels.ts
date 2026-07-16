@@ -1,9 +1,6 @@
 import type { ChannelProviderKey } from "@/src/config/channel-integrations";
 
 export type SalesChannelKey =
-  | "mercado_libre"
-  | "instagram"
-  | "facebook"
   | "whatsapp"
   | "tienda_fisica"
   | "otro";
@@ -14,31 +11,10 @@ export interface SalesChannelDefinition {
   description: string;
   /** Valor persistido en ventas.canal_venta */
   dbValue: string;
-  logoProvider?: ChannelProviderKey | "facebook";
+  logoProvider?: ChannelProviderKey;
 }
 
 export const SALES_CHANNELS: SalesChannelDefinition[] = [
-  {
-    key: "mercado_libre",
-    label: "Mercado Libre",
-    description: "Ventas del marketplace",
-    dbValue: "Mercado Libre",
-    logoProvider: "mercadolibre",
-  },
-  {
-    key: "instagram",
-    label: "Instagram",
-    description: "DMs o pedidos por Instagram",
-    dbValue: "Instagram",
-    logoProvider: "instagram",
-  },
-  {
-    key: "facebook",
-    label: "Facebook",
-    description: "Messenger o pedidos por Facebook",
-    dbValue: "Facebook",
-    logoProvider: "facebook",
-  },
   {
     key: "whatsapp",
     label: "WhatsApp",

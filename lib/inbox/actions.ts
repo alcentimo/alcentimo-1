@@ -17,10 +17,7 @@ import {
   type ContactCrmSnapshot,
 } from "@/lib/inbox/contact-crm-data";
 import { getIntegrationAccessToken } from "@/lib/inbox/integration-token";
-import {
-  resolveMetaPageId,
-  sendMetaTextMessage,
-} from "@/lib/inbox/messenger-client";
+import { sendWhatsAppTextMessage } from "@/lib/inbox/whatsapp-client";
 import {
   getStoreInboxConversations,
   mapInboxMessageRowToChannelMessage,
@@ -191,7 +188,7 @@ export async function sendInboxMessage(
   }
 
   if (!conversation.integration_id) {
-    return { error: "Esta conversación no tiene integración de Meta vinculada." };
+    return { error: "Esta conversación no tiene integración de WhatsApp vinculada." };
   }
 
   const { data: integration, error: integrationError } = await supabase
@@ -206,14 +203,11 @@ export async function sendInboxMessage(
   }
 
   if (!integration?.is_active) {
-    return { error: "La integración de Meta no está activa." };
+    return { error: "La integración de WhatsApp no está activa." };
   }
 
-  if (
-    integration.provider !== "messenger" &&
-    integration.provider !== "instagram"
-  ) {
-    return { error: "Solo Messenger e Instagram admiten respuesta desde aquí." };
+  if (integration.provider !== "whatsapp") {
+    return { error: "Solo WhatsApp admite respuesta desde aquí." };
   }
 
   const contact = conversation.inbox_contacts as
@@ -225,28 +219,27 @@ export async function sendInboxMessage(
     : contact?.external_id;
 
   if (!recipientId?.trim()) {
-    return { error: "No se encontró el destinatario de Meta." };
+    return { error: "No se encontró el destinatario de WhatsApp." };
   }
 
   const accessToken = await getIntegrationAccessToken(integration.id);
   if (!accessToken) {
-    return { error: "Token de Meta no disponible. Reconecta la integración." };
+    return { error: "Token de WhatsApp no disponible. Reconecta la integración." };
   }
 
-  const pageId = resolveMetaPageId(
-    integration.provider as "messenger" | "instagram",
-    integration.external_account_id,
-    integration.config,
-  );
+  const config = (integration.config ?? {}) as Record<string, unknown>;
+  const phoneNumberId =
+    typeof config.phone_number_id === "string"
+      ? config.phone_number_id
+      : integration.external_account_id;
 
   let messageId: string;
   try {
-    const result = await sendMetaTextMessage({
-      pageId,
+    const result = await sendWhatsAppTextMessage({
+      phoneNumberId,
       accessToken,
-      recipientId: recipientId.trim(),
+      to: recipientId.trim(),
       body: trimmedBody,
-      provider: integration.provider as "messenger" | "instagram",
     });
     messageId = result.messageId;
   } catch (error) {
