@@ -14,7 +14,8 @@ export async function getStoreProductCount(storeId: string): Promise<number> {
     .from("products")
     .select("id", { count: "exact", head: true })
     .eq("store_id", storeId)
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("is_deleted", false);
 
   if (error) throw new Error(error.message);
   return count ?? 0;

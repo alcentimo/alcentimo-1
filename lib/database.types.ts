@@ -126,6 +126,7 @@ export interface Product {
   brand: string | null;
   tags: string[];
   is_active: boolean;
+  is_deleted: boolean;
   is_featured: boolean;
   metadata: Record<string, unknown>;
   stock: number;

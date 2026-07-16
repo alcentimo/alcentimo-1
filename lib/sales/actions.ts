@@ -73,6 +73,7 @@ export async function createSale(
     .eq("id", productoId)
     .eq("store_id", store.id)
     .eq("is_active", true)
+    .eq("is_deleted", false)
     .maybeSingle();
 
   if (productError || !product) {

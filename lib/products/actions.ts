@@ -181,6 +181,7 @@ export async function createProduct(
       .select("id")
       .eq("store_id", store.id)
       .eq("slug", candidate)
+      .eq("is_deleted", false)
       .maybeSingle();
     if (!taken) {
       productSlug = candidate;
@@ -311,6 +312,7 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     )
     .eq("id", productId)
     .eq("store_id", store.id)
+    .eq("is_deleted", false)
     .maybeSingle();
 
   if (productError || !product) return null;
@@ -600,17 +602,22 @@ export async function deleteProduct(productId: string): Promise<DeleteProductSta
 
   const { data: product, error: lookupError } = await supabase
     .from("products")
-    .select("id")
+    .select("id, is_deleted")
     .eq("id", productId)
     .eq("store_id", store.id)
     .maybeSingle();
 
   if (lookupError) return { error: lookupError.message };
   if (!product) return { error: "Producto no encontrado." };
+  if (product.is_deleted) return { success: true };
 
   const { error } = await supabase
     .from("products")
-    .delete()
+    .update({
+      is_deleted: true,
+      is_active: false,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", productId)
     .eq("store_id", store.id);
 
@@ -652,6 +659,7 @@ async function assertStoreProductVariant(
     .select("id")
     .eq("id", productId)
     .eq("store_id", storeId)
+    .eq("is_deleted", false)
     .maybeSingle();
 
   if (productError) return { error: productError.message };
@@ -820,6 +828,7 @@ export async function duplicateProduct(
     )
     .eq("id", productId)
     .eq("store_id", store.id)
+    .eq("is_deleted", false)
     .maybeSingle();
 
   if (sourceError) return { error: sourceError.message };
@@ -860,6 +869,7 @@ export async function duplicateProduct(
       .select("id")
       .eq("store_id", store.id)
       .eq("slug", candidate)
+      .eq("is_deleted", false)
       .maybeSingle();
     if (!taken) {
       productSlug = candidate;
