@@ -35,6 +35,10 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["sharp"],
   experimental: {
     optimizePackageImports: ["lucide-react", "react-icons"],
+    serverActions: {
+      // createProduct envía multipart/form-data con imagen (hasta ~12 MB en cliente).
+      bodySizeLimit: "10mb",
+    },
   },
   images: {
     formats: ["image/avif", "image/webp"],
