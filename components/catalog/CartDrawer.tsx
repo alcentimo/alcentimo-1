@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
+import { CheckoutStepper, type CheckoutStep } from "@/components/catalog/CheckoutStepper";
 import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { PaymentCheckoutDetails } from "@/components/payments/PaymentCheckoutDetails";
@@ -83,6 +84,7 @@ export function CartDrawer({
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponPending, startCouponTransition] = useTransition();
+  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(1);
 
   const paymentOptions = useMemo(
     () => buildPaymentOptions(purchaseInfo),
@@ -128,6 +130,12 @@ export function CartDrawer({
   }, [open]);
 
   useEffect(() => {
+    if (!open) {
+      setCheckoutStep(1);
+    }
+  }, [open]);
+
+  useEffect(() => {
     if (purchaseInfo.shipping.length === 1) {
       setSelectedShipping(purchaseInfo.shipping[0].key);
     }
@@ -151,6 +159,10 @@ export function CartDrawer({
       null
     );
   }, [purchaseInfo.payments, selectedPayment]);
+
+  const canProceedStep1 =
+    items.length > 0 &&
+    (purchaseInfo.shipping.length === 0 || Boolean(selectedShipping));
 
   const canCheckout =
     items.length > 0 &&
@@ -208,6 +220,16 @@ export function CartDrawer({
     setAppliedCoupon(null);
     setCouponInput("");
     setCouponError(null);
+  }
+
+  function handleFooterAction() {
+    if (checkoutStep === 1) {
+      if (!canProceedStep1) return;
+      setOrderError(null);
+      setCheckoutStep(2);
+      return;
+    }
+    void handleFinalizeOrder();
   }
 
   async function handleFinalizeOrder() {
@@ -309,297 +331,356 @@ export function CartDrawer({
           </div>
         ) : (
           <>
-            <ul className="store-cart-items">
-              {items.map((item) => {
-                const key = cartItemKey(item.product.product_id, item.variantId);
-                const itemEligible =
-                  activeCoupon != null &&
-                  isCartItemEligible(item.product.product_id, activeCoupon);
-                return (
-                  <li key={key} className="store-cart-item">
-                    <div className="store-cart-item-thumb">
-                      {item.product.thumb_url ? (
-                        <Image
-                          src={item.product.thumb_url}
-                          alt={item.product.product_name}
-                          fill
-                          sizes="72px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-base font-semibold text-zinc-400">
-                          {item.product.product_name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
+            <CheckoutStepper
+              step={checkoutStep}
+              step1Label="Productos y envío"
+              step2Label="Pago"
+            />
 
-                    <div className="store-cart-item-body">
-                      <div className="store-cart-item-top">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold leading-snug text-zinc-900">
-                            {item.product.product_name}
-                          </p>
-                          {item.variantName !== "Estándar" && (
-                            <p className="mt-0.5 truncate text-xs text-zinc-500">
-                              {item.variantName}
+            <div className="store-cart-body">
+              {checkoutStep === 1 ? (
+                <>
+                  <ul className="store-cart-items">
+                    {items.map((item) => {
+                      const key = cartItemKey(item.product.product_id, item.variantId);
+                      const itemEligible =
+                        activeCoupon != null &&
+                        isCartItemEligible(item.product.product_id, activeCoupon);
+                      return (
+                        <li key={key} className="store-cart-item">
+                          <div className="store-cart-item-thumb">
+                            {item.product.thumb_url ? (
+                              <Image
+                                src={item.product.thumb_url}
+                                alt={item.product.product_name}
+                                fill
+                                sizes="72px"
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-base font-semibold text-zinc-400">
+                                {item.product.product_name.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="store-cart-item-body">
+                            <div className="store-cart-item-top">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold leading-snug text-zinc-900">
+                                  {item.product.product_name}
+                                </p>
+                                {item.variantName !== "Estándar" && (
+                                  <p className="mt-0.5 truncate text-xs text-zinc-500">
+                                    {item.variantName}
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onRemove(item.product.product_id, item.variantId)
+                                }
+                                className="store-cart-remove-btn"
+                                aria-label={`Eliminar ${item.product.product_name} del carrito`}
+                              >
+                                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                              </button>
+                            </div>
+
+                            {activeCoupon && (
+                              <p
+                                className={`text-xs leading-relaxed ${
+                                  itemEligible ? "text-teal-700" : "text-zinc-400"
+                                }`}
+                              >
+                                {itemEligible
+                                  ? "Incluido en cupón"
+                                  : "Sin descuento de cupón"}
+                              </p>
+                            )}
+
+                            <p className="text-sm font-semibold tabular-nums text-zinc-900">
+                              {formatUsd(item.unitPriceUsd * item.quantity)}
                             </p>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onRemove(item.product.product_id, item.variantId)
-                          }
-                          className="store-cart-remove-btn"
-                          aria-label={`Eliminar ${item.product.product_name} del carrito`}
-                        >
-                          <Trash2 className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                      </div>
 
-                      {activeCoupon && (
-                        <p
-                          className={`text-xs leading-relaxed ${
-                            itemEligible ? "text-teal-700" : "text-zinc-400"
-                          }`}
-                        >
-                          {itemEligible ? "Incluido en cupón" : "Sin descuento de cupón"}
+                            <div className="store-cart-item-qty">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onUpdateQuantity(
+                                    item.product.product_id,
+                                    item.variantId,
+                                    Math.max(1, item.quantity - 1),
+                                  )
+                                }
+                                className="store-qty-btn"
+                                aria-label={`Reducir cantidad de ${item.product.product_name}`}
+                              >
+                                <Minus className="h-3.5 w-3.5" />
+                              </button>
+                              <span className="min-w-7 text-center text-sm font-medium tabular-nums text-zinc-800">
+                                {item.quantity}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onUpdateQuantity(
+                                    item.product.product_id,
+                                    item.variantId,
+                                    item.quantity + 1,
+                                  )
+                                }
+                                className="store-qty-btn"
+                                aria-label={`Aumentar cantidad de ${item.product.product_name}`}
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  <div className="store-cart-checkout-section px-7 pb-6">
+                    <div className="store-cart-field">
+                      <label htmlFor="cart-coupon" className="store-cart-label">
+                        Aplicar cupón
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          id="cart-coupon"
+                          type="text"
+                          value={couponInput}
+                          onChange={(e) =>
+                            setCouponInput(e.target.value.toUpperCase())
+                          }
+                          placeholder="Código de descuento"
+                          className="store-cart-select flex-1 uppercase"
+                          disabled={Boolean(appliedCoupon) || couponPending}
+                        />
+                        {appliedCoupon ? (
+                          <button
+                            type="button"
+                            onClick={handleRemoveCoupon}
+                            className="store-qty-btn px-3 text-xs font-medium"
+                          >
+                            Quitar
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleApplyCoupon}
+                            disabled={!couponInput.trim() || couponPending}
+                            className="store-qty-btn px-3 text-xs font-medium"
+                          >
+                            {couponPending ? "…" : "Aplicar"}
+                          </button>
+                        )}
+                      </div>
+                      {couponError && (
+                        <p className="mt-1 text-xs text-red-600">{couponError}</p>
+                      )}
+                      {appliedCoupon && activeCoupon && discountUsd > 0 && (
+                        <p className="mt-1 text-xs text-teal-700">
+                          Cupón {activeCoupon.code} aplicado (
+                          {couponSummaryLabel(activeCoupon)}
+                          {activeCoupon.isGlobal
+                            ? " · toda la tienda"
+                            : ` · ${activeCoupon.eligibleProductIds.length} producto(s)`}
+                          )
                         </p>
                       )}
-
-                      <p className="text-sm font-semibold tabular-nums text-zinc-900">
-                        {formatUsd(item.unitPriceUsd * item.quantity)}
-                      </p>
-
-                      <div className="store-cart-item-qty">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onUpdateQuantity(
-                              item.product.product_id,
-                              item.variantId,
-                              Math.max(1, item.quantity - 1),
-                            )
-                          }
-                          className="store-qty-btn"
-                          aria-label={`Reducir cantidad de ${item.product.product_name}`}
-                        >
-                          <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="min-w-7 text-center text-sm font-medium tabular-nums text-zinc-800">
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onUpdateQuantity(
-                              item.product.product_id,
-                              item.variantId,
-                              item.quantity + 1,
-                            )
-                          }
-                          className="store-qty-btn"
-                          aria-label={`Aumentar cantidad de ${item.product.product_name}`}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
 
-            <div className="store-cart-checkout">
-              <div className="store-cart-checkout-section">
-                <h3 className="store-cart-checkout-title">Información de compra</h3>
-
-                <div className="store-cart-field">
-                  <label htmlFor="cart-coupon" className="store-cart-label">
-                    Aplicar cupón
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      id="cart-coupon"
-                      type="text"
-                      value={couponInput}
-                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                      placeholder="Código de descuento"
-                      className="store-cart-select flex-1 uppercase"
-                      disabled={Boolean(appliedCoupon) || couponPending}
-                    />
-                    {appliedCoupon ? (
-                      <button
-                        type="button"
-                        onClick={handleRemoveCoupon}
-                        className="store-qty-btn px-3 text-xs font-medium"
-                      >
-                        Quitar
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleApplyCoupon}
-                        disabled={!couponInput.trim() || couponPending}
-                        className="store-qty-btn px-3 text-xs font-medium"
-                      >
-                        {couponPending ? "…" : "Aplicar"}
-                      </button>
+                    {purchaseInfo.shipping.length > 0 && (
+                      <div className="store-cart-shipping-block">
+                        <p className="store-cart-label">Método de envío</p>
+                        <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                          {purchaseInfo.shipping.map((option) => (
+                            <ShippingMethodCard
+                              key={option.key}
+                              carrierKey={option.key}
+                              details={option.details}
+                              description={option.description}
+                              estimatedTime={option.estimatedTime}
+                              selectable
+                              selected={selectedShipping === option.key}
+                              onSelect={() => setSelectedShipping(option.key)}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
-                  {couponError && (
-                    <p className="mt-1 text-xs text-red-600">{couponError}</p>
-                  )}
-                  {appliedCoupon && activeCoupon && discountUsd > 0 && (
-                    <p className="mt-1 text-xs text-teal-700">
-                      Cupón {activeCoupon.code} aplicado ({couponSummaryLabel(activeCoupon)}
-                      {activeCoupon.isGlobal
-                        ? " · toda la tienda"
-                        : ` · ${activeCoupon.eligibleProductIds.length} producto(s)`}
-                      )
+                </>
+              ) : (
+                <div className="store-cart-checkout-section px-7 py-6">
+                  {paymentOptions.length > 0 ? (
+                    <div className="store-cart-field">
+                      <p className="store-cart-label">Método de pago</p>
+                      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {paymentOptions.map((option) =>
+                          option.value === INSTALLMENTS_KEY ? (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => setSelectedPayment(option.value)}
+                              aria-pressed={selectedPayment === option.value}
+                              className={[
+                                "shipping-method-card relative flex w-full items-start gap-3 text-left",
+                                selectedPayment === option.value
+                                  ? "shipping-method-card-selected"
+                                  : "",
+                                "shipping-method-card-interactive",
+                              ].join(" ")}
+                            >
+                              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-violet-600 text-xs font-bold text-white">
+                                Cuotas
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold text-zinc-900">
+                                  {option.label}
+                                </p>
+                                <p className="mt-0.5 text-xs text-zinc-500">
+                                  Pago fraccionado según condiciones de la tienda.
+                                </p>
+                              </div>
+                              {selectedPayment === option.value && (
+                                <span
+                                  className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-teal-600 ring-2 ring-teal-100"
+                                  aria-hidden="true"
+                                />
+                              )}
+                            </button>
+                          ) : (
+                            <PaymentMethodCard
+                              key={option.value}
+                              methodKey={option.value as PaymentMethodKey}
+                              selectable
+                              selected={selectedPayment === option.value}
+                              onSelect={() => setSelectedPayment(option.value)}
+                            />
+                          ),
+                        )}
+                      </div>
+                      {selectedPaymentDetails && (
+                        <PaymentCheckoutDetails
+                          methodKey={selectedPaymentDetails.key}
+                          fields={selectedPaymentDetails.fields}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-zinc-500">
+                      No hay métodos de pago configurados. Confirma el pedido por
+                      WhatsApp.
                     </p>
                   )}
                 </div>
+              )}
+            </div>
 
-                {purchaseInfo.shipping.length > 0 && (
-                  <div className="store-cart-shipping-block">
-                    <p className="store-cart-label">Método de envío</p>
-                    <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                      {purchaseInfo.shipping.map((option) => (
-                        <ShippingMethodCard
-                          key={option.key}
-                          carrierKey={option.key}
-                          details={option.details}
-                          description={option.description}
-                          estimatedTime={option.estimatedTime}
-                          selectable
-                          selected={selectedShipping === option.key}
-                          onSelect={() => setSelectedShipping(option.key)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {paymentOptions.length > 0 && (
-                  <div className="store-cart-field">
-                    <p className="store-cart-label">Método de pago</p>
-                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {paymentOptions.map((option) =>
-                        option.value === INSTALLMENTS_KEY ? (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => setSelectedPayment(option.value)}
-                            aria-pressed={selectedPayment === option.value}
-                            className={[
-                              "shipping-method-card relative flex w-full items-start gap-3 text-left",
-                              selectedPayment === option.value
-                                ? "shipping-method-card-selected"
-                                : "",
-                              "shipping-method-card-interactive",
-                            ].join(" ")}
-                          >
-                            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-violet-600 text-xs font-bold text-white">
-                              Cuotas
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-zinc-900">
-                                {option.label}
-                              </p>
-                              <p className="mt-0.5 text-xs text-zinc-500">
-                                Pago fraccionado según condiciones de la tienda.
-                              </p>
-                            </div>
-                            {selectedPayment === option.value && (
-                              <span
-                                className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-teal-600 ring-2 ring-teal-100"
-                                aria-hidden="true"
-                              />
-                            )}
-                          </button>
-                        ) : (
-                          <PaymentMethodCard
-                            key={option.value}
-                            methodKey={option.value as PaymentMethodKey}
-                            selectable
-                            selected={selectedPayment === option.value}
-                            onSelect={() => setSelectedPayment(option.value)}
-                          />
-                        ),
-                      )}
-                    </div>
-                    {selectedPaymentDetails && (
-                      <PaymentCheckoutDetails
-                        methodKey={selectedPaymentDetails.key}
-                        fields={selectedPaymentDetails.fields}
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
+            <footer className="store-cart-footer safe-area-bottom">
+              {checkoutStep === 2 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOrderError(null);
+                    setCheckoutStep(1);
+                  }}
+                  className="checkout-footer-back"
+                >
+                  ← Volver a productos y envío
+                </button>
+              )}
 
               <div className="store-cart-summary space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Subtotal</span>
+                  <span className="text-sm text-zinc-500">
+                    {checkoutStep === 1 ? "Subtotal" : "Total"}
+                  </span>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-zinc-900">
-                      {formatUsd(subtotalUsd)}
+                      {formatUsd(checkoutStep === 1 ? subtotalUsd : totalUsd)}
                     </p>
-                    {showBsConversion && subtotalVes > 0 && (
-                      <p className="text-xs text-zinc-400">{formatVes(subtotalVes)}</p>
-                    )}
-                  </div>
-                </div>
-
-                {appliedCoupon && activeCoupon && discountUsd > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-teal-700">
-                      Descuento ({couponSummaryLabel(activeCoupon)})
-                    </span>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-teal-700">
-                        -{formatUsd(discountUsd)}
+                    {showBsConversion && (checkoutStep === 1 ? subtotalVes : totalVes) > 0 && (
+                      <p className="text-xs text-zinc-400">
+                        {formatVes(checkoutStep === 1 ? subtotalVes : totalVes)}
                       </p>
-                      {showBsConversion && discountVes > 0 && (
-                        <p className="text-xs text-teal-600">-{formatVes(discountVes)}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between border-t border-zinc-100 pt-2">
-                  <span className="text-sm font-medium text-zinc-700">Total</span>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-zinc-900">{formatUsd(totalUsd)}</p>
-                    {showBsConversion && totalVes > 0 && (
-                      <p className="text-xs text-zinc-400">{formatVes(totalVes)}</p>
                     )}
                   </div>
                 </div>
+
+                {checkoutStep === 2 &&
+                  appliedCoupon &&
+                  activeCoupon &&
+                  discountUsd > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-teal-700">
+                        Descuento ({couponSummaryLabel(activeCoupon)})
+                      </span>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-teal-700">
+                          -{formatUsd(discountUsd)}
+                        </p>
+                        {showBsConversion && discountVes > 0 && (
+                          <p className="text-xs text-teal-600">
+                            -{formatVes(discountVes)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
               </div>
 
               {orderError && <p className="store-cart-warning">{orderError}</p>}
 
-              {missingWhatsApp && (
+              {checkoutStep === 2 && missingWhatsApp && (
                 <p className="store-cart-warning">
                   La tienda aún no configuró un WhatsApp para recibir pedidos.
                 </p>
               )}
 
+              {checkoutStep === 1 &&
+                purchaseInfo.shipping.length > 0 &&
+                !selectedShipping && (
+                  <p className="store-cart-warning">
+                    Selecciona un método de envío para continuar.
+                  </p>
+                )}
+
+              {checkoutStep === 2 &&
+                paymentOptions.length > 0 &&
+                !selectedPayment && (
+                  <p className="store-cart-warning">
+                    Selecciona un método de pago para finalizar.
+                  </p>
+                )}
+
               <button
                 type="button"
-                onClick={handleFinalizeOrder}
-                disabled={!canCheckout && !processing}
+                onClick={handleFooterAction}
+                disabled={
+                  checkoutStep === 1
+                    ? !canProceedStep1
+                    : !canCheckout && !processing
+                }
                 className={
-                  canCheckout || processing
+                  (checkoutStep === 1 && canProceedStep1) ||
+                  (checkoutStep === 2 && (canCheckout || processing))
                     ? "store-whatsapp-btn"
                     : "store-whatsapp-btn-disabled"
                 }
               >
-                {processing ? "Procesando pedido…" : "Finalizar pedido por WhatsApp"}
+                {processing
+                  ? "Procesando pedido…"
+                  : checkoutStep === 1
+                    ? "Continuar"
+                    : "Finalizar pedido por WhatsApp"}
               </button>
-            </div>
+            </footer>
           </>
         )}
       </aside>
