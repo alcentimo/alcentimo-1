@@ -549,10 +549,83 @@ body {
 }
 
 .orders-mobile-card {
-  @apply cursor-pointer rounded-xl border border-zinc-200/80 bg-white p-3 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900/60;
+  @apply cursor-pointer rounded-xl border border-zinc-200/80 bg-white p-3.5 transition-colors hover:bg-zinc-50 active:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900/60 dark:active:bg-zinc-900;
   content-visibility: auto;
   contain-intrinsic-size: auto 8.5rem;
   contain: layout style paint;
+}
+
+.orders-ops-kpi-grid {
+  @apply grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4;
+}
+
+.orders-ops-kpi-card {
+  @apply rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.orders-ops-kpi-card-active {
+  @apply border-emerald-300 ring-1 ring-emerald-500/20 dark:border-emerald-700 dark:ring-emerald-500/30;
+}
+
+.orders-ops-kpi-card-warning {
+  @apply border-amber-200/90 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20;
+}
+
+.orders-ops-kpi-icon {
+  @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300;
+}
+
+.orders-ops-table-shell {
+  @apply overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.orders-ops-table {
+  @apply min-w-full text-left text-sm;
+}
+
+.orders-ops-table thead {
+  @apply border-b border-zinc-200 bg-zinc-50/80 text-[11px] uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50;
+}
+
+.orders-ops-table thead th {
+  @apply px-4 py-3 font-medium;
+}
+
+.orders-ops-row {
+  @apply cursor-pointer border-b border-zinc-100 bg-white transition-colors last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800/80 dark:bg-zinc-950 dark:hover:bg-zinc-900/60;
+}
+
+.orders-ops-cell {
+  @apply px-4 py-3.5 align-middle;
+}
+
+.orders-slideover-root {
+  @apply fixed inset-0 z-50;
+}
+
+.orders-slideover-backdrop {
+  @apply absolute inset-0 bg-zinc-900/40 backdrop-blur-[1px];
+}
+
+.orders-slideover-panel {
+  @apply absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-zinc-200/80 bg-white shadow-2xl safe-area-inset dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.orders-slideover-header {
+  @apply flex items-start gap-3 border-b border-zinc-200/80 px-4 py-4 dark:border-zinc-800;
+}
+
+.orders-slideover-body {
+  @apply flex-1 overflow-y-auto overscroll-contain px-4 py-4;
+  -webkit-overflow-scrolling: touch;
+}
+
+.orders-slideover-section {
+  @apply mb-5 rounded-xl border border-zinc-200/70 bg-zinc-50/40 p-4 dark:border-zinc-800 dark:bg-zinc-900/30;
+}
+
+.orders-slideover-label {
+  @apply text-xs font-semibold uppercase tracking-wide text-zinc-500;
 }
 
 .inventory-catalog-header {

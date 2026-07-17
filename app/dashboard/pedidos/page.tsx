@@ -42,19 +42,19 @@ export default async function PedidosPage() {
   return (
     <PageContainer as="div" className="py-6 sm:py-8">
       <header className="page-header">
-        <p className="section-label">Catálogo transaccional</p>
+        <p className="section-label">Centro de operaciones</p>
         <h1 className="page-header-title">Pedidos</h1>
         <p className="page-header-desc">
-          Central operativa de pedidos desde{" "}
+          Gestiona ventas, estados y clientes desde{" "}
           <Link
             href={`/c/${store.slug}`}
-            className="font-medium text-teal-700 hover:underline dark:text-teal-400"
+            className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
             target="_blank"
             rel="noopener noreferrer"
           >
             /c/{store.slug}
           </Link>
-          . Gestiona estados, contacta clientes y revisa comprobantes sin salir de Alcentimo.
+          . Toca un pedido para ver el detalle sin salir de la lista.
         </p>
       </header>
 

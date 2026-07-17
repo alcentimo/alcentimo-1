@@ -1,8 +1,9 @@
 "use client";
 
 import { memo, useCallback, useMemo, useState } from "react";
-import { MessageCircle } from "lucide-react";
+import { ChevronRight, MessageCircle } from "lucide-react";
 import { formatUsd } from "@/lib/format";
+import { computeOrdersKpis, isOrderToday } from "@/lib/orders/order-kpis";
 import { buildCustomerWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
 import type { CatalogOrder } from "@/lib/orders/types";
 import {
@@ -10,20 +11,28 @@ import {
   type OrderEstado,
   type OrderFilterId,
 } from "@/lib/orders/order-status";
-import { OrderStatusSelect } from "@/components/dashboard/orders/OrderStatusSelect";
-import { OrderDetailDialog } from "@/components/dashboard/orders/OrderDetailDialog";
+import { OrderEstadoBadge } from "@/components/dashboard/orders/OrderEstadoBadge";
+import { OrderDetailSlideOver } from "@/components/dashboard/orders/OrderDetailSlideOver";
+import { OrdersKpiRow } from "@/components/dashboard/orders/OrdersKpiRow";
 import { cn } from "@/lib/cn";
 
 const FILTER_TABS: { id: OrderFilterId; label: string }[] = [
   { id: "all", label: "Todos" },
-  { id: "pending", label: "Pendientes" },
-  { id: "completed", label: "Completados" },
+  { id: "pending", label: "Activos" },
+  { id: "completed", label: "Entregados" },
 ];
 
 function formatOrderDate(value: string): string {
   return new Intl.DateTimeFormat("es", {
     dateStyle: "medium",
     timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function formatOrderTime(value: string): string {
+  return new Intl.DateTimeFormat("es", {
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(new Date(value));
 }
 
@@ -40,16 +49,14 @@ interface OrdersPanelProps {
 const OrderWhatsAppLink = memo(function OrderWhatsAppLink({
   customerName,
   customerPhone,
-  compact = false,
 }: {
   customerName: string;
   customerPhone: string | null;
-  compact?: boolean;
 }) {
   const whatsappUrl = buildCustomerWhatsAppUrl(customerPhone);
 
   if (!whatsappUrl) {
-    return <span className="text-xs text-zinc-400">Sin teléfono</span>;
+    return <span className="text-xs text-zinc-400">—</span>;
   }
 
   return (
@@ -58,14 +65,10 @@ const OrderWhatsAppLink = memo(function OrderWhatsAppLink({
       target="_blank"
       rel="noopener noreferrer"
       onClick={(event) => event.stopPropagation()}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-teal-50 font-medium text-teal-800 transition-colors hover:bg-teal-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-300",
-        compact ? "px-2 py-1 text-[11px]" : "px-2.5 py-1.5 text-xs",
-      )}
+      className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg border border-emerald-200/80 bg-emerald-50 text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
       aria-label={`WhatsApp con ${customerName}`}
     >
-      <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-      WhatsApp
+      <MessageCircle className="h-4 w-4" aria-hidden="true" />
     </a>
   );
 });
@@ -73,43 +76,42 @@ const OrderWhatsAppLink = memo(function OrderWhatsAppLink({
 const OrderRow = memo(function OrderRow({
   order,
   onSelect,
-  onEstadoUpdated,
 }: {
   order: CatalogOrder;
   onSelect: (orderId: string) => void;
-  onEstadoUpdated: (orderId: string, estado: OrderEstado) => void;
 }) {
   return (
     <tr
-      className="cursor-pointer bg-white transition-colors hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900/60"
+      className="orders-ops-row group"
       onClick={() => onSelect(order.id)}
     >
-      <td className="px-4 py-3">
+      <td className="orders-ops-cell">
         <p className="font-medium text-zinc-900 dark:text-zinc-50">
           {order.customer_name}
         </p>
-        {order.customer_phone && (
-          <p className="mt-0.5 text-xs text-zinc-500">{order.customer_phone}</p>
-        )}
+        <p className="mt-0.5 line-clamp-1 text-xs text-zinc-500">
+          {summarizeItems(order)}
+        </p>
       </td>
-      <td className="max-w-xs px-4 py-3 text-zinc-600 dark:text-zinc-300">
-        <span className="line-clamp-2">{summarizeItems(order)}</span>
+      <td className="orders-ops-cell">
+        <OrderEstadoBadge estado={order.estado} />
       </td>
-      <td className="px-4 py-3 tabular-nums text-zinc-900 dark:text-zinc-50">
+      <td className="orders-ops-cell tabular-nums font-medium text-zinc-900 dark:text-zinc-50">
         {formatUsd(order.total_usd)}
       </td>
-      <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
-        <OrderStatusSelect
-          orderId={order.id}
-          estado={order.estado}
-          onEstadoUpdated={onEstadoUpdated}
-        />
+      <td className="orders-ops-cell hidden text-zinc-500 lg:table-cell">
+        {formatOrderDate(order.created_at)}
       </td>
-      <td className="px-4 py-3 text-zinc-500">{formatOrderDate(order.created_at)}</td>
-      <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
+      <td className="orders-ops-cell hidden sm:table-cell">
         <OrderWhatsAppLink
           customerName={order.customer_name}
           customerPhone={order.customer_phone}
+        />
+      </td>
+      <td className="orders-ops-cell w-8 text-zinc-400">
+        <ChevronRight
+          className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100"
+          aria-hidden="true"
         />
       </td>
     </tr>
@@ -119,11 +121,9 @@ const OrderRow = memo(function OrderRow({
 const OrderMobileCard = memo(function OrderMobileCard({
   order,
   onSelect,
-  onEstadoUpdated,
 }: {
   order: CatalogOrder;
   onSelect: (orderId: string) => void;
-  onEstadoUpdated: (orderId: string, estado: OrderEstado) => void;
 }) {
   return (
     <article
@@ -140,22 +140,22 @@ const OrderMobileCard = memo(function OrderMobileCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            {order.customer_name}
-          </p>
-          {order.customer_phone ? (
-            <p className="mt-0.5 truncate text-xs text-zinc-500">
-              {order.customer_phone}
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+              {order.customer_name}
             </p>
-          ) : null}
+            <OrderEstadoBadge estado={order.estado} />
+          </div>
           <p className="mt-1 text-[11px] text-zinc-500">
-            {formatOrderDate(order.created_at)}
+            {formatOrderTime(order.created_at)}
+            {order.customer_phone ? ` · ${order.customer_phone}` : ""}
           </p>
         </div>
         <div className="shrink-0 text-right">
           <p className="text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
             {formatUsd(order.total_usd)}
           </p>
+          <ChevronRight className="ml-auto mt-1 h-4 w-4 text-zinc-400" aria-hidden="true" />
         </div>
       </div>
 
@@ -164,19 +164,12 @@ const OrderMobileCard = memo(function OrderMobileCard({
       </p>
 
       <div
-        className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800"
+        className="mt-3 flex items-center justify-end border-t border-zinc-100 pt-3 dark:border-zinc-800"
         onClick={(event) => event.stopPropagation()}
       >
-        <OrderStatusSelect
-          orderId={order.id}
-          estado={order.estado}
-          onEstadoUpdated={onEstadoUpdated}
-          className="max-w-full min-w-0 flex-1"
-        />
         <OrderWhatsAppLink
           customerName={order.customer_name}
           customerPhone={order.customer_phone}
-          compact
         />
       </div>
     </article>
@@ -187,6 +180,8 @@ export function OrdersPanel({ orders: initialOrders }: OrdersPanelProps) {
   const [orders, setOrders] = useState(initialOrders);
   const [filter, setFilter] = useState<OrderFilterId>("all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+  const kpis = useMemo(() => computeOrdersKpis(orders), [orders]);
 
   const handleEstadoUpdated = useCallback((orderId: string, estado: OrderEstado) => {
     setOrders((current) =>
@@ -200,34 +195,17 @@ export function OrdersPanel({ orders: initialOrders }: OrdersPanelProps) {
     setSelectedOrderId(orderId);
   }, []);
 
-  const filteredOrders = useMemo(
-    () => orders.filter((order) => matchesOrderFilter(order.estado, filter)),
-    [orders, filter],
-  );
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      if (filter === "today") return isOrderToday(order);
+      return matchesOrderFilter(order.estado, filter);
+    });
+  }, [orders, filter]);
 
   const selectedOrder = useMemo(
     () => orders.find((order) => order.id === selectedOrderId) ?? null,
     [orders, selectedOrderId],
   );
-
-  const mobileOrderList = useMemo(() => {
-    if (filteredOrders.length === 0) {
-      return (
-        <p className="py-8 text-center text-sm text-zinc-500">
-          No hay pedidos en este filtro.
-        </p>
-      );
-    }
-
-    return filteredOrders.map((order) => (
-      <OrderMobileCard
-        key={order.id}
-        order={order}
-        onSelect={handleSelectOrder}
-        onEstadoUpdated={handleEstadoUpdated}
-      />
-    ));
-  }, [filteredOrders, handleSelectOrder, handleEstadoUpdated]);
 
   if (initialOrders.length === 0) {
     return (
@@ -248,7 +226,13 @@ export function OrdersPanel({ orders: initialOrders }: OrdersPanelProps) {
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <OrdersKpiRow
+        kpis={kpis}
+        activeFilter={filter}
+        onFilterChange={setFilter}
+      />
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         {FILTER_TABS.map((tab) => {
           const isActive = filter === tab.id;
           return (
@@ -257,9 +241,9 @@ export function OrdersPanel({ orders: initialOrders }: OrdersPanelProps) {
               type="button"
               onClick={() => setFilter(tab.id)}
               className={cn(
-                "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
+                "min-h-9 rounded-full border px-3.5 text-xs font-medium transition-colors",
                 isActive
-                  ? "border-teal-600 bg-teal-600 text-white"
+                  ? "border-emerald-600 bg-emerald-600 text-white"
                   : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300",
               )}
             >
@@ -267,35 +251,57 @@ export function OrdersPanel({ orders: initialOrders }: OrdersPanelProps) {
             </button>
           );
         })}
+        {(filter === "today" || filter === "dispatch") && (
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            className="text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+          >
+            Ver todos
+          </button>
+        )}
         <span className="ml-auto text-xs text-zinc-500">
           {filteredOrders.length} pedido{filteredOrders.length !== 1 ? "s" : ""}
         </span>
       </div>
 
-      <div className="card-panel overflow-hidden p-0">
+      <div className="orders-ops-table-shell mt-4">
         <div className="orders-mobile-list" aria-label="Lista de pedidos">
-          {mobileOrderList}
+          {filteredOrders.length === 0 ? (
+            <p className="py-8 text-center text-sm text-zinc-500">
+              No hay pedidos en este filtro.
+            </p>
+          ) : (
+            filteredOrders.map((order) => (
+              <OrderMobileCard
+                key={order.id}
+                order={order}
+                onSelect={handleSelectOrder}
+              />
+            ))
+          )}
         </div>
 
         <div className="hidden overflow-x-auto md:block">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50">
+          <table className="orders-ops-table">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Cliente</th>
-                <th className="px-4 py-3 font-medium">Productos</th>
-                <th className="px-4 py-3 font-medium">Total</th>
-                <th className="px-4 py-3 font-medium">Estado</th>
-                <th className="px-4 py-3 font-medium">Fecha</th>
-                <th className="px-4 py-3 font-medium">Acciones</th>
+                <th>Cliente</th>
+                <th>Estado</th>
+                <th>Total</th>
+                <th className="hidden lg:table-cell">Fecha</th>
+                <th className="hidden sm:table-cell">
+                  <span className="sr-only">WhatsApp</span>
+                </th>
+                <th className="w-8">
+                  <span className="sr-only">Ver</span>
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <tbody>
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-sm text-zinc-500"
-                  >
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-zinc-500">
                     No hay pedidos en este filtro.
                   </td>
                 </tr>
@@ -305,7 +311,6 @@ export function OrdersPanel({ orders: initialOrders }: OrdersPanelProps) {
                     key={order.id}
                     order={order}
                     onSelect={handleSelectOrder}
-                    onEstadoUpdated={handleEstadoUpdated}
                   />
                 ))
               )}
@@ -314,12 +319,10 @@ export function OrdersPanel({ orders: initialOrders }: OrdersPanelProps) {
         </div>
       </div>
 
-      <OrderDetailDialog
+      <OrderDetailSlideOver
         order={selectedOrder}
         open={Boolean(selectedOrder)}
-        onOpenChange={(open) => {
-          if (!open) setSelectedOrderId(null);
-        }}
+        onClose={() => setSelectedOrderId(null)}
         onEstadoUpdated={handleEstadoUpdated}
       />
     </>

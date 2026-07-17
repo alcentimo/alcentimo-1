@@ -33,7 +33,15 @@ export const ORDER_ESTADO_BADGE_CLASS: Record<OrderEstado, string> = {
     "border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-400",
 };
 
-export type OrderFilterId = "all" | "pending" | "completed";
+export type OrderFilterId = "all" | "today" | "dispatch" | "pending" | "completed";
+
+export function isDispatchPendingEstado(estado: OrderEstado): boolean {
+  return (
+    estado === "pendiente" ||
+    estado === "verificando" ||
+    estado === "en_preparacion"
+  );
+}
 
 export function isValidOrderEstado(value: string): value is OrderEstado {
   return (ORDER_ESTADOS as readonly string[]).includes(value);
@@ -51,7 +59,8 @@ export function matchesOrderFilter(
   estado: OrderEstado,
   filter: OrderFilterId,
 ): boolean {
-  if (filter === "all") return true;
+  if (filter === "all" || filter === "today") return true;
+  if (filter === "dispatch") return isDispatchPendingEstado(estado);
   if (filter === "pending") return isPendingOrderEstado(estado);
   return isCompletedOrderEstado(estado);
 }
