@@ -608,7 +608,9 @@ body {
 }
 
 .orders-slideover-panel {
-  @apply absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-zinc-200/80 bg-white shadow-2xl safe-area-inset dark:border-zinc-800 dark:bg-zinc-950;
+  @apply absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-zinc-200/80 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950;
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
 }
 
 .orders-slideover-header {
