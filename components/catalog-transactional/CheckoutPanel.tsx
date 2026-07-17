@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
@@ -10,6 +11,7 @@ import { PaymentCheckoutDetails } from "@/components/payments/PaymentCheckoutDet
 import { cartItemKey } from "@/lib/catalog/cart-types";
 import { formatUsd } from "@/lib/format";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
+import { loadCustomerCheckoutContext } from "@/lib/customers/checkout-actions";
 import { submitTransactionalOrder } from "@/lib/orders/actions";
 import type { SubmitOrderLineInput } from "@/lib/orders/types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
@@ -21,6 +23,11 @@ interface CheckoutPanelProps {
   purchaseInfo: PublicPurchaseInfo;
   whatsappConfigured: boolean;
   onClose: () => void;
+}
+
+interface CustomerCheckoutProfile {
+  displayName: string;
+  phone: string;
 }
 
 function pickDefaultPaymentKey(
@@ -40,6 +47,8 @@ export function CheckoutPanel({
   const { items, subtotalUsd, updateQuantity, removeItem, clearCart } =
     useCart();
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(1);
+  const [customerProfile, setCustomerProfile] =
+    useState<CustomerCheckoutProfile | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [selectedShipping, setSelectedShipping] = useState("");
@@ -54,6 +63,27 @@ export function CheckoutPanel({
     }
     setSelectedPayment(pickDefaultPaymentKey(purchaseInfo.payments));
   }, [purchaseInfo.payments, purchaseInfo.shipping]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void loadCustomerCheckoutContext(storeSlug).then((context) => {
+      if (cancelled) return;
+
+      const name = context.displayName?.trim() ?? "";
+      const phone = context.phone?.trim() ?? "";
+
+      if (context.isCustomer && name.length >= 2 && phone.length >= 10) {
+        setCustomerProfile({ displayName: name, phone });
+        setCustomerName(name);
+        setCustomerPhone(phone);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [storeSlug]);
 
   const selectedPaymentDetails = useMemo(() => {
     if (!selectedPayment) return null;
@@ -87,10 +117,13 @@ export function CheckoutPanel({
     items.length > 0 &&
     (purchaseInfo.shipping.length === 0 || Boolean(selectedShipping));
 
+  const hasCustomerData = customerProfile
+    ? true
+    : customerName.trim().length >= 2 && customerPhone.trim().length >= 10;
+
   const canSubmitStep2 =
     items.length > 0 &&
-    customerName.trim().length >= 2 &&
-    customerPhone.trim().length >= 10 &&
+    hasCustomerData &&
     Boolean(proofFile) &&
     (purchaseInfo.shipping.length === 0 || Boolean(selectedShipping)) &&
     (purchaseInfo.payments.length === 0 || Boolean(selectedPayment)) &&
@@ -118,10 +151,21 @@ export function CheckoutPanel({
       return;
     }
 
+    if (!hasCustomerData) {
+      setError("Indica tu nombre y teléfono para continuar.");
+      return;
+    }
+
     const formData = new FormData();
     formData.set("storeSlug", storeSlug);
-    formData.set("customerName", customerName.trim());
-    formData.set("customerPhone", customerPhone.trim());
+    formData.set(
+      "customerName",
+      customerProfile?.displayName ?? customerName.trim(),
+    );
+    formData.set(
+      "customerPhone",
+      customerProfile?.phone ?? customerPhone.trim(),
+    );
     formData.set("items", JSON.stringify(orderLines));
     formData.set("paymentProof", proofFile);
     if (selectedShipping) formData.set("shippingMethod", selectedShipping);
@@ -137,6 +181,9 @@ export function CheckoutPanel({
 
       clearCart();
       setCheckoutStep(1);
+      setCustomerProfile(null);
+      setCustomerName("");
+      setCustomerPhone("");
       onClose();
 
       if (result.whatsappUrl) {
@@ -329,35 +376,59 @@ export function CheckoutPanel({
                   )}
                 </div>
 
+                {customerProfile ? (
+                  <div className="txn-checkout-customer-card">
+                    <p className="txn-checkout-section-title">Tus datos</p>
+                    <dl className="txn-checkout-customer-dl">
+                      <div>
+                        <dt>Nombre</dt>
+                        <dd>{customerProfile.displayName}</dd>
+                      </div>
+                      <div>
+                        <dt>Teléfono</dt>
+                        <dd>{customerProfile.phone}</dd>
+                      </div>
+                    </dl>
+                    <Link
+                      href={`/c/${storeSlug}/cuenta`}
+                      className="txn-checkout-customer-link"
+                    >
+                      Editar en Mi cuenta
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="txn-checkout-form">
+                    <label className="txn-field">
+                      <span>Nombre</span>
+                      <input
+                        type="text"
+                        required
+                        minLength={2}
+                        value={customerName}
+                        onChange={(event) => setCustomerName(event.target.value)}
+                        placeholder="Tu nombre completo"
+                        className="txn-input"
+                      />
+                    </label>
+
+                    <label className="txn-field">
+                      <span>Teléfono / WhatsApp</span>
+                      <input
+                        type="tel"
+                        required
+                        inputMode="tel"
+                        autoComplete="tel"
+                        minLength={10}
+                        value={customerPhone}
+                        onChange={(event) => setCustomerPhone(event.target.value)}
+                        placeholder="Ej: 0414-1234567"
+                        className="txn-input"
+                      />
+                    </label>
+                  </div>
+                )}
+
                 <div className="txn-checkout-form">
-                  <label className="txn-field">
-                    <span>Nombre</span>
-                    <input
-                      type="text"
-                      required
-                      minLength={2}
-                      value={customerName}
-                      onChange={(event) => setCustomerName(event.target.value)}
-                      placeholder="Tu nombre completo"
-                      className="txn-input"
-                    />
-                  </label>
-
-                  <label className="txn-field">
-                    <span>Teléfono / WhatsApp</span>
-                    <input
-                      type="tel"
-                      required
-                      inputMode="tel"
-                      autoComplete="tel"
-                      minLength={10}
-                      value={customerPhone}
-                      onChange={(event) => setCustomerPhone(event.target.value)}
-                      placeholder="Ej: 0414-1234567"
-                      className="txn-input"
-                    />
-                  </label>
-
                   <label className="txn-field">
                     <span>Comprobante de pago</span>
                     <input
@@ -412,6 +483,19 @@ export function CheckoutPanel({
                   ? "Continuar"
                   : "Finalizar pedido por WhatsApp"}
             </button>
+
+            {checkoutStep === 2 && !customerProfile && (
+              <p className="txn-checkout-hint">
+                ¿Ya tienes cuenta?{" "}
+                <Link
+                  href={`/register?store=${encodeURIComponent(storeSlug)}&next=${encodeURIComponent(`/c/${storeSlug}?checkout=1`)}`}
+                  className="link-brand"
+                >
+                  Inicia sesión
+                </Link>{" "}
+                para autocompletar tus datos la próxima vez.
+              </p>
+            )}
 
             {checkoutStep === 2 && !whatsappConfigured && (
               <p className="txn-checkout-hint">

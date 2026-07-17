@@ -3043,6 +3043,26 @@ body {
   @apply space-y-4 px-6 py-5;
 }
 
+.txn-checkout-customer-card {
+  @apply mx-6 mb-2 rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-4 py-4 dark:border-zinc-800 dark:bg-zinc-900/40;
+}
+
+.txn-checkout-customer-dl {
+  @apply mt-3 space-y-2 text-sm;
+}
+
+.txn-checkout-customer-dl dt {
+  @apply text-xs font-medium uppercase tracking-wide text-zinc-500;
+}
+
+.txn-checkout-customer-dl dd {
+  @apply font-medium text-zinc-900 dark:text-zinc-50;
+}
+
+.txn-checkout-customer-link {
+  @apply mt-3 inline-block text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400;
+}
+
 .txn-field {
   @apply flex flex-col gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-200;
 }

@@ -9,9 +9,16 @@ export const revalidate = 0;
 
 interface CatalogPageProps {
   params: Promise<{ store_slug: string }>;
+  searchParams: Promise<{ checkout?: string }>;
 }
 
-async function CatalogContent({ storeSlug }: { storeSlug: string }) {
+async function CatalogContent({
+  storeSlug,
+  openCheckoutInitially,
+}: {
+  storeSlug: string;
+  openCheckoutInitially: boolean;
+}) {
   const data = await getPublicCatalogPageData(storeSlug);
   if (!data) notFound();
 
@@ -27,6 +34,7 @@ async function CatalogContent({ storeSlug }: { storeSlug: string }) {
         purchaseInfo={purchaseInfo}
         catalogDesign={catalogDesign}
         catalogCurrency={catalogCurrency}
+        openCheckoutInitially={openCheckoutInitially}
       />
     </CartProvider>
   );
@@ -34,8 +42,11 @@ async function CatalogContent({ storeSlug }: { storeSlug: string }) {
 
 export default async function TransactionalCatalogPage({
   params,
+  searchParams,
 }: CatalogPageProps) {
   const { store_slug: storeSlug } = await params;
+  const query = await searchParams;
+  const openCheckoutInitially = query.checkout === "1";
 
   return (
     <Suspense
@@ -43,7 +54,10 @@ export default async function TransactionalCatalogPage({
         <div className="txn-catalog-loading">Cargando catálogo…</div>
       }
     >
-      <CatalogContent storeSlug={storeSlug} />
+      <CatalogContent
+        storeSlug={storeSlug}
+        openCheckoutInitially={openCheckoutInitially}
+      />
     </Suspense>
   );
 }

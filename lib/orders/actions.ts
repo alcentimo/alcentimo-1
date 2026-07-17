@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveOrderCustomerDetails } from "@/lib/customers/get-customer-checkout-context";
 import { getStoreBySlug } from "@/lib/stores";
 import { buildTransactionalOrderWhatsAppMessage } from "@/lib/whatsapp-formatter";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
@@ -38,8 +39,8 @@ export async function submitTransactionalOrder(
   formData: FormData,
 ): Promise<SubmitTransactionalOrderResult> {
   const storeSlug = String(formData.get("storeSlug") ?? "").trim();
-  const customerName = String(formData.get("customerName") ?? "").trim();
-  const customerPhone = String(formData.get("customerPhone") ?? "").trim();
+  const customerNameRaw = String(formData.get("customerName") ?? "").trim();
+  const customerPhoneRaw = String(formData.get("customerPhone") ?? "").trim();
   const itemsRaw = String(formData.get("items") ?? "[]");
   const proof = formData.get("paymentProof");
   const paymentMethodRaw = String(formData.get("paymentMethod") ?? "").trim();
@@ -47,19 +48,6 @@ export async function submitTransactionalOrder(
 
   if (!storeSlug) {
     return { error: "Tienda no válida." };
-  }
-
-  if (!customerName || customerName.length < 2) {
-    return { error: "Indica tu nombre para el pedido." };
-  }
-
-  const normalizedPhone = normalizeWhatsAppPhone(customerPhone);
-  if (!normalizedPhone) {
-    return { error: "Indica un teléfono válido (mínimo 10 dígitos)." };
-  }
-
-  if (!(proof instanceof File) || proof.size === 0) {
-    return { error: "Adjunta el comprobante de pago." };
   }
 
   let lines: SubmitOrderLineInput[];
@@ -76,6 +64,24 @@ export async function submitTransactionalOrder(
   const store = await getStoreBySlug(storeSlug);
   if (!store) {
     return { error: "Tienda no encontrada." };
+  }
+
+  const customerResult = await resolveOrderCustomerDetails(store.id, {
+    customerName: customerNameRaw,
+    customerPhone: customerPhoneRaw,
+  });
+  if (!customerResult.ok) {
+    return { error: customerResult.error };
+  }
+
+  const { customerUserId, customerName, customerPhone } = customerResult;
+  const normalizedPhone = normalizeWhatsAppPhone(customerPhone);
+  if (!normalizedPhone) {
+    return { error: "Indica un teléfono válido (mínimo 10 dígitos)." };
+  }
+
+  if (!(proof instanceof File) || proof.size === 0) {
+    return { error: "Adjunta el comprobante de pago." };
   }
 
   const orderItems = buildOrderItems(lines);
@@ -96,6 +102,7 @@ export async function submitTransactionalOrder(
   const { error: insertError } = await admin.from("orders").insert({
     id: orderId,
     store_id: store.id,
+    customer_user_id: customerUserId,
     customer_name: customerName,
     customer_phone: customerPhone,
     items: orderItems,

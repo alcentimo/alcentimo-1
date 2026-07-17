@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { ShoppingBag } from "lucide-react";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
@@ -22,6 +22,7 @@ interface TransactionalCatalogProps {
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
   catalogCurrency: CatalogCurrencySettings;
+  openCheckoutInitially?: boolean;
 }
 
 function getStoreInitials(name: string): string {
@@ -38,11 +39,18 @@ export function TransactionalCatalog({
   purchaseInfo,
   catalogDesign,
   catalogCurrency,
+  openCheckoutInitially = false,
 }: TransactionalCatalogProps) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
   const { addItem, itemCount } = useCart();
-  const [cartOpen, setCartOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(openCheckoutInitially);
+
+  useEffect(() => {
+    if (openCheckoutInitially) {
+      setCartOpen(true);
+    }
+  }, [openCheckoutInitially]);
 
   const availableProducts = useMemo(
     () => products.filter((product) => !isProductOutOfStock(product)),
