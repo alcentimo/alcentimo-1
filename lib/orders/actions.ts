@@ -13,6 +13,7 @@ import { getShippingMethod } from "@/src/config/shipping-methods";
 import type { PaymentMethodKey, ShippingCarrierKey } from "@/lib/store-settings/types";
 import { uploadOrderPaymentProof } from "@/lib/orders/storage";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
+import { reserveOrderInventory } from "@/lib/orders/order-inventory";
 import type { OrderLineItem, SubmitOrderLineInput } from "@/lib/orders/types";
 
 export interface SubmitTransactionalOrderResult {
@@ -107,6 +108,12 @@ export async function submitTransactionalOrder(
     return { error: insertError.message };
   }
 
+  const reserveResult = await reserveOrderInventory(admin, orderId);
+  if (reserveResult.error) {
+    await admin.from("orders").delete().eq("id", orderId);
+    return { error: reserveResult.error };
+  }
+
   const settings = await getPublicStoreSettingsConfig(store.id);
   const purchaseInfo = buildPublicPurchaseInfo(settings);
 
@@ -132,6 +139,8 @@ export async function submitTransactionalOrder(
   revalidatePath(`/c/${storeSlug}`);
   revalidatePath("/dashboard/pedidos");
   revalidatePath("/dashboard/analiticas");
+  revalidatePath("/dashboard/catalogo");
+  revalidatePath("/dashboard/inventario");
   revalidatePath(`/pedidos/${orderId}`);
 
   return {
