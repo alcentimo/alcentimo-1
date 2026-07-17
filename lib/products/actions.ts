@@ -640,8 +640,8 @@ export async function fetchInventoryProducts(): Promise<{
   }
 
   const { getStoreInventory } = await import("@/lib/inventory");
-  const { products } = await getStoreInventory(auth.store.slug);
-  return { products };
+  const { products, inventoryError } = await getStoreInventory(auth.store.slug);
+  return { products, error: inventoryError };
 }
 
 export type InventoryActionState = {

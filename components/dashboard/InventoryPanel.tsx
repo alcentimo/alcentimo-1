@@ -443,6 +443,7 @@ export function InventoryPanel({
   const [exportingPdf, startExportPdf] = useTransition();
   const [exportingCsv, startExportCsv] = useTransition();
   const [exportError, setExportError] = useState<string | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfPreviewBase64, setPdfPreviewBase64] = useState<string | null>(null);
@@ -480,14 +481,25 @@ export function InventoryPanel({
     return map;
   }, [products]);
 
+  const applyInventoryRefresh = useCallback(
+    (result: Awaited<ReturnType<typeof fetchInventoryProducts>>) => {
+      if (result.error) {
+        setRefreshError(result.error);
+        return false;
+      }
+      setRefreshError(null);
+      setProducts(result.products);
+      return true;
+    },
+    [],
+  );
+
   const refreshProducts = useCallback(() => {
     startRefresh(async () => {
       const result = await fetchInventoryProducts();
-      if (!result.error) {
-        setProducts(result.products);
-      }
+      applyInventoryRefresh(result);
     });
-  }, []);
+  }, [applyInventoryRefresh]);
 
   const handleProductSaved = useCallback(
     (result?: PublishedProductResult) => {
@@ -547,11 +559,11 @@ export function InventoryPanel({
         );
       } else {
         const refreshed = await fetchInventoryProducts();
-        if (!refreshed.error) setProducts(refreshed.products);
+        applyInventoryRefresh(refreshed);
       }
       setAdjustingProductId(null);
     });
-  }, []);
+  }, [applyInventoryRefresh]);
 
   const handleExportExcel = useCallback(() => {
     startExport(async () => {
@@ -838,6 +850,12 @@ export function InventoryPanel({
           </DropdownMenu>
         </div>
       </div>
+
+      {refreshError && (
+        <p className="mb-3 text-xs text-red-600 dark:text-red-400" role="alert">
+          {refreshError}
+        </p>
+      )}
 
       {exportError && (
         <p className="mb-3 text-xs text-red-600 dark:text-red-400" role="alert">

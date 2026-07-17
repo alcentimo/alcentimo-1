@@ -26,29 +26,46 @@ function normalizeCatalogItem(row: CatalogListItem): CatalogListItem {
 export interface StoreInventoryData {
   products: CatalogListItem[];
   exchangeRate: ExchangeRate | null;
+  /** Set when the inventory query failed but was handled without throwing. */
+  inventoryError?: string;
 }
 
 /** Inventario del dashboard — productos de la tienda autenticada. */
 export async function getStoreInventory(
   storeSlug: string,
 ): Promise<StoreInventoryData> {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  const [productsResult, exchangeRate] = await Promise.all([
-    supabase
-      .from("catalog_list_view")
-      .select("*")
-      .eq("store_slug", storeSlug)
-      .order("updated_at", { ascending: false }),
-    getCurrentExchangeRate(),
-  ]);
+    const [productsResult, exchangeRate] = await Promise.all([
+      supabase
+        .from("catalog_list_view")
+        .select("*")
+        .eq("store_slug", storeSlug)
+        .order("updated_at", { ascending: false }),
+      getCurrentExchangeRate().catch(() => null),
+    ]);
 
-  if (productsResult.error) {
-    throw new Error(productsResult.error.message);
+    if (productsResult.error) {
+      console.error(
+        "[getStoreInventory] catalog_list_view:",
+        productsResult.error.message,
+      );
+      return {
+        products: [],
+        exchangeRate,
+        inventoryError: productsResult.error.message,
+      };
+    }
+
+    return {
+      products: (productsResult.data ?? []).map(normalizeCatalogItem),
+      exchangeRate,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Error al cargar inventario.";
+    console.error("[getStoreInventory]", message);
+    return { products: [], exchangeRate: null, inventoryError: message };
   }
-
-  return {
-    products: (productsResult.data ?? []).map(normalizeCatalogItem),
-    exchangeRate,
-  };
 }
