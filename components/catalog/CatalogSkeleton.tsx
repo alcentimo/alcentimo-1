@@ -10,14 +10,18 @@ function ProductCardSkeleton() {
   return (
     <article className="store-product-card h-full">
       <SkeletonBlock className="store-product-media aspect-[4/5] w-full shrink-0 rounded-none" />
-      <div className="store-product-body">
-        <SkeletonBlock className="store-product-slot-meta h-[var(--pc-meta-min-h)] w-16" />
-        <SkeletonBlock className="store-product-slot-title h-[var(--pc-title-min-h)] w-full" />
-        <SkeletonBlock className="store-product-slot-desc h-[var(--pc-desc-min-h)] w-3/4" />
-        <SkeletonBlock className="store-product-slot-variant h-[var(--pc-variant-min-h)] w-full" />
-        <div aria-hidden="true" />
-        <SkeletonBlock className="store-product-slot-pricing h-[var(--pc-price-min-h)] w-24" />
-        <SkeletonBlock className="store-product-slot-action h-[var(--pc-action-min-h)] w-full sm:hidden" />
+      <div className="store-product-content">
+        <div className="store-product-body">
+          <SkeletonBlock className="store-product-slot-meta h-[var(--pc-meta-min-h)] w-16" />
+          <SkeletonBlock className="store-product-slot-title h-[var(--pc-title-min-h)] w-full" />
+          <SkeletonBlock className="store-product-slot-desc h-[var(--pc-desc-min-h)] w-3/4" />
+          <SkeletonBlock className="store-product-slot-variant h-[var(--pc-variant-min-h)] w-full" />
+          <div aria-hidden="true" />
+          <SkeletonBlock className="store-product-slot-pricing h-[var(--pc-price-min-h)] w-24" />
+        </div>
+        <div className="store-product-footer sm:hidden">
+          <SkeletonBlock className="store-product-footer-placeholder h-[var(--pc-btn-min-h)] w-full" />
+        </div>
       </div>
     </article>
   );

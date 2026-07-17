@@ -159,100 +159,99 @@ export const ProductCard = memo(function ProductCard({
         )}
       </div>
 
-      <div className="store-product-body">
-        <div className="store-product-slot store-product-slot-meta">
-          <p
-            className={cn(
-              "store-product-category",
-              !product.category_name && "store-product-slot-empty",
-            )}
-          >
-            {product.category_name ?? "\u00A0"}
-          </p>
-        </div>
-
-        <div className="store-product-slot store-product-slot-title">
-          <h2 className="store-product-name">{product.product_name}</h2>
-        </div>
-
-        <div className="store-product-slot store-product-slot-desc">
-          <p
-            className={cn(
-              "store-product-desc",
-              !product.short_description && "store-product-slot-empty",
-            )}
-          >
-            {product.short_description ?? "\u00A0"}
-          </p>
-        </div>
-
-        <div className="store-product-slot store-product-slot-variant">
-          {showVariantSelector ? (
-            <>
-              <label htmlFor={`variant-${product.product_id}`} className="sr-only">
-                Variante
-              </label>
-              <select
-                id={`variant-${product.product_id}`}
-                value={selectedVariantId}
-                onChange={(e) => setSelectedVariantId(e.target.value)}
-                className="store-cart-select store-product-variant-select w-full"
-              >
-                {variantOptions.map((variant) => (
-                  <option
-                    key={variant.id}
-                    value={variant.id}
-                    disabled={variant.availableStock <= 0}
-                  >
-                    {variant.name}
-                    {variant.priceExtraUsd > 0
-                      ? ` (+${formatUsd(variant.priceExtraUsd)})`
-                      : ""}
-                    {variant.availableStock <= 0 ? " — Agotado" : ""}
-                  </option>
-                ))}
-              </select>
-            </>
-          ) : (
-            <span className="store-product-variant-placeholder" aria-hidden="true" />
-          )}
-        </div>
-
-        <div className="store-product-slot store-product-slot-pricing">
-          <div className="store-product-price-row">
-            <p className="store-product-price-usd">
-              {formatUsd(selectedVariant?.priceUsd ?? product.price_usd)}
+      <div className="store-product-content">
+        <div className="store-product-body">
+          <div className="store-product-slot store-product-slot-meta">
+            <p
+              className={cn(
+                "store-product-category",
+                !product.category_name && "store-product-slot-empty",
+              )}
+            >
+              {product.category_name ?? "\u00A0"}
             </p>
-            {hasDiscount && (
-              <p className="store-product-price-compare">
-                {formatUsd(product.compare_at_usd)}
-              </p>
+          </div>
+
+          <div className="store-product-slot store-product-slot-title">
+            <h2 className="store-product-name">{product.product_name}</h2>
+          </div>
+
+          <div className="store-product-slot store-product-slot-desc">
+            <p
+              className={cn(
+                "store-product-desc",
+                !product.short_description && "store-product-slot-empty",
+              )}
+            >
+              {product.short_description ?? "\u00A0"}
+            </p>
+          </div>
+
+          <div className="store-product-slot store-product-slot-variant">
+            {showVariantSelector ? (
+              <>
+                <label htmlFor={`variant-${product.product_id}`} className="sr-only">
+                  Variante
+                </label>
+                <select
+                  id={`variant-${product.product_id}`}
+                  value={selectedVariantId}
+                  onChange={(e) => setSelectedVariantId(e.target.value)}
+                  className="store-cart-select store-product-variant-select w-full"
+                >
+                  {variantOptions.map((variant) => (
+                    <option
+                      key={variant.id}
+                      value={variant.id}
+                      disabled={variant.availableStock <= 0}
+                    >
+                      {variant.name}
+                      {variant.priceExtraUsd > 0
+                        ? ` (+${formatUsd(variant.priceExtraUsd)})`
+                        : ""}
+                      {variant.availableStock <= 0 ? " — Agotado" : ""}
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : (
+              <span className="store-product-variant-placeholder" aria-hidden="true" />
             )}
           </div>
-          {showBsConversion ? (
-            <p className="store-product-price-ves">
-              {formatApproxBs(selectedPriceVes)}
-            </p>
-          ) : (
-            <span className="store-product-price-ves-placeholder" aria-hidden="true" />
-          )}
+
+          <div className="store-product-slot store-product-slot-pricing">
+            <div className="store-product-price-row">
+              <p className="store-product-price-usd">
+                {formatUsd(selectedVariant?.priceUsd ?? product.price_usd)}
+              </p>
+              {hasDiscount && (
+                <p className="store-product-price-compare">
+                  {formatUsd(product.compare_at_usd)}
+                </p>
+              )}
+            </div>
+            {showBsConversion ? (
+              <p className="store-product-price-ves">
+                {formatApproxBs(selectedPriceVes)}
+              </p>
+            ) : (
+              <span className="store-product-price-ves-placeholder" aria-hidden="true" />
+            )}
+          </div>
         </div>
 
-        <div className="store-product-slot store-product-slot-action">
+        <div className="store-product-footer sm:hidden">
           {canAdd ? (
             <button
               type="button"
               onClick={handleAdd}
-              className="store-add-btn-mobile sm:hidden"
+              className="store-add-btn-mobile"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               Agregar al carrito
             </button>
           ) : (
-            <span
-              className="store-product-action-placeholder sm:hidden"
-              aria-hidden="true"
-            />
+            <span className="store-product-footer-placeholder" aria-hidden="true" />
           )}
         </div>
       </div>
