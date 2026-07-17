@@ -26,13 +26,20 @@ interface ProductCardProps {
 function StockBadge({
   availableStock,
   threshold,
+  emphasis = false,
 }: {
   availableStock: number;
   threshold: number;
+  emphasis?: boolean;
 }) {
   if (availableStock <= 0) {
     return (
-      <span className="store-stock-badge store-stock-badge-out">
+      <span
+        className={cn(
+          "store-stock-badge store-stock-badge-out",
+          emphasis && "store-stock-badge-emphasis",
+        )}
+      >
         Agotado
       </span>
     );
@@ -46,11 +53,7 @@ function StockBadge({
     );
   }
 
-  return (
-    <span className="store-stock-badge store-stock-badge-available">
-      Disponible
-    </span>
-  );
+  return null;
 }
 
 export const ProductCard = memo(function ProductCard({
@@ -79,6 +82,13 @@ export const ProductCard = memo(function ProductCard({
   );
 
   const outOfStock = isProductOutOfStock(product);
+  const threshold = getLowStockThreshold(product);
+  const displayStock = showVariantSelector
+    ? (selectedVariant?.availableStock ?? 0)
+    : product.available_stock;
+  const showStockOverlay = outOfStock;
+  const showStockBadge =
+    !outOfStock && displayStock > 0 && displayStock <= threshold;
   const activeStock = selectedVariant?.availableStock ?? 0;
   const remaining = Math.max(0, activeStock - cartQuantity);
   const canAdd = !outOfStock && remaining > 0 && onAddToCart && selectedVariant;
@@ -120,11 +130,9 @@ export const ProductCard = memo(function ProductCard({
           </div>
         )}
 
-        {outOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/55">
-            <span className="store-stock-badge store-stock-badge-out px-4 py-2 text-sm">
-              Agotado
-            </span>
+        {showStockOverlay && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/55">
+            <StockBadge availableStock={0} threshold={threshold} emphasis />
           </div>
         )}
 
@@ -134,14 +142,11 @@ export const ProductCard = memo(function ProductCard({
           ) : (
             <span aria-hidden="true" />
           )}
-          <StockBadge
-            availableStock={
-              showVariantSelector
-                ? variantOptions.reduce((sum, variant) => sum + variant.availableStock, 0)
-                : product.available_stock
-            }
-            threshold={getLowStockThreshold(product)}
-          />
+          {showStockBadge ? (
+            <StockBadge availableStock={displayStock} threshold={threshold} />
+          ) : (
+            <span aria-hidden="true" />
+          )}
         </div>
 
         {canAdd && (

@@ -75,8 +75,6 @@
   --pc-stock-out-fg: #ffffff;
   --pc-stock-low-bg: color-mix(in srgb, #fef3c7 95%, transparent);
   --pc-stock-low-fg: #78350f;
-  --pc-stock-available-bg: color-mix(in srgb, #d1fae5 95%, transparent);
-  --pc-stock-available-fg: #065f46;
   --pc-fallback-label-size: clamp(1.5rem, 5vw, 2rem);
 }
 
@@ -409,21 +407,9 @@ body {
   color: var(--pc-stock-low-fg);
 }
 
-.store-stock-badge-available {
-  background-color: var(--pc-stock-available-bg);
-  color: var(--pc-stock-available-fg);
-}
-
-.store-product-availability {
-  @apply text-xs font-semibold;
-}
-
-.store-product-availability-in {
-  @apply text-emerald-700 dark:text-emerald-400;
-}
-
-.store-product-availability-out {
-  @apply text-red-600 dark:text-red-400;
+.store-stock-badge-emphasis {
+  padding: calc(var(--pc-badge-pad-y) * 2) calc(var(--pc-badge-pad-x) * 2);
+  font-size: calc(var(--pc-badge-size) * 1.15);
 }
 
 .inventory-row-low-stock {
@@ -2718,8 +2704,6 @@ body {
   --pc-stock-out-bg: color-mix(in srgb, #262626 90%, transparent);
   --pc-stock-low-bg: color-mix(in srgb, #f5f5f5 95%, transparent);
   --pc-stock-low-fg: #737373;
-  --pc-stock-available-bg: color-mix(in srgb, #f5f5f5 95%, transparent);
-  --pc-stock-available-fg: #737373;
 }
 
 .txn-catalog-header {
