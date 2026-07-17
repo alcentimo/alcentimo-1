@@ -1,73 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
-import { getStoreIntegrations } from "@/lib/inbox/get-store-integrations";
-import { getMetaOAuthConfig } from "@/lib/env/server";
-import { getMetaRedirectUri, resolveMetaOAuthSiteUrl } from "@/lib/inbox/meta-oauth";
-import { IntegrationsTab } from "@/components/dashboard/settings/IntegrationsTab";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
-import { getChannelIntegration } from "@/src/config/channel-integrations";
-import type { ChannelProviderKey } from "@/src/config/channel-integrations";
 
 export const dynamic = "force-dynamic";
 
-const VALID_CHANNELS = new Set<ChannelProviderKey>(["whatsapp"]);
-
-function resolveStatus(searchParams: {
-  connected?: string;
-  error?: string;
-}): { message: string | null; tone: "success" | "error" | null } {
-  if (searchParams.connected && VALID_CHANNELS.has(searchParams.connected as ChannelProviderKey)) {
-    const channel = getChannelIntegration(searchParams.connected as ChannelProviderKey);
-    return {
-      message: `${channel.label} conectado correctamente.`,
-      tone: "success",
-    };
-  }
-
-  switch (searchParams.error) {
-    case "meta_not_configured":
-      return {
-        message:
-          "Meta aún no está configurado en el servidor. En Vercel define META_APP_ID y META_APP_SECRET con el App ID y App Secret reales de developers.facebook.com (no uses pending-configuration).",
-        tone: "error",
-      };
-    case "oauth_denied":
-      return {
-        message:
-          "Autorización cancelada o rechazada por Meta. Si ves «La app no está activa», verifica que tu usuario figure como Administrador o Desarrollador en developers.facebook.com → tu app → Roles, y que la app esté en modo Desarrollo con tu cuenta añadida o en modo Live tras App Review.",
-        tone: "error",
-      };
-    case "connect_failed":
-      return {
-        message:
-          "No se pudo completar la conexión con Meta. Verifica tu app de Meta Business e inténtalo otra vez.",
-        tone: "error",
-      };
-    case "meta_assets_not_found":
-      return {
-        message:
-          "Meta autorizó la app, pero no encontramos una cuenta de WhatsApp Business vinculada. Verifica que tu negocio tenga WhatsApp Business configurado en Meta Business Suite.",
-        tone: "error",
-      };
-    case "invalid_provider":
-    case "invalid_state":
-      return {
-        message: "La solicitud de conexión no es válida. Vuelve a intentarlo.",
-        tone: "error",
-      };
-    default:
-      return { message: null, tone: null };
-  }
-}
-
-export default async function IntegracionesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ channel?: string; connected?: string; error?: string }>;
-}) {
+export default async function IntegracionesPage() {
   const supabase = await createClient();
   const session = await getDashboardSession(supabase);
 
@@ -76,22 +16,6 @@ export default async function IntegracionesPage({
   }
 
   const { store } = session;
-  const params = await searchParams;
-  const focusChannel =
-    params.channel && VALID_CHANNELS.has(params.channel as ChannelProviderKey)
-      ? (params.channel as ChannelProviderKey)
-      : null;
-  const status = resolveStatus(params);
-
-  let integrations: Awaited<ReturnType<typeof getStoreIntegrations>> = [];
-  const metaOAuth = getMetaOAuthConfig();
-  const metaRedirectUri = metaOAuth.isConfigured
-    ? getMetaRedirectUri(resolveMetaOAuthSiteUrl())
-    : null;
-
-  if (store) {
-    integrations = await getStoreIntegrations(supabase, store.id);
-  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
@@ -100,8 +24,8 @@ export default async function IntegracionesPage({
         title="Integraciones"
         description={
           store
-            ? `Conecta tus canales para centralizar tu operación · ${store.name}.`
-            : "Conecta tus canales para centralizar tu operación."
+            ? `Canales conectados a tu operación · ${store.name}.`
+            : "Canales conectados a tu operación."
         }
         storeSlug={store?.slug ?? null}
         before={
@@ -123,34 +47,31 @@ export default async function IntegracionesPage({
         </div>
       ) : (
         <div className="settings-workspace">
-          {metaRedirectUri ? (
-            <details className="card-panel mb-6 text-sm text-zinc-600 dark:text-zinc-400">
-              <summary className="cursor-pointer font-semibold text-zinc-800 dark:text-zinc-200">
-                Diagnóstico OAuth Meta
-              </summary>
-              <div className="mt-3 space-y-2 leading-relaxed">
-                <p>
-                  En Meta → <strong>Inicio de sesión con Facebook → Configuración</strong>,
-                  la URL de redirección válida debe coincidir <em>exactamente</em> con:
-                </p>
-                <p className="break-all rounded-lg bg-zinc-100 px-3 py-2 font-mono text-xs text-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
-                  {metaRedirectUri}
-                </p>
-                <p>
-                  Si el error aparece en la pantalla de Facebook (antes de volver a Alcentimo),
-                  suele deberse al modo de la app (Desarrollo/Live) o a que tu cuenta personal
-                  no está en Roles de la app, no a un fallo del callback.
-                </p>
-              </div>
-            </details>
-          ) : null}
           <div className="settings-workspace-body">
-            <IntegrationsTab
-              integrations={integrations}
-              focusChannel={focusChannel}
-              statusMessage={status.message}
-              statusTone={status.tone}
-            />
+            <article className="card-panel max-w-2xl">
+              <div className="flex items-start gap-4">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                  <MessageCircle className="h-6 w-6" aria-hidden="true" />
+                </span>
+                <div>
+                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                    WhatsApp
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                    Alcentimo usa WhatsApp mediante enlace directo (wa.me) con el
+                    teléfono de tu tienda. Los clientes finalizan pedidos desde el
+                    catálogo y tú recibes el mensaje en tu número habitual — sin API
+                    oficial de Meta.
+                  </p>
+                  <Link
+                    href="/dashboard/ajustes"
+                    className="btn-brand-outline mt-5 inline-flex items-center gap-2"
+                  >
+                    Configurar teléfono en ajustes
+                  </Link>
+                </div>
+              </div>
+            </article>
           </div>
         </div>
       )}

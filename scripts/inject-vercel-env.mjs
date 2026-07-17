@@ -6,7 +6,6 @@
  *   $env:SUPABASE_SERVICE_ROLE_KEY="..."; node scripts/inject-vercel-env.mjs
  */
 import { spawnSync } from "node:child_process";
-import { randomBytes } from "node:crypto";
 import { readFileSync, existsSync } from "node:fs";
 
 const ENVIRONMENTS = ["production", "preview"];
@@ -74,12 +73,6 @@ const vars = {
     process.env.SUPABASE_SERVICE_ROLE_KEY ??
     local.SUPABASE_SERVICE_ROLE_KEY ??
     PLACEHOLDER,
-  META_APP_ID: process.env.META_APP_ID ?? local.META_APP_ID,
-  META_APP_SECRET: process.env.META_APP_SECRET ?? local.META_APP_SECRET,
-  META_WEBHOOK_VERIFY_TOKEN:
-    process.env.META_WEBHOOK_VERIFY_TOKEN ??
-    local.META_WEBHOOK_VERIFY_TOKEN ??
-    randomBytes(32).toString("hex"),
 };
 
 const required = new Set([

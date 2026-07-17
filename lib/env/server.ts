@@ -42,21 +42,6 @@ export function getSupabasePublicConfig() {
   };
 }
 
-export function getMetaOAuthConfig() {
-  const appId = optionalEnv("META_APP_ID");
-  const appSecret = optionalEnv("META_APP_SECRET");
-  const webhookVerifyToken = optionalEnv("META_WEBHOOK_VERIFY_TOKEN");
-
-  return {
-    appId: isConfiguredEnvValue(appId) ? appId : undefined,
-    appSecret: isConfiguredEnvValue(appSecret) ? appSecret : undefined,
-    webhookVerifyToken: isConfiguredEnvValue(webhookVerifyToken)
-      ? webhookVerifyToken
-      : undefined,
-    isConfigured: isConfiguredEnvValue(appId) && isConfiguredEnvValue(appSecret),
-  };
-}
-
 export function isVercelDeployment(): boolean {
   return process.env.VERCEL === "1";
 }
