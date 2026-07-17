@@ -6,9 +6,8 @@ import { Menu, X } from "lucide-react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 
 const navLinks = [
-  { href: "#caracteristicas", label: "Características" },
+  { href: "#caracteristicas", label: "Producto" },
   { href: "#precios", label: "Precios" },
-  { href: "#tiendas", label: "Tiendas" },
 ];
 
 export function LandingNav() {
