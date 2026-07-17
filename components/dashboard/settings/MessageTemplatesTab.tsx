@@ -6,6 +6,7 @@ import {
   SettingsSection,
   SettingsTabShell,
 } from "@/components/dashboard/settings/SettingsLayout";
+import { MessageTemplatePreview } from "@/components/dashboard/settings/MessageTemplatePreview";
 import { saveMessageTemplatesSettings } from "@/lib/settings/actions";
 import {
   MESSAGE_TEMPLATE_PLACEHOLDERS,
@@ -16,10 +17,12 @@ import type { MessageTemplatesSettings } from "@/lib/store-settings/types";
 
 interface MessageTemplatesTabProps {
   initialSettings: MessageTemplatesSettings;
+  storeName?: string;
 }
 
 export function MessageTemplatesTab({
   initialSettings,
+  storeName,
 }: MessageTemplatesTabProps) {
   const [templates, setTemplates] = useState(initialSettings);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +51,7 @@ export function MessageTemplatesTab({
       saving={saving}
       onSave={handleSave}
       saveLabel="Guardar plantillas"
-      saveHint="Usa variables como {{cliente}} o {{productos}}. Puedes borrar {{productos}} para mensajes breves."
+      saveHint="Usa variables como {{cliente}} o {{productos}}. La vista previa se actualiza mientras editas."
     >
       {successMessage ? (
         <p
@@ -78,23 +81,36 @@ export function MessageTemplatesTab({
 
         <div className="space-y-5">
           {ORDER_MESSAGE_TEMPLATE_KEYS.map((key) => (
-            <div key={key} className="general-settings-card space-y-2">
+            <div key={key} className="general-settings-card">
               <Label htmlFor={`template-${key}`} className="payment-field-label">
                 {ORDER_MESSAGE_TEMPLATE_LABELS[key]}
               </Label>
-              <textarea
-                id={`template-${key}`}
-                value={templates[key]}
-                onChange={(event) => {
-                  setTemplates((prev) => ({
-                    ...prev,
-                    [key]: event.target.value,
-                  }));
-                  setSuccessMessage(null);
-                }}
-                rows={6}
-                className="payment-field-input min-h-[8rem] w-full resize-y font-mono text-sm leading-relaxed"
-              />
+
+              <div className="mt-3 grid gap-4 lg:grid-cols-2 lg:gap-5">
+                <div>
+                  <textarea
+                    id={`template-${key}`}
+                    value={templates[key]}
+                    onChange={(event) => {
+                      setTemplates((prev) => ({
+                        ...prev,
+                        [key]: event.target.value,
+                      }));
+                      setSuccessMessage(null);
+                    }}
+                    rows={8}
+                    className="payment-field-input min-h-[8rem] w-full resize-y font-mono text-sm leading-relaxed"
+                    aria-describedby={`template-preview-${key}`}
+                  />
+                </div>
+
+                <div id={`template-preview-${key}`}>
+                  <MessageTemplatePreview
+                    template={templates[key]}
+                    storeName={storeName}
+                  />
+                </div>
+              </div>
             </div>
           ))}
         </div>

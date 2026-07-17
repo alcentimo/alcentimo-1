@@ -197,7 +197,10 @@ export function SettingsPanel({
             id="settings-panel-messages"
             aria-labelledby="settings-tab-messages"
           >
-            <MessageTemplatesTab initialSettings={initialConfig.messageTemplates} />
+            <MessageTemplatesTab
+              initialSettings={initialConfig.messageTemplates}
+              storeName={store?.name}
+            />
           </div>
         )}
       </div>

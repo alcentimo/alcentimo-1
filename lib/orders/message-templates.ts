@@ -29,6 +29,22 @@ export const MESSAGE_TEMPLATE_PLACEHOLDERS = [
   "{{productos}}",
 ] as const;
 
+export const MESSAGE_TEMPLATE_PREVIEW_SAMPLES = {
+  cliente: "Juan Pérez",
+  tienda: "Ferremax",
+  total: "$42.50",
+  referencia: "A1B2C3D4",
+  productos:
+    "• 2x Taladro inalámbrico — $28.00\n• 1x Juego de brocas (12 pzas) — $14.50",
+} as const;
+
+export function getMessageTemplatePreviewValues(storeName?: string) {
+  return {
+    ...MESSAGE_TEMPLATE_PREVIEW_SAMPLES,
+    tienda: storeName?.trim() || MESSAGE_TEMPLATE_PREVIEW_SAMPLES.tienda,
+  };
+}
+
 export function defaultMessageTemplates(): MessageTemplatesSettings {
   return {
     nuevo:

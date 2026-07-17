@@ -16,7 +16,7 @@ function formatProductSummary(order: CatalogOrder): string {
     .join("\n");
 }
 
-function applyPlaceholders(
+export function renderMessageTemplate(
   template: string,
   values: Record<string, string>,
 ): string {
@@ -36,7 +36,7 @@ export function renderOrderWhatsAppMessage(
   const key = templateKey ?? resolveMessageTemplateKey(order.estado);
   const template = templates[key];
 
-  return applyPlaceholders(template, {
+  return renderMessageTemplate(template, {
     cliente: order.customer_name,
     tienda: storeName,
     total: formatUsd(order.total_usd),
