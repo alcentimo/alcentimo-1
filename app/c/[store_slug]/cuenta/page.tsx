@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { CustomerOrdersList } from "@/components/customers/CustomerOrdersList";
+import { getCustomerOrdersForStore } from "@/lib/customers/get-customer-orders";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import { getPublicStoreBySlug } from "@/lib/stores";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +28,15 @@ export default async function CustomerAccountPage({
     redirect(buildCustomerRegisterPath(store.slug, `/c/${store.slug}/cuenta`));
   }
 
-  const { data: profile } = await supabase
-    .from("customer_profiles")
-    .select("display_name, phone, created_at")
-    .eq("user_id", user.id)
-    .eq("store_id", store.id)
-    .maybeSingle();
+  const [{ data: profile }, orders] = await Promise.all([
+    supabase
+      .from("customer_profiles")
+      .select("display_name, phone, created_at")
+      .eq("user_id", user.id)
+      .eq("store_id", store.id)
+      .maybeSingle(),
+    getCustomerOrdersForStore(store.id),
+  ]);
 
   return (
     <main className="page-shell min-h-dvh safe-area-inset">
@@ -52,29 +57,40 @@ export default async function CustomerAccountPage({
           </p>
         </header>
 
-        <div className="card-panel mt-8 space-y-4">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              Email
-            </p>
-            <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-              {user.email ?? "—"}
-            </p>
+        <section className="mt-8">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            Mis Pedidos
+          </h2>
+          <div className="card-panel mt-3">
+            <CustomerOrdersList orders={orders} />
           </div>
-          {profile?.phone ? (
+        </section>
+
+        <section className="mt-8">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            Datos de contacto
+          </h2>
+          <div className="card-panel mt-3 space-y-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Teléfono
+                Email
               </p>
               <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-                {profile.phone}
+                {user.email ?? "—"}
               </p>
             </div>
-          ) : null}
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            El historial de pedidos estará disponible en la siguiente fase.
-          </p>
-        </div>
+            {profile?.phone ? (
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Teléfono
+                </p>
+                <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
+                  {profile.phone}
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </section>
       </div>
     </main>
   );
