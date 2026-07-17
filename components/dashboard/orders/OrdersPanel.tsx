@@ -11,7 +11,7 @@ import {
   type OrderFilterId,
 } from "@/lib/orders/order-status";
 import type { MessageTemplatesSettings } from "@/lib/store-settings/types";
-import { OrderEstadoBadge } from "@/components/dashboard/orders/OrderEstadoBadge";
+import { OrderStatusSelect } from "@/components/dashboard/orders/OrderStatusSelect";
 import { OrderDetailSlideOver } from "@/components/dashboard/orders/OrderDetailSlideOver";
 import { OrderWhatsAppButton } from "@/components/dashboard/orders/OrderWhatsAppButton";
 import { OrdersKpiRow } from "@/components/dashboard/orders/OrdersKpiRow";
@@ -54,11 +54,13 @@ const OrderRow = memo(function OrderRow({
   storeName,
   messageTemplates,
   onSelect,
+  onEstadoUpdated,
 }: {
   order: CatalogOrder;
   storeName: string;
   messageTemplates: MessageTemplatesSettings;
   onSelect: (orderId: string) => void;
+  onEstadoUpdated: (orderId: string, estado: OrderEstado) => void;
 }) {
   return (
     <tr
@@ -74,7 +76,11 @@ const OrderRow = memo(function OrderRow({
         </p>
       </td>
       <td className="orders-ops-cell">
-        <OrderEstadoBadge estado={order.estado} />
+        <OrderStatusSelect
+          orderId={order.id}
+          estado={order.estado}
+          onEstadoUpdated={onEstadoUpdated}
+        />
       </td>
       <td className="orders-ops-cell tabular-nums font-medium text-zinc-900 dark:text-zinc-50">
         {formatUsd(order.total_usd)}
@@ -105,11 +111,13 @@ const OrderMobileCard = memo(function OrderMobileCard({
   storeName,
   messageTemplates,
   onSelect,
+  onEstadoUpdated,
 }: {
   order: CatalogOrder;
   storeName: string;
   messageTemplates: MessageTemplatesSettings;
   onSelect: (orderId: string) => void;
+  onEstadoUpdated: (orderId: string, estado: OrderEstado) => void;
 }) {
   return (
     <article
@@ -130,7 +138,11 @@ const OrderMobileCard = memo(function OrderMobileCard({
             <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
               {order.customer_name}
             </p>
-            <OrderEstadoBadge estado={order.estado} />
+            <OrderStatusSelect
+              orderId={order.id}
+              estado={order.estado}
+              onEstadoUpdated={onEstadoUpdated}
+            />
           </div>
           <p className="mt-1 text-[11px] text-zinc-500">
             {formatOrderTime(order.created_at)}
@@ -271,6 +283,7 @@ export function OrdersPanel({
                 storeName={storeName}
                 messageTemplates={messageTemplates}
                 onSelect={handleSelectOrder}
+                onEstadoUpdated={handleEstadoUpdated}
               />
             ))
           )}
@@ -307,6 +320,7 @@ export function OrdersPanel({
                     storeName={storeName}
                     messageTemplates={messageTemplates}
                     onSelect={handleSelectOrder}
+                    onEstadoUpdated={handleEstadoUpdated}
                   />
                 ))
               )}

@@ -653,6 +653,18 @@ body {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
+.orders-status-menu {
+  @apply overflow-hidden rounded-xl border border-zinc-200/90 bg-white py-1 shadow-lg ring-1 ring-black/5 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-white/10;
+}
+
+.orders-status-menu-item {
+  @apply hover:bg-zinc-50 dark:hover:bg-zinc-900/70;
+}
+
+.orders-status-menu-item-active {
+  @apply bg-emerald-50/70 dark:bg-emerald-950/20;
+}
+
 .inventory-catalog-header {
   @apply mb-4 flex flex-col gap-3;
 }

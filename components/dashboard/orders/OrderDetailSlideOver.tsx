@@ -7,7 +7,6 @@ import { formatUsd } from "@/lib/format";
 import type { CatalogOrder } from "@/lib/orders/types";
 import type { OrderEstado } from "@/lib/orders/order-status";
 import type { MessageTemplatesSettings } from "@/lib/store-settings/types";
-import { OrderEstadoBadge } from "@/components/dashboard/orders/OrderEstadoBadge";
 import { OrderStatusSelect } from "@/components/dashboard/orders/OrderStatusSelect";
 import { OrderWhatsAppButton } from "@/components/dashboard/orders/OrderWhatsAppButton";
 
@@ -95,13 +94,12 @@ export function OrderDetailSlideOver({
 
         <div className="orders-slideover-body">
           <section className="orders-slideover-section">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <OrderEstadoBadge estado={order.estado} />
+            <p className="orders-slideover-label">Estado</p>
+            <div className="mt-2">
               <OrderStatusSelect
                 orderId={order.id}
                 estado={order.estado}
                 onEstadoUpdated={onEstadoUpdated}
-                className="w-full max-w-xs sm:w-auto"
               />
             </div>
           </section>

@@ -20,17 +20,26 @@ export const ORDER_ESTADO_LABELS: Record<OrderEstado, string> = {
 
 export const ORDER_ESTADO_BADGE_CLASS: Record<OrderEstado, string> = {
   pendiente:
-    "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300",
+    "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200",
   verificando:
-    "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300",
+    "border-yellow-200 bg-yellow-50 text-yellow-900 dark:border-yellow-900/50 dark:bg-yellow-950/40 dark:text-yellow-200",
   en_preparacion:
-    "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-300",
+    "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200",
   enviado:
-    "border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-300",
+    "border-violet-200 bg-violet-50 text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-200",
   entregado:
-    "border-teal-200 bg-teal-50 text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-300",
+    "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200",
   cancelado:
     "border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-400",
+};
+
+export const ORDER_ESTADO_DOT_CLASS: Record<OrderEstado, string> = {
+  pendiente: "bg-amber-500",
+  verificando: "bg-yellow-400",
+  en_preparacion: "bg-blue-500",
+  enviado: "bg-violet-500",
+  entregado: "bg-emerald-500",
+  cancelado: "bg-zinc-400",
 };
 
 export type OrderFilterId = "all" | "today" | "dispatch" | "pending" | "completed";
