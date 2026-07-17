@@ -2390,6 +2390,10 @@ body {
   @apply mt-1 max-w-2xl text-xs leading-snug text-neutral-500 sm:text-sm;
 }
 
+.txn-catalog-rate {
+  @apply mt-2 text-xs text-neutral-500 sm:text-sm;
+}
+
 .txn-store-status {
   @apply inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide;
 }

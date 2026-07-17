@@ -19,6 +19,7 @@ import {
 } from "@/lib/payments/validate-payment-fields";
 import type {
   ContactSettings,
+  CatalogCurrencySettings,
   CatalogDesignSettings,
   LocationHoursSettings,
   PaymentsSettings,
@@ -79,6 +80,13 @@ export async function saveCatalogDesignSettings(
       layout: normalizeCatalogLayout(design.layout),
     },
   });
+}
+
+export async function saveCatalogCurrencySettings(
+  catalogCurrency: CatalogCurrencySettings,
+): Promise<SettingsActionResult> {
+  const normalized = normalizeStoreSettingsConfig({ catalogCurrency });
+  return persistSettingsPatch({ catalogCurrency: normalized.catalogCurrency });
 }
 
 export async function saveShippingSettings(

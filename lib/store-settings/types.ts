@@ -58,6 +58,7 @@ export interface StoreSettingsConfig {
   contact: ContactSettings;
   locationHours: LocationHoursSettings;
   catalogDesign: CatalogDesignSettings;
+  catalogCurrency: CatalogCurrencySettings;
 }
 
 export interface ContactSettings {
@@ -93,6 +94,13 @@ export type CatalogLayoutMode = "grid" | "list";
 export interface CatalogDesignSettings {
   primaryColor: string;
   layout: CatalogLayoutMode;
+}
+
+export interface CatalogCurrencySettings {
+  /** Muestra la tasa BCV oficial en el catálogo público. */
+  showOfficialRate: boolean;
+  /** Muestra precios convertidos a Bs en catálogo, carrito y checkout. */
+  showBsConversion: boolean;
 }
 
 export interface StoreSettingsRow {

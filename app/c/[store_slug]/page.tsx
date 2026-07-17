@@ -15,7 +15,8 @@ async function CatalogContent({ storeSlug }: { storeSlug: string }) {
   const data = await getPublicCatalogPageData(storeSlug);
   if (!data) notFound();
 
-  const { store, products, exchangeRate, purchaseInfo, catalogDesign } = data;
+  const { store, products, exchangeRate, purchaseInfo, catalogDesign, catalogCurrency } =
+    data;
 
   return (
     <CartProvider storeSlug={store.slug}>
@@ -25,6 +26,7 @@ async function CatalogContent({ storeSlug }: { storeSlug: string }) {
         exchangeRate={exchangeRate}
         purchaseInfo={purchaseInfo}
         catalogDesign={catalogDesign}
+        catalogCurrency={catalogCurrency}
       />
     </CartProvider>
   );

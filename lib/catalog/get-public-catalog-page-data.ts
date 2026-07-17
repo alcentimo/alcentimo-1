@@ -7,7 +7,7 @@ import {
 } from "@/lib/store-settings/defaults";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
-import type { CatalogDesignSettings } from "@/lib/store-settings/types";
+import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogPageData } from "@/lib/catalog";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
@@ -16,6 +16,7 @@ export interface PublicCatalogPageData extends CatalogPageData {
   store: Store;
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
+  catalogCurrency: CatalogCurrencySettings;
 }
 
 function normalizeStoreSlug(slug: string): string {
@@ -84,5 +85,6 @@ export async function getPublicCatalogPageData(
     ...catalogData,
     purchaseInfo,
     catalogDesign,
+    catalogCurrency: settingsConfig.catalogCurrency,
   };
 }

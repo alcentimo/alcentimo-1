@@ -4,6 +4,7 @@ interface DashboardExchangeRateBadgeProps {
   rate: number | null;
   updatedAt?: string | null;
   stale?: boolean;
+  variant?: "badge" | "strip";
 }
 
 function formatUpdatedAt(value: string | null | undefined): string | null {
@@ -22,8 +23,60 @@ export function DashboardExchangeRateBadge({
   rate,
   updatedAt,
   stale = false,
+  variant = "badge",
 }: DashboardExchangeRateBadgeProps) {
   const formattedDate = formatUpdatedAt(updatedAt);
+  const rateLabel =
+    rate != null ? `Bs. ${formatExchangeRate(rate)}` : "Sin tasa";
+  const syncLabel = stale ? "Requiere sincronización" : "Sincronizado";
+
+  if (variant === "strip") {
+    return (
+      <div
+        className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border px-4 py-2.5 text-sm shadow-sm ${
+          stale
+            ? "border-amber-200/80 bg-amber-50/70 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-200"
+            : "border-zinc-200/70 bg-white text-zinc-600 shadow-emerald-500/5 dark:border-zinc-800/70 dark:bg-zinc-950/60 dark:text-zinc-400"
+        }`}
+        role="status"
+        aria-label={`Tasa BCV ${rateLabel}. ${syncLabel}.`}
+      >
+        <p className="min-w-0 text-pretty">
+          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+            Tasa BCV:
+          </span>{" "}
+          <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-50">
+            {rateLabel}
+          </span>
+          {formattedDate && !stale ? (
+            <span className="hidden text-zinc-500 sm:inline dark:text-zinc-400">
+              {" "}
+              · Actualizada {formattedDate}
+            </span>
+          ) : null}
+        </p>
+        <span
+          className={`inline-flex shrink-0 items-center gap-2 text-xs font-medium ${
+            stale
+              ? "text-amber-800 dark:text-amber-200"
+              : "text-emerald-700 dark:text-emerald-400"
+          }`}
+        >
+          <span className="relative flex h-2 w-2" aria-hidden="true">
+            {!stale ? (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-40" />
+            ) : null}
+            <span
+              className={`relative inline-flex h-2 w-2 rounded-full ${
+                stale ? "bg-amber-500" : "bg-emerald-500"
+              }`}
+            />
+          </span>
+          {syncLabel}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div

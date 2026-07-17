@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Clock, CreditCard, Link2, Palette, Settings2, Tag } from "lucide-react";
+import { Clock, Coins, CreditCard, Link2, Palette, Settings2, Tag } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
+import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
 import { PaymentsTab } from "@/components/dashboard/settings/PaymentsTab";
@@ -15,7 +16,7 @@ import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { Coupon } from "@/lib/coupons/types";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
 
-type SettingsTabId = "general" | "location" | "payments" | "promotions" | "design";
+type SettingsTabId = "general" | "currency" | "location" | "payments" | "promotions" | "design";
 
 const PRIMARY_TABS: {
   id: SettingsTabId;
@@ -23,6 +24,7 @@ const PRIMARY_TABS: {
   icon: typeof Settings2;
 }[] = [
   { id: "general", label: "General", icon: Settings2 },
+  { id: "currency", label: "Preferencias de Moneda", icon: Coins },
   { id: "location", label: "Ubicación y Horario", icon: Clock },
   { id: "payments", label: "Pagos", icon: CreditCard },
 ];
@@ -122,6 +124,15 @@ export function SettingsPanel({
                 }
               }
             />
+          </div>
+        )}
+        {activeTab === "currency" && !integrationsActive && (
+          <div
+            role="tabpanel"
+            id="settings-panel-currency"
+            aria-labelledby="settings-tab-currency"
+          >
+            <CatalogCurrencyTab initialSettings={initialConfig.catalogCurrency} />
           </div>
         )}
         {activeTab === "location" && !integrationsActive && (

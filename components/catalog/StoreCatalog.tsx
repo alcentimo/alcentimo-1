@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
+import type { CatalogCurrencySettings } from "@/lib/store-settings/types";
 import { formatExchangeRate } from "@/lib/format";
 import { StoreHeader } from "@/components/catalog/StoreHeader";
 import {
@@ -30,6 +31,7 @@ interface StoreCatalogProps {
   products: CatalogListItem[];
   exchangeRate: ExchangeRate | null;
   purchaseInfo: PublicPurchaseInfo;
+  catalogCurrency: CatalogCurrencySettings;
 }
 
 function extractCategories(products: CatalogListItem[]): CatalogCategory[] {
@@ -65,8 +67,10 @@ export function StoreCatalog({
   products,
   exchangeRate,
   purchaseInfo,
+  catalogCurrency,
 }: StoreCatalogProps) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
+  const { showOfficialRate, showBsConversion } = catalogCurrency;
   const [catalogProducts, setCatalogProducts] = useState(products);
   const [query, setQuery] = useState("");
   const [categorySlug, setCategorySlug] = useState("");
@@ -250,7 +254,7 @@ export function StoreCatalog({
           <p className="store-description">{store.description}</p>
         )}
 
-        {exchangeRate && (
+        {showOfficialRate && exchangeRate && (
           <p className="store-rate-note">
             Tasa del día: Bs. {formatExchangeRate(exchangeRate.rate)} / USD
           </p>
@@ -285,6 +289,7 @@ export function StoreCatalog({
                     key={product.product_id}
                     product={product}
                     exchangeRate={liveExchangeRate}
+                    showBsConversion={showBsConversion}
                     cartQuantity={cartQuantities.get(product.product_id) ?? 0}
                     onAddToCart={addToCart}
                   />
@@ -300,7 +305,10 @@ export function StoreCatalog({
       <footer className="store-footer safe-area-bottom">
         <PageContainer className="flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
           <p className="text-xs text-zinc-500">
-            Catálogo de {store.name} · Precios en USD con referencia en bolívares.
+            Catálogo de {store.name}
+            {showBsConversion
+              ? " · Precios en USD con referencia en bolívares."
+              : " · Precios en USD."}
           </p>
           <Link href="/" className="text-xs font-medium text-zinc-700 hover:text-zinc-900">
             Creado con alcentimo
@@ -314,6 +322,7 @@ export function StoreCatalog({
         storeName={store.name}
         purchaseInfo={purchaseInfo}
         items={cartItems}
+        showBsConversion={showBsConversion}
         onClose={() => setCartOpen(false)}
         onRemove={removeFromCart}
         onUpdateQuantity={updateCartQuantity}

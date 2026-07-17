@@ -17,6 +17,7 @@ import type { CatalogVariantOption } from "@/lib/products/variants";
 interface ProductCardProps {
   product: CatalogListItem;
   exchangeRate?: number | null;
+  showBsConversion?: boolean;
   cartQuantity?: number;
   onAddToCart?: (product: CatalogListItem, variant: CatalogVariantOption) => void;
 }
@@ -61,6 +62,7 @@ function AvailabilityStatus({ availableStock }: { availableStock: number }) {
 export const ProductCard = memo(function ProductCard({
   product,
   exchangeRate = null,
+  showBsConversion = true,
   cartQuantity = 0,
   onAddToCart,
 }: ProductCardProps) {
@@ -215,9 +217,11 @@ export const ProductCard = memo(function ProductCard({
               </p>
             )}
           </div>
-          <p className="store-product-price-ves">
-            {formatApproxBs(selectedPriceVes)}
-          </p>
+          {showBsConversion ? (
+            <p className="store-product-price-ves">
+              {formatApproxBs(selectedPriceVes)}
+            </p>
+          ) : null}
         </div>
 
         {canAdd && (

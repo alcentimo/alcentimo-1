@@ -8,7 +8,7 @@ import { getStoreInventory } from "@/lib/inventory";
 import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
 import { isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
 import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
-import { AutomaticConversionWidget } from "@/components/dashboard/AutomaticConversionWidget";
+import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { Button } from "@/components/ui/button";
 
@@ -64,9 +64,9 @@ export default async function CatalogoPage({
   const exchangeRateStale = isBcvRateStale(exchangeRateUpdatedAt);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-6">
       {showOnboardingSuccess ? (
-        <div className="alert-success mb-6" role="status">
+        <div className="alert-success" role="status">
           ¡Tu tienda está lista! Publica tu primer producto y comparte tu catálogo.
         </div>
       ) : null}
@@ -77,7 +77,8 @@ export default async function CatalogoPage({
         storeSlug={store.slug}
       />
 
-      <AutomaticConversionWidget
+      <DashboardExchangeRateBadge
+        variant="strip"
         rate={exchangeRate}
         updatedAt={exchangeRateUpdatedAt}
         stale={exchangeRateStale}

@@ -92,6 +92,10 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       primaryColor: getDefaultPrimaryColorForRubro("general"),
       layout: "grid",
     },
+    catalogCurrency: {
+      showOfficialRate: true,
+      showBsConversion: true,
+    },
   };
 }
 
@@ -175,6 +179,7 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
   const scheduleRaw = isRecord(locationRaw.schedule) ? locationRaw.schedule : {};
   const schedule = { ...defaults.locationHours.schedule };
   const designRaw = isRecord(raw.catalogDesign) ? raw.catalogDesign : {};
+  const currencyRaw = isRecord(raw.catalogCurrency) ? raw.catalogCurrency : {};
 
   for (const key of WEEKDAY_KEYS) {
     const dayRaw = scheduleRaw[key];
@@ -248,6 +253,16 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           ? designRaw.layout
           : defaults.catalogDesign.layout,
     },
+    catalogCurrency: {
+      showOfficialRate:
+        typeof currencyRaw.showOfficialRate === "boolean"
+          ? currencyRaw.showOfficialRate
+          : defaults.catalogCurrency.showOfficialRate,
+      showBsConversion:
+        typeof currencyRaw.showBsConversion === "boolean"
+          ? currencyRaw.showBsConversion
+          : defaults.catalogCurrency.showBsConversion,
+    },
   };
 }
 
@@ -307,5 +322,8 @@ export function mergeStoreSettingsConfig(
     catalogDesign: patch.catalogDesign
       ? { ...base.catalogDesign, ...patch.catalogDesign }
       : base.catalogDesign,
+    catalogCurrency: patch.catalogCurrency
+      ? { ...base.catalogCurrency, ...patch.catalogCurrency }
+      : base.catalogCurrency,
   };
 }

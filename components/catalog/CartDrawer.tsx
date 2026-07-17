@@ -29,6 +29,7 @@ interface CartDrawerProps {
   storeName: string;
   purchaseInfo: PublicPurchaseInfo;
   items: CartItem[];
+  showBsConversion?: boolean;
   onClose: () => void;
   onRemove: (productId: string, variantId: string) => void;
   onUpdateQuantity: (productId: string, variantId: string, quantity: number) => void;
@@ -68,6 +69,7 @@ export function CartDrawer({
   storeName,
   purchaseInfo,
   items,
+  showBsConversion = true,
   onClose,
   onRemove,
   onUpdateQuantity,
@@ -534,7 +536,7 @@ export function CartDrawer({
                     <p className="text-sm font-semibold text-zinc-900">
                       {formatUsd(subtotalUsd)}
                     </p>
-                    {subtotalVes > 0 && (
+                    {showBsConversion && subtotalVes > 0 && (
                       <p className="text-xs text-zinc-400">{formatVes(subtotalVes)}</p>
                     )}
                   </div>
@@ -549,7 +551,7 @@ export function CartDrawer({
                       <p className="text-sm font-semibold text-teal-700">
                         -{formatUsd(discountUsd)}
                       </p>
-                      {discountVes > 0 && (
+                      {showBsConversion && discountVes > 0 && (
                         <p className="text-xs text-teal-600">-{formatVes(discountVes)}</p>
                       )}
                     </div>
@@ -560,7 +562,7 @@ export function CartDrawer({
                   <span className="text-sm font-medium text-zinc-700">Total</span>
                   <div className="text-right">
                     <p className="text-lg font-bold text-zinc-900">{formatUsd(totalUsd)}</p>
-                    {totalVes > 0 && (
+                    {showBsConversion && totalVes > 0 && (
                       <p className="text-xs text-zinc-400">{formatVes(totalVes)}</p>
                     )}
                   </div>

@@ -5,8 +5,9 @@ import Image from "next/image";
 import { ShoppingBag } from "lucide-react";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
-import type { CatalogDesignSettings } from "@/lib/store-settings/types";
+import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
 import { getCatalogThemeStyle } from "@/lib/store-settings/catalog-theme";
+import { formatExchangeRate } from "@/lib/format";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
@@ -20,6 +21,7 @@ interface TransactionalCatalogProps {
   exchangeRate: ExchangeRate | null;
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
+  catalogCurrency: CatalogCurrencySettings;
 }
 
 function getStoreInitials(name: string): string {
@@ -35,8 +37,10 @@ export function TransactionalCatalog({
   exchangeRate,
   purchaseInfo,
   catalogDesign,
+  catalogCurrency,
 }: TransactionalCatalogProps) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
+  const { showOfficialRate, showBsConversion } = catalogCurrency;
   const { addItem, itemCount } = useCart();
   const [cartOpen, setCartOpen] = useState(false);
 
@@ -83,6 +87,11 @@ export function TransactionalCatalog({
               {store.description && (
                 <p className="txn-catalog-desc">{store.description}</p>
               )}
+              {showOfficialRate && exchangeRate && (
+                <p className="txn-catalog-rate">
+                  Tasa BCV: Bs. {formatExchangeRate(exchangeRate.rate)} / USD
+                </p>
+              )}
             </div>
           </div>
 
@@ -123,6 +132,7 @@ export function TransactionalCatalog({
                 key={product.product_id}
                 product={product}
                 exchangeRate={liveExchangeRate}
+                showBsConversion={showBsConversion}
                 onAddToCart={addItem}
               />
             ))}
