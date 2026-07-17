@@ -8,13 +8,16 @@ function SkeletonBlock({ className }: { className?: string }) {
 
 function ProductCardSkeleton() {
   return (
-    <article className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-      <SkeletonBlock className="aspect-[4/5] w-full rounded-none" />
-      <div className="flex flex-col gap-3 p-6">
-        <SkeletonBlock className="h-3 w-16" />
-        <SkeletonBlock className="h-5 w-full" />
-        <SkeletonBlock className="h-5 w-3/4" />
-        <SkeletonBlock className="mt-4 h-7 w-24" />
+    <article className="store-product-card h-full">
+      <SkeletonBlock className="store-product-media aspect-[4/5] w-full shrink-0 rounded-none" />
+      <div className="store-product-body">
+        <SkeletonBlock className="store-product-slot-meta h-[var(--pc-meta-min-h)] w-16" />
+        <SkeletonBlock className="store-product-slot-title h-[var(--pc-title-min-h)] w-full" />
+        <SkeletonBlock className="store-product-slot-desc h-[var(--pc-desc-min-h)] w-3/4" />
+        <SkeletonBlock className="store-product-slot-variant h-[var(--pc-variant-min-h)] w-full" />
+        <div aria-hidden="true" />
+        <SkeletonBlock className="store-product-slot-pricing h-[var(--pc-price-min-h)] w-24" />
+        <SkeletonBlock className="store-product-slot-action h-[var(--pc-action-min-h)] w-full sm:hidden" />
       </div>
     </article>
   );

@@ -13,6 +13,7 @@ import {
   isProductOutOfStock,
 } from "@/lib/products/variants";
 import type { CatalogVariantOption } from "@/lib/products/variants";
+import { cn } from "@/lib/cn";
 
 interface ProductCardProps {
   product: CatalogListItem;
@@ -52,13 +53,6 @@ function StockBadge({
   );
 }
 
-function AvailabilityStatus({ availableStock }: { availableStock: number }) {
-  if (availableStock <= 0) {
-    return <p className="store-product-availability store-product-availability-out">Agotado</p>;
-  }
-  return <p className="store-product-availability store-product-availability-in">Disponible</p>;
-}
-
 export const ProductCard = memo(function ProductCard({
   product,
   exchangeRate = null,
@@ -94,9 +88,8 @@ export const ProductCard = memo(function ProductCard({
     product.price_usd != null &&
     product.compare_at_usd > product.price_usd;
 
-  const selectedPriceUsd = selectedVariant?.priceUsd ?? product.price_usd;
   const selectedPriceVes =
-    computeUsdToVes(selectedPriceUsd, activeExchangeRate) ??
+    computeUsdToVes(selectedVariant?.priceUsd ?? product.price_usd, activeExchangeRate) ??
     selectedVariant?.priceVes ??
     product.price_ves;
 
@@ -106,7 +99,9 @@ export const ProductCard = memo(function ProductCard({
   }
 
   return (
-    <article className={`store-product-card group ${outOfStock ? "opacity-90" : ""}`}>
+    <article
+      className={cn("store-product-card group h-full", outOfStock && "opacity-90")}
+    >
       <div className="store-product-media">
         {product.thumb_url ? (
           <Image
@@ -118,8 +113,8 @@ export const ProductCard = memo(function ProductCard({
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-zinc-100">
-            <span className="text-4xl font-semibold text-zinc-300">
+          <div className="store-product-media-fallback" aria-hidden="true">
+            <span className="store-product-media-fallback-label">
               {product.product_name.charAt(0).toUpperCase()}
             </span>
           </div>
@@ -137,7 +132,7 @@ export const ProductCard = memo(function ProductCard({
           {product.is_featured ? (
             <span className="store-featured-badge">Destacado</span>
           ) : (
-            <span />
+            <span aria-hidden="true" />
           )}
           <StockBadge
             availableStock={
@@ -160,59 +155,71 @@ export const ProductCard = memo(function ProductCard({
       </div>
 
       <div className="store-product-body">
-        {product.category_name && (
-          <p className="store-product-category">{product.category_name}</p>
-        )}
+        <div className="store-product-slot store-product-slot-meta">
+          <p
+            className={cn(
+              "store-product-category",
+              !product.category_name && "store-product-slot-empty",
+            )}
+          >
+            {product.category_name ?? "\u00A0"}
+          </p>
+        </div>
 
-        <h2 className="store-product-name">{product.product_name}</h2>
+        <div className="store-product-slot store-product-slot-title">
+          <h2 className="store-product-name">{product.product_name}</h2>
+        </div>
 
-        <AvailabilityStatus
-          availableStock={
-            showVariantSelector
-              ? selectedVariant?.availableStock ?? 0
-              : product.available_stock
-          }
-        />
+        <div className="store-product-slot store-product-slot-desc">
+          <p
+            className={cn(
+              "store-product-desc",
+              !product.short_description && "store-product-slot-empty",
+            )}
+          >
+            {product.short_description ?? "\u00A0"}
+          </p>
+        </div>
 
-        {product.short_description && (
-          <p className="store-product-desc">{product.short_description}</p>
-        )}
+        <div className="store-product-slot store-product-slot-variant">
+          {showVariantSelector ? (
+            <>
+              <label htmlFor={`variant-${product.product_id}`} className="sr-only">
+                Variante
+              </label>
+              <select
+                id={`variant-${product.product_id}`}
+                value={selectedVariantId}
+                onChange={(e) => setSelectedVariantId(e.target.value)}
+                className="store-cart-select store-product-variant-select w-full"
+              >
+                {variantOptions.map((variant) => (
+                  <option
+                    key={variant.id}
+                    value={variant.id}
+                    disabled={variant.availableStock <= 0}
+                  >
+                    {variant.name}
+                    {variant.priceExtraUsd > 0
+                      ? ` (+${formatUsd(variant.priceExtraUsd)})`
+                      : ""}
+                    {variant.availableStock <= 0 ? " — Agotado" : ""}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : (
+            <span className="store-product-variant-placeholder" aria-hidden="true" />
+          )}
+        </div>
 
-        {showVariantSelector && (
-          <div className="mt-3">
-            <label htmlFor={`variant-${product.product_id}`} className="sr-only">
-              Variante
-            </label>
-            <select
-              id={`variant-${product.product_id}`}
-              value={selectedVariantId}
-              onChange={(e) => setSelectedVariantId(e.target.value)}
-              className="store-cart-select w-full"
-            >
-              {variantOptions.map((variant) => (
-                <option
-                  key={variant.id}
-                  value={variant.id}
-                  disabled={variant.availableStock <= 0}
-                >
-                  {variant.name}
-                  {variant.priceExtraUsd > 0
-                    ? ` (+${formatUsd(variant.priceExtraUsd)})`
-                    : ""}
-                  {variant.availableStock <= 0 ? " — Agotado" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div className="store-product-pricing">
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <div className="store-product-slot store-product-slot-pricing">
+          <div className="store-product-price-row">
             <p className="store-product-price-usd">
               {formatUsd(selectedVariant?.priceUsd ?? product.price_usd)}
             </p>
             {hasDiscount && (
-              <p className="text-sm text-zinc-400 line-through">
+              <p className="store-product-price-compare">
                 {formatUsd(product.compare_at_usd)}
               </p>
             )}
@@ -221,19 +228,28 @@ export const ProductCard = memo(function ProductCard({
             <p className="store-product-price-ves">
               {formatApproxBs(selectedPriceVes)}
             </p>
-          ) : null}
+          ) : (
+            <span className="store-product-price-ves-placeholder" aria-hidden="true" />
+          )}
         </div>
 
-        {canAdd && (
-          <button
-            type="button"
-            onClick={handleAdd}
-            className="store-add-btn-mobile sm:hidden"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Agregar al carrito
-          </button>
-        )}
+        <div className="store-product-slot store-product-slot-action">
+          {canAdd ? (
+            <button
+              type="button"
+              onClick={handleAdd}
+              className="store-add-btn-mobile sm:hidden"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Agregar al carrito
+            </button>
+          ) : (
+            <span
+              className="store-product-action-placeholder sm:hidden"
+              aria-hidden="true"
+            />
+          )}
+        </div>
       </div>
     </article>
   );
