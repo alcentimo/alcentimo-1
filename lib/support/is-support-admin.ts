@@ -1,4 +1,4 @@
-/** Emails con acceso a /dashboard/soporte (lista separada por comas). */
+/** Emails con acceso a /admin/soporte (lista separada por comas). */
 export function isSupportAdmin(email: string | null | undefined): boolean {
   const normalized = email?.trim().toLowerCase();
   if (!normalized) return false;

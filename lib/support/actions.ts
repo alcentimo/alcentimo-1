@@ -85,6 +85,6 @@ export async function updateSupportMessageStatusAction(
     return { error: result.error };
   }
 
-  revalidatePath("/dashboard/soporte");
+  revalidatePath("/admin/soporte");
   return { success: true };
 }

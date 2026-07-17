@@ -230,7 +230,7 @@ export function DashboardSidebar({
 
           {isSupportAdmin && !collapsed ? (
             <Link
-              href="/dashboard/soporte"
+              href="/admin/soporte"
               className="block px-1 pt-1 text-center text-[11px] text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
               onClick={onCloseMobile}
             >

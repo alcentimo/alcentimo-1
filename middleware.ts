@@ -1,8 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasSupabasePublicEnv, requireSupabasePublicEnv } from "@/lib/supabase/config";
+import { isSupportAdmin } from "@/lib/support/is-support-admin";
 
 const DASHBOARD_PREFIX = "/dashboard";
+const ADMIN_PREFIX = "/admin";
 const DASHBOARD_LOGIN = "/dashboard/login";
 const RECOVER_PASSWORD_PATH = "/dashboard/recuperar-contrasena";
 const RESET_PASSWORD_PATH = "/dashboard/restablecer-contrasena";
@@ -107,6 +109,7 @@ export async function middleware(request: NextRequest) {
   }
 
   const isDashboard = pathname.startsWith(DASHBOARD_PREFIX);
+  const isAdminRoute = pathname.startsWith(ADMIN_PREFIX);
   const isLoginPage = pathname === DASHBOARD_LOGIN;
   const isRecoverPasswordPage = pathname === RECOVER_PASSWORD_PATH;
   const isResetPasswordPage = pathname === RESET_PASSWORD_PATH;
@@ -121,6 +124,24 @@ export async function middleware(request: NextRequest) {
 
   // Sin sesión: getUser puede devolver error "Auth session missing!" — es esperable.
   const authenticatedUser = user ?? null;
+
+  if (isAdminRoute) {
+    if (!authenticatedUser) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = DASHBOARD_LOGIN;
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    if (!isSupportAdmin(authenticatedUser.email)) {
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = "/dashboard/catalogo";
+      dashboardUrl.search = "";
+      return NextResponse.redirect(dashboardUrl);
+    }
+
+    return supabaseResponse;
+  }
 
   if (isOnboarding) {
     if (!authenticatedUser) {
@@ -165,16 +186,29 @@ export async function middleware(request: NextRequest) {
     }
 
     if (authenticatedUser && isLoginPage) {
+      const next = request.nextUrl.searchParams.get("next");
+      const redirectUrl = request.nextUrl.clone();
+
+      if (
+        next?.startsWith(ADMIN_PREFIX) &&
+        isSupportAdmin(authenticatedUser.email)
+      ) {
+        redirectUrl.pathname = next;
+        redirectUrl.search = "";
+        return NextResponse.redirect(redirectUrl);
+      }
+
       const hasStore = await userHasStoreInMiddleware(
         supabase,
         authenticatedUser.id,
       );
-      const next = request.nextUrl.searchParams.get("next");
-      const redirectUrl = request.nextUrl.clone();
 
       if (hasStore) {
         redirectUrl.pathname =
-          next && next.startsWith(DASHBOARD_PREFIX) ? next : "/dashboard";
+          next &&
+          (next.startsWith(DASHBOARD_PREFIX) || next.startsWith(ADMIN_PREFIX))
+            ? next
+            : "/dashboard";
       } else {
         redirectUrl.pathname = ONBOARDING_PATH;
       }
