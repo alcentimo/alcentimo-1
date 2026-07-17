@@ -1,11 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
+import { requireSupabasePublicEnv } from "@/lib/supabase/config";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+let anonClient: SupabaseClient<Database> | undefined;
 
 /**
- * Cliente anónimo para lecturas públicas en Server Components (catálogo, etc.).
- * No usar para auth: usar lib/supabase/client (browser) o lib/supabase/server.
+ * Cliente anónimo para lecturas públicas en el servidor (catálogo, cupones, etc.).
+ * Inicialización lazy: no accede a process.env al importar el módulo.
  */
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export function getSupabaseAnonClient(): SupabaseClient<Database> {
+  if (!anonClient) {
+    const { url, anonKey } = requireSupabasePublicEnv();
+    anonClient = createClient<Database>(url, anonKey);
+  }
+
+  return anonClient;
+}

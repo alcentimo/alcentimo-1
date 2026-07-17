@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import { getUserStore } from "@/lib/stores";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseAnonClient } from "@/lib/supabase";
 import type { Coupon, CouponInsert } from "@/lib/database.types";
 import type { CouponDiscountType } from "@/lib/coupons/types";
 import {
@@ -198,6 +198,8 @@ export async function validateCouponCode(
   const normalized = code.trim().toUpperCase();
   if (!normalized) return { error: "Ingresa un código de cupón." };
 
+  const supabase = getSupabaseAnonClient();
+
   const { data: storeData, error: storeError } = await supabase
     .from("stores")
     .select("id")
@@ -284,7 +286,7 @@ export async function redeemCouponCode(
 ): Promise<CouponActionResult> {
   if (!code.trim()) return { success: true };
 
-  const { data, error } = await supabase.rpc(
+  const { data, error } = await getSupabaseAnonClient().rpc(
     "redeem_coupon" as never,
     {
       p_store_slug: storeSlug,

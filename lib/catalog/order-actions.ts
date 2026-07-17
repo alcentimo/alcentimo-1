@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseAnonClient } from "@/lib/supabase";
 
 export type ProcessOrderResult = {
   error?: string;
@@ -26,7 +26,7 @@ export async function processCatalogOrder(
     quantity: item.quantity,
   }));
 
-  const { data, error } = await supabase.rpc(
+  const { data, error } = await getSupabaseAnonClient().rpc(
     "process_catalog_order" as never,
     {
       p_store_slug: storeSlug,

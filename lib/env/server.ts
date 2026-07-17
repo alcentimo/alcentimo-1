@@ -3,6 +3,8 @@
  * Nunca importar desde componentes cliente.
  */
 
+import { requireSupabasePublicEnv } from "@/lib/supabase/config";
+
 function requireEnv(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) {
@@ -36,10 +38,7 @@ export function getPublicSiteUrl(fallbackOrigin?: string): string {
 }
 
 export function getSupabasePublicConfig() {
-  return {
-    url: requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    anonKey: requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
-  };
+  return requireSupabasePublicEnv();
 }
 
 export function isVercelDeployment(): boolean {

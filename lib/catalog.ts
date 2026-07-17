@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { getSupabaseAnonClient } from "@/lib/supabase";
 import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 
@@ -43,6 +43,7 @@ function normalizeExchangeRate(row: ExchangeRate): ExchangeRate {
 }
 
 export async function getCurrentExchangeRate(): Promise<ExchangeRate | null> {
+  const supabase = getSupabaseAnonClient();
   const tasa = await getLatestUsdTasa(supabase);
   if (tasa && tasa.tasa > 0) {
     return {
@@ -74,6 +75,7 @@ export async function getCatalogProducts(
 ): Promise<CatalogPageData> {
   const { storeSlug, limit = 24, offset = 0, categorySlug } = options;
   const normalizedSlug = storeSlug.trim().toLowerCase();
+  const supabase = getSupabaseAnonClient();
 
   let query = supabase
     .from("catalog_list_view")

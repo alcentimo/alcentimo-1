@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseAnonClient } from "@/lib/supabase";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -11,6 +11,6 @@ export function getPublicServerClient(): SupabaseClient {
   try {
     return createAdminClient();
   } catch {
-    return supabase;
+    return getSupabaseAnonClient();
   }
 }
