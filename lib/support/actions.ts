@@ -2,9 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getAuthUserWithPlan } from "@/lib/auth/get-user-profile";
 import type { SupportMessageStatus } from "@/lib/database.types";
-import { isSupportAdmin } from "@/lib/support/is-support-admin";
+import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { updateSupportMessageStatus as persistSupportMessageStatus } from "@/lib/support/get-support-messages";
 
 export type SupportFormState = {
@@ -70,9 +69,11 @@ export async function updateSupportMessageStatusAction(
   status: SupportMessageStatus,
 ): Promise<SupportStatusActionState> {
   const supabase = await createClient();
-  const authUser = await getAuthUserWithPlan(supabase);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!authUser || !isSupportAdmin(authUser.email)) {
+  if (!user || !isSupportAdmin(resolveAuthEmail(user))) {
     return { error: "No tienes permiso para gestionar mensajes de soporte." };
   }
 

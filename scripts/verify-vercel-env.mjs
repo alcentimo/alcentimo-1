@@ -62,6 +62,12 @@ if (isProduction && missingServer.length > 0) {
   );
 }
 
+if (isProduction && !envValue("SUPPORT_ADMIN_EMAILS")) {
+  console.warn(
+    "[vercel-env] SUPPORT_ADMIN_EMAILS no está configurada: /admin/soporte redirigirá a todos los usuarios.",
+  );
+}
+
 if (isProduction && blockingMissing.length > 0) {
   console.error(
     "[vercel-env] Build abortado: configura las variables core en Vercel → Settings → Environment Variables.",

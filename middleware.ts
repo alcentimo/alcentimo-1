@@ -1,7 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasSupabasePublicEnv, requireSupabasePublicEnv } from "@/lib/supabase/config";
-import { isSupportAdmin } from "@/lib/support/is-support-admin";
+import {
+  checkSupportAdminAccess,
+  resolveAuthEmail,
+} from "@/lib/support/admin-access";
 
 const DASHBOARD_PREFIX = "/dashboard";
 const ADMIN_PREFIX = "/admin";
@@ -133,10 +136,22 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    if (!isSupportAdmin(authenticatedUser.email)) {
+    const adminEmail = resolveAuthEmail(authenticatedUser);
+    const adminAccess = checkSupportAdminAccess(adminEmail);
+
+    if (!adminAccess.ok) {
+      console.warn("[admin-access-denied]", {
+        path: pathname,
+        reason: adminAccess.reason,
+        sessionEmail: authenticatedUser.email ?? null,
+        resolvedEmail: adminEmail,
+        allowlistCount: adminAccess.allowlistCount,
+        envVarPresent: Boolean(process.env.SUPPORT_ADMIN_EMAILS?.trim()),
+      });
+
       const dashboardUrl = request.nextUrl.clone();
       dashboardUrl.pathname = "/dashboard/catalogo";
-      dashboardUrl.search = "";
+      dashboardUrl.searchParams.set("admin_denied", adminAccess.reason ?? "denied");
       return NextResponse.redirect(dashboardUrl);
     }
 
@@ -191,7 +206,7 @@ export async function middleware(request: NextRequest) {
 
       if (
         next?.startsWith(ADMIN_PREFIX) &&
-        isSupportAdmin(authenticatedUser.email)
+        checkSupportAdminAccess(resolveAuthEmail(authenticatedUser)).ok
       ) {
         redirectUrl.pathname = next;
         redirectUrl.search = "";

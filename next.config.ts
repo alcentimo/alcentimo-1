@@ -33,6 +33,10 @@ const nextConfig: NextConfig = {
   turbopack: {},
   poweredByHeader: false,
   serverExternalPackages: ["sharp"],
+  // Disponible en middleware (Edge) tras el build en Vercel.
+  env: {
+    SUPPORT_ADMIN_EMAILS: process.env.SUPPORT_ADMIN_EMAILS ?? "",
+  },
   experimental: {
     optimizePackageImports: ["lucide-react", "react-icons"],
     serverActions: {

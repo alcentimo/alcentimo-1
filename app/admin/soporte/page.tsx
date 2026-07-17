@@ -1,24 +1,25 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { SupportMessagesPanel } from "@/components/dashboard/SupportMessagesPanel";
 import { getSupportMessages } from "@/lib/support/get-support-messages";
-import { isSupportAdmin } from "@/lib/support/is-support-admin";
+import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import type { SupportMessage } from "@/lib/database.types";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminSoportePage() {
   const supabase = await createClient();
-  const session = await getDashboardSession(supabase);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect("/dashboard/login?next=/admin/soporte");
   }
 
-  if (!isSupportAdmin(session.authUser.email)) {
-    redirect("/dashboard/catalogo");
+  if (!isSupportAdmin(resolveAuthEmail(user))) {
+    redirect("/dashboard/catalogo?admin_denied=not_listed");
   }
 
   let messages: SupportMessage[] = [];
