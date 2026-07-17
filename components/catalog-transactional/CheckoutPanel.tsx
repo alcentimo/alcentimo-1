@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Minus, Plus, ShoppingBag, X } from "lucide-react";
+import Image from "next/image";
+import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { PaymentCheckoutDetails } from "@/components/payments/PaymentCheckoutDetails";
@@ -166,61 +167,84 @@ export function CheckoutPanel({
               const key = cartItemKey(item.product.product_id, item.variantId);
               return (
                 <li key={key} className="txn-checkout-item">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-zinc-900">
-                      {item.product.product_name}
-                    </p>
-                    {item.variantName !== "Estándar" && (
-                      <p className="text-xs text-zinc-500">{item.variantName}</p>
+                  <div className="txn-checkout-item-thumb">
+                    {item.product.thumb_url ? (
+                      <Image
+                        src={item.product.thumb_url}
+                        alt={item.product.product_name}
+                        fill
+                        sizes="72px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-base font-semibold text-zinc-400">
+                        {item.product.product_name.charAt(0).toUpperCase()}
+                      </div>
                     )}
-                    <p className="mt-1 text-sm text-zinc-700">
+                  </div>
+
+                  <div className="txn-checkout-item-body">
+                    <div className="txn-checkout-item-top">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold leading-snug text-zinc-900 dark:text-zinc-50">
+                          {item.product.product_name}
+                        </p>
+                        {item.variantName !== "Estándar" && (
+                          <p className="mt-0.5 truncate text-xs text-zinc-500">
+                            {item.variantName}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className="txn-remove-btn"
+                        onClick={() =>
+                          removeItem(item.product.product_id, item.variantId)
+                        }
+                        aria-label={`Eliminar ${item.product.product_name} del carrito`}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </div>
+
+                    <p className="text-sm font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
                       {formatUsd(item.unitPriceUsd * item.quantity)}
                     </p>
-                  </div>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      className="txn-qty-btn"
-                      onClick={() =>
-                        updateQuantity(
-                          item.product.product_id,
-                          item.variantId,
-                          item.quantity - 1,
-                        )
-                      }
-                      aria-label="Reducir cantidad"
-                    >
-                      <Minus className="h-3.5 w-3.5" />
-                    </button>
-                    <span className="w-6 text-center text-sm tabular-nums">
-                      {item.quantity}
-                    </span>
-                    <button
-                      type="button"
-                      className="txn-qty-btn"
-                      onClick={() =>
-                        updateQuantity(
-                          item.product.product_id,
-                          item.variantId,
-                          item.quantity + 1,
-                        )
-                      }
-                      aria-label="Aumentar cantidad"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="txn-checkout-item-qty">
+                      <button
+                        type="button"
+                        className="txn-qty-btn"
+                        onClick={() =>
+                          updateQuantity(
+                            item.product.product_id,
+                            item.variantId,
+                            item.quantity - 1,
+                          )
+                        }
+                        aria-label="Reducir cantidad"
+                      >
+                        <Minus className="h-3.5 w-3.5" />
+                      </button>
+                      <span className="min-w-7 text-center text-sm font-medium tabular-nums">
+                        {item.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        className="txn-qty-btn"
+                        onClick={() =>
+                          updateQuantity(
+                            item.product.product_id,
+                            item.variantId,
+                            item.quantity + 1,
+                          )
+                        }
+                        aria-label="Aumentar cantidad"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
-
-                  <button
-                    type="button"
-                    className="txn-remove-btn"
-                    onClick={() =>
-                      removeItem(item.product.product_id, item.variantId)
-                    }
-                  >
-                    Quitar
-                  </button>
                 </li>
               );
             })}

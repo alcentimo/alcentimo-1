@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Image from "next/image";
-import { Minus, Plus, ShoppingBag, X } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { PaymentCheckoutDetails } from "@/components/payments/PaymentCheckoutDetails";
@@ -317,42 +317,61 @@ export function CartDrawer({
                   isCartItemEligible(item.product.product_id, activeCoupon);
                 return (
                   <li key={key} className="store-cart-item">
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
+                    <div className="store-cart-item-thumb">
                       {item.product.thumb_url ? (
                         <Image
                           src={item.product.thumb_url}
                           alt={item.product.product_name}
                           fill
-                          sizes="64px"
+                          sizes="72px"
                           className="object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-400">
+                        <div className="flex h-full w-full items-center justify-center text-base font-semibold text-zinc-400">
                           {item.product.product_name.charAt(0).toUpperCase()}
                         </div>
                       )}
                     </div>
 
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-zinc-900">
-                        {item.product.product_name}
-                      </p>
-                      {item.variantName !== "Estándar" && (
-                        <p className="truncate text-xs text-zinc-500">{item.variantName}</p>
-                      )}
+                    <div className="store-cart-item-body">
+                      <div className="store-cart-item-top">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold leading-snug text-zinc-900">
+                            {item.product.product_name}
+                          </p>
+                          {item.variantName !== "Estándar" && (
+                            <p className="mt-0.5 truncate text-xs text-zinc-500">
+                              {item.variantName}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onRemove(item.product.product_id, item.variantId)
+                          }
+                          className="store-cart-remove-btn"
+                          aria-label={`Eliminar ${item.product.product_name} del carrito`}
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </div>
+
                       {activeCoupon && (
                         <p
-                          className={`mt-0.5 text-xs ${
+                          className={`text-xs leading-relaxed ${
                             itemEligible ? "text-teal-700" : "text-zinc-400"
                           }`}
                         >
                           {itemEligible ? "Incluido en cupón" : "Sin descuento de cupón"}
                         </p>
                       )}
-                      <p className="mt-1 text-sm font-semibold text-zinc-900">
+
+                      <p className="text-sm font-semibold tabular-nums text-zinc-900">
                         {formatUsd(item.unitPriceUsd * item.quantity)}
                       </p>
-                      <div className="mt-2 flex items-center gap-2">
+
+                      <div className="store-cart-item-qty">
                         <button
                           type="button"
                           onClick={() =>
@@ -367,7 +386,7 @@ export function CartDrawer({
                         >
                           <Minus className="h-3.5 w-3.5" />
                         </button>
-                        <span className="min-w-6 text-center text-sm font-medium text-zinc-800">
+                        <span className="min-w-7 text-center text-sm font-medium tabular-nums text-zinc-800">
                           {item.quantity}
                         </span>
                         <button
@@ -383,15 +402,6 @@ export function CartDrawer({
                           aria-label={`Aumentar cantidad de ${item.product.product_name}`}
                         >
                           <Plus className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onRemove(item.product.product_id, item.variantId)
-                          }
-                          className="ml-auto text-xs font-medium text-zinc-500 hover:text-zinc-900"
-                        >
-                          Quitar
                         </button>
                       </div>
                     </div>
@@ -452,9 +462,9 @@ export function CartDrawer({
                 </div>
 
                 {purchaseInfo.shipping.length > 0 && (
-                  <div className="store-cart-field">
+                  <div className="store-cart-shipping-block">
                     <p className="store-cart-label">Método de envío</p>
-                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                       {purchaseInfo.shipping.map((option) => (
                         <ShippingMethodCard
                           key={option.key}
