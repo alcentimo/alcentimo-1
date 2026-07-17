@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Clock, Coins, CreditCard, Link2, MessageSquare, Palette, Settings2, Tag } from "lucide-react";
+import { Clock, Coins, CreditCard, MessageSquare, Palette, Settings2, Tag } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
 import { MessageTemplatesTab } from "@/components/dashboard/settings/MessageTemplatesTab";
@@ -43,12 +41,10 @@ export function SettingsPanel({
   products,
   initialConfig,
 }: SettingsPanelProps) {
-  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<SettingsTabId>("general");
-  const integrationsActive = pathname.startsWith("/dashboard/ajustes/integraciones");
-  const promotionsActive = activeTab === "promotions" && !integrationsActive;
-  const designActive = activeTab === "design" && !integrationsActive;
-  const messagesActive = activeTab === "messages" && !integrationsActive;
+  const promotionsActive = activeTab === "promotions";
+  const designActive = activeTab === "design";
+  const messagesActive = activeTab === "messages";
 
   const panel = (
     <>
@@ -59,7 +55,7 @@ export function SettingsPanel({
       >
         {PRIMARY_TABS.map((tab) => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.id && !integrationsActive;
+          const isActive = activeTab === tab.id;
 
           return (
             <button
@@ -107,17 +103,10 @@ export function SettingsPanel({
           <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
           Plantillas de mensajes
         </button>
-        <Link
-          href="/dashboard/ajustes/integraciones"
-          className={`settings-pill-link ${integrationsActive ? "settings-pill-link-active" : ""}`}
-        >
-          <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
-          Integraciones
-        </Link>
       </nav>
 
       <div className="settings-workspace-body">
-        {activeTab === "general" && !integrationsActive && (
+        {activeTab === "general" && (
           <div
             role="tabpanel"
             id="settings-panel-general"
@@ -136,7 +125,7 @@ export function SettingsPanel({
             />
           </div>
         )}
-        {activeTab === "currency" && !integrationsActive && (
+        {activeTab === "currency" && (
           <div
             role="tabpanel"
             id="settings-panel-currency"
@@ -145,7 +134,7 @@ export function SettingsPanel({
             <CatalogCurrencyTab initialSettings={initialConfig.catalogCurrency} />
           </div>
         )}
-        {activeTab === "location" && !integrationsActive && (
+        {activeTab === "location" && (
           <div
             role="tabpanel"
             id="settings-panel-location"
@@ -158,7 +147,7 @@ export function SettingsPanel({
             />
           </div>
         )}
-        {activeTab === "payments" && !integrationsActive && (
+        {activeTab === "payments" && (
           <div
             role="tabpanel"
             id="settings-panel-payments"
