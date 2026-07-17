@@ -27,7 +27,7 @@ export function ProductPreview({ exchangeRate }: ProductPreviewProps) {
   return (
     <div className="relative mx-auto w-full max-w-xl lg:max-w-none" aria-hidden="true">
       <div
-        className="pointer-events-none absolute -right-6 -top-6 h-48 w-48 rounded-full bg-teal-400/10 blur-3xl dark:bg-teal-500/5"
+        className="pointer-events-none absolute -right-6 -top-6 h-48 w-48 rounded-full bg-emerald-400/10 blur-3xl dark:bg-emerald-500/5"
         aria-hidden="true"
       />
       <div
@@ -41,7 +41,7 @@ export function ProductPreview({ exchangeRate }: ProductPreviewProps) {
           <div className="flex items-center gap-2 border-b border-zinc-200/60 px-3.5 py-2.5 dark:border-zinc-700/60">
             <span className="h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-600" />
             <span className="h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-            <span className="h-2 w-2 rounded-full bg-teal-500/80" />
+            <span className="h-2 w-2 rounded-full bg-emerald-500/80" />
             <span className="ml-1 truncate text-[11px] font-medium text-zinc-400">
               app.alcentimo.com/dashboard
             </span>
@@ -54,7 +54,7 @@ export function ProductPreview({ exchangeRate }: ProductPreviewProps) {
                   key={index}
                   className={`flex h-8 w-8 items-center justify-center rounded-lg ${
                     index === 0
-                      ? "border-l-2 border-teal-600 bg-teal-50 text-teal-700 dark:border-teal-400 dark:bg-teal-950/60 dark:text-teal-400"
+                      ? "border-l-2 border-emerald-600 bg-emerald-50 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-950/60 dark:text-emerald-400"
                       : "text-zinc-400"
                   }`}
                 >
@@ -100,7 +100,7 @@ export function ProductPreview({ exchangeRate }: ProductPreviewProps) {
                             {formatUsd(product.usd)}
                           </span>
                           {ves != null && (
-                            <span className="text-[10px] font-medium text-teal-700 dark:text-teal-400">
+                            <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
                               {formatVes(ves)}
                             </span>
                           )}
@@ -119,7 +119,7 @@ export function ProductPreview({ exchangeRate }: ProductPreviewProps) {
 
         {/* KPI — productos */}
         <div className="landing-glass col-span-3 flex flex-col justify-between p-3.5 sm:p-4 lg:col-span-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
             <Package className="h-4 w-4" strokeWidth={1.75} />
           </span>
           <div className="mt-3">
@@ -149,7 +149,7 @@ export function ProductPreview({ exchangeRate }: ProductPreviewProps) {
                 ? `Bs. ${formatExchangeRate(exchangeRate)}`
                 : "—"}
             </p>
-            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-teal-700 dark:text-teal-400">
+            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400">
               <RefreshCw className="h-3 w-3" aria-hidden="true" />
               Actualización automática
             </p>
@@ -170,7 +170,7 @@ export function ProductPreview({ exchangeRate }: ProductPreviewProps) {
           {sampleVes != null && (
             <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">
               Ejemplo: {formatUsd(mockProducts[0].usd)}{" "}
-              <span className="text-teal-700 dark:text-teal-400">
+              <span className="text-emerald-700 dark:text-emerald-400">
                 → {formatVes(sampleVes)}
               </span>
             </p>
@@ -180,8 +180,8 @@ export function ProductPreview({ exchangeRate }: ProductPreviewProps) {
         {/* Estado del sistema */}
         <div className="landing-glass col-span-6 flex items-center gap-3 p-3.5 sm:p-4 lg:col-span-3">
           <span className="relative flex h-2.5 w-2.5 shrink-0">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-40" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-teal-500" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-40" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
           </span>
           <div className="min-w-0">
             <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">

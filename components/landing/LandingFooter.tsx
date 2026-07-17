@@ -3,7 +3,7 @@ import { BrandLogo } from "@/components/ui/BrandLogo";
 
 export function LandingFooter() {
   return (
-    <footer className="border-t border-zinc-200/80 bg-white safe-area-bottom dark:border-zinc-800 dark:bg-zinc-950">
+    <footer className="border-t border-zinc-200/70 bg-[#FAFAF9] safe-area-bottom dark:border-zinc-800/70 dark:bg-zinc-950">
       <div className="page-container py-10 sm:py-12">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div>

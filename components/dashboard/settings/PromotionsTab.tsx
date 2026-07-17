@@ -263,7 +263,7 @@ export function PromotionsTab({ initialCoupons, products }: PromotionsTabProps) 
                   onChange={() =>
                     setForm((prev) => ({ ...prev, discountType: "percent" }))
                   }
-                  className="text-teal-600 focus:ring-teal-500"
+                  className="text-emerald-600 focus:ring-emerald-500"
                 />
                 Porcentaje (%)
               </label>
@@ -275,7 +275,7 @@ export function PromotionsTab({ initialCoupons, products }: PromotionsTabProps) 
                   onChange={() =>
                     setForm((prev) => ({ ...prev, discountType: "fixed" }))
                   }
-                  className="text-teal-600 focus:ring-teal-500"
+                  className="text-emerald-600 focus:ring-emerald-500"
                 />
                 Monto fijo (USD)
               </label>
@@ -386,7 +386,7 @@ export function PromotionsTab({ initialCoupons, products }: PromotionsTabProps) 
                 }
                 className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
                   form.applyToWholeStore
-                    ? "bg-teal-600"
+                    ? "bg-emerald-600"
                     : "bg-zinc-300 dark:bg-zinc-600"
                 }`}
               >
@@ -409,7 +409,7 @@ export function PromotionsTab({ initialCoupons, products }: PromotionsTabProps) 
             )}
           </div>
 
-          <div className="rounded-xl bg-teal-50/70 px-4 py-3 text-sm text-teal-900 dark:bg-teal-950/40 dark:text-teal-100">
+          <div className="rounded-xl bg-emerald-50/70 px-4 py-3 text-sm text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
             Resumen: <strong>{discountPreview}</strong> de descuento ·{" "}
             {form.applyToWholeStore
               ? "toda la tienda"
@@ -438,7 +438,7 @@ export function PromotionsTab({ initialCoupons, products }: PromotionsTabProps) 
 
       {coupons.length === 0 ? (
         <div className="settings-option-card py-16 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-400">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
             <Tag className="h-5 w-5" aria-hidden="true" />
           </div>
           <p className="mt-4 text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -459,7 +459,7 @@ export function PromotionsTab({ initialCoupons, products }: PromotionsTabProps) 
               <article key={coupon.id} className="settings-option-card">
                 <div className="settings-option-row items-start">
                   <div className="flex min-w-0 items-start gap-4">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-400">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
                       <Tag className="h-4 w-4" aria-hidden="true" />
                     </span>
                     <div className="min-w-0">

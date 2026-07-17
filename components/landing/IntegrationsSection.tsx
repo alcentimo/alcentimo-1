@@ -27,12 +27,12 @@ export function IntegrationsSection() {
         <div className="mt-10">
           <Link
             href="/dashboard/login"
-            className="landing-glass group flex flex-col gap-4 p-5 transition-colors hover:border-teal-600/20 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+            className="landing-glass group flex flex-col gap-4 p-5 transition-colors hover:border-emerald-600/20 sm:flex-row sm:items-center sm:justify-between sm:p-6"
           >
             <div className="flex items-start gap-4">
               <ChannelLogo provider="whatsapp" className="h-11 w-11 shrink-0" />
               <div className="text-left">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-teal-700 dark:text-teal-400">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
                   WhatsApp
                 </p>
                 <p className="mt-1 text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -44,7 +44,7 @@ export function IntegrationsSection() {
                 </p>
               </div>
             </div>
-            <span className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-teal-700 transition group-hover:gap-2 dark:text-teal-400 sm:self-center">
+            <span className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-emerald-700 transition group-hover:gap-2 dark:text-emerald-400 sm:self-center">
               Comenzar gratis
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </span>

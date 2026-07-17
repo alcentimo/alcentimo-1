@@ -47,7 +47,7 @@ export function CatalogLinkCard({
           onClick={handleCopy}
           className={cn(
             "btn-brand mt-4 inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-sm font-semibold sm:w-auto sm:min-w-[11rem]",
-            copied && "bg-teal-700",
+            copied && "bg-emerald-700",
           )}
         >
           {copied ? (
@@ -69,12 +69,12 @@ export function CatalogLinkCard({
   return (
     <div
       className={cn(
-        "general-catalog-link-card flex flex-col rounded-xl border border-teal-100/80 bg-teal-50/40 sm:flex-row sm:items-center sm:justify-between dark:border-teal-900/40 dark:bg-teal-950/20",
+        "general-catalog-link-card flex flex-col rounded-xl border border-emerald-100/80 bg-emerald-50/40 sm:flex-row sm:items-center sm:justify-between dark:border-emerald-900/40 dark:bg-emerald-950/20",
         className,
       )}
     >
       <div className="min-w-0">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-teal-700/80 dark:text-teal-300/80">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-emerald-700/80 dark:text-emerald-300/80">
           Enlace de tu catálogo
         </p>
         <p className="mt-1 break-all text-sm text-zinc-800 dark:text-zinc-100">
@@ -89,13 +89,13 @@ export function CatalogLinkCard({
         className={cn(
           "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
           copied
-            ? "border-teal-200 bg-white text-teal-700 dark:border-teal-800 dark:bg-zinc-950 dark:text-teal-300"
-            : "border-teal-200/80 bg-white text-zinc-700 hover:bg-teal-50 dark:border-teal-900 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-teal-950/30",
+            ? "border-emerald-200 bg-white text-emerald-700 dark:border-emerald-800 dark:bg-zinc-950 dark:text-emerald-300"
+            : "border-emerald-200/80 bg-white text-zinc-700 hover:bg-emerald-50 dark:border-emerald-900 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-emerald-950/30",
         )}
       >
         {copied ? (
           <>
-            <Check className="h-3.5 w-3.5 text-teal-600" aria-hidden="true" />
+            <Check className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
             ¡Copiado!
           </>
         ) : (

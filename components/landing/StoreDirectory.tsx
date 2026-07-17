@@ -36,7 +36,7 @@ export function StoreDirectory({ stores }: StoreDirectoryProps) {
                 className="group flex h-full min-h-[5.5rem] flex-col justify-between p-5 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
               >
                 <div>
-                  <p className="text-base font-semibold tracking-tight text-zinc-900 group-hover:text-teal-700 dark:text-zinc-50 dark:group-hover:text-teal-400">
+                  <p className="text-base font-semibold tracking-tight text-zinc-900 group-hover:text-emerald-700 dark:text-zinc-50 dark:group-hover:text-emerald-400">
                     {store.name}
                   </p>
                   {store.description && (
@@ -45,7 +45,7 @@ export function StoreDirectory({ stores }: StoreDirectoryProps) {
                     </p>
                   )}
                 </div>
-                <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-teal-700 dark:text-teal-400">
+                <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-400">
                   Ver catálogo
                   <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </span>

@@ -63,7 +63,7 @@ export function DesignTab({ initialDesign, storeRubro }: DesignTabProps) {
     >
       {successMessage ? (
         <p
-          className="mb-4 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-300"
+          className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
           role="status"
         >
           {successMessage}
@@ -127,7 +127,7 @@ export function DesignTab({ initialDesign, storeRubro }: DesignTabProps) {
                 className={cn(
                   "flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition",
                   layout === "grid"
-                    ? "border-teal-600 bg-teal-50/70 dark:border-teal-500 dark:bg-teal-950/30"
+                    ? "border-emerald-600 bg-emerald-50/70 dark:border-emerald-500 dark:bg-emerald-950/30"
                     : "border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900/40",
                 )}
               >
@@ -150,7 +150,7 @@ export function DesignTab({ initialDesign, storeRubro }: DesignTabProps) {
                 className={cn(
                   "flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition",
                   layout === "list"
-                    ? "border-teal-600 bg-teal-50/70 dark:border-teal-500 dark:bg-teal-950/30"
+                    ? "border-emerald-600 bg-emerald-50/70 dark:border-emerald-500 dark:bg-emerald-950/30"
                     : "border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900/40",
                 )}
               >

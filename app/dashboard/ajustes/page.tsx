@@ -43,7 +43,7 @@ export default async function AjustesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-5xl space-y-8">
       <DashboardPageHeader
         sectionLabel="Administración"
         title="Configuración de Tienda"

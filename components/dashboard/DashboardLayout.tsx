@@ -63,7 +63,7 @@ function DashboardShell({
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-zinc-100 dark:bg-zinc-950">
+    <div className="dashboard-shell flex h-dvh overflow-hidden">
       {sidebarOpen && (
         <button
           type="button"
@@ -85,7 +85,7 @@ function DashboardShell({
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-950 lg:px-6">
+        <header className="dashboard-header flex h-14 shrink-0 items-center justify-between gap-3 px-4 lg:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -109,7 +109,7 @@ function DashboardShell({
           />
         </header>
 
-        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 safe-area-inset sm:p-6 lg:p-8">
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 safe-area-inset sm:p-7 lg:p-9">
           {children}
         </main>
       </div>

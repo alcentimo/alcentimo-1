@@ -109,7 +109,7 @@ export function PricingGrid({ exchangeRate }: PricingGridProps) {
   return (
     <section
       id="precios"
-      className="section-padding border-b border-zinc-200/60 bg-zinc-50 dark:border-zinc-800/60 dark:bg-zinc-950"
+      className="section-padding border-b border-zinc-200/60 bg-[#FAFAF9] dark:border-zinc-800/60 dark:bg-zinc-950"
     >
       <div className="page-container">
         <div className="grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-16">
@@ -151,7 +151,7 @@ export function PricingGrid({ exchangeRate }: PricingGridProps) {
                 }`}
               >
                 {isPopular && (
-                  <span className="absolute -top-3 left-6 rounded-full border border-teal-600/20 bg-teal-600 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white dark:border-teal-400/20 dark:bg-teal-500 dark:text-zinc-950">
+                  <span className="absolute -top-3 left-6 rounded-full border border-emerald-600/20 bg-emerald-600 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white dark:border-emerald-400/20 dark:bg-emerald-500 dark:text-zinc-950">
                     Recomendado
                   </span>
                 )}
@@ -160,7 +160,7 @@ export function PricingGrid({ exchangeRate }: PricingGridProps) {
                   <span
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                       isPopular
-                        ? "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400"
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
                         : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
                     }`}
                   >

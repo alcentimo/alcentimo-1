@@ -3,11 +3,11 @@ import { ArrowRight } from "lucide-react";
 
 export function CtaBanner() {
   return (
-    <section className="section-padding border-t border-zinc-200/60 bg-zinc-50 dark:border-zinc-800/60 dark:bg-zinc-950">
+    <section className="section-padding border-t border-zinc-200/60 bg-[#FAFAF9] dark:border-zinc-800/60 dark:bg-zinc-950">
       <div className="page-container">
-        <div className="rounded-xl border border-zinc-200/60 bg-zinc-900 px-6 py-10 sm:px-10 sm:py-12 lg:px-12 dark:border-zinc-800/60 dark:bg-zinc-900">
+        <div className="rounded-[12px] border border-zinc-200/60 bg-zinc-900 px-6 py-10 shadow-[0_1px_3px_rgba(24,24,27,0.06)] sm:px-10 sm:py-12 lg:px-12 dark:border-zinc-800/60 dark:bg-zinc-900">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-widest text-teal-400">
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
               Implementación inmediata
             </p>
             <h2 className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">

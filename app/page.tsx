@@ -33,7 +33,7 @@ export default async function Home() {
     <>
       <RecoveryUrlRedirect />
       <LandingNav />
-      <main className="min-h-dvh bg-zinc-50 dark:bg-zinc-950">
+      <main className="landing-shell">
         <Hero exchangeRate={exchangeRate} />
         <FinancialConsistencyHighlight />
         <Features />

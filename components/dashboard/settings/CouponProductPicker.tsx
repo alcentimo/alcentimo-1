@@ -106,7 +106,7 @@ export function CouponProductPicker({
                 <label
                   className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
                     checked
-                      ? "border-teal-300 bg-teal-50/80 dark:border-teal-800 dark:bg-teal-950/40"
+                      ? "border-emerald-300 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/40"
                       : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
                   }`}
                 >
@@ -114,7 +114,7 @@ export function CouponProductPicker({
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggleProduct(product.id)}
-                    className="h-4 w-4 rounded border-zinc-300 text-teal-600 focus:ring-teal-500"
+                    className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
                   />
                   <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-zinc-100">
                     {product.thumbUrl ? (

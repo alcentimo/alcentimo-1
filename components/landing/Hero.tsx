@@ -15,7 +15,7 @@ const stats = [
 
 export function Hero({ exchangeRate }: HeroProps) {
   return (
-    <section className="relative overflow-hidden border-b border-zinc-200/60 bg-zinc-50 pt-28 sm:pt-32 lg:pt-36 dark:border-zinc-800/60 dark:bg-zinc-950">
+    <section className="relative overflow-hidden border-b border-zinc-200/60 bg-[#FAFAF9] pt-28 sm:pt-32 lg:pt-36 dark:border-zinc-800/60 dark:bg-zinc-950">
       <div
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[linear-gradient(to_bottom,white,transparent)] opacity-40 dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)] dark:opacity-25"
         aria-hidden="true"
@@ -28,7 +28,7 @@ export function Hero({ exchangeRate }: HeroProps) {
               <span className="section-label">Plataforma empresarial</span>
               {exchangeRate != null && (
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200/80 bg-white/80 px-2.5 py-1 text-xs font-medium text-zinc-600 backdrop-blur-sm dark:border-zinc-700/80 dark:bg-zinc-900/80 dark:text-zinc-300">
-                  <RefreshCw className="h-3 w-3 text-teal-600 dark:text-teal-400" aria-hidden="true" />
+                  <RefreshCw className="h-3 w-3 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                   Bs. {formatExchangeRate(exchangeRate)} / USD
                 </span>
               )}
@@ -36,7 +36,7 @@ export function Hero({ exchangeRate }: HeroProps) {
 
             <h1 className="landing-hero-title mt-5">
               Infraestructura de gestión para el{" "}
-              <span className="text-teal-600 dark:text-teal-400">
+              <span className="text-emerald-600 dark:text-emerald-400">
                 comercio moderno
               </span>
             </h1>

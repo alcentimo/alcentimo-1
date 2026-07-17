@@ -47,7 +47,7 @@ export function ForgotPasswordPanel() {
         <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
           Revisa tu correo
         </h2>
-        <div className="alert-success mt-4 text-base text-teal-800 sm:text-sm dark:text-teal-200">
+        <div className="alert-success mt-4 text-base text-emerald-800 sm:text-sm dark:text-emerald-200">
           Si existe una cuenta con ese correo, te enviamos un enlace para
           restablecer tu contraseña.
         </div>

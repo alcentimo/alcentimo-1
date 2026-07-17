@@ -138,9 +138,9 @@ export function StoreLogoField({ storeName, value, onChange }: StoreLogoFieldPro
             role="status"
             aria-live="polite"
           >
-            <Loader2 className="h-5 w-5 animate-spin text-teal-600" aria-hidden="true" />
+            <Loader2 className="h-5 w-5 animate-spin text-emerald-600" aria-hidden="true" />
             {compressing && (
-              <span className="text-[9px] font-medium text-teal-700 dark:text-teal-300">
+              <span className="text-[9px] font-medium text-emerald-700 dark:text-emerald-300">
                 Optimizando…
               </span>
             )}

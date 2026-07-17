@@ -82,11 +82,7 @@ export function SettingsPanel({
         <button
           type="button"
           onClick={() => setActiveTab("design")}
-          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-            designActive
-              ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-              : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900/50 dark:hover:text-zinc-200"
-          }`}
+          className={`settings-pill-link ${designActive ? "settings-pill-link-active" : ""}`}
         >
           <Palette className="h-3.5 w-3.5" aria-hidden="true" />
           Personalizar diseño
@@ -94,22 +90,14 @@ export function SettingsPanel({
         <button
           type="button"
           onClick={() => setActiveTab("promotions")}
-          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-            promotionsActive
-              ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-              : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900/50 dark:hover:text-zinc-200"
-          }`}
+          className={`settings-pill-link ${promotionsActive ? "settings-pill-link-active" : ""}`}
         >
           <Tag className="h-3.5 w-3.5" aria-hidden="true" />
           Promociones
         </button>
         <Link
           href="/dashboard/ajustes/integraciones"
-          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-            integrationsActive
-              ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-              : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900/50 dark:hover:text-zinc-200"
-          }`}
+          className={`settings-pill-link ${integrationsActive ? "settings-pill-link-active" : ""}`}
         >
           <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
           Integraciones

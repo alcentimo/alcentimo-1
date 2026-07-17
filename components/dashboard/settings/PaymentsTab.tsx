@@ -318,7 +318,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
     >
       {success && (
         <p
-          className="mb-4 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-300"
+          className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
           role="status"
         >
           {success}

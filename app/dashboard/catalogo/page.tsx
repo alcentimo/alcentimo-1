@@ -6,7 +6,9 @@ import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getStoreInventory } from "@/lib/inventory";
 import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
+import { isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
 import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
+import { AutomaticConversionWidget } from "@/components/dashboard/AutomaticConversionWidget";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { Button } from "@/components/ui/button";
 
@@ -51,14 +53,18 @@ export default async function CatalogoPage({
     );
   }
 
-  const [{ products }, exchangeRate, productFormConfig] = await Promise.all([
+  const [{ products }, exchangeRateRow, productFormConfig] = await Promise.all([
     getStoreInventory(store.slug),
     getCurrentExchangeRate(),
     getStoreProductFormConfig(store.id),
   ]);
 
+  const exchangeRate = exchangeRateRow?.rate ?? null;
+  const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
+  const exchangeRateStale = isBcvRateStale(exchangeRateUpdatedAt);
+
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-6xl space-y-8">
       {showOnboardingSuccess ? (
         <div className="alert-success mb-6" role="status">
           ¡Tu tienda está lista! Publica tu primer producto y comparte tu catálogo.
@@ -71,10 +77,16 @@ export default async function CatalogoPage({
         storeSlug={store.slug}
       />
 
+      <AutomaticConversionWidget
+        rate={exchangeRate}
+        updatedAt={exchangeRateUpdatedAt}
+        stale={exchangeRateStale}
+      />
+
       <Suspense fallback={<p className="text-sm text-zinc-500">Cargando catálogo…</p>}>
         <CatalogPanel
           store={store}
-          exchangeRate={exchangeRate?.rate ?? null}
+          exchangeRate={exchangeRate}
           initialProducts={products}
           productFormConfig={productFormConfig}
         />

@@ -29,7 +29,7 @@ export function LandingNav() {
       className={`fixed inset-x-0 top-0 z-50 transition-all safe-area-inset ${
         scrolled
           ? "border-b border-zinc-200/70 bg-white/90 shadow-[0_1px_2px_rgba(0,0,0,0.04)] backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-950/90"
-          : "border-b border-transparent bg-zinc-50/80 backdrop-blur-sm dark:bg-zinc-950/80"
+          : "border-b border-transparent bg-[#FAFAF9]/90 backdrop-blur-sm dark:bg-zinc-950/80"
       }`}
     >
       <div className="page-container flex h-14 items-center justify-between gap-4 lg:h-16">

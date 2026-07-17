@@ -139,7 +139,7 @@ export function AuthPanel() {
         <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
           Revisa tu correo
         </h2>
-        <div className="alert-success mt-4 text-base text-teal-800 sm:text-sm dark:text-teal-200">
+        <div className="alert-success mt-4 text-base text-emerald-800 sm:text-sm dark:text-emerald-200">
           ¡Casi listo! Hemos enviado un enlace de confirmación a tu correo. Por
           favor, revísalo para activar tu cuenta.
         </div>
@@ -179,7 +179,7 @@ export function AuthPanel() {
         type="button"
         onClick={() => void handleGoogleAuth()}
         disabled={isBusy}
-        className="mt-6 flex w-full items-center justify-center gap-3 rounded-xl border-2 border-zinc-200 bg-white px-4 py-3.5 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+        className="mt-6 flex w-full items-center justify-center gap-3 rounded-[10px] border border-zinc-200/80 bg-white px-4 py-3.5 text-sm font-semibold text-zinc-800 shadow-[0_1px_2px_rgba(24,24,27,0.04)] transition hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
       >
         <GoogleIcon />
         {googleLoading ? "Redirigiendo a Google…" : "Continuar con Google"}

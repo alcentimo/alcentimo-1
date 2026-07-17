@@ -68,7 +68,7 @@ export function Features() {
           <ul className="lg:col-span-8">
             {features.map((feature) => (
               <li key={feature.title} className="landing-feature-row group">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-50 text-teal-700 transition-colors group-hover:bg-teal-50 dark:bg-zinc-900 dark:text-teal-400 dark:group-hover:bg-teal-950/50">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-50 text-emerald-700 transition-colors group-hover:bg-emerald-50 dark:bg-zinc-900 dark:text-emerald-400 dark:group-hover:bg-emerald-950/50">
                   <feature.icon className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden="true" />
                 </span>
                 <div className="min-w-0 pt-0.5">

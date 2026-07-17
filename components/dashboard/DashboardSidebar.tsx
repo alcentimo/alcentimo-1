@@ -30,7 +30,7 @@ function navLinkClass(active: boolean, collapsed: boolean) {
     "group relative flex w-full items-center rounded-lg border-l-[3px] text-sm font-medium transition-colors",
     collapsed ? "h-10 justify-center border-transparent px-0" : "min-h-10 gap-3 border-transparent px-3 py-2",
     active
-      ? "border-teal-600 bg-teal-50 text-teal-700 dark:border-teal-500 dark:bg-teal-950/50 dark:text-teal-300"
+      ? "border-emerald-600 bg-emerald-50 text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
       : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
   );
 }

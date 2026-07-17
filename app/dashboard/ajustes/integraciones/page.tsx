@@ -94,7 +94,7 @@ export default async function IntegracionesPage({
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-5xl space-y-8">
       <DashboardPageHeader
         sectionLabel="Configuración de Tienda"
         title="Integraciones"
@@ -107,7 +107,7 @@ export default async function IntegracionesPage({
         before={
           <Link
             href="/dashboard/ajustes"
-            className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-teal-700 transition hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
+            className="mb-4 inline-flex items-center gap-2 text-sm font-medium link-brand"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Volver a configuración de tienda
