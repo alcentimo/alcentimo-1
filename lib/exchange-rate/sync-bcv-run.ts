@@ -3,7 +3,7 @@ import { getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
 import { syncBcvTasaToDatabase } from "@/lib/exchange-rate/sync-bcv-tasa";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 
-export type BcvSyncSlot = "midnight" | "retry";
+export type BcvSyncSlot = "midnight" | "retry" | "manual";
 
 export type BcvSyncRunAction =
   | "success"
@@ -177,6 +177,52 @@ export async function runBcvSyncAttempt(
     success: false,
     action: "alert_created",
     slot,
+    syncDate,
+    error: result.error,
+  };
+}
+
+/** Sincronización manual desde el dashboard (siempre intenta fetch + upsert). */
+export async function runManualBcvSync(
+  admin: SupabaseClient,
+): Promise<BcvSyncRunResult> {
+  const syncDate = getVenezuelaSyncDate();
+
+  logBcvSync("manual_sync_start", { syncDate });
+
+  const result = await syncBcvTasaToDatabase(admin);
+
+  await logSyncAttempt(admin, {
+    syncDate,
+    slot: "manual",
+    success: result.success,
+    rate: result.rate,
+    error: result.error,
+  });
+
+  if (result.success) {
+    await resolveBcvAlerts(admin, syncDate);
+    logBcvSync("manual_sync_success", {
+      syncDate,
+      rate: result.rate,
+      updatedAt: result.updatedAt,
+    });
+    return {
+      success: true,
+      action: "success",
+      slot: "manual",
+      syncDate,
+      rate: result.rate,
+      updatedAt: result.updatedAt,
+    };
+  }
+
+  logBcvSync("manual_sync_failed", { syncDate, error: result.error }, "error");
+
+  return {
+    success: false,
+    action: "alert_created",
+    slot: "manual",
     syncDate,
     error: result.error,
   };

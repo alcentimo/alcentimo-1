@@ -40,5 +40,9 @@ if ((result.status ?? 1) !== 0) {
 const base = `https://${PROJECT_REF}.supabase.co/functions/v1`;
 console.log("\n[deploy] Despliegue exitoso.");
 console.log(`[deploy] Prueba manual: ${base}/sync-bcv?slot=midnight`);
-console.log(`[deploy] Cron medianoche: ${base}/sync-bcv-midnight`);
-console.log(`[deploy] Cron reintento 06:00: ${base}/sync-bcv-retry`);
+console.log(`[deploy] Invocación medianoche: ${base}/sync-bcv-midnight`);
+console.log(`[deploy] Invocación reintento 06:00: ${base}/sync-bcv-retry`);
+console.log(
+  "[deploy] Para cron automático en Supabase: Dashboard → Integrations → Cron, o pg_cron + pg_net (ver docs).",
+);
+console.log("[deploy] Cron principal en producción: Vercel → vercel.json");

@@ -8,7 +8,7 @@ import { getStoreInventory } from "@/lib/inventory";
 import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
 import { isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
 import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
-import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
+import { BcvRateStripWithSync } from "@/components/dashboard/BcvRateStripWithSync";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { Button } from "@/components/ui/button";
 
@@ -77,8 +77,7 @@ export default async function CatalogoPage({
         storeSlug={store.slug}
       />
 
-      <DashboardExchangeRateBadge
-        variant="strip"
+      <BcvRateStripWithSync
         rate={exchangeRate}
         updatedAt={exchangeRateUpdatedAt}
         stale={exchangeRateStale}
