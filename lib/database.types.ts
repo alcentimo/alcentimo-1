@@ -33,6 +33,16 @@ export interface SupportMessage {
   created_at: string;
 }
 
+export interface CustomerProfile {
+  id: string;
+  user_id: string;
+  store_id: string;
+  display_name: string | null;
+  phone: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PaymentReport {
   id: string;
   user_id: string;
@@ -443,6 +453,7 @@ export interface Order {
   store_id: string;
   customer_name: string;
   customer_phone: string | null;
+  customer_user_id: string | null;
   items: unknown;
   total_usd: number;
   payment_proof_url: string | null;
@@ -510,6 +521,18 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<SupportMessage>;
+        Relationships: [];
+      };
+      customer_profiles: {
+        Row: CustomerProfile;
+        Insert: Omit<CustomerProfile, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          display_name?: string | null;
+          phone?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<CustomerProfile>;
         Relationships: [];
       };
       stores: {

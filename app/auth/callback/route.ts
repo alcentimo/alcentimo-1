@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
+import { ensureCustomerProfileAfterAuth } from "@/lib/customers/ensure-customer-profile";
 import { getSiteUrl } from "@/lib/site-url";
 
 export async function GET(request: Request) {
@@ -8,6 +9,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/onboarding";
+  const storeSlug = searchParams.get("store");
 
   if (!code) {
     return NextResponse.redirect(
@@ -28,6 +30,18 @@ export async function GET(request: Request) {
     await ensureUserProfile(supabase);
   } catch {
     // El trigger handle_new_user_profile suele crear el perfil; no bloquear el login.
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    try {
+      await ensureCustomerProfileAfterAuth(supabase, user, next, storeSlug);
+    } catch {
+      // No bloquear login si falla el vínculo cliente; /register puede reintentar.
+    }
   }
 
   const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding";

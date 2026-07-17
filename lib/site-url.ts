@@ -36,11 +36,23 @@ export function getPublicSiteHost(): string {
   return getSiteUrl().replace(/^https?:\/\//, "");
 }
 
-/** Callback OAuth/email: p. ej. https://alcentimo.com/auth/callback?next=%2Fonboarding */
-export function getAuthCallbackUrl(next = "/onboarding"): string {
+/** Callback OAuth/email: p. ej. https://alcentimo.com/auth/callback?next=%2Fonboarding&store=mi-tienda */
+export function getAuthCallbackUrl(
+  next = "/onboarding",
+  extraParams?: Record<string, string | undefined>,
+): string {
   const siteUrl = getSiteUrl();
   const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding";
-  return `${siteUrl}/auth/callback?next=${encodeURIComponent(safeNext)}`;
+  const params = new URLSearchParams({ next: safeNext });
+
+  if (extraParams) {
+    for (const [key, value] of Object.entries(extraParams)) {
+      const trimmed = value?.trim();
+      if (trimmed) params.set(key, trimmed);
+    }
+  }
+
+  return `${siteUrl}/auth/callback?${params.toString()}`;
 }
 
 /** Destino del enlace de recuperación (Supabase añade token_hash/type o code). */

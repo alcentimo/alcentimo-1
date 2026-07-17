@@ -7,6 +7,7 @@ interface AuthPageShellProps {
   description: string;
   children: ReactNode;
   footer?: ReactNode;
+  sectionLabel?: string;
 }
 
 export function AuthPageShell({
@@ -14,6 +15,7 @@ export function AuthPageShell({
   description,
   children,
   footer,
+  sectionLabel = "Panel del negocio",
 }: AuthPageShellProps) {
   return (
     <main className="page-shell-auth flex min-h-dvh flex-col justify-center safe-area-inset">
@@ -22,7 +24,7 @@ export function AuthPageShell({
       <PageContainer narrow className="relative py-10 sm:py-14">
         <div className="mb-8 text-center">
           <BrandLogo href="/" centered className="justify-center" />
-          <p className="section-label mt-6">Panel del negocio</p>
+          <p className="section-label mt-6">{sectionLabel}</p>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">
             {title}
           </h1>

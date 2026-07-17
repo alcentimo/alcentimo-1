@@ -2,6 +2,15 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasSupabasePublicEnv, requireSupabasePublicEnv } from "@/lib/supabase/config";
 import {
+  buildCustomerAccountPath,
+  getPrimaryCustomerStore,
+  parseCustomerAccountPath,
+  resolveActiveStoreBySlug,
+  userHasMerchantStore,
+  userIsCustomerOfStoreId,
+  userIsMerchantOfStoreSlug,
+} from "@/lib/customers/middleware-access";
+import {
   checkSupportAdminAccess,
   resolveAuthEmail,
 } from "@/lib/support/admin-access";
@@ -9,6 +18,7 @@ import {
 const DASHBOARD_PREFIX = "/dashboard";
 const ADMIN_PREFIX = "/admin";
 const DASHBOARD_LOGIN = "/dashboard/login";
+const REGISTER_PATH = "/register";
 const RECOVER_PASSWORD_PATH = "/dashboard/recuperar-contrasena";
 const RESET_PASSWORD_PATH = "/dashboard/restablecer-contrasena";
 const RESET_PASSWORD_SUCCESS_PATH = "/dashboard/restablecer-contrasena/exito";
@@ -16,36 +26,8 @@ const ONBOARDING_PATH = "/onboarding";
 const AUTH_CONFIRM_PATH = "/auth/confirm";
 const AUTH_CALLBACK_PATH = "/auth/callback";
 
-async function userHasStoreInMiddleware(
-  supabase: ReturnType<typeof createServerClient>,
-  userId: string,
-): Promise<boolean> {
-  const { data: owned } = await supabase
-    .from("stores")
-    .select("id")
-    .eq("owner_id", userId)
-    .limit(1)
-    .maybeSingle();
-
-  if (owned) return true;
-
-  const { data: membership } = await supabase
-    .from("store_members")
-    .select("id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-
-  return Boolean(membership);
-}
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // Crons: sin sesión ni redirecciones de auth
-  if (pathname.startsWith("/api/cron")) {
-    return NextResponse.next();
-  }
 
   if (!hasSupabasePublicEnv()) {
     return NextResponse.next();
@@ -113,6 +95,9 @@ export async function middleware(request: NextRequest) {
 
   const isDashboard = pathname.startsWith(DASHBOARD_PREFIX);
   const isAdminRoute = pathname.startsWith(ADMIN_PREFIX);
+  const isRegisterRoute = pathname === REGISTER_PATH;
+  const customerAccountPath = parseCustomerAccountPath(pathname);
+  const isCustomerAccountRoute = Boolean(customerAccountPath);
   const isLoginPage = pathname === DASHBOARD_LOGIN;
   const isRecoverPasswordPage = pathname === RECOVER_PASSWORD_PATH;
   const isResetPasswordPage = pathname === RESET_PASSWORD_PATH;
@@ -125,8 +110,81 @@ export async function middleware(request: NextRequest) {
     isResetPasswordFlow;
   const isOnboarding = pathname === ONBOARDING_PATH;
 
-  // Sin sesión: getUser puede devolver error "Auth session missing!" — es esperable.
   const authenticatedUser = user ?? null;
+
+  // ── Cuenta cliente: /c/{slug}/cuenta ───────────────────────
+  if (isCustomerAccountRoute && customerAccountPath) {
+    const { storeSlug } = customerAccountPath;
+
+    if (!authenticatedUser) {
+      const registerUrl = request.nextUrl.clone();
+      registerUrl.pathname = REGISTER_PATH;
+      registerUrl.search = "";
+      registerUrl.searchParams.set("store", storeSlug);
+      registerUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(registerUrl);
+    }
+
+    const store = await resolveActiveStoreBySlug(supabase, storeSlug);
+    if (!store) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    if (await userIsMerchantOfStoreSlug(supabase, authenticatedUser.id, storeSlug)) {
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = "/dashboard/catalogo";
+      dashboardUrl.search = "";
+      return NextResponse.redirect(dashboardUrl);
+    }
+
+    const isCustomer = await userIsCustomerOfStoreId(
+      supabase,
+      authenticatedUser.id,
+      store.id,
+    );
+
+    if (!isCustomer) {
+      const registerUrl = request.nextUrl.clone();
+      registerUrl.pathname = REGISTER_PATH;
+      registerUrl.search = "";
+      registerUrl.searchParams.set("store", storeSlug);
+      registerUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(registerUrl);
+    }
+
+    return supabaseResponse;
+  }
+
+  // ── Registro cliente: /register ────────────────────────────
+  if (isRegisterRoute && authenticatedUser) {
+    const storeSlug = request.nextUrl.searchParams.get("store")?.trim().toLowerCase();
+    const nextPath = request.nextUrl.searchParams.get("next");
+
+    if (storeSlug) {
+      const store = await resolveActiveStoreBySlug(supabase, storeSlug);
+      if (
+        store &&
+        (await userIsCustomerOfStoreId(supabase, authenticatedUser.id, store.id))
+      ) {
+        const accountUrl = request.nextUrl.clone();
+        accountUrl.pathname =
+          nextPath?.startsWith(`/c/${storeSlug}/cuenta`) && nextPath.startsWith("/c/")
+            ? nextPath
+            : buildCustomerAccountPath(storeSlug);
+        accountUrl.search = "";
+        return NextResponse.redirect(accountUrl);
+      }
+    }
+
+    if (await userHasMerchantStore(supabase, authenticatedUser.id)) {
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = "/dashboard/catalogo";
+      dashboardUrl.search = "";
+      return NextResponse.redirect(dashboardUrl);
+    }
+
+    return supabaseResponse;
+  }
 
   if (isAdminRoute) {
     if (!authenticatedUser) {
@@ -166,18 +224,28 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    if (await userHasStoreInMiddleware(supabase, authenticatedUser.id)) {
+    if (await userHasMerchantStore(supabase, authenticatedUser.id)) {
       const dashboardUrl = request.nextUrl.clone();
       dashboardUrl.pathname = "/dashboard/catalogo";
       dashboardUrl.search = "";
       return NextResponse.redirect(dashboardUrl);
     }
 
+    const customerStore = await getPrimaryCustomerStore(
+      supabase,
+      authenticatedUser.id,
+    );
+    if (customerStore) {
+      const accountUrl = request.nextUrl.clone();
+      accountUrl.pathname = buildCustomerAccountPath(customerStore.storeSlug);
+      accountUrl.search = "";
+      return NextResponse.redirect(accountUrl);
+    }
+
     return supabaseResponse;
   }
 
   if (isDashboard) {
-    // Rutas públicas de auth: accesibles sin sesión (login, recuperar, restablecer).
     if (!authenticatedUser && !isPublicAuthPage) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = DASHBOARD_LOGIN;
@@ -185,14 +253,25 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // Tras intercambiar el code, el usuario puede no tener tienda aún: no forzar onboarding.
     if (authenticatedUser && !isLoginPage && !isResetPasswordFlow) {
-      const hasStore = await userHasStoreInMiddleware(
+      const hasMerchantStore = await userHasMerchantStore(
         supabase,
         authenticatedUser.id,
       );
 
-      if (!hasStore) {
+      if (!hasMerchantStore) {
+        const customerStore = await getPrimaryCustomerStore(
+          supabase,
+          authenticatedUser.id,
+        );
+
+        if (customerStore) {
+          const accountUrl = request.nextUrl.clone();
+          accountUrl.pathname = buildCustomerAccountPath(customerStore.storeSlug);
+          accountUrl.search = "";
+          return NextResponse.redirect(accountUrl);
+        }
+
         const onboardingUrl = request.nextUrl.clone();
         onboardingUrl.pathname = ONBOARDING_PATH;
         onboardingUrl.search = "";
@@ -213,19 +292,28 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(redirectUrl);
       }
 
-      const hasStore = await userHasStoreInMiddleware(
+      const hasMerchantStore = await userHasMerchantStore(
         supabase,
         authenticatedUser.id,
       );
 
-      if (hasStore) {
+      if (hasMerchantStore) {
         redirectUrl.pathname =
           next &&
           (next.startsWith(DASHBOARD_PREFIX) || next.startsWith(ADMIN_PREFIX))
             ? next
             : "/dashboard";
       } else {
-        redirectUrl.pathname = ONBOARDING_PATH;
+        const customerStore = await getPrimaryCustomerStore(
+          supabase,
+          authenticatedUser.id,
+        );
+
+        if (customerStore) {
+          redirectUrl.pathname = buildCustomerAccountPath(customerStore.storeSlug);
+        } else {
+          redirectUrl.pathname = ONBOARDING_PATH;
+        }
       }
 
       redirectUrl.search = "";
@@ -238,6 +326,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/cron|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Todas las rutas /api/* gestionan su propia auth (Supabase, CRON_SECRET, API keys).
+    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
