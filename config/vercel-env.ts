@@ -1,14 +1,20 @@
 /**
- * Variables de entorno requeridas en Vercel.
+ * Variables de entorno en Vercel.
  * Usado por scripts/verify-vercel-env.mjs en cada despliegue.
+ *
+ * Solo VERCEL_CORE_ENV_VARS bloquean el build en producción.
+ * Las integraciones (Meta, etc.) son opcionales.
  */
 export const VERCEL_CORE_ENV_VARS = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "NEXT_PUBLIC_SITE_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
 ] as const;
 
+/** Recomendadas en producción; el build continúa si faltan. */
+export const VERCEL_SERVER_ENV_VARS = ["SUPABASE_SERVICE_ROLE_KEY"] as const;
+
+/** Integración Meta / WhatsApp — opcional. */
 export const VERCEL_META_ENV_VARS = [
   "META_APP_ID",
   "META_APP_SECRET",
@@ -16,6 +22,7 @@ export const VERCEL_META_ENV_VARS = [
 ] as const;
 
 export const VERCEL_OPTIONAL_ENV_VARS = [
+  ...VERCEL_META_ENV_VARS,
   "API_SECRET_KEY",
   "ALLOW_DEV_AUTH_BYPASS",
   "NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION",

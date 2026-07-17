@@ -74,9 +74,8 @@ const vars = {
     process.env.SUPABASE_SERVICE_ROLE_KEY ??
     local.SUPABASE_SERVICE_ROLE_KEY ??
     PLACEHOLDER,
-  META_APP_ID: process.env.META_APP_ID ?? local.META_APP_ID ?? PLACEHOLDER,
-  META_APP_SECRET:
-    process.env.META_APP_SECRET ?? local.META_APP_SECRET ?? PLACEHOLDER,
+  META_APP_ID: process.env.META_APP_ID ?? local.META_APP_ID,
+  META_APP_SECRET: process.env.META_APP_SECRET ?? local.META_APP_SECRET,
   META_WEBHOOK_VERIFY_TOKEN:
     process.env.META_WEBHOOK_VERIFY_TOKEN ??
     local.META_WEBHOOK_VERIFY_TOKEN ??
@@ -87,7 +86,6 @@ const required = new Set([
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "NEXT_PUBLIC_SITE_URL",
-  "META_WEBHOOK_VERIFY_TOKEN",
 ]);
 
 for (const [name, value] of Object.entries(vars)) {

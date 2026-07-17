@@ -2,7 +2,8 @@
  * Verifica variables de entorno en despliegues Vercel.
  * Se ejecuta antes del build (npm run vercel-build).
  *
- * - Producción: falla si faltan variables core u de integraciones.
+ * - Producción: falla solo si faltan variables core (Supabase + SITE_URL).
+ * - Integraciones (Meta, etc.): opcionales; el build continúa sin ellas.
  * - Preview: solo advierte en logs (no bloquea el build).
  */
 
@@ -14,7 +15,8 @@ const CORE = [
 
 const SERVER = ["SUPABASE_SERVICE_ROLE_KEY"];
 
-const META = [
+/** Integración opcional — ausencia no bloquea el build. */
+const OPTIONAL_META = [
   "META_APP_ID",
   "META_APP_SECRET",
   "META_WEBHOOK_VERIFY_TOKEN",
@@ -22,24 +24,53 @@ const META = [
 
 const PLACEHOLDER_VALUES = new Set(["pending-configuration", "changeme", "xxx"]);
 
-function missing(vars) {
-  return vars.filter((name) => !process.env[name]?.trim());
+function envValue(name) {
+  return process.env[name]?.trim() ?? "";
 }
 
-function placeholder(vars) {
-  return vars.filter((name) =>
-    PLACEHOLDER_VALUES.has(process.env[name]?.trim() ?? ""),
-  );
+function isConfigured(name) {
+  const value = envValue(name);
+  return value.length > 0 && !PLACEHOLDER_VALUES.has(value);
 }
 
-function logSection(title, vars) {
-  const absent = missing(vars);
+function missingRequired(vars) {
+  return vars.filter((name) => !envValue(name));
+}
+
+function logRequiredSection(title, vars) {
+  const absent = missingRequired(vars);
   if (absent.length === 0) {
     console.log(`[vercel-env] OK ${title}`);
     return [];
   }
   console.warn(`[vercel-env] Faltan (${title}): ${absent.join(", ")}`);
   return absent;
+}
+
+function logOptionalMeta(vars) {
+  const configured = vars.filter(isConfigured);
+  const allPlaceholderOrEmpty = vars.every((name) => {
+    const value = envValue(name);
+    return !value || PLACEHOLDER_VALUES.has(value);
+  });
+
+  if (allPlaceholderOrEmpty) {
+    console.log(
+      "[vercel-env] Meta / WhatsApp: omitido (opcional — no configurado)",
+    );
+    return { inUse: false, configured: false };
+  }
+
+  if (configured.length === vars.length) {
+    console.log("[vercel-env] OK Meta / WhatsApp (opcional)");
+    return { inUse: true, configured: true };
+  }
+
+  const incomplete = vars.filter((name) => !isConfigured(name));
+  console.warn(
+    `[vercel-env] Meta / WhatsApp: configuración incompleta (${incomplete.join(", ")}). OAuth y webhooks no funcionarán hasta completarla.`,
+  );
+  return { inUse: true, configured: false };
 }
 
 const isVercel = process.env.VERCEL === "1";
@@ -52,17 +83,11 @@ if (!isVercel) {
 
 console.log(`[vercel-env] Verificando variables (${process.env.VERCEL_ENV})…`);
 
-const missingCore = logSection("core", CORE);
-const missingServer = logSection("servidor", SERVER);
-const missingMeta = logSection("Meta / WhatsApp", META);
-const placeholderMeta = placeholder(META);
-if (placeholderMeta.length > 0) {
-  console.warn(
-    `[vercel-env] Meta usa valores placeholder (${placeholderMeta.join(", ")}). OAuth de WhatsApp fallará hasta configurar IDs reales.`,
-  );
-}
+const missingCore = logRequiredSection("core", CORE);
+const missingServer = logRequiredSection("servidor", SERVER);
+const metaStatus = logOptionalMeta(OPTIONAL_META);
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+const siteUrl = envValue("NEXT_PUBLIC_SITE_URL");
 if (siteUrl && !/^https:\/\//i.test(siteUrl)) {
   console.warn(
     "[vercel-env] NEXT_PUBLIC_SITE_URL debería usar HTTPS en producción:",
@@ -70,7 +95,7 @@ if (siteUrl && !/^https:\/\//i.test(siteUrl)) {
   );
 }
 
-if (siteUrl && isProduction) {
+if (siteUrl && isProduction && metaStatus.configured) {
   const redirectUri = `${siteUrl.replace(/\/$/, "")}/api/integrations/meta/callback`;
   console.log(
     "[vercel-env] Meta OAuth redirect_uri (registrar en Facebook Login → Configuración):",
@@ -87,17 +112,9 @@ if (isProduction && missingServer.length > 0) {
   );
 }
 
-const integrationMissing = [...missingMeta];
-if (integrationMissing.length > 0) {
-  console.warn(
-    "[vercel-env] Integraciones pendientes (el build continúa):",
-    integrationMissing.join(", "),
-  );
-}
-
 if (isProduction && blockingMissing.length > 0) {
   console.error(
-    "[vercel-env] Build abortado: configura las variables en Vercel → Settings → Environment Variables.",
+    "[vercel-env] Build abortado: configura las variables core en Vercel → Settings → Environment Variables.",
   );
   process.exit(1);
 }
