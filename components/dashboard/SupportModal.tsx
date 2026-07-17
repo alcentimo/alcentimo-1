@@ -21,13 +21,11 @@ const initialState: SupportFormState = {};
 interface SupportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  storeName?: string | null;
 }
 
 export function SupportModal({
   open,
   onOpenChange,
-  storeName,
 }: SupportModalProps) {
   const [state, formAction, pending] = useActionState(
     submitSupportMessage,
@@ -71,10 +69,6 @@ export function SupportModal({
           </div>
         ) : (
           <form action={formAction} className="space-y-4">
-            {storeName ? (
-              <input type="hidden" name="storeName" value={storeName} readOnly />
-            ) : null}
-
             <label className="block space-y-1.5">
               <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
                 Tu mensaje

@@ -18,6 +18,7 @@ interface DashboardLayoutProps {
   exchangeRate?: number | null;
   exchangeRateUpdatedAt?: string | null;
   exchangeRateStale?: boolean;
+  isSupportAdmin?: boolean;
 }
 
 function isStandaloneAuthPath(pathname: string): boolean {
@@ -35,6 +36,7 @@ function DashboardShell({
   exchangeRate = null,
   exchangeRateUpdatedAt = null,
   exchangeRateStale = false,
+  isSupportAdmin = false,
 }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -82,6 +84,7 @@ function DashboardShell({
         immersiveHidden={false}
         onCloseMobile={closeSidebar}
         onLogout={() => void handleLogout()}
+        isSupportAdmin={isSupportAdmin}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">

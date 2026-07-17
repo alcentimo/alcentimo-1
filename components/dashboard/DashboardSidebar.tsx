@@ -24,6 +24,7 @@ interface DashboardSidebarProps {
   immersiveHidden: boolean;
   onCloseMobile: () => void;
   onLogout: () => void;
+  isSupportAdmin?: boolean;
 }
 
 function navLinkClass(active: boolean, collapsed: boolean) {
@@ -76,6 +77,7 @@ export function DashboardSidebar({
   immersiveHidden,
   onCloseMobile,
   onLogout,
+  isSupportAdmin = false,
 }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
@@ -225,6 +227,16 @@ export function DashboardSidebar({
             <LifeBuoy className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
             {!collapsed && <span>Soporte</span>}
           </button>
+
+          {isSupportAdmin && !collapsed ? (
+            <Link
+              href="/dashboard/soporte"
+              className="block px-1 pt-1 text-center text-[11px] text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+              onClick={onCloseMobile}
+            >
+              Bandeja de soporte
+            </Link>
+          ) : null}
         </div>
       </div>
 
@@ -232,7 +244,6 @@ export function DashboardSidebar({
         key={supportKey}
         open={supportOpen}
         onOpenChange={setSupportOpen}
-        storeName={storeName}
       />
     </aside>
   );

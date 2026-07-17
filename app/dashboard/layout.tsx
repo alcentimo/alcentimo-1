@@ -5,6 +5,7 @@ import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
 import { bcvRateAgeHours, isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
+import { isSupportAdmin } from "@/lib/support/is-support-admin";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { BcvSyncAlertBanner } from "@/components/dashboard/BcvSyncAlertBanner";
 import { CountryProvider } from "@/components/providers/CountryProvider";
@@ -58,6 +59,7 @@ export default async function DashboardRootLayout({
         exchangeRate={exchangeRate}
         exchangeRateUpdatedAt={exchangeRateUpdatedAt}
         exchangeRateStale={exchangeRateStale}
+        isSupportAdmin={isSupportAdmin(authUser.email)}
       >
         {bcvSyncAlert ? <BcvSyncAlertBanner alert={bcvSyncAlert} /> : null}
         {children}

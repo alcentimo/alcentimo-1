@@ -22,6 +22,17 @@ export type PaymentReportStatus = "pending" | "verified" | "rejected";
 export type PaymentReportBillingPeriod = "monthly" | "annual";
 export type PaymentReportPlanId = "starter" | "premium";
 
+export type SupportMessageStatus = "pendiente" | "atendido" | "cerrado";
+
+export interface SupportMessage {
+  id: string;
+  user_id: string | null;
+  email: string;
+  message: string;
+  status: SupportMessageStatus;
+  created_at: string;
+}
+
 export interface PaymentReport {
   id: string;
   user_id: string;
@@ -488,6 +499,17 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<PaymentReport>;
+        Relationships: [];
+      };
+      support_messages: {
+        Row: SupportMessage;
+        Insert: Omit<SupportMessage, "id" | "status" | "created_at"> & {
+          id?: string;
+          user_id?: string | null;
+          status?: SupportMessageStatus;
+          created_at?: string;
+        };
+        Update: Partial<SupportMessage>;
         Relationships: [];
       };
       stores: {
