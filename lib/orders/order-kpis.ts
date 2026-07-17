@@ -1,5 +1,8 @@
 import type { CatalogOrder } from "@/lib/orders/types";
-import { isDispatchPendingEstado } from "@/lib/orders/order-status";
+import {
+  isDispatchPendingEstado,
+  sortOrdersByBusinessRules,
+} from "@/lib/orders/order-status";
 
 const VENEZUELA_TZ = "America/Caracas";
 
@@ -22,6 +25,34 @@ export interface OrdersKpiSnapshot {
   ordersToday: number;
   pendingDispatch: number;
   salesVolumeTodayUsd: number;
+}
+
+export interface OrderDayGroup<T extends CatalogOrder = CatalogOrder> {
+  id: "today" | "older";
+  label: string;
+  orders: T[];
+}
+
+/** Agrupa pedidos activos en Hoy / Días anteriores (orden lógico dentro de cada grupo). */
+export function groupActiveOrdersByDay(
+  orders: CatalogOrder[],
+): OrderDayGroup[] {
+  const today = sortOrdersByBusinessRules(orders.filter((order) => isOrderToday(order)));
+  const older = sortOrdersByBusinessRules(
+    orders.filter((order) => !isOrderToday(order)),
+  );
+
+  const groups: OrderDayGroup[] = [];
+
+  if (today.length > 0) {
+    groups.push({ id: "today", label: "Hoy", orders: today });
+  }
+
+  if (older.length > 0) {
+    groups.push({ id: "older", label: "Días anteriores", orders: older });
+  }
+
+  return groups;
 }
 
 export function computeOrdersKpis(orders: CatalogOrder[]): OrdersKpiSnapshot {

@@ -64,6 +64,29 @@ export function isCompletedOrderEstado(estado: OrderEstado): boolean {
   return estado === "entregado";
 }
 
+/** Pendiente y en preparación (operación en curso) — prioridad en listados. */
+export function isPriorityOrderEstado(estado: OrderEstado): boolean {
+  return estado === "pendiente" || estado === "en_preparacion";
+}
+
+/** ORDER BY lógico: pendiente / en preparación primero; resto por fecha desc. */
+export function sortOrdersByBusinessRules<T extends { estado: OrderEstado; created_at: string }>(
+  orders: T[],
+): T[] {
+  return [...orders].sort((a, b) => {
+    const aPriority = isPriorityOrderEstado(a.estado);
+    const bPriority = isPriorityOrderEstado(b.estado);
+
+    if (aPriority !== bPriority) {
+      return aPriority ? -1 : 1;
+    }
+
+    return (
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  });
+}
+
 export function matchesOrderFilter(
   estado: OrderEstado,
   filter: OrderFilterId,

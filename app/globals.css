@@ -842,6 +842,22 @@ body {
   contain: layout style paint;
 }
 
+.orders-ops-day-group {
+  @apply flex flex-col gap-2;
+}
+
+.orders-ops-day-group + .orders-ops-day-group {
+  @apply mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800;
+}
+
+.orders-ops-section-label {
+  @apply px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400;
+}
+
+.orders-ops-section-row td {
+  @apply border-b border-zinc-100 bg-zinc-50/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400;
+}
+
 .orders-ops-kpi-grid {
   @apply grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4;
 }

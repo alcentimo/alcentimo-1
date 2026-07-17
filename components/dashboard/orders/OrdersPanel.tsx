@@ -1,12 +1,13 @@
 "use client";
 
-import { memo, useCallback, useMemo, useState } from "react";
+import { Fragment, memo, useCallback, useMemo, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { formatUsd } from "@/lib/format";
-import { computeOrdersKpis, isOrderToday } from "@/lib/orders/order-kpis";
+import { computeOrdersKpis, groupActiveOrdersByDay, isOrderToday } from "@/lib/orders/order-kpis";
 import type { CatalogOrder } from "@/lib/orders/types";
 import {
   matchesOrderFilter,
+  sortOrdersByBusinessRules,
   type OrderEstado,
   type OrderFilterId,
 } from "@/lib/orders/order-status";
@@ -18,8 +19,8 @@ import { OrdersKpiRow } from "@/components/dashboard/orders/OrdersKpiRow";
 import { cn } from "@/lib/cn";
 
 const FILTER_TABS: { id: OrderFilterId; label: string }[] = [
-  { id: "all", label: "Todos" },
   { id: "pending", label: "Activos" },
+  { id: "all", label: "Todos" },
   { id: "completed", label: "Entregados" },
 ];
 
@@ -49,22 +50,35 @@ interface OrdersPanelProps {
   messageTemplates: MessageTemplatesSettings;
 }
 
+function OrderSectionLabel({ label }: { label: string }) {
+  return (
+    <div
+      className="orders-ops-section-label"
+      role="presentation"
+    >
+      {label}
+    </div>
+  );
+}
+
 const OrderRow = memo(function OrderRow({
   order,
   storeName,
   messageTemplates,
   onSelect,
   onEstadoUpdated,
+  dimmed = false,
 }: {
   order: CatalogOrder;
   storeName: string;
   messageTemplates: MessageTemplatesSettings;
   onSelect: (orderId: string) => void;
   onEstadoUpdated: (orderId: string, estado: OrderEstado) => void;
+  dimmed?: boolean;
 }) {
   return (
     <tr
-      className="orders-ops-row group"
+      className={cn("orders-ops-row group", dimmed && "opacity-60")}
       onClick={() => onSelect(order.id)}
     >
       <td className="orders-ops-cell">
@@ -112,16 +126,18 @@ const OrderMobileCard = memo(function OrderMobileCard({
   messageTemplates,
   onSelect,
   onEstadoUpdated,
+  dimmed = false,
 }: {
   order: CatalogOrder;
   storeName: string;
   messageTemplates: MessageTemplatesSettings;
   onSelect: (orderId: string) => void;
   onEstadoUpdated: (orderId: string, estado: OrderEstado) => void;
+  dimmed?: boolean;
 }) {
   return (
     <article
-      className="orders-mobile-card"
+      className={cn("orders-mobile-card", dimmed && "opacity-60")}
       onClick={() => onSelect(order.id)}
       role="button"
       tabIndex={0}
@@ -182,15 +198,17 @@ export function OrdersPanel({
   messageTemplates,
 }: OrdersPanelProps) {
   const [orders, setOrders] = useState(initialOrders);
-  const [filter, setFilter] = useState<OrderFilterId>("all");
+  const [filter, setFilter] = useState<OrderFilterId>("pending");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const kpis = useMemo(() => computeOrdersKpis(orders), [orders]);
 
   const handleEstadoUpdated = useCallback((orderId: string, estado: OrderEstado) => {
     setOrders((current) =>
-      current.map((order) =>
-        order.id === orderId ? { ...order, estado } : order,
+      sortOrdersByBusinessRules(
+        current.map((order) =>
+          order.id === orderId ? { ...order, estado } : order,
+        ),
       ),
     );
   }, []);
@@ -200,11 +218,23 @@ export function OrdersPanel({
   }, []);
 
   const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
+    const list = orders.filter((order) => {
       if (filter === "today") return isOrderToday(order);
       return matchesOrderFilter(order.estado, filter);
     });
+
+    return sortOrdersByBusinessRules(list);
   }, [orders, filter]);
+
+  const activeOrderGroups = useMemo(() => {
+    if (filter !== "pending") return null;
+    return groupActiveOrdersByDay(filteredOrders);
+  }, [filter, filteredOrders]);
+
+  const isOrderDimmed = useCallback(
+    (order: CatalogOrder) => order.estado === "entregado",
+    [],
+  );
 
   const selectedOrder = useMemo(
     () => orders.find((order) => order.id === selectedOrderId) ?? null,
@@ -258,10 +288,10 @@ export function OrdersPanel({
         {(filter === "today" || filter === "dispatch") && (
           <button
             type="button"
-            onClick={() => setFilter("all")}
+            onClick={() => setFilter("pending")}
             className="text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
           >
-            Ver todos
+            Volver a activos
           </button>
         )}
         <span className="ml-auto text-xs text-zinc-500">
@@ -275,6 +305,23 @@ export function OrdersPanel({
             <p className="py-8 text-center text-sm text-zinc-500">
               No hay pedidos en este filtro.
             </p>
+          ) : activeOrderGroups ? (
+            activeOrderGroups.map((group) => (
+              <div key={group.id} className="orders-ops-day-group">
+                <OrderSectionLabel label={group.label} />
+                {group.orders.map((order) => (
+                  <OrderMobileCard
+                    key={order.id}
+                    order={order}
+                    storeName={storeName}
+                    messageTemplates={messageTemplates}
+                    onSelect={handleSelectOrder}
+                    onEstadoUpdated={handleEstadoUpdated}
+                    dimmed={isOrderDimmed(order)}
+                  />
+                ))}
+              </div>
+            ))
           ) : (
             filteredOrders.map((order) => (
               <OrderMobileCard
@@ -284,6 +331,7 @@ export function OrdersPanel({
                 messageTemplates={messageTemplates}
                 onSelect={handleSelectOrder}
                 onEstadoUpdated={handleEstadoUpdated}
+                dimmed={isOrderDimmed(order)}
               />
             ))
           )}
@@ -312,6 +360,25 @@ export function OrdersPanel({
                     No hay pedidos en este filtro.
                   </td>
                 </tr>
+              ) : activeOrderGroups ? (
+                activeOrderGroups.map((group) => (
+                  <Fragment key={group.id}>
+                    <tr className="orders-ops-section-row">
+                      <td colSpan={6}>{group.label}</td>
+                    </tr>
+                    {group.orders.map((order) => (
+                      <OrderRow
+                        key={order.id}
+                        order={order}
+                        storeName={storeName}
+                        messageTemplates={messageTemplates}
+                        onSelect={handleSelectOrder}
+                        onEstadoUpdated={handleEstadoUpdated}
+                        dimmed={isOrderDimmed(order)}
+                      />
+                    ))}
+                  </Fragment>
+                ))
               ) : (
                 filteredOrders.map((order) => (
                   <OrderRow
@@ -321,6 +388,7 @@ export function OrdersPanel({
                     messageTemplates={messageTemplates}
                     onSelect={handleSelectOrder}
                     onEstadoUpdated={handleEstadoUpdated}
+                    dimmed={isOrderDimmed(order)}
                   />
                 ))
               )}

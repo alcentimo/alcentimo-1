@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { isValidOrderEstado, type OrderEstado } from "@/lib/orders/order-status";
+import {
+  isValidOrderEstado,
+  sortOrdersByBusinessRules,
+  type OrderEstado,
+} from "@/lib/orders/order-status";
 import type { CatalogOrder, OrderLineItem } from "@/lib/orders/types";
 
 function parseOrderEstado(value: unknown): OrderEstado {
@@ -44,7 +48,7 @@ export async function getStoreOrders(
 
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map((row) => ({
+  const mapped = (data ?? []).map((row) => ({
     id: row.id,
     store_id: row.store_id,
     customer_name: row.customer_name,
@@ -55,4 +59,7 @@ export async function getStoreOrders(
     estado: parseOrderEstado(row.estado),
     created_at: row.created_at,
   }));
+
+  // PostgREST no expone CASE en .order(); aplicamos el ORDER BY lógico en capa de datos.
+  return sortOrdersByBusinessRules(mapped);
 }
