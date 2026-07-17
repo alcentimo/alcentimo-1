@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LogOut, PanelLeftClose, PanelLeftOpen, Rocket } from "lucide-react";
+import { LifeBuoy, LogOut, PanelLeftClose, PanelLeftOpen, Rocket } from "lucide-react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import { SupportModal } from "@/components/dashboard/SupportModal";
 import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
 import {
   DASHBOARD_NAV_ITEMS,
@@ -77,6 +78,8 @@ export function DashboardSidebar({
   onLogout,
 }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [supportKey, setSupportKey] = useState(0);
 
   useEffect(() => {
     try {
@@ -208,8 +211,29 @@ export function DashboardSidebar({
               </Link>
             </p>
           )}
+
+          <button
+            type="button"
+            onClick={() => {
+              setSupportKey((key) => key + 1);
+              setSupportOpen(true);
+              onCloseMobile();
+            }}
+            className={navLinkClass(false, collapsed)}
+            title={collapsed ? "Soporte y sugerencias" : undefined}
+          >
+            <LifeBuoy className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+            {!collapsed && <span>Soporte</span>}
+          </button>
         </div>
       </div>
+
+      <SupportModal
+        key={supportKey}
+        open={supportOpen}
+        onOpenChange={setSupportOpen}
+        storeName={storeName}
+      />
     </aside>
   );
 }
