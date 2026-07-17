@@ -1,18 +1,19 @@
 "use client";
 
 import { memo, useCallback, useMemo, useState } from "react";
-import { ChevronRight, MessageCircle } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import { computeOrdersKpis, isOrderToday } from "@/lib/orders/order-kpis";
-import { buildCustomerWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
 import type { CatalogOrder } from "@/lib/orders/types";
 import {
   matchesOrderFilter,
   type OrderEstado,
   type OrderFilterId,
 } from "@/lib/orders/order-status";
+import type { MessageTemplatesSettings } from "@/lib/store-settings/types";
 import { OrderEstadoBadge } from "@/components/dashboard/orders/OrderEstadoBadge";
 import { OrderDetailSlideOver } from "@/components/dashboard/orders/OrderDetailSlideOver";
+import { OrderWhatsAppButton } from "@/components/dashboard/orders/OrderWhatsAppButton";
 import { OrdersKpiRow } from "@/components/dashboard/orders/OrdersKpiRow";
 import { cn } from "@/lib/cn";
 
@@ -44,40 +45,19 @@ function summarizeItems(order: CatalogOrder): string {
 
 interface OrdersPanelProps {
   orders: CatalogOrder[];
+  storeName: string;
+  messageTemplates: MessageTemplatesSettings;
 }
-
-const OrderWhatsAppLink = memo(function OrderWhatsAppLink({
-  customerName,
-  customerPhone,
-}: {
-  customerName: string;
-  customerPhone: string | null;
-}) {
-  const whatsappUrl = buildCustomerWhatsAppUrl(customerPhone);
-
-  if (!whatsappUrl) {
-    return <span className="text-xs text-zinc-400">—</span>;
-  }
-
-  return (
-    <a
-      href={whatsappUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(event) => event.stopPropagation()}
-      className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg border border-emerald-200/80 bg-emerald-50 text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
-      aria-label={`WhatsApp con ${customerName}`}
-    >
-      <MessageCircle className="h-4 w-4" aria-hidden="true" />
-    </a>
-  );
-});
 
 const OrderRow = memo(function OrderRow({
   order,
+  storeName,
+  messageTemplates,
   onSelect,
 }: {
   order: CatalogOrder;
+  storeName: string;
+  messageTemplates: MessageTemplatesSettings;
   onSelect: (orderId: string) => void;
 }) {
   return (
@@ -103,9 +83,11 @@ const OrderRow = memo(function OrderRow({
         {formatOrderDate(order.created_at)}
       </td>
       <td className="orders-ops-cell hidden sm:table-cell">
-        <OrderWhatsAppLink
-          customerName={order.customer_name}
-          customerPhone={order.customer_phone}
+        <OrderWhatsAppButton
+          order={order}
+          storeName={storeName}
+          messageTemplates={messageTemplates}
+          compact
         />
       </td>
       <td className="orders-ops-cell w-8 text-zinc-400">
@@ -120,9 +102,13 @@ const OrderRow = memo(function OrderRow({
 
 const OrderMobileCard = memo(function OrderMobileCard({
   order,
+  storeName,
+  messageTemplates,
   onSelect,
 }: {
   order: CatalogOrder;
+  storeName: string;
+  messageTemplates: MessageTemplatesSettings;
   onSelect: (orderId: string) => void;
 }) {
   return (
@@ -167,16 +153,22 @@ const OrderMobileCard = memo(function OrderMobileCard({
         className="mt-3 flex items-center justify-end border-t border-zinc-100 pt-3 dark:border-zinc-800"
         onClick={(event) => event.stopPropagation()}
       >
-        <OrderWhatsAppLink
-          customerName={order.customer_name}
-          customerPhone={order.customer_phone}
+        <OrderWhatsAppButton
+          order={order}
+          storeName={storeName}
+          messageTemplates={messageTemplates}
+          compact
         />
       </div>
     </article>
   );
 });
 
-export function OrdersPanel({ orders: initialOrders }: OrdersPanelProps) {
+export function OrdersPanel({
+  orders: initialOrders,
+  storeName,
+  messageTemplates,
+}: OrdersPanelProps) {
   const [orders, setOrders] = useState(initialOrders);
   const [filter, setFilter] = useState<OrderFilterId>("all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -276,6 +268,8 @@ export function OrdersPanel({ orders: initialOrders }: OrdersPanelProps) {
               <OrderMobileCard
                 key={order.id}
                 order={order}
+                storeName={storeName}
+                messageTemplates={messageTemplates}
                 onSelect={handleSelectOrder}
               />
             ))
@@ -310,6 +304,8 @@ export function OrdersPanel({ orders: initialOrders }: OrdersPanelProps) {
                   <OrderRow
                     key={order.id}
                     order={order}
+                    storeName={storeName}
+                    messageTemplates={messageTemplates}
                     onSelect={handleSelectOrder}
                   />
                 ))
@@ -322,6 +318,8 @@ export function OrdersPanel({ orders: initialOrders }: OrdersPanelProps) {
       <OrderDetailSlideOver
         order={selectedOrder}
         open={Boolean(selectedOrder)}
+        storeName={storeName}
+        messageTemplates={messageTemplates}
         onClose={() => setSelectedOrderId(null)}
         onEstadoUpdated={handleEstadoUpdated}
       />

@@ -22,6 +22,7 @@ import type {
   CatalogCurrencySettings,
   CatalogDesignSettings,
   LocationHoursSettings,
+  MessageTemplatesSettings,
   PaymentsSettings,
   ShippingSettings,
   StoredPromotion,
@@ -66,6 +67,7 @@ async function persistSettingsPatch(
 
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
+  revalidatePath("/dashboard/pedidos");
   revalidatePublicStorePaths(store.slug);
 
   return { success: true };
@@ -87,6 +89,15 @@ export async function saveCatalogCurrencySettings(
 ): Promise<SettingsActionResult> {
   const normalized = normalizeStoreSettingsConfig({ catalogCurrency });
   return persistSettingsPatch({ catalogCurrency: normalized.catalogCurrency });
+}
+
+export async function saveMessageTemplatesSettings(
+  messageTemplates: MessageTemplatesSettings,
+): Promise<SettingsActionResult> {
+  const normalized = normalizeStoreSettingsConfig({ messageTemplates });
+  return persistSettingsPatch({
+    messageTemplates: normalized.messageTemplates,
+  });
 }
 
 export async function saveShippingSettings(

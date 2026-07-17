@@ -7,6 +7,7 @@ import type {
 } from "@/lib/store-settings/types";
 import { WEEKDAY_KEYS } from "@/lib/store-settings/types";
 import { getDefaultPrimaryColorForRubro } from "@/lib/store-settings/catalog-theme";
+import { defaultMessageTemplates } from "@/lib/orders/message-templates";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "mrw",
@@ -96,6 +97,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       showOfficialRate: true,
       showBsConversion: true,
     },
+    messageTemplates: defaultMessageTemplates(),
   };
 }
 
@@ -180,6 +182,7 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
   const schedule = { ...defaults.locationHours.schedule };
   const designRaw = isRecord(raw.catalogDesign) ? raw.catalogDesign : {};
   const currencyRaw = isRecord(raw.catalogCurrency) ? raw.catalogCurrency : {};
+  const templatesRaw = isRecord(raw.messageTemplates) ? raw.messageTemplates : {};
 
   for (const key of WEEKDAY_KEYS) {
     const dayRaw = scheduleRaw[key];
@@ -263,6 +266,20 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           ? currencyRaw.showBsConversion
           : defaults.catalogCurrency.showBsConversion,
     },
+    messageTemplates: {
+      nuevo:
+        typeof templatesRaw.nuevo === "string" && templatesRaw.nuevo.trim()
+          ? templatesRaw.nuevo
+          : defaults.messageTemplates.nuevo,
+      confirmado:
+        typeof templatesRaw.confirmado === "string" && templatesRaw.confirmado.trim()
+          ? templatesRaw.confirmado
+          : defaults.messageTemplates.confirmado,
+      enviado:
+        typeof templatesRaw.enviado === "string" && templatesRaw.enviado.trim()
+          ? templatesRaw.enviado
+          : defaults.messageTemplates.enviado,
+    },
   };
 }
 
@@ -325,5 +342,8 @@ export function mergeStoreSettingsConfig(
     catalogCurrency: patch.catalogCurrency
       ? { ...base.catalogCurrency, ...patch.catalogCurrency }
       : base.catalogCurrency,
+    messageTemplates: patch.messageTemplates
+      ? { ...base.messageTemplates, ...patch.messageTemplates }
+      : base.messageTemplates,
   };
 }

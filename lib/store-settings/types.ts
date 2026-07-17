@@ -59,6 +59,7 @@ export interface StoreSettingsConfig {
   locationHours: LocationHoursSettings;
   catalogDesign: CatalogDesignSettings;
   catalogCurrency: CatalogCurrencySettings;
+  messageTemplates: MessageTemplatesSettings;
 }
 
 export interface ContactSettings {
@@ -101,6 +102,14 @@ export interface CatalogCurrencySettings {
   showOfficialRate: boolean;
   /** Muestra precios convertidos a Bs en catálogo, carrito y checkout. */
   showBsConversion: boolean;
+}
+
+export type OrderMessageTemplateKey = "nuevo" | "confirmado" | "enviado";
+
+export interface MessageTemplatesSettings {
+  nuevo: string;
+  confirmado: string;
+  enviado: string;
 }
 
 export interface StoreSettingsRow {

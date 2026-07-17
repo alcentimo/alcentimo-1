@@ -4,6 +4,8 @@ import { PageContainer } from "@/components/ui/PageContainer";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreOrders } from "@/lib/orders/get-store-orders";
+import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
+import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { OrdersPanel } from "@/components/dashboard/orders/OrdersPanel";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +39,13 @@ export default async function PedidosPage() {
     );
   }
 
-  const orders = await getStoreOrders(store.id, 200);
+  const [orders, settingsConfig] = await Promise.all([
+    getStoreOrders(store.id, 200),
+    getStoreSettingsConfig(supabase, store.id),
+  ]);
+
+  const messageTemplates =
+    settingsConfig.messageTemplates ?? defaultStoreSettingsConfig().messageTemplates;
 
   return (
     <PageContainer as="div" className="py-6 sm:py-8">
@@ -58,7 +66,11 @@ export default async function PedidosPage() {
         </p>
       </header>
 
-      <OrdersPanel orders={orders} />
+      <OrdersPanel
+        orders={orders}
+        storeName={store.name}
+        messageTemplates={messageTemplates}
+      />
     </PageContainer>
   );
 }

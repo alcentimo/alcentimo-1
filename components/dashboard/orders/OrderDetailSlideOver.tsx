@@ -2,13 +2,14 @@
 
 import { useEffect } from "react";
 import Image from "next/image";
-import { MessageCircle, X } from "lucide-react";
+import { X } from "lucide-react";
 import { formatUsd } from "@/lib/format";
-import { buildCustomerWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
 import type { CatalogOrder } from "@/lib/orders/types";
 import type { OrderEstado } from "@/lib/orders/order-status";
+import type { MessageTemplatesSettings } from "@/lib/store-settings/types";
 import { OrderEstadoBadge } from "@/components/dashboard/orders/OrderEstadoBadge";
 import { OrderStatusSelect } from "@/components/dashboard/orders/OrderStatusSelect";
+import { OrderWhatsAppButton } from "@/components/dashboard/orders/OrderWhatsAppButton";
 
 function formatOrderDate(value: string): string {
   return new Intl.DateTimeFormat("es", {
@@ -20,6 +21,8 @@ function formatOrderDate(value: string): string {
 interface OrderDetailSlideOverProps {
   order: CatalogOrder | null;
   open: boolean;
+  storeName: string;
+  messageTemplates: MessageTemplatesSettings;
   onClose: () => void;
   onEstadoUpdated?: (orderId: string, estado: OrderEstado) => void;
 }
@@ -27,6 +30,8 @@ interface OrderDetailSlideOverProps {
 export function OrderDetailSlideOver({
   order,
   open,
+  storeName,
+  messageTemplates,
   onClose,
   onEstadoUpdated,
 }: OrderDetailSlideOverProps) {
@@ -47,12 +52,6 @@ export function OrderDetailSlideOver({
   }, [open, onClose]);
 
   if (!open || !order) return null;
-
-  const whatsappUrl = buildCustomerWhatsAppUrl(order.customer_phone, {
-    customerName: order.customer_name,
-    orderId: order.id,
-    totalUsd: order.total_usd,
-  });
 
   return (
     <div className="orders-slideover-root" role="presentation">
@@ -115,17 +114,12 @@ export function OrderDetailSlideOver({
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
               {order.customer_phone ?? "Sin teléfono registrado"}
             </p>
-            {whatsappUrl ? (
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-brand mt-3 inline-flex min-h-11 items-center gap-2 px-4 text-sm"
-              >
-                <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                WhatsApp
-              </a>
-            ) : null}
+            <OrderWhatsAppButton
+              order={order}
+              storeName={storeName}
+              messageTemplates={messageTemplates}
+              className="mt-3"
+            />
           </section>
 
           <section className="orders-slideover-section">

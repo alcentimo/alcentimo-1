@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Clock, Coins, CreditCard, Link2, Palette, Settings2, Tag } from "lucide-react";
+import { Clock, Coins, CreditCard, Link2, MessageSquare, Palette, Settings2, Tag } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
+import { MessageTemplatesTab } from "@/components/dashboard/settings/MessageTemplatesTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
 import { PaymentsTab } from "@/components/dashboard/settings/PaymentsTab";
@@ -16,7 +17,7 @@ import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { Coupon } from "@/lib/coupons/types";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
 
-type SettingsTabId = "general" | "currency" | "location" | "payments" | "promotions" | "design";
+type SettingsTabId = "general" | "currency" | "location" | "payments" | "promotions" | "design" | "messages";
 
 const PRIMARY_TABS: {
   id: SettingsTabId;
@@ -47,6 +48,7 @@ export function SettingsPanel({
   const integrationsActive = pathname.startsWith("/dashboard/ajustes/integraciones");
   const promotionsActive = activeTab === "promotions" && !integrationsActive;
   const designActive = activeTab === "design" && !integrationsActive;
+  const messagesActive = activeTab === "messages" && !integrationsActive;
 
   const panel = (
     <>
@@ -96,6 +98,14 @@ export function SettingsPanel({
         >
           <Tag className="h-3.5 w-3.5" aria-hidden="true" />
           Promociones
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("messages")}
+          className={`settings-pill-link ${messagesActive ? "settings-pill-link-active" : ""}`}
+        >
+          <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+          Plantillas de mensajes
         </button>
         <Link
           href="/dashboard/ajustes/integraciones"
@@ -179,6 +189,15 @@ export function SettingsPanel({
             aria-labelledby="settings-tab-promotions"
           >
             <PromotionsTab initialCoupons={initialCoupons} products={products} />
+          </div>
+        )}
+        {messagesActive && (
+          <div
+            role="tabpanel"
+            id="settings-panel-messages"
+            aria-labelledby="settings-tab-messages"
+          >
+            <MessageTemplatesTab initialSettings={initialConfig.messageTemplates} />
           </div>
         )}
       </div>

@@ -8,19 +8,24 @@ export function buildCustomerWhatsAppUrl(
     orderId: string;
     totalUsd: number;
   },
+  message?: string,
 ): string | null {
   const normalized = normalizeWhatsAppPhone(String(phone ?? ""));
   if (!normalized) return null;
 
-  if (!context) {
+  const body =
+    message ??
+    (context
+      ? [
+          `Hola ${context.customerName}, te escribo desde mi tienda en Alcentimo sobre tu pedido.`,
+          `Total: ${formatUsd(context.totalUsd)}.`,
+          `Referencia: ${context.orderId.slice(0, 8)}.`,
+        ].join("\n")
+      : undefined);
+
+  if (!body) {
     return `https://wa.me/${normalized}`;
   }
 
-  const message = [
-    `Hola ${context.customerName}, te escribo desde mi tienda en Alcentimo sobre tu pedido.`,
-    `Total: ${formatUsd(context.totalUsd)}.`,
-    `Referencia: ${context.orderId.slice(0, 8)}.`,
-  ].join("\n");
-
-  return `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${normalized}?text=${encodeURIComponent(body)}`;
 }

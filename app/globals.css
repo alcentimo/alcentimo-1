@@ -630,6 +630,29 @@ body {
   @apply text-xs font-semibold uppercase tracking-wide text-zinc-500;
 }
 
+.orders-wa-composer-root {
+  @apply fixed inset-0 z-[60];
+}
+
+.orders-wa-composer-panel {
+  @apply absolute inset-x-4 top-1/2 mx-auto flex w-full max-w-lg -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950;
+  max-height: min(90vh, 32rem);
+}
+
+.orders-wa-composer-header {
+  @apply flex items-start gap-3 border-b border-zinc-200/80 px-4 py-4 dark:border-zinc-800;
+}
+
+.orders-wa-composer-body {
+  @apply flex-1 overflow-y-auto overscroll-contain px-4 py-4;
+  -webkit-overflow-scrolling: touch;
+}
+
+.orders-wa-composer-footer {
+  @apply border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-800;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
 .inventory-catalog-header {
   @apply mb-4 flex flex-col gap-3;
 }
