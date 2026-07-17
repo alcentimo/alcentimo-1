@@ -18,11 +18,15 @@ export function BcvSyncAlertBanner({ alert }: BcvSyncAlertBannerProps) {
         <code className="rounded bg-amber-100/80 px-1 py-0.5 dark:bg-amber-950/60">
           npm run sync:bcv-rate
         </code>{" "}
-        o revisa los logs en Supabase (
+        o revisa logs en{" "}
         <code className="rounded bg-amber-100/80 px-1 py-0.5 dark:bg-amber-950/60">
           tasas_cambio_sync_logs
+        </code>{" "}
+        (Supabase) y{" "}
+        <code className="rounded bg-amber-100/80 px-1 py-0.5 dark:bg-amber-950/60">
+          Vercel → Cron /api/cron/sync-bcv-rate
         </code>
-        ).
+        .
       </p>
     </div>
   );

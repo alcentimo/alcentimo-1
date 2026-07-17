@@ -98,13 +98,18 @@ export async function fetchBcvUsdRate(): Promise<number> {
 
   for (const endpoint of BCV_API_ENDPOINTS) {
     try {
+      console.log(`[bcv-sync] ${JSON.stringify({ ts: new Date().toISOString(), phase: "fetch_endpoint", endpoint })}`);
       const payload = await fetchJson(endpoint);
       const rate = extractRateFromPayload(payload);
-      if (rate) return rate;
+      if (rate) {
+        console.log(`[bcv-sync] ${JSON.stringify({ ts: new Date().toISOString(), phase: "fetch_endpoint_ok", endpoint, rate })}`);
+        return rate;
+      }
       errors.push(`${endpoint}: respuesta sin tasa válida`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error desconocido";
       errors.push(`${endpoint}: ${message}`);
+      console.error(`[bcv-sync] ${JSON.stringify({ ts: new Date().toISOString(), phase: "fetch_endpoint_error", endpoint, error: message })}`);
     }
   }
 

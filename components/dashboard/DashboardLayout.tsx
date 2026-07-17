@@ -17,6 +17,7 @@ interface DashboardLayoutProps {
   planName?: string | null;
   exchangeRate?: number | null;
   exchangeRateUpdatedAt?: string | null;
+  exchangeRateStale?: boolean;
 }
 
 function isStandaloneAuthPath(pathname: string): boolean {
@@ -33,6 +34,7 @@ function DashboardShell({
   planName = null,
   exchangeRate = null,
   exchangeRateUpdatedAt = null,
+  exchangeRateStale = false,
 }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -103,6 +105,7 @@ function DashboardShell({
           <DashboardExchangeRateBadge
             rate={exchangeRate}
             updatedAt={exchangeRateUpdatedAt}
+            stale={exchangeRateStale}
           />
         </header>
 

@@ -6,38 +6,77 @@ function extractBearerToken(request: Request): string | null {
   return (bearerMatch?.[1] ?? authHeader).trim();
 }
 
+function logAuthEvent(
+  phase: string,
+  data: Record<string, unknown>,
+  level: "warn" | "error" = "warn",
+): void {
+  const line = `[bcv-sync] ${JSON.stringify({
+    ts: new Date().toISOString(),
+    phase,
+    ...data,
+  })}`;
+
+  if (level === "error") {
+    console.error(line);
+    return;
+  }
+
+  console.warn(line);
+}
+
 /**
- * Valida peticiones manuales (CRON_SECRET) y programadas de Supabase
- * (service role en Authorization).
+ * Valida peticiones manuales (CRON_SECRET), programadas (apikey / service role)
+ * y llamadas con Bearer service role.
  */
 export function verifyCronRequest(request: Request): {
   authorized: boolean;
   reason?: string;
+  source?: "cron-secret" | "service-role" | "apikey";
 } {
   const cronSecret = Deno.env.get("CRON_SECRET")?.trim();
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
-  const token = extractBearerToken(request);
+  const bearerToken = extractBearerToken(request);
+  const apiKey = request.headers.get("apikey")?.trim() ?? null;
 
   const acceptedTokens = [cronSecret, serviceRoleKey].filter(
     (value): value is string => Boolean(value),
   );
 
-  if (token && acceptedTokens.includes(token)) {
-    return { authorized: true };
-  }
-
-  if (!cronSecret) {
+  if (bearerToken && acceptedTokens.includes(bearerToken)) {
     return {
-      authorized: false,
-      reason: "CRON_SECRET no está configurado en los secrets de Supabase.",
+      authorized: true,
+      source: bearerToken === serviceRoleKey ? "service-role" : "cron-secret",
     };
   }
 
-  if (!token) {
+  if (apiKey && acceptedTokens.includes(apiKey)) {
+    return { authorized: true, source: "apikey" };
+  }
+
+  logAuthEvent("edge_auth_failed", {
+    hasAuthorization: Boolean(bearerToken),
+    hasApiKey: Boolean(apiKey),
+    headerNames: [...request.headers.keys()].filter((name) =>
+      ["authorization", "apikey", "x-vercel-cron", "x-supabase-schedule"].includes(
+        name.toLowerCase(),
+      ),
+    ),
+  });
+
+  if (!cronSecret && !serviceRoleKey) {
     return {
       authorized: false,
       reason:
-        "Falta el encabezado Authorization. Envía Bearer <CRON_SECRET>.",
+        "CRON_SECRET o SUPABASE_SERVICE_ROLE_KEY no están configurados en los secrets de Supabase.",
+    };
+  }
+
+  if (!bearerToken && !apiKey) {
+    return {
+      authorized: false,
+      reason:
+        "Falta Authorization o apikey. Envía Bearer <CRON_SECRET> o apikey con service role.",
     };
   }
 

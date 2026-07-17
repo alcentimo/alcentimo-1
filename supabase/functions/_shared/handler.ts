@@ -55,7 +55,13 @@ export async function serveSyncBcv(
 
   const auth = verifyCronRequest(request);
   if (!auth.authorized) {
-    console.error("[sync-bcv] No autorizado:", auth.reason);
+    console.error(
+      `[bcv-sync] ${JSON.stringify({
+        ts: new Date().toISOString(),
+        phase: "edge_unauthorized",
+        reason: auth.reason,
+      })}`,
+    );
     return jsonResponse(
       {
         error: "No autorizado.",
@@ -67,10 +73,28 @@ export async function serveSyncBcv(
 
   try {
     const slot = parseSyncSlot(request, forcedSlot);
+    console.log(
+      `[bcv-sync] ${JSON.stringify({
+        ts: new Date().toISOString(),
+        phase: "edge_start",
+        slot,
+        authSource: auth.source,
+      })}`,
+    );
     const admin = createAdminClient();
     const result = await runBcvSyncAttempt(admin, slot);
 
     if (result.success) {
+      console.log(
+        `[bcv-sync] ${JSON.stringify({
+          ts: new Date().toISOString(),
+          phase: "edge_success",
+          slot: result.slot,
+          action: result.action,
+          syncDate: result.syncDate,
+          rate: result.rate,
+        })}`,
+      );
       return jsonResponse({
         ok: true,
         slot: result.slot,
@@ -84,7 +108,13 @@ export async function serveSyncBcv(
 
     const status = result.action === "awaiting_retry" ? 502 : 503;
 
-    console.error("[sync-bcv] Sincronización fallida:", result);
+    console.error(
+      `[bcv-sync] ${JSON.stringify({
+        ts: new Date().toISOString(),
+        phase: "edge_failed",
+        ...result,
+      })}`,
+    );
 
     return jsonResponse(
       {
@@ -99,7 +129,13 @@ export async function serveSyncBcv(
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error interno.";
-    console.error("[sync-bcv] Error:", message);
+    console.error(
+      `[bcv-sync] ${JSON.stringify({
+        ts: new Date().toISOString(),
+        phase: "edge_exception",
+        error: message,
+      })}`,
+    );
     return jsonResponse({ error: message }, 500);
   }
 }

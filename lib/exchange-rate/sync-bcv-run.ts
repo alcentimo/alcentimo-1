@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
 import { syncBcvTasaToDatabase } from "@/lib/exchange-rate/sync-bcv-tasa";
+import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 
 export type BcvSyncSlot = "midnight" | "retry";
 
@@ -41,7 +42,7 @@ async function logSyncAttempt(
   });
 
   if (error) {
-    console.error("[bcv-sync] No se pudo registrar el intento:", error.message);
+    logBcvSync("sync_log_insert_failed", { error: error.message }, "error");
   }
 }
 
@@ -117,7 +118,10 @@ export async function runBcvSyncAttempt(
 ): Promise<BcvSyncRunResult> {
   const syncDate = getVenezuelaSyncDate();
 
+  logBcvSync("attempt_start", { slot, syncDate });
+
   if (slot === "retry" && (await hasSuccessfulSyncToday(admin, syncDate))) {
+    logBcvSync("attempt_skipped", { slot, syncDate, reason: "already_synced_today" });
     return {
       success: true,
       action: "skipped_already_synced",
@@ -138,6 +142,12 @@ export async function runBcvSyncAttempt(
 
   if (result.success) {
     await resolveBcvAlerts(admin, syncDate);
+    logBcvSync("attempt_success", {
+      slot,
+      syncDate,
+      rate: result.rate,
+      updatedAt: result.updatedAt,
+    });
     return {
       success: true,
       action: "success",
@@ -149,6 +159,7 @@ export async function runBcvSyncAttempt(
   }
 
   if (slot === "midnight") {
+    logBcvSync("attempt_failed_awaiting_retry", { slot, syncDate, error: result.error }, "warn");
     return {
       success: false,
       action: "awaiting_retry",
@@ -159,6 +170,8 @@ export async function runBcvSyncAttempt(
   }
 
   await createBcvFailureAlert(admin, syncDate, result.error);
+
+  logBcvSync("attempt_failed_alert_created", { slot, syncDate, error: result.error }, "error");
 
   return {
     success: false,

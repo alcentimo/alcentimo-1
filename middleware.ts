@@ -36,9 +36,10 @@ async function userHasStoreInMiddleware(
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Webhooks y OAuth de integraciones: sin sesión ni redirecciones de auth
+  // Webhooks, OAuth de integraciones y crons: sin sesión ni redirecciones de auth
   if (
     pathname.startsWith("/api/webhooks") ||
+    pathname.startsWith("/api/cron") ||
     pathname.startsWith("/api/integrations/meta/")
   ) {
     return NextResponse.next();
@@ -188,6 +189,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/webhooks|api/integrations|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/webhooks|api/cron|api/integrations|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

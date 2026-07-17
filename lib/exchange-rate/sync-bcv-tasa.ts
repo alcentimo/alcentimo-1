@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchBcvUsdRate } from "@/lib/exchange-rate/bcv-client";
+import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 
 export interface SyncBcvTasaResult {
   success: boolean;
@@ -17,14 +18,19 @@ export async function syncBcvTasaToDatabase(
   admin: SupabaseClient,
 ): Promise<SyncBcvTasaResult> {
   try {
+    logBcvSync("fetch_start");
     const rate = await fetchBcvUsdRate();
+    logBcvSync("fetch_success", { rate });
+
     if (!Number.isFinite(rate) || rate <= 0) {
+      logBcvSync("fetch_invalid_rate", { rate }, "error");
       return { success: false, error: "La API BCV devolvió una tasa nula o inválida." };
     }
 
     const updatedAt = new Date().toISOString();
     const effectiveDate = todayUtcDate();
 
+    logBcvSync("db_upsert_start", { effectiveDate, rate });
     const { error: tasaError } = await admin.from("tasas_cambio").upsert(
       {
         moneda: "USD",
@@ -35,8 +41,11 @@ export async function syncBcvTasaToDatabase(
     );
 
     if (tasaError) {
+      logBcvSync("db_upsert_failed", { error: tasaError.message }, "error");
       return { success: false, error: tasaError.message };
     }
+
+    logBcvSync("db_upsert_success", { updatedAt });
 
     const { data: existingRate } = await admin
       .from("exchange_rate")
@@ -56,6 +65,7 @@ export async function syncBcvTasaToDatabase(
         .eq("id", existingRate.id);
 
       if (updateError) {
+        logBcvSync("db_legacy_update_failed", { error: updateError.message }, "error");
         return { success: false, error: updateError.message };
       }
     } else {
@@ -68,15 +78,20 @@ export async function syncBcvTasaToDatabase(
       });
 
       if (insertError) {
+        logBcvSync("db_legacy_insert_failed", { error: insertError.message }, "error");
         return { success: false, error: insertError.message };
       }
     }
 
+    logBcvSync("sync_complete", { rate, updatedAt });
     return { success: true, rate, updatedAt };
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Error al sincronizar tasa BCV.";
+    logBcvSync("sync_exception", { error: message }, "error");
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error al sincronizar tasa BCV.",
+      error: message,
     };
   }
 }
