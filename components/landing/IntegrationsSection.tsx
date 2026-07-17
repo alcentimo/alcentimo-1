@@ -10,59 +10,59 @@ export function IntegrationsSection() {
   return (
     <section
       id="integraciones"
-      className="section-padding border-y border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+      className="section-padding border-b border-zinc-200/60 bg-white dark:border-zinc-800/60 dark:bg-zinc-950"
     >
       <div className="page-container">
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="max-w-xl">
           <p className="section-label">Ecosistema de integración</p>
-          <h2 className="section-title">
+          <h2 className="section-title mt-3">
             Conectividad operativa sin fricción
           </h2>
-          <p className="section-subtitle mx-auto">
-            Habilita los métodos de pago y logística que tu mercado exige, con
-            configuración empresarial desde un panel centralizado.
+          <p className="section-subtitle mt-4 max-w-lg">
+            Habilita pagos y logística desde un panel centralizado, con la misma
+            lógica de configuración que usas en el dashboard.
           </p>
         </div>
 
         <div className="mt-10">
           <Link
             href="/dashboard/login"
-            className="group flex flex-col gap-4 rounded-xl border border-emerald-200/80 bg-linear-to-r from-emerald-50 to-teal-50 p-5 shadow-sm transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:justify-between sm:p-6 dark:border-emerald-900/50 dark:from-emerald-950/40 dark:to-teal-950/30"
+            className="landing-glass group flex flex-col gap-4 p-5 transition-colors hover:border-teal-600/20 sm:flex-row sm:items-center sm:justify-between sm:p-6"
           >
             <div className="flex items-start gap-4">
-              <ChannelLogo provider="whatsapp" className="h-12 w-12 shrink-0" />
+              <ChannelLogo provider="whatsapp" className="h-11 w-11 shrink-0" />
               <div className="text-left">
-                <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-teal-700 dark:text-teal-400">
                   WhatsApp
                 </p>
-                <p className="mt-1 text-base font-semibold text-zinc-900 sm:text-lg dark:text-zinc-50">
-                  Distribución comercial vía WhatsApp con un solo clic
+                <p className="mt-1 text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                  Distribución comercial con un solo clic
                 </p>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  Comparte tu catálogo corporativo con pedidos estructurados,
-                  listos para confirmación con productos, envío y pago definidos.
+                <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  Comparte tu catálogo con pedidos estructurados: productos,
+                  envío y pago definidos desde el panel.
                 </p>
               </div>
             </div>
-            <span className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-emerald-700 transition group-hover:gap-2.5 dark:text-emerald-400 sm:self-center">
+            <span className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-teal-700 transition group-hover:gap-2 dark:text-teal-400 sm:self-center">
               Comenzar gratis
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </span>
           </Link>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-12">
+        <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
               Métodos de pago
             </h3>
-            <ul className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <ul className="mt-4 divide-y divide-zinc-200/70 dark:divide-zinc-800/70">
               {PAYMENT_METHODS.map((method) => (
                 <li key={method.key}>
-                  <div className="card-surface flex items-center gap-3 p-3 transition-shadow hover:shadow-md sm:p-3.5">
+                  <div className="flex items-center gap-3 py-3.5">
                     <PaymentMethodLogo
                       methodKey={method.key}
-                      className="h-9 w-9 shrink-0"
+                      className="h-8 w-8 shrink-0"
                     />
                     <span className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-100">
                       {method.label}
@@ -74,16 +74,16 @@ export function IntegrationsSection() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
               Envíos nacionales
             </h3>
-            <ul className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <ul className="mt-4 divide-y divide-zinc-200/70 dark:divide-zinc-800/70">
               {NATIONAL_CARRIER_METHODS.map((method) => (
                 <li key={method.key}>
-                  <div className="card-surface flex items-center gap-3 p-3 transition-shadow hover:shadow-md sm:p-3.5">
+                  <div className="flex items-center gap-3 py-3.5">
                     <ShippingCarrierLogo
                       carrierKey={method.key}
-                      className="h-9 w-9 shrink-0"
+                      className="h-8 w-8 shrink-0"
                     />
                     <span className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-100">
                       {method.label}
@@ -93,8 +93,8 @@ export function IntegrationsSection() {
               ))}
             </ul>
             <p className="mt-4 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-              También puedes ofrecer delivery local y retiro en tienda desde
-              el panel de ajustes.
+              También puedes ofrecer delivery local y retiro en tienda desde el
+              panel de ajustes.
             </p>
           </div>
         </div>

@@ -12,7 +12,7 @@ const features = [
     icon: Store,
     title: "Presencia digital propietaria",
     description:
-      "Cada organización despliega un catálogo corporativo con dominio dedicado, listo para distribución omnicanal.",
+      "Catálogo corporativo con URL dedicada, listo para distribución omnicanal sin depender de marketplaces.",
   },
   {
     icon: Layers,
@@ -24,62 +24,65 @@ const features = [
     icon: ImageIcon,
     title: "Entrega de contenido inteligente",
     description:
-      "Sistema de entrega de contenido (CDN) inteligente que garantiza carga instantánea en cualquier condición de red.",
+      "CDN optimizado que garantiza carga instantánea del catálogo en cualquier condición de red.",
   },
   {
     icon: Globe,
     title: "Arquitectura multi-moneda",
     description:
-      "Motor de conversión en tiempo real que mantiene precios referenciales en USD y equivalentes en bolívares sincronizados.",
+      "Motor de conversión en tiempo real: precios en USD con equivalentes en bolívares siempre sincronizados.",
   },
   {
     icon: Shield,
-    title: "Aislamiento de datos multi-tenant",
+    title: "Aislamiento multi-tenant",
     description:
-      "Arquitectura empresarial con segregación estricta de datos por organización, garantizando confidencialidad operativa.",
+      "Segregación estricta de datos por organización, con confidencialidad operativa de nivel empresarial.",
   },
   {
     icon: Zap,
     title: "Sincronización en tiempo real",
     description:
-      "Los cambios en el panel se propagan de inmediato al catálogo público, eliminando desfases entre operación y venta.",
+      "Los cambios en el panel se propagan al catálogo público al instante, sin desfase entre operación y venta.",
   },
 ];
 
 export function Features() {
   return (
-    <section id="caracteristicas" className="section-padding bg-zinc-100/60 dark:bg-zinc-900/40">
+    <section
+      id="caracteristicas"
+      className="section-padding border-b border-zinc-200/60 bg-white dark:border-zinc-800/60 dark:bg-zinc-950"
+    >
       <div className="page-container">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="section-label">Capacidades de la plataforma</p>
-          <h2 className="section-title">
-            Todo lo que necesitas para escalar con confianza
-          </h2>
-          <p className="section-subtitle mx-auto">
-            Una suite SaaS diseñada para organizaciones que exigen precisión
-            financiera, control operativo y una presencia digital de nivel
-            empresarial.
-          </p>
-        </div>
+        <div className="grid gap-12 lg:grid-cols-12 lg:gap-16 xl:gap-20">
+          <div className="lg:col-span-4 lg:sticky lg:top-28 lg:self-start">
+            <p className="section-label">Capacidades del sistema</p>
+            <h2 className="section-title mt-3 max-w-sm">
+              Módulos diseñados para escalar con confianza
+            </h2>
+            <p className="section-subtitle mt-4 max-w-sm">
+              Una suite SaaS con la misma precisión visual y operativa que tu
+              panel de control: limpia, corporativa y lista para producción.
+            </p>
+          </div>
 
-        <ul className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-          {features.map((feature) => (
-            <li
-              key={feature.title}
-              className="card-surface p-6 transition-shadow hover:shadow-md"
-            >
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-400">
-                <feature.icon className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <h3 className="mt-4 text-base font-semibold text-zinc-900 dark:text-zinc-50">
-                {feature.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                {feature.description}
-              </p>
-            </li>
-          ))}
-        </ul>
+          <ul className="lg:col-span-8">
+            {features.map((feature) => (
+              <li key={feature.title} className="landing-feature-row group">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-50 text-teal-700 transition-colors group-hover:bg-teal-50 dark:bg-zinc-900 dark:text-teal-400 dark:group-hover:bg-teal-950/50">
+                  <feature.icon className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden="true" />
+                </span>
+                <div className="min-w-0 pt-0.5">
+                  <h3 className="text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                    {feature.description}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );

@@ -26,33 +26,33 @@ export function LandingNav() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 border-b bg-white/90 backdrop-blur-md transition-shadow safe-area-inset dark:bg-zinc-950/90 ${
+      className={`fixed inset-x-0 top-0 z-50 transition-all safe-area-inset ${
         scrolled
-          ? "border-zinc-200/80 shadow-sm dark:border-zinc-800/80"
-          : "border-transparent"
+          ? "border-b border-zinc-200/70 bg-white/90 shadow-[0_1px_2px_rgba(0,0,0,0.04)] backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-950/90"
+          : "border-b border-transparent bg-zinc-50/80 backdrop-blur-sm dark:bg-zinc-950/80"
       }`}
     >
-      <div className="page-container flex h-16 items-center justify-between gap-4 lg:h-[4.25rem]">
+      <div className="page-container flex h-14 items-center justify-between gap-4 lg:h-16">
         <BrandLogo href="/" />
 
         <nav
-          className="hidden items-center gap-1 md:flex"
+          className="hidden items-center gap-0.5 md:flex"
           aria-label="Navegación principal"
         >
           {navLinks.map((link) => (
-            <a key={link.href} href={link.href} className="nav-link px-3.5">
+            <a key={link.href} href={link.href} className="landing-nav-link">
               {link.label}
             </a>
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 md:flex">
-          <Link href="/dashboard/login" className="nav-link px-3">
+        <div className="hidden items-center gap-2 md:flex">
+          <Link href="/dashboard/login" className="landing-nav-link">
             Iniciar sesión
           </Link>
           <Link
             href="/dashboard/productos/nuevo"
-            className="btn-brand gap-2 px-5 shadow-sm"
+            className="btn-brand ml-1 gap-2 px-4"
           >
             Comenzar gratis
           </Link>
@@ -61,7 +61,7 @@ export function LandingNav() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="touch-target rounded-xl text-zinc-700 md:hidden dark:text-zinc-300"
+          className="touch-target rounded-lg text-zinc-700 md:hidden dark:text-zinc-300"
           aria-expanded={open}
           aria-label={open ? "Cerrar menú" : "Abrir menú"}
         >
@@ -70,30 +70,30 @@ export function LandingNav() {
       </div>
 
       {open && (
-        <div className="border-t border-zinc-200 bg-white px-4 py-4 shadow-lg md:hidden dark:border-zinc-800 dark:bg-zinc-950">
-          <nav className="flex flex-col gap-1" aria-label="Menú móvil">
+        <div className="border-t border-zinc-200/70 bg-white px-4 py-4 md:hidden dark:border-zinc-800/70 dark:bg-zinc-950">
+          <nav className="flex flex-col gap-0.5" aria-label="Menú móvil">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="nav-link w-full justify-start px-3 text-base"
+                className="landing-nav-link justify-start px-2 py-3 text-base"
               >
                 {link.label}
               </a>
             ))}
-            <hr className="my-2 border-zinc-200 dark:border-zinc-800" />
+            <hr className="my-2 border-zinc-200/70 dark:border-zinc-800/70" />
             <Link
               href="/dashboard/login"
               onClick={() => setOpen(false)}
-              className="nav-link w-full justify-start px-3 text-base"
+              className="landing-nav-link justify-start px-2 py-3 text-base"
             >
               Iniciar sesión
             </Link>
             <Link
               href="/dashboard/productos/nuevo"
               onClick={() => setOpen(false)}
-              className="btn-brand mt-2 gap-2 shadow-sm"
+              className="btn-brand mt-2 gap-2"
             >
               Comenzar gratis
             </Link>
