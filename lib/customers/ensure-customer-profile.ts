@@ -3,25 +3,42 @@ import {
   parseCustomerAccountPath,
   resolveActiveStoreBySlug,
 } from "@/lib/customers/middleware-access";
+import { parseStoreSlugFromHost } from "@/lib/store-host";
 import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 
 export type EnsureCustomerProfileResult =
   | { ok: true; storeId: string; storeSlug: string }
   | { ok: false; error: string };
 
-/** Extrae el slug de tienda desde rutas /c/{slug}/... o parámetro explícito. */
+/** Extrae el slug de tienda desde rutas /c/{slug}/..., subdominio o parámetro explícito. */
 export function resolveCustomerStoreSlugFromNext(
   nextPath: string | null | undefined,
   fallbackStoreSlug?: string | null,
 ): string | null {
-  const normalizedNext = nextPath?.split("?")[0]?.trim();
-  if (normalizedNext) {
-    const accountPath = parseCustomerAccountPath(normalizedNext);
-    if (accountPath) return accountPath.storeSlug;
+  const raw = nextPath?.trim();
+  if (raw) {
+    if (raw.startsWith("http://") || raw.startsWith("https://")) {
+      try {
+        const url = new URL(raw);
+        const slugFromHost = parseStoreSlugFromHost(url.host);
+        if (slugFromHost) {
+          const accountPath = parseCustomerAccountPath(url.pathname, slugFromHost);
+          return accountPath?.storeSlug ?? slugFromHost;
+        }
+      } catch {
+        // continuar con rutas relativas
+      }
+    }
 
-    const catalogMatch = normalizedNext.match(/^\/c\/([^/]+)/);
-    if (catalogMatch?.[1]) {
-      return decodeURIComponent(catalogMatch[1]).trim().toLowerCase();
+    const normalizedNext = raw.split("?")[0]?.trim();
+    if (normalizedNext) {
+      const accountPath = parseCustomerAccountPath(normalizedNext);
+      if (accountPath) return accountPath.storeSlug;
+
+      const catalogMatch = normalizedNext.match(/^\/c\/([^/]+)/);
+      if (catalogMatch?.[1]) {
+        return decodeURIComponent(catalogMatch[1]).trim().toLowerCase();
+      }
     }
   }
 

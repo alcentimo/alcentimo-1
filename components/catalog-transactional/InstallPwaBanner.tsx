@@ -9,6 +9,7 @@ import {
   subscribeToInstallPrompt,
   type BeforeInstallPromptEvent,
 } from "@/lib/pwa/before-install-prompt";
+import { parseStoreSlugFromHost } from "@/lib/store-host";
 
 interface InstallPwaBannerProps {
   storeSlug: string;
@@ -24,7 +25,10 @@ function getDismissStorageKey(storeSlug: string): string {
 
 function isCatalogPath(storeSlug: string): boolean {
   if (typeof window === "undefined") return false;
-  return window.location.pathname.startsWith(`/c/${storeSlug.trim().toLowerCase()}`);
+  const slug = storeSlug.trim().toLowerCase();
+  const slugFromHost = parseStoreSlugFromHost(window.location.host);
+  if (slugFromHost === slug) return true;
+  return window.location.pathname.startsWith(`/c/${slug}`);
 }
 
 function isAppInstalled(): boolean {

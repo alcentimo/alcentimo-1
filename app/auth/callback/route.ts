@@ -5,6 +5,15 @@ import { ensureCustomerProfileAfterAuth } from "@/lib/customers/ensure-customer-
 import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { getSiteUrl } from "@/lib/site-url";
 
+function resolveAuthRedirectTarget(next: string, siteUrl: string): string {
+  if (next.startsWith("http://") || next.startsWith("https://")) {
+    return next;
+  }
+
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding";
+  return `${siteUrl}${safeNext}`;
+}
+
 export async function GET(request: Request) {
   const siteUrl = getSiteUrl();
   const { searchParams } = new URL(request.url);
@@ -38,7 +47,7 @@ export async function GET(request: Request) {
   } = await supabase.auth.getUser();
 
   if (user) {
-    const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding";
+    const safeNext = resolveAuthRedirectTarget(next, siteUrl);
     const normalizedStoreSlug = storeSlug?.trim().toLowerCase() || null;
 
     if (normalizedStoreSlug) {
@@ -73,10 +82,10 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.redirect(`${siteUrl}${safeNext}`);
+    return NextResponse.redirect(safeNext);
   }
 
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding";
+  const safeNext = resolveAuthRedirectTarget(next, siteUrl);
 
-  return NextResponse.redirect(`${siteUrl}${safeNext}`);
+  return NextResponse.redirect(safeNext);
 }

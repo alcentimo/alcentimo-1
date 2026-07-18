@@ -1,6 +1,10 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
 import { getOptionalAuthUser } from "@/lib/auth/optional-auth";
+import {
+  getStoreCatalogPublicUrl,
+  isStoreSubdomainCatalogEnabled,
+} from "@/lib/store-host";
 import type { Store } from "@/lib/database.types";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 
@@ -76,7 +80,15 @@ export function getStoreCatalogUrl(slug: string): string {
 }
 
 export function getTransactionalCatalogUrl(slug: string): string {
-  return `/c/${slug}`;
+  if (isStoreSubdomainCatalogEnabled()) {
+    return getStoreCatalogPublicUrl(slug, "/");
+  }
+
+  return `/c/${slug.trim().toLowerCase()}`;
+}
+
+export function getTransactionalCatalogPublicUrl(slug: string): string {
+  return getStoreCatalogPublicUrl(slug, "/");
 }
 
 /** Indica si el usuario ya tiene tienda (dueño o miembro). */

@@ -1,21 +1,26 @@
-export function getCatalogServiceWorkerUrl(storeSlug: string): string {
-  return `/c/${storeSlug.trim().toLowerCase()}/sw.js`;
+import { resolveCatalogPwaContext } from "@/lib/pwa/resolve-catalog-pwa-context";
+import { getDefaultCatalogOriginForSlug } from "@/lib/pwa/resolve-catalog-pwa-context";
+
+export function getCatalogServiceWorkerUrl(storeSlug: string, origin?: string): string {
+  const resolvedOrigin = origin ?? getDefaultCatalogOriginForSlug(storeSlug);
+  return resolveCatalogPwaContext(storeSlug, resolvedOrigin).serviceWorkerPath;
 }
 
-export function getCatalogServiceWorkerScope(storeSlug: string): string {
-  return `/c/${storeSlug.trim().toLowerCase()}/`;
+export function getCatalogServiceWorkerScope(storeSlug: string, origin?: string): string {
+  const resolvedOrigin = origin ?? getDefaultCatalogOriginForSlug(storeSlug);
+  return resolveCatalogPwaContext(storeSlug, resolvedOrigin).serviceWorkerScope;
 }
 
-export function getStoreCatalogManifestPath(storeSlug: string): string {
-  return `/c/${storeSlug.trim().toLowerCase()}/manifest.json`;
+export function getStoreCatalogManifestPath(storeSlug: string, origin?: string): string {
+  const resolvedOrigin = origin ?? getDefaultCatalogOriginForSlug(storeSlug);
+  return resolveCatalogPwaContext(storeSlug, resolvedOrigin).manifestPath;
 }
 
 export function getStoreCatalogManifestAbsoluteUrl(
   storeSlug: string,
   origin: string,
 ): string {
-  const base = origin.replace(/\/$/, "");
-  return `${base}${getStoreCatalogManifestPath(storeSlug)}`;
+  return resolveCatalogPwaContext(storeSlug, origin).manifestAbsoluteUrl;
 }
 
 export function getCatalogServiceWorkerAbsoluteUrl(
@@ -23,10 +28,10 @@ export function getCatalogServiceWorkerAbsoluteUrl(
   origin: string,
 ): string {
   const base = origin.replace(/\/$/, "");
-  return `${base}${getCatalogServiceWorkerUrl(storeSlug)}`;
+  const path = resolveCatalogPwaContext(storeSlug, origin).serviceWorkerPath;
+  return `${base}${path}`;
 }
 
 export function getCatalogCanonicalUrl(storeSlug: string, origin: string): string {
-  const base = origin.replace(/\/$/, "");
-  return `${base}/c/${storeSlug.trim().toLowerCase()}/`;
+  return resolveCatalogPwaContext(storeSlug, origin).canonicalUrl;
 }

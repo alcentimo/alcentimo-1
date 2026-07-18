@@ -4,7 +4,7 @@ import { randomBytes } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
-import { buildCustomerAccountPath } from "@/lib/customers/middleware-access";
+import { resolveCustomerNextDestination } from "@/lib/customers/middleware-access";
 import {
   ensureCustomerProfile,
   resolveCustomerStoreSlugFromNext,
@@ -25,17 +25,13 @@ function sanitizeNextPath(
   nextPath: string | null | undefined,
   storeSlug: string,
 ): string {
-  const fallback = buildCustomerAccountPath(storeSlug);
-  if (!nextPath?.startsWith("/") || nextPath.startsWith("//")) {
-    return fallback;
+  const slug = storeSlug.trim().toLowerCase();
+  const resolvedSlug = resolveCustomerStoreSlugFromNext(nextPath, slug);
+  if (resolvedSlug !== slug) {
+    return resolveCustomerNextDestination(slug, null);
   }
 
-  const resolvedSlug = resolveCustomerStoreSlugFromNext(nextPath, storeSlug);
-  if (resolvedSlug !== storeSlug) {
-    return fallback;
-  }
-
-  return nextPath.split("?")[0] ?? fallback;
+  return resolveCustomerNextDestination(slug, nextPath);
 }
 
 function isExistingUserError(message: string): boolean {

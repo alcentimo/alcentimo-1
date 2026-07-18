@@ -7,28 +7,8 @@ import {
 import {
   getCatalogServiceWorkerAbsoluteUrl,
   getCatalogServiceWorkerScope,
-  getCatalogServiceWorkerUrl,
 } from "@/lib/pwa/catalog-sw-paths";
-
-function resolveCatalogServiceWorkerRegistration(storeSlug: string): {
-  scriptUrl: string;
-  scope: string;
-} {
-  const normalizedSlug = storeSlug.trim().toLowerCase();
-  const scope = getCatalogServiceWorkerScope(normalizedSlug);
-
-  if (typeof window !== "undefined") {
-    return {
-      scriptUrl: getCatalogServiceWorkerAbsoluteUrl(normalizedSlug, window.location.origin),
-      scope,
-    };
-  }
-
-  return {
-    scriptUrl: getCatalogServiceWorkerUrl(normalizedSlug),
-    scope,
-  };
-}
+import { parseStoreSlugFromHost } from "@/lib/store-host";
 
 function isCatalogLegacyCacheName(name: string): boolean {
   return LEGACY_CATALOG_PWA_CACHE_PREFIXES.some(
@@ -62,6 +42,20 @@ function scheduleIdleTask(task: () => void): void {
   window.setTimeout(task, PWA_REGISTER_IDLE_TIMEOUT_MS);
 }
 
+function resolveCatalogServiceWorkerRegistration(storeSlug: string): {
+  scriptUrl: string;
+  scope: string;
+} {
+  const normalizedSlug = storeSlug.trim().toLowerCase();
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "https://alcentimo.com";
+
+  return {
+    scriptUrl: getCatalogServiceWorkerAbsoluteUrl(normalizedSlug, origin),
+    scope: getCatalogServiceWorkerScope(normalizedSlug, origin),
+  };
+}
+
 async function runCatalogRegistration(storeSlug: string): Promise<void> {
   const normalizedSlug = storeSlug.trim().toLowerCase();
   const storedVersion = localStorage.getItem(CATALOG_PWA_RESET_STORAGE_KEY);
@@ -84,7 +78,6 @@ async function runCatalogRegistration(storeSlug: string): Promise<void> {
     });
 }
 
-/** SW aislado del cliente — scope /c/{slug}/, sin fallback al SW admin. */
 export function scheduleCatalogServiceWorker(storeSlug: string): void {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
     return;
@@ -131,7 +124,6 @@ export function registerCatalogServiceWorkerForInstall(storeSlug: string): void 
   });
 }
 
-/** Desregistra SW admin si el usuario entra al catálogo (evita scope / compartido). */
 export async function unregisterAdminServiceWorkerOnCatalog(): Promise<void> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
     return;
@@ -142,8 +134,12 @@ export async function unregisterAdminServiceWorkerOnCatalog(): Promise<void> {
     await Promise.all(
       registrations
         .filter((registration) => {
-          const scriptUrl = registration.active?.scriptURL ?? registration.installing?.scriptURL ?? "";
-          return scriptUrl.endsWith("/sw.js") && !scriptUrl.includes("/c/");
+          const scriptUrl =
+            registration.active?.scriptURL ?? registration.installing?.scriptURL ?? "";
+          const isRootSw =
+            scriptUrl.endsWith("/sw.js") && !scriptUrl.includes("/c/");
+          if (!isRootSw) return false;
+          return parseStoreSlugFromHost(window.location.host) === null;
         })
         .map((registration) => registration.unregister()),
     );

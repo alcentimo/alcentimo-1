@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { CustomerProfilePanel } from "@/components/customers/CustomerProfilePanel";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
+import { getStoreCustomerAccountPath } from "@/lib/store-host";
 import { resolveCustomerContactEmail } from "@/lib/customers/phone-auth";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { createClient } from "@/lib/supabase/server";
@@ -24,7 +25,12 @@ export default async function CustomerProfilePage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(buildCustomerRegisterPath(store.slug, `/c/${store.slug}/perfil`));
+    redirect(
+      buildCustomerRegisterPath(
+        store.slug,
+        getStoreCustomerAccountPath(store.slug, "perfil"),
+      ),
+    );
   }
 
   const { data: profile } = await supabase

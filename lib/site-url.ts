@@ -31,18 +31,28 @@ export function getSiteUrl(): string {
   return DEFAULT_SITE_URL;
 }
 
+/** Host apex sin protocolo (ej. alcentimo.com). */
+export function getApexSiteHost(): string {
+  return getPublicSiteHost();
+}
+
 /** Host público sin protocolo (ej. alcentimo.com). */
 export function getPublicSiteHost(): string {
   return getSiteUrl().replace(/^https?:\/\//, "");
 }
 
-/** Callback OAuth/email: p. ej. https://alcentimo.com/auth/callback?next=%2Fonboarding&store=mi-tienda */
+/** Callback OAuth/email: p. ej. https://alcentimo.com/auth/callback?next=...&store=mi-tienda */
 export function getAuthCallbackUrl(
   next = "/onboarding",
   extraParams?: Record<string, string | undefined>,
 ): string {
   const siteUrl = getSiteUrl();
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding";
+  const safeNext =
+    next.startsWith("http://") ||
+    next.startsWith("https://") ||
+    (next.startsWith("/") && !next.startsWith("//"))
+      ? next
+      : "/onboarding";
   const params = new URLSearchParams({ next: safeNext });
 
   if (extraParams) {

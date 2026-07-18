@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolveActiveStoreBySlug } from "@/lib/customers/middleware-access";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
+import { getStoreCatalogBasePath } from "@/lib/store-host";
 import type { CatalogPromotionContext } from "@/lib/promotions/types";
 
 function isPromotionInDateRange(
@@ -77,7 +78,10 @@ export async function getCatalogPromotionContext(
     return { guestBanner: null, autoApply: null };
   }
 
-  const registerPath = buildCustomerRegisterPath(normalizedSlug, `/c/${normalizedSlug}`);
+  const registerPath = buildCustomerRegisterPath(
+    normalizedSlug,
+    getStoreCatalogBasePath(normalizedSlug),
+  );
 
   return {
     guestBanner: isCustomer

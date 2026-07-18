@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { ExternalLink } from "lucide-react";
-import { getPublicSiteHost } from "@/lib/site-url";
+import { getStoreCatalogPublicUrl } from "@/lib/store-host";
 import { cn } from "@/lib/cn";
 
 interface PublicCatalogQuickLinkProps {
@@ -20,7 +20,7 @@ export function PublicCatalogQuickLink({
 }: PublicCatalogQuickLinkProps) {
   const catalogUrl = useMemo(() => {
     if (!storeSlug) return null;
-    return `https://${getPublicSiteHost()}/c/${storeSlug}`;
+    return getStoreCatalogPublicUrl(storeSlug);
   }, [storeSlug]);
 
   if (!catalogUrl) {

@@ -13,7 +13,6 @@ import {
 } from "@/lib/pwa/catalog-sw-paths";
 import { getRequestOrigin } from "@/lib/pwa/get-request-origin";
 import { getPublicStoreBySlug } from "@/lib/stores";
-import { getSiteUrl } from "@/lib/site-url";
 
 interface TransactionalCatalogLayoutProps {
   children: ReactNode;
@@ -59,7 +58,7 @@ export async function generateMetadata({
   }
 
   return {
-    metadataBase: new URL(getSiteUrl()),
+    metadataBase: new URL(origin),
     title: `${storeName} — Pedidos`,
     description: `Catálogo y pedidos de ${storeName}`,
     alternates: {

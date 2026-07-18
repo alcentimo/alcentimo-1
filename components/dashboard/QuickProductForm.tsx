@@ -19,7 +19,8 @@ import type { Store } from "@/lib/database.types";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { VariantFormInput } from "@/lib/products/variants";
 import { formatUsd } from "@/lib/format";
-import { getPublicSiteHost } from "@/lib/site-url";
+import { getSiteUrl } from "@/lib/site-url";
+import { getTransactionalCatalogPublicUrl } from "@/lib/stores";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -116,8 +117,8 @@ function QuickProductFormSession({
       catalogUrl: state.catalogUrl
         ? state.catalogUrl.startsWith("http")
           ? state.catalogUrl
-          : `https://${getPublicSiteHost()}${state.catalogUrl}`
-        : `https://${getPublicSiteHost()}/c/${store.slug}`,
+          : `${getSiteUrl()}${state.catalogUrl}`
+        : getTransactionalCatalogPublicUrl(store.slug),
     });
   }, [state.success, state.catalogUrl, state.productName, onComplete, onRefresh, onSavedAndAnother, store.slug]);
 

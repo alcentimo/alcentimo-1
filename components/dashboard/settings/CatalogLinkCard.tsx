@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
-import { getPublicSiteHost } from "@/lib/site-url";
+import { getStoreCatalogPublicUrl } from "@/lib/store-host";
 import { cn } from "@/lib/cn";
 
 interface CatalogLinkCardProps {
@@ -17,8 +17,14 @@ export function CatalogLinkCard({
   variant = "settings",
 }: CatalogLinkCardProps) {
   const [copied, setCopied] = useState(false);
-  const siteHost = useMemo(() => getPublicSiteHost(), []);
-  const catalogUrl = `https://${siteHost}/c/${slug}`;
+  const catalogUrl = useMemo(() => getStoreCatalogPublicUrl(slug), [slug]);
+  const catalogHostLabel = useMemo(() => {
+    try {
+      return new URL(catalogUrl).host;
+    } catch {
+      return catalogUrl;
+    }
+  }, [catalogUrl]);
 
   async function handleCopy() {
     try {
@@ -78,8 +84,7 @@ export function CatalogLinkCard({
           Enlace de tu catálogo
         </p>
         <p className="mt-1 break-all text-sm text-zinc-800 dark:text-zinc-100">
-          <span className="text-zinc-500 dark:text-zinc-400">{siteHost}/c/</span>
-          <span className="font-medium">{slug}</span>
+          <span className="font-medium">{catalogHostLabel}</span>
         </p>
       </div>
 

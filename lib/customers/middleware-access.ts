@@ -1,12 +1,27 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  getStoreCatalogPublicUrl,
+  getStoreCustomerAccountPath,
+  isStoreSubdomainCatalogEnabled,
+  parseStoreSlugFromHost,
+} from "@/lib/store-host";
 
 export interface CustomerStoreContext {
   storeId: string;
   storeSlug: string;
 }
 
-/** Ruta /c/{slug}/cuenta, /perfil o subrutas protegidas. */
-export function parseCustomerAccountPath(pathname: string): { storeSlug: string } | null {
+/** Ruta /c/{slug}/cuenta|perfil o /cuenta|perfil en subdominio de tienda. */
+export function parseCustomerAccountPath(
+  pathname: string,
+  storeSlugFromHost?: string | null,
+): { storeSlug: string } | null {
+  if (storeSlugFromHost) {
+    if (/^\/cuenta(?:\/|$)/.test(pathname) || /^\/perfil(?:\/|$)/.test(pathname)) {
+      return { storeSlug: storeSlugFromHost.trim().toLowerCase() };
+    }
+  }
+
   const match = pathname.match(/^\/c\/([^/]+)\/(?:cuenta|perfil)(?:\/|$)/);
   if (!match?.[1]) return null;
 
@@ -132,7 +147,7 @@ export async function getPrimaryCustomerStore(
 }
 
 export function buildCustomerAccountPath(storeSlug: string): string {
-  return `/c/${storeSlug}/cuenta`;
+  return getStoreCustomerAccountPath(storeSlug, "cuenta");
 }
 
 export function buildCustomerRegisterPath(
@@ -142,4 +157,52 @@ export function buildCustomerRegisterPath(
   const params = new URLSearchParams({ store: storeSlug });
   if (nextPath) params.set("next", nextPath);
   return `/register?${params.toString()}`;
+}
+
+/** Destino post-registro: URL absoluta en subdominio o ruta relativa legacy. */
+export function resolveCustomerNextDestination(
+  storeSlug: string,
+  nextPath?: string | null,
+): string {
+  const slug = storeSlug.trim().toLowerCase();
+  const fallback = isStoreSubdomainCatalogEnabled()
+    ? getStoreCatalogPublicUrl(slug, "cuenta")
+    : getStoreCustomerAccountPath(slug, "cuenta");
+
+  if (!nextPath?.trim()) return fallback;
+
+  const trimmed = nextPath.trim();
+  const query = trimmed.includes("?") ? trimmed.slice(trimmed.indexOf("?")) : "";
+  const pathOnly = trimmed.split("?")[0]?.trim() ?? "";
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    try {
+      const url = new URL(trimmed);
+      if (parseStoreSlugFromHost(url.host) === slug) {
+        return trimmed;
+      }
+    } catch {
+      return fallback;
+    }
+    return fallback;
+  }
+
+  if (isStoreSubdomainCatalogEnabled()) {
+    if (trimmed.startsWith(`/c/${slug}`)) {
+      const suffix = trimmed.slice(`/c/${slug}`.length) || "/";
+      return `${getStoreCatalogPublicUrl(slug, suffix.split("?")[0])}${query}`;
+    }
+
+    if (pathOnly.startsWith("/")) {
+      return `${getStoreCatalogPublicUrl(slug, pathOnly)}${query}`;
+    }
+
+    return fallback;
+  }
+
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) {
+    return trimmed;
+  }
+
+  return fallback;
 }

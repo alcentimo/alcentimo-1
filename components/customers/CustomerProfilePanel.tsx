@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
+import { getStoreCatalogBasePath, getStoreCustomerAccountPath } from "@/lib/store-host";
 
 interface CustomerProfilePanelProps {
   storeSlug: string;
@@ -39,7 +40,7 @@ export function CustomerProfilePanel({
       return;
     }
 
-    router.push(`/c/${storeSlug}`);
+    router.push(getStoreCatalogBasePath(storeSlug));
     router.refresh();
   }
 
@@ -104,7 +105,10 @@ export function CustomerProfilePanel({
       <p className="text-center text-sm text-zinc-500">
         ¿Quieres actualizar tus datos?{" "}
         <Link
-          href={buildCustomerRegisterPath(storeSlug, `/c/${storeSlug}/perfil`)}
+          href={buildCustomerRegisterPath(
+            storeSlug,
+            getStoreCustomerAccountPath(storeSlug, "perfil"),
+          )}
           className="link-brand"
         >
           Ir al registro

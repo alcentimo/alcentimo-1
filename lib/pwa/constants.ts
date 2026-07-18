@@ -2,7 +2,7 @@
 export const PWA_ADMIN_RESET_VERSION = "1";
 
 /** Incrementar tras cambios de estrategia SW catálogo cliente. */
-export const PWA_CATALOG_RESET_VERSION = "8";
+export const PWA_CATALOG_RESET_VERSION = "9";
 
 /** Identidad PWA admin (Alcentimo Admin). */
 export const PWA_ADMIN_IDENTITY_VERSION = "1";

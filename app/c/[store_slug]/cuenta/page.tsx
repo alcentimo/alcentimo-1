@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { CustomerOrdersList } from "@/components/customers/CustomerOrdersList";
 import { getCustomerOrdersForStore } from "@/lib/customers/get-customer-orders";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
+import { getStoreCatalogBasePath, getStoreCustomerAccountPath } from "@/lib/store-host";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { createClient } from "@/lib/supabase/server";
 
@@ -25,7 +26,12 @@ export default async function CustomerAccountPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(buildCustomerRegisterPath(store.slug, `/c/${store.slug}/cuenta`));
+    redirect(
+      buildCustomerRegisterPath(
+        store.slug,
+        getStoreCustomerAccountPath(store.slug, "cuenta"),
+      ),
+    );
   }
 
   const orders = await getCustomerOrdersForStore(store.id);
@@ -44,7 +50,7 @@ export default async function CustomerAccountPage({
       </div>
 
       <p className="mt-6 text-center text-sm text-zinc-500">
-        <Link href={`/c/${store.slug}`} className="link-brand">
+        <Link href={getStoreCatalogBasePath(store.slug)} className="link-brand">
           Seguir comprando
         </Link>
       </p>

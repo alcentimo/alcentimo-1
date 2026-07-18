@@ -23,6 +23,10 @@ import {
 } from "@/lib/promotions/actions";
 import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
 import type { AppliedPromotion } from "@/lib/promotions/types";
+import {
+  getStoreCatalogPublicUrl,
+  getStoreCustomerAccountPath,
+} from "@/lib/store-host";
 
 interface CheckoutPanelProps {
   storeSlug: string;
@@ -518,7 +522,7 @@ export function CheckoutPanel({
                       </div>
                     </dl>
                     <Link
-                      href={`/c/${storeSlug}/cuenta`}
+                      href={getStoreCustomerAccountPath(storeSlug, "cuenta")}
                       className="txn-checkout-customer-link"
                     >
                       Editar en Mi cuenta
@@ -628,7 +632,7 @@ export function CheckoutPanel({
               <p className="txn-checkout-hint">
                 ¿Ya tienes cuenta?{" "}
                 <Link
-                  href={`/register?store=${encodeURIComponent(storeSlug)}&next=${encodeURIComponent(`/c/${storeSlug}?checkout=1`)}`}
+                  href={`/register?store=${encodeURIComponent(storeSlug)}&next=${encodeURIComponent(`${getStoreCatalogPublicUrl(storeSlug)}?checkout=1`)}`}
                   className="link-brand"
                 >
                   Inicia sesión

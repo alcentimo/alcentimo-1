@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useState } from "react";
 import { ExternalLink, Rocket, Store } from "lucide-react";
 import {
   completeOnboarding,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/onboarding/actions";
 import { DEFAULT_STORE_COUNTRY } from "@/lib/onboarding/countries";
 import { slugify } from "@/lib/slugify";
-import { getPublicSiteHost } from "@/lib/site-url";
+import { getStoreCatalogPublicUrl } from "@/lib/store-host";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import { STORE_RUBRO_OPTIONS } from "@/src/config/categories";
 import { Input } from "@/components/ui/input";
@@ -29,8 +29,7 @@ export function OnboardingForm() {
   const [whatsapp, setWhatsapp] = useState("");
 
   const slugPreview = slugify(storeName) || "mi-tienda";
-  const siteHost = useMemo(() => getPublicSiteHost(), []);
-  const catalogUrl = `${siteHost}/c/${slugPreview}`;
+  const catalogUrl = getStoreCatalogPublicUrl(slugPreview);
   const normalizedWhatsApp = normalizeWhatsAppPhone(whatsapp);
 
   return (
@@ -71,13 +70,12 @@ export function OnboardingForm() {
               Tu enlace público
             </p>
             <p className="mt-1 break-all text-sm text-zinc-700 dark:text-zinc-200">
-              <span className="text-zinc-400">{siteHost}/c/</span>
-              <Badge variant="secondary" className="ml-0.5 align-middle font-mono text-[11px]">
-                {slugPreview}
+              <Badge variant="secondary" className="align-middle font-mono text-[11px]">
+                {new URL(catalogUrl).host}
               </Badge>
             </p>
             <a
-              href={`https://${catalogUrl}`}
+              href={catalogUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-teal-700 hover:text-teal-800 dark:text-teal-300 dark:hover:text-teal-200"

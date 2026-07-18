@@ -7,6 +7,7 @@ import {
   quickRegisterOrSignInCustomer,
 } from "@/lib/customers/register-actions";
 import { createClient } from "@/lib/supabase/client";
+import { getStoreCatalogBasePath } from "@/lib/store-host";
 import { getAuthCallbackUrl } from "@/lib/site-url";
 
 function GoogleIcon() {
@@ -123,7 +124,7 @@ export function CustomerRegisterPanel({
   }
 
   const isBusy = loading || googleLoading;
-  const catalogUrl = `/c/${storeSlug}`;
+  const catalogUrl = getStoreCatalogBasePath(storeSlug);
 
   if (needsPhoneCompletion) {
     return (

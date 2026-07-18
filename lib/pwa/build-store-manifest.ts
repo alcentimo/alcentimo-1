@@ -1,30 +1,16 @@
 import type { Store } from "@/lib/database.types";
-import { PWA_STORE_IDENTITY_VERSION } from "@/lib/pwa/constants";
-import { getStoreCatalogManifestPath } from "@/lib/pwa/catalog-sw-paths";
 import type { StoreManifestTheme } from "@/lib/pwa/get-store-manifest-theme";
+import {
+  getDefaultCatalogOriginForSlug,
+  resolveCatalogPwaContext,
+} from "@/lib/pwa/resolve-catalog-pwa-context";
 import type { StoreManifestIcon, WebAppManifest } from "@/lib/pwa/types";
 import { getSiteUrl } from "@/lib/site-url";
 
-export { getStoreCatalogManifestPath };
+export { getStoreCatalogManifestPath } from "@/lib/pwa/catalog-sw-paths";
 
 function normalizeOrigin(origin: string): string {
   return origin.replace(/\/$/, "");
-}
-
-/**
- * PWA del cliente final: scope estricto /c/{slug}/.
- * id y start_url únicos por tienda (Android no fusiona apps).
- */
-export function buildStoreCatalogPwaPaths(storeSlug: string, origin?: string) {
-  const slug = storeSlug.trim().toLowerCase();
-  const base = normalizeOrigin(origin ?? getSiteUrl());
-  const catalogPath = `/c/${slug}/`;
-
-  return {
-    id: `${base}${catalogPath}?pwa_id=store-${PWA_STORE_IDENTITY_VERSION}-${slug}`,
-    scope: catalogPath,
-    startUrl: catalogPath,
-  };
 }
 
 function absoluteAssetUrl(src: string, origin: string): string {
@@ -73,17 +59,19 @@ export function buildStoreWebManifest(
   origin?: string,
   theme?: StoreManifestTheme,
 ): WebAppManifest {
-  const { id, scope, startUrl } = buildStoreCatalogPwaPaths(store.slug, origin);
-  const manifestOrigin = normalizeOrigin(origin ?? getSiteUrl());
+  const manifestOrigin = normalizeOrigin(
+    origin ?? getDefaultCatalogOriginForSlug(store.slug),
+  );
+  const pwa = resolveCatalogPwaContext(store.slug, manifestOrigin);
   const storeName = store.name.trim();
 
   return {
-    id,
+    id: pwa.id,
     name: storeName,
     short_name: storeName.slice(0, 12),
     description: `Catálogo y pedidos de ${storeName}`,
-    start_url: startUrl,
-    scope,
+    start_url: pwa.startUrl,
+    scope: pwa.scope,
     display: "standalone",
     display_override: ["standalone", "fullscreen"],
     orientation: "portrait-primary",
@@ -98,16 +86,18 @@ export function buildFallbackStoreWebManifest(
   storeSlug: string,
   origin?: string,
 ): WebAppManifest {
-  const { id, scope, startUrl } = buildStoreCatalogPwaPaths(storeSlug, origin);
-  const manifestOrigin = normalizeOrigin(origin ?? getSiteUrl());
+  const manifestOrigin = normalizeOrigin(
+    origin ?? getDefaultCatalogOriginForSlug(storeSlug),
+  );
+  const pwa = resolveCatalogPwaContext(storeSlug, manifestOrigin);
 
   return {
-    id,
+    id: pwa.id,
     name: "Catálogo",
     short_name: "Catálogo",
     description: "Catálogo de tienda",
-    start_url: startUrl,
-    scope,
+    start_url: pwa.startUrl,
+    scope: pwa.scope,
     display: "standalone",
     display_override: ["standalone", "fullscreen"],
     orientation: "portrait-primary",

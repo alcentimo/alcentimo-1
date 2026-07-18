@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, LayoutGrid, ShoppingBag, User } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { getStoreCatalogBasePath } from "@/lib/store-host";
 
 export type CatalogTabId = "inicio" | "categorias" | "compras" | "perfil";
 
@@ -24,7 +25,7 @@ const TABS: {
 ];
 
 function resolveActiveTab(pathname: string, storeSlug: string): CatalogTabId {
-  const base = `/c/${storeSlug}`;
+  const base = getStoreCatalogBasePath(storeSlug);
 
   if (pathname === base || pathname === `${base}/`) {
     return "inicio";
@@ -34,13 +35,20 @@ function resolveActiveTab(pathname: string, storeSlug: string): CatalogTabId {
   if (pathname.startsWith(`${base}/cuenta`)) return "compras";
   if (pathname.startsWith(`${base}/perfil`)) return "perfil";
 
+  if (base === "/") {
+    if (pathname === "/" || pathname === "") return "inicio";
+    if (pathname.startsWith("/categorias")) return "categorias";
+    if (pathname.startsWith("/cuenta")) return "compras";
+    if (pathname.startsWith("/perfil")) return "perfil";
+  }
+
   return "inicio";
 }
 
 export function CatalogTabBar({ storeSlug }: CatalogTabBarProps) {
   const pathname = usePathname();
   const activeTab = resolveActiveTab(pathname, storeSlug);
-  const base = `/c/${storeSlug}`;
+  const base = getStoreCatalogBasePath(storeSlug);
 
   return (
     <nav
@@ -49,7 +57,7 @@ export function CatalogTabBar({ storeSlug }: CatalogTabBarProps) {
     >
       <div className="catalog-tab-bar-inner">
         {TABS.map(({ id, label, segment, icon: Icon }) => {
-          const href = segment ? `${base}/${segment}` : base;
+          const href = segment ? `${base}/${segment}`.replace("//", "/") : base;
           const isActive = activeTab === id;
 
           return (
