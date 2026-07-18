@@ -3,8 +3,15 @@ import type { NextConfig } from "next";
 const withPWA = require("next-pwa")({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
-  register: true,
+  // Registro manual en CatalogAppShell (App Router).
+  register: false,
   skipWaiting: true,
+  clientsClaim: true,
+  cleanupOutdatedCaches: true,
+  // Evita cachear "/" o start_url genérico que compite con el catálogo por tienda.
+  cacheStartUrl: false,
+  dynamicStartUrl: false,
+  reloadOnOnline: false,
   fallbacks: {
     document: "/offline.html",
   },
@@ -14,25 +21,44 @@ const withPWA = require("next-pwa")({
         request.mode === "navigate" && url.pathname.startsWith("/c/"),
       handler: "NetworkFirst",
       options: {
-        cacheName: "catalog-navigations",
-        networkTimeoutSeconds: 8,
+        cacheName: "catalog-navigations-v3",
+        networkTimeoutSeconds: 15,
         expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 24 * 60 * 60,
+          maxEntries: 16,
+          maxAgeSeconds: 60 * 60,
         },
         cacheableResponse: {
-          statuses: [0, 200],
+          statuses: [200],
         },
       },
     },
     {
       urlPattern: /\/_next\/static\/.*/i,
-      handler: "CacheFirst",
+      handler: "NetworkFirst",
       options: {
-        cacheName: "next-static-assets",
+        cacheName: "next-static-assets-v3",
+        networkTimeoutSeconds: 10,
         expiration: {
-          maxEntries: 128,
-          maxAgeSeconds: 30 * 24 * 60 * 60,
+          maxEntries: 64,
+          maxAgeSeconds: 7 * 24 * 60 * 60,
+        },
+        cacheableResponse: {
+          statuses: [200],
+        },
+      },
+    },
+    {
+      urlPattern: /\/_next\/data\/.+\/.+\.json$/i,
+      handler: "NetworkFirst",
+      options: {
+        cacheName: "next-data-v3",
+        networkTimeoutSeconds: 10,
+        expiration: {
+          maxEntries: 32,
+          maxAgeSeconds: 60 * 60,
+        },
+        cacheableResponse: {
+          statuses: [200],
         },
       },
     },
@@ -42,10 +68,13 @@ const withPWA = require("next-pwa")({
         /\.(?:png|jpg|jpeg|webp|svg|gif|ico)$/i.test(url.pathname),
       handler: "StaleWhileRevalidate",
       options: {
-        cacheName: "catalog-images",
+        cacheName: "catalog-images-v3",
         expiration: {
           maxEntries: 64,
           maxAgeSeconds: 7 * 24 * 60 * 60,
+        },
+        cacheableResponse: {
+          statuses: [200],
         },
       },
     },

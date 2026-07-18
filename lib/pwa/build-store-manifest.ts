@@ -27,7 +27,11 @@ function normalizeOrigin(origin: string): string {
   return origin.replace(/\/$/, "");
 }
 
-/** URLs absolutas del catálogo para start_url/scope (compatibles con accesos directos móviles). */
+/**
+ * Rutas PWA del catálogo.
+ * - start_url/scope en path relativo (resuelto contra el origen del manifest): mejor compatibilidad móvil.
+ * - scope cubre /c/{slug}/, /c/{slug}/cuenta, /c/{slug}/perfil, etc.
+ */
 export function buildStoreCatalogPwaPaths(storeSlug: string, origin?: string) {
   const slug = storeSlug.trim().toLowerCase();
   const base = normalizeOrigin(origin ?? getSiteUrl());
@@ -35,8 +39,8 @@ export function buildStoreCatalogPwaPaths(storeSlug: string, origin?: string) {
 
   return {
     id: `${base}${catalogPath}`,
-    scope: `${base}${catalogPath}`,
-    startUrl: `${base}${catalogPath}`,
+    scope: catalogPath,
+    startUrl: catalogPath,
   };
 }
 
