@@ -3,82 +3,17 @@ import type { NextConfig } from "next";
 const withPWA = require("next-pwa")({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
-  // Registro manual en CatalogAppShell (App Router).
+  // Registro manual en CatalogAppShell (App Router), diferido tras la primera pintura.
   register: false,
   skipWaiting: true,
-  clientsClaim: true,
+  // No tomar control de la pestaña actual: evita esperas al abrir desde el icono PWA.
+  clientsClaim: false,
   cleanupOutdatedCaches: true,
-  // Evita cachear "/" o start_url genérico que compite con el catálogo por tienda.
   cacheStartUrl: false,
   dynamicStartUrl: false,
   reloadOnOnline: false,
-  fallbacks: {
-    document: "/offline.html",
-  },
-  runtimeCaching: [
-    {
-      urlPattern: ({ request, url }: { request: Request; url: URL }) =>
-        request.mode === "navigate" && url.pathname.startsWith("/c/"),
-      handler: "NetworkFirst",
-      options: {
-        cacheName: "catalog-navigations-v3",
-        networkTimeoutSeconds: 15,
-        expiration: {
-          maxEntries: 16,
-          maxAgeSeconds: 60 * 60,
-        },
-        cacheableResponse: {
-          statuses: [200],
-        },
-      },
-    },
-    {
-      urlPattern: /\/_next\/static\/.*/i,
-      handler: "NetworkFirst",
-      options: {
-        cacheName: "next-static-assets-v3",
-        networkTimeoutSeconds: 10,
-        expiration: {
-          maxEntries: 64,
-          maxAgeSeconds: 7 * 24 * 60 * 60,
-        },
-        cacheableResponse: {
-          statuses: [200],
-        },
-      },
-    },
-    {
-      urlPattern: /\/_next\/data\/.+\/.+\.json$/i,
-      handler: "NetworkFirst",
-      options: {
-        cacheName: "next-data-v3",
-        networkTimeoutSeconds: 10,
-        expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 60 * 60,
-        },
-        cacheableResponse: {
-          statuses: [200],
-        },
-      },
-    },
-    {
-      urlPattern: ({ url }: { url: URL }) =>
-        url.pathname.startsWith("/c/") &&
-        /\.(?:png|jpg|jpeg|webp|svg|gif|ico)$/i.test(url.pathname),
-      handler: "StaleWhileRevalidate",
-      options: {
-        cacheName: "catalog-images-v3",
-        expiration: {
-          maxEntries: 64,
-          maxAgeSeconds: 7 * 24 * 60 * 60,
-        },
-        cacheableResponse: {
-          statuses: [200],
-        },
-      },
-    },
-  ],
+  // Sin reglas runtime: navegación HTML y JS cargan directo desde red (sin espera de caché SW).
+  runtimeCaching: [],
 });
 
 const oauthSecurityHeaders = [

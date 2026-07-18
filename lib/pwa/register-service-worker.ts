@@ -1,5 +1,6 @@
 import {
   LEGACY_PWA_CACHE_PREFIXES,
+  PWA_REGISTER_IDLE_TIMEOUT_MS,
   PWA_RESET_STORAGE_KEY,
   PWA_RESET_VERSION,
   PWA_SW_SCOPE,
@@ -12,11 +13,6 @@ function isLegacyCacheName(name: string): boolean {
   );
 }
 
-async function unregisterAllServiceWorkers(): Promise<void> {
-  const registrations = await navigator.serviceWorker.getRegistrations();
-  await Promise.all(registrations.map((registration) => registration.unregister()));
-}
-
 async function deleteLegacyCaches(): Promise<void> {
   const cacheNames = await caches.keys();
   await Promise.all(
@@ -24,24 +20,45 @@ async function deleteLegacyCaches(): Promise<void> {
   );
 }
 
-async function registerFreshServiceWorker(): Promise<void> {
-  const registration = await navigator.serviceWorker.register(PWA_SW_URL, {
-    scope: PWA_SW_SCOPE,
-    updateViaCache: "none",
-  });
-
-  if (registration.waiting && registration.active) {
-    registration.waiting.postMessage({ type: "SKIP_WAITING" });
+function scheduleIdleTask(task: () => void): void {
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(task, { timeout: PWA_REGISTER_IDLE_TIMEOUT_MS });
+    return;
   }
 
-  await registration.update();
+  window.setTimeout(task, PWA_REGISTER_IDLE_TIMEOUT_MS);
+}
+
+async function runBackgroundRegistration(): Promise<void> {
+  try {
+    const storedVersion = localStorage.getItem(PWA_RESET_STORAGE_KEY);
+    const needsReset = storedVersion !== PWA_RESET_VERSION;
+
+    if (needsReset) {
+      // Solo limpiar cachés legacy; no desregistrar el SW activo (evita bucles/esperas al abrir).
+      await deleteLegacyCaches();
+      localStorage.setItem(PWA_RESET_STORAGE_KEY, PWA_RESET_VERSION);
+    }
+
+    // Fire-and-forget: no esperar update()/ready para no bloquear la UI.
+    void navigator.serviceWorker
+      .register(PWA_SW_URL, {
+        scope: PWA_SW_SCOPE,
+        updateViaCache: "none",
+      })
+      .catch(() => {
+        // El catálogo funciona sin SW.
+      });
+  } catch {
+    // El catálogo funciona sin SW; offline es mejora progresiva.
+  }
 }
 
 /**
- * Limpia SW/cachés obsoletos (una vez por versión) y registra el worker actual.
- * Evita pantallas en blanco por HTML/JS cacheados de despliegues anteriores.
+ * Registra el SW en segundo plano tras la primera pintura.
+ * El start_url y la navegación inicial no dependen del SW.
  */
-export async function registerCatalogServiceWorker(): Promise<void> {
+export function scheduleCatalogServiceWorker(): void {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
     return;
   }
@@ -54,18 +71,16 @@ export async function registerCatalogServiceWorker(): Promise<void> {
     return;
   }
 
-  try {
-    const storedVersion = localStorage.getItem(PWA_RESET_STORAGE_KEY);
-    const needsReset = storedVersion !== PWA_RESET_VERSION;
+  const start = () => {
+    scheduleIdleTask(() => {
+      void runBackgroundRegistration();
+    });
+  };
 
-    if (needsReset) {
-      await unregisterAllServiceWorkers();
-      await deleteLegacyCaches();
-      localStorage.setItem(PWA_RESET_STORAGE_KEY, PWA_RESET_VERSION);
-    }
-
-    await registerFreshServiceWorker();
-  } catch {
-    // El catálogo funciona sin SW; offline es mejora progresiva.
+  if (document.readyState === "complete") {
+    start();
+    return;
   }
+
+  window.addEventListener("load", start, { once: true });
 }

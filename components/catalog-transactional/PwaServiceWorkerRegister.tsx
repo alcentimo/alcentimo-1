@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { registerCatalogServiceWorker } from "@/lib/pwa/register-service-worker";
+import { scheduleCatalogServiceWorker } from "@/lib/pwa/register-service-worker";
 
 export function PwaServiceWorkerRegister() {
   useEffect(() => {
-    void registerCatalogServiceWorker();
+    scheduleCatalogServiceWorker();
   }, []);
 
   return null;
