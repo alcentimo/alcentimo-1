@@ -13,6 +13,7 @@ import {
 } from "@/lib/orders/order-status";
 import type { MessageTemplatesSettings } from "@/lib/store-settings/types";
 import { OrderStatusSelect } from "@/components/dashboard/orders/OrderStatusSelect";
+import { OrderStatusWhatsAppPrompt } from "@/components/dashboard/orders/OrderStatusWhatsAppPrompt";
 import { OrderDetailSlideOver } from "@/components/dashboard/orders/OrderDetailSlideOver";
 import { OrderWhatsAppButton } from "@/components/dashboard/orders/OrderWhatsAppButton";
 import { OrdersKpiRow } from "@/components/dashboard/orders/OrdersKpiRow";
@@ -68,12 +69,20 @@ const OrderRow = memo(function OrderRow({
   onSelect,
   onEstadoUpdated,
   dimmed = false,
+  pendingStatusNotifyEstado,
+  onDismissStatusNotify,
 }: {
   order: CatalogOrder;
   storeName: string;
   messageTemplates: MessageTemplatesSettings;
   onSelect: (orderId: string) => void;
-  onEstadoUpdated: (orderId: string, estado: OrderEstado) => void;
+  onEstadoUpdated: (
+    orderId: string,
+    estado: OrderEstado,
+    context?: { previousEstado: OrderEstado },
+  ) => void;
+  pendingStatusNotifyEstado?: OrderEstado;
+  onDismissStatusNotify?: () => void;
   dimmed?: boolean;
 }) {
   return (
@@ -95,6 +104,15 @@ const OrderRow = memo(function OrderRow({
           estado={order.estado}
           onEstadoUpdated={onEstadoUpdated}
         />
+        {pendingStatusNotifyEstado && onDismissStatusNotify ? (
+          <OrderStatusWhatsAppPrompt
+            order={order}
+            storeName={storeName}
+            newEstado={pendingStatusNotifyEstado}
+            onDismiss={onDismissStatusNotify}
+            className="mt-2"
+          />
+        ) : null}
       </td>
       <td className="orders-ops-cell tabular-nums font-medium text-zinc-900 dark:text-zinc-50">
         {formatUsd(order.total_usd)}
@@ -127,12 +145,20 @@ const OrderMobileCard = memo(function OrderMobileCard({
   onSelect,
   onEstadoUpdated,
   dimmed = false,
+  pendingStatusNotifyEstado,
+  onDismissStatusNotify,
 }: {
   order: CatalogOrder;
   storeName: string;
   messageTemplates: MessageTemplatesSettings;
   onSelect: (orderId: string) => void;
-  onEstadoUpdated: (orderId: string, estado: OrderEstado) => void;
+  onEstadoUpdated: (
+    orderId: string,
+    estado: OrderEstado,
+    context?: { previousEstado: OrderEstado },
+  ) => void;
+  pendingStatusNotifyEstado?: OrderEstado;
+  onDismissStatusNotify?: () => void;
   dimmed?: boolean;
 }) {
   return (
@@ -164,6 +190,16 @@ const OrderMobileCard = memo(function OrderMobileCard({
             {formatOrderTime(order.created_at)}
             {order.customer_phone ? ` · ${order.customer_phone}` : ""}
           </p>
+          {pendingStatusNotifyEstado && onDismissStatusNotify ? (
+            <OrderStatusWhatsAppPrompt
+              order={order}
+              storeName={storeName}
+              newEstado={pendingStatusNotifyEstado}
+              onDismiss={onDismissStatusNotify}
+              className="mt-2"
+              compact
+            />
+          ) : null}
         </div>
         <div className="shrink-0 text-right">
           <p className="text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
@@ -200,18 +236,47 @@ export function OrdersPanel({
   const [orders, setOrders] = useState(initialOrders);
   const [filter, setFilter] = useState<OrderFilterId>("pending");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [statusNotifyByOrderId, setStatusNotifyByOrderId] = useState<
+    Record<string, OrderEstado>
+  >({});
 
   const kpis = useMemo(() => computeOrdersKpis(orders), [orders]);
 
-  const handleEstadoUpdated = useCallback((orderId: string, estado: OrderEstado) => {
-    setOrders((current) =>
-      sortOrdersByBusinessRules(
-        current.map((order) =>
-          order.id === orderId ? { ...order, estado } : order,
-        ),
-      ),
-    );
+  const dismissStatusNotify = useCallback((orderId: string) => {
+    setStatusNotifyByOrderId((current) => {
+      if (!(orderId in current)) return current;
+      const next = { ...current };
+      delete next[orderId];
+      return next;
+    });
   }, []);
+
+  const handleEstadoUpdated = useCallback(
+    (
+      orderId: string,
+      estado: OrderEstado,
+      context?: { previousEstado: OrderEstado },
+    ) => {
+      setOrders((current) =>
+        sortOrdersByBusinessRules(
+          current.map((order) =>
+            order.id === orderId ? { ...order, estado } : order,
+          ),
+        ),
+      );
+
+      if (
+        context?.previousEstado &&
+        context.previousEstado !== estado
+      ) {
+        setStatusNotifyByOrderId((current) => ({
+          ...current,
+          [orderId]: estado,
+        }));
+      }
+    },
+    [],
+  );
 
   const handleSelectOrder = useCallback((orderId: string) => {
     setSelectedOrderId(orderId);
@@ -239,6 +304,16 @@ export function OrdersPanel({
   const selectedOrder = useMemo(
     () => orders.find((order) => order.id === selectedOrderId) ?? null,
     [orders, selectedOrderId],
+  );
+
+  const renderOrderRowProps = useCallback(
+    (order: CatalogOrder) => ({
+      pendingStatusNotifyEstado: statusNotifyByOrderId[order.id],
+      onDismissStatusNotify: statusNotifyByOrderId[order.id]
+        ? () => dismissStatusNotify(order.id)
+        : undefined,
+    }),
+    [dismissStatusNotify, statusNotifyByOrderId],
   );
 
   if (initialOrders.length === 0) {
@@ -318,6 +393,7 @@ export function OrdersPanel({
                     onSelect={handleSelectOrder}
                     onEstadoUpdated={handleEstadoUpdated}
                     dimmed={isOrderDimmed(order)}
+                    {...renderOrderRowProps(order)}
                   />
                 ))}
               </div>
@@ -332,6 +408,7 @@ export function OrdersPanel({
                 onSelect={handleSelectOrder}
                 onEstadoUpdated={handleEstadoUpdated}
                 dimmed={isOrderDimmed(order)}
+                {...renderOrderRowProps(order)}
               />
             ))
           )}
@@ -375,6 +452,7 @@ export function OrdersPanel({
                         onSelect={handleSelectOrder}
                         onEstadoUpdated={handleEstadoUpdated}
                         dimmed={isOrderDimmed(order)}
+                        {...renderOrderRowProps(order)}
                       />
                     ))}
                   </Fragment>
@@ -389,6 +467,7 @@ export function OrdersPanel({
                     onSelect={handleSelectOrder}
                     onEstadoUpdated={handleEstadoUpdated}
                     dimmed={isOrderDimmed(order)}
+                    {...renderOrderRowProps(order)}
                   />
                 ))
               )}
@@ -404,6 +483,14 @@ export function OrdersPanel({
         messageTemplates={messageTemplates}
         onClose={() => setSelectedOrderId(null)}
         onEstadoUpdated={handleEstadoUpdated}
+        pendingStatusNotifyEstado={
+          selectedOrder ? statusNotifyByOrderId[selectedOrder.id] : undefined
+        }
+        onDismissStatusNotify={
+          selectedOrder
+            ? () => dismissStatusNotify(selectedOrder.id)
+            : undefined
+        }
       />
     </>
   );

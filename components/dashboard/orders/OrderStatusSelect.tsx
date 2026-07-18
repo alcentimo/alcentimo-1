@@ -15,7 +15,11 @@ import {
 interface OrderStatusSelectProps {
   orderId: string;
   estado: OrderEstado;
-  onEstadoUpdated?: (orderId: string, estado: OrderEstado) => void;
+  onEstadoUpdated?: (
+    orderId: string,
+    estado: OrderEstado,
+    context?: { previousEstado: OrderEstado },
+  ) => void;
   className?: string;
   align?: "start" | "end";
 }
@@ -79,7 +83,7 @@ export function OrderStatusSelect({
         return;
       }
 
-      onEstadoUpdated?.(orderId, nextEstado);
+      onEstadoUpdated?.(orderId, nextEstado, { previousEstado: previous });
     });
   }
 

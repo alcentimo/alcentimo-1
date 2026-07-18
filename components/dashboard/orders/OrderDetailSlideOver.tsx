@@ -8,6 +8,7 @@ import type { CatalogOrder } from "@/lib/orders/types";
 import type { OrderEstado } from "@/lib/orders/order-status";
 import type { MessageTemplatesSettings } from "@/lib/store-settings/types";
 import { OrderStatusSelect } from "@/components/dashboard/orders/OrderStatusSelect";
+import { OrderStatusWhatsAppPrompt } from "@/components/dashboard/orders/OrderStatusWhatsAppPrompt";
 import { OrderWhatsAppButton } from "@/components/dashboard/orders/OrderWhatsAppButton";
 
 function formatOrderDate(value: string): string {
@@ -23,7 +24,13 @@ interface OrderDetailSlideOverProps {
   storeName: string;
   messageTemplates: MessageTemplatesSettings;
   onClose: () => void;
-  onEstadoUpdated?: (orderId: string, estado: OrderEstado) => void;
+  onEstadoUpdated?: (
+    orderId: string,
+    estado: OrderEstado,
+    context?: { previousEstado: OrderEstado },
+  ) => void;
+  pendingStatusNotifyEstado?: OrderEstado;
+  onDismissStatusNotify?: () => void;
 }
 
 export function OrderDetailSlideOver({
@@ -33,6 +40,8 @@ export function OrderDetailSlideOver({
   messageTemplates,
   onClose,
   onEstadoUpdated,
+  pendingStatusNotifyEstado,
+  onDismissStatusNotify,
 }: OrderDetailSlideOverProps) {
   useEffect(() => {
     if (!open) return;
@@ -102,6 +111,15 @@ export function OrderDetailSlideOver({
                 onEstadoUpdated={onEstadoUpdated}
               />
             </div>
+            {pendingStatusNotifyEstado && onDismissStatusNotify ? (
+              <OrderStatusWhatsAppPrompt
+                order={order}
+                storeName={storeName}
+                newEstado={pendingStatusNotifyEstado}
+                onDismiss={onDismissStatusNotify}
+                className="mt-3"
+              />
+            ) : null}
           </section>
 
           <section className="orders-slideover-section">

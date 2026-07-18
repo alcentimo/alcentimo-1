@@ -985,6 +985,26 @@ body {
   @apply bg-emerald-50/70 dark:bg-emerald-950/20;
 }
 
+.orders-status-wa-prompt {
+  @apply flex max-w-full items-stretch gap-1 rounded-xl border border-emerald-200/90 bg-emerald-50/90 p-1 shadow-sm dark:border-emerald-900/50 dark:bg-emerald-950/30;
+}
+
+.orders-status-wa-prompt-compact {
+  @apply w-full;
+}
+
+.orders-status-wa-prompt-action {
+  @apply inline-flex min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-[11px] font-semibold leading-tight text-emerald-900 transition-colors hover:bg-emerald-100/80 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-200 dark:hover:bg-emerald-900/40;
+}
+
+.orders-status-wa-prompt-dismiss {
+  @apply inline-flex shrink-0 items-center justify-center rounded-lg px-1.5 text-emerald-700/70 transition-colors hover:bg-emerald-100 hover:text-emerald-900 dark:text-emerald-300/70 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-100;
+}
+
+.orders-status-wa-prompt-hint {
+  @apply mt-1 text-[10px] leading-tight text-zinc-500;
+}
+
 .inventory-catalog-header {
   @apply mb-4 flex flex-col gap-3;
 }
