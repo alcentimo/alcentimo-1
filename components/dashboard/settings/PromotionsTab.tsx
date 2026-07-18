@@ -22,10 +22,13 @@ import {
   getCouponDateStatus,
 } from "@/lib/coupons/dates";
 import type { Coupon, CouponDiscountType } from "@/lib/coupons/types";
+import type { Promotion } from "@/lib/promotions/types";
+import { CustomerPromotionsSection } from "@/components/dashboard/settings/CustomerPromotionsSection";
 import { formatUsd } from "@/lib/format";
 
 interface PromotionsTabProps {
   initialCoupons: Coupon[];
+  initialPromotions: Promotion[];
   products: CouponProductOption[];
 }
 
@@ -37,7 +40,11 @@ function formatMaxUses(maxUses: number): string {
   return maxUses <= 0 ? "Ilimitado" : String(maxUses);
 }
 
-export function PromotionsTab({ initialCoupons, products }: PromotionsTabProps) {
+export function PromotionsTab({
+  initialCoupons,
+  initialPromotions,
+  products,
+}: PromotionsTabProps) {
   const [coupons, setCoupons] = useState(initialCoupons);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -169,6 +176,8 @@ export function PromotionsTab({ initialCoupons, products }: PromotionsTabProps) 
 
   return (
     <SettingsTabShell error={error} hideSaveBar>
+      <CustomerPromotionsSection initialPromotions={initialPromotions} />
+
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1.5">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">

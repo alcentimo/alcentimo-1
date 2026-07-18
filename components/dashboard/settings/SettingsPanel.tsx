@@ -13,6 +13,7 @@ import type { CouponProductOption } from "@/components/dashboard/settings/Coupon
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { Coupon } from "@/lib/coupons/types";
+import type { Promotion } from "@/lib/promotions/types";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
 
 type SettingsTabId = "general" | "currency" | "location" | "payments" | "promotions" | "design" | "messages";
@@ -31,6 +32,7 @@ const PRIMARY_TABS: {
 interface SettingsPanelProps {
   store: GeneralTabStore | null;
   initialCoupons: Coupon[];
+  initialPromotions: Promotion[];
   products: CouponProductOption[];
   initialConfig: StoreSettingsConfig;
 }
@@ -38,6 +40,7 @@ interface SettingsPanelProps {
 export function SettingsPanel({
   store,
   initialCoupons,
+  initialPromotions,
   products,
   initialConfig,
 }: SettingsPanelProps) {
@@ -177,7 +180,11 @@ export function SettingsPanel({
             id="settings-panel-promotions"
             aria-labelledby="settings-tab-promotions"
           >
-            <PromotionsTab initialCoupons={initialCoupons} products={products} />
+            <PromotionsTab
+              initialCoupons={initialCoupons}
+              initialPromotions={initialPromotions}
+              products={products}
+            />
           </div>
         )}
         {messagesActive && (

@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { CartProvider } from "@/components/catalog-transactional/CartProvider";
 import { CatalogAppShell } from "@/components/catalog-transactional/CatalogAppShell";
+import { PromotionProvider } from "@/components/catalog-transactional/PromotionProvider";
 import { getCartAuthContext } from "@/lib/customers/get-cart-auth-context";
+import { getCatalogPromotionContext } from "@/lib/promotions/get-catalog-promotion";
 
 interface TransactionalCatalogLayoutProps {
   children: ReactNode;
@@ -14,6 +16,10 @@ export default async function TransactionalCatalogLayout({
 }: TransactionalCatalogLayoutProps) {
   const { store_slug: storeSlug } = await params;
   const cartAuth = await getCartAuthContext(storeSlug);
+  const promotionContext = await getCatalogPromotionContext(
+    storeSlug,
+    cartAuth.isCustomer,
+  );
 
   return (
     <div className="txn-catalog-root">
@@ -23,7 +29,9 @@ export default async function TransactionalCatalogLayout({
         userId={cartAuth.userId}
         isCustomer={cartAuth.isCustomer}
       >
-        <CatalogAppShell storeSlug={storeSlug}>{children}</CatalogAppShell>
+        <PromotionProvider value={promotionContext}>
+          <CatalogAppShell storeSlug={storeSlug}>{children}</CatalogAppShell>
+        </PromotionProvider>
       </CartProvider>
     </div>
   );

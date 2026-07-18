@@ -16,6 +16,13 @@ import { submitTransactionalOrder } from "@/lib/orders/actions";
 import type { SubmitOrderLineInput } from "@/lib/orders/types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
+import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
+import {
+  redeemCustomerPromotionCode,
+  validateCustomerPromotionCode,
+} from "@/lib/promotions/actions";
+import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
+import type { AppliedPromotion } from "@/lib/promotions/types";
 
 interface CheckoutPanelProps {
   storeSlug: string;
@@ -46,6 +53,7 @@ export function CheckoutPanel({
 }: CheckoutPanelProps) {
   const { items, subtotalUsd, updateQuantity, removeItem, clearCart } =
     useCart();
+  const { autoApply, guestBanner } = usePromotionContext();
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(1);
   const [customerProfile, setCustomerProfile] =
     useState<CustomerCheckoutProfile | null>(null);
@@ -54,6 +62,11 @@ export function CheckoutPanel({
   const [selectedShipping, setSelectedShipping] = useState("");
   const [selectedPayment, setSelectedPayment] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [promotionInput, setPromotionInput] = useState("");
+  const [appliedPromotion, setAppliedPromotion] =
+    useState<AppliedPromotion | null>(null);
+  const [promotionError, setPromotionError] = useState<string | null>(null);
+  const [promotionPending, startPromotionTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -84,6 +97,51 @@ export function CheckoutPanel({
       cancelled = true;
     };
   }, [storeSlug]);
+
+  useEffect(() => {
+    if (!customerProfile || !autoApply) return;
+    setAppliedPromotion(autoApply);
+    setPromotionInput(autoApply.code);
+  }, [customerProfile, autoApply]);
+
+  const discountUsd = useMemo(() => {
+    if (!appliedPromotion) return 0;
+    return calculatePromotionDiscountUsd(
+      subtotalUsd,
+      appliedPromotion.discountPercent,
+    );
+  }, [appliedPromotion, subtotalUsd]);
+
+  const totalUsd = Math.max(0, subtotalUsd - discountUsd);
+
+  function handleApplyPromotion() {
+    setPromotionError(null);
+    startPromotionTransition(async () => {
+      const result = await validateCustomerPromotionCode(
+        storeSlug,
+        promotionInput,
+      );
+
+      if (result.error || !result.code || !result.discountPercent) {
+        setAppliedPromotion(null);
+        setPromotionError(result.error ?? "Promoción no válida.");
+        return;
+      }
+
+      setAppliedPromotion({
+        code: result.code,
+        name: result.name ?? result.code,
+        discountPercent: result.discountPercent,
+      });
+      setPromotionInput(result.code);
+    });
+  }
+
+  function handleRemovePromotion() {
+    setAppliedPromotion(null);
+    setPromotionInput("");
+    setPromotionError(null);
+  }
 
   const selectedPaymentDetails = useMemo(() => {
     if (!selectedPayment) return null;
@@ -168,6 +226,9 @@ export function CheckoutPanel({
     );
     formData.set("items", JSON.stringify(orderLines));
     formData.set("paymentProof", proofFile);
+    if (appliedPromotion) {
+      formData.set("promotionCode", appliedPromotion.code);
+    }
     if (selectedShipping) formData.set("shippingMethod", selectedShipping);
     if (selectedPayment) formData.set("paymentMethod", selectedPayment);
 
@@ -184,6 +245,9 @@ export function CheckoutPanel({
       setCustomerProfile(null);
       setCustomerName("");
       setCustomerPhone("");
+      setAppliedPromotion(null);
+      setPromotionInput("");
+      setPromotionError(null);
       onClose();
 
       if (result.whatsappUrl) {
@@ -348,6 +412,70 @@ export function CheckoutPanel({
                     </div>
                   </div>
                 )}
+
+                {(customerProfile || autoApply) && (
+                  <div className="txn-checkout-promo">
+                    <p className="txn-checkout-section-title">
+                      Código de promoción
+                    </p>
+                    {appliedPromotion ? (
+                      <div className="txn-checkout-promo-applied">
+                        <div>
+                          <p className="font-medium text-emerald-800 dark:text-emerald-300">
+                            {appliedPromotion.name}
+                          </p>
+                          <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80">
+                            {appliedPromotion.code} · -{appliedPromotion.discountPercent}%
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemovePromotion}
+                          className="text-xs font-medium text-zinc-500 hover:text-zinc-800"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={promotionInput}
+                          onChange={(event) => setPromotionInput(event.target.value)}
+                          placeholder="Ej: CLIENTE10"
+                          className="txn-input flex-1 uppercase"
+                          disabled={promotionPending}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyPromotion}
+                          disabled={!promotionInput.trim() || promotionPending}
+                          className="txn-promo-apply-btn"
+                        >
+                          {promotionPending ? "…" : "Aplicar"}
+                        </button>
+                      </div>
+                    )}
+                    {promotionError ? (
+                      <p className="mt-1 text-xs text-red-600">{promotionError}</p>
+                    ) : null}
+                  </div>
+                )}
+
+                {!customerProfile && guestBanner ? (
+                  <div className="txn-checkout-guest-promo">
+                    <p className="text-sm text-orange-950 dark:text-orange-100">
+                      ¿Quieres {guestBanner.discountPercent}% de descuento?{" "}
+                      <Link
+                        href={guestBanner.registerPath}
+                        className="font-semibold underline"
+                      >
+                        Regístrate
+                      </Link>{" "}
+                      y activa el beneficio exclusivo.
+                    </p>
+                  </div>
+                ) : null}
               </>
             ) : (
               <>
@@ -461,9 +589,21 @@ export function CheckoutPanel({
             )}
 
             <div className="txn-checkout-total !border-0 !px-0 !py-0">
-              <span>{checkoutStep === 1 ? "Subtotal" : "Total"}</span>
+              <span>{checkoutStep === 1 ? "Subtotal" : "Subtotal"}</span>
               <strong>{formatUsd(subtotalUsd)}</strong>
             </div>
+            {discountUsd > 0 && appliedPromotion ? (
+              <div className="txn-checkout-total txn-checkout-total-discount !border-0 !px-0 !py-0">
+                <span>Descuento ({appliedPromotion.code})</span>
+                <strong>-{formatUsd(discountUsd)}</strong>
+              </div>
+            ) : null}
+            {checkoutStep === 2 || discountUsd > 0 ? (
+              <div className="txn-checkout-total !border-0 !px-0 !py-0">
+                <span>Total</span>
+                <strong>{formatUsd(totalUsd)}</strong>
+              </div>
+            ) : null}
 
             {error && (
               <p className="txn-checkout-error" role="alert">

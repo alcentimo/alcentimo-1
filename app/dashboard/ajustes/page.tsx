@@ -4,6 +4,7 @@ import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { getStoreCoupons } from "@/lib/coupons/actions";
+import { getStorePromotions } from "@/lib/promotions/actions";
 import { getStoreInventory } from "@/lib/inventory";
 import { SettingsPanel } from "@/components/dashboard/settings/SettingsPanel";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
@@ -22,18 +23,21 @@ export default async function AjustesPage() {
 
   let settingsConfig = defaultStoreSettingsConfig();
   let coupons: Awaited<ReturnType<typeof getStoreCoupons>> = [];
+  let promotions: Awaited<ReturnType<typeof getStorePromotions>> = [];
   let products: { id: string; name: string; categoryName: string | null; thumbUrl: string | null }[] =
     [];
 
   if (store) {
-    const [config, couponRows, inventory] = await Promise.all([
+    const [config, couponRows, promotionRows, inventory] = await Promise.all([
       getStoreSettingsConfig(supabase, store.id),
       getStoreCoupons(store.id),
+      getStorePromotions(store.id),
       getStoreInventory(store.slug),
     ]);
 
     settingsConfig = config;
     coupons = couponRows;
+    promotions = promotionRows;
     products = inventory.products.map((product) => ({
       id: product.product_id,
       name: product.product_name,
@@ -68,6 +72,7 @@ export default async function AjustesPage() {
             : null
         }
         initialCoupons={coupons}
+        initialPromotions={promotions}
         products={products}
         initialConfig={settingsConfig}
       />

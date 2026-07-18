@@ -14,6 +14,9 @@ export interface TransactionalOrderWhatsAppMessageInput {
   orderDetailUrl: string;
   paymentLabel?: string;
   shippingLabel?: string;
+  subtotalUsd?: number;
+  discountUsd?: number;
+  promotionLabel?: string;
 }
 
 const STORAGE_URL_PATTERN =
@@ -62,8 +65,21 @@ export function buildTransactionalOrderWhatsAppMessage(
     "📋 Productos:",
     ...productLines,
     "",
-    `💰 Total: ${formatUsd(input.totalUsd)}`,
   ];
+
+  if (
+    input.discountUsd != null &&
+    input.discountUsd > 0 &&
+    input.subtotalUsd != null
+  ) {
+    body.push(`💰 Subtotal: ${formatUsd(input.subtotalUsd)}`);
+    body.push(
+      `🏷️ Descuento${input.promotionLabel ? ` (${sanitizeCustomerText(input.promotionLabel)})` : ""}: -${formatUsd(input.discountUsd)}`,
+    );
+    body.push(`💰 Total: ${formatUsd(input.totalUsd)}`);
+  } else {
+    body.push(`💰 Total: ${formatUsd(input.totalUsd)}`);
+  }
 
   if (input.paymentLabel?.trim()) {
     body.push("", `💳 Pago: ${sanitizeCustomerText(input.paymentLabel)}`);

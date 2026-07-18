@@ -214,6 +214,22 @@ export type CouponInsert = {
   updated_at?: string;
 };
 
+export interface Promotion {
+  id: string;
+  store_id: string;
+  name: string;
+  discount_percentage: number;
+  code: string;
+  start_date: string | null;
+  end_date: string;
+  is_active: boolean;
+  auto_apply: boolean;
+  max_uses: number;
+  use_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ProductVariant {
   id: string;
   product_id: string;
@@ -684,6 +700,17 @@ export interface Database {
         Update: Partial<CouponInsert>;
         Relationships: [];
       };
+      promotions: {
+        Row: Promotion;
+        Insert: Omit<Promotion, "id" | "created_at" | "updated_at" | "use_count"> & {
+          id?: string;
+          use_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Promotion>;
+        Relationships: [];
+      };
       channel_integrations: {
         Row: ChannelIntegration;
         Insert: Omit<
@@ -812,6 +839,28 @@ export interface Database {
       };
       redeem_coupon: {
         Args: { p_store_slug: string; p_code: string };
+        Returns: { error?: string; success?: boolean };
+      };
+      validate_customer_promotion: {
+        Args: {
+          p_store_slug: string;
+          p_code: string;
+          p_user_id: string | null;
+        };
+        Returns: {
+          error?: string;
+          success?: boolean;
+          code?: string;
+          name?: string;
+          discount_percentage?: number;
+        };
+      };
+      redeem_customer_promotion: {
+        Args: {
+          p_store_slug: string;
+          p_code: string;
+          p_user_id: string;
+        };
         Returns: { error?: string; success?: boolean };
       };
     };

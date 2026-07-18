@@ -15,6 +15,7 @@ import type { PaymentMethodKey, ShippingCarrierKey } from "@/lib/store-settings/
 import { uploadOrderPaymentProof } from "@/lib/orders/storage";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import { reserveOrderInventory } from "@/lib/orders/order-inventory";
+import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
 import type { OrderLineItem, SubmitOrderLineInput } from "@/lib/orders/types";
 
 export interface SubmitTransactionalOrderResult {
@@ -45,6 +46,7 @@ export async function submitTransactionalOrder(
   const proof = formData.get("paymentProof");
   const paymentMethodRaw = String(formData.get("paymentMethod") ?? "").trim();
   const shippingMethodRaw = String(formData.get("shippingMethod") ?? "").trim();
+  const promotionCodeRaw = String(formData.get("promotionCode") ?? "").trim();
 
   if (!storeSlug) {
     return { error: "Tienda no válida." };
@@ -85,13 +87,57 @@ export async function submitTransactionalOrder(
   }
 
   const orderItems = buildOrderItems(lines);
-  const totalUsd = orderItems.reduce((sum, item) => sum + item.line_total_usd, 0);
+  const subtotalUsd = orderItems.reduce((sum, item) => sum + item.line_total_usd, 0);
 
-  if (totalUsd <= 0) {
+  if (subtotalUsd <= 0) {
     return { error: "El total del pedido no es válido." };
   }
 
+  let discountUsd = 0;
+  let promotionLabel: string | undefined;
   const admin = createAdminClient();
+
+  if (promotionCodeRaw) {
+    if (!customerUserId) {
+      return {
+        error: "Debes registrarte como cliente de la tienda para usar promociones.",
+      };
+    }
+
+    const { data: promotionValidation, error: promotionError } = await admin.rpc(
+      "validate_customer_promotion" as never,
+      {
+        p_store_slug: storeSlug,
+        p_code: promotionCodeRaw,
+        p_user_id: customerUserId,
+      } as never,
+    );
+
+    if (promotionError) {
+      return { error: promotionError.message };
+    }
+
+    const validation = promotionValidation as {
+      error?: string;
+      success?: boolean;
+      code?: string;
+      name?: string;
+      discount_percentage?: number;
+    } | null;
+
+    if (!validation || validation.error || !validation.discount_percentage) {
+      return { error: validation?.error ?? "Promoción no válida." };
+    }
+
+    discountUsd = calculatePromotionDiscountUsd(
+      subtotalUsd,
+      Number(validation.discount_percentage),
+    );
+    promotionLabel = validation.name ?? validation.code;
+  }
+
+  const totalUsd = Math.max(0, subtotalUsd - discountUsd);
+
   const orderId = crypto.randomUUID();
 
   const proofUpload = await uploadOrderPaymentProof(store.id, orderId, proof);
@@ -121,6 +167,28 @@ export async function submitTransactionalOrder(
     return { error: reserveResult.error };
   }
 
+  if (promotionCodeRaw && customerUserId) {
+    const { data: redeemResult, error: redeemError } = await admin.rpc(
+      "redeem_customer_promotion" as never,
+      {
+        p_store_slug: storeSlug,
+        p_code: promotionCodeRaw,
+        p_user_id: customerUserId,
+      } as never,
+    );
+
+    if (redeemError) {
+      await admin.from("orders").delete().eq("id", orderId);
+      return { error: redeemError.message };
+    }
+
+    const redeemed = redeemResult as { error?: string; success?: boolean } | null;
+    if (redeemed?.error) {
+      await admin.from("orders").delete().eq("id", orderId);
+      return { error: redeemed.error };
+    }
+  }
+
   const settings = await getPublicStoreSettingsConfig(store.id);
   const purchaseInfo = buildPublicPurchaseInfo(settings);
 
@@ -138,6 +206,9 @@ export async function submitTransactionalOrder(
     orderDetailUrl: getWhatsAppOrderDetailUrl(orderId),
     paymentLabel,
     shippingLabel,
+    subtotalUsd: discountUsd > 0 ? subtotalUsd : undefined,
+    discountUsd: discountUsd > 0 ? discountUsd : undefined,
+    promotionLabel,
   });
 
   const whatsappUrl =
