@@ -9,17 +9,27 @@ interface SheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: ReactNode;
+  /** Si es false, el overlay no bloquea clics en el contenido detrás. */
+  modal?: boolean;
+  /** Bloquear scroll del body mientras el panel está abierto. */
+  lockScroll?: boolean;
 }
 
-export function Sheet({ open, onOpenChange, children }: SheetProps) {
+export function Sheet({
+  open,
+  onOpenChange,
+  children,
+  modal = true,
+  lockScroll = true,
+}: SheetProps) {
   useEffect(() => {
-    if (!open) return;
+    if (!open || !lockScroll) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previous;
     };
-  }, [open]);
+  }, [open, lockScroll]);
 
   useEffect(() => {
     if (!open) return;
@@ -36,9 +46,14 @@ export function Sheet({ open, onOpenChange, children }: SheetProps) {
     <div className="fixed inset-0 z-50 flex justify-end">
       <button
         type="button"
-        className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
+        className={cn(
+          "absolute inset-0 bg-black/40 backdrop-blur-[1px]",
+          !modal && "pointer-events-none bg-black/20 backdrop-blur-none",
+        )}
         aria-label="Cerrar"
-        onClick={() => onOpenChange(false)}
+        aria-hidden={!modal}
+        tabIndex={modal ? 0 : -1}
+        onClick={modal ? () => onOpenChange(false) : undefined}
       />
       {children}
     </div>,

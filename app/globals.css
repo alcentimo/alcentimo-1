@@ -3177,6 +3177,61 @@ body {
   @apply max-w-[12rem];
 }
 
+/* ── Vista previa en vivo (dashboard) ── */
+
+.catalog-preview-drawer {
+  @apply bg-zinc-100 dark:bg-zinc-950;
+}
+
+.catalog-preview-drawer-header {
+  @apply bg-white dark:bg-zinc-950;
+}
+
+.catalog-preview-drawer-body {
+  @apply bg-zinc-100 px-4 py-4 dark:bg-zinc-950;
+}
+
+.catalog-preview-stage {
+  @apply flex min-h-full justify-center overflow-x-auto pb-6;
+}
+
+.catalog-preview-viewport {
+  @apply shrink-0 overflow-hidden rounded-[1.25rem] border border-zinc-300 bg-white shadow-xl ring-1 ring-black/5 transition-[width] duration-200 ease-out dark:border-zinc-700 dark:bg-white;
+}
+
+.catalog-preview-viewport--mobile {
+  max-width: 375px;
+}
+
+.catalog-preview-viewport--desktop {
+  max-width: min(1024px, 100%);
+}
+
+.catalog-live-preview-root {
+  @apply min-h-0 bg-white;
+}
+
+.catalog-live-preview-root.txn-catalog-root {
+  min-height: auto;
+}
+
+.catalog-live-preview-root .txn-catalog {
+  min-height: auto;
+  max-width: 100%;
+}
+
+.catalog-live-preview-root .txn-catalog--preview {
+  min-height: 520px;
+}
+
+.catalog-live-preview-tab-bar {
+  @apply pointer-events-none select-none border-t border-neutral-200 opacity-95;
+}
+
+.catalog-live-preview-tab-bar .catalog-tab-bar {
+  position: relative;
+}
+
 .txn-catalog-empty {
   @apply rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/50 px-6 py-16 text-center;
 }

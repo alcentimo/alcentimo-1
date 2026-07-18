@@ -88,3 +88,27 @@ export async function getPublicCatalogPageData(
     catalogCurrency: settingsConfig.catalogCurrency,
   };
 }
+
+export interface CatalogPreviewSettings {
+  purchaseInfo: PublicPurchaseInfo;
+  catalogDesign: CatalogDesignSettings;
+  catalogCurrency: CatalogCurrencySettings;
+}
+
+/** Ajustes visuales del catálogo para la vista previa del dashboard. */
+export async function getCatalogPreviewSettings(
+  store: Store,
+): Promise<CatalogPreviewSettings> {
+  noStore();
+
+  const settingsConfig = await fetchStoreSettingsConfig(store.id);
+
+  return {
+    purchaseInfo: buildPublicPurchaseInfo(settingsConfig),
+    catalogDesign: resolveCatalogDesign(
+      settingsConfig.catalogDesign,
+      store.rubro_tienda,
+    ),
+    catalogCurrency: settingsConfig.catalogCurrency,
+  };
+}

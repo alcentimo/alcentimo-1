@@ -4,14 +4,17 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
 import type { CatalogListItem, Store } from "@/lib/database.types";
+import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { CatalogStockFilter } from "@/lib/inventory/stock-status";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 
 interface CatalogPanelProps {
   store: Store;
   exchangeRate: number | null;
+  exchangeRateUpdatedAt?: string | null;
   initialProducts: CatalogListItem[];
   productFormConfig: StoreProductFormConfig;
+  previewSettings: CatalogPreviewSettings;
 }
 
 function resolveStockFilter(value: string | null): CatalogStockFilter {
@@ -21,8 +24,10 @@ function resolveStockFilter(value: string | null): CatalogStockFilter {
 export function CatalogPanel({
   store,
   exchangeRate,
+  exchangeRateUpdatedAt,
   initialProducts,
   productFormConfig,
+  previewSettings,
 }: CatalogPanelProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -84,8 +89,10 @@ export function CatalogPanel({
     <InventoryPanel
       store={store}
       exchangeRate={exchangeRate}
+      exchangeRateUpdatedAt={exchangeRateUpdatedAt}
       initialProducts={initialProducts}
       productFormConfig={productFormConfig}
+      previewSettings={previewSettings}
       autoOpenCreate={autoOpenCreate}
       onAutoOpenCreateHandled={() => setAutoOpenCreate(false)}
       stockFilter={stockFilter}

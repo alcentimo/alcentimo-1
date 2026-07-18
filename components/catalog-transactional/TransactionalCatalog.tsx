@@ -22,6 +22,7 @@ interface TransactionalCatalogProps {
   catalogDesign: CatalogDesignSettings;
   catalogCurrency: CatalogCurrencySettings;
   openCheckoutInitially?: boolean;
+  previewMode?: boolean;
 }
 
 function getStoreInitials(name: string): string {
@@ -39,6 +40,7 @@ export function TransactionalCatalog({
   catalogDesign,
   catalogCurrency,
   openCheckoutInitially = false,
+  previewMode = false,
 }: TransactionalCatalogProps) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
@@ -56,6 +58,7 @@ export function TransactionalCatalog({
       className={cn(
         "txn-catalog",
         catalogDesign.layout === "list" && "txn-catalog--list",
+        previewMode && "txn-catalog--preview",
       )}
       style={getCatalogThemeStyle(catalogDesign.primaryColor)}
     >
@@ -128,11 +131,13 @@ export function TransactionalCatalog({
         )}
       </main>
 
-      <CatalogCartHost
-        store={store}
-        purchaseInfo={purchaseInfo}
-        openInitially={openCheckoutInitially}
-      />
+      {!previewMode ? (
+        <CatalogCartHost
+          store={store}
+          purchaseInfo={purchaseInfo}
+          openInitially={openCheckoutInitially}
+        />
+      ) : null}
     </div>
   );
 }

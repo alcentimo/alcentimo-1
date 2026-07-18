@@ -7,6 +7,7 @@ import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getStoreInventory } from "@/lib/inventory";
 import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
 import { isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
+import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
 import { BcvRateStripWithSync } from "@/components/dashboard/BcvRateStripWithSync";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
@@ -53,11 +54,13 @@ export default async function CatalogoPage({
     );
   }
 
-  const [{ products }, exchangeRateRow, productFormConfig] = await Promise.all([
-    getStoreInventory(store.slug),
-    getCurrentExchangeRate(),
-    getStoreProductFormConfig(store.id),
-  ]);
+  const [{ products }, exchangeRateRow, productFormConfig, previewSettings] =
+    await Promise.all([
+      getStoreInventory(store.slug),
+      getCurrentExchangeRate(),
+      getStoreProductFormConfig(store.id),
+      getCatalogPreviewSettings(store),
+    ]);
 
   const exchangeRate = exchangeRateRow?.rate ?? null;
   const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
@@ -87,8 +90,10 @@ export default async function CatalogoPage({
         <CatalogPanel
           store={store}
           exchangeRate={exchangeRate}
+          exchangeRateUpdatedAt={exchangeRateUpdatedAt}
           initialProducts={products}
           productFormConfig={productFormConfig}
+          previewSettings={previewSettings}
         />
       </Suspense>
     </div>

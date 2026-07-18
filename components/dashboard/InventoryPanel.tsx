@@ -37,8 +37,13 @@ import { AlertDialog } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { CatalogPdfPreviewDialog } from "@/components/dashboard/CatalogPdfPreviewDialog";
+import {
+  CatalogPreviewDrawer,
+  CatalogPreviewTrigger,
+} from "@/components/dashboard/CatalogPreviewDrawer";
 
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
+import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import {
   PRODUCT_IMPORT_TEMPLATE_FILENAME,
   PRODUCT_IMPORT_TEMPLATE_PATH,
@@ -77,8 +82,10 @@ const ProductImportSheet = dynamic(
 interface InventoryPanelProps {
   store: Store;
   exchangeRate: number | null;
+  exchangeRateUpdatedAt?: string | null;
   initialProducts: CatalogListItem[];
   productFormConfig: StoreProductFormConfig;
+  previewSettings: CatalogPreviewSettings;
   autoOpenCreate?: boolean;
   onAutoOpenCreateHandled?: () => void;
   stockFilter?: CatalogStockFilter;
@@ -464,8 +471,10 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
 export function InventoryPanel({
   store,
   exchangeRate,
+  exchangeRateUpdatedAt,
   initialProducts,
   productFormConfig,
+  previewSettings,
   autoOpenCreate = false,
   onAutoOpenCreateHandled,
   stockFilter = "all",
@@ -492,6 +501,7 @@ export function InventoryPanel({
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfPreviewBase64, setPdfPreviewBase64] = useState<string | null>(null);
   const [pdfPreviewFileName, setPdfPreviewFileName] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [publishedProduct, setPublishedProduct] = useState<PublishedProductResult | null>(
     null,
   );
@@ -775,14 +785,17 @@ export function InventoryPanel({
       )}
 
       <div className="inventory-catalog-header">
-        <Button
-          type="button"
-          onClick={openCreate}
-          className="btn-brand inventory-primary-cta inventory-primary-cta-toolbar"
-        >
-          <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
-          Nuevo producto
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            onClick={openCreate}
+            className="btn-brand inventory-primary-cta inventory-primary-cta-toolbar"
+          >
+            <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
+            Nuevo producto
+          </Button>
+          <CatalogPreviewTrigger onClick={() => setPreviewOpen(true)} />
+        </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="inventory-toolbar min-w-0 flex-1">
@@ -1050,6 +1063,16 @@ export function InventoryPanel({
         mode={sheetMode}
         productId={editingProductId}
         onSaved={handleProductSaved}
+      />
+
+      <CatalogPreviewDrawer
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        store={store}
+        products={products}
+        exchangeRate={exchangeRate}
+        exchangeRateUpdatedAt={exchangeRateUpdatedAt}
+        settings={previewSettings}
       />
 
       <CatalogPdfPreviewDialog
