@@ -13,7 +13,6 @@ export const metadata: Metadata = {
   description:
     "Software de gestión de inventario y catálogo digital para comerciantes venezolanos. Precios en USD con conversión automática a bolívares.",
   applicationName: "alcentimo",
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

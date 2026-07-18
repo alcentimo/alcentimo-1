@@ -4,16 +4,9 @@ project_id = "pboxqwrogkwxkrjvbsqo"
 [functions.sync-bcv]
 verify_jwt = false
 
-# Cron Supabase — 00:00 hora Venezuela (04:00 UTC)
+# Cron: configurar en Supabase Dashboard → Integrations → Cron, o Vercel (ver vercel.json).
 [functions.sync-bcv-midnight]
 verify_jwt = false
 
-[functions.sync-bcv-midnight.schedule]
-cron = "0 4 * * *"
-
-# Cron Supabase — 06:00 hora Venezuela (10:00 UTC), reintento si falló medianoche
 [functions.sync-bcv-retry]
 verify_jwt = false
-
-[functions.sync-bcv-retry.schedule]
-cron = "0 10 * * *"

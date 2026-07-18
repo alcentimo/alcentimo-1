@@ -443,6 +443,8 @@ export type StoreInsert = {
   slug: string;
   description?: string | null;
   logo_url?: string | null;
+  pwa_icon_192_url?: string | null;
+  pwa_icon_512_url?: string | null;
   country?: string | null;
   is_active?: boolean;
   created_at?: string;

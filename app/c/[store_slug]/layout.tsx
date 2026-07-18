@@ -8,6 +8,7 @@ import { getCatalogPromotionContext } from "@/lib/promotions/get-catalog-promoti
 import { recordCatalogVisit } from "@/lib/analytics/track-catalog-visit";
 import { getStoreManifestPath } from "@/lib/pwa/build-store-manifest";
 import { getPublicStoreBySlug } from "@/lib/stores";
+import { getSiteUrl } from "@/lib/site-url";
 
 interface TransactionalCatalogLayoutProps {
   children: ReactNode;
@@ -50,6 +51,7 @@ export async function generateMetadata({
   }
 
   return {
+    metadataBase: new URL(getSiteUrl()),
     title: `${store.name} — Pedidos`,
     description: `Catálogo y pedidos de ${store.name}`,
     manifest: manifestPath,

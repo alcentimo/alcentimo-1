@@ -1,5 +1,4 @@
 import type { Store } from "@/lib/database.types";
-import { getSiteUrl } from "@/lib/site-url";
 
 export interface StoreManifestIcon {
   src: string;
@@ -23,11 +22,21 @@ export interface StoreWebManifest {
   icons: StoreManifestIcon[];
 }
 
+/** Rutas PWA relativas al origen — requerido para que el acceso directo abra el catálogo. */
+export function buildStoreCatalogPwaPaths(storeSlug: string) {
+  const slug = storeSlug.trim().toLowerCase();
+  const scope = `/c/${slug}/`;
+
+  return {
+    id: scope,
+    scope,
+    // Query param no afecta el scope; ayuda a distinguir instalaciones en analíticas.
+    startUrl: `${scope}?source=pwa`,
+  };
+}
+
 export function buildStoreWebManifest(store: Store): StoreWebManifest {
-  const siteUrl = getSiteUrl();
-  const catalogPath = `/c/${store.slug}`;
-  const startUrl = `${siteUrl}${catalogPath}`;
-  const scope = `${siteUrl}${catalogPath}`;
+  const { id, scope, startUrl } = buildStoreCatalogPwaPaths(store.slug);
 
   const icons: StoreManifestIcon[] = [];
 
@@ -67,7 +76,7 @@ export function buildStoreWebManifest(store: Store): StoreWebManifest {
   }
 
   return {
-    id: `${siteUrl}/stores/${store.id}`,
+    id,
     name: store.name,
     short_name: store.name.slice(0, 12),
     description: `Catálogo y pedidos de ${store.name}`,
@@ -83,5 +92,5 @@ export function buildStoreWebManifest(store: Store): StoreWebManifest {
 }
 
 export function getStoreManifestPath(storeSlug: string): string {
-  return `/c/${storeSlug}/manifest.json`;
+  return `/c/${storeSlug.trim().toLowerCase()}/manifest.webmanifest`;
 }
