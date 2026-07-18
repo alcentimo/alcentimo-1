@@ -124,6 +124,19 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/c/:store_slug/sw.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+          {
+            key: "Service-Worker-Allowed",
+            value: "/",
+          },
+        ],
+      },
+      {
         source: "/c/:store_slug/manifest.json",
         headers: [
           {

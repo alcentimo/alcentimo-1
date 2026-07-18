@@ -3,9 +3,11 @@ import {
   PWA_REGISTER_IDLE_TIMEOUT_MS,
   PWA_RESET_STORAGE_KEY,
   PWA_RESET_VERSION,
-  PWA_SW_SCOPE,
-  PWA_SW_URL,
 } from "@/lib/pwa/constants";
+import {
+  getCatalogServiceWorkerScope,
+  getCatalogServiceWorkerUrl,
+} from "@/lib/pwa/catalog-sw-paths";
 
 function isLegacyCacheName(name: string): boolean {
   return LEGACY_PWA_CACHE_PREFIXES.some(
@@ -29,25 +31,31 @@ function scheduleIdleTask(task: () => void): void {
   window.setTimeout(task, PWA_REGISTER_IDLE_TIMEOUT_MS);
 }
 
-async function runBackgroundRegistration(): Promise<void> {
+async function runBackgroundRegistration(storeSlug: string): Promise<void> {
   try {
     const storedVersion = localStorage.getItem(PWA_RESET_STORAGE_KEY);
     const needsReset = storedVersion !== PWA_RESET_VERSION;
 
     if (needsReset) {
-      // Solo limpiar cachés legacy; no desregistrar el SW activo (evita bucles/esperas al abrir).
       await deleteLegacyCaches();
       localStorage.setItem(PWA_RESET_STORAGE_KEY, PWA_RESET_VERSION);
     }
 
-    // Fire-and-forget: no esperar update()/ready para no bloquear la UI.
     void navigator.serviceWorker
-      .register(PWA_SW_URL, {
-        scope: PWA_SW_SCOPE,
+      .register(getCatalogServiceWorkerUrl(storeSlug), {
+        scope: getCatalogServiceWorkerScope(storeSlug),
         updateViaCache: "none",
       })
       .catch(() => {
-        // El catálogo funciona sin SW.
+        // Fallback: SW raíz con scope del catálogo (Chrome lo permite).
+        void navigator.serviceWorker
+          .register("/sw.js", {
+            scope: getCatalogServiceWorkerScope(storeSlug),
+            updateViaCache: "none",
+          })
+          .catch(() => {
+            // El catálogo funciona sin SW.
+          });
       });
   } catch {
     // El catálogo funciona sin SW; offline es mejora progresiva.
@@ -55,10 +63,10 @@ async function runBackgroundRegistration(): Promise<void> {
 }
 
 /**
- * Registra el SW en segundo plano tras la primera pintura.
- * El start_url y la navegación inicial no dependen del SW.
+ * Registra el SW del catálogo en segundo plano.
+ * Usa /c/{slug}/sw.js para que Chrome detecte la PWA en el subdirectorio.
  */
-export function scheduleCatalogServiceWorker(): void {
+export function scheduleCatalogServiceWorker(storeSlug: string): void {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
     return;
   }
@@ -71,9 +79,12 @@ export function scheduleCatalogServiceWorker(): void {
     return;
   }
 
+  const normalizedSlug = storeSlug.trim().toLowerCase();
+  if (!normalizedSlug) return;
+
   const start = () => {
     scheduleIdleTask(() => {
-      void runBackgroundRegistration();
+      void runBackgroundRegistration(normalizedSlug);
     });
   };
 
@@ -83,4 +94,30 @@ export function scheduleCatalogServiceWorker(): void {
   }
 
   window.addEventListener("load", start, { once: true });
+}
+
+/** Registro inmediato para criterios de instalabilidad de Chrome. */
+export function registerCatalogServiceWorkerForInstall(storeSlug: string): void {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+    return;
+  }
+
+  if (process.env.NODE_ENV === "development" || !window.isSecureContext) {
+    return;
+  }
+
+  const normalizedSlug = storeSlug.trim().toLowerCase();
+  if (!normalizedSlug) return;
+
+  void navigator.serviceWorker
+    .register(getCatalogServiceWorkerUrl(normalizedSlug), {
+      scope: getCatalogServiceWorkerScope(normalizedSlug),
+      updateViaCache: "none",
+    })
+    .catch(() => {
+      void navigator.serviceWorker.register("/sw.js", {
+        scope: getCatalogServiceWorkerScope(normalizedSlug),
+        updateViaCache: "none",
+      });
+    });
 }

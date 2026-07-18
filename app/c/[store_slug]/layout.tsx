@@ -7,6 +7,8 @@ import { getCartAuthContext } from "@/lib/customers/get-cart-auth-context";
 import { getCatalogPromotionContext } from "@/lib/promotions/get-catalog-promotion";
 import { recordCatalogVisit } from "@/lib/analytics/track-catalog-visit";
 import { getStoreManifestPath, formatPwaManifestName, formatPwaManifestShortName } from "@/lib/pwa/build-store-manifest";
+import { getCatalogCanonicalUrl } from "@/lib/pwa/catalog-sw-paths";
+import { getRequestOrigin } from "@/lib/pwa/get-request-origin";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -26,6 +28,8 @@ export async function generateMetadata({
   }
 
   const manifestPath = getStoreManifestPath(store.slug);
+  const origin = await getRequestOrigin();
+  const canonicalUrl = getCatalogCanonicalUrl(store.slug, origin);
   const icons: Metadata["icons"] = [];
 
   if (store.pwa_icon_192_url) {
@@ -54,6 +58,9 @@ export async function generateMetadata({
     metadataBase: new URL(getSiteUrl()),
     title: `${store.name} — Pedidos`,
     description: `Catálogo y pedidos de ${store.name}`,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     manifest: manifestPath,
     applicationName: formatPwaManifestName(store.name),
     appleWebApp: {

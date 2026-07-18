@@ -24,7 +24,7 @@ export function CatalogAppShell({
 
   return (
     <>
-      <PwaServiceWorkerRegister />
+      <PwaServiceWorkerRegister storeSlug={storeSlug} />
       <InstallPwaBanner
         storeSlug={storeSlug}
         storeName={storeName}

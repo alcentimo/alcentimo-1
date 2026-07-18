@@ -1,5 +1,5 @@
 /** Incrementar tras cambios de estrategia SW para forzar limpieza en clientes. */
-export const PWA_RESET_VERSION = "5";
+export const PWA_RESET_VERSION = "6";
 
 /** Nueva identidad PWA: cambiar fuerza al móvil a tratarla como app distinta. */
 export const PWA_IDENTITY_VERSION = "4";

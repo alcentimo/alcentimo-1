@@ -3,11 +3,12 @@
 import Image from "next/image";
 import { Download, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
+import {
+  getDeferredInstallPrompt,
+  initBeforeInstallPromptCapture,
+  subscribeToInstallPrompt,
+  type BeforeInstallPromptEvent,
+} from "@/lib/pwa/before-install-prompt";
 
 interface InstallPwaBannerProps {
   storeSlug: string;
@@ -19,6 +20,11 @@ const DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getDismissStorageKey(storeSlug: string): string {
   return `alcentimo_pwa_install_dismiss_${storeSlug}`;
+}
+
+function isCatalogPath(storeSlug: string): boolean {
+  if (typeof window === "undefined") return false;
+  return window.location.pathname.startsWith(`/c/${storeSlug.trim().toLowerCase()}`);
 }
 
 function isAppInstalled(): boolean {
@@ -60,9 +66,10 @@ export function InstallPwaBanner({
   storeLogoUrl,
 }: InstallPwaBannerProps) {
   const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
-  const [visible, setVisible] = useState(false);
+    useState<BeforeInstallPromptEvent | null>(() => getDeferredInstallPrompt());
+  const [manualInstallMode, setManualInstallMode] = useState(false);
   const [installing, setInstalling] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   const dismissBanner = useCallback(() => {
     localStorage.setItem(getDismissStorageKey(storeSlug), String(Date.now()));
@@ -70,55 +77,68 @@ export function InstallPwaBanner({
   }, [storeSlug]);
 
   useEffect(() => {
-    if (isAppInstalled() || isBannerDismissed(storeSlug)) {
+    initBeforeInstallPromptCapture();
+
+    if (isAppInstalled() || isBannerDismissed(storeSlug) || !isCatalogPath(storeSlug)) {
       return;
     }
 
-    function handleBeforeInstallPrompt(event: Event) {
-      event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
-      setVisible(true);
-    }
+    setVisible(true);
 
-    function handleAppInstalled() {
-      setVisible(false);
-      setDeferredPrompt(null);
-    }
+    const unsubscribe = subscribeToInstallPrompt((event) => {
+      setDeferredPrompt(event);
+      if (event) {
+        setManualInstallMode(false);
+      }
+    });
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
+    const manualTimer = window.setTimeout(() => {
+      if (!getDeferredInstallPrompt()) {
+        setManualInstallMode(true);
+      }
+    }, 1200);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-      window.removeEventListener("appinstalled", handleAppInstalled);
+      unsubscribe();
+      window.clearTimeout(manualTimer);
     };
   }, [storeSlug]);
 
   async function handleInstallClick() {
-    if (!deferredPrompt) return;
+    const promptEvent = deferredPrompt ?? getDeferredInstallPrompt();
 
-    setInstalling(true);
+    if (promptEvent) {
+      setInstalling(true);
 
-    try {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
+      try {
+        await promptEvent.prompt();
+        const { outcome } = await promptEvent.userChoice;
 
-      if (outcome === "accepted") {
-        setVisible(false);
+        if (outcome === "accepted") {
+          setVisible(false);
+        }
+      } catch {
+        setManualInstallMode(true);
+      } finally {
+        setInstalling(false);
+        setDeferredPrompt(null);
       }
-    } catch {
-      // El navegador puede rechazar prompt si no hay gesto válido.
-    } finally {
-      setInstalling(false);
-      setDeferredPrompt(null);
+      return;
     }
+
+    setManualInstallMode(true);
   }
 
-  if (!visible || !deferredPrompt || isAppInstalled()) {
+  if (!visible || isAppInstalled()) {
     return null;
   }
 
   const displayName = storeName.trim() || "tu tienda";
+  const installLabel = installing
+    ? "Instalando…"
+    : deferredPrompt
+      ? "Instalar"
+      : "Instalar app";
 
   return (
     <div className="install-pwa-banner" role="region" aria-label="Instalar aplicación">
@@ -140,7 +160,16 @@ export function InstallPwaBanner({
       </div>
 
       <p className="install-pwa-banner-text">
-        Instala <strong>{displayName}</strong> para acceder rápido
+        {manualInstallMode && !deferredPrompt ? (
+          <>
+            Instala <strong>{displayName}</strong> desde el menú ⋮ →{" "}
+            <strong>Instalar aplicación</strong>
+          </>
+        ) : (
+          <>
+            Instala <strong>{displayName}</strong> para acceder rápido
+          </>
+        )}
       </p>
 
       <button
@@ -150,7 +179,7 @@ export function InstallPwaBanner({
         className="install-pwa-banner-action"
       >
         <Download className="h-3.5 w-3.5" aria-hidden="true" />
-        {installing ? "Instalando…" : "Instalar"}
+        {installLabel}
       </button>
 
       <button

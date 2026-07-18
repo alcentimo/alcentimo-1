@@ -1,12 +1,22 @@
 "use client";
 
 import { useEffect } from "react";
-import { scheduleCatalogServiceWorker } from "@/lib/pwa/register-service-worker";
+import {
+  registerCatalogServiceWorkerForInstall,
+  scheduleCatalogServiceWorker,
+} from "@/lib/pwa/register-service-worker";
+import { initBeforeInstallPromptCapture } from "@/lib/pwa/before-install-prompt";
 
-export function PwaServiceWorkerRegister() {
+interface PwaServiceWorkerRegisterProps {
+  storeSlug: string;
+}
+
+export function PwaServiceWorkerRegister({ storeSlug }: PwaServiceWorkerRegisterProps) {
   useEffect(() => {
-    scheduleCatalogServiceWorker();
-  }, []);
+    initBeforeInstallPromptCapture();
+    registerCatalogServiceWorkerForInstall(storeSlug);
+    scheduleCatalogServiceWorker(storeSlug);
+  }, [storeSlug]);
 
   return null;
 }
