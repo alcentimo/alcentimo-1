@@ -3,6 +3,7 @@ import {
   ClipboardList,
   Settings2,
   Store,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -12,6 +13,8 @@ export interface DashboardNavItem {
   description: string;
   icon: LucideIcon;
   match?: (pathname: string) => boolean;
+  /** Solo visible para el dueño de la tienda (`stores.owner_id`). */
+  ownerOnly?: boolean;
 }
 
 export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
@@ -32,6 +35,14 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     description: "Gestión de ventas y pedidos",
     icon: ClipboardList,
     match: (pathname) => pathname.startsWith("/dashboard/pedidos"),
+  },
+  {
+    href: "/dashboard/clientes",
+    label: "Mis Clientes",
+    description: "Clientes registrados y su historial de compras",
+    icon: Users,
+    match: (pathname) => pathname.startsWith("/dashboard/clientes"),
+    ownerOnly: true,
   },
   {
     href: "/dashboard/analiticas",
@@ -63,4 +74,13 @@ export function isDashboardNavItemActive(
   item: DashboardNavItem,
 ): boolean {
   return item.match?.(pathname) ?? pathname === item.href;
+}
+
+export function getDashboardNavItems(options?: {
+  isStoreOwner?: boolean;
+}): DashboardNavItem[] {
+  const isStoreOwner = options?.isStoreOwner ?? false;
+  return DASHBOARD_NAV_ITEMS.filter(
+    (item) => !item.ownerOnly || isStoreOwner,
+  );
 }

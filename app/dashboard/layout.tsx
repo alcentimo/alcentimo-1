@@ -6,6 +6,7 @@ import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
 import { bcvRateAgeHours, isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
+import { isStoreOwner } from "@/lib/stores/owner-access";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { BcvSyncAlertBanner } from "@/components/dashboard/BcvSyncAlertBanner";
 import { CountryProvider } from "@/components/providers/CountryProvider";
@@ -29,6 +30,7 @@ export default async function DashboardRootLayout({
     data: { user: authAccount },
   } = await supabase.auth.getUser();
   const isAdmin = isSupportAdmin(resolveAuthEmail(authAccount));
+  const isStoreOwnerUser = store ? isStoreOwner(store, authUser.id) : false;
   const [bcvSyncAlert, exchangeRateRow, tasaRow] = await Promise.all([
     getActiveBcvSyncAlert(supabase),
     getCurrentExchangeRate(),
@@ -64,6 +66,7 @@ export default async function DashboardRootLayout({
         exchangeRateUpdatedAt={exchangeRateUpdatedAt}
         exchangeRateStale={exchangeRateStale}
         isSupportAdmin={isAdmin}
+        isStoreOwner={isStoreOwnerUser}
       >
         {bcvSyncAlert ? <BcvSyncAlertBanner alert={bcvSyncAlert} /> : null}
         {children}

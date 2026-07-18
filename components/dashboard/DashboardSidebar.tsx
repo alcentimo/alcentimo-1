@@ -7,7 +7,7 @@ import { BrandLogo } from "@/components/ui/BrandLogo";
 import { SupportModal } from "@/components/dashboard/SupportModal";
 import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
 import {
-  DASHBOARD_NAV_ITEMS,
+  getDashboardNavItems,
   isDashboardNavItemActive,
   type DashboardNavItem,
 } from "@/src/config/dashboard-nav";
@@ -25,6 +25,7 @@ interface DashboardSidebarProps {
   onCloseMobile: () => void;
   onLogout: () => void;
   isSupportAdmin?: boolean;
+  isStoreOwner?: boolean;
 }
 
 function navLinkClass(active: boolean, collapsed: boolean) {
@@ -78,10 +79,12 @@ export function DashboardSidebar({
   onCloseMobile,
   onLogout,
   isSupportAdmin = false,
+  isStoreOwner = false,
 }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [supportKey, setSupportKey] = useState(0);
+  const navItems = getDashboardNavItems({ isStoreOwner });
 
   useEffect(() => {
     try {
@@ -153,7 +156,7 @@ export function DashboardSidebar({
         )}
         aria-label="Navegación principal"
       >
-        {DASHBOARD_NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <SidebarNavLink
             key={item.href}
             item={item}
