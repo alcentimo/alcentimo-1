@@ -381,6 +381,23 @@ body {
   @apply inline-flex h-full w-full items-center justify-center border font-semibold shadow-sm transition-colors hover:opacity-90 active:scale-[0.98];
 }
 
+.store-add-btn-in-cart {
+  --pc-btn-desktop-bg: #f5f5f5;
+  --pc-btn-desktop-fg: #525252;
+  --pc-btn-mobile-bg: #f5f5f5;
+  --pc-btn-mobile-fg: #525252;
+  border-color: #d4d4d4 !important;
+  @apply cursor-default shadow-none;
+}
+
+.store-add-btn-in-cart:not(:disabled) {
+  @apply cursor-pointer hover:opacity-80;
+}
+
+.store-add-btn-in-cart:disabled {
+  @apply opacity-70;
+}
+
 .store-featured-badge {
   padding: var(--pc-badge-pad-y) var(--pc-badge-pad-x);
   border-radius: var(--pc-badge-radius);
@@ -2935,6 +2952,17 @@ body {
   @apply shadow-none transition-opacity duration-200 hover:opacity-75 active:opacity-60;
 }
 
+.txn-catalog .store-add-btn-in-cart {
+  background-color: #f5f5f5;
+  border-color: #d4d4d4;
+  color: #525252;
+  @apply font-medium shadow-none;
+}
+
+.txn-catalog .store-add-btn-in-cart:not(:disabled):hover {
+  @apply opacity-80;
+}
+
 .txn-catalog .store-featured-badge,
 .txn-catalog .store-stock-badge {
   @apply shadow-none;
@@ -3026,6 +3054,23 @@ body {
 
 .txn-cart-backdrop {
   @apply absolute inset-0 bg-black/40;
+}
+
+.txn-cart-summary-checkout-btn {
+  @apply text-base;
+}
+
+@keyframes txn-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.txn-cart-overlay .txn-checkout {
+  animation: txn-slide-in 0.24s ease-out;
 }
 
 .txn-checkout {

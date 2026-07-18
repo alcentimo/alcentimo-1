@@ -327,3 +327,7 @@ export function useCart(): CartContextValue {
   }
   return context;
 }
+
+export function useCartOptional(): CartContextValue | null {
+  return useContext(CartContext);
+}

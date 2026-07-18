@@ -2,10 +2,11 @@
 
 import { memo, useMemo, useState } from "react";
 import Image from "next/image";
-import { Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
 import { formatUsd, formatApproxBs } from "@/lib/format";
 import { computeUsdToVes } from "@/lib/catalog/pricing";
+import { cartItemKey } from "@/lib/catalog/cart-types";
 import { getLowStockThreshold } from "@/lib/inventory/stock-status";
 import {
   getCatalogVariantOptions,
@@ -13,6 +14,7 @@ import {
   isProductOutOfStock,
 } from "@/lib/products/variants";
 import type { CatalogVariantOption } from "@/lib/products/variants";
+import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import { cn } from "@/lib/cn";
 
 interface ProductCardProps {
@@ -63,6 +65,7 @@ export const ProductCard = memo(function ProductCard({
   cartQuantity = 0,
   onAddToCart,
 }: ProductCardProps) {
+  const cartContext = useCartOptional();
   const activeExchangeRate = exchangeRate ?? product.exchange_rate_used;
 
   const variantOptions = useMemo(
@@ -90,8 +93,24 @@ export const ProductCard = memo(function ProductCard({
   const showStockBadge =
     !outOfStock && displayStock > 0 && displayStock <= threshold;
   const activeStock = selectedVariant?.availableStock ?? 0;
-  const remaining = Math.max(0, activeStock - cartQuantity);
-  const canAdd = !outOfStock && remaining > 0 && onAddToCart && selectedVariant;
+  const contextCartQuantity =
+    cartContext?.items.find(
+      (item) =>
+        cartItemKey(item.product.product_id, item.variantId) ===
+        cartItemKey(product.product_id, selectedVariantId),
+    )?.quantity ?? 0;
+  const effectiveCartQuantity =
+    cartQuantity > 0 ? cartQuantity : contextCartQuantity;
+  const inCart = effectiveCartQuantity > 0;
+  const remaining = Math.max(0, activeStock - effectiveCartQuantity);
+  const canAddMore =
+    !outOfStock && remaining > 0 && onAddToCart && selectedVariant;
+  const showAddButton =
+    !outOfStock && onAddToCart && selectedVariant && (canAddMore || inCart);
+
+  const addButtonLabel = inCart
+    ? `En carrito (${effectiveCartQuantity})`
+    : "Agregar al carrito";
 
   const hasDiscount =
     product.compare_at_usd != null &&
@@ -104,8 +123,31 @@ export const ProductCard = memo(function ProductCard({
     product.price_ves;
 
   function handleAdd() {
-    if (!canAdd || !selectedVariant) return;
-    onAddToCart(product, selectedVariant);
+    if (!canAddMore || !selectedVariant) return;
+    onAddToCart?.(product, selectedVariant);
+  }
+
+  function renderAddButton(className: string) {
+    return (
+      <button
+        type="button"
+        onClick={handleAdd}
+        disabled={inCart && !canAddMore}
+        className={cn(className, inCart && "store-add-btn-in-cart")}
+        aria-label={
+          inCart
+            ? `${addButtonLabel}. ${canAddMore ? "Pulsa para añadir otro." : "Cantidad máxima en carrito."}`
+            : addButtonLabel
+        }
+      >
+        {inCart ? (
+          <Check className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <Plus className="h-4 w-4" aria-hidden="true" />
+        )}
+        {addButtonLabel}
+      </button>
+    );
   }
 
   return (
@@ -149,12 +191,9 @@ export const ProductCard = memo(function ProductCard({
           )}
         </div>
 
-        {canAdd && (
+        {showAddButton && (
           <div className="store-product-action">
-            <button type="button" onClick={handleAdd} className="store-add-btn">
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              Agregar al carrito
-            </button>
+            {renderAddButton("store-add-btn")}
           </div>
         )}
       </div>
@@ -241,15 +280,8 @@ export const ProductCard = memo(function ProductCard({
         </div>
 
         <div className="store-product-footer sm:hidden">
-          {canAdd ? (
-            <button
-              type="button"
-              onClick={handleAdd}
-              className="store-add-btn-mobile"
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              Agregar al carrito
-            </button>
+          {showAddButton ? (
+            renderAddButton("store-add-btn-mobile")
           ) : (
             <span className="store-product-footer-placeholder" aria-hidden="true" />
           )}
