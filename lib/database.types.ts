@@ -33,6 +33,15 @@ export interface SupportMessage {
   created_at: string;
 }
 
+export interface CustomerMerchantNote {
+  id: string;
+  store_id: string;
+  customer_user_id: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CustomerProfile {
   id: string;
   user_id: string;
@@ -555,6 +564,17 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<CustomerCartItem>;
+        Relationships: [];
+      };
+      customer_merchant_notes: {
+        Row: CustomerMerchantNote;
+        Insert: Omit<CustomerMerchantNote, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          body?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<CustomerMerchantNote>;
         Relationships: [];
       };
       stores: {

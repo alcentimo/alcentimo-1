@@ -31,7 +31,7 @@ export async function getStoreCustomers(
 
   const statsByUser = aggregateCustomerOrderStats(ordersResult.data ?? []);
 
-  return (profilesResult.data ?? []).map((profile) => {
+  const customers = (profilesResult.data ?? []).map((profile) => {
     const stats = statsByUser.get(profile.user_id);
 
     return {
@@ -44,6 +44,21 @@ export async function getStoreCustomers(
       totalSpentUsd: stats?.totalSpentUsd ?? 0,
       lastOrderAt: stats?.lastOrderAt ?? null,
     };
+  });
+
+  return sortCustomersByRecentPurchase(customers);
+}
+
+function sortCustomersByRecentPurchase(
+  customers: StoreCustomerSummary[],
+): StoreCustomerSummary[] {
+  return [...customers].sort((a, b) => {
+    const aTime = a.lastOrderAt ? new Date(a.lastOrderAt).getTime() : 0;
+    const bTime = b.lastOrderAt ? new Date(b.lastOrderAt).getTime() : 0;
+    if (bTime !== aTime) return bTime - aTime;
+    return (
+      new Date(b.registeredAt).getTime() - new Date(a.registeredAt).getTime()
+    );
   });
 }
 
