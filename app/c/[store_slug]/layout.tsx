@@ -1,9 +1,23 @@
 import type { ReactNode } from "react";
+import { CartProvider } from "@/components/catalog-transactional/CartProvider";
+import { CatalogAppShell } from "@/components/catalog-transactional/CatalogAppShell";
 
-export default function TransactionalCatalogLayout({
-  children,
-}: {
+interface TransactionalCatalogLayoutProps {
   children: ReactNode;
-}) {
-  return <div className="txn-catalog-root">{children}</div>;
+  params: Promise<{ store_slug: string }>;
+}
+
+export default async function TransactionalCatalogLayout({
+  children,
+  params,
+}: TransactionalCatalogLayoutProps) {
+  const { store_slug: storeSlug } = await params;
+
+  return (
+    <div className="txn-catalog-root">
+      <CartProvider storeSlug={storeSlug}>
+        <CatalogAppShell storeSlug={storeSlug}>{children}</CatalogAppShell>
+      </CartProvider>
+    </div>
+  );
 }

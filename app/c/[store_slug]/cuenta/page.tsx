@@ -28,70 +28,26 @@ export default async function CustomerAccountPage({
     redirect(buildCustomerRegisterPath(store.slug, `/c/${store.slug}/cuenta`));
   }
 
-  const [{ data: profile }, orders] = await Promise.all([
-    supabase
-      .from("customer_profiles")
-      .select("display_name, phone, created_at")
-      .eq("user_id", user.id)
-      .eq("store_id", store.id)
-      .maybeSingle(),
-    getCustomerOrdersForStore(store.id),
-  ]);
+  const orders = await getCustomerOrdersForStore(store.id);
 
   return (
-    <main className="page-shell min-h-dvh safe-area-inset">
-      <div className="mx-auto max-w-lg px-5 py-10 sm:px-7">
-        <Link
-          href={`/c/${store.slug}`}
-          className="text-sm font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-        >
-          ← Volver al catálogo
-        </Link>
+    <div className="catalog-subpage">
+      <header className="catalog-subpage-header">
+        <h1 className="catalog-subpage-title">Mis Pedidos</h1>
+        <p className="catalog-subpage-desc">
+          Historial de compras en {store.name}.
+        </p>
+      </header>
 
-        <header className="mt-6 space-y-2">
-          <p className="section-label">Tu cuenta</p>
-          <h1 className="page-header-title">{store.name}</h1>
-          <p className="page-header-desc">
-            Hola{profile?.display_name ? `, ${profile.display_name}` : ""}.
-            Aquí verás tus pedidos y datos de contacto.
-          </p>
-        </header>
-
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            Mis Pedidos
-          </h2>
-          <div className="card-panel mt-3">
-            <CustomerOrdersList orders={orders} />
-          </div>
-        </section>
-
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            Datos de contacto
-          </h2>
-          <div className="card-panel mt-3 space-y-4">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Email
-              </p>
-              <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-                {user.email ?? "—"}
-              </p>
-            </div>
-            {profile?.phone ? (
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Teléfono
-                </p>
-                <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-                  {profile.phone}
-                </p>
-              </div>
-            ) : null}
-          </div>
-        </section>
+      <div className="card-panel">
+        <CustomerOrdersList orders={orders} />
       </div>
-    </main>
+
+      <p className="mt-6 text-center text-sm text-zinc-500">
+        <Link href={`/c/${store.slug}`} className="link-brand">
+          Seguir comprando
+        </Link>
+      </p>
+    </div>
   );
 }

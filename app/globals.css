@@ -2947,6 +2947,79 @@ body {
   @apply rounded-lg;
 }
 
+/* Shell con tab bar inferior */
+.catalog-shell-content {
+  min-height: 100dvh;
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.catalog-tab-bar {
+  @apply fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200/90 bg-white/95 backdrop-blur-md;
+}
+
+.catalog-tab-bar-inner {
+  @apply mx-auto flex max-w-lg items-stretch justify-around px-2 pt-2;
+}
+
+.catalog-tab-item {
+  @apply flex min-h-[3.25rem] min-w-16 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1.5 text-[10px] font-medium text-neutral-500 transition active:scale-95 sm:text-xs;
+}
+
+.catalog-tab-item-active {
+  color: var(--txn-primary, #0d9488);
+  @apply font-semibold;
+}
+
+.catalog-cart-fab {
+  @apply fixed z-30 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition active:scale-95;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  background-color: var(--txn-primary, #0d9488);
+}
+
+.catalog-cart-fab-badge {
+  @apply absolute -right-0.5 -top-0.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-neutral-900 px-1 text-[11px] font-semibold text-white;
+}
+
+.catalog-subpage {
+  @apply mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6;
+}
+
+.catalog-subpage-header {
+  @apply mb-5;
+}
+
+.catalog-subpage-title {
+  @apply text-xl font-semibold tracking-tight text-neutral-900 sm:text-2xl;
+}
+
+.catalog-subpage-desc {
+  @apply mt-1 text-sm text-neutral-500;
+}
+
+.catalog-category-chips {
+  @apply mb-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:px-6;
+  scrollbar-width: none;
+}
+
+.catalog-category-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.catalog-category-chip {
+  @apply shrink-0 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-600 transition active:scale-95;
+}
+
+.catalog-category-chip-active {
+  border-color: var(--txn-primary, #0d9488);
+  color: var(--txn-primary, #0d9488);
+  background-color: color-mix(in srgb, var(--txn-primary, #0d9488) 8%, white);
+}
+
+.txn-catalog-subpage .catalog-subpage-header {
+  @apply px-4 sm:px-6;
+}
+
 .txn-cart-overlay {
   @apply fixed inset-0 z-50 flex justify-end;
 }

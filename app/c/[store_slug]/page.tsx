@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
-import { CartProvider } from "@/components/catalog-transactional/CartProvider";
 import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
 
 export const dynamic = "force-dynamic";
@@ -26,17 +25,15 @@ async function CatalogContent({
     data;
 
   return (
-    <CartProvider storeSlug={store.slug}>
-      <TransactionalCatalog
-        store={store}
-        products={products}
-        exchangeRate={exchangeRate}
-        purchaseInfo={purchaseInfo}
-        catalogDesign={catalogDesign}
-        catalogCurrency={catalogCurrency}
-        openCheckoutInitially={openCheckoutInitially}
-      />
-    </CartProvider>
+    <TransactionalCatalog
+      store={store}
+      products={products}
+      exchangeRate={exchangeRate}
+      purchaseInfo={purchaseInfo}
+      catalogDesign={catalogDesign}
+      catalogCurrency={catalogCurrency}
+      openCheckoutInitially={openCheckoutInitially}
+    />
   );
 }
 

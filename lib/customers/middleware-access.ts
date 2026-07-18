@@ -5,9 +5,9 @@ export interface CustomerStoreContext {
   storeSlug: string;
 }
 
-/** Ruta /c/{slug}/cuenta o subrutas. */
+/** Ruta /c/{slug}/cuenta, /perfil o subrutas protegidas. */
 export function parseCustomerAccountPath(pathname: string): { storeSlug: string } | null {
-  const match = pathname.match(/^\/c\/([^/]+)\/cuenta(?:\/|$)/);
+  const match = pathname.match(/^\/c\/([^/]+)\/(?:cuenta|perfil)(?:\/|$)/);
   if (!match?.[1]) return null;
 
   return {

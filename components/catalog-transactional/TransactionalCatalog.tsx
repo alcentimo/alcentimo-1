@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Image from "next/image";
-import { ShoppingBag } from "lucide-react";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
@@ -11,7 +10,7 @@ import { formatExchangeRate } from "@/lib/format";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
-import { CheckoutPanel } from "@/components/catalog-transactional/CheckoutPanel";
+import { CatalogCartHost } from "@/components/catalog-transactional/CatalogCartHost";
 import { isProductOutOfStock } from "@/lib/products/variants";
 import { cn } from "@/lib/cn";
 
@@ -43,21 +42,13 @@ export function TransactionalCatalog({
 }: TransactionalCatalogProps) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
-  const { addItem, itemCount } = useCart();
-  const [cartOpen, setCartOpen] = useState(openCheckoutInitially);
-
-  useEffect(() => {
-    if (openCheckoutInitially) {
-      setCartOpen(true);
-    }
-  }, [openCheckoutInitially]);
+  const { addItem } = useCart();
 
   const availableProducts = useMemo(
     () => products.filter((product) => !isProductOutOfStock(product)),
     [products],
   );
 
-  const whatsappConfigured = Boolean(purchaseInfo.whatsappPhone?.trim());
   const storeInitials = getStoreInitials(store.name);
 
   return (
@@ -103,17 +94,6 @@ export function TransactionalCatalog({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setCartOpen(true)}
-            className="txn-cart-btn"
-          >
-            <ShoppingBag className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Carrito</span>
-            {itemCount > 0 && (
-              <span className="txn-cart-badge">{itemCount}</span>
-            )}
-          </button>
         </div>
       </header>
 
@@ -148,23 +128,11 @@ export function TransactionalCatalog({
         )}
       </main>
 
-      {cartOpen && (
-        <div className="txn-cart-overlay" role="presentation">
-          <button
-            type="button"
-            className="txn-cart-backdrop"
-            aria-label="Cerrar carrito"
-            onClick={() => setCartOpen(false)}
-          />
-          <CheckoutPanel
-            storeSlug={store.slug}
-            storeName={store.name}
-            purchaseInfo={purchaseInfo}
-            whatsappConfigured={whatsappConfigured}
-            onClose={() => setCartOpen(false)}
-          />
-        </div>
-      )}
+      <CatalogCartHost
+        store={store}
+        purchaseInfo={purchaseInfo}
+        openInitially={openCheckoutInitially}
+      />
     </div>
   );
 }

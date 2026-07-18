@@ -112,7 +112,7 @@ export async function middleware(request: NextRequest) {
 
   const authenticatedUser = user ?? null;
 
-  // ── Cuenta cliente: /c/{slug}/cuenta ───────────────────────
+  // ── Área cliente: /c/{slug}/cuenta y /c/{slug}/perfil ───────
   if (isCustomerAccountRoute && customerAccountPath) {
     const { storeSlug } = customerAccountPath;
 
@@ -168,7 +168,7 @@ export async function middleware(request: NextRequest) {
       ) {
         const accountUrl = request.nextUrl.clone();
         accountUrl.pathname =
-          nextPath?.startsWith(`/c/${storeSlug}/cuenta`) && nextPath.startsWith("/c/")
+          nextPath?.startsWith(`/c/${storeSlug}/`) && nextPath.startsWith("/c/")
             ? nextPath
             : buildCustomerAccountPath(storeSlug);
         accountUrl.search = "";
