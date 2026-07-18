@@ -6,7 +6,7 @@ import { PromotionProvider } from "@/components/catalog-transactional/PromotionP
 import { getCartAuthContext } from "@/lib/customers/get-cart-auth-context";
 import { getCatalogPromotionContext } from "@/lib/promotions/get-catalog-promotion";
 import { recordCatalogVisit } from "@/lib/analytics/track-catalog-visit";
-import { getStoreManifestPath, formatPwaManifestName, formatPwaManifestShortName } from "@/lib/pwa/build-store-manifest";
+import { getStoreCatalogManifestPath } from "@/lib/pwa/build-store-manifest";
 import { getCatalogCanonicalUrl } from "@/lib/pwa/catalog-sw-paths";
 import { getRequestOrigin } from "@/lib/pwa/get-request-origin";
 import { getPublicStoreBySlug } from "@/lib/stores";
@@ -27,9 +27,10 @@ export async function generateMetadata({
     return { title: "Catálogo no encontrado" };
   }
 
-  const manifestPath = getStoreManifestPath(store.slug);
+  const manifestPath = getStoreCatalogManifestPath(store.slug);
   const origin = await getRequestOrigin();
   const canonicalUrl = getCatalogCanonicalUrl(store.slug, origin);
+  const storeName = store.name.trim();
   const icons: Metadata["icons"] = [];
 
   if (store.pwa_icon_192_url) {
@@ -56,17 +57,17 @@ export async function generateMetadata({
 
   return {
     metadataBase: new URL(getSiteUrl()),
-    title: `${store.name} — Pedidos`,
-    description: `Catálogo y pedidos de ${store.name}`,
+    title: `${storeName} — Pedidos`,
+    description: `Catálogo y pedidos de ${storeName}`,
     alternates: {
       canonical: canonicalUrl,
     },
     manifest: manifestPath,
-    applicationName: formatPwaManifestName(store.name),
+    applicationName: storeName,
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
-      title: formatPwaManifestShortName(store.name),
+      title: storeName.slice(0, 12),
     },
     icons: icons.length > 0 ? icons : undefined,
   };

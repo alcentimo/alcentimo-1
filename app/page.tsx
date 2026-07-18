@@ -7,6 +7,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import { AdminPwaServiceWorkerRegister } from "@/components/dashboard/AdminPwaServiceWorkerRegister";
 import { RecoveryUrlRedirect } from "@/components/auth/RecoveryUrlRedirect";
 
 const valueBlocks = [
@@ -78,6 +79,7 @@ const plans = [
 export default function Home() {
   return (
     <>
+      <AdminPwaServiceWorkerRegister />
       <RecoveryUrlRedirect />
 
       <header className="fixed inset-x-0 top-0 z-50 border-b border-zinc-200/60 bg-[#FAFAF9]/90 backdrop-blur-md safe-area-inset dark:border-zinc-800/60 dark:bg-zinc-950/90">

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import { getAdminManifestPath } from "@/lib/pwa/build-admin-manifest";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,11 +13,12 @@ export const metadata: Metadata = {
   title: "alcentimo — Inventario y catálogo digital",
   description:
     "Software de gestión de inventario y catálogo digital para comerciantes venezolanos. Precios en USD con conversión automática a bolívares.",
-  applicationName: "alcentimo",
+  applicationName: "Alcentimo Admin",
+  manifest: getAdminManifestPath(),
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "alcentimo",
+    title: "Alcentimo Admin",
   },
   formatDetection: {
     telephone: false,

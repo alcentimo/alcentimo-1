@@ -1,18 +1,19 @@
-import { readRootServiceWorkerScript, rewriteServiceWorkerForCatalogSubpath, SERVICE_WORKER_RESPONSE_HEADERS } from "@/lib/pwa/service-worker-script";
+import { buildCatalogMinimalServiceWorker } from "@/lib/pwa/catalog-minimal-sw";
+import { SERVICE_WORKER_RESPONSE_HEADERS } from "@/lib/pwa/service-worker-script";
 
 interface CatalogServiceWorkerRouteProps {
   params: Promise<{ store_slug: string }>;
 }
 
+/** SW aislado del catálogo cliente (sin precache compartido con admin). */
 export async function GET(_request: Request, { params }: CatalogServiceWorkerRouteProps) {
-  await params;
-
-  const script = rewriteServiceWorkerForCatalogSubpath(await readRootServiceWorkerScript());
+  const { store_slug: storeSlug } = await params;
+  const script = buildCatalogMinimalServiceWorker(storeSlug);
 
   return new Response(script, {
     headers: {
       ...SERVICE_WORKER_RESPONSE_HEADERS,
-      "Service-Worker-Allowed": "/",
+      "Service-Worker-Allowed": `/c/${storeSlug.trim().toLowerCase()}/`,
     },
   });
 }

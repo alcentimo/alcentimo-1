@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import {
   registerCatalogServiceWorkerForInstall,
   scheduleCatalogServiceWorker,
+  unregisterAdminServiceWorkerOnCatalog,
 } from "@/lib/pwa/register-service-worker";
 import { initBeforeInstallPromptCapture } from "@/lib/pwa/before-install-prompt";
 
@@ -14,8 +15,10 @@ interface PwaServiceWorkerRegisterProps {
 export function PwaServiceWorkerRegister({ storeSlug }: PwaServiceWorkerRegisterProps) {
   useEffect(() => {
     initBeforeInstallPromptCapture();
-    registerCatalogServiceWorkerForInstall(storeSlug);
-    scheduleCatalogServiceWorker(storeSlug);
+    void unregisterAdminServiceWorkerOnCatalog().then(() => {
+      registerCatalogServiceWorkerForInstall(storeSlug);
+      scheduleCatalogServiceWorker(storeSlug);
+    });
   }, [storeSlug]);
 
   return null;

@@ -9,6 +9,7 @@ import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin
 import { isStoreOwner } from "@/lib/stores/owner-access";
 import { getCriticalStockCount } from "@/lib/inventory/get-critical-stock-count";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { AdminPwaServiceWorkerRegister } from "@/components/dashboard/AdminPwaServiceWorkerRegister";
 import { BcvSyncAlertBanner } from "@/components/dashboard/BcvSyncAlertBanner";
 import { CountryProvider } from "@/components/providers/CountryProvider";
 
@@ -23,7 +24,12 @@ export default async function DashboardRootLayout({
   const session = await getDashboardSession(supabase);
 
   if (!session) {
-    return <>{children}</>;
+    return (
+      <>
+        <AdminPwaServiceWorkerRegister />
+        {children}
+      </>
+    );
   }
 
   const { authUser, store } = session;
@@ -59,7 +65,9 @@ export default async function DashboardRootLayout({
   }
 
   return (
-    <CountryProvider country={store?.country}>
+    <>
+      <AdminPwaServiceWorkerRegister />
+      <CountryProvider country={store?.country}>
       <DashboardLayout
         storeName={store?.name ?? null}
         storeSlug={store?.slug ?? null}
@@ -76,5 +84,6 @@ export default async function DashboardRootLayout({
         {children}
       </DashboardLayout>
     </CountryProvider>
+    </>
   );
 }

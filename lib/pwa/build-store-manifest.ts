@@ -1,38 +1,16 @@
 import type { Store } from "@/lib/database.types";
-import { PWA_IDENTITY_VERSION } from "@/lib/pwa/constants";
+import { PWA_STORE_IDENTITY_VERSION } from "@/lib/pwa/constants";
+import type { StoreManifestTheme } from "@/lib/pwa/get-store-manifest-theme";
+import type { StoreManifestIcon, WebAppManifest } from "@/lib/pwa/types";
 import { getSiteUrl } from "@/lib/site-url";
-
-export interface StoreManifestIcon {
-  src: string;
-  sizes: string;
-  type: string;
-  purpose: string;
-}
-
-export interface StoreWebManifest {
-  id: string;
-  name: string;
-  short_name: string;
-  description: string;
-  start_url: string;
-  scope: string;
-  display: string;
-  display_override?: string[];
-  orientation: string;
-  background_color: string;
-  theme_color: string;
-  lang: string;
-  icons: StoreManifestIcon[];
-}
 
 function normalizeOrigin(origin: string): string {
   return origin.replace(/\/$/, "");
 }
 
 /**
- * Rutas PWA del catálogo.
- * - start_url/scope en path relativo (resuelto contra el origen del manifest): mejor compatibilidad móvil.
- * - scope cubre /c/{slug}/, /c/{slug}/cuenta, /c/{slug}/perfil, etc.
+ * PWA del cliente final: scope estricto /c/{slug}/.
+ * id y start_url únicos por tienda (Android no fusiona apps).
  */
 export function buildStoreCatalogPwaPaths(storeSlug: string, origin?: string) {
   const slug = storeSlug.trim().toLowerCase();
@@ -40,22 +18,10 @@ export function buildStoreCatalogPwaPaths(storeSlug: string, origin?: string) {
   const catalogPath = `/c/${slug}/`;
 
   return {
-    id: `${base}${catalogPath}?pwa_id=${PWA_IDENTITY_VERSION}`,
+    id: `${base}${catalogPath}?pwa_id=store-${PWA_STORE_IDENTITY_VERSION}-${slug}`,
     scope: catalogPath,
     startUrl: catalogPath,
   };
-}
-
-/** Nombre visible distinto para que el móvil no fusione con instalaciones anteriores. */
-export function formatPwaManifestName(storeName: string): string {
-  return `${storeName.trim()} · App`;
-}
-
-export function formatPwaManifestShortName(storeName: string): string {
-  const base = storeName.trim();
-  const withSuffix = `${base} ·`;
-  if (withSuffix.length <= 12) return withSuffix;
-  return `${base.slice(0, 10).trimEnd()} ·`;
 }
 
 function absoluteAssetUrl(src: string, origin: string): string {
@@ -65,7 +31,6 @@ function absoluteAssetUrl(src: string, origin: string): string {
 }
 
 function buildManifestIcons(store: Store, origin: string): StoreManifestIcon[] {
-  const icons: StoreManifestIcon[] = [];
   const base = normalizeOrigin(origin);
 
   const icon192 = store.pwa_icon_192_url
@@ -78,14 +43,13 @@ function buildManifestIcons(store: Store, origin: string): StoreManifestIcon[] {
       ? absoluteAssetUrl(store.logo_url, base)
       : `${base}/icon-512x512.png`;
 
-  icons.push({
-    src: icon192,
-    sizes: "192x192",
-    type: "image/png",
-    purpose: "any",
-  });
-
-  icons.push(
+  return [
+    {
+      src: icon192,
+      sizes: "192x192",
+      type: "image/png",
+      purpose: "any",
+    },
     {
       src: icon512,
       sizes: "512x512",
@@ -98,30 +62,30 @@ function buildManifestIcons(store: Store, origin: string): StoreManifestIcon[] {
       type: "image/png",
       purpose: "maskable",
     },
-  );
-
-  return icons;
+  ];
 }
 
 export function buildStoreWebManifest(
   store: Store,
   origin?: string,
-): StoreWebManifest {
+  theme?: StoreManifestTheme,
+): WebAppManifest {
   const { id, scope, startUrl } = buildStoreCatalogPwaPaths(store.slug, origin);
   const manifestOrigin = normalizeOrigin(origin ?? getSiteUrl());
+  const storeName = store.name.trim();
 
   return {
     id,
-    name: formatPwaManifestName(store.name),
-    short_name: formatPwaManifestShortName(store.name),
-    description: `Catálogo y pedidos de ${store.name}`,
+    name: storeName,
+    short_name: storeName.slice(0, 12),
+    description: `Catálogo y pedidos de ${storeName}`,
     start_url: startUrl,
     scope,
     display: "standalone",
     display_override: ["standalone", "fullscreen"],
     orientation: "portrait-primary",
-    background_color: "#ffffff",
-    theme_color: "#0d9488",
+    background_color: theme?.background_color ?? "#ffffff",
+    theme_color: theme?.theme_color ?? "#0d9488",
     lang: "es",
     icons: buildManifestIcons(store, manifestOrigin),
   };
@@ -130,14 +94,14 @@ export function buildStoreWebManifest(
 export function buildFallbackStoreWebManifest(
   storeSlug: string,
   origin?: string,
-): StoreWebManifest {
+): WebAppManifest {
   const { id, scope, startUrl } = buildStoreCatalogPwaPaths(storeSlug, origin);
   const manifestOrigin = normalizeOrigin(origin ?? getSiteUrl());
 
   return {
     id,
-    name: formatPwaManifestName("Catálogo"),
-    short_name: formatPwaManifestShortName("Catálogo"),
+    name: "Catálogo",
+    short_name: "Catálogo",
     description: "Catálogo de tienda",
     start_url: startUrl,
     scope,
@@ -170,11 +134,7 @@ export function buildFallbackStoreWebManifest(
   };
 }
 
-export function getStoreManifestPath(storeSlug: string): string {
-  const slug = storeSlug.trim().toLowerCase();
-  return `/manifest.json?store=${encodeURIComponent(slug)}`;
-}
-
+/** Manifiesto exclusivo del catálogo cliente (no compartir con /manifest.json admin). */
 export function getStoreCatalogManifestPath(storeSlug: string): string {
   return `/c/${storeSlug.trim().toLowerCase()}/manifest.json`;
 }
