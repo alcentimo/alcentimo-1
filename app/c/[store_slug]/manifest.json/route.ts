@@ -2,6 +2,8 @@ import { getPublicStoreBySlug } from "@/lib/stores";
 import {
   buildStoreCatalogPwaPaths,
   buildStoreWebManifest,
+  formatPwaManifestName,
+  formatPwaManifestShortName,
 } from "@/lib/pwa/build-store-manifest";
 import { getRequestOrigin } from "@/lib/pwa/get-request-origin";
 
@@ -20,8 +22,8 @@ export async function GET(_request: Request, { params }: CatalogManifestRoutePro
         const paths = buildStoreCatalogPwaPaths(storeSlug, origin);
         return {
           id: paths.id,
-          name: "Catálogo",
-          short_name: "Catálogo",
+          name: formatPwaManifestName("Catálogo"),
+          short_name: formatPwaManifestShortName("Catálogo"),
           description: "Catálogo de tienda",
           start_url: paths.startUrl,
           scope: paths.scope,
@@ -37,7 +39,7 @@ export async function GET(_request: Request, { params }: CatalogManifestRoutePro
   return Response.json(manifest, {
     headers: {
       "Content-Type": "application/manifest+json",
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": "no-cache, must-revalidate",
     },
   });
 }

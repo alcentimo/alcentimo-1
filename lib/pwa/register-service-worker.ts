@@ -50,6 +50,10 @@ export async function registerCatalogServiceWorker(): Promise<void> {
     return;
   }
 
+  if (!window.isSecureContext) {
+    return;
+  }
+
   try {
     const storedVersion = localStorage.getItem(PWA_RESET_STORAGE_KEY);
     const needsReset = storedVersion !== PWA_RESET_VERSION;

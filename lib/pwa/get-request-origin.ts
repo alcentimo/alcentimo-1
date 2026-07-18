@@ -16,7 +16,11 @@ export async function getRequestOrigin(): Promise<string> {
     const proto =
       headersList.get("x-forwarded-proto")?.split(",")[0]?.trim() ?? "https";
 
-    return `${proto}://${host}`;
+    // Vercel redirige HTTP→HTTPS en el edge; el manifest/SW deben usar siempre https.
+    const safeProto =
+      process.env.NODE_ENV === "production" ? "https" : proto;
+
+    return `${safeProto}://${host}`;
   } catch {
     return getSiteUrl();
   }

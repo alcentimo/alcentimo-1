@@ -1,4 +1,5 @@
 import type { Store } from "@/lib/database.types";
+import { PWA_IDENTITY_VERSION } from "@/lib/pwa/constants";
 import { getSiteUrl } from "@/lib/site-url";
 
 export interface StoreManifestIcon {
@@ -38,10 +39,22 @@ export function buildStoreCatalogPwaPaths(storeSlug: string, origin?: string) {
   const catalogPath = `/c/${slug}/`;
 
   return {
-    id: `${base}${catalogPath}`,
+    id: `${base}${catalogPath}?pwa_id=${PWA_IDENTITY_VERSION}`,
     scope: catalogPath,
     startUrl: catalogPath,
   };
+}
+
+/** Nombre visible distinto para que el móvil no fusione con instalaciones anteriores. */
+export function formatPwaManifestName(storeName: string): string {
+  return `${storeName.trim()} · App`;
+}
+
+export function formatPwaManifestShortName(storeName: string): string {
+  const base = storeName.trim();
+  const withSuffix = `${base} ·`;
+  if (withSuffix.length <= 12) return withSuffix;
+  return `${base.slice(0, 10).trimEnd()} ·`;
 }
 
 export function buildStoreWebManifest(
@@ -89,8 +102,8 @@ export function buildStoreWebManifest(
 
   return {
     id,
-    name: store.name,
-    short_name: store.name.slice(0, 12),
+    name: formatPwaManifestName(store.name),
+    short_name: formatPwaManifestShortName(store.name),
     description: `Catálogo y pedidos de ${store.name}`,
     start_url: startUrl,
     scope,

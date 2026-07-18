@@ -162,6 +162,28 @@ const nextConfig: NextConfig = {
         source: "/api/support/:path*",
         headers: oauthSecurityHeaders,
       },
+      {
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+          {
+            key: "Service-Worker-Allowed",
+            value: "/",
+          },
+        ],
+      },
+      {
+        source: "/c/:store_slug/manifest.json",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, must-revalidate",
+          },
+        ],
+      },
     ];
   },
   async redirects() {
