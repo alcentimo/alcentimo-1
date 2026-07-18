@@ -1,4 +1,5 @@
 import type { Store } from "@/lib/database.types";
+import { getSiteUrl } from "@/lib/site-url";
 
 export interface StoreManifestIcon {
   src: string;
@@ -22,21 +23,28 @@ export interface StoreWebManifest {
   icons: StoreManifestIcon[];
 }
 
-/** Rutas PWA relativas al origen — requerido para que el acceso directo abra el catálogo. */
-export function buildStoreCatalogPwaPaths(storeSlug: string) {
+function normalizeOrigin(origin: string): string {
+  return origin.replace(/\/$/, "");
+}
+
+/** URLs absolutas del catálogo para start_url/scope (compatibles con accesos directos móviles). */
+export function buildStoreCatalogPwaPaths(storeSlug: string, origin?: string) {
   const slug = storeSlug.trim().toLowerCase();
-  const scope = `/c/${slug}/`;
+  const base = normalizeOrigin(origin ?? getSiteUrl());
+  const catalogPath = `/c/${slug}/`;
 
   return {
-    id: scope,
-    scope,
-    // Query param no afecta el scope; ayuda a distinguir instalaciones en analíticas.
-    startUrl: `${scope}?source=pwa`,
+    id: `${base}${catalogPath}`,
+    scope: `${base}${catalogPath}`,
+    startUrl: `${base}${catalogPath}`,
   };
 }
 
-export function buildStoreWebManifest(store: Store): StoreWebManifest {
-  const { id, scope, startUrl } = buildStoreCatalogPwaPaths(store.slug);
+export function buildStoreWebManifest(
+  store: Store,
+  origin?: string,
+): StoreWebManifest {
+  const { id, scope, startUrl } = buildStoreCatalogPwaPaths(store.slug, origin);
 
   const icons: StoreManifestIcon[] = [];
 
@@ -92,5 +100,5 @@ export function buildStoreWebManifest(store: Store): StoreWebManifest {
 }
 
 export function getStoreManifestPath(storeSlug: string): string {
-  return `/c/${storeSlug.trim().toLowerCase()}/manifest.webmanifest`;
+  return `/c/${storeSlug.trim().toLowerCase()}/manifest.json`;
 }

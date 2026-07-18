@@ -5,18 +5,48 @@ const withPWA = require("next-pwa")({
   disable: process.env.NODE_ENV === "development",
   register: true,
   skipWaiting: true,
+  fallbacks: {
+    document: "/offline.html",
+  },
   runtimeCaching: [
     {
       urlPattern: ({ request, url }: { request: Request; url: URL }) =>
         request.mode === "navigate" && url.pathname.startsWith("/c/"),
       handler: "NetworkFirst",
       options: {
-        cacheName: "public-catalog-pages",
+        cacheName: "catalog-navigations",
+        networkTimeoutSeconds: 8,
         expiration: {
-          maxEntries: 16,
-          maxAgeSeconds: 60,
+          maxEntries: 32,
+          maxAgeSeconds: 24 * 60 * 60,
         },
-        networkTimeoutSeconds: 10,
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+    {
+      urlPattern: /\/_next\/static\/.*/i,
+      handler: "CacheFirst",
+      options: {
+        cacheName: "next-static-assets",
+        expiration: {
+          maxEntries: 128,
+          maxAgeSeconds: 30 * 24 * 60 * 60,
+        },
+      },
+    },
+    {
+      urlPattern: ({ url }: { url: URL }) =>
+        url.pathname.startsWith("/c/") &&
+        /\.(?:png|jpg|jpeg|webp|svg|gif|ico)$/i.test(url.pathname),
+      handler: "StaleWhileRevalidate",
+      options: {
+        cacheName: "catalog-images",
+        expiration: {
+          maxEntries: 64,
+          maxAgeSeconds: 7 * 24 * 60 * 60,
+        },
       },
     },
   ],
@@ -80,15 +110,6 @@ const nextConfig: NextConfig = {
       {
         source: "/api/integrations/:path*",
         headers: oauthSecurityHeaders,
-      },
-      {
-        source: "/c/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "no-store, no-cache, must-revalidate",
-          },
-        ],
       },
       {
         source: "/dashboard/:path*",

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { CatalogTabBar } from "@/components/catalog-transactional/CatalogTabBar";
 import { CustomerPromoBanner } from "@/components/catalog-transactional/CustomerPromoBanner";
 import { InstallPwaBanner } from "@/components/catalog-transactional/InstallPwaBanner";
+import { PwaServiceWorkerRegister } from "@/components/catalog-transactional/PwaServiceWorkerRegister";
 import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
 
 interface CatalogAppShellProps {
@@ -23,6 +24,7 @@ export function CatalogAppShell({
 
   return (
     <>
+      <PwaServiceWorkerRegister />
       <InstallPwaBanner
         storeSlug={storeSlug}
         storeName={storeName}
