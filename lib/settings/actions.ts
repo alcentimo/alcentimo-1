@@ -8,7 +8,7 @@ import {
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
-import { uploadStoreAssetImage, uploadStoreLogoImage } from "@/lib/storage";
+import { uploadStoreAssetImage, uploadStoreLogoImage, removeStoreLogoAssets } from "@/lib/storage";
 import { isValidStoreSlug } from "@/lib/stores/slug";
 import { slugify } from "@/lib/slugify";
 import { syncStoreProductCategories } from "@/lib/products/rubro-categories";
@@ -236,7 +236,7 @@ export async function checkStoreSlugAvailability(
 
 export async function uploadStoreLogo(
   formData: FormData,
-): Promise<{ url?: string; error?: string }> {
+): Promise<{ url?: string; warning?: string; error?: string }> {
   const supabase = await createClient();
   const auth = await requireAuthStore(supabase);
 
@@ -256,7 +256,11 @@ export async function uploadStoreLogo(
 
   const { error: updateError } = await supabase
     .from("stores")
-    .update({ logo_url: upload.url })
+    .update({
+      logo_url: upload.url,
+      pwa_icon_192_url: upload.pwaIcon192Url ?? null,
+      pwa_icon_512_url: upload.pwaIcon512Url ?? null,
+    })
     .eq("id", auth.store.id);
 
   if (updateError) {
@@ -265,7 +269,10 @@ export async function uploadStoreLogo(
 
   revalidatePublicStorePaths(auth.store.slug);
 
-  return { url: upload.url };
+  return {
+    url: upload.url,
+    warning: upload.warning,
+  };
 }
 
 export async function clearStoreLogo(): Promise<SettingsActionResult> {
@@ -276,9 +283,19 @@ export async function clearStoreLogo(): Promise<SettingsActionResult> {
     return { error: auth.error };
   }
 
+  try {
+    await removeStoreLogoAssets(supabase, auth.store.id);
+  } catch {
+    // Si falla el borrado en storage, igual limpiamos las URLs en la tienda.
+  }
+
   const { error } = await supabase
     .from("stores")
-    .update({ logo_url: null })
+    .update({
+      logo_url: null,
+      pwa_icon_192_url: null,
+      pwa_icon_512_url: null,
+    })
     .eq("id", auth.store.id);
 
   if (error) {
