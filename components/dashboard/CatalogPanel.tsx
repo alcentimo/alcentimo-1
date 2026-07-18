@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
 import type { CatalogListItem, Store } from "@/lib/database.types";
+import type { CatalogStockFilter } from "@/lib/inventory/stock-status";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 
 interface CatalogPanelProps {
@@ -11,6 +12,10 @@ interface CatalogPanelProps {
   exchangeRate: number | null;
   initialProducts: CatalogListItem[];
   productFormConfig: StoreProductFormConfig;
+}
+
+function resolveStockFilter(value: string | null): CatalogStockFilter {
+  return value === "bajo" ? "critical" : "all";
 }
 
 export function CatalogPanel({
@@ -24,6 +29,13 @@ export function CatalogPanel({
   const [autoOpenCreate, setAutoOpenCreate] = useState(
     () => searchParams.get("nuevo") === "1",
   );
+  const [stockFilter, setStockFilter] = useState<CatalogStockFilter>(() =>
+    resolveStockFilter(searchParams.get("stock")),
+  );
+
+  useEffect(() => {
+    setStockFilter(resolveStockFilter(searchParams.get("stock")));
+  }, [searchParams]);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -52,6 +64,22 @@ export function CatalogPanel({
     }
   }, [searchParams, router]);
 
+  function handleStockFilterChange(nextFilter: CatalogStockFilter) {
+    setStockFilter(nextFilter);
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextFilter === "critical") {
+      params.set("stock", "bajo");
+    } else {
+      params.delete("stock");
+    }
+
+    const query = params.toString();
+    router.replace(query ? `/dashboard/catalogo?${query}` : "/dashboard/catalogo", {
+      scroll: false,
+    });
+  }
+
   return (
     <InventoryPanel
       store={store}
@@ -60,6 +88,8 @@ export function CatalogPanel({
       productFormConfig={productFormConfig}
       autoOpenCreate={autoOpenCreate}
       onAutoOpenCreateHandled={() => setAutoOpenCreate(false)}
+      stockFilter={stockFilter}
+      onStockFilterChange={handleStockFilterChange}
     />
   );
 }

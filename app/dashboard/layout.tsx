@@ -7,6 +7,7 @@ import { bcvRateAgeHours, isBcvRateStale } from "@/lib/exchange-rate/rate-freshn
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { isStoreOwner } from "@/lib/stores/owner-access";
+import { getCriticalStockCount } from "@/lib/inventory/get-critical-stock-count";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { BcvSyncAlertBanner } from "@/components/dashboard/BcvSyncAlertBanner";
 import { CountryProvider } from "@/components/providers/CountryProvider";
@@ -31,10 +32,12 @@ export default async function DashboardRootLayout({
   } = await supabase.auth.getUser();
   const isAdmin = isSupportAdmin(resolveAuthEmail(authAccount));
   const isStoreOwnerUser = store ? isStoreOwner(store, authUser.id) : false;
-  const [bcvSyncAlert, exchangeRateRow, tasaRow] = await Promise.all([
+  const [bcvSyncAlert, exchangeRateRow, tasaRow, criticalStockCount] =
+    await Promise.all([
     getActiveBcvSyncAlert(supabase),
     getCurrentExchangeRate(),
     getLatestUsdTasa(supabase),
+    store ? getCriticalStockCount(store.slug) : Promise.resolve(0),
   ]);
 
   const exchangeRate = exchangeRateRow?.rate ?? tasaRow?.tasa ?? null;
@@ -67,6 +70,7 @@ export default async function DashboardRootLayout({
         exchangeRateStale={exchangeRateStale}
         isSupportAdmin={isAdmin}
         isStoreOwner={isStoreOwnerUser}
+        criticalStockCount={criticalStockCount}
       >
         {bcvSyncAlert ? <BcvSyncAlertBanner alert={bcvSyncAlert} /> : null}
         {children}

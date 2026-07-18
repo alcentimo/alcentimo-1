@@ -24,8 +24,12 @@ import type { CatalogListItem } from "@/lib/database.types";
 import type { Store } from "@/lib/database.types";
 import { formatUsd, formatVes } from "@/lib/format";
 import {
-  getLowStockThreshold,
+  CRITICAL_STOCK_THRESHOLD,
+  getProductStockQuantity,
+  isCriticalStock,
   isOutOfStock,
+  matchesCriticalStockFilter,
+  type CatalogStockFilter,
 } from "@/lib/inventory/stock-status";
 import { deleteProduct, fetchInventoryProducts, adjustProductStock } from "@/lib/products/actions";
 import { hasMultipleVariants } from "@/lib/products/variants";
@@ -77,21 +81,21 @@ interface InventoryPanelProps {
   productFormConfig: StoreProductFormConfig;
   autoOpenCreate?: boolean;
   onAutoOpenCreateHandled?: () => void;
+  stockFilter?: CatalogStockFilter;
+  onStockFilterChange?: (filter: CatalogStockFilter) => void;
 }
 
 const StockBadge = memo(function StockBadge({
-  available,
-  threshold,
+  stockQuantity,
 }: {
-  available: number;
-  threshold: number;
+  stockQuantity: number;
 }) {
-  if (isOutOfStock({ available_stock: available })) {
+  if (stockQuantity <= 0) {
     return <span className="stock-badge stock-badge-out">Agotado</span>;
   }
 
-  if (available <= threshold) {
-    return <span className="stock-badge stock-badge-low">Stock bajo</span>;
+  if (stockQuantity <= CRITICAL_STOCK_THRESHOLD) {
+    return <span className="stock-badge stock-badge-critical">Stock bajo</span>;
   }
 
   return null;
@@ -210,74 +214,98 @@ const InventoryStockControls = memo(function InventoryStockControls({
   productName,
   productId,
   availableStock,
-  threshold,
+  stockQuantity,
   hasVariants,
   adjustingStock,
   onStockAdjust,
+  onEditStock,
+  showEditStockButton = false,
   layout = "inline",
 }: {
   productName: string;
   productId: string;
   availableStock: number;
-  threshold: number;
+  stockQuantity: number;
   hasVariants: boolean;
   adjustingStock: boolean;
   onStockAdjust: (productId: string, delta: number) => void;
+  onEditStock?: (productId: string) => void;
+  showEditStockButton?: boolean;
   layout?: "inline" | "spread";
 }) {
-  const out = isOutOfStock({ available_stock: availableStock });
-  const low = !out && availableStock <= threshold;
+  const out = isOutOfStock({
+    available_stock: availableStock,
+    stock_quantity: stockQuantity,
+  });
+  const critical = isCriticalStock({ stock_quantity: stockQuantity });
   const quickAdjustDisabled = hasVariants || adjustingStock;
   const containerClass =
     layout === "spread"
-      ? "flex items-center justify-between gap-3"
-      : "flex items-center gap-1";
+      ? "flex flex-col gap-2"
+      : "flex flex-col gap-2";
 
   return (
     <div className={containerClass}>
-      {layout === "spread" && (
-        <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-          Stock
-        </span>
-      )}
-      <div className="flex items-center gap-1">
-        {!hasVariants && (
-          <button
-            type="button"
-            onClick={() => onStockAdjust(productId, -1)}
-            disabled={quickAdjustDisabled || availableStock <= 0}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
-            aria-label={`Restar stock de ${productName}`}
-          >
-            <Minus className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-        )}
-        <div className="flex min-w-[2.75rem] flex-col items-center">
-          <span
-            className={`text-sm font-semibold tabular-nums ${
-              out
-                ? "text-zinc-400"
-                : low
-                  ? "text-red-600 dark:text-red-400"
-                  : "text-zinc-900 dark:text-zinc-50"
-            }`}
-          >
-            {availableStock}
+      <div
+        className={
+          layout === "spread"
+            ? "flex items-center justify-between gap-3"
+            : "flex items-center gap-1"
+        }
+      >
+        {layout === "spread" && (
+          <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            Stock
           </span>
-          <StockBadge available={availableStock} threshold={threshold} />
-        </div>
-        {!hasVariants && (
-          <button
-            type="button"
-            onClick={() => onStockAdjust(productId, 1)}
-            disabled={quickAdjustDisabled}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
-            aria-label={`Sumar stock de ${productName}`}
-          >
-            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
         )}
+        <div className="flex items-center gap-1">
+          {!hasVariants && (
+            <button
+              type="button"
+              onClick={() => onStockAdjust(productId, -1)}
+              disabled={quickAdjustDisabled || availableStock <= 0}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              aria-label={`Restar stock de ${productName}`}
+            >
+              <Minus className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          )}
+          <div className="flex min-w-[2.75rem] flex-col items-center">
+            <span
+              className={`text-sm font-semibold tabular-nums ${
+                out
+                  ? "text-zinc-400"
+                  : critical
+                    ? "text-orange-600 dark:text-orange-400"
+                    : "text-zinc-900 dark:text-zinc-50"
+              }`}
+            >
+              {stockQuantity}
+            </span>
+            <StockBadge stockQuantity={stockQuantity} />
+          </div>
+          {!hasVariants && (
+            <button
+              type="button"
+              onClick={() => onStockAdjust(productId, 1)}
+              disabled={quickAdjustDisabled}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              aria-label={`Sumar stock de ${productName}`}
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
       </div>
+      {showEditStockButton && onEditStock ? (
+        <button
+          type="button"
+          onClick={() => onEditStock(productId)}
+          className="inventory-edit-stock-btn"
+        >
+          Editar stock
+        </button>
+      ) : null}
     </div>
   );
 });
@@ -288,21 +316,26 @@ const InventoryRow = memo(function InventoryRow({
   onDelete,
   onStockAdjust,
   adjustingStock,
+  emphasizeCriticalStock = false,
 }: {
   product: CatalogListItem;
   onEdit: (productId: string) => void;
   onDelete: (productId: string) => void;
   onStockAdjust: (productId: string, delta: number) => void;
   adjustingStock: boolean;
+  emphasizeCriticalStock?: boolean;
 }) {
-  const threshold = getLowStockThreshold(product);
-  const out = isOutOfStock({ available_stock: product.available_stock });
-  const low = !out && product.available_stock <= threshold;
+  const stockQuantity = getProductStockQuantity(product);
+  const out = isOutOfStock({
+    available_stock: product.available_stock,
+    stock_quantity: stockQuantity,
+  });
+  const critical = matchesCriticalStockFilter(product);
   const productHasVariants = hasMultipleVariants(product);
 
   return (
     <tr
-      className={`inventory-row group ${low ? "inventory-row-low-stock" : ""} ${out ? "inventory-row-out-stock" : ""}`}
+      className={`inventory-row group ${critical ? "inventory-row-low-stock" : ""} ${out ? "inventory-row-out-stock" : ""}`}
     >
       <td className="inventory-td w-12">
         <ProductThumb name={product.product_name} thumbUrl={product.thumb_url} />
@@ -324,10 +357,12 @@ const InventoryRow = memo(function InventoryRow({
           productName={product.product_name}
           productId={product.product_id}
           availableStock={product.available_stock}
-          threshold={threshold}
+          stockQuantity={stockQuantity}
           hasVariants={productHasVariants}
           adjustingStock={adjustingStock}
           onStockAdjust={onStockAdjust}
+          onEditStock={onEdit}
+          showEditStockButton={emphasizeCriticalStock || critical}
         />
       </td>
       <td className="inventory-td">
@@ -354,21 +389,26 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
   onDelete,
   onStockAdjust,
   adjustingStock,
+  emphasizeCriticalStock = false,
 }: {
   product: CatalogListItem;
   onEdit: (productId: string) => void;
   onDelete: (productId: string) => void;
   onStockAdjust: (productId: string, delta: number) => void;
   adjustingStock: boolean;
+  emphasizeCriticalStock?: boolean;
 }) {
-  const threshold = getLowStockThreshold(product);
-  const out = isOutOfStock({ available_stock: product.available_stock });
-  const low = !out && product.available_stock <= threshold;
+  const stockQuantity = getProductStockQuantity(product);
+  const out = isOutOfStock({
+    available_stock: product.available_stock,
+    stock_quantity: stockQuantity,
+  });
+  const critical = matchesCriticalStockFilter(product);
   const productHasVariants = hasMultipleVariants(product);
 
   return (
     <article
-      className={`inventory-mobile-card ${low ? "inventory-mobile-card-low" : ""} ${out ? "inventory-mobile-card-out" : ""}`}
+      className={`inventory-mobile-card ${critical ? "inventory-mobile-card-low" : ""} ${out ? "inventory-mobile-card-out" : ""}`}
     >
       <div className="flex items-start gap-3">
         <ProductThumb
@@ -408,10 +448,12 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
           productName={product.product_name}
           productId={product.product_id}
           availableStock={product.available_stock}
-          threshold={threshold}
+          stockQuantity={stockQuantity}
           hasVariants={productHasVariants}
           adjustingStock={adjustingStock}
           onStockAdjust={onStockAdjust}
+          onEditStock={onEdit}
+          showEditStockButton={emphasizeCriticalStock || critical}
           layout="spread"
         />
       </div>
@@ -426,6 +468,8 @@ export function InventoryPanel({
   productFormConfig,
   autoOpenCreate = false,
   onAutoOpenCreateHandled,
+  stockFilter = "all",
+  onStockFilterChange,
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
   const [search, setSearch] = useState("");
@@ -469,9 +513,16 @@ export function InventoryPanel({
         (product.category_name?.toLowerCase().includes(q) ?? false);
       const matchesCategory =
         category === "all" || product.category_name === category;
-      return matchesSearch && matchesCategory;
+      const matchesStock =
+        stockFilter === "all" || matchesCriticalStockFilter(product);
+      return matchesSearch && matchesCategory && matchesStock;
     });
-  }, [products, search, category]);
+  }, [products, search, category, stockFilter]);
+
+  const criticalStockCount = useMemo(
+    () => products.filter(matchesCriticalStockFilter).length,
+    [products],
+  );
 
   const productById = useMemo(() => {
     const map = new Map<string, CatalogListItem>();
@@ -657,7 +708,9 @@ export function InventoryPanel({
     if (filtered.length === 0) {
       return (
         <p className="py-10 text-center text-xs text-zinc-500">
-          No hay productos que coincidan con tu búsqueda.
+          {stockFilter === "critical"
+            ? "No hay productos con stock crítico en este momento."
+            : "No hay productos que coincidan con tu búsqueda."}
         </p>
       );
     }
@@ -672,6 +725,7 @@ export function InventoryPanel({
           onDelete={handleDeleteRequest}
           onStockAdjust={handleStockAdjust}
           adjustingStock={isAdjusting}
+          emphasizeCriticalStock={stockFilter === "critical"}
         />
       );
     });
@@ -681,6 +735,7 @@ export function InventoryPanel({
     openEdit,
     handleDeleteRequest,
     handleStockAdjust,
+    stockFilter,
   ]);
 
   return (
@@ -857,6 +912,40 @@ export function InventoryPanel({
         </p>
       )}
 
+      {stockFilter === "critical" ? (
+        <div className="inventory-critical-banner mb-4" role="status">
+          <p>
+            Mostrando <strong>{filtered.length}</strong> producto
+            {filtered.length === 1 ? "" : "s"} con stock crítico (≤{" "}
+            {CRITICAL_STOCK_THRESHOLD} unidades).
+          </p>
+          {onStockFilterChange ? (
+            <button
+              type="button"
+              onClick={() => onStockFilterChange("all")}
+              className="inventory-critical-banner-action"
+            >
+              Ver catálogo completo
+            </button>
+          ) : null}
+        </div>
+      ) : criticalStockCount > 0 && onStockFilterChange ? (
+        <div className="inventory-critical-hint mb-4" role="status">
+          <p>
+            Tienes{" "}
+            <strong className="tabular-nums">{criticalStockCount}</strong>{" "}
+            producto{criticalStockCount === 1 ? "" : "s"} con bajo stock.
+          </p>
+          <button
+            type="button"
+            onClick={() => onStockFilterChange("critical")}
+            className="inventory-critical-banner-action"
+          >
+            Ver productos críticos
+          </button>
+        </div>
+      ) : null}
+
       {exportError && (
         <p className="mb-3 text-xs text-red-600 dark:text-red-400" role="alert">
           {exportError}
@@ -910,7 +999,9 @@ export function InventoryPanel({
                       colSpan={5}
                       className="inventory-td inventory-td-dense py-10 text-center text-xs text-zinc-500"
                     >
-                      No hay productos que coincidan con tu búsqueda.
+                      {stockFilter === "critical"
+                        ? "No hay productos con stock crítico en este momento."
+                        : "No hay productos que coincidan con tu búsqueda."}
                     </td>
                   </tr>
                 ) : (
@@ -922,6 +1013,7 @@ export function InventoryPanel({
                       onDelete={handleDeleteRequest}
                       onStockAdjust={handleStockAdjust}
                       adjustingStock={adjustingProductId === product.product_id}
+                      emphasizeCriticalStock={stockFilter === "critical"}
                     />
                   ))
                 )}

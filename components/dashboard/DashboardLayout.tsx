@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
+import { DashboardCriticalStockAlert } from "@/components/dashboard/DashboardCriticalStockAlert";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ interface DashboardLayoutProps {
   exchangeRateStale?: boolean;
   isSupportAdmin?: boolean;
   isStoreOwner?: boolean;
+  criticalStockCount?: number;
 }
 
 function isStandaloneAuthPath(pathname: string): boolean {
@@ -39,6 +41,7 @@ function DashboardShell({
   exchangeRateStale = false,
   isSupportAdmin = false,
   isStoreOwner = false,
+  criticalStockCount = 0,
 }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -108,11 +111,14 @@ function DashboardShell({
               className="lg:hidden"
             />
           </div>
-          <DashboardExchangeRateBadge
-            rate={exchangeRate}
-            updatedAt={exchangeRateUpdatedAt}
-            stale={exchangeRateStale}
-          />
+          <div className="flex shrink-0 items-center gap-2">
+            <DashboardCriticalStockAlert count={criticalStockCount} />
+            <DashboardExchangeRateBadge
+              rate={exchangeRate}
+              updatedAt={exchangeRateUpdatedAt}
+              stale={exchangeRateStale}
+            />
+          </div>
         </header>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 safe-area-inset sm:p-7 lg:p-9">
