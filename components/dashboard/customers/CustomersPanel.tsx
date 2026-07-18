@@ -121,15 +121,15 @@ export function CustomersPanel({ customers, storeName }: CustomersPanelProps) {
             </div>
           </div>
 
-          <div className="customers-mobile-list space-y-3 lg:hidden">
+          <div className="customers-mobile-list lg:hidden">
             {filteredCustomers.map((customer) => (
               <article key={customer.id} className="customers-mobile-card">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h2 className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="customers-table-name truncate">
                       {customer.displayName?.trim() || "Sin nombre"}
                     </h2>
-                    <p className="mt-0.5 text-xs text-zinc-500">
+                    <p className="customers-table-meta truncate">
                       {customer.phone?.trim() || "Sin teléfono"}
                     </p>
                   </div>
@@ -139,22 +139,22 @@ export function CustomersPanel({ customers, storeName }: CustomersPanelProps) {
                     storeName={storeName}
                   />
                 </div>
-                <dl className="mt-4 grid grid-cols-3 gap-3 text-xs">
+                <dl className="customers-mobile-metrics">
                   <div>
-                    <dt className="text-zinc-500">Pedidos</dt>
-                    <dd className="mt-0.5 font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+                    <dt className="customers-summary-label">Pedidos</dt>
+                    <dd className="customers-mobile-metric-value">
                       {customer.orderCount}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-zinc-500">Gastado</dt>
-                    <dd className="mt-0.5 font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+                    <dt className="customers-summary-label">Gastado</dt>
+                    <dd className="customers-mobile-metric-value">
                       {formatUsd(customer.totalSpentUsd)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-zinc-500">Última compra</dt>
-                    <dd className="mt-0.5 font-medium text-zinc-700 dark:text-zinc-300">
+                    <dt className="customers-summary-label">Última compra</dt>
+                    <dd className="customers-mobile-metric-date truncate">
                       {formatCustomerDate(customer.lastOrderAt)}
                     </dd>
                   </div>
@@ -163,48 +163,62 @@ export function CustomersPanel({ customers, storeName }: CustomersPanelProps) {
             ))}
           </div>
 
-          <div className="orders-ops-table-shell hidden lg:block">
-            <table className="orders-ops-table customers-table">
+          <div className="customers-table-shell hidden lg:block">
+            <table className="customers-table">
+              <colgroup>
+                <col className="customers-col-name" />
+                <col className="customers-col-phone" />
+                <col className="customers-col-numeric" />
+                <col className="customers-col-numeric" />
+                <col className="customers-col-date" />
+                <col className="customers-col-action" />
+              </colgroup>
               <thead>
                 <tr>
                   <th scope="col">Cliente</th>
                   <th scope="col">Teléfono</th>
-                  <th scope="col" className="text-right">
+                  <th scope="col" className="customers-table-th-numeric">
                     Pedidos
                   </th>
-                  <th scope="col" className="text-right">
+                  <th scope="col" className="customers-table-th-numeric">
                     Total gastado
                   </th>
                   <th scope="col">Última compra</th>
-                  <th scope="col" className="text-right">
+                  <th scope="col" className="customers-table-th-action">
                     Contacto
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCustomers.map((customer) => (
-                  <tr key={customer.id}>
-                    <td>
-                      <p className="font-medium text-zinc-900 dark:text-zinc-50">
-                        {customer.displayName?.trim() || "Sin nombre"}
-                      </p>
-                      <p className="mt-0.5 text-xs text-zinc-500">
-                        Registrado {formatCustomerDate(customer.registeredAt)}
+                  <tr key={customer.id} className="customers-table-row">
+                    <td className="customers-table-cell">
+                      <div className="min-w-0">
+                        <p className="customers-table-name truncate">
+                          {customer.displayName?.trim() || "Sin nombre"}
+                        </p>
+                        <p className="customers-table-meta truncate">
+                          Registrado {formatCustomerDate(customer.registeredAt)}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="customers-table-cell">
+                      <p className="customers-table-phone truncate">
+                        {customer.phone?.trim() || "—"}
                       </p>
                     </td>
-                    <td className="text-sm text-zinc-700 dark:text-zinc-300">
-                      {customer.phone?.trim() || "—"}
-                    </td>
-                    <td className="text-right text-sm font-medium tabular-nums">
+                    <td className="customers-table-cell customers-table-cell-numeric">
                       {customer.orderCount}
                     </td>
-                    <td className="text-right text-sm font-semibold tabular-nums">
+                    <td className="customers-table-cell customers-table-cell-numeric customers-table-cell-amount">
                       {formatUsd(customer.totalSpentUsd)}
                     </td>
-                    <td className="text-sm text-zinc-600 dark:text-zinc-400">
-                      {formatCustomerDate(customer.lastOrderAt)}
+                    <td className="customers-table-cell">
+                      <p className="customers-table-date truncate">
+                        {formatCustomerDate(customer.lastOrderAt)}
+                      </p>
                     </td>
-                    <td className="text-right">
+                    <td className="customers-table-cell customers-table-cell-action">
                       <CustomerWhatsAppButton
                         customerName={customer.displayName}
                         phone={customer.phone}
