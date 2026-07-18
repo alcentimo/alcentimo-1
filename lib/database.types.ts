@@ -43,6 +43,17 @@ export interface CustomerProfile {
   updated_at: string;
 }
 
+export interface CustomerCartItem {
+  id: string;
+  user_id: string;
+  store_id: string;
+  product_id: string;
+  variant_id: string;
+  quantity: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PaymentReport {
   id: string;
   user_id: string;
@@ -533,6 +544,17 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<CustomerProfile>;
+        Relationships: [];
+      };
+      customer_cart_items: {
+        Row: CustomerCartItem;
+        Insert: Omit<CustomerCartItem, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          quantity?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<CustomerCartItem>;
         Relationships: [];
       };
       stores: {
