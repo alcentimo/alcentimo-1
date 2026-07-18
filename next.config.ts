@@ -108,6 +108,10 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: "/api/support/:path*",
+        headers: oauthSecurityHeaders,
+      },
     ];
   },
   async redirects() {

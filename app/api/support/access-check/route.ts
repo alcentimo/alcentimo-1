@@ -2,10 +2,7 @@ import { handleSupportAccessCheckGET } from "@/lib/support/access-check-handler"
 
 export const dynamic = "force-dynamic";
 
-/**
- * Ruta legacy — misma lógica que /api/support/access-check.
- * Preferir /api/support/access-check (evita confusión con protección de despliegue en rutas /admin).
- */
+/** Diagnóstico de acceso admin (sesión Supabase, respuesta JSON). */
 export async function GET() {
   return handleSupportAccessCheckGET();
 }
