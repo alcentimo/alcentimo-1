@@ -6,6 +6,7 @@ import { PromotionProvider } from "@/components/catalog-transactional/PromotionP
 import { getCartAuthContext } from "@/lib/customers/get-cart-auth-context";
 import { getCatalogPromotionContext } from "@/lib/promotions/get-catalog-promotion";
 import { recordCatalogVisit } from "@/lib/analytics/track-catalog-visit";
+import { getStoreManifestPath } from "@/lib/pwa/build-store-manifest";
 import { getPublicStoreBySlug } from "@/lib/stores";
 
 interface TransactionalCatalogLayoutProps {
@@ -23,7 +24,7 @@ export async function generateMetadata({
     return { title: "Catálogo no encontrado" };
   }
 
-  const manifestPath = `/c/${store.slug}/manifest.webmanifest`;
+  const manifestPath = getStoreManifestPath(store.slug);
   const icons: Metadata["icons"] = [];
 
   if (store.pwa_icon_192_url) {
@@ -67,6 +68,7 @@ export default async function TransactionalCatalogLayout({
 }: TransactionalCatalogLayoutProps) {
   const { store_slug: storeSlug } = await params;
   const cartAuth = await getCartAuthContext(storeSlug);
+  const store = await getPublicStoreBySlug(storeSlug);
   const promotionContext = await getCatalogPromotionContext(
     storeSlug,
     cartAuth.isCustomer,
@@ -75,6 +77,9 @@ export default async function TransactionalCatalogLayout({
   if (cartAuth.storeId) {
     void recordCatalogVisit(storeSlug, cartAuth.storeId, cartAuth.userId);
   }
+
+  const storeLogoUrl =
+    store?.pwa_icon_192_url ?? store?.pwa_icon_512_url ?? store?.logo_url ?? null;
 
   return (
     <div className="txn-catalog-root">
@@ -85,7 +90,13 @@ export default async function TransactionalCatalogLayout({
         isCustomer={cartAuth.isCustomer}
       >
         <PromotionProvider value={promotionContext}>
-          <CatalogAppShell storeSlug={storeSlug}>{children}</CatalogAppShell>
+          <CatalogAppShell
+            storeSlug={storeSlug}
+            storeName={store?.name ?? ""}
+            storeLogoUrl={storeLogoUrl}
+          >
+            {children}
+          </CatalogAppShell>
         </PromotionProvider>
       </CartProvider>
     </div>
