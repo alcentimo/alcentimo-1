@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { CustomerRegisterPanel } from "@/components/customers/CustomerRegisterPanel";
 import {
@@ -7,7 +7,9 @@ import {
   buildCustomerRegisterPath,
 } from "@/lib/customers/middleware-access";
 import { resolveCustomerStoreSlugFromNext } from "@/lib/customers/ensure-customer-profile";
+import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { getPublicStoreBySlug } from "@/lib/stores";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,7 @@ interface RegisterPageProps {
   searchParams: Promise<{
     store?: string;
     next?: string;
+    complete?: string;
   }>;
 }
 
@@ -30,6 +33,22 @@ function resolveNextPath(storeSlug: string, nextParam?: string): string {
   }
 
   return nextParam.split("?")[0] ?? fallback;
+}
+
+function resolveSuggestedDisplayName(
+  metadata: Record<string, unknown> | undefined,
+): string | null {
+  if (metadata && typeof metadata.display_name === "string") {
+    const value = metadata.display_name.trim();
+    if (value.length >= 2) return value;
+  }
+
+  if (metadata && typeof metadata.full_name === "string") {
+    const value = metadata.full_name.trim();
+    if (value.length >= 2) return value;
+  }
+
+  return null;
 }
 
 export default async function CustomerRegisterPage({
@@ -67,12 +86,47 @@ export default async function CustomerRegisterPage({
   if (!store) notFound();
 
   const nextPath = resolveNextPath(store.slug, params.next);
+  const needsPhoneCompletion = params.complete === "phone";
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let suggestedDisplayName: string | null = null;
+
+  if (needsPhoneCompletion) {
+    if (!user) {
+      redirect(buildCustomerRegisterPath(store.slug, nextPath));
+    }
+
+    suggestedDisplayName = resolveSuggestedDisplayName(user.user_metadata);
+
+    const { data: profile } = await supabase
+      .from("customer_profiles")
+      .select("phone")
+      .eq("user_id", user.id)
+      .eq("store_id", store.id)
+      .maybeSingle();
+
+    if (profile?.phone && isValidCustomerPhone(profile.phone)) {
+      redirect(nextPath);
+    }
+  }
 
   return (
     <AuthPageShell
       sectionLabel="Cuenta de cliente"
-      title="Regístrate para comprar"
-      description={`Crea tu cuenta en ${store.name} para guardar tus datos y hacer pedidos.`}
+      title={
+        needsPhoneCompletion
+          ? "Confirma tu WhatsApp"
+          : "Regístrate y compra más rápido"
+      }
+      description={
+        needsPhoneCompletion
+          ? `Activa tu cuenta en ${store.name} con tu número de contacto.`
+          : `Sin contraseñas: Google o solo nombre + WhatsApp en ${store.name}.`
+      }
       footer={
         <p className="text-center text-sm text-zinc-500">
           ¿Vendes productos?{" "}
@@ -86,6 +140,8 @@ export default async function CustomerRegisterPage({
         storeSlug={store.slug}
         storeName={store.name}
         nextPath={nextPath}
+        needsPhoneCompletion={needsPhoneCompletion}
+        suggestedDisplayName={suggestedDisplayName}
       />
     </AuthPageShell>
   );

@@ -9,7 +9,7 @@ import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 interface CustomerProfilePanelProps {
   storeSlug: string;
   storeName: string;
-  email: string | null;
+  contactEmail: string | null;
   displayName: string | null;
   phone: string | null;
 }
@@ -17,7 +17,7 @@ interface CustomerProfilePanelProps {
 export function CustomerProfilePanel({
   storeSlug,
   storeName,
-  email,
+  contactEmail,
   displayName,
   phone,
 }: CustomerProfilePanelProps) {
@@ -54,14 +54,16 @@ export function CustomerProfilePanel({
             {storeName}
           </p>
         </div>
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-            Email
-          </p>
-          <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-            {email ?? "—"}
-          </p>
-        </div>
+        {contactEmail ? (
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Correo
+            </p>
+            <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
+              {contactEmail}
+            </p>
+          </div>
+        ) : null}
         {displayName ? (
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">

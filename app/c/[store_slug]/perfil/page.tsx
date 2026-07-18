@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { CustomerProfilePanel } from "@/components/customers/CustomerProfilePanel";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
+import { resolveCustomerContactEmail } from "@/lib/customers/phone-auth";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { createClient } from "@/lib/supabase/server";
 
@@ -45,7 +46,7 @@ export default async function CustomerProfilePage({
       <CustomerProfilePanel
         storeSlug={store.slug}
         storeName={store.name}
-        email={user.email ?? null}
+        contactEmail={resolveCustomerContactEmail(user.email, user.user_metadata)}
         displayName={profile?.display_name ?? null}
         phone={profile?.phone ?? null}
       />

@@ -4,6 +4,7 @@ import { CatalogAppShell } from "@/components/catalog-transactional/CatalogAppSh
 import { PromotionProvider } from "@/components/catalog-transactional/PromotionProvider";
 import { getCartAuthContext } from "@/lib/customers/get-cart-auth-context";
 import { getCatalogPromotionContext } from "@/lib/promotions/get-catalog-promotion";
+import { recordCatalogVisit } from "@/lib/analytics/track-catalog-visit";
 
 interface TransactionalCatalogLayoutProps {
   children: ReactNode;
@@ -20,6 +21,10 @@ export default async function TransactionalCatalogLayout({
     storeSlug,
     cartAuth.isCustomer,
   );
+
+  if (cartAuth.storeId) {
+    void recordCatalogVisit(storeSlug, cartAuth.storeId, cartAuth.userId);
+  }
 
   return (
     <div className="txn-catalog-root">

@@ -3,6 +3,7 @@ import {
   parseCustomerAccountPath,
   resolveActiveStoreBySlug,
 } from "@/lib/customers/middleware-access";
+import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 
 export type EnsureCustomerProfileResult =
   | { ok: true; storeId: string; storeSlug: string }
@@ -73,6 +74,8 @@ export async function ensureCustomerProfile(
   options?: {
     displayName?: string | null;
     phone?: string | null;
+    requireDisplayName?: boolean;
+    requirePhone?: boolean;
   },
 ): Promise<EnsureCustomerProfileResult> {
   const normalizedSlug = storeSlug.trim().toLowerCase();
@@ -82,11 +85,28 @@ export async function ensureCustomerProfile(
     return { ok: false, error: "Tienda no encontrada o no está activa." };
   }
 
+  const displayName = resolveDisplayName(options?.displayName, user);
+  const phone = resolvePhone(options?.phone, user);
+
+  if (options?.requireDisplayName && (!displayName || displayName.length < 2)) {
+    return { ok: false, error: "Indica tu nombre (mínimo 2 caracteres)." };
+  }
+
+  if (options?.requirePhone) {
+    const phoneValue = phone ?? options?.phone?.trim() ?? "";
+    if (!isValidCustomerPhone(phoneValue)) {
+      return {
+        ok: false,
+        error: "Indica un teléfono WhatsApp válido (mínimo 10 dígitos).",
+      };
+    }
+  }
+
   const payload = {
     user_id: user.id,
     store_id: store.id,
-    display_name: resolveDisplayName(options?.displayName, user),
-    phone: resolvePhone(options?.phone, user),
+    display_name: displayName,
+    phone: phone ? phone.slice(0, 40) : null,
   };
 
   const { error } = await supabase.from("customer_profiles").upsert(payload, {

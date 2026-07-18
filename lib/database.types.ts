@@ -52,6 +52,16 @@ export interface CustomerProfile {
   updated_at: string;
 }
 
+export interface CatalogVisit {
+  id: string;
+  store_id: string;
+  visitor_key: string;
+  user_id: string | null;
+  registered_at: string | null;
+  first_seen_at: string;
+  last_seen_at: string;
+}
+
 export interface CustomerCartItem {
   id: string;
   user_id: string;
@@ -569,6 +579,18 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<CustomerProfile>;
+        Relationships: [];
+      };
+      catalog_visits: {
+        Row: CatalogVisit;
+        Insert: Omit<CatalogVisit, "id" | "first_seen_at" | "last_seen_at"> & {
+          id?: string;
+          user_id?: string | null;
+          registered_at?: string | null;
+          first_seen_at?: string;
+          last_seen_at?: string;
+        };
+        Update: Partial<CatalogVisit>;
         Relationships: [];
       };
       customer_cart_items: {

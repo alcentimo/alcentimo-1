@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { devSignUpAndSignIn } from "@/lib/auth/dev-signup";
-import { linkCustomerToStore } from "@/lib/customers/register-actions";
+import {
+  completeCustomerPhone,
+  quickRegisterOrSignInCustomer,
+} from "@/lib/customers/register-actions";
 import { createClient } from "@/lib/supabase/client";
 import { getAuthCallbackUrl } from "@/lib/site-url";
-import { PasswordInput } from "@/components/ui/PasswordInput";
-
-const devSkipEmailConfirmation =
-  process.env.NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION === "true";
 
 function GoogleIcon() {
   return (
@@ -38,50 +36,23 @@ interface CustomerRegisterPanelProps {
   storeSlug: string;
   storeName: string;
   nextPath: string;
+  needsPhoneCompletion?: boolean;
+  suggestedDisplayName?: string | null;
 }
 
 export function CustomerRegisterPanel({
   storeSlug,
   storeName,
   nextPath,
+  needsPhoneCompletion = false,
+  suggestedDisplayName = null,
 }: CustomerRegisterPanelProps) {
-  const [mode, setMode] = useState<"login" | "signup">("signup");
-  const [displayName, setDisplayName] = useState("");
+  const [displayName, setDisplayName] = useState(suggestedDisplayName ?? "");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [signupConfirmationSent, setSignupConfirmationSent] = useState(false);
-
-  function switchMode(nextMode: "login" | "signup") {
-    setMode(nextMode);
-    setError(null);
-    setSignupConfirmationSent(false);
-    setConfirmPassword("");
-  }
-
-  async function finalizeCustomerAccess(profile?: {
-    displayName?: string;
-    phone?: string;
-  }) {
-    const linkResult = await linkCustomerToStore({
-      storeSlug,
-      nextPath,
-      displayName: profile?.displayName ?? displayName,
-      phone: profile?.phone ?? phone,
-    });
-
-    if (!linkResult.ok) {
-      setError(linkResult.error);
-      return false;
-    }
-
-    window.location.href = linkResult.redirectTo;
-    return true;
-  }
 
   async function handleGoogleAuth() {
     setError(null);
@@ -106,99 +77,120 @@ export function CustomerRegisterPanel({
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleQuickSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-
-    if (mode === "signup") {
-      if (password !== confirmPassword) {
-        setError("Las contraseñas no coinciden.");
-        return;
-      }
-    }
-
     setLoading(true);
 
-    if (mode === "signup" && devSkipEmailConfirmation) {
-      const devResult = await devSignUpAndSignIn(email, password);
-      if (!devResult.ok) {
-        setLoading(false);
-        setError(devResult.error);
-        return;
-      }
+    const result = await quickRegisterOrSignInCustomer({
+      storeSlug,
+      nextPath,
+      displayName,
+      phone,
+      email: email.trim() || null,
+    });
 
-      const linked = await finalizeCustomerAccess();
-      setLoading(false);
-      if (!linked) return;
-      return;
-    }
-
-    const supabase = createClient();
-    const emailRedirectTo = getAuthCallbackUrl(nextPath, { store: storeSlug });
-
-    const result =
-      mode === "login"
-        ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              emailRedirectTo,
-              data: {
-                customer_store_slug: storeSlug,
-                display_name: displayName.trim() || undefined,
-                phone: phone.trim() || undefined,
-              },
-            },
-          });
-
-    if (result.error) {
-      setLoading(false);
-      const message = result.error.message;
-      if (message.toLowerCase().includes("rate limit")) {
-        setError(
-          "Límite de envío de correos alcanzado. Revisa la configuración de email en Supabase o usa el modo desarrollo.",
-        );
-        return;
-      }
-      setError(message);
-      return;
-    }
-
-    if (mode === "signup" && result.data.user && !result.data.session) {
-      setLoading(false);
-      setSignupConfirmationSent(true);
-      return;
-    }
-
-    const linked = await finalizeCustomerAccess();
     setLoading(false);
-    if (!linked) return;
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    window.location.href = result.redirectTo;
   }
 
-  if (signupConfirmationSent) {
-    return (
-      <div className="card-panel mx-auto w-full max-w-md">
-        <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
-          Revisa tu correo
-        </h2>
-        <div className="alert-success mt-4 text-base text-emerald-800 sm:text-sm dark:text-emerald-200">
-          Enviamos un enlace de confirmación a tu correo. Al activar tu cuenta
-          quedarás registrado en {storeName}.
-        </div>
-        <button
-          type="button"
-          onClick={() => switchMode("login")}
-          className="btn-primary mt-6 w-full"
-        >
-          Ir a iniciar sesión
-        </button>
-      </div>
-    );
+  async function handlePhoneCompletion(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const result = await completeCustomerPhone({
+      storeSlug,
+      nextPath,
+      phone,
+      displayName: displayName.trim() || suggestedDisplayName,
+    });
+
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    window.location.href = result.redirectTo;
   }
 
   const isBusy = loading || googleLoading;
   const catalogUrl = `/c/${storeSlug}`;
+
+  if (needsPhoneCompletion) {
+    return (
+      <div className="card-panel mx-auto w-full max-w-md">
+        <p className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+          {storeName}
+        </p>
+        <h2 className="mt-2 text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
+          Un paso más
+        </h2>
+        <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
+          Confirma tu WhatsApp para activar descuentos y recibir actualizaciones de
+          pedidos.
+        </p>
+
+        <form onSubmit={handlePhoneCompletion} className="mt-6 space-y-5">
+          {!suggestedDisplayName ? (
+            <div>
+              <label htmlFor="display_name_complete" className="label-field">
+                Nombre
+              </label>
+              <input
+                id="display_name_complete"
+                type="text"
+                autoComplete="name"
+                required
+                minLength={2}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="input-field"
+                placeholder="Tu nombre"
+              />
+            </div>
+          ) : null}
+
+          <div>
+            <label htmlFor="phone_complete" className="label-field">
+              Teléfono (WhatsApp)
+            </label>
+            <input
+              id="phone_complete"
+              type="tel"
+              autoComplete="tel"
+              required
+              minLength={10}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="input-field"
+              placeholder="0412 1234567"
+            />
+          </div>
+
+          {error ? <p className="alert-error">{error}</p> : null}
+
+          <button type="submit" disabled={isBusy} className="btn-primary w-full">
+            {loading ? "Guardando…" : "Activar mi cuenta"}
+          </button>
+        </form>
+
+        <p className="mt-4 text-center text-sm text-zinc-500">
+          <Link href={catalogUrl} className="link-brand">
+            ← Volver al catálogo
+          </Link>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="card-panel mx-auto w-full max-w-md">
@@ -206,19 +198,11 @@ export function CustomerRegisterPanel({
         {storeName}
       </p>
       <h2 className="mt-2 text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
-        {mode === "login" ? "Iniciar sesión" : "Crear cuenta de cliente"}
+        Regístrate en segundos
       </h2>
       <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-        {mode === "login"
-          ? "Accede para ver tu cuenta y realizar pedidos en esta tienda."
-          : "Regístrate para guardar tus datos y hacer pedidos en esta tienda."}
+        Sin contraseñas. Solo tu nombre y WhatsApp para comprar más rápido.
       </p>
-
-      {devSkipEmailConfirmation && mode === "signup" && (
-        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
-          Modo desarrollo: el registro no envía correo de confirmación.
-        </p>
-      )}
 
       <button
         type="button"
@@ -235,117 +219,70 @@ export function CustomerRegisterPanel({
           <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
         </div>
         <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
-          o con tu correo
+          o en 5 segundos
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {mode === "signup" && (
-          <>
-            <div>
-              <label htmlFor="display_name" className="label-field">
-                Nombre
-              </label>
-              <input
-                id="display_name"
-                type="text"
-                autoComplete="name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="input-field"
-                placeholder="Tu nombre"
-              />
-            </div>
-            <div>
-              <label htmlFor="phone" className="label-field">
-                Teléfono (WhatsApp)
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                autoComplete="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="input-field"
-                placeholder="0412 1234567"
-              />
-            </div>
-          </>
-        )}
+      <form onSubmit={handleQuickSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="display_name" className="label-field">
+            Nombre
+          </label>
+          <input
+            id="display_name"
+            type="text"
+            autoComplete="name"
+            required
+            minLength={2}
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="input-field"
+            placeholder="Tu nombre"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="phone" className="label-field">
+            Teléfono (WhatsApp)
+          </label>
+          <input
+            id="phone"
+            type="tel"
+            autoComplete="tel"
+            required
+            minLength={10}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="input-field"
+            placeholder="0412 1234567"
+          />
+        </div>
 
         <div>
           <label htmlFor="email" className="label-field">
-            Email
+            Correo <span className="font-normal text-zinc-400">(opcional)</span>
           </label>
           <input
             id="email"
             type="email"
-            required
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="input-field"
+            placeholder="solo si quieres recibir novedades"
           />
         </div>
 
-        <div>
-          <label htmlFor="password" className="label-field">
-            Contraseña
-          </label>
-          <PasswordInput
-            id="password"
-            required
-            minLength={6}
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
+        {error ? <p className="alert-error">{error}</p> : null}
 
-        {mode === "signup" && (
-          <div>
-            <label htmlFor="confirm_password" className="label-field">
-              Confirmar contraseña
-            </label>
-            <PasswordInput
-              id="confirm_password"
-              required
-              minLength={6}
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-          </div>
-        )}
-
-        {error && <p className="alert-error">{error}</p>}
-
-        <button type="submit" disabled={isBusy} className="btn-primary">
-          {loading
-            ? "Procesando…"
-            : mode === "login"
-              ? "Entrar"
-              : "Registrarme"}
+        <button type="submit" disabled={isBusy} className="btn-primary w-full">
+          {loading ? "Entrando…" : `Unirme a ${storeName}`}
         </button>
       </form>
 
-      <button
-        type="button"
-        onClick={() => switchMode(mode === "login" ? "signup" : "login")}
-        className="touch-target mt-5 w-full text-center text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-      >
-        {mode === "login" ? (
-          <>
-            ¿No tienes cuenta?{" "}
-            <span className="link-brand">Regístrate</span>
-          </>
-        ) : (
-          <>
-            ¿Ya tienes cuenta?{" "}
-            <span className="link-brand">Inicia sesión</span>
-          </>
-        )}
-      </button>
+      <p className="mt-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
+        ¿Ya te registraste? Usa el mismo WhatsApp y entrarás al instante.
+      </p>
 
       <p className="mt-4 text-center text-sm text-zinc-500">
         <Link href={catalogUrl} className="link-brand">

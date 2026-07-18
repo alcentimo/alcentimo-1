@@ -14,6 +14,7 @@ import {
   checkSupportAdminAccess,
   resolveAuthEmail,
 } from "@/lib/support/admin-access";
+import { getCatalogVisitorCookieName } from "@/lib/analytics/track-catalog-visit";
 
 const DASHBOARD_PREFIX = "/dashboard";
 const ADMIN_PREFIX = "/admin";
@@ -112,6 +113,23 @@ export async function middleware(request: NextRequest) {
 
   const authenticatedUser = user ?? null;
 
+  // Cookie anónima de visitante del catálogo (/c/{slug}) para tasa de registro.
+  const catalogPathMatch = pathname.match(/^\/c\/([^/]+)/);
+  if (catalogPathMatch?.[1]) {
+    const storeSlug = decodeURIComponent(catalogPathMatch[1]).trim().toLowerCase();
+    const visitorCookieName = getCatalogVisitorCookieName(storeSlug);
+
+    if (!request.cookies.get(visitorCookieName)?.value) {
+      supabaseResponse.cookies.set(visitorCookieName, crypto.randomUUID(), {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60 * 24 * 30,
+        path: `/c/${storeSlug}`,
+      });
+    }
+  }
+
   // ── Área cliente: /c/{slug}/cuenta y /c/{slug}/perfil ───────
   if (isCustomerAccountRoute && customerAccountPath) {
     const { storeSlug } = customerAccountPath;
@@ -159,8 +177,10 @@ export async function middleware(request: NextRequest) {
   if (isRegisterRoute && authenticatedUser) {
     const storeSlug = request.nextUrl.searchParams.get("store")?.trim().toLowerCase();
     const nextPath = request.nextUrl.searchParams.get("next");
+    const completePhone =
+      request.nextUrl.searchParams.get("complete") === "phone";
 
-    if (storeSlug) {
+    if (storeSlug && !completePhone) {
       const store = await resolveActiveStoreBySlug(supabase, storeSlug);
       if (
         store &&

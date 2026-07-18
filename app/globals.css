@@ -3518,6 +3518,54 @@ body {
   @apply text-[11px] font-medium capitalize text-zinc-600 dark:text-zinc-400;
 }
 
+.analytics-chart-compare {
+  @apply mx-auto grid max-w-md grid-cols-2 gap-6;
+}
+
+.analytics-chart-bar-track-tall {
+  @apply h-44;
+}
+
+.analytics-chart-bar-today {
+  @apply bg-teal-600 dark:bg-teal-500;
+}
+
+.analytics-registration-rate {
+  @apply rounded-xl border border-emerald-100 bg-emerald-50/60 px-5 py-6 text-center dark:border-emerald-900/40 dark:bg-emerald-950/20;
+}
+
+.analytics-registration-rate-value {
+  @apply text-4xl font-semibold tabular-nums text-emerald-800 dark:text-emerald-200;
+}
+
+.analytics-registration-rate-caption {
+  @apply mt-2 text-sm text-emerald-900/80 dark:text-emerald-200/80;
+}
+
+.analytics-registration-stats {
+  @apply mt-5 grid grid-cols-2 gap-3;
+}
+
+.analytics-registration-stats div {
+  @apply rounded-lg border border-zinc-100 bg-zinc-50/80 px-3 py-3 dark:border-zinc-800 dark:bg-zinc-900/40;
+}
+
+.analytics-registration-stats dt {
+  @apply text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400;
+}
+
+.analytics-registration-stats dd {
+  @apply mt-1 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50;
+}
+
+.analytics-registration-note {
+  @apply mt-4 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs leading-relaxed text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400;
+}
+
+.analytics-registration-note-positive {
+  @apply border-emerald-200 bg-emerald-50/80 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200;
+}
+
 .analytics-insight-list {
   @apply space-y-2;
 }

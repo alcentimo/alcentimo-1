@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import { ensureCustomerProfileAfterAuth } from "@/lib/customers/ensure-customer-profile";
+import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { getSiteUrl } from "@/lib/site-url";
 
 export async function GET(request: Request) {
@@ -37,11 +38,42 @@ export async function GET(request: Request) {
   } = await supabase.auth.getUser();
 
   if (user) {
-    try {
-      await ensureCustomerProfileAfterAuth(supabase, user, next, storeSlug);
-    } catch {
-      // No bloquear login si falla el vínculo cliente; /register puede reintentar.
+    const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding";
+    const normalizedStoreSlug = storeSlug?.trim().toLowerCase() || null;
+
+    if (normalizedStoreSlug) {
+      const metadataPhone =
+        typeof user.user_metadata?.phone === "string"
+          ? user.user_metadata.phone
+          : "";
+
+      if (isValidCustomerPhone(metadataPhone)) {
+        try {
+          await ensureCustomerProfileAfterAuth(
+            supabase,
+            user,
+            safeNext,
+            normalizedStoreSlug,
+          );
+        } catch {
+          // No bloquear login si falla el vínculo cliente; /register puede reintentar.
+        }
+      } else {
+        const completeUrl = new URL(`${siteUrl}/register`);
+        completeUrl.searchParams.set("store", normalizedStoreSlug);
+        completeUrl.searchParams.set("next", safeNext);
+        completeUrl.searchParams.set("complete", "phone");
+        return NextResponse.redirect(completeUrl.toString());
+      }
+    } else {
+      try {
+        await ensureCustomerProfileAfterAuth(supabase, user, safeNext, storeSlug);
+      } catch {
+        // No bloquear login si falla el vínculo cliente; /register puede reintentar.
+      }
     }
+
+    return NextResponse.redirect(`${siteUrl}${safeNext}`);
   }
 
   const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding";
