@@ -28,7 +28,7 @@ export function DashboardPageHeader({
         {storeSlug !== undefined ? (
           <PublicCatalogQuickLink
             storeSlug={storeSlug}
-            className="mx-0 w-full shrink-0 sm:w-auto sm:min-w-[12rem]"
+            className="mx-0 w-full shrink-0 sm:w-auto"
           />
         ) : null}
       </div>

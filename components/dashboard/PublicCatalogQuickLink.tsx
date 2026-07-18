@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { ExternalLink } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, Copy, ExternalLink } from "lucide-react";
 import { getStoreCatalogPublicUrl } from "@/lib/store-host";
 import { cn } from "@/lib/cn";
 
@@ -18,10 +18,23 @@ export function PublicCatalogQuickLink({
   onNavigate,
   className,
 }: PublicCatalogQuickLinkProps) {
+  const [copied, setCopied] = useState(false);
   const catalogUrl = useMemo(() => {
     if (!storeSlug) return null;
     return getStoreCatalogPublicUrl(storeSlug);
   }, [storeSlug]);
+
+  async function handleCopyLink() {
+    if (!catalogUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(catalogUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   if (!catalogUrl) {
     return (
@@ -38,24 +51,69 @@ export function PublicCatalogQuickLink({
     );
   }
 
+  if (collapsed) {
+    return (
+      <a
+        href={catalogUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onNavigate}
+        title="Ver mi catálogo"
+        aria-label="Ver mi catálogo en una nueva pestaña"
+        className={cn(
+          "mx-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-teal-600/20 bg-teal-600 text-white shadow-sm transition-all hover:bg-teal-700 hover:shadow-md dark:border-teal-500/30 dark:bg-teal-600 dark:hover:bg-teal-500",
+          className,
+        )}
+      >
+        <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+      </a>
+    );
+  }
+
   return (
-    <a
-      href={catalogUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={onNavigate}
-      title="Ver mi catálogo"
-      aria-label="Ver mi catálogo en una nueva pestaña"
+    <div
       className={cn(
-        "flex items-center rounded-xl border border-teal-600/20 bg-teal-600 text-sm font-semibold text-white shadow-sm transition-all hover:bg-teal-700 hover:shadow-md dark:border-teal-500/30 dark:bg-teal-600 dark:hover:bg-teal-500",
-        collapsed
-          ? "mx-2 h-10 w-10 shrink-0 justify-center p-0"
-          : "mx-3 min-h-10 gap-2.5 px-3 py-2.5",
+        "flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-stretch",
         className,
       )}
     >
-      <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
-      {!collapsed && <span className="truncate">Ver mi catálogo</span>}
-    </a>
+      <button
+        type="button"
+        onClick={() => void handleCopyLink()}
+        title={catalogUrl}
+        aria-label={copied ? "Enlace copiado" : "Copiar enlace de tienda"}
+        className={cn(
+          "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold shadow-sm transition-all",
+          copied
+            ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
+            : "border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800",
+        )}
+      >
+        {copied ? (
+          <>
+            <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">¡Copiado!</span>
+          </>
+        ) : (
+          <>
+            <Copy className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">Copiar enlace de tienda</span>
+          </>
+        )}
+      </button>
+
+      <a
+        href={catalogUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onNavigate}
+        title="Ver mi catálogo"
+        aria-label="Ver mi catálogo en una nueva pestaña"
+        className="inline-flex min-h-10 items-center justify-center gap-2.5 rounded-xl border border-teal-600/20 bg-teal-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-teal-700 hover:shadow-md dark:border-teal-500/30 dark:bg-teal-600 dark:hover:bg-teal-500"
+      >
+        <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span className="truncate">Ver mi catálogo</span>
+      </a>
+    </div>
   );
 }
