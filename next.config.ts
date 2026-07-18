@@ -111,6 +111,19 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/manifest.json",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, must-revalidate",
+          },
+          {
+            key: "Content-Type",
+            value: "application/manifest+json",
+          },
+        ],
+      },
+      {
         source: "/c/:store_slug/manifest.json",
         headers: [
           {

@@ -4,17 +4,21 @@ import {
   buildStoreWebManifest,
 } from "@/lib/pwa/build-store-manifest";
 import { getRequestOrigin } from "@/lib/pwa/get-request-origin";
-import { createManifestJsonResponse } from "@/lib/pwa/manifest-response";
+import {
+  createManifestJsonResponse,
+  resolveManifestStoreSlug,
+} from "@/lib/pwa/manifest-response";
 
-interface CatalogManifestRouteProps {
-  params: Promise<{ store_slug: string }>;
-}
-
-export async function GET(_request: Request, { params }: CatalogManifestRouteProps) {
-  const { store_slug: storeSlug } = await params;
+export async function GET(request: Request) {
   const origin = await getRequestOrigin();
-  const store = await getPublicStoreBySlug(storeSlug);
+  const storeSlug = resolveManifestStoreSlug(request);
 
+  if (!storeSlug) {
+    const fallback = buildFallbackStoreWebManifest("catalogo", origin);
+    return createManifestJsonResponse(fallback);
+  }
+
+  const store = await getPublicStoreBySlug(storeSlug);
   const manifest = store
     ? buildStoreWebManifest(store, origin)
     : buildFallbackStoreWebManifest(storeSlug, origin);

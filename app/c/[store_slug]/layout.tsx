@@ -6,7 +6,7 @@ import { PromotionProvider } from "@/components/catalog-transactional/PromotionP
 import { getCartAuthContext } from "@/lib/customers/get-cart-auth-context";
 import { getCatalogPromotionContext } from "@/lib/promotions/get-catalog-promotion";
 import { recordCatalogVisit } from "@/lib/analytics/track-catalog-visit";
-import { getStoreManifestPath } from "@/lib/pwa/build-store-manifest";
+import { getStoreManifestPath, formatPwaManifestName, formatPwaManifestShortName } from "@/lib/pwa/build-store-manifest";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -55,10 +55,11 @@ export async function generateMetadata({
     title: `${store.name} — Pedidos`,
     description: `Catálogo y pedidos de ${store.name}`,
     manifest: manifestPath,
-    applicationName: store.name,
+    applicationName: formatPwaManifestName(store.name),
     appleWebApp: {
       capable: true,
-      title: store.name,
+      statusBarStyle: "black-translucent",
+      title: formatPwaManifestShortName(store.name),
     },
     icons: icons.length > 0 ? icons : undefined,
   };
