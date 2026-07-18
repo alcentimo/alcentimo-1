@@ -118,6 +118,12 @@ export async function middleware(request: NextRequest) {
   if (catalogPathMatch?.[1]) {
     const storeSlug = decodeURIComponent(catalogPathMatch[1]).trim().toLowerCase();
     const visitorCookieName = getCatalogVisitorCookieName(storeSlug);
+    const manifestUrl = `${request.nextUrl.origin}/c/${storeSlug}/manifest.json`;
+
+    supabaseResponse.headers.set(
+      "Link",
+      `<${manifestUrl}>; rel="manifest"`,
+    );
 
     if (!request.cookies.get(visitorCookieName)?.value) {
       supabaseResponse.cookies.set(visitorCookieName, crypto.randomUUID(), {

@@ -6,8 +6,11 @@ import { PromotionProvider } from "@/components/catalog-transactional/PromotionP
 import { getCartAuthContext } from "@/lib/customers/get-cart-auth-context";
 import { getCatalogPromotionContext } from "@/lib/promotions/get-catalog-promotion";
 import { recordCatalogVisit } from "@/lib/analytics/track-catalog-visit";
-import { getStoreCatalogManifestPath } from "@/lib/pwa/build-store-manifest";
-import { getCatalogCanonicalUrl } from "@/lib/pwa/catalog-sw-paths";
+import { CatalogPwaHeadLinks } from "@/components/catalog-transactional/CatalogPwaHeadLinks";
+import {
+  getCatalogCanonicalUrl,
+  getStoreCatalogManifestAbsoluteUrl,
+} from "@/lib/pwa/catalog-sw-paths";
 import { getRequestOrigin } from "@/lib/pwa/get-request-origin";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { getSiteUrl } from "@/lib/site-url";
@@ -27,8 +30,8 @@ export async function generateMetadata({
     return { title: "Catálogo no encontrado" };
   }
 
-  const manifestPath = getStoreCatalogManifestPath(store.slug);
   const origin = await getRequestOrigin();
+  const manifestAbsoluteUrl = getStoreCatalogManifestAbsoluteUrl(store.slug, origin);
   const canonicalUrl = getCatalogCanonicalUrl(store.slug, origin);
   const storeName = store.name.trim();
   const icons: Metadata["icons"] = [];
@@ -62,7 +65,7 @@ export async function generateMetadata({
     alternates: {
       canonical: canonicalUrl,
     },
-    manifest: manifestPath,
+    manifest: manifestAbsoluteUrl,
     applicationName: storeName,
     appleWebApp: {
       capable: true,
@@ -91,9 +94,15 @@ export default async function TransactionalCatalogLayout({
 
   const storeLogoUrl =
     store?.pwa_icon_192_url ?? store?.pwa_icon_512_url ?? store?.logo_url ?? null;
+  const origin = await getRequestOrigin();
+  const manifestAbsoluteUrl = getStoreCatalogManifestAbsoluteUrl(storeSlug, origin);
 
   return (
     <div className="txn-catalog-root">
+      <CatalogPwaHeadLinks
+        manifestAbsoluteUrl={manifestAbsoluteUrl}
+        storeSlug={storeSlug}
+      />
       <CartProvider
         storeSlug={storeSlug}
         storeId={cartAuth.storeId}

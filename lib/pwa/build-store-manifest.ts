@@ -1,8 +1,11 @@
 import type { Store } from "@/lib/database.types";
 import { PWA_STORE_IDENTITY_VERSION } from "@/lib/pwa/constants";
+import { getStoreCatalogManifestPath } from "@/lib/pwa/catalog-sw-paths";
 import type { StoreManifestTheme } from "@/lib/pwa/get-store-manifest-theme";
 import type { StoreManifestIcon, WebAppManifest } from "@/lib/pwa/types";
 import { getSiteUrl } from "@/lib/site-url";
+
+export { getStoreCatalogManifestPath };
 
 function normalizeOrigin(origin: string): string {
   return origin.replace(/\/$/, "");
@@ -132,9 +135,4 @@ export function buildFallbackStoreWebManifest(
       },
     ],
   };
-}
-
-/** Manifiesto exclusivo del catálogo cliente (no compartir con /manifest.json admin). */
-export function getStoreCatalogManifestPath(storeSlug: string): string {
-  return `/c/${storeSlug.trim().toLowerCase()}/manifest.json`;
 }

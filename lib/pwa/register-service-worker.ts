@@ -5,9 +5,30 @@ import {
   PWA_REGISTER_IDLE_TIMEOUT_MS,
 } from "@/lib/pwa/constants";
 import {
+  getCatalogServiceWorkerAbsoluteUrl,
   getCatalogServiceWorkerScope,
   getCatalogServiceWorkerUrl,
 } from "@/lib/pwa/catalog-sw-paths";
+
+function resolveCatalogServiceWorkerRegistration(storeSlug: string): {
+  scriptUrl: string;
+  scope: string;
+} {
+  const normalizedSlug = storeSlug.trim().toLowerCase();
+  const scope = getCatalogServiceWorkerScope(normalizedSlug);
+
+  if (typeof window !== "undefined") {
+    return {
+      scriptUrl: getCatalogServiceWorkerAbsoluteUrl(normalizedSlug, window.location.origin),
+      scope,
+    };
+  }
+
+  return {
+    scriptUrl: getCatalogServiceWorkerUrl(normalizedSlug),
+    scope,
+  };
+}
 
 function isCatalogLegacyCacheName(name: string): boolean {
   return LEGACY_CATALOG_PWA_CACHE_PREFIXES.some(
@@ -51,9 +72,11 @@ async function runCatalogRegistration(storeSlug: string): Promise<void> {
     localStorage.setItem(CATALOG_PWA_RESET_STORAGE_KEY, PWA_CATALOG_RESET_VERSION);
   }
 
+  const registration = resolveCatalogServiceWorkerRegistration(normalizedSlug);
+
   void navigator.serviceWorker
-    .register(getCatalogServiceWorkerUrl(normalizedSlug), {
-      scope: getCatalogServiceWorkerScope(normalizedSlug),
+    .register(registration.scriptUrl, {
+      scope: registration.scope,
       updateViaCache: "none",
     })
     .catch(() => {
@@ -100,8 +123,10 @@ export function registerCatalogServiceWorkerForInstall(storeSlug: string): void 
   const normalizedSlug = storeSlug.trim().toLowerCase();
   if (!normalizedSlug) return;
 
-  void navigator.serviceWorker.register(getCatalogServiceWorkerUrl(normalizedSlug), {
-    scope: getCatalogServiceWorkerScope(normalizedSlug),
+  const registration = resolveCatalogServiceWorkerRegistration(normalizedSlug);
+
+  void navigator.serviceWorker.register(registration.scriptUrl, {
+    scope: registration.scope,
     updateViaCache: "none",
   });
 }
