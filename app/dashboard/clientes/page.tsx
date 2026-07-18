@@ -5,6 +5,7 @@ import { CustomersPanel } from "@/components/dashboard/customers/CustomersPanel"
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreCustomers } from "@/lib/customers/get-store-customers";
 import { createClient } from "@/lib/supabase/server";
+import { getTransactionalCatalogPublicUrl } from "@/lib/stores";
 import { isStoreOwner } from "@/lib/stores/owner-access";
 
 export const dynamic = "force-dynamic";
@@ -52,12 +53,12 @@ export default async function ClientesPage() {
         <p className="page-header-desc">
           Personas registradas en{" "}
           <Link
-            href={`/c/${store.slug}`}
+            href={getTransactionalCatalogPublicUrl(store.slug)}
             className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
             target="_blank"
             rel="noopener noreferrer"
           >
-            /c/{store.slug}
+            {new URL(getTransactionalCatalogPublicUrl(store.slug)).host}
           </Link>
           . Los totales incluyen pedidos vinculados a su cuenta.
         </p>

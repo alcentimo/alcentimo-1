@@ -7,6 +7,7 @@ import { getStoreOrders } from "@/lib/orders/get-store-orders";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { OrdersPanel } from "@/components/dashboard/orders/OrdersPanel";
+import { getTransactionalCatalogPublicUrl } from "@/lib/stores";
 
 export const dynamic = "force-dynamic";
 
@@ -55,12 +56,12 @@ export default async function PedidosPage() {
         <p className="page-header-desc">
           Gestiona ventas, estados y clientes desde{" "}
           <Link
-            href={`/c/${store.slug}`}
+            href={getTransactionalCatalogPublicUrl(store.slug)}
             className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
             target="_blank"
             rel="noopener noreferrer"
           >
-            /c/{store.slug}
+            {new URL(getTransactionalCatalogPublicUrl(store.slug)).host}
           </Link>
           . Toca un pedido para ver el detalle sin salir de la lista.
         </p>
