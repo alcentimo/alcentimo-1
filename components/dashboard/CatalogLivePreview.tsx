@@ -60,17 +60,19 @@ export function CatalogLivePreview({
         isCustomer={false}
       >
         <div className="catalog-live-preview-root txn-catalog-root">
-          <TransactionalCatalog
-            store={store}
-            products={products}
-            exchangeRate={exchangeRateRow}
-            purchaseInfo={settings.purchaseInfo}
-            catalogDesign={settings.catalogDesign}
-            catalogCurrency={settings.catalogCurrency}
-            previewMode
-            referenceMode={referenceMode}
-            showReferenceCta={showReferenceCta}
-          />
+          <div className="catalog-live-preview-scroll">
+            <TransactionalCatalog
+              store={store}
+              products={products}
+              exchangeRate={exchangeRateRow}
+              purchaseInfo={settings.purchaseInfo}
+              catalogDesign={settings.catalogDesign}
+              catalogCurrency={settings.catalogCurrency}
+              previewMode
+              referenceMode={referenceMode}
+              showReferenceCta={showReferenceCta}
+            />
+          </div>
           <div className="catalog-live-preview-tab-bar" aria-hidden="true">
             <CatalogTabBar storeSlug={store.slug} />
           </div>

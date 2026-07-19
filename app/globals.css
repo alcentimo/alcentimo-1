@@ -3550,9 +3550,25 @@ body {
 
 .design-studio-preview-frame {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: min(72vh, 720px);
   max-height: min(72vh, 720px);
-  overflow: auto;
+  overflow: hidden;
   background: #fff;
+}
+
+.design-studio-preview-frame .design-preview-rubro-enter,
+.design-studio-preview-frame .design-preview-stage {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.design-studio-preview-frame .catalog-live-preview-root {
+  flex: 1;
+  min-height: 0;
 }
 
 .design-reference-badge {
@@ -3671,7 +3687,9 @@ body {
 }
 
 .catalog-preview-viewport {
-  @apply shrink-0 overflow-hidden rounded-[1.25rem] border border-zinc-300 bg-white shadow-xl ring-1 ring-black/5 transition-[width] duration-200 ease-out dark:border-zinc-700 dark:bg-white;
+  @apply flex shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-zinc-300 bg-white shadow-xl ring-1 ring-black/5 transition-[width] duration-200 ease-out dark:border-zinc-700 dark:bg-white;
+  height: min(72vh, 720px);
+  max-height: min(72vh, 720px);
 }
 
 .catalog-preview-viewport--mobile {
@@ -3683,11 +3701,21 @@ body {
 }
 
 .catalog-live-preview-root {
-  @apply min-h-0 bg-white;
+  @apply relative flex min-h-0 flex-col bg-white;
 }
 
 .catalog-live-preview-root.txn-catalog-root {
-  min-height: auto;
+  height: 100%;
+  min-height: 0;
+}
+
+.catalog-live-preview-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .catalog-live-preview-root .txn-catalog {
@@ -3696,15 +3724,19 @@ body {
 }
 
 .catalog-live-preview-root .txn-catalog--preview {
-  min-height: 520px;
+  min-height: auto;
 }
 
 .catalog-live-preview-tab-bar {
-  @apply pointer-events-none select-none border-t border-neutral-200 opacity-95;
+  @apply pointer-events-none z-10 shrink-0 select-none border-t border-neutral-200 bg-white/95 opacity-95 backdrop-blur-md;
 }
 
 .catalog-live-preview-tab-bar .catalog-tab-bar {
   position: relative;
+  inset: auto;
+  bottom: auto;
+  left: auto;
+  right: auto;
 }
 
 .txn-catalog-empty {
