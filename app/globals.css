@@ -3460,6 +3460,10 @@ body {
   @apply mt-1 text-sm font-medium text-zinc-800 dark:text-zinc-100;
 }
 
+.design-studio-preview-badge {
+  @apply inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-950/50 dark:text-amber-300;
+}
+
 .design-studio-preview-frame {
   max-height: min(72vh, 720px);
   overflow: auto;
