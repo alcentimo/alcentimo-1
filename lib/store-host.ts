@@ -147,13 +147,38 @@ export function toInternalCatalogPath(
   return `/c/${storeSlugFromHost}${pathname === "/" ? "" : pathname}`;
 }
 
+/** Rutas públicas del catálogo que viven bajo app/c/[store_slug]/ */
+const SUBDOMAIN_CATALOG_PUBLIC_PATHS = new Set([
+  "/",
+  "/categorias",
+  "/cuenta",
+  "/perfil",
+  "/manifest.json",
+  "/sw.js",
+]);
+
+function isSubdomainCatalogPublicPath(pathname: string): boolean {
+  if (SUBDOMAIN_CATALOG_PUBLIC_PATHS.has(pathname)) return true;
+
+  return (
+    pathname.startsWith("/categorias/") ||
+    pathname.startsWith("/cuenta/") ||
+    pathname.startsWith("/perfil/")
+  );
+}
+
 /** ¿Debe reescribirse la petición de subdominio hacia /c/[slug]? */
 export function shouldRewriteSubdomainCatalogPath(pathname: string): boolean {
-  return (
-    !pathname.startsWith("/c/") &&
-    !pathname.startsWith("/api/") &&
-    !pathname.startsWith("/_next/") &&
-    !pathname.startsWith("/auth/") &&
-    pathname !== "/favicon.ico"
-  );
+  if (
+    pathname.startsWith("/c/") ||
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/auth/") ||
+    pathname === "/favicon.ico"
+  ) {
+    return false;
+  }
+
+  // Solo reescribir rutas del catálogo. /register, /dashboard, etc. viven en app/.
+  return isSubdomainCatalogPublicPath(pathname);
 }
