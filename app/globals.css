@@ -3455,6 +3455,35 @@ body {
   @apply divide-y divide-zinc-200/80 rounded-xl border border-zinc-200/80 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-950;
 }
 
+.design-preview-rubro-picker {
+  @apply space-y-2 px-4 py-3.5;
+}
+
+.design-preview-rubro-label {
+  @apply block text-xs font-medium text-zinc-600 dark:text-zinc-400;
+}
+
+.design-preview-rubro-select {
+  @apply h-9 border-zinc-200/90 bg-zinc-50/80 font-medium dark:border-zinc-700 dark:bg-zinc-900/60;
+}
+
+.design-preview-rubro-hint {
+  @apply text-[11px] leading-relaxed text-zinc-400;
+}
+
+.design-preview-rubro-enter {
+  animation: design-preview-rubro-fade 0.32s ease-out both;
+}
+
+@keyframes design-preview-rubro-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .design-accordion-trigger {
   @apply flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-zinc-50/80 dark:hover:bg-zinc-900/40;
 }

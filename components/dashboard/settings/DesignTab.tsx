@@ -22,6 +22,12 @@ import type {
   CatalogVisibilitySettings,
 } from "@/lib/store-settings/types";
 import { cn } from "@/lib/cn";
+import { Select } from "@/components/ui/select";
+import {
+  normalizeStoreRubro,
+  STORE_RUBRO_OPTIONS,
+  type StoreRubro,
+} from "@/src/config/categories";
 
 interface DesignTabPreviewContext {
   store: Store;
@@ -144,6 +150,9 @@ function DesignOption({
 
 export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
   const [design, setDesign] = useState(initialDesign);
+  const [previewRubro, setPreviewRubro] = useState<StoreRubro>(() =>
+    normalizeStoreRubro(preview?.store.rubro_tienda ?? "general"),
+  );
   const [error, setError] = useState<string | null>(null);
   const [savingField, setSavingField] = useState<SavingField>(null);
   const [openSection, setOpenSection] = useState<AccordionSection>("theme");
@@ -235,6 +244,31 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
           </div>
 
           <div className="design-studio-accordions">
+            <div className="design-preview-rubro-picker">
+              <label htmlFor="design-preview-rubro" className="design-preview-rubro-label">
+                Viendo catálogo de:
+              </label>
+              <Select
+                id="design-preview-rubro"
+                value={previewRubro}
+                onChange={(event) =>
+                  setPreviewRubro(normalizeStoreRubro(event.target.value))
+                }
+                className="design-preview-rubro-select"
+                aria-describedby="design-preview-rubro-hint"
+              >
+                {STORE_RUBRO_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+              <p id="design-preview-rubro-hint" className="design-preview-rubro-hint">
+                Solo vista previa. No cambia el rubro de tu tienda en Perfil de
+                Empresa.
+              </p>
+            </div>
+
             <DesignAccordion
               title="Tema"
               summary={themeSummary}
@@ -353,6 +387,7 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
               exchangeRateUpdatedAt={preview.exchangeRateUpdatedAt}
               baseSettings={preview.baseSettings}
               design={design}
+              previewRubro={previewRubro}
             />
           ) : (
             <div className="design-studio-preview-empty">

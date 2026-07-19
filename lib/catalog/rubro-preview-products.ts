@@ -499,8 +499,9 @@ export interface ReferenceCatalogResult {
 export function getReferenceCatalogForStore(
   store: Pick<Store, "id" | "slug" | "name" | "rubro_tienda">,
   exchangeRate: number | null = null,
+  previewRubro?: StoreRubro,
 ): ReferenceCatalogResult {
-  const rubro = normalizeStoreRubro(store.rubro_tienda);
+  const rubro = previewRubro ?? normalizeStoreRubro(store.rubro_tienda);
   const rate = exchangeRate ?? DEFAULT_REFERENCE_EXCHANGE_RATE;
   const seeds = REFERENCE_CATALOG_SEEDS[rubro] ?? REFERENCE_CATALOG_SEEDS.general;
 

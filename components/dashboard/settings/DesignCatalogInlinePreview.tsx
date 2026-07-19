@@ -11,6 +11,7 @@ import {
   CATALOG_SALE_MODE_PRESETS,
   CATALOG_THEME_PRESETS,
 } from "@/lib/store-settings/catalog-theme-presets";
+import type { StoreRubro } from "@/src/config/categories";
 
 interface DesignCatalogInlinePreviewProps {
   store: Store;
@@ -18,6 +19,7 @@ interface DesignCatalogInlinePreviewProps {
   exchangeRateUpdatedAt?: string | null;
   baseSettings: CatalogPreviewSettings;
   design: CatalogDesignSettings;
+  previewRubro: StoreRubro;
 }
 
 export function DesignCatalogInlinePreview({
@@ -26,18 +28,19 @@ export function DesignCatalogInlinePreview({
   exchangeRateUpdatedAt = null,
   baseSettings,
   design,
+  previewRubro,
 }: DesignCatalogInlinePreviewProps) {
   const resolvedDesign = useMemo(
-    () => resolveCatalogDesign(design, store.rubro_tienda),
-    [design, store.rubro_tienda],
+    () => resolveCatalogDesign(design, previewRubro),
+    [design, previewRubro],
   );
 
   const themeLabel = CATALOG_THEME_PRESETS[resolvedDesign.theme].label;
   const saleLabel = CATALOG_SALE_MODE_PRESETS[resolvedDesign.saleMode].label;
 
   const referenceCatalog = useMemo(
-    () => getReferenceCatalogForStore(store, exchangeRate),
-    [store, exchangeRate],
+    () => getReferenceCatalogForStore(store, exchangeRate, previewRubro),
+    [store, exchangeRate, previewRubro],
   );
 
   const settings = useMemo(
@@ -71,15 +74,17 @@ export function DesignCatalogInlinePreview({
 
       <div className="design-studio-preview-frame">
         <span className="design-reference-badge">Diseño de Referencia</span>
-        <div key={previewStageKey} className="design-preview-stage">
-          <CatalogLivePreview
-            store={store}
-            products={referenceCatalog.products}
-            exchangeRate={exchangeRate}
-            exchangeRateUpdatedAt={exchangeRateUpdatedAt}
-            settings={settings}
-            referenceMode
-          />
+        <div key={previewRubro} className="design-preview-rubro-enter">
+          <div key={previewStageKey} className="design-preview-stage">
+            <CatalogLivePreview
+              store={store}
+              products={referenceCatalog.products}
+              exchangeRate={exchangeRate}
+              exchangeRateUpdatedAt={exchangeRateUpdatedAt}
+              settings={settings}
+              referenceMode
+            />
+          </div>
         </div>
       </div>
     </div>
