@@ -13,7 +13,12 @@
 import { spawnSync } from "node:child_process";
 
 const PROJECT_REF = "pboxqwrogkwxkrjvbsqo";
-const FUNCTIONS = ["sync-bcv", "sync-bcv-midnight", "sync-bcv-retry"];
+const FUNCTIONS = [
+  "sync-bcv",
+  "sync-bcv-midnight",
+  "sync-bcv-retry",
+  "provision-store-subdomain",
+];
 
 console.log(`[deploy] Proyecto Supabase: ${PROJECT_REF}`);
 console.log(`[deploy] Funciones: ${FUNCTIONS.join(", ")}`);

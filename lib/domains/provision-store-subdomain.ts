@@ -1,30 +1,36 @@
 /**
- * Orquesta el aprovisionamiento de subdominios de tienda en Cloudflare + Vercel.
- * Diseñado para ejecutarse en fire-and-forget desde server actions.
+ * Cliente del lado Vercel/Next.js para invocar la Edge Function de Supabase.
+ * La lógica de Cloudflare/Vercel vive en supabase/functions/provision-store-subdomain.
  */
 
-import {
-  getDomainProvisioningConfig,
-  isStoreSubdomainProvisioningEnabled,
-} from "@/lib/domains/config";
-import { ensureCloudflareStoreCname } from "@/lib/domains/cloudflare-dns";
-import {
-  ensureVercelProjectDomain,
-  removeVercelProjectDomain,
-} from "@/lib/domains/vercel-domains";
-import { isValidStoreSlug } from "@/lib/stores/slug";
+function optionalEnv(name: string): string | undefined {
+  const value = process.env[name]?.trim();
+  return value || undefined;
+}
+
+/** Activa la invocación de la Edge Function al crear o renombrar tiendas. */
+export function isStoreSubdomainProvisioningEnabled(): boolean {
+  return process.env.STORE_SUBDOMAIN_PROVISION_ENABLED === "true";
+}
+
+function getProvisionFunctionUrl(): string | null {
+  const supabaseUrl = optionalEnv("NEXT_PUBLIC_SUPABASE_URL");
+  if (!supabaseUrl) return null;
+  return `${supabaseUrl.replace(/\/$/, "")}/functions/v1/provision-store-subdomain`;
+}
 
 export interface ProvisionStoreSubdomainInput {
   storeId: string;
   slug: string;
 }
 
-export interface ProvisionStoreSubdomainResult {
-  skipped: boolean;
+type ProvisionAction = "provision" | "deprovision" | "rename";
+
+interface InvokePayload {
+  action: ProvisionAction;
+  storeId: string;
   slug: string;
-  cloudflare?: { created: boolean };
-  vercel?: { created: boolean };
-  error?: string;
+  previousSlug?: string;
 }
 
 function logProvision(event: string, payload: Record<string, unknown>) {
@@ -37,91 +43,68 @@ function logProvision(event: string, payload: Record<string, unknown>) {
   );
 }
 
-/**
- * Crea (o verifica) el subdominio `{slug}.{apex}` en Cloudflare y Vercel.
- * No lanza excepciones: devuelve `{ skipped: true }` si el feature está apagado.
- */
-export async function provisionStoreSubdomain(
-  input: ProvisionStoreSubdomainInput,
-): Promise<ProvisionStoreSubdomainResult> {
-  const slug = input.slug.trim().toLowerCase();
-
-  if (!isValidStoreSlug(slug)) {
-    return { skipped: true, slug, error: "Slug inválido para subdominio." };
-  }
-
+async function invokeProvisionEdgeFunction(
+  payload: InvokePayload,
+): Promise<void> {
   if (!isStoreSubdomainProvisioningEnabled()) {
-    return { skipped: true, slug };
+    return;
   }
 
-  const config = getDomainProvisioningConfig();
-  if (!config) {
-    logProvision("missing_config", { storeId: input.storeId, slug });
-    return {
-      skipped: true,
-      slug,
-      error: "STORE_SUBDOMAIN_PROVISION_ENABLED=true pero faltan credenciales.",
-    };
-  }
+  const functionUrl = getProvisionFunctionUrl();
+  const serviceRoleKey = optionalEnv("SUPABASE_SERVICE_ROLE_KEY");
 
-  const cloudflare = await ensureCloudflareStoreCname(config, slug);
-  if (!cloudflare.ok) {
-    logProvision("cloudflare_failed", {
-      storeId: input.storeId,
-      slug,
-      error: cloudflare.error,
+  if (!functionUrl || !serviceRoleKey) {
+    logProvision("invoke_skipped_missing_config", {
+      hasFunctionUrl: Boolean(functionUrl),
+      hasServiceRoleKey: Boolean(serviceRoleKey),
+      ...payload,
     });
-    return { skipped: false, slug, error: cloudflare.error };
+    return;
   }
 
-  const vercel = await ensureVercelProjectDomain(config, slug);
-  if (!vercel.ok) {
-    logProvision("vercel_failed", {
-      storeId: input.storeId,
-      slug,
-      error: vercel.error,
-    });
-    return { skipped: false, slug, error: vercel.error };
-  }
-
-  logProvision("success", {
-    storeId: input.storeId,
-    slug,
-    cloudflareCreated: cloudflare.created,
-    vercelCreated: vercel.created,
+  const response = await fetch(functionUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceRoleKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
   });
 
-  return {
-    skipped: false,
-    slug,
-    cloudflare: { created: cloudflare.created },
-    vercel: { created: vercel.created },
-  };
+  const body = (await response.json().catch(() => null)) as
+    | { ok?: boolean; skipped?: boolean; error?: string }
+    | null;
+
+  if (!response.ok) {
+    logProvision("edge_invoke_failed", {
+      status: response.status,
+      error: body?.error ?? "Edge Function error",
+      ...payload,
+    });
+    return;
+  }
+
+  if (body?.error && !body.skipped) {
+    logProvision("edge_provision_failed", {
+      error: body.error,
+      ...payload,
+    });
+    return;
+  }
+
+  logProvision("edge_invoke_success", { ...payload });
 }
 
-/**
- * Limpia el subdominio anterior cuando el slug cambia (opcional).
- * No revierte el wildcard; solo elimina registros explícitos creados por la app.
- */
-export async function deprovisionStoreSubdomain(
-  slug: string,
-): Promise<void> {
-  const config = getDomainProvisioningConfig();
-  if (!config || !isValidStoreSlug(slug)) return;
-
-  const { removeCloudflareStoreCname } = await import(
-    "@/lib/domains/cloudflare-dns"
-  );
-
-  await removeCloudflareStoreCname(config, slug);
-  await removeVercelProjectDomain(config, slug);
-}
-
-/** Fire-and-forget seguro para no bloquear onboarding ni ajustes. */
+/** Fire-and-forget: no bloquea onboarding ni ajustes. */
 export function scheduleStoreSubdomainProvision(
   input: ProvisionStoreSubdomainInput,
 ): void {
-  void provisionStoreSubdomain(input).catch((error: unknown) => {
+  void invokeProvisionEdgeFunction({
+    action: "provision",
+    storeId: input.storeId,
+    slug: input.slug,
+  }).catch((error: unknown) => {
     logProvision("unhandled_error", {
       storeId: input.storeId,
       slug: input.slug,
@@ -130,7 +113,7 @@ export function scheduleStoreSubdomainProvision(
   });
 }
 
-/** Al renombrar slug: aprovisiona el nuevo y limpia el anterior. */
+/** Aprovisiona el nuevo slug y limpia el anterior en una sola invocación. */
 export function scheduleStoreSubdomainRename(
   storeId: string,
   previousSlug: string,
@@ -138,12 +121,16 @@ export function scheduleStoreSubdomainRename(
 ): void {
   if (previousSlug === nextSlug) return;
 
-  scheduleStoreSubdomainProvision({ storeId, slug: nextSlug });
-
-  void deprovisionStoreSubdomain(previousSlug).catch((error: unknown) => {
-    logProvision("deprovision_failed", {
+  void invokeProvisionEdgeFunction({
+    action: "rename",
+    storeId,
+    slug: nextSlug,
+    previousSlug,
+  }).catch((error: unknown) => {
+    logProvision("unhandled_error", {
       storeId,
-      slug: previousSlug,
+      slug: nextSlug,
+      previousSlug,
       error: error instanceof Error ? error.message : String(error),
     });
   });

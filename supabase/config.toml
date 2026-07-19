@@ -10,3 +10,7 @@ verify_jwt = false
 
 [functions.sync-bcv-retry]
 verify_jwt = false
+
+# Aprovisionamiento de subdominios de tienda (invocada desde Next.js con service role)
+[functions.provision-store-subdomain]
+verify_jwt = false

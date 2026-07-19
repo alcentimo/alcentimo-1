@@ -1,16 +1,9 @@
-/**
- * Cliente mínimo para dominios de proyecto en Vercel.
- * Docs: https://vercel.com/docs/rest-api/reference/endpoints/projects/add-a-domain-to-a-project
- */
-
-import type { DomainProvisioningConfig } from "@/lib/domains/config";
+import type { DomainProvisioningConfig } from "./store-subdomain-config.ts";
 
 const VERCEL_API = "https://api.vercel.com";
 
 interface VercelDomainResponse {
-  name: string;
-  verified: boolean;
-  error?: { message: string; code: string };
+  error?: { message?: string };
 }
 
 function vercelProjectPath(config: DomainProvisioningConfig): string {
@@ -36,7 +29,6 @@ export async function ensureVercelProjectDomain(
   const getRes = await fetch(`${VERCEL_API}${path}/${encodeURIComponent(domain)}`, {
     method: "GET",
     headers: vercelHeaders(config.vercelApiToken),
-    cache: "no-store",
   });
 
   if (getRes.ok) {
@@ -45,7 +37,7 @@ export async function ensureVercelProjectDomain(
 
   if (getRes.status !== 404) {
     const body = (await getRes.json().catch(() => null)) as
-      | { error?: { message?: string } }
+      | VercelDomainResponse
       | null;
     return {
       ok: false,
@@ -58,15 +50,14 @@ export async function ensureVercelProjectDomain(
     method: "POST",
     headers: vercelHeaders(config.vercelApiToken),
     body: JSON.stringify({ name: domain }),
-    cache: "no-store",
   });
 
   const createJson = (await createRes.json()) as VercelDomainResponse;
   if (!createRes.ok) {
     const message =
-      createJson.error?.message ?? `Vercel add domain failed (${createRes.status})`;
+      createJson.error?.message ??
+      `Vercel add domain failed (${createRes.status})`;
 
-    // Con wildcard *.apex ya configurado, Vercel puede responder que el dominio ya existe.
     if (
       createRes.status === 409 ||
       message.toLowerCase().includes("already") ||
@@ -93,7 +84,6 @@ export async function removeVercelProjectDomain(
     {
       method: "DELETE",
       headers: vercelHeaders(config.vercelApiToken),
-      cache: "no-store",
     },
   );
 
@@ -103,12 +93,13 @@ export async function removeVercelProjectDomain(
 
   if (!deleteRes.ok) {
     const body = (await deleteRes.json().catch(() => null)) as
-      | { error?: { message?: string } }
+      | VercelDomainResponse
       | null;
     return {
       ok: false,
       error:
-        body?.error?.message ?? `Vercel remove domain failed (${deleteRes.status})`,
+        body?.error?.message ??
+        `Vercel remove domain failed (${deleteRes.status})`,
     };
   }
 

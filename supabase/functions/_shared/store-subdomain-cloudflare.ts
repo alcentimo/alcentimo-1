@@ -1,16 +1,10 @@
-/**
- * Cliente mínimo para registros DNS en Cloudflare.
- * Docs: https://developers.cloudflare.com/api/resources/dns/subresources/records/
- */
-
-import type { DomainProvisioningConfig } from "@/lib/domains/config";
+import type { DomainProvisioningConfig } from "./store-subdomain-config.ts";
 
 const CLOUDFLARE_API = "https://api.cloudflare.com/client/v4";
 
 interface CloudflareDnsRecord {
   id: string;
   type: string;
-  name: string;
   content: string;
 }
 
@@ -22,7 +16,6 @@ interface CloudflareListResponse {
 
 interface CloudflareCreateResponse {
   success: boolean;
-  result: CloudflareDnsRecord;
   errors?: { message: string }[];
 }
 
@@ -52,7 +45,6 @@ export async function ensureCloudflareStoreCname(
   const listRes = await fetch(listUrl, {
     method: "GET",
     headers: cloudflareHeaders(config.cloudflareApiToken),
-    cache: "no-store",
   });
 
   const listJson = (await listRes.json()) as CloudflareListResponse;
@@ -83,10 +75,9 @@ export async function ensureCloudflareStoreCname(
         type: "CNAME",
         name: slug,
         content: config.vercelCnameTarget,
-        proxied: process.env.CLOUDFLARE_DNS_PROXIED !== "false",
+        proxied: config.cloudflareDnsProxied,
         ttl: 1,
       }),
-      cache: "no-store",
     },
   );
 
@@ -116,7 +107,6 @@ export async function removeCloudflareStoreCname(
   const listRes = await fetch(listUrl, {
     method: "GET",
     headers: cloudflareHeaders(config.cloudflareApiToken),
-    cache: "no-store",
   });
 
   const listJson = (await listRes.json()) as CloudflareListResponse;
@@ -137,7 +127,6 @@ export async function removeCloudflareStoreCname(
       {
         method: "DELETE",
         headers: cloudflareHeaders(config.cloudflareApiToken),
-        cache: "no-store",
       },
     );
 
