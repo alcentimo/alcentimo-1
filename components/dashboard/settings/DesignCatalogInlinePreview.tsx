@@ -11,6 +11,7 @@ import {
   CATALOG_SALE_MODE_PRESETS,
   CATALOG_THEME_PRESETS,
 } from "@/lib/store-settings/catalog-theme-presets";
+import { cn } from "@/lib/cn";
 
 interface DesignCatalogInlinePreviewProps {
   store: Store;
@@ -50,9 +51,18 @@ export function DesignCatalogInlinePreview({
     [baseSettings, resolvedDesign],
   );
 
+  const previewStageKey = preview.isSampleMode
+    ? `sample-${resolvedDesign.theme}-${resolvedDesign.saleMode}-${preview.rubroLabel}`
+    : `live-${preview.products.map((item) => item.product_id).join(",")}`;
+
   return (
     <div className="design-studio-preview">
-      <div className="design-studio-preview-meta">
+      <div
+        className={cn(
+          "design-studio-preview-meta design-preview-meta-enter",
+          !preview.isSampleMode && "design-preview-meta-enter-live",
+        )}
+      >
         <div className="flex flex-wrap items-center gap-2">
           <p className="design-studio-preview-eyebrow">Vista previa en vivo</p>
           {preview.isSampleMode ? (
@@ -65,20 +75,23 @@ export function DesignCatalogInlinePreview({
         </p>
         {preview.isSampleMode ? (
           <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-            Productos de ejemplo para tu rubro. Cuando publiques los tuyos, se
-            mostrarán aquí automáticamente.
+            Ejemplos curados para tu rubro. Al publicar tus productos, la vista
+            previa cambiará automáticamente.
           </p>
         ) : null}
       </div>
 
       <div className="design-studio-preview-frame">
-        <CatalogLivePreview
-          store={store}
-          products={preview.products}
-          exchangeRate={exchangeRate}
-          exchangeRateUpdatedAt={exchangeRateUpdatedAt}
-          settings={settings}
-        />
+        <div key={previewStageKey} className="design-preview-stage">
+          <CatalogLivePreview
+            store={store}
+            products={preview.products}
+            exchangeRate={exchangeRate}
+            exchangeRateUpdatedAt={exchangeRateUpdatedAt}
+            settings={settings}
+            sampleMode={preview.isSampleMode}
+          />
+        </div>
       </div>
     </div>
   );

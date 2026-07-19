@@ -3474,6 +3474,85 @@ body {
   min-height: auto;
 }
 
+.design-preview-stage {
+  animation: design-preview-stage-enter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.design-preview-meta-enter {
+  transition: opacity 0.32s ease, transform 0.32s ease;
+}
+
+.design-preview-meta-enter-live {
+  animation: design-preview-meta-enter 0.36s ease-out both;
+}
+
+@keyframes design-preview-stage-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes design-preview-meta-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes catalog-preview-product-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.catalog-preview-product-enter {
+  animation: catalog-preview-product-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  height: 100%;
+}
+
+.txn-catalog--sample-mode .store-product-desc {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.catalog-upload-cta-card {
+  @apply border-dashed border-zinc-300 bg-zinc-50/80 shadow-none transition duration-300 hover:border-emerald-500/50 hover:bg-emerald-50/40 dark:border-zinc-700 dark:bg-zinc-900/40 dark:hover:border-emerald-500/40 dark:hover:bg-emerald-950/20;
+}
+
+.catalog-upload-cta-card-inner {
+  @apply flex h-full min-h-[220px] flex-col items-center justify-center px-4 py-6 text-center;
+}
+
+.catalog-upload-cta-icon {
+  @apply mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 shadow-sm transition group-hover:border-emerald-500 group-hover:text-emerald-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200;
+}
+
+.catalog-upload-cta-title {
+  @apply text-sm font-semibold text-zinc-900 dark:text-zinc-50;
+}
+
+.catalog-upload-cta-desc {
+  @apply mt-1.5 max-w-[14rem] text-xs leading-relaxed text-zinc-500;
+}
+
+.catalog-upload-cta-action {
+  @apply mt-4 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 transition group-hover:gap-1.5 dark:text-emerald-400;
+}
+
 .design-studio-preview-empty {
   @apply flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/50 px-6 text-center dark:border-zinc-700 dark:bg-zinc-900/20;
 }

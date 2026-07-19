@@ -11,6 +11,7 @@ import {
 } from "@/lib/store-settings/catalog-theme";
 import { formatExchangeRate } from "@/lib/format";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { CatalogUploadCtaCard } from "@/components/catalog/CatalogUploadCtaCard";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { CatalogCartHost } from "@/components/catalog-transactional/CatalogCartHost";
@@ -26,6 +27,7 @@ interface TransactionalCatalogProps {
   catalogCurrency: CatalogCurrencySettings;
   openCheckoutInitially?: boolean;
   previewMode?: boolean;
+  sampleMode?: boolean;
 }
 
 function getStoreInitials(name: string): string {
@@ -44,6 +46,7 @@ export function TransactionalCatalog({
   catalogCurrency,
   openCheckoutInitially = false,
   previewMode = false,
+  sampleMode = false,
 }: TransactionalCatalogProps) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
@@ -62,6 +65,7 @@ export function TransactionalCatalog({
         "txn-catalog",
         getCatalogDesignClasses(catalogDesign),
         previewMode && "txn-catalog--preview",
+        previewMode && sampleMode && "txn-catalog--sample-mode",
       )}
       style={getCatalogThemeStyle(catalogDesign)}
     >
@@ -121,16 +125,35 @@ export function TransactionalCatalog({
                 : "txn-product-grid"
             }
           >
-            {availableProducts.map((product) => (
-              <ProductCard
+            {availableProducts.map((product, index) => (
+              <div
                 key={product.product_id}
-                product={product}
-                exchangeRate={liveExchangeRate}
-                showBsConversion={showBsConversion}
-                catalogVisibility={catalogDesign.visibility}
-                onAddToCart={addItem}
-              />
+                className={cn(
+                  sampleMode && previewMode && "catalog-preview-product-enter",
+                )}
+                style={
+                  sampleMode && previewMode
+                    ? { animationDelay: `${index * 45}ms` }
+                    : undefined
+                }
+              >
+                <ProductCard
+                  product={product}
+                  exchangeRate={liveExchangeRate}
+                  showBsConversion={showBsConversion}
+                  catalogVisibility={catalogDesign.visibility}
+                  onAddToCart={sampleMode ? undefined : addItem}
+                />
+              </div>
             ))}
+            {previewMode && sampleMode ? (
+              <div
+                className="catalog-preview-product-enter"
+                style={{ animationDelay: `${availableProducts.length * 45}ms` }}
+              >
+                <CatalogUploadCtaCard />
+              </div>
+            ) : null}
           </div>
         )}
       </main>
