@@ -1436,12 +1436,25 @@ body {
 }
 
 /* Settings — control panel workspace */
+.settings-page-shell {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
 .settings-workspace {
-  @apply overflow-hidden rounded-[12px] border border-zinc-200/70 bg-white shadow-[0_1px_3px_rgba(24,24,27,0.05)] dark:border-zinc-800/70 dark:bg-zinc-950;
+  @apply min-w-0 max-w-full overflow-x-hidden rounded-[12px] border border-zinc-200/70 bg-white shadow-[0_1px_3px_rgba(24,24,27,0.05)] dark:border-zinc-800/70 dark:bg-zinc-950;
 }
 
 .settings-tab-nav {
-  @apply flex gap-1 overflow-x-auto border-b border-zinc-200/70 bg-[#FAFAF9] px-4 dark:border-zinc-800/70 dark:bg-zinc-900/30 sm:gap-2 sm:px-6;
+  @apply flex flex-nowrap gap-1 overflow-x-auto border-b border-zinc-200/70 bg-[#FAFAF9] px-3 dark:border-zinc-800/70 dark:bg-zinc-900/30 sm:gap-2 sm:px-6;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.settings-tab-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .settings-tab-link {
@@ -1458,7 +1471,17 @@ body {
 }
 
 .settings-workspace-body {
-  @apply p-5 sm:p-7;
+  @apply min-w-0 p-3 sm:p-5 md:p-7;
+}
+
+.settings-secondary-nav {
+  @apply mt-0 flex flex-nowrap gap-2 overflow-x-auto border-t border-zinc-100 px-3 pb-1 pt-3 dark:border-zinc-800/80 sm:px-6;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.settings-secondary-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .settings-pill-link {
@@ -1548,7 +1571,39 @@ body {
 }
 
 .settings-section-grid {
-  @apply grid grid-cols-1 gap-4;
+  @apply grid min-w-0 grid-cols-1 gap-4;
+}
+
+@media (max-width: 767px) {
+  .settings-workspace-body {
+    @apply px-3 py-4;
+  }
+
+  .settings-tab-content {
+    @apply space-y-4 pb-2;
+  }
+
+  .settings-section {
+    @apply space-y-3;
+  }
+
+  .settings-section-grid {
+    @apply gap-3;
+  }
+
+  .settings-workspace-body input:not([type="checkbox"]):not([type="radio"]),
+  .settings-workspace-body textarea,
+  .settings-workspace-body select {
+    @apply text-sm;
+  }
+
+  .settings-workspace-body label {
+    @apply text-xs;
+  }
+
+  .store-logo-field {
+    @apply gap-2.5;
+  }
 }
 
 .integration-hub-grid {
@@ -3438,7 +3493,7 @@ body {
   min-width: 0;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .design-studio {
     grid-template-columns: minmax(0, 17.5rem) minmax(0, 1fr);
     gap: 2rem;
@@ -3460,27 +3515,19 @@ body {
 
 .design-studio-mobile-preview-bar {
   display: none;
-  min-width: 0;
 }
 
-.design-studio-mobile-preview-toggle {
-  @apply inline-flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50 active:scale-[0.99] dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900;
+.design-studio-preview-fab {
+  display: none;
 }
 
-@media (max-width: 1023px) {
-  .design-studio-mobile-preview-bar {
-    display: block;
+@media (max-width: 767px) {
+  .design-studio-preview-fab {
+    @apply fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-1/2 z-40 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-emerald-600/20 bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition active:scale-[0.98] dark:border-emerald-500/30 dark:bg-emerald-600;
   }
 
-  .design-studio-main {
+  .design-studio-main--desktop {
     display: none;
-    min-width: 0;
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .design-studio-main.design-studio-main--open {
-    display: block;
   }
 
   .design-preview-rubro-picker {
@@ -3509,8 +3556,31 @@ body {
   }
 
   .settings-tab-content:has(.design-studio) {
-    @apply space-y-4 pb-3;
+    @apply space-y-4 pb-20;
   }
+}
+
+.design-studio-preview-sheet {
+  @apply w-full max-w-none border-l-0 bg-zinc-100 dark:bg-zinc-950 sm:max-w-md sm:border-l;
+}
+
+.design-studio-preview-sheet-header {
+  @apply bg-white dark:bg-zinc-950;
+}
+
+.design-studio-preview-sheet-body {
+  @apply flex min-h-0 flex-1 flex-col overflow-hidden p-0;
+}
+
+.design-studio-preview-sheet-body .design-studio-preview {
+  @apply flex min-h-0 flex-1 flex-col rounded-none border-0;
+}
+
+.design-studio-preview-sheet-body .design-studio-preview-frame {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  max-height: none;
 }
 
 .design-preview-rubro-picker {
@@ -3577,7 +3647,7 @@ body {
 }
 
 .design-studio-main {
-  @apply min-w-0 w-full max-w-full lg:sticky lg:top-4 lg:self-start;
+  @apply min-w-0 w-full max-w-full md:sticky md:top-4 md:self-start;
 }
 
 .design-studio-preview {
@@ -3724,7 +3794,7 @@ body {
   @apply flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/50 px-6 text-center dark:border-zinc-700 dark:bg-zinc-900/20;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .design-studio-preview-empty {
     min-height: min(72vh, 720px);
   }

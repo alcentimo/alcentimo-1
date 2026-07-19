@@ -134,10 +134,10 @@ export function StoreLogoField({ storeName, value, onChange }: StoreLogoFieldPro
   }
 
   return (
-    <div className="flex items-start gap-4">
+    <div className="store-logo-field flex items-start gap-3 sm:gap-4">
       <div
         className={cn(
-          "relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 ring-1 ring-zinc-200/60 dark:border-zinc-700 dark:bg-zinc-900 dark:ring-zinc-800",
+          "store-logo-field-thumb relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 ring-1 ring-zinc-200/60 sm:h-16 sm:w-16 sm:rounded-2xl dark:border-zinc-700 dark:bg-zinc-900 dark:ring-zinc-800",
           isBusy && "opacity-70",
         )}
       >

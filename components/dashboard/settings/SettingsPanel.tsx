@@ -92,7 +92,7 @@ export function SettingsPanel({
       </nav>
 
       <nav
-        className="mt-2 flex flex-wrap gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800/80"
+        className="settings-secondary-nav"
         aria-label="Más opciones de configuración"
       >
         <button

@@ -1,7 +1,15 @@
 "use client";
 
 import { useCallback, useState, useTransition, type ReactNode } from "react";
-import { ChevronDown, Eye, EyeOff } from "lucide-react";
+import { ChevronDown, Eye } from "lucide-react";
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { SettingsTabShell } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
@@ -156,7 +164,7 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [savingField, setSavingField] = useState<SavingField>(null);
   const [openSection, setOpenSection] = useState<AccordionSection>("theme");
-  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
+  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [isSaving, startSave] = useTransition();
 
   const persist = useCallback(
@@ -227,6 +235,26 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
     ]
       .filter(Boolean)
       .join(", ") || "Oculto";
+
+  const previewPanel = preview ? (
+    <DesignCatalogInlinePreview
+      store={preview.store}
+      exchangeRate={preview.exchangeRate}
+      exchangeRateUpdatedAt={preview.exchangeRateUpdatedAt}
+      baseSettings={preview.baseSettings}
+      design={design}
+      previewRubro={previewRubro}
+    />
+  ) : (
+    <div className="design-studio-preview-empty">
+      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+        Vista previa no disponible
+      </p>
+      <p className="mt-1 text-xs text-zinc-500">
+        Configura tu tienda para ver cómo se verá el catálogo.
+      </p>
+    </div>
+  );
 
   return (
     <SettingsTabShell error={error} hideSaveBar>
@@ -381,50 +409,42 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
         </aside>
 
         {preview ? (
-          <div className="design-studio-mobile-preview-bar">
+          <>
             <button
               type="button"
-              className="design-studio-mobile-preview-toggle"
-              aria-expanded={mobilePreviewOpen}
-              aria-controls="design-studio-preview-panel"
-              onClick={() => setMobilePreviewOpen((open) => !open)}
+              className="design-studio-preview-fab"
+              aria-haspopup="dialog"
+              onClick={() => setPreviewSheetOpen(true)}
             >
-              {mobilePreviewOpen ? (
-                <EyeOff className="h-4 w-4 shrink-0" aria-hidden="true" />
-              ) : (
-                <Eye className="h-4 w-4 shrink-0" aria-hidden="true" />
-              )}
-              {mobilePreviewOpen ? "Ocultar vista previa" : "Ver vista previa"}
+              <Eye className="h-4 w-4 shrink-0" aria-hidden="true" />
+              Ver vista previa
             </button>
-          </div>
+
+            <Sheet open={previewSheetOpen} onOpenChange={setPreviewSheetOpen}>
+              <SheetContent
+                className="design-studio-preview-sheet"
+                onClose={() => setPreviewSheetOpen(false)}
+              >
+                <SheetHeader className="design-studio-preview-sheet-header">
+                  <SheetTitle>Vista previa del catálogo</SheetTitle>
+                  <SheetDescription>
+                    Catálogo de referencia por rubro. Los cambios de diseño se
+                    reflejan al instante.
+                  </SheetDescription>
+                </SheetHeader>
+                <SheetBody className="design-studio-preview-sheet-body">
+                  {previewPanel}
+                </SheetBody>
+              </SheetContent>
+            </Sheet>
+          </>
         ) : null}
 
         <main
           id="design-studio-preview-panel"
-          className={cn(
-            "design-studio-main",
-            mobilePreviewOpen && "design-studio-main--open",
-          )}
+          className="design-studio-main design-studio-main--desktop"
         >
-          {preview ? (
-            <DesignCatalogInlinePreview
-              store={preview.store}
-              exchangeRate={preview.exchangeRate}
-              exchangeRateUpdatedAt={preview.exchangeRateUpdatedAt}
-              baseSettings={preview.baseSettings}
-              design={design}
-              previewRubro={previewRubro}
-            />
-          ) : (
-            <div className="design-studio-preview-empty">
-              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                Vista previa no disponible
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                Configura tu tienda para ver cómo se verá el catálogo.
-              </p>
-            </div>
-          )}
+          {previewPanel}
         </main>
       </div>
     </SettingsTabShell>
