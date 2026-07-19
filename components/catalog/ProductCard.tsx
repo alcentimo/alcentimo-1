@@ -1,8 +1,8 @@
 "use client";
 
 import { memo, useMemo, useState } from "react";
-import Image from "next/image";
 import { Check, Plus } from "lucide-react";
+import { CatalogProductImage } from "@/components/catalog/CatalogProductImage";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVisibilitySettings } from "@/lib/store-settings/types";
 import { getProductBodyLayoutClass } from "@/lib/store-settings/catalog-theme";
@@ -166,13 +166,10 @@ export const ProductCard = memo(function ProductCard({
     >
       <div className="store-product-media">
         {product.thumb_url ? (
-          <Image
+          <CatalogProductImage
             src={product.thumb_url}
             alt={product.image_alt ?? product.product_name}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
             className="store-product-image"
-            loading="lazy"
           />
         ) : (
           <div className="store-product-media-fallback" aria-hidden="true">

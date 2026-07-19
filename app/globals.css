@@ -504,6 +504,51 @@ body {
   @apply object-cover transition-transform duration-500 ease-out group-hover:scale-105;
 }
 
+.catalog-product-image-placeholder {
+  @apply absolute inset-0 z-[1] overflow-hidden;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--pc-media-bg) 92%, var(--pc-fg-meta) 8%) 0%,
+    var(--pc-media-bg) 50%,
+    color-mix(in srgb, var(--pc-media-bg) 88%, var(--pc-fg-meta) 12%) 100%
+  );
+}
+
+.catalog-product-image-shimmer {
+  @apply absolute inset-0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, white 35%, transparent) 50%,
+    transparent 100%
+  );
+  animation: catalog-image-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes catalog-image-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.catalog-product-image-fallback {
+  @apply absolute inset-0 z-[1] flex flex-col items-center justify-center gap-2;
+  background-color: color-mix(in srgb, var(--pc-media-bg) 94%, var(--pc-fg-meta) 6%);
+  color: color-mix(in srgb, var(--pc-fg-meta) 55%, transparent);
+}
+
+.catalog-product-image-fallback-icon {
+  @apply h-7 w-7 opacity-70;
+}
+
+.catalog-product-image-fallback-text {
+  font-size: 0.6875rem;
+  @apply font-medium tracking-wide uppercase opacity-80;
+}
+
 .store-product-action {
   padding: var(--pc-body-pad);
   @apply absolute inset-x-0 bottom-0 hidden translate-y-full bg-linear-to-t from-black/50 to-transparent opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:block;
