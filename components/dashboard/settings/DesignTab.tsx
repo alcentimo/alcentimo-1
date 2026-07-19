@@ -9,6 +9,8 @@ import {
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { DesignCatalogInlinePreview } from "@/components/dashboard/settings/DesignCatalogInlinePreview";
+import { DesignThemePreviewCard } from "@/components/dashboard/settings/DesignThemePreviewCard";
 import { saveCatalogDesignSettings } from "@/lib/settings/actions";
 import {
   CATALOG_SALE_MODE_IDS,
@@ -16,6 +18,8 @@ import {
   CATALOG_THEME_IDS,
   CATALOG_THEME_PRESETS,
 } from "@/lib/store-settings/catalog-theme-presets";
+import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
+import type { CatalogListItem, Store } from "@/lib/database.types";
 import type {
   CatalogDesignSettings,
   CatalogSaleMode,
@@ -24,8 +28,17 @@ import type {
 } from "@/lib/store-settings/types";
 import { cn } from "@/lib/cn";
 
+interface DesignTabPreviewContext {
+  store: Store;
+  products: CatalogListItem[];
+  exchangeRate: number | null;
+  exchangeRateUpdatedAt?: string | null;
+  baseSettings: CatalogPreviewSettings;
+}
+
 interface DesignTabProps {
   initialDesign: CatalogDesignSettings;
+  preview?: DesignTabPreviewContext | null;
 }
 
 type SavingField =
@@ -34,45 +47,7 @@ type SavingField =
   | keyof CatalogVisibilitySettings
   | null;
 
-function ThemePreview({ themeId }: { themeId: CatalogThemeId }) {
-  const preset = CATALOG_THEME_PRESETS[themeId];
-
-  return (
-    <div
-      className="mt-3 overflow-hidden rounded-lg border border-zinc-200/80 dark:border-zinc-700"
-      aria-hidden="true"
-    >
-      <div
-        className="flex gap-1.5 p-2"
-        style={{ backgroundColor: preset.previewBg }}
-      >
-        {[0, 1].map((index) => (
-          <div
-            key={index}
-            className="flex-1 overflow-hidden rounded-md border border-black/5 bg-white shadow-sm"
-          >
-            <div
-              className="aspect-[4/3] w-full"
-              style={{
-                backgroundColor:
-                  index === 0 ? `${preset.previewAccent}22` : `${preset.previewAccent}14`,
-              }}
-            />
-            <div className="space-y-1 p-1.5">
-              <div className="h-1.5 w-3/4 rounded-full bg-zinc-200" />
-              <div
-                className="h-2 w-1/2 rounded-full"
-                style={{ backgroundColor: preset.previewAccent }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SaleModePreview({ mode }: { mode: CatalogSaleMode }) {
+function SaleModePreview({ mode, primaryColor }: { mode: CatalogSaleMode; primaryColor: string }) {
   const isQuick = mode === "quick";
 
   return (
@@ -86,8 +61,14 @@ function SaleModePreview({ mode }: { mode: CatalogSaleMode }) {
           <div className="h-1.5 w-full rounded-full bg-zinc-200 dark:bg-zinc-700" />
           {isQuick ? (
             <>
-              <div className="h-2.5 w-2/5 rounded-full bg-emerald-600" />
-              <div className="mt-0.5 h-3 w-full rounded-md bg-emerald-600/90" />
+              <div
+                className="h-2.5 w-2/5 rounded-full"
+                style={{ backgroundColor: primaryColor }}
+              />
+              <div
+                className="mt-0.5 h-3 w-full rounded-md"
+                style={{ backgroundColor: primaryColor }}
+              />
             </>
           ) : (
             <>
@@ -101,7 +82,7 @@ function SaleModePreview({ mode }: { mode: CatalogSaleMode }) {
   );
 }
 
-export function DesignTab({ initialDesign }: DesignTabProps) {
+export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
   const [design, setDesign] = useState(initialDesign);
   const [error, setError] = useState<string | null>(null);
   const [savingField, setSavingField] = useState<SavingField>(null);
@@ -175,52 +156,83 @@ export function DesignTab({ initialDesign }: DesignTabProps) {
         description="Elige un estilo completo. Tipografía, espaciado y botones se aplican solos."
         variant="payments"
       >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {CATALOG_THEME_IDS.map((themeId) => {
-            const preset = CATALOG_THEME_PRESETS[themeId];
-            const selected = design.theme === themeId;
-            const isFieldSaving = savingField === themeId;
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:col-span-3 xl:grid-cols-1">
+            {CATALOG_THEME_IDS.map((themeId) => {
+              const preset = CATALOG_THEME_PRESETS[themeId];
+              const selected = design.theme === themeId;
+              const isFieldSaving = savingField === themeId;
+              const accent = preset.primaryColor;
 
-            return (
-              <button
-                key={themeId}
-                type="button"
-                onClick={() => setTheme(themeId)}
-                disabled={isSaving && isFieldSaving}
-                className="text-left"
-              >
-                <Card
-                  className={cn(
-                    "h-full transition",
-                    selected
-                      ? "border-emerald-600 ring-1 ring-emerald-600/30 dark:border-emerald-500"
-                      : "hover:border-zinc-300 dark:hover:border-zinc-600",
-                  )}
+              return (
+                <button
+                  key={themeId}
+                  type="button"
+                  onClick={() => setTheme(themeId)}
+                  disabled={isSaving && isFieldSaving}
+                  className="text-left"
                 >
-                  <CardHeader className="pb-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                          {preset.label}
-                        </p>
-                        <p className="mt-1 text-xs leading-snug text-zinc-500">
-                          {preset.description}
-                        </p>
+                  <Card
+                    className={cn(
+                      "h-full overflow-hidden transition",
+                      selected
+                        ? "ring-1"
+                        : "hover:border-zinc-300 dark:hover:border-zinc-600",
+                    )}
+                    style={
+                      selected
+                        ? {
+                            borderColor: accent,
+                            boxShadow: `0 0 0 1px color-mix(in srgb, ${accent} 35%, transparent)`,
+                          }
+                        : undefined
+                    }
+                  >
+                    <CardHeader className="pb-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                            {preset.label}
+                          </p>
+                          <p className="mt-1 text-xs leading-snug text-zinc-500">
+                            {preset.description}
+                          </p>
+                        </div>
+                        {selected ? (
+                          <span
+                            className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white"
+                            style={{ backgroundColor: accent }}
+                          >
+                            <Check className="h-3 w-3" aria-hidden="true" />
+                          </span>
+                        ) : null}
                       </div>
-                      {selected ? (
-                        <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
-                          <Check className="h-3 w-3" aria-hidden="true" />
-                        </span>
-                      ) : null}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <ThemePreview themeId={themeId} />
-                  </CardContent>
-                </Card>
-              </button>
-            );
-          })}
+                    </CardHeader>
+                    <CardContent>
+                      <DesignThemePreviewCard
+                        themeId={themeId}
+                        primaryColor={accent}
+                        saleMode={design.saleMode}
+                      />
+                    </CardContent>
+                  </Card>
+                </button>
+              );
+            })}
+          </div>
+
+          {preview ? (
+            <div className="xl:col-span-2">
+              <DesignCatalogInlinePreview
+                store={preview.store}
+                products={preview.products}
+                exchangeRate={preview.exchangeRate}
+                exchangeRateUpdatedAt={preview.exchangeRateUpdatedAt}
+                baseSettings={preview.baseSettings}
+                design={design}
+              />
+            </div>
+          ) : null}
         </div>
       </SettingsSection>
 
@@ -234,6 +246,8 @@ export function DesignTab({ initialDesign }: DesignTabProps) {
             const preset = CATALOG_SALE_MODE_PRESETS[modeId];
             const selected = design.saleMode === modeId;
             const isFieldSaving = savingField === modeId;
+            const accent =
+              CATALOG_THEME_PRESETS[design.theme].primaryColor;
 
             return (
               <button
@@ -282,7 +296,7 @@ export function DesignTab({ initialDesign }: DesignTabProps) {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <SaleModePreview mode={modeId} />
+                    <SaleModePreview mode={modeId} primaryColor={accent} />
                   </CardContent>
                 </Card>
               </button>

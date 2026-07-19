@@ -6,6 +6,8 @@ import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { getStoreCoupons } from "@/lib/coupons/actions";
 import { getStorePromotions } from "@/lib/promotions/actions";
 import { getStoreInventory } from "@/lib/inventory";
+import { getCurrentExchangeRate } from "@/lib/catalog";
+import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import { SettingsPanel } from "@/components/dashboard/settings/SettingsPanel";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 
@@ -27,12 +29,23 @@ export default async function AjustesPage() {
   let products: { id: string; name: string; categoryName: string | null; thumbUrl: string | null }[] =
     [];
 
+  let designPreview: {
+    store: NonNullable<typeof store>;
+    products: Awaited<ReturnType<typeof getStoreInventory>>["products"];
+    exchangeRate: number | null;
+    exchangeRateUpdatedAt: string | null;
+    baseSettings: Awaited<ReturnType<typeof getCatalogPreviewSettings>>;
+  } | null = null;
+
   if (store) {
-    const [config, couponRows, promotionRows, inventory] = await Promise.all([
+    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings] =
+      await Promise.all([
       getStoreSettingsConfig(supabase, store.id),
       getStoreCoupons(store.id),
       getStorePromotions(store.id),
       getStoreInventory(store.slug),
+      getCurrentExchangeRate(),
+      getCatalogPreviewSettings(store),
     ]);
 
     settingsConfig = config;
@@ -44,10 +57,17 @@ export default async function AjustesPage() {
       categoryName: product.category_name,
       thumbUrl: product.thumb_url,
     }));
+    designPreview = {
+      store,
+      products: inventory.products,
+      exchangeRate: exchangeRateRow?.rate ?? null,
+      exchangeRateUpdatedAt: exchangeRateRow?.created_at ?? null,
+      baseSettings: previewSettings,
+    };
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-8">
       <DashboardPageHeader
         sectionLabel="Administración"
         title="Configuración de Tienda"
@@ -75,6 +95,7 @@ export default async function AjustesPage() {
         initialPromotions={promotions}
         products={products}
         initialConfig={settingsConfig}
+        designPreview={designPreview}
       />
     </div>
   );
