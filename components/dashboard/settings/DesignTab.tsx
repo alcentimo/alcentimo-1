@@ -1,16 +1,11 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
-import { Check, Eye, EyeOff, Sparkles, Zap } from "lucide-react";
-import {
-  SettingsSection,
-  SettingsTabShell,
-} from "@/components/dashboard/settings/SettingsLayout";
+import { useCallback, useState, useTransition, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+import { SettingsTabShell } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { DesignCatalogInlinePreview } from "@/components/dashboard/settings/DesignCatalogInlinePreview";
-import { DesignThemePreviewCard } from "@/components/dashboard/settings/DesignThemePreviewCard";
 import { saveCatalogDesignSettings } from "@/lib/settings/actions";
 import {
   CATALOG_SALE_MODE_IDS,
@@ -47,38 +42,104 @@ type SavingField =
   | keyof CatalogVisibilitySettings
   | null;
 
-function SaleModePreview({ mode, primaryColor }: { mode: CatalogSaleMode; primaryColor: string }) {
-  const isQuick = mode === "quick";
+type AccordionSection = "theme" | "sale" | "visibility";
 
+interface DesignAccordionProps {
+  title: string;
+  summary: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}
+
+function DesignAccordion({
+  title,
+  summary,
+  open,
+  onToggle,
+  children,
+}: DesignAccordionProps) {
   return (
-    <div
-      className="mt-3 overflow-hidden rounded-lg border border-zinc-200/80 dark:border-zinc-700"
-      aria-hidden="true"
-    >
-      <div className="flex gap-2 bg-zinc-50 p-2 dark:bg-zinc-900/50">
-        <div className="aspect-square w-10 shrink-0 rounded-md bg-zinc-200 dark:bg-zinc-700" />
-        <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-          <div className="h-1.5 w-full rounded-full bg-zinc-200 dark:bg-zinc-700" />
-          {isQuick ? (
-            <>
-              <div
-                className="h-2.5 w-2/5 rounded-full"
-                style={{ backgroundColor: primaryColor }}
-              />
-              <div
-                className="mt-0.5 h-3 w-full rounded-md"
-                style={{ backgroundColor: primaryColor }}
-              />
-            </>
-          ) : (
-            <>
-              <div className="h-1.5 w-2/5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-              <div className="mt-1 h-2 w-3/5 rounded-md border border-zinc-300 dark:border-zinc-600" />
-            </>
+    <section className="design-accordion">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="design-accordion-trigger"
+      >
+        <span className="min-w-0 flex-1 text-left">
+          <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">
+            {title}
+          </span>
+          {!open ? (
+            <span className="mt-0.5 block truncate text-xs text-zinc-500">
+              {summary}
+            </span>
+          ) : null}
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 text-zinc-400 transition-transform duration-200",
+            open && "rotate-180",
           )}
-        </div>
-      </div>
-    </div>
+          aria-hidden="true"
+        />
+      </button>
+      {open ? <div className="design-accordion-panel">{children}</div> : null}
+    </section>
+  );
+}
+
+interface DesignOptionProps {
+  label: string;
+  description: string;
+  selected: boolean;
+  disabled?: boolean;
+  accent?: string;
+  onClick: () => void;
+}
+
+function DesignOption({
+  label,
+  description,
+  selected,
+  disabled = false,
+  accent,
+  onClick,
+}: DesignOptionProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn("design-option", selected && "design-option-selected")}
+      style={
+        selected && accent
+          ? {
+              borderColor: `color-mix(in srgb, ${accent} 40%, transparent)`,
+              backgroundColor: `color-mix(in srgb, ${accent} 6%, white)`,
+            }
+          : undefined
+      }
+    >
+      <span className="flex min-w-0 flex-1 items-start gap-2.5">
+        {accent ? (
+          <span
+            className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: accent }}
+            aria-hidden="true"
+          />
+        ) : null}
+        <span className="min-w-0 text-left">
+          <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">
+            {label}
+          </span>
+          <span className="mt-0.5 block text-xs leading-snug text-zinc-500">
+            {description}
+          </span>
+        </span>
+      </span>
+    </button>
   );
 }
 
@@ -86,6 +147,7 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
   const [design, setDesign] = useState(initialDesign);
   const [error, setError] = useState<string | null>(null);
   const [savingField, setSavingField] = useState<SavingField>(null);
+  const [openSection, setOpenSection] = useState<AccordionSection>("theme");
   const [isSaving, startSave] = useTransition();
 
   const persist = useCallback(
@@ -142,243 +204,170 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
     );
   }
 
+  function toggleSection(section: AccordionSection) {
+    setOpenSection(section);
+  }
+
+  const themeSummary = CATALOG_THEME_PRESETS[design.theme].label;
+  const saleSummary = CATALOG_SALE_MODE_PRESETS[design.saleMode].label;
+  const visibilitySummary =
+    [
+      design.visibility.showStock && "Stock",
+      design.visibility.showDescription && "Descripción",
+      design.visibility.showPrices && "Precios",
+    ]
+      .filter(Boolean)
+      .join(", ") || "Oculto";
+
   return (
     <SettingsTabShell error={error} hideSaveBar>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Los cambios se guardan automáticamente en tu catálogo público.
-        </p>
-        <SavingHint visible={isSaving} />
-      </div>
-
-      <SettingsSection
-        title="Temas de diseño"
-        description="Elige un estilo completo. Tipografía, espaciado y botones se aplican solos."
-        variant="payments"
-      >
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:col-span-3 xl:grid-cols-1">
-            {CATALOG_THEME_IDS.map((themeId) => {
-              const preset = CATALOG_THEME_PRESETS[themeId];
-              const selected = design.theme === themeId;
-              const isFieldSaving = savingField === themeId;
-              const accent = preset.primaryColor;
-
-              return (
-                <button
-                  key={themeId}
-                  type="button"
-                  onClick={() => setTheme(themeId)}
-                  disabled={isSaving && isFieldSaving}
-                  className="text-left"
-                >
-                  <Card
-                    className={cn(
-                      "h-full overflow-hidden transition",
-                      selected
-                        ? "ring-1"
-                        : "hover:border-zinc-300 dark:hover:border-zinc-600",
-                    )}
-                    style={
-                      selected
-                        ? {
-                            borderColor: accent,
-                            boxShadow: `0 0 0 1px color-mix(in srgb, ${accent} 35%, transparent)`,
-                          }
-                        : undefined
-                    }
-                  >
-                    <CardHeader className="pb-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                            {preset.label}
-                          </p>
-                          <p className="mt-1 text-xs leading-snug text-zinc-500">
-                            {preset.description}
-                          </p>
-                        </div>
-                        {selected ? (
-                          <span
-                            className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white"
-                            style={{ backgroundColor: accent }}
-                          >
-                            <Check className="h-3 w-3" aria-hidden="true" />
-                          </span>
-                        ) : null}
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <DesignThemePreviewCard
-                        themeId={themeId}
-                        primaryColor={accent}
-                        saleMode={design.saleMode}
-                      />
-                    </CardContent>
-                  </Card>
-                </button>
-              );
-            })}
-          </div>
-
-          {preview ? (
-            <div className="xl:col-span-2">
-              <DesignCatalogInlinePreview
-                store={preview.store}
-                products={preview.products}
-                exchangeRate={preview.exchangeRate}
-                exchangeRateUpdatedAt={preview.exchangeRateUpdatedAt}
-                baseSettings={preview.baseSettings}
-                design={design}
-              />
-            </div>
-          ) : null}
-        </div>
-      </SettingsSection>
-
-      <SettingsSection
-        title="Modo de venta"
-        description="Define si priorizas conversión rápida o presentación visual del producto."
-        variant="payments"
-      >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {CATALOG_SALE_MODE_IDS.map((modeId) => {
-            const preset = CATALOG_SALE_MODE_PRESETS[modeId];
-            const selected = design.saleMode === modeId;
-            const isFieldSaving = savingField === modeId;
-            const accent =
-              CATALOG_THEME_PRESETS[design.theme].primaryColor;
-
-            return (
-              <button
-                key={modeId}
-                type="button"
-                onClick={() => setSaleMode(modeId)}
-                disabled={isSaving && isFieldSaving}
-                className="text-left"
-              >
-                <Card
-                  className={cn(
-                    "h-full transition",
-                    selected
-                      ? "border-emerald-600 ring-1 ring-emerald-600/30 dark:border-emerald-500"
-                      : "hover:border-zinc-300 dark:hover:border-zinc-600",
-                  )}
-                >
-                  <CardHeader className="pb-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2">
-                        {modeId === "quick" ? (
-                          <Zap
-                            className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
-                            aria-hidden="true"
-                          />
-                        ) : (
-                          <Sparkles
-                            className="mt-0.5 h-4 w-4 shrink-0 text-violet-500"
-                            aria-hidden="true"
-                          />
-                        )}
-                        <div>
-                          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                            {preset.label}
-                          </p>
-                          <p className="mt-1 text-xs leading-snug text-zinc-500">
-                            {preset.description}
-                          </p>
-                        </div>
-                      </div>
-                      {selected ? (
-                        <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
-                          <Check className="h-3 w-3" aria-hidden="true" />
-                        </span>
-                      ) : null}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <SaleModePreview mode={modeId} primaryColor={accent} />
-                  </CardContent>
-                </Card>
-              </button>
-            );
-          })}
-        </div>
-      </SettingsSection>
-
-      <SettingsSection
-        title="Preferencias de visibilidad"
-        description="Controla qué información ven tus clientes. El diseño se reajusta sin dejar espacios vacíos."
-        variant="payments"
-      >
-        <div className="general-settings-card divide-y divide-zinc-100 dark:divide-zinc-800">
-          <div className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                Stock
-              </p>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                Muestra u oculta indicadores de disponibilidad y agotado.
+      <div className="design-studio">
+        <aside className="design-studio-sidebar">
+          <div className="design-studio-sidebar-header">
+            <div>
+              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                Estilo del catálogo
+              </h2>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                Se guarda automáticamente al cambiar una opción.
               </p>
             </div>
-            <SettingsSwitch
-              id="visibility-stock"
-              label="Mostrar stock"
-              checked={design.visibility.showStock}
-              onChange={(value) => setVisibility("showStock", value)}
-              disabled={isSaving && savingField === "showStock"}
-            />
+            <SavingHint visible={isSaving} />
           </div>
 
-          <div className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                Descripción
-              </p>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                Texto breve debajo del nombre del producto.
-              </p>
-            </div>
-            <SettingsSwitch
-              id="visibility-description"
-              label="Mostrar descripción"
-              checked={design.visibility.showDescription}
-              onChange={(value) => setVisibility("showDescription", value)}
-              disabled={isSaving && savingField === "showDescription"}
-            />
-          </div>
-
-          <div className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
-            <div className="min-w-0 flex items-start gap-2">
-              <div>
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                  Precios
-                </p>
-                <p className="mt-0.5 text-xs text-zinc-500">
-                  Montos en USD y conversión a Bs en las tarjetas.
-                </p>
+          <div className="design-studio-accordions">
+            <DesignAccordion
+              title="Tema"
+              summary={themeSummary}
+              open={openSection === "theme"}
+              onToggle={() => toggleSection("theme")}
+            >
+              <div className="space-y-1">
+                {CATALOG_THEME_IDS.map((themeId) => {
+                  const preset = CATALOG_THEME_PRESETS[themeId];
+                  return (
+                    <DesignOption
+                      key={themeId}
+                      label={preset.label}
+                      description={preset.description}
+                      selected={design.theme === themeId}
+                      accent={preset.primaryColor}
+                      disabled={isSaving && savingField === themeId}
+                      onClick={() => setTheme(themeId)}
+                    />
+                  );
+                })}
               </div>
-              {!design.visibility.showPrices ? (
-                <EyeOff
-                  className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400"
-                  aria-hidden="true"
-                />
-              ) : (
-                <Eye
-                  className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400"
-                  aria-hidden="true"
-                />
-              )}
-            </div>
-            <SettingsSwitch
-              id="visibility-prices"
-              label="Mostrar precios"
-              checked={design.visibility.showPrices}
-              onChange={(value) => setVisibility("showPrices", value)}
-              disabled={isSaving && savingField === "showPrices"}
-            />
+            </DesignAccordion>
+
+            <DesignAccordion
+              title="Modo de venta"
+              summary={saleSummary}
+              open={openSection === "sale"}
+              onToggle={() => toggleSection("sale")}
+            >
+              <div className="space-y-1">
+                {CATALOG_SALE_MODE_IDS.map((modeId) => {
+                  const preset = CATALOG_SALE_MODE_PRESETS[modeId];
+                  return (
+                    <DesignOption
+                      key={modeId}
+                      label={preset.label}
+                      description={preset.description}
+                      selected={design.saleMode === modeId}
+                      disabled={isSaving && savingField === modeId}
+                      onClick={() => setSaleMode(modeId)}
+                    />
+                  );
+                })}
+              </div>
+            </DesignAccordion>
+
+            <DesignAccordion
+              title="Visibilidad"
+              summary={visibilitySummary}
+              open={openSection === "visibility"}
+              onToggle={() => toggleSection("visibility")}
+            >
+              <div className="design-visibility-list">
+                <div className="design-visibility-row">
+                  <div>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      Stock
+                    </p>
+                    <p className="mt-0.5 text-xs text-zinc-500">
+                      Disponibilidad y agotado
+                    </p>
+                  </div>
+                  <SettingsSwitch
+                    id="visibility-stock"
+                    label="Mostrar stock"
+                    checked={design.visibility.showStock}
+                    onChange={(value) => setVisibility("showStock", value)}
+                    disabled={isSaving && savingField === "showStock"}
+                  />
+                </div>
+                <div className="design-visibility-row">
+                  <div>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      Descripción
+                    </p>
+                    <p className="mt-0.5 text-xs text-zinc-500">
+                      Texto bajo el nombre
+                    </p>
+                  </div>
+                  <SettingsSwitch
+                    id="visibility-description"
+                    label="Mostrar descripción"
+                    checked={design.visibility.showDescription}
+                    onChange={(value) => setVisibility("showDescription", value)}
+                    disabled={isSaving && savingField === "showDescription"}
+                  />
+                </div>
+                <div className="design-visibility-row">
+                  <div>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      Precios
+                    </p>
+                    <p className="mt-0.5 text-xs text-zinc-500">
+                      USD y conversión a Bs
+                    </p>
+                  </div>
+                  <SettingsSwitch
+                    id="visibility-prices"
+                    label="Mostrar precios"
+                    checked={design.visibility.showPrices}
+                    onChange={(value) => setVisibility("showPrices", value)}
+                    disabled={isSaving && savingField === "showPrices"}
+                  />
+                </div>
+              </div>
+            </DesignAccordion>
           </div>
-        </div>
-      </SettingsSection>
+        </aside>
+
+        <main className="design-studio-main">
+          {preview ? (
+            <DesignCatalogInlinePreview
+              store={preview.store}
+              products={preview.products}
+              exchangeRate={preview.exchangeRate}
+              exchangeRateUpdatedAt={preview.exchangeRateUpdatedAt}
+              baseSettings={preview.baseSettings}
+              design={design}
+            />
+          ) : (
+            <div className="design-studio-preview-empty">
+              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                Vista previa no disponible
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Configura tu tienda para ver cómo se verá el catálogo.
+              </p>
+            </div>
+          )}
+        </main>
+      </div>
     </SettingsTabShell>
   );
 }
