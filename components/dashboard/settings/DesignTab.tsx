@@ -23,7 +23,6 @@ import type {
 } from "@/lib/store-settings/types";
 import { cn } from "@/lib/cn";
 import { Select } from "@/components/ui/select";
-import { prefetchAllReferenceRubroAssets } from "@/lib/catalog/reference-rubro-assets";
 import {
   normalizeStoreRubro,
   STORE_RUBRO_OPTIONS,
@@ -252,7 +251,6 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
               <Select
                 id="design-preview-rubro"
                 value={previewRubro}
-                onFocus={() => void prefetchAllReferenceRubroAssets()}
                 onChange={(event) =>
                   setPreviewRubro(normalizeStoreRubro(event.target.value))
                 }

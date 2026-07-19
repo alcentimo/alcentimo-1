@@ -25,6 +25,7 @@ interface ProductCardProps {
   showBsConversion?: boolean;
   catalogVisibility?: CatalogVisibilitySettings;
   cartQuantity?: number;
+  referenceCatalog?: boolean;
   onAddToCart?: (product: CatalogListItem, variant: CatalogVariantOption) => void;
 }
 
@@ -71,6 +72,7 @@ export const ProductCard = memo(function ProductCard({
     showPrices: true,
   },
   cartQuantity = 0,
+  referenceCatalog = false,
   onAddToCart,
 }: ProductCardProps) {
   const cartContext = useCartOptional();
@@ -170,6 +172,12 @@ export const ProductCard = memo(function ProductCard({
             src={product.thumb_url}
             alt={product.image_alt ?? product.product_name}
             className="store-product-image"
+            loading="lazy"
+            sizes={
+              referenceCatalog
+                ? "(max-width: 640px) 50vw, 25vw"
+                : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            }
           />
         ) : (
           <div className="store-product-media-fallback" aria-hidden="true">

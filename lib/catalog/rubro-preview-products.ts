@@ -29,7 +29,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
   "ropa-moda": [
     {
       name: "Blazer Estructurado Milano",
-      shortDescription: "Lana ligera, corte entallado, forro satinado",
+      shortDescription: "Lana ligera, corte entallado, forro satinado · Tip: Ofrece tallas y envía foto completa",
       categoryName: "Camisas",
       categorySlug: "camisas",
       priceUsd: 78,
@@ -39,7 +39,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Jean Indigo Selvedge",
-      shortDescription: "Denim 14 oz, tiro medio, acabado stone wash",
+      shortDescription: "Denim 14 oz, tiro medio, acabado stone wash · Tip: Pregunta tiro y comparte medidas",
       categoryName: "Pantalones",
       categorySlug: "pantalones",
       priceUsd: 54,
@@ -47,7 +47,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Sneaker Court Premium",
-      shortDescription: "Capellada en cuero, suela de goma antideslizante",
+      shortDescription: "Capellada en cuero, suela de goma antideslizante · Tip: Confirma talla y muestra suela",
       categoryName: "Calzado",
       categorySlug: "calzado",
       priceUsd: 89,
@@ -55,7 +55,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Bolso Crossbody Valentina",
-      shortDescription: "Cuero sintético texturizado, herrajes dorados",
+      shortDescription: "Cuero sintético texturizado, herrajes dorados · Tip: Sugiérelo como regalo con envío hoy",
       categoryName: "Accesorios",
       categorySlug: "accesorios",
       priceUsd: 42,
@@ -63,7 +63,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Camiseta Algodón Pima",
-      shortDescription: "Tejido premium, cuello reforzado, colores surtidos",
+      shortDescription: "Tejido premium, cuello reforzado, colores surtidos · Tip: Ofrece pack de colores con descuento",
       categoryName: "Camisas",
       categorySlug: "camisas",
       priceUsd: 22,
@@ -71,7 +71,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Pantalón Chino Slim Fit",
-      shortDescription: "Algodón stretch, cintura media, acabado pre-lavado",
+      shortDescription: "Algodón stretch, cintura media, acabado pre-lavado · Tip: Combínalo con camisa del catálogo",
       categoryName: "Pantalones",
       categorySlug: "pantalones",
       priceUsd: 38,
@@ -81,7 +81,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
   ferreteria: [
     {
       name: "Taladro Percutor Brushless 20V",
-      shortDescription: "Motor sin escobillas, 2 baterías y maletín incluidos",
+      shortDescription: "Motor sin escobillas, 2 baterías y maletín incluidos · Tip: Destaca garantía y baterías incluidas",
       categoryName: "Herramientas",
       categorySlug: "herramientas",
       priceUsd: 129,
@@ -91,7 +91,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Set Llaves Combinadas Cromadas",
-      shortDescription: "12 piezas métricas, acabado cromo vanadio",
+      shortDescription: "12 piezas métricas, acabado cromo vanadio · Tip: Ideal para kit básico o regalo",
       categoryName: "Herramientas",
       categorySlug: "herramientas",
       priceUsd: 34,
@@ -99,7 +99,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Cable THHN 12 AWG Rolled",
-      shortDescription: "Rollo 100 m, uso residencial e industrial",
+      shortDescription: "Rollo 100 m, uso residencial e industrial · Tip: Indica metros disponibles y entrega rápida",
       categoryName: "Electricidad",
       categorySlug: "electricidad",
       priceUsd: 48,
@@ -107,7 +107,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Tubería PVC Presión 1/2\"",
-      shortDescription: "Tramo 3 m, unión cementar, presión clase 10",
+      shortDescription: "Tramo 3 m, unión cementar, presión clase 10 · Tip: Cobra por metro o venta mínima",
       categoryName: "Plomería",
       categorySlug: "plomeria",
       priceUsd: 8.5,
@@ -115,7 +115,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Motosierra Profesional 16\"",
-      shortDescription: "Motor 2 tiempos, espada Oregon, arranque fácil",
+      shortDescription: "Motor 2 tiempos, espada Oregon, arranque fácil · Tip: Envía video de funcionamiento al cliente",
       categoryName: "Herramientas",
       categorySlug: "herramientas",
       priceUsd: 185,
@@ -123,7 +123,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Tornillos Surtidos Industrial",
-      shortDescription: "Caja 500 pzas, acero zincado, métrica M4–M8",
+      shortDescription: "Caja 500 pzas, acero zincado, métrica M4–M8 · Tip: Vende por caja o surtido personalizado",
       categoryName: "Fijaciones",
       categorySlug: "fijaciones",
       priceUsd: 12,
@@ -133,7 +133,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
   calzado: [
     {
       name: "Oxford Clásico Firenze",
-      shortDescription: "Cuero plena flor, suela de cuero, plantilla acolchada",
+      shortDescription: "Cuero plena flor, suela de cuero, plantilla acolchada · Tip: Confirma talla con plantilla referencia",
       categoryName: "Zapatos",
       categorySlug: "zapatos",
       priceUsd: 95,
@@ -142,7 +142,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Bota Trekking Andes GTX",
-      shortDescription: "Membrana impermeable, suela Vibram, caña media",
+      shortDescription: "Membrana impermeable, suela Vibram, caña media · Tip: Pregunta uso y recomienda media talla",
       categoryName: "Botas",
       categorySlug: "botas",
       priceUsd: 118,
@@ -150,7 +150,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Sandalia Ergonómica Cloud",
-      shortDescription: "Plantilla memory foam, correa ajustable",
+      shortDescription: "Plantilla memory foam, correa ajustable · Tip: Ofrece probar en tienda o cambio",
       categoryName: "Sandalias",
       categorySlug: "sandalias",
       priceUsd: 32,
@@ -158,7 +158,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Runner Velocity Pro",
-      shortDescription: "Amortiguación reactiva, malla transpirable",
+      shortDescription: "Amortiguación reactiva, malla transpirable · Tip: Comparte video corriendo y tallas",
       categoryName: "Deportivos",
       categorySlug: "deportivos",
       priceUsd: 86,
@@ -166,7 +166,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Mocasín Cuero Suede",
-      shortDescription: "Acabado ante, suela flexible, ideal oficina casual",
+      shortDescription: "Acabado ante, suela flexible, ideal oficina casual · Tip: Sugiere combinar con pantalón formal",
       categoryName: "Zapatos",
       categorySlug: "zapatos",
       priceUsd: 74,
@@ -174,7 +174,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Deportivo Urban Pro",
-      shortDescription: "Suela EVA ligera, upper knit, uso diario",
+      shortDescription: "Suela EVA ligera, upper knit, uso diario · Tip: Ofrece envío gratis sobre cierto monto",
       categoryName: "Deportivos",
       categorySlug: "deportivos",
       priceUsd: 68,
@@ -184,7 +184,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
   tecnologia: [
     {
       name: "Reloj Cronógrafo Deportivo",
-      shortDescription: "Caja acero 44 mm, resistencia 10 ATM, correa silicona",
+      shortDescription: "Caja acero 44 mm, resistencia 10 ATM, correa silicona · Tip: Muestra pulsera en muñeca por foto",
       categoryName: "Accesorios",
       categorySlug: "accesorios",
       priceUsd: 89,
@@ -194,7 +194,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Smartphone Nova X 128 GB",
-      shortDescription: "Pantalla AMOLED 6.5\", triple cámara, carga rápida",
+      shortDescription: "Pantalla AMOLED 6.5\", triple cámara, carga rápida · Tip: Destaca cuotas y trade-in disponible",
       categoryName: "Celulares",
       categorySlug: "celulares",
       priceUsd: 349,
@@ -203,7 +203,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Ultrabook Pro 14\" 16 GB",
-      shortDescription: "SSD 512 GB, pantalla IPS, batería 10 h",
+      shortDescription: "SSD 512 GB, pantalla IPS, batería 10 h · Tip: Envía specs y garantía por escrito",
       categoryName: "Laptops",
       categorySlug: "laptops",
       priceUsd: 720,
@@ -211,7 +211,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Audífonos ANC Studio One",
-      shortDescription: "Cancelación activa, 30 h de batería, estuche incluido",
+      shortDescription: "Cancelación activa, 30 h de batería, estuche incluido · Tip: Ofrece demo de sonido por video",
       categoryName: "Accesorios",
       categorySlug: "accesorios",
       priceUsd: 58,
@@ -219,7 +219,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Monitor IPS 24\" 75 Hz",
-      shortDescription: "Panel antireflejo, bordes finos, montaje VESA",
+      shortDescription: "Panel antireflejo, bordes finos, montaje VESA · Tip: Confirma conectores y montaje incluido",
       categoryName: "Repuestos",
       categorySlug: "repuestos",
       priceUsd: 135,
@@ -227,7 +227,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Cargador USB-C 65 W GaN",
-      shortDescription: "Carga rápida PD, puerto dual, compacto viaje",
+      shortDescription: "Carga rápida PD, puerto dual, compacto viaje · Tip: Sugiérelo como add-on con laptop",
       categoryName: "Accesorios",
       categorySlug: "accesorios",
       priceUsd: 32,
@@ -237,7 +237,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
   alimentos: [
     {
       name: "Arroz Grano Largo Premium",
-      shortDescription: "Selección especial, libre de impurezas, 1 kg",
+      shortDescription: "Selección especial, libre de impurezas, 1 kg · Tip: Ofrece descuento por compra múltiple",
       categoryName: "Abarrotes",
       categorySlug: "abarrotes",
       priceUsd: 2.2,
@@ -246,7 +246,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Aceite Girasol Extra Virgen",
-      shortDescription: "Botella 900 ml, prensado en frío, sin aditivos",
+      shortDescription: "Botella 900 ml, prensado en frío, sin aditivos · Tip: Sugiere combo con arroz o despensa",
       categoryName: "Abarrotes",
       categorySlug: "abarrotes",
       priceUsd: 4.5,
@@ -254,7 +254,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Jugo Cold Press Naranja",
-      shortDescription: "1 L, exprimido en frío, sin azúcar añadida",
+      shortDescription: "1 L, exprimido en frío, sin azúcar añadida · Tip: Promueve entrega fría el mismo día",
       categoryName: "Bebidas",
       categorySlug: "bebidas",
       priceUsd: 3.8,
@@ -262,7 +262,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Canasta Frutas de Temporada",
-      shortDescription: "Selección fresca del día, origen local verificado",
+      shortDescription: "Selección fresca del día, origen local verificado · Tip: Confirma disponibilidad antes de cobrar",
       categoryName: "Frescos",
       categorySlug: "frescos",
       priceUsd: 12,
@@ -270,7 +270,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Mix Snacks Gourmet",
-      shortDescription: "Frutos secos y semillas, paquete familiar 400 g",
+      shortDescription: "Frutos secos y semillas, paquete familiar 400 g · Tip: Ideal para regalo o snack oficina",
       categoryName: "Snacks",
       categorySlug: "snacks",
       priceUsd: 6.5,
@@ -278,7 +278,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Café Especialidad Origins",
-      shortDescription: "Grano 100% arábica, tueste medio, bolsa 250 g",
+      shortDescription: "Grano 100% arábica, tueste medio, bolsa 250 g · Tip: Ofrece molienda y envío express",
       categoryName: "Bebidas",
       categorySlug: "bebidas",
       priceUsd: 9.5,
@@ -288,7 +288,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
   "salud-belleza": [
     {
       name: "Sérum Vitamina C Luminous",
-      shortDescription: "Fórmula iluminadora, piel apagada y manchas leves",
+      shortDescription: "Fórmula iluminadora, piel apagada y manchas leves · Tip: Explica rutina mañana y noche",
       categoryName: "Cuidado personal",
       categorySlug: "cuidado-personal",
       priceUsd: 28,
@@ -297,7 +297,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Labial Mate Velvet Rose",
-      shortDescription: "Alta pigmentación, 8 h de duración, tono nude rosado",
+      shortDescription: "Alta pigmentación, 8 h de duración, tono nude rosado · Tip: Envía swatch en foto con luz natural",
       categoryName: "Maquillaje",
       categorySlug: "maquillaje",
       priceUsd: 16,
@@ -305,7 +305,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Eau de Parfum Citrus Noir",
-      shortDescription: "50 ml, notas cítricas y madera, concentración 15%",
+      shortDescription: "50 ml, notas cítricas y madera, concentración 15% · Tip: Ofrece muestra o decant antes de comprar",
       categoryName: "Fragancias",
       categorySlug: "fragancias",
       priceUsd: 48,
@@ -313,7 +313,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Multivitamínico Daily Balance",
-      shortDescription: "60 cápsulas, vitaminas A–E y zinc, uso diario",
+      shortDescription: "60 cápsulas, vitaminas A–E y zinc, uso diario · Tip: Recomienda ciclo de tres meses",
       categoryName: "Suplementos",
       categorySlug: "suplementos",
       priceUsd: 24,
@@ -321,7 +321,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Crema Hidratante Hydra Calm",
-      shortDescription: "Piel sensible, ácido hialurónico, textura ligera",
+      shortDescription: "Piel sensible, ácido hialurónico, textura ligera · Tip: Pregunta tipo de piel antes de recomendar",
       categoryName: "Cuidado personal",
       categorySlug: "cuidado-personal",
       priceUsd: 19,
@@ -329,7 +329,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Mascarilla Facial Detox",
-      shortDescription: "Arcilla purificante, uso semanal, piel mixta",
+      shortDescription: "Arcilla purificante, uso semanal, piel mixta · Tip: Sugiere rutina completa con sérum",
       categoryName: "Cuidado personal",
       categorySlug: "cuidado-personal",
       priceUsd: 14,
@@ -339,7 +339,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
   "hogar-decoracion": [
     {
       name: "Sillón Nórdico Oslo Gris",
-      shortDescription: "Tela bouclé, patas roble macizo, asiento ergonómico",
+      shortDescription: "Tela bouclé, patas roble macizo, asiento ergonómico · Tip: Envía medidas y foto en ambiente real",
       categoryName: "Muebles",
       categorySlug: "muebles",
       priceUsd: 245,
@@ -348,7 +348,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Lámpara Arco Minimal Brass",
-      shortDescription: "Luz cálida 2700 K, dimmer integrado, base mármol",
+      shortDescription: "Luz cálida 2700 K, dimmer integrado, base mármol · Tip: Pregunta altura techo y estilo ambiente",
       categoryName: "Decoración",
       categorySlug: "decoracion",
       priceUsd: 68,
@@ -356,7 +356,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Set Ollas Forged Pro 3 pzas",
-      shortDescription: "Antiadherente cerámico, apto inducción, tapa vidrio",
+      shortDescription: "Antiadherente cerámico, apto inducción, tapa vidrio · Tip: Ofrece set completo con descuento",
       categoryName: "Cocina",
       categorySlug: "cocina",
       priceUsd: 72,
@@ -364,7 +364,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Juego Sábanas Algodón 400 Hilos",
-      shortDescription: "Queen size, acabado percal, colores neutros",
+      shortDescription: "Queen size, acabado percal, colores neutros · Tip: Confirma tamaño cama y color disponible",
       categoryName: "Textiles",
       categorySlug: "textiles",
       priceUsd: 58,
@@ -372,7 +372,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Espejo Decorativo Arco",
-      shortDescription: "Marco metal negro, ideal recibidor o dormitorio",
+      shortDescription: "Marco metal negro, ideal recibidor o dormitorio · Tip: Sugiere medir pared antes de confirmar",
       categoryName: "Decoración",
       categorySlug: "decoracion",
       priceUsd: 44,
@@ -380,7 +380,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Cojín Decorativo Velvet",
-      shortDescription: "Terciopelo suave, relleno pluma sintética, 45×45 cm",
+      shortDescription: "Terciopelo suave, relleno pluma sintética, 45×45 cm · Tip: Vende en par o pack decorativo",
       categoryName: "Textiles",
       categorySlug: "textiles",
       priceUsd: 22,
@@ -390,7 +390,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
   general: [
     {
       name: "Kit Esencial Best Seller",
-      shortDescription: "Selección curada, lista para vender desde el día uno",
+      shortDescription: "Selección curada, lista para vender desde el día uno · Tip: Personaliza mensaje con nombre tienda",
       categoryName: "General",
       categorySlug: "general",
       priceUsd: 35,
@@ -399,7 +399,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Edición Limitada Signature",
-      shortDescription: "Pieza exclusiva de tu línea, alta rotación",
+      shortDescription: "Pieza exclusiva de tu línea, alta rotación · Tip: Crea urgencia con stock limitado",
       categoryName: "Novedades",
       categorySlug: "novedades",
       priceUsd: 48,
@@ -407,7 +407,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Pack Ahorro Familiar",
-      shortDescription: "Precio especial por volumen, ideal WhatsApp",
+      shortDescription: "Precio especial por volumen, ideal WhatsApp · Tip: Destaca ahorro vs compra individual",
       categoryName: "Ofertas",
       categorySlug: "ofertas",
       priceUsd: 29,
@@ -416,7 +416,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Accesorio Complemento Pro",
-      shortDescription: "Perfecto para venta cruzada con tu producto estrella",
+      shortDescription: "Perfecto para venta cruzada con tu producto estrella · Tip: Ofrece junto al más vendido",
       categoryName: "General",
       categorySlug: "general",
       priceUsd: 18,
@@ -424,7 +424,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Gift Card Digital Tienda",
-      shortDescription: "Canjeable en catálogo completo, entrega inmediata",
+      shortDescription: "Canjeable en catálogo completo, entrega inmediata · Tip: Ideal regalo, envía código al instante",
       categoryName: "Novedades",
       categorySlug: "novedades",
       priceUsd: 25,
@@ -432,7 +432,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
     },
     {
       name: "Producto Destacado Premium",
-      shortDescription: "Referencia visual para tu vitrina principal",
+      shortDescription: "Referencia visual para tu vitrina principal · Tip: Compártelo primero en status WhatsApp",
       categoryName: "General",
       categorySlug: "general",
       priceUsd: 42,

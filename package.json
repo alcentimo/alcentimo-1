@@ -8,7 +8,7 @@
     "vercel-build": "node scripts/verify-vercel-env.mjs && npm run build",
     "start": "next start",
     "lint": "eslint",
-    "generate-icons": "node scripts/generate-icons.mjs",
+    "generate-reference-thumbs": "node scripts/generate-reference-thumbnails.mjs",
     "generate-import-template": "node scripts/generate-import-template.mjs",
     "dev:create-user": "node scripts/create-dev-user.mjs",
     "verify:vercel-env": "node scripts/verify-vercel-env.mjs",

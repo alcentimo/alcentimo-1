@@ -3,8 +3,11 @@
 import { useMemo } from "react";
 import type { Store } from "@/lib/database.types";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
-import { getReferenceCatalogForStore } from "@/lib/catalog/rubro-preview-products";
-import { useReferenceRubroAssets } from "@/lib/catalog/use-reference-rubro-assets";
+import {
+  getReferenceCatalogForStore,
+  useSmartPreviewRubro,
+  SMART_PREVIEW_FADE_MS,
+} from "@/lib/catalog/smart-preview-engine";
 import { CatalogLivePreview } from "@/components/dashboard/CatalogLivePreview";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { CatalogDesignSettings } from "@/lib/store-settings/types";
@@ -32,7 +35,7 @@ export function DesignCatalogInlinePreview({
   design,
   previewRubro,
 }: DesignCatalogInlinePreviewProps) {
-  const { isPrefetching } = useReferenceRubroAssets(previewRubro);
+  const { isPrefetching } = useSmartPreviewRubro(previewRubro);
 
   const resolvedDesign = useMemo(
     () => resolveCatalogDesign(design, previewRubro),
@@ -66,13 +69,13 @@ export function DesignCatalogInlinePreview({
   return (
     <div className="design-studio-preview">
       <div className="design-studio-preview-meta">
-        <p className="design-studio-preview-eyebrow">Vista previa en vivo</p>
+        <p className="design-studio-preview-eyebrow">Vista previa inteligente</p>
         <p className="design-studio-preview-caption">
           {themeLabel} · {saleLabel} · {referenceCatalog.rubroLabel}
         </p>
         <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-          Catálogo de referencia fijo para comparar temas con la misma
-          estética. Tus productos reales no se muestran aquí.
+          Mockup estático por rubro para comparar temas. Tus productos reales
+          no se muestran aquí — el selector es solo sandbox de diseño.
         </p>
       </div>
 
@@ -84,6 +87,7 @@ export function DesignCatalogInlinePreview({
             "design-preview-rubro-enter",
             isPrefetching && "design-preview-rubro-swapping",
           )}
+          style={{ ["--smart-preview-fade-ms" as string]: `${SMART_PREVIEW_FADE_MS}ms` }}
         >
           <div key={previewStageKey} className="design-preview-stage">
             <CatalogLivePreview

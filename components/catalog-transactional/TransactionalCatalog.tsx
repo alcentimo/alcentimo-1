@@ -146,6 +146,7 @@ export function TransactionalCatalog({
                   exchangeRate={liveExchangeRate}
                   showBsConversion={showBsConversion}
                   catalogVisibility={catalogDesign.visibility}
+                  referenceCatalog={referenceMode && previewMode}
                   onAddToCart={referenceMode ? undefined : addItem}
                 />
               </div>

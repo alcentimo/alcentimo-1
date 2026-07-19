@@ -11,6 +11,7 @@ interface CatalogProductImageProps {
   className?: string;
   sizes?: string;
   priority?: boolean;
+  loading?: "lazy" | "eager";
 }
 
 export function CatalogProductImage({
@@ -19,6 +20,7 @@ export function CatalogProductImage({
   className,
   sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw",
   priority = false,
+  loading = "lazy",
 }: CatalogProductImageProps) {
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
 
@@ -52,6 +54,7 @@ export function CatalogProductImage({
         fill
         sizes={sizes}
         priority={priority}
+        loading={priority ? undefined : loading}
         className={cn(
           className,
           "transition-opacity duration-300 ease-out",

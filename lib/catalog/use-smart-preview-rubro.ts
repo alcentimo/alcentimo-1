@@ -4,27 +4,25 @@ import { useEffect, useState } from "react";
 import type { StoreRubro } from "@/src/config/categories";
 import {
   isReferenceRubroAssetsCached,
-  prefetchAllReferenceRubroAssets,
   prefetchReferenceRubroAssets,
 } from "@/lib/catalog/reference-rubro-assets";
 
-interface UseReferenceRubroAssetsResult {
+/** Duración estándar del fade al intercambiar rubro (ms). */
+export const SMART_PREVIEW_FADE_MS = 300;
+
+interface UseSmartPreviewRubroResult {
   /** true mientras se pre-cargan imágenes del rubro seleccionado. */
   isPrefetching: boolean;
 }
 
 /**
- * Escucha el rubro del selector y pre-carga su colección de assets
- * para que el intercambio visual sea fluido y sin parpadeos.
+ * Escucha el rubro del selector sandbox y pre-carga solo su colección de assets.
+ * Nunca descarga el paquete completo — carga condicional por rubro.
  */
-export function useReferenceRubroAssets(
+export function useSmartPreviewRubro(
   selectedRubro: StoreRubro,
-): UseReferenceRubroAssetsResult {
+): UseSmartPreviewRubroResult {
   const [isPrefetching, setIsPrefetching] = useState(false);
-
-  useEffect(() => {
-    void prefetchAllReferenceRubroAssets();
-  }, []);
 
   useEffect(() => {
     if (isReferenceRubroAssetsCached(selectedRubro)) {
@@ -46,3 +44,6 @@ export function useReferenceRubroAssets(
 
   return { isPrefetching };
 }
+
+/** @deprecated Usar useSmartPreviewRubro */
+export const useReferenceRubroAssets = useSmartPreviewRubro;

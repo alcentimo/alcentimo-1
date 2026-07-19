@@ -3472,7 +3472,7 @@ body {
 }
 
 .design-preview-rubro-enter {
-  animation: design-preview-rubro-fade 0.32s ease-out both;
+  animation: design-preview-rubro-fade var(--smart-preview-fade-ms, 300ms) ease-out both;
 }
 
 @keyframes design-preview-rubro-fade {
@@ -3485,13 +3485,13 @@ body {
 }
 
 .design-preview-rubro-swapping {
-  opacity: 0.82;
-  transition: opacity 0.28s ease;
+  opacity: 0.78;
+  transition: opacity var(--smart-preview-fade-ms, 300ms) ease;
 }
 
 .design-preview-rubro-enter:not(.design-preview-rubro-swapping) {
   opacity: 1;
-  transition: opacity 0.28s ease;
+  transition: opacity var(--smart-preview-fade-ms, 300ms) ease;
 }
 
 .design-accordion-trigger {

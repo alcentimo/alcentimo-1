@@ -1,7 +1,7 @@
-import {
-  STORE_RUBRO_OPTIONS,
-  type StoreRubro,
-} from "@/src/config/categories";
+import type { StoreRubro } from "@/src/config/categories";
+
+/** Ancho máximo de thumbnails WebP servidos en vista previa. */
+export const REFERENCE_THUMB_MAX_WIDTH = 400;
 
 /** Claves de imagen por producto dentro de cada rubro (img1 … img6). */
 export type ReferenceRubroAssetKey =
@@ -19,72 +19,72 @@ const REF = (rubro: string, file: string) =>
 
 /**
  * Diccionario de assets por rubro — motor de intercambio de la vista previa.
- * Cada rubro expone su colección local de imágenes de alta calidad.
+ * Thumbnails WebP locales (máx. 400px), nunca imágenes originales pesadas.
  */
 export const REFERENCE_RUBRO_ASSETS: Record<StoreRubro, ReferenceRubroAssetMap> = {
   "ropa-moda": {
-    img1: REF("ropa-moda", "blazer-milano.jpg"),
-    img2: REF("ropa-moda", "jean-indigo.jpg"),
-    img3: REF("ropa-moda", "sneaker-court.jpg"),
-    img4: REF("ropa-moda", "bolso-valentina.jpg"),
-    img5: REF("ropa-moda", "camiseta-pima.jpg"),
-    img6: REF("ropa-moda", "pantalon-chino.jpg"),
+    img1: REF("ropa-moda", "blazer-milano.webp"),
+    img2: REF("ropa-moda", "jean-indigo.webp"),
+    img3: REF("ropa-moda", "sneaker-court.webp"),
+    img4: REF("ropa-moda", "bolso-valentina.webp"),
+    img5: REF("ropa-moda", "camiseta-pima.webp"),
+    img6: REF("ropa-moda", "pantalon-chino.webp"),
   },
   ferreteria: {
-    img1: REF("ferreteria", "taladro-brushless.jpg"),
-    img2: REF("ferreteria", "llaves-combinadas.jpg"),
-    img3: REF("ferreteria", "cable-thhn.jpg"),
-    img4: REF("ferreteria", "tuberia-pvc.jpg"),
-    img5: REF("ferreteria", "motosierra.jpg"),
-    img6: REF("ferreteria", "tornillos-surtidos.jpg"),
+    img1: REF("ferreteria", "taladro-brushless.webp"),
+    img2: REF("ferreteria", "llaves-combinadas.webp"),
+    img3: REF("ferreteria", "cable-thhn.webp"),
+    img4: REF("ferreteria", "tuberia-pvc.webp"),
+    img5: REF("ferreteria", "motosierra.webp"),
+    img6: REF("ferreteria", "tornillos-surtidos.webp"),
   },
   calzado: {
-    img1: REF("calzado", "oxford-firenze.jpg"),
-    img2: REF("calzado", "bota-andes.jpg"),
-    img3: REF("calzado", "sandalia-cloud.jpg"),
-    img4: REF("calzado", "runner-velocity.jpg"),
-    img5: REF("calzado", "mocasin-suede.jpg"),
-    img6: REF("calzado", "deportivo-pro.jpg"),
+    img1: REF("calzado", "oxford-firenze.webp"),
+    img2: REF("calzado", "bota-andes.webp"),
+    img3: REF("calzado", "sandalia-cloud.webp"),
+    img4: REF("calzado", "runner-velocity.webp"),
+    img5: REF("calzado", "mocasin-suede.webp"),
+    img6: REF("calzado", "deportivo-pro.webp"),
   },
   tecnologia: {
-    img1: REF("tecnologia", "reloj-cronografo.jpg"),
-    img2: REF("tecnologia", "smartphone-nova.jpg"),
-    img3: REF("tecnologia", "ultrabook-pro.jpg"),
-    img4: REF("tecnologia", "audifonos-anc.jpg"),
-    img5: REF("tecnologia", "monitor-ips.jpg"),
-    img6: REF("tecnologia", "cargador-usbc.jpg"),
+    img1: REF("tecnologia", "reloj-cronografo.webp"),
+    img2: REF("tecnologia", "smartphone-nova.webp"),
+    img3: REF("tecnologia", "ultrabook-pro.webp"),
+    img4: REF("tecnologia", "audifonos-anc.webp"),
+    img5: REF("tecnologia", "monitor-ips.webp"),
+    img6: REF("tecnologia", "cargador-usbc.webp"),
   },
   alimentos: {
-    img1: REF("alimentos", "arroz-premium.jpg"),
-    img2: REF("alimentos", "aceite-girasol.jpg"),
-    img3: REF("alimentos", "jugo-naranja.jpg"),
-    img4: REF("alimentos", "frutas-temporada.jpg"),
-    img5: REF("alimentos", "mix-snacks.jpg"),
-    img6: REF("alimentos", "cafe-especialidad.jpg"),
+    img1: REF("alimentos", "arroz-premium.webp"),
+    img2: REF("alimentos", "aceite-girasol.webp"),
+    img3: REF("alimentos", "jugo-naranja.webp"),
+    img4: REF("alimentos", "frutas-temporada.webp"),
+    img5: REF("alimentos", "mix-snacks.webp"),
+    img6: REF("alimentos", "cafe-especialidad.webp"),
   },
   "salud-belleza": {
-    img1: REF("salud-belleza", "serum-vitamina-c.jpg"),
-    img2: REF("salud-belleza", "labial-velvet.jpg"),
-    img3: REF("salud-belleza", "perfume-citrus.jpg"),
-    img4: REF("salud-belleza", "multivitaminico.jpg"),
-    img5: REF("salud-belleza", "crema-hydra.jpg"),
-    img6: REF("salud-belleza", "mascarilla-facial.jpg"),
+    img1: REF("salud-belleza", "serum-vitamina-c.webp"),
+    img2: REF("salud-belleza", "labial-velvet.webp"),
+    img3: REF("salud-belleza", "perfume-citrus.webp"),
+    img4: REF("salud-belleza", "multivitaminico.webp"),
+    img5: REF("salud-belleza", "crema-hydra.webp"),
+    img6: REF("salud-belleza", "mascarilla-facial.webp"),
   },
   "hogar-decoracion": {
-    img1: REF("hogar-decoracion", "sillon-oslo.jpg"),
-    img2: REF("hogar-decoracion", "lampara-arco.jpg"),
-    img3: REF("hogar-decoracion", "ollas-forged.jpg"),
-    img4: REF("hogar-decoracion", "sabanas-algodon.jpg"),
-    img5: REF("hogar-decoracion", "espejo-arco.jpg"),
-    img6: REF("hogar-decoracion", "cojin-decorativo.jpg"),
+    img1: REF("hogar-decoracion", "sillon-oslo.webp"),
+    img2: REF("hogar-decoracion", "lampara-arco.webp"),
+    img3: REF("hogar-decoracion", "ollas-forged.webp"),
+    img4: REF("hogar-decoracion", "sabanas-algodon.webp"),
+    img5: REF("hogar-decoracion", "espejo-arco.webp"),
+    img6: REF("hogar-decoracion", "cojin-decorativo.webp"),
   },
   general: {
-    img1: REF("general", "kit-best-seller.jpg"),
-    img2: REF("general", "edicion-signature.jpg"),
-    img3: REF("general", "pack-familiar.jpg"),
-    img4: REF("general", "accesorio-pro.jpg"),
-    img5: REF("general", "gift-card.jpg"),
-    img6: REF("general", "producto-destacado.jpg"),
+    img1: REF("general", "kit-best-seller.webp"),
+    img2: REF("general", "edicion-signature.webp"),
+    img3: REF("general", "pack-familiar.webp"),
+    img4: REF("general", "accesorio-pro.webp"),
+    img5: REF("general", "gift-card.webp"),
+    img6: REF("general", "producto-destacado.webp"),
   },
 };
 
@@ -136,18 +136,9 @@ function prefetchImage(src: string): Promise<void> {
   return promise;
 }
 
-/** Pre-carga las imágenes de un rubro en caché del navegador. */
+/** Pre-carga las imágenes WebP de un rubro en caché del navegador. */
 export function prefetchReferenceRubroAssets(rubro: StoreRubro): Promise<void> {
   return Promise.all(getReferenceRubroImageUrls(rubro).map(prefetchImage)).then(
     () => undefined,
   );
-}
-
-/** Pre-carga todas las colecciones en segundo plano (sandbox de diseño). */
-export function prefetchAllReferenceRubroAssets(): Promise<void> {
-  return Promise.all(
-    STORE_RUBRO_OPTIONS.map((option) =>
-      prefetchReferenceRubroAssets(option.value),
-    ),
-  ).then(() => undefined);
 }
