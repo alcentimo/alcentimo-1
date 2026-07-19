@@ -11,6 +11,7 @@ import { join } from "node:path";
 
 const PROJECT_REF = "pboxqwrogkwxkrjvbsqo";
 const APEX_HOST = "alcentimo.com";
+const VERCEL_PROJECT_ID = "prj_sZqpSdqpwbaYcRyhbfHgRgfMvn9M";
 
 function loadEnvLocal() {
   const env = {};
@@ -58,17 +59,17 @@ const localEnv = loadEnvLocal();
 const serviceRoleKey = localEnv.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
 if (!serviceRoleKey) {
-  console.error(
-    "[sync] Falta SUPABASE_SERVICE_ROLE_KEY en .env.local (Dashboard → Settings → API → service_role).",
+  console.warn(
+    "[sync] SUPABASE_SERVICE_ROLE_KEY no encontrada en .env.local — la Edge Function valida JWT; continúo con otros secrets.",
   );
-  process.exit(1);
 }
 
 const secrets = {
-  SUPABASE_SERVICE_ROLE_KEY: serviceRoleKey,
   STORE_SUBDOMAIN_PROVISION_ENABLED: "true",
   SITE_URL: localEnv.NEXT_PUBLIC_SITE_URL?.trim() || "https://alcentimo.com",
   STORE_SUBDOMAIN_APEX_HOST: APEX_HOST,
+  VERCEL_PROJECT_ID:
+    localEnv.VERCEL_PROJECT_ID?.trim() || VERCEL_PROJECT_ID,
 };
 
 const cloudflareToken =
