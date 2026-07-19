@@ -1,19 +1,18 @@
-import type { CatalogListItem, Store } from "@/lib/database.types";
-import { isProductOutOfStock } from "@/lib/products/variants";
+﻿import type { CatalogListItem, Store } from "@/lib/database.types";
 import {
   getRubroLabel,
   normalizeStoreRubro,
   type StoreRubro,
 } from "@/src/config/categories";
 
-const DEFAULT_PREVIEW_EXCHANGE_RATE = 50;
-/** Productos demo + tarjeta CTA en la grilla. */
-export const PREVIEW_DEMO_PRODUCT_LIMIT = 5;
+const DEFAULT_REFERENCE_EXCHANGE_RATE = 50;
 
-interface RubroPreviewProductSeed {
+/** CatÃ¡logo fijo de referencia en Personalizar diseÃ±o (sin productos reales). */
+export const REFERENCE_CATALOG_LIMIT = 6;
+
+interface ReferenceCatalogProductSeed {
   name: string;
   shortDescription: string;
-  microTip: string;
   categoryName: string;
   categorySlug: string;
   priceUsd: number;
@@ -22,20 +21,15 @@ interface RubroPreviewProductSeed {
   isFeatured?: boolean;
 }
 
-/** Imágenes estáticas de Unsplash, solo para vista previa en dashboard. */
+/** ImÃ¡genes estÃ¡ticas de Unsplash â€” solo catÃ¡logo de referencia en dashboard. */
 const UNSPLASH = (id: string) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=480&h=600&q=80`;
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=800&h=1000&q=90`;
 
-function withMicroTip(description: string, tip: string): string {
-  return `${description} Sugerencia: ${tip}`;
-}
-
-const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
+const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]> = {
   "ropa-moda": [
     {
       name: "Blazer Estructurado Milano",
       shortDescription: "Lana ligera, corte entallado, forro satinado",
-      microTip: "indica tallas disponibles y composición del tejido",
       categoryName: "Camisas",
       categorySlug: "camisas",
       priceUsd: 78,
@@ -46,7 +40,6 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     {
       name: "Jean Indigo Selvedge",
       shortDescription: "Denim 14 oz, tiro medio, acabado stone wash",
-      microTip: "menciona el stretch y la guía de tallas",
       categoryName: "Pantalones",
       categorySlug: "pantalones",
       priceUsd: 54,
@@ -55,7 +48,6 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     {
       name: "Sneaker Court Premium",
       shortDescription: "Capellada en cuero, suela de goma antideslizante",
-      microTip: "aclara si el envío incluye caja original",
       categoryName: "Calzado",
       categorySlug: "calzado",
       priceUsd: 89,
@@ -63,17 +55,15 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Bolso Crossbody Valentina",
-      shortDescription: "Cuero sintético texturizado, herrajes dorados",
-      microTip: "destaca capacidad en litros y largo de correa",
+      shortDescription: "Cuero sintÃ©tico texturizado, herrajes dorados",
       categoryName: "Accesorios",
       categorySlug: "accesorios",
       priceUsd: 42,
       thumbUrl: UNSPLASH("photo-1590871191120-3a924815213f"),
     },
     {
-      name: "Camiseta Algodón Pima",
+      name: "Camiseta AlgodÃ³n Pima",
       shortDescription: "Tejido premium, cuello reforzado, colores surtidos",
-      microTip: "enumera colores y tallas en stock",
       categoryName: "Camisas",
       categorySlug: "camisas",
       priceUsd: 22,
@@ -83,8 +73,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
   ferreteria: [
     {
       name: "Taladro Percutor Brushless 20V",
-      shortDescription: "Motor sin escobillas, 2 baterías y maletín incluidos",
-      microTip: "especifica torque, rpm y tiempo de garantía",
+      shortDescription: "Motor sin escobillas, 2 baterÃ­as y maletÃ­n incluidos",
       categoryName: "Herramientas",
       categorySlug: "herramientas",
       priceUsd: 129,
@@ -94,8 +83,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Set Llaves Combinadas Cromadas",
-      shortDescription: "12 piezas métricas, acabado cromo vanadio",
-      microTip: "indica medidas incluidas en el set",
+      shortDescription: "12 piezas mÃ©tricas, acabado cromo vanadio",
       categoryName: "Herramientas",
       categorySlug: "herramientas",
       priceUsd: 34,
@@ -104,25 +92,22 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     {
       name: "Cable THHN 12 AWG Rolled",
       shortDescription: "Rollo 100 m, uso residencial e industrial",
-      microTip: "menciona calibre, metros y certificación",
       categoryName: "Electricidad",
       categorySlug: "electricidad",
       priceUsd: 48,
       thumbUrl: UNSPLASH("photo-1621905251189-08b45d6a269e"),
     },
     {
-      name: "Tubería PVC Presión 1/2\"",
-      shortDescription: "Tramo 3 m, unión cementar, presión clase 10",
-      microTip: "aclara diámetro, presión máxima y unidad de venta",
-      categoryName: "Plomería",
+      name: "TuberÃ­a PVC PresiÃ³n 1/2\"",
+      shortDescription: "Tramo 3 m, uniÃ³n cementar, presiÃ³n clase 10",
+      categoryName: "PlomerÃ­a",
       categorySlug: "plomeria",
       priceUsd: 8.5,
       thumbUrl: UNSPLASH("photo-1581244277609-cbdfe2a4a5c8"),
     },
     {
       name: "Motosierra Profesional 16\"",
-      shortDescription: "Motor 2 tiempos, espada Oregon, arranque fácil",
-      microTip: "detalla cilindrada, espada y mantenimiento incluido",
+      shortDescription: "Motor 2 tiempos, espada Oregon, arranque fÃ¡cil",
       categoryName: "Herramientas",
       categorySlug: "herramientas",
       priceUsd: 185,
@@ -131,9 +116,8 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
   ],
   calzado: [
     {
-      name: "Oxford Clásico Firenze",
+      name: "Oxford ClÃ¡sico Firenze",
       shortDescription: "Cuero plena flor, suela de cuero, plantilla acolchada",
-      microTip: "publica la tabla de tallas EU y US",
       categoryName: "Zapatos",
       categorySlug: "zapatos",
       priceUsd: 95,
@@ -142,8 +126,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Bota Trekking Andes GTX",
-      shortDescription: "Membrana impermeable, suela Vibram, caña media",
-      microTip: "menciona impermeabilidad y peso por par",
+      shortDescription: "Membrana impermeable, suela Vibram, caÃ±a media",
       categoryName: "Botas",
       categorySlug: "botas",
       priceUsd: 118,
@@ -152,7 +135,6 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     {
       name: "Sandalia Ergonomica Cloud",
       shortDescription: "Plantilla memory foam, correa ajustable",
-      microTip: "indica tallas y si es unisex",
       categoryName: "Sandalias",
       categorySlug: "sandalias",
       priceUsd: 32,
@@ -160,17 +142,15 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Runner Velocity Pro",
-      shortDescription: "Amortiguación reactiva, malla transpirable",
-      microTip: "destaca drop, uso recomendado y kilómetros",
+      shortDescription: "AmortiguaciÃ³n reactiva, malla transpirable",
       categoryName: "Deportivos",
       categorySlug: "deportivos",
       priceUsd: 86,
       thumbUrl: UNSPLASH("photo-1460353581641-37baddab0fa2"),
     },
     {
-      name: "Mocasín Cuero Suede",
+      name: "MocasÃ­n Cuero Suede",
       shortDescription: "Acabado ante, suela flexible, ideal oficina casual",
-      microTip: "aclara cuidados del ante y colores disponibles",
       categoryName: "Zapatos",
       categorySlug: "zapatos",
       priceUsd: 74,
@@ -179,9 +159,8 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
   ],
   tecnologia: [
     {
-      name: "Reloj Cronógrafo Deportivo",
+      name: "Reloj CronÃ³grafo Deportivo",
       shortDescription: "Caja acero 44 mm, resistencia 10 ATM, correa silicona",
-      microTip: "menciona materiales, resistencia al agua y garantía",
       categoryName: "Accesorios",
       categorySlug: "accesorios",
       priceUsd: 89,
@@ -191,8 +170,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Smartphone Nova X 128 GB",
-      shortDescription: "Pantalla AMOLED 6.5\", triple cámara, carga rápida",
-      microTip: "detalla RAM, almacenamiento y accesorios incluidos",
+      shortDescription: "Pantalla AMOLED 6.5\", triple cÃ¡mara, carga rÃ¡pida",
       categoryName: "Celulares",
       categorySlug: "celulares",
       priceUsd: 349,
@@ -201,17 +179,15 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Ultrabook Pro 14\" 16 GB",
-      shortDescription: "SSD 512 GB, pantalla IPS, batería 10 h",
-      microTip: "especifica procesador, puertos y sistema operativo",
+      shortDescription: "SSD 512 GB, pantalla IPS, baterÃ­a 10 h",
       categoryName: "Laptops",
       categorySlug: "laptops",
       priceUsd: 720,
       thumbUrl: UNSPLASH("photo-1496181133206-80ce9b88a853"),
     },
     {
-      name: "Audífonos ANC Studio One",
-      shortDescription: "Cancelación activa, 30 h de batería, estuche incluido",
-      microTip: "indica compatibilidad Bluetooth y autonomía real",
+      name: "AudÃ­fonos ANC Studio One",
+      shortDescription: "CancelaciÃ³n activa, 30 h de baterÃ­a, estuche incluido",
       categoryName: "Accesorios",
       categorySlug: "accesorios",
       priceUsd: 58,
@@ -220,7 +196,6 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     {
       name: "Monitor IPS 24\" 75 Hz",
       shortDescription: "Panel antireflejo, bordes finos, montaje VESA",
-      microTip: "publica resolución, puertos y si incluye cable",
       categoryName: "Repuestos",
       categorySlug: "repuestos",
       priceUsd: 135,
@@ -230,8 +205,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
   alimentos: [
     {
       name: "Arroz Grano Largo Premium",
-      shortDescription: "Selección especial, libre de impurezas, 1 kg",
-      microTip: "indica origen, fecha de vencimiento y presentación",
+      shortDescription: "SelecciÃ³n especial, libre de impurezas, 1 kg",
       categoryName: "Abarrotes",
       categorySlug: "abarrotes",
       priceUsd: 2.2,
@@ -240,8 +214,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Aceite Girasol Extra Virgen",
-      shortDescription: "Botella 900 ml, prensado en frío, sin aditivos",
-      microTip: "menciona volumen, marca y condiciones de almacenaje",
+      shortDescription: "Botella 900 ml, prensado en frÃ­o, sin aditivos",
       categoryName: "Abarrotes",
       categorySlug: "abarrotes",
       priceUsd: 4.5,
@@ -249,8 +222,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Jugo Cold Press Naranja",
-      shortDescription: "1 L, exprimido en frío, sin azúcar añadida",
-      microTip: "destaca ingredientes y vida útil refrigerado",
+      shortDescription: "1 L, exprimido en frÃ­o, sin azÃºcar aÃ±adida",
       categoryName: "Bebidas",
       categorySlug: "bebidas",
       priceUsd: 3.8,
@@ -258,8 +230,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Canasta Frutas de Temporada",
-      shortDescription: "Selección fresca del día, origen local verificado",
-      microTip: "aclara peso aproximado y frutas incluidas",
+      shortDescription: "SelecciÃ³n fresca del dÃ­a, origen local verificado",
       categoryName: "Frescos",
       categorySlug: "frescos",
       priceUsd: 12,
@@ -268,7 +239,6 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     {
       name: "Mix Snacks Gourmet",
       shortDescription: "Frutos secos y semillas, paquete familiar 400 g",
-      microTip: "lista alérgenos y contenido neto",
       categoryName: "Snacks",
       categorySlug: "snacks",
       priceUsd: 6.5,
@@ -277,9 +247,8 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
   ],
   "salud-belleza": [
     {
-      name: "Sérum Vitamina C Luminous",
-      shortDescription: "Fórmula iluminadora, piel apagada y manchas leves",
-      microTip: "menciona ingredientes activos y modo de uso",
+      name: "SÃ©rum Vitamina C Luminous",
+      shortDescription: "FÃ³rmula iluminadora, piel apagada y manchas leves",
       categoryName: "Cuidado personal",
       categorySlug: "cuidado-personal",
       priceUsd: 28,
@@ -288,8 +257,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Labial Mate Velvet Rose",
-      shortDescription: "Alta pigmentación, 8 h de duración, tono nude rosado",
-      microTip: "indica tonos disponibles y si es transfer-proof",
+      shortDescription: "Alta pigmentaciÃ³n, 8 h de duraciÃ³n, tono nude rosado",
       categoryName: "Maquillaje",
       categorySlug: "maquillaje",
       priceUsd: 16,
@@ -297,17 +265,15 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Eau de Parfum Citrus Noir",
-      shortDescription: "50 ml, notas cítricas y madera, concentración 15%",
-      microTip: "describe notas olfativas y duración aproximada",
+      shortDescription: "50 ml, notas cÃ­tricas y madera, concentraciÃ³n 15%",
       categoryName: "Fragancias",
       categorySlug: "fragancias",
       priceUsd: 48,
       thumbUrl: UNSPLASH("photo-1541643600914-78b084683601"),
     },
     {
-      name: "Multivitamínico Daily Balance",
-      shortDescription: "60 cápsulas, vitaminas A–E y zinc, uso diario",
-      microTip: "incluye contenido por porción y contraindicaciones básicas",
+      name: "MultivitamÃ­nico Daily Balance",
+      shortDescription: "60 cÃ¡psulas, vitaminas Aâ€“E y zinc, uso diario",
       categoryName: "Suplementos",
       categorySlug: "suplementos",
       priceUsd: 24,
@@ -315,8 +281,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Crema Hidratante Hydra Calm",
-      shortDescription: "Piel sensible, ácido hialurónico, textura ligera",
-      microTip: "especifica tipo de piel y tamaño del envase",
+      shortDescription: "Piel sensible, Ã¡cido hialurÃ³nico, textura ligera",
       categoryName: "Cuidado personal",
       categorySlug: "cuidado-personal",
       priceUsd: 19,
@@ -325,9 +290,8 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
   ],
   "hogar-decoracion": [
     {
-      name: "Sillón Nórdico Oslo Gris",
-      shortDescription: "Tela bouclé, patas roble macizo, asiento ergonómico",
-      microTip: "indica medidas, peso máximo y tiempo de entrega",
+      name: "SillÃ³n NÃ³rdico Oslo Gris",
+      shortDescription: "Tela bouclÃ©, patas roble macizo, asiento ergonÃ³mico",
       categoryName: "Muebles",
       categorySlug: "muebles",
       priceUsd: 245,
@@ -335,27 +299,24 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
       thumbUrl: UNSPLASH("photo-1555041469-a586c61ea9bc"),
     },
     {
-      name: "Lámpara Arco Minimal Brass",
-      shortDescription: "Luz cálida 2700 K, dimmer integrado, base mármol",
-      microTip: "menciona altura, tipo de foco y potencia",
-      categoryName: "Decoración",
+      name: "LÃ¡mpara Arco Minimal Brass",
+      shortDescription: "Luz cÃ¡lida 2700 K, dimmer integrado, base mÃ¡rmol",
+      categoryName: "DecoraciÃ³n",
       categorySlug: "decoracion",
       priceUsd: 68,
       thumbUrl: UNSPLASH("photo-1507473886091-9f7f8e5e3561"),
     },
     {
       name: "Set Ollas Forged Pro 3 pzas",
-      shortDescription: "Antiadherente cerámico, apto inducción, tapa vidrio",
-      microTip: "detalla capacidades, materiales y compatibilidad",
+      shortDescription: "Antiadherente cerÃ¡mico, apto inducciÃ³n, tapa vidrio",
       categoryName: "Cocina",
       categorySlug: "cocina",
       priceUsd: 72,
       thumbUrl: UNSPLASH("photo-1556909214-d6b4c7d3a7c8"),
     },
     {
-      name: "Juego Sábanas Algodón 400 Hilos",
+      name: "Juego SÃ¡banas AlgodÃ³n 400 Hilos",
       shortDescription: "Queen size, acabado percal, colores neutros",
-      microTip: "publica medidas, hilos y instrucciones de lavado",
       categoryName: "Textiles",
       categorySlug: "textiles",
       priceUsd: 58,
@@ -364,8 +325,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     {
       name: "Espejo Decorativo Arco",
       shortDescription: "Marco metal negro, ideal recibidor o dormitorio",
-      microTip: "incluye dimensiones y peso para envío",
-      categoryName: "Decoración",
+      categoryName: "DecoraciÃ³n",
       categorySlug: "decoracion",
       priceUsd: 44,
       thumbUrl: UNSPLASH("photo-1618220179428-22790b461013"),
@@ -374,8 +334,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
   general: [
     {
       name: "Kit Esencial Best Seller",
-      shortDescription: "Selección curada, lista para vender desde el día uno",
-      microTip: "describe qué incluye y para quién es ideal",
+      shortDescription: "SelecciÃ³n curada, lista para vender desde el dÃ­a uno",
       categoryName: "General",
       categorySlug: "general",
       priceUsd: 35,
@@ -383,9 +342,8 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
       thumbUrl: UNSPLASH("photo-1505740420928-5e560c06d30e"),
     },
     {
-      name: "Edición Limitada Signature",
-      shortDescription: "Pieza exclusiva de tu línea, alta rotación",
-      microTip: "genera urgencia con stock limitado real",
+      name: "EdiciÃ³n Limitada Signature",
+      shortDescription: "Pieza exclusiva de tu lÃ­nea, alta rotaciÃ³n",
       categoryName: "Novedades",
       categorySlug: "novedades",
       priceUsd: 48,
@@ -394,7 +352,6 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     {
       name: "Pack Ahorro Familiar",
       shortDescription: "Precio especial por volumen, ideal WhatsApp",
-      microTip: "muestra el ahorro vs comprar por unidad",
       categoryName: "Ofertas",
       categorySlug: "ofertas",
       priceUsd: 29,
@@ -404,7 +361,6 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     {
       name: "Accesorio Complemento Pro",
       shortDescription: "Perfecto para venta cruzada con tu producto estrella",
-      microTip: "vincula con productos relacionados en la descripción",
       categoryName: "General",
       categorySlug: "general",
       priceUsd: 18,
@@ -412,8 +368,7 @@ const RUBRO_PREVIEW_SEEDS: Record<StoreRubro, RubroPreviewProductSeed[]> = {
     },
     {
       name: "Gift Card Digital Tienda",
-      shortDescription: "Canjeable en catálogo completo, entrega inmediata",
-      microTip: "explica montos disponibles y vigencia",
+      shortDescription: "Canjeable en catÃ¡logo completo, entrega inmediata",
       categoryName: "Novedades",
       categorySlug: "novedades",
       priceUsd: 25,
@@ -426,31 +381,32 @@ function usdToVes(usd: number, rate: number): number {
   return Math.round(usd * rate * 100) / 100;
 }
 
-function seedToCatalogListItem(
+function seedToReferenceCatalogItem(
   store: Pick<Store, "id" | "slug" | "name">,
-  seed: RubroPreviewProductSeed,
+  rubro: StoreRubro,
+  seed: ReferenceCatalogProductSeed,
   index: number,
   exchangeRate: number,
 ): CatalogListItem {
-  const productId = `rubro-preview-${index}`;
+  const productId = `reference-catalog-${rubro}-${index}`;
 
   return {
     store_id: store.id,
     store_slug: store.slug,
     store_name: store.name,
     product_id: productId,
-    product_slug: `muestra-${seed.categorySlug}-${index}`,
+    product_slug: `referencia-${seed.categorySlug}-${index}`,
     product_name: seed.name,
-    short_description: withMicroTip(seed.shortDescription, seed.microTip),
+    short_description: seed.shortDescription,
     brand: null,
     is_featured: seed.isFeatured ?? false,
     updated_at: new Date().toISOString(),
-    category_id: `preview-cat-${seed.categorySlug}`,
+    category_id: `reference-cat-${seed.categorySlug}`,
     category_name: seed.categoryName,
     category_slug: seed.categorySlug,
     category_path: seed.categoryName,
     default_variant_id: `${productId}-default`,
-    default_sku: `DEMO-${String(index + 1).padStart(2, "0")}`,
+    default_sku: `REF-${String(index + 1).padStart(2, "0")}`,
     stock_quantity: 12,
     reserved_quantity: 0,
     available_stock: 12,
@@ -470,48 +426,26 @@ function seedToCatalogListItem(
   };
 }
 
-export function buildRubroPreviewCatalogItems(
-  store: Pick<Store, "id" | "slug" | "name" | "rubro_tienda">,
-  exchangeRate: number | null = null,
-): CatalogListItem[] {
-  const rubro = normalizeStoreRubro(store.rubro_tienda);
-  const rate = exchangeRate ?? DEFAULT_PREVIEW_EXCHANGE_RATE;
-  const seeds = RUBRO_PREVIEW_SEEDS[rubro] ?? RUBRO_PREVIEW_SEEDS.general;
-
-  return seeds
-    .slice(0, PREVIEW_DEMO_PRODUCT_LIMIT)
-    .map((seed, index) => seedToCatalogListItem(store, seed, index, rate));
-}
-
-export interface DesignPreviewProductsResult {
+export interface ReferenceCatalogResult {
   products: CatalogListItem[];
-  isSampleMode: boolean;
   rubroLabel: string;
 }
 
-export function resolveDesignPreviewProducts(
+/** CatÃ¡logo estÃ¡tico de referencia segÃºn rubro â€” nunca usa productos reales. */
+export function getReferenceCatalogForStore(
   store: Pick<Store, "id" | "slug" | "name" | "rubro_tienda">,
-  realProducts: CatalogListItem[],
-  exchangeRate: number | null,
-): DesignPreviewProductsResult {
+  exchangeRate: number | null = null,
+): ReferenceCatalogResult {
   const rubro = normalizeStoreRubro(store.rubro_tienda);
-  const rubroLabel = getRubroLabel(rubro);
-
-  const availableReal = realProducts.filter(
-    (product) => !isProductOutOfStock(product),
-  );
-
-  if (availableReal.length > 0) {
-    return {
-      products: availableReal.slice(0, PREVIEW_DEMO_PRODUCT_LIMIT + 3),
-      isSampleMode: false,
-      rubroLabel,
-    };
-  }
+  const rate = exchangeRate ?? DEFAULT_REFERENCE_EXCHANGE_RATE;
+  const seeds = REFERENCE_CATALOG_SEEDS[rubro] ?? REFERENCE_CATALOG_SEEDS.general;
 
   return {
-    products: buildRubroPreviewCatalogItems(store, exchangeRate),
-    isSampleMode: true,
-    rubroLabel,
+    products: seeds
+      .slice(0, REFERENCE_CATALOG_LIMIT)
+      .map((seed, index) =>
+        seedToReferenceCatalogItem(store, rubro, seed, index, rate),
+      ),
+    rubroLabel: getRubroLabel(rubro),
   };
 }

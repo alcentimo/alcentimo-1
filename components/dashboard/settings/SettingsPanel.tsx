@@ -12,7 +12,7 @@ import { PaymentsTab } from "@/components/dashboard/settings/PaymentsTab";
 import { PromotionsTab } from "@/components/dashboard/settings/PromotionsTab";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
-import type { CatalogListItem, Store } from "@/lib/database.types";
+import type { Store } from "@/lib/database.types";
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { Coupon } from "@/lib/coupons/types";
@@ -35,7 +35,6 @@ const PRIMARY_TABS: {
 
 interface DesignPreviewContext {
   store: Store;
-  products: CatalogListItem[];
   exchangeRate: number | null;
   exchangeRateUpdatedAt?: string | null;
   baseSettings: CatalogPreviewSettings;

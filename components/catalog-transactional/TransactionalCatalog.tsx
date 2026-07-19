@@ -27,7 +27,8 @@ interface TransactionalCatalogProps {
   catalogCurrency: CatalogCurrencySettings;
   openCheckoutInitially?: boolean;
   previewMode?: boolean;
-  sampleMode?: boolean;
+  referenceMode?: boolean;
+  showReferenceCta?: boolean;
 }
 
 function getStoreInitials(name: string): string {
@@ -46,7 +47,8 @@ export function TransactionalCatalog({
   catalogCurrency,
   openCheckoutInitially = false,
   previewMode = false,
-  sampleMode = false,
+  referenceMode = false,
+  showReferenceCta = false,
 }: TransactionalCatalogProps) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
@@ -65,7 +67,7 @@ export function TransactionalCatalog({
         "txn-catalog",
         getCatalogDesignClasses(catalogDesign),
         previewMode && "txn-catalog--preview",
-        previewMode && sampleMode && "txn-catalog--sample-mode",
+        previewMode && referenceMode && "txn-catalog--reference-mode",
       )}
       style={getCatalogThemeStyle(catalogDesign)}
     >
@@ -128,12 +130,14 @@ export function TransactionalCatalog({
             {availableProducts.map((product, index) => (
               <div
                 key={product.product_id}
-                className={cn(
-                  sampleMode && previewMode && "catalog-preview-product-enter",
-                )}
+                className={
+                  referenceMode && previewMode
+                    ? "catalog-preview-product-enter"
+                    : undefined
+                }
                 style={
-                  sampleMode && previewMode
-                    ? { animationDelay: `${index * 45}ms` }
+                  referenceMode && previewMode
+                    ? { animationDelay: `${index * 40}ms` }
                     : undefined
                 }
               >
@@ -142,14 +146,16 @@ export function TransactionalCatalog({
                   exchangeRate={liveExchangeRate}
                   showBsConversion={showBsConversion}
                   catalogVisibility={catalogDesign.visibility}
-                  onAddToCart={sampleMode ? undefined : addItem}
+                  onAddToCart={referenceMode ? undefined : addItem}
                 />
               </div>
             ))}
-            {previewMode && sampleMode ? (
+            {previewMode && referenceMode && showReferenceCta ? (
               <div
                 className="catalog-preview-product-enter"
-                style={{ animationDelay: `${availableProducts.length * 45}ms` }}
+                style={{
+                  animationDelay: `${availableProducts.length * 40}ms`,
+                }}
               >
                 <CatalogUploadCtaCard />
               </div>

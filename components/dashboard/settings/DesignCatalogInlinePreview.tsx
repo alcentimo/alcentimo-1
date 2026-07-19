@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import type { CatalogListItem, Store } from "@/lib/database.types";
+import type { Store } from "@/lib/database.types";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
-import { resolveDesignPreviewProducts } from "@/lib/catalog/rubro-preview-products";
+import { getReferenceCatalogForStore } from "@/lib/catalog/rubro-preview-products";
 import { CatalogLivePreview } from "@/components/dashboard/CatalogLivePreview";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { CatalogDesignSettings } from "@/lib/store-settings/types";
@@ -11,11 +11,9 @@ import {
   CATALOG_SALE_MODE_PRESETS,
   CATALOG_THEME_PRESETS,
 } from "@/lib/store-settings/catalog-theme-presets";
-import { cn } from "@/lib/cn";
 
 interface DesignCatalogInlinePreviewProps {
   store: Store;
-  products: CatalogListItem[];
   exchangeRate: number | null;
   exchangeRateUpdatedAt?: string | null;
   baseSettings: CatalogPreviewSettings;
@@ -24,7 +22,6 @@ interface DesignCatalogInlinePreviewProps {
 
 export function DesignCatalogInlinePreview({
   store,
-  products,
   exchangeRate,
   exchangeRateUpdatedAt = null,
   baseSettings,
@@ -38,9 +35,9 @@ export function DesignCatalogInlinePreview({
   const themeLabel = CATALOG_THEME_PRESETS[resolvedDesign.theme].label;
   const saleLabel = CATALOG_SALE_MODE_PRESETS[resolvedDesign.saleMode].label;
 
-  const preview = useMemo(
-    () => resolveDesignPreviewProducts(store, products, exchangeRate),
-    [store, products, exchangeRate],
+  const referenceCatalog = useMemo(
+    () => getReferenceCatalogForStore(store, exchangeRate),
+    [store, exchangeRate],
   );
 
   const settings = useMemo(
@@ -51,45 +48,37 @@ export function DesignCatalogInlinePreview({
     [baseSettings, resolvedDesign],
   );
 
-  const previewStageKey = preview.isSampleMode
-    ? `sample-${resolvedDesign.theme}-${resolvedDesign.saleMode}-${preview.rubroLabel}`
-    : `live-${preview.products.map((item) => item.product_id).join(",")}`;
+  const previewStageKey = [
+    resolvedDesign.theme,
+    resolvedDesign.saleMode,
+    resolvedDesign.visibility.showStock,
+    resolvedDesign.visibility.showDescription,
+    resolvedDesign.visibility.showPrices,
+  ].join("-");
 
   return (
     <div className="design-studio-preview">
-      <div
-        className={cn(
-          "design-studio-preview-meta design-preview-meta-enter",
-          !preview.isSampleMode && "design-preview-meta-enter-live",
-        )}
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="design-studio-preview-eyebrow">Vista previa en vivo</p>
-          {preview.isSampleMode ? (
-            <span className="design-studio-preview-badge">Modo muestra</span>
-          ) : null}
-        </div>
+      <div className="design-studio-preview-meta">
+        <p className="design-studio-preview-eyebrow">Vista previa en vivo</p>
         <p className="design-studio-preview-caption">
-          {themeLabel} · {saleLabel}
-          {preview.isSampleMode ? ` · ${preview.rubroLabel}` : ""}
+          {themeLabel} · {saleLabel} · {referenceCatalog.rubroLabel}
         </p>
-        {preview.isSampleMode ? (
-          <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-            Ejemplos curados para tu rubro. Al publicar tus productos, la vista
-            previa cambiará automáticamente.
-          </p>
-        ) : null}
+        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+          Catálogo de referencia fijo para comparar temas con la misma
+          estética. Tus productos reales no se muestran aquí.
+        </p>
       </div>
 
       <div className="design-studio-preview-frame">
+        <span className="design-reference-badge">Diseño de Referencia</span>
         <div key={previewStageKey} className="design-preview-stage">
           <CatalogLivePreview
             store={store}
-            products={preview.products}
+            products={referenceCatalog.products}
             exchangeRate={exchangeRate}
             exchangeRateUpdatedAt={exchangeRateUpdatedAt}
             settings={settings}
-            sampleMode={preview.isSampleMode}
+            referenceMode
           />
         </div>
       </div>

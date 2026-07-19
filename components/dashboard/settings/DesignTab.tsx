@@ -14,7 +14,7 @@ import {
   CATALOG_THEME_PRESETS,
 } from "@/lib/store-settings/catalog-theme-presets";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
-import type { CatalogListItem, Store } from "@/lib/database.types";
+import type { Store } from "@/lib/database.types";
 import type {
   CatalogDesignSettings,
   CatalogSaleMode,
@@ -25,7 +25,6 @@ import { cn } from "@/lib/cn";
 
 interface DesignTabPreviewContext {
   store: Store;
-  products: CatalogListItem[];
   exchangeRate: number | null;
   exchangeRateUpdatedAt?: string | null;
   baseSettings: CatalogPreviewSettings;
@@ -350,7 +349,6 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
           {preview ? (
             <DesignCatalogInlinePreview
               store={preview.store}
-              products={preview.products}
               exchangeRate={preview.exchangeRate}
               exchangeRateUpdatedAt={preview.exchangeRateUpdatedAt}
               baseSettings={preview.baseSettings}

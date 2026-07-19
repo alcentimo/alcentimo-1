@@ -3465,9 +3465,14 @@ body {
 }
 
 .design-studio-preview-frame {
+  position: relative;
   max-height: min(72vh, 720px);
   overflow: auto;
   background: #fff;
+}
+
+.design-reference-badge {
+  @apply pointer-events-none absolute right-3 top-3 z-10 rounded-full border border-zinc-200/90 bg-white/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 shadow-sm backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-950/90 dark:text-zinc-400;
 }
 
 .design-studio-preview-frame .catalog-live-preview-root .txn-catalog {
@@ -3524,7 +3529,7 @@ body {
   height: 100%;
 }
 
-.txn-catalog--sample-mode .store-product-desc {
+.txn-catalog--reference-mode .store-product-desc {
   -webkit-line-clamp: 2;
   line-clamp: 2;
 }

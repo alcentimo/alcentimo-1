@@ -31,7 +31,6 @@ export default async function AjustesPage() {
 
   let designPreview: {
     store: NonNullable<typeof store>;
-    products: Awaited<ReturnType<typeof getStoreInventory>>["products"];
     exchangeRate: number | null;
     exchangeRateUpdatedAt: string | null;
     baseSettings: Awaited<ReturnType<typeof getCatalogPreviewSettings>>;
@@ -59,7 +58,6 @@ export default async function AjustesPage() {
     }));
     designPreview = {
       store,
-      products: inventory.products,
       exchangeRate: exchangeRateRow?.rate ?? null,
       exchangeRateUpdatedAt: exchangeRateRow?.created_at ?? null,
       baseSettings: previewSettings,

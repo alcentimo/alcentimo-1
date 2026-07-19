@@ -14,7 +14,8 @@ interface CatalogLivePreviewProps {
   exchangeRate: number | null;
   exchangeRateUpdatedAt?: string | null;
   settings: CatalogPreviewSettings;
-  sampleMode?: boolean;
+  referenceMode?: boolean;
+  showReferenceCta?: boolean;
 }
 
 function toPreviewExchangeRate(
@@ -42,7 +43,8 @@ export function CatalogLivePreview({
   exchangeRate,
   exchangeRateUpdatedAt = null,
   settings,
-  sampleMode = false,
+  referenceMode = false,
+  showReferenceCta = false,
 }: CatalogLivePreviewProps) {
   const exchangeRateRow = useMemo(
     () => toPreviewExchangeRate(exchangeRate, exchangeRateUpdatedAt),
@@ -66,7 +68,8 @@ export function CatalogLivePreview({
             catalogDesign={settings.catalogDesign}
             catalogCurrency={settings.catalogCurrency}
             previewMode
-            sampleMode={sampleMode}
+            referenceMode={referenceMode}
+            showReferenceCta={showReferenceCta}
           />
           <div className="catalog-live-preview-tab-bar" aria-hidden="true">
             <CatalogTabBar storeSlug={store.slug} />
