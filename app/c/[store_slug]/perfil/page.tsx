@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { CustomerProfilePanel } from "@/components/customers/CustomerProfilePanel";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
+import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 import { resolveCustomerContactEmail } from "@/lib/customers/phone-auth";
 import { getPublicStoreBySlug } from "@/lib/stores";
@@ -33,19 +34,25 @@ export default async function CustomerProfilePage({
     );
   }
 
-  const { data: profile } = await supabase
-    .from("customer_profiles")
-    .select("display_name, phone")
-    .eq("user_id", user.id)
-    .eq("store_id", store.id)
-    .maybeSingle();
+  const [profileResult, catalogData] = await Promise.all([
+    supabase
+      .from("customer_profiles")
+      .select("display_name, phone")
+      .eq("user_id", user.id)
+      .eq("store_id", store.id)
+      .maybeSingle(),
+    getPublicCatalogPageData(store.slug),
+  ]);
+
+  const profile = profileResult.data;
+  const whatsappPhone = catalogData?.purchaseInfo.whatsappPhone ?? "";
 
   return (
     <div className="catalog-subpage">
       <header className="catalog-subpage-header">
         <h1 className="catalog-subpage-title">Perfil</h1>
         <p className="catalog-subpage-desc">
-          Tus datos de contacto en {store.name}.
+          Actualiza tus datos en {store.name}.
         </p>
       </header>
 
@@ -55,6 +62,7 @@ export default async function CustomerProfilePage({
         contactEmail={resolveCustomerContactEmail(user.email, user.user_metadata)}
         displayName={profile?.display_name ?? null}
         phone={profile?.phone ?? null}
+        whatsappPhone={whatsappPhone}
       />
     </div>
   );

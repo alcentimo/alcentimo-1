@@ -1,5 +1,4 @@
 import { OrderEstadoPill } from "@/components/dashboard/orders/OrderEstadoPill";
-import { formatUsd } from "@/lib/format";
 import {
   formatCustomerOrderDate,
   formatCustomerOrderPublicId,
@@ -13,9 +12,7 @@ interface CustomerOrdersListProps {
 export function CustomerOrdersList({ orders }: CustomerOrdersListProps) {
   if (orders.length === 0) {
     return (
-      <p className="customer-orders-empty">
-        Aún no has realizado pedidos en esta tienda.
-      </p>
+      <p className="customer-orders-empty">Aún no tienes compras</p>
     );
   }
 
@@ -32,7 +29,6 @@ export function CustomerOrdersList({ orders }: CustomerOrdersListProps) {
             </p>
           </div>
           <div className="customer-orders-item-meta">
-            <p className="customer-orders-total">{formatUsd(order.total_usd)}</p>
             <OrderEstadoPill estado={order.estado} />
           </div>
         </li>

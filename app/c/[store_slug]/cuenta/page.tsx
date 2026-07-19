@@ -39,9 +39,9 @@ export default async function CustomerAccountPage({
   return (
     <div className="catalog-subpage">
       <header className="catalog-subpage-header">
-        <h1 className="catalog-subpage-title">Mis Pedidos</h1>
+        <h1 className="catalog-subpage-title">Compras</h1>
         <p className="catalog-subpage-desc">
-          Historial de compras en {store.name}.
+          Tus pedidos en {store.name}.
         </p>
       </header>
 

@@ -17,6 +17,7 @@ import { getPublicServerClient } from "@/lib/supabase/public-server";
 export interface PublicCatalogPageData extends CatalogPageData {
   store: Store;
   storeCategories: CatalogCategoryOption[];
+  selectedCategorySlug?: string | null;
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
   catalogCurrency: CatalogCurrencySettings;
@@ -64,19 +65,46 @@ async function fetchStoreSettingsConfig(storeId: string) {
   return normalizeStoreSettingsConfig(data.config);
 }
 
+export interface GetPublicCatalogPageOptions {
+  /** Filtra productos por slug de categoría (página Categorías). */
+  categorySlug?: string | null;
+  categoryFilter?: boolean;
+}
+
 export async function getPublicCatalogPageData(
   storeSlug: string,
+  options?: GetPublicCatalogPageOptions,
 ): Promise<PublicCatalogPageData | null> {
   noStore();
 
   const store = await fetchActiveStoreBySlug(storeSlug);
   if (!store) return null;
 
-  const [catalogData, settingsConfig, storeCategories] = await Promise.all([
-    getCatalogProducts({ storeSlug: store.slug, limit: 500 }),
+  const [settingsConfig, storeCategories] = await Promise.all([
     fetchStoreSettingsConfig(store.id),
     getPublicStoreCategories(store.id),
   ]);
+
+  let selectedCategorySlug: string | null = null;
+
+  if (options?.categoryFilter) {
+    const requested = options.categorySlug?.trim().toLowerCase() ?? "";
+    const isAllowed = storeCategories.some(
+      (category) => category.slug === requested,
+    );
+
+    if (requested && isAllowed) {
+      selectedCategorySlug = requested;
+    } else if (storeCategories[0]) {
+      selectedCategorySlug = storeCategories[0].slug;
+    }
+  }
+
+  const catalogData = await getCatalogProducts({
+    storeSlug: store.slug,
+    limit: 500,
+    categorySlug: selectedCategorySlug ?? undefined,
+  });
 
   const purchaseInfo = buildPublicPurchaseInfo(settingsConfig);
   const catalogDesign = resolveCatalogDesign(
@@ -87,6 +115,7 @@ export async function getPublicCatalogPageData(
   return {
     store,
     storeCategories,
+    selectedCategorySlug,
     ...catalogData,
     purchaseInfo,
     catalogDesign,
