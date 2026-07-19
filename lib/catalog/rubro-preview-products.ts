@@ -4,6 +4,10 @@ import {
   normalizeStoreRubro,
   type StoreRubro,
 } from "@/src/config/categories";
+import {
+  resolveReferenceAssetUrl,
+  type ReferenceRubroAssetKey,
+} from "@/lib/catalog/reference-rubro-assets";
 
 const DEFAULT_REFERENCE_EXCHANGE_RATE = 50;
 
@@ -17,13 +21,9 @@ interface ReferenceCatalogProductSeed {
   categorySlug: string;
   priceUsd: number;
   compareAtUsd?: number;
-  thumbUrl: string;
+  assetKey: ReferenceRubroAssetKey;
   isFeatured?: boolean;
 }
-
-/** Rutas locales en /public/images/referencia — carga determinista sin URLs externas. */
-const REF = (rubro: string, file: string) =>
-  `/images/referencia/${rubro}/${file}`;
 
 const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]> = {
   "ropa-moda": [
@@ -34,7 +34,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categorySlug: "camisas",
       priceUsd: 78,
       compareAtUsd: 92,
-      thumbUrl: REF("ropa-moda", "blazer-milano.jpg"),
+      assetKey: "img1",
       isFeatured: true,
     },
     {
@@ -43,7 +43,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Pantalones",
       categorySlug: "pantalones",
       priceUsd: 54,
-      thumbUrl: REF("ropa-moda", "jean-indigo.jpg"),
+      assetKey: "img2",
     },
     {
       name: "Sneaker Court Premium",
@@ -51,7 +51,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Calzado",
       categorySlug: "calzado",
       priceUsd: 89,
-      thumbUrl: REF("ropa-moda", "sneaker-court.jpg"),
+      assetKey: "img3",
     },
     {
       name: "Bolso Crossbody Valentina",
@@ -59,7 +59,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Accesorios",
       categorySlug: "accesorios",
       priceUsd: 42,
-      thumbUrl: REF("ropa-moda", "bolso-valentina.jpg"),
+      assetKey: "img4",
     },
     {
       name: "Camiseta Algodón Pima",
@@ -67,7 +67,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Camisas",
       categorySlug: "camisas",
       priceUsd: 22,
-      thumbUrl: REF("ropa-moda", "camiseta-pima.jpg"),
+      assetKey: "img5",
     },
     {
       name: "Pantalón Chino Slim Fit",
@@ -75,7 +75,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Pantalones",
       categorySlug: "pantalones",
       priceUsd: 38,
-      thumbUrl: REF("ropa-moda", "pantalon-chino.jpg"),
+      assetKey: "img6",
     },
   ],
   ferreteria: [
@@ -86,7 +86,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categorySlug: "herramientas",
       priceUsd: 129,
       compareAtUsd: 149,
-      thumbUrl: REF("ferreteria", "taladro-brushless.jpg"),
+      assetKey: "img1",
       isFeatured: true,
     },
     {
@@ -95,7 +95,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Herramientas",
       categorySlug: "herramientas",
       priceUsd: 34,
-      thumbUrl: REF("ferreteria", "llaves-combinadas.jpg"),
+      assetKey: "img2",
     },
     {
       name: "Cable THHN 12 AWG Rolled",
@@ -103,7 +103,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Electricidad",
       categorySlug: "electricidad",
       priceUsd: 48,
-      thumbUrl: REF("ferreteria", "cable-thhn.jpg"),
+      assetKey: "img3",
     },
     {
       name: "Tubería PVC Presión 1/2\"",
@@ -111,7 +111,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Plomería",
       categorySlug: "plomeria",
       priceUsd: 8.5,
-      thumbUrl: REF("ferreteria", "tuberia-pvc.jpg"),
+      assetKey: "img4",
     },
     {
       name: "Motosierra Profesional 16\"",
@@ -119,7 +119,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Herramientas",
       categorySlug: "herramientas",
       priceUsd: 185,
-      thumbUrl: REF("ferreteria", "motosierra.jpg"),
+      assetKey: "img5",
     },
     {
       name: "Tornillos Surtidos Industrial",
@@ -127,7 +127,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Fijaciones",
       categorySlug: "fijaciones",
       priceUsd: 12,
-      thumbUrl: REF("ferreteria", "tornillos-surtidos.jpg"),
+      assetKey: "img6",
     },
   ],
   calzado: [
@@ -138,7 +138,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categorySlug: "zapatos",
       priceUsd: 95,
       isFeatured: true,
-      thumbUrl: REF("calzado", "oxford-firenze.jpg"),
+      assetKey: "img1",
     },
     {
       name: "Bota Trekking Andes GTX",
@@ -146,7 +146,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Botas",
       categorySlug: "botas",
       priceUsd: 118,
-      thumbUrl: REF("calzado", "bota-andes.jpg"),
+      assetKey: "img2",
     },
     {
       name: "Sandalia Ergonómica Cloud",
@@ -154,7 +154,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Sandalias",
       categorySlug: "sandalias",
       priceUsd: 32,
-      thumbUrl: REF("calzado", "sandalia-cloud.jpg"),
+      assetKey: "img3",
     },
     {
       name: "Runner Velocity Pro",
@@ -162,7 +162,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Deportivos",
       categorySlug: "deportivos",
       priceUsd: 86,
-      thumbUrl: REF("calzado", "runner-velocity.jpg"),
+      assetKey: "img4",
     },
     {
       name: "Mocasín Cuero Suede",
@@ -170,7 +170,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Zapatos",
       categorySlug: "zapatos",
       priceUsd: 74,
-      thumbUrl: REF("calzado", "mocasin-suede.jpg"),
+      assetKey: "img5",
     },
     {
       name: "Deportivo Urban Pro",
@@ -178,7 +178,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Deportivos",
       categorySlug: "deportivos",
       priceUsd: 68,
-      thumbUrl: REF("calzado", "deportivo-pro.jpg"),
+      assetKey: "img6",
     },
   ],
   tecnologia: [
@@ -190,7 +190,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       priceUsd: 89,
       compareAtUsd: 109,
       isFeatured: true,
-      thumbUrl: REF("tecnologia", "reloj-cronografo.jpg"),
+      assetKey: "img1",
     },
     {
       name: "Smartphone Nova X 128 GB",
@@ -199,7 +199,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categorySlug: "celulares",
       priceUsd: 349,
       compareAtUsd: 389,
-      thumbUrl: REF("tecnologia", "smartphone-nova.jpg"),
+      assetKey: "img2",
     },
     {
       name: "Ultrabook Pro 14\" 16 GB",
@@ -207,7 +207,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Laptops",
       categorySlug: "laptops",
       priceUsd: 720,
-      thumbUrl: REF("tecnologia", "ultrabook-pro.jpg"),
+      assetKey: "img3",
     },
     {
       name: "Audífonos ANC Studio One",
@@ -215,7 +215,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Accesorios",
       categorySlug: "accesorios",
       priceUsd: 58,
-      thumbUrl: REF("tecnologia", "audifonos-anc.jpg"),
+      assetKey: "img4",
     },
     {
       name: "Monitor IPS 24\" 75 Hz",
@@ -223,7 +223,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Repuestos",
       categorySlug: "repuestos",
       priceUsd: 135,
-      thumbUrl: REF("tecnologia", "monitor-ips.jpg"),
+      assetKey: "img5",
     },
     {
       name: "Cargador USB-C 65 W GaN",
@@ -231,7 +231,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Accesorios",
       categorySlug: "accesorios",
       priceUsd: 32,
-      thumbUrl: REF("tecnologia", "cargador-usbc.jpg"),
+      assetKey: "img6",
     },
   ],
   alimentos: [
@@ -242,7 +242,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categorySlug: "abarrotes",
       priceUsd: 2.2,
       isFeatured: true,
-      thumbUrl: REF("alimentos", "arroz-premium.jpg"),
+      assetKey: "img1",
     },
     {
       name: "Aceite Girasol Extra Virgen",
@@ -250,7 +250,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Abarrotes",
       categorySlug: "abarrotes",
       priceUsd: 4.5,
-      thumbUrl: REF("alimentos", "aceite-girasol.jpg"),
+      assetKey: "img2",
     },
     {
       name: "Jugo Cold Press Naranja",
@@ -258,7 +258,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Bebidas",
       categorySlug: "bebidas",
       priceUsd: 3.8,
-      thumbUrl: REF("alimentos", "jugo-naranja.jpg"),
+      assetKey: "img3",
     },
     {
       name: "Canasta Frutas de Temporada",
@@ -266,7 +266,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Frescos",
       categorySlug: "frescos",
       priceUsd: 12,
-      thumbUrl: REF("alimentos", "frutas-temporada.jpg"),
+      assetKey: "img4",
     },
     {
       name: "Mix Snacks Gourmet",
@@ -274,7 +274,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Snacks",
       categorySlug: "snacks",
       priceUsd: 6.5,
-      thumbUrl: REF("alimentos", "mix-snacks.jpg"),
+      assetKey: "img5",
     },
     {
       name: "Café Especialidad Origins",
@@ -282,7 +282,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Bebidas",
       categorySlug: "bebidas",
       priceUsd: 9.5,
-      thumbUrl: REF("alimentos", "cafe-especialidad.jpg"),
+      assetKey: "img6",
     },
   ],
   "salud-belleza": [
@@ -293,7 +293,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categorySlug: "cuidado-personal",
       priceUsd: 28,
       isFeatured: true,
-      thumbUrl: REF("salud-belleza", "serum-vitamina-c.jpg"),
+      assetKey: "img1",
     },
     {
       name: "Labial Mate Velvet Rose",
@@ -301,7 +301,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Maquillaje",
       categorySlug: "maquillaje",
       priceUsd: 16,
-      thumbUrl: REF("salud-belleza", "labial-velvet.jpg"),
+      assetKey: "img2",
     },
     {
       name: "Eau de Parfum Citrus Noir",
@@ -309,7 +309,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Fragancias",
       categorySlug: "fragancias",
       priceUsd: 48,
-      thumbUrl: REF("salud-belleza", "perfume-citrus.jpg"),
+      assetKey: "img3",
     },
     {
       name: "Multivitamínico Daily Balance",
@@ -317,7 +317,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Suplementos",
       categorySlug: "suplementos",
       priceUsd: 24,
-      thumbUrl: REF("salud-belleza", "multivitaminico.jpg"),
+      assetKey: "img4",
     },
     {
       name: "Crema Hidratante Hydra Calm",
@@ -325,7 +325,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Cuidado personal",
       categorySlug: "cuidado-personal",
       priceUsd: 19,
-      thumbUrl: REF("salud-belleza", "crema-hydra.jpg"),
+      assetKey: "img5",
     },
     {
       name: "Mascarilla Facial Detox",
@@ -333,7 +333,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Cuidado personal",
       categorySlug: "cuidado-personal",
       priceUsd: 14,
-      thumbUrl: REF("salud-belleza", "mascarilla-facial.jpg"),
+      assetKey: "img6",
     },
   ],
   "hogar-decoracion": [
@@ -344,7 +344,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categorySlug: "muebles",
       priceUsd: 245,
       isFeatured: true,
-      thumbUrl: REF("hogar-decoracion", "sillon-oslo.jpg"),
+      assetKey: "img1",
     },
     {
       name: "Lámpara Arco Minimal Brass",
@@ -352,7 +352,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Decoración",
       categorySlug: "decoracion",
       priceUsd: 68,
-      thumbUrl: REF("hogar-decoracion", "lampara-arco.jpg"),
+      assetKey: "img2",
     },
     {
       name: "Set Ollas Forged Pro 3 pzas",
@@ -360,7 +360,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Cocina",
       categorySlug: "cocina",
       priceUsd: 72,
-      thumbUrl: REF("hogar-decoracion", "ollas-forged.jpg"),
+      assetKey: "img3",
     },
     {
       name: "Juego Sábanas Algodón 400 Hilos",
@@ -368,7 +368,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Textiles",
       categorySlug: "textiles",
       priceUsd: 58,
-      thumbUrl: REF("hogar-decoracion", "sabanas-algodon.jpg"),
+      assetKey: "img4",
     },
     {
       name: "Espejo Decorativo Arco",
@@ -376,7 +376,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Decoración",
       categorySlug: "decoracion",
       priceUsd: 44,
-      thumbUrl: REF("hogar-decoracion", "espejo-arco.jpg"),
+      assetKey: "img5",
     },
     {
       name: "Cojín Decorativo Velvet",
@@ -384,7 +384,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Textiles",
       categorySlug: "textiles",
       priceUsd: 22,
-      thumbUrl: REF("hogar-decoracion", "cojin-decorativo.jpg"),
+      assetKey: "img6",
     },
   ],
   general: [
@@ -395,7 +395,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categorySlug: "general",
       priceUsd: 35,
       isFeatured: true,
-      thumbUrl: REF("general", "kit-best-seller.jpg"),
+      assetKey: "img1",
     },
     {
       name: "Edición Limitada Signature",
@@ -403,7 +403,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Novedades",
       categorySlug: "novedades",
       priceUsd: 48,
-      thumbUrl: REF("general", "edicion-signature.jpg"),
+      assetKey: "img2",
     },
     {
       name: "Pack Ahorro Familiar",
@@ -412,7 +412,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categorySlug: "ofertas",
       priceUsd: 29,
       compareAtUsd: 38,
-      thumbUrl: REF("general", "pack-familiar.jpg"),
+      assetKey: "img3",
     },
     {
       name: "Accesorio Complemento Pro",
@@ -420,7 +420,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "General",
       categorySlug: "general",
       priceUsd: 18,
-      thumbUrl: REF("general", "accesorio-pro.jpg"),
+      assetKey: "img4",
     },
     {
       name: "Gift Card Digital Tienda",
@@ -428,7 +428,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "Novedades",
       categorySlug: "novedades",
       priceUsd: 25,
-      thumbUrl: REF("general", "gift-card.jpg"),
+      assetKey: "img5",
     },
     {
       name: "Producto Destacado Premium",
@@ -436,7 +436,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       categoryName: "General",
       categorySlug: "general",
       priceUsd: 42,
-      thumbUrl: REF("general", "producto-destacado.jpg"),
+      assetKey: "img6",
     },
   ],
 };
@@ -484,7 +484,7 @@ function seedToReferenceCatalogItem(
       : null,
     exchange_rate_used: exchangeRate,
     product_variants: null,
-    thumb_url: seed.thumbUrl,
+    thumb_url: resolveReferenceAssetUrl(rubro, seed.assetKey),
     blur_hash: null,
     image_alt: seed.name,
   };

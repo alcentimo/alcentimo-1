@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { Store } from "@/lib/database.types";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import { getReferenceCatalogForStore } from "@/lib/catalog/rubro-preview-products";
+import { useReferenceRubroAssets } from "@/lib/catalog/use-reference-rubro-assets";
 import { CatalogLivePreview } from "@/components/dashboard/CatalogLivePreview";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { CatalogDesignSettings } from "@/lib/store-settings/types";
@@ -12,6 +13,7 @@ import {
   CATALOG_THEME_PRESETS,
 } from "@/lib/store-settings/catalog-theme-presets";
 import type { StoreRubro } from "@/src/config/categories";
+import { cn } from "@/lib/cn";
 
 interface DesignCatalogInlinePreviewProps {
   store: Store;
@@ -30,6 +32,8 @@ export function DesignCatalogInlinePreview({
   design,
   previewRubro,
 }: DesignCatalogInlinePreviewProps) {
+  const { isPrefetching } = useReferenceRubroAssets(previewRubro);
+
   const resolvedDesign = useMemo(
     () => resolveCatalogDesign(design, previewRubro),
     [design, previewRubro],
@@ -74,7 +78,13 @@ export function DesignCatalogInlinePreview({
 
       <div className="design-studio-preview-frame">
         <span className="design-reference-badge">Diseño de Referencia</span>
-        <div key={previewRubro} className="design-preview-rubro-enter">
+        <div
+          key={previewRubro}
+          className={cn(
+            "design-preview-rubro-enter",
+            isPrefetching && "design-preview-rubro-swapping",
+          )}
+        >
           <div key={previewStageKey} className="design-preview-stage">
             <CatalogLivePreview
               store={store}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ImageOff } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -21,6 +21,10 @@ export function CatalogProductImage({
   priority = false,
 }: CatalogProductImageProps) {
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+
+  useEffect(() => {
+    setStatus("loading");
+  }, [src]);
 
   if (status === "error") {
     return (

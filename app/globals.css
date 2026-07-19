@@ -3484,6 +3484,16 @@ body {
   }
 }
 
+.design-preview-rubro-swapping {
+  opacity: 0.82;
+  transition: opacity 0.28s ease;
+}
+
+.design-preview-rubro-enter:not(.design-preview-rubro-swapping) {
+  opacity: 1;
+  transition: opacity 0.28s ease;
+}
+
 .design-accordion-trigger {
   @apply flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-zinc-50/80 dark:hover:bg-zinc-900/40;
 }
