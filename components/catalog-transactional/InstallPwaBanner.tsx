@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { Download, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
 import {
   getDeferredInstallPrompt,
   initBeforeInstallPromptCapture,
@@ -57,23 +57,16 @@ function isBannerDismissed(storeSlug: string): boolean {
   return Date.now() - dismissedAt < DISMISS_TTL_MS;
 }
 
-function getStoreInitials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "T";
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return `${words[0][0] ?? ""}${words[1][0] ?? ""}`.toUpperCase();
-}
-
 export function InstallPwaBanner({
   storeSlug,
   storeName,
-  storeLogoUrl,
 }: InstallPwaBannerProps) {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(() => getDeferredInstallPrompt());
   const [manualInstallMode, setManualInstallMode] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const dismissBanner = useCallback(() => {
     localStorage.setItem(getDismissStorageKey(storeSlug), String(Date.now()));
@@ -123,6 +116,7 @@ export function InstallPwaBanner({
         }
       } catch {
         setManualInstallMode(true);
+        setExpanded(true);
       } finally {
         setInstalling(false);
         setDeferredPrompt(null);
@@ -131,6 +125,7 @@ export function InstallPwaBanner({
     }
 
     setManualInstallMode(true);
+    setExpanded(true);
   }
 
   if (!visible || isAppInstalled()) {
@@ -145,37 +140,14 @@ export function InstallPwaBanner({
       : "Instalar app";
 
   return (
-    <div className="install-pwa-banner" role="region" aria-label="Instalar aplicación">
-      <div className="install-pwa-banner-logo">
-        {storeLogoUrl ? (
-          <Image
-            src={storeLogoUrl}
-            alt=""
-            width={40}
-            height={40}
-            className="h-10 w-10 object-contain"
-            unoptimized
-          />
-        ) : (
-          <span className="install-pwa-banner-logo-fallback" aria-hidden="true">
-            {getStoreInitials(displayName)}
-          </span>
-        )}
-      </div>
-
-      <p className="install-pwa-banner-text">
-        {manualInstallMode && !deferredPrompt ? (
-          <>
-            Instala <strong>{displayName}</strong> desde el menú ⋮ →{" "}
-            <strong>Instalar aplicación</strong>
-          </>
-        ) : (
-          <>
-            Instala <strong>{displayName}</strong> para acceder rápido
-          </>
-        )}
-      </p>
-
+    <div
+      className={cn(
+        "install-pwa-banner",
+        expanded && "install-pwa-banner--expanded",
+      )}
+      role="region"
+      aria-label="Instalar aplicación"
+    >
       <button
         type="button"
         onClick={() => void handleInstallClick()}
@@ -183,7 +155,23 @@ export function InstallPwaBanner({
         className="install-pwa-banner-action"
       >
         <Download className="h-3.5 w-3.5" aria-hidden="true" />
-        {installLabel}
+        {installLabel} {displayName}
+      </button>
+
+      {expanded && manualInstallMode && !deferredPrompt ? (
+        <p className="install-pwa-banner-hint">
+          En Chrome: menú ⋮ → <strong>Instalar aplicación</strong>
+        </p>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => setExpanded((value) => !value)}
+        className="install-pwa-banner-toggle"
+        aria-expanded={expanded}
+        aria-label={expanded ? "Ocultar detalles" : "Ver cómo instalar"}
+      >
+        {expanded ? "Menos" : "Más"}
       </button>
 
       <button
@@ -192,7 +180,7 @@ export function InstallPwaBanner({
         className="install-pwa-banner-dismiss"
         aria-label="Cerrar aviso de instalación"
       >
-        <X className="h-4 w-4" aria-hidden="true" />
+        <X className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
     </div>
   );

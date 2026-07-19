@@ -8,12 +8,15 @@ import {
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
+import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
+import { getPublicStoreCategories } from "@/lib/catalog/get-public-store-categories";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogPageData } from "@/lib/catalog";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
 
 export interface PublicCatalogPageData extends CatalogPageData {
   store: Store;
+  storeCategories: CatalogCategoryOption[];
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
   catalogCurrency: CatalogCurrencySettings;
@@ -69,9 +72,10 @@ export async function getPublicCatalogPageData(
   const store = await fetchActiveStoreBySlug(storeSlug);
   if (!store) return null;
 
-  const [catalogData, settingsConfig] = await Promise.all([
+  const [catalogData, settingsConfig, storeCategories] = await Promise.all([
     getCatalogProducts({ storeSlug: store.slug, limit: 500 }),
     fetchStoreSettingsConfig(store.id),
+    getPublicStoreCategories(store.id),
   ]);
 
   const purchaseInfo = buildPublicPurchaseInfo(settingsConfig);
@@ -82,6 +86,7 @@ export async function getPublicCatalogPageData(
 
   return {
     store,
+    storeCategories,
     ...catalogData,
     purchaseInfo,
     catalogDesign,

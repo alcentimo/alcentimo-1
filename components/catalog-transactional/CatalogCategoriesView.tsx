@@ -8,6 +8,7 @@ import {
   getCatalogDesignClasses,
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
+import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { extractCatalogCategories } from "@/lib/catalog/extract-categories";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
@@ -18,6 +19,7 @@ import { cn } from "@/lib/cn";
 interface CatalogCategoriesViewProps {
   store: Store;
   products: CatalogListItem[];
+  storeCategories: CatalogCategoryOption[];
   exchangeRate: ExchangeRate | null;
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
@@ -27,6 +29,7 @@ interface CatalogCategoriesViewProps {
 export function CatalogCategoriesView({
   store,
   products,
+  storeCategories,
   exchangeRate,
   purchaseInfo,
   catalogDesign,
@@ -35,16 +38,32 @@ export function CatalogCategoriesView({
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showBsConversion } = catalogCurrency;
   const { addItem } = useCart();
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
 
-  const availableProducts = useMemo(
-    () => products.filter((product) => !isProductOutOfStock(product)),
-    [products],
+  const categories = useMemo(() => {
+    if (storeCategories.length > 0) return storeCategories;
+    return extractCatalogCategories(
+      products.filter((product) => !isProductOutOfStock(product)),
+    );
+  }, [products, storeCategories]);
+
+  const allowedCategorySlugs = useMemo(
+    () => new Set(categories.map((category) => category.slug)),
+    [categories],
   );
 
-  const categories = useMemo(
-    () => extractCatalogCategories(availableProducts),
-    [availableProducts],
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    () => categories[0]?.slug ?? "",
+  );
+
+  const availableProducts = useMemo(
+    () =>
+      products.filter(
+        (product) =>
+          !isProductOutOfStock(product) &&
+          product.category_slug &&
+          allowedCategorySlugs.has(product.category_slug),
+      ),
+    [products, allowedCategorySlugs],
   );
 
   const filteredProducts = useMemo(() => {
@@ -71,18 +90,6 @@ export function CatalogCategoriesView({
 
       {categories.length > 0 ? (
         <div className="catalog-category-chips" role="tablist" aria-label="Categorías">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={!selectedCategory}
-            onClick={() => setSelectedCategory("")}
-            className={cn(
-              "catalog-category-chip",
-              !selectedCategory && "catalog-category-chip-active",
-            )}
-          >
-            Todas
-          </button>
           {categories.map((category) => (
             <button
               key={category.slug}
@@ -105,10 +112,14 @@ export function CatalogCategoriesView({
         {filteredProducts.length === 0 ? (
           <div className="txn-catalog-empty">
             <p className="text-sm font-medium text-neutral-800">
-              No hay productos en esta categoría
+              {categories.length === 0
+                ? "Esta tienda aún no tiene categorías configuradas"
+                : "No hay productos en esta categoría"}
             </p>
             <p className="mt-1.5 text-xs text-neutral-500">
-              Prueba otra categoría o vuelve al inicio.
+              {categories.length === 0
+                ? "El dueño de la tienda puede configurarlas desde el panel."
+                : "Prueba otra categoría o vuelve al inicio."}
             </p>
           </div>
         ) : (

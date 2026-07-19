@@ -35,6 +35,32 @@ const ONBOARDING_PATH = "/onboarding";
 const AUTH_CONFIRM_PATH = "/auth/confirm";
 const AUTH_CALLBACK_PATH = "/auth/callback";
 
+function applySubdomainCatalogRewrite(
+  request: NextRequest,
+  storeSlugFromHost: string | null,
+  pathname: string,
+  response: NextResponse,
+): NextResponse {
+  if (!storeSlugFromHost || !shouldRewriteSubdomainCatalogPath(pathname)) {
+    return response;
+  }
+
+  const rewriteUrl = request.nextUrl.clone();
+  rewriteUrl.pathname = toInternalCatalogPath(pathname, storeSlugFromHost);
+  const rewriteResponse = NextResponse.rewrite(rewriteUrl);
+
+  response.cookies.getAll().forEach((cookie) => {
+    rewriteResponse.cookies.set(cookie);
+  });
+
+  response.headers.forEach((value, key) => {
+    if (key.toLowerCase() === "set-cookie") return;
+    rewriteResponse.headers.set(key, value);
+  });
+
+  return rewriteResponse;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const requestHost =
@@ -206,7 +232,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(registerUrl);
     }
 
-    return supabaseResponse;
+    return applySubdomainCatalogRewrite(
+      request,
+      storeSlugFromHost,
+      pathname,
+      supabaseResponse,
+    );
   }
 
   // ── Registro cliente: /register ────────────────────────────
@@ -373,24 +404,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (storeSlugFromHost && shouldRewriteSubdomainCatalogPath(pathname)) {
-    const rewriteUrl = request.nextUrl.clone();
-    rewriteUrl.pathname = toInternalCatalogPath(pathname, storeSlugFromHost);
-    const rewriteResponse = NextResponse.rewrite(rewriteUrl);
-
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      rewriteResponse.cookies.set(cookie);
-    });
-
-    supabaseResponse.headers.forEach((value, key) => {
-      if (key.toLowerCase() === "set-cookie") return;
-      rewriteResponse.headers.set(key, value);
-    });
-
-    return rewriteResponse;
-  }
-
-  return supabaseResponse;
+  return applySubdomainCatalogRewrite(
+    request,
+    storeSlugFromHost,
+    pathname,
+    supabaseResponse,
+  );
 }
 
 export const config = {

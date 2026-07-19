@@ -14,13 +14,14 @@ async function CategoriesContent({ storeSlug }: { storeSlug: string }) {
   const data = await getPublicCatalogPageData(storeSlug);
   if (!data) notFound();
 
-  const { store, products, exchangeRate, purchaseInfo, catalogDesign, catalogCurrency } =
+  const { store, products, storeCategories, exchangeRate, purchaseInfo, catalogDesign, catalogCurrency } =
     data;
 
   return (
     <CatalogCategoriesView
       store={store}
       products={products}
+      storeCategories={storeCategories}
       exchangeRate={exchangeRate}
       purchaseInfo={purchaseInfo}
       catalogDesign={catalogDesign}
