@@ -6,8 +6,22 @@ interface VercelDomainResponse {
   error?: { message?: string };
 }
 
+interface VercelDomainConfigResponse {
+  misconfigured?: boolean;
+  recommendedCNAME?: { rank: number; value: string }[];
+}
+
 function vercelProjectPath(config: DomainProvisioningConfig): string {
   const base = `/v10/projects/${config.vercelProjectId}/domains`;
+  if (!config.vercelTeamId) return base;
+  return `${base}?teamId=${encodeURIComponent(config.vercelTeamId)}`;
+}
+
+function vercelDomainConfigPath(
+  config: DomainProvisioningConfig,
+  domain: string,
+): string {
+  const base = `/v6/domains/${encodeURIComponent(domain)}/config`;
   if (!config.vercelTeamId) return base;
   return `${base}?teamId=${encodeURIComponent(config.vercelTeamId)}`;
 }
@@ -19,10 +33,40 @@ function vercelHeaders(token: string): HeadersInit {
   };
 }
 
+export async function resolveVercelCnameTarget(
+  config: DomainProvisioningConfig,
+  domain: string,
+): Promise<string> {
+  const response = await fetch(
+    `${VERCEL_API}${vercelDomainConfigPath(config, domain)}`,
+    {
+      method: "GET",
+      headers: vercelHeaders(config.vercelApiToken),
+    },
+  );
+
+  const body = (await response.json().catch(() => null)) as
+    | VercelDomainConfigResponse
+    | null;
+
+  const recommended = body?.recommendedCNAME
+    ?.slice()
+    .sort((a, b) => a.rank - b.rank)[0]?.value;
+
+  if (recommended) {
+    return recommended.replace(/\.$/, "");
+  }
+
+  return config.vercelCnameTarget.replace(/\.$/, "");
+}
+
 export async function ensureVercelProjectDomain(
   config: DomainProvisioningConfig,
   slug: string,
-): Promise<{ ok: true; created: boolean } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; created: boolean; cnameTarget: string; misconfigured?: boolean }
+  | { ok: false; error: string }
+> {
   const domain = `${slug}.${config.apexHost}`;
   const path = vercelProjectPath(config);
 
@@ -31,51 +75,73 @@ export async function ensureVercelProjectDomain(
     headers: vercelHeaders(config.vercelApiToken),
   });
 
-  if (getRes.ok) {
-    return { ok: true, created: false };
-  }
+  let created = false;
 
-  let getMessage = "";
-  if (getRes.status !== 404) {
-    const body = (await getRes.json().catch(() => null)) as
-      | VercelDomainResponse
-      | null;
-    getMessage = body?.error?.message ?? `Vercel get domain failed (${getRes.status})`;
+  if (!getRes.ok) {
+    let getMessage = "";
+    if (getRes.status !== 404) {
+      const body = (await getRes.json().catch(() => null)) as
+        | VercelDomainResponse
+        | null;
+      getMessage =
+        body?.error?.message ?? `Vercel get domain failed (${getRes.status})`;
 
-    const shouldTryCreate =
-      getRes.status === 400 ||
-      getMessage.toLowerCase().includes("no route") ||
-      getMessage.toLowerCase().includes("not found");
+      const shouldTryCreate =
+        getRes.status === 400 ||
+        getMessage.toLowerCase().includes("no route") ||
+        getMessage.toLowerCase().includes("not found");
 
-    if (!shouldTryCreate) {
-      return { ok: false, error: `Vercel: ${getMessage}` };
+      if (!shouldTryCreate) {
+        return { ok: false, error: `Vercel: ${getMessage}` };
+      }
+    }
+
+    const createRes = await fetch(`${VERCEL_API}${path}`, {
+      method: "POST",
+      headers: vercelHeaders(config.vercelApiToken),
+      body: JSON.stringify({ name: domain }),
+    });
+
+    const createJson = (await createRes.json()) as VercelDomainResponse;
+    if (!createRes.ok) {
+      const message =
+        createJson.error?.message ??
+        `Vercel add domain failed (${createRes.status})`;
+
+      if (
+        createRes.status === 409 ||
+        message.toLowerCase().includes("already") ||
+        message.toLowerCase().includes("exists")
+      ) {
+        created = false;
+      } else {
+        return { ok: false, error: `Vercel: ${message}` };
+      }
+    } else {
+      created = true;
     }
   }
 
-  const createRes = await fetch(`${VERCEL_API}${path}`, {
-    method: "POST",
-    headers: vercelHeaders(config.vercelApiToken),
-    body: JSON.stringify({ name: domain }),
-  });
+  const configRes = await fetch(
+    `${VERCEL_API}${vercelDomainConfigPath(config, domain)}`,
+    {
+      method: "GET",
+      headers: vercelHeaders(config.vercelApiToken),
+    },
+  );
 
-  const createJson = (await createRes.json()) as VercelDomainResponse;
-  if (!createRes.ok) {
-    const message =
-      createJson.error?.message ??
-      `Vercel add domain failed (${createRes.status})`;
+  const domainConfig = (await configRes.json().catch(() => null)) as
+    | VercelDomainConfigResponse
+    | null;
 
-    if (
-      createRes.status === 409 ||
-      message.toLowerCase().includes("already") ||
-      message.toLowerCase().includes("exists")
-    ) {
-      return { ok: true, created: false };
-    }
+  const cnameTarget = await resolveVercelCnameTarget(config, domain);
 
-    return { ok: false, error: `Vercel: ${message}` };
-  }
-
-  return { ok: true, created: true };
+  return {
+    ok: true,
+    created,
+    cnameTarget,
+    misconfigured: domainConfig?.misconfigured,
+  };
 }
 
 export async function removeVercelProjectDomain(

@@ -28,7 +28,7 @@ export interface StoreSubdomainResult {
   action: StoreSubdomainAction;
   slug: string;
   storeId: string;
-  cloudflare?: { created?: boolean; removed?: boolean };
+  cloudflare?: { created?: boolean; updated?: boolean; removed?: boolean };
   vercel?: { created?: boolean; removed?: boolean };
   error?: string;
 }
@@ -65,19 +65,6 @@ async function provisionSlug(
     };
   }
 
-  const cloudflare = await ensureCloudflareStoreCname(config, slug);
-  if (!cloudflare.ok) {
-    logProvision("cloudflare_failed", { storeId, slug, error: cloudflare.error });
-    return {
-      ok: false,
-      skipped: false,
-      action: "provision",
-      slug,
-      storeId,
-      error: cloudflare.error,
-    };
-  }
-
   const vercel = await ensureVercelProjectDomain(config, slug);
   if (!vercel.ok) {
     logProvision("vercel_failed", { storeId, slug, error: vercel.error });
@@ -91,11 +78,31 @@ async function provisionSlug(
     };
   }
 
+  const cloudflare = await ensureCloudflareStoreCname(
+    config,
+    slug,
+    vercel.cnameTarget,
+  );
+  if (!cloudflare.ok) {
+    logProvision("cloudflare_failed", { storeId, slug, error: cloudflare.error });
+    return {
+      ok: false,
+      skipped: false,
+      action: "provision",
+      slug,
+      storeId,
+      error: cloudflare.error,
+    };
+  }
+
   logProvision("success", {
     storeId,
     slug,
     cloudflareCreated: cloudflare.created,
+    cloudflareUpdated: cloudflare.updated ?? false,
     vercelCreated: vercel.created,
+    cnameTarget: vercel.cnameTarget,
+    vercelMisconfigured: vercel.misconfigured ?? null,
   });
 
   return {

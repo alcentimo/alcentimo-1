@@ -102,6 +102,6 @@ export async function getDomainProvisioningConfig():
     vercelApiToken,
     vercelProjectId,
     vercelTeamId: optionalEnv("VERCEL_TEAM_ID"),
-    cloudflareDnsProxied: optionalEnv("CLOUDFLARE_DNS_PROXIED") !== "false",
+    cloudflareDnsProxied: optionalEnv("CLOUDFLARE_DNS_PROXIED") === "true",
   };
 }

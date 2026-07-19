@@ -6,6 +6,8 @@ interface CloudflareDnsRecord {
   id: string;
   type: string;
   content: string;
+  proxied?: boolean;
+  name?: string;
 }
 
 interface CloudflareListResponse {
@@ -33,8 +35,13 @@ function recordFqdn(slug: string, apexHost: string): string {
 export async function ensureCloudflareStoreCname(
   config: DomainProvisioningConfig,
   slug: string,
-): Promise<{ ok: true; created: boolean } | { ok: false; error: string }> {
+  cnameTargetOverride?: string,
+): Promise<{ ok: true; created: boolean; updated?: boolean } | { ok: false; error: string }> {
   const fqdn = recordFqdn(slug, config.apexHost);
+  const cnameTarget = (cnameTargetOverride ?? config.vercelCnameTarget).replace(
+    /\.$/,
+    "",
+  );
   const listUrl = new URL(
     `${CLOUDFLARE_API}/zones/${config.cloudflareZoneId}/dns_records`,
   );
@@ -55,13 +62,42 @@ export async function ensureCloudflareStoreCname(
   }
 
   const existing = listJson.result.find(
-    (record) =>
-      record.type === "CNAME" &&
-      record.content.replace(/\.$/, "") ===
-        config.vercelCnameTarget.replace(/\.$/, ""),
+    (record) => record.type === "CNAME",
   );
 
   if (existing) {
+    const normalizedContent = existing.content.replace(/\.$/, "");
+    const needsUpdate =
+      normalizedContent !== cnameTarget ||
+      Boolean(existing.proxied) !== config.cloudflareDnsProxied;
+
+    if (needsUpdate) {
+      const updateRes = await fetch(
+        `${CLOUDFLARE_API}/zones/${config.cloudflareZoneId}/dns_records/${existing.id}`,
+        {
+          method: "PATCH",
+          headers: cloudflareHeaders(config.cloudflareApiToken),
+          body: JSON.stringify({
+            type: "CNAME",
+            name: slug,
+            content: cnameTarget,
+            proxied: config.cloudflareDnsProxied,
+            ttl: 1,
+          }),
+        },
+      );
+
+      const updateJson = (await updateRes.json()) as CloudflareCreateResponse;
+      if (!updateRes.ok || !updateJson.success) {
+        const message =
+          updateJson.errors?.map((entry) => entry.message).join("; ") ??
+          `Cloudflare update failed (${updateRes.status})`;
+        return { ok: false, error: `Cloudflare: ${message}` };
+      }
+
+      return { ok: true, created: false, updated: true };
+    }
+
     return { ok: true, created: false };
   }
 
@@ -73,7 +109,7 @@ export async function ensureCloudflareStoreCname(
       body: JSON.stringify({
         type: "CNAME",
         name: slug,
-        content: config.vercelCnameTarget,
+        content: cnameTarget,
         proxied: config.cloudflareDnsProxied,
         ttl: 1,
       }),
