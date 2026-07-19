@@ -33,6 +33,7 @@ interface ProductFormSheetProps {
   mode: "create" | "edit";
   productId?: string;
   onSaved: (result?: PublishedProductResult) => void;
+  onLimitHit?: () => void;
 }
 
 export function ProductFormSheet({
@@ -44,6 +45,7 @@ export function ProductFormSheet({
   mode,
   productId,
   onSaved,
+  onLimitHit,
 }: ProductFormSheetProps) {
   const [editData, setEditData] = useState<ProductEditData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -105,6 +107,7 @@ export function ProductFormSheet({
               onComplete={handleCreateComplete}
               onRefresh={onSaved}
               onCancel={() => onOpenChange(false)}
+              onLimitHit={onLimitHit}
             />
           )}
         </DialogContent>

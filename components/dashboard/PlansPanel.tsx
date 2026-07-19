@@ -13,6 +13,7 @@ import {
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
 import { formatProductLimit, type PlanId } from "@/src/config/plans";
+import { formatProTrialEndsAt } from "@/lib/plans/trial";
 import { cn } from "@/lib/cn";
 
 interface PlansPanelProps {
@@ -21,6 +22,8 @@ interface PlansPanelProps {
   productCount?: number | null;
   productLimit?: number | null;
   exchangeRate?: number | null;
+  trialActive?: boolean;
+  trialEndsAt?: string | null;
 }
 
 function isCurrentTier(tierPlanId: PlanId, currentPlanId: PlanId): boolean {
@@ -81,6 +84,8 @@ export function PlansPanel({
   productCount = null,
   productLimit = null,
   exchangeRate = null,
+  trialActive = false,
+  trialEndsAt = null,
 }: PlansPanelProps) {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -102,6 +107,11 @@ export function PlansPanel({
             <p className="mt-0.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
               {currentPlanName}
             </p>
+            {trialActive && trialEndsAt ? (
+              <p className="mt-1 text-sm text-teal-700 dark:text-teal-300">
+                Prueba Pro activa hasta el {formatProTrialEndsAt(trialEndsAt)}
+              </p>
+            ) : null}
             {productCount != null && productLimit != null && currentPlanId !== "premium" && (
               <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
                 {productCount} / {formatProductLimit(productLimit)} productos activos

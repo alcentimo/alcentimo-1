@@ -33,6 +33,8 @@ export type ProductFormState = {
   productName?: string;
   imageOptimizedMessage?: string;
   productId?: string;
+  limitHit?: boolean;
+  trialEligible?: boolean;
 };
 
 export interface ProductEditData {
@@ -106,7 +108,11 @@ export async function createProduct(
 
   const productLimitCheck = await assertCanCreateProduct(store.id);
   if (!productLimitCheck.ok) {
-    return { error: productLimitCheck.error };
+    return {
+      error: productLimitCheck.error,
+      limitHit: productLimitCheck.code === "PRODUCT_LIMIT",
+      trialEligible: productLimitCheck.trialEligible,
+    };
   }
 
   const name = String(formData.get("name") ?? "").trim();
@@ -648,6 +654,8 @@ export type InventoryActionState = {
   error?: string;
   success?: boolean;
   stock?: number;
+  limitHit?: boolean;
+  trialEligible?: boolean;
 };
 
 async function assertStoreProductVariant(
@@ -820,7 +828,11 @@ export async function duplicateProduct(
 
   const productLimitCheck = await assertCanCreateProduct(store.id);
   if (!productLimitCheck.ok) {
-    return { error: productLimitCheck.error };
+    return {
+      error: productLimitCheck.error,
+      limitHit: productLimitCheck.code === "PRODUCT_LIMIT",
+      trialEligible: productLimitCheck.trialEligible,
+    };
   }
 
   const { data: source, error: sourceError } = await supabase

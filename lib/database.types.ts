@@ -14,6 +14,8 @@ export type ProfilePlanDb = "FREE" | "STARTER" | "GROWTH" | "PREMIUM";
 export interface Profile {
   id: string;
   plan: ProfilePlanDb | string;
+  pro_trial_started_at?: string | null;
+  pro_trial_ends_at?: string | null;
   created_at?: string;
   updated_at?: string;
 }

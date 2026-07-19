@@ -6,6 +6,7 @@ import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
 import type { CatalogListItem, Store } from "@/lib/database.types";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { CatalogStockFilter } from "@/lib/inventory/stock-status";
+import type { StoreProductLimitContext } from "@/lib/plans/product-limit";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 
 interface CatalogPanelProps {
@@ -15,6 +16,7 @@ interface CatalogPanelProps {
   initialProducts: CatalogListItem[];
   productFormConfig: StoreProductFormConfig;
   previewSettings: CatalogPreviewSettings;
+  productLimitContext?: StoreProductLimitContext | null;
 }
 
 function resolveStockFilter(value: string | null): CatalogStockFilter {
@@ -28,6 +30,7 @@ export function CatalogPanel({
   initialProducts,
   productFormConfig,
   previewSettings,
+  productLimitContext = null,
 }: CatalogPanelProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -97,6 +100,7 @@ export function CatalogPanel({
       onAutoOpenCreateHandled={() => setAutoOpenCreate(false)}
       stockFilter={stockFilter}
       onStockFilterChange={handleStockFilterChange}
+      productLimitContext={productLimitContext}
     />
   );
 }

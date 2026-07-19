@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreProductLimitStatus } from "@/lib/plans/product-limit";
+import { resolveProTrialStatus } from "@/lib/plans/trial";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { PlansPanel } from "@/components/dashboard/PlansPanel";
 import { PageContainer } from "@/components/ui/PageContainer";
@@ -17,6 +18,7 @@ export default async function PlanesPage() {
   }
 
   const { authUser, store } = session;
+  const trial = resolveProTrialStatus(authUser.profile);
   const productLimitStatus = store
     ? await getStoreProductLimitStatus(store.id)
     : null;
@@ -37,11 +39,17 @@ export default async function PlanesPage() {
       <PlansPanel
         currentPlanId={authUser.planId}
         currentPlanName={
-          authUser.planId === "free" ? "Gratis" : authUser.plan.name
+          trial.active
+            ? "Pro (prueba)"
+            : authUser.planId === "free"
+              ? "Gratis"
+              : authUser.plan.name
         }
         productCount={productLimitStatus?.currentCount ?? null}
         productLimit={productLimitStatus?.productLimit ?? null}
         exchangeRate={exchangeRate}
+        trialActive={trial.active}
+        trialEndsAt={trial.endsAt}
       />
     </PageContainer>
   );

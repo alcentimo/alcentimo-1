@@ -16,7 +16,7 @@ const plans = [
     period: "",
     highlight: false,
     features: [
-      "Hasta 15 productos",
+      "Hasta 10 productos",
       "Catálogo con enlace propio",
       "Precios USD y Bs automáticos",
       "Pedidos por WhatsApp",

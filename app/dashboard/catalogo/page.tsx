@@ -4,10 +4,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
+import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import { getStoreInventory } from "@/lib/inventory";
 import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
 import { isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
-import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
+import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
 import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
 import { BcvRateStripWithSync } from "@/components/dashboard/BcvRateStripWithSync";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
@@ -54,12 +55,13 @@ export default async function CatalogoPage({
     );
   }
 
-  const [{ products }, exchangeRateRow, productFormConfig, previewSettings] =
+  const [{ products }, exchangeRateRow, productFormConfig, previewSettings, productLimitContext] =
     await Promise.all([
       getStoreInventory(store.slug),
       getCurrentExchangeRate(),
       getStoreProductFormConfig(store.id),
       getCatalogPreviewSettings(store),
+      getStoreProductLimitContext(store.id),
     ]);
 
   const exchangeRate = exchangeRateRow?.rate ?? null;
@@ -94,6 +96,7 @@ export default async function CatalogoPage({
           initialProducts={products}
           productFormConfig={productFormConfig}
           previewSettings={previewSettings}
+          productLimitContext={productLimitContext}
         />
       </Suspense>
     </div>

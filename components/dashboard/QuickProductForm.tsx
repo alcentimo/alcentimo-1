@@ -42,6 +42,7 @@ interface QuickProductFormProps {
   onComplete: (result?: PublishedProductResult) => void;
   onRefresh: () => void;
   onCancel?: () => void;
+  onLimitHit?: () => void;
 }
 
 export function QuickProductForm(props: QuickProductFormProps) {
@@ -71,6 +72,7 @@ function QuickProductFormSession({
   onRefresh,
   onCancel,
   onSavedAndAnother,
+  onLimitHit,
 }: QuickProductFormSessionProps) {
   const [state, formAction, pending] = useActionState(createProduct, initialState);
   const [priceBs, setPriceBs] = useState("");
@@ -121,6 +123,11 @@ function QuickProductFormSession({
         : getTransactionalCatalogPublicUrl(store.slug),
     });
   }, [state.success, state.catalogUrl, state.productName, onComplete, onRefresh, onSavedAndAnother, store.slug]);
+
+  useEffect(() => {
+    if (!state.limitHit) return;
+    onLimitHit?.();
+  }, [state.limitHit, onLimitHit]);
 
   function resetFormState() {
     setPriceBs("");

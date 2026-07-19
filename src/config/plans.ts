@@ -14,7 +14,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   free: {
     id: "free",
     name: "Plan Gratis",
-    productLimit: 15,
+    productLimit: 10,
     priceUsdYearly: 0,
   },
   starter: {
@@ -50,7 +50,7 @@ export const PRICING_SECTION_HREF = "/#precios";
 /** Página interna de planes en el dashboard. */
 export const DASHBOARD_PLANS_HREF = "/dashboard/planes";
 
-/** Avisar cuando quedan esta cantidad de slots o menos (p. ej. 12/15 en plan Free). */
+/** Avisar cuando quedan esta cantidad de slots o menos (p. ej. 7/10 en plan Free). */
 export const PRODUCT_LIMIT_NEAR_REMAINING = 3;
 
 const NEXT_PLAN_DISPLAY_NAME: Record<PlanId, string | null> = {
@@ -169,12 +169,19 @@ export function isNearProductLimit(
   return check.remainingSlots <= remainingThreshold;
 }
 
-export function shouldShowProductLimitBanner(_check: ProductLimitCheck): boolean {
-  return false;
+export function shouldShowProductLimitBanner(check: ProductLimitCheck): boolean {
+  return check.hasReachedLimit || isNearProductLimit(check);
 }
 
-export function getProductLimitErrorMessage(check: ProductLimitCheck): string {
+export function getProductLimitErrorMessage(
+  check: ProductLimitCheck,
+  trial?: { eligible: boolean; active: boolean },
+): string {
   if (check.canCreateMore) return "";
+
+  if (trial?.eligible) {
+    return "Has alcanzado tu límite. Activa una prueba gratuita de un mes del plan Pro (250 productos).";
+  }
 
   if (isUnlimitedProductLimit(check.productLimit)) {
     return "No puedes crear más productos en este momento.";
@@ -182,7 +189,7 @@ export function getProductLimitErrorMessage(check: ProductLimitCheck): string {
 
   const upgradePlan = getUpgradePlanName(check.planId);
   if (upgradePlan) {
-    return `Has alcanzado el límite de tu plan actual. Actualiza a ${upgradePlan} para continuar.`;
+    return `Has alcanzado el límite de ${check.productLimit} productos. Actualiza a ${upgradePlan} para continuar.`;
   }
 
   return `Has alcanzado el límite de ${check.productLimit} productos de tu ${check.planName}.`;

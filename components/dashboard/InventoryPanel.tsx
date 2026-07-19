@@ -43,6 +43,10 @@ import {
 } from "@/components/dashboard/CatalogPreviewDrawer";
 
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
+import type { StoreProductLimitContext } from "@/lib/plans/product-limit";
+import { shouldShowProductLimitBanner } from "@/src/config/plans";
+import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
+import { TrialLimitDialog } from "@/components/dashboard/plans/TrialLimitDialog";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import {
   PRODUCT_IMPORT_TEMPLATE_FILENAME,
@@ -90,6 +94,7 @@ interface InventoryPanelProps {
   onAutoOpenCreateHandled?: () => void;
   stockFilter?: CatalogStockFilter;
   onStockFilterChange?: (filter: CatalogStockFilter) => void;
+  productLimitContext?: StoreProductLimitContext | null;
 }
 
 const StockBadge = memo(function StockBadge({
@@ -479,8 +484,10 @@ export function InventoryPanel({
   onAutoOpenCreateHandled,
   stockFilter = "all",
   onStockFilterChange,
+  productLimitContext = null,
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
+  const [trialDialogOpen, setTrialDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -573,16 +580,25 @@ export function InventoryPanel({
   );
 
   const openCreate = useCallback(() => {
+    if (productLimitContext?.hasReachedLimit) {
+      setTrialDialogOpen(true);
+      return;
+    }
     setSheetMode("create");
     setEditingProductId(undefined);
     setSheetOpen(true);
-  }, []);
+  }, [productLimitContext?.hasReachedLimit]);
 
   useEffect(() => {
     if (!autoOpenCreate) return;
+    if (productLimitContext?.hasReachedLimit) {
+      setTrialDialogOpen(true);
+      onAutoOpenCreateHandled?.();
+      return;
+    }
     openCreate();
     onAutoOpenCreateHandled?.();
-  }, [autoOpenCreate, openCreate, onAutoOpenCreateHandled]);
+  }, [autoOpenCreate, openCreate, onAutoOpenCreateHandled, productLimitContext?.hasReachedLimit]);
 
   const openEdit = useCallback((productId: string) => {
     setSheetMode("edit");
@@ -750,6 +766,14 @@ export function InventoryPanel({
 
   return (
     <>
+      {productLimitContext &&
+      shouldShowProductLimitBanner(productLimitContext) ? (
+        <ProductLimitBanner
+          productLimit={productLimitContext}
+          trial={productLimitContext.trial}
+        />
+      ) : null}
+
       {publishedProduct && (
         <div
           className="alert-success mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
@@ -1063,6 +1087,16 @@ export function InventoryPanel({
         mode={sheetMode}
         productId={editingProductId}
         onSaved={handleProductSaved}
+        onLimitHit={() => {
+          setSheetOpen(false);
+          setTrialDialogOpen(true);
+        }}
+      />
+
+      <TrialLimitDialog
+        open={trialDialogOpen}
+        onOpenChange={setTrialDialogOpen}
+        trialEligible={productLimitContext?.trial.eligible ?? false}
       />
 
       <CatalogPreviewDrawer

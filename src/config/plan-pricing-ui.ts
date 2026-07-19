@@ -26,7 +26,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     tagline: "Ideal para empezar",
     monthlyUsd: 0,
     annualUsd: null,
-    productLimitLabel: "Hasta 15 productos",
+    productLimitLabel: "Hasta 10 productos",
     features: [
       "Catálogo público con enlace único",
       "Precios USD y Bs automáticos",

@@ -3,23 +3,30 @@ import { AlertTriangle } from "lucide-react";
 import {
   getProductLimitErrorMessage,
   isNearProductLimit,
-  DASHBOARD_PLANS_HREF,
   type ProductLimitCheck,
 } from "@/src/config/plans";
+import type { ProTrialStatus } from "@/lib/plans/trial";
 
 interface ProductLimitBannerProps {
   productLimit: ProductLimitCheck;
+  trial?: ProTrialStatus;
 }
 
-export function ProductLimitBanner({ productLimit }: ProductLimitBannerProps) {
+export function ProductLimitBanner({
+  productLimit,
+  trial,
+}: ProductLimitBannerProps) {
   const atLimit = productLimit.hasReachedLimit;
   const nearLimit = isNearProductLimit(productLimit);
 
   if (!atLimit && !nearLimit) return null;
 
   const message = atLimit
-    ? getProductLimitErrorMessage(productLimit)
+    ? getProductLimitErrorMessage(productLimit, trial)
     : "Estás cerca de tu límite de productos.";
+
+  const ctaHref = trial?.eligible || atLimit ? "/activar" : "/dashboard/planes";
+  const ctaLabel = trial?.eligible && atLimit ? "Activar prueba Pro" : "Ver planes";
 
   return (
     <div
@@ -45,14 +52,14 @@ export function ProductLimitBanner({ productLimit }: ProductLimitBannerProps) {
         </div>
       </div>
       <Link
-        href={DASHBOARD_PLANS_HREF}
+        href={ctaHref}
         className={`inline-flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
           atLimit
             ? "bg-amber-700 text-white hover:bg-amber-800 dark:bg-amber-600 dark:hover:bg-amber-500"
             : "bg-teal-700 text-white hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
         }`}
       >
-        Ver planes
+        {ctaLabel}
       </Link>
     </div>
   );
