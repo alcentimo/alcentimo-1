@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState, useTransition, type ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Eye, EyeOff } from "lucide-react";
 import { SettingsTabShell } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
@@ -156,6 +156,7 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [savingField, setSavingField] = useState<SavingField>(null);
   const [openSection, setOpenSection] = useState<AccordionSection>("theme");
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
   const [isSaving, startSave] = useTransition();
 
   const persist = useCallback(
@@ -379,7 +380,32 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
           </div>
         </aside>
 
-        <main className="design-studio-main">
+        {preview ? (
+          <div className="design-studio-mobile-preview-bar">
+            <button
+              type="button"
+              className="design-studio-mobile-preview-toggle"
+              aria-expanded={mobilePreviewOpen}
+              aria-controls="design-studio-preview-panel"
+              onClick={() => setMobilePreviewOpen((open) => !open)}
+            >
+              {mobilePreviewOpen ? (
+                <EyeOff className="h-4 w-4 shrink-0" aria-hidden="true" />
+              ) : (
+                <Eye className="h-4 w-4 shrink-0" aria-hidden="true" />
+              )}
+              {mobilePreviewOpen ? "Ocultar vista previa" : "Ver vista previa"}
+            </button>
+          </div>
+        ) : null}
+
+        <main
+          id="design-studio-preview-panel"
+          className={cn(
+            "design-studio-main",
+            mobilePreviewOpen && "design-studio-main--open",
+          )}
+        >
           {preview ? (
             <DesignCatalogInlinePreview
               store={preview.store}

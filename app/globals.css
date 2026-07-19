@@ -3431,8 +3431,11 @@ body {
 
 .design-studio {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 @media (min-width: 1024px) {
@@ -3444,7 +3447,7 @@ body {
 }
 
 .design-studio-sidebar {
-  @apply flex flex-col gap-4;
+  @apply flex min-w-0 flex-col gap-3 lg:gap-4;
 }
 
 .design-studio-sidebar-header {
@@ -3452,7 +3455,62 @@ body {
 }
 
 .design-studio-accordions {
-  @apply divide-y divide-zinc-200/80 rounded-xl border border-zinc-200/80 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-950;
+  @apply min-w-0 divide-y divide-zinc-200/80 rounded-xl border border-zinc-200/80 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.design-studio-mobile-preview-bar {
+  display: none;
+  min-width: 0;
+}
+
+.design-studio-mobile-preview-toggle {
+  @apply inline-flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50 active:scale-[0.99] dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900;
+}
+
+@media (max-width: 1023px) {
+  .design-studio-mobile-preview-bar {
+    display: block;
+  }
+
+  .design-studio-main {
+    display: none;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .design-studio-main.design-studio-main--open {
+    display: block;
+  }
+
+  .design-preview-rubro-picker {
+    @apply space-y-1.5 px-3 py-2.5;
+  }
+
+  .design-accordion-trigger {
+    @apply px-3 py-3;
+  }
+
+  .design-accordion-panel {
+    @apply px-2 pb-2 pt-1.5;
+  }
+
+  .design-studio-preview-meta {
+    @apply px-3 py-2;
+  }
+
+  .design-studio-preview-frame {
+    height: min(52vh, 520px);
+    max-height: min(52vh, 520px);
+  }
+
+  .design-studio-preview-empty {
+    min-height: 12rem;
+  }
+
+  .settings-tab-content:has(.design-studio) {
+    @apply space-y-4 pb-3;
+  }
 }
 
 .design-preview-rubro-picker {
@@ -3519,17 +3577,11 @@ body {
 }
 
 .design-studio-main {
-  @apply min-w-0 lg:sticky lg:top-4 lg:self-start;
-}
-
-@media (max-width: 1023px) {
-  .design-studio-main {
-    order: -1;
-  }
+  @apply min-w-0 w-full max-w-full lg:sticky lg:top-4 lg:self-start;
 }
 
 .design-studio-preview {
-  @apply overflow-hidden rounded-2xl border border-zinc-200/90 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/30;
+  @apply w-full max-w-full min-w-0 overflow-hidden rounded-2xl border border-zinc-200/90 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/30;
 }
 
 .design-studio-preview-meta {
@@ -3552,10 +3604,20 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: min(72vh, 720px);
   max-height: min(72vh, 720px);
   overflow: hidden;
   background: #fff;
+}
+
+.design-studio-preview-frame .catalog-live-preview-root,
+.design-studio-preview-frame .catalog-live-preview-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .design-studio-preview-frame .design-preview-rubro-enter,
