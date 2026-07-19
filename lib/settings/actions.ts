@@ -17,6 +17,7 @@ import {
   getFirstPaymentValidationError,
   validatePaymentsSettings,
 } from "@/lib/payments/validate-payment-fields";
+import { scheduleStoreSubdomainRename } from "@/lib/domains/provision-store-subdomain";
 import type {
   ContactSettings,
   CatalogCurrencySettings,
@@ -396,6 +397,10 @@ export async function saveGeneralStoreSettings(
       return { error: "Este enlace ya está registrado por otro negocio." };
     }
     return { error: storeError.message };
+  }
+
+  if (previousSlug !== slug) {
+    scheduleStoreSubdomainRename(store.id, previousSlug, slug);
   }
 
   const sync = await syncStoreProductCategories(

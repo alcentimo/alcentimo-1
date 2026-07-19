@@ -21,6 +21,7 @@ import {
   defaultStoreSettingsConfig,
   mergeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
+import { scheduleStoreSubdomainProvision } from "@/lib/domains/provision-store-subdomain";
 
 export type OnboardingFormState = {
   error?: string;
@@ -115,6 +116,8 @@ export async function completeOnboarding(
     }
     return { error: storeError.message };
   }
+
+  scheduleStoreSubdomainProvision({ storeId: store.id, slug });
 
   const settingsConfig = mergeStoreSettingsConfig(defaultStoreSettingsConfig(), {
     contact: { whatsappPhone: whatsapp },
