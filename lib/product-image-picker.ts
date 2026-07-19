@@ -36,8 +36,8 @@ export async function compressSelectedProductImage(
     const { file: compressed, message } = await compressImageForUpload(file);
     return {
       ok: true,
-      file,
-      previewUrl: URL.createObjectURL(file),
+      file: compressed,
+      previewUrl: URL.createObjectURL(compressed),
       message,
     };
   } catch (error) {
@@ -67,7 +67,7 @@ export type AutoProcessProductImageResult =
     }
   | { ok: false; error: string };
 
-/** Recorte centrado 4:5 + compresión WebP automática tras elegir archivo. */
+/** Recorte centrado 1:1 + compresión WebP automática tras elegir archivo. */
 export async function autoCropAndCompressProductImage(
   file: File,
 ): Promise<AutoProcessProductImageResult> {

@@ -1,7 +1,7 @@
 import type { Area } from "react-easy-crop";
 
-/** Relación de aspecto del catálogo (vertical 4:5). */
-export const PRODUCT_IMAGE_ASPECT_RATIO = 4 / 5;
+/** Relación de aspecto del catálogo (cuadrado 1:1). */
+export const PRODUCT_IMAGE_ASPECT_RATIO = 1;
 
 /**
  * Recorte centrado en porcentajes (0–100) para react-easy-crop.

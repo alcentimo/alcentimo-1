@@ -247,7 +247,7 @@ export function ProductImageField({
     >
       <Image
         src={confirmedPreviewUrl}
-        alt="Vista previa en catálogo (4:5)"
+        alt="Vista previa en catálogo (1:1)"
         fill
         sizes={layout === "compact" ? "64px" : "140px"}
         className="object-cover"
@@ -402,7 +402,7 @@ export function ProductImageField({
                 Editar encuadre
               </DialogTitle>
               <DialogDescription className="text-sm text-zinc-400">
-                Arrastra la imagen o usa zoom para ajustar el recorte 4:5. La foto original completa
+                Arrastra la imagen o usa zoom para ajustar el recorte 1:1. La foto original completa
                 se muestra aquí.
               </DialogDescription>
             </DialogHeader>

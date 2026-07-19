@@ -18,7 +18,7 @@
    * Override contexts: .txn-catalog, .txn-catalog--list .store-product-card
    */
   --pc-radius: var(--radius-lg);
-  --pc-media-ratio: 4 / 5;
+  --pc-media-ratio: 1 / 1;
   --pc-list-media-width: clamp(7rem, 22vw, 8rem);
   --pc-body-pad: clamp(0.75rem, 2.5vw, 1.25rem);
   --pc-gap: clamp(0.375rem, 1.5vw, 0.5rem);
@@ -501,7 +501,8 @@ body {
 }
 
 .store-product-image {
-  @apply object-cover transition-transform duration-500 ease-out group-hover:scale-105;
+  object-fit: cover;
+  @apply transition-transform duration-500 ease-out group-hover:scale-105;
 }
 
 .catalog-product-image-placeholder {
@@ -3439,7 +3440,7 @@ body {
 }
 
 .txn-catalog--sale-showcase {
-  --pc-media-ratio: 4 / 5;
+  --pc-media-ratio: 1 / 1;
 }
 
 .txn-catalog--sale-showcase .store-product-price-usd {

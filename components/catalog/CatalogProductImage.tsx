@@ -18,7 +18,7 @@ export function CatalogProductImage({
   src,
   alt,
   className,
-  sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw",
+  sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, 25vw",
   priority = false,
   loading = "lazy",
 }: CatalogProductImageProps) {
@@ -53,11 +53,12 @@ export function CatalogProductImage({
         alt={alt}
         fill
         sizes={sizes}
+        quality={80}
         priority={priority}
         loading={priority ? undefined : loading}
         className={cn(
           className,
-          "transition-opacity duration-300 ease-out",
+          "object-cover transition-opacity duration-300 ease-out",
           status === "loading" ? "opacity-0" : "opacity-100",
         )}
         onLoad={() => setStatus("loaded")}

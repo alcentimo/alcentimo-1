@@ -2,13 +2,16 @@ import sharp from "sharp";
 import {
   PRODUCT_IMAGE_MAX_DIMENSION,
   PRODUCT_IMAGE_MAX_OUTPUT_BYTES,
-  PRODUCT_IMAGE_TARGET_BYTES,
   PRODUCT_IMAGE_WEBP_QUALITY,
 } from "@/lib/product-image";
 
-const MIN_QUALITY = 35;
+/** Calidad mínima absoluta: por debajo aparecen artefactos visibles. */
+const MIN_QUALITY = 70;
 const START_QUALITY = Math.round(PRODUCT_IMAGE_WEBP_QUALITY * 100);
 const QUALITY_STEP = 5;
+/** Lado largo mínimo al reducir para caber en 120 KB. */
+const MIN_DIMENSION = 720;
+const DIMENSION_STEP = 64;
 
 export interface ImageOptimizationResult {
   buffer: Buffer;
@@ -26,14 +29,14 @@ function toBuffer(input: Buffer | ArrayBuffer): Buffer {
 
 async function encodeWebp(
   input: Buffer,
-  width: number,
+  maxDimension: number,
   quality: number,
 ): Promise<{ buffer: Buffer; width: number; height: number }> {
   const buffer = await sharp(input, { animated: false })
     .rotate()
     .resize({
-      width,
-      height: PRODUCT_IMAGE_MAX_DIMENSION,
+      width: maxDimension,
+      height: maxDimension,
       fit: "inside",
       withoutEnlargement: true,
     })
@@ -44,13 +47,17 @@ async function encodeWebp(
 
   return {
     buffer,
-    width: meta.width ?? width,
-    height: meta.height ?? width,
+    width: meta.width ?? maxDimension,
+    height: meta.height ?? maxDimension,
   };
 }
 
 /**
- * Respaldo en servidor: WebP, máx. 800px, objetivo < 40 KB.
+ * Optimización de catálogo en servidor:
+ * - Redimensiona a máx. 1024×1024 (mantiene proporción)
+ * - Convierte siempre a WebP
+ * - Calidad inicial 80%; si supera 120 KB, reduce dimensión antes que calidad
+ * - No baja de calidad 70% para preservar texturas y detalle
  */
 export async function compressProductImage(
   input: Buffer | ArrayBuffer,
@@ -59,21 +66,16 @@ export async function compressProductImage(
   const originalSize = source.length;
 
   let quality = START_QUALITY;
-  let width = PRODUCT_IMAGE_MAX_DIMENSION;
-  let best = await encodeWebp(source, width, quality);
+  let maxDimension = PRODUCT_IMAGE_MAX_DIMENSION;
+  let best = await encodeWebp(source, maxDimension, quality);
 
+  // Preferir mantener calidad ~80% y bajar resolución si hace falta.
   while (
-    best.buffer.length > PRODUCT_IMAGE_TARGET_BYTES &&
-    quality > MIN_QUALITY
+    best.buffer.length > PRODUCT_IMAGE_MAX_OUTPUT_BYTES &&
+    maxDimension > MIN_DIMENSION
   ) {
-    quality -= QUALITY_STEP;
-    best = await encodeWebp(source, width, quality);
-  }
-
-  while (best.buffer.length > PRODUCT_IMAGE_MAX_OUTPUT_BYTES && width > 400) {
-    width -= 80;
-    quality = Math.max(MIN_QUALITY, quality - 5);
-    best = await encodeWebp(source, width, quality);
+    maxDimension -= DIMENSION_STEP;
+    best = await encodeWebp(source, maxDimension, quality);
   }
 
   while (
@@ -81,7 +83,7 @@ export async function compressProductImage(
     quality > MIN_QUALITY
   ) {
     quality -= QUALITY_STEP;
-    best = await encodeWebp(source, width, quality);
+    best = await encodeWebp(source, maxDimension, quality);
   }
 
   if (best.buffer.length > PRODUCT_IMAGE_MAX_OUTPUT_BYTES) {

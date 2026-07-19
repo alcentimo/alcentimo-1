@@ -9,7 +9,7 @@ function SkeletonBlock({ className }: { className?: string }) {
 function ProductCardSkeleton() {
   return (
     <article className="store-product-card h-full">
-      <SkeletonBlock className="store-product-media aspect-[4/5] w-full shrink-0 rounded-none" />
+      <SkeletonBlock className="store-product-media w-full shrink-0 rounded-none" />
       <div className="store-product-content">
         <div className="store-product-body">
           <SkeletonBlock className="store-product-slot-meta h-[var(--pc-meta-min-h)] w-16" />

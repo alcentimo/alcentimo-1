@@ -6,10 +6,11 @@ import {
   PRODUCT_IMAGE_WEBP_QUALITY,
 } from "@/lib/product-image";
 
-const MIN_QUALITY = 0.45;
-const QUALITY_STEP = 0.08;
-const MIN_DIMENSION = 480;
-const DIMENSION_STEP = 80;
+/** Alineado con el servidor: no bajar de ~70% para evitar artefactos. */
+const MIN_QUALITY = 0.7;
+const QUALITY_STEP = 0.05;
+const MIN_DIMENSION = 720;
+const DIMENSION_STEP = 64;
 const MAX_OUTPUT_MB = PRODUCT_IMAGE_MAX_OUTPUT_BYTES / (1024 * 1024);
 
 type ImageCompressionFn = (
@@ -40,7 +41,8 @@ function toWebpFile(blob: Blob, originalName: string): File {
 
 /**
  * Comprime en el navegador antes de enviar al servidor.
- * Redimensiona a máx. 800px, convierte a WebP (75%) y apunta a < 40 KB.
+ * Redimensiona a máx. 1024px, convierte a WebP (~80%) y apunta a ≤ 120 KB
+ * priorizando nitidez (baja dimensión antes que calidad).
  */
 export async function compressImageForUpload(
   file: File,
@@ -55,8 +57,10 @@ export async function compressImageForUpload(
 
   const originalSize = file.size;
   let maxDim = PRODUCT_IMAGE_MAX_DIMENSION;
+  let usedQuality = PRODUCT_IMAGE_WEBP_QUALITY;
   let webpFile: File | null = null;
 
+  // Primero intentar a 1024px / calidad 80%, luego bajar dimensión, luego calidad.
   while (maxDim >= MIN_DIMENSION) {
     let quality = PRODUCT_IMAGE_WEBP_QUALITY;
 
@@ -72,8 +76,16 @@ export async function compressImageForUpload(
 
       const candidate = toWebpFile(compressed, file.name);
       webpFile = candidate;
+      usedQuality = quality;
 
       if (candidate.size <= PRODUCT_IMAGE_MAX_OUTPUT_BYTES) {
+        const qualityPct = Math.round(usedQuality * 100);
+        const message = `Optimizada: ${formatImageSize(originalSize)} → ${formatImageSize(candidate.size)} (WebP máx. ${maxDim}px, calidad ${qualityPct}%).`;
+        return { file: candidate, message };
+      }
+
+      // Si aún es grande a calidad alta, bajar dimensión antes que calidad.
+      if (quality === PRODUCT_IMAGE_WEBP_QUALITY && maxDim > MIN_DIMENSION) {
         break;
       }
 
@@ -89,11 +101,12 @@ export async function compressImageForUpload(
 
   if (!webpFile || webpFile.size > PRODUCT_IMAGE_MAX_OUTPUT_BYTES) {
     throw new Error(
-      "No se pudo optimizar la imagen por debajo de 40 KB. Prueba con otra foto.",
+      "No se pudo optimizar la imagen por debajo de 120 KB. Prueba con otra foto.",
     );
   }
 
-  const message = `Optimizada: ${formatImageSize(originalSize)} → ${formatImageSize(webpFile.size)} (WebP, máx. ${maxDim}px).`;
+  const qualityPct = Math.round(usedQuality * 100);
+  const message = `Optimizada: ${formatImageSize(originalSize)} → ${formatImageSize(webpFile.size)} (WebP máx. ${maxDim}px, calidad ${qualityPct}%).`;
 
   return { file: webpFile, message };
 }
