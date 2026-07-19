@@ -185,6 +185,74 @@ body {
   @apply inline-flex items-center px-2.5 py-2 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100;
 }
 
+.landing-dashboard-mockup {
+  @apply relative w-full max-w-[520px];
+}
+
+.landing-dashboard-mockup-glow {
+  @apply pointer-events-none absolute -inset-4 rounded-[2rem] bg-emerald-500/10 blur-2xl dark:bg-emerald-500/5;
+}
+
+.landing-dashboard-mockup-frame {
+  @apply relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-2xl shadow-emerald-500/10 ring-1 ring-zinc-900/5 dark:border-zinc-700/80 dark:bg-zinc-900 dark:shadow-emerald-500/5 dark:ring-white/10;
+}
+
+.landing-dashboard-mockup-chrome {
+  @apply flex items-center gap-1.5 border-b border-zinc-200/80 bg-zinc-50 px-4 py-2.5 dark:border-zinc-700/80 dark:bg-zinc-900/80;
+}
+
+.landing-dashboard-mockup-dot {
+  @apply h-2.5 w-2.5 rounded-full;
+}
+
+.landing-dashboard-mockup-body {
+  @apply flex min-h-[320px] sm:min-h-[360px];
+}
+
+.landing-dashboard-mockup-sidebar {
+  @apply flex w-12 shrink-0 flex-col items-center gap-3 border-r border-zinc-200/80 bg-zinc-50/80 py-4 dark:border-zinc-700/80 dark:bg-zinc-900/60;
+}
+
+.landing-dashboard-mockup-logo {
+  @apply flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-xs font-bold text-white;
+}
+
+.landing-dashboard-mockup-nav-item {
+  @apply flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400;
+}
+
+.landing-dashboard-mockup-nav-item-active {
+  @apply bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400;
+}
+
+.landing-dashboard-mockup-main {
+  @apply min-w-0 flex-1 p-4;
+}
+
+.landing-dashboard-mockup-topbar {
+  @apply flex items-start justify-between gap-3;
+}
+
+.landing-dashboard-mockup-stats {
+  @apply mt-4 grid grid-cols-2 gap-2;
+}
+
+.landing-dashboard-mockup-stat {
+  @apply rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 dark:border-zinc-700/80 dark:bg-zinc-800/40;
+}
+
+.landing-dashboard-mockup-products {
+  @apply mt-4 space-y-2;
+}
+
+.landing-dashboard-mockup-product {
+  @apply flex items-center gap-2.5 rounded-lg border border-zinc-200/70 bg-white px-2.5 py-2 dark:border-zinc-700/70 dark:bg-zinc-900/40;
+}
+
+.landing-dashboard-mockup-product-thumb {
+  @apply h-9 w-9 shrink-0 rounded-md bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-700 dark:to-zinc-800;
+}
+
 /* ── Dashboard tech-minimalist ── */
 
 .dashboard-shell {

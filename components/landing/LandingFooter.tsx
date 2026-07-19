@@ -9,8 +9,8 @@ export function LandingFooter() {
           <div>
             <BrandLogo href="/" size="sm" />
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-              Infraestructura SaaS de gestión comercial para organizaciones que
-              operan con precisión financiera y presencia digital profesional.
+              La forma más simple de tener tu catálogo online, recibir pedidos
+              por WhatsApp y mantener tus precios al día.
             </p>
           </div>
 
