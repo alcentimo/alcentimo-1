@@ -28,10 +28,6 @@ import type {
   StoredPromotion,
   StoreSettingsConfig,
 } from "@/lib/store-settings/types";
-import {
-  normalizeCatalogLayout,
-  normalizeCatalogPrimaryColor,
-} from "@/lib/store-settings/catalog-theme";
 
 export type SettingsActionResult = {
   error?: string;
@@ -76,10 +72,12 @@ async function persistSettingsPatch(
 export async function saveCatalogDesignSettings(
   design: CatalogDesignSettings,
 ): Promise<SettingsActionResult> {
+  const normalized = normalizeStoreSettingsConfig({ catalogDesign: design });
   return persistSettingsPatch({
     catalogDesign: {
-      primaryColor: normalizeCatalogPrimaryColor(design.primaryColor),
-      layout: normalizeCatalogLayout(design.layout),
+      theme: normalized.catalogDesign.theme,
+      saleMode: normalized.catalogDesign.saleMode,
+      visibility: normalized.catalogDesign.visibility,
     },
   });
 }

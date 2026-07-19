@@ -13,7 +13,6 @@ import {
   isValidStoreRubro,
   normalizeStoreRubro,
 } from "@/src/config/categories";
-import { getDefaultPrimaryColorForRubro } from "@/lib/store-settings/catalog-theme";
 import {
   DEFAULT_STORE_COUNTRY,
   isStoreCountryOption,
@@ -120,8 +119,13 @@ export async function completeOnboarding(
   const settingsConfig = mergeStoreSettingsConfig(defaultStoreSettingsConfig(), {
     contact: { whatsappPhone: whatsapp },
     catalogDesign: {
-      primaryColor: getDefaultPrimaryColorForRubro(rubroTienda),
-      layout: "grid",
+      theme: "minimal",
+      saleMode: "quick",
+      visibility: {
+        showStock: true,
+        showDescription: true,
+        showPrices: true,
+      },
     },
   });
 

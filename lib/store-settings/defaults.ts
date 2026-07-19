@@ -6,7 +6,6 @@ import type {
   WeekdayKey,
 } from "@/lib/store-settings/types";
 import { WEEKDAY_KEYS } from "@/lib/store-settings/types";
-import { getDefaultPrimaryColorForRubro } from "@/lib/store-settings/catalog-theme";
 import { defaultMessageTemplates } from "@/lib/orders/message-templates";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
@@ -90,8 +89,13 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       closeTime: "18:00",
     },
     catalogDesign: {
-      primaryColor: getDefaultPrimaryColorForRubro("general"),
-      layout: "grid",
+      theme: "minimal",
+      saleMode: "quick",
+      visibility: {
+        showStock: true,
+        showDescription: true,
+        showPrices: true,
+      },
     },
     catalogCurrency: {
       showOfficialRate: true,
@@ -181,6 +185,7 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
   const scheduleRaw = isRecord(locationRaw.schedule) ? locationRaw.schedule : {};
   const schedule = { ...defaults.locationHours.schedule };
   const designRaw = isRecord(raw.catalogDesign) ? raw.catalogDesign : {};
+  const visibilityRaw = isRecord(designRaw.visibility) ? designRaw.visibility : {};
   const currencyRaw = isRecord(raw.catalogCurrency) ? raw.catalogCurrency : {};
   const templatesRaw = isRecord(raw.messageTemplates) ? raw.messageTemplates : {};
 
@@ -247,14 +252,38 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           : defaults.locationHours.closeTime,
     },
     catalogDesign: {
-      primaryColor:
-        typeof designRaw.primaryColor === "string"
-          ? designRaw.primaryColor
-          : defaults.catalogDesign.primaryColor,
-      layout:
-        designRaw.layout === "list" || designRaw.layout === "grid"
-          ? designRaw.layout
-          : defaults.catalogDesign.layout,
+      theme:
+        designRaw.theme === "minimal" ||
+        designRaw.theme === "impact" ||
+        designRaw.theme === "classic"
+          ? designRaw.theme
+          : designRaw.layout === "list"
+            ? "classic"
+            : defaults.catalogDesign.theme,
+      saleMode:
+        designRaw.saleMode === "showcase" || designRaw.saleMode === "quick"
+          ? designRaw.saleMode
+          : defaults.catalogDesign.saleMode,
+      visibility: {
+        showStock:
+          typeof visibilityRaw.showStock === "boolean"
+            ? visibilityRaw.showStock
+            : defaults.catalogDesign.visibility.showStock,
+        showDescription:
+          typeof visibilityRaw.showDescription === "boolean"
+            ? visibilityRaw.showDescription
+            : defaults.catalogDesign.visibility.showDescription,
+        showPrices:
+          typeof visibilityRaw.showPrices === "boolean"
+            ? visibilityRaw.showPrices
+            : defaults.catalogDesign.visibility.showPrices,
+      },
+      ...(typeof designRaw.primaryColor === "string"
+        ? { primaryColor: designRaw.primaryColor }
+        : {}),
+      ...(designRaw.layout === "list" || designRaw.layout === "grid"
+        ? { layout: designRaw.layout }
+        : {}),
     },
     catalogCurrency: {
       showOfficialRate:

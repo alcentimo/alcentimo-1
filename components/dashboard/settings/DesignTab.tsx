@@ -1,170 +1,367 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { LayoutGrid, List, Palette } from "lucide-react";
+import { useCallback, useState, useTransition } from "react";
+import { Check, Eye, EyeOff, Sparkles, Zap } from "lucide-react";
 import {
   SettingsSection,
   SettingsTabShell,
 } from "@/components/dashboard/settings/SettingsLayout";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { SavingHint } from "@/components/dashboard/settings/SavingHint";
+import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { saveCatalogDesignSettings } from "@/lib/settings/actions";
 import {
-  getDefaultPrimaryColorForRubro,
-  normalizeCatalogPrimaryColor,
-} from "@/lib/store-settings/catalog-theme";
-import type { CatalogDesignSettings, CatalogLayoutMode } from "@/lib/store-settings/types";
+  CATALOG_SALE_MODE_IDS,
+  CATALOG_SALE_MODE_PRESETS,
+  CATALOG_THEME_IDS,
+  CATALOG_THEME_PRESETS,
+} from "@/lib/store-settings/catalog-theme-presets";
+import type {
+  CatalogDesignSettings,
+  CatalogSaleMode,
+  CatalogThemeId,
+  CatalogVisibilitySettings,
+} from "@/lib/store-settings/types";
 import { cn } from "@/lib/cn";
 
 interface DesignTabProps {
   initialDesign: CatalogDesignSettings;
-  storeRubro: string;
 }
 
-export function DesignTab({ initialDesign, storeRubro }: DesignTabProps) {
-  const rubroDefaultColor = useMemo(
-    () => getDefaultPrimaryColorForRubro(storeRubro),
-    [storeRubro],
+type SavingField =
+  | CatalogThemeId
+  | CatalogSaleMode
+  | keyof CatalogVisibilitySettings
+  | null;
+
+function ThemePreview({ themeId }: { themeId: CatalogThemeId }) {
+  const preset = CATALOG_THEME_PRESETS[themeId];
+
+  return (
+    <div
+      className="mt-3 overflow-hidden rounded-lg border border-zinc-200/80 dark:border-zinc-700"
+      aria-hidden="true"
+    >
+      <div
+        className="flex gap-1.5 p-2"
+        style={{ backgroundColor: preset.previewBg }}
+      >
+        {[0, 1].map((index) => (
+          <div
+            key={index}
+            className="flex-1 overflow-hidden rounded-md border border-black/5 bg-white shadow-sm"
+          >
+            <div
+              className="aspect-[4/3] w-full"
+              style={{
+                backgroundColor:
+                  index === 0 ? `${preset.previewAccent}22` : `${preset.previewAccent}14`,
+              }}
+            />
+            <div className="space-y-1 p-1.5">
+              <div className="h-1.5 w-3/4 rounded-full bg-zinc-200" />
+              <div
+                className="h-2 w-1/2 rounded-full"
+                style={{ backgroundColor: preset.previewAccent }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
-  const [primaryColor, setPrimaryColor] = useState(initialDesign.primaryColor);
-  const [layout, setLayout] = useState<CatalogLayoutMode>(initialDesign.layout);
+}
+
+function SaleModePreview({ mode }: { mode: CatalogSaleMode }) {
+  const isQuick = mode === "quick";
+
+  return (
+    <div
+      className="mt-3 overflow-hidden rounded-lg border border-zinc-200/80 dark:border-zinc-700"
+      aria-hidden="true"
+    >
+      <div className="flex gap-2 bg-zinc-50 p-2 dark:bg-zinc-900/50">
+        <div className="aspect-square w-10 shrink-0 rounded-md bg-zinc-200 dark:bg-zinc-700" />
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+          <div className="h-1.5 w-full rounded-full bg-zinc-200 dark:bg-zinc-700" />
+          {isQuick ? (
+            <>
+              <div className="h-2.5 w-2/5 rounded-full bg-emerald-600" />
+              <div className="mt-0.5 h-3 w-full rounded-md bg-emerald-600/90" />
+            </>
+          ) : (
+            <>
+              <div className="h-1.5 w-2/5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
+              <div className="mt-1 h-2 w-3/5 rounded-md border border-zinc-300 dark:border-zinc-600" />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function DesignTab({ initialDesign }: DesignTabProps) {
+  const [design, setDesign] = useState(initialDesign);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [saving, startSave] = useTransition();
+  const [savingField, setSavingField] = useState<SavingField>(null);
+  const [isSaving, startSave] = useTransition();
 
-  function handleSave() {
-    setError(null);
-    setSuccessMessage(null);
+  const persist = useCallback(
+    (nextDesign: CatalogDesignSettings, field: SavingField) => {
+      setError(null);
+      setSavingField(field);
 
-    startSave(async () => {
-      const result = await saveCatalogDesignSettings({
-        primaryColor: normalizeCatalogPrimaryColor(primaryColor),
-        layout,
+      startSave(async () => {
+        const result = await saveCatalogDesignSettings(nextDesign);
+        setSavingField(null);
+
+        if (result.error) {
+          setError(result.error);
+          setDesign(initialDesign);
+        }
       });
+    },
+    [initialDesign],
+  );
 
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
+  function updateDesign(
+    patch: Partial<CatalogDesignSettings>,
+    field: SavingField,
+  ) {
+    const nextDesign: CatalogDesignSettings = {
+      ...design,
+      ...patch,
+      visibility: patch.visibility
+        ? { ...design.visibility, ...patch.visibility }
+        : design.visibility,
+    };
+    setDesign(nextDesign);
+    persist(nextDesign, field);
+  }
 
-      setSuccessMessage(
-        "Diseño del catálogo guardado. Los cambios ya están visibles en tu vitrina pública.",
-      );
-    });
+  function setTheme(theme: CatalogThemeId) {
+    if (theme === design.theme) return;
+    updateDesign({ theme }, theme);
+  }
+
+  function setSaleMode(saleMode: CatalogSaleMode) {
+    if (saleMode === design.saleMode) return;
+    updateDesign({ saleMode }, saleMode);
+  }
+
+  function setVisibility(
+    key: keyof CatalogVisibilitySettings,
+    value: boolean,
+  ) {
+    if (design.visibility[key] === value) return;
+    updateDesign(
+      { visibility: { ...design.visibility, [key]: value } },
+      key,
+    );
   }
 
   return (
-    <SettingsTabShell
-      error={error}
-      saveLabel="Guardar diseño"
-      saving={saving}
-      onSave={handleSave}
-      saveHint="El color y la vista se aplican de inmediato en tu catálogo público."
-    >
-      {successMessage ? (
-        <p
-          className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
-          role="status"
-        >
-          {successMessage}
+    <SettingsTabShell error={error} hideSaveBar>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Los cambios se guardan automáticamente en tu catálogo público.
         </p>
-      ) : null}
+        <SavingHint visible={isSaving} />
+      </div>
 
       <SettingsSection
-        title="Personalizar diseño"
-        description="Ajusta la apariencia de tu catálogo público según tu rubro."
+        title="Temas de diseño"
+        description="Elige un estilo completo. Tipografía, espaciado y botones se aplican solos."
         variant="payments"
       >
-        <div className="general-settings-card space-y-4">
-          <div>
-            <Label htmlFor="catalog-primary-color" className="payment-field-label">
-              Color principal
-            </Label>
-            <div className="mt-1.5 flex flex-wrap items-center gap-3">
-              <input
-                id="catalog-primary-color"
-                type="color"
-                value={primaryColor}
-                onChange={(event) => {
-                  setPrimaryColor(event.target.value);
-                  setSuccessMessage(null);
-                }}
-                className="h-11 w-14 cursor-pointer rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-900"
-                aria-label="Selector de color principal"
-              />
-              <Input
-                value={primaryColor}
-                onChange={(event) => {
-                  setPrimaryColor(event.target.value);
-                  setSuccessMessage(null);
-                }}
-                placeholder="#0d9488"
-                className="payment-field-input max-w-[10rem] font-mono text-sm"
-              />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {CATALOG_THEME_IDS.map((themeId) => {
+            const preset = CATALOG_THEME_PRESETS[themeId];
+            const selected = design.theme === themeId;
+            const isFieldSaving = savingField === themeId;
+
+            return (
               <button
+                key={themeId}
                 type="button"
-                onClick={() => {
-                  setPrimaryColor(rubroDefaultColor);
-                  setSuccessMessage(null);
-                }}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                onClick={() => setTheme(themeId)}
+                disabled={isSaving && isFieldSaving}
+                className="text-left"
               >
-                <Palette className="h-3.5 w-3.5" aria-hidden="true" />
-                Color sugerido del rubro
+                <Card
+                  className={cn(
+                    "h-full transition",
+                    selected
+                      ? "border-emerald-600 ring-1 ring-emerald-600/30 dark:border-emerald-500"
+                      : "hover:border-zinc-300 dark:hover:border-zinc-600",
+                  )}
+                >
+                  <CardHeader className="pb-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                          {preset.label}
+                        </p>
+                        <p className="mt-1 text-xs leading-snug text-zinc-500">
+                          {preset.description}
+                        </p>
+                      </div>
+                      {selected ? (
+                        <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+                          <Check className="h-3 w-3" aria-hidden="true" />
+                        </span>
+                      ) : null}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ThemePreview themeId={themeId} />
+                  </CardContent>
+                </Card>
               </button>
+            );
+          })}
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Modo de venta"
+        description="Define si priorizas conversión rápida o presentación visual del producto."
+        variant="payments"
+      >
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {CATALOG_SALE_MODE_IDS.map((modeId) => {
+            const preset = CATALOG_SALE_MODE_PRESETS[modeId];
+            const selected = design.saleMode === modeId;
+            const isFieldSaving = savingField === modeId;
+
+            return (
+              <button
+                key={modeId}
+                type="button"
+                onClick={() => setSaleMode(modeId)}
+                disabled={isSaving && isFieldSaving}
+                className="text-left"
+              >
+                <Card
+                  className={cn(
+                    "h-full transition",
+                    selected
+                      ? "border-emerald-600 ring-1 ring-emerald-600/30 dark:border-emerald-500"
+                      : "hover:border-zinc-300 dark:hover:border-zinc-600",
+                  )}
+                >
+                  <CardHeader className="pb-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
+                        {modeId === "quick" ? (
+                          <Zap
+                            className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <Sparkles
+                            className="mt-0.5 h-4 w-4 shrink-0 text-violet-500"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <div>
+                          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                            {preset.label}
+                          </p>
+                          <p className="mt-1 text-xs leading-snug text-zinc-500">
+                            {preset.description}
+                          </p>
+                        </div>
+                      </div>
+                      {selected ? (
+                        <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+                          <Check className="h-3 w-3" aria-hidden="true" />
+                        </span>
+                      ) : null}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <SaleModePreview mode={modeId} />
+                  </CardContent>
+                </Card>
+              </button>
+            );
+          })}
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Preferencias de visibilidad"
+        description="Controla qué información ven tus clientes. El diseño se reajusta sin dejar espacios vacíos."
+        variant="payments"
+      >
+        <div className="general-settings-card divide-y divide-zinc-100 dark:divide-zinc-800">
+          <div className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                Stock
+              </p>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                Muestra u oculta indicadores de disponibilidad y agotado.
+              </p>
             </div>
+            <SettingsSwitch
+              id="visibility-stock"
+              label="Mostrar stock"
+              checked={design.visibility.showStock}
+              onChange={(value) => setVisibility("showStock", value)}
+              disabled={isSaving && savingField === "showStock"}
+            />
           </div>
 
-          <div>
-            <p className="payment-field-label">Vista de productos</p>
-            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setLayout("grid");
-                  setSuccessMessage(null);
-                }}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition",
-                  layout === "grid"
-                    ? "border-emerald-600 bg-emerald-50/70 dark:border-emerald-500 dark:bg-emerald-950/30"
-                    : "border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900/40",
-                )}
-              >
-                <LayoutGrid className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>
-                  <span className="block text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                    Cuadrícula
-                  </span>
-                  <span className="mt-0.5 block text-xs text-zinc-500">
-                    Ideal para fotos de producto
-                  </span>
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setLayout("list");
-                  setSuccessMessage(null);
-                }}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition",
-                  layout === "list"
-                    ? "border-emerald-600 bg-emerald-50/70 dark:border-emerald-500 dark:bg-emerald-950/30"
-                    : "border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900/40",
-                )}
-              >
-                <List className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>
-                  <span className="block text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                    Lista
-                  </span>
-                  <span className="mt-0.5 block text-xs text-zinc-500">
-                    Más compacta en móvil
-                  </span>
-                </span>
-              </button>
+          <div className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                Descripción
+              </p>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                Texto breve debajo del nombre del producto.
+              </p>
             </div>
+            <SettingsSwitch
+              id="visibility-description"
+              label="Mostrar descripción"
+              checked={design.visibility.showDescription}
+              onChange={(value) => setVisibility("showDescription", value)}
+              disabled={isSaving && savingField === "showDescription"}
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+            <div className="min-w-0 flex items-start gap-2">
+              <div>
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                  Precios
+                </p>
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  Montos en USD y conversión a Bs en las tarjetas.
+                </p>
+              </div>
+              {!design.visibility.showPrices ? (
+                <EyeOff
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400"
+                  aria-hidden="true"
+                />
+              ) : (
+                <Eye
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400"
+                  aria-hidden="true"
+                />
+              )}
+            </div>
+            <SettingsSwitch
+              id="visibility-prices"
+              label="Mostrar precios"
+              checked={design.visibility.showPrices}
+              onChange={(value) => setVisibility("showPrices", value)}
+              disabled={isSaving && savingField === "showPrices"}
+            />
           </div>
         </div>
       </SettingsSection>

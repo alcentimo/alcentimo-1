@@ -4,7 +4,10 @@ import { useMemo, useState } from "react";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
-import { getCatalogThemeStyle } from "@/lib/store-settings/catalog-theme";
+import {
+  getCatalogDesignClasses,
+  getCatalogThemeStyle,
+} from "@/lib/store-settings/catalog-theme";
 import { extractCatalogCategories } from "@/lib/catalog/extract-categories";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
@@ -55,9 +58,9 @@ export function CatalogCategoriesView({
     <div
       className={cn(
         "txn-catalog txn-catalog-subpage",
-        catalogDesign.layout === "list" && "txn-catalog--list",
+        getCatalogDesignClasses(catalogDesign),
       )}
-      style={getCatalogThemeStyle(catalogDesign.primaryColor)}
+      style={getCatalogThemeStyle(catalogDesign)}
     >
       <header className="catalog-subpage-header">
         <h1 className="catalog-subpage-title">Categorías</h1>
@@ -122,6 +125,7 @@ export function CatalogCategoriesView({
                 product={product}
                 exchangeRate={liveExchangeRate}
                 showBsConversion={showBsConversion}
+                catalogVisibility={catalogDesign.visibility}
                 onAddToCart={addItem}
               />
             ))}

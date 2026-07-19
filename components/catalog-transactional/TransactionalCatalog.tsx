@@ -5,7 +5,10 @@ import Image from "next/image";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
-import { getCatalogThemeStyle } from "@/lib/store-settings/catalog-theme";
+import {
+  getCatalogDesignClasses,
+  getCatalogThemeStyle,
+} from "@/lib/store-settings/catalog-theme";
 import { formatExchangeRate } from "@/lib/format";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
@@ -57,10 +60,10 @@ export function TransactionalCatalog({
     <div
       className={cn(
         "txn-catalog",
-        catalogDesign.layout === "list" && "txn-catalog--list",
+        getCatalogDesignClasses(catalogDesign),
         previewMode && "txn-catalog--preview",
       )}
-      style={getCatalogThemeStyle(catalogDesign.primaryColor)}
+      style={getCatalogThemeStyle(catalogDesign)}
     >
       <header className="txn-catalog-header">
         <div className="txn-catalog-header-inner">
@@ -124,6 +127,7 @@ export function TransactionalCatalog({
                 product={product}
                 exchangeRate={liveExchangeRate}
                 showBsConversion={showBsConversion}
+                catalogVisibility={catalogDesign.visibility}
                 onAddToCart={addItem}
               />
             ))}

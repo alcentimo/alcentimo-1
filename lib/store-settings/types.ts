@@ -92,9 +92,24 @@ export interface LocationHoursSettings {
 
 export type CatalogLayoutMode = "grid" | "list";
 
+export type CatalogThemeId = "minimal" | "impact" | "classic";
+
+export type CatalogSaleMode = "quick" | "showcase";
+
+export interface CatalogVisibilitySettings {
+  showStock: boolean;
+  showDescription: boolean;
+  showPrices: boolean;
+}
+
 export interface CatalogDesignSettings {
-  primaryColor: string;
-  layout: CatalogLayoutMode;
+  theme: CatalogThemeId;
+  saleMode: CatalogSaleMode;
+  visibility: CatalogVisibilitySettings;
+  /** Derivado del tema al renderizar; opcional en almacenamiento legacy. */
+  primaryColor?: string;
+  /** Derivado del tema al renderizar; opcional en almacenamiento legacy. */
+  layout?: CatalogLayoutMode;
 }
 
 export interface CatalogCurrencySettings {

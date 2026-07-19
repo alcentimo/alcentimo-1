@@ -4,6 +4,8 @@ import { memo, useMemo, useState } from "react";
 import Image from "next/image";
 import { Check, Plus } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
+import type { CatalogVisibilitySettings } from "@/lib/store-settings/types";
+import { getProductBodyLayoutClass } from "@/lib/store-settings/catalog-theme";
 import { formatUsd, formatApproxBs } from "@/lib/format";
 import { computeUsdToVes } from "@/lib/catalog/pricing";
 import { cartItemKey } from "@/lib/catalog/cart-types";
@@ -21,6 +23,7 @@ interface ProductCardProps {
   product: CatalogListItem;
   exchangeRate?: number | null;
   showBsConversion?: boolean;
+  catalogVisibility?: CatalogVisibilitySettings;
   cartQuantity?: number;
   onAddToCart?: (product: CatalogListItem, variant: CatalogVariantOption) => void;
 }
@@ -62,6 +65,11 @@ export const ProductCard = memo(function ProductCard({
   product,
   exchangeRate = null,
   showBsConversion = true,
+  catalogVisibility = {
+    showStock: true,
+    showDescription: true,
+    showPrices: true,
+  },
   cartQuantity = 0,
   onAddToCart,
 }: ProductCardProps) {
@@ -85,13 +93,15 @@ export const ProductCard = memo(function ProductCard({
   );
 
   const outOfStock = isProductOutOfStock(product);
+  const { showStock, showDescription, showPrices } = catalogVisibility;
+  const bodyLayoutClass = getProductBodyLayoutClass(catalogVisibility);
   const threshold = getLowStockThreshold(product);
   const displayStock = showVariantSelector
     ? (selectedVariant?.availableStock ?? 0)
     : product.available_stock;
-  const showStockOverlay = outOfStock;
+  const showStockOverlay = showStock && outOfStock;
   const showStockBadge =
-    !outOfStock && displayStock > 0 && displayStock <= threshold;
+    showStock && !outOfStock && displayStock > 0 && displayStock <= threshold;
   const activeStock = selectedVariant?.availableStock ?? 0;
   const contextCartQuantity =
     cartContext?.items.find(
@@ -199,7 +209,7 @@ export const ProductCard = memo(function ProductCard({
       </div>
 
       <div className="store-product-content">
-        <div className="store-product-body">
+        <div className={cn("store-product-body", bodyLayoutClass)}>
           <div className="store-product-slot store-product-slot-meta">
             <p
               className={cn(
@@ -215,16 +225,18 @@ export const ProductCard = memo(function ProductCard({
             <h2 className="store-product-name">{product.product_name}</h2>
           </div>
 
-          <div className="store-product-slot store-product-slot-desc">
-            <p
-              className={cn(
-                "store-product-desc",
-                !product.short_description && "store-product-slot-empty",
-              )}
-            >
-              {product.short_description ?? "\u00A0"}
-            </p>
-          </div>
+          {showDescription ? (
+            <div className="store-product-slot store-product-slot-desc">
+              <p
+                className={cn(
+                  "store-product-desc",
+                  !product.short_description && "store-product-slot-empty",
+                )}
+              >
+                {product.short_description ?? "\u00A0"}
+              </p>
+            </div>
+          ) : null}
 
           <div className="store-product-slot store-product-slot-variant">
             {showVariantSelector ? (
@@ -258,25 +270,27 @@ export const ProductCard = memo(function ProductCard({
             )}
           </div>
 
-          <div className="store-product-slot store-product-slot-pricing">
-            <div className="store-product-price-row">
-              <p className="store-product-price-usd">
-                {formatUsd(selectedVariant?.priceUsd ?? product.price_usd)}
-              </p>
-              {hasDiscount && (
-                <p className="store-product-price-compare">
-                  {formatUsd(product.compare_at_usd)}
+          {showPrices ? (
+            <div className="store-product-slot store-product-slot-pricing">
+              <div className="store-product-price-row">
+                <p className="store-product-price-usd">
+                  {formatUsd(selectedVariant?.priceUsd ?? product.price_usd)}
                 </p>
+                {hasDiscount && (
+                  <p className="store-product-price-compare">
+                    {formatUsd(product.compare_at_usd)}
+                  </p>
+                )}
+              </div>
+              {showBsConversion ? (
+                <p className="store-product-price-ves">
+                  {formatApproxBs(selectedPriceVes)}
+                </p>
+              ) : (
+                <span className="store-product-price-ves-placeholder" aria-hidden="true" />
               )}
             </div>
-            {showBsConversion ? (
-              <p className="store-product-price-ves">
-                {formatApproxBs(selectedPriceVes)}
-              </p>
-            ) : (
-              <span className="store-product-price-ves-placeholder" aria-hidden="true" />
-            )}
-          </div>
+          ) : null}
         </div>
 
         <div className="store-product-footer sm:hidden">
