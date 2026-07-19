@@ -1,4 +1,4 @@
-import { verifyCronRequest } from "./verify-cron.ts";
+import { authorizeProvisionRequest } from "./verify-provision-auth.ts";
 import {
   runStoreSubdomainProvision,
   type StoreSubdomainAction,
@@ -56,7 +56,7 @@ export async function serveStoreSubdomainProvision(
     return jsonResponse({ error: "Método no permitido." }, 405);
   }
 
-  const auth = verifyCronRequest(request);
+  const auth = authorizeProvisionRequest(request);
   if (!auth.authorized) {
     console.error(
       JSON.stringify({

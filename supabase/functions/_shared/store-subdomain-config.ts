@@ -30,21 +30,54 @@ function resolveApexHost(): string {
   return "alcentimo.com";
 }
 
+async function resolveCloudflareZoneId(
+  apexHost: string,
+  apiToken: string,
+): Promise<string | null> {
+  const url = new URL("https://api.cloudflare.com/client/v4/zones");
+  url.searchParams.set("name", apexHost);
+
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${apiToken}` },
+  });
+
+  const json = await response.json();
+  if (!response.ok || !json.success || !json.result?.[0]?.id) {
+    console.warn(
+      JSON.stringify({
+        scope: "store-subdomain-provision",
+        event: "cloudflare_zone_lookup_failed",
+        apexHost,
+        status: response.status,
+        errors: json.errors ?? null,
+      }),
+    );
+    return null;
+  }
+
+  return json.result[0].id as string;
+}
+
 export function isStoreSubdomainProvisioningEnabled(): boolean {
   return Deno.env.get("STORE_SUBDOMAIN_PROVISION_ENABLED") === "true";
 }
 
-export function getDomainProvisioningConfig():
-  | DomainProvisioningConfig
-  | null {
+export async function getDomainProvisioningConfig():
+  Promise<DomainProvisioningConfig | null> {
   if (!isStoreSubdomainProvisioningEnabled()) {
     return null;
   }
 
-  const cloudflareZoneId = optionalEnv("CLOUDFLARE_ZONE_ID");
+  const apexHost = resolveApexHost();
   const cloudflareApiToken = optionalEnv("CLOUDFLARE_API_TOKEN");
   const vercelApiToken = optionalEnv("VERCEL_API_TOKEN");
   const vercelProjectId = optionalEnv("VERCEL_PROJECT_ID");
+
+  let cloudflareZoneId = optionalEnv("CLOUDFLARE_ZONE_ID");
+  if (!cloudflareZoneId && cloudflareApiToken) {
+    cloudflareZoneId = (await resolveCloudflareZoneId(apexHost, cloudflareApiToken)) ??
+      undefined;
+  }
 
   if (
     !cloudflareZoneId ||
@@ -56,7 +89,7 @@ export function getDomainProvisioningConfig():
   }
 
   return {
-    apexHost: resolveApexHost(),
+    apexHost,
     vercelCnameTarget:
       optionalEnv("VERCEL_DNS_CNAME_TARGET") ?? "cname.vercel-dns.com",
     cloudflareZoneId,

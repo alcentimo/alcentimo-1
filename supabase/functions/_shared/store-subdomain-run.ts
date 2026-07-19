@@ -51,7 +51,7 @@ async function provisionSlug(
   storeId: string,
   slug: string,
 ): Promise<StoreSubdomainResult> {
-  const config = getDomainProvisioningConfig();
+  const config = await getDomainProvisioningConfig();
   if (!config) {
     logProvision("missing_config", { storeId, slug });
     return {
@@ -113,7 +113,7 @@ async function deprovisionSlug(
   storeId: string,
   slug: string,
 ): Promise<StoreSubdomainResult> {
-  const config = getDomainProvisioningConfig();
+  const config = await getDomainProvisioningConfig();
   if (!config) {
     return {
       ok: true,
