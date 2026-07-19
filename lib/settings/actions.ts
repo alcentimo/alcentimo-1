@@ -141,6 +141,26 @@ export async function saveContactSettings(
   return persistSettingsPatch({ contact: normalized.contact });
 }
 
+export async function saveLocationHoursSettings(input: {
+  locationHours: LocationHoursSettings;
+  whatsappPhone?: string;
+}): Promise<SettingsActionResult> {
+  const normalized = normalizeStoreSettingsConfig({
+    locationHours: input.locationHours,
+    contact:
+      typeof input.whatsappPhone === "string"
+        ? { whatsappPhone: input.whatsappPhone.trim() }
+        : undefined,
+  });
+
+  return persistSettingsPatch({
+    locationHours: normalized.locationHours,
+    ...(typeof input.whatsappPhone === "string"
+      ? { contact: normalized.contact }
+      : {}),
+  });
+}
+
 export interface LocationLogisticsSettingsInput {
   locationHours: LocationHoursSettings;
   shipping: ShippingSettings;

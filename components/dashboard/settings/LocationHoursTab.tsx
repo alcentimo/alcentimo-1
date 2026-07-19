@@ -4,27 +4,18 @@ import { useState, useTransition } from "react";
 import { MapPin } from "lucide-react";
 import { ChannelLogo } from "@/components/inbox/ChannelLogo";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
-import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
 import {
   SettingsSection,
   SettingsTabShell,
 } from "@/components/dashboard/settings/SettingsLayout";
-import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/cn";
-import {
-  getLocalShippingForCountry,
-  getNationalCarriersForCountry,
-} from "@/lib/country-config";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
-import { saveLocationLogisticsSettings } from "@/lib/settings/actions";
-import { getShippingMethod } from "@/src/config/shipping-methods";
+import { saveLocationHoursSettings } from "@/lib/settings/actions";
 import type {
   ContactSettings,
   LocationHoursSettings,
-  ShippingCarrierKey,
-  ShippingSettings,
   WeekdayKey,
 } from "@/lib/store-settings/types";
 import { WEEKDAY_KEYS } from "@/lib/store-settings/types";
@@ -41,23 +32,14 @@ const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
 
 interface LocationHoursTabProps {
   initialLocationHours: LocationHoursSettings;
-  initialShipping: ShippingSettings;
   initialContact: ContactSettings;
 }
 
 export function LocationHoursTab({
   initialLocationHours,
-  initialShipping,
   initialContact,
 }: LocationHoursTabProps) {
-  const nationalCarriers = getNationalCarriersForCountry("Venezuela");
-  const localShipping = getLocalShippingForCountry("Venezuela");
-
   const [locationHours, setLocationHours] = useState(initialLocationHours);
-  const [carriers, setCarriers] = useState(initialShipping.carriers);
-  const [deliveryDetails, setDeliveryDetails] = useState(
-    initialShipping.deliveryDetails,
-  );
   const [whatsappPhone, setWhatsappPhone] = useState(initialContact.whatsappPhone);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,20 +59,14 @@ export function LocationHoursTab({
     setSuccess(false);
   }
 
-  function setCarrier(key: ShippingCarrierKey, value: boolean) {
-    setCarriers((prev) => ({ ...prev, [key]: value }));
-    setSuccess(false);
-  }
-
   function handleSave() {
     setError(null);
     setSuccess(false);
     setSaving(true);
 
     startTransition(async () => {
-      const result = await saveLocationLogisticsSettings({
+      const result = await saveLocationHoursSettings({
         locationHours,
-        shipping: { carriers, deliveryDetails },
         whatsappPhone,
       });
       setSaving(false);
@@ -98,50 +74,12 @@ export function LocationHoursTab({
       if (result.error) {
         setError(result.error);
         setLocationHours(initialLocationHours);
-        setCarriers(initialShipping.carriers);
-        setDeliveryDetails(initialShipping.deliveryDetails);
         setWhatsappPhone(initialContact.whatsappPhone);
         return;
       }
 
       setSuccess(true);
     });
-  }
-
-  function renderCarrierCard(key: ShippingCarrierKey) {
-    return (
-      <div key={key}>
-        <ShippingMethodCard
-          carrierKey={key}
-          action={
-            <SettingsSwitch
-              id={`ship-${key}`}
-              label={getShippingMethod(key).label}
-              checked={carriers[key]}
-              onChange={(v) => setCarrier(key, v)}
-            />
-          }
-        />
-        {key === "delivery" && carriers.delivery && (
-          <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
-            <label htmlFor="delivery-details" className="label-field">
-              Detalles del delivery
-            </label>
-            <textarea
-              id="delivery-details"
-              rows={3}
-              value={deliveryDetails}
-              onChange={(e) => {
-                setDeliveryDetails(e.target.value);
-                setSuccess(false);
-              }}
-              placeholder="Ej: Delivery en Valencia — costo según zona, pedido mínimo $5"
-              className="input-field mt-2 resize-none"
-            />
-          </div>
-        )}
-      </div>
-    );
   }
 
   return (
@@ -157,7 +95,7 @@ export function LocationHoursTab({
           className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
           role="status"
         >
-          Configuración logística guardada correctamente.
+          Ubicación y horario guardados correctamente.
         </p>
       )}
 
@@ -314,28 +252,6 @@ export function LocationHoursTab({
                 : "Revisa el número — debe tener al menos 10 dígitos."}
             </p>
           ) : null}
-        </div>
-      </SettingsSection>
-
-      {nationalCarriers.length > 0 && (
-        <SettingsSection
-          title="Envío nacional"
-          description="Activa las opciones de encomienda que ofreces."
-          variant="payments"
-        >
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {nationalCarriers.map((method) => renderCarrierCard(method.key))}
-          </div>
-        </SettingsSection>
-      )}
-
-      <SettingsSection
-        title="Entrega local"
-        description="Delivery propio y retiro en tienda."
-        variant="payments"
-      >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {localShipping.map((method) => renderCarrierCard(method.key))}
         </div>
       </SettingsSection>
 

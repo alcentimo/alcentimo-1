@@ -131,8 +131,9 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
     >
       {nationalCarriers.length > 0 && (
         <SettingsSection
-          title="Empresas de encomienda"
-          description="Activa las opciones de envío nacional que ofreces a tus clientes."
+          title="Envío nacional"
+          description="Activa las opciones de encomienda que ofreces."
+          variant="payments"
         >
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {nationalCarriers.map((method) => renderCarrierCard(method.key))}
@@ -142,7 +143,8 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
 
       <SettingsSection
         title="Entrega local"
-        description="Configura delivery propio y retiro en tienda."
+        description="Delivery propio y retiro en tienda."
+        variant="payments"
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {localShipping.map((method) => renderCarrierCard(method.key))}

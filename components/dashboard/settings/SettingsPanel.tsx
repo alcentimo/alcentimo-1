@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, Coins, CreditCard, MessageSquare, Palette, Settings2, Tag } from "lucide-react";
+import { Clock, Coins, CreditCard, MessageSquare, Palette, Settings2, Tag, Truck } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
 import { MessageTemplatesTab } from "@/components/dashboard/settings/MessageTemplatesTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
+import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
 import { PaymentsTab } from "@/components/dashboard/settings/PaymentsTab";
 import { PromotionsTab } from "@/components/dashboard/settings/PromotionsTab";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
@@ -16,7 +17,7 @@ import type { Coupon } from "@/lib/coupons/types";
 import type { Promotion } from "@/lib/promotions/types";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
 
-type SettingsTabId = "general" | "currency" | "location" | "payments" | "promotions" | "design" | "messages";
+type SettingsTabId = "general" | "currency" | "location" | "shipping" | "payments" | "promotions" | "design" | "messages";
 
 const PRIMARY_TABS: {
   id: SettingsTabId;
@@ -26,6 +27,7 @@ const PRIMARY_TABS: {
   { id: "general", label: "General", icon: Settings2 },
   { id: "currency", label: "Preferencias de Moneda", icon: Coins },
   { id: "location", label: "Ubicación y Horario", icon: Clock },
+  { id: "shipping", label: "Envíos y Entregas", icon: Truck },
   { id: "payments", label: "Pagos", icon: CreditCard },
 ];
 
@@ -145,9 +147,17 @@ export function SettingsPanel({
           >
             <LocationHoursTab
               initialLocationHours={initialConfig.locationHours}
-              initialShipping={initialConfig.shipping}
               initialContact={initialConfig.contact}
             />
+          </div>
+        )}
+        {activeTab === "shipping" && (
+          <div
+            role="tabpanel"
+            id="settings-panel-shipping"
+            aria-labelledby="settings-tab-shipping"
+          >
+            <ShippingTab initialSettings={initialConfig.shipping} />
           </div>
         )}
         {activeTab === "payments" && (
