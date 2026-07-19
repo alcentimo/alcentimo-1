@@ -35,15 +35,21 @@ export async function ensureVercelProjectDomain(
     return { ok: true, created: false };
   }
 
+  let getMessage = "";
   if (getRes.status !== 404) {
     const body = (await getRes.json().catch(() => null)) as
       | VercelDomainResponse
       | null;
-    return {
-      ok: false,
-      error:
-        body?.error?.message ?? `Vercel get domain failed (${getRes.status})`,
-    };
+    getMessage = body?.error?.message ?? `Vercel get domain failed (${getRes.status})`;
+
+    const shouldTryCreate =
+      getRes.status === 400 ||
+      getMessage.toLowerCase().includes("no route") ||
+      getMessage.toLowerCase().includes("not found");
+
+    if (!shouldTryCreate) {
+      return { ok: false, error: `Vercel: ${getMessage}` };
+    }
   }
 
   const createRes = await fetch(`${VERCEL_API}${path}`, {
@@ -66,7 +72,7 @@ export async function ensureVercelProjectDomain(
       return { ok: true, created: false };
     }
 
-    return { ok: false, error: message };
+    return { ok: false, error: `Vercel: ${message}` };
   }
 
   return { ok: true, created: true };

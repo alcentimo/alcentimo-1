@@ -36,8 +36,7 @@ export async function ensureCloudflareStoreCname(
 ): Promise<{ ok: true; created: boolean } | { ok: false; error: string }> {
   const fqdn = recordFqdn(slug, config.apexHost);
   const listUrl = new URL(
-    `/zones/${config.cloudflareZoneId}/dns_records`,
-    CLOUDFLARE_API,
+    `${CLOUDFLARE_API}/zones/${config.cloudflareZoneId}/dns_records`,
   );
   listUrl.searchParams.set("type", "CNAME");
   listUrl.searchParams.set("name", fqdn);
@@ -52,7 +51,7 @@ export async function ensureCloudflareStoreCname(
     const message =
       listJson.errors?.map((entry) => entry.message).join("; ") ??
       `Cloudflare list failed (${listRes.status})`;
-    return { ok: false, error: message };
+    return { ok: false, error: `Cloudflare: ${message}` };
   }
 
   const existing = listJson.result.find(
@@ -86,7 +85,7 @@ export async function ensureCloudflareStoreCname(
     const message =
       createJson.errors?.map((entry) => entry.message).join("; ") ??
       `Cloudflare create failed (${createRes.status})`;
-    return { ok: false, error: message };
+    return { ok: false, error: `Cloudflare: ${message}` };
   }
 
   return { ok: true, created: true };
@@ -98,8 +97,7 @@ export async function removeCloudflareStoreCname(
 ): Promise<{ ok: true; removed: boolean } | { ok: false; error: string }> {
   const fqdn = recordFqdn(slug, config.apexHost);
   const listUrl = new URL(
-    `/zones/${config.cloudflareZoneId}/dns_records`,
-    CLOUDFLARE_API,
+    `${CLOUDFLARE_API}/zones/${config.cloudflareZoneId}/dns_records`,
   );
   listUrl.searchParams.set("type", "CNAME");
   listUrl.searchParams.set("name", fqdn);
@@ -114,7 +112,7 @@ export async function removeCloudflareStoreCname(
     const message =
       listJson.errors?.map((entry) => entry.message).join("; ") ??
       `Cloudflare list failed (${listRes.status})`;
-    return { ok: false, error: message };
+    return { ok: false, error: `Cloudflare: ${message}` };
   }
 
   if (listJson.result.length === 0) {

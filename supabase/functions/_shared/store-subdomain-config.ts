@@ -74,9 +74,14 @@ export async function getDomainProvisioningConfig():
   const vercelProjectId = optionalEnv("VERCEL_PROJECT_ID");
 
   let cloudflareZoneId = optionalEnv("CLOUDFLARE_ZONE_ID");
-  if (!cloudflareZoneId && cloudflareApiToken) {
-    cloudflareZoneId = (await resolveCloudflareZoneId(apexHost, cloudflareApiToken)) ??
-      undefined;
+  if (cloudflareApiToken) {
+    const resolvedZoneId = await resolveCloudflareZoneId(
+      apexHost,
+      cloudflareApiToken,
+    );
+    if (resolvedZoneId) {
+      cloudflareZoneId = resolvedZoneId;
+    }
   }
 
   if (
