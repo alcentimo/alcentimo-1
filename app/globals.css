@@ -253,6 +253,72 @@ body {
   @apply h-9 w-9 shrink-0 rounded-md bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-700 dark:to-zinc-800;
 }
 
+/* Hero composite: dashboard + mobile catalog */
+.landing-hero-composite {
+  @apply relative mx-auto w-full max-w-xl lg:max-w-none;
+}
+
+.landing-hero-composite-glow {
+  @apply pointer-events-none absolute -inset-6 rounded-[2.5rem] bg-emerald-500/10 blur-3xl dark:bg-emerald-500/5;
+}
+
+.landing-hero-composite-inner {
+  @apply relative flex flex-col items-center gap-8 sm:gap-10 lg:flex-row lg:items-end lg:justify-end lg:gap-6 xl:gap-8;
+}
+
+.landing-hero-composite-dashboard {
+  @apply w-full max-w-full lg:max-w-[420px] xl:max-w-[460px];
+}
+
+.landing-hero-composite-mobile {
+  @apply shrink-0 lg:-mb-2;
+}
+
+/* Mobile catalog mockup */
+.landing-mobile-mockup {
+  @apply flex flex-col items-center;
+}
+
+.landing-mobile-mockup-device {
+  @apply relative w-[148px] rounded-[1.75rem] border-[3px] border-zinc-800 bg-zinc-900 p-1.5 shadow-xl shadow-zinc-900/20 dark:border-zinc-600 dark:shadow-black/40 sm:w-[168px];
+}
+
+.landing-mobile-mockup-notch {
+  @apply absolute left-1/2 top-2 z-10 h-1.5 w-12 -translate-x-1/2 rounded-full bg-zinc-800 dark:bg-zinc-700;
+}
+
+.landing-mobile-mockup-screen {
+  @apply overflow-hidden rounded-[1.35rem] bg-white dark:bg-zinc-950;
+}
+
+.landing-mobile-mockup-header {
+  @apply flex items-center gap-2 border-b border-zinc-100 px-2.5 py-2 dark:border-zinc-800;
+}
+
+.landing-mobile-mockup-store-logo {
+  @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-[8px] font-bold text-white;
+}
+
+.landing-mobile-mockup-grid {
+  @apply grid grid-cols-2 gap-1.5 p-2;
+}
+
+.landing-mobile-mockup-product {
+  @apply rounded-lg border border-zinc-100 bg-zinc-50/80 p-1.5 dark:border-zinc-800 dark:bg-zinc-900/50;
+}
+
+.landing-mobile-mockup-product-img {
+  @apply aspect-square w-full rounded-md bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-700 dark:to-zinc-800;
+}
+
+.landing-mobile-mockup-tabbar {
+  @apply flex items-center justify-around border-t border-zinc-100 px-2 py-2 dark:border-zinc-800;
+}
+
+.landing-mobile-mockup-caption {
+  @apply mt-3 text-center text-[11px] font-medium text-zinc-500 dark:text-zinc-400;
+}
+
 /* ── Dashboard tech-minimalist ── */
 
 .dashboard-shell {

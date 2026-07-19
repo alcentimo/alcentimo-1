@@ -1,6 +1,7 @@
 import { AdminPwaServiceWorkerRegister } from "@/components/dashboard/AdminPwaServiceWorkerRegister";
 import { RecoveryUrlRedirect } from "@/components/auth/RecoveryUrlRedirect";
 import { Hero } from "@/components/landing/Hero";
+import { LandingCustomerExperience } from "@/components/landing/LandingCustomerExperience";
 import { LandingBenefits } from "@/components/landing/LandingBenefits";
 import { LandingCta } from "@/components/landing/LandingCta";
 import { LandingFooter } from "@/components/landing/LandingFooter";
@@ -17,6 +18,7 @@ export default function Home() {
 
       <main className="landing-shell">
         <Hero />
+        <LandingCustomerExperience />
         <LandingBenefits />
         <LandingPricing />
         <LandingCta />

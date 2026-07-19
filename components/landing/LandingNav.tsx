@@ -6,7 +6,7 @@ import { Menu, X } from "lucide-react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 
 const navLinks = [
-  { href: "#caracteristicas", label: "Producto" },
+  { href: "#experiencia", label: "Producto" },
   { href: "#precios", label: "Precios" },
 ];
 
