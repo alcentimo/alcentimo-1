@@ -44,6 +44,10 @@ async function handleSync(request: Request) {
     slot,
     source: auth.source ?? "unknown",
     isVercelCron: request.headers.get("x-vercel-cron") === "1",
+    scheduleNote:
+      slot === "midnight"
+        ? "01:00 America/Caracas (UTC 05:00)"
+        : "06:00 America/Caracas (UTC 10:00)",
   });
 
   let admin;

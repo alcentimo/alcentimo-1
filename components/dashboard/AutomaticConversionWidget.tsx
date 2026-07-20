@@ -89,7 +89,7 @@ export function AutomaticConversionWidget({
                 }`}
               />
             </span>
-            {stale ? "Requiere sincronización" : "Sincronizado · BCV"}
+            {stale ? "Actualización automática pendiente" : "Sincronizado · BCV"}
           </div>
         </div>
 

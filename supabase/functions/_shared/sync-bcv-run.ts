@@ -136,6 +136,19 @@ export async function runBcvSyncAttempt(
 
   if (result.success) {
     await resolveBcvAlerts(admin, syncDate);
+    if (slot === "midnight") {
+      console.log(
+        JSON.stringify({
+          event: "early_morning_sync_confirmed",
+          slot,
+          syncDate,
+          rate: result.rate,
+          schedule: "01:00 America/Caracas",
+          message:
+            "Sincronización BCV de las 01:00 completada con éxito y registrada en tasas_cambio_sync_logs.",
+        }),
+      );
+    }
     return {
       success: true,
       action: "success",

@@ -28,7 +28,9 @@ export function DashboardExchangeRateBadge({
   const formattedDate = formatUpdatedAt(updatedAt);
   const rateLabel =
     rate != null ? `Bs. ${formatExchangeRate(rate)}` : "Sin tasa";
-  const syncLabel = stale ? "Requiere sincronización" : "Sincronizado";
+  const syncLabel = stale
+    ? "Actualización automática pendiente"
+    : "Actualizada automáticamente";
 
   if (variant === "strip") {
     return (
@@ -39,7 +41,9 @@ export function DashboardExchangeRateBadge({
             : "border-zinc-200/70 bg-white text-zinc-600 shadow-emerald-500/5 dark:border-zinc-800/70 dark:bg-zinc-950/60 dark:text-zinc-400"
         }`}
         role="status"
-        aria-label={`Tasa BCV ${rateLabel}. ${syncLabel}.`}
+        aria-label={`Tasa BCV ${rateLabel}. ${syncLabel}.${
+          formattedDate ? ` Última actualización ${formattedDate}.` : ""
+        }`}
       >
         <p className="min-w-0 text-pretty">
           <span className="font-medium text-zinc-700 dark:text-zinc-300">
@@ -48,8 +52,8 @@ export function DashboardExchangeRateBadge({
           <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-50">
             {rateLabel}
           </span>
-          {formattedDate && !stale ? (
-            <span className="hidden text-zinc-500 sm:inline dark:text-zinc-400">
+          {formattedDate ? (
+            <span className="text-zinc-500 dark:text-zinc-400">
               {" "}
               · Actualizada {formattedDate}
             </span>
