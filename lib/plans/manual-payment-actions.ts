@@ -110,6 +110,7 @@ export async function submitManualPayment(
   revalidatePath("/activar");
   revalidatePath("/dashboard/planes");
   revalidatePath("/dashboard/catalogo");
+  revalidatePath("/dashboard", "layout");
 
   return { success: true };
 }

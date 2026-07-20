@@ -1,5 +1,7 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getUserPlanIdById, getUserProfile } from "@/lib/auth/get-user-profile";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { Profile } from "@/lib/database.types";
 import {
   buildProductLimitCheck,
   DEFAULT_PLAN_ID,
@@ -53,11 +55,33 @@ async function getStoreOwnerId(storeId: string): Promise<string | null> {
   return data?.owner_id ?? null;
 }
 
+async function getStoreOwnerProfile(
+  ownerId: string,
+): Promise<Pick<
+  Profile,
+  "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
+> | null> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("profiles")
+    .select("plan, subscription_status, pro_trial_started_at, pro_trial_ends_at")
+    .eq("id", ownerId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 /** Plan del dueño de la tienda (límite de productos compartido por la tienda). */
 export async function getStorePlanId(storeId: string): Promise<PlanId> {
   const ownerId = await getStoreOwnerId(storeId);
   if (!ownerId) return DEFAULT_PLAN_ID;
-  return getUserPlanIdById(ownerId);
+
+  const profile = await getStoreOwnerProfile(ownerId);
+  return resolvePlanId(profile?.plan);
 }
 
 export async function getStoreOwnerTrialStatus(
@@ -68,9 +92,8 @@ export async function getStoreOwnerTrialStatus(
     return resolveProTrialStatus(null);
   }
 
-  const supabase = await createClient();
-  const profile = await getUserProfile(supabase, ownerId);
-  const planId = await getUserPlanIdById(ownerId);
+  const profile = await getStoreOwnerProfile(ownerId);
+  const planId = resolvePlanId(profile?.plan);
   return resolveProTrialStatus(profile, planId);
 }
 
@@ -78,6 +101,7 @@ export async function getStoreProductLimitContext(
   storeId: string,
   planId?: PlanId | string | null,
 ): Promise<StoreProductLimitContext> {
+  noStore();
   const resolvedPlanId = planId
     ? resolvePlanId(planId)
     : await getStorePlanId(storeId);
