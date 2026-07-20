@@ -10,6 +10,8 @@ interface ProTrialClaimFieldsProps {
   error: string | null;
   unlockReady: boolean;
   submitLabel?: string;
+  /** Permite enviar sin cumplir el conteo mínimo de productos (solo visualización). */
+  allowClaimWithoutUnlock?: boolean;
 }
 
 export function ProTrialClaimFields({
@@ -20,9 +22,10 @@ export function ProTrialClaimFields({
   error,
   unlockReady,
   submitLabel = "Activar prueba Pro",
+  allowClaimWithoutUnlock = false,
 }: ProTrialClaimFieldsProps) {
   const codeValid = isProTrialClaimCodeValid(claimCode);
-  const canSubmit = unlockReady && codeValid && !pending;
+  const canSubmit = (unlockReady || allowClaimWithoutUnlock) && codeValid && !pending;
 
   return (
     <div className="pro-trial-claim">

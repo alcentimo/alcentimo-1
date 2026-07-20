@@ -71,6 +71,12 @@ export function getDisplayPlanForProfile(
   };
 }
 
+export function hasUnusedProTrial(
+  profile: Pick<Profile, "pro_trial_started_at"> | null,
+): boolean {
+  return profile != null && profile.pro_trial_started_at == null;
+}
+
 /** Muestra el banner de prueba Pro (elegible, activo o consumido). */
 export function shouldShowProTrialBanner(
   profile: Pick<
@@ -78,9 +84,25 @@ export function shouldShowProTrialBanner(
     "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
   > | null,
 ): boolean {
+  return shouldShowProTrialOnActivar(profile);
+}
+
+/**
+ * /activar: prueba obligatoria si nunca se usó (pro_trial_started_at NULL) y el perfil es elegible.
+ * No depende del conteo de productos ni de haber alcanzado el límite.
+ */
+export function shouldShowProTrialOnActivar(
+  profile: Pick<
+    Profile,
+    "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
+  > | null,
+): boolean {
+  if (!profile) return false;
+
   const trial = resolveProTrialStatus(profile);
   if (trial.active) return true;
-  if (trial.consumed) return false;
+  if (!hasUnusedProTrial(profile)) return false;
+
   return isEligiblePlanForProTrial(profile);
 }
 

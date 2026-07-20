@@ -21,6 +21,8 @@ interface ProTrialBannerProps {
   trialEligible: boolean;
   trialActive: boolean;
   trialEndsAt: string | null;
+  /** En /activar: muestra el formulario de reclamo aunque el conteo no alcance el objetivo. */
+  forceClaimUnlocked?: boolean;
 }
 
 export function ProTrialBanner({
@@ -30,6 +32,7 @@ export function ProTrialBanner({
   trialEligible,
   trialActive,
   trialEndsAt,
+  forceClaimUnlocked = false,
 }: ProTrialBannerProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -37,8 +40,11 @@ export function ProTrialBanner({
   const [successEndsAt, setSuccessEndsAt] = useState<string | null>(null);
   const [claimCode, setClaimCode] = useState("");
 
-  const unlockReady = isProTrialUnlockReady(currentCount, unlockTarget);
+  const unlockReady =
+    forceClaimUnlocked ||
+    isProTrialUnlockReady(currentCount, unlockTarget);
   const remaining = getProTrialProductsRemaining(currentCount, unlockTarget);
+  const canClaimTrial = trialEligible && unlockReady;
 
   if (!showBanner) {
     return null;
@@ -125,7 +131,7 @@ export function ProTrialBanner({
     );
   }
 
-  if (!unlockReady) {
+  if (trialEligible && !canClaimTrial) {
     return (
       <section className="pro-trial-banner pro-trial-banner--locked" aria-disabled="true">
         <div className="flex items-start gap-3">
@@ -148,6 +154,10 @@ export function ProTrialBanner({
         </Link>
       </section>
     );
+  }
+
+  if (!canClaimTrial) {
+    return null;
   }
 
   return (
@@ -173,6 +183,7 @@ export function ProTrialBanner({
         pending={pending}
         error={error}
         unlockReady={unlockReady}
+        allowClaimWithoutUnlock={forceClaimUnlocked}
       />
     </section>
   );

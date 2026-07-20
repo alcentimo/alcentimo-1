@@ -5,7 +5,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
-import { resolveProTrialStatus, shouldShowProTrialBanner } from "@/lib/plans/trial";
+import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
+import {
+  hasUnusedProTrial,
+  resolveProTrialStatus,
+  shouldShowProTrialOnActivar,
+} from "@/lib/plans/trial";
+import { isProTrialUnlockReady } from "@/lib/plans/trial-unlock";
 import { PlansPanel } from "@/components/dashboard/PlansPanel";
 import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
 import { BrandLogo } from "@/components/ui/BrandLogo";
@@ -26,8 +32,17 @@ export default async function ActivarPage() {
     store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
     getCurrentExchangeRate(),
   ]);
+
   const trial = resolveProTrialStatus(authUser.profile);
-  const showProTrialBanner = shouldShowProTrialBanner(authUser.profile);
+  const trialEligible = isEligiblePlanForProTrial(authUser.profile);
+  const hasUnusedTrial = hasUnusedProTrial(authUser.profile);
+  const showProTrialSection = shouldShowProTrialOnActivar(authUser.profile);
+  const currentCount = productLimitStatus?.currentCount ?? 0;
+  const atProductLimit = productLimitStatus?.hasReachedLimit ?? false;
+  const forceClaimUnlocked =
+    trialEligible &&
+    hasUnusedTrial &&
+    (atProductLimit || isProTrialUnlockReady(currentCount));
 
   return (
     <main className="page-shell-auth min-h-dvh safe-area-inset">
@@ -52,21 +67,31 @@ export default async function ActivarPage() {
           <p className="section-label">Activación</p>
           <h1 className="page-header-title">Activa tu cuenta</h1>
           <p className="page-header-desc">
-            Completa 10 productos para desbloquear tu mes de prueba Pro (250
-            productos) o elige un plan de pago{store ? ` para ${store.name}` : ""}.
+            {showProTrialSection && !trial.active
+              ? atProductLimit || forceClaimUnlocked
+                ? `Has alcanzado el límite de 10 productos. Reclama tu mes de prueba Pro (250 productos) con ALCENTIMO o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
+                : `Completa 10 productos para desbloquear tu mes de prueba Pro (250 productos) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
+              : `Elige el plan que mejor se adapte a tu negocio${store ? ` · ${store.name}` : ""}.`}
           </p>
         </header>
 
-        {showProTrialBanner ? (
+        {showProTrialSection ? (
           <div className="mb-8 max-w-3xl">
             <ProTrialBanner
               showBanner
-              currentCount={productLimitStatus?.currentCount ?? 0}
-              trialEligible={trial.eligible}
+              currentCount={currentCount}
+              trialEligible={trialEligible}
               trialActive={trial.active}
               trialEndsAt={trial.endsAt}
+              forceClaimUnlocked={forceClaimUnlocked}
             />
           </div>
+        ) : null}
+
+        {showProTrialSection && !trial.active ? (
+          <p className="mb-4 max-w-2xl text-sm font-medium text-neutral-600 dark:text-neutral-400">
+            También puedes elegir un plan de pago
+          </p>
         ) : null}
 
         <PlansPanel
