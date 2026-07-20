@@ -169,7 +169,6 @@ export function ManualPaymentsPanel({
       }
 
       const payment = payments.find((item) => item.id === paymentId);
-      const previousPlan = payment?.from_plan ?? "FREE";
 
       setPayments((prev) =>
         prev.map((item) =>
@@ -180,15 +179,15 @@ export function ManualPaymentsPanel({
                 verified_at: null,
                 permanently_rejected: false,
                 rejected_at: null,
-                owner_plan: previousPlan,
-                owner_subscription_status:
-                  previousPlan === "FREE" ? "none" : "active",
+                // El plan del usuario no cambia; solo el estado del pago.
               }
             : item,
         ),
       );
       setSuccess(
-        `Confirmación revertida. El pago volvió a Pendiente y el usuario regresó al plan ${previousPlan}.`,
+        `Confirmación revertida: el pago de ${
+          payment ? storeLabel(payment) : "la tienda"
+        } volvió a Pendiente. El plan del usuario se mantiene sin cambios.`,
       );
     });
   }

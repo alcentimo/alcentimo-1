@@ -114,12 +114,12 @@ export function PaymentReviewPanel({ review }: PaymentReviewPanelProps) {
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
               {needsCorrection
                 ? "Necesitamos que corrijas tu comprobante"
-                : "Tu pago está bajo revisión"}
+                : "Pago en revisión"}
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-300">
               {needsCorrection
-                ? "Tu solicitud de plan sigue activa, pero debemos revisar un nuevo comprobante antes de confirmarla."
-                : "Ya recibimos tu pago. Tu acceso queda provisional mientras verificamos el comprobante. No hace falta volver a activar la cuenta."}
+                ? "Tu solicitud de plan sigue activa, pero debemos revisar un nuevo comprobante antes de confirmarla. Puedes seguir usando tu acceso actual."
+                : "Tu solicitud está siendo reevaluada. Puedes seguir usando el acceso que ya tienes mientras confirmamos el pago. No es necesario volver a activar la cuenta."}
             </p>
             <p className="text-sm text-zinc-600 dark:text-zinc-300">
               Plan solicitado: <strong>{planLabel}</strong>
@@ -222,7 +222,8 @@ export function PaymentReviewPanel({ review }: PaymentReviewPanelProps) {
         </form>
       ) : isPending ? (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Mientras tanto puedes seguir usando tu acceso provisional desde el{" "}
+          Mientras reevaluamos tu solicitud puedes seguir usando tu acceso
+          actual desde el{" "}
           <Link
             href="/dashboard/catalogo"
             className="font-medium text-teal-700 hover:underline dark:text-teal-300"

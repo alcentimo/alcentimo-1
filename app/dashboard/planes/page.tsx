@@ -4,7 +4,13 @@ import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
 import { resolveProTrialStatus, shouldShowProTrialBanner } from "@/lib/plans/trial";
 import { getCurrentExchangeRate } from "@/lib/catalog";
+import {
+  getLatestPermanentRejection,
+  getUserPaymentReview,
+} from "@/lib/plans/get-user-payment-review";
 import { PlansPanel } from "@/components/dashboard/PlansPanel";
+import { PaymentReviewPanel } from "@/components/dashboard/plans/PaymentReviewPanel";
+import { PermanentRejectionNotice } from "@/components/dashboard/plans/PermanentRejectionNotice";
 import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
 import { PageContainer } from "@/components/ui/PageContainer";
 
@@ -21,10 +27,13 @@ export default async function PlanesPage() {
   const { authUser, store } = session;
   const trial = resolveProTrialStatus(authUser.profile);
   const showProTrialBanner = shouldShowProTrialBanner(authUser.profile);
-  const productLimitContext = store
-    ? await getStoreProductLimitContext(store.id)
-    : null;
-  const exchangeRateRow = await getCurrentExchangeRate();
+  const [productLimitContext, exchangeRateRow, paymentReview, permanentRejection] =
+    await Promise.all([
+      store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
+      getCurrentExchangeRate(),
+      getUserPaymentReview(authUser.id),
+      getLatestPermanentRejection(authUser.id),
+    ]);
   const exchangeRate = exchangeRateRow?.rate ?? null;
 
   return (
@@ -37,6 +46,18 @@ export default async function PlanesPage() {
           {store ? ` · ${store.name}` : ""}.
         </p>
       </header>
+
+      {paymentReview ? (
+        <div className="mb-8 max-w-2xl">
+          <PaymentReviewPanel review={paymentReview} />
+        </div>
+      ) : null}
+
+      {!paymentReview && permanentRejection ? (
+        <div className="mb-8 max-w-2xl">
+          <PermanentRejectionNotice payment={permanentRejection} />
+        </div>
+      ) : null}
 
       {store && showProTrialBanner ? (
         <div className="mb-8 max-w-3xl">

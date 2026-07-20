@@ -336,8 +336,8 @@ export async function permanentlyRejectManualPayment(
 }
 
 /**
- * Revierte una confirmación: el pago vuelve a Pendiente y el usuario
- * recupera el plan anterior (from_plan) para corregir errores humanos.
+ * Revierte una confirmación: el pago vuelve a Pendiente para reevaluarlo.
+ * No modifica el plan del usuario; mantiene el acceso que ya tenía.
  */
 export async function revertVerifiedManualPayment(
   paymentId: string,
@@ -362,23 +362,11 @@ export async function revertVerifiedManualPayment(
       permanently_rejected: false,
       rejected_at: null,
       correction_requested_at: null,
-      // Conservamos admin_note si existía; no es crítico.
     })
     .eq("id", paymentId)
     .eq("status", "verified");
 
   if (paymentError) return { error: paymentError.message };
-
-  try {
-    await restorePlanBeforePayment(payment);
-  } catch (error) {
-    return {
-      error:
-        error instanceof Error
-          ? error.message
-          : "No se pudo restaurar el plan anterior del usuario.",
-    };
-  }
 
   revalidatePlanPaths();
   revalidatePath("/dashboard", "layout");

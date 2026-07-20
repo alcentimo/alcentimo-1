@@ -12,9 +12,13 @@ import {
   shouldShowProTrialOnActivar,
 } from "@/lib/plans/trial";
 import { isProTrialUnlockReady } from "@/lib/plans/trial-unlock";
-import { getUserPaymentReview } from "@/lib/plans/get-user-payment-review";
+import {
+  getLatestPermanentRejection,
+  getUserPaymentReview,
+} from "@/lib/plans/get-user-payment-review";
 import { PlansPanel } from "@/components/dashboard/PlansPanel";
 import { PaymentReviewPanel } from "@/components/dashboard/plans/PaymentReviewPanel";
+import { PermanentRejectionNotice } from "@/components/dashboard/plans/PermanentRejectionNotice";
 import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { PageContainer } from "@/components/ui/PageContainer";
@@ -73,10 +77,12 @@ export default async function ActivarPage() {
     );
   }
 
-  const [productLimitStatus, exchangeRateRow] = await Promise.all([
-    store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
-    getCurrentExchangeRate(),
-  ]);
+  const [productLimitStatus, exchangeRateRow, permanentRejection] =
+    await Promise.all([
+      store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
+      getCurrentExchangeRate(),
+      getLatestPermanentRejection(authUser.id),
+    ]);
 
   const trial = resolveProTrialStatus(authUser.profile);
   const trialEligible = isEligiblePlanForProTrial(authUser.profile);
@@ -137,6 +143,12 @@ export default async function ActivarPage() {
           <p className="mb-4 max-w-2xl text-sm font-medium text-neutral-600 dark:text-neutral-400">
             También puedes elegir un plan de pago
           </p>
+        ) : null}
+
+        {permanentRejection ? (
+          <div className="mb-8 max-w-2xl">
+            <PermanentRejectionNotice payment={permanentRejection} />
+          </div>
         ) : null}
 
         <PlansPanel

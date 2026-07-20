@@ -63,3 +63,28 @@ export async function isReferencePermanentlyRejected(
 
   return Boolean(data);
 }
+
+/** Último rechazo permanente (para notificar al usuario en el dashboard). */
+export async function getLatestPermanentRejection(
+  userId: string,
+): Promise<ManualPayment | null> {
+  const admin = createAdminClient();
+
+  const { data, error } = await admin
+    .from("manual_payments")
+    .select(
+      "id, user_id, plan_id, reference_number, image_url, status, created_at, verified_at, rejected_at, billing_period, from_plan, from_billing_period, list_price_usd, credit_usd, amount_due_usd, days_remaining, credited_period_ends_at, admin_note, permanently_rejected, correction_requested_at",
+    )
+    .eq("user_id", userId)
+    .eq("status", "rejected")
+    .eq("permanently_rejected", true)
+    .order("rejected_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data as ManualPayment | null) ?? null;
+}
