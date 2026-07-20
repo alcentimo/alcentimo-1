@@ -4,20 +4,24 @@ import { resolvePlanId, type PlanId } from "@/src/config/plans";
 
 export type SubscriptionStatus = "none" | "provisional" | "active";
 
+/** IDs internos del checkout → valores persistidos en profiles.plan */
 const PLAN_ID_TO_DB: Record<ManualPaymentPlanId, ProfilePlanDb> = {
-  starter: "STARTER",
-  premium: "PREMIUM",
+  starter: "PRO",
+  premium: "BUSINESS",
 };
 
 export function normalizeDbPlan(value: string | null | undefined): ProfilePlanDb {
   const normalized = (value ?? "FREE").trim().toUpperCase();
+  if (normalized === "FREE") return "FREE";
   if (
-    normalized === "FREE" ||
+    normalized === "PRO" ||
     normalized === "STARTER" ||
-    normalized === "GROWTH" ||
-    normalized === "PREMIUM"
+    normalized === "GROWTH"
   ) {
-    return normalized;
+    return "PRO";
+  }
+  if (normalized === "BUSINESS" || normalized === "PREMIUM") {
+    return "BUSINESS";
   }
   return "FREE";
 }

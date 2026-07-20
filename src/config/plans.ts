@@ -19,19 +19,19 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   },
   starter: {
     id: "starter",
-    name: "Plan Starter",
+    name: "Plan Pro",
     productLimit: 250,
     priceUsdYearly: 39,
   },
   growth: {
     id: "growth",
-    name: "Plan Growth",
+    name: "Plan Pro",
     productLimit: 1000,
     priceUsdYearly: 99,
   },
   premium: {
     id: "premium",
-    name: "Plan Premium",
+    name: "Plan Business",
     productLimit: null,
     priceUsdYearly: 199,
   },
@@ -54,9 +54,9 @@ export const DASHBOARD_PLANS_HREF = "/dashboard/planes";
 export const PRODUCT_LIMIT_NEAR_REMAINING = 3;
 
 const NEXT_PLAN_DISPLAY_NAME: Record<PlanId, string | null> = {
-  free: "Starter",
-  starter: "Growth",
-  growth: "Premium",
+  free: "Pro",
+  starter: "Business",
+  growth: "Business",
   premium: null,
 };
 
@@ -82,10 +82,14 @@ export function isPlanId(value: string): value is PlanId {
 const DB_PLAN_ALIASES: Record<string, PlanId> = {
   free: "free",
   FREE: "free",
+  pro: "starter",
+  PRO: "starter",
   starter: "starter",
   STARTER: "starter",
   growth: "growth",
   GROWTH: "growth",
+  business: "premium",
+  BUSINESS: "premium",
   premium: "premium",
   PREMIUM: "premium",
 };

@@ -9,7 +9,7 @@ export type InventoryMovementType =
 
 export type StoreMemberRole = "owner" | "admin" | "staff";
 
-export type ProfilePlanDb = "FREE" | "STARTER" | "GROWTH" | "PREMIUM";
+export type ProfilePlanDb = "FREE" | "PRO" | "BUSINESS";
 
 export type SubscriptionStatus = "none" | "provisional" | "active";
 
