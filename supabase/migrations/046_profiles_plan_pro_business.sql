@@ -1,5 +1,8 @@
 -- Sincroniza nombres comerciales (Pro / Business) con profiles.plan en BD.
 
+ALTER TABLE public.profiles
+  DROP CONSTRAINT IF EXISTS profiles_plan_check;
+
 UPDATE public.profiles
 SET plan = 'PRO'
 WHERE upper(trim(plan)) IN ('STARTER', 'GROWTH');
@@ -7,9 +10,6 @@ WHERE upper(trim(plan)) IN ('STARTER', 'GROWTH');
 UPDATE public.profiles
 SET plan = 'BUSINESS'
 WHERE upper(trim(plan)) = 'PREMIUM';
-
-ALTER TABLE public.profiles
-  DROP CONSTRAINT IF EXISTS profiles_plan_check;
 
 ALTER TABLE public.profiles
   ADD CONSTRAINT profiles_plan_check
