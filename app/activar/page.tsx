@@ -79,6 +79,7 @@ export default async function ActivarPage() {
           exchangeRate={exchangeRateRow?.rate ?? null}
           trialActive={trial.active}
           trialEndsAt={trial.endsAt}
+          subscriptionStatus={authUser.profile?.subscription_status ?? "none"}
         />
       </PageContainer>
     </main>

@@ -48,7 +48,9 @@ export async function getUserProfile(
 ): Promise<Profile | null> {
   const { data, error } = await client
     .from("profiles")
-    .select("id, plan, pro_trial_started_at, pro_trial_ends_at, created_at, updated_at")
+    .select(
+      "id, plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, created_at, updated_at",
+    )
     .eq("id", userId)
     .maybeSingle();
 

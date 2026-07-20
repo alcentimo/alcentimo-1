@@ -24,6 +24,7 @@ interface PlansPanelProps {
   exchangeRate?: number | null;
   trialActive?: boolean;
   trialEndsAt?: string | null;
+  subscriptionStatus?: "none" | "provisional" | "active" | string | null;
 }
 
 function isCurrentTier(tierPlanId: PlanId, currentPlanId: PlanId): boolean {
@@ -86,6 +87,7 @@ export function PlansPanel({
   exchangeRate = null,
   trialActive = false,
   trialEndsAt = null,
+  subscriptionStatus = null,
 }: PlansPanelProps) {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -110,6 +112,11 @@ export function PlansPanel({
             {trialActive && trialEndsAt ? (
               <p className="mt-1 text-sm text-teal-700 dark:text-teal-300">
                 Prueba Pro activa hasta el {formatProTrialEndsAt(trialEndsAt)}
+              </p>
+            ) : null}
+            {subscriptionStatus === "provisional" ? (
+              <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                Acceso Pro provisional — verificando tu pago
               </p>
             ) : null}
             {productCount != null && productLimit != null && currentPlanId !== "premium" && (

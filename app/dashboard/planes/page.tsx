@@ -62,6 +62,7 @@ export default async function PlanesPage() {
         exchangeRate={exchangeRate}
         trialActive={trial.active}
         trialEndsAt={trial.endsAt}
+        subscriptionStatus={authUser.profile?.subscription_status ?? "none"}
       />
     </PageContainer>
   );

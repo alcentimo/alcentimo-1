@@ -49,6 +49,12 @@ export default async function AdminSoportePage() {
           <p className="page-header-desc">
             Mensajes de todos los usuarios de la plataforma.
           </p>
+          <Link
+            href="/admin/pagos"
+            className="text-sm font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+          >
+            Pagos manuales
+          </Link>
         </div>
       </header>
 

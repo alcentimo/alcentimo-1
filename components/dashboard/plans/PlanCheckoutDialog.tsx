@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import { CheckCircle2, Smartphone } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { CheckCircle2, Smartphone, Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,10 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { CopyableInline } from "@/components/payments/CopyableInline";
-import { submitPaymentReport } from "@/lib/plans/payment-report-actions";
+import { submitManualPayment } from "@/lib/plans/manual-payment-actions";
 import { formatVes } from "@/lib/format";
 import {
   formatPlanCheckoutSummary,
@@ -23,7 +22,6 @@ import {
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
 import { getSubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
-import { getVenezuelaBankOptions } from "@/src/config/venezuela-banks";
 
 type CheckoutStep = "checkout" | "success";
 
@@ -44,9 +42,11 @@ export function PlanCheckoutDialog({
 }: PlanCheckoutDialogProps) {
   const [step, setStep] = useState<CheckoutStep>("checkout");
   const [referenceNumber, setReferenceNumber] = useState("");
-  const [originBank, setOriginBank] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const pagoMovil = getSubscriptionPagoMovilDetails();
 
@@ -54,10 +54,22 @@ export function PlanCheckoutDialog({
     if (!open) return;
     setStep("checkout");
     setReferenceNumber("");
-    setOriginBank("");
+    setProofFile(null);
+    setProofPreview(null);
     setSubmitting(false);
     setError(null);
   }, [open, tier?.planId, billing]);
+
+  useEffect(() => {
+    if (!proofFile) {
+      setProofPreview(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(proofFile);
+    setProofPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [proofFile]);
 
   function handleClose() {
     onOpenChange(false);
@@ -65,17 +77,17 @@ export function PlanCheckoutDialog({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!tier || tier.planId === "free") return;
+    if (!tier || tier.planId === "free" || !proofFile) return;
 
     setSubmitting(true);
     setError(null);
 
-    const result = await submitPaymentReport({
-      planId: tier.planId,
-      billingPeriod: billing,
-      referenceNumber,
-      originBank,
-    });
+    const formData = new FormData();
+    formData.set("planId", tier.planId);
+    formData.set("referenceNumber", referenceNumber);
+    formData.set("proofImage", proofFile);
+
+    const result = await submitManualPayment(formData);
 
     setSubmitting(false);
 
@@ -99,13 +111,14 @@ export function PlanCheckoutDialog({
     <Dialog open={open} onOpenChange={onOpenChange} containerClassName="max-w-3xl">
       <DialogContent className="relative max-h-[90vh] overflow-y-auto p-0" onClose={handleClose}>
         {step === "success" ? (
-          <SuccessView onClose={handleClose} />
+          <SuccessView tier={tier} onClose={handleClose} />
         ) : (
           <div className="p-6 sm:p-8">
             <DialogHeader className="mb-6">
               <DialogTitle className="text-xl">Completa tu suscripción</DialogTitle>
               <DialogDescription>
-                Realiza el Pago Móvil y reporta la referencia para activar tu plan.
+                Realiza el Pago Móvil, sube tu captura y obtén acceso Pro de
+                inmediato mientras verificamos el pago.
               </DialogDescription>
             </DialogHeader>
 
@@ -148,7 +161,8 @@ export function PlanCheckoutDialog({
                     Reporta tu pago
                   </p>
                   <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                    Ingresa los datos de la transferencia para que podamos verificarla.
+                    Acceso de Confianza: activamos tu plan Pro al enviar el
+                    comprobante.
                   </p>
 
                   <div className="mt-5 space-y-4">
@@ -170,26 +184,38 @@ export function PlanCheckoutDialog({
                     </div>
 
                     <div>
-                      <Label htmlFor="payment-origin-bank" className="payment-field-label">
-                        Banco de origen <span className="text-red-500">*</span>
+                      <Label htmlFor="payment-proof" className="payment-field-label">
+                        Captura del pago <span className="text-red-500">*</span>
                       </Label>
-                      <Select
-                        id="payment-origin-bank"
-                        name="originBank"
-                        value={originBank}
-                        onChange={(event) => setOriginBank(event.target.value)}
+                      <input
+                        ref={fileInputRef}
+                        id="payment-proof"
+                        name="proofImage"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
                         required
-                        className="payment-field-input mt-1.5"
+                        className="sr-only"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] ?? null;
+                          setProofFile(file);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="mt-1.5 flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-6 text-sm text-neutral-600 transition hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900/50 dark:text-neutral-300 dark:hover:bg-neutral-900"
                       >
-                        <option value="" disabled>
-                          Selecciona tu banco
-                        </option>
-                        {getVenezuelaBankOptions().map((bank) => (
-                          <option key={bank} value={bank}>
-                            {bank}
-                          </option>
-                        ))}
-                      </Select>
+                        <Upload className="h-5 w-5" aria-hidden="true" />
+                        {proofFile ? proofFile.name : "Subir captura del pago"}
+                      </button>
+                      {proofPreview ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={proofPreview}
+                          alt="Vista previa del comprobante"
+                          className="mt-2 max-h-32 w-full rounded-lg border border-neutral-200 object-contain dark:border-neutral-800"
+                        />
+                      ) : null}
                     </div>
                   </div>
 
@@ -202,10 +228,10 @@ export function PlanCheckoutDialog({
                   <div className="mt-auto pt-6">
                     <button
                       type="submit"
-                      disabled={submitting}
+                      disabled={submitting || !proofFile}
                       className="btn-brand inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold disabled:opacity-60"
                     >
-                      {submitting ? "Enviando…" : "Confirmar pago"}
+                      {submitting ? "Activando acceso…" : "Confirmar pago y activar Pro"}
                     </button>
                   </div>
                 </form>
@@ -237,17 +263,24 @@ function PagoMovilField({
   );
 }
 
-function SuccessView({ onClose }: { onClose: () => void }) {
+function SuccessView({
+  tier,
+  onClose,
+}: {
+  tier: PlanPricingTier;
+  onClose: () => void;
+}) {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center sm:px-10 sm:py-14">
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-400">
         <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
       </span>
       <h3 className="mt-5 text-xl font-semibold text-neutral-900 dark:text-neutral-50">
-        ¡Pago reportado con éxito!
+        ¡Plan {tier.displayName} activado!
       </h3>
       <p className="mt-2 max-w-sm text-sm text-neutral-600 dark:text-neutral-400">
-        Estamos verificando la transacción. Tu plan se activará en unos minutos.
+        Tu acceso Pro ya está disponible. Verificaremos tu pago en breve; si hay
+        algún problema, te avisaremos por correo.
       </p>
       <Button type="button" className="btn-brand mt-8 min-w-[10rem]" onClick={onClose}>
         Entendido

@@ -11,13 +11,31 @@ export type StoreMemberRole = "owner" | "admin" | "staff";
 
 export type ProfilePlanDb = "FREE" | "STARTER" | "GROWTH" | "PREMIUM";
 
+export type SubscriptionStatus = "none" | "provisional" | "active";
+
 export interface Profile {
   id: string;
   plan: ProfilePlanDb | string;
+  subscription_status?: SubscriptionStatus | string;
   pro_trial_started_at?: string | null;
   pro_trial_ends_at?: string | null;
   created_at?: string;
   updated_at?: string;
+}
+
+export type ManualPaymentStatus = "pending" | "verified" | "rejected";
+export type ManualPaymentPlanId = "starter" | "premium";
+
+export interface ManualPayment {
+  id: string;
+  user_id: string;
+  plan_id: ManualPaymentPlanId;
+  reference_number: string;
+  image_url: string;
+  status: ManualPaymentStatus;
+  created_at: string;
+  verified_at: string | null;
+  rejected_at: string | null;
 }
 
 export type PaymentReportStatus = "pending" | "verified" | "rejected";
@@ -548,10 +566,26 @@ export interface Database {
         Row: Profile;
         Insert: Pick<Profile, "id"> & {
           plan?: ProfilePlanDb | string;
+          subscription_status?: SubscriptionStatus | string;
           created_at?: string;
           updated_at?: string;
         };
         Update: Partial<Profile>;
+        Relationships: [];
+      };
+      manual_payments: {
+        Row: ManualPayment;
+        Insert: Omit<
+          ManualPayment,
+          "id" | "status" | "created_at" | "verified_at" | "rejected_at"
+        > & {
+          id?: string;
+          status?: ManualPaymentStatus;
+          created_at?: string;
+          verified_at?: string | null;
+          rejected_at?: string | null;
+        };
+        Update: Partial<ManualPayment>;
         Relationships: [];
       };
       payment_reports: {
