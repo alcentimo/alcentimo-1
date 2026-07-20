@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
+  ArrowUpRight,
   LayoutDashboard,
   LifeBuoy,
   LogOut,
@@ -33,6 +34,7 @@ interface DashboardSidebarProps {
   onLogout: () => void;
   isSupportAdmin?: boolean;
   isStoreOwner?: boolean;
+  canUpgradeToBusiness?: boolean;
 }
 
 function navLinkClass(active: boolean, collapsed: boolean) {
@@ -87,6 +89,7 @@ export function DashboardSidebar({
   onLogout,
   isSupportAdmin = false,
   isStoreOwner = false,
+  canUpgradeToBusiness = false,
 }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
@@ -201,6 +204,28 @@ export function DashboardSidebar({
             <Rocket className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
             {!collapsed && <span>Activar cuenta</span>}
           </Link>
+
+          {canUpgradeToBusiness ? (
+            <Link
+              href="/dashboard/upgrade"
+              className={navLinkClass(
+                pathname.startsWith("/dashboard/upgrade"),
+                collapsed,
+              )}
+              onClick={onCloseMobile}
+              title={collapsed ? "Upgrade a Business" : "Pasar a Business con saldo a favor"}
+              aria-current={
+                pathname.startsWith("/dashboard/upgrade") ? "page" : undefined
+              }
+            >
+              <ArrowUpRight
+                className="h-4 w-4 shrink-0"
+                strokeWidth={1.75}
+                aria-hidden="true"
+              />
+              {!collapsed && <span>Upgrade a Business</span>}
+            </Link>
+          ) : null}
 
           <button
             type="button"

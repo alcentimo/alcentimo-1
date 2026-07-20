@@ -21,6 +21,7 @@ interface DashboardLayoutProps {
   exchangeRateStale?: boolean;
   isSupportAdmin?: boolean;
   isStoreOwner?: boolean;
+  canUpgradeToBusiness?: boolean;
   criticalStockCount?: number;
 }
 
@@ -41,6 +42,7 @@ function DashboardShell({
   exchangeRateStale = false,
   isSupportAdmin = false,
   isStoreOwner = false,
+  canUpgradeToBusiness = false,
   criticalStockCount = 0,
 }: DashboardLayoutProps) {
   const router = useRouter();
@@ -91,6 +93,7 @@ function DashboardShell({
         onLogout={() => void handleLogout()}
         isSupportAdmin={isSupportAdmin}
         isStoreOwner={isStoreOwner}
+        canUpgradeToBusiness={canUpgradeToBusiness}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">

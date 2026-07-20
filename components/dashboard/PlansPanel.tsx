@@ -38,10 +38,12 @@ function isCurrentTier(tierPlanId: PlanId, currentPlanId: PlanId): boolean {
 function PlanCtaButton({
   tier,
   isCurrent,
+  currentPlanId,
   onCheckout,
 }: {
   tier: PlanPricingTier;
   isCurrent: boolean;
+  currentPlanId: PlanId;
   onCheckout: (tier: PlanPricingTier) => void;
 }) {
   if (isCurrent) {
@@ -63,6 +65,24 @@ function PlanCtaButton({
         className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900"
       >
         {tier.cta}
+      </Link>
+    );
+  }
+
+  // PRO → Business usa la página de upgrade con prorrateo.
+  if (
+    tier.planId === "premium" &&
+    (currentPlanId === "starter" || currentPlanId === "growth")
+  ) {
+    return (
+      <Link
+        href="/dashboard/upgrade"
+        className={cn(
+          "btn-brand mt-6 inline-flex w-full items-center justify-center px-4 py-3.5 text-sm font-semibold shadow-sm",
+          !tier.recommended && "md:py-3",
+        )}
+      >
+        Upgrade a Business
       </Link>
     );
   }
@@ -157,6 +177,7 @@ export function PlansPanel({
               tier={tier}
               billing={billing}
               isCurrent={isCurrentTier(tier.planId, currentPlanId)}
+              currentPlanId={currentPlanId}
               onCheckout={openCheckout}
             />
           ))}
@@ -225,11 +246,13 @@ function PricingCard({
   tier,
   billing,
   isCurrent,
+  currentPlanId,
   onCheckout,
 }: {
   tier: PlanPricingTier;
   billing: BillingPeriod;
   isCurrent: boolean;
+  currentPlanId: PlanId;
   onCheckout: (tier: PlanPricingTier) => void;
 }) {
   const priceLabel = formatPlanPriceForTier(tier, billing);
@@ -308,7 +331,12 @@ function PricingCard({
         ))}
       </ul>
 
-      <PlanCtaButton tier={tier} isCurrent={isCurrent} onCheckout={onCheckout} />
+      <PlanCtaButton
+        tier={tier}
+        isCurrent={isCurrent}
+        currentPlanId={currentPlanId}
+        onCheckout={onCheckout}
+      />
     </article>
   );
 }
