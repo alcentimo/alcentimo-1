@@ -10,6 +10,7 @@ import type {
   SubscriptionCouponRewardType,
 } from "@/lib/database.types";
 import { normalizePromoCode } from "@/lib/admin/growth-discount";
+import { logGrowthAction } from "@/lib/admin/growth-audit";
 
 export type GrowthActionResult = {
   error?: string;
@@ -119,6 +120,17 @@ export async function createSubscriptionCoupon(input: {
     return { error: error.message };
   }
 
+  await logGrowthAction({
+    actorId: auth.user.id,
+    action: "create_coupon",
+    summary: `Creó cupón ${code} (${input.rewardType})`,
+    meta: {
+      coupon_id: data.id,
+      code,
+      reward_type: input.rewardType,
+    },
+  });
+
   revalidate();
   return { success: true, coupon: data as SubscriptionCoupon };
 }
@@ -137,6 +149,14 @@ export async function toggleSubscriptionCoupon(
     .eq("id", couponId);
 
   if (error) return { error: error.message };
+
+  await logGrowthAction({
+    actorId: auth.user.id,
+    action: "toggle_coupon",
+    summary: `${isActive ? "Activó" : "Desactivó"} cupón ${couponId}`,
+    meta: { coupon_id: couponId, is_active: isActive },
+  });
+
   revalidate();
   return { success: true };
 }
@@ -214,6 +234,21 @@ export async function createSubscriptionCampaign(input: {
     .single();
 
   if (error) return { error: error.message };
+
+  await logGrowthAction({
+    actorId: auth.user.id,
+    action: "create_campaign",
+    summary: `Creó campaña «${name}»`,
+    meta: {
+      campaign_id: data.id,
+      name,
+      discount_percent: data.discount_percent,
+      discount_usd: data.discount_usd,
+      starts_at: data.starts_at,
+      ends_at: data.ends_at,
+    },
+  });
+
   revalidate();
   return { success: true, campaign: data as SubscriptionCampaign };
 }
@@ -232,6 +267,14 @@ export async function toggleSubscriptionCampaign(
     .eq("id", campaignId);
 
   if (error) return { error: error.message };
+
+  await logGrowthAction({
+    actorId: auth.user.id,
+    action: "toggle_campaign",
+    summary: `${isActive ? "Activó" : "Desactivó"} campaña ${campaignId}`,
+    meta: { campaign_id: campaignId, is_active: isActive },
+  });
+
   revalidate();
   return { success: true };
 }

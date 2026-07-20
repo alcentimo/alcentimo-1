@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import type { AdminUserRow } from "@/lib/admin/get-admin-users";
+import type { GrowthAuditEntry } from "@/lib/admin/growth-audit";
 import type {
   SubscriptionCampaign,
   SubscriptionCoupon,
@@ -9,6 +10,7 @@ import type {
 } from "@/lib/database.types";
 import {
   grantProMonthToUser,
+  grantProMonthToUsers,
   sendPromoOffersToUsers,
 } from "@/lib/admin/grant-pro-actions";
 import {
@@ -22,12 +24,40 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
-type GrowthSubTab = "usuarios" | "cupones" | "campanas";
+type GrowthSubTab = "usuarios" | "cupones" | "campanas" | "historial";
+
+const ACTION_LABELS: Record<string, string> = {
+  grant_pro: "Otorgar Pro",
+  create_coupon: "Crear cupón",
+  toggle_coupon: "Cupón on/off",
+  create_campaign: "Crear campaña",
+  toggle_campaign: "Campaña on/off",
+  send_promo: "Enviar promo",
+};
+
+function formatReward(coupon: SubscriptionCoupon): string {
+  if (coupon.reward_type === "percent_discount") {
+    return `${coupon.discount_percent}%`;
+  }
+  if (coupon.reward_type === "fixed_discount") {
+    return `$${coupon.discount_usd}`;
+  }
+  return `${coupon.grant_pro_days} días Pro`;
+}
+
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Intl.DateTimeFormat("es-VE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(iso));
+}
 
 interface AdminGrowthPanelProps {
   initialUsers: AdminUserRow[];
   initialCoupons: SubscriptionCoupon[];
   initialCampaigns: SubscriptionCampaign[];
+  initialAuditLog: GrowthAuditEntry[];
   initialPlanFilter?: "FREE" | "PRO" | "BUSINESS" | "all";
   initialMinProducts?: number;
 }
@@ -36,6 +66,7 @@ export function AdminGrowthPanel({
   initialUsers,
   initialCoupons,
   initialCampaigns,
+  initialAuditLog,
   initialPlanFilter = "all",
   initialMinProducts,
 }: AdminGrowthPanelProps) {
@@ -43,14 +74,17 @@ export function AdminGrowthPanel({
   const [users, setUsers] = useState(initialUsers);
   const [coupons, setCoupons] = useState(initialCoupons);
   const [campaigns, setCampaigns] = useState(initialCampaigns);
-  const [planFilter, setPlanFilter] = useState<"all" | "FREE" | "PRO" | "BUSINESS">(
-    initialPlanFilter,
-  );
+  const [auditLog, setAuditLog] = useState(initialAuditLog);
+  const [planFilter, setPlanFilter] = useState<
+    "all" | "FREE" | "PRO" | "BUSINESS"
+  >(initialPlanFilter);
   const [minProducts, setMinProducts] = useState(
     initialMinProducts != null ? String(initialMinProducts) : "",
   );
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [rewardType, setRewardType] =
+    useState<SubscriptionCouponRewardType>("percent_discount");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -71,6 +105,17 @@ export function AdminGrowthPanel({
       return true;
     });
   }, [users, planFilter, minProducts, search]);
+
+  function markUsersAsPro(ids: string[]) {
+    const idSet = new Set(ids);
+    setUsers((prev) =>
+      prev.map((row) =>
+        idSet.has(row.id)
+          ? { ...row, plan: "PRO", subscriptionStatus: "active" }
+          : row,
+      ),
+    );
+  }
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -96,14 +141,46 @@ export function AdminGrowthPanel({
         setError(result.error);
         return;
       }
-      setUsers((prev) =>
-        prev.map((row) =>
-          row.id === userId
-            ? { ...row, plan: "PRO", subscriptionStatus: "active" }
-            : row,
-        ),
+      markUsersAsPro([userId]);
+      setSuccess("Pro otorgado por 30 días.");
+      setAuditLog((prev) => [
+        {
+          id: `local-${Date.now()}`,
+          actorId: "me",
+          actorEmail: "tú",
+          action: "grant_pro",
+          targetUserId: userId,
+          targetEmail: users.find((u) => u.id === userId)?.email ?? null,
+          summary: "Otorgó plan PRO por 30 días",
+          meta: { days: 30 },
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+    });
+  }
+
+  function handleGrantSelected() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) {
+      setError("Selecciona al menos un usuario.");
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    startTransition(async () => {
+      const result = await grantProMonthToUsers({ userIds: ids, days: 30 });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      markUsersAsPro(ids);
+      setSelected(new Set());
+      setSuccess(
+        `Pro otorgado a ${result.granted ?? ids.length} usuario(s)${
+          result.failed ? ` (${result.failed} fallaron)` : ""
+        }.`,
       );
-      setSuccess("Plan Pro otorgado por 30 días.");
     });
   }
 
@@ -143,9 +220,6 @@ export function AdminGrowthPanel({
     setError(null);
     setSuccess(null);
     const form = new FormData(event.currentTarget);
-    const rewardType = String(
-      form.get("rewardType") ?? "percent_discount",
-    ) as SubscriptionCouponRewardType;
 
     startTransition(async () => {
       const result = await createSubscriptionCoupon({
@@ -154,20 +228,20 @@ export function AdminGrowthPanel({
         rewardType,
         discountPercent:
           rewardType === "percent_discount"
-            ? Number(form.get("discountPercent"))
+            ? Number(form.get("discountValue"))
             : null,
         discountUsd:
           rewardType === "fixed_discount"
-            ? Number(form.get("discountUsd"))
+            ? Number(form.get("discountValue"))
             : null,
         grantProDays:
           rewardType === "grant_pro_days"
-            ? Number(form.get("grantProDays"))
+            ? Number(form.get("discountValue"))
             : null,
         maxRedemptions: form.get("maxRedemptions")
           ? Number(form.get("maxRedemptions"))
           : null,
-        startsAt: String(form.get("startsAt") ?? "") || null,
+        startsAt: null,
         endsAt: String(form.get("endsAt") ?? "") || null,
       });
       if (result.error) {
@@ -179,6 +253,7 @@ export function AdminGrowthPanel({
       }
       setSuccess(`Cupón ${result.coupon?.code} creado.`);
       event.currentTarget.reset();
+      setRewardType("percent_discount");
     });
   }
 
@@ -212,14 +287,22 @@ export function AdminGrowthPanel({
     });
   }
 
+  const discountValueLabel =
+    rewardType === "percent_discount"
+      ? "Porcentaje (%)"
+      : rewardType === "fixed_discount"
+        ? "Monto fijo (USD)"
+        : "Días de Pro";
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap gap-2">
         {(
           [
-            ["usuarios", "Usuarios y segmentación"],
+            ["usuarios", "Usuarios"],
             ["cupones", "Cupones"],
             ["campanas", "Campañas"],
+            ["historial", "Historial"],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -300,9 +383,13 @@ export function AdminGrowthPanel({
             >
               Limpiar selección
             </Button>
-            <span className="text-sm text-zinc-500">
-              {selected.size} seleccionados
-            </span>
+            <Button
+              type="button"
+              disabled={pending || selected.size === 0}
+              onClick={handleGrantSelected}
+            >
+              Otorgar Pro a seleccionados ({selected.size})
+            </Button>
           </div>
 
           <form
@@ -349,7 +436,7 @@ export function AdminGrowthPanel({
                 required
                 rows={3}
                 className="mt-1.5 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-                placeholder="Usa el código NAVIDAD2026 y obtén un mes Pro..."
+                placeholder="Usa el código NAVIDAD2026..."
               />
             </div>
             <Button type="submit" disabled={pending || selected.size === 0}>
@@ -401,9 +488,7 @@ export function AdminGrowthPanel({
                         disabled={pending && grantingId === user.id}
                         onClick={() => handleGrant(user.id)}
                       >
-                        {grantingId === user.id
-                          ? "Otorgando…"
-                          : "Otorgar mes Pro"}
+                        {grantingId === user.id ? "Otorgando…" : "Otorgar Pro"}
                       </Button>
                     </td>
                   </tr>
@@ -430,22 +515,37 @@ export function AdminGrowthPanel({
             onSubmit={handleCreateCoupon}
             className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
           >
-            <p className="text-sm font-semibold">Nuevo cupón</p>
+            <p className="text-sm font-semibold">Crear nuevo cupón</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <Label>Código</Label>
-                <Input name="code" required className="mt-1.5" placeholder="NAVIDAD2026" />
+                <Input
+                  name="code"
+                  required
+                  className="mt-1.5"
+                  placeholder="NAVIDAD2026"
+                />
               </div>
               <div>
                 <Label>Nombre</Label>
-                <Input name="name" required className="mt-1.5" placeholder="Promo Navidad" />
+                <Input
+                  name="name"
+                  required
+                  className="mt-1.5"
+                  placeholder="Promo Navidad"
+                />
               </div>
               <div>
-                <Label>Tipo</Label>
+                <Label>Tipo de descuento</Label>
                 <select
                   name="rewardType"
+                  value={rewardType}
+                  onChange={(e) =>
+                    setRewardType(
+                      e.target.value as SubscriptionCouponRewardType,
+                    )
+                  }
                   className="mt-1.5 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-                  defaultValue="percent_discount"
                 >
                   <option value="percent_discount">Descuento %</option>
                   <option value="fixed_discount">Descuento fijo USD</option>
@@ -453,28 +553,36 @@ export function AdminGrowthPanel({
                 </select>
               </div>
               <div>
-                <Label>% descuento</Label>
-                <Input name="discountPercent" type="number" min={1} max={100} className="mt-1.5" placeholder="20" />
+                <Label>{discountValueLabel}</Label>
+                <Input
+                  name="discountValue"
+                  type="number"
+                  min={rewardType === "fixed_discount" ? 0.01 : 1}
+                  max={rewardType === "percent_discount" ? 100 : undefined}
+                  step={rewardType === "fixed_discount" ? "0.01" : "1"}
+                  required
+                  className="mt-1.5"
+                  placeholder={
+                    rewardType === "percent_discount"
+                      ? "20"
+                      : rewardType === "fixed_discount"
+                        ? "5"
+                        : "30"
+                  }
+                />
               </div>
               <div>
-                <Label>$ descuento</Label>
-                <Input name="discountUsd" type="number" min={0.01} step="0.01" className="mt-1.5" placeholder="5" />
-              </div>
-              <div>
-                <Label>Días Pro</Label>
-                <Input name="grantProDays" type="number" min={1} className="mt-1.5" placeholder="30" />
+                <Label>Fecha de expiración</Label>
+                <Input name="endsAt" type="datetime-local" className="mt-1.5" />
               </div>
               <div>
                 <Label>Máx. usos (opcional)</Label>
-                <Input name="maxRedemptions" type="number" min={1} className="mt-1.5" />
-              </div>
-              <div>
-                <Label>Inicio (opcional)</Label>
-                <Input name="startsAt" type="datetime-local" className="mt-1.5" />
-              </div>
-              <div>
-                <Label>Fin (opcional)</Label>
-                <Input name="endsAt" type="datetime-local" className="mt-1.5" />
+                <Input
+                  name="maxRedemptions"
+                  type="number"
+                  min={1}
+                  className="mt-1.5"
+                />
               </div>
             </div>
             <Button type="submit" disabled={pending}>
@@ -482,54 +590,82 @@ export function AdminGrowthPanel({
             </Button>
           </form>
 
-          <ul className="space-y-2">
-            {coupons.map((coupon) => (
-              <li
-                key={coupon.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950"
-              >
-                <div>
-                  <p className="font-semibold text-zinc-900 dark:text-zinc-50">
-                    {coupon.code}
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    {coupon.name} · {coupon.reward_type} · usos{" "}
-                    {coupon.redemption_count}
-                    {coupon.max_redemptions != null
-                      ? `/${coupon.max_redemptions}`
-                      : ""}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={pending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      const result = await toggleSubscriptionCoupon(
-                        coupon.id,
-                        !coupon.is_active,
-                      );
-                      if (result.error) {
-                        setError(result.error);
-                        return;
-                      }
-                      setCoupons((prev) =>
-                        prev.map((row) =>
-                          row.id === coupon.id
-                            ? { ...row, is_active: !row.is_active }
-                            : row,
-                        ),
-                      );
-                    })
-                  }
-                >
-                  {coupon.is_active ? "Desactivar" : "Activar"}
-                </Button>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-zinc-50 text-xs uppercase text-zinc-500 dark:bg-zinc-900">
+                <tr>
+                  <th className="px-3 py-2">Código</th>
+                  <th className="px-3 py-2">Nombre</th>
+                  <th className="px-3 py-2">Beneficio</th>
+                  <th className="px-3 py-2">Expira</th>
+                  <th className="px-3 py-2">Usos</th>
+                  <th className="px-3 py-2">Estado</th>
+                  <th className="px-3 py-2">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {coupons.map((coupon) => (
+                  <tr
+                    key={coupon.id}
+                    className="border-t border-zinc-100 dark:border-zinc-800"
+                  >
+                    <td className="px-3 py-2 font-semibold">{coupon.code}</td>
+                    <td className="px-3 py-2">{coupon.name}</td>
+                    <td className="px-3 py-2">{formatReward(coupon)}</td>
+                    <td className="px-3 py-2">{formatDate(coupon.ends_at)}</td>
+                    <td className="px-3 py-2">
+                      {coupon.redemption_count}
+                      {coupon.max_redemptions != null
+                        ? ` / ${coupon.max_redemptions}`
+                        : ""}
+                    </td>
+                    <td className="px-3 py-2">
+                      {coupon.is_active ? "Activo" : "Inactivo"}
+                    </td>
+                    <td className="px-3 py-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={pending}
+                        onClick={() =>
+                          startTransition(async () => {
+                            const result = await toggleSubscriptionCoupon(
+                              coupon.id,
+                              !coupon.is_active,
+                            );
+                            if (result.error) {
+                              setError(result.error);
+                              return;
+                            }
+                            setCoupons((prev) =>
+                              prev.map((row) =>
+                                row.id === coupon.id
+                                  ? { ...row, is_active: !row.is_active }
+                                  : row,
+                              ),
+                            );
+                          })
+                        }
+                      >
+                        {coupon.is_active ? "Desactivar" : "Activar"}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {coupons.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-3 py-8 text-center text-zinc-500"
+                    >
+                      Aún no hay cupones. Crea el primero arriba.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : null}
 
@@ -543,29 +679,52 @@ export function AdminGrowthPanel({
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <Label>Nombre</Label>
-                <Input name="name" required className="mt-1.5" placeholder="Oferta de Julio" />
+                <Input
+                  name="name"
+                  required
+                  className="mt-1.5"
+                  placeholder="Oferta de Julio"
+                />
               </div>
               <div>
                 <Label>% descuento</Label>
-                <Input name="discountPercent" type="number" min={1} max={100} className="mt-1.5" />
+                <Input
+                  name="discountPercent"
+                  type="number"
+                  min={1}
+                  max={100}
+                  className="mt-1.5"
+                />
               </div>
               <div>
                 <Label>$ descuento</Label>
-                <Input name="discountUsd" type="number" min={0.01} step="0.01" className="mt-1.5" />
+                <Input
+                  name="discountUsd"
+                  type="number"
+                  min={0.01}
+                  step="0.01"
+                  className="mt-1.5"
+                />
               </div>
               <div>
                 <Label>Inicio</Label>
-                <Input name="startsAt" type="datetime-local" required className="mt-1.5" />
+                <Input
+                  name="startsAt"
+                  type="datetime-local"
+                  required
+                  className="mt-1.5"
+                />
               </div>
               <div>
                 <Label>Fin</Label>
-                <Input name="endsAt" type="datetime-local" required className="mt-1.5" />
+                <Input
+                  name="endsAt"
+                  type="datetime-local"
+                  required
+                  className="mt-1.5"
+                />
               </div>
             </div>
-            <p className="text-xs text-zinc-500">
-              Mientras esté vigente, el descuento se aplica solo en el checkout
-              (sin código).
-            </p>
             <Button type="submit" disabled={pending}>
               Crear campaña
             </Button>
@@ -588,8 +747,8 @@ export function AdminGrowthPanel({
                     {campaign.discount_usd != null
                       ? ` -$${campaign.discount_usd}`
                       : ""}{" "}
-                    · {new Date(campaign.starts_at).toLocaleString("es-VE")} →{" "}
-                    {new Date(campaign.ends_at).toLocaleString("es-VE")}
+                    · {formatDate(campaign.starts_at)} →{" "}
+                    {formatDate(campaign.ends_at)}
                   </p>
                 </div>
                 <Button
@@ -622,6 +781,54 @@ export function AdminGrowthPanel({
               </li>
             ))}
           </ul>
+        </div>
+      ) : null}
+
+      {subTab === "historial" ? (
+        <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-zinc-50 text-xs uppercase text-zinc-500 dark:bg-zinc-900">
+              <tr>
+                <th className="px-3 py-2">Cuándo</th>
+                <th className="px-3 py-2">Quién</th>
+                <th className="px-3 py-2">Acción</th>
+                <th className="px-3 py-2">Detalle</th>
+                <th className="px-3 py-2">Usuario afectado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {auditLog.map((entry) => (
+                <tr
+                  key={entry.id}
+                  className="border-t border-zinc-100 dark:border-zinc-800"
+                >
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    {formatDate(entry.createdAt)}
+                  </td>
+                  <td className="px-3 py-2">
+                    {entry.actorEmail ?? entry.actorId}
+                  </td>
+                  <td className="px-3 py-2">
+                    {ACTION_LABELS[entry.action] ?? entry.action}
+                  </td>
+                  <td className="px-3 py-2">{entry.summary}</td>
+                  <td className="px-3 py-2">
+                    {entry.targetEmail ?? entry.targetUserId ?? "—"}
+                  </td>
+                </tr>
+              ))}
+              {auditLog.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-3 py-8 text-center text-zinc-500"
+                  >
+                    Aún no hay acciones registradas en el historial.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
         </div>
       ) : null}
     </div>

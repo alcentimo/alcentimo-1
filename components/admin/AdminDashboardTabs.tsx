@@ -11,6 +11,7 @@ import { AdminGrowthPanel } from "@/components/admin/AdminGrowthPanel";
 import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
 import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import type { AdminUserRow } from "@/lib/admin/get-admin-users";
+import type { GrowthAuditEntry } from "@/lib/admin/growth-audit";
 import type {
   SupportMessage,
   SubscriptionCampaign,
@@ -87,6 +88,7 @@ interface AdminDashboardTabsProps {
   growthUsers: AdminUserRow[];
   growthCoupons: SubscriptionCoupon[];
   growthCampaigns: SubscriptionCampaign[];
+  growthAuditLog: GrowthAuditEntry[];
   growthPlanFilter?: "FREE" | "PRO" | "BUSINESS" | "all";
   growthMinProducts?: number;
   paymentsError?: string | null;
@@ -105,6 +107,7 @@ export function AdminDashboardTabs({
   growthUsers,
   growthCoupons,
   growthCampaigns,
+  growthAuditLog,
   growthPlanFilter = "all",
   growthMinProducts,
   paymentsError = null,
@@ -236,6 +239,7 @@ export function AdminDashboardTabs({
             initialUsers={growthUsers}
             initialCoupons={growthCoupons}
             initialCampaigns={growthCampaigns}
+            initialAuditLog={growthAuditLog}
             initialPlanFilter={growthPlanFilter}
             initialMinProducts={growthMinProducts}
           />

@@ -277,6 +277,16 @@ export interface AdminPlanGrant {
   created_at: string;
 }
 
+export interface AdminGrowthAuditLog {
+  id: string;
+  actor_id: string;
+  action: string;
+  target_user_id: string | null;
+  summary: string;
+  meta: Record<string, unknown>;
+  created_at: string;
+}
+
 export interface Category {
   id: string;
   store_id: string;
@@ -893,6 +903,16 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<AdminPlanGrant>;
+        Relationships: [];
+      };
+      admin_growth_audit_log: {
+        Row: AdminGrowthAuditLog;
+        Insert: Omit<AdminGrowthAuditLog, "id" | "created_at" | "meta"> & {
+          id?: string;
+          created_at?: string;
+          meta?: Record<string, unknown>;
+        };
+        Update: Partial<AdminGrowthAuditLog>;
         Relationships: [];
       };
       categories: {

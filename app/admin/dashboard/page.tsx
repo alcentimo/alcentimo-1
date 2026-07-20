@@ -9,6 +9,10 @@ import { getManualPayments } from "@/lib/plans/get-manual-payments";
 import { getAdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import { getAdminUsers, type AdminUserRow } from "@/lib/admin/get-admin-users";
+import {
+  getGrowthAuditLog,
+  type GrowthAuditEntry,
+} from "@/lib/admin/growth-audit";
 import { getSupportMessages } from "@/lib/support/get-support-messages";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
@@ -83,6 +87,7 @@ export default async function AdminDashboardPage({
   let growthUsers: AdminUserRow[] = [];
   let growthCoupons: SubscriptionCoupon[] = [];
   let growthCampaigns: SubscriptionCampaign[] = [];
+  let growthAuditLog: GrowthAuditEntry[] = [];
   let paymentsError: string | null = null;
   let messagesError: string | null = null;
   let metricsError: string | null = null;
@@ -116,14 +121,16 @@ export default async function AdminDashboardPage({
   }
 
   try {
-    const [users, coupons, campaigns] = await Promise.all([
+    const [users, coupons, campaigns, auditLog] = await Promise.all([
       getAdminUsers({ limit: 300 }),
       listSubscriptionCoupons(),
       listSubscriptionCampaigns(),
+      getGrowthAuditLog(200),
     ]);
     growthUsers = users;
     growthCoupons = coupons;
     growthCampaigns = campaigns;
+    growthAuditLog = auditLog;
   } catch (error) {
     growthError =
       error instanceof Error
@@ -190,6 +197,7 @@ export default async function AdminDashboardPage({
           growthUsers={growthUsers}
           growthCoupons={growthCoupons}
           growthCampaigns={growthCampaigns}
+          growthAuditLog={growthAuditLog}
           growthPlanFilter={growthPlanFilter}
           growthMinProducts={growthMinProducts}
           paymentsError={paymentsError}

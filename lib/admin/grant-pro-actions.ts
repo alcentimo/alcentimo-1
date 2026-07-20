@@ -5,8 +5,14 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { buildPaidProfilePatch } from "@/lib/plans/plan-activation";
+import { logGrowthAction } from "@/lib/admin/growth-audit";
 
-export type GrantProResult = { error?: string; success?: boolean };
+export type GrantProResult = {
+  error?: string;
+  success?: boolean;
+  granted?: number;
+  failed?: number;
+};
 
 async function requireSupportAdmin() {
   const supabase = await createClient();
@@ -27,29 +33,22 @@ function revalidateGrowthPaths() {
   revalidatePath("/dashboard/upgrade");
 }
 
-/** Otorga PRO activo por N días sin pasar por pagos. */
-export async function grantProMonthToUser(input: {
+async function grantProToSingleUser(input: {
+  adminUserId: string;
   userId: string;
-  days?: number;
+  days: number;
   note?: string;
-}): Promise<GrantProResult> {
-  const auth = await requireSupportAdmin();
-  if (!auth.ok) return { error: auth.error };
-
-  const userId = input.userId.trim();
-  if (!userId) return { error: "Usuario no válido." };
-
-  const days = Math.min(Math.max(input.days ?? 30, 1), 365);
+}): Promise<{ error?: string }> {
   const startedAt = new Date();
   const endsAt = new Date(startedAt.getTime());
-  endsAt.setUTCDate(endsAt.getUTCDate() + days);
+  endsAt.setUTCDate(endsAt.getUTCDate() + input.days);
 
   const admin = createAdminClient();
 
   const { data: profile, error: profileError } = await admin
     .from("profiles")
     .select("id")
-    .eq("id", userId)
+    .eq("id", input.userId)
     .maybeSingle();
 
   if (profileError) return { error: profileError.message };
@@ -64,22 +63,104 @@ export async function grantProMonthToUser(input: {
         periodEndsAt: endsAt,
       }),
     )
-    .eq("id", userId);
+    .eq("id", input.userId);
 
   if (updateError) return { error: updateError.message };
 
-  const { error: grantError } = await admin.from("admin_plan_grants").insert({
-    user_id: userId,
-    granted_by: auth.user.id,
-    plan: "PRO",
-    days,
-    note: input.note?.trim() || "Otorgar mes Pro (manual)",
-  });
+  const { data: grant, error: grantError } = await admin
+    .from("admin_plan_grants")
+    .insert({
+      user_id: input.userId,
+      granted_by: input.adminUserId,
+      plan: "PRO",
+      days: input.days,
+      note: input.note?.trim() || "Otorgar Pro (manual)",
+    })
+    .select("id")
+    .single();
 
   if (grantError) return { error: grantError.message };
 
+  await logGrowthAction({
+    actorId: input.adminUserId,
+    action: "grant_pro",
+    targetUserId: input.userId,
+    summary: `Otorgó plan PRO por ${input.days} días`,
+    meta: {
+      plan: "PRO",
+      days: input.days,
+      note: input.note?.trim() || "Otorgar Pro (manual)",
+      grant_id: grant?.id,
+    },
+  });
+
+  return {};
+}
+
+/** Otorga PRO activo por N días sin pasar por pagos. */
+export async function grantProMonthToUser(input: {
+  userId: string;
+  days?: number;
+  note?: string;
+}): Promise<GrantProResult> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const userId = input.userId.trim();
+  if (!userId) return { error: "Usuario no válido." };
+
+  const days = Math.min(Math.max(input.days ?? 30, 1), 365);
+  const result = await grantProToSingleUser({
+    adminUserId: auth.user.id,
+    userId,
+    days,
+    note: input.note,
+  });
+
+  if (result.error) return { error: result.error };
+
   revalidateGrowthPaths();
-  return { success: true };
+  return { success: true, granted: 1 };
+}
+
+/** Otorga Pro a varios usuarios seleccionados. */
+export async function grantProMonthToUsers(input: {
+  userIds: string[];
+  days?: number;
+  note?: string;
+}): Promise<GrantProResult> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const userIds = Array.from(
+    new Set(input.userIds.map((id) => id.trim()).filter(Boolean)),
+  );
+  if (userIds.length === 0) {
+    return { error: "Selecciona al menos un usuario." };
+  }
+
+  const days = Math.min(Math.max(input.days ?? 30, 1), 365);
+  let granted = 0;
+  let failed = 0;
+
+  for (const userId of userIds) {
+    const result = await grantProToSingleUser({
+      adminUserId: auth.user.id,
+      userId,
+      days,
+      note: input.note ?? `Otorgar Pro masivo (${userIds.length} usuarios)`,
+    });
+    if (result.error) failed += 1;
+    else granted += 1;
+  }
+
+  revalidateGrowthPaths();
+
+  if (granted === 0) {
+    return { error: "No se pudo otorgar Pro a ningún usuario seleccionado." };
+  }
+
+  return { success: true, granted, failed };
 }
 
 export async function sendPromoOffersToUsers(input: {
@@ -91,7 +172,9 @@ export async function sendPromoOffersToUsers(input: {
   const auth = await requireSupportAdmin();
   if (!auth.ok) return { error: auth.error };
 
-  const userIds = Array.from(new Set(input.userIds.map((id) => id.trim()).filter(Boolean)));
+  const userIds = Array.from(
+    new Set(input.userIds.map((id) => id.trim()).filter(Boolean)),
+  );
   if (userIds.length === 0) {
     return { error: "Selecciona al menos un usuario." };
   }
@@ -114,6 +197,17 @@ export async function sendPromoOffersToUsers(input: {
 
   const { error } = await admin.from("user_promo_offers").insert(rows);
   if (error) return { error: error.message };
+
+  await logGrowthAction({
+    actorId: auth.user.id,
+    action: "send_promo",
+    summary: `Envió promoción «${title}» a ${rows.length} usuarios`,
+    meta: {
+      title,
+      user_count: rows.length,
+      coupon_id: input.couponId || null,
+    },
+  });
 
   revalidateGrowthPaths();
   return { success: true, sent: rows.length };
