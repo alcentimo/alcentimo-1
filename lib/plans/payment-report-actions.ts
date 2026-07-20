@@ -5,11 +5,14 @@ import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import type { PaymentReportPlanId } from "@/lib/database.types";
 import {
   getTierChargeUsd,
-  PLAN_PRICING_TIERS,
   type BillingPeriod,
 } from "@/src/config/plan-pricing-ui";
 import { isVenezuelaBank } from "@/src/config/venezuela-banks";
 import type { PlanId } from "@/src/config/plans";
+import {
+  buildPlanPricingTiers,
+} from "@/lib/plans/plan-settings";
+import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 
 export type PaymentReportActionResult = {
   error?: string;
@@ -55,7 +58,8 @@ export async function submitPaymentReport(input: {
     return { error: "Selecciona el banco de origen." };
   }
 
-  const tier = PLAN_PRICING_TIERS.find((item) => item.planId === planId);
+  const tiers = buildPlanPricingTiers(await fetchPlanSettings());
+  const tier = tiers.find((item) => item.planId === planId);
   if (!tier || tier.monthlyUsd <= 0) {
     return { error: "No se pudo calcular el monto del plan." };
   }

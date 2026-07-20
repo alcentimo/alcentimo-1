@@ -194,6 +194,18 @@ export interface PaymentMethod {
   updated_by: string | null;
 }
 
+/** Precios y límites de planes (editables desde el admin). */
+export interface PlanSetting {
+  plan_key: string;
+  display_name: string;
+  monthly_usd: number;
+  annual_usd: number | null;
+  product_limit: number | null;
+  user_limit: number | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
 export interface Category {
   id: string;
   store_id: string;
@@ -746,6 +758,15 @@ export interface Database {
           updated_by?: string | null;
         };
         Update: Partial<PaymentMethod>;
+        Relationships: [];
+      };
+      plan_settings: {
+        Row: PlanSetting;
+        Insert: Omit<PlanSetting, "updated_at" | "updated_by"> & {
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: Partial<PlanSetting>;
         Relationships: [];
       };
       categories: {

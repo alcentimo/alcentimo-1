@@ -18,6 +18,7 @@ import { formatVes } from "@/lib/format";
 import {
   formatPlanCheckoutSummary,
   getTierChargeUsd,
+  PLAN_PRICING_TIERS,
   type BillingPeriod,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
@@ -26,6 +27,7 @@ import {
   type SubscriptionPagoMovilDetails,
 } from "@/src/config/subscription-pago-movil";
 import { calculateUpgradeProration } from "@/lib/plans/proration";
+import { buildChargeTableFromTiers } from "@/lib/plans/plan-settings";
 import type { PlanId } from "@/src/config/plans";
 
 const MIN_SUBMIT_DURATION_MS = 5000;
@@ -42,6 +44,7 @@ interface PlanCheckoutDialogProps {
   subscriptionPeriodEndsAt?: string | null;
   currentBillingPeriod?: BillingPeriod | null;
   pagoMovil?: SubscriptionPagoMovilDetails;
+  pricingTiers?: PlanPricingTier[];
 }
 
 export function PlanCheckoutDialog({
@@ -54,6 +57,7 @@ export function PlanCheckoutDialog({
   subscriptionPeriodEndsAt = null,
   currentBillingPeriod = "monthly",
   pagoMovil: pagoMovilProp,
+  pricingTiers = PLAN_PRICING_TIERS,
 }: PlanCheckoutDialogProps) {
   const [step, setStep] = useState<CheckoutStep>("checkout");
   const [referenceNumber, setReferenceNumber] = useState("");
@@ -156,6 +160,7 @@ export function PlanCheckoutDialog({
     periodEndsAt: subscriptionPeriodEndsAt,
     fromBillingPeriod: currentBillingPeriod ?? "monthly",
     toBillingPeriod: billing,
+    charges: buildChargeTableFromTiers(pricingTiers),
   });
   const displayChargeUsd = proration.isUpgradeWithCredit
     ? proration.amountDueUsd

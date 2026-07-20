@@ -14,6 +14,8 @@ import { PermanentRejectionNotice } from "@/components/dashboard/plans/Permanent
 import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
+import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
+import { buildPlanPricingTiers } from "@/lib/plans/plan-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -34,14 +36,17 @@ export default async function PlanesPage() {
     paymentReview,
     permanentRejection,
     pagoMovil,
+    planSettings,
   ] = await Promise.all([
       store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
       getCurrentExchangeRate(),
       getUserPaymentReview(authUser.id),
       getLatestPermanentRejection(authUser.id),
       fetchSubscriptionPagoMovilDetails(),
+      fetchPlanSettings(),
     ]);
   const exchangeRate = exchangeRateRow?.rate ?? null;
+  const pricingTiers = buildPlanPricingTiers(planSettings);
 
   return (
     <PageContainer as="div" className="mx-auto max-w-6xl py-6 sm:py-8">
@@ -94,6 +99,7 @@ export default async function PlanesPage() {
           authUser.profile?.billing_period === "annual" ? "annual" : "monthly"
         }
         pagoMovil={pagoMovil}
+        pricingTiers={pricingTiers}
       />
     </PageContainer>
   );

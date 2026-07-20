@@ -21,6 +21,10 @@ import {
   getUserPaymentReview,
   isReferencePermanentlyRejected,
 } from "@/lib/plans/get-user-payment-review";
+import {
+  buildChargeTableFromSettings,
+} from "@/lib/plans/plan-settings";
+import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 import type { PlanId } from "@/src/config/plans";
 
 export type ManualPaymentActionResult = {
@@ -132,6 +136,7 @@ export async function submitManualPayment(
     periodEndsAt: period.periodEndsAt,
     fromBillingPeriod: period.billingPeriod,
     toBillingPeriod: billingPeriod,
+    charges: buildChargeTableFromSettings(await fetchPlanSettings()),
   });
 
   const { data: payment, error: insertError } = await admin

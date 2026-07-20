@@ -16,6 +16,10 @@ import {
   isBillingPeriod,
   type BillingPeriod,
 } from "@/lib/plans/proration";
+import {
+  buildChargeTableFromSettings,
+} from "@/lib/plans/plan-settings";
+import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 
 export type ManualPaymentAdminActionResult = {
   error?: string;
@@ -177,6 +181,7 @@ export async function verifyManualPayment(
     fromBillingPeriod: fromBilling,
     toBillingPeriod: billingPeriod,
     now,
+    charges: buildChargeTableFromSettings(await fetchPlanSettings()),
   });
 
   const { error: paymentError } = await admin

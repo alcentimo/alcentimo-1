@@ -148,6 +148,11 @@ export function formatProTrialEndsAt(endsAt: string | null): string {
   );
 }
 
-export function getProTrialLimitLabel(): string {
-  return `${getPlanById("starter").productLimit} productos`;
+export function getProTrialLimitLabel(productLimit?: number | null): string {
+  const limit =
+    productLimit === undefined
+      ? getPlanById("starter").productLimit
+      : productLimit;
+  if (limit == null) return "productos ilimitados";
+  return `${limit} productos`;
 }

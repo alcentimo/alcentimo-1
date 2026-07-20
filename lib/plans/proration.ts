@@ -5,8 +5,13 @@ import {
   type BillingPeriod,
 } from "@/src/config/plan-pricing-ui";
 import type { PlanId } from "@/src/config/plans";
+import {
+  getChargeUsdFromTable,
+  type PlanChargeTable,
+} from "@/lib/plans/plan-settings";
 
 export type { BillingPeriod };
+export type { PlanChargeTable };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -53,7 +58,11 @@ function dbPlanToPricingPlanId(plan: ProfilePlanDb): PlanId | null {
 export function getDbPlanChargeUsd(
   plan: ProfilePlanDb,
   billing: BillingPeriod,
+  charges?: PlanChargeTable,
 ): number {
+  if (charges) {
+    return getChargeUsdFromTable(plan, billing, charges);
+  }
   const planId = dbPlanToPricingPlanId(plan);
   if (!planId) return 0;
   const tier = PLAN_PRICING_TIERS.find((entry) => entry.planId === planId);
@@ -98,6 +107,8 @@ export function calculateUpgradeProration(input: {
   /** Ciclo que se está comprando. */
   toBillingPeriod: BillingPeriod;
   now?: Date;
+  /** Precios desde plan_settings; si falta, usa PLAN_PRICING_TIERS. */
+  charges?: PlanChargeTable;
 }): UpgradeProrationResult {
   const fromPlan = normalizePlan(input.fromPlan);
   const toPlan = normalizePlan(input.toPlan);
@@ -105,9 +116,13 @@ export function calculateUpgradeProration(input: {
   const toBilling = input.toBillingPeriod;
   const now = input.now ?? new Date();
 
-  const listPriceUsd = getDbPlanChargeUsd(toPlan, toBilling);
+  const listPriceUsd = getDbPlanChargeUsd(toPlan, toBilling, input.charges);
   const periodDays = BILLING_PERIOD_DAYS[fromBilling];
-  const fromPlanChargeUsd = getDbPlanChargeUsd(fromPlan, fromBilling);
+  const fromPlanChargeUsd = getDbPlanChargeUsd(
+    fromPlan,
+    fromBilling,
+    input.charges,
+  );
 
   const planRank: Record<ProfilePlanDb, number> = {
     FREE: 0,

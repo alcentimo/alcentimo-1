@@ -29,6 +29,7 @@ interface PlansPanelProps {
   subscriptionPeriodEndsAt?: string | null;
   currentBillingPeriod?: BillingPeriod | null;
   pagoMovil?: SubscriptionPagoMovilDetails;
+  pricingTiers?: PlanPricingTier[];
 }
 
 function isCurrentTier(tierPlanId: PlanId, currentPlanId: PlanId): boolean {
@@ -115,12 +116,16 @@ export function PlansPanel({
   subscriptionPeriodEndsAt = null,
   currentBillingPeriod = "monthly",
   pagoMovil,
+  pricingTiers = PLAN_PRICING_TIERS,
 }: PlansPanelProps) {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutTier, setCheckoutTier] = useState<PlanPricingTier | null>(null);
 
-  const recommendedSavings = getRecommendedAnnualSavingsLabel();
+  const recommendedSavings = (() => {
+    const recommended = pricingTiers.find((tier) => tier.recommended);
+    return recommended ? formatAnnualSavingsLabel(recommended) : getRecommendedAnnualSavingsLabel();
+  })();
 
   function openCheckout(tier: PlanPricingTier) {
     setCheckoutTier(tier);
@@ -180,7 +185,7 @@ export function PlansPanel({
         </div>
 
         <div className="mt-8 grid grid-cols-1 items-stretch gap-5 md:grid-cols-3 md:items-end md:gap-4 lg:gap-6">
-          {PLAN_PRICING_TIERS.map((tier) => (
+          {pricingTiers.map((tier) => (
             <PricingCard
               key={tier.planId}
               tier={tier}
@@ -203,6 +208,7 @@ export function PlansPanel({
         subscriptionPeriodEndsAt={subscriptionPeriodEndsAt}
         currentBillingPeriod={currentBillingPeriod}
         pagoMovil={pagoMovil}
+        pricingTiers={pricingTiers}
       />
     </div>
   );

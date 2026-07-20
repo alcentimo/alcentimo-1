@@ -6,17 +6,20 @@ import { ManualPaymentsPanel } from "@/components/admin/ManualPaymentsPanel";
 import { SupportMessagesPanel } from "@/components/dashboard/SupportMessagesPanel";
 import { AdminMetricsPanel } from "@/components/admin/AdminMetricsPanel";
 import { PaymentMethodsConfigPanel } from "@/components/admin/PaymentMethodsConfigPanel";
+import { PlanSettingsConfigPanel } from "@/components/admin/PlanSettingsConfigPanel";
 import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
 import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import type { SupportMessage } from "@/lib/database.types";
 import type { SubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
+import type { PlanSettingsMap } from "@/lib/plans/plan-settings";
 import { cn } from "@/lib/cn";
 
 export type AdminDashboardTab =
   | "pagos"
   | "soporte"
   | "metricas"
-  | "configuracion";
+  | "configuracion"
+  | "planes";
 
 const TABS: Array<{
   id: AdminDashboardTab;
@@ -46,12 +49,18 @@ const TABS: Array<{
     label: "Configuración",
     description: "Datos de Pago Móvil que ven los usuarios al pagar.",
   },
+  {
+    id: "planes",
+    label: "Configuración de Planes",
+    description: "Precios mensuales/anuales y límites de productos por plan.",
+  },
 ];
 
 function resolveTab(value: string | null): AdminDashboardTab {
   if (value === "soporte") return "soporte";
   if (value === "metricas") return "metricas";
   if (value === "configuracion") return "configuracion";
+  if (value === "planes") return "planes";
   return "pagos";
 }
 
@@ -60,6 +69,7 @@ interface AdminDashboardTabsProps {
   messages: SupportMessage[];
   metrics: AdminPlanMetrics | null;
   pagoMovil: SubscriptionPagoMovilDetails;
+  planSettings: PlanSettingsMap;
   paymentsError?: string | null;
   messagesError?: string | null;
   metricsError?: string | null;
@@ -71,6 +81,7 @@ export function AdminDashboardTabs({
   messages,
   metrics,
   pagoMovil,
+  planSettings,
   paymentsError = null,
   messagesError = null,
   metricsError = null,
@@ -183,6 +194,10 @@ export function AdminDashboardTabs({
 
       {activeTab === "configuracion" ? (
         <PaymentMethodsConfigPanel initialDetails={pagoMovil} />
+      ) : null}
+
+      {activeTab === "planes" ? (
+        <PlanSettingsConfigPanel initialSettings={planSettings} />
       ) : null}
     </div>
   );

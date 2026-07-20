@@ -141,18 +141,27 @@ export function getRemainingProductSlots(
 export function buildProductLimitCheck(
   currentCount: number,
   planId: PlanId,
+  options?: { productLimit?: number | null },
 ): ProductLimitCheck {
   const plan = getPlanById(planId);
-  const hasReachedLimit = hasReachedProductLimit(currentCount, planId);
+  const productLimit =
+    options && "productLimit" in options
+      ? (options.productLimit ?? null)
+      : plan.productLimit;
+  const hasReachedLimit = isUnlimitedProductLimit(productLimit)
+    ? false
+    : currentCount >= (productLimit as number);
 
   return {
     planId: plan.id,
     planName: plan.name,
     currentCount,
-    productLimit: plan.productLimit,
+    productLimit,
     canCreateMore: !hasReachedLimit,
     hasReachedLimit,
-    remainingSlots: getRemainingProductSlots(currentCount, planId),
+    remainingSlots: isUnlimitedProductLimit(productLimit)
+      ? null
+      : Math.max(0, (productLimit as number) - currentCount),
   };
 }
 
@@ -184,6 +193,8 @@ export function getProductLimitErrorMessage(
     active: boolean;
     consumed?: boolean;
     startedAt?: string | null;
+    /** Límite del plan Pro (prueba); si falta, usa PLANS.starter. */
+    productLimit?: number | null;
   },
 ): string {
   if (check.canCreateMore) return "";
@@ -196,7 +207,13 @@ export function getProductLimitErrorMessage(
     trial.eligible;
 
   if (canOfferProTrial) {
-    return "¡Has alcanzado tu límite! Activa una prueba gratuita de un mes del plan Pro (250 productos)";
+    const trialLimit =
+      trial.productLimit !== undefined
+        ? trial.productLimit
+        : getPlanById("starter").productLimit;
+    const trialLabel =
+      trialLimit == null ? "productos ilimitados" : `${trialLimit} productos`;
+    return `¡Has alcanzado tu límite! Activa una prueba gratuita de un mes del plan Pro (${trialLabel})`;
   }
 
   if (isUnlimitedProductLimit(check.productLimit)) {

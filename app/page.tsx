@@ -7,8 +7,13 @@ import { LandingCta } from "@/components/landing/LandingCta";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { LandingPricing } from "@/components/landing/LandingPricing";
+import { fetchPlanPricingTiers } from "@/lib/plans/get-plan-settings";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const pricingTiers = await fetchPlanPricingTiers();
+
   return (
     <>
       <AdminPwaServiceWorkerRegister />
@@ -20,7 +25,7 @@ export default function Home() {
         <Hero />
         <LandingCustomerExperience />
         <LandingBenefits />
-        <LandingPricing />
+        <LandingPricing pricingTiers={pricingTiers} />
         <LandingCta />
       </main>
 

@@ -19,6 +19,10 @@ import {
   getPendingBusinessUpgradePayment,
 } from "@/lib/plans/get-business-upgrade-preview";
 import { isReferencePermanentlyRejected } from "@/lib/plans/get-user-payment-review";
+import {
+  buildChargeTableFromSettings,
+} from "@/lib/plans/plan-settings";
+import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 
 export type BusinessUpgradeActionResult = {
   error?: string;
@@ -107,6 +111,7 @@ export async function submitBusinessUpgradePayment(
     periodEndsAt: period.periodEndsAt,
     fromBillingPeriod: period.billingPeriod,
     toBillingPeriod: billingPeriod,
+    charges: buildChargeTableFromSettings(await fetchPlanSettings()),
   });
 
   const upload = await uploadSubscriptionPaymentProof(

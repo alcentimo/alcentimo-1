@@ -11,6 +11,7 @@ import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import { getSupportMessages } from "@/lib/support/get-support-messages";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
+import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 import type { SupportMessage } from "@/lib/database.types";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ function resolveInitialTab(raw: string | string[] | undefined): AdminDashboardTa
   if (value === "soporte") return "soporte";
   if (value === "metricas") return "metricas";
   if (value === "configuracion") return "configuracion";
+  if (value === "planes") return "planes";
   return "pagos";
 }
 
@@ -79,6 +81,7 @@ export default async function AdminDashboardPage({
   }
 
   const pagoMovil = await fetchSubscriptionPagoMovilDetails();
+  const planSettings = await fetchPlanSettings();
 
   const pendingPayments = payments.filter(
     (item) =>
@@ -133,6 +136,7 @@ export default async function AdminDashboardPage({
           messages={messages}
           metrics={metrics}
           pagoMovil={pagoMovil}
+          planSettings={planSettings}
           paymentsError={paymentsError}
           messagesError={messagesError}
           metricsError={metricsError}

@@ -23,6 +23,8 @@ import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
+import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
+import { buildPlanPricingTiers } from "@/lib/plans/plan-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -78,13 +80,17 @@ export default async function ActivarPage() {
     );
   }
 
-  const [productLimitStatus, exchangeRateRow, permanentRejection, pagoMovil] =
+  const [productLimitStatus, exchangeRateRow, permanentRejection, pagoMovil, planSettings] =
     await Promise.all([
       store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
       getCurrentExchangeRate(),
       getLatestPermanentRejection(authUser.id),
       fetchSubscriptionPagoMovilDetails(),
+      fetchPlanSettings(),
     ]);
+  const pricingTiers = buildPlanPricingTiers(planSettings);
+  const freeProductLimit = planSettings.FREE.productLimit ?? 10;
+  const proProductLimit = planSettings.PRO.productLimit;
 
   const trial = resolveProTrialStatus(authUser.profile);
   const trialEligible = isEligiblePlanForProTrial(authUser.profile);
@@ -95,7 +101,10 @@ export default async function ActivarPage() {
   const forceClaimUnlocked =
     trialEligible &&
     hasUnusedTrial &&
-    (atProductLimit || isProTrialUnlockReady(currentCount));
+    (atProductLimit || isProTrialUnlockReady(currentCount, freeProductLimit));
+
+  const proLimitLabel =
+    proProductLimit == null ? "productos ilimitados" : `${proProductLimit} productos`;
 
   return (
     <main className="page-shell-auth min-h-dvh safe-area-inset">
@@ -122,8 +131,8 @@ export default async function ActivarPage() {
           <p className="page-header-desc">
             {showProTrialSection && !trial.active
               ? atProductLimit || forceClaimUnlocked
-                ? `Has alcanzado el límite de 10 productos. Reclama tu mes de prueba Pro (250 productos) con ALCENTIMO o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
-                : `Completa 10 productos para desbloquear tu mes de prueba Pro (250 productos) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
+                ? `Has alcanzado el límite de ${freeProductLimit} productos. Reclama tu mes de prueba Pro (${proLimitLabel}) con ALCENTIMO o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
+                : `Completa ${freeProductLimit} productos para desbloquear tu mes de prueba Pro (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
               : `Elige el plan que mejor se adapte a tu negocio${store ? ` · ${store.name}` : ""}.`}
           </p>
         </header>
@@ -169,6 +178,7 @@ export default async function ActivarPage() {
             authUser.profile?.billing_period === "annual" ? "annual" : "monthly"
           }
           pagoMovil={pagoMovil}
+          pricingTiers={pricingTiers}
         />
       </PageContainer>
     </main>

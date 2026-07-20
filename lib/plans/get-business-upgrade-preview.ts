@@ -6,6 +6,10 @@ import {
   type UpgradeProrationResult,
 } from "@/lib/plans/proration";
 import { resolveCurrentPeriodEndsAt } from "@/lib/plans/resolve-subscription-period";
+import {
+  buildChargeTableFromSettings,
+} from "@/lib/plans/plan-settings";
+import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 import type { ManualPayment } from "@/lib/database.types";
 
 export interface PendingUpgradePayment {
@@ -85,12 +89,14 @@ export async function getBusinessUpgradePreview(
   const pendingPayment = await getPendingBusinessUpgradePayment(userId);
   const period = await resolveCurrentPeriodEndsAt(userId, profile);
   const fromPlan = period.fromPlan;
+  const settings = await fetchPlanSettings();
   const proration = calculateUpgradeProration({
     fromPlan,
     toPlan: "BUSINESS",
     periodEndsAt: period.periodEndsAt,
     fromBillingPeriod: period.billingPeriod,
     toBillingPeriod: billingPeriod,
+    charges: buildChargeTableFromSettings(settings),
   });
 
   if (normalizeDbPlan(profile?.plan) !== "PRO" && fromPlan !== "PRO") {

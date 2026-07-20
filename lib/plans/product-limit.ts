@@ -15,6 +15,10 @@ import {
   resolveProTrialStatus,
   type ProTrialStatus,
 } from "@/lib/plans/trial";
+import {
+  getProductLimitFromSettings,
+} from "@/lib/plans/plan-settings";
+import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 
 export interface StoreProductLimitContext extends ProductLimitCheck {
   trial: ProTrialStatus;
@@ -150,7 +154,11 @@ export async function getStoreProductLimitContext(
   const trial = await getStoreOwnerTrialStatus(storeId);
   const effectivePlanId = getEffectivePlanIdForLimits(resolvedPlanId, trial);
   const currentCount = await getStoreProductCount(storeId);
-  const check = buildProductLimitCheck(currentCount, effectivePlanId);
+  const settings = await fetchPlanSettings();
+  const productLimit = getProductLimitFromSettings(effectivePlanId, settings);
+  const check = buildProductLimitCheck(currentCount, effectivePlanId, {
+    productLimit,
+  });
 
   return {
     ...check,
@@ -180,6 +188,7 @@ export async function assertCanCreateProduct(
   storeId: string,
 ): Promise<AssertCanCreateProductResult> {
   const context = await getStoreProductLimitContext(storeId);
+  const settings = await fetchPlanSettings();
 
   if (context.canCreateMore) {
     return { ok: true };
@@ -187,7 +196,10 @@ export async function assertCanCreateProduct(
 
   return {
     ok: false,
-    error: getProductLimitErrorMessage(context, context.trial),
+    error: getProductLimitErrorMessage(context, {
+      ...context.trial,
+      productLimit: settings.PRO.productLimit,
+    }),
     code: "PRODUCT_LIMIT",
     trialEligible: context.trial.eligible,
   };
