@@ -52,10 +52,13 @@ export default async function AdminPagosPage() {
         </div>
         <div>
           <p className="section-label">Administración</p>
-          <h1 className="page-header-title">Pagos manuales</h1>
+          <h1 className="page-header-title">Confirmar pagos</h1>
           <p className="page-header-desc">
-            Verifica comprobantes de Pago Móvil. Al verificar, la suscripción Pro
-            pasa a permanente; al rechazar, se revoca el acceso provisional.
+            Lista de tiendas con pago pendiente. Al pulsar{" "}
+            <strong>Confirmar Pago</strong>, el sistema activa automáticamente el
+            plan en <code className="text-xs">profiles</code> del dueño (
+            <code className="text-xs">plan</code> = PRO/Business y{" "}
+            <code className="text-xs">subscription_status</code> = active).
           </p>
         </div>
       </header>

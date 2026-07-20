@@ -12,7 +12,7 @@ import { cn } from "@/lib/cn";
 
 const STATUS_LABELS: Record<ManualPaymentStatus, string> = {
   pending: "Pendiente",
-  verified: "Verificado",
+  verified: "Confirmado",
   rejected: "Rechazado",
 };
 
@@ -37,6 +37,16 @@ function formatPaymentDate(iso: string): string {
   }).format(new Date(iso));
 }
 
+function storeLabel(payment: ManualPaymentWithEmail): string {
+  if (payment.stores.length === 0) return "Sin tienda asociada";
+  if (payment.stores.length === 1) {
+    return `${payment.stores[0].name} (/${payment.stores[0].slug})`;
+  }
+  return payment.stores
+    .map((store) => `${store.name} (/${store.slug})`)
+    .join(" · ");
+}
+
 interface ManualPaymentsPanelProps {
   initialPayments: ManualPaymentWithEmail[];
 }
@@ -47,6 +57,7 @@ export function ManualPaymentsPanel({
   const [payments, setPayments] = useState(initialPayments);
   const [filter, setFilter] = useState<ManualPaymentStatus | "all">("pending");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -68,8 +79,9 @@ export function ManualPaymentsPanel({
     );
   }, [payments]);
 
-  function handleVerify(paymentId: string) {
+  function handleConfirmPayment(paymentId: string) {
     setError(null);
+    setSuccess(null);
     setUpdatingId(paymentId);
     startTransition(async () => {
       const result = await verifyManualPayment(paymentId);
@@ -80,6 +92,10 @@ export function ManualPaymentsPanel({
         return;
       }
 
+      const payment = payments.find((item) => item.id === paymentId);
+      const planName = PLAN_LABELS[payment?.plan_id ?? ""] ?? "pagado";
+      const storeName = payment ? storeLabel(payment) : "la tienda";
+
       setPayments((prev) =>
         prev.map((item) =>
           item.id === paymentId
@@ -87,15 +103,21 @@ export function ManualPaymentsPanel({
                 ...item,
                 status: "verified" as const,
                 verified_at: new Date().toISOString(),
+                owner_plan: item.plan_id === "premium" ? "BUSINESS" : "PRO",
+                owner_subscription_status: "active",
               }
             : item,
         ),
+      );
+      setSuccess(
+        `Pago confirmado: ${storeName} quedó con Plan ${planName} (active).`,
       );
     });
   }
 
   function handleReject(paymentId: string) {
     setError(null);
+    setSuccess(null);
     setUpdatingId(paymentId);
     startTransition(async () => {
       const result = await rejectManualPayment(paymentId);
@@ -153,9 +175,17 @@ export function ManualPaymentsPanel({
         </p>
       ) : null}
 
+      {success ? (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+          {success}
+        </p>
+      ) : null}
+
       {filtered.length === 0 ? (
         <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-          No hay pagos en este filtro.
+          {filter === "pending"
+            ? "No hay tiendas con pago pendiente."
+            : "No hay pagos en este filtro."}
         </p>
       ) : (
         <ul className="space-y-4">
@@ -181,11 +211,24 @@ export function ManualPaymentsPanel({
                         {formatPaymentDate(payment.created_at)}
                       </span>
                     </div>
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                      Plan {PLAN_LABELS[payment.plan_id] ?? payment.plan_id}
+                    <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                      {storeLabel(payment)}
                     </p>
                     <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                      {payment.user_email ?? payment.user_id}
+                      Plan solicitado:{" "}
+                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                        {PLAN_LABELS[payment.plan_id] ?? payment.plan_id}
+                      </span>
+                    </p>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                      Dueño: {payment.user_email ?? payment.owner_id}
+                    </p>
+                    <p className="text-xs font-mono text-zinc-500 dark:text-zinc-400">
+                      owner_id: {payment.owner_id}
+                    </p>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                      Perfil actual: {payment.owner_plan ?? "—"} /{" "}
+                      {payment.owner_subscription_status ?? "—"}
                     </p>
                     <p className="text-sm text-zinc-600 dark:text-zinc-300">
                       Ref:{" "}
@@ -218,10 +261,10 @@ export function ManualPaymentsPanel({
                     <button
                       type="button"
                       disabled={isUpdating}
-                      onClick={() => handleVerify(payment.id)}
+                      onClick={() => handleConfirmPayment(payment.id)}
                       className="btn-brand px-4 py-2 text-sm disabled:opacity-60"
                     >
-                      {isUpdating ? "Procesando…" : "Verificar"}
+                      {isUpdating ? "Activando plan…" : "Confirmar Pago"}
                     </button>
                     <button
                       type="button"

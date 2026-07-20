@@ -55,7 +55,10 @@ function revalidatePlanPaths() {
   revalidatePath("/dashboard/catalogo");
 }
 
-/** Verifica un pago pendiente y convierte la suscripción en permanente. */
+/**
+ * Confirma un pago pendiente: marca el comprobante como verified y activa
+ * el plan pagado (PRO / BUSINESS) en profiles del dueño (owner_id).
+ */
 export async function verifyManualPayment(
   paymentId: string,
 ): Promise<ManualPaymentAdminActionResult> {
@@ -73,6 +76,23 @@ export async function verifyManualPayment(
   const planDb = manualPaymentPlanToDbPlan(payment.plan_id);
   const now = new Date().toISOString();
 
+  // El pagador es el dueño de la(s) tienda(s); activamos su perfil.
+  const ownerId = payment.user_id;
+
+  const { data: ownedStores, error: storesError } = await admin
+    .from("stores")
+    .select("id")
+    .eq("owner_id", ownerId)
+    .limit(1);
+
+  if (storesError) return { error: storesError.message };
+  if (!ownedStores?.length) {
+    return {
+      error:
+        "No se encontró una tienda con este owner_id. No se puede activar el plan.",
+    };
+  }
+
   const { error: paymentError } = await admin
     .from("manual_payments")
     .update({ status: "verified", verified_at: now })
@@ -84,11 +104,12 @@ export async function verifyManualPayment(
   const { error: profileError } = await admin
     .from("profiles")
     .update(buildPaidProfilePatch(planDb, "active"))
-    .eq("id", payment.user_id);
+    .eq("id", ownerId);
 
   if (profileError) return { error: profileError.message };
 
   revalidatePlanPaths();
+  revalidatePath("/dashboard", "layout");
   return { success: true };
 }
 
