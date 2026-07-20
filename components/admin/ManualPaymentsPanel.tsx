@@ -7,6 +7,7 @@ import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
 import {
   permanentlyRejectManualPayment,
   requestPaymentCorrection,
+  revertVerifiedManualPayment,
   verifyManualPayment,
 } from "@/lib/plans/manual-payment-admin-actions";
 import { cn } from "@/lib/cn";
@@ -154,6 +155,44 @@ export function ManualPaymentsPanel({
     });
   }
 
+  function handleRevertConfirmation(paymentId: string) {
+    setError(null);
+    setSuccess(null);
+    setUpdatingId(paymentId);
+    startTransition(async () => {
+      const result = await revertVerifiedManualPayment(paymentId);
+      setUpdatingId(null);
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      const payment = payments.find((item) => item.id === paymentId);
+      const previousPlan = payment?.from_plan ?? "FREE";
+
+      setPayments((prev) =>
+        prev.map((item) =>
+          item.id === paymentId
+            ? {
+                ...item,
+                status: "pending" as const,
+                verified_at: null,
+                permanently_rejected: false,
+                rejected_at: null,
+                owner_plan: previousPlan,
+                owner_subscription_status:
+                  previousPlan === "FREE" ? "none" : "active",
+              }
+            : item,
+        ),
+      );
+      setSuccess(
+        `Confirmación revertida. El pago volvió a Pendiente y el usuario regresó al plan ${previousPlan}.`,
+      );
+    });
+  }
+
   function submitDialog() {
     if (!dialogMode || !dialogPaymentId) return;
 
@@ -272,6 +311,7 @@ export function ManualPaymentsPanel({
             const canRequestCorrection =
               payment.status === "pending" ||
               payment.status === "needs_correction";
+            const canRevertConfirmation = payment.status === "verified";
             const canPermanentlyReject =
               payment.status === "pending" ||
               payment.status === "needs_correction" ||
@@ -360,7 +400,10 @@ export function ManualPaymentsPanel({
                   </div>
                 </div>
 
-                {canConfirm || canRequestCorrection || canPermanentlyReject ? (
+                {canConfirm ||
+                canRequestCorrection ||
+                canRevertConfirmation ||
+                canPermanentlyReject ? (
                   <div className="mt-4 flex flex-wrap gap-2">
                     {canConfirm ? (
                       <button
@@ -370,6 +413,16 @@ export function ManualPaymentsPanel({
                         className="btn-brand px-4 py-2 text-sm disabled:opacity-60"
                       >
                         {isUpdating ? "Activando plan…" : "Confirmar Pago"}
+                      </button>
+                    ) : null}
+                    {canRevertConfirmation ? (
+                      <button
+                        type="button"
+                        disabled={isUpdating}
+                        onClick={() => handleRevertConfirmation(payment.id)}
+                        className="rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        {isUpdating ? "Revirtiendo…" : "Revertir confirmación"}
                       </button>
                     ) : null}
                     {canRequestCorrection ? (

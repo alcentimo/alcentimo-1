@@ -68,18 +68,12 @@ function revalidatePlanPaths() {
   revalidatePath("/dashboard/pago");
 }
 
-async function restorePreviousPlanAfterReject(payment: ManualPayment) {
+/**
+ * Restaura el plan que el usuario tenía antes de este pago
+ * (from_plan + período capturado en el comprobante).
+ */
+async function restorePlanBeforePayment(payment: ManualPayment) {
   const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("subscription_status")
-    .eq("id", payment.user_id)
-    .maybeSingle();
-
-  if (profile?.subscription_status !== "provisional") {
-    return;
-  }
-
   const previousPlan = normalizeDbPlan(payment.from_plan ?? "FREE");
 
   if (previousPlan === "FREE") {
@@ -109,6 +103,22 @@ async function restorePreviousPlanAfterReject(payment: ManualPayment) {
     .eq("id", payment.user_id);
 
   if (error) throw new Error(error.message);
+}
+
+/** Solo revoca si el acceso actual es provisional (pago aún no confirmado). */
+async function restorePreviousPlanAfterReject(payment: ManualPayment) {
+  const admin = createAdminClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("subscription_status")
+    .eq("id", payment.user_id)
+    .maybeSingle();
+
+  if (profile?.subscription_status !== "provisional") {
+    return;
+  }
+
+  await restorePlanBeforePayment(payment);
 }
 
 /**
@@ -310,40 +320,63 @@ export async function permanentlyRejectManualPayment(
 
   try {
     if (wasVerified) {
-      // Si estaba confirmado, revertimos el plan al anterior.
-      const previousPlan = normalizeDbPlan(payment.from_plan ?? "FREE");
-      if (previousPlan === "FREE") {
-        const { error } = await admin
-          .from("profiles")
-          .update(buildRevokedProfilePatch())
-          .eq("id", payment.user_id);
-        if (error) throw new Error(error.message);
-      } else {
-        const previousBilling: BillingPeriod =
-          payment.from_billing_period &&
-          isBillingPeriod(payment.from_billing_period)
-            ? payment.from_billing_period
-            : "monthly";
-        const { error } = await admin
-          .from("profiles")
-          .update({
-            plan: previousPlan,
-            subscription_status: "active",
-            billing_period: previousBilling,
-            subscription_period_ends_at:
-              payment.credited_period_ends_at ?? null,
-            pro_trial_started_at: null,
-            pro_trial_ends_at: null,
-          })
-          .eq("id", payment.user_id);
-        if (error) throw new Error(error.message);
-      }
+      await restorePlanBeforePayment(payment);
     } else {
       await restorePreviousPlanAfterReject(payment);
     }
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "No se pudo revertir el plan.",
+    };
+  }
+
+  revalidatePlanPaths();
+  revalidatePath("/dashboard", "layout");
+  return { success: true };
+}
+
+/**
+ * Revierte una confirmación: el pago vuelve a Pendiente y el usuario
+ * recupera el plan anterior (from_plan) para corregir errores humanos.
+ */
+export async function revertVerifiedManualPayment(
+  paymentId: string,
+): Promise<ManualPaymentAdminActionResult> {
+  const gate = await requireSupportAdmin();
+  if (!gate.ok) return { error: gate.error };
+
+  const { payment, error: loadError } = await getPaymentById(paymentId);
+  if (loadError || !payment) return { error: loadError ?? "Pago no encontrado." };
+
+  if (payment.status !== "verified") {
+    return { error: "Solo se puede revertir un pago confirmado." };
+  }
+
+  const admin = createAdminClient();
+
+  const { error: paymentError } = await admin
+    .from("manual_payments")
+    .update({
+      status: "pending",
+      verified_at: null,
+      permanently_rejected: false,
+      rejected_at: null,
+      correction_requested_at: null,
+      // Conservamos admin_note si existía; no es crítico.
+    })
+    .eq("id", paymentId)
+    .eq("status", "verified");
+
+  if (paymentError) return { error: paymentError.message };
+
+  try {
+    await restorePlanBeforePayment(payment);
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "No se pudo restaurar el plan anterior del usuario.",
     };
   }
 
