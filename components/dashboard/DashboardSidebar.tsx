@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LifeBuoy, LogOut, PanelLeftClose, PanelLeftOpen, Rocket } from "lucide-react";
+import {
+  CreditCard,
+  LifeBuoy,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Rocket,
+} from "lucide-react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { SupportModal } from "@/components/dashboard/SupportModal";
 import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
@@ -231,14 +238,38 @@ export function DashboardSidebar({
             {!collapsed && <span>Soporte</span>}
           </button>
 
-          {isSupportAdmin && !collapsed ? (
-            <Link
-              href="/admin/soporte"
-              className="block px-1 pt-1 text-center text-[11px] text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
-              onClick={onCloseMobile}
-            >
-              Bandeja de soporte
-            </Link>
+          {/* Solo admins de soporte (allowlist); equivalente a role admin en esta app. */}
+          {isSupportAdmin ? (
+            <>
+              <Link
+                href="/admin/pagos"
+                className={navLinkClass(
+                  pathname.startsWith("/admin/pagos"),
+                  collapsed,
+                )}
+                onClick={onCloseMobile}
+                title={collapsed ? "Gestionar Pagos" : "Confirmar pagos pendientes"}
+                aria-current={
+                  pathname.startsWith("/admin/pagos") ? "page" : undefined
+                }
+              >
+                <CreditCard
+                  className="h-4 w-4 shrink-0"
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
+                {!collapsed && <span>Gestionar Pagos</span>}
+              </Link>
+              {!collapsed ? (
+                <Link
+                  href="/admin/soporte"
+                  className="block px-1 pt-1 text-center text-[11px] text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+                  onClick={onCloseMobile}
+                >
+                  Bandeja de soporte
+                </Link>
+              ) : null}
+            </>
           ) : null}
         </div>
       </div>
