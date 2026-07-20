@@ -45,11 +45,6 @@ export function CatalogSkeleton({ count = 8 }: { count?: number }) {
       </header>
 
       <PageContainer className="store-catalog-main">
-        <div className="store-toolbar">
-          <SkeletonBlock className="h-12 w-full rounded-xl" />
-          <SkeletonBlock className="h-12 w-full rounded-xl lg:w-56" />
-        </div>
-
         <div className="store-catalog-layout">
           <div className="store-product-grid">
             {Array.from({ length: count }).map((_, i) => (

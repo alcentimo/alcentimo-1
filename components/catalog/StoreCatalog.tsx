@@ -7,7 +7,6 @@ import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogCurrencySettings } from "@/lib/store-settings/types";
 import { formatExchangeRate } from "@/lib/format";
 import { StoreHeader } from "@/components/catalog/StoreHeader";
-import { CatalogToolbar } from "@/components/catalog/CatalogToolbar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PurchaseInfoPanel } from "@/components/catalog/PurchaseInfoPanel";
 import { CartDrawer } from "@/components/catalog/CartDrawer";
@@ -31,20 +30,6 @@ interface StoreCatalogProps {
   catalogCurrency: CatalogCurrencySettings;
 }
 
-function EmptyResults({ onReset }: { onReset: () => void }) {
-  return (
-    <div className="store-empty-state">
-      <p className="text-base font-medium text-zinc-800">No hay productos que coincidan</p>
-      <p className="mt-2 max-w-sm text-sm leading-relaxed text-zinc-500">
-        Prueba con otro término de búsqueda.
-      </p>
-      <button type="button" onClick={onReset} className="store-reset-btn">
-        Limpiar búsqueda
-      </button>
-    </div>
-  );
-}
-
 export function StoreCatalog({
   store,
   products,
@@ -55,7 +40,6 @@ export function StoreCatalog({
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
   const [catalogProducts, setCatalogProducts] = useState(products);
-  const [query, setQuery] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
@@ -70,25 +54,6 @@ export function StoreCatalog({
     }
     return map;
   }, [catalogProducts]);
-
-  const filteredProducts = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    if (!normalizedQuery) return catalogProducts;
-
-    return catalogProducts.filter((product) => {
-      const haystack = [
-        product.product_name,
-        product.short_description ?? "",
-        product.category_name ?? "",
-        product.brand ?? "",
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(normalizedQuery);
-    });
-  }, [catalogProducts, query]);
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -135,18 +100,6 @@ export function StoreCatalog({
     },
     [liveExchangeRate, productById],
   );
-
-  function getCartQuantity(productId: string, variantId?: string) {
-    if (variantId) {
-      return (
-        cartItems.find(
-          (item) =>
-            item.product.product_id === productId && item.variantId === variantId,
-        )?.quantity ?? 0
-      );
-    }
-    return cartQuantities.get(productId) ?? 0;
-  }
 
   function removeFromCart(productId: string, variantId: string) {
     const key = cartItemKey(productId, variantId);
@@ -212,10 +165,6 @@ export function StoreCatalog({
     setCartItems([]);
   }
 
-  function resetSearch() {
-    setQuery("");
-  }
-
   return (
     <div className="store-catalog-shell">
       <StoreHeader
@@ -236,12 +185,6 @@ export function StoreCatalog({
           </p>
         )}
 
-        <CatalogToolbar
-          query={query}
-          onQueryChange={setQuery}
-          resultCount={filteredProducts.length}
-        />
-
         <div className="store-catalog-layout">
           <main className="store-catalog-products">
             {catalogProducts.length === 0 ? (
@@ -253,11 +196,9 @@ export function StoreCatalog({
                   Vuelve pronto para ver novedades.
                 </p>
               </div>
-            ) : filteredProducts.length === 0 ? (
-              <EmptyResults onReset={resetSearch} />
             ) : (
               <div className="store-product-grid">
-                {filteredProducts.map((product) => (
+                {catalogProducts.map((product) => (
                   <ProductCard
                     key={product.product_id}
                     product={product}

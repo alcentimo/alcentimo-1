@@ -13,7 +13,6 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
-  Search,
   Table,
   Trash2,
   Upload,
@@ -467,8 +466,6 @@ export function InventoryPanel({
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
   const [trialDialogOpen, setTrialDialogOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [importSheetOpen, setImportSheetOpen] = useState(false);
   const [sheetMode, setSheetMode] = useState<"create" | "edit">("create");
@@ -492,28 +489,10 @@ export function InventoryPanel({
     null,
   );
 
-  const categoriesInList = useMemo(() => {
-    const names = new Set<string>();
-    for (const product of products) {
-      if (product.category_name) names.add(product.category_name);
-    }
-    return Array.from(names).sort((a, b) => a.localeCompare(b, "es"));
-  }, [products]);
-
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return products.filter((product) => {
-      const matchesSearch =
-        !q ||
-        product.product_name.toLowerCase().includes(q) ||
-        (product.category_name?.toLowerCase().includes(q) ?? false);
-      const matchesCategory =
-        category === "all" || product.category_name === category;
-      const matchesStock =
-        stockFilter === "all" || matchesCriticalStockFilter(product);
-      return matchesSearch && matchesCategory && matchesStock;
-    });
-  }, [products, search, category, stockFilter]);
+    if (stockFilter === "all") return products;
+    return products.filter(matchesCriticalStockFilter);
+  }, [products, stockFilter]);
 
   const criticalStockCount = useMemo(
     () => products.filter(matchesCriticalStockFilter).length,
@@ -715,7 +694,7 @@ export function InventoryPanel({
         <p className="py-10 text-center text-xs text-zinc-500">
           {stockFilter === "critical"
             ? "No hay productos con stock crítico en este momento."
-            : "No hay productos que coincidan con tu búsqueda."}
+            : "No hay productos en el catálogo."}
         </p>
       );
     }
@@ -786,47 +765,17 @@ export function InventoryPanel({
       )}
 
       <div className="inventory-catalog-header">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            onClick={openCreate}
-            className="btn-brand inventory-primary-cta inventory-primary-cta-toolbar"
-          >
-            <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
-            Nuevo producto
-          </Button>
-          <CatalogPreviewTrigger onClick={() => setPreviewOpen(true)} />
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inventory-toolbar min-w-0 flex-1">
-            <div className="relative min-w-0 flex-1">
-              <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400"
-                aria-hidden="true"
-              />
-              <input
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar producto…"
-                className="inventory-search-input inventory-search-input-dense"
-                aria-label="Buscar productos"
-              />
-            </div>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="inventory-filter-select inventory-filter-select-dense"
-              aria-label="Filtrar por categoría"
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              onClick={openCreate}
+              className="btn-brand inventory-primary-cta inventory-primary-cta-toolbar"
             >
-              <option value="all">Todas las categorías</option>
-              {categoriesInList.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
+              <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
+              Nuevo producto
+            </Button>
+            <CatalogPreviewTrigger onClick={() => setPreviewOpen(true)} />
           </div>
 
           <DropdownMenu
@@ -1000,7 +949,7 @@ export function InventoryPanel({
                     >
                       {stockFilter === "critical"
                         ? "No hay productos con stock crítico en este momento."
-                        : "No hay productos que coincidan con tu búsqueda."}
+                        : "No hay productos en el catálogo."}
                     </td>
                   </tr>
                 ) : (

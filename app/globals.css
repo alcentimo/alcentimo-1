@@ -443,22 +443,6 @@ body {
   @apply mb-8 inline-flex rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600;
 }
 
-.store-toolbar {
-  @apply mb-8 flex flex-col gap-4 lg:mb-10 lg:flex-row lg:items-center;
-}
-
-.store-search-wrap {
-  @apply relative min-w-0 flex-1;
-}
-
-.store-search-input {
-  @apply w-full rounded-xl border border-zinc-200 bg-white py-3.5 pl-11 pr-4 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200;
-}
-
-.store-result-count {
-  @apply shrink-0 text-sm text-zinc-500 lg:ml-auto;
-}
-
 .store-catalog-layout {
   @apply grid grid-cols-1 gap-10 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-12;
 }
@@ -1207,7 +1191,7 @@ body {
 }
 
 .inventory-primary-cta-toolbar {
-  @apply sm:ml-auto;
+  @apply sm:ml-0;
 }
 
 .inventory-toolbar {
@@ -1376,16 +1360,8 @@ body {
   @apply mt-0 w-full min-w-0 rounded-xl border border-zinc-200 bg-white py-3 pl-10 pr-4 text-sm text-zinc-900 shadow-sm outline-none transition-all placeholder:text-zinc-400 hover:border-zinc-300 hover:shadow-md focus:border-emerald-600 focus:shadow-md focus:ring-2 focus:ring-emerald-600/15 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:hover:border-zinc-600 dark:focus:border-emerald-400 dark:focus:ring-emerald-400/15;
 }
 
-.inventory-search-input-dense {
-  @apply rounded-lg py-2 pl-9 pr-3 text-xs shadow-none hover:shadow-none focus:shadow-none;
-}
-
 .inventory-filter-select {
   @apply mt-0 w-full min-w-0 rounded-xl border border-zinc-200 bg-white px-3.5 py-3 text-sm text-zinc-900 shadow-sm outline-none transition-all hover:border-zinc-300 hover:shadow-md focus:border-emerald-600 focus:shadow-md focus:ring-2 focus:ring-emerald-600/15 sm:w-56 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:hover:border-zinc-600 dark:focus:border-emerald-400 dark:focus:ring-emerald-400/15;
-}
-
-.inventory-filter-select-dense {
-  @apply rounded-lg px-3 py-2 text-xs shadow-none hover:shadow-none focus:shadow-none sm:w-44;
 }
 
 .inventory-inline-input {
