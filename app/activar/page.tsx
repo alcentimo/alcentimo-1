@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
-import { resolveProTrialStatus } from "@/lib/plans/trial";
+import { resolveProTrialStatus, shouldShowProTrialBanner } from "@/lib/plans/trial";
 import { PlansPanel } from "@/components/dashboard/PlansPanel";
 import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
 import { BrandLogo } from "@/components/ui/BrandLogo";
@@ -26,7 +26,11 @@ export default async function ActivarPage() {
     store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
     getCurrentExchangeRate(),
   ]);
-  const trial = resolveProTrialStatus(authUser.profile);
+  const trial = resolveProTrialStatus(authUser.profile, authUser.planId);
+  const showProTrialBanner = shouldShowProTrialBanner(
+    authUser.profile,
+    authUser.planId,
+  );
 
   return (
     <main className="page-shell-auth min-h-dvh safe-area-inset">
@@ -56,14 +60,17 @@ export default async function ActivarPage() {
           </p>
         </header>
 
-        <div className="mb-8 max-w-3xl">
-          <ProTrialBanner
-            currentCount={productLimitStatus?.currentCount ?? 0}
-            trialEligible={trial.eligible}
-            trialActive={trial.active}
-            trialEndsAt={trial.endsAt}
-          />
-        </div>
+        {showProTrialBanner ? (
+          <div className="mb-8 max-w-3xl">
+            <ProTrialBanner
+              showBanner
+              currentCount={productLimitStatus?.currentCount ?? 0}
+              trialEligible={trial.eligible}
+              trialActive={trial.active}
+              trialEndsAt={trial.endsAt}
+            />
+          </div>
+        ) : null}
 
         <PlansPanel
           currentPlanId={authUser.planId}

@@ -17,6 +17,7 @@ import { ProTrialProgressBar } from "@/components/dashboard/plans/ProTrialProgre
 interface ProTrialBannerProps {
   currentCount: number;
   unlockTarget?: number;
+  showBanner: boolean;
   trialEligible: boolean;
   trialActive: boolean;
   trialEndsAt: string | null;
@@ -25,6 +26,7 @@ interface ProTrialBannerProps {
 export function ProTrialBanner({
   currentCount,
   unlockTarget = PRO_TRIAL_UNLOCK_PRODUCT_COUNT,
+  showBanner,
   trialEligible,
   trialActive,
   trialEndsAt,
@@ -37,7 +39,7 @@ export function ProTrialBanner({
   const unlockReady = isProTrialUnlockReady(currentCount, unlockTarget);
   const remaining = getProTrialProductsRemaining(currentCount, unlockTarget);
 
-  if (!trialEligible && !trialActive) {
+  if (!showBanner) {
     return null;
   }
 

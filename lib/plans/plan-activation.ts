@@ -38,17 +38,23 @@ export function isEligiblePlanForProTrial(
     Profile,
     "plan" | "subscription_status" | "pro_trial_started_at"
   > | null,
+  planId?: PlanId,
 ): boolean {
-  if (!profile || profile.pro_trial_started_at != null) {
+  if (profile?.pro_trial_started_at != null) {
     return false;
   }
 
-  const subscriptionStatus = resolveSubscriptionStatus(profile.subscription_status);
+  const subscriptionStatus = resolveSubscriptionStatus(profile?.subscription_status);
   if (subscriptionStatus === "active") {
     return false;
   }
 
-  const planNorm = normalizeDbPlan(profile.plan);
+  const planNorm = profile
+    ? normalizeDbPlan(profile.plan)
+    : planId === "free"
+      ? "FREE"
+      : "STARTER";
+
   if (planNorm === "FREE") {
     return true;
   }

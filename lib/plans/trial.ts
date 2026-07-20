@@ -19,19 +19,20 @@ export function resolveProTrialStatus(
     Profile,
     "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
   > | null,
+  planId?: PlanId,
 ): ProTrialStatus {
-  const planId = resolvePlanId(profile?.plan);
+  const resolvedPlanId = planId ?? resolvePlanId(profile?.plan);
   const startedAt = profile?.pro_trial_started_at ?? null;
   const endsAt = profile?.pro_trial_ends_at ?? null;
   const now = Date.now();
   const endsMs = endsAt ? new Date(endsAt).getTime() : null;
   const active =
-    planId === "free" &&
+    resolvedPlanId === "free" &&
     startedAt != null &&
     endsMs != null &&
     endsMs > now;
   const consumed = startedAt != null && !active;
-  const eligible = isEligiblePlanForProTrial(profile) && !active;
+  const eligible = isEligiblePlanForProTrial(profile, resolvedPlanId) && !active;
 
   return {
     eligible,
@@ -40,6 +41,20 @@ export function resolveProTrialStatus(
     startedAt,
     endsAt: active ? endsAt : endsAt,
   };
+}
+
+/** Muestra el banner de prueba Pro (plan Gratis, trial no consumido, o trial activo). */
+export function shouldShowProTrialBanner(
+  profile: Pick<
+    Profile,
+    "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
+  > | null,
+  planId: PlanId,
+): boolean {
+  const status = resolveProTrialStatus(profile, planId);
+  if (status.active) return true;
+  if (status.consumed) return false;
+  return planId === "free";
 }
 
 /** Plan efectivo para límites de productos (trial Pro = starter/250). */

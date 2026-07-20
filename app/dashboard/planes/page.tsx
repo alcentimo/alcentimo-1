@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
-import { resolveProTrialStatus } from "@/lib/plans/trial";
+import { resolveProTrialStatus, shouldShowProTrialBanner } from "@/lib/plans/trial";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { PlansPanel } from "@/components/dashboard/PlansPanel";
 import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
@@ -19,7 +19,11 @@ export default async function PlanesPage() {
   }
 
   const { authUser, store } = session;
-  const trial = resolveProTrialStatus(authUser.profile);
+  const trial = resolveProTrialStatus(authUser.profile, authUser.planId);
+  const showProTrialBanner = shouldShowProTrialBanner(
+    authUser.profile,
+    authUser.planId,
+  );
   const productLimitContext = store
     ? await getStoreProductLimitContext(store.id)
     : null;
@@ -37,9 +41,10 @@ export default async function PlanesPage() {
         </p>
       </header>
 
-      {store ? (
+      {store && showProTrialBanner ? (
         <div className="mb-8 max-w-3xl">
           <ProTrialBanner
+            showBanner
             currentCount={productLimitContext?.currentCount ?? 0}
             trialEligible={trial.eligible}
             trialActive={trial.active}
