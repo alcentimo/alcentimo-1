@@ -5,11 +5,11 @@ import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { getOptionalAuthUser } from "@/lib/auth/optional-auth";
 import { getUserStore } from "@/lib/stores";
 import {
-  getPlanById,
   resolvePlanId,
   type PlanDefinition,
   type PlanId,
 } from "@/src/config/plans";
+import { getDisplayPlanForProfile } from "@/lib/plans/trial";
 
 export interface UserWithPlan {
   id: string;
@@ -94,15 +94,14 @@ export async function getAuthUserWithPlan(
   if (!user) return null;
 
   const profile = await getUserProfile(client, user.id);
-  const planId = resolvePlanId(profile?.plan);
-  const plan = getPlanById(planId);
+  const displayPlan = getDisplayPlanForProfile(profile);
 
   return {
     id: user.id,
     email: user.email,
     profile,
-    planId,
-    plan,
+    planId: displayPlan.planId,
+    plan: { ...displayPlan.plan, name: displayPlan.planName },
     rawPlan: profile?.plan ?? "FREE",
   };
 }

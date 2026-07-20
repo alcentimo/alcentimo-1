@@ -19,11 +19,8 @@ export default async function PlanesPage() {
   }
 
   const { authUser, store } = session;
-  const trial = resolveProTrialStatus(authUser.profile, authUser.planId);
-  const showProTrialBanner = shouldShowProTrialBanner(
-    authUser.profile,
-    authUser.planId,
-  );
+  const trial = resolveProTrialStatus(authUser.profile);
+  const showProTrialBanner = shouldShowProTrialBanner(authUser.profile);
   const productLimitContext = store
     ? await getStoreProductLimitContext(store.id)
     : null;
@@ -55,13 +52,7 @@ export default async function PlanesPage() {
 
       <PlansPanel
         currentPlanId={authUser.planId}
-        currentPlanName={
-          trial.active
-            ? "Pro (prueba)"
-            : authUser.planId === "free"
-              ? "Gratis"
-              : authUser.plan.name
-        }
+        currentPlanName={authUser.plan.name}
         productCount={productLimitContext?.currentCount ?? null}
         productLimit={productLimitContext?.productLimit ?? null}
         exchangeRate={exchangeRate}

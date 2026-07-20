@@ -5,16 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { getUserStore } from "@/lib/stores";
-import { getStoreProductCount } from "@/lib/plans/product-limit";
-import {
-  isEligiblePlanForProTrial,
-  needsProTrialPlanReset,
-} from "@/lib/plans/plan-activation";
-import {
-  isProTrialClaimCodeValid,
-  isProTrialUnlockReady,
-  PRO_TRIAL_UNLOCK_PRODUCT_COUNT,
-} from "@/lib/plans/trial-unlock";
+import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
+import { isProTrialClaimCodeValid } from "@/lib/plans/trial-unlock";
 
 export type StartProTrialResult =
   | { ok: true; endsAt: string }
@@ -27,8 +19,37 @@ function revalidateTrialPaths() {
   revalidatePath("/dashboard", "layout");
 }
 
-/** Activa la prueba Pro vía service role (evita fallos del RPC en producción). */
-async function persistProTrialActivation(
+async function activateProTrialViaRpc(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<StartProTrialResult> {
+  const { data, error } = await supabase.rpc("start_pro_trial", {
+    p_user_id: userId,
+  });
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  const ok = Boolean(row?.ok);
+  const errorMessage =
+    typeof row?.error_message === "string" ? row.error_message : null;
+  const endsAt =
+    typeof row?.trial_ends_at === "string" ? row.trial_ends_at : null;
+
+  if (!ok || !endsAt) {
+    return {
+      ok: false,
+      error: errorMessage ?? "No se pudo activar la prueba Pro.",
+    };
+  }
+
+  return { ok: true, endsAt };
+}
+
+/** Respaldo con service role si el RPC no está disponible. */
+async function activateProTrialViaAdmin(
   userId: string,
 ): Promise<StartProTrialResult> {
   const admin = createAdminClient();
@@ -46,7 +67,7 @@ async function persistProTrialActivation(
     })
     .eq("id", userId)
     .is("pro_trial_started_at", null)
-    .select("pro_trial_ends_at")
+    .select("pro_trial_ends_at, plan, subscription_status")
     .maybeSingle();
 
   if (error) {
@@ -90,14 +111,6 @@ export async function startProTrial(
     };
   }
 
-  const productCount = await getStoreProductCount(store.id);
-  if (!isProTrialUnlockReady(productCount, PRO_TRIAL_UNLOCK_PRODUCT_COUNT)) {
-    return {
-      ok: false,
-      error: `Publica al menos ${PRO_TRIAL_UNLOCK_PRODUCT_COUNT} productos para desbloquear la prueba Pro.`,
-    };
-  }
-
   const admin = createAdminClient();
   const { data: profile, error: profileError } = await admin
     .from("profiles")
@@ -112,28 +125,40 @@ export async function startProTrial(
     };
   }
 
-  if (!isEligiblePlanForProTrial(profile, auth.authUser.planId)) {
+  if (!isEligiblePlanForProTrial(profile)) {
+    const plan = (profile.plan ?? "FREE").toString().toUpperCase();
+    const status = profile.subscription_status ?? "none";
+
+    if (status !== "none") {
+      return {
+        ok: false,
+        error: "La prueba gratuita requiere una cuenta sin suscripción activa.",
+      };
+    }
+
+    if (plan !== "FREE") {
+      return {
+        ok: false,
+        error:
+          "La prueba gratuita solo aplica al plan Gratis. Tu plan actual no es elegible.",
+      };
+    }
+
     return {
       ok: false,
-      error: "La prueba gratuita solo aplica al plan Gratis.",
+      error: "Ya usaste tu mes de prueba Pro.",
     };
   }
 
-  if (needsProTrialPlanReset(profile)) {
-    const { error: resetError } = await admin
-      .from("profiles")
-      .update({
-        plan: "FREE",
-        subscription_status: "none",
-      })
-      .eq("id", userId);
+  let activation = await activateProTrialViaRpc(supabase, userId);
 
-    if (resetError) {
-      return { ok: false, error: resetError.message };
-    }
+  if (
+    !activation.ok &&
+    (activation.error.includes("function") ||
+      activation.error.includes("does not exist"))
+  ) {
+    activation = await activateProTrialViaAdmin(userId);
   }
-
-  const activation = await persistProTrialActivation(userId);
 
   if (!activation.ok) {
     return activation;

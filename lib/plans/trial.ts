@@ -2,6 +2,7 @@ import type { Profile } from "@/lib/database.types";
 import {
   getPlanById,
   resolvePlanId,
+  type PlanDefinition,
   type PlanId,
 } from "@/src/config/plans";
 import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
@@ -13,6 +14,8 @@ export interface ProTrialStatus {
   startedAt: string | null;
   endsAt: string | null;
 }
+
+export const PRO_TRIAL_DISPLAY_PLAN_NAME = "Plan Pro";
 
 export function resolveProTrialStatus(
   profile: Pick<
@@ -31,7 +34,7 @@ export function resolveProTrialStatus(
     endsMs != null &&
     endsMs > now;
   const consumed = startedAt != null && !active;
-  const eligible = isEligiblePlanForProTrial(profile, resolvedPlanId) && !active;
+  const eligible = isEligiblePlanForProTrial(profile) && !active;
 
   return {
     eligible,
@@ -42,18 +45,43 @@ export function resolveProTrialStatus(
   };
 }
 
-/** Muestra el banner de prueba Pro (plan Gratis, trial no consumido, o trial activo). */
+/** Plan y nombre mostrados en UI (trial activo = Plan Pro / starter). */
+export function getDisplayPlanForProfile(
+  profile: Pick<
+    Profile,
+    "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
+  > | null,
+): { planId: PlanId; plan: PlanDefinition; planName: string } {
+  const basePlanId = resolvePlanId(profile?.plan);
+  const trial = resolveProTrialStatus(profile, basePlanId);
+
+  if (trial.active) {
+    return {
+      planId: "starter",
+      plan: getPlanById("starter"),
+      planName: PRO_TRIAL_DISPLAY_PLAN_NAME,
+    };
+  }
+
+  const plan = getPlanById(basePlanId);
+  return {
+    planId: basePlanId,
+    plan,
+    planName: plan.name,
+  };
+}
+
+/** Muestra el banner de prueba Pro (elegible, activo o consumido). */
 export function shouldShowProTrialBanner(
   profile: Pick<
     Profile,
     "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
   > | null,
-  planId: PlanId,
 ): boolean {
-  const status = resolveProTrialStatus(profile, planId);
-  if (status.active) return true;
-  if (status.consumed) return false;
-  return planId === "free";
+  const trial = resolveProTrialStatus(profile);
+  if (trial.active) return true;
+  if (trial.consumed) return false;
+  return isEligiblePlanForProTrial(profile);
 }
 
 /** Plan efectivo para límites de productos (trial Pro = starter/250). */

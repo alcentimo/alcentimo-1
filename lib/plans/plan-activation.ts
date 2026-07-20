@@ -31,43 +31,22 @@ export function resolveSubscriptionStatus(
 
 /**
  * ¿Puede reclamar la prueba Pro gratis?
- * Permisivo: plan FREE, o acceso de pago aún no verificado (provisional / none).
+ * Solo plan FREE en BD y subscription_status = none. No valida conteo de productos.
  */
 export function isEligiblePlanForProTrial(
   profile: Pick<
     Profile,
     "plan" | "subscription_status" | "pro_trial_started_at"
   > | null,
-  planId?: PlanId,
 ): boolean {
-  if (profile?.pro_trial_started_at != null) {
+  if (!profile || profile.pro_trial_started_at != null) {
     return false;
   }
 
-  const subscriptionStatus = resolveSubscriptionStatus(profile?.subscription_status);
-  if (subscriptionStatus === "active") {
-    return false;
-  }
-
-  const planNorm = profile
-    ? normalizeDbPlan(profile.plan)
-    : planId === "free"
-      ? "FREE"
-      : "STARTER";
-
-  if (planNorm === "FREE") {
-    return true;
-  }
-
-  // Acceso de confianza pendiente o plan elevado sin suscripción verificada.
-  return subscriptionStatus === "provisional" || subscriptionStatus === "none";
-}
-
-/** Normaliza el perfil a FREE antes de iniciar la prueba (p. ej. STARTER provisional). */
-export function needsProTrialPlanReset(
-  profile: Pick<Profile, "plan" | "subscription_status">,
-): boolean {
-  return normalizeDbPlan(profile.plan) !== "FREE";
+  return (
+    normalizeDbPlan(profile.plan) === "FREE" &&
+    resolveSubscriptionStatus(profile.subscription_status) === "none"
+  );
 }
 
 export function manualPaymentPlanToDbPlan(

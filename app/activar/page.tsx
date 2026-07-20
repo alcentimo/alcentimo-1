@@ -26,11 +26,8 @@ export default async function ActivarPage() {
     store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
     getCurrentExchangeRate(),
   ]);
-  const trial = resolveProTrialStatus(authUser.profile, authUser.planId);
-  const showProTrialBanner = shouldShowProTrialBanner(
-    authUser.profile,
-    authUser.planId,
-  );
+  const trial = resolveProTrialStatus(authUser.profile);
+  const showProTrialBanner = shouldShowProTrialBanner(authUser.profile);
 
   return (
     <main className="page-shell-auth min-h-dvh safe-area-inset">
@@ -74,13 +71,7 @@ export default async function ActivarPage() {
 
         <PlansPanel
           currentPlanId={authUser.planId}
-          currentPlanName={
-            trial.active
-              ? "Pro (prueba)"
-              : authUser.planId === "free"
-                ? "Gratis"
-                : authUser.plan.name
-          }
+          currentPlanName={authUser.plan.name}
           productCount={productLimitStatus?.currentCount ?? null}
           productLimit={productLimitStatus?.productLimit ?? null}
           exchangeRate={exchangeRateRow?.rate ?? null}
