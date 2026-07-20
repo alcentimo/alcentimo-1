@@ -5,6 +5,7 @@ import {
   type PlanDefinition,
   type PlanId,
 } from "@/src/config/plans";
+import { PLAN_PRICING_TIERS } from "@/src/config/plan-pricing-ui";
 import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
 
 export interface ProTrialStatus {
@@ -16,6 +17,14 @@ export interface ProTrialStatus {
 }
 
 export const PRO_TRIAL_DISPLAY_PLAN_NAME = "Plan Pro";
+
+function getCommercialPlanLabel(planId: PlanId): string {
+  const tier = PLAN_PRICING_TIERS.find((entry) => entry.planId === planId);
+  if (tier) {
+    return planId === "free" ? "Plan Gratis" : `Plan ${tier.displayName}`;
+  }
+  return getPlanById(planId).name;
+}
 
 export function resolveProTrialStatus(
   profile: Pick<
@@ -67,7 +76,7 @@ export function getDisplayPlanForProfile(
   return {
     planId: basePlanId,
     plan,
-    planName: plan.name,
+    planName: getCommercialPlanLabel(basePlanId),
   };
 }
 

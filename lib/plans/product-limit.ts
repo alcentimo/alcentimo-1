@@ -75,6 +75,26 @@ async function getStoreOwnerProfile(
   return data;
 }
 
+/** Perfil del dueño de la tienda (plan real en BD, sin depender de RLS del usuario logueado). */
+export async function getStoreOwnerPlanProfile(
+  storeId: string,
+): Promise<
+  | (Pick<
+      Profile,
+      "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
+    > & { ownerId: string })
+  | null
+> {
+  noStore();
+  const ownerId = await getStoreOwnerId(storeId);
+  if (!ownerId) return null;
+
+  const profile = await getStoreOwnerProfile(ownerId);
+  if (!profile) return null;
+
+  return { ownerId, ...profile };
+}
+
 /** Plan del dueño de la tienda (límite de productos compartido por la tienda). */
 export async function getStorePlanId(storeId: string): Promise<PlanId> {
   const ownerId = await getStoreOwnerId(storeId);

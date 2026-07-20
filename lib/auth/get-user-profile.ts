@@ -10,6 +10,7 @@ import {
   type PlanId,
 } from "@/src/config/plans";
 import { getDisplayPlanForProfile } from "@/lib/plans/trial";
+import { getStoreOwnerPlanProfile } from "@/lib/plans/product-limit";
 
 export interface UserWithPlan {
   id: string;
@@ -39,7 +40,37 @@ export async function getDashboardSession(
   if (!authUser) return null;
 
   const store = await getUserStore(client, authUser.id);
-  return { authUser, store };
+  const sessionUser = store
+    ? await applyStoreOwnerPlanToUser(authUser, store.id)
+    : authUser;
+
+  return { authUser: sessionUser, store };
+}
+
+async function applyStoreOwnerPlanToUser(
+  authUser: UserWithPlan,
+  storeId: string,
+): Promise<UserWithPlan> {
+  const ownerPlan = await getStoreOwnerPlanProfile(storeId);
+  if (!ownerPlan) return authUser;
+
+  const ownerProfile: Profile = {
+    id: ownerPlan.ownerId,
+    plan: ownerPlan.plan ?? "FREE",
+    subscription_status: ownerPlan.subscription_status,
+    pro_trial_started_at: ownerPlan.pro_trial_started_at,
+    pro_trial_ends_at: ownerPlan.pro_trial_ends_at,
+  };
+
+  const displayPlan = getDisplayPlanForProfile(ownerProfile);
+
+  return {
+    ...authUser,
+    profile: ownerProfile,
+    planId: displayPlan.planId,
+    plan: { ...displayPlan.plan, name: displayPlan.planName },
+    rawPlan: ownerPlan.plan ?? "FREE",
+  };
 }
 
 export async function getUserProfile(
