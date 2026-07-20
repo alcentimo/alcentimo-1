@@ -6,6 +6,8 @@ import {
   type AdminDashboardTab,
 } from "@/components/admin/AdminDashboardTabs";
 import { getManualPayments } from "@/lib/plans/get-manual-payments";
+import { getAdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
+import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import { getSupportMessages } from "@/lib/support/get-support-messages";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import type { SupportMessage } from "@/lib/database.types";
@@ -14,7 +16,9 @@ export const dynamic = "force-dynamic";
 
 function resolveInitialTab(raw: string | string[] | undefined): AdminDashboardTab {
   const value = Array.isArray(raw) ? raw[0] : raw;
-  return value === "soporte" ? "soporte" : "pagos";
+  if (value === "soporte") return "soporte";
+  if (value === "metricas") return "metricas";
+  return "pagos";
 }
 
 export default async function AdminDashboardPage({
@@ -40,8 +44,10 @@ export default async function AdminDashboardPage({
 
   let payments: Awaited<ReturnType<typeof getManualPayments>> = [];
   let messages: SupportMessage[] = [];
+  let metrics: AdminPlanMetrics | null = null;
   let paymentsError: string | null = null;
   let messagesError: string | null = null;
+  let metricsError: string | null = null;
 
   try {
     payments = await getManualPayments({ status: "all", limit: 200 });
@@ -61,6 +67,15 @@ export default async function AdminDashboardPage({
         : "No se pudieron cargar los mensajes de soporte.";
   }
 
+  try {
+    metrics = await getAdminPlanMetrics();
+  } catch (error) {
+    metricsError =
+      error instanceof Error
+        ? error.message
+        : "No se pudieron cargar las métricas.";
+  }
+
   const pendingPayments = payments.filter((item) => item.status === "pending")
     .length;
   const pendingMessages = messages.filter((item) => item.status === "pendiente")
@@ -72,8 +87,9 @@ export default async function AdminDashboardPage({
         <p className="section-label">Administración</p>
         <h1 className="page-header-title">Panel Admin</h1>
         <p className="page-header-desc">
-          Resumen unificado de pagos y soporte. Este espacio es exclusivo para
-          administradores; no incluye catálogo ni configuración de tienda.
+          Resumen unificado de pagos, soporte y métricas. Este espacio es
+          exclusivo para administradores; no incluye catálogo ni configuración
+          de tienda.
         </p>
         <div className="flex flex-wrap gap-4 pt-1 text-sm text-zinc-500 dark:text-zinc-400">
           <span>
@@ -88,6 +104,14 @@ export default async function AdminDashboardPage({
               {pendingMessages}
             </strong>
           </span>
+          {metrics ? (
+            <span>
+              Usuarios:{" "}
+              <strong className="text-zinc-800 dark:text-zinc-200">
+                {metrics.totalUsers}
+              </strong>
+            </span>
+          ) : null}
         </div>
       </header>
 
@@ -101,8 +125,10 @@ export default async function AdminDashboardPage({
         <AdminDashboardTabs
           payments={payments}
           messages={messages}
+          metrics={metrics}
           paymentsError={paymentsError}
           messagesError={messagesError}
+          metricsError={metricsError}
           initialTab={initialTab}
         />
       </Suspense>

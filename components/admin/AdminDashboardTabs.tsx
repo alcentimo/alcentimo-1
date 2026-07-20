@@ -4,46 +4,62 @@ import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ManualPaymentsPanel } from "@/components/admin/ManualPaymentsPanel";
 import { SupportMessagesPanel } from "@/components/dashboard/SupportMessagesPanel";
+import { AdminMetricsPanel } from "@/components/admin/AdminMetricsPanel";
 import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
+import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import type { SupportMessage } from "@/lib/database.types";
 import { cn } from "@/lib/cn";
 
-export type AdminDashboardTab = "pagos" | "soporte";
+export type AdminDashboardTab = "pagos" | "soporte" | "metricas";
 
 const TABS: Array<{
   id: AdminDashboardTab;
   label: string;
   description: string;
+  showBadge?: boolean;
 }> = [
   {
     id: "pagos",
     label: "Pagos Pendientes",
     description: "Confirma comprobantes y activa el plan del dueño.",
+    showBadge: true,
   },
   {
     id: "soporte",
     label: "Mensajes de Soporte",
     description: "Bandeja de mensajes y sugerencias de usuarios.",
+    showBadge: true,
+  },
+  {
+    id: "metricas",
+    label: "Métricas",
+    description: "Usuarios registrados y distribución por plan.",
   },
 ];
 
 function resolveTab(value: string | null): AdminDashboardTab {
-  return value === "soporte" ? "soporte" : "pagos";
+  if (value === "soporte") return "soporte";
+  if (value === "metricas") return "metricas";
+  return "pagos";
 }
 
 interface AdminDashboardTabsProps {
   payments: ManualPaymentWithEmail[];
   messages: SupportMessage[];
+  metrics: AdminPlanMetrics | null;
   paymentsError?: string | null;
   messagesError?: string | null;
+  metricsError?: string | null;
   initialTab?: AdminDashboardTab;
 }
 
 export function AdminDashboardTabs({
   payments,
   messages,
+  metrics,
   paymentsError = null,
   messagesError = null,
+  metricsError = null,
   initialTab = "pagos",
 }: AdminDashboardTabsProps) {
   const router = useRouter();
@@ -60,7 +76,7 @@ export function AdminDashboardTabs({
     [messages],
   );
 
-  const counts: Record<AdminDashboardTab, number> = {
+  const counts: Partial<Record<AdminDashboardTab, number>> = {
     pagos: pendingPayments,
     soporte: pendingMessages,
   };
@@ -78,6 +94,7 @@ export function AdminDashboardTabs({
       <div className="flex flex-wrap gap-2">
         {TABS.map((tab) => {
           const active = tab.id === activeTab;
+          const badge = tab.showBadge ? counts[tab.id] ?? 0 : 0;
           return (
             <button
               key={tab.id}
@@ -91,7 +108,7 @@ export function AdminDashboardTabs({
               )}
             >
               {tab.label}
-              {counts[tab.id] > 0 ? (
+              {badge > 0 ? (
                 <span
                   className={cn(
                     "ml-2 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs",
@@ -100,7 +117,7 @@ export function AdminDashboardTabs({
                       : "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
                   )}
                 >
-                  {counts[tab.id]}
+                  {badge}
                 </span>
               ) : null}
             </button>
@@ -120,13 +137,31 @@ export function AdminDashboardTabs({
         ) : (
           <ManualPaymentsPanel initialPayments={payments} />
         )
-      ) : messagesError ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-          {messagesError}
-        </p>
-      ) : (
-        <SupportMessagesPanel initialMessages={messages} />
-      )}
+      ) : null}
+
+      {activeTab === "soporte" ? (
+        messagesError ? (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            {messagesError}
+          </p>
+        ) : (
+          <SupportMessagesPanel initialMessages={messages} />
+        )
+      ) : null}
+
+      {activeTab === "metricas" ? (
+        metricsError ? (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            {metricsError}
+          </p>
+        ) : metrics ? (
+          <AdminMetricsPanel metrics={metrics} />
+        ) : (
+          <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+            No hay métricas disponibles.
+          </p>
+        )
+      ) : null}
     </div>
   );
 }
