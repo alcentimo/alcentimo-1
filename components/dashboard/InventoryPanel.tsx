@@ -159,13 +159,13 @@ const InventoryPriceDisplay = memo(function InventoryPriceDisplay({
   priceVes: number | null;
 }) {
   return (
-    <div>
+    <div className="inventory-price-stack">
       <span className="price-usd-cell">
         {priceUsd != null ? formatUsd(priceUsd) : "—"}
       </span>
-      {priceVes != null && (
-        <p className="price-ves-cell mt-0.5 text-[11px]">{formatVes(priceVes)}</p>
-      )}
+      {priceVes != null ? (
+        <p className="price-ves-cell">{formatVes(priceVes)}</p>
+      ) : null}
     </div>
   );
 });
@@ -182,30 +182,30 @@ const InventoryActionsMenu = memo(function InventoryActionsMenu({
   onDelete: (productId: string) => void;
 }) {
   return (
-    <DropdownMenu
-      align="end"
-      trigger={
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0 text-zinc-500"
-          aria-label={`Acciones para ${productName}`}
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      }
-    >
-      {(close) => (
-        <>
-          <DropdownMenuItem
-            onClick={() => {
-              close();
-              onEdit(productId);
-            }}
+    <div className="inventory-actions-group">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 shrink-0 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+        aria-label={`Editar ${productName}`}
+        onClick={() => onEdit(productId)}
+      >
+        <Pencil className="h-4 w-4" aria-hidden="true" />
+      </Button>
+      <DropdownMenu
+        align="end"
+        trigger={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-zinc-500"
+            aria-label={`Más acciones para ${productName}`}
           >
-            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-            Editar
-          </DropdownMenuItem>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        }
+      >
+        {(close) => (
           <DropdownMenuItem
             destructive
             onClick={() => {
@@ -216,9 +216,9 @@ const InventoryActionsMenu = memo(function InventoryActionsMenu({
             <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
             Eliminar
           </DropdownMenuItem>
-        </>
-      )}
-    </DropdownMenu>
+        )}
+      </DropdownMenu>
+    </div>
   );
 });
 
@@ -230,8 +230,6 @@ const InventoryStockControls = memo(function InventoryStockControls({
   hasVariants,
   adjustingStock,
   onStockAdjust,
-  onEditStock,
-  showEditStockButton = false,
   layout = "inline",
 }: {
   productName: string;
@@ -241,8 +239,6 @@ const InventoryStockControls = memo(function InventoryStockControls({
   hasVariants: boolean;
   adjustingStock: boolean;
   onStockAdjust: (productId: string, delta: number) => void;
-  onEditStock?: (productId: string) => void;
-  showEditStockButton?: boolean;
   layout?: "inline" | "spread";
 }) {
   const out = isOutOfStock({
@@ -309,15 +305,6 @@ const InventoryStockControls = memo(function InventoryStockControls({
           )}
         </div>
       </div>
-      {showEditStockButton && onEditStock ? (
-        <button
-          type="button"
-          onClick={() => onEditStock(productId)}
-          className="inventory-edit-stock-btn"
-        >
-          Editar stock
-        </button>
-      ) : null}
     </div>
   );
 });
@@ -328,14 +315,12 @@ const InventoryRow = memo(function InventoryRow({
   onDelete,
   onStockAdjust,
   adjustingStock,
-  emphasizeCriticalStock = false,
 }: {
   product: CatalogListItem;
   onEdit: (productId: string) => void;
   onDelete: (productId: string) => void;
   onStockAdjust: (productId: string, delta: number) => void;
   adjustingStock: boolean;
-  emphasizeCriticalStock?: boolean;
 }) {
   const stockQuantity = getProductStockQuantity(product);
   const out = isOutOfStock({
@@ -373,8 +358,6 @@ const InventoryRow = memo(function InventoryRow({
           hasVariants={productHasVariants}
           adjustingStock={adjustingStock}
           onStockAdjust={onStockAdjust}
-          onEditStock={onEdit}
-          showEditStockButton={emphasizeCriticalStock || critical}
         />
       </td>
       <td className="inventory-td">
@@ -401,14 +384,12 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
   onDelete,
   onStockAdjust,
   adjustingStock,
-  emphasizeCriticalStock = false,
 }: {
   product: CatalogListItem;
   onEdit: (productId: string) => void;
   onDelete: (productId: string) => void;
   onStockAdjust: (productId: string, delta: number) => void;
   adjustingStock: boolean;
-  emphasizeCriticalStock?: boolean;
 }) {
   const stockQuantity = getProductStockQuantity(product);
   const out = isOutOfStock({
@@ -464,8 +445,6 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
           hasVariants={productHasVariants}
           adjustingStock={adjustingStock}
           onStockAdjust={onStockAdjust}
-          onEditStock={onEdit}
-          showEditStockButton={emphasizeCriticalStock || critical}
           layout="spread"
         />
       </div>
@@ -751,7 +730,6 @@ export function InventoryPanel({
           onDelete={handleDeleteRequest}
           onStockAdjust={handleStockAdjust}
           adjustingStock={isAdjusting}
-          emphasizeCriticalStock={stockFilter === "critical"}
         />
       );
     });
@@ -761,7 +739,6 @@ export function InventoryPanel({
     openEdit,
     handleDeleteRequest,
     handleStockAdjust,
-    stockFilter,
   ]);
 
   return (
@@ -966,21 +943,6 @@ export function InventoryPanel({
             </button>
           ) : null}
         </div>
-      ) : criticalStockCount > 0 && onStockFilterChange ? (
-        <div className="inventory-critical-hint mb-4" role="status">
-          <p>
-            Tienes{" "}
-            <strong className="tabular-nums">{criticalStockCount}</strong>{" "}
-            producto{criticalStockCount === 1 ? "" : "s"} con bajo stock.
-          </p>
-          <button
-            type="button"
-            onClick={() => onStockFilterChange("critical")}
-            className="inventory-critical-banner-action"
-          >
-            Ver productos críticos
-          </button>
-        </div>
       ) : null}
 
       {exportError && (
@@ -1050,7 +1012,6 @@ export function InventoryPanel({
                       onDelete={handleDeleteRequest}
                       onStockAdjust={handleStockAdjust}
                       adjustingStock={adjustingProductId === product.product_id}
-                      emphasizeCriticalStock={stockFilter === "critical"}
                     />
                   ))
                 )}
@@ -1071,6 +1032,25 @@ export function InventoryPanel({
           </div>
         </div>
       )}
+
+      {stockFilter !== "critical" &&
+      criticalStockCount > 0 &&
+      onStockFilterChange ? (
+        <div className="inventory-critical-hint mt-4" role="status">
+          <p>
+            Tienes{" "}
+            <strong className="tabular-nums">{criticalStockCount}</strong>{" "}
+            producto{criticalStockCount === 1 ? "" : "s"} con bajo stock.
+          </p>
+          <button
+            type="button"
+            onClick={() => onStockFilterChange("critical")}
+            className="inventory-critical-banner-action"
+          >
+            Ver productos críticos
+          </button>
+        </div>
+      ) : null}
 
       <ProductImportSheet
         open={importSheetOpen}

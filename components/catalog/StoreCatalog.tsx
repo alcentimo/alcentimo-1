@@ -7,10 +7,7 @@ import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogCurrencySettings } from "@/lib/store-settings/types";
 import { formatExchangeRate } from "@/lib/format";
 import { StoreHeader } from "@/components/catalog/StoreHeader";
-import {
-  CatalogToolbar,
-  type CatalogCategory,
-} from "@/components/catalog/CatalogToolbar";
+import { CatalogToolbar } from "@/components/catalog/CatalogToolbar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PurchaseInfoPanel } from "@/components/catalog/PurchaseInfoPanel";
 import { CartDrawer } from "@/components/catalog/CartDrawer";
@@ -34,29 +31,15 @@ interface StoreCatalogProps {
   catalogCurrency: CatalogCurrencySettings;
 }
 
-function extractCategories(products: CatalogListItem[]): CatalogCategory[] {
-  const map = new Map<string, CatalogCategory>();
-
-  for (const product of products) {
-    if (!product.category_slug || !product.category_name) continue;
-    map.set(product.category_slug, {
-      slug: product.category_slug,
-      name: product.category_name,
-    });
-  }
-
-  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "es"));
-}
-
 function EmptyResults({ onReset }: { onReset: () => void }) {
   return (
     <div className="store-empty-state">
       <p className="text-base font-medium text-zinc-800">No hay productos que coincidan</p>
       <p className="mt-2 max-w-sm text-sm leading-relaxed text-zinc-500">
-        Prueba con otro término de búsqueda o selecciona otra categoría.
+        Prueba con otro término de búsqueda.
       </p>
       <button type="button" onClick={onReset} className="store-reset-btn">
-        Limpiar filtros
+        Limpiar búsqueda
       </button>
     </div>
   );
@@ -73,7 +56,6 @@ export function StoreCatalog({
   const { showOfficialRate, showBsConversion } = catalogCurrency;
   const [catalogProducts, setCatalogProducts] = useState(products);
   const [query, setQuery] = useState("");
-  const [categorySlug, setCategorySlug] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
@@ -89,17 +71,12 @@ export function StoreCatalog({
     return map;
   }, [catalogProducts]);
 
-  const categories = useMemo(() => extractCategories(catalogProducts), [catalogProducts]);
-
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
+    if (!normalizedQuery) return catalogProducts;
+
     return catalogProducts.filter((product) => {
-      const matchesCategory =
-        !categorySlug || product.category_slug === categorySlug;
-
-      if (!normalizedQuery) return matchesCategory;
-
       const haystack = [
         product.product_name,
         product.short_description ?? "",
@@ -109,9 +86,9 @@ export function StoreCatalog({
         .join(" ")
         .toLowerCase();
 
-      return matchesCategory && haystack.includes(normalizedQuery);
+      return haystack.includes(normalizedQuery);
     });
-  }, [catalogProducts, query, categorySlug]);
+  }, [catalogProducts, query]);
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -235,9 +212,8 @@ export function StoreCatalog({
     setCartItems([]);
   }
 
-  function resetFilters() {
+  function resetSearch() {
     setQuery("");
-    setCategorySlug("");
   }
 
   return (
@@ -263,9 +239,6 @@ export function StoreCatalog({
         <CatalogToolbar
           query={query}
           onQueryChange={setQuery}
-          categorySlug={categorySlug}
-          onCategoryChange={setCategorySlug}
-          categories={categories}
           resultCount={filteredProducts.length}
         />
 
@@ -281,7 +254,7 @@ export function StoreCatalog({
                 </p>
               </div>
             ) : filteredProducts.length === 0 ? (
-              <EmptyResults onReset={resetFilters} />
+              <EmptyResults onReset={resetSearch} />
             ) : (
               <div className="store-product-grid">
                 {filteredProducts.map((product) => (

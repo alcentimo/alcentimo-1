@@ -8,7 +8,6 @@ import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { isStoreOwner } from "@/lib/stores/owner-access";
 import { normalizeDbPlan } from "@/lib/plans/plan-activation";
-import { getCriticalStockCount } from "@/lib/inventory/get-critical-stock-count";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { AdminPwaServiceWorkerRegister } from "@/components/dashboard/AdminPwaServiceWorkerRegister";
 import { BcvSyncAlertBanner } from "@/components/dashboard/BcvSyncAlertBanner";
@@ -41,12 +40,10 @@ export default async function DashboardRootLayout({
   const isStoreOwnerUser = store ? isStoreOwner(store, authUser.id) : false;
   const canUpgradeToBusiness =
     normalizeDbPlan(authUser.profile?.plan ?? authUser.rawPlan) === "PRO";
-  const [bcvSyncAlert, exchangeRateRow, tasaRow, criticalStockCount] =
-    await Promise.all([
+  const [bcvSyncAlert, exchangeRateRow, tasaRow] = await Promise.all([
     getActiveBcvSyncAlert(supabase),
     getCurrentExchangeRate(),
     getLatestUsdTasa(supabase),
-    store ? getCriticalStockCount(store.slug) : Promise.resolve(0),
   ]);
 
   const exchangeRate = exchangeRateRow?.rate ?? tasaRow?.tasa ?? null;
@@ -82,7 +79,6 @@ export default async function DashboardRootLayout({
         isSupportAdmin={isAdmin}
         isStoreOwner={isStoreOwnerUser}
         canUpgradeToBusiness={canUpgradeToBusiness}
-        criticalStockCount={criticalStockCount}
       >
         {bcvSyncAlert ? <BcvSyncAlertBanner alert={bcvSyncAlert} /> : null}
         {children}

@@ -8,7 +8,6 @@ import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
-import { DashboardCriticalStockAlert } from "@/components/dashboard/DashboardCriticalStockAlert";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -22,7 +21,6 @@ interface DashboardLayoutProps {
   isSupportAdmin?: boolean;
   isStoreOwner?: boolean;
   canUpgradeToBusiness?: boolean;
-  criticalStockCount?: number;
 }
 
 function isStandaloneAuthPath(pathname: string): boolean {
@@ -43,7 +41,6 @@ function DashboardShell({
   isSupportAdmin = false,
   isStoreOwner = false,
   canUpgradeToBusiness = false,
-  criticalStockCount = 0,
 }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -115,7 +112,6 @@ function DashboardShell({
             />
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <DashboardCriticalStockAlert count={criticalStockCount} />
             <DashboardExchangeRateBadge
               rate={exchangeRate}
               updatedAt={exchangeRateUpdatedAt}

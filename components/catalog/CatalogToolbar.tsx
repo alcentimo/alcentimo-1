@@ -2,26 +2,15 @@
 
 import { Search } from "lucide-react";
 
-export interface CatalogCategory {
-  slug: string;
-  name: string;
-}
-
 interface CatalogToolbarProps {
   query: string;
   onQueryChange: (value: string) => void;
-  categorySlug: string;
-  onCategoryChange: (slug: string) => void;
-  categories: CatalogCategory[];
   resultCount: number;
 }
 
 export function CatalogToolbar({
   query,
   onQueryChange,
-  categorySlug,
-  onCategoryChange,
-  categories,
   resultCount,
 }: CatalogToolbarProps) {
   return (
@@ -40,20 +29,6 @@ export function CatalogToolbar({
           aria-label="Buscar productos"
         />
       </div>
-
-      <select
-        value={categorySlug}
-        onChange={(e) => onCategoryChange(e.target.value)}
-        className="store-category-select"
-        aria-label="Filtrar por categoría"
-      >
-        <option value="">Todas las categorías</option>
-        {categories.map((cat) => (
-          <option key={cat.slug} value={cat.slug}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
 
       <p className="store-result-count">
         {resultCount} producto{resultCount !== 1 ? "s" : ""}
