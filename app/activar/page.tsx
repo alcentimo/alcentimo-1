@@ -22,6 +22,7 @@ import { PermanentRejectionNotice } from "@/components/dashboard/plans/Permanent
 import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { PageContainer } from "@/components/ui/PageContainer";
+import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
 
 export const dynamic = "force-dynamic";
 
@@ -77,11 +78,12 @@ export default async function ActivarPage() {
     );
   }
 
-  const [productLimitStatus, exchangeRateRow, permanentRejection] =
+  const [productLimitStatus, exchangeRateRow, permanentRejection, pagoMovil] =
     await Promise.all([
       store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
       getCurrentExchangeRate(),
       getLatestPermanentRejection(authUser.id),
+      fetchSubscriptionPagoMovilDetails(),
     ]);
 
   const trial = resolveProTrialStatus(authUser.profile);
@@ -166,6 +168,7 @@ export default async function ActivarPage() {
           currentBillingPeriod={
             authUser.profile?.billing_period === "annual" ? "annual" : "monthly"
           }
+          pagoMovil={pagoMovil}
         />
       </PageContainer>
     </main>

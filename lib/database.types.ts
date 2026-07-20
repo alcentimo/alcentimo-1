@@ -183,6 +183,17 @@ export interface PlatformAlert {
   created_at: string;
 }
 
+/** Destino de cobro de la plataforma (Pago Móvil de suscripciones). */
+export interface PaymentMethod {
+  method_key: string;
+  bank: string;
+  phone: string;
+  ci: string;
+  holder_name: string;
+  updated_at: string;
+  updated_by: string | null;
+}
+
 export interface Category {
   id: string;
   store_id: string;
@@ -726,6 +737,15 @@ export interface Database {
           resolved_at?: string | null;
         };
         Update: Partial<PlatformAlert>;
+        Relationships: [];
+      };
+      payment_methods: {
+        Row: PaymentMethod;
+        Insert: Omit<PaymentMethod, "updated_at" | "updated_by"> & {
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: Partial<PaymentMethod>;
         Relationships: [];
       };
       categories: {

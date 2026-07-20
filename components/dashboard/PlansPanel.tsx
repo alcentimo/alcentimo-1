@@ -13,6 +13,7 @@ import {
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
 import { formatProductLimit, type PlanId } from "@/src/config/plans";
+import type { SubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
 import { formatProTrialEndsAt } from "@/lib/plans/trial";
 import { cn } from "@/lib/cn";
 
@@ -27,6 +28,7 @@ interface PlansPanelProps {
   subscriptionStatus?: "none" | "provisional" | "active" | string | null;
   subscriptionPeriodEndsAt?: string | null;
   currentBillingPeriod?: BillingPeriod | null;
+  pagoMovil?: SubscriptionPagoMovilDetails;
 }
 
 function isCurrentTier(tierPlanId: PlanId, currentPlanId: PlanId): boolean {
@@ -112,6 +114,7 @@ export function PlansPanel({
   subscriptionStatus = null,
   subscriptionPeriodEndsAt = null,
   currentBillingPeriod = "monthly",
+  pagoMovil,
 }: PlansPanelProps) {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -199,6 +202,7 @@ export function PlansPanel({
         currentPlanId={currentPlanId}
         subscriptionPeriodEndsAt={subscriptionPeriodEndsAt}
         currentBillingPeriod={currentBillingPeriod}
+        pagoMovil={pagoMovil}
       />
     </div>
   );

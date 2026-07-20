@@ -13,6 +13,7 @@ import { PaymentReviewPanel } from "@/components/dashboard/plans/PaymentReviewPa
 import { PermanentRejectionNotice } from "@/components/dashboard/plans/PermanentRejectionNotice";
 import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
 import { PageContainer } from "@/components/ui/PageContainer";
+import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
 
 export const dynamic = "force-dynamic";
 
@@ -27,12 +28,18 @@ export default async function PlanesPage() {
   const { authUser, store } = session;
   const trial = resolveProTrialStatus(authUser.profile);
   const showProTrialBanner = shouldShowProTrialBanner(authUser.profile);
-  const [productLimitContext, exchangeRateRow, paymentReview, permanentRejection] =
-    await Promise.all([
+  const [
+    productLimitContext,
+    exchangeRateRow,
+    paymentReview,
+    permanentRejection,
+    pagoMovil,
+  ] = await Promise.all([
       store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
       getCurrentExchangeRate(),
       getUserPaymentReview(authUser.id),
       getLatestPermanentRejection(authUser.id),
+      fetchSubscriptionPagoMovilDetails(),
     ]);
   const exchangeRate = exchangeRateRow?.rate ?? null;
 
@@ -86,6 +93,7 @@ export default async function PlanesPage() {
         currentBillingPeriod={
           authUser.profile?.billing_period === "annual" ? "annual" : "monthly"
         }
+        pagoMovil={pagoMovil}
       />
     </PageContainer>
   );

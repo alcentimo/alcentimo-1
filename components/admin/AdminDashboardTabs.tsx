@@ -5,12 +5,18 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ManualPaymentsPanel } from "@/components/admin/ManualPaymentsPanel";
 import { SupportMessagesPanel } from "@/components/dashboard/SupportMessagesPanel";
 import { AdminMetricsPanel } from "@/components/admin/AdminMetricsPanel";
+import { PaymentMethodsConfigPanel } from "@/components/admin/PaymentMethodsConfigPanel";
 import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
 import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import type { SupportMessage } from "@/lib/database.types";
+import type { SubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
 import { cn } from "@/lib/cn";
 
-export type AdminDashboardTab = "pagos" | "soporte" | "metricas";
+export type AdminDashboardTab =
+  | "pagos"
+  | "soporte"
+  | "metricas"
+  | "configuracion";
 
 const TABS: Array<{
   id: AdminDashboardTab;
@@ -35,11 +41,17 @@ const TABS: Array<{
     label: "Métricas",
     description: "Usuarios registrados y distribución por plan.",
   },
+  {
+    id: "configuracion",
+    label: "Configuración",
+    description: "Datos de Pago Móvil que ven los usuarios al pagar.",
+  },
 ];
 
 function resolveTab(value: string | null): AdminDashboardTab {
   if (value === "soporte") return "soporte";
   if (value === "metricas") return "metricas";
+  if (value === "configuracion") return "configuracion";
   return "pagos";
 }
 
@@ -47,6 +59,7 @@ interface AdminDashboardTabsProps {
   payments: ManualPaymentWithEmail[];
   messages: SupportMessage[];
   metrics: AdminPlanMetrics | null;
+  pagoMovil: SubscriptionPagoMovilDetails;
   paymentsError?: string | null;
   messagesError?: string | null;
   metricsError?: string | null;
@@ -57,6 +70,7 @@ export function AdminDashboardTabs({
   payments,
   messages,
   metrics,
+  pagoMovil,
   paymentsError = null,
   messagesError = null,
   metricsError = null,
@@ -165,6 +179,10 @@ export function AdminDashboardTabs({
             No hay métricas disponibles.
           </p>
         )
+      ) : null}
+
+      {activeTab === "configuracion" ? (
+        <PaymentMethodsConfigPanel initialDetails={pagoMovil} />
       ) : null}
     </div>
   );

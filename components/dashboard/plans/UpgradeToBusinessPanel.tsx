@@ -10,7 +10,10 @@ import { CopyableInline } from "@/components/payments/CopyableInline";
 import { submitBusinessUpgradePayment } from "@/lib/plans/business-upgrade-actions";
 import type { BusinessUpgradePreview } from "@/lib/plans/get-business-upgrade-preview";
 import { formatUsd, formatVes } from "@/lib/format";
-import { getSubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
+import {
+  getSubscriptionPagoMovilDetails,
+  type SubscriptionPagoMovilDetails,
+} from "@/src/config/subscription-pago-movil";
 import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
 
 const MIN_SUBMIT_DURATION_MS = 5000;
@@ -18,11 +21,13 @@ const MIN_SUBMIT_DURATION_MS = 5000;
 interface UpgradeToBusinessPanelProps {
   preview: BusinessUpgradePreview;
   exchangeRate?: number | null;
+  pagoMovil?: SubscriptionPagoMovilDetails;
 }
 
 export function UpgradeToBusinessPanel({
   preview,
   exchangeRate = null,
+  pagoMovil: pagoMovilProp,
 }: UpgradeToBusinessPanelProps) {
   const [referenceNumber, setReferenceNumber] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -32,7 +37,7 @@ export function UpgradeToBusinessPanel({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pagoMovil = getSubscriptionPagoMovilDetails();
+  const pagoMovil = pagoMovilProp ?? getSubscriptionPagoMovilDetails();
 
   const proration = preview.proration;
   const pending = preview.pendingPayment;
@@ -226,6 +231,12 @@ export function UpgradeToBusinessPanel({
           </p>
           <dl className="mt-4 space-y-3">
             <div>
+              <dt className="text-xs text-zinc-500 dark:text-zinc-400">Banco</dt>
+              <dd className="mt-1 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                {pagoMovil.bank}
+              </dd>
+            </div>
+            <div>
               <dt className="text-xs text-zinc-500 dark:text-zinc-400">
                 Teléfono
               </dt>
@@ -235,18 +246,25 @@ export function UpgradeToBusinessPanel({
             </div>
             <div>
               <dt className="text-xs text-zinc-500 dark:text-zinc-400">
-                Cédula
+                Cédula / RIF
               </dt>
               <dd className="mt-1">
-                <CopyableInline value={pagoMovil.ci} label="Cédula" mono />
+                <CopyableInline value={pagoMovil.ci} label="Cédula / RIF" mono />
               </dd>
             </div>
-            <div>
-              <dt className="text-xs text-zinc-500 dark:text-zinc-400">Banco</dt>
-              <dd className="mt-1 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                {pagoMovil.bank}
-              </dd>
-            </div>
+            {pagoMovil.holderName ? (
+              <div>
+                <dt className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Nombre del titular
+                </dt>
+                <dd className="mt-1">
+                  <CopyableInline
+                    value={pagoMovil.holderName}
+                    label="Nombre del titular"
+                  />
+                </dd>
+              </div>
+            ) : null}
           </dl>
         </section>
 

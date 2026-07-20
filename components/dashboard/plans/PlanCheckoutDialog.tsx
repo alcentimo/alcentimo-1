@@ -21,7 +21,10 @@ import {
   type BillingPeriod,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
-import { getSubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
+import {
+  getSubscriptionPagoMovilDetails,
+  type SubscriptionPagoMovilDetails,
+} from "@/src/config/subscription-pago-movil";
 import { calculateUpgradeProration } from "@/lib/plans/proration";
 import type { PlanId } from "@/src/config/plans";
 
@@ -38,6 +41,7 @@ interface PlanCheckoutDialogProps {
   currentPlanId?: PlanId;
   subscriptionPeriodEndsAt?: string | null;
   currentBillingPeriod?: BillingPeriod | null;
+  pagoMovil?: SubscriptionPagoMovilDetails;
 }
 
 export function PlanCheckoutDialog({
@@ -49,6 +53,7 @@ export function PlanCheckoutDialog({
   currentPlanId = "free",
   subscriptionPeriodEndsAt = null,
   currentBillingPeriod = "monthly",
+  pagoMovil: pagoMovilProp,
 }: PlanCheckoutDialogProps) {
   const [step, setStep] = useState<CheckoutStep>("checkout");
   const [referenceNumber, setReferenceNumber] = useState("");
@@ -59,7 +64,7 @@ export function PlanCheckoutDialog({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const pagoMovil = getSubscriptionPagoMovilDetails();
+  const pagoMovil = pagoMovilProp ?? getSubscriptionPagoMovilDetails();
 
   useEffect(() => {
     if (!open) return;
@@ -220,9 +225,15 @@ export function PlanCheckoutDialog({
                   </p>
 
                   <dl className="mt-4 space-y-3">
-                    <PagoMovilField label="Teléfono" value={pagoMovil.phone} mono />
-                    <PagoMovilField label="Cédula" value={pagoMovil.ci} mono />
                     <PagoMovilField label="Banco" value={pagoMovil.bank} />
+                    <PagoMovilField label="Teléfono" value={pagoMovil.phone} mono />
+                    <PagoMovilField label="Cédula / RIF" value={pagoMovil.ci} mono />
+                    {pagoMovil.holderName ? (
+                      <PagoMovilField
+                        label="Nombre del titular"
+                        value={pagoMovil.holderName}
+                      />
+                    ) : null}
                   </dl>
                 </div>
               </section>

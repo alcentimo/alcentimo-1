@@ -10,6 +10,7 @@ import { getAdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import { getSupportMessages } from "@/lib/support/get-support-messages";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
+import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
 import type { SupportMessage } from "@/lib/database.types";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ function resolveInitialTab(raw: string | string[] | undefined): AdminDashboardTa
   const value = Array.isArray(raw) ? raw[0] : raw;
   if (value === "soporte") return "soporte";
   if (value === "metricas") return "metricas";
+  if (value === "configuracion") return "configuracion";
   return "pagos";
 }
 
@@ -76,6 +78,8 @@ export default async function AdminDashboardPage({
         : "No se pudieron cargar las métricas.";
   }
 
+  const pagoMovil = await fetchSubscriptionPagoMovilDetails();
+
   const pendingPayments = payments.filter(
     (item) =>
       item.status === "pending" || item.status === "needs_correction",
@@ -89,9 +93,9 @@ export default async function AdminDashboardPage({
         <p className="section-label">Administración</p>
         <h1 className="page-header-title">Panel Admin</h1>
         <p className="page-header-desc">
-          Resumen unificado de pagos, soporte y métricas. Este espacio es
-          exclusivo para administradores; no incluye catálogo ni configuración
-          de tienda.
+          Resumen unificado de pagos, soporte, métricas y configuración de
+          cobro. Este espacio es exclusivo para administradores; no incluye
+          catálogo ni configuración de tienda.
         </p>
         <div className="flex flex-wrap gap-4 pt-1 text-sm text-zinc-500 dark:text-zinc-400">
           <span>
@@ -128,6 +132,7 @@ export default async function AdminDashboardPage({
           payments={payments}
           messages={messages}
           metrics={metrics}
+          pagoMovil={pagoMovil}
           paymentsError={paymentsError}
           messagesError={messagesError}
           metricsError={metricsError}
