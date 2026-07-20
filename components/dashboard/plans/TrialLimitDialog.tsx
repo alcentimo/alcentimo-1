@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { startProTrial } from "@/lib/plans/trial-actions";
 import { formatProTrialEndsAt } from "@/lib/plans/trial";
+import { ProTrialClaimFields } from "@/components/dashboard/plans/ProTrialClaimFields";
 
 interface TrialLimitDialogProps {
   open: boolean;
@@ -28,12 +29,13 @@ export function TrialLimitDialog({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successEndsAt, setSuccessEndsAt] = useState<string | null>(null);
+  const [claimCode, setClaimCode] = useState("");
 
   async function handleStartTrial() {
     setError(null);
     setPending(true);
 
-    const result = await startProTrial();
+    const result = await startProTrial(claimCode);
 
     setPending(false);
 
@@ -43,6 +45,7 @@ export function TrialLimitDialog({
     }
 
     setSuccessEndsAt(result.endsAt);
+    setClaimCode("");
     router.refresh();
   }
 
@@ -50,6 +53,7 @@ export function TrialLimitDialog({
     if (!nextOpen) {
       setError(null);
       setSuccessEndsAt(null);
+      setClaimCode("");
     }
     onOpenChange(nextOpen);
   }
@@ -67,61 +71,52 @@ export function TrialLimitDialog({
                 Ya puedes publicar hasta 250 productos. Tu prueba termina el{" "}
                 {formatProTrialEndsAt(successEndsAt)}.
               </>
+            ) : trialEligible ? (
+              <>
+                ¡Felicidades! Has desbloqueado una prueba Pro de 1 mes. Escribe
+                ALCENTIMO para reclamar tu premio.
+              </>
             ) : (
               <>
-                Has alcanzado tu límite de 10 productos en el plan Gratis.
-                {trialEligible
-                  ? " Activa una prueba gratuita de un mes del plan Pro (250 productos)."
-                  : " Elige un plan de pago para seguir creciendo."}
+                Has alcanzado tu límite de 10 productos en el plan Gratis. Elige
+                un plan de pago para seguir creciendo.
               </>
             )}
           </DialogDescription>
         </DialogHeader>
 
-        {error ? (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
-            {error}
-          </p>
-        ) : null}
-
-        <div className="flex flex-col gap-2 sm:flex-row">
-          {successEndsAt ? (
+        {successEndsAt ? (
+          <button
+            type="button"
+            onClick={() => handleClose(false)}
+            className="btn-primary w-full"
+          >
+            Continuar
+          </button>
+        ) : trialEligible ? (
+          <ProTrialClaimFields
+            claimCode={claimCode}
+            onClaimCodeChange={setClaimCode}
+            onSubmit={() => void handleStartTrial()}
+            pending={pending}
+            error={error}
+            unlockReady
+            submitLabel="Activar prueba Pro gratis"
+          />
+        ) : (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link href="/activar" className="btn-primary w-full text-center">
+              Ver planes
+            </Link>
             <button
               type="button"
               onClick={() => handleClose(false)}
-              className="btn-primary w-full"
+              className="btn-secondary w-full"
             >
-              Continuar
+              Cerrar
             </button>
-          ) : trialEligible ? (
-            <>
-              <button
-                type="button"
-                onClick={() => void handleStartTrial()}
-                disabled={pending}
-                className="btn-primary w-full"
-              >
-                {pending ? "Activando…" : "Activar prueba Pro gratis"}
-              </button>
-              <Link href="/activar" className="btn-secondary w-full text-center">
-                Ver planes
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link href="/activar" className="btn-primary w-full text-center">
-                Ver planes
-              </Link>
-              <button
-                type="button"
-                onClick={() => handleClose(false)}
-                className="btn-secondary w-full"
-              >
-                Cerrar
-              </button>
-            </>
-          )}
-        </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

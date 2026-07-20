@@ -51,13 +51,14 @@ export default async function ActivarPage() {
           <p className="section-label">Activación</p>
           <h1 className="page-header-title">Activa tu cuenta</h1>
           <p className="page-header-desc">
-            El plan Gratis incluye 10 productos. Prueba Pro gratis por 1 mes (250
+            Completa 10 productos para desbloquear tu mes de prueba Pro (250
             productos) o elige un plan de pago{store ? ` para ${store.name}` : ""}.
           </p>
         </header>
 
         <div className="mb-8 max-w-3xl">
           <ProTrialBanner
+            currentCount={productLimitStatus?.currentCount ?? 0}
             trialEligible={trial.eligible}
             trialActive={trial.active}
             trialEndsAt={trial.endsAt}

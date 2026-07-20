@@ -4164,11 +4164,76 @@ body {
 }
 
 .pro-trial-banner {
-  @apply flex flex-col gap-4 rounded-xl border border-teal-200 bg-teal-50 px-5 py-4 dark:border-teal-900/50 dark:bg-teal-950/30;
+  @apply flex flex-col gap-4 rounded-xl border px-5 py-4;
+}
+
+.pro-trial-banner--active,
+.pro-trial-banner--unlocked {
+  @apply border-teal-200 bg-teal-50 dark:border-teal-900/50 dark:bg-teal-950/30;
+}
+
+.pro-trial-banner--locked {
+  @apply border-zinc-200 bg-zinc-50 opacity-95 dark:border-zinc-800 dark:bg-zinc-900/40;
 }
 
 .pro-trial-banner-cta {
-  @apply inline-flex w-full items-center justify-center rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60 dark:bg-teal-600 dark:hover:bg-teal-500 sm:w-auto;
+  @apply inline-flex w-full items-center justify-center rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-teal-600 dark:hover:bg-teal-500 sm:w-auto;
+}
+
+.pro-trial-banner-link {
+  @apply inline-flex w-full items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900 sm:w-auto;
+}
+
+.pro-trial-progress {
+  @apply flex flex-col gap-2;
+}
+
+.pro-trial-progress-header {
+  @apply flex items-center justify-between gap-3 text-sm;
+}
+
+.pro-trial-progress-label {
+  @apply font-medium text-zinc-600 dark:text-zinc-300;
+}
+
+.pro-trial-progress-count {
+  @apply font-semibold tabular-nums text-zinc-900 dark:text-zinc-100;
+}
+
+.pro-trial-progress-track {
+  @apply h-2.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800;
+}
+
+.pro-trial-progress-fill {
+  @apply h-full rounded-full bg-teal-600 transition-[width] duration-500 ease-out dark:bg-teal-500;
+}
+
+.pro-trial-banner--locked .pro-trial-progress-fill {
+  @apply bg-zinc-400 dark:bg-zinc-600;
+}
+
+.pro-trial-banner--unlocked .pro-trial-progress-fill {
+  @apply bg-amber-500 dark:bg-amber-400;
+}
+
+.pro-trial-claim {
+  @apply flex flex-col gap-3;
+}
+
+.pro-trial-claim-label {
+  @apply text-sm text-teal-900/90 dark:text-teal-100/90;
+}
+
+.pro-trial-claim-input {
+  @apply w-full rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-sm font-medium uppercase tracking-wide text-zinc-900 outline-none ring-teal-500/30 placeholder:normal-case placeholder:font-normal placeholder:tracking-normal placeholder:text-zinc-400 focus:border-teal-500 focus:ring-2 dark:border-teal-900/60 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500;
+}
+
+.pro-trial-claim-hint {
+  @apply text-xs text-amber-700 dark:text-amber-300;
+}
+
+.pro-trial-claim-error {
+  @apply rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300;
 }
 
 .txn-field {

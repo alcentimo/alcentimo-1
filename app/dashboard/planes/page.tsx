@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
-import { getStoreProductLimitStatus } from "@/lib/plans/product-limit";
+import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
 import { resolveProTrialStatus } from "@/lib/plans/trial";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { PlansPanel } from "@/components/dashboard/PlansPanel";
+import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
 import { PageContainer } from "@/components/ui/PageContainer";
 
 export const dynamic = "force-dynamic";
@@ -19,8 +20,8 @@ export default async function PlanesPage() {
 
   const { authUser, store } = session;
   const trial = resolveProTrialStatus(authUser.profile);
-  const productLimitStatus = store
-    ? await getStoreProductLimitStatus(store.id)
+  const productLimitContext = store
+    ? await getStoreProductLimitContext(store.id)
     : null;
   const exchangeRateRow = await getCurrentExchangeRate();
   const exchangeRate = exchangeRateRow?.rate ?? null;
@@ -36,6 +37,17 @@ export default async function PlanesPage() {
         </p>
       </header>
 
+      {store ? (
+        <div className="mb-8 max-w-3xl">
+          <ProTrialBanner
+            currentCount={productLimitContext?.currentCount ?? 0}
+            trialEligible={trial.eligible}
+            trialActive={trial.active}
+            trialEndsAt={trial.endsAt}
+          />
+        </div>
+      ) : null}
+
       <PlansPanel
         currentPlanId={authUser.planId}
         currentPlanName={
@@ -45,8 +57,8 @@ export default async function PlanesPage() {
               ? "Gratis"
               : authUser.plan.name
         }
-        productCount={productLimitStatus?.currentCount ?? null}
-        productLimit={productLimitStatus?.productLimit ?? null}
+        productCount={productLimitContext?.currentCount ?? null}
+        productLimit={productLimitContext?.productLimit ?? null}
         exchangeRate={exchangeRate}
         trialActive={trial.active}
         trialEndsAt={trial.endsAt}
