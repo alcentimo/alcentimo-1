@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Gift, Lock, Sparkles } from "lucide-react";
+import { CheckCircle2, Gift, Lock, Sparkles } from "lucide-react";
 import { startProTrial } from "@/lib/plans/trial-actions";
 import { formatProTrialEndsAt } from "@/lib/plans/trial";
 import {
@@ -34,6 +34,7 @@ export function ProTrialBanner({
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successEndsAt, setSuccessEndsAt] = useState<string | null>(null);
   const [claimCode, setClaimCode] = useState("");
 
   const unlockReady = isProTrialUnlockReady(currentCount, unlockTarget);
@@ -47,17 +48,59 @@ export function ProTrialBanner({
     setError(null);
     setPending(true);
 
-    const result = await startProTrial(claimCode);
+    try {
+      const result = await startProTrial(claimCode);
 
-    setPending(false);
+      if (!result.ok) {
+        console.error("[startProTrial]", result.error);
+        setError(result.error);
+        return;
+      }
 
-    if (!result.ok) {
-      setError(result.error);
-      return;
+      setSuccessEndsAt(result.endsAt);
+      setClaimCode("");
+      router.refresh();
+    } catch (cause) {
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : "Error inesperado al activar la prueba Pro.";
+      console.error("[startProTrial]", cause);
+      setError(message);
+    } finally {
+      setPending(false);
     }
+  }
 
-    setClaimCode("");
+  function goToCatalog() {
+    router.push("/dashboard/catalogo?trial=activated");
     router.refresh();
+  }
+
+  if (successEndsAt) {
+    return (
+      <section className="pro-trial-banner pro-trial-banner--unlocked">
+        <div className="flex items-start gap-3">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-teal-700 dark:text-teal-300" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-teal-950 dark:text-teal-50">
+              ¡Prueba Pro activada!
+            </p>
+            <p className="mt-1 text-sm text-teal-900/80 dark:text-teal-100/80">
+              Ya puedes publicar hasta 250 productos. Tu prueba termina el{" "}
+              {formatProTrialEndsAt(successEndsAt)}.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={goToCatalog}
+          className="pro-trial-banner-cta"
+        >
+          Ir al catálogo
+        </button>
+      </section>
+    );
   }
 
   if (trialActive) {
@@ -75,6 +118,9 @@ export function ProTrialBanner({
             </p>
           </div>
         </div>
+        <Link href="/dashboard/catalogo" className="pro-trial-banner-cta">
+          Ir al catálogo
+        </Link>
       </section>
     );
   }

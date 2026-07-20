@@ -27,7 +27,6 @@ export function resolveProTrialStatus(
   const now = Date.now();
   const endsMs = endsAt ? new Date(endsAt).getTime() : null;
   const active =
-    resolvedPlanId === "free" &&
     startedAt != null &&
     endsMs != null &&
     endsMs > now;
@@ -62,7 +61,7 @@ export function getEffectivePlanIdForLimits(
   planId: PlanId,
   trial: ProTrialStatus,
 ): PlanId {
-  if (planId === "free" && trial.active) {
+  if (trial.active) {
     return "starter";
   }
   return planId;

@@ -20,6 +20,49 @@ export type StartProTrialResult =
   | { ok: true; endsAt: string }
   | { ok: false; error: string };
 
+function revalidateTrialPaths() {
+  revalidatePath("/activar");
+  revalidatePath("/dashboard/planes");
+  revalidatePath("/dashboard/catalogo");
+  revalidatePath("/dashboard", "layout");
+}
+
+/** Activa la prueba Pro vía service role (evita fallos del RPC en producción). */
+async function persistProTrialActivation(
+  userId: string,
+): Promise<StartProTrialResult> {
+  const admin = createAdminClient();
+  const startedAt = new Date();
+  const endsAt = new Date(startedAt);
+  endsAt.setMonth(endsAt.getMonth() + 1);
+
+  const { data, error } = await admin
+    .from("profiles")
+    .update({
+      plan: "FREE",
+      subscription_status: "none",
+      pro_trial_started_at: startedAt.toISOString(),
+      pro_trial_ends_at: endsAt.toISOString(),
+    })
+    .eq("id", userId)
+    .is("pro_trial_started_at", null)
+    .select("pro_trial_ends_at")
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  if (!data?.pro_trial_ends_at) {
+    return {
+      ok: false,
+      error: "Ya usaste tu mes de prueba Pro.",
+    };
+  }
+
+  return { ok: true, endsAt: data.pro_trial_ends_at };
+}
+
 export async function startProTrial(
   claimCode: string,
 ): Promise<StartProTrialResult> {
@@ -30,6 +73,8 @@ export async function startProTrial(
     return { ok: false, error: auth.error };
   }
 
+  const userId = auth.authUser.id;
+
   if (!isProTrialClaimCodeValid(claimCode)) {
     return {
       ok: false,
@@ -37,7 +82,7 @@ export async function startProTrial(
     };
   }
 
-  const store = await getUserStore(supabase, auth.authUser.id);
+  const store = await getUserStore(supabase, userId);
   if (!store) {
     return {
       ok: false,
@@ -57,7 +102,7 @@ export async function startProTrial(
   const { data: profile, error: profileError } = await admin
     .from("profiles")
     .select("plan, subscription_status, pro_trial_started_at")
-    .eq("id", auth.authUser.id)
+    .eq("id", userId)
     .maybeSingle();
 
   if (profileError || !profile) {
@@ -67,7 +112,7 @@ export async function startProTrial(
     };
   }
 
-  if (!isEligiblePlanForProTrial(profile)) {
+  if (!isEligiblePlanForProTrial(profile, auth.authUser.planId)) {
     return {
       ok: false,
       error: "La prueba gratuita solo aplica al plan Gratis.",
@@ -81,38 +126,20 @@ export async function startProTrial(
         plan: "FREE",
         subscription_status: "none",
       })
-      .eq("id", auth.authUser.id);
+      .eq("id", userId);
 
     if (resetError) {
       return { ok: false, error: resetError.message };
     }
   }
 
-  const { data, error } = await supabase.rpc("start_pro_trial", {
-    p_user_id: auth.authUser.id,
-  });
+  const activation = await persistProTrialActivation(userId);
 
-  if (error) {
-    return { ok: false, error: error.message };
+  if (!activation.ok) {
+    return activation;
   }
 
-  const row = Array.isArray(data) ? data[0] : data;
-  const ok = Boolean(row?.ok);
-  const errorMessage =
-    typeof row?.error_message === "string" ? row.error_message : null;
-  const endsAt =
-    typeof row?.trial_ends_at === "string" ? row.trial_ends_at : null;
+  revalidateTrialPaths();
 
-  if (!ok || !endsAt) {
-    return {
-      ok: false,
-      error: errorMessage ?? "No se pudo activar la prueba Pro.",
-    };
-  }
-
-  revalidatePath("/dashboard/catalogo");
-  revalidatePath("/dashboard/planes");
-  revalidatePath("/activar");
-
-  return { ok: true, endsAt };
+  return activation;
 }

@@ -70,7 +70,8 @@ export async function getStoreOwnerTrialStatus(
 
   const supabase = await createClient();
   const profile = await getUserProfile(supabase, ownerId);
-  return resolveProTrialStatus(profile, resolvePlanId(profile?.plan));
+  const planId = await getUserPlanIdById(ownerId);
+  return resolveProTrialStatus(profile, planId);
 }
 
 export async function getStoreProductLimitContext(

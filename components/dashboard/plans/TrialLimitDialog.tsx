@@ -35,17 +35,33 @@ export function TrialLimitDialog({
     setError(null);
     setPending(true);
 
-    const result = await startProTrial(claimCode);
+    try {
+      const result = await startProTrial(claimCode);
 
-    setPending(false);
+      if (!result.ok) {
+        console.error("[startProTrial]", result.error);
+        setError(result.error);
+        return;
+      }
 
-    if (!result.ok) {
-      setError(result.error);
-      return;
+      setSuccessEndsAt(result.endsAt);
+      setClaimCode("");
+      router.refresh();
+    } catch (cause) {
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : "Error inesperado al activar la prueba Pro.";
+      console.error("[startProTrial]", cause);
+      setError(message);
+    } finally {
+      setPending(false);
     }
+  }
 
-    setSuccessEndsAt(result.endsAt);
-    setClaimCode("");
+  function handleContinueAfterSuccess() {
+    handleClose(false);
+    router.push("/dashboard/catalogo?trial=activated");
     router.refresh();
   }
 
@@ -88,10 +104,10 @@ export function TrialLimitDialog({
         {successEndsAt ? (
           <button
             type="button"
-            onClick={() => handleClose(false)}
+            onClick={handleContinueAfterSuccess}
             className="btn-primary w-full"
           >
-            Continuar
+            Ir al catálogo
           </button>
         ) : trialEligible ? (
           <ProTrialClaimFields

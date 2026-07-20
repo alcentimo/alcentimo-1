@@ -44,7 +44,14 @@ export function ProTrialClaimFields({
         <p className="pro-trial-claim-hint">La palabra debe ser exactamente ALCENTIMO.</p>
       ) : null}
       {error ? (
-        <p className="pro-trial-claim-error">{error}</p>
+        <p className="pro-trial-claim-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {pending ? (
+        <p className="text-sm text-teal-700 dark:text-teal-300" role="status">
+          Activando tu prueba Pro…
+        </p>
       ) : null}
       <button
         type="button"
