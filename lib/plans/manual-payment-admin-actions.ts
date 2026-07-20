@@ -9,11 +9,20 @@ import {
   buildPaidProfilePatch,
   buildRevokedProfilePatch,
   manualPaymentPlanToDbPlan,
+  normalizeDbPlan,
 } from "@/lib/plans/plan-activation";
+import {
+  calculateUpgradeProration,
+  isBillingPeriod,
+  type BillingPeriod,
+} from "@/lib/plans/proration";
 
 export type ManualPaymentAdminActionResult = {
   error?: string;
   success?: boolean;
+  creditUsd?: number;
+  amountDueUsd?: number;
+  daysRemaining?: number;
 };
 
 async function requireSupportAdmin() {
@@ -37,7 +46,7 @@ async function getPendingPayment(
   const { data, error } = await admin
     .from("manual_payments")
     .select(
-      "id, user_id, plan_id, reference_number, image_url, status, created_at, verified_at, rejected_at",
+      "id, user_id, plan_id, reference_number, image_url, status, created_at, verified_at, rejected_at, billing_period, from_plan, from_billing_period, list_price_usd, credit_usd, amount_due_usd, days_remaining, credited_period_ends_at",
     )
     .eq("id", paymentId)
     .maybeSingle();
@@ -57,8 +66,8 @@ function revalidatePlanPaths() {
 }
 
 /**
- * Confirma un pago pendiente: marca el comprobante como verified y activa
- * el plan pagado (PRO / BUSINESS) en profiles del dueño (owner_id).
+ * Confirma un pago pendiente: recalcula saldo a favor (PRO → Business),
+ * marca verified y activa el plan en profiles del dueño.
  */
 export async function verifyManualPayment(
   paymentId: string,
@@ -75,9 +84,12 @@ export async function verifyManualPayment(
 
   const admin = createAdminClient();
   const planDb = manualPaymentPlanToDbPlan(payment.plan_id);
-  const now = new Date().toISOString();
-
-  // El pagador es el dueño de la(s) tienda(s); activamos su perfil.
+  const billingPeriod: BillingPeriod =
+    payment.billing_period && isBillingPeriod(payment.billing_period)
+      ? payment.billing_period
+      : "monthly";
+  const now = new Date();
+  const nowIso = now.toISOString();
   const ownerId = payment.user_id;
 
   const { data: ownedStores, error: storesError } = await admin
@@ -94,9 +106,30 @@ export async function verifyManualPayment(
     };
   }
 
+  const fromPlan = normalizeDbPlan(payment.from_plan ?? "FREE");
+  const fromBilling: BillingPeriod =
+    payment.from_billing_period && isBillingPeriod(payment.from_billing_period)
+      ? payment.from_billing_period
+      : "monthly";
+  const proration = calculateUpgradeProration({
+    fromPlan,
+    toPlan: planDb,
+    periodEndsAt: payment.credited_period_ends_at,
+    fromBillingPeriod: fromBilling,
+    toBillingPeriod: billingPeriod,
+    now,
+  });
+
   const { error: paymentError } = await admin
     .from("manual_payments")
-    .update({ status: "verified", verified_at: now })
+    .update({
+      status: "verified",
+      verified_at: nowIso,
+      list_price_usd: proration.listPriceUsd,
+      credit_usd: proration.creditUsd,
+      amount_due_usd: proration.amountDueUsd,
+      days_remaining: proration.daysRemaining,
+    })
     .eq("id", paymentId)
     .eq("status", "pending");
 
@@ -104,17 +137,27 @@ export async function verifyManualPayment(
 
   const { error: profileError } = await admin
     .from("profiles")
-    .update(buildPaidProfilePatch(planDb, "active"))
+    .update(
+      buildPaidProfilePatch(planDb, "active", {
+        billingPeriod,
+        periodStartedAt: now,
+      }),
+    )
     .eq("id", ownerId);
 
   if (profileError) return { error: profileError.message };
 
   revalidatePlanPaths();
   revalidatePath("/dashboard", "layout");
-  return { success: true };
+  return {
+    success: true,
+    creditUsd: proration.creditUsd,
+    amountDueUsd: proration.amountDueUsd,
+    daysRemaining: proration.daysRemaining,
+  };
 }
 
-/** Rechaza un pago y revoca el acceso Pro provisional si aplica. */
+/** Rechaza un pago y revoca el acceso provisional si aplica. */
 export async function rejectManualPayment(
   paymentId: string,
 ): Promise<ManualPaymentAdminActionResult> {
@@ -146,12 +189,33 @@ export async function rejectManualPayment(
     .maybeSingle();
 
   if (profile?.subscription_status === "provisional") {
-    const { error: profileError } = await admin
-      .from("profiles")
-      .update(buildRevokedProfilePatch())
-      .eq("id", payment.user_id);
+    const previousPlan = normalizeDbPlan(payment.from_plan ?? "FREE");
 
-    if (profileError) return { error: profileError.message };
+    if (previousPlan === "FREE") {
+      const { error: profileError } = await admin
+        .from("profiles")
+        .update(buildRevokedProfilePatch())
+        .eq("id", payment.user_id);
+      if (profileError) return { error: profileError.message };
+    } else {
+      const previousBilling: BillingPeriod =
+        payment.from_billing_period && isBillingPeriod(payment.from_billing_period)
+          ? payment.from_billing_period
+          : "monthly";
+      const { error: profileError } = await admin
+        .from("profiles")
+        .update({
+          plan: previousPlan,
+          subscription_status: "active",
+          billing_period: previousBilling,
+          subscription_period_ends_at:
+            payment.credited_period_ends_at ?? null,
+          pro_trial_started_at: null,
+          pro_trial_ends_at: null,
+        })
+        .eq("id", payment.user_id);
+      if (profileError) return { error: profileError.message };
+    }
   }
 
   revalidatePlanPaths();

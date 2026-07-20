@@ -25,6 +25,8 @@ interface PlansPanelProps {
   trialActive?: boolean;
   trialEndsAt?: string | null;
   subscriptionStatus?: "none" | "provisional" | "active" | string | null;
+  subscriptionPeriodEndsAt?: string | null;
+  currentBillingPeriod?: BillingPeriod | null;
 }
 
 function isCurrentTier(tierPlanId: PlanId, currentPlanId: PlanId): boolean {
@@ -88,6 +90,8 @@ export function PlansPanel({
   trialActive = false,
   trialEndsAt = null,
   subscriptionStatus = null,
+  subscriptionPeriodEndsAt = null,
+  currentBillingPeriod = "monthly",
 }: PlansPanelProps) {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -165,6 +169,9 @@ export function PlansPanel({
         tier={checkoutTier}
         billing={billing}
         exchangeRate={exchangeRate}
+        currentPlanId={currentPlanId}
+        subscriptionPeriodEndsAt={subscriptionPeriodEndsAt}
+        currentBillingPeriod={currentBillingPeriod}
       />
     </div>
   );

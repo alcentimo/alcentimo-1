@@ -22,6 +22,8 @@ import {
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
 import { getSubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
+import { calculateUpgradeProration } from "@/lib/plans/proration";
+import type { PlanId } from "@/src/config/plans";
 
 const MIN_SUBMIT_DURATION_MS = 5000;
 
@@ -33,6 +35,9 @@ interface PlanCheckoutDialogProps {
   tier: PlanPricingTier | null;
   billing: BillingPeriod;
   exchangeRate?: number | null;
+  currentPlanId?: PlanId;
+  subscriptionPeriodEndsAt?: string | null;
+  currentBillingPeriod?: BillingPeriod | null;
 }
 
 export function PlanCheckoutDialog({
@@ -41,6 +46,9 @@ export function PlanCheckoutDialog({
   tier,
   billing,
   exchangeRate = null,
+  currentPlanId = "free",
+  subscriptionPeriodEndsAt = null,
+  currentBillingPeriod = "monthly",
 }: PlanCheckoutDialogProps) {
   const [step, setStep] = useState<CheckoutStep>("checkout");
   const [referenceNumber, setReferenceNumber] = useState("");
@@ -98,6 +106,7 @@ export function PlanCheckoutDialog({
 
     const formData = new FormData();
     formData.set("planId", tier.planId);
+    formData.set("billingPeriod", billing);
     formData.set("referenceNumber", referenceNumber);
     formData.set("proofImage", proofFile);
 
@@ -124,9 +133,31 @@ export function PlanCheckoutDialog({
   if (!tier || tier.monthlyUsd <= 0) return null;
 
   const chargeUsd = getTierChargeUsd(tier, billing);
+  const fromDbPlan =
+    currentPlanId === "starter" || currentPlanId === "growth"
+      ? "PRO"
+      : currentPlanId === "premium"
+        ? "BUSINESS"
+        : "FREE";
+  const toDbPlan =
+    tier.planId === "starter"
+      ? "PRO"
+      : tier.planId === "premium"
+        ? "BUSINESS"
+        : "FREE";
+  const proration = calculateUpgradeProration({
+    fromPlan: fromDbPlan,
+    toPlan: toDbPlan,
+    periodEndsAt: subscriptionPeriodEndsAt,
+    fromBillingPeriod: currentBillingPeriod ?? "monthly",
+    toBillingPeriod: billing,
+  });
+  const displayChargeUsd = proration.isUpgradeWithCredit
+    ? proration.amountDueUsd
+    : chargeUsd;
   const vesEquivalent =
     exchangeRate != null && exchangeRate > 0
-      ? chargeUsd * exchangeRate
+      ? displayChargeUsd * exchangeRate
       : null;
 
   return (
@@ -153,6 +184,25 @@ export function PlanCheckoutDialog({
                   <p className="mt-2 text-base font-semibold text-neutral-900 dark:text-neutral-50">
                     {formatPlanCheckoutSummary(tier, billing)}
                   </p>
+                  {proration.isUpgradeWithCredit ? (
+                    <div className="mt-3 space-y-1 text-sm text-neutral-600 dark:text-neutral-400">
+                      <p>
+                        Días restantes del plan actual:{" "}
+                        <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                          {proration.daysRemaining}
+                        </span>
+                      </p>
+                      <p>
+                        Saldo a favor:{" "}
+                        <span className="font-medium text-teal-700 dark:text-teal-300">
+                          ${proration.creditUsd.toFixed(2)}
+                        </span>
+                      </p>
+                      <p className="font-semibold text-neutral-900 dark:text-neutral-50">
+                        Monto a pagar ahora: ${proration.amountDueUsd.toFixed(2)}
+                      </p>
+                    </div>
+                  ) : null}
                   {vesEquivalent != null && (
                     <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
                       Equivalente referencial: {formatVes(vesEquivalent)}

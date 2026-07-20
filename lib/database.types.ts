@@ -17,6 +17,9 @@ export interface Profile {
   id: string;
   plan: ProfilePlanDb | string;
   subscription_status?: SubscriptionStatus | string;
+  billing_period?: "monthly" | "annual" | string | null;
+  subscription_period_started_at?: string | null;
+  subscription_period_ends_at?: string | null;
   pro_trial_started_at?: string | null;
   pro_trial_ends_at?: string | null;
   created_at?: string;
@@ -36,6 +39,14 @@ export interface ManualPayment {
   created_at: string;
   verified_at: string | null;
   rejected_at: string | null;
+  billing_period?: "monthly" | "annual" | string;
+  from_plan?: string | null;
+  list_price_usd?: number | null;
+  credit_usd?: number | null;
+  amount_due_usd?: number | null;
+  days_remaining?: number | null;
+  credited_period_ends_at?: string | null;
+  from_billing_period?: "monthly" | "annual" | string | null;
 }
 
 export type PaymentReportStatus = "pending" | "verified" | "rejected";

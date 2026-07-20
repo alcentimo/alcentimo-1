@@ -109,8 +109,12 @@ export function ManualPaymentsPanel({
             : item,
         ),
       );
+      const credit =
+        typeof result.creditUsd === "number" && result.creditUsd > 0
+          ? ` Saldo a favor: $${result.creditUsd.toFixed(2)} · A pagar: $${(result.amountDueUsd ?? 0).toFixed(2)}.`
+          : "";
       setSuccess(
-        `Pago confirmado: ${storeName} quedó con Plan ${planName} (active).`,
+        `Pago confirmado: ${storeName} quedó con Plan ${planName} (active).${credit}`,
       );
     });
   }
@@ -230,6 +234,39 @@ export function ManualPaymentsPanel({
                       Perfil actual: {payment.owner_plan ?? "—"} /{" "}
                       {payment.owner_subscription_status ?? "—"}
                     </p>
+                    {payment.from_plan ||
+                    payment.credit_usd != null ||
+                    payment.amount_due_usd != null ? (
+                      <div className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+                        {payment.from_plan ? (
+                          <p>
+                            Desde:{" "}
+                            <span className="font-medium">{payment.from_plan}</span>
+                            {payment.days_remaining != null
+                              ? ` · ${payment.days_remaining} días restantes`
+                              : null}
+                          </p>
+                        ) : null}
+                        {payment.list_price_usd != null ? (
+                          <p>
+                            Precio lista: ${Number(payment.list_price_usd).toFixed(2)}
+                          </p>
+                        ) : null}
+                        {payment.credit_usd != null &&
+                        Number(payment.credit_usd) > 0 ? (
+                          <p>
+                            Saldo a favor: $
+                            {Number(payment.credit_usd).toFixed(2)}
+                          </p>
+                        ) : null}
+                        {payment.amount_due_usd != null ? (
+                          <p className="font-semibold text-zinc-800 dark:text-zinc-100">
+                            Monto a confirmar: $
+                            {Number(payment.amount_due_usd).toFixed(2)}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <p className="text-sm text-zinc-600 dark:text-zinc-300">
                       Ref:{" "}
                       <span className="font-mono">{payment.reference_number}</span>

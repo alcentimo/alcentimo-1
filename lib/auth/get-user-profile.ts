@@ -60,6 +60,9 @@ async function applyStoreOwnerPlanToUser(
     subscription_status: ownerPlan.subscription_status,
     pro_trial_started_at: ownerPlan.pro_trial_started_at,
     pro_trial_ends_at: ownerPlan.pro_trial_ends_at,
+    billing_period: ownerPlan.billing_period,
+    subscription_period_started_at: ownerPlan.subscription_period_started_at,
+    subscription_period_ends_at: ownerPlan.subscription_period_ends_at,
   };
 
   const displayPlan = getDisplayPlanForProfile(ownerProfile);
@@ -78,7 +81,7 @@ export async function getUserProfile(
   userId: string,
 ): Promise<Profile | null> {
   const fullSelect =
-    "id, plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, created_at, updated_at";
+    "id, plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, billing_period, subscription_period_started_at, subscription_period_ends_at, created_at, updated_at";
 
   const { data, error } = await client
     .from("profiles")
@@ -90,8 +93,25 @@ export async function getUserProfile(
     return data;
   }
 
-  // Fallback si subscription_status aún no existe en el proyecto remoto.
+  // Fallback si columnas nuevas aún no existen en el proyecto remoto.
   const { data: fallback, error: fallbackError } = await client
+    .from("profiles")
+    .select(
+      "id, plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, created_at, updated_at",
+    )
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!fallbackError && fallback) {
+    return {
+      ...fallback,
+      billing_period: null,
+      subscription_period_started_at: null,
+      subscription_period_ends_at: null,
+    };
+  }
+
+  const { data: legacy, error: legacyError } = await client
     .from("profiles")
     .select(
       "id, plan, pro_trial_started_at, pro_trial_ends_at, created_at, updated_at",
@@ -99,13 +119,16 @@ export async function getUserProfile(
     .eq("id", userId)
     .maybeSingle();
 
-  if (fallbackError || !fallback) {
+  if (legacyError || !legacy) {
     return null;
   }
 
   return {
-    ...fallback,
+    ...legacy,
     subscription_status: "none",
+    billing_period: null,
+    subscription_period_started_at: null,
+    subscription_period_ends_at: null,
   };
 }
 

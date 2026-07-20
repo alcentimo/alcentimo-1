@@ -11,11 +11,20 @@ import {
   manualPaymentPlanToDbPlan,
 } from "@/lib/plans/plan-activation";
 import { uploadSubscriptionPaymentProof } from "@/lib/plans/manual-payment-storage";
+import {
+  calculateUpgradeProration,
+  isBillingPeriod,
+  type BillingPeriod,
+} from "@/lib/plans/proration";
+import { resolveCurrentPeriodEndsAt } from "@/lib/plans/resolve-subscription-period";
 import type { PlanId } from "@/src/config/plans";
 
 export type ManualPaymentActionResult = {
   error?: string;
   success?: boolean;
+  creditUsd?: number;
+  amountDueUsd?: number;
+  daysRemaining?: number;
 };
 
 const UPGRADE_PLAN_IDS = new Set<PlanId>(["starter", "premium"]);
@@ -43,7 +52,7 @@ async function rejectPendingPaymentsForUser(
   await query;
 }
 
-/** Reporta pago manual y otorga acceso Pro provisional de inmediato. */
+/** Reporta pago manual y otorga acceso provisional de inmediato. */
 export async function submitManualPayment(
   formData: FormData,
 ): Promise<ManualPaymentActionResult> {
@@ -55,6 +64,10 @@ export async function submitManualPayment(
   }
 
   const planId = String(formData.get("planId") ?? "").trim() as PlanId;
+  const billingRaw = String(formData.get("billingPeriod") ?? "monthly").trim();
+  const billingPeriod: BillingPeriod = isBillingPeriod(billingRaw)
+    ? billingRaw
+    : "monthly";
   const referenceNumber = normalizeReference(
     String(formData.get("referenceNumber") ?? ""),
   );
@@ -80,6 +93,27 @@ export async function submitManualPayment(
   const admin = createAdminClient();
   const planDb = manualPaymentPlanToDbPlan(planId as ManualPaymentPlanId);
 
+  const { data: currentProfile } = await admin
+    .from("profiles")
+    .select(
+      "plan, billing_period, subscription_period_started_at, subscription_period_ends_at",
+    )
+    .eq("id", auth.authUser.id)
+    .maybeSingle();
+
+  const period = await resolveCurrentPeriodEndsAt(
+    auth.authUser.id,
+    currentProfile,
+  );
+
+  const proration = calculateUpgradeProration({
+    fromPlan: period.fromPlan,
+    toPlan: planDb,
+    periodEndsAt: period.periodEndsAt,
+    fromBillingPeriod: period.billingPeriod,
+    toBillingPeriod: billingPeriod,
+  });
+
   const { data: payment, error: insertError } = await admin
     .from("manual_payments")
     .insert({
@@ -88,6 +122,14 @@ export async function submitManualPayment(
       reference_number: referenceNumber,
       image_url: upload.url,
       status: "pending",
+      billing_period: billingPeriod,
+      from_plan: period.fromPlan,
+      from_billing_period: period.billingPeriod,
+      list_price_usd: proration.listPriceUsd,
+      credit_usd: proration.creditUsd,
+      amount_due_usd: proration.amountDueUsd,
+      days_remaining: proration.daysRemaining,
+      credited_period_ends_at: period.periodEndsAt,
     })
     .select("id")
     .single();
@@ -100,7 +142,11 @@ export async function submitManualPayment(
 
   const { error: profileError } = await admin
     .from("profiles")
-    .update(buildPaidProfilePatch(planDb, "provisional"))
+    .update(
+      buildPaidProfilePatch(planDb, "provisional", {
+        billingPeriod,
+      }),
+    )
     .eq("id", auth.authUser.id);
 
   if (profileError) {
@@ -111,6 +157,12 @@ export async function submitManualPayment(
   revalidatePath("/dashboard/planes");
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard", "layout");
+  revalidatePath("/admin/dashboard");
 
-  return { success: true };
+  return {
+    success: true,
+    creditUsd: proration.creditUsd,
+    amountDueUsd: proration.amountDueUsd,
+    daysRemaining: proration.daysRemaining,
+  };
 }

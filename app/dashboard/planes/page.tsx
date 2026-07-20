@@ -59,6 +59,12 @@ export default async function PlanesPage() {
         trialActive={trial.active}
         trialEndsAt={trial.endsAt}
         subscriptionStatus={authUser.profile?.subscription_status ?? "none"}
+        subscriptionPeriodEndsAt={
+          authUser.profile?.subscription_period_ends_at ?? null
+        }
+        currentBillingPeriod={
+          authUser.profile?.billing_period === "annual" ? "annual" : "monthly"
+        }
       />
     </PageContainer>
   );
