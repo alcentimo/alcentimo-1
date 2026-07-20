@@ -46,19 +46,36 @@ export async function getUserProfile(
   client: SupabaseServerClient,
   userId: string,
 ): Promise<Profile | null> {
+  const fullSelect =
+    "id, plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, created_at, updated_at";
+
   const { data, error } = await client
     .from("profiles")
+    .select(fullSelect)
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!error) {
+    return data;
+  }
+
+  // Fallback si subscription_status aún no existe en el proyecto remoto.
+  const { data: fallback, error: fallbackError } = await client
+    .from("profiles")
     .select(
-      "id, plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, created_at, updated_at",
+      "id, plan, pro_trial_started_at, pro_trial_ends_at, created_at, updated_at",
     )
     .eq("id", userId)
     .maybeSingle();
 
-  if (error) {
-    // Perfil ausente o error de lectura: usar plan FREE por defecto.
+  if (fallbackError || !fallback) {
     return null;
   }
-  return data;
+
+  return {
+    ...fallback,
+    subscription_status: "none",
+  };
 }
 
 export async function getUserPlanId(

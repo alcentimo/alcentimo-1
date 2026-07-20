@@ -4,6 +4,7 @@ import {
   resolvePlanId,
   type PlanId,
 } from "@/src/config/plans";
+import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
 
 export interface ProTrialStatus {
   eligible: boolean;
@@ -16,7 +17,7 @@ export interface ProTrialStatus {
 export function resolveProTrialStatus(
   profile: Pick<
     Profile,
-    "plan" | "pro_trial_started_at" | "pro_trial_ends_at"
+    "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
   > | null,
 ): ProTrialStatus {
   const planId = resolvePlanId(profile?.plan);
@@ -30,7 +31,7 @@ export function resolveProTrialStatus(
     endsMs != null &&
     endsMs > now;
   const consumed = startedAt != null && !active;
-  const eligible = planId === "free" && startedAt == null;
+  const eligible = isEligiblePlanForProTrial(profile) && !active;
 
   return {
     eligible,

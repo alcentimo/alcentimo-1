@@ -2,9 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { getUserStore } from "@/lib/stores";
 import { getStoreProductCount } from "@/lib/plans/product-limit";
+import {
+  isEligiblePlanForProTrial,
+  needsProTrialPlanReset,
+} from "@/lib/plans/plan-activation";
 import {
   isProTrialClaimCodeValid,
   isProTrialUnlockReady,
@@ -46,6 +51,41 @@ export async function startProTrial(
       ok: false,
       error: `Publica al menos ${PRO_TRIAL_UNLOCK_PRODUCT_COUNT} productos para desbloquear la prueba Pro.`,
     };
+  }
+
+  const admin = createAdminClient();
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .select("plan, subscription_status, pro_trial_started_at")
+    .eq("id", auth.authUser.id)
+    .maybeSingle();
+
+  if (profileError || !profile) {
+    return {
+      ok: false,
+      error: profileError?.message ?? "No se encontró tu perfil.",
+    };
+  }
+
+  if (!isEligiblePlanForProTrial(profile)) {
+    return {
+      ok: false,
+      error: "La prueba gratuita solo aplica al plan Gratis.",
+    };
+  }
+
+  if (needsProTrialPlanReset(profile)) {
+    const { error: resetError } = await admin
+      .from("profiles")
+      .update({
+        plan: "FREE",
+        subscription_status: "none",
+      })
+      .eq("id", auth.authUser.id);
+
+    if (resetError) {
+      return { ok: false, error: resetError.message };
+    }
   }
 
   const { data, error } = await supabase.rpc("start_pro_trial", {
