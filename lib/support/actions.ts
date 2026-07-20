@@ -87,5 +87,6 @@ export async function updateSupportMessageStatusAction(
   }
 
   revalidatePath("/admin/soporte");
+  revalidatePath("/admin/dashboard");
   return { success: true };
 }

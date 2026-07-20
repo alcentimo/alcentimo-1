@@ -50,6 +50,7 @@ async function getPendingPayment(
 
 function revalidatePlanPaths() {
   revalidatePath("/admin/pagos");
+  revalidatePath("/admin/dashboard");
   revalidatePath("/activar");
   revalidatePath("/dashboard/planes");
   revalidatePath("/dashboard/catalogo");
