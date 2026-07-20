@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { CheckCircle2, Smartphone, Upload } from "lucide-react";
+import { CheckCircle2, Loader2, Smartphone, Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,8 @@ import {
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
 import { getSubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
+
+const MIN_SUBMIT_DURATION_MS = 1800;
 
 type CheckoutStep = "checkout" | "success";
 
@@ -45,6 +47,7 @@ export function PlanCheckoutDialog({
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitProgress, setSubmitProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,8 +60,19 @@ export function PlanCheckoutDialog({
     setProofFile(null);
     setProofPreview(null);
     setSubmitting(false);
+    setSubmitProgress(0);
     setError(null);
   }, [open, tier?.planId, billing]);
+
+  useEffect(() => {
+    if (!submitting) {
+      setSubmitProgress(0);
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => setSubmitProgress(100));
+    return () => cancelAnimationFrame(frame);
+  }, [submitting]);
 
   useEffect(() => {
     if (!proofFile) {
@@ -77,7 +91,7 @@ export function PlanCheckoutDialog({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!tier || tier.planId === "free" || !proofFile) return;
+    if (!tier || tier.planId === "free" || !proofFile || submitting) return;
 
     setSubmitting(true);
     setError(null);
@@ -87,7 +101,10 @@ export function PlanCheckoutDialog({
     formData.set("referenceNumber", referenceNumber);
     formData.set("proofImage", proofFile);
 
-    const result = await submitManualPayment(formData);
+    const [result] = await Promise.all([
+      submitManualPayment(formData),
+      new Promise<void>((resolve) => setTimeout(resolve, MIN_SUBMIT_DURATION_MS)),
+    ]);
 
     setSubmitting(false);
 
@@ -179,6 +196,7 @@ export function PlanCheckoutDialog({
                         inputMode="numeric"
                         autoComplete="off"
                         required
+                        disabled={submitting}
                         className="payment-field-input mt-1.5"
                       />
                     </div>
@@ -194,6 +212,7 @@ export function PlanCheckoutDialog({
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/gif"
                         required
+                        disabled={submitting}
                         className="sr-only"
                         onChange={(event) => {
                           const file = event.target.files?.[0] ?? null;
@@ -203,7 +222,8 @@ export function PlanCheckoutDialog({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="mt-1.5 flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-6 text-sm text-neutral-600 transition hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900/50 dark:text-neutral-300 dark:hover:bg-neutral-900"
+                        disabled={submitting}
+                        className="mt-1.5 flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-6 text-sm text-neutral-600 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900/50 dark:text-neutral-300 dark:hover:bg-neutral-900"
                       >
                         <Upload className="h-5 w-5" aria-hidden="true" />
                         {proofFile ? proofFile.name : "Subir captura del pago"}
@@ -219,6 +239,25 @@ export function PlanCheckoutDialog({
                     </div>
                   </div>
 
+                  {submitting ? (
+                    <div
+                      className="mt-4 space-y-3 rounded-xl border border-teal-200 bg-teal-50/60 p-4 dark:border-teal-900 dark:bg-teal-950/30"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <div className="flex items-center gap-2 text-sm font-medium text-teal-800 dark:text-teal-200">
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        Procesando tu pago…
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-teal-100 dark:bg-teal-900/60">
+                        <div
+                          className="h-full rounded-full bg-teal-600 transition-[width] duration-[1800ms] ease-out dark:bg-teal-400"
+                          style={{ width: `${submitProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+
                   {error && (
                     <p className="mt-4 text-sm text-red-600 dark:text-red-400" role="alert">
                       {error}
@@ -229,9 +268,16 @@ export function PlanCheckoutDialog({
                     <button
                       type="submit"
                       disabled={submitting || !proofFile}
-                      className="btn-brand inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold disabled:opacity-60"
+                      className="btn-brand inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-sm font-semibold disabled:opacity-60"
                     >
-                      {submitting ? "Activando acceso…" : "Confirmar pago y activar Pro"}
+                      {submitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                          Enviando…
+                        </>
+                      ) : (
+                        "Confirmar pago y activar Pro"
+                      )}
                     </button>
                   </div>
                 </form>
