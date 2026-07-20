@@ -175,12 +175,24 @@ export function shouldShowProductLimitBanner(check: ProductLimitCheck): boolean 
 
 export function getProductLimitErrorMessage(
   check: ProductLimitCheck,
-  trial?: { eligible: boolean; active: boolean },
+  trial?: {
+    eligible: boolean;
+    active: boolean;
+    consumed?: boolean;
+    startedAt?: string | null;
+  },
 ): string {
   if (check.canCreateMore) return "";
 
-  if (trial?.eligible) {
-    return "Has alcanzado tu límite. Activa una prueba gratuita de un mes del plan Pro (250 productos).";
+  const canOfferProTrial =
+    trial != null &&
+    !trial.active &&
+    !trial.consumed &&
+    trial.startedAt == null &&
+    trial.eligible;
+
+  if (canOfferProTrial) {
+    return "¡Has alcanzado tu límite! Activa una prueba gratuita de un mes del plan Pro (250 productos)";
   }
 
   if (isUnlimitedProductLimit(check.productLimit)) {

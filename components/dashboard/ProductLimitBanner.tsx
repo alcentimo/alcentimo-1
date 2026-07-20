@@ -5,7 +5,11 @@ import {
   isNearProductLimit,
   type ProductLimitCheck,
 } from "@/src/config/plans";
-import type { ProTrialStatus } from "@/lib/plans/trial";
+import {
+  PRO_TRIAL_AT_LIMIT_MESSAGE,
+  shouldPromoteProTrialAtLimit,
+  type ProTrialStatus,
+} from "@/lib/plans/trial";
 
 interface ProductLimitBannerProps {
   productLimit: ProductLimitCheck;
@@ -21,12 +25,16 @@ export function ProductLimitBanner({
 
   if (!atLimit && !nearLimit) return null;
 
+  const promoteProTrial = shouldPromoteProTrialAtLimit(trial);
+
   const message = atLimit
-    ? getProductLimitErrorMessage(productLimit, trial)
+    ? promoteProTrial
+      ? PRO_TRIAL_AT_LIMIT_MESSAGE
+      : getProductLimitErrorMessage(productLimit, trial)
     : "Estás cerca de tu límite de productos.";
 
-  const ctaHref = trial?.eligible || atLimit ? "/activar" : "/dashboard/planes";
-  const ctaLabel = trial?.eligible && atLimit ? "Activar prueba Pro" : "Ver planes";
+  const ctaHref = promoteProTrial ? "/activar" : "/dashboard/planes";
+  const ctaLabel = promoteProTrial ? "Activar prueba Pro" : "Ver planes";
 
   return (
     <div

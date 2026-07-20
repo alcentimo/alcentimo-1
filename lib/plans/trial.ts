@@ -77,6 +77,21 @@ export function hasUnusedProTrial(
   return profile != null && profile.pro_trial_started_at == null;
 }
 
+export const PRO_TRIAL_AT_LIMIT_MESSAGE =
+  "¡Has alcanzado tu límite! Activa una prueba gratuita de un mes del plan Pro (250 productos)";
+
+/** Prioriza ofrecer la prueba Pro al llegar al límite de productos del plan Gratis. */
+export function shouldPromoteProTrialAtLimit(
+  trial?: Pick<
+    ProTrialStatus,
+    "eligible" | "active" | "consumed" | "startedAt"
+  > | null,
+): boolean {
+  if (!trial || trial.active || trial.consumed) return false;
+  if (trial.startedAt != null) return false;
+  return trial.eligible;
+}
+
 /** Muestra el banner de prueba Pro (elegible, activo o consumido). */
 export function shouldShowProTrialBanner(
   profile: Pick<
