@@ -8,11 +8,20 @@ import {
 import { getManualPayments } from "@/lib/plans/get-manual-payments";
 import { getAdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
+import { getAdminUsers, type AdminUserRow } from "@/lib/admin/get-admin-users";
 import { getSupportMessages } from "@/lib/support/get-support-messages";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
-import type { SupportMessage } from "@/lib/database.types";
+import {
+  listSubscriptionCampaigns,
+  listSubscriptionCoupons,
+} from "@/lib/admin/subscription-promo-actions";
+import type {
+  SupportMessage,
+  SubscriptionCampaign,
+  SubscriptionCoupon,
+} from "@/lib/database.types";
 
 export const dynamic = "force-dynamic";
 
@@ -22,13 +31,33 @@ function resolveInitialTab(raw: string | string[] | undefined): AdminDashboardTa
   if (value === "metricas") return "metricas";
   if (value === "configuracion") return "configuracion";
   if (value === "planes") return "planes";
+  if (value === "crecimiento") return "crecimiento";
   return "pagos";
+}
+
+function resolvePlanFilter(
+  raw: string | string[] | undefined,
+): "FREE" | "PRO" | "BUSINESS" | "all" {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (value === "FREE" || value === "PRO" || value === "BUSINESS") return value;
+  return "all";
+}
+
+function resolveMinProducts(raw: string | string[] | undefined): number | undefined {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (!value) return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
 export default async function AdminDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string | string[] }>;
+  searchParams: Promise<{
+    tab?: string | string[];
+    plan?: string | string[];
+    minProducts?: string | string[];
+  }>;
 }) {
   const supabase = await createClient();
   const {
@@ -45,13 +74,19 @@ export default async function AdminDashboardPage({
 
   const params = await searchParams;
   const initialTab = resolveInitialTab(params.tab);
+  const growthPlanFilter = resolvePlanFilter(params.plan);
+  const growthMinProducts = resolveMinProducts(params.minProducts);
 
   let payments: Awaited<ReturnType<typeof getManualPayments>> = [];
   let messages: SupportMessage[] = [];
   let metrics: AdminPlanMetrics | null = null;
+  let growthUsers: AdminUserRow[] = [];
+  let growthCoupons: SubscriptionCoupon[] = [];
+  let growthCampaigns: SubscriptionCampaign[] = [];
   let paymentsError: string | null = null;
   let messagesError: string | null = null;
   let metricsError: string | null = null;
+  let growthError: string | null = null;
 
   try {
     payments = await getManualPayments({ status: "all", limit: 200 });
@@ -80,6 +115,22 @@ export default async function AdminDashboardPage({
         : "No se pudieron cargar las métricas.";
   }
 
+  try {
+    const [users, coupons, campaigns] = await Promise.all([
+      getAdminUsers({ limit: 300 }),
+      listSubscriptionCoupons(),
+      listSubscriptionCampaigns(),
+    ]);
+    growthUsers = users;
+    growthCoupons = coupons;
+    growthCampaigns = campaigns;
+  } catch (error) {
+    growthError =
+      error instanceof Error
+        ? error.message
+        : "No se pudo cargar el módulo de crecimiento.";
+  }
+
   const pagoMovil = await fetchSubscriptionPagoMovilDetails();
   const planSettings = await fetchPlanSettings();
 
@@ -96,9 +147,8 @@ export default async function AdminDashboardPage({
         <p className="section-label">Administración</p>
         <h1 className="page-header-title">Panel Admin</h1>
         <p className="page-header-desc">
-          Resumen unificado de pagos, soporte, métricas y configuración de
-          cobro. Este espacio es exclusivo para administradores; no incluye
-          catálogo ni configuración de tienda.
+          Pagos, soporte, métricas, configuración y herramientas de
+          crecimiento. Exclusivo para administradores.
         </p>
         <div className="flex flex-wrap gap-4 pt-1 text-sm text-zinc-500 dark:text-zinc-400">
           <span>
@@ -137,9 +187,15 @@ export default async function AdminDashboardPage({
           metrics={metrics}
           pagoMovil={pagoMovil}
           planSettings={planSettings}
+          growthUsers={growthUsers}
+          growthCoupons={growthCoupons}
+          growthCampaigns={growthCampaigns}
+          growthPlanFilter={growthPlanFilter}
+          growthMinProducts={growthMinProducts}
           paymentsError={paymentsError}
           messagesError={messagesError}
           metricsError={metricsError}
+          growthError={growthError}
           initialTab={initialTab}
         />
       </Suspense>

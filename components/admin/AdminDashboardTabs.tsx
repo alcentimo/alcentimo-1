@@ -7,9 +7,15 @@ import { SupportMessagesPanel } from "@/components/dashboard/SupportMessagesPane
 import { AdminMetricsPanel } from "@/components/admin/AdminMetricsPanel";
 import { PaymentMethodsConfigPanel } from "@/components/admin/PaymentMethodsConfigPanel";
 import { PlanSettingsConfigPanel } from "@/components/admin/PlanSettingsConfigPanel";
+import { AdminGrowthPanel } from "@/components/admin/AdminGrowthPanel";
 import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
 import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
-import type { SupportMessage } from "@/lib/database.types";
+import type { AdminUserRow } from "@/lib/admin/get-admin-users";
+import type {
+  SupportMessage,
+  SubscriptionCampaign,
+  SubscriptionCoupon,
+} from "@/lib/database.types";
 import type { SubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
 import type { PlanSettingsMap } from "@/lib/plans/plan-settings";
 import { cn } from "@/lib/cn";
@@ -19,7 +25,8 @@ export type AdminDashboardTab =
   | "soporte"
   | "metricas"
   | "configuracion"
-  | "planes";
+  | "planes"
+  | "crecimiento";
 
 const TABS: Array<{
   id: AdminDashboardTab;
@@ -54,6 +61,12 @@ const TABS: Array<{
     label: "Configuración de Planes",
     description: "Precios mensuales/anuales y límites de productos por plan.",
   },
+  {
+    id: "crecimiento",
+    label: "Crecimiento",
+    description:
+      "Usuarios, otorgar Pro, cupones, campañas y envío de promociones.",
+  },
 ];
 
 function resolveTab(value: string | null): AdminDashboardTab {
@@ -61,6 +74,7 @@ function resolveTab(value: string | null): AdminDashboardTab {
   if (value === "metricas") return "metricas";
   if (value === "configuracion") return "configuracion";
   if (value === "planes") return "planes";
+  if (value === "crecimiento") return "crecimiento";
   return "pagos";
 }
 
@@ -70,9 +84,15 @@ interface AdminDashboardTabsProps {
   metrics: AdminPlanMetrics | null;
   pagoMovil: SubscriptionPagoMovilDetails;
   planSettings: PlanSettingsMap;
+  growthUsers: AdminUserRow[];
+  growthCoupons: SubscriptionCoupon[];
+  growthCampaigns: SubscriptionCampaign[];
+  growthPlanFilter?: "FREE" | "PRO" | "BUSINESS" | "all";
+  growthMinProducts?: number;
   paymentsError?: string | null;
   messagesError?: string | null;
   metricsError?: string | null;
+  growthError?: string | null;
   initialTab?: AdminDashboardTab;
 }
 
@@ -82,9 +102,15 @@ export function AdminDashboardTabs({
   metrics,
   pagoMovil,
   planSettings,
+  growthUsers,
+  growthCoupons,
+  growthCampaigns,
+  growthPlanFilter = "all",
+  growthMinProducts,
   paymentsError = null,
   messagesError = null,
   metricsError = null,
+  growthError = null,
   initialTab = "pagos",
 }: AdminDashboardTabsProps) {
   const router = useRouter();
@@ -198,6 +224,22 @@ export function AdminDashboardTabs({
 
       {activeTab === "planes" ? (
         <PlanSettingsConfigPanel initialSettings={planSettings} />
+      ) : null}
+
+      {activeTab === "crecimiento" ? (
+        growthError ? (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            {growthError}
+          </p>
+        ) : (
+          <AdminGrowthPanel
+            initialUsers={growthUsers}
+            initialCoupons={growthCoupons}
+            initialCampaigns={growthCampaigns}
+            initialPlanFilter={growthPlanFilter}
+            initialMinProducts={growthMinProducts}
+          />
+        )
       ) : null}
     </div>
   );

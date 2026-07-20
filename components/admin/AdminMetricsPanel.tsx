@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 
 const PLAN_ROWS: Array<{
@@ -48,9 +49,31 @@ export function AdminMetricsPanel({ metrics }: AdminMetricsPanelProps) {
               <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
                 {row.hint}
               </p>
+              <Link
+                href={`/admin/dashboard?tab=crecimiento&plan=${row.key}`}
+                className="mt-3 inline-block text-xs font-medium text-teal-700 hover:underline dark:text-teal-300"
+              >
+                Ver usuarios →
+              </Link>
             </li>
           ))}
         </ul>
+      </div>
+
+      <div className="rounded-xl border border-dashed border-zinc-200 p-4 dark:border-zinc-800">
+        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+          Segmentación rápida
+        </p>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          Filtra usuarios Free cerca del límite de productos y envíales una
+          promoción.
+        </p>
+        <Link
+          href="/admin/dashboard?tab=crecimiento&plan=FREE&minProducts=9"
+          className="mt-3 inline-flex text-sm font-semibold text-teal-700 hover:underline dark:text-teal-300"
+        >
+          Gratis con 9+ productos →
+        </Link>
       </div>
     </div>
   );

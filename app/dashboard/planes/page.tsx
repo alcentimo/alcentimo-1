@@ -12,10 +12,15 @@ import { PlansPanel } from "@/components/dashboard/PlansPanel";
 import { PaymentReviewPanel } from "@/components/dashboard/plans/PaymentReviewPanel";
 import { PermanentRejectionNotice } from "@/components/dashboard/plans/PermanentRejectionNotice";
 import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
+import {
+  PromoOfferBanner,
+  SubscriptionCouponRedeemCard,
+} from "@/components/dashboard/plans/SubscriptionPromoCards";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 import { buildPlanPricingTiers } from "@/lib/plans/plan-settings";
+import { getOpenPromoOffersForUser } from "@/lib/plans/subscription-promo";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +42,7 @@ export default async function PlanesPage() {
     permanentRejection,
     pagoMovil,
     planSettings,
+    promoOffers,
   ] = await Promise.all([
       store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
       getCurrentExchangeRate(),
@@ -44,6 +50,7 @@ export default async function PlanesPage() {
       getLatestPermanentRejection(authUser.id),
       fetchSubscriptionPagoMovilDetails(),
       fetchPlanSettings(),
+      getOpenPromoOffersForUser(authUser.id),
     ]);
   const exchangeRate = exchangeRateRow?.rate ?? null;
   const pricingTiers = buildPlanPricingTiers(planSettings);
@@ -70,6 +77,16 @@ export default async function PlanesPage() {
           <PermanentRejectionNotice payment={permanentRejection} />
         </div>
       ) : null}
+
+      {promoOffers.length > 0 ? (
+        <div className="mb-6 max-w-2xl">
+          <PromoOfferBanner offers={promoOffers} />
+        </div>
+      ) : null}
+
+      <div className="mb-8 max-w-2xl">
+        <SubscriptionCouponRedeemCard />
+      </div>
 
       {store && showProTrialBanner ? (
         <div className="mb-8 max-w-3xl">

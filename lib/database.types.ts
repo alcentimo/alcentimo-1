@@ -54,6 +54,9 @@ export interface ManualPayment {
   admin_note?: string | null;
   permanently_rejected?: boolean;
   correction_requested_at?: string | null;
+  coupon_code?: string | null;
+  campaign_id?: string | null;
+  discount_usd?: number | null;
 }
 
 export type PaymentReportStatus = "pending" | "verified" | "rejected";
@@ -204,6 +207,74 @@ export interface PlanSetting {
   user_limit: number | null;
   updated_at: string;
   updated_by: string | null;
+}
+
+export type SubscriptionCouponRewardType =
+  | "percent_discount"
+  | "fixed_discount"
+  | "grant_pro_days";
+
+export interface SubscriptionCoupon {
+  id: string;
+  code: string;
+  name: string;
+  reward_type: SubscriptionCouponRewardType;
+  discount_percent: number | null;
+  discount_usd: number | null;
+  grant_pro_days: number | null;
+  max_redemptions: number | null;
+  redemption_count: number;
+  starts_at: string | null;
+  ends_at: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubscriptionCouponRedemption {
+  id: string;
+  coupon_id: string;
+  user_id: string;
+  reward_snapshot: string;
+  manual_payment_id: string | null;
+  redeemed_at: string;
+}
+
+export interface SubscriptionCampaign {
+  id: string;
+  name: string;
+  discount_percent: number | null;
+  discount_usd: number | null;
+  starts_at: string;
+  ends_at: string;
+  is_active: boolean;
+  applies_to_plans: string[];
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserPromoOffer {
+  id: string;
+  user_id: string;
+  coupon_id: string | null;
+  campaign_id: string | null;
+  title: string;
+  message: string;
+  dismissed_at: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface AdminPlanGrant {
+  id: string;
+  user_id: string;
+  granted_by: string;
+  plan: string;
+  days: number;
+  note: string | null;
+  created_at: string;
 }
 
 export interface Category {
@@ -767,6 +838,61 @@ export interface Database {
           updated_by?: string | null;
         };
         Update: Partial<PlanSetting>;
+        Relationships: [];
+      };
+      subscription_coupons: {
+        Row: SubscriptionCoupon;
+        Insert: Omit<
+          SubscriptionCoupon,
+          "id" | "redemption_count" | "created_at" | "updated_at"
+        > & {
+          id?: string;
+          redemption_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<SubscriptionCoupon>;
+        Relationships: [];
+      };
+      subscription_coupon_redemptions: {
+        Row: SubscriptionCouponRedemption;
+        Insert: Omit<SubscriptionCouponRedemption, "id" | "redeemed_at"> & {
+          id?: string;
+          redeemed_at?: string;
+        };
+        Update: Partial<SubscriptionCouponRedemption>;
+        Relationships: [];
+      };
+      subscription_campaigns: {
+        Row: SubscriptionCampaign;
+        Insert: Omit<
+          SubscriptionCampaign,
+          "id" | "created_at" | "updated_at"
+        > & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<SubscriptionCampaign>;
+        Relationships: [];
+      };
+      user_promo_offers: {
+        Row: UserPromoOffer;
+        Insert: Omit<UserPromoOffer, "id" | "created_at" | "dismissed_at"> & {
+          id?: string;
+          created_at?: string;
+          dismissed_at?: string | null;
+        };
+        Update: Partial<UserPromoOffer>;
+        Relationships: [];
+      };
+      admin_plan_grants: {
+        Row: AdminPlanGrant;
+        Insert: Omit<AdminPlanGrant, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<AdminPlanGrant>;
         Relationships: [];
       };
       categories: {

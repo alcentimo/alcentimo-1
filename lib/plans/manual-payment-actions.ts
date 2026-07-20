@@ -25,6 +25,13 @@ import {
   buildChargeTableFromSettings,
 } from "@/lib/plans/plan-settings";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
+import {
+  findSubscriptionCouponByCode,
+  getActiveSubscriptionCampaign,
+  recordCouponRedemption,
+  resolveAmountWithPromo,
+} from "@/lib/plans/subscription-promo";
+import { isCouponWindowOpen } from "@/lib/admin/growth-discount";
 import type { PlanId } from "@/src/config/plans";
 
 export type ManualPaymentActionResult = {
@@ -79,6 +86,7 @@ export async function submitManualPayment(
   const referenceNumber = normalizeReference(
     String(formData.get("referenceNumber") ?? ""),
   );
+  const couponCodeRaw = String(formData.get("couponCode") ?? "").trim();
   const proofFile = formData.get("proofImage");
 
   if (!UPGRADE_PLAN_IDS.has(planId) || !isManualPaymentPlanId(planId)) {
@@ -139,6 +147,56 @@ export async function submitManualPayment(
     charges: buildChargeTableFromSettings(await fetchPlanSettings()),
   });
 
+  let listAmount = proration.amountDueUsd;
+  let discountUsd = 0;
+  let couponCode: string | null = null;
+  let campaignId: string | null = null;
+  let couponIdForRedeem: string | null = null;
+
+  const coupon = couponCodeRaw
+    ? await findSubscriptionCouponByCode(couponCodeRaw)
+    : null;
+
+  if (couponCodeRaw) {
+    if (!coupon || !coupon.is_active || !isCouponWindowOpen(coupon)) {
+      return { error: "Cupón no válido o fuera de vigencia." };
+    }
+    if (coupon.reward_type === "grant_pro_days") {
+      return {
+        error:
+          "Este cupón regala días Pro. Canjéalo en Activación, no en el comprobante de pago.",
+      };
+    }
+    const { data: existingRedeem } = await admin
+      .from("subscription_coupon_redemptions")
+      .select("id")
+      .eq("coupon_id", coupon.id)
+      .eq("user_id", auth.authUser.id)
+      .maybeSingle();
+    if (existingRedeem) {
+      return { error: "Ya usaste este cupón." };
+    }
+  }
+
+  const campaign = await getActiveSubscriptionCampaign(
+    planDb === "BUSINESS" ? "BUSINESS" : "PRO",
+  );
+  const resolved = resolveAmountWithPromo({
+    listAmountUsd: listAmount,
+    planDb: planDb === "BUSINESS" ? "BUSINESS" : "PRO",
+    coupon:
+      coupon && coupon.reward_type !== "grant_pro_days" ? coupon : null,
+    campaign: coupon ? null : campaign,
+  });
+
+  listAmount = resolved.amountDueUsd;
+  discountUsd = resolved.discountUsd;
+  couponCode = resolved.couponCode ?? null;
+  campaignId = resolved.campaignId ?? null;
+  if (coupon && coupon.reward_type !== "grant_pro_days") {
+    couponIdForRedeem = coupon.id;
+  }
+
   const { data: payment, error: insertError } = await admin
     .from("manual_payments")
     .insert({
@@ -152,15 +210,27 @@ export async function submitManualPayment(
       from_billing_period: period.billingPeriod,
       list_price_usd: proration.listPriceUsd,
       credit_usd: proration.creditUsd,
-      amount_due_usd: proration.amountDueUsd,
+      amount_due_usd: listAmount,
       days_remaining: proration.daysRemaining,
       credited_period_ends_at: period.periodEndsAt,
+      coupon_code: couponCode,
+      campaign_id: campaignId,
+      discount_usd: discountUsd > 0 ? discountUsd : null,
     })
     .select("id")
     .single();
 
   if (insertError || !payment) {
     return { error: insertError?.message ?? "No se pudo registrar el pago." };
+  }
+
+  if (couponIdForRedeem) {
+    await recordCouponRedemption({
+      couponId: couponIdForRedeem,
+      userId: auth.authUser.id,
+      rewardSnapshot: `discount:${discountUsd}`,
+      manualPaymentId: payment.id,
+    });
   }
 
   await rejectPendingPaymentsForUser(auth.authUser.id, payment.id);

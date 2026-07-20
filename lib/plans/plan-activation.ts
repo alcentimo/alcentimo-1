@@ -78,6 +78,8 @@ export function buildPaidProfilePatch(
   options?: {
     billingPeriod?: BillingPeriod;
     periodStartedAt?: Date;
+    /** Si se define, sustituye el fin de ciclo calculado por billingPeriod. */
+    periodEndsAt?: Date;
   },
 ) {
   if (planDb === "FREE") {
@@ -94,7 +96,8 @@ export function buildPaidProfilePatch(
 
   const billingPeriod = options?.billingPeriod ?? "monthly";
   const startedAt = options?.periodStartedAt ?? new Date();
-  const endsAt = addBillingPeriod(startedAt, billingPeriod);
+  const endsAt =
+    options?.periodEndsAt ?? addBillingPeriod(startedAt, billingPeriod);
 
   return {
     plan: planDb,

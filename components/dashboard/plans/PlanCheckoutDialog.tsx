@@ -61,6 +61,7 @@ export function PlanCheckoutDialog({
 }: PlanCheckoutDialogProps) {
   const [step, setStep] = useState<CheckoutStep>("checkout");
   const [referenceNumber, setReferenceNumber] = useState("");
+  const [couponCode, setCouponCode] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -74,6 +75,7 @@ export function PlanCheckoutDialog({
     if (!open) return;
     setStep("checkout");
     setReferenceNumber("");
+    setCouponCode("");
     setProofFile(null);
     setProofPreview(null);
     setSubmitting(false);
@@ -117,6 +119,7 @@ export function PlanCheckoutDialog({
     formData.set("planId", tier.planId);
     formData.set("billingPeriod", billing);
     formData.set("referenceNumber", referenceNumber);
+    formData.set("couponCode", couponCode);
     formData.set("proofImage", proofFile);
 
     const startedAt = Date.now();
@@ -270,6 +273,26 @@ export function PlanCheckoutDialog({
                         disabled={submitting}
                         className="payment-field-input mt-1.5"
                       />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="payment-coupon" className="payment-field-label">
+                        Cupón de descuento (opcional)
+                      </Label>
+                      <Input
+                        id="payment-coupon"
+                        name="couponCode"
+                        value={couponCode}
+                        onChange={(event) => setCouponCode(event.target.value)}
+                        placeholder="Ej. NAVIDAD2026"
+                        autoComplete="off"
+                        disabled={submitting}
+                        className="payment-field-input mt-1.5"
+                      />
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        Si hay una campaña vigente, el descuento se aplica
+                        automáticamente aunque no ingreses cupón.
+                      </p>
                     </div>
 
                     <div>
