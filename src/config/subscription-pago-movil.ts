@@ -8,8 +8,8 @@ export interface SubscriptionPagoMovilDetails {
 export function getSubscriptionPagoMovilDetails(): SubscriptionPagoMovilDetails {
   return {
     phone:
-      process.env.NEXT_PUBLIC_ALCENTIMO_PM_PHONE?.trim() || "0412-0000000",
-    ci: process.env.NEXT_PUBLIC_ALCENTIMO_PM_CI?.trim() || "V-00.000.000",
-    bank: process.env.NEXT_PUBLIC_ALCENTIMO_PM_BANK?.trim() || "Banesco",
+      process.env.NEXT_PUBLIC_ALCENTIMO_PM_PHONE?.trim() || "04129839915",
+    ci: process.env.NEXT_PUBLIC_ALCENTIMO_PM_CI?.trim() || "25074267",
+    bank: process.env.NEXT_PUBLIC_ALCENTIMO_PM_BANK?.trim() || "Mercantil",
   };
 }
