@@ -69,7 +69,7 @@ export function ManualPaymentsPanel({
   initialPayments,
 }: ManualPaymentsPanelProps) {
   const [payments, setPayments] = useState(initialPayments);
-  const [filter, setFilter] = useState<ManualPaymentStatus | "all">("pending");
+  const [filter, setFilter] = useState<ManualPaymentStatus | "all">("all");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -257,17 +257,26 @@ export function ManualPaymentsPanel({
 
       {filtered.length === 0 ? (
         <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-          {filter === "pending"
-            ? "No hay tiendas con pago pendiente."
+          {filter === "all"
+            ? "No hay pagos registrados."
             : "No hay pagos en este filtro."}
         </p>
       ) : (
         <ul className="space-y-4">
           {filtered.map((payment) => {
             const isUpdating = updatingId === payment.id && pending;
-            const actionable =
+            const canConfirm =
+              payment.status === "pending" ||
+              payment.status === "needs_correction" ||
+              payment.status === "rejected";
+            const canRequestCorrection =
               payment.status === "pending" ||
               payment.status === "needs_correction";
+            const canPermanentlyReject =
+              payment.status === "pending" ||
+              payment.status === "needs_correction" ||
+              payment.status === "rejected" ||
+              payment.status === "verified";
             return (
               <li
                 key={payment.id}
@@ -351,32 +360,38 @@ export function ManualPaymentsPanel({
                   </div>
                 </div>
 
-                {actionable ? (
+                {canConfirm || canRequestCorrection || canPermanentlyReject ? (
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      disabled={isUpdating}
-                      onClick={() => handleConfirmPayment(payment.id)}
-                      className="btn-brand px-4 py-2 text-sm disabled:opacity-60"
-                    >
-                      {isUpdating ? "Activando plan…" : "Confirmar Pago"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isUpdating}
-                      onClick={() => openDialog("correction", payment.id)}
-                      className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 disabled:opacity-60 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300"
-                    >
-                      Solicitar corrección
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isUpdating}
-                      onClick={() => openDialog("reject", payment.id)}
-                      className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-60 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
-                    >
-                      Rechazar y anular
-                    </button>
+                    {canConfirm ? (
+                      <button
+                        type="button"
+                        disabled={isUpdating}
+                        onClick={() => handleConfirmPayment(payment.id)}
+                        className="btn-brand px-4 py-2 text-sm disabled:opacity-60"
+                      >
+                        {isUpdating ? "Activando plan…" : "Confirmar Pago"}
+                      </button>
+                    ) : null}
+                    {canRequestCorrection ? (
+                      <button
+                        type="button"
+                        disabled={isUpdating}
+                        onClick={() => openDialog("correction", payment.id)}
+                        className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 disabled:opacity-60 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300"
+                      >
+                        Solicitar corrección
+                      </button>
+                    ) : null}
+                    {canPermanentlyReject ? (
+                      <button
+                        type="button"
+                        disabled={isUpdating}
+                        onClick={() => openDialog("reject", payment.id)}
+                        className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-60 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
+                      >
+                        Rechazar definitivamente
+                      </button>
+                    ) : null}
                   </div>
                 ) : null}
               </li>
@@ -395,12 +410,12 @@ export function ManualPaymentsPanel({
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
               {dialogMode === "correction"
                 ? "Solicitar corrección"
-                : "Rechazar y anular"}
+                : "Rechazar definitivamente"}
             </h3>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
               {dialogMode === "correction"
-                ? "El usuario verá este motivo y podrá volver a subir el comprobante. Su acceso provisional se mantiene."
-                : "Anula la solicitud de forma permanente y bloquea reenviar la misma referencia."}
+                ? "El usuario verá este motivo y podrá volver a subir el comprobante. Su acceso provisional se mantiene. Si luego decides aceptar el pago, usa Confirmar Pago sin esperar al usuario."
+                : "Anula la solicitud de forma permanente y bloquea reenviar la misma referencia. También puedes usar Confirmar Pago si cambias de opinión."}
             </p>
             <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
               {storeLabel(dialogPayment)} · Ref {dialogPayment.reference_number}

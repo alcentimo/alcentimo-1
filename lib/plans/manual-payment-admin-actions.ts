@@ -123,8 +123,12 @@ export async function verifyManualPayment(
   const { payment, error: loadError } = await getPaymentById(paymentId);
   if (loadError || !payment) return { error: loadError ?? "Pago no encontrado." };
 
-  if (payment.status !== "pending" && payment.status !== "needs_correction") {
-    return { error: "Este pago ya fue procesado." };
+  if (
+    payment.status !== "pending" &&
+    payment.status !== "needs_correction" &&
+    payment.status !== "rejected"
+  ) {
+    return { error: "Este pago ya está confirmado." };
   }
 
   const admin = createAdminClient();
@@ -173,13 +177,14 @@ export async function verifyManualPayment(
       permanently_rejected: false,
       admin_note: null,
       correction_requested_at: null,
+      rejected_at: null,
       list_price_usd: proration.listPriceUsd,
       credit_usd: proration.creditUsd,
       amount_due_usd: proration.amountDueUsd,
       days_remaining: proration.daysRemaining,
     })
     .eq("id", paymentId)
-    .in("status", ["pending", "needs_correction"]);
+    .in("status", ["pending", "needs_correction", "rejected"]);
 
   if (paymentError) return { error: paymentError.message };
 
@@ -274,13 +279,16 @@ export async function permanentlyRejectManualPayment(
 
   if (
     payment.status !== "pending" &&
-    payment.status !== "needs_correction"
+    payment.status !== "needs_correction" &&
+    payment.status !== "rejected" &&
+    payment.status !== "verified"
   ) {
-    return { error: "Este pago ya fue procesado." };
+    return { error: "No se puede anular este pago." };
   }
 
   const admin = createAdminClient();
   const now = new Date().toISOString();
+  const wasVerified = payment.status === "verified";
 
   const { error: paymentError } = await admin
     .from("manual_payments")
@@ -288,16 +296,51 @@ export async function permanentlyRejectManualPayment(
       status: "rejected",
       rejected_at: now,
       permanently_rejected: true,
-      admin_note: note.length > 0 ? note : "Rechazado permanentemente por el administrador.",
+      admin_note:
+        note.length > 0
+          ? note
+          : "Rechazado permanentemente por el administrador.",
       correction_requested_at: null,
+      verified_at: null,
     })
     .eq("id", paymentId)
-    .in("status", ["pending", "needs_correction"]);
+    .in("status", ["pending", "needs_correction", "rejected", "verified"]);
 
   if (paymentError) return { error: paymentError.message };
 
   try {
-    await restorePreviousPlanAfterReject(payment);
+    if (wasVerified) {
+      // Si estaba confirmado, revertimos el plan al anterior.
+      const previousPlan = normalizeDbPlan(payment.from_plan ?? "FREE");
+      if (previousPlan === "FREE") {
+        const { error } = await admin
+          .from("profiles")
+          .update(buildRevokedProfilePatch())
+          .eq("id", payment.user_id);
+        if (error) throw new Error(error.message);
+      } else {
+        const previousBilling: BillingPeriod =
+          payment.from_billing_period &&
+          isBillingPeriod(payment.from_billing_period)
+            ? payment.from_billing_period
+            : "monthly";
+        const { error } = await admin
+          .from("profiles")
+          .update({
+            plan: previousPlan,
+            subscription_status: "active",
+            billing_period: previousBilling,
+            subscription_period_ends_at:
+              payment.credited_period_ends_at ?? null,
+            pro_trial_started_at: null,
+            pro_trial_ends_at: null,
+          })
+          .eq("id", payment.user_id);
+        if (error) throw new Error(error.message);
+      }
+    } else {
+      await restorePreviousPlanAfterReject(payment);
+    }
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "No se pudo revertir el plan.",
