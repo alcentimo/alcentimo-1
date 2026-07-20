@@ -16,6 +16,7 @@ export interface PendingUpgradePayment {
   credit_usd: number | null;
   days_remaining: number | null;
   list_price_usd: number | null;
+  status: "pending" | "needs_correction";
 }
 
 export interface BusinessUpgradePreview {
@@ -37,8 +38,8 @@ export async function getPendingBusinessUpgradePayment(
       "id, reference_number, created_at, amount_due_usd, credit_usd, days_remaining, list_price_usd, plan_id, status",
     )
     .eq("user_id", userId)
-    .eq("status", "pending")
     .eq("plan_id", "premium")
+    .in("status", ["pending", "needs_correction"])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -57,6 +58,8 @@ export async function getPendingBusinessUpgradePayment(
     credit_usd: data.credit_usd ?? null,
     days_remaining: data.days_remaining ?? null,
     list_price_usd: data.list_price_usd ?? null,
+    status:
+      data.status === "needs_correction" ? "needs_correction" : "pending",
   };
 }
 

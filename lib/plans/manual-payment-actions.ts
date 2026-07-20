@@ -17,6 +17,10 @@ import {
   type BillingPeriod,
 } from "@/lib/plans/proration";
 import { resolveCurrentPeriodEndsAt } from "@/lib/plans/resolve-subscription-period";
+import {
+  getUserPaymentReview,
+  isReferencePermanentlyRejected,
+} from "@/lib/plans/get-user-payment-review";
 import type { PlanId } from "@/src/config/plans";
 
 export type ManualPaymentActionResult = {
@@ -83,6 +87,22 @@ export async function submitManualPayment(
 
   if (!(proofFile instanceof File) || proofFile.size === 0) {
     return { error: "Sube la captura de tu pago." };
+  }
+
+  if (await isReferencePermanentlyRejected(auth.authUser.id, referenceNumber)) {
+    return {
+      error:
+        "Esta referencia fue rechazada permanentemente. Usa otra referencia o contacta soporte.",
+    };
+  }
+
+  const existingReview = await getUserPaymentReview(auth.authUser.id);
+  if (existingReview) {
+    return {
+      error: existingReview.needsCorrection
+        ? "Ya tienes un comprobante pendiente de corrección. Ve a Estado de tu pago para reenviarlo."
+        : "Ya tienes un pago en revisión. Espera la confirmación antes de enviar otro.",
+    };
   }
 
   const upload = await uploadSubscriptionPaymentProof(auth.authUser.id, proofFile);
@@ -156,6 +176,7 @@ export async function submitManualPayment(
   revalidatePath("/activar");
   revalidatePath("/dashboard/planes");
   revalidatePath("/dashboard/catalogo");
+  revalidatePath("/dashboard/pago");
   revalidatePath("/dashboard", "layout");
   revalidatePath("/admin/dashboard");
 

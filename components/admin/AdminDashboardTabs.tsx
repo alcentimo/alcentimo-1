@@ -68,7 +68,11 @@ export function AdminDashboardTabs({
   const activeTab = resolveTab(searchParams.get("tab") ?? initialTab);
 
   const pendingPayments = useMemo(
-    () => payments.filter((item) => item.status === "pending").length,
+    () =>
+      payments.filter(
+        (item) =>
+          item.status === "pending" || item.status === "needs_correction",
+      ).length,
     [payments],
   );
   const pendingMessages = useMemo(

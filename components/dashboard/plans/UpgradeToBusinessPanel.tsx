@@ -112,22 +112,34 @@ export function UpgradeToBusinessPanel({
   }
 
   if (success || pending) {
+    const needsCorrection = pending?.status === "needs_correction";
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-6 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+      <div
+        className={
+          needsCorrection
+            ? "rounded-xl border border-amber-200 bg-amber-50/60 p-6 dark:border-amber-900/50 dark:bg-amber-950/20"
+            : "rounded-xl border border-emerald-200 bg-emerald-50/60 p-6 dark:border-emerald-900/50 dark:bg-emerald-950/20"
+        }
+      >
         <div className="flex items-start gap-3">
           <CheckCircle2
-            className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400"
+            className={
+              needsCorrection
+                ? "mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400"
+                : "mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400"
+            }
             aria-hidden="true"
           />
           <div className="space-y-2">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              Comprobante en revisión
+              {needsCorrection
+                ? "Necesitamos que corrijas tu comprobante"
+                : "Comprobante en revisión"}
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              Ya recibimos tu pago de upgrade a Business
-              {amountDue > 0 ? ` por ${formatUsd(amountDue)}` : ""}. Tu acceso
-              Business queda provisional mientras confirmamos el comprobante.
-              No envíes otro comprobante mientras este esté pendiente.
+              {needsCorrection
+                ? "Tu upgrade a Business sigue activo, pero debes corregir el comprobante antes de confirmarlo."
+                : `Ya recibimos tu pago de upgrade a Business${amountDue > 0 ? ` por ${formatUsd(amountDue)}` : ""}. Tu acceso Business queda provisional mientras confirmamos el comprobante. No envíes otro comprobante mientras este esté pendiente.`}
             </p>
             {pending?.reference_number ? (
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -136,10 +148,12 @@ export function UpgradeToBusinessPanel({
               </p>
             ) : null}
             <Link
-              href="/dashboard/catalogo"
+              href={needsCorrection ? "/dashboard/pago" : "/dashboard/catalogo"}
               className="inline-flex text-sm font-medium text-teal-700 hover:underline dark:text-teal-300"
             >
-              Volver al catálogo
+              {needsCorrection
+                ? "Ir a corregir comprobante"
+                : "Volver al catálogo"}
             </Link>
           </div>
         </div>

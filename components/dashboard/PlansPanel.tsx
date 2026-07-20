@@ -140,7 +140,13 @@ export function PlansPanel({
             ) : null}
             {subscriptionStatus === "provisional" ? (
               <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
-                Acceso Pro provisional — verificando tu pago
+                Acceso provisional —{" "}
+                <Link
+                  href="/dashboard/pago"
+                  className="font-medium underline underline-offset-2"
+                >
+                  ver estado de tu pago
+                </Link>
               </p>
             ) : null}
             {productCount != null && productLimit != null && currentPlanId !== "premium" && (

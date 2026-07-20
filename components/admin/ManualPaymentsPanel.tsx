@@ -5,13 +5,15 @@ import Image from "next/image";
 import type { ManualPaymentStatus } from "@/lib/database.types";
 import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
 import {
-  rejectManualPayment,
+  permanentlyRejectManualPayment,
+  requestPaymentCorrection,
   verifyManualPayment,
 } from "@/lib/plans/manual-payment-admin-actions";
 import { cn } from "@/lib/cn";
 
 const STATUS_LABELS: Record<ManualPaymentStatus, string> = {
   pending: "Pendiente",
+  needs_correction: "Corrección",
   verified: "Confirmado",
   rejected: "Rechazado",
 };
@@ -19,6 +21,8 @@ const STATUS_LABELS: Record<ManualPaymentStatus, string> = {
 const STATUS_CLASS: Record<ManualPaymentStatus, string> = {
   pending:
     "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/50",
+  needs_correction:
+    "bg-orange-50 text-orange-800 border-orange-200 dark:bg-orange-950/30 dark:text-orange-300 dark:border-orange-900/50",
   verified:
     "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/50",
   rejected:
@@ -29,6 +33,14 @@ const PLAN_LABELS: Record<string, string> = {
   starter: "Pro",
   premium: "Business",
 };
+
+const FILTERS = [
+  "all",
+  "pending",
+  "needs_correction",
+  "verified",
+  "rejected",
+] as const;
 
 function formatPaymentDate(iso: string): string {
   return new Intl.DateTimeFormat("es-VE", {
@@ -47,6 +59,8 @@ function storeLabel(payment: ManualPaymentWithEmail): string {
     .join(" · ");
 }
 
+type DialogMode = "correction" | "reject" | null;
+
 interface ManualPaymentsPanelProps {
   initialPayments: ManualPaymentWithEmail[];
 }
@@ -60,6 +74,9 @@ export function ManualPaymentsPanel({
   const [success, setSuccess] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [dialogMode, setDialogMode] = useState<DialogMode>(null);
+  const [dialogPaymentId, setDialogPaymentId] = useState<string | null>(null);
+  const [dialogReason, setDialogReason] = useState("");
 
   const filtered = useMemo(() => {
     if (filter === "all") return payments;
@@ -72,12 +89,28 @@ export function ManualPaymentsPanel({
         acc[item.status] += 1;
         return acc;
       },
-      { pending: 0, verified: 0, rejected: 0 } as Record<
-        ManualPaymentStatus,
-        number
-      >,
+      {
+        pending: 0,
+        needs_correction: 0,
+        verified: 0,
+        rejected: 0,
+      } as Record<ManualPaymentStatus, number>,
     );
   }, [payments]);
+
+  function closeDialog() {
+    setDialogMode(null);
+    setDialogPaymentId(null);
+    setDialogReason("");
+  }
+
+  function openDialog(mode: Exclude<DialogMode, null>, paymentId: string) {
+    setDialogMode(mode);
+    setDialogPaymentId(paymentId);
+    setDialogReason("");
+    setError(null);
+    setSuccess(null);
+  }
 
   function handleConfirmPayment(paymentId: string) {
     setError(null);
@@ -103,6 +136,8 @@ export function ManualPaymentsPanel({
                 ...item,
                 status: "verified" as const,
                 verified_at: new Date().toISOString(),
+                permanently_rejected: false,
+                admin_note: null,
                 owner_plan: item.plan_id === "premium" ? "BUSINESS" : "PRO",
                 owner_subscription_status: "active",
               }
@@ -119,12 +154,22 @@ export function ManualPaymentsPanel({
     });
   }
 
-  function handleReject(paymentId: string) {
+  function submitDialog() {
+    if (!dialogMode || !dialogPaymentId) return;
+
     setError(null);
     setSuccess(null);
-    setUpdatingId(paymentId);
+    setUpdatingId(dialogPaymentId);
+
     startTransition(async () => {
-      const result = await rejectManualPayment(paymentId);
+      const result =
+        dialogMode === "correction"
+          ? await requestPaymentCorrection(dialogPaymentId, dialogReason)
+          : await permanentlyRejectManualPayment(
+              dialogPaymentId,
+              dialogReason || undefined,
+            );
+
       setUpdatingId(null);
 
       if (result.error) {
@@ -132,24 +177,49 @@ export function ManualPaymentsPanel({
         return;
       }
 
+      const note = dialogReason.trim();
       setPayments((prev) =>
         prev.map((item) =>
-          item.id === paymentId
-            ? {
-                ...item,
-                status: "rejected" as const,
-                rejected_at: new Date().toISOString(),
-              }
+          item.id === dialogPaymentId
+            ? dialogMode === "correction"
+              ? {
+                  ...item,
+                  status: "needs_correction" as const,
+                  admin_note: note,
+                  correction_requested_at: new Date().toISOString(),
+                  permanently_rejected: false,
+                }
+              : {
+                  ...item,
+                  status: "rejected" as const,
+                  rejected_at: new Date().toISOString(),
+                  permanently_rejected: true,
+                  admin_note:
+                    note ||
+                    "Rechazado permanentemente por el administrador.",
+                }
             : item,
         ),
       );
+
+      setSuccess(
+        dialogMode === "correction"
+          ? "Se solicitó corrección. El usuario verá el motivo en su panel."
+          : "Pago anulado permanentemente. Esa referencia queda bloqueada.",
+      );
+      closeDialog();
     });
   }
+
+  const dialogPayment = dialogPaymentId
+    ? payments.find((item) => item.id === dialogPaymentId)
+    : null;
+  const isDialogBusy = Boolean(dialogPaymentId && updatingId === dialogPaymentId && pending);
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        {(["all", "pending", "verified", "rejected"] as const).map((key) => {
+        {FILTERS.map((key) => {
           const label =
             key === "all"
               ? `Todos (${payments.length})`
@@ -195,6 +265,9 @@ export function ManualPaymentsPanel({
         <ul className="space-y-4">
           {filtered.map((payment) => {
             const isUpdating = updatingId === payment.id && pending;
+            const actionable =
+              payment.status === "pending" ||
+              payment.status === "needs_correction";
             return (
               <li
                 key={payment.id}
@@ -210,6 +283,7 @@ export function ManualPaymentsPanel({
                         )}
                       >
                         {STATUS_LABELS[payment.status]}
+                        {payment.permanently_rejected ? " · Permanente" : ""}
                       </span>
                       <span className="text-xs text-zinc-500 dark:text-zinc-400">
                         {formatPaymentDate(payment.created_at)}
@@ -227,29 +301,19 @@ export function ManualPaymentsPanel({
                     <p className="text-sm text-zinc-600 dark:text-zinc-300">
                       Dueño: {payment.user_email ?? payment.owner_id}
                     </p>
-                    <p className="text-xs font-mono text-zinc-500 dark:text-zinc-400">
-                      owner_id: {payment.owner_id}
-                    </p>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                      Perfil actual: {payment.owner_plan ?? "—"} /{" "}
-                      {payment.owner_subscription_status ?? "—"}
-                    </p>
+                    {payment.admin_note ? (
+                      <p className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+                        Nota: {payment.admin_note}
+                      </p>
+                    ) : null}
                     {payment.from_plan ||
                     payment.credit_usd != null ||
                     payment.amount_due_usd != null ? (
                       <div className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
-                        {payment.from_plan ? (
-                          <p>
-                            Desde:{" "}
-                            <span className="font-medium">{payment.from_plan}</span>
-                            {payment.days_remaining != null
-                              ? ` · ${payment.days_remaining} días restantes`
-                              : null}
-                          </p>
-                        ) : null}
-                        {payment.list_price_usd != null ? (
-                          <p>
-                            Precio lista: ${Number(payment.list_price_usd).toFixed(2)}
+                        {payment.amount_due_usd != null ? (
+                          <p className="font-semibold text-zinc-800 dark:text-zinc-100">
+                            Monto a confirmar: $
+                            {Number(payment.amount_due_usd).toFixed(2)}
                           </p>
                         ) : null}
                         {payment.credit_usd != null &&
@@ -257,12 +321,6 @@ export function ManualPaymentsPanel({
                           <p>
                             Saldo a favor: $
                             {Number(payment.credit_usd).toFixed(2)}
-                          </p>
-                        ) : null}
-                        {payment.amount_due_usd != null ? (
-                          <p className="font-semibold text-zinc-800 dark:text-zinc-100">
-                            Monto a confirmar: $
-                            {Number(payment.amount_due_usd).toFixed(2)}
                           </p>
                         ) : null}
                       </div>
@@ -293,7 +351,7 @@ export function ManualPaymentsPanel({
                   </div>
                 </div>
 
-                {payment.status === "pending" ? (
+                {actionable ? (
                   <div className="mt-4 flex flex-wrap gap-2">
                     <button
                       type="button"
@@ -306,10 +364,18 @@ export function ManualPaymentsPanel({
                     <button
                       type="button"
                       disabled={isUpdating}
-                      onClick={() => handleReject(payment.id)}
-                      className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-60 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300 dark:hover:bg-red-950/50"
+                      onClick={() => openDialog("correction", payment.id)}
+                      className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 disabled:opacity-60 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300"
                     >
-                      Rechazar
+                      Solicitar corrección
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isUpdating}
+                      onClick={() => openDialog("reject", payment.id)}
+                      className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-60 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
+                    >
+                      Rechazar y anular
                     </button>
                   </div>
                 ) : null}
@@ -318,6 +384,75 @@ export function ManualPaymentsPanel({
           })}
         </ul>
       )}
+
+      {dialogMode && dialogPayment ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/50 p-4 sm:items-center">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              {dialogMode === "correction"
+                ? "Solicitar corrección"
+                : "Rechazar y anular"}
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+              {dialogMode === "correction"
+                ? "El usuario verá este motivo y podrá volver a subir el comprobante. Su acceso provisional se mantiene."
+                : "Anula la solicitud de forma permanente y bloquea reenviar la misma referencia."}
+            </p>
+            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+              {storeLabel(dialogPayment)} · Ref {dialogPayment.reference_number}
+            </p>
+            <label className="mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Motivo{dialogMode === "correction" ? " (obligatorio)" : " (opcional)"}
+              <textarea
+                value={dialogReason}
+                onChange={(event) => setDialogReason(event.target.value)}
+                rows={4}
+                className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-teal-500/30 focus:ring-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                placeholder={
+                  dialogMode === "correction"
+                    ? "Ej. El comprobante está borroso / el monto no coincide…"
+                    : "Ej. Comprobante inválido o manipulado…"
+                }
+                disabled={isDialogBusy}
+              />
+            </label>
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeDialog}
+                disabled={isDialogBusy}
+                className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-200"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={submitDialog}
+                disabled={
+                  isDialogBusy ||
+                  (dialogMode === "correction" && dialogReason.trim().length < 8)
+                }
+                className={cn(
+                  "rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60",
+                  dialogMode === "correction"
+                    ? "bg-amber-600 hover:bg-amber-700"
+                    : "bg-red-600 hover:bg-red-700",
+                )}
+              >
+                {isDialogBusy
+                  ? "Guardando…"
+                  : dialogMode === "correction"
+                    ? "Enviar solicitud"
+                    : "Anular permanentemente"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

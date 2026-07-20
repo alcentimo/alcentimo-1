@@ -26,7 +26,11 @@ export interface Profile {
   updated_at?: string;
 }
 
-export type ManualPaymentStatus = "pending" | "verified" | "rejected";
+export type ManualPaymentStatus =
+  | "pending"
+  | "verified"
+  | "needs_correction"
+  | "rejected";
 export type ManualPaymentPlanId = "starter" | "premium";
 
 export interface ManualPayment {
@@ -47,6 +51,9 @@ export interface ManualPayment {
   days_remaining?: number | null;
   credited_period_ends_at?: string | null;
   from_billing_period?: "monthly" | "annual" | string | null;
+  admin_note?: string | null;
+  permanently_rejected?: boolean;
+  correction_requested_at?: string | null;
 }
 
 export type PaymentReportStatus = "pending" | "verified" | "rejected";

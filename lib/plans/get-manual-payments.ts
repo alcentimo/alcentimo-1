@@ -110,7 +110,7 @@ export async function getManualPayments(options?: {
   let query = admin
     .from("manual_payments")
     .select(
-      "id, user_id, plan_id, reference_number, image_url, status, created_at, verified_at, rejected_at, billing_period, from_plan, from_billing_period, list_price_usd, credit_usd, amount_due_usd, days_remaining, credited_period_ends_at",
+      "id, user_id, plan_id, reference_number, image_url, status, created_at, verified_at, rejected_at, billing_period, from_plan, from_billing_period, list_price_usd, credit_usd, amount_due_usd, days_remaining, credited_period_ends_at, admin_note, permanently_rejected, correction_requested_at",
     )
     .order("created_at", { ascending: false })
     .limit(limit);

@@ -15,7 +15,10 @@ import {
   type BillingPeriod,
 } from "@/lib/plans/proration";
 import { resolveCurrentPeriodEndsAt } from "@/lib/plans/resolve-subscription-period";
-import { getPendingBusinessUpgradePayment } from "@/lib/plans/get-business-upgrade-preview";
+import {
+  getPendingBusinessUpgradePayment,
+} from "@/lib/plans/get-business-upgrade-preview";
+import { isReferencePermanentlyRejected } from "@/lib/plans/get-user-payment-review";
 
 export type BusinessUpgradeActionResult = {
   error?: string;
@@ -58,6 +61,13 @@ export async function submitBusinessUpgradePayment(
 
   if (!(proofFile instanceof File) || proofFile.size === 0) {
     return { error: "Sube la captura de tu pago." };
+  }
+
+  if (await isReferencePermanentlyRejected(auth.authUser.id, referenceNumber)) {
+    return {
+      error:
+        "Esta referencia fue rechazada permanentemente. Usa otra referencia o contacta soporte.",
+    };
   }
 
   const existingPending = await getPendingBusinessUpgradePayment(
@@ -156,6 +166,7 @@ export async function submitBusinessUpgradePayment(
   revalidatePath("/dashboard/planes");
   revalidatePath("/activar");
   revalidatePath("/dashboard/catalogo");
+  revalidatePath("/dashboard/pago");
   revalidatePath("/dashboard", "layout");
   revalidatePath("/admin/dashboard");
 

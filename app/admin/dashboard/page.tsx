@@ -76,8 +76,10 @@ export default async function AdminDashboardPage({
         : "No se pudieron cargar las métricas.";
   }
 
-  const pendingPayments = payments.filter((item) => item.status === "pending")
-    .length;
+  const pendingPayments = payments.filter(
+    (item) =>
+      item.status === "pending" || item.status === "needs_correction",
+  ).length;
   const pendingMessages = messages.filter((item) => item.status === "pendiente")
     .length;
 
