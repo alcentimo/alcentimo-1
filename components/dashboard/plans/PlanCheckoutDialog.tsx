@@ -23,7 +23,7 @@ import {
 } from "@/src/config/plan-pricing-ui";
 import { getSubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
 
-const MIN_SUBMIT_DURATION_MS = 1800;
+const MIN_SUBMIT_DURATION_MS = 5000;
 
 type CheckoutStep = "checkout" | "success";
 
@@ -101,10 +101,15 @@ export function PlanCheckoutDialog({
     formData.set("referenceNumber", referenceNumber);
     formData.set("proofImage", proofFile);
 
-    const [result] = await Promise.all([
-      submitManualPayment(formData),
-      new Promise<void>((resolve) => setTimeout(resolve, MIN_SUBMIT_DURATION_MS)),
-    ]);
+    const startedAt = Date.now();
+
+    const result = await submitManualPayment(formData);
+
+    const elapsed = Date.now() - startedAt;
+    const remaining = Math.max(0, MIN_SUBMIT_DURATION_MS - elapsed);
+    if (remaining > 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, remaining));
+    }
 
     setSubmitting(false);
 
@@ -251,7 +256,7 @@ export function PlanCheckoutDialog({
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-teal-100 dark:bg-teal-900/60">
                         <div
-                          className="h-full rounded-full bg-teal-600 transition-[width] duration-[1800ms] ease-out dark:bg-teal-400"
+                          className="h-full rounded-full bg-teal-600 transition-[width] duration-[5000ms] ease-out dark:bg-teal-400"
                           style={{ width: `${submitProgress}%` }}
                         />
                       </div>
