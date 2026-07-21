@@ -39,6 +39,7 @@ import type {
 import { cn } from "@/lib/cn";
 import { Select } from "@/components/ui/select";
 import {
+  DEFAULT_STORE_RUBRO,
   normalizeStoreRubro,
   STORE_RUBRO_OPTIONS,
   type StoreRubro,
@@ -172,7 +173,7 @@ export function DesignTab({
   const [design, setDesign] = useState(initialDesign);
   const [previewRubro, setPreviewRubro] = useState<StoreRubro>(() =>
     normalizeStoreRubro(
-      storeRubroProp ?? preview?.store.rubro_tienda ?? "general",
+      storeRubroProp ?? preview?.store.rubro_tienda ?? DEFAULT_STORE_RUBRO,
     ),
   );
   const [error, setError] = useState<string | null>(null);
@@ -182,7 +183,7 @@ export function DesignTab({
   const [isSaving, startSave] = useTransition();
 
   const storeRubro = normalizeStoreRubro(
-    storeRubroProp ?? preview?.store.rubro_tienda ?? "general",
+    storeRubroProp ?? preview?.store.rubro_tienda ?? DEFAULT_STORE_RUBRO,
   );
   const isFashionStore = storeRubro === "ropa-moda";
   const availableThemeIds = useMemo(

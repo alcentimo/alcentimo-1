@@ -19,15 +19,10 @@ import type {
 import { cn } from "@/lib/cn";
 
 const RUBRO_THEME_COLORS: Record<StoreRubro, string> = {
-  ferreteria: "#ea580c",
   "ropa-moda": "#171717",
-  calzado: "#7c3aed",
-  tecnologia: "#2563eb",
   alimentos: "#16a34a",
+  tecnologia: "#2563eb",
   coleccionables: "#b45309",
-  "salud-belleza": "#0891b2",
-  "hogar-decoracion": "#b45309",
-  general: "#0d9488",
 };
 
 const HEX_COLOR_PATTERN = /^#([0-9a-fA-F]{6})$/;

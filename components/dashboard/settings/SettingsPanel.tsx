@@ -135,7 +135,7 @@ export function SettingsPanel({
                   slug: "mi-tienda",
                   logo_url: null,
                   description: null,
-                  rubro_tienda: "general",
+                  rubro_tienda: "ropa-moda",
                 }
               }
             />
@@ -189,9 +189,9 @@ export function SettingsPanel({
             <DesignTab
               initialDesign={resolveCatalogDesign(
                 initialConfig.catalogDesign,
-                store?.rubro_tienda ?? "general",
+                store?.rubro_tienda ?? "ropa-moda",
               )}
-              storeRubro={store?.rubro_tienda ?? "general"}
+              storeRubro={store?.rubro_tienda ?? "ropa-moda"}
               preview={designPreview}
             />
           </div>

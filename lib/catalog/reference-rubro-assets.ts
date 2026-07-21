@@ -30,21 +30,13 @@ export const REFERENCE_RUBRO_ASSETS: Record<StoreRubro, ReferenceRubroAssetMap> 
     img5: REF("ropa-moda", "camiseta-pima.webp"),
     img6: REF("ropa-moda", "pantalon-chino.webp"),
   },
-  ferreteria: {
-    img1: REF("ferreteria", "taladro-brushless.webp"),
-    img2: REF("ferreteria", "llaves-combinadas.webp"),
-    img3: REF("ferreteria", "cable-thhn.webp"),
-    img4: REF("ferreteria", "tuberia-pvc.webp"),
-    img5: REF("ferreteria", "motosierra.webp"),
-    img6: REF("ferreteria", "tornillos-surtidos.webp"),
-  },
-  calzado: {
-    img1: REF("calzado", "oxford-firenze.webp"),
-    img2: REF("calzado", "bota-andes.webp"),
-    img3: REF("calzado", "sandalia-cloud.webp"),
-    img4: REF("calzado", "runner-velocity.webp"),
-    img5: REF("calzado", "mocasin-suede.webp"),
-    img6: REF("calzado", "deportivo-pro.webp"),
+  alimentos: {
+    img1: REF("alimentos", "arroz-premium.webp"),
+    img2: REF("alimentos", "aceite-girasol.webp"),
+    img3: REF("alimentos", "jugo-naranja.webp"),
+    img4: REF("alimentos", "frutas-temporada.webp"),
+    img5: REF("alimentos", "mix-snacks.webp"),
+    img6: REF("alimentos", "cafe-especialidad.webp"),
   },
   tecnologia: {
     img1: REF("tecnologia", "reloj-cronografo.webp"),
@@ -53,14 +45,6 @@ export const REFERENCE_RUBRO_ASSETS: Record<StoreRubro, ReferenceRubroAssetMap> 
     img4: REF("tecnologia", "audifonos-anc.webp"),
     img5: REF("tecnologia", "monitor-ips.webp"),
     img6: REF("tecnologia", "cargador-usbc.webp"),
-  },
-  alimentos: {
-    img1: REF("alimentos", "arroz-premium.webp"),
-    img2: REF("alimentos", "aceite-girasol.webp"),
-    img3: REF("alimentos", "jugo-naranja.webp"),
-    img4: REF("alimentos", "frutas-temporada.webp"),
-    img5: REF("alimentos", "mix-snacks.webp"),
-    img6: REF("alimentos", "cafe-especialidad.webp"),
   },
   // Vista previa: reutiliza assets generales hasta tener set dedicado.
   coleccionables: {
@@ -71,37 +55,13 @@ export const REFERENCE_RUBRO_ASSETS: Record<StoreRubro, ReferenceRubroAssetMap> 
     img5: REF("general", "gift-card.webp"),
     img6: REF("general", "pack-familiar.webp"),
   },
-  "salud-belleza": {
-    img1: REF("salud-belleza", "serum-vitamina-c.webp"),
-    img2: REF("salud-belleza", "labial-velvet.webp"),
-    img3: REF("salud-belleza", "perfume-citrus.webp"),
-    img4: REF("salud-belleza", "multivitaminico.webp"),
-    img5: REF("salud-belleza", "crema-hydra.webp"),
-    img6: REF("salud-belleza", "mascarilla-facial.webp"),
-  },
-  "hogar-decoracion": {
-    img1: REF("hogar-decoracion", "sillon-oslo.webp"),
-    img2: REF("hogar-decoracion", "lampara-arco.webp"),
-    img3: REF("hogar-decoracion", "ollas-forged.webp"),
-    img4: REF("hogar-decoracion", "sabanas-algodon.webp"),
-    img5: REF("hogar-decoracion", "espejo-arco.webp"),
-    img6: REF("hogar-decoracion", "cojin-decorativo.webp"),
-  },
-  general: {
-    img1: REF("general", "kit-best-seller.webp"),
-    img2: REF("general", "edicion-signature.webp"),
-    img3: REF("general", "pack-familiar.webp"),
-    img4: REF("general", "accesorio-pro.webp"),
-    img5: REF("general", "gift-card.webp"),
-    img6: REF("general", "producto-destacado.webp"),
-  },
 };
 
 const prefetchedUrls = new Set<string>();
 const prefetchPromises = new Map<string, Promise<void>>();
 
 export function getReferenceRubroAssets(rubro: StoreRubro): ReferenceRubroAssetMap {
-  return REFERENCE_RUBRO_ASSETS[rubro] ?? REFERENCE_RUBRO_ASSETS.general;
+  return REFERENCE_RUBRO_ASSETS[rubro] ?? REFERENCE_RUBRO_ASSETS["ropa-moda"];
 }
 
 export function resolveReferenceAssetUrl(

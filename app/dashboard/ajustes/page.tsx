@@ -85,7 +85,7 @@ export default async function AjustesPage() {
                 slug: store.slug,
                 logo_url: store.logo_url,
                 description: store.description,
-                rubro_tienda: store.rubro_tienda ?? "general",
+                rubro_tienda: store.rubro_tienda ?? "ropa-moda",
               }
             : null
         }

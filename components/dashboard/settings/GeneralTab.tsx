@@ -18,7 +18,7 @@ import {
 import { slugify } from "@/lib/slugify";
 import { isValidStoreSlug } from "@/lib/stores/slug";
 import { getPublicSiteHost } from "@/lib/site-url";
-import { STORE_RUBRO_OPTIONS } from "@/src/config/categories";
+import { STORE_RUBRO_OPTIONS, normalizeStoreRubro, type StoreRubro } from "@/src/config/categories";
 
 function getRubroLabel(value: string): string {
   return STORE_RUBRO_OPTIONS.find((option) => option.value === value)?.label ?? value;
@@ -44,8 +44,12 @@ export function GeneralTab({ store }: GeneralTabProps) {
   const [description, setDescription] = useState(store.description ?? "");
   const [savedSlug, setSavedSlug] = useState(store.slug);
   const [logoUrl, setLogoUrl] = useState<string | null>(store.logo_url);
-  const [rubroTienda, setRubroTienda] = useState(store.rubro_tienda);
-  const [savedRubro, setSavedRubro] = useState(store.rubro_tienda);
+  const [rubroTienda, setRubroTienda] = useState<StoreRubro>(() =>
+    normalizeStoreRubro(store.rubro_tienda),
+  );
+  const [savedRubro, setSavedRubro] = useState<StoreRubro>(() =>
+    normalizeStoreRubro(store.rubro_tienda),
+  );
   const [slugStatus, setSlugStatus] = useState<SlugStatus>("available");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,8 +61,8 @@ export function GeneralTab({ store }: GeneralTabProps) {
     setDescription(store.description ?? "");
     setSavedSlug(store.slug);
     setLogoUrl(store.logo_url);
-    setRubroTienda(store.rubro_tienda);
-    setSavedRubro(store.rubro_tienda);
+    setRubroTienda(normalizeStoreRubro(store.rubro_tienda));
+    setSavedRubro(normalizeStoreRubro(store.rubro_tienda));
   }, [store.name, store.description, store.slug, store.logo_url, store.rubro_tienda]);
 
   const siteHost = useMemo(() => getPublicSiteHost(), []);
@@ -130,7 +134,9 @@ export function GeneralTab({ store }: GeneralTabProps) {
         return;
       }
 
-      const persistedRubro = result.rubroTienda ?? rubroTienda;
+      const persistedRubro = normalizeStoreRubro(
+        result.rubroTienda ?? rubroTienda,
+      );
       setSavedSlug(slugPreview);
       setSavedRubro(persistedRubro);
       setRubroTienda(persistedRubro);
@@ -264,7 +270,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
 
       <SettingsSection
         title="Rubro de la tienda"
-        description="Define las categorías sugeridas y los campos al crear productos."
+        description="Elige el giro operativo de tu tienda. Cada rubro activa formularios y catálogo especializados."
         variant="payments"
       >
         <div className="general-settings-card">
@@ -276,7 +282,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
             value={rubroTienda}
             required
             onChange={(e) => {
-              setRubroTienda(e.target.value);
+              setRubroTienda(normalizeStoreRubro(e.target.value));
               setSuccessMessage(null);
             }}
             className="payment-field-input mt-1.5"
@@ -288,7 +294,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
             ))}
           </Select>
           <p className="mt-1.5 text-[11px] text-zinc-400">
-            Al guardar, las categorías sugeridas en Nuevo Producto se adaptan a este rubro.
+            Ropa incluye tallas S/M/L y numeraciones de calzado; Alimentos, porciones y modificadores; Tecnología, specs; Coleccionables, condición y preventa.
           </p>
         </div>
       </SettingsSection>
