@@ -38,6 +38,8 @@ async function CategoriesContent({
     purchaseInfo,
     catalogDesign,
     catalogCurrency,
+    locations,
+    locationStocks,
   } = data;
 
   return (
@@ -50,6 +52,8 @@ async function CategoriesContent({
       purchaseInfo={purchaseInfo}
       catalogDesign={catalogDesign}
       catalogCurrency={catalogCurrency}
+      locations={locations}
+      locationStocks={locationStocks}
     />
   );
 }

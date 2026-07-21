@@ -10,6 +10,7 @@ import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import { SettingsPanel } from "@/components/dashboard/settings/SettingsPanel";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import { getStoreLocations } from "@/lib/locations/get-store-locations";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export default async function AjustesPage({
   let promotions: Awaited<ReturnType<typeof getStorePromotions>> = [];
   let products: { id: string; name: string; categoryName: string | null; thumbUrl: string | null }[] =
     [];
+  let locations: Awaited<ReturnType<typeof getStoreLocations>> = [];
 
   let designPreview: {
     store: NonNullable<typeof store>;
@@ -42,7 +44,7 @@ export default async function AjustesPage({
   } | null = null;
 
   if (store) {
-    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings] =
+    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations] =
       await Promise.all([
       getStoreSettingsConfig(store.id),
       getStoreCoupons(store.id),
@@ -50,11 +52,13 @@ export default async function AjustesPage({
       getStoreInventory(store.slug),
       getCurrentExchangeRate(),
       getCatalogPreviewSettings(store),
+      getStoreLocations(store.id).catch(() => []),
     ]);
 
     settingsConfig = config;
     coupons = couponRows;
     promotions = promotionRows;
+    locations = storeLocations;
     products = inventory.products.map((product) => ({
       id: product.product_id,
       name: product.product_name,
@@ -103,6 +107,7 @@ export default async function AjustesPage({
         designPreview={designPreview}
         initialTab={tab}
         planId={session.authUser.planId}
+        initialLocations={locations}
       />
     </div>
   );

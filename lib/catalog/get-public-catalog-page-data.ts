@@ -14,6 +14,9 @@ import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogPageData } from "@/lib/catalog";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
 
+import { getPublicStoreLocations, getVariantLocationStocksForStore } from "@/lib/locations/get-store-locations";
+import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
+
 export interface PublicCatalogPageData extends CatalogPageData {
   store: Store;
   storeCategories: CatalogCategoryOption[];
@@ -21,6 +24,8 @@ export interface PublicCatalogPageData extends CatalogPageData {
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
   catalogCurrency: CatalogCurrencySettings;
+  locations: StoreLocation[];
+  locationStocks: VariantLocationStock[];
 }
 
 function normalizeStoreSlug(slug: string): string {
@@ -80,9 +85,11 @@ export async function getPublicCatalogPageData(
   const store = await fetchActiveStoreBySlug(storeSlug);
   if (!store) return null;
 
-  const [settingsConfig, storeCategories] = await Promise.all([
+  const [settingsConfig, storeCategories, locations, locationStocks] = await Promise.all([
     fetchStoreSettingsConfig(store.id),
     getPublicStoreCategories(store.id),
+    getPublicStoreLocations(store.id).catch(() => []),
+    getVariantLocationStocksForStore(store.id).catch(() => []),
   ]);
 
   let selectedCategorySlug: string | null = null;
@@ -120,6 +127,8 @@ export async function getPublicCatalogPageData(
     purchaseInfo,
     catalogDesign,
     catalogCurrency: settingsConfig.catalogCurrency,
+    locations,
+    locationStocks,
   };
 }
 

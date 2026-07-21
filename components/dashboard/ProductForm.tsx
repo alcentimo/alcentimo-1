@@ -29,6 +29,7 @@ import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
+import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
 import {
   emptyFoodModifiers,
   serializeFoodModifiersJson,
@@ -402,26 +403,10 @@ export function ProductForm({
         />
       ) : null}
 
-      {!hasCustomVariants && (
-        <div>
-          <label htmlFor="stock_quantity" className="label-field">
-            Cantidad en stock <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="stock_quantity"
-            name="stock_quantity"
-            type="number"
-            required
-            min={0}
-            step={1}
-            defaultValue={initialData?.stockQuantity ?? 0}
-            className="input-field"
-          />
-        </div>
-      )}
-
-      {hasCustomVariants && (
-        <input type="hidden" name="stock_quantity" value="0" readOnly />
+      {!hasCustomVariants ? (
+        <LocationStockFields defaultStock={initialData?.stockQuantity ?? 0} />
+      ) : (
+        <LocationStockFields hidden />
       )}
 
       <div>

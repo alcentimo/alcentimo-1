@@ -28,6 +28,7 @@ import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSec
 import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
+import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
 import {
   emptyFoodModifiers,
   serializeFoodModifiersJson,
@@ -43,6 +44,7 @@ interface ProductCatalogFormProps {
   initialData?: ProductEditData;
   onSuccess: () => void;
   onCancel?: () => void;
+  initialLocationStocks?: Record<string, number>;
 }
 
 const initialState: ProductFormState = {};
@@ -55,6 +57,7 @@ export function ProductCatalogForm({
   initialData,
   onSuccess,
   onCancel,
+  initialLocationStocks = {},
 }: ProductCatalogFormProps) {
   const { config: countryConfig } = useCountry();
   const action = mode === "edit" ? updateProduct : createProduct;
@@ -373,23 +376,12 @@ export function ProductCatalogForm({
       ) : null}
 
       {!((isAlimentos || isSaludBelleza || isRopaModa) && hasCustomVariants) ? (
-      <div>
-        <Label htmlFor="catalog-stock" className="payment-field-label">
-          Cantidad en stock <span className="text-red-500">*</span>
-        </Label>
-        <Input
-          id="catalog-stock"
-          name="stock_quantity"
-          type="number"
-          required
-          min={0}
-          step={1}
-          defaultValue={initialData?.stockQuantity ?? 0}
-          className="payment-field-input mt-1.5"
+        <LocationStockFields
+          defaultStock={initialData?.stockQuantity ?? 0}
+          initialByLocation={initialLocationStocks}
         />
-      </div>
       ) : (
-        <input type="hidden" name="stock_quantity" value="0" readOnly />
+        <LocationStockFields hidden />
       )}
 
       <div>

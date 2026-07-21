@@ -37,17 +37,32 @@ function parseOrderItems(value: unknown): OrderLineItem[] {
 function mapOrderRows(
   data: Array<Record<string, unknown>> | null,
 ): CatalogOrder[] {
-  const mapped = (data ?? []).map((row) => ({
-    id: row.id as string,
-    store_id: row.store_id as string,
-    customer_name: row.customer_name as string,
-    customer_phone: (row.customer_phone as string | null) ?? null,
-    items: parseOrderItems(row.items),
-    total_usd: Number(row.total_usd) || 0,
-    payment_proof_url: row.payment_proof_url as string | null,
-    estado: parseOrderEstado(row.estado),
-    created_at: row.created_at as string,
-  }));
+  const mapped = (data ?? []).map((row) => {
+    const location = row.store_locations as
+      | { name?: string }
+      | { name?: string }[]
+      | null
+      | undefined;
+    const locationName = Array.isArray(location)
+      ? location[0]?.name
+      : location?.name;
+
+    return {
+      id: row.id as string,
+      store_id: row.store_id as string,
+      customer_name: row.customer_name as string,
+      customer_phone: (row.customer_phone as string | null) ?? null,
+      items: parseOrderItems(row.items),
+      total_usd: Number(row.total_usd) || 0,
+      payment_proof_url: row.payment_proof_url as string | null,
+      estado: parseOrderEstado(row.estado),
+      created_at: row.created_at as string,
+      location_id: (row.location_id as string | null) ?? null,
+      location_name: locationName ?? null,
+      fulfillment_type:
+        (row.fulfillment_type as CatalogOrder["fulfillment_type"]) ?? null,
+    };
+  });
 
   return sortOrdersByBusinessRules(mapped);
 }
@@ -70,7 +85,7 @@ export async function getStoreOrders(
   const { data, error, count } = await supabase
     .from("orders")
     .select(
-      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at",
+      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, store_locations(name)",
       { count: "exact" },
     )
     .eq("store_id", storeId)

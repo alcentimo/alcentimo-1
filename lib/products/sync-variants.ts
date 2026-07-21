@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { slugify } from "@/lib/slugify";
 import type { ProductVariantJson } from "@/lib/products/variants";
+import { syncDefaultLocationStockFromVariant } from "@/lib/locations/sync-stock";
 
 async function upsertVariantPrice(
   supabase: SupabaseClient,
@@ -39,6 +40,7 @@ export async function syncProductVariants(
     lowStockThreshold: number;
     variants: ProductVariantJson[];
     defaultVariantId: string;
+    storeId?: string;
   },
 ): Promise<{ error?: string; synced: ProductVariantJson[] }> {
   const {
@@ -49,6 +51,7 @@ export async function syncProductVariants(
     lowStockThreshold,
     variants,
     defaultVariantId,
+    storeId,
   } = options;
 
   if (variants.length === 0) {
@@ -131,6 +134,18 @@ export async function syncProductVariants(
       basePriceUsd + variant.price_extra_usd,
     );
     if (priceResult.error) return { error: priceResult.error, synced: [] };
+
+    if (storeId) {
+      const locationSync = await syncDefaultLocationStockFromVariant(
+        supabase,
+        storeId,
+        variantId,
+        variant.stock,
+      );
+      if (locationSync.error) {
+        return { error: locationSync.error, synced: [] };
+      }
+    }
 
     keepIds.add(variantId);
     synced.push({

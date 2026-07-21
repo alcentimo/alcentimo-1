@@ -54,6 +54,19 @@ export async function submitTransactionalOrder(
   const paymentMethodRaw = String(formData.get("paymentMethod") ?? "").trim();
   const shippingMethodRaw = String(formData.get("shippingMethod") ?? "").trim();
   const promotionCodeRaw = String(formData.get("promotionCode") ?? "").trim();
+  const locationIdRaw = String(formData.get("locationId") ?? "").trim();
+  const fulfillmentTypeRaw = String(formData.get("fulfillmentType") ?? "").trim();
+
+  const fulfillmentType =
+    fulfillmentTypeRaw === "pickup" ||
+    fulfillmentTypeRaw === "delivery" ||
+    fulfillmentTypeRaw === "shipping"
+      ? fulfillmentTypeRaw
+      : shippingMethodRaw === "pickup"
+        ? "pickup"
+        : shippingMethodRaw
+          ? "shipping"
+          : null;
 
   if (!storeSlug) {
     return { error: "Tienda no válida." };
@@ -152,6 +165,28 @@ export async function submitTransactionalOrder(
     return { error: proofUpload.error ?? "No se pudo subir el comprobante." };
   }
 
+  let resolvedLocationId: string | null = null;
+  if (locationIdRaw) {
+    const { data: locationRow } = await admin
+      .from("store_locations")
+      .select("id")
+      .eq("id", locationIdRaw)
+      .eq("store_id", store.id)
+      .eq("is_active", true)
+      .maybeSingle();
+    resolvedLocationId = (locationRow?.id as string | undefined) ?? null;
+  }
+
+  if (!resolvedLocationId) {
+    const { data: defaultLocation } = await admin
+      .from("store_locations")
+      .select("id")
+      .eq("store_id", store.id)
+      .eq("is_default", true)
+      .maybeSingle();
+    resolvedLocationId = (defaultLocation?.id as string | undefined) ?? null;
+  }
+
   const { error: insertError } = await admin.from("orders").insert({
     id: orderId,
     store_id: store.id,
@@ -162,6 +197,8 @@ export async function submitTransactionalOrder(
     total_usd: totalUsd,
     payment_proof_url: proofUpload.url,
     estado: "pendiente",
+    location_id: resolvedLocationId,
+    fulfillment_type: fulfillmentType,
   });
 
   if (insertError) {

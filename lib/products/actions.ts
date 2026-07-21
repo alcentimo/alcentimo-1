@@ -9,6 +9,10 @@ import { slugify, uniqueSlug } from "@/lib/slugify";
 import { uploadProductImage, buildOptimizationMessage } from "@/lib/storage";
 import { parseVariantFormInputs, parseVariantsJson } from "@/lib/products/variants";
 import { syncProductVariants } from "@/lib/products/sync-variants";
+import {
+  applyLocationStocksFromForm,
+  syncDefaultLocationStockFromVariant,
+} from "@/lib/locations/sync-stock";
 import { assertCanCreateProduct } from "@/lib/plans/product-limit";
 import {
   applyFoodModifiersToMetadata,
@@ -321,6 +325,17 @@ export async function createProduct(
 
   const variantId = variant.id as string;
 
+  if (!hasCustomVariants) {
+    const locationStock = await applyLocationStocksFromForm(
+      supabase,
+      store.id,
+      variantId,
+      formData,
+      stockQuantity,
+    );
+    if (locationStock.error) return { error: locationStock.error };
+  }
+
   const { error: priceError } = await supabase.from("product_prices").insert({
     variant_id: variantId,
     amount_usd: priceUsd,
@@ -338,6 +353,7 @@ export async function createProduct(
       lowStockThreshold,
       variants: customVariants,
       defaultVariantId: variantId,
+      storeId: store.id,
     });
     if (synced.error) return { error: synced.error };
   }
@@ -593,6 +609,17 @@ export async function updateProduct(
 
   if (defaultVariantError) return { error: defaultVariantError.message };
 
+  if (!hasCustomVariants) {
+    const locationStock = await applyLocationStocksFromForm(
+      supabase,
+      store.id,
+      defaultVariantId,
+      formData,
+      stockQuantity,
+    );
+    if (locationStock.error) return { error: locationStock.error };
+  }
+
   const priceUpdate = await supabase
     .from("product_prices")
     .update({
@@ -612,6 +639,7 @@ export async function updateProduct(
       lowStockThreshold,
       variants: customVariants,
       defaultVariantId,
+      storeId: store.id,
     });
     if (synced.error) return { error: synced.error };
   } else if (storeRubroManagesProductVariants(rubro)) {
@@ -885,13 +913,13 @@ export async function updateProductStock(
   );
   if ("error" in access) return { error: access.error };
 
-  const { error } = await supabase
-    .from("product_variants")
-    .update({ stock_quantity: Math.floor(stockQuantity) })
-    .eq("id", variantId)
-    .eq("product_id", productId);
-
-  if (error) return { error: error.message };
+  const locationSync = await syncDefaultLocationStockFromVariant(
+    supabase,
+    store.id,
+    variantId,
+    Math.floor(stockQuantity),
+  );
+  if (locationSync.error) return { error: locationSync.error };
 
   revalidateInventoryPaths(store.slug);
   return { success: true, stock: Math.floor(stockQuantity) };

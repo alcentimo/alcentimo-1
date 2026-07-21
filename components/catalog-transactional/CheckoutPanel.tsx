@@ -27,6 +27,7 @@ import {
   getStoreCatalogPublicUrl,
   getStoreCustomerAccountPath,
 } from "@/lib/store-host";
+import type { CatalogFulfillmentMode } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 
 interface CheckoutPanelProps {
   storeSlug: string;
@@ -34,6 +35,8 @@ interface CheckoutPanelProps {
   purchaseInfo: PublicPurchaseInfo;
   whatsappConfigured: boolean;
   onClose: () => void;
+  fulfillmentMode?: CatalogFulfillmentMode;
+  locationId?: string | null;
 }
 
 interface CustomerCheckoutProfile {
@@ -54,6 +57,8 @@ export function CheckoutPanel({
   purchaseInfo,
   whatsappConfigured,
   onClose,
+  fulfillmentMode = "delivery",
+  locationId = null,
 }: CheckoutPanelProps) {
   const { items, subtotalUsd, updateQuantity, removeItem, clearCart } =
     useCart();
@@ -80,6 +85,16 @@ export function CheckoutPanel({
     }
     setSelectedPayment(pickDefaultPaymentKey(purchaseInfo.payments));
   }, [purchaseInfo.payments, purchaseInfo.shipping]);
+
+  useEffect(() => {
+    if (fulfillmentMode === "pickup") {
+      const pickup = purchaseInfo.shipping.find((method) => method.key === "pickup");
+      if (pickup) setSelectedShipping("pickup");
+    } else if (fulfillmentMode === "delivery") {
+      const delivery = purchaseInfo.shipping.find((method) => method.key === "delivery");
+      if (delivery) setSelectedShipping("delivery");
+    }
+  }, [fulfillmentMode, purchaseInfo.shipping]);
 
   useEffect(() => {
     let cancelled = false;
@@ -235,6 +250,8 @@ export function CheckoutPanel({
     }
     if (selectedShipping) formData.set("shippingMethod", selectedShipping);
     if (selectedPayment) formData.set("paymentMethod", selectedPayment);
+    formData.set("fulfillmentType", fulfillmentMode);
+    if (locationId) formData.set("locationId", locationId);
 
     startTransition(async () => {
       const result = await submitTransactionalOrder(formData);

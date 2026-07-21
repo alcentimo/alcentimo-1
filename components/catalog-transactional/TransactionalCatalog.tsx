@@ -6,6 +6,7 @@ import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types"
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
+import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
 import { extractCatalogCategories } from "@/lib/catalog/extract-categories";
 import {
   getCatalogDesignClasses,
@@ -20,6 +21,12 @@ import { CatalogCartHost } from "@/components/catalog-transactional/CatalogCartH
 import { CatalogBrowseToolbar } from "@/components/catalog-transactional/CatalogBrowseToolbar";
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
 import { useCatalogBrowse } from "@/components/catalog-transactional/useCatalogBrowse";
+import {
+  CatalogFulfillmentProvider,
+  useCatalogFulfillment,
+} from "@/components/catalog-transactional/CatalogFulfillmentProvider";
+import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
+import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { isProductOutOfStock } from "@/lib/products/variants";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { groupProductsByFoodMenu } from "@/lib/rubros/modules/alimentos";
@@ -37,6 +44,8 @@ interface TransactionalCatalogProps {
   previewMode?: boolean;
   referenceMode?: boolean;
   showReferenceCta?: boolean;
+  locations?: StoreLocation[];
+  locationStocks?: VariantLocationStock[];
 }
 
 function getStoreInitials(name: string): string {
@@ -66,10 +75,48 @@ export function TransactionalCatalog({
   previewMode = false,
   referenceMode = false,
   showReferenceCta = false,
+  locations = [],
+  locationStocks = [],
 }: TransactionalCatalogProps) {
+  return (
+    <CatalogFulfillmentProvider
+      locations={locations}
+      locationStocks={locationStocks}
+    >
+      <TransactionalCatalogInner
+        store={store}
+        products={products}
+        storeCategories={storeCategories}
+        exchangeRate={exchangeRate}
+        purchaseInfo={purchaseInfo}
+        catalogDesign={catalogDesign}
+        catalogCurrency={catalogCurrency}
+        openCheckoutInitially={openCheckoutInitially}
+        previewMode={previewMode}
+        referenceMode={referenceMode}
+        showReferenceCta={showReferenceCta}
+      />
+    </CatalogFulfillmentProvider>
+  );
+}
+
+function TransactionalCatalogInner({
+  store,
+  products,
+  storeCategories = [],
+  exchangeRate,
+  purchaseInfo,
+  catalogDesign,
+  catalogCurrency,
+  openCheckoutInitially = false,
+  previewMode = false,
+  referenceMode = false,
+  showReferenceCta = false,
+}: Omit<TransactionalCatalogProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
   const { addItem } = useCart();
+  const { getAvailableStock } = useCatalogFulfillment();
   const isFoodMenu = storeUsesRubroProductModule(store.rubro_tienda, "alimentos");
   const isTechCatalog = storeUsesRubroProductModule(
     store.rubro_tienda,
@@ -80,9 +127,17 @@ export function TransactionalCatalog({
     "coleccionables",
   );
 
+  const locationAwareProducts = useMemo(
+    () =>
+      products.map((product) =>
+        applyLocationStockToProduct(product, getAvailableStock),
+      ),
+    [products, getAvailableStock],
+  );
+
   const availableProducts = useMemo(
-    () => products.filter((product) => !isProductOutOfStock(product)),
-    [products],
+    () => locationAwareProducts.filter((product) => !isProductOutOfStock(product)),
+    [locationAwareProducts],
   );
 
   const categoryOptions = useMemo(
@@ -190,6 +245,12 @@ export function TransactionalCatalog({
           </div>
         </div>
       </header>
+
+      {!previewMode ? (
+        <div className="txn-catalog-header-inner px-0 pb-0 pt-3">
+          <CatalogLocationPicker />
+        </div>
+      ) : null}
 
       {availableProducts.length > 0 ? (
         <CatalogBrowseToolbar

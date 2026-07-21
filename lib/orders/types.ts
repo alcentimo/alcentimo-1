@@ -22,6 +22,9 @@ export interface CatalogOrder {
   payment_proof_url: string | null;
   estado: OrderEstado;
   created_at: string;
+  location_id?: string | null;
+  location_name?: string | null;
+  fulfillment_type?: "delivery" | "pickup" | "shipping" | null;
 }
 
 export interface SubmitOrderLineInput {

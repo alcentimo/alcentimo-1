@@ -7,6 +7,7 @@ import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { CartSummaryPanel } from "@/components/catalog-transactional/CartSummaryPanel";
 import { CheckoutPanel } from "@/components/catalog-transactional/CheckoutPanel";
+import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 
 interface CatalogCartHostProps {
   store: Pick<Store, "slug" | "name">;
@@ -22,6 +23,11 @@ export function CatalogCartHost({
   openInitially = false,
 }: CatalogCartHostProps) {
   const { itemCount } = useCart();
+  const { mode, selectedLocationId, locations } = useCatalogFulfillment();
+  const defaultLocationId =
+    locations.find((loc) => loc.is_default)?.id ?? locations[0]?.id ?? null;
+  const orderLocationId =
+    mode === "pickup" ? selectedLocationId : defaultLocationId;
   const [panelView, setPanelView] = useState<CartPanelView>(
     openInitially ? "checkout" : "closed",
   );
@@ -72,6 +78,8 @@ export function CatalogCartHost({
               purchaseInfo={purchaseInfo}
               whatsappConfigured={whatsappConfigured}
               onClose={closePanel}
+              fulfillmentMode={mode}
+              locationId={orderLocationId}
             />
           )}
         </div>

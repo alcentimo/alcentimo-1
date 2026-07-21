@@ -5,6 +5,7 @@ import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types"
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
+import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
 import {
   getCatalogDesignClasses,
   getCatalogThemeStyle,
@@ -15,6 +16,12 @@ import { CatalogCartHost } from "@/components/catalog-transactional/CatalogCartH
 import { CatalogBrowseToolbar } from "@/components/catalog-transactional/CatalogBrowseToolbar";
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
 import { useCatalogBrowse } from "@/components/catalog-transactional/useCatalogBrowse";
+import {
+  CatalogFulfillmentProvider,
+  useCatalogFulfillment,
+} from "@/components/catalog-transactional/CatalogFulfillmentProvider";
+import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
+import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { isProductOutOfStock } from "@/lib/products/variants";
 import { cn } from "@/lib/cn";
 
@@ -27,6 +34,8 @@ interface CatalogCategoriesViewProps {
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
   catalogCurrency: CatalogCurrencySettings;
+  locations?: StoreLocation[];
+  locationStocks?: VariantLocationStock[];
 }
 
 export function CatalogCategoriesView({
@@ -38,14 +47,54 @@ export function CatalogCategoriesView({
   purchaseInfo,
   catalogDesign,
   catalogCurrency,
+  locations = [],
+  locationStocks = [],
 }: CatalogCategoriesViewProps) {
+  return (
+    <CatalogFulfillmentProvider
+      locations={locations}
+      locationStocks={locationStocks}
+    >
+      <CatalogCategoriesViewInner
+        store={store}
+        products={products}
+        storeCategories={storeCategories}
+        selectedCategorySlug={selectedCategorySlug}
+        exchangeRate={exchangeRate}
+        purchaseInfo={purchaseInfo}
+        catalogDesign={catalogDesign}
+        catalogCurrency={catalogCurrency}
+      />
+    </CatalogFulfillmentProvider>
+  );
+}
+
+function CatalogCategoriesViewInner({
+  store,
+  products,
+  storeCategories,
+  selectedCategorySlug,
+  exchangeRate,
+  purchaseInfo,
+  catalogDesign,
+  catalogCurrency,
+}: Omit<CatalogCategoriesViewProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showBsConversion } = catalogCurrency;
   const { addItem } = useCart();
+  const { getAvailableStock } = useCatalogFulfillment();
+
+  const locationAwareProducts = useMemo(
+    () =>
+      products.map((product) =>
+        applyLocationStockToProduct(product, getAvailableStock),
+      ),
+    [products, getAvailableStock],
+  );
 
   const availableProducts = useMemo(
-    () => products.filter((product) => !isProductOutOfStock(product)),
-    [products],
+    () => locationAwareProducts.filter((product) => !isProductOutOfStock(product)),
+    [locationAwareProducts],
   );
 
   const browse = useCatalogBrowse(availableProducts, {
@@ -58,16 +107,18 @@ export function CatalogCategoriesView({
   return (
     <div
       className={cn(
-        "txn-catalog txn-catalog-subpage",
+        "txn-catalog",
         getCatalogDesignClasses(catalogDesign, store.rubro_tienda),
       )}
       style={getCatalogThemeStyle(catalogDesign, store.rubro_tienda)}
     >
-      <header className="catalog-subpage-header">
-        <h1 className="catalog-subpage-title">Categorías</h1>
-        <p className="catalog-subpage-desc">
-          Explora productos por categoría en {store.name}.
-        </p>
+      <header className="txn-catalog-header">
+        <div className="txn-catalog-header-inner">
+          <h1 className="txn-catalog-title">{store.name}</h1>
+          <div className="mt-3">
+            <CatalogLocationPicker />
+          </div>
+        </div>
       </header>
 
       {availableProducts.length > 0 ? (
@@ -90,14 +141,10 @@ export function CatalogCategoriesView({
         {availableProducts.length === 0 ? (
           <div className="txn-catalog-empty">
             <p className="text-sm font-medium text-neutral-800">
-              {storeCategories.length === 0
-                ? "Esta tienda aún no tiene categorías configuradas"
-                : "No hay productos disponibles"}
+              No hay productos disponibles
             </p>
             <p className="mt-1.5 text-xs text-neutral-500">
-              {storeCategories.length === 0
-                ? "El dueño de la tienda puede configurarlas desde el panel."
-                : "Vuelve pronto para ver el catálogo actualizado."}
+              Vuelve pronto para ver el catálogo actualizado.
             </p>
           </div>
         ) : browse.totalCount === 0 ? (
