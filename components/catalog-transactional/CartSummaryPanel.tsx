@@ -51,7 +51,11 @@ export function CartSummaryPanel({
           <div className="txn-checkout-scroll">
             <ul className="txn-checkout-items">
               {items.map((item) => {
-                const key = cartItemKey(item.product.product_id, item.variantId);
+                const key = cartItemKey(
+                  item.product.product_id,
+                  item.variantId,
+                  item.modifiers,
+                );
                 return (
                   <li key={key} className="txn-checkout-item">
                     <div className="txn-checkout-item-thumb">
@@ -86,7 +90,11 @@ export function CartSummaryPanel({
                           type="button"
                           className="txn-remove-btn"
                           onClick={() =>
-                            removeItem(item.product.product_id, item.variantId)
+                            removeItem(
+                              item.product.product_id,
+                              item.variantId,
+                              item.modifiers,
+                            )
                           }
                           aria-label={`Eliminar ${item.product.product_name} del carrito`}
                         >
@@ -107,6 +115,7 @@ export function CartSummaryPanel({
                               item.product.product_id,
                               item.variantId,
                               item.quantity - 1,
+                              item.modifiers,
                             )
                           }
                           aria-label="Reducir cantidad"
@@ -124,6 +133,7 @@ export function CartSummaryPanel({
                               item.product.product_id,
                               item.variantId,
                               item.quantity + 1,
+                              item.modifiers,
                             )
                           }
                           aria-label="Aumentar cantidad"

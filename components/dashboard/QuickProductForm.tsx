@@ -9,11 +9,20 @@ import {
 import { ProductImageField } from "@/components/dashboard/ProductImageField";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
+import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
-import { rubroHidesProductCategory } from "@/lib/rubros/registry";
+import {
+  rubroHidesProductCategory,
+  storeUsesRubroProductModule,
+} from "@/lib/rubros/registry";
+import {
+  emptyFoodModifiers,
+  serializeFoodModifiersJson,
+  type FoodModifiersConfig,
+} from "@/lib/rubros/modules/alimentos";
 import type { Store } from "@/lib/database.types";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { VariantFormInput } from "@/lib/products/variants";
@@ -76,6 +85,8 @@ function QuickProductFormSession({
   const [state, formAction, pending] = useActionState(createProduct, initialState);
   const [priceBs, setPriceBs] = useState("");
   const [variants, setVariants] = useState<VariantFormInput[]>([]);
+  const [foodModifiers, setFoodModifiers] =
+    useState<FoodModifiersConfig>(emptyFoodModifiers);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [compressedImageFile, setCompressedImageFile] = useState<File | null>(null);
   const [imageBusy, setImageBusy] = useState(false);
@@ -96,6 +107,10 @@ function QuickProductFormSession({
   } = useProductCategoryFields(productFormConfig);
 
   const isRopaModa = rubroHidesProductCategory(productFormConfig.rubroTienda);
+  const isAlimentos = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "alimentos",
+  );
   const defaultCategorySlug =
     productFormConfig.productCategories[0]?.slug ?? "camisas";
 
@@ -135,6 +150,7 @@ function QuickProductFormSession({
   function resetFormState() {
     setPriceBs("");
     setVariants([]);
+    setFoodModifiers(emptyFoodModifiers());
     setAdvancedOpen(false);
     setCompressedImageFile(null);
     setImageProcessed(false);
@@ -176,8 +192,14 @@ function QuickProductFormSession({
     formData.set("variants_json", serializeVariantsForForm(variants));
     formData.set(
       "extra_fields_json",
-      serializeExtraFieldsJson(isRopaModa ? {} : extraFields),
+      serializeExtraFieldsJson(isRopaModa || isAlimentos ? {} : extraFields),
     );
+    if (isAlimentos) {
+      formData.set(
+        "food_modifiers_json",
+        serializeFoodModifiersJson(foodModifiers),
+      );
+    }
 
     if (!hasCustomVariants) {
       const stockValue = advancedOpen
@@ -223,7 +245,9 @@ function QuickProductFormSession({
           name="name"
           required
           maxLength={120}
-          placeholder="Ej: Arroz Premium 1kg"
+          placeholder={
+            isAlimentos ? "Ej: Arepa reina pepiada" : "Ej: Arroz Premium 1kg"
+          }
           className="payment-field-input mt-1.5"
           autoFocus
         />
@@ -300,13 +324,22 @@ function QuickProductFormSession({
         />
       ) : null}
 
-      {isRopaModa ? (
+      {isRopaModa || isAlimentos ? (
         <RubroVariantsSection
           rubro={productFormConfig.rubroTienda}
           variants={variants}
           onChange={setVariants}
           disabled={isBusy}
-          required
+          required={isRopaModa}
+        />
+      ) : null}
+
+      {isAlimentos ? (
+        <RubroModifiersSection
+          rubro={productFormConfig.rubroTienda}
+          value={foodModifiers}
+          onChange={setFoodModifiers}
+          disabled={isBusy}
         />
       ) : null}
 
@@ -378,7 +411,7 @@ function QuickProductFormSession({
               />
             </div>
 
-            {!isRopaModa ? (
+            {!isRopaModa && !isAlimentos ? (
               <RubroVariantsSection
                 rubro={productFormConfig.rubroTienda}
                 variants={variants}

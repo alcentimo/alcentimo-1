@@ -8,7 +8,7 @@ export const STORE_RUBRO_OPTIONS = [
   { value: "ropa-moda", label: "Ropa y Moda" },
   { value: "calzado", label: "Calzado" },
   { value: "tecnologia", label: "Tecnología" },
-  { value: "alimentos", label: "Alimentos" },
+  { value: "alimentos", label: "Alimentos y Bebidas" },
   { value: "salud-belleza", label: "Salud y Belleza" },
   { value: "hogar-decoracion", label: "Hogar y Decoración" },
   { value: "general", label: "General" },
@@ -72,12 +72,12 @@ export const STORE_RUBRO_CONFIGS: StoreRubroConfig[] = [
   },
   {
     rubro: "alimentos",
-    label: "Alimentos",
+    label: "Alimentos y Bebidas",
     categorias: [
-      { slug: "abarrotes", label: "Abarrotes", campos: ["Marca", "Peso/Volumen", "Presentación"] },
-      { slug: "bebidas", label: "Bebidas", campos: ["Marca", "Volumen", "Sabor"] },
-      { slug: "frescos", label: "Frescos", campos: ["Peso/Volumen", "Origen"] },
-      { slug: "snacks", label: "Snacks", campos: ["Marca", "Peso/Volumen", "Sabor"] },
+      { slug: "entradas", label: "Entradas", campos: [] },
+      { slug: "platos-principales", label: "Platos Principales", campos: [] },
+      { slug: "bebidas", label: "Bebidas", campos: [] },
+      { slug: "postres", label: "Postres", campos: [] },
     ],
   },
   {

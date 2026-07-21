@@ -304,6 +304,7 @@ export function CheckoutPanel({
                     const key = cartItemKey(
                       item.product.product_id,
                       item.variantId,
+                      item.modifiers,
                     );
                     return (
                       <li key={key} className="txn-checkout-item">
@@ -342,6 +343,7 @@ export function CheckoutPanel({
                                 removeItem(
                                   item.product.product_id,
                                   item.variantId,
+                                  item.modifiers,
                                 )
                               }
                               aria-label={`Eliminar ${item.product.product_name} del carrito`}
@@ -363,6 +365,7 @@ export function CheckoutPanel({
                                   item.product.product_id,
                                   item.variantId,
                                   item.quantity - 1,
+                                  item.modifiers,
                                 )
                               }
                               aria-label="Reducir cantidad"
@@ -380,6 +383,7 @@ export function CheckoutPanel({
                                   item.product.product_id,
                                   item.variantId,
                                   item.quantity + 1,
+                                  item.modifiers,
                                 )
                               }
                               aria-label="Aumentar cantidad"

@@ -17,6 +17,7 @@ import { useCountry } from "@/components/providers/CountryProvider";
 import {
   RubroVariantsSection,
 } from "@/components/rubros/RubroVariantsSection";
+import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
@@ -24,7 +25,15 @@ import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import type { VariantFormInput } from "@/lib/products/variants";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
-import { rubroHidesProductCategory } from "@/lib/rubros/registry";
+import {
+  rubroHidesProductCategory,
+  storeUsesRubroProductModule,
+} from "@/lib/rubros/registry";
+import {
+  emptyFoodModifiers,
+  serializeFoodModifiersJson,
+  type FoodModifiersConfig,
+} from "@/lib/rubros/modules/alimentos";
 
 interface ProductFormProps {
   store: Store;
@@ -64,6 +73,9 @@ export function ProductForm({
   const [variants, setVariants] = useState<VariantFormInput[]>(
     initialData ? toVariantInputs(initialData.variants) : [],
   );
+  const [foodModifiers, setFoodModifiers] = useState<FoodModifiersConfig>(
+    () => initialData?.foodModifiers ?? emptyFoodModifiers(),
+  );
   const [compressedImageFile, setCompressedImageFile] = useState<File | null>(null);
   const [imageBusy, setImageBusy] = useState(false);
   const [imageProcessed, setImageProcessed] = useState(false);
@@ -83,6 +95,10 @@ export function ProductForm({
     initialData?.extraFields,
   );
   const isRopaModa = rubroHidesProductCategory(productFormConfig.rubroTienda);
+  const isAlimentos = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "alimentos",
+  );
   const defaultCategorySlug =
     productFormConfig.productCategories[0]?.slug ?? "camisas";
   const catalogUrl = getStoreCatalogUrl(store.slug);
@@ -126,8 +142,14 @@ export function ProductForm({
     );
     formData.set(
       "extra_fields_json",
-      serializeExtraFieldsJson(isRopaModa ? {} : extraFields),
+      serializeExtraFieldsJson(isRopaModa || isAlimentos ? {} : extraFields),
     );
+    if (isAlimentos) {
+      formData.set(
+        "food_modifiers_json",
+        serializeFoodModifiersJson(foodModifiers),
+      );
+    }
 
     if (compressedImageFile) {
       formData.set("image", compressedImageFile);
@@ -317,7 +339,7 @@ export function ProductForm({
         )}
       </div>
 
-      {!isRopaModa && fieldLabels.length > 0 ? (
+      {!isRopaModa && !isAlimentos && fieldLabels.length > 0 ? (
         <ProductExtraFieldsSection
           fieldLabels={fieldLabels}
           values={extraFields}
@@ -327,13 +349,22 @@ export function ProductForm({
         />
       ) : null}
 
-      {isRopaModa ? (
+      {isRopaModa || isAlimentos ? (
         <RubroVariantsSection
           rubro={productFormConfig.rubroTienda}
           variants={variants}
           onChange={setVariants}
           disabled={isBusy}
-          required
+          required={isRopaModa}
+        />
+      ) : null}
+
+      {isAlimentos ? (
+        <RubroModifiersSection
+          rubro={productFormConfig.rubroTienda}
+          value={foodModifiers}
+          onChange={setFoodModifiers}
+          disabled={isBusy}
         />
       ) : null}
 
@@ -377,7 +408,7 @@ export function ProductForm({
         </p>
       </div>
 
-      {!isRopaModa ? (
+      {!isRopaModa && !isAlimentos ? (
         <RubroVariantsSection
           rubro={productFormConfig.rubroTienda}
           variants={variants}

@@ -44,9 +44,22 @@ interface CartContextValue {
   itemCount: number;
   subtotalUsd: number;
   isSyncing: boolean;
-  addItem: (product: CatalogListItem, variant: CatalogVariantOption) => void;
-  removeItem: (productId: string, variantId: string) => void;
-  updateQuantity: (productId: string, variantId: string, quantity: number) => void;
+  addItem: (
+    product: CatalogListItem,
+    variant: CatalogVariantOption,
+    modifiers?: import("@/lib/catalog/cart-types").CartModifierSelection[],
+  ) => void;
+  removeItem: (
+    productId: string,
+    variantId: string,
+    modifiers?: import("@/lib/catalog/cart-types").CartModifierSelection[],
+  ) => void;
+  updateQuantity: (
+    productId: string,
+    variantId: string,
+    quantity: number,
+    modifiers?: import("@/lib/catalog/cart-types").CartModifierSelection[],
+  ) => void;
   clearCart: () => void;
 }
 
@@ -200,12 +213,20 @@ export function CartProvider({
           setItems((current) => {
             const currentKeys = new Set(
               current.map((item) =>
-                cartItemKey(item.product.product_id, item.variantId),
+                cartItemKey(
+                  item.product.product_id,
+                  item.variantId,
+                  item.modifiers,
+                ),
               ),
             );
             const nextKeys = new Set(
               result.items.map((item) =>
-                cartItemKey(item.product.product_id, item.variantId),
+                cartItemKey(
+                  item.product.product_id,
+                  item.variantId,
+                  item.modifiers,
+                ),
               ),
             );
 
@@ -232,11 +253,20 @@ export function CartProvider({
   }, [storeSlug, items, hydrated, persistMode]);
 
   const addItem = useCallback(
-    (product: CatalogListItem, variant: CatalogVariantOption) => {
+    (
+      product: CatalogListItem,
+      variant: CatalogVariantOption,
+      modifiers: import("@/lib/catalog/cart-types").CartModifierSelection[] = [],
+    ) => {
       setItems((current) => {
-        const key = cartItemKey(product.product_id, variant.id);
+        const key = cartItemKey(product.product_id, variant.id, modifiers);
         const existing = current.find(
-          (item) => cartItemKey(item.product.product_id, item.variantId) === key,
+          (item) =>
+            cartItemKey(
+              item.product.product_id,
+              item.variantId,
+              item.modifiers,
+            ) === key,
         );
 
         if (existing) {
@@ -245,34 +275,61 @@ export function CartProvider({
             existing.availableStock,
           );
           return current.map((item) =>
-            cartItemKey(item.product.product_id, item.variantId) === key
+            cartItemKey(
+              item.product.product_id,
+              item.variantId,
+              item.modifiers,
+            ) === key
               ? { ...item, quantity: nextQty }
               : item,
           );
         }
 
-        return [...current, buildCartItem(product, variant, 1)];
+        return [...current, buildCartItem(product, variant, 1, modifiers)];
       });
     },
     [],
   );
 
-  const removeItem = useCallback((productId: string, variantId: string) => {
-    const key = cartItemKey(productId, variantId);
-    setItems((current) =>
-      current.filter(
-        (item) => cartItemKey(item.product.product_id, item.variantId) !== key,
-      ),
-    );
-  }, []);
+  const removeItem = useCallback(
+    (
+      productId: string,
+      variantId: string,
+      modifiers?: import("@/lib/catalog/cart-types").CartModifierSelection[],
+    ) => {
+      const key = cartItemKey(productId, variantId, modifiers);
+      setItems((current) =>
+        current.filter(
+          (item) =>
+            cartItemKey(
+              item.product.product_id,
+              item.variantId,
+              item.modifiers,
+            ) !== key,
+        ),
+      );
+    },
+    [],
+  );
 
   const updateQuantity = useCallback(
-    (productId: string, variantId: string, quantity: number) => {
-      const key = cartItemKey(productId, variantId);
+    (
+      productId: string,
+      variantId: string,
+      quantity: number,
+      modifiers?: import("@/lib/catalog/cart-types").CartModifierSelection[],
+    ) => {
+      const key = cartItemKey(productId, variantId, modifiers);
       setItems((current) =>
         current
           .map((item) => {
-            if (cartItemKey(item.product.product_id, item.variantId) !== key) {
+            if (
+              cartItemKey(
+                item.product.product_id,
+                item.variantId,
+                item.modifiers,
+              ) !== key
+            ) {
               return item;
             }
             const nextQty = Math.max(

@@ -8,7 +8,7 @@ import type { CatalogVisibilitySettings } from "@/lib/store-settings/types";
 import { getProductBodyLayoutClass } from "@/lib/store-settings/catalog-theme";
 import { formatUsd, formatApproxBs } from "@/lib/format";
 import { computeUsdToVes } from "@/lib/catalog/pricing";
-import { cartItemKey } from "@/lib/catalog/cart-types";
+import { cartItemKey, sumModifiersExtraUsd, type CartModifierSelection } from "@/lib/catalog/cart-types";
 import { getLowStockThreshold } from "@/lib/inventory/stock-status";
 import {
   getCatalogVariantOptions,
@@ -18,6 +18,11 @@ import {
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import { RubroCatalogVariantSlot } from "@/components/rubros/RubroCatalogVariantSlot";
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
+import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
+import {
+  hasFoodModifiers,
+  parseFoodModifiersFromMetadata,
+} from "@/lib/rubros/modules/alimentos";
 import { cn } from "@/lib/cn";
 
 interface ProductCardProps {
@@ -29,7 +34,11 @@ interface ProductCardProps {
   referenceCatalog?: boolean;
   /** Rubro de la tienda: activa selectores de módulo (lazy). */
   storeRubro?: string | null;
-  onAddToCart?: (product: CatalogListItem, variant: CatalogVariantOption) => void;
+  onAddToCart?: (
+    product: CatalogListItem,
+    variant: CatalogVariantOption,
+    modifiers?: CartModifierSelection[],
+  ) => void;
 }
 
 function StockBadge({
@@ -86,10 +95,19 @@ export const ProductCard = memo(function ProductCard({
     () => getCatalogVariantOptions(product, activeExchangeRate),
     [product, activeExchangeRate],
   );
-  const showVariantSelector = hasMultipleVariants(product);
   const [selectedVariantId, setSelectedVariantId] = useState(
     () => variantOptions[0]?.id ?? product.default_variant_id,
   );
+  const [selectedModifiers, setSelectedModifiers] = useState<
+    CartModifierSelection[]
+  >([]);
+
+  const isAlimentos = storeUsesRubroProductModule(storeRubro, "alimentos");
+  const foodHasModifiers =
+    isAlimentos &&
+    hasFoodModifiers(parseFoodModifiersFromMetadata(product.metadata ?? null));
+  const showVariantSelector = hasMultipleVariants(product);
+  const showOrderOptions = showVariantSelector || foodHasModifiers;
 
   const selectedVariant = useMemo(
     () =>
@@ -97,6 +115,10 @@ export const ProductCard = memo(function ProductCard({
       variantOptions[0],
     [variantOptions, selectedVariantId],
   );
+
+  const modifiersExtra = sumModifiersExtraUsd(selectedModifiers);
+  const displayPriceUsd =
+    (selectedVariant?.priceUsd ?? product.price_usd ?? 0) + modifiersExtra;
 
   const outOfStock = isProductOutOfStock(product);
   const { showStock, showDescription, showPrices } = catalogVisibility;
@@ -112,8 +134,12 @@ export const ProductCard = memo(function ProductCard({
   const contextCartQuantity =
     cartContext?.items.find(
       (item) =>
-        cartItemKey(item.product.product_id, item.variantId) ===
-        cartItemKey(product.product_id, selectedVariantId),
+        cartItemKey(
+          item.product.product_id,
+          item.variantId,
+          item.modifiers,
+        ) ===
+        cartItemKey(product.product_id, selectedVariantId, selectedModifiers),
     )?.quantity ?? 0;
   const effectiveCartQuantity =
     cartQuantity > 0 ? cartQuantity : contextCartQuantity;
@@ -134,13 +160,13 @@ export const ProductCard = memo(function ProductCard({
     product.compare_at_usd > product.price_usd;
 
   const selectedPriceVes =
-    computeUsdToVes(selectedVariant?.priceUsd ?? product.price_usd, activeExchangeRate) ??
+    computeUsdToVes(displayPriceUsd, activeExchangeRate) ??
     selectedVariant?.priceVes ??
     product.price_ves;
 
   function handleAdd() {
     if (!canAddMore || !selectedVariant) return;
-    onAddToCart?.(product, selectedVariant);
+    onAddToCart?.(product, selectedVariant, selectedModifiers);
   }
 
   function renderAddButton(className: string) {
@@ -248,13 +274,16 @@ export const ProductCard = memo(function ProductCard({
           ) : null}
 
           <div className="store-product-slot store-product-slot-variant">
-            {showVariantSelector ? (
+            {showOrderOptions ? (
               <RubroCatalogVariantSlot
                 rubro={storeRubro}
                 product={product}
                 variantOptions={variantOptions}
                 selectedVariantId={selectedVariantId}
                 onSelect={setSelectedVariantId}
+                selectedModifiers={selectedModifiers}
+                onModifiersChange={setSelectedModifiers}
+                showVariants={showVariantSelector}
               />
             ) : (
               <span className="store-product-variant-placeholder" aria-hidden="true" />
@@ -265,7 +294,7 @@ export const ProductCard = memo(function ProductCard({
             <div className="store-product-slot store-product-slot-pricing">
               <div className="store-product-price-row">
                 <p className="store-product-price-usd">
-                  {formatUsd(selectedVariant?.priceUsd ?? product.price_usd)}
+                  {formatUsd(displayPriceUsd)}
                 </p>
                 {hasDiscount && (
                   <p className="store-product-price-compare">

@@ -493,6 +493,7 @@ export interface CatalogListItem {
   compare_at_ves: number | null;
   exchange_rate_used: number | null;
   product_variants: ProductVariantJson[] | null;
+  metadata?: Record<string, unknown> | null;
   thumb_url: string | null;
   blur_hash: string | null;
   image_alt: string | null;

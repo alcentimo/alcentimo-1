@@ -53,6 +53,8 @@ export async function loadRubroProductModule(moduleId: RubroProductModuleId) {
   switch (moduleId) {
     case "ropa-moda":
       return import("@/lib/rubros/modules/ropa-moda");
+    case "alimentos":
+      return import("@/lib/rubros/modules/alimentos");
     default: {
       const _exhaustive: never = moduleId;
       return _exhaustive;

@@ -1,3 +1,9 @@
+import {
+  FOOD_MODIFIERS_METADATA_KEY,
+  hasFoodModifiers,
+  parseFoodModifiersJson,
+} from "@/lib/rubros/modules/alimentos";
+
 export type ProductExtraFieldsMap = Record<string, string>;
 
 const METADATA_KEY = "extra_fields";
@@ -72,6 +78,30 @@ export function buildProductMetadata(
   }
 
   return base;
+}
+
+/** Fusiona o limpia `food_modifiers` en metadata sin tocar otros keys. */
+export function applyFoodModifiersToMetadata(
+  metadata: Record<string, unknown>,
+  foodModifiersJson: string | null | undefined,
+): { metadata: Record<string, unknown>; error?: string } {
+  if (foodModifiersJson == null) {
+    return { metadata };
+  }
+
+  const parsed = parseFoodModifiersJson(foodModifiersJson);
+  if (parsed.error) {
+    return { metadata, error: parsed.error };
+  }
+
+  const next = { ...metadata };
+  if (hasFoodModifiers(parsed.config)) {
+    next[FOOD_MODIFIERS_METADATA_KEY] = parsed.config;
+  } else {
+    delete next[FOOD_MODIFIERS_METADATA_KEY];
+  }
+
+  return { metadata: next };
 }
 
 export function pickExtraFieldValues(

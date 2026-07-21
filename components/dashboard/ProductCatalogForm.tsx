@@ -21,7 +21,19 @@ import { ProductCategorySelector } from "@/components/dashboard/ProductCategoryS
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
-import { rubroHidesProductCategory } from "@/lib/rubros/registry";
+import {
+  rubroHidesProductCategory,
+  storeUsesRubroProductModule,
+} from "@/lib/rubros/registry";
+import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
+import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
+import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
+import {
+  emptyFoodModifiers,
+  serializeFoodModifiersJson,
+  type FoodModifiersConfig,
+} from "@/lib/rubros/modules/alimentos";
+import type { VariantFormInput } from "@/lib/products/variants";
 
 interface ProductCatalogFormProps {
   store: Store;
@@ -54,6 +66,18 @@ export function ProductCatalogForm({
   const [imageBusy, setImageBusy] = useState(false);
   const [imageProcessed, setImageProcessed] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [variants, setVariants] = useState<VariantFormInput[]>(() =>
+    (initialData?.variants ?? []).map((variant) => ({
+      id: variant.id,
+      name: variant.name,
+      priceExtraUsd: String(variant.price_extra_usd),
+      stock: String(variant.stock),
+      attributes: variant.attributes,
+    })),
+  );
+  const [foodModifiers, setFoodModifiers] = useState<FoodModifiersConfig>(
+    () => initialData?.foodModifiers ?? emptyFoodModifiers(),
+  );
   const {
     categorySlug,
     setCategorySlug,
@@ -69,8 +93,13 @@ export function ProductCatalogForm({
     initialData?.extraFields,
   );
   const isRopaModa = rubroHidesProductCategory(productFormConfig.rubroTienda);
+  const isAlimentos = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "alimentos",
+  );
   const defaultCategorySlug =
     productFormConfig.productCategories[0]?.slug ?? "camisas";
+  const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
 
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
@@ -100,11 +129,28 @@ export function ProductCatalogForm({
       isRopaModa ? defaultCategorySlug : categorySlug,
     );
     formData.set("custom_category_name", isRopaModa ? "" : customCategoryName);
-    formData.set("variants_json", "[]");
+    formData.set(
+      "variants_json",
+      isAlimentos
+        ? serializeVariantsForForm(
+            variants,
+            initialData?.variants.map((variant) => variant.id),
+          )
+        : "[]",
+    );
     formData.set(
       "extra_fields_json",
-      serializeExtraFieldsJson(isRopaModa ? {} : extraFields),
+      serializeExtraFieldsJson(isRopaModa || isAlimentos ? {} : extraFields),
     );
+    if (isAlimentos) {
+      formData.set(
+        "food_modifiers_json",
+        serializeFoodModifiersJson(foodModifiers),
+      );
+    }
+    if (isAlimentos && hasCustomVariants) {
+      formData.set("stock_quantity", "0");
+    }
 
     if (compressedImageFile) {
       formData.set("image", compressedImageFile);
@@ -235,7 +281,7 @@ export function ProductCatalogForm({
         </div>
       </div>
 
-      {!isRopaModa && fieldLabels.length > 0 ? (
+      {!isRopaModa && !isAlimentos && fieldLabels.length > 0 ? (
         <ProductExtraFieldsSection
           fieldLabels={fieldLabels}
           values={extraFields}
@@ -246,6 +292,24 @@ export function ProductCatalogForm({
         />
       ) : null}
 
+      {isAlimentos ? (
+        <>
+          <RubroVariantsSection
+            rubro={productFormConfig.rubroTienda}
+            variants={variants}
+            onChange={setVariants}
+            disabled={isBusy}
+          />
+          <RubroModifiersSection
+            rubro={productFormConfig.rubroTienda}
+            value={foodModifiers}
+            onChange={setFoodModifiers}
+            disabled={isBusy}
+          />
+        </>
+      ) : null}
+
+      {!(isAlimentos && hasCustomVariants) ? (
       <div>
         <Label htmlFor="catalog-stock" className="payment-field-label">
           Cantidad en stock <span className="text-red-500">*</span>
@@ -261,6 +325,9 @@ export function ProductCatalogForm({
           className="payment-field-input mt-1.5"
         />
       </div>
+      ) : (
+        <input type="hidden" name="stock_quantity" value="0" readOnly />
+      )}
 
       <div>
         <Label htmlFor="catalog-low-stock" className="payment-field-label">

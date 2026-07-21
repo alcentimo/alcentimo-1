@@ -3,7 +3,12 @@
 import dynamic from "next/dynamic";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
+import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import { getActiveProductModuleId } from "@/lib/rubros/registry";
+import {
+  hasFoodModifiers,
+  parseFoodModifiersFromMetadata,
+} from "@/lib/rubros/modules/alimentos";
 import { formatUsd } from "@/lib/format";
 
 const FashionVariantPicker = dynamic(
@@ -19,12 +24,41 @@ const FashionVariantPicker = dynamic(
   },
 );
 
+const FoodVariantPicker = dynamic(
+  () =>
+    import("@/components/rubros/alimentos/FoodVariantPicker").then(
+      (mod) => mod.FoodVariantPicker,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-10 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+    ),
+  },
+);
+
+const FoodModifiersPicker = dynamic(
+  () =>
+    import("@/components/rubros/alimentos/FoodModifiersPicker").then(
+      (mod) => mod.FoodModifiersPicker,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-10 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+    ),
+  },
+);
+
 interface RubroCatalogVariantSlotProps {
   rubro?: string | null;
   product: CatalogListItem;
   variantOptions: CatalogVariantOption[];
   selectedVariantId: string;
   onSelect: (variantId: string) => void;
+  selectedModifiers?: CartModifierSelection[];
+  onModifiersChange?: (next: CartModifierSelection[]) => void;
+  showVariants?: boolean;
 }
 
 function DefaultVariantSelect({
@@ -67,7 +101,7 @@ function DefaultVariantSelect({
 
 /**
  * Selector de variantes del catálogo público.
- * Solo importa el picker de moda si el rubro de la tienda es ropa-moda.
+ * Solo importa pickers de rubro cuando el módulo está activo.
  */
 export function RubroCatalogVariantSlot({
   rubro,
@@ -75,24 +109,51 @@ export function RubroCatalogVariantSlot({
   variantOptions,
   selectedVariantId,
   onSelect,
+  selectedModifiers = [],
+  onModifiersChange,
+  showVariants = true,
 }: RubroCatalogVariantSlotProps) {
-  if (getActiveProductModuleId(rubro) === "ropa-moda") {
-    return (
-      <FashionVariantPicker
-        product={product}
-        variantOptions={variantOptions}
-        selectedVariantId={selectedVariantId}
-        onSelect={onSelect}
-      />
-    );
-  }
+  const moduleId = getActiveProductModuleId(rubro);
+  const foodConfig = parseFoodModifiersFromMetadata(product.metadata ?? null);
+  const showFoodModifiers =
+    moduleId === "alimentos" &&
+    hasFoodModifiers(foodConfig) &&
+    typeof onModifiersChange === "function";
 
   return (
-    <DefaultVariantSelect
-      productId={product.product_id}
-      variantOptions={variantOptions}
-      selectedVariantId={selectedVariantId}
-      onSelect={onSelect}
-    />
+    <div className="space-y-2.5">
+      {showVariants ? (
+        moduleId === "ropa-moda" ? (
+          <FashionVariantPicker
+            product={product}
+            variantOptions={variantOptions}
+            selectedVariantId={selectedVariantId}
+            onSelect={onSelect}
+          />
+        ) : moduleId === "alimentos" ? (
+          <FoodVariantPicker
+            product={product}
+            variantOptions={variantOptions}
+            selectedVariantId={selectedVariantId}
+            onSelect={onSelect}
+          />
+        ) : (
+          <DefaultVariantSelect
+            productId={product.product_id}
+            variantOptions={variantOptions}
+            selectedVariantId={selectedVariantId}
+            onSelect={onSelect}
+          />
+        )
+      ) : null}
+
+      {showFoodModifiers ? (
+        <FoodModifiersPicker
+          product={product}
+          selected={selectedModifiers}
+          onChange={onModifiersChange}
+        />
+      ) : null}
+    </div>
   );
 }

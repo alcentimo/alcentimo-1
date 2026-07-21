@@ -11,6 +11,7 @@ import { parseVariantFormInputs, parseVariantsJson } from "@/lib/products/varian
 import { syncProductVariants } from "@/lib/products/sync-variants";
 import { assertCanCreateProduct } from "@/lib/plans/product-limit";
 import {
+  applyFoodModifiersToMetadata,
   buildProductMetadata,
   parseExtraFieldsFromMetadata,
   parseExtraFieldsJson,
@@ -24,7 +25,15 @@ import {
   getExtraFieldsForProductCategory,
   getProductCategoriesForRubro,
 } from "@/src/config/categories";
-import { filterExtraFieldsForActiveModule } from "@/lib/rubros/registry";
+import {
+  filterExtraFieldsForActiveModule,
+  storeUsesRubroProductModule,
+} from "@/lib/rubros/registry";
+import {
+  FOOD_MODIFIERS_METADATA_KEY,
+  parseFoodModifiersFromMetadata,
+  type FoodModifiersConfig,
+} from "@/lib/rubros/modules/alimentos";
 
 export type ProductFormState = {
   error?: string;
@@ -52,6 +61,7 @@ export interface ProductEditData {
   variants: import("@/lib/products/variants").ProductVariantJson[];
   thumbUrl: string | null;
   extraFields: Record<string, string>;
+  foodModifiers: FoodModifiersConfig;
 }
 
 export type StoreFormState = {
@@ -164,11 +174,20 @@ export async function createProduct(
   );
   if (extraFieldsParsed.error) return { error: extraFieldsParsed.error };
   const fieldLabels = getExtraFieldsForProductCategory(rubro, categorySlug);
-  const metadata = buildProductMetadata(
+  let metadata = buildProductMetadata(
     null,
     extraFieldsParsed.fields,
     fieldLabels,
   );
+
+  if (storeUsesRubroProductModule(rubro, "alimentos")) {
+    const withModifiers = applyFoodModifiersToMetadata(
+      metadata,
+      String(formData.get("food_modifiers_json") ?? ""),
+    );
+    if (withModifiers.error) return { error: withModifiers.error };
+    metadata = withModifiers.metadata;
+  }
 
   const { data: category, error: categoryError } = await supabase
     .from("categories")
@@ -375,6 +394,9 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     variants: parseVariantsJson(product.variants),
     thumbUrl: primaryImage?.thumb_url ?? null,
     extraFields: pickExtraFieldValues(storedExtraFields, fieldLabels),
+    foodModifiers: parseFoodModifiersFromMetadata(
+      product.metadata as Record<string, unknown> | null,
+    ),
   };
 }
 
@@ -457,11 +479,22 @@ export async function updateProduct(
   );
   if (extraFieldsParsed.error) return { error: extraFieldsParsed.error };
   const fieldLabels = getExtraFieldsForProductCategory(rubro, categorySlug);
-  const metadata = buildProductMetadata(
+  let metadata = buildProductMetadata(
     existingProduct.metadata as Record<string, unknown> | null,
     extraFieldsParsed.fields,
     fieldLabels,
   );
+
+  if (storeUsesRubroProductModule(rubro, "alimentos")) {
+    const withModifiers = applyFoodModifiersToMetadata(
+      metadata,
+      String(formData.get("food_modifiers_json") ?? ""),
+    );
+    if (withModifiers.error) return { error: withModifiers.error };
+    metadata = withModifiers.metadata;
+  } else if (FOOD_MODIFIERS_METADATA_KEY in metadata) {
+    delete metadata[FOOD_MODIFIERS_METADATA_KEY];
+  }
 
   const { error: productUpdateError } = await supabase
     .from("products")

@@ -16,6 +16,8 @@ import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { CatalogCartHost } from "@/components/catalog-transactional/CatalogCartHost";
 import { isProductOutOfStock } from "@/lib/products/variants";
+import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
+import { groupProductsByFoodMenu } from "@/lib/rubros/modules/alimentos";
 import { cn } from "@/lib/cn";
 
 interface TransactionalCatalogProps {
@@ -53,19 +55,54 @@ export function TransactionalCatalog({
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
   const { addItem } = useCart();
+  const isFoodMenu = storeUsesRubroProductModule(store.rubro_tienda, "alimentos");
 
   const availableProducts = useMemo(
     () => products.filter((product) => !isProductOutOfStock(product)),
     [products],
   );
 
+  const menuSections = useMemo(
+    () => (isFoodMenu ? groupProductsByFoodMenu(availableProducts) : []),
+    [availableProducts, isFoodMenu],
+  );
+
   const storeInitials = getStoreInitials(store.name);
+
+  function renderProductCard(product: CatalogListItem, index: number) {
+    return (
+      <div
+        key={product.product_id}
+        className={
+          referenceMode && previewMode
+            ? "catalog-preview-product-enter"
+            : undefined
+        }
+        style={
+          referenceMode && previewMode
+            ? { animationDelay: `${index * 40}ms` }
+            : undefined
+        }
+      >
+        <ProductCard
+          product={product}
+          exchangeRate={liveExchangeRate}
+          showBsConversion={showBsConversion}
+          catalogVisibility={catalogDesign.visibility}
+          referenceCatalog={referenceMode && previewMode}
+          storeRubro={store.rubro_tienda}
+          onAddToCart={referenceMode ? undefined : addItem}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
       className={cn(
         "txn-catalog",
         getCatalogDesignClasses(catalogDesign, store.rubro_tienda),
+        isFoodMenu && "txn-catalog--food-menu",
         previewMode && "txn-catalog--preview",
         previewMode && referenceMode && "txn-catalog--reference-mode",
       )}
@@ -91,7 +128,9 @@ export function TransactionalCatalog({
             )}
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="txn-catalog-eyebrow">Catálogo</p>
+                <p className="txn-catalog-eyebrow">
+                  {isFoodMenu ? "Menú" : "Catálogo"}
+                </p>
                 <StoreOpenBadge locationHours={purchaseInfo.locationHours} />
               </div>
               <h1 className="txn-catalog-title">{store.name}</h1>
@@ -105,7 +144,6 @@ export function TransactionalCatalog({
               )}
             </div>
           </div>
-
         </div>
       </header>
 
@@ -119,6 +157,39 @@ export function TransactionalCatalog({
               Vuelve pronto para ver el catálogo actualizado.
             </p>
           </div>
+        ) : isFoodMenu ? (
+          <div className="food-menu">
+            {menuSections.map((section) => (
+              <section
+                key={section.slug}
+                className="food-menu-section"
+                aria-labelledby={`food-section-${section.slug}`}
+              >
+                <div className="food-menu-section-header">
+                  <h2
+                    id={`food-section-${section.slug}`}
+                    className="food-menu-section-title"
+                  >
+                    {section.name}
+                  </h2>
+                </div>
+                <div
+                  className={
+                    catalogDesign.layout === "list"
+                      ? "txn-product-list"
+                      : "txn-product-grid food-menu-grid"
+                  }
+                >
+                  {section.products.map((product, index) =>
+                    renderProductCard(product, index),
+                  )}
+                </div>
+              </section>
+            ))}
+            {previewMode && referenceMode && showReferenceCta ? (
+              <CatalogUploadCtaCard />
+            ) : null}
+          </div>
         ) : (
           <div
             className={
@@ -127,31 +198,9 @@ export function TransactionalCatalog({
                 : "txn-product-grid"
             }
           >
-            {availableProducts.map((product, index) => (
-              <div
-                key={product.product_id}
-                className={
-                  referenceMode && previewMode
-                    ? "catalog-preview-product-enter"
-                    : undefined
-                }
-                style={
-                  referenceMode && previewMode
-                    ? { animationDelay: `${index * 40}ms` }
-                    : undefined
-                }
-              >
-                <ProductCard
-                  product={product}
-                  exchangeRate={liveExchangeRate}
-                  showBsConversion={showBsConversion}
-                  catalogVisibility={catalogDesign.visibility}
-                  referenceCatalog={referenceMode && previewMode}
-                  storeRubro={store.rubro_tienda}
-                  onAddToCart={referenceMode ? undefined : addItem}
-                />
-              </div>
-            ))}
+            {availableProducts.map((product, index) =>
+              renderProductCard(product, index),
+            )}
             {previewMode && referenceMode && showReferenceCta ? (
               <div
                 className="catalog-preview-product-enter"

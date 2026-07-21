@@ -3414,6 +3414,45 @@ body {
   gap: var(--pc-grid-gap);
 }
 
+/* Menú Alimentos y Bebidas */
+.txn-catalog--food-menu {
+  --txn-page-bg: #fffaf5;
+  --pc-media-ratio: 4 / 3;
+  --pc-btn-radius: 0.75rem;
+}
+
+.txn-catalog--food-menu .txn-catalog-eyebrow {
+  letter-spacing: 0.18em;
+}
+
+.food-menu {
+  @apply space-y-8;
+}
+
+.food-menu-section-header {
+  @apply mb-3 border-b border-neutral-200/80 pb-2;
+}
+
+.food-menu-section-title {
+  @apply text-lg font-semibold tracking-tight text-neutral-900 sm:text-xl;
+}
+
+.food-menu-grid {
+  @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+}
+
+.txn-catalog--food-menu .store-product-card {
+  @apply overflow-hidden rounded-2xl border-neutral-200/90 bg-white shadow-sm;
+}
+
+.txn-catalog--food-menu .store-product-name {
+  @apply text-[0.9375rem] font-semibold;
+}
+
+.txn-catalog--food-menu .store-product-category {
+  @apply hidden;
+}
+
 .txn-catalog--list .store-product-card {
   @apply flex flex-row items-stretch overflow-hidden;
   --pc-media-ratio: 1 / 1;
