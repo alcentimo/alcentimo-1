@@ -25,7 +25,8 @@ import {
 import type { Store } from "@/lib/database.types";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { VariantFormInput } from "@/lib/products/variants";
-import { formatUsd } from "@/lib/format";
+import { formatCountryCurrency } from "@/lib/country-config";
+import { useCountry } from "@/components/providers/CountryProvider";
 import { getSiteUrl } from "@/lib/site-url";
 import { getTransactionalCatalogPublicUrl } from "@/lib/stores";
 import { Input } from "@/components/ui/input";
@@ -81,8 +82,9 @@ function QuickProductFormSession({
   onSavedAndAnother,
   onLimitHit,
 }: QuickProductFormSessionProps) {
+  const { config: countryConfig } = useCountry();
   const [state, formAction, pending] = useActionState(createProduct, initialState);
-  const [priceBs, setPriceBs] = useState("");
+  const [priceUsd, setPriceUsd] = useState("");
   const [variants, setVariants] = useState<VariantFormInput[]>([]);
   const [foodModifiers, setFoodModifiers] =
     useState<FoodModifiersConfig>(emptyFoodModifiers);
@@ -125,11 +127,18 @@ function QuickProductFormSession({
 
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
 
-  const priceUsdPreview = useMemo(() => {
-    const bs = parseFloat(priceBs);
-    if (!exchangeRate || !Number.isFinite(bs) || bs <= 0) return null;
-    return bs / exchangeRate;
-  }, [priceBs, exchangeRate]);
+  const priceLocal = useMemo(() => {
+    const usd = parseFloat(priceUsd);
+    if (
+      !countryConfig.currency.showLocalEquivalent ||
+      !exchangeRate ||
+      !Number.isFinite(usd) ||
+      usd <= 0
+    ) {
+      return null;
+    }
+    return usd * exchangeRate;
+  }, [priceUsd, exchangeRate, countryConfig.currency.showLocalEquivalent]);
 
   useEffect(() => {
     if (!state.success) return;
@@ -157,7 +166,7 @@ function QuickProductFormSession({
   }, [state.limitHit, onLimitHit]);
 
   function resetFormState() {
-    setPriceBs("");
+    setPriceUsd("");
     setVariants([]);
     setFoodModifiers(emptyFoodModifiers());
     setAdvancedOpen(false);
@@ -171,14 +180,9 @@ function QuickProductFormSession({
     e.preventDefault();
     setLocalError(null);
 
-    const bs = parseFloat(priceBs);
-    if (!Number.isFinite(bs) || bs <= 0) {
-      setLocalError("Ingresa un precio válido en Bs.");
-      return;
-    }
-
-    if (!exchangeRate || exchangeRate <= 0) {
-      setLocalError("No hay tasa del día disponible. Configura la tasa antes de publicar.");
+    const usd = parseFloat(priceUsd);
+    if (!Number.isFinite(usd) || usd <= 0) {
+      setLocalError("Ingresa un precio válido en dólares.");
       return;
     }
 
@@ -190,9 +194,7 @@ function QuickProductFormSession({
     const form = e.currentTarget;
     const formData = new FormData(form);
     submittedNameRef.current = String(formData.get("name") ?? "").trim();
-    const priceUsd = bs / exchangeRate;
-
-    formData.set("price_usd", priceUsd.toFixed(4));
+    formData.set("price_usd", usd.toFixed(4));
     formData.set("product_category_slug", categorySlug);
     formData.set("custom_category_name", "");
     formData.set("variants_json", serializeVariantsForForm(variants));
@@ -269,26 +271,47 @@ function QuickProductFormSession({
         />
       </div>
 
-      <div>
-        <Label htmlFor="quick-price-bs" className="payment-field-label">
-          Precio (Bs) <span className="text-red-500">*</span>
-        </Label>
-        <Input
-          id="quick-price-bs"
-          type="number"
-          required
-          min={0}
-          step="0.01"
-          placeholder="0.00"
-          value={priceBs}
-          onChange={(e) => setPriceBs(e.target.value)}
-          className="payment-field-input mt-1.5"
-          inputMode="decimal"
-        />
-        {priceUsdPreview != null && (
-          <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-            Equivalente: {formatUsd(priceUsdPreview)} USD
-          </p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <Label htmlFor="quick-price-usd" className="payment-field-label">
+            {countryConfig.currency.baseCurrencyLabel}{" "}
+            <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="quick-price-usd"
+            name="price_usd"
+            type="number"
+            required
+            min={0}
+            step="0.01"
+            placeholder="0.00"
+            value={priceUsd}
+            onChange={(e) => setPriceUsd(e.target.value)}
+            className="payment-field-input mt-1.5"
+            inputMode="decimal"
+          />
+        </div>
+        {countryConfig.currency.showLocalEquivalent && (
+          <div>
+            <Label htmlFor="quick-price-ves" className="payment-field-label">
+              {countryConfig.currency.localCurrencyLabel}
+            </Label>
+            <Input
+              id="quick-price-ves"
+              readOnly
+              value={
+                priceLocal != null
+                  ? formatCountryCurrency(
+                      priceLocal,
+                      countryConfig.currency.localCurrency,
+                      countryConfig.currency.locale,
+                    )
+                  : "—"
+              }
+              className="payment-field-input mt-1.5 bg-zinc-50 text-zinc-600 dark:bg-zinc-900/50"
+              tabIndex={-1}
+            />
+          </div>
         )}
       </div>
 

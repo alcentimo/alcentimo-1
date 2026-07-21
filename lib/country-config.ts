@@ -69,7 +69,7 @@ export const COUNTRY_CONFIG: CountryConfig = {
   country: "Venezuela",
   currency: {
     baseCurrency: "USD",
-    baseCurrencyLabel: "Precio base USD",
+    baseCurrencyLabel: "Precio ($)",
     localCurrency: "VES",
     localCurrencyLabel: "Equivalente en Bs",
     locale: "es-VE",

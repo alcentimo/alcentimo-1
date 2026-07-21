@@ -238,7 +238,7 @@ export function ProductCatalogForm({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="catalog-price-usd" className="payment-field-label">
-            Precio USD
+            {countryConfig.currency.baseCurrencyLabel}
           </Label>
           <Input
             id="catalog-price-usd"
@@ -255,7 +255,7 @@ export function ProductCatalogForm({
         </div>
         <div>
           <Label htmlFor="catalog-price-ves" className="payment-field-label">
-            Precio Bs.
+            {countryConfig.currency.localCurrencyLabel}
           </Label>
           <Input
             id="catalog-price-ves"

@@ -136,7 +136,7 @@ export function ProductFormSheet({
           <DialogHeader>
             <DialogTitle>Nuevo producto</DialogTitle>
             <DialogDescription>
-              Nombre, precio en Bs y foto. Lo demás queda en opciones avanzadas.
+              Nombre, precio en dólares y foto. Lo demás queda en opciones avanzadas.
               {configReady && liveFormConfig.rubroLabel
                 ? ` Rubro: ${liveFormConfig.rubroLabel}.`
                 : ""}
