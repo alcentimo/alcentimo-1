@@ -28,10 +28,10 @@ import {
 } from "@/src/config/categories";
 import {
   filterExtraFieldsForActiveModule,
+  storeRubroManagesProductVariants,
   storeUsesRubroProductModule,
 } from "@/lib/rubros/registry";
 import {
-  FOOD_MODIFIERS_METADATA_KEY,
   parseFoodModifiersFromMetadata,
   type FoodModifiersConfig,
 } from "@/lib/rubros/modules/alimentos";
@@ -564,8 +564,6 @@ export async function updateProduct(
     );
     if (withModifiers.error) return { error: withModifiers.error };
     metadata = withModifiers.metadata;
-  } else if (FOOD_MODIFIERS_METADATA_KEY in metadata) {
-    delete metadata[FOOD_MODIFIERS_METADATA_KEY];
   }
 
   const { error: productUpdateError } = await supabase
@@ -616,7 +614,7 @@ export async function updateProduct(
       defaultVariantId,
     });
     if (synced.error) return { error: synced.error };
-  } else {
+  } else if (storeRubroManagesProductVariants(rubro)) {
     await supabase.from("products").update({ variants: [] }).eq("id", productId);
   }
 

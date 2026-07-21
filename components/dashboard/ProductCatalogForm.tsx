@@ -20,7 +20,7 @@ import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFi
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
-import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
+import { storeUsesRubroProductModule, storeRubroManagesProductVariants } from "@/lib/rubros/registry";
 import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
 import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
 import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
@@ -114,6 +114,8 @@ export function ProductCatalogForm({
   );
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
 
+  const managesVariants = storeRubroManagesProductVariants(productFormConfig.rubroTienda);
+
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
     if (
@@ -141,12 +143,12 @@ export function ProductCatalogForm({
     formData.set("custom_category_name", "");
     formData.set(
       "variants_json",
-      isAlimentos || isSaludBelleza
+      managesVariants
         ? serializeVariantsForForm(
             variants,
             initialData?.variants.map((variant) => variant.id),
           )
-        : "[]",
+        : "",
     );
     formData.set(
       "extra_fields_json",
@@ -326,6 +328,15 @@ export function ProductCatalogForm({
         />
       ) : null}
 
+      {isRopaModa ? (
+        <RubroVariantsSection
+          rubro={productFormConfig.rubroTienda}
+          variants={variants}
+          onChange={setVariants}
+          disabled={isBusy}
+        />
+      ) : null}
+
       {isSaludBelleza ? (
         <>
           <RubroBeautySection
@@ -361,7 +372,7 @@ export function ProductCatalogForm({
         </>
       ) : null}
 
-      {!((isAlimentos || isSaludBelleza) && hasCustomVariants) ? (
+      {!((isAlimentos || isSaludBelleza || isRopaModa) && hasCustomVariants) ? (
       <div>
         <Label htmlFor="catalog-stock" className="payment-field-label">
           Cantidad en stock <span className="text-red-500">*</span>

@@ -65,10 +65,16 @@ export function buildProductMetadata(
       ? { ...existing }
       : {};
 
-  const sanitized: ProductExtraFieldsMap = {};
+  const existingExtra = parseExtraFieldsFromMetadata(base);
+  const sanitized: ProductExtraFieldsMap = { ...existingExtra };
+
   for (const label of allowedLabels) {
     const value = extraFields[label]?.trim();
-    if (value) sanitized[label] = value;
+    if (value) {
+      sanitized[label] = value;
+    } else {
+      delete sanitized[label];
+    }
   }
 
   if (Object.keys(sanitized).length === 0) {

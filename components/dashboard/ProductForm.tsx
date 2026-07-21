@@ -134,11 +134,6 @@ export function ProductForm({
     e.preventDefault();
     setLocalError(null);
 
-    if (isRopaModa && !hasCustomVariants) {
-      setLocalError("Selecciona al menos una talla y un color con su stock.");
-      return;
-    }
-
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.set("product_category_slug", categorySlug);

@@ -112,6 +112,18 @@ export function GeneralTab({ store }: GeneralTabProps) {
   function handleSave() {
     if (!canSave) return;
 
+    const rubroChanged = rubroTienda !== savedRubro;
+    if (rubroChanged) {
+      const confirmed = window.confirm(
+        "Vas a cambiar el rubro de tu tienda.\n\n" +
+          "• Tus productos existentes se conservan sin cambios.\n" +
+          "• Los formularios nuevos usarán campos del rubro seleccionado.\n" +
+          "• Los productos antiguos mantienen sus datos aunque pertenezcan a otro giro.\n\n" +
+          "¿Deseas continuar?",
+      );
+      if (!confirmed) return;
+    }
+
     setError(null);
     setSuccessMessage(null);
     setSaving(true);
@@ -147,7 +159,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
       const rubroChanged = persistedRubro !== previousRubro;
       setSuccessMessage(
         rubroChanged
-          ? `Rubro guardado: ${getRubroLabel(persistedRubro)}. Abre Nuevo producto para ver categorías y variantes de este giro.`
+          ? `Rubro actualizado a ${getRubroLabel(persistedRubro)}. Tus productos anteriores se conservaron; los nuevos usarán los campos de este giro.`
           : "Cambios guardados correctamente.",
       );
       router.refresh();
@@ -309,8 +321,9 @@ export function GeneralTab({ store }: GeneralTabProps) {
             ))}
           </Select>
           <p className="mt-1.5 text-[11px] text-zinc-400">
-            Ropa: tallas y calzado · Alimentos: porciones · Tech: specs ·
-            Coleccionables: condición/preventa · Belleza: volumen/tonos y tipo de piel.
+            Ropa: tallas y colores · Alimentos: porciones · Tech: specs ·
+            Coleccionables: condición/preventa · Belleza: volumen/tonos.
+            Cambiar rubro no borra productos existentes.
           </p>
         </div>
       </SettingsSection>

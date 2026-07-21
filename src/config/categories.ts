@@ -18,6 +18,8 @@ export interface ProductCategoryOption {
   label: string;
   campos: string[];
   isCustom?: boolean;
+  /** Categoría preset de un rubro anterior (productos existentes pueden usarla). */
+  isLegacy?: boolean;
 }
 
 export interface StoreRubroConfig {

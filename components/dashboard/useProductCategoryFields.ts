@@ -41,9 +41,16 @@ export function useProductCategoryFields(
 
   const categoriesKey = config.productCategories.map((item) => item.slug).join("|");
 
-  /** Al cambiar el rubro (o la lista de categorías), alinear la selección. */
+  /** Al cambiar el rubro, conservar la categoría del producto si sigue disponible. */
   useEffect(() => {
-    setCategorySlug(resolveInitialCategorySlug(config, initialCategorySlug));
+    setCategorySlug((current) => {
+      const preferred = resolveInitialCategorySlug(config, initialCategorySlug);
+      const currentStillValid = config.productCategories.some(
+        (item) => item.slug === current,
+      );
+      if (currentStillValid) return current;
+      return preferred;
+    });
     // categoriesKey refleja cambios en productCategories sin depender de la referencia del array.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- config se usa vía rubro + categoriesKey
   }, [config.rubroTienda, categoriesKey, initialCategorySlug]);

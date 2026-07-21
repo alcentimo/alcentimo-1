@@ -200,5 +200,15 @@ export function mergeStoreProductCategories(
       isCustom: true,
     }));
 
-  return [...suggested, ...custom];
+  /** Presets de rubros anteriores: conservan categorías de productos ya creados. */
+  const legacyPresets = storeCategories
+    .filter((item) => otherRubroPresetSlugs.has(item.slug))
+    .map((item) => ({
+      slug: item.slug,
+      label: item.name,
+      campos: [] as string[],
+      isLegacy: true,
+    }));
+
+  return [...suggested, ...legacyPresets, ...custom];
 }

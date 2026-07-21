@@ -392,6 +392,8 @@ export async function saveGeneralStoreSettings(
   }
 
   const previousSlug = store.slug;
+  const previousRubro = normalizeStoreRubro(store.rubro_tienda as string | null);
+  const nextRubro = normalizeStoreRubro(rubroTienda);
 
   const { error: storeError } = await supabase
     .from("stores")
@@ -415,12 +417,10 @@ export async function saveGeneralStoreSettings(
     scheduleStoreSubdomainRename(store.id, previousSlug, slug);
   }
 
-  const sync = await syncStoreProductCategories(
-    supabase,
-    store.id,
-    normalizeStoreRubro(rubroTienda),
-  );
-  if (sync.error) return { error: sync.error };
+  if (previousRubro !== nextRubro) {
+    const sync = await syncStoreProductCategories(supabase, store.id, nextRubro);
+    if (sync.error) return { error: sync.error };
+  }
 
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");

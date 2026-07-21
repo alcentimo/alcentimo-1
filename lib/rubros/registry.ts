@@ -22,6 +22,18 @@ export function storeUsesRubroProductModule(
   return getActiveProductModuleId(rubro) === moduleId;
 }
 
+/** Rubros cuyo formulario gestiona variantes (tallas, porciones, tonos, etc.). */
+export function storeRubroManagesProductVariants(
+  rubro: string | null | undefined,
+): boolean {
+  const moduleId = getActiveProductModuleId(rubro);
+  return (
+    moduleId === "ropa-moda" ||
+    moduleId === "alimentos" ||
+    moduleId === "salud-belleza"
+  );
+}
+
 export function rubroHidesProductCategory(
   _rubro: string | null | undefined,
 ): boolean {
