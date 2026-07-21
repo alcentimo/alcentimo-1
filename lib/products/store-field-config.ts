@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
   getRubroLabel,
@@ -18,6 +19,7 @@ export interface StoreProductFormConfig {
 export async function getStoreProductFormConfig(
   storeId: string,
 ): Promise<StoreProductFormConfig> {
+  noStore();
   const supabase = await createClient();
   const rubroTienda = await getStoreRubroTienda(supabase, storeId);
 

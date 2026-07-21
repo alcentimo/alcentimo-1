@@ -45,11 +45,21 @@ export function GeneralTab({ store }: GeneralTabProps) {
   const [savedSlug, setSavedSlug] = useState(store.slug);
   const [logoUrl, setLogoUrl] = useState<string | null>(store.logo_url);
   const [rubroTienda, setRubroTienda] = useState(store.rubro_tienda);
+  const [savedRubro, setSavedRubro] = useState(store.rubro_tienda);
   const [slugStatus, setSlugStatus] = useState<SlugStatus>("available");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    setStoreName(store.name);
+    setDescription(store.description ?? "");
+    setSavedSlug(store.slug);
+    setLogoUrl(store.logo_url);
+    setRubroTienda(store.rubro_tienda);
+    setSavedRubro(store.rubro_tienda);
+  }, [store.name, store.description, store.slug, store.logo_url, store.rubro_tienda]);
 
   const siteHost = useMemo(() => getPublicSiteHost(), []);
   const slugPreview = slugify(storeName) || store.slug;
@@ -98,7 +108,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
     setSuccessMessage(null);
     setSaving(true);
 
-    const previousRubro = store.rubro_tienda;
+    const previousRubro = savedRubro;
 
     startTransition(async () => {
       const result = await saveGeneralStoreSettings({
@@ -116,15 +126,18 @@ export function GeneralTab({ store }: GeneralTabProps) {
         setDescription(store.description ?? "");
         setSavedSlug(store.slug);
         setLogoUrl(store.logo_url);
-        setRubroTienda(store.rubro_tienda);
+        setRubroTienda(savedRubro);
         return;
       }
 
+      const persistedRubro = result.rubroTienda ?? rubroTienda;
       setSavedSlug(slugPreview);
-      const rubroChanged = rubroTienda !== previousRubro;
+      setSavedRubro(persistedRubro);
+      setRubroTienda(persistedRubro);
+      const rubroChanged = persistedRubro !== previousRubro;
       setSuccessMessage(
         rubroChanged
-          ? `Rubro guardado: ${getRubroLabel(rubroTienda)}. Las categorías sugeridas al crear productos ya están actualizadas para este giro.`
+          ? `Rubro guardado: ${getRubroLabel(persistedRubro)}. Abre Nuevo producto para ver categorías y variantes de este giro.`
           : "Cambios guardados correctamente.",
       );
       router.refresh();

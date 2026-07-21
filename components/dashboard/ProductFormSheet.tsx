@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useLayoutEffect, useState, useTransition } from "react";
 import type { ProductEditData } from "@/lib/products/actions";
 import { getProductForEdit } from "@/lib/products/actions";
+import { fetchStoreProductFormConfig } from "@/lib/products/fetch-store-product-form-config";
 import type { Store } from "@/lib/database.types";
 import { ProductCatalogForm } from "@/components/dashboard/ProductCatalogForm";
-import { QuickProductForm, type PublishedProductResult } from "@/components/dashboard/QuickProductForm";
+import {
+  QuickProductForm,
+  type PublishedProductResult,
+} from "@/components/dashboard/QuickProductForm";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import {
   Sheet,
@@ -51,38 +55,76 @@ export function ProductFormSheet({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, startTransition] = useTransition();
   const [createFormKey, setCreateFormKey] = useState(0);
+  const [liveFormConfig, setLiveFormConfig] =
+    useState<StoreProductFormConfig>(productFormConfig);
+  const [configReady, setConfigReady] = useState(false);
 
   useEffect(() => {
+    setLiveFormConfig(productFormConfig);
+  }, [productFormConfig]);
+
+  useLayoutEffect(() => {
     if (!open) {
+      setConfigReady(false);
       setEditData(null);
       setLoadError(null);
       return;
     }
+    setConfigReady(false);
+  }, [open, mode, productId]);
 
-    if (mode === "create") {
-      setCreateFormKey((key) => key + 1);
-      return;
-    }
+  useEffect(() => {
+    if (!open) return;
 
-    if (!productId) {
-      setLoadError("Producto no válido.");
-      return;
-    }
+    let cancelled = false;
+    setLoadError(null);
 
     startTransition(async () => {
-      const data = await getProductForEdit(productId);
-      if (!data) {
-        setLoadError("No se pudo cargar el producto.");
+      const configResult = await fetchStoreProductFormConfig();
+      if (cancelled) return;
+
+      if (configResult.config) {
+        setLiveFormConfig(configResult.config);
+      } else {
+        setLiveFormConfig(productFormConfig);
+      }
+
+      if (mode === "create") {
+        setCreateFormKey((key) => key + 1);
+        setConfigReady(true);
         return;
       }
+
+      if (!productId) {
+        setLoadError("Producto no válido.");
+        setConfigReady(true);
+        return;
+      }
+
+      const data = await getProductForEdit(productId);
+      if (cancelled) return;
+
+      if (!data) {
+        setLoadError("No se pudo cargar el producto.");
+        setConfigReady(true);
+        return;
+      }
+
       setEditData(data);
+      setConfigReady(true);
     });
-  }, [open, mode, productId]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, mode, productId, productFormConfig]);
 
   function handleCreateComplete(result?: PublishedProductResult) {
     onSaved(result);
     onOpenChange(false);
   }
+
+  const formBusy = open && (!configReady || loading);
 
   if (mode === "create") {
     return (
@@ -95,15 +137,23 @@ export function ProductFormSheet({
             <DialogTitle>Nuevo producto</DialogTitle>
             <DialogDescription>
               Nombre, precio en Bs y foto. Lo demás queda en opciones avanzadas.
+              {configReady && liveFormConfig.rubroLabel
+                ? ` Rubro: ${liveFormConfig.rubroLabel}.`
+                : ""}
             </DialogDescription>
           </DialogHeader>
 
-          {open && (
+          {formBusy ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-zinc-500">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              Cargando campos del rubro…
+            </div>
+          ) : (
             <QuickProductForm
-              key={createFormKey}
+              key={`${createFormKey}-${liveFormConfig.rubroTienda}`}
               store={store}
               exchangeRate={exchangeRate}
-              productFormConfig={productFormConfig}
+              productFormConfig={liveFormConfig}
               onComplete={handleCreateComplete}
               onRefresh={onSaved}
               onCancel={() => onOpenChange(false)}
@@ -129,7 +179,7 @@ export function ProductFormSheet({
         </SheetHeader>
 
         <SheetBody>
-          {loading && (
+          {formBusy && (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-zinc-500">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               Cargando producto…
@@ -142,12 +192,12 @@ export function ProductFormSheet({
             </p>
           )}
 
-          {editData && !loading && (
+          {editData && !formBusy && (
             <ProductCatalogForm
-              key={editData.productId}
+              key={`${editData.productId}-${liveFormConfig.rubroTienda}`}
               store={store}
               exchangeRate={exchangeRate}
-              productFormConfig={productFormConfig}
+              productFormConfig={liveFormConfig}
               mode="edit"
               initialData={editData}
               onSuccess={() => {

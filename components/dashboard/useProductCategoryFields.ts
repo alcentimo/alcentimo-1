@@ -14,7 +14,12 @@ function resolveInitialCategorySlug(
   config: StoreProductFormConfig,
   initialCategorySlug?: string,
 ): string {
-  if (initialCategorySlug) return initialCategorySlug;
+  if (initialCategorySlug) {
+    const exists = config.productCategories.some(
+      (item) => item.slug === initialCategorySlug,
+    );
+    if (exists) return initialCategorySlug;
+  }
   return config.productCategories[0]?.slug ?? "general";
 }
 
@@ -23,15 +28,19 @@ export function useProductCategoryFields(
   initialCategorySlug?: string,
   initialExtraFields?: ProductExtraFieldsMap,
 ) {
-  const defaultSlug = resolveInitialCategorySlug(config, initialCategorySlug);
-  const [categorySlug, setCategorySlug] = useState(defaultSlug);
+  const [categorySlug, setCategorySlug] = useState(() =>
+    resolveInitialCategorySlug(config, initialCategorySlug),
+  );
   const [customCategoryName, setCustomCategoryName] = useState("");
 
+  const categoriesKey = config.productCategories.map((item) => item.slug).join("|");
+
+  /** Al cambiar el rubro (o la lista de categorías), alinear la selección. */
   useEffect(() => {
-    if (initialCategorySlug) {
-      setCategorySlug(initialCategorySlug);
-    }
-  }, [initialCategorySlug]);
+    setCategorySlug(resolveInitialCategorySlug(config, initialCategorySlug));
+    // categoriesKey refleja cambios en productCategories sin depender de la referencia del array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- config se usa vía rubro + categoriesKey
+  }, [config.rubroTienda, categoriesKey, initialCategorySlug]);
 
   const fieldLabels = useMemo(() => {
     if (categorySlug === CUSTOM_PRODUCT_CATEGORY_VALUE) return [];

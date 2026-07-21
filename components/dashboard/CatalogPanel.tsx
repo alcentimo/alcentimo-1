@@ -90,6 +90,7 @@ export function CatalogPanel({
 
   return (
     <InventoryPanel
+      key={`catalog-${productFormConfig.rubroTienda}`}
       store={store}
       exchangeRate={exchangeRate}
       exchangeRateUpdatedAt={exchangeRateUpdatedAt}

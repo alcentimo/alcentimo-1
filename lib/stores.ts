@@ -34,6 +34,7 @@ export async function getUserStore(
   client: SupabaseServerClient,
   userId?: string,
 ): Promise<Store | null> {
+  noStore();
   let resolvedUserId = userId;
 
   if (!resolvedUserId) {

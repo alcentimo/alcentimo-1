@@ -1,7 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { unstable_noStore as noStore } from "next/cache";
 import { slugify } from "@/lib/slugify";
 import { CUSTOM_PRODUCT_CATEGORY_VALUE } from "@/lib/products/category-selection";
 import {
+  STORE_RUBRO_CONFIGS,
   getProductCategoriesForRubro,
   normalizeStoreRubro,
   type ProductCategoryOption,
@@ -12,6 +14,7 @@ export async function getStoreRubroTienda(
   supabase: SupabaseClient,
   storeId: string,
 ): Promise<StoreRubro> {
+  noStore();
   const { data, error } = await supabase
     .from("stores")
     .select("rubro_tienda")
@@ -180,8 +183,16 @@ export function mergeStoreProductCategories(
   const suggested = getProductCategoriesForRubro(rubro);
   const suggestedSlugs = new Set(suggested.map((item) => item.slug));
 
+  /** Slugs de presets de otros rubros (quedan tras un cambio de giro). */
+  const otherRubroPresetSlugs = new Set(
+    STORE_RUBRO_CONFIGS.filter((config) => config.rubro !== rubro).flatMap((config) =>
+      config.categorias.map((category) => category.slug),
+    ),
+  );
+
   const custom = storeCategories
     .filter((item) => !suggestedSlugs.has(item.slug))
+    .filter((item) => !otherRubroPresetSlugs.has(item.slug))
     .map((item) => ({
       slug: item.slug,
       label: item.name,

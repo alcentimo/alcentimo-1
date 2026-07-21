@@ -33,6 +33,8 @@ import type {
 export type SettingsActionResult = {
   error?: string;
   success?: boolean;
+  /** Rubro persistido tras guardar ajustes generales. */
+  rubroTienda?: string;
 };
 
 async function persistSettingsPatch(
@@ -411,7 +413,6 @@ export async function saveGeneralStoreSettings(
   if (sync.error) return { error: sync.error };
 
   revalidatePath("/dashboard/catalogo");
-  revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/inventario");
   revalidatePath("/dashboard/productos/nuevo");
@@ -420,5 +421,8 @@ export async function saveGeneralStoreSettings(
     revalidatePublicStorePaths(previousSlug);
   }
 
-  return { success: true };
+  return {
+    success: true,
+    rubroTienda: normalizeStoreRubro(rubroTienda),
+  };
 }
