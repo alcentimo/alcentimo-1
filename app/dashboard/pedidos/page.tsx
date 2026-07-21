@@ -4,6 +4,7 @@ import { PageContainer } from "@/components/ui/PageContainer";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreOrders } from "@/lib/orders/get-store-orders";
+import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { OrdersPanel } from "@/components/dashboard/orders/OrdersPanel";
@@ -40,8 +41,8 @@ export default async function PedidosPage() {
     );
   }
 
-  const [orders, settingsConfig] = await Promise.all([
-    getStoreOrders(store.id, 200),
+  const [{ orders, totalCount, hasMore }, settingsConfig] = await Promise.all([
+    getStoreOrders(store.id, { limit: ORDERS_PAGE_SIZE, offset: 0 }),
     getStoreSettingsConfig(store.id),
   ]);
 
@@ -69,6 +70,8 @@ export default async function PedidosPage() {
 
       <OrdersPanel
         orders={orders}
+        initialTotalCount={totalCount}
+        initialHasMore={hasMore}
         storeName={store.name}
         messageTemplates={messageTemplates}
       />

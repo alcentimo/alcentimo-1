@@ -25,11 +25,13 @@ export async function getHomeSummary(
 ): Promise<HomeSummary> {
   const monthStart = startOfMonth();
 
-  const [sales, orders, inventory] = await Promise.all([
+  const [sales, ordersResult, inventory] = await Promise.all([
     getStoreSales(storeId, 500),
-    getStoreOrders(storeId, 200),
+    getStoreOrders(storeId, { limit: 200 }),
     getStoreInventory(storeSlug),
   ]);
+
+  const orders = ordersResult.orders;
 
   const monthSales = sales.filter(
     (sale) => new Date(sale.created_at) >= monthStart,
@@ -40,7 +42,7 @@ export async function getHomeSummary(
   ).length;
 
   return {
-    productCount: inventory.products.length,
+    productCount: inventory.totalCount || inventory.products.length,
     pendingCatalogOrders,
     monthSalesTotal: monthSales.reduce((total, sale) => total + sale.monto, 0),
     outOfStockCount: countOutOfStock(inventory.products),

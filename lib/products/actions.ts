@@ -745,19 +745,32 @@ export async function deleteProduct(productId: string): Promise<DeleteProductSta
   return { success: true };
 }
 
-export async function fetchInventoryProducts(): Promise<{
+export async function fetchInventoryProducts(options?: {
+  offset?: number;
+  limit?: number;
+  stockFilter?: import("@/lib/inventory/stock-status").CatalogStockFilter;
+}): Promise<{
   products: import("@/lib/database.types").CatalogListItem[];
+  totalCount: number;
+  hasMore: boolean;
   error?: string;
 }> {
   const supabase = await getSupabase();
   const auth = await requireAuthStore(supabase);
   if (!auth.ok) {
-    return { products: [], error: auth.error };
+    return { products: [], totalCount: 0, hasMore: false, error: auth.error };
   }
 
-  const { getStoreInventory } = await import("@/lib/inventory");
-  const { products, inventoryError } = await getStoreInventory(auth.store.slug);
-  return { products, error: inventoryError };
+  const { getStoreInventory, INVENTORY_PAGE_SIZE } = await import("@/lib/inventory");
+  const { products, totalCount, hasMore, inventoryError } = await getStoreInventory(
+    auth.store.slug,
+    {
+      offset: options?.offset ?? 0,
+      limit: options?.limit ?? INVENTORY_PAGE_SIZE,
+      stockFilter: options?.stockFilter,
+    },
+  );
+  return { products, totalCount, hasMore, error: inventoryError };
 }
 
 export async function reorderProducts(

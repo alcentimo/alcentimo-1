@@ -14,6 +14,10 @@ interface CatalogPanelProps {
   exchangeRate: number | null;
   exchangeRateUpdatedAt?: string | null;
   initialProducts: CatalogListItem[];
+  initialTotalCount?: number;
+  initialHasMore?: boolean;
+  initialCriticalStockCount?: number;
+  initialStockFilter?: CatalogStockFilter;
   productFormConfig: StoreProductFormConfig;
   previewSettings: CatalogPreviewSettings;
   productLimitContext?: StoreProductLimitContext | null;
@@ -41,6 +45,10 @@ export function CatalogPanel({
   exchangeRate,
   exchangeRateUpdatedAt,
   initialProducts,
+  initialTotalCount,
+  initialHasMore = false,
+  initialCriticalStockCount = 0,
+  initialStockFilter = "all",
   productFormConfig,
   previewSettings,
   productLimitContext = null,
@@ -50,8 +58,8 @@ export function CatalogPanel({
   const [autoOpenCreate, setAutoOpenCreate] = useState(
     () => searchParams.get("nuevo") === "1",
   );
-  const [stockFilter, setStockFilter] = useState<CatalogStockFilter>(() =>
-    resolveStockFilter(searchParams.get("stock")),
+  const [stockFilter, setStockFilter] = useState<CatalogStockFilter>(
+    () => initialStockFilter ?? resolveStockFilter(searchParams.get("stock")),
   );
 
   useEffect(() => {
@@ -93,6 +101,9 @@ export function CatalogPanel({
       exchangeRate={exchangeRate}
       exchangeRateUpdatedAt={exchangeRateUpdatedAt}
       initialProducts={initialProducts}
+      initialTotalCount={initialTotalCount}
+      initialHasMore={initialHasMore}
+      initialCriticalStockCount={initialCriticalStockCount}
       productFormConfig={productFormConfig}
       previewSettings={previewSettings}
       autoOpenCreate={autoOpenCreate}

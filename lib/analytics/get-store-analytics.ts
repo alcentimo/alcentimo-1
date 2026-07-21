@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getStoreInventory } from "@/lib/inventory";
+import type { CatalogOrder } from "@/lib/orders/types";
 import { getStoreOrders } from "@/lib/orders/get-store-orders";
 import type {
   DailySalesVolume,
@@ -102,7 +103,7 @@ async function fetchSalesSources(
   supabase: SupabaseClient,
   storeId: string,
 ) {
-  const [ventasResult, orders] = await Promise.all([
+  const [ventasResult, ordersResult] = await Promise.all([
     supabase
       .from("ventas")
       .select(
@@ -123,7 +124,7 @@ async function fetchSalesSources(
       .eq("store_id", storeId)
       .order("created_at", { ascending: false })
       .limit(ANALYTICS_FETCH_LIMIT),
-    getStoreOrders(storeId, ANALYTICS_FETCH_LIMIT),
+    getStoreOrders(storeId, { limit: ANALYTICS_FETCH_LIMIT }),
   ]);
 
   if (ventasResult.error) {
@@ -132,13 +133,13 @@ async function fetchSalesSources(
 
   return {
     ventas: (ventasResult.data ?? []) as VentaAnalyticsRow[],
-    orders,
+    orders: ordersResult.orders,
   };
 }
 
 function buildProductSalesInsights(
   ventas: VentaAnalyticsRow[],
-  orders: Awaited<ReturnType<typeof getStoreOrders>>,
+  orders: CatalogOrder[],
   inventoryThumbById: Map<string, string | null>,
 ): TopProductInsight[] {
   const productSales = new Map<string, TopProductInsight>();
@@ -181,7 +182,7 @@ function buildProductSalesInsights(
 
 function computeSalesComparison(
   ventas: VentaAnalyticsRow[],
-  orders: Awaited<ReturnType<typeof getStoreOrders>>,
+  orders: CatalogOrder[],
 ): SalesComparison {
   let todayUsd = 0;
   let monthToDateUsd = 0;

@@ -5,6 +5,9 @@ import {
   type OrderEstado,
 } from "@/lib/orders/order-status";
 import type { CatalogOrder, OrderLineItem } from "@/lib/orders/types";
+import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
+
+export { ORDERS_PAGE_SIZE };
 
 function parseOrderEstado(value: unknown): OrderEstado {
   const raw = String(value ?? "pendiente");
@@ -31,35 +34,66 @@ function parseOrderItems(value: unknown): OrderLineItem[] {
     .filter((item): item is OrderLineItem => Boolean(item?.product_id));
 }
 
-export async function getStoreOrders(
-  storeId: string,
-  limit = 100,
-): Promise<CatalogOrder[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("orders")
-    .select(
-      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at",
-    )
-    .eq("store_id", storeId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (error) throw new Error(error.message);
-
+function mapOrderRows(
+  data: Array<Record<string, unknown>> | null,
+): CatalogOrder[] {
   const mapped = (data ?? []).map((row) => ({
-    id: row.id,
-    store_id: row.store_id,
-    customer_name: row.customer_name,
+    id: row.id as string,
+    store_id: row.store_id as string,
+    customer_name: row.customer_name as string,
     customer_phone: (row.customer_phone as string | null) ?? null,
     items: parseOrderItems(row.items),
     total_usd: Number(row.total_usd) || 0,
-    payment_proof_url: row.payment_proof_url,
+    payment_proof_url: row.payment_proof_url as string | null,
     estado: parseOrderEstado(row.estado),
-    created_at: row.created_at,
+    created_at: row.created_at as string,
   }));
 
-  // PostgREST no expone CASE en .order(); aplicamos el ORDER BY lógico en capa de datos.
   return sortOrdersByBusinessRules(mapped);
+}
+
+export interface StoreOrdersResult {
+  orders: CatalogOrder[];
+  totalCount: number;
+  hasMore: boolean;
+}
+
+export async function getStoreOrders(
+  storeId: string,
+  options?: { limit?: number; offset?: number },
+): Promise<StoreOrdersResult> {
+  const limit = options?.limit ?? 100;
+  const offset = options?.offset ?? 0;
+
+  const supabase = await createClient();
+
+  const { data, error, count } = await supabase
+    .from("orders")
+    .select(
+      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at",
+      { count: "exact" },
+    )
+    .eq("store_id", storeId)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw new Error(error.message);
+
+  const orders = mapOrderRows(data as Array<Record<string, unknown>> | null);
+  const totalCount = count ?? orders.length;
+
+  return {
+    orders,
+    totalCount,
+    hasMore: offset + orders.length < totalCount,
+  };
+}
+
+/** Compatibilidad para llamadas que solo necesitan un array acotado. */
+export async function getStoreOrdersList(
+  storeId: string,
+  limit = 100,
+): Promise<CatalogOrder[]> {
+  const { orders } = await getStoreOrders(storeId, { limit, offset: 0 });
+  return orders;
 }

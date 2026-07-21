@@ -5,11 +5,14 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
-import { getStoreInventory } from "@/lib/inventory";
+import { getStoreInventory, INVENTORY_PAGE_SIZE } from "@/lib/inventory";
+import { getCriticalStockCount } from "@/lib/inventory/get-critical-stock-count";
+import type { CatalogStockFilter } from "@/lib/inventory/stock-status";
 import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
 import { isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
 import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
+import { InventoryListSkeleton } from "@/components/dashboard/InventoryListSkeleton";
 import { BcvRateStripWithSync } from "@/components/dashboard/BcvRateStripWithSync";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { Button } from "@/components/ui/button";
@@ -19,7 +22,7 @@ export const dynamic = "force-dynamic";
 export default async function CatalogoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ onboarded?: string; tab?: string }>;
+  searchParams: Promise<{ onboarded?: string; tab?: string; stock?: string }>;
 }) {
   const supabase = await createClient();
   const session = await getDashboardSession();
@@ -55,14 +58,24 @@ export default async function CatalogoPage({
     );
   }
 
-  const [{ products }, exchangeRateRow, productFormConfig, previewSettings, productLimitContext] =
+  const stockFilter: CatalogStockFilter =
+    params.stock === "bajo" ? "critical" : "all";
+
+  const [inventory, exchangeRateRow, productFormConfig, previewSettings, productLimitContext, criticalStockCount] =
     await Promise.all([
-      getStoreInventory(store.slug),
+      getStoreInventory(store.slug, {
+        limit: INVENTORY_PAGE_SIZE,
+        offset: 0,
+        stockFilter,
+      }),
       getCurrentExchangeRate(),
       getStoreProductFormConfig(store.id),
       getCatalogPreviewSettings(store),
       getStoreProductLimitContext(store.id),
+      getCriticalStockCount(store.slug),
     ]);
+
+  const { products, totalCount, hasMore } = inventory;
 
   const exchangeRate = exchangeRateRow?.rate ?? null;
   const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
@@ -88,15 +101,19 @@ export default async function CatalogoPage({
         stale={exchangeRateStale}
       />
 
-      <Suspense fallback={<p className="text-sm text-zinc-500">Cargando catálogo…</p>}>
+      <Suspense fallback={<InventoryListSkeleton rows={5} showReorderColumn={false} />}>
         <CatalogPanel
           store={store}
           exchangeRate={exchangeRate}
           exchangeRateUpdatedAt={exchangeRateUpdatedAt}
           initialProducts={products}
+          initialTotalCount={totalCount}
+          initialHasMore={hasMore}
+          initialCriticalStockCount={criticalStockCount}
           productFormConfig={productFormConfig}
           previewSettings={previewSettings}
           productLimitContext={productLimitContext}
+          initialStockFilter={stockFilter}
         />
       </Suspense>
     </div>

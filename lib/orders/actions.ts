@@ -17,6 +17,13 @@ import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import { reserveOrderInventory } from "@/lib/orders/order-inventory";
 import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
 import type { OrderLineItem, SubmitOrderLineInput } from "@/lib/orders/types";
+import { createClient } from "@/lib/supabase/server";
+import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
+import {
+  getStoreOrders,
+  type StoreOrdersResult,
+} from "@/lib/orders/get-store-orders";
+import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
 
 export interface SubmitTransactionalOrderResult {
   error?: string;
@@ -225,4 +232,35 @@ export async function submitTransactionalOrder(
     orderId,
     whatsappUrl,
   };
+}
+
+export async function fetchStoreOrdersPage(options: {
+  offset: number;
+  limit?: number;
+}): Promise<StoreOrdersResult & { error?: string }> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) {
+    return {
+      orders: [],
+      totalCount: 0,
+      hasMore: false,
+      error: auth.error,
+    };
+  }
+
+  try {
+    return await getStoreOrders(auth.store.id, {
+      offset: options.offset,
+      limit: options.limit ?? ORDERS_PAGE_SIZE,
+    });
+  } catch (error) {
+    return {
+      orders: [],
+      totalCount: 0,
+      hasMore: false,
+      error:
+        error instanceof Error ? error.message : "No se pudieron cargar pedidos.",
+    };
+  }
 }

@@ -4,10 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
-import { getStoreInventory } from "@/lib/inventory";
+import { getStoreInventory, INVENTORY_PAGE_SIZE } from "@/lib/inventory";
 import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
-import { getStoreOrders } from "@/lib/orders/get-store-orders";
+import { getStoreOrders, type StoreOrdersResult } from "@/lib/orders/get-store-orders";
+import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { getStoreCustomers } from "@/lib/customers/get-store-customers";
@@ -42,7 +43,7 @@ export async function loadDashboardRoutePrefetchData(
     case "catalogo": {
       if (!store) break;
       await Promise.all([
-        getStoreInventory(store.slug),
+        getStoreInventory(store.slug, { limit: INVENTORY_PAGE_SIZE, offset: 0 }),
         getCurrentExchangeRate(),
         getStoreProductFormConfig(store.id),
         getCatalogPreviewSettings(store),
@@ -53,7 +54,7 @@ export async function loadDashboardRoutePrefetchData(
     case "pedidos": {
       if (!store) break;
       await Promise.all([
-        getStoreOrders(store.id, 200),
+        getStoreOrders(store.id, { limit: ORDERS_PAGE_SIZE, offset: 0 }),
         getStoreSettingsConfig(store.id),
       ]);
       break;

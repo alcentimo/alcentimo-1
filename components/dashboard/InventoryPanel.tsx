@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { memo, useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   Loader2,
   Download,
@@ -70,6 +70,8 @@ import {
   reorderProductIds,
 } from "@/components/dashboard/InventoryProductOrderCell";
 import { isProductOnSale } from "@/lib/catalog/pricing";
+import { INVENTORY_PAGE_SIZE } from "@/lib/inventory/constants";
+import { InventoryListSkeleton } from "@/components/dashboard/InventoryListSkeleton";
 
 const ProductFormSheet = dynamic(
   () =>
@@ -92,6 +94,9 @@ interface InventoryPanelProps {
   exchangeRate: number | null;
   exchangeRateUpdatedAt?: string | null;
   initialProducts: CatalogListItem[];
+  initialTotalCount?: number;
+  initialHasMore?: boolean;
+  initialCriticalStockCount?: number;
   productFormConfig: StoreProductFormConfig;
   previewSettings: CatalogPreviewSettings;
   autoOpenCreate?: boolean;
@@ -514,6 +519,9 @@ export function InventoryPanel({
   exchangeRate,
   exchangeRateUpdatedAt,
   initialProducts,
+  initialTotalCount,
+  initialHasMore = false,
+  initialCriticalStockCount = 0,
   productFormConfig,
   previewSettings,
   autoOpenCreate = false,
@@ -523,6 +531,17 @@ export function InventoryPanel({
   productLimitContext = null,
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
+  const [totalCount, setTotalCount] = useState(
+    initialTotalCount ?? initialProducts.length,
+  );
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [criticalStockCount, setCriticalStockCount] = useState(
+    initialCriticalStockCount,
+  );
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [filterLoading, setFilterLoading] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const skipFilterEffectRef = useRef(true);
   const [trialDialogOpen, setTrialDialogOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [importSheetOpen, setImportSheetOpen] = useState(false);
@@ -549,17 +568,9 @@ export function InventoryPanel({
   const [reorderingProductId, setReorderingProductId] = useState<string | null>(null);
   const [reorderError, setReorderError] = useState<string | null>(null);
 
-  const reorderEnabled = stockFilter === "all";
+  const reorderEnabled = stockFilter === "all" && !hasMore;
 
-  const filtered = useMemo(() => {
-    if (stockFilter === "all") return products;
-    return products.filter(matchesCriticalStockFilter);
-  }, [products, stockFilter]);
-
-  const criticalStockCount = useMemo(
-    () => products.filter(matchesCriticalStockFilter).length,
-    [products],
-  );
+  const filtered = products;
 
   const productById = useMemo(() => {
     const map = new Map<string, CatalogListItem>();
@@ -577,6 +588,8 @@ export function InventoryPanel({
       }
       setRefreshError(null);
       setProducts(result.products);
+      setTotalCount(result.totalCount);
+      setHasMore(result.hasMore);
       return true;
     },
     [],
@@ -584,10 +597,83 @@ export function InventoryPanel({
 
   const refreshProducts = useCallback(() => {
     startRefresh(async () => {
-      const result = await fetchInventoryProducts();
+      const result = await fetchInventoryProducts({
+        offset: 0,
+        limit: INVENTORY_PAGE_SIZE,
+        stockFilter,
+      });
       applyInventoryRefresh(result);
     });
-  }, [applyInventoryRefresh]);
+  }, [applyInventoryRefresh, stockFilter]);
+
+  const loadMoreProducts = useCallback(async () => {
+    if (!hasMore || loadingMore || refreshing) return;
+
+    setLoadingMore(true);
+    try {
+      const result = await fetchInventoryProducts({
+        offset: products.length,
+        limit: INVENTORY_PAGE_SIZE,
+        stockFilter,
+      });
+
+      if (result.error) {
+        setRefreshError(result.error);
+        return;
+      }
+
+      setRefreshError(null);
+      setProducts((current) => [...current, ...result.products]);
+      setTotalCount(result.totalCount);
+      setHasMore(result.hasMore);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [hasMore, loadingMore, products.length, refreshing, stockFilter]);
+
+  useEffect(() => {
+    if (skipFilterEffectRef.current) {
+      skipFilterEffectRef.current = false;
+      return;
+    }
+
+    let cancelled = false;
+    setFilterLoading(true);
+
+    void (async () => {
+      const result = await fetchInventoryProducts({
+        offset: 0,
+        limit: INVENTORY_PAGE_SIZE,
+        stockFilter,
+      });
+
+      if (cancelled) return;
+
+      applyInventoryRefresh(result);
+      setFilterLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applyInventoryRefresh, stockFilter]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadMoreProducts();
+        }
+      },
+      { rootMargin: "240px 0px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, loadMoreProducts]);
 
   const handleProductSaved = useCallback(
     (result?: PublishedProductResult) => {
@@ -1003,8 +1089,9 @@ export function InventoryPanel({
       {stockFilter === "critical" ? (
         <div className="inventory-critical-banner mb-4" role="status">
           <p>
-            Mostrando <strong>{filtered.length}</strong> producto
-            {filtered.length === 1 ? "" : "s"} con stock crítico (≤{" "}
+            Mostrando <strong>{filtered.length}</strong>
+            {totalCount > filtered.length ? ` de ${totalCount}` : ""} producto
+            {totalCount === 1 ? "" : "s"} con stock crítico (≤{" "}
             {CRITICAL_STOCK_THRESHOLD} unidades).
           </p>
           {onStockFilterChange ? (
@@ -1025,6 +1112,12 @@ export function InventoryPanel({
         </p>
       )}
 
+      {stockFilter === "all" && hasMore ? (
+        <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+          Carga todos los productos para poder reordenar el catálogo público.
+        </p>
+      ) : null}
+
       {reorderEnabled && products.length > 1 ? (
         <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
           Arrastra o cambia la posición numérica para definir el orden del catálogo
@@ -1038,7 +1131,11 @@ export function InventoryPanel({
         </p>
       )}
 
-      {products.length === 0 ? (
+      {filterLoading ? (
+        <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+          <InventoryListSkeleton rows={5} showReorderColumn={false} />
+        </div>
+      ) : products.length === 0 ? (
         <div className="card-panel flex flex-col items-center border-dashed py-12 text-center">
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
             Sin productos en el catálogo
@@ -1119,15 +1216,40 @@ export function InventoryPanel({
 
           <div className="flex items-center justify-between border-t border-zinc-200/70 bg-zinc-50/50 px-4 py-2 text-[11px] text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/30">
             <span>
-              {filtered.length} producto{filtered.length !== 1 ? "s" : ""}
+              {products.length} de {totalCount} producto{totalCount !== 1 ? "s" : ""}
             </span>
-            {refreshing && (
+            {(refreshing || loadingMore) && (
               <span className="inline-flex items-center gap-1">
                 <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
-                Actualizando…
+                {loadingMore ? "Cargando más…" : "Actualizando…"}
               </span>
             )}
           </div>
+
+          {hasMore ? (
+            <div
+              ref={loadMoreRef}
+              className="flex items-center justify-center border-t border-zinc-200/70 px-4 py-3 dark:border-zinc-800"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={loadingMore || refreshing}
+                onClick={() => void loadMoreProducts()}
+                className="text-xs"
+              >
+                {loadingMore ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                    Cargando…
+                  </>
+                ) : (
+                  "Cargar más productos"
+                )}
+              </Button>
+            </div>
+          ) : null}
         </div>
       )}
 

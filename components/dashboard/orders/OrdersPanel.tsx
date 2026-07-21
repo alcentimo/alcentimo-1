@@ -1,7 +1,7 @@
 "use client";
 
-import { Fragment, memo, useCallback, useMemo, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronRight, Loader2 } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import { computeOrdersKpis, groupActiveOrdersByDay, isOrderToday } from "@/lib/orders/order-kpis";
 import type { CatalogOrder } from "@/lib/orders/types";
@@ -17,6 +17,9 @@ import { OrderStatusWhatsAppPrompt } from "@/components/dashboard/orders/OrderSt
 import { OrderDetailSlideOver } from "@/components/dashboard/orders/OrderDetailSlideOver";
 import { OrderWhatsAppButton } from "@/components/dashboard/orders/OrderWhatsAppButton";
 import { OrdersKpiRow } from "@/components/dashboard/orders/OrdersKpiRow";
+import { Button } from "@/components/ui/button";
+import { fetchStoreOrdersPage } from "@/lib/orders/actions";
+import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
 import { cn } from "@/lib/cn";
 
 const FILTER_TABS: { id: OrderFilterId; label: string }[] = [
@@ -47,6 +50,8 @@ function summarizeItems(order: CatalogOrder): string {
 
 interface OrdersPanelProps {
   orders: CatalogOrder[];
+  initialTotalCount?: number;
+  initialHasMore?: boolean;
   storeName: string;
   messageTemplates: MessageTemplatesSettings;
 }
@@ -230,10 +235,18 @@ const OrderMobileCard = memo(function OrderMobileCard({
 
 export function OrdersPanel({
   orders: initialOrders,
+  initialTotalCount,
+  initialHasMore = false,
   storeName,
   messageTemplates,
 }: OrdersPanelProps) {
   const [orders, setOrders] = useState(initialOrders);
+  const [totalCount, setTotalCount] = useState(
+    initialTotalCount ?? initialOrders.length,
+  );
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [filter, setFilter] = useState<OrderFilterId>("pending");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [statusNotifyByOrderId, setStatusNotifyByOrderId] = useState<
@@ -281,6 +294,41 @@ export function OrdersPanel({
   const handleSelectOrder = useCallback((orderId: string) => {
     setSelectedOrderId(orderId);
   }, []);
+
+  const loadMoreOrders = useCallback(async () => {
+    if (!hasMore || loadingMore) return;
+
+    setLoadingMore(true);
+    try {
+      const result = await fetchStoreOrdersPage({ offset: orders.length });
+      if (result.error) return;
+
+      setOrders((current) =>
+        sortOrdersByBusinessRules([...current, ...result.orders]),
+      );
+      setTotalCount(result.totalCount);
+      setHasMore(result.hasMore);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [hasMore, loadingMore, orders.length]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadMoreOrders();
+        }
+      },
+      { rootMargin: "240px 0px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, loadMoreOrders]);
 
   const filteredOrders = useMemo(() => {
     const list = orders.filter((order) => {
@@ -474,6 +522,33 @@ export function OrdersPanel({
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="flex flex-col items-center gap-2 border-t border-zinc-200/70 px-4 py-3 text-xs text-zinc-500 dark:border-zinc-800">
+        <span>
+          {orders.length} de {totalCount} pedido{totalCount !== 1 ? "s" : ""} cargados
+        </span>
+        {hasMore ? (
+          <div ref={loadMoreRef}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={loadingMore}
+              onClick={() => void loadMoreOrders()}
+              className="text-xs"
+            >
+              {loadingMore ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  Cargando…
+                </>
+              ) : (
+                "Cargar más pedidos"
+              )}
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       <OrderDetailSlideOver

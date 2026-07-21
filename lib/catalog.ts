@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { getSupabaseAnonClient } from "@/lib/supabase";
 import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
+import { CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 
 export interface CatalogPageData {
@@ -82,7 +83,7 @@ export async function getCatalogProducts(
 
   let query = supabase
     .from("catalog_list_view")
-    .select("*")
+    .select(CATALOG_LIST_SELECT)
     .eq("store_slug", normalizedSlug)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false })
@@ -102,7 +103,9 @@ export async function getCatalogProducts(
   }
 
   return {
-    products: (productsResult.data ?? []).map(normalizeCatalogItem),
+    products: (productsResult.data ?? []).map((row) =>
+      normalizeCatalogItem(row as unknown as CatalogListItem),
+    ),
     exchangeRate,
   };
 }
