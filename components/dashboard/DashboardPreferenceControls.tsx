@@ -32,7 +32,7 @@ export function DashboardPreferenceControls({
 
   if (variant === "compact") {
     return (
-      <div className={cn("flex items-center gap-1.5", className)}>
+      <div className={cn("flex items-center", className)}>
         <button
           type="button"
           onClick={() => setTheme(isDark ? "light" : "dark")}
@@ -50,23 +50,6 @@ export function DashboardPreferenceControls({
             <Moon className="h-4 w-4" aria-hidden="true" />
           )}
         </button>
-
-        <label className="sr-only" htmlFor="dashboard-locale-compact">
-          {t("prefs.language")}
-        </label>
-        <Select
-          id="dashboard-locale-compact"
-          value={locale}
-          onChange={(e) => setLocale(e.target.value === "en" ? "en" : "es")}
-          className="h-9 w-[5.75rem] rounded-xl border-zinc-200 bg-white py-1.5 text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900"
-          aria-label={t("prefs.language")}
-        >
-          {UI_LOCALE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.value.toUpperCase()}
-            </option>
-          ))}
-        </Select>
       </div>
     );
   }
