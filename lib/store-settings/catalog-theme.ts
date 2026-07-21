@@ -24,6 +24,7 @@ const RUBRO_THEME_COLORS: Record<StoreRubro, string> = {
   calzado: "#7c3aed",
   tecnologia: "#2563eb",
   alimentos: "#16a34a",
+  coleccionables: "#b45309",
   "salud-belleza": "#0891b2",
   "hogar-decoracion": "#b45309",
   general: "#0d9488",

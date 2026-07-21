@@ -5,7 +5,11 @@ import type { StoreRubro } from "@/src/config/categories";
  * (lazy) cuando la tienda tiene ese rubro. Añadir un rubro aquí no importa
  * su código; el import dinámico ocurre en el loader del módulo.
  */
-export type RubroProductModuleId = "ropa-moda" | "alimentos" | "tecnologia";
+export type RubroProductModuleId =
+  | "ropa-moda"
+  | "alimentos"
+  | "tecnologia"
+  | "coleccionables";
 
 /** Registro ligero: no importa componentes ni datos pesados. */
 export const ACTIVE_RUBRO_PRODUCT_MODULES: Partial<
@@ -14,6 +18,7 @@ export const ACTIVE_RUBRO_PRODUCT_MODULES: Partial<
   "ropa-moda": "ropa-moda",
   alimentos: "alimentos",
   tecnologia: "tecnologia",
+  coleccionables: "coleccionables",
 };
 
 /** Campos que el módulo de variantes/specs sustituye (no mostrar como texto libre genérico). */
@@ -39,13 +44,18 @@ export const RUBRO_MODULE_MANAGED_EXTRA_FIELDS: Record<
     "Modelo compatible",
     "Marca",
   ],
+  coleccionables: [
+    "Condición",
+    "Edición / Rareza",
+    "Preventa",
+    "Llegada estimada",
+  ],
 };
 
 /** Si true, el formulario no muestra selector de categoría (el rubro define el giro). */
 export const RUBRO_MODULE_HIDES_CATEGORY: Record<RubroProductModuleId, boolean> = {
   "ropa-moda": true,
-  /** Alimentos usa categorías de menú (Entradas, Platos, etc.). */
   alimentos: false,
-  /** Tecnología organiza por tipo de dispositivo. */
   tecnologia: false,
+  coleccionables: false,
 };

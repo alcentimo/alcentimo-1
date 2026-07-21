@@ -60,6 +60,10 @@ export function TransactionalCatalog({
     store.rubro_tienda,
     "tecnologia",
   );
+  const isCollectiblesCatalog = storeUsesRubroProductModule(
+    store.rubro_tienda,
+    "coleccionables",
+  );
 
   const availableProducts = useMemo(
     () => products.filter((product) => !isProductOutOfStock(product)),
@@ -108,6 +112,7 @@ export function TransactionalCatalog({
         getCatalogDesignClasses(catalogDesign, store.rubro_tienda),
         isFoodMenu && "txn-catalog--food-menu",
         isTechCatalog && "txn-catalog--tech",
+        isCollectiblesCatalog && "txn-catalog--collectibles",
         previewMode && "txn-catalog--preview",
         previewMode && referenceMode && "txn-catalog--reference-mode",
       )}
@@ -134,7 +139,13 @@ export function TransactionalCatalog({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="txn-catalog-eyebrow">
-                  {isFoodMenu ? "Menú" : isTechCatalog ? "Tech" : "Catálogo"}
+                  {isFoodMenu
+                    ? "Menú"
+                    : isTechCatalog
+                      ? "Tech"
+                      : isCollectiblesCatalog
+                        ? "Colección"
+                        : "Catálogo"}
                 </p>
                 <StoreOpenBadge locationHours={purchaseInfo.locationHours} />
               </div>

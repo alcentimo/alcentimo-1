@@ -36,6 +36,7 @@ import {
   type FoodModifiersConfig,
 } from "@/lib/rubros/modules/alimentos";
 import { getTechSpecLabels } from "@/lib/rubros/modules/tecnologia/config";
+import { getCollectibleFieldLabels } from "@/lib/rubros/modules/coleccionables/config";
 
 function resolveProductFieldLabels(
   rubro: string,
@@ -43,6 +44,9 @@ function resolveProductFieldLabels(
 ): string[] {
   if (storeUsesRubroProductModule(rubro, "tecnologia")) {
     return getTechSpecLabels(categorySlug);
+  }
+  if (storeUsesRubroProductModule(rubro, "coleccionables")) {
+    return getCollectibleFieldLabels();
   }
   const normalized = normalizeStoreRubro(rubro);
   return filterExtraFieldsForActiveModule(

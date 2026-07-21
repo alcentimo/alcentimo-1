@@ -62,6 +62,15 @@ export const REFERENCE_RUBRO_ASSETS: Record<StoreRubro, ReferenceRubroAssetMap> 
     img5: REF("alimentos", "mix-snacks.webp"),
     img6: REF("alimentos", "cafe-especialidad.webp"),
   },
+  // Vista previa: reutiliza assets generales hasta tener set dedicado.
+  coleccionables: {
+    img1: REF("general", "edicion-signature.webp"),
+    img2: REF("general", "kit-best-seller.webp"),
+    img3: REF("general", "producto-destacado.webp"),
+    img4: REF("general", "accesorio-pro.webp"),
+    img5: REF("general", "gift-card.webp"),
+    img6: REF("general", "pack-familiar.webp"),
+  },
   "salud-belleza": {
     img1: REF("salud-belleza", "serum-vitamina-c.webp"),
     img2: REF("salud-belleza", "labial-velvet.webp"),

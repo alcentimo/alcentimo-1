@@ -34,6 +34,14 @@ const TechSpecsChips = dynamic(
   { ssr: false },
 );
 
+const CollectibleBadges = dynamic(
+  () =>
+    import("@/components/rubros/coleccionables/CollectibleBadges").then(
+      (mod) => mod.CollectibleBadges,
+    ),
+  { ssr: false },
+);
+
 interface ProductCardProps {
   product: CatalogListItem;
   exchangeRate?: number | null;
@@ -113,6 +121,10 @@ export const ProductCard = memo(function ProductCard({
 
   const isAlimentos = storeUsesRubroProductModule(storeRubro, "alimentos");
   const isTecnologia = storeUsesRubroProductModule(storeRubro, "tecnologia");
+  const isColeccionables = storeUsesRubroProductModule(
+    storeRubro,
+    "coleccionables",
+  );
   const foodHasModifiers =
     isAlimentos &&
     hasFoodModifiers(parseFoodModifiersFromMetadata(product.metadata ?? null));
@@ -269,6 +281,7 @@ export const ProductCard = memo(function ProductCard({
           <div className="store-product-slot store-product-slot-title">
             <h2 className="store-product-name">{product.product_name}</h2>
             {isTecnologia ? <TechSpecsChips product={product} /> : null}
+            {isColeccionables ? <CollectibleBadges product={product} /> : null}
           </div>
 
           {showDescription ? (

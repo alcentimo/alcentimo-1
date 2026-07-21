@@ -9,6 +9,7 @@ export const STORE_RUBRO_OPTIONS = [
   { value: "calzado", label: "Calzado" },
   { value: "tecnologia", label: "Tecnología y Electrónica" },
   { value: "alimentos", label: "Alimentos y Bebidas" },
+  { value: "coleccionables", label: "Coleccionables, Cómics y Figuras" },
   { value: "salud-belleza", label: "Salud y Belleza" },
   { value: "hogar-decoracion", label: "Hogar y Decoración" },
   { value: "general", label: "General" },
@@ -80,6 +81,17 @@ export const STORE_RUBRO_CONFIGS: StoreRubroConfig[] = [
       { slug: "platos-principales", label: "Platos Principales", campos: [] },
       { slug: "bebidas", label: "Bebidas", campos: [] },
       { slug: "postres", label: "Postres", campos: [] },
+    ],
+  },
+  {
+    rubro: "coleccionables",
+    label: "Coleccionables, Cómics y Figuras",
+    categorias: [
+      { slug: "comics", label: "Cómics", campos: [] },
+      { slug: "figuras", label: "Figuras", campos: [] },
+      { slug: "cartas", label: "Cartas", campos: [] },
+      { slug: "merch", label: "Merch", campos: [] },
+      { slug: "otros", label: "Otros", campos: [] },
     ],
   },
   {

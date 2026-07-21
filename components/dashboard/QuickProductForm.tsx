@@ -11,6 +11,7 @@ import { serializeVariantsForForm } from "@/components/dashboard/ProductVariants
 import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
 import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
 import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
+import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
@@ -115,6 +116,10 @@ function QuickProductFormSession({
   const isTecnologia = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
     "tecnologia",
+  );
+  const isColeccionables = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "coleccionables",
   );
   const defaultCategorySlug =
     productFormConfig.productCategories[0]?.slug ?? "camisas";
@@ -257,7 +262,9 @@ function QuickProductFormSession({
               ? "Ej: Arepa reina pepiada"
               : isTecnologia
                 ? "Ej: Smartphone Nova X 256 GB"
-                : "Ej: Arroz Premium 1kg"
+                : isColeccionables
+                  ? "Ej: Figura Exclusive Chase #42"
+                  : "Ej: Arroz Premium 1kg"
           }
           className="payment-field-input mt-1.5"
           autoFocus
@@ -324,7 +331,7 @@ function QuickProductFormSession({
         />
       )}
 
-      {!isRopaModa && !isAlimentos && !isTecnologia && fieldLabels.length > 0 ? (
+      {!isRopaModa && !isAlimentos && !isTecnologia && !isColeccionables && fieldLabels.length > 0 ? (
         <ProductExtraFieldsSection
           fieldLabels={fieldLabels}
           values={extraFields}
@@ -340,6 +347,16 @@ function QuickProductFormSession({
           rubro={productFormConfig.rubroTienda}
           categorySlug={categorySlug}
           categoryLabel={categoryLabel}
+          values={extraFields}
+          onChange={setExtraFields}
+          disabled={isBusy}
+          variant="compact"
+        />
+      ) : null}
+
+      {isColeccionables ? (
+        <RubroCollectibleSection
+          rubro={productFormConfig.rubroTienda}
           values={extraFields}
           onChange={setExtraFields}
           disabled={isBusy}

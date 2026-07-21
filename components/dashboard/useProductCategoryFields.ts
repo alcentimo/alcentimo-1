@@ -8,6 +8,7 @@ import {
   getActiveProductModuleId,
 } from "@/lib/rubros/registry";
 import { getTechSpecLabels } from "@/lib/rubros/modules/tecnologia/config";
+import { getCollectibleFieldLabels } from "@/lib/rubros/modules/coleccionables/config";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import {
   pickExtraFieldValues,
@@ -48,8 +49,12 @@ export function useProductCategoryFields(
 
   const fieldLabels = useMemo(() => {
     if (categorySlug === CUSTOM_PRODUCT_CATEGORY_VALUE) return [];
-    if (getActiveProductModuleId(config.rubroTienda) === "tecnologia") {
+    const moduleId = getActiveProductModuleId(config.rubroTienda);
+    if (moduleId === "tecnologia") {
       return getTechSpecLabels(categorySlug);
+    }
+    if (moduleId === "coleccionables") {
+      return getCollectibleFieldLabels();
     }
     return filterExtraFieldsForActiveModule(
       config.rubroTienda,

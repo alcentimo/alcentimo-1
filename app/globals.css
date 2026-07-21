@@ -3512,6 +3512,60 @@ body {
   @apply truncate font-semibold tabular-nums text-slate-800;
 }
 
+/* Catálogo Coleccionables / Cómics / Figuras */
+.txn-catalog--collectibles {
+  --txn-page-bg: #faf8f5;
+  --txn-primary: #b45309;
+  --txn-primary-hover: #92400e;
+  --pc-media-ratio: 3 / 4;
+  --pc-btn-radius: 0.5rem;
+  --pc-title-size: 0.875rem;
+}
+
+.txn-catalog--collectibles .txn-catalog-eyebrow {
+  letter-spacing: 0.18em;
+}
+
+.txn-catalog--collectibles .store-product-card {
+  @apply overflow-hidden rounded-2xl border-stone-200/90 bg-white shadow-none;
+}
+
+.txn-catalog--collectibles .store-product-card:hover {
+  @apply shadow-md;
+}
+
+.txn-catalog--collectibles .store-product-media {
+  @apply bg-stone-100;
+}
+
+.txn-catalog--collectibles .store-product-name {
+  @apply font-semibold tracking-tight;
+}
+
+.txn-catalog--collectibles .store-product-category {
+  @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400;
+}
+
+.txn-catalog--collectibles .store-product-image {
+  @apply object-contain;
+}
+
+.collectible-badges {
+  @apply mt-1.5 flex flex-wrap gap-1;
+}
+
+.collectible-badge {
+  @apply inline-flex max-w-full truncate rounded-md border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] font-medium text-stone-700;
+}
+
+.collectible-badge--edition {
+  @apply border-amber-200 bg-amber-50 text-amber-900;
+}
+
+.collectible-badge--preorder {
+  @apply border-orange-300 bg-orange-50 font-semibold text-orange-900;
+}
+
 .txn-catalog--list .store-product-card {
   @apply flex flex-row items-stretch overflow-hidden;
   --pc-media-ratio: 1 / 1;
