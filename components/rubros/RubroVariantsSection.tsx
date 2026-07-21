@@ -32,6 +32,19 @@ const FoodPortionsEditor = dynamic(
   },
 );
 
+const BeautyVariantsEditor = dynamic(
+  () =>
+    import("@/components/rubros/salud-belleza/BeautyVariantsEditor").then(
+      (mod) => mod.BeautyVariantsEditor,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-24 animate-pulse rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40" />
+    ),
+  },
+);
+
 interface RubroVariantsSectionProps {
   rubro: StoreRubro | string;
   variants: VariantFormInput[];
@@ -67,6 +80,16 @@ export function RubroVariantsSection({
   if (moduleId === "alimentos") {
     return (
       <FoodPortionsEditor
+        variants={variants}
+        onChange={onChange}
+        disabled={disabled}
+      />
+    );
+  }
+
+  if (moduleId === "salud-belleza") {
+    return (
+      <BeautyVariantsEditor
         variants={variants}
         onChange={onChange}
         disabled={disabled}

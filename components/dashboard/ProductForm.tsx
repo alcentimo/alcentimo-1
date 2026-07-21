@@ -20,6 +20,7 @@ import {
 import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
 import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
 import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
+import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
@@ -108,6 +109,10 @@ export function ProductForm({
   const isColeccionables = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
     "coleccionables",
+  );
+  const isSaludBelleza = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "salud-belleza",
   );
   const defaultCategorySlug =
     productFormConfig.productCategories[0]?.slug ?? "camisas";
@@ -349,7 +354,12 @@ export function ProductForm({
         )}
       </div>
 
-      {!isRopaModa && !isAlimentos && !isTecnologia && !isColeccionables && fieldLabels.length > 0 ? (
+      {!isRopaModa &&
+      !isAlimentos &&
+      !isTecnologia &&
+      !isColeccionables &&
+      !isSaludBelleza &&
+      fieldLabels.length > 0 ? (
         <ProductExtraFieldsSection
           fieldLabels={fieldLabels}
           values={extraFields}
@@ -379,7 +389,16 @@ export function ProductForm({
         />
       ) : null}
 
-      {isRopaModa || isAlimentos ? (
+      {isSaludBelleza ? (
+        <RubroBeautySection
+          rubro={productFormConfig.rubroTienda}
+          values={extraFields}
+          onChange={setExtraFields}
+          disabled={isBusy}
+        />
+      ) : null}
+
+      {isRopaModa || isAlimentos || isSaludBelleza ? (
         <RubroVariantsSection
           rubro={productFormConfig.rubroTienda}
           variants={variants}
@@ -438,7 +457,7 @@ export function ProductForm({
         </p>
       </div>
 
-      {!isRopaModa && !isAlimentos ? (
+      {!isRopaModa && !isAlimentos && !isSaludBelleza ? (
         <RubroVariantsSection
           rubro={productFormConfig.rubroTienda}
           variants={variants}

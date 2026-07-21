@@ -59,6 +59,8 @@ export async function loadRubroProductModule(moduleId: RubroProductModuleId) {
       return import("@/lib/rubros/modules/tecnologia");
     case "coleccionables":
       return import("@/lib/rubros/modules/coleccionables");
+    case "salud-belleza":
+      return import("@/lib/rubros/modules/salud-belleza");
     default: {
       const _exhaustive: never = moduleId;
       return _exhaustive;

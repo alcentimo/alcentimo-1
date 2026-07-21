@@ -233,6 +233,57 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       assetKey: "img6",
     },
   ],
+  "salud-belleza": [
+    {
+      name: "Sérum Vitamina C Luminous",
+      shortDescription: "Fórmula iluminadora · Piel mixta · Tip: Explica rutina mañana y noche",
+      categoryName: "Cuidado personal",
+      categorySlug: "cuidado-personal",
+      priceUsd: 28,
+      isFeatured: true,
+      assetKey: "img1",
+    },
+    {
+      name: "Labial Mate Velvet Rose",
+      shortDescription: "Alta pigmentación, tono nude rosado · Variantes por tono",
+      categoryName: "Maquillaje",
+      categorySlug: "maquillaje",
+      priceUsd: 16,
+      assetKey: "img2",
+    },
+    {
+      name: "Eau de Parfum Citrus Noir",
+      shortDescription: "50 ml, notas cítricas y madera · Presentación en ml",
+      categoryName: "Fragancias",
+      categorySlug: "fragancias",
+      priceUsd: 48,
+      assetKey: "img3",
+    },
+    {
+      name: "Multivitamínico Daily Balance",
+      shortDescription: "60 cápsulas, vitaminas A–E y zinc · Tip: Ciclo de tres meses",
+      categoryName: "Suplementos",
+      categorySlug: "suplementos",
+      priceUsd: 24,
+      assetKey: "img4",
+    },
+    {
+      name: "Crema Hidratante Hydra Calm",
+      shortDescription: "Ácido hialurónico, piel sensible · Presentación 50 ml / 100 ml",
+      categoryName: "Cuidado personal",
+      categorySlug: "cuidado-personal",
+      priceUsd: 19,
+      assetKey: "img5",
+    },
+    {
+      name: "Champú Reparador Keratin Soft",
+      shortDescription: "Cabello dañado, sin sulfatos · Presentación 250 ml",
+      categoryName: "Cabello",
+      categorySlug: "cabello",
+      priceUsd: 14,
+      assetKey: "img6",
+    },
+  ],
 };
 
 function usdToVes(usd: number, rate: number): number {

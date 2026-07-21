@@ -37,6 +37,7 @@ import {
 } from "@/lib/rubros/modules/alimentos";
 import { getTechSpecLabels } from "@/lib/rubros/modules/tecnologia/config";
 import { getCollectibleFieldLabels } from "@/lib/rubros/modules/coleccionables/config";
+import { getBeautyFieldLabels } from "@/lib/rubros/modules/salud-belleza/config";
 
 function resolveProductFieldLabels(
   rubro: string,
@@ -47,6 +48,9 @@ function resolveProductFieldLabels(
   }
   if (storeUsesRubroProductModule(rubro, "coleccionables")) {
     return getCollectibleFieldLabels();
+  }
+  if (storeUsesRubroProductModule(rubro, "salud-belleza")) {
+    return getBeautyFieldLabels();
   }
   const normalized = normalizeStoreRubro(rubro);
   return filterExtraFieldsForActiveModule(

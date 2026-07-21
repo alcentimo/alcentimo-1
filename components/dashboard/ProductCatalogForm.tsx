@@ -29,6 +29,7 @@ import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection
 import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
 import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
 import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
+import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import {
   emptyFoodModifiers,
@@ -107,6 +108,10 @@ export function ProductCatalogForm({
     productFormConfig.rubroTienda,
     "coleccionables",
   );
+  const isSaludBelleza = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "salud-belleza",
+  );
   const defaultCategorySlug =
     productFormConfig.productCategories[0]?.slug ?? "camisas";
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
@@ -158,7 +163,7 @@ export function ProductCatalogForm({
         serializeFoodModifiersJson(foodModifiers),
       );
     }
-    if (isAlimentos && hasCustomVariants) {
+    if ((isAlimentos || isSaludBelleza) && hasCustomVariants) {
       formData.set("stock_quantity", "0");
     }
 
@@ -291,7 +296,12 @@ export function ProductCatalogForm({
         </div>
       </div>
 
-      {!isRopaModa && !isAlimentos && !isTecnologia && !isColeccionables && fieldLabels.length > 0 ? (
+      {!isRopaModa &&
+      !isAlimentos &&
+      !isTecnologia &&
+      !isColeccionables &&
+      !isSaludBelleza &&
+      fieldLabels.length > 0 ? (
         <ProductExtraFieldsSection
           fieldLabels={fieldLabels}
           values={extraFields}
@@ -324,6 +334,24 @@ export function ProductCatalogForm({
         />
       ) : null}
 
+      {isSaludBelleza ? (
+        <>
+          <RubroBeautySection
+            rubro={productFormConfig.rubroTienda}
+            values={extraFields}
+            onChange={setExtraFields}
+            disabled={isBusy}
+            variant="compact"
+          />
+          <RubroVariantsSection
+            rubro={productFormConfig.rubroTienda}
+            variants={variants}
+            onChange={setVariants}
+            disabled={isBusy}
+          />
+        </>
+      ) : null}
+
       {isAlimentos ? (
         <>
           <RubroVariantsSection
@@ -341,7 +369,7 @@ export function ProductCatalogForm({
         </>
       ) : null}
 
-      {!(isAlimentos && hasCustomVariants) ? (
+      {!((isAlimentos || isSaludBelleza) && hasCustomVariants) ? (
       <div>
         <Label htmlFor="catalog-stock" className="payment-field-label">
           Cantidad en stock <span className="text-red-500">*</span>

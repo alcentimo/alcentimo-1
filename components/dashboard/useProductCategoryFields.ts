@@ -9,6 +9,7 @@ import {
 } from "@/lib/rubros/registry";
 import { getTechSpecLabels } from "@/lib/rubros/modules/tecnologia/config";
 import { getCollectibleFieldLabels } from "@/lib/rubros/modules/coleccionables/config";
+import { getBeautyFieldLabels } from "@/lib/rubros/modules/salud-belleza/config";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import {
   pickExtraFieldValues,
@@ -55,6 +56,9 @@ export function useProductCategoryFields(
     }
     if (moduleId === "coleccionables") {
       return getCollectibleFieldLabels();
+    }
+    if (moduleId === "salud-belleza") {
+      return getBeautyFieldLabels();
     }
     return filterExtraFieldsForActiveModule(
       config.rubroTienda,

@@ -23,6 +23,7 @@ const RUBRO_THEME_COLORS: Record<StoreRubro, string> = {
   alimentos: "#16a34a",
   tecnologia: "#2563eb",
   coleccionables: "#b45309",
+  "salud-belleza": "#e11d48",
 };
 
 const HEX_COLOR_PATTERN = /^#([0-9a-fA-F]{6})$/;

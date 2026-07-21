@@ -9,7 +9,8 @@ export type RubroProductModuleId =
   | "ropa-moda"
   | "alimentos"
   | "tecnologia"
-  | "coleccionables";
+  | "coleccionables"
+  | "salud-belleza";
 
 /** Registro ligero: no importa componentes ni datos pesados. */
 export const ACTIVE_RUBRO_PRODUCT_MODULES: Partial<
@@ -19,6 +20,7 @@ export const ACTIVE_RUBRO_PRODUCT_MODULES: Partial<
   alimentos: "alimentos",
   tecnologia: "tecnologia",
   coleccionables: "coleccionables",
+  "salud-belleza": "salud-belleza",
 };
 
 /** Campos que el módulo de variantes/specs sustituye (no mostrar como texto libre genérico). */
@@ -50,6 +52,14 @@ export const RUBRO_MODULE_MANAGED_EXTRA_FIELDS: Record<
     "Preventa",
     "Llegada estimada",
   ],
+  "salud-belleza": [
+    "Presentación",
+    "Volumen",
+    "Tono",
+    "Color",
+    "Tipo de piel",
+    "Ingredientes clave",
+  ],
 };
 
 /** Si true, el formulario no muestra selector de categoría (el rubro define el giro). */
@@ -58,4 +68,5 @@ export const RUBRO_MODULE_HIDES_CATEGORY: Record<RubroProductModuleId, boolean> 
   alimentos: false,
   tecnologia: false,
   coleccionables: false,
+  "salud-belleza": false,
 };

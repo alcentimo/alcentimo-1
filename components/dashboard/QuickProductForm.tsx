@@ -12,6 +12,7 @@ import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
 import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
 import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
 import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
+import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
@@ -120,6 +121,10 @@ function QuickProductFormSession({
   const isColeccionables = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
     "coleccionables",
+  );
+  const isSaludBelleza = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "salud-belleza",
   );
   const defaultCategorySlug =
     productFormConfig.productCategories[0]?.slug ?? "camisas";
@@ -264,7 +269,9 @@ function QuickProductFormSession({
                 ? "Ej: Smartphone Nova X 256 GB"
                 : isColeccionables
                   ? "Ej: Figura Exclusive Chase #42"
-                  : "Ej: Arroz Premium 1kg"
+                  : isSaludBelleza
+                    ? "Ej: Sérum vitamina C 30 ml"
+                    : "Ej: Arroz Premium 1kg"
           }
           className="payment-field-input mt-1.5"
           autoFocus
@@ -331,7 +338,12 @@ function QuickProductFormSession({
         />
       )}
 
-      {!isRopaModa && !isAlimentos && !isTecnologia && !isColeccionables && fieldLabels.length > 0 ? (
+      {!isRopaModa &&
+      !isAlimentos &&
+      !isTecnologia &&
+      !isColeccionables &&
+      !isSaludBelleza &&
+      fieldLabels.length > 0 ? (
         <ProductExtraFieldsSection
           fieldLabels={fieldLabels}
           values={extraFields}
@@ -364,7 +376,17 @@ function QuickProductFormSession({
         />
       ) : null}
 
-      {isRopaModa || isAlimentos ? (
+      {isSaludBelleza ? (
+        <RubroBeautySection
+          rubro={productFormConfig.rubroTienda}
+          values={extraFields}
+          onChange={setExtraFields}
+          disabled={isBusy}
+          variant="compact"
+        />
+      ) : null}
+
+      {isRopaModa || isAlimentos || isSaludBelleza ? (
         <RubroVariantsSection
           rubro={productFormConfig.rubroTienda}
           variants={variants}
@@ -451,7 +473,7 @@ function QuickProductFormSession({
               />
             </div>
 
-            {!isRopaModa && !isAlimentos ? (
+            {!isRopaModa && !isAlimentos && !isSaludBelleza ? (
               <RubroVariantsSection
                 rubro={productFormConfig.rubroTienda}
                 variants={variants}

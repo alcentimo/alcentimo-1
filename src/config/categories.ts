@@ -1,6 +1,6 @@
 /**
  * Rubro de tienda y categorías sugeridas por giro del negocio.
- * Solo 4 rubros oficiales operativos (módulos de producto activos).
+ * Rubros oficiales operativos (módulos de producto activos).
  */
 
 export const STORE_RUBRO_OPTIONS = [
@@ -8,6 +8,7 @@ export const STORE_RUBRO_OPTIONS = [
   { value: "alimentos", label: "Alimentos y Bebidas" },
   { value: "tecnologia", label: "Tecnología y Electrónica" },
   { value: "coleccionables", label: "Coleccionables y Cómics" },
+  { value: "salud-belleza", label: "Salud, Belleza y Cuidado Personal" },
 ] as const;
 
 export type StoreRubro = (typeof STORE_RUBRO_OPTIONS)[number]["value"];
@@ -73,6 +74,17 @@ export const STORE_RUBRO_CONFIGS: StoreRubroConfig[] = [
       { slug: "otros", label: "Otros", campos: [] },
     ],
   },
+  {
+    rubro: "salud-belleza",
+    label: "Salud, Belleza y Cuidado Personal",
+    categorias: [
+      { slug: "cuidado-personal", label: "Cuidado personal", campos: [] },
+      { slug: "maquillaje", label: "Maquillaje", campos: [] },
+      { slug: "fragancias", label: "Fragancias", campos: [] },
+      { slug: "suplementos", label: "Suplementos", campos: [] },
+      { slug: "cabello", label: "Cabello", campos: [] },
+    ],
+  },
 ];
 
 const RUBRO_SET = new Set<string>(STORE_RUBRO_OPTIONS.map((item) => item.value));
@@ -87,9 +99,8 @@ const LEGACY_RUBRO_ALIASES: Record<string, StoreRubro> = {
   zapateria: "ropa-moda",
   ferreteria: "tecnologia",
   repuestos: "tecnologia",
-  "salud-belleza": "ropa-moda",
   joyeria: "coleccionables",
-  cosmeticos: "ropa-moda",
+  cosmeticos: "salud-belleza",
   "hogar-decoracion": "ropa-moda",
   general: "ropa-moda",
 };

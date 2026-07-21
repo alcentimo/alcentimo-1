@@ -108,8 +108,8 @@ export function OnboardingForm() {
           ))}
         </Select>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Solo hay 4 rubros operativos. Cada uno activa formularios y catálogo
-          especializados. Puedes cambiarlo después en Configuración de Tienda.
+          Rubros operativos con formularios y catálogo especializados. Puedes
+          cambiarlo después en Configuración de Tienda.
         </p>
       </div>
 

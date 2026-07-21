@@ -55,6 +55,14 @@ export const REFERENCE_RUBRO_ASSETS: Record<StoreRubro, ReferenceRubroAssetMap> 
     img5: REF("general", "gift-card.webp"),
     img6: REF("general", "pack-familiar.webp"),
   },
+  "salud-belleza": {
+    img1: REF("salud-belleza", "serum-vitamina-c.webp"),
+    img2: REF("salud-belleza", "labial-velvet.webp"),
+    img3: REF("salud-belleza", "perfume-citrus.webp"),
+    img4: REF("salud-belleza", "multivitaminico.webp"),
+    img5: REF("salud-belleza", "crema-hydra.webp"),
+    img6: REF("salud-belleza", "mascarilla-facial.webp"),
+  },
 };
 
 const prefetchedUrls = new Set<string>();

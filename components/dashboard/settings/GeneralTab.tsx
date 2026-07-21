@@ -294,7 +294,8 @@ export function GeneralTab({ store }: GeneralTabProps) {
             ))}
           </Select>
           <p className="mt-1.5 text-[11px] text-zinc-400">
-            Ropa incluye tallas S/M/L y numeraciones de calzado; Alimentos, porciones y modificadores; Tecnología, specs; Coleccionables, condición y preventa.
+            Ropa: tallas y calzado · Alimentos: porciones · Tech: specs ·
+            Coleccionables: condición/preventa · Belleza: volumen/tonos y tipo de piel.
           </p>
         </div>
       </SettingsSection>
