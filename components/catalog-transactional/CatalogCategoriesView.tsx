@@ -59,9 +59,9 @@ export function CatalogCategoriesView({
     <div
       className={cn(
         "txn-catalog txn-catalog-subpage",
-        getCatalogDesignClasses(catalogDesign),
+        getCatalogDesignClasses(catalogDesign, store.rubro_tienda),
       )}
-      style={getCatalogThemeStyle(catalogDesign)}
+      style={getCatalogThemeStyle(catalogDesign, store.rubro_tienda)}
     >
       <header className="catalog-subpage-header">
         <h1 className="catalog-subpage-title">Categorías</h1>

@@ -4,6 +4,7 @@ import {
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
+import { CATALOG_THEME_PRESETS } from "@/lib/store-settings/catalog-theme-presets";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
 
 export interface StoreManifestTheme {
@@ -25,10 +26,11 @@ export async function getStoreManifestTheme(store: Store): Promise<StoreManifest
       : defaultStoreSettingsConfig();
 
     const design = resolveCatalogDesign(config.catalogDesign, store.rubro_tienda);
+    const preset = CATALOG_THEME_PRESETS[design.theme];
 
     return {
       theme_color: design.primaryColor,
-      background_color: "#ffffff",
+      background_color: preset.pageBg,
     };
   } catch {
     return {

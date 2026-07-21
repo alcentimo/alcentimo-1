@@ -38,8 +38,8 @@ export function DesignCatalogInlinePreview({
   const { isPrefetching } = useSmartPreviewRubro(previewRubro);
 
   const resolvedDesign = useMemo(
-    () => resolveCatalogDesign(design, previewRubro),
-    [design, previewRubro],
+    () => resolveCatalogDesign(design, store.rubro_tienda ?? previewRubro),
+    [design, store.rubro_tienda, previewRubro],
   );
 
   const themeLabel = CATALOG_THEME_PRESETS[resolvedDesign.theme].label;

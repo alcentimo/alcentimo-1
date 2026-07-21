@@ -191,6 +191,7 @@ export function SettingsPanel({
                 initialConfig.catalogDesign,
                 store?.rubro_tienda ?? "general",
               )}
+              storeRubro={store?.rubro_tienda ?? "general"}
               preview={designPreview}
             />
           </div>

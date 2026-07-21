@@ -255,7 +255,10 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
       theme:
         designRaw.theme === "minimal" ||
         designRaw.theme === "impact" ||
-        designRaw.theme === "classic"
+        designRaw.theme === "classic" ||
+        designRaw.theme === "fashion-pure" ||
+        designRaw.theme === "fashion-nocturne" ||
+        designRaw.theme === "fashion-editorial"
           ? designRaw.theme
           : designRaw.layout === "list"
             ? "classic"

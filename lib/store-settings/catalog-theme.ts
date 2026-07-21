@@ -6,6 +6,8 @@ import {
 } from "@/src/config/categories";
 import {
   CATALOG_THEME_PRESETS,
+  FASHION_CATALOG_THEME_IDS,
+  isFashionCatalogThemeId,
 } from "@/lib/store-settings/catalog-theme-presets";
 import type {
   CatalogDesignSettings,
@@ -18,7 +20,7 @@ import { cn } from "@/lib/cn";
 
 const RUBRO_THEME_COLORS: Record<StoreRubro, string> = {
   ferreteria: "#ea580c",
-  "ropa-moda": "#db2777",
+  "ropa-moda": "#171717",
   calzado: "#7c3aed",
   tecnologia: "#2563eb",
   alimentos: "#16a34a",
@@ -28,6 +30,21 @@ const RUBRO_THEME_COLORS: Record<StoreRubro, string> = {
 };
 
 const HEX_COLOR_PATTERN = /^#([0-9a-fA-F]{6})$/;
+
+const LEGACY_TO_FASHION: Record<"minimal" | "impact" | "classic", CatalogThemeId> = {
+  minimal: "fashion-pure",
+  impact: "fashion-nocturne",
+  classic: "fashion-editorial",
+};
+
+const FASHION_TO_LEGACY: Record<
+  "fashion-pure" | "fashion-nocturne" | "fashion-editorial",
+  CatalogThemeId
+> = {
+  "fashion-pure": "minimal",
+  "fashion-nocturne": "impact",
+  "fashion-editorial": "classic",
+};
 
 export function getDefaultPrimaryColorForRubro(
   rubro: string | null | undefined,
@@ -49,7 +66,14 @@ export function normalizeCatalogLayout(value: unknown): CatalogLayoutMode {
 }
 
 export function normalizeCatalogTheme(value: unknown): CatalogThemeId | null {
-  if (value === "minimal" || value === "impact" || value === "classic") {
+  if (
+    value === "minimal" ||
+    value === "impact" ||
+    value === "classic" ||
+    value === "fashion-pure" ||
+    value === "fashion-nocturne" ||
+    value === "fashion-editorial"
+  ) {
     return value;
   }
   return null;
@@ -96,13 +120,38 @@ function inferThemeFromLegacy(
   return "minimal";
 }
 
+/** Ajusta el tema al conjunto permitido por el rubro de la tienda. */
+export function coerceThemeForRubro(
+  theme: CatalogThemeId,
+  storeRubro: string | null | undefined,
+): CatalogThemeId {
+  const rubro = normalizeStoreRubro(storeRubro);
+
+  if (rubro === "ropa-moda") {
+    if (isFashionCatalogThemeId(theme)) {
+      return theme;
+    }
+    if (theme === "minimal" || theme === "impact" || theme === "classic") {
+      return LEGACY_TO_FASHION[theme];
+    }
+    return FASHION_CATALOG_THEME_IDS[0];
+  }
+
+  if (isFashionCatalogThemeId(theme)) {
+    return FASHION_TO_LEGACY[theme];
+  }
+
+  return theme;
+}
+
 export function resolveCatalogDesign(
   design: Partial<CatalogDesignSettings> | undefined,
   storeRubro: string | null | undefined,
 ): Required<Pick<CatalogDesignSettings, "primaryColor" | "layout">> &
   CatalogDesignSettings {
-  const theme =
+  const rawTheme =
     normalizeCatalogTheme(design?.theme) ?? inferThemeFromLegacy(design);
+  const theme = coerceThemeForRubro(rawTheme, storeRubro);
   const preset = CATALOG_THEME_PRESETS[theme];
   const saleMode = normalizeCatalogSaleMode(design?.saleMode);
   const visibility = normalizeCatalogVisibility(design?.visibility);
@@ -132,21 +181,26 @@ export function resolveCatalogDesign(
   };
 }
 
-export function getCatalogThemeStyle(design: CatalogDesignSettings): CSSProperties {
-  const resolved = resolveCatalogDesign(design, undefined);
+export function getCatalogThemeStyle(
+  design: CatalogDesignSettings,
+  storeRubro?: string | null,
+): CSSProperties {
+  const resolved = resolveCatalogDesign(design, storeRubro);
   const preset = CATALOG_THEME_PRESETS[resolved.theme];
 
   return {
     ["--txn-primary" as string]: resolved.primaryColor,
     ["--txn-primary-hover" as string]: resolved.primaryColor,
+    ["--txn-page-bg" as string]: preset.pageBg,
     ...preset.cssVars,
   } as CSSProperties;
 }
 
 export function getCatalogDesignClasses(
   design: CatalogDesignSettings,
+  storeRubro?: string | null,
 ): string {
-  const resolved = resolveCatalogDesign(design, undefined);
+  const resolved = resolveCatalogDesign(design, storeRubro);
 
   return cn(
     `txn-catalog--theme-${resolved.theme}`,

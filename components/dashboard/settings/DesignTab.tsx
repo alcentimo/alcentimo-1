@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useState, useTransition, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import { ChevronDown, Eye } from "lucide-react";
 import {
   Sheet,
@@ -18,8 +25,8 @@ import { saveCatalogDesignSettings } from "@/lib/settings/actions";
 import {
   CATALOG_SALE_MODE_IDS,
   CATALOG_SALE_MODE_PRESETS,
-  CATALOG_THEME_IDS,
   CATALOG_THEME_PRESETS,
+  getCatalogThemeIdsForRubro,
 } from "@/lib/store-settings/catalog-theme-presets";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { Store } from "@/lib/database.types";
@@ -46,6 +53,7 @@ interface DesignTabPreviewContext {
 
 interface DesignTabProps {
   initialDesign: CatalogDesignSettings;
+  storeRubro?: string | null;
   preview?: DesignTabPreviewContext | null;
 }
 
@@ -156,16 +164,31 @@ function DesignOption({
   );
 }
 
-export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
+export function DesignTab({
+  initialDesign,
+  storeRubro: storeRubroProp = null,
+  preview = null,
+}: DesignTabProps) {
   const [design, setDesign] = useState(initialDesign);
   const [previewRubro, setPreviewRubro] = useState<StoreRubro>(() =>
-    normalizeStoreRubro(preview?.store.rubro_tienda ?? "general"),
+    normalizeStoreRubro(
+      storeRubroProp ?? preview?.store.rubro_tienda ?? "general",
+    ),
   );
   const [error, setError] = useState<string | null>(null);
   const [savingField, setSavingField] = useState<SavingField>(null);
   const [openSection, setOpenSection] = useState<AccordionSection>("theme");
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [isSaving, startSave] = useTransition();
+
+  const storeRubro = normalizeStoreRubro(
+    storeRubroProp ?? preview?.store.rubro_tienda ?? "general",
+  );
+  const isFashionStore = storeRubro === "ropa-moda";
+  const availableThemeIds = useMemo(
+    () => getCatalogThemeIdsForRubro(storeRubro),
+    [storeRubro],
+  );
 
   const persist = useCallback(
     (nextDesign: CatalogDesignSettings, field: SavingField) => {
@@ -205,6 +228,14 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
     updateDesign({ theme }, theme);
   }
 
+  useEffect(() => {
+    if (!availableThemeIds.includes(design.theme)) {
+      setTheme(availableThemeIds[0]);
+    }
+    // Solo al montar / cambiar rubro de tienda: alinea tema guardado al set permitido.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intencional
+  }, [storeRubro]);
+
   function setSaleMode(saleMode: CatalogSaleMode) {
     if (saleMode === design.saleMode) return;
     updateDesign({ saleMode }, saleMode);
@@ -225,7 +256,7 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
     setOpenSection(section);
   }
 
-  const themeSummary = CATALOG_THEME_PRESETS[design.theme].label;
+  const themeSummary = CATALOG_THEME_PRESETS[design.theme]?.label ?? "Tema";
   const saleSummary = CATALOG_SALE_MODE_PRESETS[design.saleMode].label;
   const visibilitySummary =
     [
@@ -266,46 +297,55 @@ export function DesignTab({ initialDesign, preview = null }: DesignTabProps) {
                 Estilo del catálogo
               </h2>
               <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                Se guarda automáticamente al cambiar una opción.
+                {isFashionStore
+                  ? "Elige uno de los tres looks de alta gama. Se aplica al instante en tu catálogo."
+                  : "Se guarda automáticamente al cambiar una opción."}
               </p>
             </div>
             <SavingHint visible={isSaving} />
           </div>
 
           <div className="design-studio-accordions">
-            <div className="design-preview-rubro-picker">
-              <label htmlFor="design-preview-rubro" className="design-preview-rubro-label">
-                Viendo catálogo de:
-              </label>
-              <Select
-                id="design-preview-rubro"
-                value={previewRubro}
-                onChange={(event) =>
-                  setPreviewRubro(normalizeStoreRubro(event.target.value))
-                }
-                className="design-preview-rubro-select"
-                aria-describedby="design-preview-rubro-hint"
-              >
-                {STORE_RUBRO_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-              <p id="design-preview-rubro-hint" className="design-preview-rubro-hint">
-                Solo vista previa. No cambia el rubro de tu tienda en Perfil de
-                Empresa.
-              </p>
-            </div>
+            {!isFashionStore ? (
+              <div className="design-preview-rubro-picker">
+                <label htmlFor="design-preview-rubro" className="design-preview-rubro-label">
+                  Viendo catálogo de:
+                </label>
+                <Select
+                  id="design-preview-rubro"
+                  value={previewRubro}
+                  onChange={(event) =>
+                    setPreviewRubro(normalizeStoreRubro(event.target.value))
+                  }
+                  className="design-preview-rubro-select"
+                  aria-describedby="design-preview-rubro-hint"
+                >
+                  {STORE_RUBRO_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+                <p id="design-preview-rubro-hint" className="design-preview-rubro-hint">
+                  Solo vista previa. No cambia el rubro de tu tienda en Perfil de
+                  Empresa.
+                </p>
+              </div>
+            ) : null}
 
             <DesignAccordion
-              title="Tema"
+              title={isFashionStore ? "Tema de moda" : "Tema"}
               summary={themeSummary}
               open={openSection === "theme"}
               onToggle={() => toggleSection("theme")}
             >
               <div className="space-y-1">
-                {CATALOG_THEME_IDS.map((themeId) => {
+                {isFashionStore ? (
+                  <p className="mb-2 text-xs leading-relaxed text-zinc-500">
+                    Estándar de alta gama: tres looks fijos, sin colores libres.
+                  </p>
+                ) : null}
+                {availableThemeIds.map((themeId) => {
                   const preset = CATALOG_THEME_PRESETS[themeId];
                   return (
                     <DesignOption

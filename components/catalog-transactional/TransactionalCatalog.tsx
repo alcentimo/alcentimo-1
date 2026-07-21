@@ -65,11 +65,11 @@ export function TransactionalCatalog({
     <div
       className={cn(
         "txn-catalog",
-        getCatalogDesignClasses(catalogDesign),
+        getCatalogDesignClasses(catalogDesign, store.rubro_tienda),
         previewMode && "txn-catalog--preview",
         previewMode && referenceMode && "txn-catalog--reference-mode",
       )}
-      style={getCatalogThemeStyle(catalogDesign)}
+      style={getCatalogThemeStyle(catalogDesign, store.rubro_tienda)}
     >
       <header className="txn-catalog-header">
         <div className="txn-catalog-header-inner">

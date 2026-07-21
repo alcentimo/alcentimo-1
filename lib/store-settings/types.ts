@@ -92,7 +92,13 @@ export interface LocationHoursSettings {
 
 export type CatalogLayoutMode = "grid" | "list";
 
-export type CatalogThemeId = "minimal" | "impact" | "classic";
+export type CatalogThemeId =
+  | "minimal"
+  | "impact"
+  | "classic"
+  | "fashion-pure"
+  | "fashion-nocturne"
+  | "fashion-editorial";
 
 export type CatalogSaleMode = "quick" | "showcase";
 
