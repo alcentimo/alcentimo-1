@@ -24,6 +24,7 @@ import {
 import {
   getExtraFieldsForProductCategory,
   getProductCategoriesForRubro,
+  normalizeStoreRubro,
 } from "@/src/config/categories";
 import {
   filterExtraFieldsForActiveModule,
@@ -34,6 +35,21 @@ import {
   parseFoodModifiersFromMetadata,
   type FoodModifiersConfig,
 } from "@/lib/rubros/modules/alimentos";
+import { getTechSpecLabels } from "@/lib/rubros/modules/tecnologia/config";
+
+function resolveProductFieldLabels(
+  rubro: string,
+  categorySlug: string,
+): string[] {
+  if (storeUsesRubroProductModule(rubro, "tecnologia")) {
+    return getTechSpecLabels(categorySlug);
+  }
+  const normalized = normalizeStoreRubro(rubro);
+  return filterExtraFieldsForActiveModule(
+    normalized,
+    getExtraFieldsForProductCategory(normalized, categorySlug),
+  );
+}
 
 export type ProductFormState = {
   error?: string;
@@ -173,7 +189,7 @@ export async function createProduct(
     String(formData.get("extra_fields_json") ?? ""),
   );
   if (extraFieldsParsed.error) return { error: extraFieldsParsed.error };
-  const fieldLabels = getExtraFieldsForProductCategory(rubro, categorySlug);
+  const fieldLabels = resolveProductFieldLabels(rubro, categorySlug);
   let metadata = buildProductMetadata(
     null,
     extraFieldsParsed.fields,
@@ -372,10 +388,7 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     : categoryRelation?.slug;
   const resolvedCategorySlug =
     categorySlug ?? getProductCategoriesForRubro(rubro)[0]?.slug ?? "general";
-  const fieldLabels = filterExtraFieldsForActiveModule(
-    rubro,
-    getExtraFieldsForProductCategory(rubro, resolvedCategorySlug),
-  );
+  const fieldLabels = resolveProductFieldLabels(rubro, resolvedCategorySlug);
   const storedExtraFields = parseExtraFieldsFromMetadata(
     product.metadata as Record<string, unknown> | null,
   );
@@ -478,7 +491,7 @@ export async function updateProduct(
     String(formData.get("extra_fields_json") ?? ""),
   );
   if (extraFieldsParsed.error) return { error: extraFieldsParsed.error };
-  const fieldLabels = getExtraFieldsForProductCategory(rubro, categorySlug);
+  const fieldLabels = resolveProductFieldLabels(rubro, categorySlug);
   let metadata = buildProductMetadata(
     existingProduct.metadata as Record<string, unknown> | null,
     extraFieldsParsed.fields,

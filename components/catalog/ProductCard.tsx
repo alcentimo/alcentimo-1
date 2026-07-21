@@ -23,7 +23,16 @@ import {
   hasFoodModifiers,
   parseFoodModifiersFromMetadata,
 } from "@/lib/rubros/modules/alimentos";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/cn";
+
+const TechSpecsChips = dynamic(
+  () =>
+    import("@/components/rubros/tecnologia/TechSpecsChips").then(
+      (mod) => mod.TechSpecsChips,
+    ),
+  { ssr: false },
+);
 
 interface ProductCardProps {
   product: CatalogListItem;
@@ -103,6 +112,7 @@ export const ProductCard = memo(function ProductCard({
   >([]);
 
   const isAlimentos = storeUsesRubroProductModule(storeRubro, "alimentos");
+  const isTecnologia = storeUsesRubroProductModule(storeRubro, "tecnologia");
   const foodHasModifiers =
     isAlimentos &&
     hasFoodModifiers(parseFoodModifiersFromMetadata(product.metadata ?? null));
@@ -258,6 +268,7 @@ export const ProductCard = memo(function ProductCard({
 
           <div className="store-product-slot store-product-slot-title">
             <h2 className="store-product-name">{product.product_name}</h2>
+            {isTecnologia ? <TechSpecsChips product={product} /> : null}
           </div>
 
           {showDescription ? (

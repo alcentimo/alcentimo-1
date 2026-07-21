@@ -18,6 +18,7 @@ import {
   RubroVariantsSection,
 } from "@/components/rubros/RubroVariantsSection";
 import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
+import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
@@ -98,6 +99,10 @@ export function ProductForm({
   const isAlimentos = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
     "alimentos",
+  );
+  const isTecnologia = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "tecnologia",
   );
   const defaultCategorySlug =
     productFormConfig.productCategories[0]?.slug ?? "camisas";
@@ -339,12 +344,23 @@ export function ProductForm({
         )}
       </div>
 
-      {!isRopaModa && !isAlimentos && fieldLabels.length > 0 ? (
+      {!isRopaModa && !isAlimentos && !isTecnologia && fieldLabels.length > 0 ? (
         <ProductExtraFieldsSection
           fieldLabels={fieldLabels}
           values={extraFields}
           onChange={setExtraFields}
           categoryLabel={categoryLabel}
+          disabled={isBusy}
+        />
+      ) : null}
+
+      {isTecnologia ? (
+        <RubroTechSpecsSection
+          rubro={productFormConfig.rubroTienda}
+          categorySlug={categorySlug}
+          categoryLabel={categoryLabel}
+          values={extraFields}
+          onChange={setExtraFields}
           disabled={isBusy}
         />
       ) : null}

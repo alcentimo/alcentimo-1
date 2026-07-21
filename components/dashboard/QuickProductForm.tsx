@@ -10,6 +10,7 @@ import { ProductImageField } from "@/components/dashboard/ProductImageField";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
 import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
+import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
@@ -111,6 +112,10 @@ function QuickProductFormSession({
     productFormConfig.rubroTienda,
     "alimentos",
   );
+  const isTecnologia = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "tecnologia",
+  );
   const defaultCategorySlug =
     productFormConfig.productCategories[0]?.slug ?? "camisas";
 
@@ -192,7 +197,9 @@ function QuickProductFormSession({
     formData.set("variants_json", serializeVariantsForForm(variants));
     formData.set(
       "extra_fields_json",
-      serializeExtraFieldsJson(isRopaModa || isAlimentos ? {} : extraFields),
+      serializeExtraFieldsJson(
+        isRopaModa || isAlimentos ? {} : extraFields,
+      ),
     );
     if (isAlimentos) {
       formData.set(
@@ -246,7 +253,11 @@ function QuickProductFormSession({
           required
           maxLength={120}
           placeholder={
-            isAlimentos ? "Ej: Arepa reina pepiada" : "Ej: Arroz Premium 1kg"
+            isAlimentos
+              ? "Ej: Arepa reina pepiada"
+              : isTecnologia
+                ? "Ej: Smartphone Nova X 256 GB"
+                : "Ej: Arroz Premium 1kg"
           }
           className="payment-field-input mt-1.5"
           autoFocus
@@ -313,12 +324,24 @@ function QuickProductFormSession({
         />
       )}
 
-      {!isRopaModa && fieldLabels.length > 0 ? (
+      {!isRopaModa && !isAlimentos && !isTecnologia && fieldLabels.length > 0 ? (
         <ProductExtraFieldsSection
           fieldLabels={fieldLabels}
           values={extraFields}
           onChange={setExtraFields}
           categoryLabel={categoryLabel}
+          disabled={isBusy}
+          variant="compact"
+        />
+      ) : null}
+
+      {isTecnologia ? (
+        <RubroTechSpecsSection
+          rubro={productFormConfig.rubroTienda}
+          categorySlug={categorySlug}
+          categoryLabel={categoryLabel}
+          values={extraFields}
+          onChange={setExtraFields}
           disabled={isBusy}
           variant="compact"
         />

@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { CUSTOM_PRODUCT_CATEGORY_VALUE } from "@/lib/products/category-selection";
 import { getExtraFieldsForProductCategory } from "@/src/config/categories";
-import { filterExtraFieldsForActiveModule } from "@/lib/rubros/registry";
+import {
+  filterExtraFieldsForActiveModule,
+  getActiveProductModuleId,
+} from "@/lib/rubros/registry";
+import { getTechSpecLabels } from "@/lib/rubros/modules/tecnologia/config";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import {
   pickExtraFieldValues,
@@ -44,6 +48,9 @@ export function useProductCategoryFields(
 
   const fieldLabels = useMemo(() => {
     if (categorySlug === CUSTOM_PRODUCT_CATEGORY_VALUE) return [];
+    if (getActiveProductModuleId(config.rubroTienda) === "tecnologia") {
+      return getTechSpecLabels(categorySlug);
+    }
     return filterExtraFieldsForActiveModule(
       config.rubroTienda,
       getExtraFieldsForProductCategory(config.rubroTienda, categorySlug),

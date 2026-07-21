@@ -56,6 +56,10 @@ export function TransactionalCatalog({
   const { showOfficialRate, showBsConversion } = catalogCurrency;
   const { addItem } = useCart();
   const isFoodMenu = storeUsesRubroProductModule(store.rubro_tienda, "alimentos");
+  const isTechCatalog = storeUsesRubroProductModule(
+    store.rubro_tienda,
+    "tecnologia",
+  );
 
   const availableProducts = useMemo(
     () => products.filter((product) => !isProductOutOfStock(product)),
@@ -103,6 +107,7 @@ export function TransactionalCatalog({
         "txn-catalog",
         getCatalogDesignClasses(catalogDesign, store.rubro_tienda),
         isFoodMenu && "txn-catalog--food-menu",
+        isTechCatalog && "txn-catalog--tech",
         previewMode && "txn-catalog--preview",
         previewMode && referenceMode && "txn-catalog--reference-mode",
       )}
@@ -129,7 +134,7 @@ export function TransactionalCatalog({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="txn-catalog-eyebrow">
-                  {isFoodMenu ? "Menú" : "Catálogo"}
+                  {isFoodMenu ? "Menú" : isTechCatalog ? "Tech" : "Catálogo"}
                 </p>
                 <StoreOpenBadge locationHours={purchaseInfo.locationHours} />
               </div>

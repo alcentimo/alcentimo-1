@@ -7,7 +7,7 @@ export const STORE_RUBRO_OPTIONS = [
   { value: "ferreteria", label: "Ferretería" },
   { value: "ropa-moda", label: "Ropa y Moda" },
   { value: "calzado", label: "Calzado" },
-  { value: "tecnologia", label: "Tecnología" },
+  { value: "tecnologia", label: "Tecnología y Electrónica" },
   { value: "alimentos", label: "Alimentos y Bebidas" },
   { value: "salud-belleza", label: "Salud y Belleza" },
   { value: "hogar-decoracion", label: "Hogar y Decoración" },
@@ -62,12 +62,14 @@ export const STORE_RUBRO_CONFIGS: StoreRubroConfig[] = [
   },
   {
     rubro: "tecnologia",
-    label: "Tecnología",
+    label: "Tecnología y Electrónica",
     categorias: [
-      { slug: "celulares", label: "Celulares", campos: ["Memoria RAM", "Almacenamiento", "Color"] },
-      { slug: "laptops", label: "Laptops", campos: ["Memoria RAM", "Almacenamiento", "Pantalla"] },
-      { slug: "accesorios", label: "Accesorios", campos: ["Compatibilidad", "Color"] },
-      { slug: "repuestos", label: "Repuestos", campos: ["Modelo compatible", "Marca"] },
+      { slug: "celulares", label: "Celulares", campos: [] },
+      { slug: "laptops", label: "Laptops", campos: [] },
+      { slug: "tablets", label: "Tablets", campos: [] },
+      { slug: "audio", label: "Audio", campos: [] },
+      { slug: "accesorios", label: "Accesorios", campos: [] },
+      { slug: "repuestos", label: "Repuestos", campos: [] },
     ],
   },
   {
