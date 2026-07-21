@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 
 interface BrandLogoProps {
   href?: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   showName?: boolean;
   subtitle?: string;
   className?: string;
@@ -19,30 +19,58 @@ interface BrandLogoProps {
   platformName?: string;
 }
 
+function brandMarkImageSize(size: "sm" | "md" | "lg") {
+  if (size === "sm") {
+    return {
+      container: "h-8 max-w-[7.5rem]",
+      width: 120,
+      height: 32,
+    };
+  }
+  if (size === "lg") {
+    return {
+      container: "h-10 max-w-[11rem] sm:h-11 sm:max-w-[13rem]",
+      width: 208,
+      height: 44,
+    };
+  }
+  return {
+    container: "h-9 max-w-[9rem]",
+    width: 144,
+    height: 36,
+  };
+}
+
 function BrandMark({
   size,
   logoUrl,
   platformName,
 }: {
-  size: "sm" | "md";
+  size: "sm" | "md" | "lg";
   logoUrl: string | null;
   platformName: string;
 }) {
-  const markSize = size === "sm" ? "brand-mark-sm" : "brand-mark-md";
+  const markSize =
+    size === "sm"
+      ? "brand-mark-sm"
+      : size === "lg"
+        ? "brand-mark-lg"
+        : "brand-mark-md";
+  const imageSize = brandMarkImageSize(size);
 
   if (logoUrl) {
     return (
       <span
         className={cn(
           "relative flex shrink-0 items-center justify-center overflow-hidden",
-          size === "sm" ? "h-8 max-w-[7.5rem]" : "h-9 max-w-[9rem]",
+          imageSize.container,
         )}
       >
         <Image
           src={logoUrl}
           alt={`Logo de ${platformName}`}
-          width={size === "sm" ? 120 : 144}
-          height={size === "sm" ? 32 : 36}
+          width={imageSize.width}
+          height={imageSize.height}
           className="h-full w-auto max-w-full object-contain object-left"
           unoptimized={logoUrl.includes("?v=")}
         />
