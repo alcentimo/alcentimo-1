@@ -21,16 +21,15 @@ function absoluteAssetUrl(src: string, origin: string): string {
 
 function buildManifestIcons(store: Store, origin: string): StoreManifestIcon[] {
   const base = normalizeOrigin(origin);
+  const logoUrl = store.logo_url ? absoluteAssetUrl(store.logo_url, base) : null;
 
   const icon192 = store.pwa_icon_192_url
     ? absoluteAssetUrl(store.pwa_icon_192_url, base)
-    : `${base}/icon-192x192.png`;
+    : logoUrl ?? `${base}/icon-192x192.png`;
 
   const icon512 = store.pwa_icon_512_url
     ? absoluteAssetUrl(store.pwa_icon_512_url, base)
-    : store.logo_url
-      ? absoluteAssetUrl(store.logo_url, base)
-      : `${base}/icon-512x512.png`;
+    : logoUrl ?? `${base}/icon-512x512.png`;
 
   return [
     {
@@ -54,6 +53,13 @@ function buildManifestIcons(store: Store, origin: string): StoreManifestIcon[] {
   ];
 }
 
+function buildShortName(storeName: string): string {
+  const trimmed = storeName.trim();
+  if (trimmed.length <= 12) return trimmed;
+  const withoutSpaces = trimmed.slice(0, 12).trimEnd();
+  return withoutSpaces.length >= 8 ? withoutSpaces : trimmed.slice(0, 12);
+}
+
 export function buildStoreWebManifest(
   store: Store,
   origin?: string,
@@ -68,13 +74,13 @@ export function buildStoreWebManifest(
   return {
     id: pwa.id,
     name: storeName,
-    short_name: storeName.slice(0, 12),
+    short_name: buildShortName(storeName),
     description: `Catálogo y pedidos de ${storeName}`,
     start_url: pwa.startUrl,
     scope: pwa.scope,
     display: "standalone",
     display_override: ["standalone", "fullscreen"],
-    orientation: "portrait-primary",
+    orientation: "any",
     background_color: theme?.background_color ?? "#ffffff",
     theme_color: theme?.theme_color ?? "#0d9488",
     lang: "es",
@@ -100,7 +106,7 @@ export function buildFallbackStoreWebManifest(
     scope: pwa.scope,
     display: "standalone",
     display_override: ["standalone", "fullscreen"],
-    orientation: "portrait-primary",
+    orientation: "any",
     background_color: "#ffffff",
     theme_color: "#0d9488",
     lang: "es",

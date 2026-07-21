@@ -12,6 +12,7 @@ import {
   getStoreCatalogManifestAbsoluteUrl,
 } from "@/lib/pwa/catalog-sw-paths";
 import { getRequestOrigin } from "@/lib/pwa/get-request-origin";
+import { getStoreManifestTheme } from "@/lib/pwa/get-store-manifest-theme";
 import { getPublicStoreBySlug } from "@/lib/stores";
 
 interface TransactionalCatalogLayoutProps {
@@ -33,11 +34,18 @@ export async function generateMetadata({
   const manifestAbsoluteUrl = getStoreCatalogManifestAbsoluteUrl(store.slug, origin);
   const canonicalUrl = getCatalogCanonicalUrl(store.slug, origin);
   const storeName = store.name.trim();
+  const theme = await getStoreManifestTheme(store);
   const icons: Metadata["icons"] = [];
 
   if (store.pwa_icon_192_url) {
     icons.push({
       url: store.pwa_icon_192_url,
+      sizes: "192x192",
+      type: "image/png",
+    });
+  } else if (store.logo_url) {
+    icons.push({
+      url: store.logo_url,
       sizes: "192x192",
       type: "image/png",
     });
@@ -66,6 +74,7 @@ export async function generateMetadata({
     },
     manifest: manifestAbsoluteUrl,
     applicationName: storeName,
+    themeColor: theme.theme_color,
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",

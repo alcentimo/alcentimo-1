@@ -1,7 +1,7 @@
 "use client";
 
-import { Download, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Download, Share, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
 import {
   getDeferredInstallPrompt,
@@ -45,6 +45,15 @@ function isAppInstalled(): boolean {
   return standalone || iosStandalone;
 }
 
+function isIosDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  const ua = window.navigator.userAgent;
+  return (
+    /iPad|iPhone|iPod/.test(ua) ||
+    (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1)
+  );
+}
+
 function isBannerDismissed(storeSlug: string): boolean {
   if (typeof window === "undefined") return false;
 
@@ -60,6 +69,7 @@ function isBannerDismissed(storeSlug: string): boolean {
 export function InstallPwaBanner({
   storeSlug,
   storeName,
+  storeLogoUrl,
 }: InstallPwaBannerProps) {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(() => getDeferredInstallPrompt());
@@ -67,6 +77,7 @@ export function InstallPwaBanner({
   const [installing, setInstalling] = useState(false);
   const [visible, setVisible] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [iosMode, setIosMode] = useState(false);
 
   const dismissBanner = useCallback(() => {
     localStorage.setItem(getDismissStorageKey(storeSlug), String(Date.now()));
@@ -80,18 +91,22 @@ export function InstallPwaBanner({
       return;
     }
 
+    const ios = isIosDevice();
+    setIosMode(ios);
     setVisible(true);
 
     const unsubscribe = subscribeToInstallPrompt((event) => {
       setDeferredPrompt(event);
       if (event) {
         setManualInstallMode(false);
+        setIosMode(false);
       }
     });
 
     const manualTimer = window.setTimeout(() => {
       if (!getDeferredInstallPrompt()) {
         setManualInstallMode(true);
+        if (ios) setExpanded(true);
       }
     }, 1200);
 
@@ -128,6 +143,22 @@ export function InstallPwaBanner({
     setExpanded(true);
   }
 
+  const installHint = useMemo(() => {
+    if (iosMode) {
+      return (
+        <>
+          En iPhone/iPad: toca <Share className="inline h-3 w-3" aria-hidden="true" />{" "}
+          <strong>Compartir</strong> → <strong>Añadir a pantalla de inicio</strong>
+        </>
+      );
+    }
+    return (
+      <>
+        En Chrome o Edge: menú ⋮ → <strong>Instalar aplicación</strong> (también en PC)
+      </>
+    );
+  }, [iosMode]);
+
   if (!visible || isAppInstalled()) {
     return null;
   }
@@ -136,8 +167,10 @@ export function InstallPwaBanner({
   const installLabel = installing
     ? "Instalando…"
     : deferredPrompt
-      ? "Instalar"
-      : "Instalar app";
+      ? "Instalar aplicación"
+      : iosMode
+        ? "Añadir a inicio"
+        : "Instalar aplicación";
 
   return (
     <div
@@ -148,6 +181,27 @@ export function InstallPwaBanner({
       role="region"
       aria-label="Instalar aplicación"
     >
+      <div className="install-pwa-banner-brand">
+        {storeLogoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={storeLogoUrl}
+            alt=""
+            width={28}
+            height={28}
+            className="install-pwa-banner-logo"
+          />
+        ) : (
+          <span className="install-pwa-banner-logo-fallback" aria-hidden="true">
+            {displayName.charAt(0).toUpperCase()}
+          </span>
+        )}
+        <div className="min-w-0">
+          <p className="install-pwa-banner-title">{displayName}</p>
+          <p className="install-pwa-banner-subtitle">Instala el catálogo en tu dispositivo</p>
+        </div>
+      </div>
+
       <button
         type="button"
         onClick={() => void handleInstallClick()}
@@ -155,13 +209,11 @@ export function InstallPwaBanner({
         className="install-pwa-banner-action"
       >
         <Download className="h-3.5 w-3.5" aria-hidden="true" />
-        {installLabel} {displayName}
+        {installLabel}
       </button>
 
-      {expanded && manualInstallMode && !deferredPrompt ? (
-        <p className="install-pwa-banner-hint">
-          En Chrome: menú ⋮ → <strong>Instalar aplicación</strong>
-        </p>
+      {expanded && (manualInstallMode || iosMode) && !deferredPrompt ? (
+        <p className="install-pwa-banner-hint">{installHint}</p>
       ) : null}
 
       <button
@@ -171,7 +223,7 @@ export function InstallPwaBanner({
         aria-expanded={expanded}
         aria-label={expanded ? "Ocultar detalles" : "Ver cómo instalar"}
       >
-        {expanded ? "Menos" : "Más"}
+        {expanded ? "Menos" : "Cómo"}
       </button>
 
       <button

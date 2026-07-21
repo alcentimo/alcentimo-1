@@ -3191,15 +3191,35 @@ body {
 }
 
 .install-pwa-banner {
-  @apply sticky top-0 z-40 flex items-center justify-end gap-1.5 border-b border-teal-200/70 bg-teal-50/95 px-2 py-1.5 text-teal-950 backdrop-blur-sm dark:border-teal-900/40 dark:bg-teal-950/80 dark:text-teal-50;
+  @apply sticky top-0 z-40 flex flex-wrap items-center gap-2 border-b border-teal-200/70 bg-teal-50/95 px-3 py-2 text-teal-950 backdrop-blur-sm dark:border-teal-900/40 dark:bg-teal-950/80 dark:text-teal-50;
 }
 
 .install-pwa-banner--expanded {
-  @apply flex-wrap justify-start gap-2 px-3 py-2;
+  @apply gap-2;
+}
+
+.install-pwa-banner-brand {
+  @apply mr-auto flex min-w-0 flex-1 items-center gap-2;
+}
+
+.install-pwa-banner-logo {
+  @apply h-7 w-7 shrink-0 rounded-lg border border-teal-200/80 bg-white object-cover dark:border-teal-800;
+}
+
+.install-pwa-banner-logo-fallback {
+  @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal-700 text-[11px] font-bold text-white dark:bg-teal-600;
+}
+
+.install-pwa-banner-title {
+  @apply truncate text-xs font-semibold leading-tight;
+}
+
+.install-pwa-banner-subtitle {
+  @apply truncate text-[10px] leading-tight text-teal-800/80 dark:text-teal-100/80;
 }
 
 .install-pwa-banner-action {
-  @apply inline-flex max-w-[calc(100%-4.5rem)] shrink items-center gap-1.5 truncate rounded-full bg-teal-700 px-3 py-1 text-[11px] font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60 dark:bg-teal-600 dark:hover:bg-teal-500;
+  @apply inline-flex shrink-0 items-center gap-1.5 rounded-full bg-teal-700 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60 dark:bg-teal-600 dark:hover:bg-teal-500;
 }
 
 .install-pwa-banner-hint {
