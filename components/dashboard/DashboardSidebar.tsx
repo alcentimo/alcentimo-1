@@ -21,6 +21,7 @@ import {
 } from "@/src/config/dashboard-nav";
 import { cn } from "@/lib/cn";
 import { useLocale } from "@/components/providers/UiPreferencesProvider";
+import { useDashboardRoutePrefetch } from "@/components/dashboard/use-dashboard-route-prefetch";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "alcentimo-dashboard-sidebar-collapsed";
 
@@ -54,20 +55,32 @@ function SidebarNavLink({
   active,
   collapsed,
   onNavigate,
+  onPrefetch,
 }: {
   item: DashboardNavItem;
   label: string;
   active: boolean;
   collapsed: boolean;
   onNavigate: () => void;
+  onPrefetch: (href: string) => void;
 }) {
   const Icon = item.icon;
+
+  function handlePrefetch() {
+    if (!active) {
+      onPrefetch(item.href);
+    }
+  }
 
   return (
     <Link
       href={item.href}
+      prefetch={true}
       className={navLinkClass(active, collapsed)}
       onClick={onNavigate}
+      onMouseEnter={handlePrefetch}
+      onFocus={handlePrefetch}
+      onTouchStart={handlePrefetch}
       title={collapsed ? `${label} — ${item.description}` : item.description}
       aria-current={active ? "page" : undefined}
     >
@@ -99,6 +112,7 @@ export function DashboardSidebar({
   const [supportKey, setSupportKey] = useState(0);
   const navItems = getDashboardNavItems({ isStoreOwner });
   const { t, navLabel } = useLocale();
+  const { prefetchRoute } = useDashboardRoutePrefetch();
 
   useEffect(() => {
     try {
@@ -178,6 +192,7 @@ export function DashboardSidebar({
             active={isDashboardNavItemActive(pathname, item)}
             collapsed={collapsed}
             onNavigate={onCloseMobile}
+            onPrefetch={prefetchRoute}
           />
         ))}
       </nav>
@@ -202,8 +217,12 @@ export function DashboardSidebar({
 
           <Link
             href="/activar"
+            prefetch={true}
             className={navLinkClass(pathname === "/activar", collapsed)}
             onClick={onCloseMobile}
+            onMouseEnter={() => prefetchRoute("/activar")}
+            onFocus={() => prefetchRoute("/activar")}
+            onTouchStart={() => prefetchRoute("/activar")}
             title={collapsed ? "Activar cuenta" : undefined}
           >
             <Rocket className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
@@ -213,11 +232,15 @@ export function DashboardSidebar({
           {canUpgradeToBusiness ? (
             <Link
               href="/dashboard/upgrade"
+              prefetch={true}
               className={navLinkClass(
                 pathname.startsWith("/dashboard/upgrade"),
                 collapsed,
               )}
               onClick={onCloseMobile}
+              onMouseEnter={() => prefetchRoute("/dashboard/upgrade")}
+              onFocus={() => prefetchRoute("/dashboard/upgrade")}
+              onTouchStart={() => prefetchRoute("/dashboard/upgrade")}
               title={collapsed ? "Upgrade a Business" : "Pasar a Business con saldo a favor"}
               aria-current={
                 pathname.startsWith("/dashboard/upgrade") ? "page" : undefined
@@ -272,11 +295,15 @@ export function DashboardSidebar({
           {isSupportAdmin ? (
             <Link
               href="/admin/dashboard"
+              prefetch={true}
               className={navLinkClass(
                 pathname.startsWith("/admin"),
                 collapsed,
               )}
               onClick={onCloseMobile}
+              onMouseEnter={() => prefetchRoute("/admin/dashboard")}
+              onFocus={() => prefetchRoute("/admin/dashboard")}
+              onTouchStart={() => prefetchRoute("/admin/dashboard")}
               title={collapsed ? "Panel Admin" : "Pagos y soporte"}
               aria-current={pathname.startsWith("/admin") ? "page" : undefined}
             >

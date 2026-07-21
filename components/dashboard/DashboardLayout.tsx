@@ -9,6 +9,8 @@ import { BrandLogo } from "@/components/ui/BrandLogo";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
 import { DashboardPreferenceControls } from "@/components/dashboard/DashboardPreferenceControls";
+import { DashboardViewKeepAlive } from "@/components/dashboard/DashboardViewKeepAlive";
+import { DashboardRouteVisitTracker } from "@/components/dashboard/DashboardRouteVisitTracker";
 import { useOptionalLocale } from "@/components/providers/UiPreferencesProvider";
 
 interface DashboardLayoutProps {
@@ -125,7 +127,8 @@ function DashboardShell({
         </header>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 safe-area-inset sm:p-7 lg:p-9">
-          {children}
+          <DashboardRouteVisitTracker pathname={pathname} />
+          <DashboardViewKeepAlive pathname={pathname}>{children}</DashboardViewKeepAlive>
         </main>
       </div>
     </div>
