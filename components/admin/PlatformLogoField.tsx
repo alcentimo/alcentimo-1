@@ -66,7 +66,7 @@ export function PlatformLogoField({
       if (result.url) {
         onChange(result.url);
         clearPreview();
-        setNotice("Logo actualizado. Se refleja en login, panel y landing.");
+        setNotice("Logo actualizado. También se regeneraron los iconos PWA de la app.");
       }
     });
   }

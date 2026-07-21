@@ -4,11 +4,14 @@ import path from "node:path";
 
 const publicDir = path.join(process.cwd(), "public");
 
+/** Fallback PWA icons (emerald brand) when no custom platform logo is uploaded. */
 function createIconSvg(size) {
+  const radius = Math.round(size * 0.18);
+  const fontSize = Math.round(size * 0.42);
   return `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100%" height="100%" rx="${size * 0.18}" fill="#171717"/>
+  <rect width="100%" height="100%" rx="${radius}" fill="#059669"/>
   <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
-        font-family="Arial, Helvetica, sans-serif" font-size="${Math.round(size * 0.42)}"
+        font-family="Arial, Helvetica, sans-serif" font-size="${fontSize}"
         font-weight="700" fill="#ffffff">a</text>
 </svg>`;
 }

@@ -1,13 +1,13 @@
 {
-  "name": "alcentimo",
-  "short_name": "alcentimo",
-  "description": "alcentimo — Progressive Web App",
+  "name": "Alcentimo",
+  "short_name": "Alcentimo",
+  "description": "Inventario y catálogo digital",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#171717",
+  "theme_color": "#0d9488",
   "lang": "es",
   "icons": [
     {

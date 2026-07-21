@@ -6,6 +6,7 @@ import {
 } from "@/lib/image-compress";
 import { PRODUCT_IMAGE_MAX_INPUT_BYTES, PRODUCT_IMAGE_MAX_OUTPUT_BYTES } from "@/lib/product-image";
 import { processStoreLogoFile } from "@/lib/store-logo/process-logo";
+import { processPlatformLogoFile } from "@/lib/platform/process-platform-logo";
 
 export const PRODUCT_IMAGES_BUCKET = "product-images";
 export const STORE_ASSETS_BUCKET = "store-assets";
@@ -216,54 +217,77 @@ export async function removeStoreLogoAssets(
 
 export interface UploadPlatformLogoResult {
   url?: string;
+  pwaIcon192Url?: string;
+  pwaIcon512Url?: string;
   error?: string;
 }
 
-const PLATFORM_LOGO_PATH = "brand/logo.webp";
+function getPlatformLogoStoragePaths() {
+  return {
+    logo: "brand/logo.webp",
+    icon192: "brand/pwa/icon-192x192.png",
+    icon512: "brand/pwa/icon-512x512.png",
+  };
+}
 
-/** Sube el logo principal de la plataforma (superadmin). */
+/** Sube el logo principal de la plataforma y genera iconos PWA (192 y 512). */
 export async function uploadPlatformLogoImage(
   supabase: SupabaseClient,
   file: File,
 ): Promise<UploadPlatformLogoResult> {
-  if (!ALLOWED_TYPES.has(file.type)) {
-    return { error: "Formato no permitido. Usa JPG, PNG, WebP o GIF." };
-  }
-
   if (file.size > MAX_QR_INPUT_SIZE) {
     return { error: "La imagen supera el límite de 2 MB." };
   }
 
-  const inputBuffer = Buffer.from(await file.arrayBuffer());
-
-  let optimization: ImageOptimizationResult;
-  try {
-    optimization = await compressProductImage(inputBuffer);
-  } catch {
-    return { error: "No se pudo procesar la imagen. Prueba con otro archivo." };
+  const processed = await processPlatformLogoFile(file);
+  if (!processed.ok) {
+    return { error: processed.error };
   }
 
-  const { error: uploadError } = await supabase.storage
-    .from(PLATFORM_ASSETS_BUCKET)
-    .upload(PLATFORM_LOGO_PATH, optimization.buffer, {
-      cacheControl: "31536000",
-      upsert: true,
-      contentType: "image/webp",
-    });
+  const { logoWebp, icon192, icon512 } = processed.assets;
+  const paths = getPlatformLogoStoragePaths();
+  const version = Date.now();
 
-  if (uploadError) {
-    return { error: uploadError.message };
+  const uploads = [
+    { path: paths.logo, body: logoWebp, contentType: "image/webp" },
+    { path: paths.icon192, body: icon192, contentType: "image/png" },
+    { path: paths.icon512, body: icon512, contentType: "image/png" },
+  ] as const;
+
+  for (const item of uploads) {
+    const { error: uploadError } = await supabase.storage
+      .from(PLATFORM_ASSETS_BUCKET)
+      .upload(item.path, item.body, {
+        cacheControl: "31536000",
+        upsert: true,
+        contentType: item.contentType,
+      });
+
+    if (uploadError) {
+      return { error: uploadError.message };
+    }
   }
 
-  const { data } = supabase.storage
+  const { data: logoData } = supabase.storage
     .from(PLATFORM_ASSETS_BUCKET)
-    .getPublicUrl(PLATFORM_LOGO_PATH);
+    .getPublicUrl(paths.logo);
+  const { data: icon192Data } = supabase.storage
+    .from(PLATFORM_ASSETS_BUCKET)
+    .getPublicUrl(paths.icon192);
+  const { data: icon512Data } = supabase.storage
+    .from(PLATFORM_ASSETS_BUCKET)
+    .getPublicUrl(paths.icon512);
 
-  return { url: `${data.publicUrl}?v=${Date.now()}` };
+  return {
+    url: `${logoData.publicUrl}?v=${version}`,
+    pwaIcon192Url: `${icon192Data.publicUrl}?v=${version}`,
+    pwaIcon512Url: `${icon512Data.publicUrl}?v=${version}`,
+  };
 }
 
 export async function removePlatformLogoAsset(supabase: SupabaseClient): Promise<void> {
-  await supabase.storage.from(PLATFORM_ASSETS_BUCKET).remove([PLATFORM_LOGO_PATH]);
+  const paths = Object.values(getPlatformLogoStoragePaths());
+  await supabase.storage.from(PLATFORM_ASSETS_BUCKET).remove(paths);
 }
 
 export function buildOptimizationMessage(

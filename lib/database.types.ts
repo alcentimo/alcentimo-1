@@ -218,6 +218,8 @@ export interface PlatformSetting {
   platform_name: string;
   tagline: string;
   logo_url: string | null;
+  pwa_icon_192_url: string | null;
+  pwa_icon_512_url: string | null;
   support_email: string | null;
   updated_at: string;
   updated_by: string | null;

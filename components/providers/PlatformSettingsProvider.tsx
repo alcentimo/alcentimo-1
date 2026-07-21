@@ -27,6 +27,8 @@ export function PlatformSettingsProvider({
       platformName: settings.platformName || DEFAULT_PLATFORM_SETTINGS.platformName,
       tagline: settings.tagline || DEFAULT_PLATFORM_SETTINGS.tagline,
       logoUrl: settings.logoUrl,
+      pwaIcon192Url: settings.pwaIcon192Url,
+      pwaIcon512Url: settings.pwaIcon512Url,
       supportEmail: settings.supportEmail,
     }),
     [settings],

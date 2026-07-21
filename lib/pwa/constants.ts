@@ -5,7 +5,7 @@ export const PWA_ADMIN_RESET_VERSION = "1";
 export const PWA_CATALOG_RESET_VERSION = "10";
 
 /** Identidad PWA admin (Alcentimo Admin). */
-export const PWA_ADMIN_IDENTITY_VERSION = "1";
+export const PWA_ADMIN_IDENTITY_VERSION = "2";
 
 /** Identidad base PWA tienda cliente. */
 export const PWA_STORE_IDENTITY_VERSION = "5";

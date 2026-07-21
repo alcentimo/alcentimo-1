@@ -16,7 +16,9 @@ export const fetchPlatformSettings = cache(async (): Promise<PlatformSettings> =
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("platform_settings")
-      .select("id, platform_name, tagline, logo_url, support_email, updated_at, updated_by")
+      .select(
+        "id, platform_name, tagline, logo_url, pwa_icon_192_url, pwa_icon_512_url, support_email, updated_at, updated_by",
+      )
       .eq("id", PLATFORM_SETTINGS_ID)
       .maybeSingle();
 

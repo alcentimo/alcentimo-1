@@ -4,6 +4,8 @@ export interface PlatformSettings {
   platformName: string;
   tagline: string;
   logoUrl: string | null;
+  pwaIcon192Url: string | null;
+  pwaIcon512Url: string | null;
   supportEmail: string | null;
 }
 
@@ -11,6 +13,8 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   platformName: "Alcentimo",
   tagline: "Inventario y catálogo digital",
   logoUrl: null,
+  pwaIcon192Url: null,
+  pwaIcon512Url: null,
   supportEmail: null,
 };
 
@@ -19,6 +23,8 @@ export interface PlatformSettingsRow {
   platform_name: string;
   tagline: string;
   logo_url: string | null;
+  pwa_icon_192_url: string | null;
+  pwa_icon_512_url: string | null;
   support_email: string | null;
   updated_at: string;
   updated_by: string | null;
@@ -33,6 +39,8 @@ export function parsePlatformSettingsRow(
     platformName: row.platform_name?.trim() || DEFAULT_PLATFORM_SETTINGS.platformName,
     tagline: row.tagline?.trim() || DEFAULT_PLATFORM_SETTINGS.tagline,
     logoUrl: row.logo_url?.trim() || null,
+    pwaIcon192Url: row.pwa_icon_192_url?.trim() || null,
+    pwaIcon512Url: row.pwa_icon_512_url?.trim() || null,
     supportEmail: row.support_email?.trim() || null,
   };
 }

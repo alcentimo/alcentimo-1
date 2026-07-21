@@ -23,6 +23,7 @@ export type UpdatePlatformSettingsResult = {
 
 function revalidatePlatformBranding() {
   revalidatePath("/", "layout");
+  revalidatePath("/manifest.json");
   revalidatePath("/admin/dashboard");
   revalidatePath("/dashboard/login");
   revalidatePath("/register");
@@ -86,7 +87,7 @@ export async function updatePlatformSettings(
 
   const { data: existing, error: readError } = await admin
     .from("platform_settings")
-    .select("logo_url")
+    .select("logo_url, pwa_icon_192_url, pwa_icon_512_url")
     .eq("id", PLATFORM_SETTINGS_ID)
     .maybeSingle();
 
@@ -101,6 +102,8 @@ export async function updatePlatformSettings(
       tagline,
       support_email: supportEmail,
       logo_url: existing?.logo_url ?? null,
+      pwa_icon_192_url: existing?.pwa_icon_192_url ?? null,
+      pwa_icon_512_url: existing?.pwa_icon_512_url ?? null,
       updated_at: now,
       updated_by: auth.user.id,
     },
@@ -119,6 +122,8 @@ export async function updatePlatformSettings(
       platformName,
       tagline,
       logoUrl: existing?.logo_url ?? null,
+      pwaIcon192Url: existing?.pwa_icon_192_url ?? null,
+      pwaIcon512Url: existing?.pwa_icon_512_url ?? null,
       supportEmail,
     },
   };
@@ -159,6 +164,8 @@ export async function uploadPlatformLogo(
           platform_name: existing.platform_name,
           tagline: existing.tagline,
           logo_url: upload.url,
+          pwa_icon_192_url: upload.pwaIcon192Url ?? null,
+          pwa_icon_512_url: upload.pwaIcon512Url ?? null,
           support_email: existing.support_email,
           updated_at: now,
           updated_by: auth.user.id,
@@ -173,6 +180,8 @@ export async function uploadPlatformLogo(
       tagline: parsed.tagline,
       support_email: parsed.supportEmail,
       logo_url: upload.url,
+      pwa_icon_192_url: upload.pwaIcon192Url ?? null,
+      pwa_icon_512_url: upload.pwaIcon512Url ?? null,
       updated_at: now,
       updated_by: auth.user.id,
     },
@@ -221,6 +230,8 @@ export async function clearPlatformLogo(): Promise<UpdatePlatformSettingsResult>
           platform_name: existing.platform_name,
           tagline: existing.tagline,
           logo_url: null,
+          pwa_icon_192_url: null,
+          pwa_icon_512_url: null,
           support_email: existing.support_email,
           updated_at: now,
           updated_by: auth.user.id,
@@ -235,6 +246,8 @@ export async function clearPlatformLogo(): Promise<UpdatePlatformSettingsResult>
       tagline: parsed.tagline,
       support_email: parsed.supportEmail,
       logo_url: null,
+      pwa_icon_192_url: null,
+      pwa_icon_512_url: null,
       updated_at: now,
       updated_by: auth.user.id,
     },

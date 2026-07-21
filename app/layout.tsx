@@ -11,28 +11,48 @@ const geistSans = Geist({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "alcentimo — Inventario y catálogo digital",
-  description:
-    "Software de gestión de inventario y catálogo digital para comerciantes venezolanos. Precios en USD con conversión automática a bolívares.",
-  applicationName: "Alcentimo Admin",
-  manifest: getAdminManifestPath(),
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Alcentimo Admin",
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  icons: {
-    icon: [
-      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [{ url: "/icon-192x192.png", sizes: "192x192", type: "image/png" }],
-  },
-};
+function resolveMetadataIconUrl(
+  customUrl: string | null | undefined,
+  fallbackPath: string,
+): string {
+  return customUrl?.trim() || fallbackPath;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const platformSettings = await fetchPlatformSettings();
+  const icon192 = resolveMetadataIconUrl(
+    platformSettings.pwaIcon192Url,
+    "/icon-192x192.png",
+  );
+  const icon512 = resolveMetadataIconUrl(
+    platformSettings.pwaIcon512Url,
+    "/icon-512x512.png",
+  );
+
+  return {
+    title: `${platformSettings.platformName.toLowerCase()} — Inventario y catálogo digital`,
+    description:
+      platformSettings.tagline ||
+      "Software de gestión de inventario y catálogo digital para comerciantes venezolanos. Precios en USD con conversión automática a bolívares.",
+    applicationName: `${platformSettings.platformName} Admin`,
+    manifest: getAdminManifestPath(),
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: `${platformSettings.platformName} Admin`,
+    },
+    formatDetection: {
+      telephone: false,
+    },
+    icons: {
+      icon: [
+        { url: icon192, sizes: "192x192", type: "image/png" },
+        { url: icon512, sizes: "512x512", type: "image/png" },
+      ],
+      apple: [{ url: icon192, sizes: "192x192", type: "image/png" }],
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [
