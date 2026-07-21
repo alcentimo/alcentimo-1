@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getActiveBcvSyncAlert } from "@/lib/exchange-rate/get-bcv-sync-alert";
 import { getCurrentExchangeRate } from "@/lib/catalog";
-import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
 import { bcvRateAgeHours, isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
@@ -24,7 +23,7 @@ export default async function DashboardRootLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const session = await getDashboardSession(supabase);
+  const session = await getDashboardSession();
 
   if (!session) {
     return (
@@ -36,26 +35,22 @@ export default async function DashboardRootLayout({
   }
 
   const { authUser, store } = session;
-  const {
-    data: { user: authAccount },
-  } = await supabase.auth.getUser();
-  const isAdmin = isSupportAdmin(resolveAuthEmail(authAccount));
+  const isAdmin = isSupportAdmin(
+    resolveAuthEmail({ email: authUser.email, user_metadata: {} }),
+  );
   const isStoreOwnerUser = store ? isStoreOwner(store, authUser.id) : false;
   const canUpgradeToBusiness =
     normalizeDbPlan(authUser.profile?.plan ?? authUser.rawPlan) === "PRO";
-  const [bcvSyncAlert, exchangeRateRow, tasaRow, settingsConfig] =
-    await Promise.all([
-      getActiveBcvSyncAlert(supabase),
-      getCurrentExchangeRate(),
-      getLatestUsdTasa(supabase),
-      store
-        ? getStoreSettingsConfig(supabase, store.id)
-        : Promise.resolve(defaultStoreSettingsConfig()),
-    ]);
+  const [bcvSyncAlert, exchangeRateRow, settingsConfig] = await Promise.all([
+    getActiveBcvSyncAlert(supabase),
+    getCurrentExchangeRate(),
+    store
+      ? getStoreSettingsConfig(store.id)
+      : Promise.resolve(defaultStoreSettingsConfig()),
+  ]);
 
-  const exchangeRate = exchangeRateRow?.rate ?? tasaRow?.tasa ?? null;
-  const exchangeRateUpdatedAt =
-    tasaRow?.ultima_actualizacion ?? exchangeRateRow?.created_at ?? null;
+  const exchangeRate = exchangeRateRow?.rate ?? null;
+  const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
   const exchangeRateStale = isBcvRateStale(exchangeRateUpdatedAt);
 
   if (exchangeRateStale) {

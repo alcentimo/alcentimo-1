@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getSupabaseAnonClient } from "@/lib/supabase";
 import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
@@ -42,32 +43,34 @@ function normalizeExchangeRate(row: ExchangeRate): ExchangeRate {
   };
 }
 
-export async function getCurrentExchangeRate(): Promise<ExchangeRate | null> {
-  const supabase = getSupabaseAnonClient();
-  const tasa = await getLatestUsdTasa(supabase);
-  if (tasa && tasa.tasa > 0) {
-    return {
-      id: `tasas_cambio:${tasa.moneda}`,
-      rate: tasa.tasa,
-      source: "bcv",
-      effective_date: tasa.ultima_actualizacion.slice(0, 10),
-      notes: "Tasa BCV sincronizada automáticamente",
-      store_id: null,
-      created_at: tasa.ultima_actualizacion,
-    };
-  }
+export const getCurrentExchangeRate = cache(
+  async (): Promise<ExchangeRate | null> => {
+    const supabase = getSupabaseAnonClient();
+    const tasa = await getLatestUsdTasa(supabase);
+    if (tasa && tasa.tasa > 0) {
+      return {
+        id: `tasas_cambio:${tasa.moneda}`,
+        rate: tasa.tasa,
+        source: "bcv",
+        effective_date: tasa.ultima_actualizacion.slice(0, 10),
+        notes: "Tasa BCV sincronizada automáticamente",
+        store_id: null,
+        created_at: tasa.ultima_actualizacion,
+      };
+    }
 
-  const { data, error } = await supabase
-    .from("exchange_rate")
-    .select("*")
-    .is("store_id", null)
-    .order("effective_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    const { data, error } = await supabase
+      .from("exchange_rate")
+      .select("*")
+      .is("store_id", null)
+      .order("effective_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  if (error) throw new Error(error.message);
-  return data ? normalizeExchangeRate(data) : null;
-}
+    if (error) throw new Error(error.message);
+    return data ? normalizeExchangeRate(data) : null;
+  },
+);
 
 /** Catálogo filtrado estrictamente por tienda (vista catalog_list_view). */
 export async function getCatalogProducts(

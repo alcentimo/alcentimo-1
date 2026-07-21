@@ -23,6 +23,19 @@ function resolveStockFilter(value: string | null): CatalogStockFilter {
   return value === "bajo" ? "critical" : "all";
 }
 
+function syncStockFilterUrl(nextFilter: CatalogStockFilter) {
+  const params = new URLSearchParams(window.location.search);
+  if (nextFilter === "critical") {
+    params.set("stock", "bajo");
+  } else {
+    params.delete("stock");
+  }
+
+  const query = params.toString();
+  const nextUrl = query ? `/dashboard/catalogo?${query}` : "/dashboard/catalogo";
+  window.history.replaceState(null, "", nextUrl);
+}
+
 export function CatalogPanel({
   store,
   exchangeRate,
@@ -40,10 +53,6 @@ export function CatalogPanel({
   const [stockFilter, setStockFilter] = useState<CatalogStockFilter>(() =>
     resolveStockFilter(searchParams.get("stock")),
   );
-
-  useEffect(() => {
-    setStockFilter(resolveStockFilter(searchParams.get("stock")));
-  }, [searchParams]);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -74,18 +83,7 @@ export function CatalogPanel({
 
   function handleStockFilterChange(nextFilter: CatalogStockFilter) {
     setStockFilter(nextFilter);
-
-    const params = new URLSearchParams(searchParams.toString());
-    if (nextFilter === "critical") {
-      params.set("stock", "bajo");
-    } else {
-      params.delete("stock");
-    }
-
-    const query = params.toString();
-    router.replace(query ? `/dashboard/catalogo?${query}` : "/dashboard/catalogo", {
-      scroll: false,
-    });
+    syncStockFilterUrl(nextFilter);
   }
 
   return (

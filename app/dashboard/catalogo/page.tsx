@@ -22,7 +22,7 @@ export default async function CatalogoPage({
   searchParams: Promise<{ onboarded?: string; tab?: string }>;
 }) {
   const supabase = await createClient();
-  const session = await getDashboardSession(supabase);
+  const session = await getDashboardSession();
   const params = await searchParams;
 
   if (!session) {

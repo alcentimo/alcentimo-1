@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PagoStatusPage() {
   const supabase = await createClient();
-  const session = await getDashboardSession(supabase);
+  const session = await getDashboardSession();
 
   if (!session) {
     redirect("/dashboard/login?next=/dashboard/pago");

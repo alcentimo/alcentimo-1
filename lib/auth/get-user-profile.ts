@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Profile } from "@/lib/database.types";
 import type { Store } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
@@ -33,19 +34,20 @@ export async function getUserPlanIdById(userId: string): Promise<PlanId> {
 }
 
 /** Usuario autenticado, su plan y la tienda asociada (si existe). */
-export async function getDashboardSession(
-  client: SupabaseServerClient,
-): Promise<DashboardSession | null> {
-  const authUser = await getAuthUserWithPlan(client);
-  if (!authUser) return null;
+export const getDashboardSession = cache(
+  async (): Promise<DashboardSession | null> => {
+    const client = await createClient();
+    const authUser = await getAuthUserWithPlan(client);
+    if (!authUser) return null;
 
-  const store = await getUserStore(client, authUser.id);
-  const sessionUser = store
-    ? await applyStoreOwnerPlanToUser(authUser, store.id)
-    : authUser;
+    const store = await getUserStore(client, authUser.id);
+    const sessionUser = store
+      ? await applyStoreOwnerPlanToUser(authUser, store.id)
+      : authUser;
 
-  return { authUser: sessionUser, store };
-}
+    return { authUser: sessionUser, store };
+  },
+);
 
 async function applyStoreOwnerPlanToUser(
   authUser: UserWithPlan,

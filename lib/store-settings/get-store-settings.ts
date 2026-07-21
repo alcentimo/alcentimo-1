@@ -1,14 +1,14 @@
-import type { SupabaseServerClient } from "@/lib/supabase/server";
+import { cache } from "react";
+import { createClient } from "@/lib/supabase/server";
 import {
   defaultStoreSettingsConfig,
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
 
-export async function getStoreSettingsConfig(
-  client: SupabaseServerClient,
-  storeId: string,
-): Promise<StoreSettingsConfig> {
+export const getStoreSettingsConfig = cache(
+  async (storeId: string): Promise<StoreSettingsConfig> => {
+  const client = await createClient();
   const { data, error } = await client
     .from("store_settings")
     .select("config")
@@ -22,4 +22,5 @@ export async function getStoreSettingsConfig(
   }
 
   return normalizeStoreSettingsConfig(data.config);
-}
+  },
+);

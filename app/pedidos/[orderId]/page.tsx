@@ -50,7 +50,7 @@ export async function generateMetadata({
 export default async function PublicOrderPage({ params }: PublicOrderPageProps) {
   const { orderId } = await params;
   const supabase = await createClient();
-  const session = await getDashboardSession(supabase);
+  const session = await getDashboardSession();
 
   if (!session) {
     redirect(`/dashboard/login?next=/pedidos/${orderId}`);

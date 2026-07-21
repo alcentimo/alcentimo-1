@@ -18,7 +18,7 @@ interface EditProductPageProps {
 export default async function EditProductPage({ params }: EditProductPageProps) {
   const { productId } = await params;
   const supabase = await createClient();
-  const session = await getDashboardSession(supabase);
+  const session = await getDashboardSession();
 
   if (!session) {
     redirect(`/dashboard/login?next=/dashboard/productos/${productId}/editar`);

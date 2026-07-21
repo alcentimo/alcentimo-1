@@ -50,7 +50,7 @@ async function persistSettingsPatch(
 
   const { store } = auth;
 
-  const current = await getStoreSettingsConfig(supabase, store.id);
+  const current = await getStoreSettingsConfig(store.id);
   const merged = mergeStoreSettingsConfig(current, patch);
 
   const { error } = await supabase.from("store_settings").upsert(

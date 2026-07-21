@@ -1,15 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
+import { useMemo, useState } from "react";
 import { ManualPaymentsPanel } from "@/components/admin/ManualPaymentsPanel";
 import { SupportMessagesPanel } from "@/components/dashboard/SupportMessagesPanel";
-import { AdminMetricsPanel } from "@/components/admin/AdminMetricsPanel";
-import { PaymentMethodsConfigPanel } from "@/components/admin/PaymentMethodsConfigPanel";
-import { PlatformLogoConfigCard } from "@/components/admin/PlatformLogoConfigCard";
-import { PlanSettingsConfigPanel } from "@/components/admin/PlanSettingsConfigPanel";
-import { PlatformSettingsConfigPanel } from "@/components/admin/PlatformSettingsConfigPanel";
-import { AdminGrowthPanel } from "@/components/admin/AdminGrowthPanel";
 import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
 import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import type { AdminUserRow } from "@/lib/admin/get-admin-users";
@@ -22,9 +16,94 @@ import type {
 import type { SubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
 import type { PlanSettingsMap } from "@/lib/plans/plan-settings";
 import type { PlatformSettings } from "@/lib/platform/platform-settings";
-import { AdminCustomDomainsPanel } from "@/components/admin/AdminCustomDomainsPanel";
 import type { AdminStoreDomainRow } from "@/lib/admin/custom-domain-actions";
 import { cn } from "@/lib/cn";
+
+const AdminMetricsPanel = dynamic(
+  () =>
+    import("@/components/admin/AdminMetricsPanel").then((m) => ({
+      default: m.AdminMetricsPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando métricas…</p>
+    ),
+  },
+);
+
+const AdminGrowthPanel = dynamic(
+  () =>
+    import("@/components/admin/AdminGrowthPanel").then((m) => ({
+      default: m.AdminGrowthPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Cargando módulo de crecimiento…
+      </p>
+    ),
+  },
+);
+
+const PlatformLogoConfigCard = dynamic(
+  () =>
+    import("@/components/admin/PlatformLogoConfigCard").then((m) => ({
+      default: m.PlatformLogoConfigCard,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando configuración…</p>
+    ),
+  },
+);
+
+const PaymentMethodsConfigPanel = dynamic(
+  () =>
+    import("@/components/admin/PaymentMethodsConfigPanel").then((m) => ({
+      default: m.PaymentMethodsConfigPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando métodos de pago…</p>
+    ),
+  },
+);
+
+const PlatformSettingsConfigPanel = dynamic(
+  () =>
+    import("@/components/admin/PlatformSettingsConfigPanel").then((m) => ({
+      default: m.PlatformSettingsConfigPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando plataforma…</p>
+    ),
+  },
+);
+
+const PlanSettingsConfigPanel = dynamic(
+  () =>
+    import("@/components/admin/PlanSettingsConfigPanel").then((m) => ({
+      default: m.PlanSettingsConfigPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando planes…</p>
+    ),
+  },
+);
+
+const AdminCustomDomainsPanel = dynamic(
+  () =>
+    import("@/components/admin/AdminCustomDomainsPanel").then((m) => ({
+      default: m.AdminCustomDomainsPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando dominios…</p>
+    ),
+  },
+);
 
 export type AdminDashboardTab =
   | "pagos"
@@ -87,7 +166,7 @@ const TABS: Array<{
   },
 ];
 
-function resolveTab(value: string | null): AdminDashboardTab {
+function resolveTab(value: string | null | undefined): AdminDashboardTab {
   if (value === "soporte") return "soporte";
   if (value === "metricas") return "metricas";
   if (value === "configuracion") return "configuracion";
@@ -141,10 +220,9 @@ export function AdminDashboardTabs({
   storeDomainsError = null,
   initialTab = "pagos",
 }: AdminDashboardTabsProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const activeTab = resolveTab(searchParams.get("tab") ?? initialTab);
+  const [activeTab, setActiveTab] = useState<AdminDashboardTab>(() =>
+    resolveTab(initialTab),
+  );
 
   const pendingPayments = useMemo(
     () =>
@@ -165,9 +243,15 @@ export function AdminDashboardTabs({
   };
 
   function setTab(tab: AdminDashboardTab) {
-    const params = new URLSearchParams(searchParams.toString());
+    setActiveTab(tab);
+
+    const params = new URLSearchParams(window.location.search);
     params.set("tab", tab);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    const query = params.toString();
+    const nextUrl = query
+      ? `${window.location.pathname}?${query}`
+      : window.location.pathname;
+    window.history.replaceState(null, "", nextUrl);
   }
 
   const activeMeta = TABS.find((tab) => tab.id === activeTab) ?? TABS[0];

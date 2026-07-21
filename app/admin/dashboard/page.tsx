@@ -7,12 +7,8 @@ import {
 } from "@/components/admin/AdminDashboardTabs";
 import { getManualPayments } from "@/lib/plans/get-manual-payments";
 import { getAdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
-import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
-import { getAdminUsers, type AdminUserRow } from "@/lib/admin/get-admin-users";
-import {
-  getGrowthAuditLog,
-  type GrowthAuditEntry,
-} from "@/lib/admin/growth-audit";
+import { getAdminUsers } from "@/lib/admin/get-admin-users";
+import { getGrowthAuditLog } from "@/lib/admin/growth-audit";
 import { getSupportMessages } from "@/lib/support/get-support-messages";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
@@ -23,11 +19,6 @@ import {
   listSubscriptionCampaigns,
   listSubscriptionCoupons,
 } from "@/lib/admin/subscription-promo-actions";
-import type {
-  SupportMessage,
-  SubscriptionCampaign,
-  SubscriptionCoupon,
-} from "@/lib/database.types";
 
 export const dynamic = "force-dynamic";
 
@@ -85,77 +76,95 @@ export default async function AdminDashboardPage({
   const growthPlanFilter = resolvePlanFilter(params.plan);
   const growthMinProducts = resolveMinProducts(params.minProducts);
 
-  let payments: Awaited<ReturnType<typeof getManualPayments>> = [];
-  let messages: SupportMessage[] = [];
-  let metrics: AdminPlanMetrics | null = null;
-  let growthUsers: AdminUserRow[] = [];
-  let growthCoupons: SubscriptionCoupon[] = [];
-  let growthCampaigns: SubscriptionCampaign[] = [];
-  let growthAuditLog: GrowthAuditEntry[] = [];
-  let paymentsError: string | null = null;
-  let messagesError: string | null = null;
-  let metricsError: string | null = null;
-  let growthError: string | null = null;
-  let storeDomains: Awaited<ReturnType<typeof listAdminStoreDomains>> = [];
-  let storeDomainsError: string | null = null;
-
-  try {
-    payments = await getManualPayments({ status: "all", limit: 200 });
-  } catch (error) {
-    paymentsError =
-      error instanceof Error
-        ? error.message
-        : "No se pudieron cargar los pagos manuales.";
-  }
-
-  try {
-    messages = await getSupportMessages();
-  } catch (error) {
-    messagesError =
-      error instanceof Error
-        ? error.message
-        : "No se pudieron cargar los mensajes de soporte.";
-  }
-
-  try {
-    metrics = await getAdminPlanMetrics();
-  } catch (error) {
-    metricsError =
-      error instanceof Error
-        ? error.message
-        : "No se pudieron cargar las métricas.";
-  }
-
-  try {
-    const [users, coupons, campaigns, auditLog] = await Promise.all([
+  const [
+    paymentsResult,
+    messagesResult,
+    metricsResult,
+    growthResult,
+    storeDomainsResult,
+    pagoMovil,
+    planSettings,
+    platformSettings,
+  ] = await Promise.all([
+    getManualPayments({ status: "all", limit: 200 }).then(
+      (data) => ({ ok: true as const, data }),
+      (error: unknown) => ({
+        ok: false as const,
+        error:
+          error instanceof Error
+            ? error.message
+            : "No se pudieron cargar los pagos manuales.",
+      }),
+    ),
+    getSupportMessages().then(
+      (data) => ({ ok: true as const, data }),
+      (error: unknown) => ({
+        ok: false as const,
+        error:
+          error instanceof Error
+            ? error.message
+            : "No se pudieron cargar los mensajes de soporte.",
+      }),
+    ),
+    getAdminPlanMetrics().then(
+      (data) => ({ ok: true as const, data }),
+      (error: unknown) => ({
+        ok: false as const,
+        error:
+          error instanceof Error
+            ? error.message
+            : "No se pudieron cargar las métricas.",
+      }),
+    ),
+    Promise.all([
       getAdminUsers({ limit: 300 }),
       listSubscriptionCoupons(),
       listSubscriptionCampaigns(),
       getGrowthAuditLog(200),
-    ]);
-    growthUsers = users;
-    growthCoupons = coupons;
-    growthCampaigns = campaigns;
-    growthAuditLog = auditLog;
-  } catch (error) {
-    growthError =
-      error instanceof Error
-        ? error.message
-        : "No se pudo cargar el módulo de crecimiento.";
-  }
+    ]).then(
+      ([users, coupons, campaigns, auditLog]) => ({
+        ok: true as const,
+        users,
+        coupons,
+        campaigns,
+        auditLog,
+      }),
+      (error: unknown) => ({
+        ok: false as const,
+        error:
+          error instanceof Error
+            ? error.message
+            : "No se pudo cargar el módulo de crecimiento.",
+      }),
+    ),
+    listAdminStoreDomains().then(
+      (data) => ({ ok: true as const, data }),
+      (error: unknown) => ({
+        ok: false as const,
+        error:
+          error instanceof Error
+            ? error.message
+            : "No se pudieron cargar los dominios personalizados.",
+      }),
+    ),
+    fetchSubscriptionPagoMovilDetails(),
+    fetchPlanSettings(),
+    fetchPlatformSettings(),
+  ]);
 
-  try {
-    storeDomains = await listAdminStoreDomains();
-  } catch (error) {
-    storeDomainsError =
-      error instanceof Error
-        ? error.message
-        : "No se pudieron cargar los dominios personalizados.";
-  }
-
-  const pagoMovil = await fetchSubscriptionPagoMovilDetails();
-  const planSettings = await fetchPlanSettings();
-  const platformSettings = await fetchPlatformSettings();
+  const payments = paymentsResult.ok ? paymentsResult.data : [];
+  const paymentsError = paymentsResult.ok ? null : paymentsResult.error;
+  const messages = messagesResult.ok ? messagesResult.data : [];
+  const messagesError = messagesResult.ok ? null : messagesResult.error;
+  const metrics = metricsResult.ok ? metricsResult.data : null;
+  const metricsError = metricsResult.ok ? null : metricsResult.error;
+  const growthUsers = growthResult.ok ? growthResult.users : [];
+  const growthCoupons = growthResult.ok ? growthResult.coupons : [];
+  const growthCampaigns = growthResult.ok ? growthResult.campaigns : [];
+  const growthAuditLog = growthResult.ok ? growthResult.auditLog : [];
+  const growthError = growthResult.ok ? null : growthResult.error;
+  const storeDomains = storeDomainsResult.ok ? storeDomainsResult.data : [];
+  const storeDomainsError = storeDomainsResult.ok ? null : storeDomainsResult.error;
 
   const pendingPayments = payments.filter(
     (item) =>

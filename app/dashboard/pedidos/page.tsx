@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PedidosPage() {
   const supabase = await createClient();
-  const session = await getDashboardSession(supabase);
+  const session = await getDashboardSession();
 
   if (!session) {
     redirect("/dashboard/login?next=/dashboard/pedidos");
@@ -42,7 +42,7 @@ export default async function PedidosPage() {
 
   const [orders, settingsConfig] = await Promise.all([
     getStoreOrders(store.id, 200),
-    getStoreSettingsConfig(supabase, store.id),
+    getStoreSettingsConfig(store.id),
   ]);
 
   const messageTemplates =

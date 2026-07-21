@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AjustesPage() {
   const supabase = await createClient();
-  const session = await getDashboardSession(supabase);
+  const session = await getDashboardSession();
 
   if (!session) {
     redirect("/dashboard/login?next=/dashboard/ajustes");
@@ -39,7 +39,7 @@ export default async function AjustesPage() {
   if (store) {
     const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings] =
       await Promise.all([
-      getStoreSettingsConfig(supabase, store.id),
+      getStoreSettingsConfig(store.id),
       getStoreCoupons(store.id),
       getStorePromotions(store.id),
       getStoreInventory(store.slug),
