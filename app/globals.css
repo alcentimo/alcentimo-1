@@ -4259,6 +4259,62 @@ body {
   background-color: color-mix(in srgb, var(--txn-primary, #0d9488) 8%, white);
 }
 
+.catalog-browse-toolbar {
+  @apply border-b border-neutral-200/80 bg-white/95 px-4 py-4 backdrop-blur-sm sm:px-6;
+}
+
+.catalog-browse-toolbar-row {
+  @apply flex flex-col gap-3 sm:flex-row sm:items-center;
+}
+
+.catalog-browse-search {
+  @apply flex min-h-11 flex-1 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 shadow-sm;
+}
+
+.catalog-browse-search-input {
+  @apply min-w-0 flex-1 border-0 bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400;
+}
+
+.catalog-browse-search-clear {
+  @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-600;
+}
+
+.catalog-browse-sort {
+  @apply flex min-h-11 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 shadow-sm sm:min-w-[220px];
+}
+
+.catalog-browse-sort-select {
+  @apply min-w-0 flex-1 border-0 bg-transparent text-sm text-neutral-800 outline-none;
+}
+
+.catalog-browse-category-chips {
+  @apply mb-0 mt-3 px-0;
+}
+
+.catalog-browse-meta {
+  @apply mt-3 flex flex-wrap items-center justify-between gap-2;
+}
+
+.catalog-browse-count {
+  @apply text-xs text-neutral-500;
+}
+
+.catalog-browse-clear {
+  @apply text-xs font-medium text-teal-700 transition hover:text-teal-900;
+}
+
+.catalog-browse-footer {
+  @apply mt-6 flex flex-col items-center gap-3 px-4 pb-2 sm:px-6;
+}
+
+.catalog-browse-footer-count {
+  @apply text-xs text-neutral-500;
+}
+
+.catalog-browse-load-more {
+  @apply inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-200 bg-white px-5 text-sm font-semibold text-neutral-800 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50 active:scale-[0.99];
+}
+
 .txn-catalog-subpage .catalog-subpage-header {
   @apply px-4 sm:px-6;
 }

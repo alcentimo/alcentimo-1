@@ -21,13 +21,14 @@ async function CatalogContent({
   const data = await getPublicCatalogPageData(storeSlug);
   if (!data) notFound();
 
-  const { store, products, exchangeRate, purchaseInfo, catalogDesign, catalogCurrency } =
+  const { store, products, exchangeRate, purchaseInfo, catalogDesign, catalogCurrency, storeCategories } =
     data;
 
   return (
     <TransactionalCatalog
       store={store}
       products={products}
+      storeCategories={storeCategories}
       exchangeRate={exchangeRate}
       purchaseInfo={purchaseInfo}
       catalogDesign={catalogDesign}

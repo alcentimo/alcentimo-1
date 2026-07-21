@@ -5,6 +5,8 @@ import Image from "next/image";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
+import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
+import { extractCatalogCategories } from "@/lib/catalog/extract-categories";
 import {
   getCatalogDesignClasses,
   getCatalogThemeStyle,
@@ -15,6 +17,9 @@ import { CatalogUploadCtaCard } from "@/components/catalog/CatalogUploadCtaCard"
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { CatalogCartHost } from "@/components/catalog-transactional/CatalogCartHost";
+import { CatalogBrowseToolbar } from "@/components/catalog-transactional/CatalogBrowseToolbar";
+import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
+import { useCatalogBrowse } from "@/components/catalog-transactional/useCatalogBrowse";
 import { isProductOutOfStock } from "@/lib/products/variants";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { groupProductsByFoodMenu } from "@/lib/rubros/modules/alimentos";
@@ -23,6 +28,7 @@ import { cn } from "@/lib/cn";
 interface TransactionalCatalogProps {
   store: Store;
   products: CatalogListItem[];
+  storeCategories?: CatalogCategoryOption[];
   exchangeRate: ExchangeRate | null;
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
@@ -40,9 +46,18 @@ function getStoreInitials(name: string): string {
   return `${words[0][0] ?? ""}${words[1][0] ?? ""}`.toUpperCase();
 }
 
+function resolveCategoryOptions(
+  storeCategories: CatalogCategoryOption[],
+  products: CatalogListItem[],
+): CatalogCategoryOption[] {
+  if (storeCategories.length > 0) return storeCategories;
+  return extractCatalogCategories(products);
+}
+
 export function TransactionalCatalog({
   store,
   products,
+  storeCategories = [],
   exchangeRate,
   purchaseInfo,
   catalogDesign,
@@ -70,10 +85,20 @@ export function TransactionalCatalog({
     [products],
   );
 
-  const menuSections = useMemo(
-    () => (isFoodMenu ? groupProductsByFoodMenu(availableProducts) : []),
-    [availableProducts, isFoodMenu],
+  const categoryOptions = useMemo(
+    () => resolveCategoryOptions(storeCategories, availableProducts),
+    [storeCategories, availableProducts],
   );
+
+  const browse = useCatalogBrowse(availableProducts);
+
+  const useFlatBrowseLayout =
+    !isFoodMenu || browse.hasActiveFilters || availableProducts.length > 20;
+
+  const menuSections = useMemo(() => {
+    if (!isFoodMenu || useFlatBrowseLayout) return [];
+    return groupProductsByFoodMenu(browse.filteredProducts);
+  }, [browse.filteredProducts, isFoodMenu, useFlatBrowseLayout]);
 
   const storeInitials = getStoreInitials(store.name);
 
@@ -104,6 +129,9 @@ export function TransactionalCatalog({
       </div>
     );
   }
+
+  const gridClassName =
+    catalogDesign.layout === "list" ? "txn-product-list" : "txn-product-grid";
 
   return (
     <div
@@ -163,6 +191,22 @@ export function TransactionalCatalog({
         </div>
       </header>
 
+      {availableProducts.length > 0 ? (
+        <CatalogBrowseToolbar
+          searchQuery={browse.searchQuery}
+          onSearchQueryChange={browse.setSearchQuery}
+          categorySlug={browse.categorySlug}
+          onCategorySlugChange={browse.setCategorySlug}
+          sortKey={browse.sortKey}
+          onSortKeyChange={browse.setSortKey}
+          categories={categoryOptions}
+          totalCount={availableProducts.length}
+          filteredCount={browse.totalCount}
+          hasActiveFilters={browse.hasActiveFilters}
+          onClearFilters={browse.clearFilters}
+        />
+      ) : null}
+
       <main className="txn-catalog-main">
         {availableProducts.length === 0 ? (
           <div className="txn-catalog-empty">
@@ -173,7 +217,40 @@ export function TransactionalCatalog({
               Vuelve pronto para ver el catálogo actualizado.
             </p>
           </div>
-        ) : isFoodMenu ? (
+        ) : browse.totalCount === 0 ? (
+          <div className="txn-catalog-empty">
+            <p className="text-sm font-medium text-neutral-800">
+              No encontramos productos con esos filtros
+            </p>
+            <p className="mt-1.5 text-xs text-neutral-500">
+              Prueba otra búsqueda o limpia los filtros.
+            </p>
+          </div>
+        ) : useFlatBrowseLayout ? (
+          <>
+            <div className={gridClassName}>
+              {browse.visibleProducts.map((product, index) =>
+                renderProductCard(product, index),
+              )}
+              {previewMode && referenceMode && showReferenceCta ? (
+                <div
+                  className="catalog-preview-product-enter"
+                  style={{
+                    animationDelay: `${browse.visibleProducts.length * 40}ms`,
+                  }}
+                >
+                  <CatalogUploadCtaCard />
+                </div>
+              ) : null}
+            </div>
+            <CatalogBrowseLoadMore
+              visibleCount={browse.visibleCount}
+              totalCount={browse.totalCount}
+              hasMore={browse.hasMore}
+              onLoadMore={browse.loadMore}
+            />
+          </>
+        ) : (
           <div className="food-menu">
             {menuSections.map((section) => (
               <section
@@ -204,28 +281,6 @@ export function TransactionalCatalog({
             ))}
             {previewMode && referenceMode && showReferenceCta ? (
               <CatalogUploadCtaCard />
-            ) : null}
-          </div>
-        ) : (
-          <div
-            className={
-              catalogDesign.layout === "list"
-                ? "txn-product-list"
-                : "txn-product-grid"
-            }
-          >
-            {availableProducts.map((product, index) =>
-              renderProductCard(product, index),
-            )}
-            {previewMode && referenceMode && showReferenceCta ? (
-              <div
-                className="catalog-preview-product-enter"
-                style={{
-                  animationDelay: `${availableProducts.length * 40}ms`,
-                }}
-              >
-                <CatalogUploadCtaCard />
-              </div>
             ) : null}
           </div>
         )}
