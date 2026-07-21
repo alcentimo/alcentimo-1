@@ -17,14 +17,10 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
-import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
-import {
-  rubroHidesProductCategory,
-  storeUsesRubroProductModule,
-} from "@/lib/rubros/registry";
+import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
 import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
 import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
@@ -83,9 +79,6 @@ export function ProductCatalogForm({
   );
   const {
     categorySlug,
-    setCategorySlug,
-    customCategoryName,
-    setCustomCategoryName,
     fieldLabels,
     categoryLabel,
     extraFields,
@@ -95,7 +88,10 @@ export function ProductCatalogForm({
     initialData?.categorySlug,
     initialData?.extraFields,
   );
-  const isRopaModa = rubroHidesProductCategory(productFormConfig.rubroTienda);
+  const isRopaModa = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "ropa-moda",
+  );
   const isAlimentos = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
     "alimentos",
@@ -112,8 +108,6 @@ export function ProductCatalogForm({
     productFormConfig.rubroTienda,
     "salud-belleza",
   );
-  const defaultCategorySlug =
-    productFormConfig.productCategories[0]?.slug ?? "camisas";
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
 
   const priceLocal = useMemo(() => {
@@ -139,14 +133,11 @@ export function ProductCatalogForm({
 
     const form = e.currentTarget;
     const formData = new FormData(form);
-    formData.set(
-      "product_category_slug",
-      isRopaModa ? defaultCategorySlug : categorySlug,
-    );
-    formData.set("custom_category_name", isRopaModa ? "" : customCategoryName);
+    formData.set("product_category_slug", categorySlug);
+    formData.set("custom_category_name", "");
     formData.set(
       "variants_json",
-      isAlimentos
+      isAlimentos || isSaludBelleza
         ? serializeVariantsForForm(
             variants,
             initialData?.variants.map((variant) => variant.id),
@@ -243,18 +234,6 @@ export function ProductCatalogForm({
           className="payment-field-input mt-1.5"
         />
       </div>
-
-      {!isRopaModa ? (
-        <ProductCategorySelector
-          id="catalog-category"
-          rubroLabel={productFormConfig.rubroLabel}
-          categories={productFormConfig.productCategories}
-          categorySlug={categorySlug}
-          customCategoryName={customCategoryName}
-          onCategorySlugChange={setCategorySlug}
-          onCustomCategoryNameChange={setCustomCategoryName}
-        />
-      ) : null}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>

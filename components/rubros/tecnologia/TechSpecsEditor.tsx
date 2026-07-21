@@ -27,10 +27,7 @@ export function TechSpecsEditor({
   disabled = false,
   variant = "default",
 }: TechSpecsEditorProps) {
-  const labels = useMemo(
-    () => getTechSpecLabels(categorySlug),
-    [categorySlug],
-  );
+  const labels = useMemo(() => getTechSpecLabels(null), []);
   const isCompact = variant === "compact";
 
   useEffect(() => {

@@ -4,7 +4,6 @@ import {
 } from "@/src/config/categories";
 import {
   ACTIVE_RUBRO_PRODUCT_MODULES,
-  RUBRO_MODULE_HIDES_CATEGORY,
   RUBRO_MODULE_MANAGED_EXTRA_FIELDS,
   type RubroProductModuleId,
 } from "@/lib/rubros/types";
@@ -24,10 +23,10 @@ export function storeUsesRubroProductModule(
 }
 
 export function rubroHidesProductCategory(
-  rubro: string | null | undefined,
+  _rubro: string | null | undefined,
 ): boolean {
-  const moduleId = getActiveProductModuleId(rubro);
-  return moduleId ? RUBRO_MODULE_HIDES_CATEGORY[moduleId] === true : false;
+  // El rubro vive en configuración de tienda; no hay subcategorías en el formulario.
+  return true;
 }
 
 /**

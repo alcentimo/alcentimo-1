@@ -14,13 +14,9 @@ import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection
 import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
 import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
-import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
-import {
-  rubroHidesProductCategory,
-  storeUsesRubroProductModule,
-} from "@/lib/rubros/registry";
+import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import {
   emptyFoodModifiers,
   serializeFoodModifiersJson,
@@ -100,16 +96,16 @@ function QuickProductFormSession({
 
   const {
     categorySlug,
-    setCategorySlug,
-    customCategoryName,
-    setCustomCategoryName,
     fieldLabels,
     categoryLabel,
     extraFields,
     setExtraFields,
   } = useProductCategoryFields(productFormConfig);
 
-  const isRopaModa = rubroHidesProductCategory(productFormConfig.rubroTienda);
+  const isRopaModa = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "ropa-moda",
+  );
   const isAlimentos = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
     "alimentos",
@@ -126,8 +122,6 @@ function QuickProductFormSession({
     productFormConfig.rubroTienda,
     "salud-belleza",
   );
-  const defaultCategorySlug =
-    productFormConfig.productCategories[0]?.slug ?? "camisas";
 
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
 
@@ -199,11 +193,8 @@ function QuickProductFormSession({
     const priceUsd = bs / exchangeRate;
 
     formData.set("price_usd", priceUsd.toFixed(4));
-    formData.set(
-      "product_category_slug",
-      isRopaModa ? defaultCategorySlug : categorySlug,
-    );
-    formData.set("custom_category_name", isRopaModa ? "" : customCategoryName);
+    formData.set("product_category_slug", categorySlug);
+    formData.set("custom_category_name", "");
     formData.set("variants_json", serializeVariantsForForm(variants));
     formData.set(
       "extra_fields_json",
@@ -319,24 +310,12 @@ function QuickProductFormSession({
         }}
       />
 
-      {!isRopaModa ? (
-        <ProductCategorySelector
-          id="quick-category"
-          rubroLabel={productFormConfig.rubroLabel}
-          categories={productFormConfig.productCategories}
-          categorySlug={categorySlug}
-          customCategoryName={customCategoryName}
-          onCategorySlugChange={setCategorySlug}
-          onCustomCategoryNameChange={setCustomCategoryName}
-        />
-      ) : (
-        <input
-          type="hidden"
-          name="product_category_slug"
-          value={defaultCategorySlug}
-          readOnly
-        />
-      )}
+      <input
+        type="hidden"
+        name="product_category_slug"
+        value={categorySlug}
+        readOnly
+      />
 
       {!isRopaModa &&
       !isAlimentos &&

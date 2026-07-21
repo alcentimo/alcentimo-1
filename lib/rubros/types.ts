@@ -62,11 +62,11 @@ export const RUBRO_MODULE_MANAGED_EXTRA_FIELDS: Record<
   ],
 };
 
-/** Si true, el formulario no muestra selector de categoría (el rubro define el giro). */
+/** El rubro de tienda define el giro; el formulario de producto no pide categoría. */
 export const RUBRO_MODULE_HIDES_CATEGORY: Record<RubroProductModuleId, boolean> = {
   "ropa-moda": true,
-  alimentos: false,
-  tecnologia: false,
-  coleccionables: false,
-  "salud-belleza": false,
+  alimentos: true,
+  tecnologia: true,
+  coleccionables: true,
+  "salud-belleza": true,
 };
