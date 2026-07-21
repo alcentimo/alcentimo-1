@@ -1,4 +1,8 @@
 import { getApexSiteHost, getSiteUrl } from "@/lib/site-url";
+import {
+  buildVerifiedCustomDomainOrigin,
+  type StoreCustomDomainInfo,
+} from "@/lib/domains/custom-domain";
 
 const RESERVED_STORE_SUBDOMAINS = new Set([
   "www",
@@ -67,8 +71,15 @@ export function isSubdomainCatalogOrigin(origin: string, storeSlug: string): boo
   }
 }
 
-/** Origen público del catálogo: https://ferremax.alcentimo.com */
-export function getStoreCatalogOrigin(storeSlug: string): string {
+/** Origen público del catálogo: https://ferremax.alcentimo.com o dominio verificado. */
+export function getStoreCatalogOrigin(
+  storeSlug: string,
+  domainInfo?: StoreCustomDomainInfo | null,
+): string {
+  if (domainInfo?.customDomain && domainInfo.customDomainVerified) {
+    return buildVerifiedCustomDomainOrigin(domainInfo.customDomain);
+  }
+
   const slug = normalizeStoreSlug(storeSlug);
 
   if (isStoreSubdomainCatalogEnabled()) {
@@ -102,9 +113,16 @@ function joinPublicPath(basePath: string, path: string): string {
 }
 
 /** URL pública absoluta del catálogo (subdominio preferido en producción). */
-export function getStoreCatalogPublicUrl(storeSlug: string, path = "/"): string {
-  const origin = getStoreCatalogOrigin(storeSlug);
-  const basePath = getStoreCatalogBasePath(storeSlug);
+export function getStoreCatalogPublicUrl(
+  storeSlug: string,
+  path = "/",
+  domainInfo?: StoreCustomDomainInfo | null,
+): string {
+  const origin = getStoreCatalogOrigin(storeSlug, domainInfo);
+  const basePath =
+    domainInfo?.customDomain && domainInfo.customDomainVerified
+      ? "/"
+      : getStoreCatalogBasePath(storeSlug);
   return `${origin}${joinPublicPath(basePath, path)}`;
 }
 
@@ -122,8 +140,9 @@ export function getStoreCustomerAccountPath(
 export function getStoreCustomerAccountUrl(
   storeSlug: string,
   section: "cuenta" | "perfil" = "cuenta",
+  domainInfo?: StoreCustomDomainInfo | null,
 ): string {
-  return `${getStoreCatalogOrigin(storeSlug)}${getStoreCustomerAccountPath(storeSlug, section)}`;
+  return `${getStoreCatalogOrigin(storeSlug, domainInfo)}${getStoreCustomerAccountPath(storeSlug, section)}`;
 }
 
 /** Convierte ruta pública del catálogo a ruta interna App Router (/c/slug/...). */

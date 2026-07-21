@@ -6,6 +6,7 @@ import {
   getPrimaryCustomerStore,
   parseCustomerAccountPath,
   resolveActiveStoreBySlug,
+  resolveActiveStoreByCustomDomain,
   resolveCustomerNextDestination,
   userHasMerchantStore,
   userIsCustomerOfStoreId,
@@ -23,6 +24,7 @@ import {
   shouldRewriteSubdomainCatalogPath,
   toInternalCatalogPath,
 } from "@/lib/store-host";
+import { normalizeCustomDomain, isPlatformCatalogHost } from "@/lib/domains/custom-domain";
 
 const DASHBOARD_PREFIX = "/dashboard";
 const ADMIN_PREFIX = "/admin";
@@ -68,6 +70,7 @@ export async function middleware(request: NextRequest) {
     request.headers.get("host")?.split(":")[0]?.trim() ??
     "";
   const storeSlugFromHost = parseStoreSlugFromHost(requestHost);
+  let effectiveStoreSlug = storeSlugFromHost;
 
   if (!storeSlugFromHost && isStoreSubdomainCatalogEnabled()) {
     const legacyCatalog = pathname.match(/^\/c\/([^/]+)(\/.*)?$/);
@@ -81,9 +84,9 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!hasSupabasePublicEnv()) {
-    if (storeSlugFromHost && shouldRewriteSubdomainCatalogPath(pathname)) {
+    if (effectiveStoreSlug && shouldRewriteSubdomainCatalogPath(pathname)) {
       const rewriteUrl = request.nextUrl.clone();
-      rewriteUrl.pathname = toInternalCatalogPath(pathname, storeSlugFromHost);
+      rewriteUrl.pathname = toInternalCatalogPath(pathname, effectiveStoreSlug);
       return NextResponse.rewrite(rewriteUrl);
     }
 
@@ -111,6 +114,22 @@ export async function middleware(request: NextRequest) {
       },
     },
   });
+
+  if (!effectiveStoreSlug) {
+    const normalizedHost = normalizeCustomDomain(requestHost);
+    if (
+      normalizedHost &&
+      !isPlatformCatalogHost(normalizedHost)
+    ) {
+      const store = await resolveActiveStoreByCustomDomain(
+        supabase,
+        normalizedHost,
+      );
+      if (store) {
+        effectiveStoreSlug = store.slug;
+      }
+    }
+  }
 
   const {
     data: { user },
@@ -153,7 +172,7 @@ export async function middleware(request: NextRequest) {
   const isDashboard = pathname.startsWith(DASHBOARD_PREFIX);
   const isAdminRoute = pathname.startsWith(ADMIN_PREFIX);
   const isRegisterRoute = pathname === REGISTER_PATH;
-  const customerAccountPath = parseCustomerAccountPath(pathname, storeSlugFromHost);
+  const customerAccountPath = parseCustomerAccountPath(pathname, effectiveStoreSlug);
   const isCustomerAccountRoute = Boolean(customerAccountPath);
   const isLoginPage = pathname === DASHBOARD_LOGIN;
   const isRecoverPasswordPage = pathname === RECOVER_PASSWORD_PATH;
@@ -170,12 +189,12 @@ export async function middleware(request: NextRequest) {
   const authenticatedUser = user ?? null;
 
   const catalogPathMatch = pathname.match(/^\/c\/([^/]+)/);
-  const catalogSlug = storeSlugFromHost ?? catalogPathMatch?.[1];
+  const catalogSlug = effectiveStoreSlug ?? catalogPathMatch?.[1];
 
   if (catalogSlug) {
     const storeSlug = decodeURIComponent(catalogSlug).trim().toLowerCase();
     const visitorCookieName = getCatalogVisitorCookieName(storeSlug);
-    const manifestUrl = storeSlugFromHost
+    const manifestUrl = effectiveStoreSlug
       ? `${request.nextUrl.origin}/manifest.json`
       : `${request.nextUrl.origin}/c/${storeSlug}/manifest.json`;
 
@@ -187,7 +206,7 @@ export async function middleware(request: NextRequest) {
         sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 60 * 24 * 30,
-        path: storeSlugFromHost ? "/" : `/c/${storeSlug}`,
+        path: effectiveStoreSlug ? "/" : `/c/${storeSlug}`,
       });
     }
   }
@@ -234,7 +253,7 @@ export async function middleware(request: NextRequest) {
 
     return applySubdomainCatalogRewrite(
       request,
-      storeSlugFromHost,
+      effectiveStoreSlug,
       pathname,
       supabaseResponse,
     );
@@ -406,7 +425,7 @@ export async function middleware(request: NextRequest) {
 
   return applySubdomainCatalogRewrite(
     request,
-    storeSlugFromHost,
+    effectiveStoreSlug,
     pathname,
     supabaseResponse,
   );

@@ -17,6 +17,7 @@ import { getSupportMessages } from "@/lib/support/get-support-messages";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
+import { listAdminStoreDomains } from "@/lib/admin/custom-domain-actions";
 import {
   listSubscriptionCampaigns,
   listSubscriptionCoupons,
@@ -36,6 +37,7 @@ function resolveInitialTab(raw: string | string[] | undefined): AdminDashboardTa
   if (value === "configuracion") return "configuracion";
   if (value === "planes") return "planes";
   if (value === "crecimiento") return "crecimiento";
+  if (value === "dominios") return "dominios";
   return "pagos";
 }
 
@@ -92,6 +94,8 @@ export default async function AdminDashboardPage({
   let messagesError: string | null = null;
   let metricsError: string | null = null;
   let growthError: string | null = null;
+  let storeDomains: Awaited<ReturnType<typeof listAdminStoreDomains>> = [];
+  let storeDomainsError: string | null = null;
 
   try {
     payments = await getManualPayments({ status: "all", limit: 200 });
@@ -136,6 +140,15 @@ export default async function AdminDashboardPage({
       error instanceof Error
         ? error.message
         : "No se pudo cargar el módulo de crecimiento.";
+  }
+
+  try {
+    storeDomains = await listAdminStoreDomains();
+  } catch (error) {
+    storeDomainsError =
+      error instanceof Error
+        ? error.message
+        : "No se pudieron cargar los dominios personalizados.";
   }
 
   const pagoMovil = await fetchSubscriptionPagoMovilDetails();
@@ -204,6 +217,8 @@ export default async function AdminDashboardPage({
           messagesError={messagesError}
           metricsError={metricsError}
           growthError={growthError}
+          storeDomains={storeDomains}
+          storeDomainsError={storeDomainsError}
           initialTab={initialTab}
         />
       </Suspense>

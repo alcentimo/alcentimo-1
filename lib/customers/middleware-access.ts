@@ -85,6 +85,22 @@ export async function userIsMerchantOfStoreSlug(
   return Boolean(membership);
 }
 
+export async function resolveActiveStoreByCustomDomain(
+  supabase: SupabaseClient,
+  customDomain: string,
+): Promise<{ id: string; slug: string } | null> {
+  const { data, error } = await supabase
+    .from("stores")
+    .select("id, slug")
+    .eq("custom_domain", customDomain)
+    .eq("custom_domain_verified", true)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (error || !data?.id) return null;
+  return { id: data.id, slug: data.slug };
+}
+
 export async function resolveActiveStoreBySlug(
   supabase: SupabaseClient,
   storeSlug: string,

@@ -86,6 +86,8 @@ export default async function AjustesPage() {
                 logo_url: store.logo_url,
                 description: store.description,
                 rubro_tienda: store.rubro_tienda ?? "ropa-moda",
+                custom_domain: store.custom_domain ?? null,
+                custom_domain_verified: Boolean(store.custom_domain_verified),
               }
             : null
         }

@@ -19,6 +19,7 @@ import { slugify } from "@/lib/slugify";
 import { isValidStoreSlug } from "@/lib/stores/slug";
 import { getPublicSiteHost } from "@/lib/site-url";
 import { STORE_RUBRO_OPTIONS, normalizeStoreRubro, type StoreRubro } from "@/src/config/categories";
+import { CustomDomainSection } from "@/components/dashboard/settings/CustomDomainSection";
 import { InterfacePreferencesSettingsSection } from "@/components/dashboard/settings/InterfacePreferencesSettingsSection";
 
 function getRubroLabel(value: string): string {
@@ -31,6 +32,8 @@ export interface GeneralTabStore {
   logo_url: string | null;
   description: string | null;
   rubro_tienda: string;
+  custom_domain?: string | null;
+  custom_domain_verified?: boolean;
 }
 
 interface GeneralTabProps {
@@ -175,7 +178,18 @@ export function GeneralTab({ store }: GeneralTabProps) {
         </p>
       ) : null}
 
-      <CatalogLinkCard slug={slugPreview} className="mb-4" />
+      <CatalogLinkCard
+        slug={slugPreview}
+        customDomain={store.custom_domain ?? null}
+        customDomainVerified={Boolean(store.custom_domain_verified)}
+        className="mb-4"
+      />
+
+      <CustomDomainSection
+        storeSlug={savedSlug}
+        customDomain={store.custom_domain ?? null}
+        customDomainVerified={Boolean(store.custom_domain_verified)}
+      />
 
       <SettingsSection
         title="Identidad de marca"

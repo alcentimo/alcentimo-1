@@ -19,6 +19,8 @@ import type {
 } from "@/lib/database.types";
 import type { SubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
 import type { PlanSettingsMap } from "@/lib/plans/plan-settings";
+import { AdminCustomDomainsPanel } from "@/components/admin/AdminCustomDomainsPanel";
+import type { AdminStoreDomainRow } from "@/lib/admin/custom-domain-actions";
 import { cn } from "@/lib/cn";
 
 export type AdminDashboardTab =
@@ -27,7 +29,8 @@ export type AdminDashboardTab =
   | "metricas"
   | "configuracion"
   | "planes"
-  | "crecimiento";
+  | "crecimiento"
+  | "dominios";
 
 const TABS: Array<{
   id: AdminDashboardTab;
@@ -63,6 +66,11 @@ const TABS: Array<{
     description: "Precios mensuales/anuales y límites de productos por plan.",
   },
   {
+    id: "dominios",
+    label: "Dominios",
+    description: "Asigna y verifica dominios personalizados de tiendas.",
+  },
+  {
     id: "crecimiento",
     label: "Crecimiento",
     description:
@@ -76,6 +84,7 @@ function resolveTab(value: string | null): AdminDashboardTab {
   if (value === "configuracion") return "configuracion";
   if (value === "planes") return "planes";
   if (value === "crecimiento") return "crecimiento";
+  if (value === "dominios") return "dominios";
   return "pagos";
 }
 
@@ -95,6 +104,8 @@ interface AdminDashboardTabsProps {
   messagesError?: string | null;
   metricsError?: string | null;
   growthError?: string | null;
+  storeDomains?: AdminStoreDomainRow[];
+  storeDomainsError?: string | null;
   initialTab?: AdminDashboardTab;
 }
 
@@ -114,6 +125,8 @@ export function AdminDashboardTabs({
   messagesError = null,
   metricsError = null,
   growthError = null,
+  storeDomains = [],
+  storeDomainsError = null,
   initialTab = "pagos",
 }: AdminDashboardTabsProps) {
   const router = useRouter();
@@ -227,6 +240,16 @@ export function AdminDashboardTabs({
 
       {activeTab === "planes" ? (
         <PlanSettingsConfigPanel initialSettings={planSettings} />
+      ) : null}
+
+      {activeTab === "dominios" ? (
+        storeDomainsError ? (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            {storeDomainsError}
+          </p>
+        ) : (
+          <AdminCustomDomainsPanel initialRows={storeDomains} />
+        )
       ) : null}
 
       {activeTab === "crecimiento" ? (

@@ -7,17 +7,28 @@ import { cn } from "@/lib/cn";
 
 interface CatalogLinkCardProps {
   slug: string;
+  customDomain?: string | null;
+  customDomainVerified?: boolean;
   className?: string;
   variant?: "settings" | "dashboard";
 }
 
 export function CatalogLinkCard({
   slug,
+  customDomain = null,
+  customDomainVerified = false,
   className,
   variant = "settings",
 }: CatalogLinkCardProps) {
   const [copied, setCopied] = useState(false);
-  const catalogUrl = useMemo(() => getStoreCatalogPublicUrl(slug), [slug]);
+  const catalogUrl = useMemo(
+    () =>
+      getStoreCatalogPublicUrl(slug, "/", {
+        customDomain,
+        customDomainVerified,
+      }),
+    [slug, customDomain, customDomainVerified],
+  );
   const catalogHostLabel = useMemo(() => {
     try {
       return new URL(catalogUrl).host;
