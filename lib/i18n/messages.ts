@@ -32,6 +32,7 @@ const MESSAGES = {
     "settings.tab.design": "Personalizar diseño",
     "settings.tab.promotions": "Promociones",
     "settings.tab.messages": "Plantillas de mensajes",
+    "settings.tab.domains": "Dominios",
   },
   en: {
     "prefs.theme": "Theme",
@@ -64,6 +65,7 @@ const MESSAGES = {
     "settings.tab.design": "Catalog design",
     "settings.tab.promotions": "Promotions",
     "settings.tab.messages": "Message templates",
+    "settings.tab.domains": "Domains",
   },
 } as const;
 

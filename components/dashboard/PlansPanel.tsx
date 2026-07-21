@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Globe } from "lucide-react";
 import { PlanCheckoutDialog } from "@/components/dashboard/plans/PlanCheckoutDialog";
 import {
   formatAnnualSavingsLabel,
@@ -171,6 +171,42 @@ export function PlansPanel({
           <span className="inline-flex w-fit items-center rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
             Activo
           </span>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-teal-200/80 bg-teal-50/40 px-5 py-4 dark:border-teal-900/40 dark:bg-teal-950/20">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <Globe
+              className="mt-0.5 h-5 w-5 shrink-0 text-teal-700 dark:text-teal-400"
+              aria-hidden="true"
+            />
+            <div>
+              <p className="text-sm font-semibold text-teal-950 dark:text-teal-100">
+                Dominio personalizado con Business
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-teal-900/90 dark:text-teal-200/90">
+                El plan Business incluye conectar tu propio dominio (por ejemplo{" "}
+                <strong>tutienda.com</strong>) para que tus clientes vean tu marca
+                en la URL, con instrucciones DNS y verificación incluidas.
+              </p>
+            </div>
+          </div>
+          {currentPlanId === "premium" ? (
+            <Link
+              href="/dashboard/ajustes?tab=domains"
+              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-teal-300 bg-white px-4 py-2 text-sm font-medium text-teal-900 transition hover:bg-teal-50 dark:border-teal-800 dark:bg-teal-950 dark:text-teal-100 dark:hover:bg-teal-900/40"
+            >
+              Configurar dominio
+            </Link>
+          ) : (
+            <Link
+              href="/dashboard/ajustes?tab=domains"
+              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-teal-300 bg-white px-4 py-2 text-sm font-medium text-teal-900 transition hover:bg-teal-50 dark:border-teal-800 dark:bg-teal-950 dark:text-teal-100 dark:hover:bg-teal-900/40"
+            >
+              Ver cómo funciona
+            </Link>
+          )}
         </div>
       </section>
 

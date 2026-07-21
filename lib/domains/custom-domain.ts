@@ -85,6 +85,13 @@ export function getCustomDomainCnameTarget(): string {
   return getPublicSiteHost();
 }
 
+/** IP para registro A en dominio raíz (@). Null si debe configurarse manualmente. */
+export function getCustomDomainApexATarget(): string | null {
+  const fromEnv = process.env.NEXT_PUBLIC_CUSTOM_DOMAIN_A_TARGET?.trim();
+  if (!fromEnv) return null;
+  return fromEnv.replace(/^https?:\/\//, "").split("/")[0] ?? null;
+}
+
 export function isPlatformCatalogHost(hostname: string): boolean {
   const host = hostname.split(":")[0]?.trim().toLowerCase() ?? "";
   if (!host) return true;

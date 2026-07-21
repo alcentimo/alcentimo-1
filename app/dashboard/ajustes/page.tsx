@@ -13,7 +13,12 @@ import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader"
 
 export const dynamic = "force-dynamic";
 
-export default async function AjustesPage() {
+export default async function AjustesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
   const supabase = await createClient();
   const session = await getDashboardSession();
 
@@ -96,6 +101,8 @@ export default async function AjustesPage() {
         products={products}
         initialConfig={settingsConfig}
         designPreview={designPreview}
+        initialTab={tab}
+        planId={session.authUser.planId}
       />
     </div>
   );

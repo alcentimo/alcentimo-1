@@ -123,6 +123,19 @@ export function DashboardSidebar({
     }
   }, []);
 
+  useEffect(() => {
+    function handleOpenSupport() {
+      setSupportKey((key) => key + 1);
+      setSupportOpen(true);
+      onCloseMobile();
+    }
+
+    window.addEventListener("alcentimo:open-support", handleOpenSupport);
+    return () => {
+      window.removeEventListener("alcentimo:open-support", handleOpenSupport);
+    };
+  }, [onCloseMobile]);
+
   function toggleCollapsed() {
     setCollapsed((value) => {
       const next = !value;

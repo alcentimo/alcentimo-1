@@ -19,7 +19,6 @@ import { slugify } from "@/lib/slugify";
 import { isValidStoreSlug } from "@/lib/stores/slug";
 import { getPublicSiteHost } from "@/lib/site-url";
 import { STORE_RUBRO_OPTIONS, normalizeStoreRubro, type StoreRubro } from "@/src/config/categories";
-import { CustomDomainSection } from "@/components/dashboard/settings/CustomDomainSection";
 import { InterfacePreferencesSettingsSection } from "@/components/dashboard/settings/InterfacePreferencesSettingsSection";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 
@@ -207,12 +206,6 @@ export function GeneralTab({ store }: GeneralTabProps) {
         customDomain={store.custom_domain ?? null}
         customDomainVerified={Boolean(store.custom_domain_verified)}
         className="mb-4"
-      />
-
-      <CustomDomainSection
-        storeSlug={savedSlug}
-        customDomain={store.custom_domain ?? null}
-        customDomainVerified={Boolean(store.custom_domain_verified)}
       />
 
       <SettingsSection

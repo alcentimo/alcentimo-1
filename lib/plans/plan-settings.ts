@@ -90,6 +90,7 @@ const TIER_STATIC: Record<
     tagline: "Para marcas establecidas",
     features: [
       "Todo lo del plan Pro",
+      "Dominio personalizado (tutienda.com)",
       "Usuarios y roles de equipo",
       "Soporte dedicado",
     ],

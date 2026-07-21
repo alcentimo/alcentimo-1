@@ -58,6 +58,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     productLimitLabel: "Productos ilimitados",
     features: [
       "Todo lo del plan Pro",
+      "Dominio personalizado (tutienda.com)",
       "Usuarios y roles de equipo",
       "Soporte dedicado",
     ],

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Clock, Coins, CreditCard, MessageSquare, Palette, Settings2, Tag, Truck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Clock, Coins, CreditCard, Globe, MessageSquare, Palette, Settings2, Tag, Truck } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
+import { DomainsTab } from "@/components/dashboard/settings/DomainsTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
 import { MessageTemplatesTab } from "@/components/dashboard/settings/MessageTemplatesTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
@@ -19,8 +20,37 @@ import type { Coupon } from "@/lib/coupons/types";
 import type { Promotion } from "@/lib/promotions/types";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
 import { useLocale } from "@/components/providers/UiPreferencesProvider";
+import type { PlanId } from "@/src/config/plans";
 
-type SettingsTabId = "general" | "currency" | "location" | "shipping" | "payments" | "promotions" | "design" | "messages";
+type SettingsTabId =
+  | "general"
+  | "currency"
+  | "location"
+  | "shipping"
+  | "payments"
+  | "promotions"
+  | "design"
+  | "messages"
+  | "domains";
+
+const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
+  "general",
+  "currency",
+  "location",
+  "shipping",
+  "payments",
+  "promotions",
+  "design",
+  "messages",
+  "domains",
+]);
+
+function resolveInitialTab(tab: string | undefined): SettingsTabId {
+  if (tab && VALID_SETTINGS_TABS.has(tab as SettingsTabId)) {
+    return tab as SettingsTabId;
+  }
+  return "general";
+}
 
 const PRIMARY_TABS: {
   id: SettingsTabId;
@@ -53,6 +83,8 @@ interface SettingsPanelProps {
   products: CouponProductOption[];
   initialConfig: StoreSettingsConfig;
   designPreview?: DesignPreviewContext | null;
+  initialTab?: string;
+  planId?: PlanId;
 }
 
 export function SettingsPanel({
@@ -62,12 +94,21 @@ export function SettingsPanel({
   products,
   initialConfig,
   designPreview = null,
+  initialTab = "general",
+  planId,
 }: SettingsPanelProps) {
-  const [activeTab, setActiveTab] = useState<SettingsTabId>("general");
+  const [activeTab, setActiveTab] = useState<SettingsTabId>(() =>
+    resolveInitialTab(initialTab),
+  );
   const promotionsActive = activeTab === "promotions";
   const designActive = activeTab === "design";
   const messagesActive = activeTab === "messages";
+  const domainsActive = activeTab === "domains";
   const { t } = useLocale();
+
+  useEffect(() => {
+    setActiveTab(resolveInitialTab(initialTab));
+  }, [initialTab]);
 
   const panel = (
     <>
@@ -102,6 +143,14 @@ export function SettingsPanel({
         className="settings-secondary-nav"
         aria-label="Más opciones de configuración"
       >
+        <button
+          type="button"
+          onClick={() => setActiveTab("domains")}
+          className={`settings-pill-link ${domainsActive ? "settings-pill-link-active" : ""}`}
+        >
+          <Globe className="h-3.5 w-3.5" aria-hidden="true" />
+          {t("settings.tab.domains")}
+        </button>
         <button
           type="button"
           onClick={() => setActiveTab("design")}
@@ -185,6 +234,22 @@ export function SettingsPanel({
             aria-labelledby="settings-tab-payments"
           >
             <PaymentsTab initialSettings={initialConfig.payments} />
+          </div>
+        )}
+        {domainsActive && (
+          <div
+            role="tabpanel"
+            id="settings-panel-domains"
+            aria-labelledby="settings-tab-domains"
+          >
+            <DomainsTab
+              store={{
+                slug: store?.slug ?? "mi-tienda",
+                custom_domain: store?.custom_domain ?? null,
+                custom_domain_verified: Boolean(store?.custom_domain_verified),
+              }}
+              planId={planId}
+            />
           </div>
         )}
         {designActive && (
