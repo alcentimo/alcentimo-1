@@ -15,9 +15,9 @@ import { formatUsd, formatExchangeRate } from "@/lib/format";
 import { formatCountryCurrency } from "@/lib/country-config";
 import { useCountry } from "@/components/providers/CountryProvider";
 import {
-  ProductVariantsEditor,
-  serializeVariantsForForm,
-} from "@/components/dashboard/ProductVariantsEditor";
+  RubroVariantsSection,
+} from "@/components/rubros/RubroVariantsSection";
+import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
@@ -39,9 +39,11 @@ function toVariantInputs(
   variants: ProductEditData["variants"],
 ): VariantFormInput[] {
   return variants.map((variant) => ({
+    id: variant.id,
     name: variant.name,
     priceExtraUsd: String(variant.price_extra_usd),
     stock: String(variant.stock),
+    attributes: variant.attributes,
   }));
 }
 
@@ -341,7 +343,8 @@ export function ProductForm({
         </p>
       </div>
 
-      <ProductVariantsEditor
+      <RubroVariantsSection
+        rubro={productFormConfig.rubroTienda}
         variants={variants}
         onChange={setVariants}
         disabled={isBusy}

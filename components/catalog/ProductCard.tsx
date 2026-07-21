@@ -16,6 +16,7 @@ import {
   isProductOutOfStock,
 } from "@/lib/products/variants";
 import type { CatalogVariantOption } from "@/lib/products/variants";
+import { RubroCatalogVariantSlot } from "@/components/rubros/RubroCatalogVariantSlot";
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import { cn } from "@/lib/cn";
 
@@ -26,6 +27,8 @@ interface ProductCardProps {
   catalogVisibility?: CatalogVisibilitySettings;
   cartQuantity?: number;
   referenceCatalog?: boolean;
+  /** Rubro de la tienda: activa selectores de módulo (lazy). */
+  storeRubro?: string | null;
   onAddToCart?: (product: CatalogListItem, variant: CatalogVariantOption) => void;
 }
 
@@ -73,6 +76,7 @@ export const ProductCard = memo(function ProductCard({
   },
   cartQuantity = 0,
   referenceCatalog = false,
+  storeRubro = null,
   onAddToCart,
 }: ProductCardProps) {
   const cartContext = useCartOptional();
@@ -245,31 +249,13 @@ export const ProductCard = memo(function ProductCard({
 
           <div className="store-product-slot store-product-slot-variant">
             {showVariantSelector ? (
-              <>
-                <label htmlFor={`variant-${product.product_id}`} className="sr-only">
-                  Variante
-                </label>
-                <select
-                  id={`variant-${product.product_id}`}
-                  value={selectedVariantId}
-                  onChange={(e) => setSelectedVariantId(e.target.value)}
-                  className="store-cart-select store-product-variant-select w-full"
-                >
-                  {variantOptions.map((variant) => (
-                    <option
-                      key={variant.id}
-                      value={variant.id}
-                      disabled={variant.availableStock <= 0}
-                    >
-                      {variant.name}
-                      {variant.priceExtraUsd > 0
-                        ? ` (+${formatUsd(variant.priceExtraUsd)})`
-                        : ""}
-                      {variant.availableStock <= 0 ? " — Agotado" : ""}
-                    </option>
-                  ))}
-                </select>
-              </>
+              <RubroCatalogVariantSlot
+                rubro={storeRubro}
+                product={product}
+                variantOptions={variantOptions}
+                selectedVariantId={selectedVariantId}
+                onSelect={setSelectedVariantId}
+              />
             ) : (
               <span className="store-product-variant-placeholder" aria-hidden="true" />
             )}

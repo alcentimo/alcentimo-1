@@ -7,10 +7,8 @@ import {
   type ProductFormState,
 } from "@/lib/products/actions";
 import { ProductImageField } from "@/components/dashboard/ProductImageField";
-import {
-  ProductVariantsEditor,
-  serializeVariantsForForm,
-} from "@/components/dashboard/ProductVariantsEditor";
+import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
+import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
@@ -345,7 +343,8 @@ function QuickProductFormSession({
               />
             </div>
 
-            <ProductVariantsEditor
+            <RubroVariantsSection
+              rubro={productFormConfig.rubroTienda}
               variants={variants}
               onChange={setVariants}
               disabled={isBusy}

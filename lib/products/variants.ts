@@ -5,12 +5,30 @@ export interface ProductVariantJson {
   name: string;
   price_extra_usd: number;
   stock: number;
+  /** Atributos estructurados del módulo de rubro (p. ej. talla/color). */
+  attributes?: Record<string, string>;
 }
 
 export interface VariantFormInput {
+  id?: string;
   name: string;
   priceExtraUsd: string;
   stock: string;
+  attributes?: Record<string, string>;
+}
+
+function parseAttributes(raw: unknown): Record<string, string> | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const entries = Object.entries(raw as Record<string, unknown>)
+    .filter(
+      (entry): entry is [string, string] =>
+        typeof entry[0] === "string" &&
+        typeof entry[1] === "string" &&
+        entry[1].trim().length > 0,
+    )
+    .map(([key, value]) => [key, value.trim()] as const);
+  if (entries.length === 0) return undefined;
+  return Object.fromEntries(entries);
 }
 
 export function parseVariantsJson(raw: unknown): ProductVariantJson[] {
@@ -29,6 +47,7 @@ export function parseVariantsJson(raw: unknown): ProductVariantJson[] {
         typeof item.stock === "number" && Number.isFinite(item.stock)
           ? Math.max(0, Math.floor(item.stock))
           : Math.max(0, parseInt(String(item.stock ?? 0), 10) || 0),
+      attributes: parseAttributes(item.attributes),
     }))
     .filter((v) => v.name.length > 0);
 }
@@ -74,6 +93,7 @@ export function parseVariantFormInputs(raw: string): {
       name,
       price_extra_usd: priceExtra,
       stock,
+      attributes: parseAttributes(row.attributes),
     });
   }
 

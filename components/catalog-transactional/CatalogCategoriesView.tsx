@@ -119,6 +119,7 @@ export function CatalogCategoriesView({
                 exchangeRate={liveExchangeRate}
                 showBsConversion={showBsConversion}
                 catalogVisibility={catalogDesign.visibility}
+                storeRubro={store.rubro_tienda}
                 onAddToCart={addItem}
               />
             ))}

@@ -205,6 +205,7 @@ export function StoreCatalog({
                     exchangeRate={liveExchangeRate}
                     showBsConversion={showBsConversion}
                     cartQuantity={cartQuantities.get(product.product_id) ?? 0}
+                    storeRubro={store.rubro_tienda}
                     onAddToCart={addToCart}
                   />
                 ))}

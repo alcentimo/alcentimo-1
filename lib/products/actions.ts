@@ -24,6 +24,7 @@ import {
   getExtraFieldsForProductCategory,
   getProductCategoriesForRubro,
 } from "@/src/config/categories";
+import { filterExtraFieldsForActiveModule } from "@/lib/rubros/registry";
 
 export type ProductFormState = {
   error?: string;
@@ -352,7 +353,10 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     : categoryRelation?.slug;
   const resolvedCategorySlug =
     categorySlug ?? getProductCategoriesForRubro(rubro)[0]?.slug ?? "general";
-  const fieldLabels = getExtraFieldsForProductCategory(rubro, resolvedCategorySlug);
+  const fieldLabels = filterExtraFieldsForActiveModule(
+    rubro,
+    getExtraFieldsForProductCategory(rubro, resolvedCategorySlug),
+  );
   const storedExtraFields = parseExtraFieldsFromMetadata(
     product.metadata as Record<string, unknown> | null,
   );

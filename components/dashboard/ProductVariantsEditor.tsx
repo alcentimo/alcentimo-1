@@ -142,6 +142,7 @@ export function serializeVariantsForForm(
     name: string;
     priceExtraUsd: string;
     stock: string;
+    attributes?: Record<string, string>;
   }> = [];
 
   variants.forEach((row, index) => {
@@ -149,10 +150,11 @@ export function serializeVariantsForForm(
     if (!name) return;
 
     rows.push({
-      id: existingIds?.[index],
+      id: row.id ?? existingIds?.[index],
       name,
       priceExtraUsd: row.priceExtraUsd,
       stock: row.stock,
+      attributes: row.attributes,
     });
   });
 

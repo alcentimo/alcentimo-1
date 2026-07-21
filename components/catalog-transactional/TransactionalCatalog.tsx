@@ -147,6 +147,7 @@ export function TransactionalCatalog({
                   showBsConversion={showBsConversion}
                   catalogVisibility={catalogDesign.visibility}
                   referenceCatalog={referenceMode && previewMode}
+                  storeRubro={store.rubro_tienda}
                   onAddToCart={referenceMode ? undefined : addItem}
                 />
               </div>

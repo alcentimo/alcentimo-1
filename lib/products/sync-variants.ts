@@ -138,6 +138,7 @@ export async function syncProductVariants(
       name: variant.name,
       price_extra_usd: variant.price_extra_usd,
       stock: variant.stock,
+      attributes: variant.attributes,
     });
   }
 
