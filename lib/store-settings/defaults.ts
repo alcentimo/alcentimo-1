@@ -102,6 +102,10 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       showBsConversion: true,
     },
     messageTemplates: defaultMessageTemplates(),
+    interfacePreferences: {
+      theme: "system",
+      locale: "es",
+    },
   };
 }
 
@@ -188,6 +192,9 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
   const visibilityRaw = isRecord(designRaw.visibility) ? designRaw.visibility : {};
   const currencyRaw = isRecord(raw.catalogCurrency) ? raw.catalogCurrency : {};
   const templatesRaw = isRecord(raw.messageTemplates) ? raw.messageTemplates : {};
+  const interfaceRaw = isRecord(raw.interfacePreferences)
+    ? raw.interfacePreferences
+    : {};
 
   for (const key of WEEKDAY_KEYS) {
     const dayRaw = scheduleRaw[key];
@@ -312,6 +319,18 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           ? templatesRaw.enviado
           : defaults.messageTemplates.enviado,
     },
+    interfacePreferences: {
+      theme:
+        interfaceRaw.theme === "light" ||
+        interfaceRaw.theme === "dark" ||
+        interfaceRaw.theme === "system"
+          ? interfaceRaw.theme
+          : defaults.interfacePreferences.theme,
+      locale:
+        interfaceRaw.locale === "es" || interfaceRaw.locale === "en"
+          ? interfaceRaw.locale
+          : defaults.interfacePreferences.locale,
+    },
   };
 }
 
@@ -377,5 +396,8 @@ export function mergeStoreSettingsConfig(
     messageTemplates: patch.messageTemplates
       ? { ...base.messageTemplates, ...patch.messageTemplates }
       : base.messageTemplates,
+    interfacePreferences: patch.interfacePreferences
+      ? { ...base.interfacePreferences, ...patch.interfacePreferences }
+      : base.interfacePreferences,
   };
 }

@@ -18,19 +18,25 @@ import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { Coupon } from "@/lib/coupons/types";
 import type { Promotion } from "@/lib/promotions/types";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
+import { useLocale } from "@/components/providers/UiPreferencesProvider";
 
 type SettingsTabId = "general" | "currency" | "location" | "shipping" | "payments" | "promotions" | "design" | "messages";
 
 const PRIMARY_TABS: {
   id: SettingsTabId;
-  label: string;
+  labelKey:
+    | "settings.tab.general"
+    | "settings.tab.currency"
+    | "settings.tab.location"
+    | "settings.tab.shipping"
+    | "settings.tab.payments";
   icon: typeof Settings2;
 }[] = [
-  { id: "general", label: "General", icon: Settings2 },
-  { id: "currency", label: "Preferencias de Moneda", icon: Coins },
-  { id: "location", label: "Ubicación y Horario", icon: Clock },
-  { id: "shipping", label: "Envíos y Entregas", icon: Truck },
-  { id: "payments", label: "Pagos", icon: CreditCard },
+  { id: "general", labelKey: "settings.tab.general", icon: Settings2 },
+  { id: "currency", labelKey: "settings.tab.currency", icon: Coins },
+  { id: "location", labelKey: "settings.tab.location", icon: Clock },
+  { id: "shipping", labelKey: "settings.tab.shipping", icon: Truck },
+  { id: "payments", labelKey: "settings.tab.payments", icon: CreditCard },
 ];
 
 interface DesignPreviewContext {
@@ -61,6 +67,7 @@ export function SettingsPanel({
   const promotionsActive = activeTab === "promotions";
   const designActive = activeTab === "design";
   const messagesActive = activeTab === "messages";
+  const { t } = useLocale();
 
   const panel = (
     <>
@@ -85,7 +92,7 @@ export function SettingsPanel({
               className={`settings-tab-link ${isActive ? "settings-tab-link-active" : ""}`}
             >
               <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span>{tab.label}</span>
+              <span>{t(tab.labelKey)}</span>
             </button>
           );
         })}
@@ -101,7 +108,7 @@ export function SettingsPanel({
           className={`settings-pill-link ${designActive ? "settings-pill-link-active" : ""}`}
         >
           <Palette className="h-3.5 w-3.5" aria-hidden="true" />
-          Personalizar diseño
+          {t("settings.tab.design")}
         </button>
         <button
           type="button"
@@ -109,7 +116,7 @@ export function SettingsPanel({
           className={`settings-pill-link ${promotionsActive ? "settings-pill-link-active" : ""}`}
         >
           <Tag className="h-3.5 w-3.5" aria-hidden="true" />
-          Promociones
+          {t("settings.tab.promotions")}
         </button>
         <button
           type="button"
@@ -117,7 +124,7 @@ export function SettingsPanel({
           className={`settings-pill-link ${messagesActive ? "settings-pill-link-active" : ""}`}
         >
           <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
-          Plantillas de mensajes
+          {t("settings.tab.messages")}
         </button>
       </nav>
 

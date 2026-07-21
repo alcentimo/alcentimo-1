@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
+import { DashboardPreferenceControls } from "@/components/dashboard/DashboardPreferenceControls";
+import { useOptionalLocale } from "@/components/providers/UiPreferencesProvider";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -45,6 +47,7 @@ function DashboardShell({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const locale = useOptionalLocale();
 
   function closeSidebar() {
     setSidebarOpen(false);
@@ -75,7 +78,7 @@ function DashboardShell({
           type="button"
           className="fixed inset-0 z-40 bg-zinc-900/40 backdrop-blur-[2px] lg:hidden"
           onClick={closeSidebar}
-          aria-label="Cerrar menú"
+          aria-label={locale?.t("nav.closeMenu") ?? "Cerrar menú"}
         />
       )}
 
@@ -100,7 +103,7 @@ function DashboardShell({
               type="button"
               onClick={() => setSidebarOpen(true)}
               className="touch-target rounded-xl text-zinc-700 lg:hidden dark:text-zinc-300"
-              aria-label="Abrir menú"
+              aria-label={locale?.t("nav.openMenu") ?? "Abrir menú"}
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -112,6 +115,7 @@ function DashboardShell({
             />
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <DashboardPreferenceControls variant="compact" />
             <DashboardExchangeRateBadge
               rate={exchangeRate}
               updatedAt={exchangeRateUpdatedAt}

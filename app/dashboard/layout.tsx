@@ -12,6 +12,9 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { AdminPwaServiceWorkerRegister } from "@/components/dashboard/AdminPwaServiceWorkerRegister";
 import { BcvSyncAlertBanner } from "@/components/dashboard/BcvSyncAlertBanner";
 import { CountryProvider } from "@/components/providers/CountryProvider";
+import { UiPreferencesProvider } from "@/components/providers/UiPreferencesProvider";
+import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
+import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 
 export const dynamic = "force-dynamic";
 
@@ -40,11 +43,15 @@ export default async function DashboardRootLayout({
   const isStoreOwnerUser = store ? isStoreOwner(store, authUser.id) : false;
   const canUpgradeToBusiness =
     normalizeDbPlan(authUser.profile?.plan ?? authUser.rawPlan) === "PRO";
-  const [bcvSyncAlert, exchangeRateRow, tasaRow] = await Promise.all([
-    getActiveBcvSyncAlert(supabase),
-    getCurrentExchangeRate(),
-    getLatestUsdTasa(supabase),
-  ]);
+  const [bcvSyncAlert, exchangeRateRow, tasaRow, settingsConfig] =
+    await Promise.all([
+      getActiveBcvSyncAlert(supabase),
+      getCurrentExchangeRate(),
+      getLatestUsdTasa(supabase),
+      store
+        ? getStoreSettingsConfig(supabase, store.id)
+        : Promise.resolve(defaultStoreSettingsConfig()),
+    ]);
 
   const exchangeRate = exchangeRateRow?.rate ?? tasaRow?.tasa ?? null;
   const exchangeRateUpdatedAt =
@@ -67,23 +74,27 @@ export default async function DashboardRootLayout({
   return (
     <>
       <AdminPwaServiceWorkerRegister />
-      <CountryProvider country={store?.country}>
-      <DashboardLayout
-        storeName={store?.name ?? null}
-        storeSlug={store?.slug ?? null}
-        userEmail={authUser.email ?? null}
-        planName={authUser.plan.name}
-        exchangeRate={exchangeRate}
-        exchangeRateUpdatedAt={exchangeRateUpdatedAt}
-        exchangeRateStale={exchangeRateStale}
-        isSupportAdmin={isAdmin}
-        isStoreOwner={isStoreOwnerUser}
-        canUpgradeToBusiness={canUpgradeToBusiness}
+      <UiPreferencesProvider
+        initialPreferences={settingsConfig.interfacePreferences}
       >
-        {bcvSyncAlert ? <BcvSyncAlertBanner alert={bcvSyncAlert} /> : null}
-        {children}
-      </DashboardLayout>
-    </CountryProvider>
+        <CountryProvider country={store?.country}>
+          <DashboardLayout
+            storeName={store?.name ?? null}
+            storeSlug={store?.slug ?? null}
+            userEmail={authUser.email ?? null}
+            planName={authUser.plan.name}
+            exchangeRate={exchangeRate}
+            exchangeRateUpdatedAt={exchangeRateUpdatedAt}
+            exchangeRateStale={exchangeRateStale}
+            isSupportAdmin={isAdmin}
+            isStoreOwner={isStoreOwnerUser}
+            canUpgradeToBusiness={canUpgradeToBusiness}
+          >
+            {bcvSyncAlert ? <BcvSyncAlertBanner alert={bcvSyncAlert} /> : null}
+            {children}
+          </DashboardLayout>
+        </CountryProvider>
+      </UiPreferencesProvider>
     </>
   );
 }

@@ -19,6 +19,7 @@ import { slugify } from "@/lib/slugify";
 import { isValidStoreSlug } from "@/lib/stores/slug";
 import { getPublicSiteHost } from "@/lib/site-url";
 import { STORE_RUBRO_OPTIONS, normalizeStoreRubro, type StoreRubro } from "@/src/config/categories";
+import { InterfacePreferencesSettingsSection } from "@/components/dashboard/settings/InterfacePreferencesSettingsSection";
 
 function getRubroLabel(value: string): string {
   return STORE_RUBRO_OPTIONS.find((option) => option.value === value)?.label ?? value;
@@ -299,6 +300,8 @@ export function GeneralTab({ store }: GeneralTabProps) {
           </p>
         </div>
       </SettingsSection>
+
+      <InterfacePreferencesSettingsSection />
     </SettingsTabShell>
   );
 }

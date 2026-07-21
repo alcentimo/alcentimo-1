@@ -51,6 +51,15 @@ export interface StoredPromotion {
   active: boolean;
 }
 
+/** Preferencias de interfaz del panel (tema e idioma). */
+export type InterfaceThemePreference = "light" | "dark" | "system";
+export type InterfaceLocalePreference = "es" | "en";
+
+export interface InterfacePreferencesSettings {
+  theme: InterfaceThemePreference;
+  locale: InterfaceLocalePreference;
+}
+
 export interface StoreSettingsConfig {
   shipping: ShippingSettings;
   payments: PaymentsSettings;
@@ -60,6 +69,7 @@ export interface StoreSettingsConfig {
   catalogDesign: CatalogDesignSettings;
   catalogCurrency: CatalogCurrencySettings;
   messageTemplates: MessageTemplatesSettings;
+  interfacePreferences: InterfacePreferencesSettings;
 }
 
 export interface ContactSettings {

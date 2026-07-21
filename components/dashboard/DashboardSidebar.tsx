@@ -20,6 +20,7 @@ import {
   type DashboardNavItem,
 } from "@/src/config/dashboard-nav";
 import { cn } from "@/lib/cn";
+import { useLocale } from "@/components/providers/UiPreferencesProvider";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "alcentimo-dashboard-sidebar-collapsed";
 
@@ -49,11 +50,13 @@ function navLinkClass(active: boolean, collapsed: boolean) {
 
 function SidebarNavLink({
   item,
+  label,
   active,
   collapsed,
   onNavigate,
 }: {
   item: DashboardNavItem;
+  label: string;
   active: boolean;
   collapsed: boolean;
   onNavigate: () => void;
@@ -65,7 +68,7 @@ function SidebarNavLink({
       href={item.href}
       className={navLinkClass(active, collapsed)}
       onClick={onNavigate}
-      title={collapsed ? `${item.label} — ${item.description}` : item.description}
+      title={collapsed ? `${label} — ${item.description}` : item.description}
       aria-current={active ? "page" : undefined}
     >
       <Icon
@@ -73,7 +76,7 @@ function SidebarNavLink({
         strokeWidth={active ? 2 : 1.75}
         aria-hidden="true"
       />
-      {!collapsed && <span className="truncate">{item.label}</span>}
+      {!collapsed && <span className="truncate">{label}</span>}
     </Link>
   );
 }
@@ -95,6 +98,7 @@ export function DashboardSidebar({
   const [supportOpen, setSupportOpen] = useState(false);
   const [supportKey, setSupportKey] = useState(0);
   const navItems = getDashboardNavItems({ isStoreOwner });
+  const { t, navLabel } = useLocale();
 
   useEffect(() => {
     try {
@@ -170,6 +174,7 @@ export function DashboardSidebar({
           <SidebarNavLink
             key={item.href}
             item={item}
+            label={navLabel(item.href, item.label)}
             active={isDashboardNavItemActive(pathname, item)}
             collapsed={collapsed}
             onNavigate={onCloseMobile}
@@ -231,10 +236,10 @@ export function DashboardSidebar({
             type="button"
             onClick={onLogout}
             className={navLinkClass(false, collapsed)}
-            title={collapsed ? "Cerrar sesión" : undefined}
+            title={collapsed ? t("nav.logout") : undefined}
           >
             <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-            {!collapsed && <span>Cerrar sesión</span>}
+            {!collapsed && <span>{t("nav.logout")}</span>}
           </button>
 
           {!collapsed && (
@@ -257,10 +262,10 @@ export function DashboardSidebar({
               onCloseMobile();
             }}
             className={navLinkClass(false, collapsed)}
-            title={collapsed ? "Soporte y sugerencias" : undefined}
+            title={collapsed ? t("nav.support") : undefined}
           >
             <LifeBuoy className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-            {!collapsed && <span>Soporte</span>}
+            {!collapsed && <span>{t("nav.support")}</span>}
           </button>
 
           {/* Solo admins de soporte (allowlist); equivalente a role admin en esta app. */}

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #fafaf9;
   --foreground: #18181b;
@@ -96,22 +98,20 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #09090b;
-    --foreground: #fafafa;
-    --brand: #34d399;
-    --brand-hover: #6ee7b7;
-    --brand-muted: #064e3b;
-    --surface: #18181b;
-    --border: #27272a;
-    --muted: #a1a1aa;
-    --pc-fg-meta: #71717a;
-    --pc-media-bg: #27272a;
-    --pc-btn-mobile-bg: #fafafa;
-    --pc-btn-mobile-fg: #18181b;
-    --pc-btn-desktop-bg: #27272a;
-  }
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --brand: #34d399;
+  --brand-hover: #6ee7b7;
+  --brand-muted: #064e3b;
+  --surface: #18181b;
+  --border: #27272a;
+  --muted: #a1a1aa;
+  --pc-fg-meta: #71717a;
+  --pc-media-bg: #27272a;
+  --pc-btn-mobile-bg: #fafafa;
+  --pc-btn-mobile-fg: #18181b;
+  --pc-btn-desktop-bg: #27272a;
 }
 
 body {
