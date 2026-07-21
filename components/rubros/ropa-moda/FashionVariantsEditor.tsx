@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { VariantFormInput } from "@/lib/products/variants";
 import {
+  ROPA_MODA_ALL_SIZE_PRESETS,
   ROPA_MODA_COLOR_PRESETS,
+  ROPA_MODA_SHOE_SIZE_EUR_PRESETS,
+  ROPA_MODA_SHOE_SIZE_US_PRESETS,
   ROPA_MODA_SIZE_PRESETS,
   createDefaultFashionMatrix,
   fashionMatrixToVariants,
@@ -50,6 +53,14 @@ function ChipToggle({
 function resolveInitialMatrix(variants: VariantFormInput[]): FashionMatrixState {
   if (variants.length > 0) return variantsToFashionMatrix(variants);
   return createDefaultFashionMatrix();
+}
+
+function sizeEquals(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+function hasSize(sizes: string[], candidate: string): boolean {
+  return sizes.some((size) => sizeEquals(size, candidate));
 }
 
 export function FashionVariantsEditor({
@@ -106,11 +117,11 @@ export function FashionVariantsEditor({
   }, []);
 
   function toggleSize(size: string) {
-    const exists = matrix.sizes.includes(size);
+    const exists = hasSize(matrix.sizes, size);
     if (exists && required && matrix.sizes.length <= 1) return;
     const sizes = exists
-      ? matrix.sizes.filter((item) => item !== size)
-      : [...matrix.sizes, size];
+      ? matrix.sizes.filter((item) => !sizeEquals(item, size))
+      : [...matrix.sizes, size.trim()];
     commit({ ...matrix, sizes });
   }
 
@@ -125,7 +136,7 @@ export function FashionVariantsEditor({
 
   function addCustomSize() {
     const value = customSize.trim();
-    if (!value || matrix.sizes.includes(value)) return;
+    if (!value || hasSize(matrix.sizes, value)) return;
     setCustomSize("");
     commit({ ...matrix, sizes: [...matrix.sizes, value] });
   }
@@ -145,14 +156,14 @@ export function FashionVariantsEditor({
     });
   }
 
-  const sizePresets = useMemo(
-    () => [
-      ...ROPA_MODA_SIZE_PRESETS,
-      ...matrix.sizes.filter(
+  const customSizes = useMemo(
+    () =>
+      matrix.sizes.filter(
         (size) =>
-          !(ROPA_MODA_SIZE_PRESETS as readonly string[]).includes(size),
+          !(ROPA_MODA_ALL_SIZE_PRESETS as readonly string[]).some((preset) =>
+            sizeEquals(preset, size),
+          ),
       ),
-    ],
     [matrix.sizes],
   );
 
@@ -167,6 +178,34 @@ export function FashionVariantsEditor({
     [matrix.colors],
   );
 
+  function renderSizeGroup(
+    title: string,
+    presets: readonly string[],
+    extra: string[] = [],
+  ) {
+    const items = [...presets, ...extra];
+    if (items.length === 0) return null;
+
+    return (
+      <div className="mt-2">
+        <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+          {title}
+        </p>
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {items.map((size) => (
+            <ChipToggle
+              key={size}
+              label={size}
+              active={hasSize(matrix.sizes, size)}
+              onClick={() => toggleSize(size)}
+              disabled={disabled}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 rounded-xl border border-teal-200/70 bg-teal-50/40 p-4 dark:border-teal-900/40 dark:bg-teal-950/20">
       <div>
@@ -174,7 +213,8 @@ export function FashionVariantsEditor({
           Tallas y colores {required ? <span className="text-red-500">*</span> : null}
         </p>
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-          Obligatorios para Ropa y Moda. Cada combinación tiene su propio stock.
+          Ropa (S–XL) o calzado (EUR / US). Cada combinación tiene su propio
+          stock en la misma matriz.
           {combinationCount > 0
             ? ` · ${combinationCount} variante${combinationCount === 1 ? "" : "s"}`
             : ""}
@@ -183,26 +223,24 @@ export function FashionVariantsEditor({
 
       <div>
         <p className="label-field text-xs">Tallas</p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {sizePresets.map((size) => (
-            <ChipToggle
-              key={size}
-              label={size}
-              active={matrix.sizes.includes(size)}
-              onClick={() => toggleSize(size)}
-              disabled={disabled}
-            />
-          ))}
-        </div>
+        {renderSizeGroup("Ropa", ROPA_MODA_SIZE_PRESETS)}
+        {renderSizeGroup("Calzado EUR", ROPA_MODA_SHOE_SIZE_EUR_PRESETS)}
+        {renderSizeGroup("Calzado US", ROPA_MODA_SHOE_SIZE_US_PRESETS, customSizes)}
         <div className="mt-2 flex gap-2">
           <input
             type="text"
             value={customSize}
             onChange={(e) => setCustomSize(e.target.value)}
-            placeholder="Talla personalizada (ej. 38)"
+            placeholder="Otra talla (ej. 38.5, US 7.5, XXS)"
             maxLength={20}
             disabled={disabled}
             className="input-field mt-0 flex-1 py-2 text-sm"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addCustomSize();
+              }
+            }}
           />
           <button
             type="button"
@@ -299,8 +337,8 @@ export function FashionVariantsEditor({
             </tbody>
           </table>
           <p className="border-t border-zinc-100 px-3 py-2 text-[11px] text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-            Indica cuántas unidades hay de cada talla y color. Usa 0 si esa combinación no
-            está disponible.
+            Indica cuántas unidades hay de cada talla y color. Usa 0 si esa
+            combinación no está disponible.
           </p>
         </div>
       ) : null}
