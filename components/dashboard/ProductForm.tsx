@@ -28,6 +28,7 @@ import type { VariantFormInput } from "@/lib/products/variants";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
+import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
 import {
   emptyFoodModifiers,
   serializeFoodModifiersJson,
@@ -68,6 +69,9 @@ export function ProductForm({
   const [state, formAction, pending] = useActionState(action, initialState);
   const [priceUsd, setPriceUsd] = useState(
     initialData ? String(initialData.priceUsd) : "",
+  );
+  const [compareAtUsd, setCompareAtUsd] = useState(
+    initialData?.compareAtUsd != null ? String(initialData.compareAtUsd) : "",
   );
   const [variants, setVariants] = useState<VariantFormInput[]>(
     initialData ? toVariantInputs(initialData.variants) : [],
@@ -330,6 +334,15 @@ export function ProductForm({
           </div>
         )}
       </div>
+
+      <ProductCompareAtField
+        priceUsd={priceUsd}
+        compareAtUsd={compareAtUsd}
+        onCompareAtUsdChange={setCompareAtUsd}
+        disabled={pending}
+        variant="default"
+        idPrefix="product-compare-at"
+      />
 
       {!isRopaModa &&
       !isAlimentos &&

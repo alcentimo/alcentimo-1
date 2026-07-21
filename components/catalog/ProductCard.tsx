@@ -7,7 +7,7 @@ import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVisibilitySettings } from "@/lib/store-settings/types";
 import { getProductBodyLayoutClass } from "@/lib/store-settings/catalog-theme";
 import { formatUsd, formatApproxBs } from "@/lib/format";
-import { computeUsdToVes } from "@/lib/catalog/pricing";
+import { computeUsdToVes, computeProductDiscountPercent, isProductOnSale } from "@/lib/catalog/pricing";
 import { cartItemKey, sumModifiersExtraUsd, type CartModifierSelection } from "@/lib/catalog/cart-types";
 import { getLowStockThreshold } from "@/lib/inventory/stock-status";
 import {
@@ -188,10 +188,15 @@ export const ProductCard = memo(function ProductCard({
     ? `En carrito (${effectiveCartQuantity})`
     : "Agregar al carrito";
 
-  const hasDiscount =
-    product.compare_at_usd != null &&
-    product.price_usd != null &&
-    product.compare_at_usd > product.price_usd;
+  const hasDiscount = isProductOnSale(product.compare_at_usd, product.price_usd);
+  const discountPercent = computeProductDiscountPercent(
+    product.compare_at_usd,
+    product.price_usd,
+  );
+  const compareAtDisplayUsd =
+    product.compare_at_usd != null && product.compare_at_usd > displayPriceUsd
+      ? product.compare_at_usd
+      : null;
 
   const selectedPriceVes =
     computeUsdToVes(displayPriceUsd, activeExchangeRate) ??
@@ -258,11 +263,16 @@ export const ProductCard = memo(function ProductCard({
         )}
 
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-between p-3">
-          {product.is_featured ? (
-            <span className="store-featured-badge">Destacado</span>
-          ) : (
-            <span aria-hidden="true" />
-          )}
+          <div className="flex flex-col items-start gap-1">
+            {product.is_featured ? (
+              <span className="store-featured-badge">Destacado</span>
+            ) : null}
+            {hasDiscount ? (
+              <span className="store-sale-badge">
+                Oferta{discountPercent != null ? ` −${discountPercent}%` : ""}
+              </span>
+            ) : null}
+          </div>
           {showStockBadge ? (
             <StockBadge availableStock={displayStock} threshold={threshold} />
           ) : (
@@ -333,9 +343,9 @@ export const ProductCard = memo(function ProductCard({
                 <p className="store-product-price-usd">
                   {formatUsd(displayPriceUsd)}
                 </p>
-                {hasDiscount && (
+                {hasDiscount && compareAtDisplayUsd != null && (
                   <p className="store-product-price-compare">
-                    {formatUsd(product.compare_at_usd)}
+                    {formatUsd(compareAtDisplayUsd)}
                   </p>
                 )}
               </div>

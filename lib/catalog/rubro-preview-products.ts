@@ -309,6 +309,8 @@ function seedToReferenceCatalogItem(
     short_description: seed.shortDescription,
     brand: null,
     is_featured: seed.isFeatured ?? false,
+    sort_order: index,
+    created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     category_id: `reference-cat-${seed.categorySlug}`,
     category_name: seed.categoryName,

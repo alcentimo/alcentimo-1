@@ -584,6 +584,13 @@ body {
   @apply font-semibold uppercase tracking-wide shadow-sm backdrop-blur-sm;
 }
 
+.store-sale-badge {
+  padding: var(--pc-badge-pad-y) var(--pc-badge-pad-x);
+  border-radius: var(--pc-badge-radius);
+  font-size: var(--pc-badge-size);
+  @apply bg-orange-600 font-semibold uppercase tracking-wide text-white shadow-sm backdrop-blur-sm;
+}
+
 .store-stock-badge {
   padding: var(--pc-badge-pad-y) var(--pc-badge-pad-x);
   border-radius: var(--pc-badge-radius);

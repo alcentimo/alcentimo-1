@@ -81,8 +81,8 @@ export async function getCatalogProducts(
     .from("catalog_list_view")
     .select("*")
     .eq("store_slug", normalizedSlug)
-    .order("is_featured", { ascending: false })
-    .order("updated_at", { ascending: false })
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (categorySlug) {

@@ -30,7 +30,7 @@ import {
   matchesCriticalStockFilter,
   type CatalogStockFilter,
 } from "@/lib/inventory/stock-status";
-import { deleteProduct, fetchInventoryProducts, adjustProductStock } from "@/lib/products/actions";
+import { deleteProduct, fetchInventoryProducts, adjustProductStock, reorderProducts } from "@/lib/products/actions";
 import { hasMultipleVariants } from "@/lib/products/variants";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -65,6 +65,11 @@ import {
   revokePdfPreviewUrl,
 } from "@/lib/products/download-export";
 import { compressCatalogImagesForPdf } from "@/lib/products/pdf-client-images";
+import {
+  InventoryProductOrderCell,
+  reorderProductIds,
+} from "@/components/dashboard/InventoryProductOrderCell";
+import { isProductOnSale } from "@/lib/catalog/pricing";
 
 const ProductFormSheet = dynamic(
   () =>
@@ -153,15 +158,31 @@ const ProductThumb = memo(function ProductThumb({
 const InventoryPriceDisplay = memo(function InventoryPriceDisplay({
   priceUsd,
   priceVes,
+  compareAtUsd,
 }: {
   priceUsd: number | null;
   priceVes: number | null;
+  compareAtUsd?: number | null;
 }) {
+  const onSale = isProductOnSale(compareAtUsd, priceUsd);
+
   return (
     <div className="inventory-price-stack">
-      <span className="price-usd-cell">
-        {priceUsd != null ? formatUsd(priceUsd) : "—"}
-      </span>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="price-usd-cell">
+          {priceUsd != null ? formatUsd(priceUsd) : "—"}
+        </span>
+        {onSale && compareAtUsd != null ? (
+          <span className="text-[11px] text-zinc-400 line-through">
+            {formatUsd(compareAtUsd)}
+          </span>
+        ) : null}
+        {onSale ? (
+          <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-700 dark:bg-orange-950/50 dark:text-orange-300">
+            Oferta
+          </span>
+        ) : null}
+      </div>
       {priceVes != null ? (
         <p className="price-ves-cell">{formatVes(priceVes)}</p>
       ) : null}
@@ -310,16 +331,28 @@ const InventoryStockControls = memo(function InventoryStockControls({
 
 const InventoryRow = memo(function InventoryRow({
   product,
+  position,
+  total,
+  reorderEnabled,
+  reorderPending,
+  adjustingStock,
   onEdit,
   onDelete,
   onStockAdjust,
-  adjustingStock,
+  onPositionCommit,
+  onDropOnRow,
 }: {
   product: CatalogListItem;
+  position: number;
+  total: number;
+  reorderEnabled: boolean;
+  reorderPending: boolean;
+  adjustingStock: boolean;
   onEdit: (productId: string) => void;
   onDelete: (productId: string) => void;
   onStockAdjust: (productId: string, delta: number) => void;
-  adjustingStock: boolean;
+  onPositionCommit: (productId: string, nextPosition: number) => void;
+  onDropOnRow: (draggedProductId: string, targetProductId: string) => void;
 }) {
   const stockQuantity = getProductStockQuantity(product);
   const out = isOutOfStock({
@@ -332,7 +365,30 @@ const InventoryRow = memo(function InventoryRow({
   return (
     <tr
       className={`inventory-row group ${critical ? "inventory-row-low-stock" : ""} ${out ? "inventory-row-out-stock" : ""}`}
+      onDragOver={(event) => {
+        if (!reorderEnabled) return;
+        event.preventDefault();
+      }}
+      onDrop={(event) => {
+        if (!reorderEnabled) return;
+        event.preventDefault();
+        const draggedProductId = event.dataTransfer.getData("text/plain");
+        if (draggedProductId) {
+          onDropOnRow(draggedProductId, product.product_id);
+        }
+      }}
     >
+      {reorderEnabled ? (
+        <td className="inventory-td w-24">
+          <InventoryProductOrderCell
+            productId={product.product_id}
+            position={position}
+            total={total}
+            pending={reorderPending}
+            onPositionCommit={onPositionCommit}
+          />
+        </td>
+      ) : null}
       <td className="inventory-td w-12">
         <ProductThumb name={product.product_name} thumbUrl={product.thumb_url} />
       </td>
@@ -363,6 +419,7 @@ const InventoryRow = memo(function InventoryRow({
         <InventoryPriceDisplay
           priceUsd={product.price_usd}
           priceVes={product.price_ves}
+          compareAtUsd={product.compare_at_usd}
         />
       </td>
       <td className="inventory-td inventory-td-actions">
@@ -431,6 +488,7 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
             <InventoryPriceDisplay
               priceUsd={product.price_usd}
               priceVes={product.price_ves}
+              compareAtUsd={product.compare_at_usd}
             />
           </div>
         </div>
@@ -488,6 +546,10 @@ export function InventoryPanel({
   const [publishedProduct, setPublishedProduct] = useState<PublishedProductResult | null>(
     null,
   );
+  const [reorderingProductId, setReorderingProductId] = useState<string | null>(null);
+  const [reorderError, setReorderError] = useState<string | null>(null);
+
+  const reorderEnabled = stockFilter === "all";
 
   const filtered = useMemo(() => {
     if (stockFilter === "all") return products;
@@ -599,6 +661,69 @@ export function InventoryPanel({
       setAdjustingProductId(null);
     });
   }, [applyInventoryRefresh]);
+
+  const applyProductOrder = useCallback(
+    async (nextIds: string[]) => {
+      const productMap = new Map(
+        products.map((product) => [product.product_id, product]),
+      );
+      const nextProducts = nextIds
+        .map((id) => productMap.get(id))
+        .filter((product): product is CatalogListItem => product != null);
+
+      if (nextProducts.length !== nextIds.length) {
+        refreshProducts();
+        return false;
+      }
+
+      setProducts(nextProducts);
+      const result = await reorderProducts(nextIds);
+      if (result.error) {
+        setReorderError(result.error);
+        refreshProducts();
+        return false;
+      }
+
+      setReorderError(null);
+      return true;
+    },
+    [products, refreshProducts],
+  );
+
+  const handlePositionCommit = useCallback(
+    async (productId: string, nextPosition: number) => {
+      if (!reorderEnabled) return;
+
+      const currentIds = products.map((product) => product.product_id);
+      const nextIds = reorderProductIds(currentIds, productId, nextPosition - 1);
+      if (nextIds.join("|") === currentIds.join("|")) return;
+
+      setReorderingProductId(productId);
+      await applyProductOrder(nextIds);
+      setReorderingProductId(null);
+    },
+    [applyProductOrder, products, reorderEnabled],
+  );
+
+  const handleDropOnRow = useCallback(
+    async (draggedProductId: string, targetProductId: string) => {
+      if (!reorderEnabled || draggedProductId === targetProductId) return;
+
+      const targetIndex = products.findIndex(
+        (product) => product.product_id === targetProductId,
+      );
+      if (targetIndex < 0) return;
+
+      const currentIds = products.map((product) => product.product_id);
+      const nextIds = reorderProductIds(currentIds, draggedProductId, targetIndex);
+      if (nextIds.join("|") === currentIds.join("|")) return;
+
+      setReorderingProductId(draggedProductId);
+      await applyProductOrder(nextIds);
+      setReorderingProductId(null);
+    },
+    [applyProductOrder, products, reorderEnabled],
+  );
 
   const handleExportExcel = useCallback(() => {
     startExport(async () => {
@@ -894,6 +1019,19 @@ export function InventoryPanel({
         </div>
       ) : null}
 
+      {reorderError && (
+        <p className="mb-3 text-xs text-red-600 dark:text-red-400" role="alert">
+          {reorderError}
+        </p>
+      )}
+
+      {reorderEnabled && products.length > 1 ? (
+        <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+          Arrastra o cambia la posición numérica para definir el orden del catálogo
+          público. Los productos nuevos aparecen primero por defecto.
+        </p>
+      ) : null}
+
       {exportError && (
         <p className="mb-3 text-xs text-red-600 dark:text-red-400" role="alert">
           {exportError}
@@ -923,6 +1061,11 @@ export function InventoryPanel({
             <table className="inventory-table inventory-table-dense w-full">
               <thead>
                 <tr className="bg-zinc-50/95 dark:bg-zinc-900/70">
+                  {reorderEnabled ? (
+                    <th scope="col" className="inventory-th inventory-th-dense w-24">
+                      Orden
+                    </th>
+                  ) : null}
                   <th scope="col" className="inventory-th inventory-th-dense w-12">
                     Foto
                   </th>
@@ -944,7 +1087,7 @@ export function InventoryPanel({
                 {filtered.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={reorderEnabled ? 6 : 5}
                       className="inventory-td inventory-td-dense py-10 text-center text-xs text-zinc-500"
                     >
                       {stockFilter === "critical"
@@ -953,14 +1096,20 @@ export function InventoryPanel({
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((product) => (
+                  filtered.map((product, index) => (
                     <InventoryRow
                       key={product.product_id}
                       product={product}
+                      position={index}
+                      total={filtered.length}
+                      reorderEnabled={reorderEnabled}
+                      reorderPending={reorderingProductId === product.product_id}
                       onEdit={openEdit}
                       onDelete={handleDeleteRequest}
                       onStockAdjust={handleStockAdjust}
                       adjustingStock={adjustingProductId === product.product_id}
+                      onPositionCommit={handlePositionCommit}
+                      onDropOnRow={handleDropOnRow}
                     />
                   ))
                 )}

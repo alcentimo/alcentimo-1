@@ -31,6 +31,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { getTransactionalCatalogPublicUrl } from "@/lib/stores";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
@@ -85,6 +86,7 @@ function QuickProductFormSession({
   const { config: countryConfig } = useCountry();
   const [state, formAction, pending] = useActionState(createProduct, initialState);
   const [priceUsd, setPriceUsd] = useState("");
+  const [compareAtUsd, setCompareAtUsd] = useState("");
   const [variants, setVariants] = useState<VariantFormInput[]>([]);
   const [foodModifiers, setFoodModifiers] =
     useState<FoodModifiersConfig>(emptyFoodModifiers);
@@ -167,6 +169,7 @@ function QuickProductFormSession({
 
   function resetFormState() {
     setPriceUsd("");
+    setCompareAtUsd("");
     setVariants([]);
     setFoodModifiers(emptyFoodModifiers());
     setAdvancedOpen(false);
@@ -314,6 +317,15 @@ function QuickProductFormSession({
           </div>
         )}
       </div>
+
+      <ProductCompareAtField
+        priceUsd={priceUsd}
+        compareAtUsd={compareAtUsd}
+        onCompareAtUsdChange={setCompareAtUsd}
+        disabled={isBusy}
+        variant="compact"
+        idPrefix="quick-compare-at"
+      />
 
       <ProductImageField
         id="quick-image"

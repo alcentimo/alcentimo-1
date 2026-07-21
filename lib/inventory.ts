@@ -42,7 +42,8 @@ export async function getStoreInventory(
         .from("catalog_list_view")
         .select("*")
         .eq("store_slug", storeSlug)
-        .order("updated_at", { ascending: false }),
+        .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false }),
       getCurrentExchangeRate().catch(() => null),
     ]);
 

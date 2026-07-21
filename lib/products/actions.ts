@@ -59,6 +59,44 @@ function resolveProductFieldLabels(
   );
 }
 
+function parseCompareAtUsdFromForm(
+  formData: FormData,
+  priceUsd: number,
+): { compareAtUsd?: number | null; error?: string } {
+  const raw = String(formData.get("compare_at_usd") ?? "").trim();
+  if (!raw) return { compareAtUsd: null };
+
+  const compareAtUsd = parseFloat(raw);
+  if (!Number.isFinite(compareAtUsd) || compareAtUsd < 0) {
+    return { error: "Ingresa un precio regular válido." };
+  }
+
+  if (compareAtUsd > 0 && compareAtUsd <= priceUsd) {
+    return {
+      error:
+        "El precio regular debe ser mayor al precio de venta para mostrar la oferta.",
+    };
+  }
+
+  return { compareAtUsd: compareAtUsd > 0 ? compareAtUsd : null };
+}
+
+async function getNextProductSortOrder(
+  supabase: SupabaseClient,
+  storeId: string,
+): Promise<number> {
+  const { data: minSortRow } = await supabase
+    .from("products")
+    .select("sort_order")
+    .eq("store_id", storeId)
+    .eq("is_deleted", false)
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  return (minSortRow?.sort_order ?? 0) - 1;
+}
+
 export type ProductFormState = {
   error?: string;
   success?: boolean;
@@ -77,6 +115,7 @@ export interface ProductEditData {
   shortDescription: string;
   description: string;
   priceUsd: number;
+  compareAtUsd: number | null;
   stockQuantity: number;
   lowStockThreshold: number;
   categoryId: string;
@@ -172,6 +211,8 @@ export async function createProduct(
   if (!Number.isFinite(priceUsd) || priceUsd < 0) {
     return { error: "Ingresa un precio USD válido." };
   }
+  const compareAtParsed = parseCompareAtUsdFromForm(formData, priceUsd);
+  if (compareAtParsed.error) return { error: compareAtParsed.error };
   if (!hasCustomVariants) {
     if (!Number.isFinite(stockQuantity) || stockQuantity < 0) {
       return { error: "Ingresa un stock válido (0 o más)." };
@@ -241,6 +282,8 @@ export async function createProduct(
     }
   }
 
+  const sortOrder = await getNextProductSortOrder(supabase, store.id);
+
   const { data: product, error: productError } = await supabase
     .from("products")
     .insert({
@@ -251,6 +294,7 @@ export async function createProduct(
       short_description: shortDescription || null,
       description: description || null,
       metadata,
+      sort_order: sortOrder,
     })
     .select("id")
     .single();
@@ -280,6 +324,7 @@ export async function createProduct(
   const { error: priceError } = await supabase.from("product_prices").insert({
     variant_id: variantId,
     amount_usd: priceUsd,
+    compare_at_usd: compareAtParsed.compareAtUsd ?? null,
   });
 
   if (priceError) return { error: priceError.message };
@@ -380,7 +425,7 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
 
   const { data: priceRow } = await supabase
     .from("product_prices")
-    .select("amount_usd")
+    .select("amount_usd, compare_at_usd")
     .eq("variant_id", defaultVariant.id)
     .maybeSingle();
 
@@ -407,6 +452,10 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     shortDescription: (product.short_description as string | null) ?? "",
     description: (product.description as string | null) ?? "",
     priceUsd: Number(priceRow?.amount_usd ?? 0),
+    compareAtUsd:
+      priceRow?.compare_at_usd != null
+        ? Number(priceRow.compare_at_usd)
+        : null,
     stockQuantity: Number(defaultVariant.stock_quantity ?? 0),
     lowStockThreshold: Number(defaultVariant.low_stock_threshold ?? 5),
     categoryId: product.category_id as string,
@@ -475,6 +524,8 @@ export async function updateProduct(
   if (!Number.isFinite(priceUsd) || priceUsd < 0) {
     return { error: "Ingresa un precio USD válido." };
   }
+  const compareAtParsed = parseCompareAtUsdFromForm(formData, priceUsd);
+  if (compareAtParsed.error) return { error: compareAtParsed.error };
   if (!hasCustomVariants && (!Number.isFinite(stockQuantity) || stockQuantity < 0)) {
     return { error: "Ingresa un stock válido (0 o más)." };
   }
@@ -546,7 +597,10 @@ export async function updateProduct(
 
   const priceUpdate = await supabase
     .from("product_prices")
-    .update({ amount_usd: priceUsd })
+    .update({
+      amount_usd: priceUsd,
+      compare_at_usd: compareAtParsed.compareAtUsd ?? null,
+    })
     .eq("variant_id", defaultVariantId);
 
   if (priceUpdate.error) return { error: priceUpdate.error.message };
@@ -706,6 +760,48 @@ export async function fetchInventoryProducts(): Promise<{
   const { getStoreInventory } = await import("@/lib/inventory");
   const { products, inventoryError } = await getStoreInventory(auth.store.slug);
   return { products, error: inventoryError };
+}
+
+export async function reorderProducts(
+  orderedProductIds: string[],
+): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await getSupabase();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) return { error: auth.error };
+
+  const uniqueIds = [...new Set(orderedProductIds.map((id) => id.trim()).filter(Boolean))];
+  if (uniqueIds.length === 0) {
+    return { error: "No hay productos para reordenar." };
+  }
+
+  const { data: storeProducts, error: lookupError } = await supabase
+    .from("products")
+    .select("id")
+    .eq("store_id", auth.store.id)
+    .eq("is_deleted", false)
+    .in("id", uniqueIds);
+
+  if (lookupError) return { error: lookupError.message };
+
+  const ownedIds = new Set((storeProducts ?? []).map((row) => row.id as string));
+  if (ownedIds.size !== uniqueIds.length) {
+    return { error: "No se pudo reordenar: producto no válido." };
+  }
+
+  const updates = uniqueIds.map((productId, index) =>
+    supabase
+      .from("products")
+      .update({ sort_order: index })
+      .eq("id", productId)
+      .eq("store_id", auth.store.id),
+  );
+
+  const results = await Promise.all(updates);
+  const failed = results.find((result) => result.error);
+  if (failed?.error) return { error: failed.error.message };
+
+  revalidateInventoryPaths(auth.store.slug);
+  return { success: true };
 }
 
 export type InventoryActionState = {

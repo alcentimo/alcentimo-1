@@ -323,6 +323,7 @@ export interface Product {
   is_active: boolean;
   is_deleted: boolean;
   is_featured: boolean;
+  sort_order: number;
   metadata: Record<string, unknown>;
   stock: number;
   variants?: ProductVariantJson[];
@@ -475,6 +476,8 @@ export interface CatalogListItem {
   short_description: string | null;
   brand: string | null;
   is_featured: boolean;
+  sort_order: number;
+  created_at: string;
   updated_at: string;
   category_id: string;
   category_name: string;
@@ -527,6 +530,7 @@ export type ProductInsert = {
   tags?: string[];
   is_active?: boolean;
   is_featured?: boolean;
+  sort_order?: number;
   metadata?: Record<string, unknown>;
   stock?: number;
   variants?: ProductVariantJson[];

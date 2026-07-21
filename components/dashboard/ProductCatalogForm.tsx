@@ -27,6 +27,7 @@ import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection
 import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
 import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
+import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
 import {
   emptyFoodModifiers,
   serializeFoodModifiersJson,
@@ -60,6 +61,9 @@ export function ProductCatalogForm({
   const [state, formAction, pending] = useActionState(action, initialState);
   const [priceUsd, setPriceUsd] = useState(
     initialData ? String(initialData.priceUsd) : "",
+  );
+  const [compareAtUsd, setCompareAtUsd] = useState(
+    initialData?.compareAtUsd != null ? String(initialData.compareAtUsd) : "",
   );
   const [compressedImageFile, setCompressedImageFile] = useState<File | null>(null);
   const [imageBusy, setImageBusy] = useState(false);
@@ -274,6 +278,15 @@ export function ProductCatalogForm({
           />
         </div>
       </div>
+
+      <ProductCompareAtField
+        priceUsd={priceUsd}
+        compareAtUsd={compareAtUsd}
+        onCompareAtUsdChange={setCompareAtUsd}
+        disabled={isBusy}
+        variant="compact"
+        idPrefix="catalog-compare-at"
+      />
 
       {!isRopaModa &&
       !isAlimentos &&
