@@ -21,6 +21,11 @@ import { getPublicSiteHost } from "@/lib/site-url";
 import { STORE_RUBRO_OPTIONS, normalizeStoreRubro, type StoreRubro } from "@/src/config/categories";
 import { CustomDomainSection } from "@/components/dashboard/settings/CustomDomainSection";
 import { InterfacePreferencesSettingsSection } from "@/components/dashboard/settings/InterfacePreferencesSettingsSection";
+import { AlertDialog } from "@/components/ui/alert-dialog";
+
+const RUBRO_CHANGE_CONFIRM_TITLE = "¿Estás seguro de cambiar el rubro?";
+const RUBRO_CHANGE_CONFIRM_DESCRIPTION =
+  "Esto adaptará los campos de tu catálogo para los nuevos productos, pero tus productos actuales conservarán su información original.";
 
 function getRubroLabel(value: string): string {
   return STORE_RUBRO_OPTIONS.find((option) => option.value === value)?.label ?? value;
@@ -58,6 +63,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [rubroConfirmOpen, setRubroConfirmOpen] = useState(false);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -109,21 +115,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
     return () => window.clearTimeout(timer);
   }, [storeName, savedSlug]);
 
-  function handleSave() {
-    if (!canSave) return;
-
-    const rubroChanged = rubroTienda !== savedRubro;
-    if (rubroChanged) {
-      const confirmed = window.confirm(
-        "Vas a cambiar el rubro de tu tienda.\n\n" +
-          "• Tus productos existentes se conservan sin cambios.\n" +
-          "• Los formularios nuevos usarán campos del rubro seleccionado.\n" +
-          "• Los productos antiguos mantienen sus datos aunque pertenezcan a otro giro.\n\n" +
-          "¿Deseas continuar?",
-      );
-      if (!confirmed) return;
-    }
-
+  function persistGeneralSettings() {
     setError(null);
     setSuccessMessage(null);
     setSaving(true);
@@ -139,6 +131,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
         rubroTienda,
       });
       setSaving(false);
+      setRubroConfirmOpen(false);
 
       if (result.error) {
         setError(result.error);
@@ -166,21 +159,40 @@ export function GeneralTab({ store }: GeneralTabProps) {
     });
   }
 
+  function handleRubroConfirmDismiss(open: boolean) {
+    if (!open && !saving) {
+      setRubroTienda(savedRubro);
+    }
+    setRubroConfirmOpen(open);
+  }
+
+  function handleSave() {
+    if (!canSave) return;
+
+    if (rubroTienda !== savedRubro) {
+      setRubroConfirmOpen(true);
+      return;
+    }
+
+    persistGeneralSettings();
+  }
+
   return (
-    <SettingsTabShell
-      error={error}
-      saveLabel="Guardar cambios"
-      saving={saving}
-      saveDisabled={!canSave}
-      onSave={handleSave}
-      saveHint={
-        canSave
-          ? "Los cambios se aplican de inmediato en tu catálogo público."
-          : slugStatus === "taken"
-            ? "Elige otro nombre: ese enlace ya está en uso."
-            : undefined
-      }
-    >
+    <>
+      <SettingsTabShell
+        error={error}
+        saveLabel="Guardar cambios"
+        saving={saving}
+        saveDisabled={!canSave}
+        onSave={handleSave}
+        saveHint={
+          canSave
+            ? "Los cambios se aplican de inmediato en tu catálogo público."
+            : slugStatus === "taken"
+              ? "Elige otro nombre: ese enlace ya está en uso."
+              : undefined
+        }
+      >
       {successMessage ? (
         <p
           className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
@@ -329,6 +341,18 @@ export function GeneralTab({ store }: GeneralTabProps) {
       </SettingsSection>
 
       <InterfacePreferencesSettingsSection />
-    </SettingsTabShell>
+      </SettingsTabShell>
+
+      <AlertDialog
+        open={rubroConfirmOpen}
+        onOpenChange={handleRubroConfirmDismiss}
+        title={RUBRO_CHANGE_CONFIRM_TITLE}
+        description={RUBRO_CHANGE_CONFIRM_DESCRIPTION}
+        confirmLabel="Sí, cambiar rubro"
+        cancelLabel="Cancelar"
+        loading={saving}
+        onConfirm={persistGeneralSettings}
+      />
+    </>
   );
 }
