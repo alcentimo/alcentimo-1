@@ -19,5 +19,10 @@ export const RUBRO_MODULE_MANAGED_EXTRA_FIELDS: Record<
   RubroProductModuleId,
   readonly string[]
 > = {
-  "ropa-moda": ["Talla", "Color"],
+  "ropa-moda": ["Talla", "Color", "Material", "Género"],
+};
+
+/** Si true, el formulario no muestra selector de categoría (el rubro define el giro). */
+export const RUBRO_MODULE_HIDES_CATEGORY: Record<RubroProductModuleId, boolean> = {
+  "ropa-moda": true,
 };

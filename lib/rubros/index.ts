@@ -13,6 +13,7 @@
 export {
   getActiveProductModuleId,
   storeUsesRubroProductModule,
+  rubroHidesProductCategory,
   filterExtraFieldsForActiveModule,
   loadRubroProductModule,
 } from "@/lib/rubros/registry";

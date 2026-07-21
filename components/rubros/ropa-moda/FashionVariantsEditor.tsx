@@ -1,12 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { VariantFormInput } from "@/lib/products/variants";
 import {
   ROPA_MODA_COLOR_PRESETS,
   ROPA_MODA_SIZE_PRESETS,
-  emptyFashionMatrix,
+  createDefaultFashionMatrix,
   fashionMatrixToVariants,
   fashionVariantKey,
   variantsToFashionMatrix,
@@ -17,6 +16,8 @@ interface FashionVariantsEditorProps {
   variants: VariantFormInput[];
   onChange: (variants: VariantFormInput[]) => void;
   disabled?: boolean;
+  /** Obliga tallas/colores (estándar Ropa y Moda). */
+  required?: boolean;
 }
 
 function ChipToggle({
@@ -46,16 +47,23 @@ function ChipToggle({
   );
 }
 
+function resolveInitialMatrix(variants: VariantFormInput[]): FashionMatrixState {
+  if (variants.length > 0) return variantsToFashionMatrix(variants);
+  return createDefaultFashionMatrix();
+}
+
 export function FashionVariantsEditor({
   variants,
   onChange,
   disabled = false,
+  required = true,
 }: FashionVariantsEditorProps) {
   const [matrix, setMatrix] = useState<FashionMatrixState>(() =>
-    variants.length > 0 ? variantsToFashionMatrix(variants) : emptyFashionMatrix(),
+    resolveInitialMatrix(variants),
   );
   const [customSize, setCustomSize] = useState("");
   const [customColor, setCustomColor] = useState("");
+  const didSeedRef = useRef(false);
 
   const combinationCount = matrix.sizes.length * matrix.colors.length;
 
@@ -87,8 +95,19 @@ export function FashionVariantsEditor({
     onChange(fashionMatrixToVariants(normalized));
   }
 
+  useEffect(() => {
+    if (didSeedRef.current) return;
+    didSeedRef.current = true;
+    if (variants.length === 0) {
+      commit(createDefaultFashionMatrix());
+    }
+    // Solo al montar: sincroniza el estado del padre con la matriz por defecto.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function toggleSize(size: string) {
     const exists = matrix.sizes.includes(size);
+    if (exists && required && matrix.sizes.length <= 1) return;
     const sizes = exists
       ? matrix.sizes.filter((item) => item !== size)
       : [...matrix.sizes, size];
@@ -97,6 +116,7 @@ export function FashionVariantsEditor({
 
   function toggleColor(color: string) {
     const exists = matrix.colors.includes(color);
+    if (exists && required && matrix.colors.length <= 1) return;
     const colors = exists
       ? matrix.colors.filter((item) => item !== color)
       : [...matrix.colors, color];
@@ -125,27 +145,6 @@ export function FashionVariantsEditor({
     });
   }
 
-  function clearMatrix() {
-    commit(emptyFashionMatrix());
-  }
-
-  function seedDefaultMatrix() {
-    commit({
-      sizes: ["S", "M", "L"],
-      colors: ["Negro", "Blanco"],
-      stocks: {
-        [fashionVariantKey("S", "Negro")]: "0",
-        [fashionVariantKey("S", "Blanco")]: "0",
-        [fashionVariantKey("M", "Negro")]: "0",
-        [fashionVariantKey("M", "Blanco")]: "0",
-        [fashionVariantKey("L", "Negro")]: "0",
-        [fashionVariantKey("L", "Blanco")]: "0",
-      },
-      priceExtras: {},
-      ids: {},
-    });
-  }
-
   const sizePresets = useMemo(
     () => [
       ...ROPA_MODA_SIZE_PRESETS,
@@ -168,50 +167,18 @@ export function FashionVariantsEditor({
     [matrix.colors],
   );
 
-  if (matrix.sizes.length === 0 && matrix.colors.length === 0) {
-    return (
-      <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+  return (
+    <div className="space-y-4 rounded-xl border border-teal-200/70 bg-teal-50/40 p-4 dark:border-teal-900/40 dark:bg-teal-950/20">
+      <div>
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-          Variantes de ropa (talla × color)
+          Tallas y colores {required ? <span className="text-red-500">*</span> : null}
         </p>
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-          Define tallas y colores con stock individual. Solo se carga para tiendas de Ropa y
-          Moda.
+          Obligatorios para Ropa y Moda. Cada combinación tiene su propio stock.
+          {combinationCount > 0
+            ? ` · ${combinationCount} variante${combinationCount === 1 ? "" : "s"}`
+            : ""}
         </p>
-        <button
-          type="button"
-          onClick={seedDefaultMatrix}
-          disabled={disabled}
-          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-teal-700 transition hover:text-teal-800 disabled:opacity-60 dark:text-teal-400"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Configurar tallas y colores
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4 rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            Variantes de ropa (talla × color)
-          </p>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            {combinationCount > 0
-              ? `${combinationCount} combinación${combinationCount === 1 ? "" : "es"} · stock por celda`
-              : "Selecciona al menos una talla y un color"}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={clearMatrix}
-          disabled={disabled}
-          className="text-xs font-medium text-zinc-500 hover:text-red-600 disabled:opacity-50"
-        >
-          Quitar variantes
-        </button>
       </div>
 
       <div>
@@ -232,7 +199,7 @@ export function FashionVariantsEditor({
             type="text"
             value={customSize}
             onChange={(e) => setCustomSize(e.target.value)}
-            placeholder="Talla personalizada"
+            placeholder="Talla personalizada (ej. 38)"
             maxLength={20}
             disabled={disabled}
             className="input-field mt-0 flex-1 py-2 text-sm"
@@ -283,7 +250,7 @@ export function FashionVariantsEditor({
       </div>
 
       {matrix.sizes.length > 0 && matrix.colors.length > 0 ? (
-        <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
           <table className="min-w-full text-left text-xs">
             <thead className="bg-zinc-100/80 dark:bg-zinc-900">
               <tr>
@@ -317,9 +284,9 @@ export function FashionVariantsEditor({
                           type="number"
                           min={0}
                           step={1}
-                          value={matrix.stocks[key] ?? ""}
+                          required={required}
+                          value={matrix.stocks[key] ?? "0"}
                           onChange={(e) => setStock(size, color, e.target.value)}
-                          placeholder="—"
                           disabled={disabled}
                           aria-label={`Stock ${size} ${color}`}
                           className="w-20 rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm tabular-nums outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600/20 dark:border-zinc-700 dark:bg-zinc-950"
@@ -332,27 +299,9 @@ export function FashionVariantsEditor({
             </tbody>
           </table>
           <p className="border-t border-zinc-100 px-3 py-2 text-[11px] text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-            Deja vacío o pon 0 si esa combinación no aplica. Solo las celdas con valor se
-            guardan como variantes.
+            Indica cuántas unidades hay de cada talla y color. Usa 0 si esa combinación no
+            está disponible.
           </p>
-        </div>
-      ) : null}
-
-      {matrix.sizes.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {matrix.sizes.map((size) => (
-            <button
-              key={`rm-size-${size}`}
-              type="button"
-              onClick={() => toggleSize(size)}
-              disabled={disabled}
-              className="inline-flex items-center gap-1 rounded-md text-[11px] text-zinc-500 hover:text-red-600"
-              aria-label={`Quitar talla ${size}`}
-            >
-              <Trash2 className="h-3 w-3" aria-hidden="true" />
-              {size}
-            </button>
-          ))}
         </div>
       ) : null}
     </div>

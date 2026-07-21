@@ -13,6 +13,7 @@ import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFi
 import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
+import { rubroHidesProductCategory } from "@/lib/rubros/registry";
 import type { Store } from "@/lib/database.types";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { VariantFormInput } from "@/lib/products/variants";
@@ -94,6 +95,10 @@ function QuickProductFormSession({
     setExtraFields,
   } = useProductCategoryFields(productFormConfig);
 
+  const isRopaModa = rubroHidesProductCategory(productFormConfig.rubroTienda);
+  const defaultCategorySlug =
+    productFormConfig.productCategories[0]?.slug ?? "camisas";
+
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
 
   const priceUsdPreview = useMemo(() => {
@@ -152,16 +157,27 @@ function QuickProductFormSession({
       return;
     }
 
+    if (isRopaModa && !hasCustomVariants) {
+      setLocalError("Selecciona al menos una talla y un color con su stock.");
+      return;
+    }
+
     const form = e.currentTarget;
     const formData = new FormData(form);
     submittedNameRef.current = String(formData.get("name") ?? "").trim();
     const priceUsd = bs / exchangeRate;
 
     formData.set("price_usd", priceUsd.toFixed(4));
-    formData.set("product_category_slug", categorySlug);
-    formData.set("custom_category_name", customCategoryName);
+    formData.set(
+      "product_category_slug",
+      isRopaModa ? defaultCategorySlug : categorySlug,
+    );
+    formData.set("custom_category_name", isRopaModa ? "" : customCategoryName);
     formData.set("variants_json", serializeVariantsForForm(variants));
-    formData.set("extra_fields_json", serializeExtraFieldsJson(extraFields));
+    formData.set(
+      "extra_fields_json",
+      serializeExtraFieldsJson(isRopaModa ? {} : extraFields),
+    );
 
     if (!hasCustomVariants) {
       const stockValue = advancedOpen
@@ -254,17 +270,26 @@ function QuickProductFormSession({
         }}
       />
 
-      <ProductCategorySelector
-        id="quick-category"
-        rubroLabel={productFormConfig.rubroLabel}
-        categories={productFormConfig.productCategories}
-        categorySlug={categorySlug}
-        customCategoryName={customCategoryName}
-        onCategorySlugChange={setCategorySlug}
-        onCustomCategoryNameChange={setCustomCategoryName}
-      />
+      {!isRopaModa ? (
+        <ProductCategorySelector
+          id="quick-category"
+          rubroLabel={productFormConfig.rubroLabel}
+          categories={productFormConfig.productCategories}
+          categorySlug={categorySlug}
+          customCategoryName={customCategoryName}
+          onCategorySlugChange={setCategorySlug}
+          onCustomCategoryNameChange={setCustomCategoryName}
+        />
+      ) : (
+        <input
+          type="hidden"
+          name="product_category_slug"
+          value={defaultCategorySlug}
+          readOnly
+        />
+      )}
 
-      {fieldLabels.length > 0 ? (
+      {!isRopaModa && fieldLabels.length > 0 ? (
         <ProductExtraFieldsSection
           fieldLabels={fieldLabels}
           values={extraFields}
@@ -272,6 +297,16 @@ function QuickProductFormSession({
           categoryLabel={categoryLabel}
           disabled={isBusy}
           variant="compact"
+        />
+      ) : null}
+
+      {isRopaModa ? (
+        <RubroVariantsSection
+          rubro={productFormConfig.rubroTienda}
+          variants={variants}
+          onChange={setVariants}
+          disabled={isBusy}
+          required
         />
       ) : null}
 
@@ -343,12 +378,14 @@ function QuickProductFormSession({
               />
             </div>
 
-            <RubroVariantsSection
-              rubro={productFormConfig.rubroTienda}
-              variants={variants}
-              onChange={setVariants}
-              disabled={isBusy}
-            />
+            {!isRopaModa ? (
+              <RubroVariantsSection
+                rubro={productFormConfig.rubroTienda}
+                variants={variants}
+                onChange={setVariants}
+                disabled={isBusy}
+              />
+            ) : null}
           </div>
         )}
       </div>

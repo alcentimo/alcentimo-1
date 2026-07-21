@@ -17,6 +17,7 @@ export {
   getFashionAttributes,
   looksLikeFashionVariants,
   emptyFashionMatrix,
+  createDefaultFashionMatrix,
   variantsToFashionMatrix,
   fashionMatrixToVariants,
   type FashionMatrixState,

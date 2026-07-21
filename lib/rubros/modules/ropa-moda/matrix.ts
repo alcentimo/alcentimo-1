@@ -56,6 +56,23 @@ export function emptyFashionMatrix(): FashionMatrixState {
   };
 }
 
+export function createDefaultFashionMatrix(): FashionMatrixState {
+  const sizes = ["S", "M", "L", "XL"];
+  const colors = ["Negro", "Blanco"];
+  const stocks: Record<string, string> = {};
+  const priceExtras: Record<string, string> = {};
+
+  for (const size of sizes) {
+    for (const color of colors) {
+      const key = fashionVariantKey(size, color);
+      stocks[key] = "0";
+      priceExtras[key] = "0";
+    }
+  }
+
+  return { sizes, colors, stocks, priceExtras, ids: {} };
+}
+
 export function variantsToFashionMatrix(
   variants: VariantFormInput[],
 ): FashionMatrixState {

@@ -44,10 +44,10 @@ export const STORE_RUBRO_CONFIGS: StoreRubroConfig[] = [
     rubro: "ropa-moda",
     label: "Ropa y Moda",
     categorias: [
-      { slug: "camisas", label: "Camisas", campos: ["Talla", "Color", "Material"] },
-      { slug: "pantalones", label: "Pantalones", campos: ["Talla", "Color", "Material"] },
-      { slug: "calzado", label: "Calzado", campos: ["Talla", "Color", "Material"] },
-      { slug: "accesorios", label: "Accesorios", campos: ["Color", "Material", "Género"] },
+      { slug: "camisas", label: "Camisas", campos: [] },
+      { slug: "pantalones", label: "Pantalones", campos: [] },
+      { slug: "calzado", label: "Calzado", campos: [] },
+      { slug: "accesorios", label: "Accesorios", campos: [] },
     ],
   },
   {

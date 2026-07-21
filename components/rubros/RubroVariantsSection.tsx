@@ -24,6 +24,7 @@ interface RubroVariantsSectionProps {
   variants: VariantFormInput[];
   onChange: (variants: VariantFormInput[]) => void;
   disabled?: boolean;
+  required?: boolean;
 }
 
 /**
@@ -35,6 +36,7 @@ export function RubroVariantsSection({
   variants,
   onChange,
   disabled = false,
+  required = false,
 }: RubroVariantsSectionProps) {
   const moduleId = getActiveProductModuleId(rubro);
 
@@ -44,6 +46,7 @@ export function RubroVariantsSection({
         variants={variants}
         onChange={onChange}
         disabled={disabled}
+        required
       />
     );
   }

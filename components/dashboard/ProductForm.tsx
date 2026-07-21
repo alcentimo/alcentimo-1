@@ -24,6 +24,7 @@ import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import type { VariantFormInput } from "@/lib/products/variants";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
+import { rubroHidesProductCategory } from "@/lib/rubros/registry";
 
 interface ProductFormProps {
   store: Store;
@@ -81,6 +82,9 @@ export function ProductForm({
     initialData?.categorySlug,
     initialData?.extraFields,
   );
+  const isRopaModa = rubroHidesProductCategory(productFormConfig.rubroTienda);
+  const defaultCategorySlug =
+    productFormConfig.productCategories[0]?.slug ?? "camisas";
   const catalogUrl = getStoreCatalogUrl(store.slug);
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
 
@@ -101,10 +105,18 @@ export function ProductForm({
     e.preventDefault();
     setLocalError(null);
 
+    if (isRopaModa && !hasCustomVariants) {
+      setLocalError("Selecciona al menos una talla y un color con su stock.");
+      return;
+    }
+
     const form = e.currentTarget;
     const formData = new FormData(form);
-    formData.set("product_category_slug", categorySlug);
-    formData.set("custom_category_name", customCategoryName);
+    formData.set(
+      "product_category_slug",
+      isRopaModa ? defaultCategorySlug : categorySlug,
+    );
+    formData.set("custom_category_name", isRopaModa ? "" : customCategoryName);
     formData.set(
       "variants_json",
       serializeVariantsForForm(
@@ -112,7 +124,10 @@ export function ProductForm({
         initialData?.variants.map((variant) => variant.id),
       ),
     );
-    formData.set("extra_fields_json", serializeExtraFieldsJson(extraFields));
+    formData.set(
+      "extra_fields_json",
+      serializeExtraFieldsJson(isRopaModa ? {} : extraFields),
+    );
 
     if (compressedImageFile) {
       formData.set("image", compressedImageFile);
@@ -177,7 +192,12 @@ export function ProductForm({
       className="space-y-5"
     >
       <input type="hidden" name="store_id" value={store.id} readOnly />
-      <input type="hidden" name="product_category_slug" value={categorySlug} readOnly />
+      <input
+        type="hidden"
+        name="product_category_slug"
+        value={isRopaModa ? defaultCategorySlug : categorySlug}
+        readOnly
+      />
       {mode === "edit" && initialData && (
         <>
           <input type="hidden" name="product_id" value={initialData.productId} readOnly />
@@ -237,17 +257,19 @@ export function ProductForm({
         />
       </div>
 
-      <ProductCategorySelector
-        id="product_category_slug"
-        rubroLabel={productFormConfig.rubroLabel}
-        categories={productFormConfig.productCategories}
-        categorySlug={categorySlug}
-        customCategoryName={customCategoryName}
-        onCategorySlugChange={setCategorySlug}
-        onCustomCategoryNameChange={setCustomCategoryName}
-        labelClassName="label-field"
-        selectClassName="input-field"
-      />
+      {!isRopaModa ? (
+        <ProductCategorySelector
+          id="product_category_slug_visible"
+          rubroLabel={productFormConfig.rubroLabel}
+          categories={productFormConfig.productCategories}
+          categorySlug={categorySlug}
+          customCategoryName={customCategoryName}
+          onCategorySlugChange={setCategorySlug}
+          onCustomCategoryNameChange={setCustomCategoryName}
+          labelClassName="label-field"
+          selectClassName="input-field"
+        />
+      ) : null}
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div>
@@ -295,13 +317,25 @@ export function ProductForm({
         )}
       </div>
 
-      <ProductExtraFieldsSection
-        fieldLabels={fieldLabels}
-        values={extraFields}
-        onChange={setExtraFields}
-        categoryLabel={categoryLabel}
-        disabled={isBusy}
-      />
+      {!isRopaModa && fieldLabels.length > 0 ? (
+        <ProductExtraFieldsSection
+          fieldLabels={fieldLabels}
+          values={extraFields}
+          onChange={setExtraFields}
+          categoryLabel={categoryLabel}
+          disabled={isBusy}
+        />
+      ) : null}
+
+      {isRopaModa ? (
+        <RubroVariantsSection
+          rubro={productFormConfig.rubroTienda}
+          variants={variants}
+          onChange={setVariants}
+          disabled={isBusy}
+          required
+        />
+      ) : null}
 
       {!hasCustomVariants && (
         <div>
@@ -343,12 +377,14 @@ export function ProductForm({
         </p>
       </div>
 
-      <RubroVariantsSection
-        rubro={productFormConfig.rubroTienda}
-        variants={variants}
-        onChange={setVariants}
-        disabled={isBusy}
-      />
+      {!isRopaModa ? (
+        <RubroVariantsSection
+          rubro={productFormConfig.rubroTienda}
+          variants={variants}
+          onChange={setVariants}
+          disabled={isBusy}
+        />
+      ) : null}
 
       <ProductImageField
         id="image"

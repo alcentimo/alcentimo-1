@@ -21,6 +21,7 @@ import { ProductCategorySelector } from "@/components/dashboard/ProductCategoryS
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
+import { rubroHidesProductCategory } from "@/lib/rubros/registry";
 
 interface ProductCatalogFormProps {
   store: Store;
@@ -67,6 +68,9 @@ export function ProductCatalogForm({
     initialData?.categorySlug,
     initialData?.extraFields,
   );
+  const isRopaModa = rubroHidesProductCategory(productFormConfig.rubroTienda);
+  const defaultCategorySlug =
+    productFormConfig.productCategories[0]?.slug ?? "camisas";
 
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
@@ -91,10 +95,16 @@ export function ProductCatalogForm({
 
     const form = e.currentTarget;
     const formData = new FormData(form);
-    formData.set("product_category_slug", categorySlug);
-    formData.set("custom_category_name", customCategoryName);
+    formData.set(
+      "product_category_slug",
+      isRopaModa ? defaultCategorySlug : categorySlug,
+    );
+    formData.set("custom_category_name", isRopaModa ? "" : customCategoryName);
     formData.set("variants_json", "[]");
-    formData.set("extra_fields_json", serializeExtraFieldsJson(extraFields));
+    formData.set(
+      "extra_fields_json",
+      serializeExtraFieldsJson(isRopaModa ? {} : extraFields),
+    );
 
     if (compressedImageFile) {
       formData.set("image", compressedImageFile);
@@ -173,15 +183,17 @@ export function ProductCatalogForm({
         />
       </div>
 
-      <ProductCategorySelector
-        id="catalog-category"
-        rubroLabel={productFormConfig.rubroLabel}
-        categories={productFormConfig.productCategories}
-        categorySlug={categorySlug}
-        customCategoryName={customCategoryName}
-        onCategorySlugChange={setCategorySlug}
-        onCustomCategoryNameChange={setCustomCategoryName}
-      />
+      {!isRopaModa ? (
+        <ProductCategorySelector
+          id="catalog-category"
+          rubroLabel={productFormConfig.rubroLabel}
+          categories={productFormConfig.productCategories}
+          categorySlug={categorySlug}
+          customCategoryName={customCategoryName}
+          onCategorySlugChange={setCategorySlug}
+          onCustomCategoryNameChange={setCustomCategoryName}
+        />
+      ) : null}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
@@ -223,14 +235,16 @@ export function ProductCatalogForm({
         </div>
       </div>
 
-      <ProductExtraFieldsSection
-        fieldLabels={fieldLabels}
-        values={extraFields}
-        onChange={setExtraFields}
-        categoryLabel={categoryLabel}
-        disabled={isBusy}
-        variant="compact"
-      />
+      {!isRopaModa && fieldLabels.length > 0 ? (
+        <ProductExtraFieldsSection
+          fieldLabels={fieldLabels}
+          values={extraFields}
+          onChange={setExtraFields}
+          categoryLabel={categoryLabel}
+          disabled={isBusy}
+          variant="compact"
+        />
+      ) : null}
 
       <div>
         <Label htmlFor="catalog-stock" className="payment-field-label">
