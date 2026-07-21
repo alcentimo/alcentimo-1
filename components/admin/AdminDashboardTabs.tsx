@@ -6,7 +6,9 @@ import { ManualPaymentsPanel } from "@/components/admin/ManualPaymentsPanel";
 import { SupportMessagesPanel } from "@/components/dashboard/SupportMessagesPanel";
 import { AdminMetricsPanel } from "@/components/admin/AdminMetricsPanel";
 import { PaymentMethodsConfigPanel } from "@/components/admin/PaymentMethodsConfigPanel";
+import { PlatformLogoConfigCard } from "@/components/admin/PlatformLogoConfigCard";
 import { PlanSettingsConfigPanel } from "@/components/admin/PlanSettingsConfigPanel";
+import { PlatformSettingsConfigPanel } from "@/components/admin/PlatformSettingsConfigPanel";
 import { AdminGrowthPanel } from "@/components/admin/AdminGrowthPanel";
 import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
 import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
@@ -19,6 +21,7 @@ import type {
 } from "@/lib/database.types";
 import type { SubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
 import type { PlanSettingsMap } from "@/lib/plans/plan-settings";
+import type { PlatformSettings } from "@/lib/platform/platform-settings";
 import { AdminCustomDomainsPanel } from "@/components/admin/AdminCustomDomainsPanel";
 import type { AdminStoreDomainRow } from "@/lib/admin/custom-domain-actions";
 import { cn } from "@/lib/cn";
@@ -28,6 +31,7 @@ export type AdminDashboardTab =
   | "soporte"
   | "metricas"
   | "configuracion"
+  | "plataforma"
   | "planes"
   | "crecimiento"
   | "dominios";
@@ -58,7 +62,12 @@ const TABS: Array<{
   {
     id: "configuracion",
     label: "Configuración",
-    description: "Datos de Pago Móvil que ven los usuarios al pagar.",
+    description: "Logo global de la plataforma y datos de Pago Móvil para suscripciones.",
+  },
+  {
+    id: "plataforma",
+    label: "Plataforma",
+    description: "Logo principal, nombre y datos globales de Alcentimo.",
   },
   {
     id: "planes",
@@ -82,6 +91,7 @@ function resolveTab(value: string | null): AdminDashboardTab {
   if (value === "soporte") return "soporte";
   if (value === "metricas") return "metricas";
   if (value === "configuracion") return "configuracion";
+  if (value === "plataforma") return "plataforma";
   if (value === "planes") return "planes";
   if (value === "crecimiento") return "crecimiento";
   if (value === "dominios") return "dominios";
@@ -94,6 +104,7 @@ interface AdminDashboardTabsProps {
   metrics: AdminPlanMetrics | null;
   pagoMovil: SubscriptionPagoMovilDetails;
   planSettings: PlanSettingsMap;
+  platformSettings: PlatformSettings;
   growthUsers: AdminUserRow[];
   growthCoupons: SubscriptionCoupon[];
   growthCampaigns: SubscriptionCampaign[];
@@ -115,6 +126,7 @@ export function AdminDashboardTabs({
   metrics,
   pagoMovil,
   planSettings,
+  platformSettings,
   growthUsers,
   growthCoupons,
   growthCampaigns,
@@ -235,7 +247,14 @@ export function AdminDashboardTabs({
       ) : null}
 
       {activeTab === "configuracion" ? (
-        <PaymentMethodsConfigPanel initialDetails={pagoMovil} />
+        <div className="space-y-6">
+          <PlatformLogoConfigCard initialSettings={platformSettings} />
+          <PaymentMethodsConfigPanel initialDetails={pagoMovil} />
+        </div>
+      ) : null}
+
+      {activeTab === "plataforma" ? (
+        <PlatformSettingsConfigPanel initialSettings={platformSettings} />
       ) : null}
 
       {activeTab === "planes" ? (

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { getAdminManifestPath } from "@/lib/pwa/build-admin-manifest";
+import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
+import { PlatformSettingsProvider } from "@/components/providers/PlatformSettingsProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -42,17 +44,23 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const platformSettings = await fetchPlatformSettings();
+
   return (
     <html lang="es" suppressHydrationWarning className={`${geistSans.variable} h-full antialiased`}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <PlatformSettingsProvider settings={platformSettings}>
+          {children}
+        </PlatformSettingsProvider>
+      </body>
     </html>
   );
 }

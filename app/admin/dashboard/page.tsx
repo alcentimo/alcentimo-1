@@ -17,6 +17,7 @@ import { getSupportMessages } from "@/lib/support/get-support-messages";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
+import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { listAdminStoreDomains } from "@/lib/admin/custom-domain-actions";
 import {
   listSubscriptionCampaigns,
@@ -35,6 +36,7 @@ function resolveInitialTab(raw: string | string[] | undefined): AdminDashboardTa
   if (value === "soporte") return "soporte";
   if (value === "metricas") return "metricas";
   if (value === "configuracion") return "configuracion";
+  if (value === "plataforma") return "plataforma";
   if (value === "planes") return "planes";
   if (value === "crecimiento") return "crecimiento";
   if (value === "dominios") return "dominios";
@@ -153,6 +155,7 @@ export default async function AdminDashboardPage({
 
   const pagoMovil = await fetchSubscriptionPagoMovilDetails();
   const planSettings = await fetchPlanSettings();
+  const platformSettings = await fetchPlatformSettings();
 
   const pendingPayments = payments.filter(
     (item) =>
@@ -207,6 +210,7 @@ export default async function AdminDashboardPage({
           metrics={metrics}
           pagoMovil={pagoMovil}
           planSettings={planSettings}
+          platformSettings={platformSettings}
           growthUsers={growthUsers}
           growthCoupons={growthCoupons}
           growthCampaigns={growthCampaigns}

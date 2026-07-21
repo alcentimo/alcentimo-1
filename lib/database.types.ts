@@ -212,6 +212,17 @@ export interface PlanSetting {
   updated_by: string | null;
 }
 
+/** Identidad y datos globales de la plataforma. */
+export interface PlatformSetting {
+  id: string;
+  platform_name: string;
+  tagline: string;
+  logo_url: string | null;
+  support_email: string | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
 export type SubscriptionCouponRewardType =
   | "percent_discount"
   | "fixed_discount"
@@ -856,6 +867,15 @@ export interface Database {
           updated_by?: string | null;
         };
         Update: Partial<PlanSetting>;
+        Relationships: [];
+      };
+      platform_settings: {
+        Row: PlatformSetting;
+        Insert: Omit<PlatformSetting, "updated_at" | "updated_by"> & {
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: Partial<PlatformSetting>;
         Relationships: [];
       };
       subscription_coupons: {

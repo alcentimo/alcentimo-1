@@ -10,6 +10,7 @@ import { processStoreLogoFile } from "@/lib/store-logo/process-logo";
 export const PRODUCT_IMAGES_BUCKET = "product-images";
 export const STORE_ASSETS_BUCKET = "store-assets";
 export const STORE_LOGOS_BUCKET = "store-logos";
+export const PLATFORM_ASSETS_BUCKET = "platform-assets";
 
 const MAX_INPUT_SIZE = PRODUCT_IMAGE_MAX_INPUT_BYTES;
 const MAX_QR_INPUT_SIZE = 2 * 1024 * 1024; // 2 MB para QR
@@ -211,6 +212,58 @@ export async function removeStoreLogoAssets(
 ): Promise<void> {
   const paths = Object.values(getStoreLogoStoragePaths(storeId));
   await supabase.storage.from(STORE_LOGOS_BUCKET).remove(paths);
+}
+
+export interface UploadPlatformLogoResult {
+  url?: string;
+  error?: string;
+}
+
+const PLATFORM_LOGO_PATH = "brand/logo.webp";
+
+/** Sube el logo principal de la plataforma (superadmin). */
+export async function uploadPlatformLogoImage(
+  supabase: SupabaseClient,
+  file: File,
+): Promise<UploadPlatformLogoResult> {
+  if (!ALLOWED_TYPES.has(file.type)) {
+    return { error: "Formato no permitido. Usa JPG, PNG, WebP o GIF." };
+  }
+
+  if (file.size > MAX_QR_INPUT_SIZE) {
+    return { error: "La imagen supera el límite de 2 MB." };
+  }
+
+  const inputBuffer = Buffer.from(await file.arrayBuffer());
+
+  let optimization: ImageOptimizationResult;
+  try {
+    optimization = await compressProductImage(inputBuffer);
+  } catch {
+    return { error: "No se pudo procesar la imagen. Prueba con otro archivo." };
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from(PLATFORM_ASSETS_BUCKET)
+    .upload(PLATFORM_LOGO_PATH, optimization.buffer, {
+      cacheControl: "31536000",
+      upsert: true,
+      contentType: "image/webp",
+    });
+
+  if (uploadError) {
+    return { error: uploadError.message };
+  }
+
+  const { data } = supabase.storage
+    .from(PLATFORM_ASSETS_BUCKET)
+    .getPublicUrl(PLATFORM_LOGO_PATH);
+
+  return { url: `${data.publicUrl}?v=${Date.now()}` };
+}
+
+export async function removePlatformLogoAsset(supabase: SupabaseClient): Promise<void> {
+  await supabase.storage.from(PLATFORM_ASSETS_BUCKET).remove([PLATFORM_LOGO_PATH]);
 }
 
 export function buildOptimizationMessage(
