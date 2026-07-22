@@ -25,7 +25,6 @@ import {
   PRODUCT_IMAGE_ASPECT_RATIO,
 } from "@/lib/product-image-crop";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -228,13 +227,19 @@ export function ProductImageField({
     }
   }
 
+  const openNativeImagePicker = useCallback(() => {
+    const input = inputRef.current;
+    if (!input || isBusy) return;
+    // Permite volver a elegir el mismo archivo y evita estado residual del picker.
+    input.value = "";
+    input.click();
+  }, [isBusy]);
+
   const pickButtonLabel = compressing
-    ? "Procesando foto…"
+    ? "Procesando…"
     : confirmedPreviewUrl
-      ? "Cambiar foto"
-      : layout === "compact"
-        ? "Tomar foto o galería"
-        : "Tomar foto o elegir imagen";
+      ? "Cambiar imagen"
+      : "Subir imagen";
 
   const previewBlock = confirmedPreviewUrl ? (
     <div
@@ -288,28 +293,29 @@ export function ProductImageField({
   const controls = (
     <div className={layout === "compact" ? "min-w-0 flex-1" : undefined}>
       {layout === "compact" && (
-        <Label htmlFor={id} className="payment-field-label">
-          Foto del producto
-        </Label>
+        <p className="payment-field-label">Foto del producto</p>
       )}
       {layout === "stacked" && <p className="label-field">Foto del producto</p>}
 
+      {/* Input oculto: sin capture. El botón dispara el menú nativo del SO. */}
       <input
         ref={inputRef}
         id={id}
         type="file"
         accept={PRODUCT_IMAGE_FILE_ACCEPT}
         onChange={handleFileChange}
-        className="sr-only"
-        aria-label="Tomar foto o elegir imagen del producto"
+        className="hidden"
+        tabIndex={-1}
+        aria-hidden="true"
       />
 
       {layout === "stacked" ? (
         <button
           type="button"
-          onClick={() => inputRef.current?.click()}
+          onClick={openNativeImagePicker}
           disabled={isBusy}
           className="btn-brand-outline mt-1 inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 py-2.5 text-sm sm:w-auto"
+          aria-label={pickButtonLabel}
         >
           {compressing ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -324,8 +330,9 @@ export function ProductImageField({
           variant="outline"
           size="sm"
           disabled={isBusy}
-          onClick={() => inputRef.current?.click()}
+          onClick={openNativeImagePicker}
           className="mt-1.5 inline-flex min-h-10 w-full items-center justify-center gap-2 sm:w-auto"
+          aria-label={pickButtonLabel}
         >
           {compressing ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
