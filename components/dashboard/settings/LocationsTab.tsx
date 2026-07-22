@@ -1,5 +1,4 @@
-"use client";
-
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { MapPin, Plus, Star, Trash2, Loader2 } from "lucide-react";
 import {
@@ -15,18 +14,30 @@ import {
   setDefaultStoreLocationAction,
   updateStoreLocationAction,
 } from "@/lib/locations/actions";
-import {
-  MAX_STORE_LOCATIONS,
-  type StoreLocation,
-} from "@/lib/locations/types";
+import type { StoreLocation } from "@/lib/locations/types";
+import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
 import { cn } from "@/lib/cn";
+
+export interface LocationLimitSummary {
+  maxAllowed: number;
+  includedLocations: number;
+  extraAuthorized: number;
+  remainingSlots: number;
+  extraLocationMonthlyUsd: number;
+  planId?: string;
+}
 
 interface LocationsTabProps {
   initialLocations: StoreLocation[];
+  locationLimit?: LocationLimitSummary | null;
 }
 
-export function LocationsTab({ initialLocations }: LocationsTabProps) {
+export function LocationsTab({
+  initialLocations,
+  locationLimit = null,
+}: LocationsTabProps) {
   const [locations, setLocations] = useState(initialLocations);
+  const [limit, setLimit] = useState(locationLimit);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -36,7 +47,9 @@ export function LocationsTab({ initialLocations }: LocationsTabProps) {
   const [city, setCity] = useState("");
   const [phone, setPhone] = useState("");
 
-  const canAdd = locations.length < MAX_STORE_LOCATIONS;
+  const maxAllowed = limit?.maxAllowed ?? 1;
+  const canAdd = locations.length < maxAllowed;
+  const isEnterprise = limit?.planId === "enterprise";
 
   function refreshMessage(next: string | null, err?: string) {
     setError(err ?? null);
@@ -52,6 +65,9 @@ export function LocationsTab({ initialLocations }: LocationsTabProps) {
         city,
         phone,
       });
+      if (result.limit) {
+        setLimit(result.limit);
+      }
       if (result.error) {
         refreshMessage(null, result.error);
         return;
@@ -136,9 +152,22 @@ export function LocationsTab({ initialLocations }: LocationsTabProps) {
 
       <SettingsSection
         title="Sucursales"
-        description={`Gestiona hasta ${MAX_STORE_LOCATIONS} ubicaciones. El stock de productos se controla por sede. Con una sola sucursal, la tienda funciona igual que antes.`}
+        description={
+          limit
+            ? `Usas ${locations.length} de ${limit.maxAllowed} sucursales autorizadas (${limit.includedLocations} incluidas en tu plan${limit.extraAuthorized > 0 ? ` + ${limit.extraAuthorized} extras` : ""}).`
+            : "Gestiona las ubicaciones de tu tienda. El stock de productos se controla por sede."
+        }
         variant="payments"
       >
+        {!isEnterprise && limit && limit.maxAllowed <= 1 ? (
+          <div className="mb-4 rounded-lg border border-teal-200/80 bg-teal-50/60 px-3 py-2 text-xs text-teal-900 dark:border-teal-900/40 dark:bg-teal-950/20 dark:text-teal-200">
+            Multi-sucursal está incluido en Enterprise (3 sedes + extras a +$
+            {limit.extraLocationMonthlyUsd}/mes).{" "}
+            <Link href={DASHBOARD_PLANS_HREF} className="font-semibold underline">
+              Ver planes
+            </Link>
+          </div>
+        ) : null}
         <div className="space-y-3">
           {locations.map((location) => (
             <LocationCard
@@ -159,7 +188,9 @@ export function LocationsTab({ initialLocations }: LocationsTabProps) {
         description={
           canAdd
             ? "Agrega otra sede con su propia dirección y stock."
-            : `Has alcanzado el máximo de ${MAX_STORE_LOCATIONS} sucursales.`
+            : isEnterprise
+              ? `Has alcanzado el máximo autorizado (${maxAllowed}). Solicita sedes extras a soporte (+$${limit?.extraLocationMonthlyUsd ?? 6}/mes c/u).`
+              : "Actualiza a Enterprise para agregar más sucursales."
         }
         variant="payments"
       >

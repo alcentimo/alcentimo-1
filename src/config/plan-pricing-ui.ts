@@ -15,10 +15,12 @@ export interface PlanPricingTier {
   productLimitLabel: string;
   recommended?: boolean;
   features: string[];
+  /** Nota visual de add-on (p. ej. sedes extras). */
+  addonNote?: string | null;
   cta: string;
 }
 
-/** Tres planes mostrados en /dashboard/planes (mapean a IDs internos). */
+/** Planes mostrados en /dashboard/planes (mapean a IDs internos). */
 export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
   {
     planId: "free",
@@ -62,6 +64,22 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
       "Usuarios y roles de equipo",
       "Soporte dedicado",
     ],
+    cta: PAID_PLAN_CTA,
+  },
+  {
+    planId: "enterprise",
+    displayName: "Enterprise",
+    tagline: "Multi-sucursal y operaciones avanzadas",
+    monthlyUsd: 29,
+    annualUsd: 278,
+    productLimitLabel: "Productos ilimitados",
+    features: [
+      "Todo lo del plan Business",
+      "Hasta 3 sucursales incluidas",
+      "Selector de sede y retiro en tienda",
+      "Stock independiente por sucursal",
+    ],
+    addonNote: "Sedes adicionales: +$6 USD/mes por cada sede extra",
     cta: PAID_PLAN_CTA,
   },
 ];

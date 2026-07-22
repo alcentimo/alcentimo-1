@@ -11,6 +11,12 @@ import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page
 import { SettingsPanel } from "@/components/dashboard/settings/SettingsPanel";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { getStoreLocations } from "@/lib/locations/get-store-locations";
+import { resolveLocationLimit } from "@/lib/locations/limits";
+import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
+import {
+  getEffectivePlanIdForLimits,
+  resolveProTrialStatus,
+} from "@/lib/plans/trial";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +33,7 @@ export default async function AjustesPage({
     redirect("/dashboard/login?next=/dashboard/ajustes");
   }
 
-  const { store } = session;
+  const { store, authUser } = session;
 
   let settingsConfig = defaultStoreSettingsConfig();
   let coupons: Awaited<ReturnType<typeof getStoreCoupons>> = [];
@@ -35,6 +41,14 @@ export default async function AjustesPage({
   let products: { id: string; name: string; categoryName: string | null; thumbUrl: string | null }[] =
     [];
   let locations: Awaited<ReturnType<typeof getStoreLocations>> = [];
+  let locationLimit: {
+    maxAllowed: number;
+    includedLocations: number;
+    extraAuthorized: number;
+    remainingSlots: number;
+    extraLocationMonthlyUsd: number;
+    planId: string;
+  } | null = null;
 
   let designPreview: {
     store: NonNullable<typeof store>;
@@ -44,7 +58,7 @@ export default async function AjustesPage({
   } | null = null;
 
   if (store) {
-    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations] =
+    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations, planSettings] =
       await Promise.all([
       getStoreSettingsConfig(store.id),
       getStoreCoupons(store.id),
@@ -53,6 +67,7 @@ export default async function AjustesPage({
       getCurrentExchangeRate(),
       getCatalogPreviewSettings(store),
       getStoreLocations(store.id).catch(() => []),
+      fetchPlanSettings().catch(() => null),
     ]);
 
     settingsConfig = config;
@@ -70,6 +85,23 @@ export default async function AjustesPage({
       exchangeRate: exchangeRateRow?.rate ?? null,
       exchangeRateUpdatedAt: exchangeRateRow?.created_at ?? null,
       baseSettings: previewSettings,
+    };
+
+    const trial = resolveProTrialStatus(authUser.profile, authUser.planId);
+    const effectivePlanId = getEffectivePlanIdForLimits(authUser.planId, trial);
+    const limit = resolveLocationLimit({
+      planId: effectivePlanId,
+      extraAuthorized: authUser.profile?.extra_locations_authorized ?? 0,
+      currentCount: storeLocations.length,
+      settings: planSettings ?? undefined,
+    });
+    locationLimit = {
+      maxAllowed: limit.maxAllowed,
+      includedLocations: limit.includedLocations,
+      extraAuthorized: limit.extraAuthorized,
+      remainingSlots: limit.remainingSlots,
+      extraLocationMonthlyUsd: limit.extraLocationMonthlyUsd,
+      planId: effectivePlanId,
     };
   }
 
@@ -108,6 +140,7 @@ export default async function AjustesPage({
         initialTab={tab}
         planId={session.authUser.planId}
         initialLocations={locations}
+        locationLimit={locationLimit}
       />
     </div>
   );

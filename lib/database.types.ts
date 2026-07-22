@@ -9,7 +9,7 @@ export type InventoryMovementType =
 
 export type StoreMemberRole = "owner" | "admin" | "staff";
 
-export type ProfilePlanDb = "FREE" | "PRO" | "BUSINESS";
+export type ProfilePlanDb = "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE";
 
 export type SubscriptionStatus = "none" | "provisional" | "active";
 
@@ -22,6 +22,8 @@ export interface Profile {
   subscription_period_ends_at?: string | null;
   pro_trial_started_at?: string | null;
   pro_trial_ends_at?: string | null;
+  /** Sedes adicionales autorizadas sobre las incluidas en el plan. */
+  extra_locations_authorized?: number | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -31,7 +33,7 @@ export type ManualPaymentStatus =
   | "verified"
   | "needs_correction"
   | "rejected";
-export type ManualPaymentPlanId = "starter" | "premium";
+export type ManualPaymentPlanId = "starter" | "premium" | "enterprise";
 
 export interface ManualPayment {
   id: string;

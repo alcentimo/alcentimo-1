@@ -63,33 +63,37 @@ async function getStoreOwnerProfile(
   ownerId: string,
 ): Promise<Pick<
   Profile,
-  "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at" | "billing_period" | "subscription_period_started_at" | "subscription_period_ends_at"
+  | "plan"
+  | "subscription_status"
+  | "pro_trial_started_at"
+  | "pro_trial_ends_at"
+  | "billing_period"
+  | "subscription_period_started_at"
+  | "subscription_period_ends_at"
+  | "extra_locations_authorized"
 > | null> {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("profiles")
     .select(
-      "plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, billing_period, subscription_period_started_at, subscription_period_ends_at",
+      "plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, billing_period, subscription_period_started_at, subscription_period_ends_at, extra_locations_authorized",
     )
     .eq("id", ownerId)
     .maybeSingle();
 
   if (error) {
-    // Fallback si la migración 047 aún no está aplicada.
+    // Fallback si la migración 063 aún no está aplicada.
     const { data: fallback, error: fallbackError } = await admin
       .from("profiles")
-      .select("plan, subscription_status, pro_trial_started_at, pro_trial_ends_at")
+      .select(
+        "plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, billing_period, subscription_period_started_at, subscription_period_ends_at",
+      )
       .eq("id", ownerId)
       .maybeSingle();
+
     if (fallbackError) throw new Error(fallbackError.message);
-    return fallback
-      ? {
-          ...fallback,
-          billing_period: null,
-          subscription_period_started_at: null,
-          subscription_period_ends_at: null,
-        }
-      : null;
+    if (!fallback) return null;
+    return { ...fallback, extra_locations_authorized: 0 };
   }
 
   return data;
@@ -108,6 +112,7 @@ export async function getStoreOwnerPlanProfile(
       | "billing_period"
       | "subscription_period_started_at"
       | "subscription_period_ends_at"
+      | "extra_locations_authorized"
     > & { ownerId: string })
   | null
 > {

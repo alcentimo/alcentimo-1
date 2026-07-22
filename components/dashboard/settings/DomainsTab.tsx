@@ -19,7 +19,7 @@ interface DomainsTabProps {
 }
 
 function hasCustomDomainPlan(planId: PlanId | undefined): boolean {
-  return planId === "premium";
+  return planId === "premium" || planId === "enterprise";
 }
 
 export function DomainsTab({ store, planId }: DomainsTabProps) {

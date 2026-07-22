@@ -105,6 +105,18 @@ const AdminCustomDomainsPanel = dynamic(
   },
 );
 
+const AdminStoreLocationsPanel = dynamic(
+  () =>
+    import("@/components/admin/AdminStoreLocationsPanel").then((m) => ({
+      default: m.AdminStoreLocationsPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando sucursales…</p>
+    ),
+  },
+);
+
 export type AdminDashboardTab =
   | "pagos"
   | "soporte"
@@ -113,7 +125,8 @@ export type AdminDashboardTab =
   | "plataforma"
   | "planes"
   | "crecimiento"
-  | "dominios";
+  | "dominios"
+  | "sucursales";
 
 const TABS: Array<{
   id: AdminDashboardTab;
@@ -159,6 +172,11 @@ const TABS: Array<{
     description: "Asigna y verifica dominios personalizados de tiendas.",
   },
   {
+    id: "sucursales",
+    label: "Sucursales",
+    description: "Autoriza sedes extras Enterprise por tienda/dueño.",
+  },
+  {
     id: "crecimiento",
     label: "Crecimiento",
     description:
@@ -174,6 +192,7 @@ function resolveTab(value: string | null | undefined): AdminDashboardTab {
   if (value === "planes") return "planes";
   if (value === "crecimiento") return "crecimiento";
   if (value === "dominios") return "dominios";
+  if (value === "sucursales") return "sucursales";
   return "pagos";
 }
 
@@ -188,7 +207,7 @@ interface AdminDashboardTabsProps {
   growthCoupons: SubscriptionCoupon[];
   growthCampaigns: SubscriptionCampaign[];
   growthAuditLog: GrowthAuditEntry[];
-  growthPlanFilter?: "FREE" | "PRO" | "BUSINESS" | "all";
+  growthPlanFilter?: "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE" | "all";
   growthMinProducts?: number;
   paymentsError?: string | null;
   messagesError?: string | null;
@@ -354,6 +373,8 @@ export function AdminDashboardTabs({
           <AdminCustomDomainsPanel initialRows={storeDomains} />
         )
       ) : null}
+
+      {activeTab === "sucursales" ? <AdminStoreLocationsPanel /> : null}
 
       {activeTab === "crecimiento" ? (
         growthError ? (

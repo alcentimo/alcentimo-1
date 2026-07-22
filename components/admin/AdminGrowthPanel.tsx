@@ -58,7 +58,7 @@ interface AdminGrowthPanelProps {
   initialCoupons: SubscriptionCoupon[];
   initialCampaigns: SubscriptionCampaign[];
   initialAuditLog: GrowthAuditEntry[];
-  initialPlanFilter?: "FREE" | "PRO" | "BUSINESS" | "all";
+  initialPlanFilter?: "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE" | "all";
   initialMinProducts?: number;
 }
 
@@ -76,7 +76,7 @@ export function AdminGrowthPanel({
   const [campaigns, setCampaigns] = useState(initialCampaigns);
   const [auditLog, setAuditLog] = useState(initialAuditLog);
   const [planFilter, setPlanFilter] = useState<
-    "all" | "FREE" | "PRO" | "BUSINESS"
+    "all" | "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE"
   >(initialPlanFilter);
   const [minProducts, setMinProducts] = useState(
     initialMinProducts != null ? String(initialMinProducts) : "",
@@ -348,6 +348,7 @@ export function AdminGrowthPanel({
                 <option value="FREE">Gratis</option>
                 <option value="PRO">Pro</option>
                 <option value="BUSINESS">Business</option>
+                <option value="ENTERPRISE">Enterprise</option>
               </select>
             </div>
             <div>

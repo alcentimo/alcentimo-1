@@ -1,4 +1,4 @@
-export const MAX_STORE_LOCATIONS = 5;
+export const MAX_STORE_LOCATIONS = 20;
 
 export interface StoreLocation {
   id: string;

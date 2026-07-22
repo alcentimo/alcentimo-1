@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const PLAN_ORDER: PlanSettingsKey[] = ["FREE", "PRO", "BUSINESS"];
+const PLAN_ORDER: PlanSettingsKey[] = ["FREE", "PRO", "BUSINESS", "ENTERPRISE"];
 
 function limitToInput(value: number | null): string {
   return value == null ? "" : String(value);
@@ -31,6 +31,7 @@ function PlanCard({
 }) {
   const prefix = planKey.toLowerCase();
   const isFree = planKey === "FREE";
+  const isEnterprise = planKey === "ENTERPRISE";
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
@@ -149,6 +150,62 @@ function PlanCard({
             placeholder="Vacío = sin límite"
           />
         </div>
+
+        <div>
+          <Label htmlFor={`${prefix}-locations`}>Sucursales incluidas</Label>
+          <Input
+            id={`${prefix}-locations`}
+            name={`${prefix}_includedLocations`}
+            type="number"
+            min={1}
+            max={20}
+            step={1}
+            value={row.includedLocations}
+            onChange={(e) =>
+              onChange({
+                ...row,
+                includedLocations: Math.max(1, Number(e.target.value || 1)),
+              })
+            }
+            disabled={disabled}
+            className="mt-1.5"
+            required
+          />
+        </div>
+
+        {isEnterprise ? (
+          <div>
+            <Label htmlFor={`${prefix}-extra-loc`}>
+              Precio sede extra (USD/mes)
+            </Label>
+            <Input
+              id={`${prefix}-extra-loc`}
+              name={`${prefix}_extraLocationMonthlyUsd`}
+              type="number"
+              min={0}
+              step="0.01"
+              value={row.extraLocationMonthlyUsd}
+              onChange={(e) =>
+                onChange({
+                  ...row,
+                  extraLocationMonthlyUsd: Number(e.target.value || 0),
+                })
+              }
+              disabled={disabled}
+              className="mt-1.5"
+            />
+            <p className="mt-1 text-xs text-zinc-400">
+              Se muestra en la tarjeta de precios como add-on.
+            </p>
+          </div>
+        ) : (
+          <input
+            type="hidden"
+            name={`${prefix}_extraLocationMonthlyUsd`}
+            value={row.extraLocationMonthlyUsd}
+            readOnly
+          />
+        )}
       </div>
     </div>
   );
@@ -185,7 +242,7 @@ export function PlanSettingsConfigPanel({
         setSettings(result.settings);
       }
       setSuccess(
-        "Planes actualizados. Precios y límites ya se reflejan en Activa tu cuenta y Upgrade.",
+        "Planes actualizados. Precios, límites y sedes ya se reflejan en Activa tu cuenta.",
       );
     });
   }
@@ -194,8 +251,8 @@ export function PlanSettingsConfigPanel({
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
         Los cambios se guardan en <code className="text-xs">plan_settings</code>{" "}
-        y se muestran de inmediato en las pantallas de suscripción de los
-        usuarios.
+        y se muestran de inmediato en las pantallas de suscripción. Enterprise
+        controla sucursales incluidas y el precio del add-on por sede extra.
       </div>
 
       <div className="grid gap-4 lg:grid-cols-1">
@@ -223,8 +280,8 @@ export function PlanSettingsConfigPanel({
         </p>
       ) : null}
 
-      <Button type="submit" disabled={pending}>
-        {pending ? "Guardando…" : "Guardar configuración de planes"}
+      <Button type="submit" disabled={pending} className="btn-brand">
+        {pending ? "Guardando…" : "Guardar planes"}
       </Button>
     </form>
   );

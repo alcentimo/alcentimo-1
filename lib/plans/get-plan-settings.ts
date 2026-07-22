@@ -8,6 +8,15 @@ import {
 } from "@/lib/plans/plan-settings";
 import type { PlanPricingTier } from "@/src/config/plan-pricing-ui";
 
+function cloneDefaults(): PlanSettingsMap {
+  return {
+    FREE: { ...DEFAULT_PLAN_SETTINGS.FREE },
+    PRO: { ...DEFAULT_PLAN_SETTINGS.PRO },
+    BUSINESS: { ...DEFAULT_PLAN_SETTINGS.BUSINESS },
+    ENTERPRISE: { ...DEFAULT_PLAN_SETTINGS.ENTERPRISE },
+  };
+}
+
 /**
  * Lee public.plan_settings. Si falla o falta alguna fila, completa con defaults.
  * Cacheado por request (React cache). Solo servidor.
@@ -18,24 +27,23 @@ export const fetchPlanSettings = cache(async (): Promise<PlanSettingsMap> => {
     const { data, error } = await supabase
       .from("plan_settings")
       .select(
-        "plan_key, display_name, monthly_usd, annual_usd, product_limit, user_limit",
+        "plan_key, display_name, monthly_usd, annual_usd, product_limit, user_limit, included_locations, extra_location_monthly_usd",
       );
 
     if (error || !data?.length) {
-      return {
-        FREE: { ...DEFAULT_PLAN_SETTINGS.FREE },
-        PRO: { ...DEFAULT_PLAN_SETTINGS.PRO },
-        BUSINESS: { ...DEFAULT_PLAN_SETTINGS.BUSINESS },
-      };
+      // Fallback sin columnas nuevas (migración 063 pendiente).
+      const { data: legacy, error: legacyError } = await supabase
+        .from("plan_settings")
+        .select(
+          "plan_key, display_name, monthly_usd, annual_usd, product_limit, user_limit",
+        );
+      if (legacyError || !legacy?.length) return cloneDefaults();
+      return parsePlanSettingsRows(legacy);
     }
 
     return parsePlanSettingsRows(data);
   } catch {
-    return {
-      FREE: { ...DEFAULT_PLAN_SETTINGS.FREE },
-      PRO: { ...DEFAULT_PLAN_SETTINGS.PRO },
-      BUSINESS: { ...DEFAULT_PLAN_SETTINGS.BUSINESS },
-    };
+    return cloneDefaults();
   }
 });
 

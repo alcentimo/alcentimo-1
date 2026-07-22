@@ -23,6 +23,7 @@ import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab
 import { useLocale } from "@/components/providers/UiPreferencesProvider";
 import type { PlanId } from "@/src/config/plans";
 import type { StoreLocation } from "@/lib/locations/types";
+import type { LocationLimitSummary } from "@/components/dashboard/settings/LocationsTab";
 
 type SettingsTabId =
   | "general"
@@ -90,6 +91,7 @@ interface SettingsPanelProps {
   initialTab?: string;
   planId?: PlanId;
   initialLocations?: StoreLocation[];
+  locationLimit?: LocationLimitSummary | null;
 }
 
 export function SettingsPanel({
@@ -102,6 +104,7 @@ export function SettingsPanel({
   initialTab = "general",
   planId,
   initialLocations = [],
+  locationLimit = null,
 }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() =>
     resolveInitialTab(initialTab),
@@ -257,7 +260,10 @@ export function SettingsPanel({
             id="settings-panel-branches"
             aria-labelledby="settings-tab-branches"
           >
-            <LocationsTab initialLocations={initialLocations} />
+            <LocationsTab
+              initialLocations={initialLocations}
+              locationLimit={locationLimit}
+            />
           </div>
         )}
         {domainsActive && (

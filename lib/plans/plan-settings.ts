@@ -7,7 +7,7 @@ import {
 import type { PlanId } from "@/src/config/plans";
 import { formatProductLimit } from "@/src/config/plans";
 
-export type PlanSettingsKey = "FREE" | "PRO" | "BUSINESS";
+export type PlanSettingsKey = "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE";
 
 export interface PlanSettingRow {
   planKey: PlanSettingsKey;
@@ -16,6 +16,10 @@ export interface PlanSettingRow {
   annualUsd: number | null;
   productLimit: number | null;
   userLimit: number | null;
+  /** Sucursales incluidas en el plan base. */
+  includedLocations: number;
+  /** Precio mensual por sede adicional (add-on). */
+  extraLocationMonthlyUsd: number;
 }
 
 export type PlanSettingsMap = Record<PlanSettingsKey, PlanSettingRow>;
@@ -28,9 +32,10 @@ export const PLAN_SETTINGS_KEYS: PlanSettingsKey[] = [
   "FREE",
   "PRO",
   "BUSINESS",
+  "ENTERPRISE",
 ];
 
-/** Defaults alineados con el seed de la migración 050. */
+/** Defaults alineados con migraciones 050 / 063. */
 export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
   FREE: {
     planKey: "FREE",
@@ -39,6 +44,8 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
     annualUsd: null,
     productLimit: 10,
     userLimit: null,
+    includedLocations: 1,
+    extraLocationMonthlyUsd: 0,
   },
   PRO: {
     planKey: "PRO",
@@ -47,6 +54,8 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
     annualUsd: 75,
     productLimit: 250,
     userLimit: null,
+    includedLocations: 1,
+    extraLocationMonthlyUsd: 0,
   },
   BUSINESS: {
     planKey: "BUSINESS",
@@ -55,12 +64,24 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
     annualUsd: 144,
     productLimit: null,
     userLimit: null,
+    includedLocations: 1,
+    extraLocationMonthlyUsd: 0,
+  },
+  ENTERPRISE: {
+    planKey: "ENTERPRISE",
+    displayName: "Enterprise",
+    monthlyUsd: 29,
+    annualUsd: 278,
+    productLimit: null,
+    userLimit: null,
+    includedLocations: 3,
+    extraLocationMonthlyUsd: 6,
   },
 };
 
 const TIER_STATIC: Record<
   PlanId,
-  Pick<PlanPricingTier, "tagline" | "features" | "cta" | "recommended">
+  Pick<PlanPricingTier, "tagline" | "features" | "cta" | "recommended" | "addonNote">
 > = {
   free: {
     tagline: "Ideal para empezar",
@@ -96,17 +117,30 @@ const TIER_STATIC: Record<
     ],
     cta: PAID_PLAN_CTA,
   },
+  enterprise: {
+    tagline: "Multi-sucursal y operaciones avanzadas",
+    features: [
+      "Todo lo del plan Business",
+      "Hasta 3 sucursales incluidas",
+      "Selector de sede y retiro en tienda",
+      "Stock independiente por sucursal",
+    ],
+    addonNote: "Sedes adicionales: +$6 USD/mes por cada sede extra",
+    cta: PAID_PLAN_CTA,
+  },
 };
 
 export function planIdToSettingsKey(planId: PlanId): PlanSettingsKey {
   if (planId === "free") return "FREE";
   if (planId === "premium") return "BUSINESS";
+  if (planId === "enterprise") return "ENTERPRISE";
   return "PRO";
 }
 
 export function settingsKeyToPlanId(key: PlanSettingsKey): PlanId {
   if (key === "FREE") return "free";
   if (key === "BUSINESS") return "premium";
+  if (key === "ENTERPRISE") return "enterprise";
   return "starter";
 }
 
@@ -133,6 +167,10 @@ export function buildChargeTableFromSettings(
       monthlyUsd: settings.BUSINESS.monthlyUsd,
       annualUsd: settings.BUSINESS.annualUsd,
     },
+    ENTERPRISE: {
+      monthlyUsd: settings.ENTERPRISE.monthlyUsd,
+      annualUsd: settings.ENTERPRISE.annualUsd,
+    },
   };
 }
 
@@ -157,6 +195,14 @@ function productLimitLabel(limit: number | null): string {
   return `Hasta ${formatProductLimit(limit)} productos`;
 }
 
+function formatAddonNote(row: PlanSettingRow): string | null {
+  if (row.planKey !== "ENTERPRISE") return null;
+  const price = row.extraLocationMonthlyUsd;
+  if (price <= 0) return null;
+  const formatted = Number.isInteger(price) ? String(price) : price.toFixed(2);
+  return `Sedes adicionales: +$${formatted} USD/mes por cada sede extra`;
+}
+
 /** Construye las tarjetas de precios a partir de plan_settings. */
 export function buildPlanPricingTiers(
   settings: PlanSettingsMap = DEFAULT_PLAN_SETTINGS,
@@ -165,6 +211,7 @@ export function buildPlanPricingTiers(
     { planId: "free", key: "FREE" },
     { planId: "starter", key: "PRO" },
     { planId: "premium", key: "BUSINESS" },
+    { planId: "enterprise", key: "ENTERPRISE" },
   ];
 
   return order.map(({ planId, key }) => {
@@ -176,6 +223,13 @@ export function buildPlanPricingTiers(
       features.splice(1, 0, `Hasta ${row.userLimit} usuarios del equipo`);
     }
 
+    if (planId === "enterprise" && row.includedLocations > 0) {
+      const idx = features.findIndex((f) => f.includes("sucursales"));
+      const label = `Hasta ${row.includedLocations} sucursales incluidas`;
+      if (idx >= 0) features[idx] = label;
+      else features.splice(1, 0, label);
+    }
+
     return {
       planId,
       displayName: row.displayName,
@@ -185,6 +239,7 @@ export function buildPlanPricingTiers(
       productLimitLabel: productLimitLabel(row.productLimit),
       recommended: staticMeta.recommended,
       features,
+      addonNote: formatAddonNote(row) ?? staticMeta.addonNote ?? null,
       cta: staticMeta.cta,
     };
   });
@@ -210,12 +265,15 @@ export function parsePlanSettingsRows(
     annual_usd?: number | string | null;
     product_limit?: number | string | null;
     user_limit?: number | string | null;
+    included_locations?: number | string | null;
+    extra_location_monthly_usd?: number | string | null;
   }>,
 ): PlanSettingsMap {
   const result: PlanSettingsMap = {
     FREE: { ...DEFAULT_PLAN_SETTINGS.FREE },
     PRO: { ...DEFAULT_PLAN_SETTINGS.PRO },
     BUSINESS: { ...DEFAULT_PLAN_SETTINGS.BUSINESS },
+    ENTERPRISE: { ...DEFAULT_PLAN_SETTINGS.ENTERPRISE },
   };
 
   for (const row of data) {
@@ -237,6 +295,12 @@ export function parsePlanSettingsRows(
             : defaults.productLimit
           : parseOptionalInt(row.product_limit),
       userLimit: parseOptionalInt(row.user_limit),
+      includedLocations:
+        parseOptionalInt(row.included_locations) ?? defaults.includedLocations,
+      extraLocationMonthlyUsd: parseMoney(
+        row.extra_location_monthly_usd,
+        defaults.extraLocationMonthlyUsd,
+      ),
     };
   }
 

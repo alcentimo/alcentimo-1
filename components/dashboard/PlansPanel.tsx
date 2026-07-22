@@ -72,9 +72,9 @@ function PlanCtaButton({
     );
   }
 
-  // PRO → Business usa la página de upgrade con prorrateo.
+  // PRO → Business / Enterprise usa la página de upgrade con prorrateo.
   if (
-    tier.planId === "premium" &&
+    (tier.planId === "premium" || tier.planId === "enterprise") &&
     (currentPlanId === "starter" || currentPlanId === "growth")
   ) {
     return (
@@ -85,8 +85,23 @@ function PlanCtaButton({
           !tier.recommended && "md:py-3",
         )}
       >
-        Upgrade a Business
+        {tier.planId === "enterprise" ? "Upgrade a Enterprise" : "Upgrade a Business"}
       </Link>
+    );
+  }
+
+  if (tier.planId === "enterprise" && currentPlanId === "premium") {
+    return (
+      <button
+        type="button"
+        onClick={() => onCheckout(tier)}
+        className={cn(
+          "btn-brand mt-6 inline-flex w-full items-center justify-center px-4 py-3.5 text-sm font-semibold shadow-sm",
+          !tier.recommended && "md:py-3",
+        )}
+      >
+        Upgrade a Enterprise
+      </button>
     );
   }
 
@@ -157,14 +172,15 @@ export function PlansPanel({
                 </Link>
               </p>
             ) : null}
-            {productCount != null && productLimit != null && currentPlanId !== "premium" && (
+            {productCount != null && productLimit != null && currentPlanId !== "premium" && currentPlanId !== "enterprise" && (
               <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
                 {productCount} / {formatProductLimit(productLimit)} productos activos
               </p>
             )}
-            {currentPlanId === "premium" && (
+            {(currentPlanId === "premium" || currentPlanId === "enterprise") && (
               <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
                 Productos ilimitados
+                {currentPlanId === "enterprise" ? " · Multi-sucursal" : null}
               </p>
             )}
           </div>
@@ -183,30 +199,25 @@ export function PlansPanel({
             />
             <div>
               <p className="text-sm font-semibold text-teal-950 dark:text-teal-100">
-                Dominio personalizado con Business
+                Multi-sucursal con Enterprise
               </p>
               <p className="mt-1 text-sm leading-relaxed text-teal-900/90 dark:text-teal-200/90">
-                El plan Business incluye conectar tu propio dominio (por ejemplo{" "}
-                <strong>tutienda.com</strong>) para que tus clientes vean tu marca
-                en la URL, con instrucciones DNS y verificación incluidas.
+                Enterprise incluye hasta <strong>3 sucursales</strong>, selector de sede
+                y retiro en tienda, stock por ubicación, y todo lo de Business.
+                Sedes adicionales: <strong>+$6 USD/mes</strong> cada una.
               </p>
             </div>
           </div>
-          {currentPlanId === "premium" ? (
-            <Link
-              href="/dashboard/ajustes?tab=domains"
-              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-teal-300 bg-white px-4 py-2 text-sm font-medium text-teal-900 transition hover:bg-teal-50 dark:border-teal-800 dark:bg-teal-950 dark:text-teal-100 dark:hover:bg-teal-900/40"
-            >
-              Configurar dominio
-            </Link>
-          ) : (
-            <Link
-              href="/dashboard/ajustes?tab=domains"
-              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-teal-300 bg-white px-4 py-2 text-sm font-medium text-teal-900 transition hover:bg-teal-50 dark:border-teal-800 dark:bg-teal-950 dark:text-teal-100 dark:hover:bg-teal-900/40"
-            >
-              Ver cómo funciona
-            </Link>
-          )}
+          <Link
+            href={
+              currentPlanId === "enterprise"
+                ? "/dashboard/ajustes?tab=branches"
+                : "#planes"
+            }
+            className="inline-flex shrink-0 items-center justify-center rounded-lg border border-teal-300 bg-white px-4 py-2 text-sm font-medium text-teal-900 transition hover:bg-teal-50 dark:border-teal-800 dark:bg-teal-950 dark:text-teal-100 dark:hover:bg-teal-900/40"
+          >
+            {currentPlanId === "enterprise" ? "Gestionar sucursales" : "Ver Enterprise"}
+          </Link>
         </div>
       </section>
 
@@ -220,7 +231,7 @@ export function PlansPanel({
           )}
         </div>
 
-        <div className="mt-8 grid grid-cols-1 items-stretch gap-5 md:grid-cols-3 md:items-end md:gap-4 lg:gap-6">
+        <div className="mt-8 grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:items-end xl:gap-4">
           {pricingTiers.map((tier) => (
             <PricingCard
               key={tier.planId}
@@ -382,6 +393,12 @@ function PricingCard({
           </li>
         ))}
       </ul>
+
+      {tier.addonNote ? (
+        <p className="mt-4 rounded-lg border border-amber-200/80 bg-amber-50/70 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
+          {tier.addonNote}
+        </p>
+      ) : null}
 
       <PlanCtaButton
         tier={tier}

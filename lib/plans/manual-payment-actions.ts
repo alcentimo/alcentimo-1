@@ -42,7 +42,7 @@ export type ManualPaymentActionResult = {
   daysRemaining?: number;
 };
 
-const UPGRADE_PLAN_IDS = new Set<PlanId>(["starter", "premium"]);
+const UPGRADE_PLAN_IDS = new Set<PlanId>(["starter", "premium", "enterprise"]);
 
 function normalizeReference(value: string): string {
   return value.trim().replace(/\s+/g, "");

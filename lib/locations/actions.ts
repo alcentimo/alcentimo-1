@@ -3,17 +3,29 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
-import {
-  MAX_STORE_LOCATIONS,
-  mapStoreLocationRow,
-  type StoreLocation,
-} from "@/lib/locations/types";
+import { mapStoreLocationRow, type StoreLocation } from "@/lib/locations/types";
 import { getStoreLocations } from "@/lib/locations/get-store-locations";
+import { resolveLocationLimit } from "@/lib/locations/limits";
+import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
+import { getStoreOwnerPlanProfile } from "@/lib/plans/product-limit";
+import {
+  getEffectivePlanIdForLimits,
+  resolveProTrialStatus,
+} from "@/lib/plans/trial";
+import { resolvePlanId, DASHBOARD_PLANS_HREF } from "@/src/config/plans";
 
 export interface LocationActionResult {
   error?: string;
   location?: StoreLocation;
   locations?: StoreLocation[];
+  limit?: {
+    maxAllowed: number;
+    includedLocations: number;
+    extraAuthorized: number;
+    remainingSlots: number;
+    extraLocationMonthlyUsd: number;
+    planId: string;
+  };
 }
 
 function normalizeText(value: unknown, max = 200): string {
@@ -25,6 +37,23 @@ function normalizePhone(value: unknown): string | null {
   return phone || null;
 }
 
+async function resolveStoreLocationLimit(
+  storeId: string,
+  currentCount: number,
+) {
+  const settings = await fetchPlanSettings();
+  const owner = await getStoreOwnerPlanProfile(storeId);
+  const planId = resolvePlanId(owner?.plan);
+  const trial = resolveProTrialStatus(owner, planId);
+  const effectivePlanId = getEffectivePlanIdForLimits(planId, trial);
+  return resolveLocationLimit({
+    planId: effectivePlanId,
+    extraAuthorized: owner?.extra_locations_authorized ?? 0,
+    currentCount,
+    settings,
+  });
+}
+
 export async function listStoreLocationsAction(): Promise<LocationActionResult> {
   const supabase = await createClient();
   const auth = await requireAuthStore(supabase);
@@ -32,7 +61,18 @@ export async function listStoreLocationsAction(): Promise<LocationActionResult> 
 
   try {
     const locations = await getStoreLocations(auth.store.id);
-    return { locations };
+    const limit = await resolveStoreLocationLimit(auth.store.id, locations.length);
+    return {
+      locations,
+      limit: {
+        maxAllowed: limit.maxAllowed,
+        includedLocations: limit.includedLocations,
+        extraAuthorized: limit.extraAuthorized,
+        remainingSlots: limit.remainingSlots,
+        extraLocationMonthlyUsd: limit.extraLocationMonthlyUsd,
+        planId: limit.planId,
+      },
+    };
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "No se pudieron cargar sucursales.",
@@ -55,8 +95,33 @@ export async function createStoreLocationAction(input: {
   if (!name) return { error: "Indica el nombre de la sucursal." };
 
   const existing = await getStoreLocations(auth.store.id);
-  if (existing.length >= MAX_STORE_LOCATIONS) {
-    return { error: `Máximo ${MAX_STORE_LOCATIONS} sucursales por tienda.` };
+  const limit = await resolveStoreLocationLimit(auth.store.id, existing.length);
+
+  if (!limit.canAddMore) {
+    if (limit.planId !== "enterprise") {
+      return {
+        error: `Tu plan incluye ${limit.includedLocations} sucursal(es). Actualiza a Enterprise para multi-sede.`,
+        limit: {
+          maxAllowed: limit.maxAllowed,
+          includedLocations: limit.includedLocations,
+          extraAuthorized: limit.extraAuthorized,
+          remainingSlots: limit.remainingSlots,
+          extraLocationMonthlyUsd: limit.extraLocationMonthlyUsd,
+          planId: limit.planId,
+        },
+      };
+    }
+    return {
+      error: `Alcanzaste el máximo de ${limit.maxAllowed} sucursales (${limit.includedLocations} incluidas + ${limit.extraAuthorized} extras autorizadas). Contacta soporte para autorizar sedes adicionales (+$${limit.extraLocationMonthlyUsd}/mes c/u).`,
+      limit: {
+        maxAllowed: limit.maxAllowed,
+        includedLocations: limit.includedLocations,
+        extraAuthorized: limit.extraAuthorized,
+        remainingSlots: limit.remainingSlots,
+        extraLocationMonthlyUsd: limit.extraLocationMonthlyUsd,
+        planId: limit.planId,
+      },
+    };
   }
 
   const { data, error } = await supabase

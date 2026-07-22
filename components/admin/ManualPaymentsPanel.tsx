@@ -139,7 +139,11 @@ export function ManualPaymentsPanel({
                 verified_at: new Date().toISOString(),
                 permanently_rejected: false,
                 admin_note: null,
-                owner_plan: item.plan_id === "premium" ? "BUSINESS" : "PRO",
+                owner_plan: item.plan_id === "enterprise"
+                  ? "ENTERPRISE"
+                  : item.plan_id === "premium"
+                    ? "BUSINESS"
+                    : "PRO",
                 owner_subscription_status: "active",
               }
             : item,

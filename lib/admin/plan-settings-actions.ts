@@ -17,7 +17,7 @@ export type UpdatePlanSettingsResult = {
   settings?: PlanSettingsMap;
 };
 
-const PLAN_KEYS: PlanSettingsKey[] = ["FREE", "PRO", "BUSINESS"];
+const PLAN_KEYS: PlanSettingsKey[] = ["FREE", "PRO", "BUSINESS", "ENTERPRISE"];
 
 function parseMoneyField(
   value: FormDataEntryValue | null,
@@ -52,6 +52,21 @@ function parseOptionalLimit(
   }
   if (n > 1_000_000) {
     return { error: `${label} es demasiado alto.` };
+  }
+  return n;
+}
+
+function parseIncludedLocations(
+  value: FormDataEntryValue | null,
+  label: string,
+  fallback: number,
+): number | { error: string } {
+  if (value == null || typeof value !== "string" || !value.trim()) {
+    return fallback;
+  }
+  const n = Number(value.trim());
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n < 1 || n > 20) {
+    return { error: `${label} debe ser un entero entre 1 y 20.` };
   }
   return n;
 }
@@ -103,6 +118,24 @@ function readPlanFromForm(
     return userLimit;
   }
 
+  const includedLocations = parseIncludedLocations(
+    formData.get(`${prefix}_includedLocations`),
+    `${displayName}: sucursales incluidas`,
+    defaults.includedLocations,
+  );
+  if (typeof includedLocations === "object") return includedLocations;
+
+  let extraLocationMonthlyUsd = defaults.extraLocationMonthlyUsd;
+  if (key === "ENTERPRISE") {
+    const extraPrice = parseMoneyField(
+      formData.get(`${prefix}_extraLocationMonthlyUsd`),
+      `${displayName}: precio sede extra`,
+      { allowZero: true },
+    );
+    if (typeof extraPrice === "object") return extraPrice;
+    extraLocationMonthlyUsd = extraPrice;
+  }
+
   if (key === "FREE" && monthly > 0) {
     return { error: "El plan Gratis debe tener precio mensual 0." };
   }
@@ -114,6 +147,8 @@ function readPlanFromForm(
     annualUsd,
     productLimit: (productLimit as number | null) ?? null,
     userLimit: (userLimit as number | null) ?? null,
+    includedLocations,
+    extraLocationMonthlyUsd,
   };
 }
 
@@ -133,6 +168,7 @@ export async function updatePlanSettings(
     FREE: { ...DEFAULT_PLAN_SETTINGS.FREE },
     PRO: { ...DEFAULT_PLAN_SETTINGS.PRO },
     BUSINESS: { ...DEFAULT_PLAN_SETTINGS.BUSINESS },
+    ENTERPRISE: { ...DEFAULT_PLAN_SETTINGS.ENTERPRISE },
   };
 
   for (const key of PLAN_KEYS) {
@@ -164,6 +200,8 @@ export async function updatePlanSettings(
         annual_usd: row.annualUsd,
         product_limit: row.productLimit,
         user_limit: row.userLimit,
+        included_locations: row.includedLocations,
+        extra_location_monthly_usd: row.extraLocationMonthlyUsd,
         updated_at: now,
         updated_by: user.id,
       },
@@ -177,10 +215,7 @@ export async function updatePlanSettings(
   revalidatePath("/admin/dashboard");
   revalidatePath("/activar");
   revalidatePath("/dashboard/planes");
-  revalidatePath("/dashboard/upgrade");
-  revalidatePath("/dashboard/pago");
-  revalidatePath("/dashboard/catalogo");
-  revalidatePath("/");
+  revalidatePath("/dashboard/ajustes");
 
   return { success: true, settings };
 }

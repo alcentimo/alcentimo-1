@@ -21,6 +21,7 @@ export async function getAdminPlanMetrics(): Promise<AdminPlanMetrics> {
     FREE: 0,
     PRO: 0,
     BUSINESS: 0,
+    ENTERPRISE: 0,
   };
 
   for (const row of data ?? []) {

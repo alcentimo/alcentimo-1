@@ -12,6 +12,7 @@ export type SubscriptionStatus = "none" | "provisional" | "active";
 const PLAN_ID_TO_DB: Record<ManualPaymentPlanId, ProfilePlanDb> = {
   starter: "PRO",
   premium: "BUSINESS",
+  enterprise: "ENTERPRISE",
 };
 
 export function normalizeDbPlan(value: string | null | undefined): ProfilePlanDb {
@@ -26,6 +27,9 @@ export function normalizeDbPlan(value: string | null | undefined): ProfilePlanDb
   }
   if (normalized === "BUSINESS" || normalized === "PREMIUM") {
     return "BUSINESS";
+  }
+  if (normalized === "ENTERPRISE") {
+    return "ENTERPRISE";
   }
   return "FREE";
 }
@@ -68,7 +72,7 @@ export function dbPlanToPlanId(plan: string | null | undefined): PlanId {
 }
 
 export function isManualPaymentPlanId(value: string): value is ManualPaymentPlanId {
-  return value === "starter" || value === "premium";
+  return value === "starter" || value === "premium" || value === "enterprise";
 }
 
 /** Limpia trial Pro al activar suscripción de pago y reinicia el ciclo. */

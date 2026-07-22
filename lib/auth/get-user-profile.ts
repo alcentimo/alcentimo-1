@@ -65,6 +65,7 @@ async function applyStoreOwnerPlanToUser(
     billing_period: ownerPlan.billing_period,
     subscription_period_started_at: ownerPlan.subscription_period_started_at,
     subscription_period_ends_at: ownerPlan.subscription_period_ends_at,
+    extra_locations_authorized: ownerPlan.extra_locations_authorized ?? 0,
   };
 
   const displayPlan = getDisplayPlanForProfile(ownerProfile);
@@ -83,7 +84,7 @@ export async function getUserProfile(
   userId: string,
 ): Promise<Profile | null> {
   const fullSelect =
-    "id, plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, billing_period, subscription_period_started_at, subscription_period_ends_at, created_at, updated_at";
+    "id, plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, billing_period, subscription_period_started_at, subscription_period_ends_at, extra_locations_authorized, created_at, updated_at";
 
   const { data, error } = await client
     .from("profiles")
@@ -110,6 +111,7 @@ export async function getUserProfile(
       billing_period: null,
       subscription_period_started_at: null,
       subscription_period_ends_at: null,
+      extra_locations_authorized: 0,
     };
   }
 

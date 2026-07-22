@@ -1,9 +1,9 @@
-export type PlanId = "free" | "starter" | "growth" | "premium";
+export type PlanId = "free" | "starter" | "growth" | "premium" | "enterprise";
 
 export interface PlanDefinition {
   id: PlanId;
   name: string;
-  /** `null` = productos ilimitados (Premium) */
+  /** `null` = productos ilimitados (Business / Enterprise) */
   productLimit: number | null;
   priceUsdYearly: number;
 }
@@ -35,6 +35,12 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     productLimit: null,
     priceUsdYearly: 199,
   },
+  enterprise: {
+    id: "enterprise",
+    name: "Plan Enterprise",
+    productLimit: null,
+    priceUsdYearly: 278,
+  },
 };
 
 export const PLAN_LIST: PlanDefinition[] = [
@@ -42,6 +48,7 @@ export const PLAN_LIST: PlanDefinition[] = [
   PLANS.starter,
   PLANS.growth,
   PLANS.premium,
+  PLANS.enterprise,
 ];
 
 /** Enlace a la sección de precios en la landing. */
@@ -57,7 +64,8 @@ const NEXT_PLAN_DISPLAY_NAME: Record<PlanId, string | null> = {
   free: "Pro",
   starter: "Business",
   growth: "Business",
-  premium: null,
+  premium: "Enterprise",
+  enterprise: null,
 };
 
 export interface ProductLimitCheck {
@@ -92,6 +100,8 @@ const DB_PLAN_ALIASES: Record<string, PlanId> = {
   BUSINESS: "premium",
   premium: "premium",
   PREMIUM: "premium",
+  enterprise: "enterprise",
+  ENTERPRISE: "enterprise",
 };
 
 /** Normaliza el valor de `profiles.plan` (p. ej. `FREE`) al `PlanId` interno. */

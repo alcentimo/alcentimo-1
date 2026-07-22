@@ -46,12 +46,16 @@ function normalizePlan(value: string | null | undefined): ProfilePlanDb {
   if (normalized === "BUSINESS" || normalized === "PREMIUM") {
     return "BUSINESS";
   }
+  if (normalized === "ENTERPRISE") {
+    return "ENTERPRISE";
+  }
   return "FREE";
 }
 
 function dbPlanToPricingPlanId(plan: ProfilePlanDb): PlanId | null {
   if (plan === "PRO") return "starter";
   if (plan === "BUSINESS") return "premium";
+  if (plan === "ENTERPRISE") return "enterprise";
   return null;
 }
 
@@ -128,6 +132,7 @@ export function calculateUpgradeProration(input: {
     FREE: 0,
     PRO: 1,
     BUSINESS: 2,
+    ENTERPRISE: 3,
   };
 
   const isUpgradeWithCredit =

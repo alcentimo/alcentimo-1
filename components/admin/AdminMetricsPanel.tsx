@@ -9,6 +9,7 @@ const PLAN_ROWS: Array<{
   { key: "FREE", label: "Gratis", hint: "Plan Free" },
   { key: "PRO", label: "Pro", hint: "Plan Pro" },
   { key: "BUSINESS", label: "Business", hint: "Plan Business" },
+  { key: "ENTERPRISE", label: "Enterprise", hint: "Plan Enterprise" },
 ];
 
 interface AdminMetricsPanelProps {
