@@ -4,7 +4,9 @@ import { getCurrentExchangeRate } from "@/lib/catalog";
 import {
   CATALOG_LIST_SELECT,
   INVENTORY_PAGE_SIZE,
+  type InventoryPageSize,
 } from "@/lib/inventory/constants";
+import { buildInventorySearchOrFilter } from "@/lib/inventory/search";
 import {
   CRITICAL_STOCK_THRESHOLD,
   type CatalogStockFilter,
@@ -37,6 +39,8 @@ export interface GetStoreInventoryOptions {
   limit?: number;
   offset?: number;
   stockFilter?: CatalogStockFilter;
+  /** Búsqueda por nombre, SKU o slug (server-side). */
+  search?: string;
 }
 
 export interface StoreInventoryData {
@@ -56,6 +60,7 @@ export async function getStoreInventory(
   const limit = options?.limit;
   const offset = options?.offset ?? 0;
   const stockFilter = options?.stockFilter ?? "all";
+  const searchOr = buildInventorySearchOrFilter(options?.search ?? "");
   const paginated = limit != null;
 
   try {
@@ -72,6 +77,12 @@ export async function getStoreInventory(
       productsQuery = productsQuery
         .lte("stock_quantity", CRITICAL_STOCK_THRESHOLD)
         .gt("stock_quantity", 0);
+    } else if (stockFilter === "out") {
+      productsQuery = productsQuery.lte("stock_quantity", 0);
+    }
+
+    if (searchOr) {
+      productsQuery = productsQuery.or(searchOr);
     }
 
     if (paginated) {
@@ -122,4 +133,20 @@ export async function getStoreInventory(
       inventoryError: message,
     };
   }
+}
+
+export function getInventoryPageOffset(
+  page: number,
+  pageSize: InventoryPageSize | number,
+): number {
+  const safePage = Math.max(1, Math.floor(page) || 1);
+  return (safePage - 1) * pageSize;
+}
+
+export function getInventoryTotalPages(
+  totalCount: number,
+  pageSize: InventoryPageSize | number,
+): number {
+  if (totalCount <= 0) return 1;
+  return Math.max(1, Math.ceil(totalCount / pageSize));
 }

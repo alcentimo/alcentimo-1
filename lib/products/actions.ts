@@ -777,6 +777,7 @@ export async function fetchInventoryProducts(options?: {
   offset?: number;
   limit?: number;
   stockFilter?: import("@/lib/inventory/stock-status").CatalogStockFilter;
+  search?: string;
 }): Promise<{
   products: import("@/lib/database.types").CatalogListItem[];
   totalCount: number;
@@ -796,6 +797,7 @@ export async function fetchInventoryProducts(options?: {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? INVENTORY_PAGE_SIZE,
       stockFilter: options?.stockFilter,
+      search: options?.search,
     },
   );
   return { products, totalCount, hasMore, error: inventoryError };

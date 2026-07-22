@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
 import type { CatalogListItem, Store } from "@/lib/database.types";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
+import type { InventoryPageSize } from "@/lib/inventory/constants";
 import type { CatalogStockFilter } from "@/lib/inventory/stock-status";
 import type { StoreProductLimitContext } from "@/lib/plans/product-limit";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
@@ -15,29 +16,14 @@ interface CatalogPanelProps {
   exchangeRateUpdatedAt?: string | null;
   initialProducts: CatalogListItem[];
   initialTotalCount?: number;
-  initialHasMore?: boolean;
   initialCriticalStockCount?: number;
   initialStockFilter?: CatalogStockFilter;
+  initialSearchQuery?: string;
+  initialPage?: number;
+  initialPageSize?: InventoryPageSize;
   productFormConfig: StoreProductFormConfig;
   previewSettings: CatalogPreviewSettings;
   productLimitContext?: StoreProductLimitContext | null;
-}
-
-function resolveStockFilter(value: string | null): CatalogStockFilter {
-  return value === "bajo" ? "critical" : "all";
-}
-
-function syncStockFilterUrl(nextFilter: CatalogStockFilter) {
-  const params = new URLSearchParams(window.location.search);
-  if (nextFilter === "critical") {
-    params.set("stock", "bajo");
-  } else {
-    params.delete("stock");
-  }
-
-  const query = params.toString();
-  const nextUrl = query ? `/dashboard/catalogo?${query}` : "/dashboard/catalogo";
-  window.history.replaceState(null, "", nextUrl);
 }
 
 export function CatalogPanel({
@@ -46,9 +32,11 @@ export function CatalogPanel({
   exchangeRateUpdatedAt,
   initialProducts,
   initialTotalCount,
-  initialHasMore = false,
   initialCriticalStockCount = 0,
   initialStockFilter = "all",
+  initialSearchQuery = "",
+  initialPage = 1,
+  initialPageSize = 20,
   productFormConfig,
   previewSettings,
   productLimitContext = null,
@@ -57,9 +45,6 @@ export function CatalogPanel({
   const searchParams = useSearchParams();
   const [autoOpenCreate, setAutoOpenCreate] = useState(
     () => searchParams.get("nuevo") === "1",
-  );
-  const [stockFilter, setStockFilter] = useState<CatalogStockFilter>(
-    () => initialStockFilter ?? resolveStockFilter(searchParams.get("stock")),
   );
 
   useEffect(() => {
@@ -89,11 +74,6 @@ export function CatalogPanel({
     }
   }, [searchParams, router]);
 
-  function handleStockFilterChange(nextFilter: CatalogStockFilter) {
-    setStockFilter(nextFilter);
-    syncStockFilterUrl(nextFilter);
-  }
-
   return (
     <InventoryPanel
       key={`catalog-${productFormConfig.rubroTienda}`}
@@ -102,14 +82,15 @@ export function CatalogPanel({
       exchangeRateUpdatedAt={exchangeRateUpdatedAt}
       initialProducts={initialProducts}
       initialTotalCount={initialTotalCount}
-      initialHasMore={initialHasMore}
       initialCriticalStockCount={initialCriticalStockCount}
       productFormConfig={productFormConfig}
       previewSettings={previewSettings}
       autoOpenCreate={autoOpenCreate}
       onAutoOpenCreateHandled={() => setAutoOpenCreate(false)}
-      stockFilter={stockFilter}
-      onStockFilterChange={handleStockFilterChange}
+      initialStockFilter={initialStockFilter}
+      initialSearchQuery={initialSearchQuery}
+      initialPage={initialPage}
+      initialPageSize={initialPageSize}
       productLimitContext={productLimitContext}
     />
   );

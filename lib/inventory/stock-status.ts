@@ -3,7 +3,24 @@ import type { CatalogListItem } from "@/lib/database.types";
 export const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 export const CRITICAL_STOCK_THRESHOLD = 3;
 
-export type CatalogStockFilter = "all" | "critical";
+/** Filtros rápidos del listado de inventario en el dashboard. */
+export type CatalogStockFilter = "all" | "critical" | "out";
+
+export function parseCatalogStockFilter(
+  value: string | null | undefined,
+): CatalogStockFilter {
+  if (value === "bajo" || value === "critical") return "critical";
+  if (value === "agotados" || value === "out") return "out";
+  return "all";
+}
+
+export function catalogStockFilterToParam(
+  filter: CatalogStockFilter,
+): string | null {
+  if (filter === "critical") return "bajo";
+  if (filter === "out") return "agotados";
+  return null;
+}
 
 export function getProductStockQuantity(
   product: Pick<CatalogListItem, "stock_quantity">,

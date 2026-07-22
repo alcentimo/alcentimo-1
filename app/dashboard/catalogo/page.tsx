@@ -1,13 +1,17 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
-import { getStoreInventory, INVENTORY_PAGE_SIZE } from "@/lib/inventory";
+import {
+  getInventoryPageOffset,
+  getStoreInventory,
+} from "@/lib/inventory";
+import { parseInventoryPageSize } from "@/lib/inventory/constants";
 import { getCriticalStockCount } from "@/lib/inventory/get-critical-stock-count";
-import type { CatalogStockFilter } from "@/lib/inventory/stock-status";
+import { sanitizeInventorySearch } from "@/lib/inventory/search";
+import { parseCatalogStockFilter } from "@/lib/inventory/stock-status";
 import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
 import { isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
@@ -22,9 +26,15 @@ export const dynamic = "force-dynamic";
 export default async function CatalogoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ onboarded?: string; tab?: string; stock?: string }>;
+  searchParams: Promise<{
+    onboarded?: string;
+    tab?: string;
+    stock?: string;
+    q?: string;
+    page?: string;
+    per?: string;
+  }>;
 }) {
-  const supabase = await createClient();
   const session = await getDashboardSession();
   const params = await searchParams;
 
@@ -58,15 +68,19 @@ export default async function CatalogoPage({
     );
   }
 
-  const stockFilter: CatalogStockFilter =
-    params.stock === "bajo" ? "critical" : "all";
+  const stockFilter = parseCatalogStockFilter(params.stock);
+  const searchQuery = sanitizeInventorySearch(params.q ?? "");
+  const pageSize = parseInventoryPageSize(params.per);
+  const requestedPage = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
+  const offset = getInventoryPageOffset(requestedPage, pageSize);
 
   const [inventory, exchangeRateRow, productFormConfig, previewSettings, productLimitContext, criticalStockCount] =
     await Promise.all([
       getStoreInventory(store.slug, {
-        limit: INVENTORY_PAGE_SIZE,
-        offset: 0,
+        limit: pageSize,
+        offset,
         stockFilter,
+        search: searchQuery,
       }),
       getCurrentExchangeRate(),
       getStoreProductFormConfig(store.id),
@@ -75,7 +89,20 @@ export default async function CatalogoPage({
       getCriticalStockCount(store.slug),
     ]);
 
-  const { products, totalCount, hasMore } = inventory;
+  let { products, totalCount } = inventory;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize) || 1);
+  const page = Math.min(requestedPage, totalPages);
+
+  if (page !== requestedPage && totalCount > 0) {
+    const corrected = await getStoreInventory(store.slug, {
+      limit: pageSize,
+      offset: getInventoryPageOffset(page, pageSize),
+      stockFilter,
+      search: searchQuery,
+    });
+    products = corrected.products;
+    totalCount = corrected.totalCount;
+  }
 
   const exchangeRate = exchangeRateRow?.rate ?? null;
   const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
@@ -108,12 +135,14 @@ export default async function CatalogoPage({
           exchangeRateUpdatedAt={exchangeRateUpdatedAt}
           initialProducts={products}
           initialTotalCount={totalCount}
-          initialHasMore={hasMore}
           initialCriticalStockCount={criticalStockCount}
           productFormConfig={productFormConfig}
           previewSettings={previewSettings}
           productLimitContext={productLimitContext}
           initialStockFilter={stockFilter}
+          initialSearchQuery={searchQuery}
+          initialPage={page}
+          initialPageSize={pageSize}
         />
       </Suspense>
     </div>

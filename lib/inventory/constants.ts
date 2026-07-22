@@ -1,5 +1,17 @@
-/** Productos por lote en el grid del dashboard (carga inicial y scroll). */
+/** Productos por página en el listado del dashboard (por defecto). */
 export const INVENTORY_PAGE_SIZE = 20;
+
+/** Tamaños de página permitidos en el catálogo del dashboard. */
+export const INVENTORY_PAGE_SIZE_OPTIONS = [20, 50] as const;
+
+export type InventoryPageSize = (typeof INVENTORY_PAGE_SIZE_OPTIONS)[number];
+
+export function parseInventoryPageSize(
+  value: string | number | null | undefined,
+): InventoryPageSize {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return parsed === 50 ? 50 : INVENTORY_PAGE_SIZE;
+}
 
 /** Pedidos por lote en la lista del dashboard. */
 export const ORDERS_PAGE_SIZE = 30;
@@ -17,6 +29,7 @@ export const CATALOG_LIST_SELECT = [
   "category_name",
   "sort_order",
   "created_at",
+  "default_sku",
   "stock_quantity",
   "reserved_quantity",
   "available_stock",
