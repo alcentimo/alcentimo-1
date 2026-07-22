@@ -8,14 +8,11 @@ import {
   readFileAsObjectUrl,
 } from "@/lib/product-image-crop";
 
-/** Acepta cualquier imagen; en móvil habilita cámara y galería. */
+/** Acepta cualquier imagen; sin `capture` el móvil ofrece cámara o galería. */
 export const PRODUCT_IMAGE_FILE_ACCEPT = "image/*";
 
-/** Prioriza cámara trasera al tomar foto (Chrome/Safari móvil). */
-export const PRODUCT_IMAGE_FILE_CAPTURE = "environment";
-
 export const PRODUCT_IMAGE_CAMERA_HINT =
-  "En móvil puedes tomar foto con la cámara trasera o elegir de la galería.";
+  "En móvil puedes tomar una foto o elegir una imagen de la galería.";
 
 export type CompressProductImageResult =
   | { ok: true; file: File; previewUrl: string; message: string }
