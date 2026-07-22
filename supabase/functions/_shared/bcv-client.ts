@@ -103,7 +103,9 @@ export async function fetchBcvUsdRate(): Promise<number> {
     try {
       const payload = await fetchJson(endpoint);
       const rate = extractRateFromPayload(payload);
-      if (rate) return rate;
+      if (rate) {
+        return Math.round((rate + Number.EPSILON) * 100) / 100;
+      }
       errors.push(`${endpoint}: respuesta sin tasa válida`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error desconocido";

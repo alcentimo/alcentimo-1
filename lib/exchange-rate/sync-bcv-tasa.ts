@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchBcvUsdRate } from "@/lib/exchange-rate/bcv-client";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
+import { roundExchangeRate } from "@/lib/format";
 
 export interface SyncBcvTasaResult {
   success: boolean;
@@ -19,8 +20,9 @@ export async function syncBcvTasaToDatabase(
 ): Promise<SyncBcvTasaResult> {
   try {
     logBcvSync("fetch_start");
-    const rate = await fetchBcvUsdRate();
-    logBcvSync("fetch_success", { rate });
+    const rawRate = await fetchBcvUsdRate();
+    const rate = roundExchangeRate(rawRate);
+    logBcvSync("fetch_success", { rate, rawRate });
 
     if (!Number.isFinite(rate) || rate <= 0) {
       logBcvSync("fetch_invalid_rate", { rate }, "error");

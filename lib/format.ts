@@ -1,10 +1,14 @@
 /**
- * Redondeo estándar a 2 decimales para mostrar montos al cliente.
- * No usar en cálculos internos: los totales deben sumarse con precisión completa.
+ * Redondeo estándar a 2 decimales para montos y tasa BCV (estándar monetario VE).
  */
 export function roundMoneyDisplay(amount: number): number {
   if (!Number.isFinite(amount)) return 0;
-  return Math.round(amount * 100) / 100;
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
+}
+
+/** Alias explícito para la tasa USD/VES (siempre 2 decimales). */
+export function roundExchangeRate(rate: number): number {
+  return roundMoneyDisplay(rate);
 }
 
 export function formatUsd(amount: number | null | undefined): string {
@@ -34,11 +38,11 @@ export function formatVes(amount: number | null | undefined): string {
   }).format(roundMoneyDisplay(amount))}`;
 }
 
-/** Tasa de cambio (no es precio): conserva más decimales para cálculos visibles. */
+/** Tasa BCV: siempre exactamente 2 decimales (ej. 737,23). */
 export function formatExchangeRate(rate: number | null | undefined): string {
   if (rate == null || !Number.isFinite(rate)) return "—";
   return new Intl.NumberFormat("es-VE", {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
-  }).format(rate);
+    maximumFractionDigits: 2,
+  }).format(roundExchangeRate(rate));
 }

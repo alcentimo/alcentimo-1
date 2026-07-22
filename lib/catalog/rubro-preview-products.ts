@@ -287,7 +287,7 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
 };
 
 function usdToVes(usd: number, rate: number): number {
-  return Math.round(usd * rate * 100) / 100;
+  return Math.round(usd * Math.round((rate + Number.EPSILON) * 100) / 100 * 100) / 100;
 }
 
 function seedToReferenceCatalogItem(

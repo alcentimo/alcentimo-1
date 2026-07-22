@@ -2,6 +2,7 @@ import { cache } from "react";
 import { getSupabaseAnonClient } from "@/lib/supabase";
 import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
 import { CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
+import { roundExchangeRate } from "@/lib/format";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 
 export interface CatalogPageData {
@@ -40,7 +41,7 @@ function normalizeCatalogItem(row: CatalogListItem): CatalogListItem {
 function normalizeExchangeRate(row: ExchangeRate): ExchangeRate {
   return {
     ...row,
-    rate: toNumber(row.rate) ?? 0,
+    rate: roundExchangeRate(toNumber(row.rate) ?? 0),
   };
 }
 
@@ -51,7 +52,7 @@ export const getCurrentExchangeRate = cache(
     if (tasa && tasa.tasa > 0) {
       return {
         id: `tasas_cambio:${tasa.moneda}`,
-        rate: tasa.tasa,
+        rate: roundExchangeRate(tasa.tasa),
         source: "bcv",
         effective_date: tasa.ultima_actualizacion.slice(0, 10),
         notes: "Tasa BCV sincronizada automáticamente",

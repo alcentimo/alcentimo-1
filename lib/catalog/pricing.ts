@@ -1,4 +1,6 @@
-/** Convierte precio USD a bolívares usando la tasa vigente (sin redondeo). */
+import { roundMoneyDisplay } from "@/lib/format";
+
+/** Convierte precio USD a bolívares con la tasa vigente (2 decimales). */
 export function computeUsdToVes(
   priceUsd: number | null | undefined,
   exchangeRate: number | null | undefined,
@@ -11,7 +13,7 @@ export function computeUsdToVes(
     return null;
   }
 
-  return priceUsd * exchangeRate;
+  return roundMoneyDisplay(priceUsd * roundMoneyDisplay(exchangeRate));
 }
 
 /** Porcentaje de descuento cuando compare_at > precio de venta. */

@@ -92,7 +92,11 @@ async function fetchJson(url: string): Promise<unknown> {
   }
 }
 
-/** Obtiene la tasa USD/VES publicada por el BCV desde APIs públicas. */
+function roundRateTwoDecimals(rate: number): number {
+  return Math.round((rate + Number.EPSILON) * 100) / 100;
+}
+
+/** Obtiene la tasa USD/VES publicada por el BCV desde APIs públicas (2 decimales). */
 export async function fetchBcvUsdRate(): Promise<number> {
   const errors: string[] = [];
 
@@ -102,8 +106,9 @@ export async function fetchBcvUsdRate(): Promise<number> {
       const payload = await fetchJson(endpoint);
       const rate = extractRateFromPayload(payload);
       if (rate) {
-        console.log(`[bcv-sync] ${JSON.stringify({ ts: new Date().toISOString(), phase: "fetch_endpoint_ok", endpoint, rate })}`);
-        return rate;
+        const rounded = roundRateTwoDecimals(rate);
+        console.log(`[bcv-sync] ${JSON.stringify({ ts: new Date().toISOString(), phase: "fetch_endpoint_ok", endpoint, rate: rounded, rawRate: rate })}`);
+        return rounded;
       }
       errors.push(`${endpoint}: respuesta sin tasa válida`);
     } catch (error) {
