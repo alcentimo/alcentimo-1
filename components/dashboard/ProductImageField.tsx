@@ -16,7 +16,6 @@ import {
   compressSelectedProductImage,
   PRODUCT_IMAGE_CAMERA_HINT,
   PRODUCT_IMAGE_FILE_ACCEPT,
-  PRODUCT_IMAGE_FILE_CAPTURE,
   revokeProductImagePreview,
 } from "@/lib/product-image-picker";
 import {
@@ -300,7 +299,6 @@ export function ProductImageField({
         id={id}
         type="file"
         accept={PRODUCT_IMAGE_FILE_ACCEPT}
-        capture={PRODUCT_IMAGE_FILE_CAPTURE}
         onChange={handleFileChange}
         className="sr-only"
         aria-label="Tomar foto o elegir imagen del producto"
