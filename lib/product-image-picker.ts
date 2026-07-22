@@ -8,11 +8,17 @@ import {
   readFileAsObjectUrl,
 } from "@/lib/product-image-crop";
 
-/** Solo imágenes. Sin `capture`: el SO decide el menú (cámara o galería). */
+/** Solo imágenes. Sin `capture` → galería / archivos. */
 export const PRODUCT_IMAGE_FILE_ACCEPT = "image/*";
 
+/**
+ * Con `capture` el SO abre la cámara (no el menú mixto).
+ * Usamos un input aparte para “Tomar foto”; otro sin capture para galería.
+ */
+export const PRODUCT_IMAGE_CAMERA_CAPTURE = "environment";
+
 export const PRODUCT_IMAGE_CAMERA_HINT =
-  "Toca «Subir imagen» para elegir entre tomar una foto o usar la galería.";
+  "En móvil elige tomar una foto o seleccionar una de la galería.";
 
 export type CompressProductImageResult =
   | { ok: true; file: File; previewUrl: string; message: string }

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
-import { Crop, ImagePlus, Loader2 } from "lucide-react";
+import { Camera, Crop, ImagePlus, Images, Loader2 } from "lucide-react";
 import "react-easy-crop/react-easy-crop.css";
 import {
   PRODUCT_IMAGE_ASPECT_CLASS,
@@ -14,6 +14,7 @@ import {
 import {
   autoCropAndCompressProductImage,
   compressSelectedProductImage,
+  PRODUCT_IMAGE_CAMERA_CAPTURE,
   PRODUCT_IMAGE_CAMERA_HINT,
   PRODUCT_IMAGE_FILE_ACCEPT,
   revokeProductImagePreview,
@@ -34,6 +35,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
+
+function isCoarsePointerDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(pointer: coarse)").matches;
+}
 
 export interface ProductImageReadyPayload {
   file: File;
@@ -65,7 +71,9 @@ export function ProductImageField({
   onBusyChange,
   onProcessedChange,
 }: ProductImageFieldProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
   const [confirmedPreviewUrl, setConfirmedPreviewUrl] = useState<string | null>(
     initialPreviewUrl,
   );
@@ -227,13 +235,36 @@ export function ProductImageField({
     }
   }
 
-  const openNativeImagePicker = useCallback(() => {
-    const input = inputRef.current;
-    if (!input || isBusy) return;
-    // Permite volver a elegir el mismo archivo y evita estado residual del picker.
-    input.value = "";
-    input.click();
-  }, [isBusy]);
+  const triggerFileInput = useCallback(
+    (input: HTMLInputElement | null) => {
+      if (!input || isBusy) return;
+      input.value = "";
+      input.click();
+    },
+    [isBusy],
+  );
+
+  const openGalleryPicker = useCallback(() => {
+    // click() debe ir en el mismo gesto del usuario, antes de cerrar el diálogo.
+    triggerFileInput(galleryInputRef.current);
+    setSourcePickerOpen(false);
+  }, [triggerFileInput]);
+
+  const openCameraPicker = useCallback(() => {
+    triggerFileInput(cameraInputRef.current);
+    setSourcePickerOpen(false);
+  }, [triggerFileInput]);
+
+  const handleUploadButtonClick = useCallback(() => {
+    if (isBusy) return;
+    // Un solo input no garantiza menú cámara+galería en muchos móviles/PWA.
+    // En touch abrimos elección explícita; en desktop basta el selector de archivos.
+    if (isCoarsePointerDevice()) {
+      setSourcePickerOpen(true);
+      return;
+    }
+    triggerFileInput(galleryInputRef.current);
+  }, [isBusy, triggerFileInput]);
 
   const pickButtonLabel = compressing
     ? "Procesando…"
@@ -297,12 +328,24 @@ export function ProductImageField({
       )}
       {layout === "stacked" && <p className="label-field">Foto del producto</p>}
 
-      {/* Input oculto: sin capture. El botón dispara el menú nativo del SO. */}
+      {/* Galería / archivos: sin capture */}
       <input
-        ref={inputRef}
-        id={id}
+        ref={galleryInputRef}
+        id={`${id}-gallery`}
         type="file"
         accept={PRODUCT_IMAGE_FILE_ACCEPT}
+        onChange={handleFileChange}
+        className="hidden"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+      {/* Cámara: capture fuerza la cámara (opción explícita en el menú de la app) */}
+      <input
+        ref={cameraInputRef}
+        id={`${id}-camera`}
+        type="file"
+        accept={PRODUCT_IMAGE_FILE_ACCEPT}
+        capture={PRODUCT_IMAGE_CAMERA_CAPTURE}
         onChange={handleFileChange}
         className="hidden"
         tabIndex={-1}
@@ -312,7 +355,7 @@ export function ProductImageField({
       {layout === "stacked" ? (
         <button
           type="button"
-          onClick={openNativeImagePicker}
+          onClick={handleUploadButtonClick}
           disabled={isBusy}
           className="btn-brand-outline mt-1 inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 py-2.5 text-sm sm:w-auto"
           aria-label={pickButtonLabel}
@@ -330,7 +373,7 @@ export function ProductImageField({
           variant="outline"
           size="sm"
           disabled={isBusy}
-          onClick={openNativeImagePicker}
+          onClick={handleUploadButtonClick}
           className="mt-1.5 inline-flex min-h-10 w-full items-center justify-center gap-2 sm:w-auto"
           aria-label={pickButtonLabel}
         >
@@ -395,6 +438,52 @@ export function ProductImageField({
           <div className="min-w-0 flex-1">{controls}</div>
         </div>
       )}
+
+      <Dialog open={sourcePickerOpen} onOpenChange={setSourcePickerOpen}>
+        <DialogContent
+          className="max-w-sm"
+          onClose={() => setSourcePickerOpen(false)}
+        >
+          <DialogHeader>
+            <DialogTitle>Subir imagen</DialogTitle>
+            <DialogDescription>
+              Elige cómo quieres agregar la foto del producto.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isBusy}
+              onClick={openCameraPicker}
+              className="h-12 justify-start gap-3 px-4 text-sm font-semibold"
+            >
+              <Camera className="h-5 w-5 shrink-0 text-emerald-600" aria-hidden="true" />
+              Tomar foto
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isBusy}
+              onClick={openGalleryPicker}
+              className="h-12 justify-start gap-3 px-4 text-sm font-semibold"
+            >
+              <Images className="h-5 w-5 shrink-0 text-emerald-600" aria-hidden="true" />
+              Elegir de la galería
+            </Button>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setSourcePickerOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={cropOpen} onOpenChange={(open) => !open && closeCropDialog()}>
         <DialogContent
