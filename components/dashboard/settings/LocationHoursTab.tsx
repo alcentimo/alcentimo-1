@@ -121,7 +121,7 @@ export function LocationHoursTab({
 
       <SettingsSection
         title="Ubicación"
-        description="Ciudad y dirección de referencia para tus clientes."
+        description="Opcional para negocios 100% online. Ciudad y referencia que verán tus clientes; no es obligatoria para configurar entregas en zonas."
         variant="payments"
       >
         <div className="general-settings-card space-y-3">

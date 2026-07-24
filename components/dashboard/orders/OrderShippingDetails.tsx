@@ -1,6 +1,7 @@
 import type { CatalogOrder } from "@/lib/orders/types";
 import {
   formatOrderShippingSummary,
+  getOrderFulfillmentDetailLabel,
   getOrderFulfillmentLabel,
   getOrderShippingMethodLabel,
 } from "@/lib/orders/shipping-display";
@@ -31,7 +32,8 @@ export function OrderShippingDetails({
       {fulfillmentLabel ? <p>{fulfillmentLabel}</p> : null}
       {getOrderShippingMethodLabel(order) ? (
         <p>
-          Agencia: <strong className="font-medium">{getOrderShippingMethodLabel(order)}</strong>
+          {isNationalCarrierKey(order.shipping_method) ? "Agencia" : "Método"}:{" "}
+          <strong className="font-medium">{getOrderShippingMethodLabel(order)}</strong>
         </p>
       ) : null}
       {isNationalCarrierKey(order.shipping_method) && order.shipping_branch_name ? (
@@ -45,7 +47,8 @@ export function OrderShippingDetails({
       ) : null}
       {order.delivery_address ? (
         <p>
-          Dirección: <strong className="font-medium">{order.delivery_address}</strong>
+          {getOrderFulfillmentDetailLabel(order)}:{" "}
+          <strong className="font-medium">{order.delivery_address}</strong>
         </p>
       ) : null}
       {order.location_name ? (
@@ -54,7 +57,7 @@ export function OrderShippingDetails({
           <strong className="font-medium">{order.location_name}</strong>
         </p>
       ) : null}
-      {shippingSummary && !isNationalCarrierKey(order.shipping_method) ? (
+      {isNationalCarrierKey(order.shipping_method) && shippingSummary ? (
         <p>{shippingSummary}</p>
       ) : null}
     </div>

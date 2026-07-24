@@ -7,6 +7,8 @@ import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { CheckoutStepper, type CheckoutStep } from "@/components/catalog/CheckoutStepper";
 import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
 import { ShippingBranchPicker } from "@/components/shipping/ShippingBranchPicker";
+import { DeliveryZonePicker } from "@/components/shipping/DeliveryZonePicker";
+import { PickupPointPicker } from "@/components/shipping/PickupPointPicker";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { PaymentCheckoutDetails } from "@/components/payments/PaymentCheckoutDetails";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
@@ -86,6 +88,10 @@ export function CheckoutPanel({
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryZoneId, setDeliveryZoneId] = useState<string | null>(null);
+  const [meetingPointId, setMeetingPointId] = useState<string | null>(null);
+  const [pickupPointId, setPickupPointId] = useState<string | null>(null);
+  const [fulfillmentNotes, setFulfillmentNotes] = useState("");
   const [shippingBranchCode, setShippingBranchCode] = useState<string | null>(null);
   const [successOrder, setSuccessOrder] = useState<{
     orderId: string;
@@ -116,12 +122,32 @@ export function CheckoutPanel({
   const isNationalCarrierSelected = isNationalCarrierKey(selectedShipping);
   const isLocalDeliverySelected = selectedShipping === "delivery";
   const isPickupSelected = selectedShipping === "pickup";
+  const deliveryZonesForCheckout = useMemo(
+    () =>
+      purchaseInfo.deliveryZones.filter((zone) => zone.meetingPoints.length > 0),
+    [purchaseInfo.deliveryZones],
+  );
+  const hasDeliveryZones = deliveryZonesForCheckout.length > 0;
+  const hasPickupPoints = purchaseInfo.pickupPoints.length > 0;
 
   useEffect(() => {
     if (!isNationalCarrierSelected) {
       setShippingBranchCode(null);
     }
   }, [isNationalCarrierSelected, selectedShipping]);
+
+  useEffect(() => {
+    if (!isLocalDeliverySelected) {
+      setDeliveryZoneId(null);
+      setMeetingPointId(null);
+    }
+  }, [isLocalDeliverySelected]);
+
+  useEffect(() => {
+    if (!isPickupSelected) {
+      setPickupPointId(null);
+    }
+  }, [isPickupSelected]);
 
   useEffect(() => {
     if (selectedShipping || purchaseInfo.shipping.length === 0) return;
@@ -273,10 +299,20 @@ export function CheckoutPanel({
     [items],
   );
 
+  const deliveryStepValid =
+    !isLocalDeliverySelected ||
+    (hasDeliveryZones
+      ? Boolean(deliveryZoneId && meetingPointId)
+      : deliveryAddress.trim().length >= 8);
+
+  const pickupStepValid =
+    !isPickupSelected || !hasPickupPoints || Boolean(pickupPointId);
+
   const canProceedStep1 =
     items.length > 0 &&
     (purchaseInfo.shipping.length === 0 || Boolean(selectedShipping)) &&
-    (!isLocalDeliverySelected || deliveryAddress.trim().length >= 8) &&
+    deliveryStepValid &&
+    pickupStepValid &&
     (!isNationalCarrierSelected || Boolean(shippingBranchCode));
 
   const hasCustomerData = customerProfile
@@ -296,8 +332,12 @@ export function CheckoutPanel({
 
     if (checkoutStep === 1) {
       if (!canProceedStep1) {
-        if (isLocalDeliverySelected && deliveryAddress.trim().length < 8) {
+        if (isLocalDeliverySelected && hasDeliveryZones && (!deliveryZoneId || !meetingPointId)) {
+          setError("Selecciona la zona y el punto de encuentro.");
+        } else if (isLocalDeliverySelected && !hasDeliveryZones && deliveryAddress.trim().length < 8) {
           setError("Indica tu dirección de entrega (mínimo 8 caracteres).");
+        } else if (isPickupSelected && hasPickupPoints && !pickupPointId) {
+          setError("Selecciona el punto de retiro.");
         } else if (isNationalCarrierSelected && !shippingBranchCode) {
           setError("Selecciona la sucursal de destino de la agencia.");
         } else {
@@ -344,9 +384,24 @@ export function CheckoutPanel({
 
     if (isPickupSelected) {
       formData.set("fulfillmentType", "pickup");
+      if (hasPickupPoints && pickupPointId) {
+        formData.set("pickupPointId", pickupPointId);
+      }
+      if (fulfillmentNotes.trim()) {
+        formData.set("fulfillmentNotes", fulfillmentNotes.trim());
+      }
     } else if (isLocalDeliverySelected) {
       formData.set("fulfillmentType", "delivery");
-      if (deliveryAddress.trim()) {
+      if (hasDeliveryZones) {
+        if (deliveryZoneId) formData.set("deliveryZoneId", deliveryZoneId);
+        if (meetingPointId) formData.set("meetingPointId", meetingPointId);
+        if (fulfillmentNotes.trim()) {
+          formData.set("fulfillmentNotes", fulfillmentNotes.trim());
+        }
+        if (deliveryAddress.trim()) {
+          formData.set("deliveryAddress", deliveryAddress.trim());
+        }
+      } else if (deliveryAddress.trim()) {
         formData.set("deliveryAddress", deliveryAddress.trim());
       }
     } else if (isNationalCarrierSelected) {
@@ -388,6 +443,10 @@ export function CheckoutPanel({
       setCustomerName("");
       setCustomerPhone("");
       setDeliveryAddress("");
+      setDeliveryZoneId(null);
+      setMeetingPointId(null);
+      setPickupPointId(null);
+      setFulfillmentNotes("");
       setShippingBranchCode(null);
       setAppliedPromotion(null);
       setPromotionInput("");
@@ -608,20 +667,49 @@ export function CheckoutPanel({
 
                 {isLocalDeliverySelected ? (
                   <div className="txn-checkout-form">
-                    <label className="txn-field">
-                      <span>Dirección de entrega</span>
-                      <textarea
-                        required
-                        minLength={8}
-                        rows={3}
-                        value={deliveryAddress}
-                        onChange={(event) => setDeliveryAddress(event.target.value)}
-                        placeholder="Calle, edificio, referencia…"
-                        className="txn-input min-h-[5rem] resize-y"
+                    {hasDeliveryZones ? (
+                      <DeliveryZonePicker
+                        zones={deliveryZonesForCheckout}
+                        selectedZoneId={deliveryZoneId}
+                        selectedPointId={meetingPointId}
+                        notes={fulfillmentNotes}
+                        onZoneChange={setDeliveryZoneId}
+                        onPointChange={setMeetingPointId}
+                        onNotesChange={setFulfillmentNotes}
                       />
-                    </label>
+                    ) : (
+                      <>
+                        <label className="txn-field">
+                          <span>Dirección de entrega</span>
+                          <textarea
+                            required
+                            minLength={8}
+                            rows={3}
+                            value={deliveryAddress}
+                            onChange={(event) => setDeliveryAddress(event.target.value)}
+                            placeholder="Calle, edificio, referencia…"
+                            className="txn-input min-h-[5rem] resize-y"
+                          />
+                        </label>
+                        <p className="text-[11px] text-zinc-500">
+                          La usaremos para entregar este pedido.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                ) : null}
+
+                {isPickupSelected && hasPickupPoints ? (
+                  <div className="txn-checkout-form">
+                    <PickupPointPicker
+                      points={purchaseInfo.pickupPoints}
+                      selectedPointId={pickupPointId}
+                      notes={fulfillmentNotes}
+                      onPointChange={setPickupPointId}
+                      onNotesChange={setFulfillmentNotes}
+                    />
                     <p className="text-[11px] text-zinc-500">
-                      La usaremos para entregar este pedido.
+                      Coordinaremos el horario de retiro por WhatsApp.
                     </p>
                   </div>
                 ) : null}

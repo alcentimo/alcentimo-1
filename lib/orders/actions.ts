@@ -9,6 +9,13 @@ import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { getWhatsAppOrderDetailUrl } from "@/lib/orders/order-links";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
+import {
+  findDeliveryZone,
+  findMeetingPointInZone,
+  findPickupPoint,
+  formatDeliverySelectionSummary,
+  formatPickupSelectionSummary,
+} from "@/lib/store-settings/delivery-zones";
 import { getPaymentMethod } from "@/src/config/payment-methods";
 import { getShippingMethod, isNationalCarrierKey } from "@/src/config/shipping-methods";
 import { getCarrierBranchById } from "@/lib/shipping/carrier-branches";
@@ -59,6 +66,10 @@ export async function submitTransactionalOrder(
   const locationIdRaw = String(formData.get("locationId") ?? "").trim();
   const fulfillmentTypeRaw = String(formData.get("fulfillmentType") ?? "").trim();
   const deliveryAddressRaw = String(formData.get("deliveryAddress") ?? "").trim();
+  const deliveryZoneIdRaw = String(formData.get("deliveryZoneId") ?? "").trim();
+  const meetingPointIdRaw = String(formData.get("meetingPointId") ?? "").trim();
+  const pickupPointIdRaw = String(formData.get("pickupPointId") ?? "").trim();
+  const fulfillmentNotesRaw = String(formData.get("fulfillmentNotes") ?? "").trim();
   const shippingBranchCodeRaw = String(
     formData.get("shippingBranchCode") ?? "",
   ).trim();
@@ -125,6 +136,7 @@ export async function submitTransactionalOrder(
   }
 
   const trimmedDeliveryAddress = deliveryAddressRaw.slice(0, 320);
+  const trimmedFulfillmentNotes = fulfillmentNotesRaw.slice(0, 200);
 
   if (isNationalCarrierKey(shippingMethodRaw)) {
     if (!resolvedShippingBranch && !shippingBranchNameRaw) {
@@ -132,8 +144,44 @@ export async function submitTransactionalOrder(
     }
   }
 
-  if (fulfillmentType === "delivery" && trimmedDeliveryAddress.length < 8) {
-    return { error: "Indica tu dirección de entrega (mínimo 8 caracteres)." };
+  const settings = await getPublicStoreSettingsConfig(store.id);
+  const purchaseInfo = buildPublicPurchaseInfo(settings);
+
+  let resolvedFulfillmentAddress: string | null = null;
+  const deliveryZonesWithPoints = purchaseInfo.deliveryZones.filter(
+    (zone) => zone.meetingPoints.length > 0,
+  );
+
+  if (fulfillmentType === "delivery") {
+    if (deliveryZonesWithPoints.length > 0) {
+      const zone = findDeliveryZone(deliveryZonesWithPoints, deliveryZoneIdRaw);
+      const point = findMeetingPointInZone(zone, meetingPointIdRaw);
+      if (!zone || !point) {
+        return { error: "Selecciona la zona y el punto de encuentro." };
+      }
+      resolvedFulfillmentAddress = formatDeliverySelectionSummary({
+        zoneName: zone.name,
+        meetingPointLabel: point.label,
+        meetingPointReference: point.reference,
+        notes: trimmedFulfillmentNotes || trimmedDeliveryAddress || null,
+      });
+    } else if (trimmedDeliveryAddress.length < 8) {
+      return { error: "Indica tu dirección de entrega (mínimo 8 caracteres)." };
+    } else {
+      resolvedFulfillmentAddress = trimmedDeliveryAddress;
+    }
+  }
+
+  if (fulfillmentType === "pickup" && purchaseInfo.pickupPoints.length > 0) {
+    const point = findPickupPoint(purchaseInfo.pickupPoints, pickupPointIdRaw);
+    if (!point) {
+      return { error: "Selecciona el punto de retiro." };
+    }
+    resolvedFulfillmentAddress = formatPickupSelectionSummary({
+      meetingPointLabel: point.label,
+      meetingPointReference: point.reference,
+      notes: trimmedFulfillmentNotes,
+    });
   }
 
   const shippingBranchCode =
@@ -244,8 +292,8 @@ export async function submitTransactionalOrder(
   if (customerUserId) {
     const profileUpdate: Record<string, string | null> = {};
 
-    if (trimmedDeliveryAddress) {
-      profileUpdate.delivery_address = trimmedDeliveryAddress;
+    if (resolvedFulfillmentAddress) {
+      profileUpdate.delivery_address = resolvedFulfillmentAddress;
     }
 
     if (shippingMethodRaw) {
@@ -293,8 +341,7 @@ export async function submitTransactionalOrder(
     shipping_branch_address: isNationalCarrierKey(shippingMethodRaw)
       ? shippingBranchAddress
       : null,
-    delivery_address:
-      fulfillmentType === "delivery" ? trimmedDeliveryAddress || null : null,
+    delivery_address: resolvedFulfillmentAddress,
   });
 
   if (insertError) {
@@ -329,9 +376,6 @@ export async function submitTransactionalOrder(
     }
   }
 
-  const settings = await getPublicStoreSettingsConfig(store.id);
-  const purchaseInfo = buildPublicPurchaseInfo(settings);
-
   const paymentLabel = paymentMethodRaw
     ? getPaymentMethod(paymentMethodRaw as PaymentMethodKey).label
     : undefined;
@@ -341,9 +385,13 @@ export async function submitTransactionalOrder(
 
   const fulfillmentLabel =
     fulfillmentType === "pickup"
-      ? "Retiro en tienda"
+      ? purchaseInfo.pickupPoints.length > 0
+        ? "Punto de encuentro"
+        : "Retiro coordinado"
       : fulfillmentType === "delivery"
-        ? "Envío a domicilio"
+        ? purchaseInfo.deliveryZones.some((zone) => zone.meetingPoints.length > 0)
+          ? "Entrega personalizada"
+          : "Envío a domicilio"
         : fulfillmentType === "shipping"
           ? "Encomienda nacional"
           : undefined;
@@ -360,8 +408,7 @@ export async function submitTransactionalOrder(
     promotionLabel,
     locationName: resolvedLocationName ?? undefined,
     locationAddress: resolvedLocationAddress ?? undefined,
-    deliveryAddress:
-      fulfillmentType === "delivery" ? trimmedDeliveryAddress || undefined : undefined,
+    deliveryAddress: resolvedFulfillmentAddress ?? undefined,
     fulfillmentLabel,
     shippingBranchName: isNationalCarrierKey(shippingMethodRaw)
       ? shippingBranchName ?? undefined

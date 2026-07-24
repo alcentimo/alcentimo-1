@@ -7,6 +7,7 @@ import {
   SettingsSection,
   SettingsTabShell,
 } from "@/components/dashboard/settings/SettingsLayout";
+import { DeliveryZonesEditor } from "@/components/dashboard/settings/DeliveryZonesEditor";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { saveShippingSettings } from "@/lib/settings/actions";
 import { useCountry } from "@/components/providers/CountryProvider";
@@ -16,6 +17,8 @@ import {
 } from "@/lib/country-config";
 import { getShippingMethod } from "@/src/config/shipping-methods";
 import type {
+  DeliveryMeetingPoint,
+  DeliveryZone,
   ShippingCarrierKey,
   ShippingSettings,
 } from "@/lib/store-settings/types";
@@ -32,6 +35,12 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
   const [deliveryDetails, setDeliveryDetails] = useState(
     initialSettings.deliveryDetails,
   );
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>(
+    initialSettings.deliveryZones,
+  );
+  const [pickupPoints, setPickupPoints] = useState<DeliveryMeetingPoint[]>(
+    initialSettings.pickupPoints,
+  );
   const [savingToggle, setSavingToggle] = useState<ShippingCarrierKey | null>(
     null,
   );
@@ -42,11 +51,22 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
   function buildPayload(
     nextCarriers: ShippingSettings["carriers"],
     nextDetails: string,
+    nextDeliveryZones: DeliveryZone[],
+    nextPickupPoints: DeliveryMeetingPoint[],
   ): ShippingSettings {
     return {
       carriers: nextCarriers,
       deliveryDetails: nextDetails,
+      deliveryZones: nextDeliveryZones,
+      pickupPoints: nextPickupPoints,
     };
+  }
+
+  function revertToInitial() {
+    setCarriers(initialSettings.carriers);
+    setDeliveryDetails(initialSettings.deliveryDetails);
+    setDeliveryZones(initialSettings.deliveryZones);
+    setPickupPoints(initialSettings.pickupPoints);
   }
 
   function persist(
@@ -65,8 +85,7 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
 
       if (result.error) {
         setError(result.error);
-        setCarriers(initialSettings.carriers);
-        setDeliveryDetails(initialSettings.deliveryDetails);
+        revertToInitial();
       }
     });
   }
@@ -74,11 +93,18 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
   function setCarrier(key: ShippingCarrierKey, value: boolean) {
     const nextCarriers = { ...carriers, [key]: value };
     setCarriers(nextCarriers);
-    persist(buildPayload(nextCarriers, deliveryDetails), "toggle", key);
+    persist(
+      buildPayload(nextCarriers, deliveryDetails, deliveryZones, pickupPoints),
+      "toggle",
+      key,
+    );
   }
 
   function handleSaveForm() {
-    persist(buildPayload(carriers, deliveryDetails), "form");
+    persist(
+      buildPayload(carriers, deliveryDetails, deliveryZones, pickupPoints),
+      "form",
+    );
   }
 
   function renderCarrierCard(key: ShippingCarrierKey) {
@@ -104,17 +130,39 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
           </div>
         )}
         {key === "delivery" && carriers.delivery && (
-          <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
-            <label htmlFor="delivery-details" className="label-field">
-              Detalles del delivery
-            </label>
-            <textarea
-              id="delivery-details"
-              rows={3}
-              value={deliveryDetails}
-              onChange={(e) => setDeliveryDetails(e.target.value)}
-              placeholder="Ej: Delivery en Valencia — costo según zona, pedido mínimo $5"
-              className="input-field mt-2 resize-none"
+          <div className="mt-3 space-y-3">
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+              <label htmlFor="delivery-details" className="label-field">
+                Detalles de la entrega personalizada
+              </label>
+              <textarea
+                id="delivery-details"
+                rows={3}
+                value={deliveryDetails}
+                onChange={(e) => setDeliveryDetails(e.target.value)}
+                placeholder="Ej: Entregas en Valencia — costo según zona, pedido mínimo $5"
+                className="input-field mt-2 resize-none"
+              />
+            </div>
+            <DeliveryZonesEditor
+              deliveryZones={deliveryZones}
+              pickupPoints={pickupPoints}
+              showDeliveryZones
+              showPickupPoints={false}
+              onDeliveryZonesChange={setDeliveryZones}
+              onPickupPointsChange={setPickupPoints}
+            />
+          </div>
+        )}
+        {key === "pickup" && carriers.pickup && (
+          <div className="mt-3">
+            <DeliveryZonesEditor
+              deliveryZones={deliveryZones}
+              pickupPoints={pickupPoints}
+              showDeliveryZones={false}
+              showPickupPoints
+              onDeliveryZonesChange={setDeliveryZones}
+              onPickupPointsChange={setPickupPoints}
             />
           </div>
         )}
@@ -143,7 +191,7 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
 
       <SettingsSection
         title="Entrega local"
-        description="Delivery propio y retiro en tienda."
+        description="Entregas personales en zonas o puntos de encuentro, y retiro sin tienda física. Ideal para negocios 100% online."
         variant="payments"
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

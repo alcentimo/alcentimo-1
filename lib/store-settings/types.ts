@@ -7,9 +7,25 @@ export type ShippingCarrierKey =
   | "delivery"
   | "pickup";
 
+export interface DeliveryMeetingPoint {
+  id: string;
+  label: string;
+  reference?: string;
+}
+
+export interface DeliveryZone {
+  id: string;
+  name: string;
+  meetingPoints: DeliveryMeetingPoint[];
+}
+
 export interface ShippingSettings {
   carriers: Record<ShippingCarrierKey, boolean>;
   deliveryDetails: string;
+  /** Zonas con puntos de encuentro para entregas personales. */
+  deliveryZones: DeliveryZone[];
+  /** Puntos de encuentro para retiro sin tienda física. */
+  pickupPoints: DeliveryMeetingPoint[];
 }
 
 export type PaymentMethodKey =

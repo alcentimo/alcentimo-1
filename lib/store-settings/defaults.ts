@@ -7,6 +7,10 @@ import type {
 } from "@/lib/store-settings/types";
 import { WEEKDAY_KEYS } from "@/lib/store-settings/types";
 import { defaultMessageTemplates } from "@/lib/orders/message-templates";
+import {
+  normalizeDeliveryZones,
+  normalizePickupPoints,
+} from "@/lib/store-settings/delivery-zones";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "mrw",
@@ -67,6 +71,8 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
     shipping: {
       carriers,
       deliveryDetails: "",
+      deliveryZones: [],
+      pickupPoints: [],
     },
     payments: {
       methods,
@@ -210,6 +216,8 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
         typeof shippingRaw.deliveryDetails === "string"
           ? shippingRaw.deliveryDetails
           : defaults.shipping.deliveryDetails,
+      deliveryZones: normalizeDeliveryZones(shippingRaw.deliveryZones),
+      pickupPoints: normalizePickupPoints(shippingRaw.pickupPoints),
     },
     payments: {
       methods,
@@ -347,6 +355,10 @@ export function mergeStoreSettingsConfig(
             ...base.shipping.carriers,
             ...patch.shipping.carriers,
           },
+          deliveryZones:
+            patch.shipping.deliveryZones ?? base.shipping.deliveryZones,
+          pickupPoints:
+            patch.shipping.pickupPoints ?? base.shipping.pickupPoints,
         }
       : base.shipping,
     payments: patch.payments

@@ -5,6 +5,8 @@ import {
 } from "@/src/config/shipping-methods";
 import { getPaymentMethod, PAYMENT_METHODS } from "@/src/config/payment-methods";
 import type {
+  DeliveryMeetingPoint,
+  DeliveryZone,
   LocationHoursSettings,
   PaymentMethodKey,
   ShippingCarrierKey,
@@ -38,6 +40,8 @@ export interface PublicPurchaseInfo {
   } | null;
   whatsappPhone: string;
   locationHours: LocationHoursSettings;
+  deliveryZones: DeliveryZone[];
+  pickupPoints: DeliveryMeetingPoint[];
 }
 
 function buildShippingOption(
@@ -89,5 +93,7 @@ export function buildPublicPurchaseInfo(
     installments,
     whatsappPhone: config.contact.whatsappPhone.trim(),
     locationHours: config.locationHours,
+    deliveryZones: config.shipping.deliveryZones,
+    pickupPoints: config.shipping.pickupPoints,
   };
 }
