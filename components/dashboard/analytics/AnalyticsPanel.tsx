@@ -1,30 +1,54 @@
-import Image from "next/image";
-import { BarChart3, Package, UserPlus } from "lucide-react";
+import { BarChart3, Package, TrendingUp, UserPlus } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import type { StoreAnalyticsPanel } from "@/lib/analytics/types";
+import { DashboardProductThumb } from "@/components/dashboard/DashboardProductThumb";
+import { DashboardKpiCard } from "@/components/dashboard/DashboardKpiCard";
+import { DashboardEmptyMetric } from "@/components/dashboard/DashboardEmptyMetric";
 
 interface AnalyticsPanelProps {
   analytics: StoreAnalyticsPanel;
 }
 
-function ProductThumb({
-  name,
-  thumbUrl,
+function AnalyticsKpiRow({
+  salesComparison,
+  registrationMetrics,
 }: {
-  name: string;
-  thumbUrl: string | null;
+  salesComparison: StoreAnalyticsPanel["salesComparison"];
+  registrationMetrics: StoreAnalyticsPanel["registrationMetrics"];
 }) {
-  if (thumbUrl) {
-    return (
-      <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-zinc-200/80 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
-        <Image src={thumbUrl} alt={name} fill sizes="36px" className="object-cover" />
-      </div>
-    );
-  }
+  const registrationValue = registrationMetrics.trackingEnabled
+    ? `${registrationMetrics.registrationRatePct.toFixed(1)}%`
+    : "—";
 
   return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50 text-xs font-semibold text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900">
-      {name.charAt(0).toUpperCase()}
+    <div className="dashboard-kpi-grid dashboard-kpi-grid-3">
+      <DashboardKpiCard
+        label="Ventas hoy"
+        value={formatUsd(salesComparison.todayUsd)}
+        icon={TrendingUp}
+        emptyHint="Aún no hay ventas hoy"
+      />
+      <DashboardKpiCard
+        label={`Ventas ${salesComparison.monthLabel}`}
+        value={formatUsd(salesComparison.monthToDateUsd)}
+        icon={BarChart3}
+        emptyHint="Sin ventas acumuladas este mes"
+      />
+      <DashboardKpiCard
+        label="Tasa de registro"
+        value={registrationValue}
+        icon={UserPlus}
+        caption={
+          registrationMetrics.trackingEnabled
+            ? `${registrationMetrics.registrations} de ${registrationMetrics.uniqueVisitors} visitantes`
+            : `Últimos ${registrationMetrics.periodDays} días`
+        }
+        emptyHint={
+          registrationMetrics.trackingEnabled
+            ? "Sin conversiones todavía"
+            : "Esperando tráfico en el catálogo"
+        }
+      />
     </div>
   );
 }
@@ -35,6 +59,7 @@ function DayVsMonthSalesChart({
   salesComparison: StoreAnalyticsPanel["salesComparison"];
 }) {
   const { todayUsd, monthToDateUsd, todayLabel, monthLabel } = salesComparison;
+  const hasSales = todayUsd > 0 || monthToDateUsd > 0;
   const maxAmount = Math.max(todayUsd, monthToDateUsd, 1);
 
   const bars = [
@@ -54,30 +79,48 @@ function DayVsMonthSalesChart({
         <BarChart3 className="h-5 w-5 text-teal-600 dark:text-teal-400" aria-hidden="true" />
       </div>
 
-      <div
-        className="analytics-chart analytics-chart-compare"
-        role="img"
-        aria-label="Gráfico de barras: ventas de hoy versus ventas del mes"
-      >
-        {bars.map((bar) => {
-          const heightPct = Math.max(8, Math.round((bar.amountUsd / maxAmount) * 100));
-          return (
-            <div key={bar.key} className="analytics-chart-column">
-              <p className="analytics-chart-amount">{formatUsd(bar.amountUsd)}</p>
-              <div className="analytics-chart-bar-track analytics-chart-bar-track-tall">
-                <div
-                  className={`analytics-chart-bar ${
-                    bar.key === "today" ? "analytics-chart-bar-today" : ""
-                  }`}
-                  style={{ height: `${heightPct}%` }}
-                  title={`${bar.label}: ${formatUsd(bar.amountUsd)}`}
-                />
+      {!hasSales ? (
+        <DashboardEmptyMetric
+          icon={TrendingUp}
+          title="Sin ventas registradas"
+          description="Cuando recibas pedidos o registres ventas, verás aquí la comparación diaria y mensual."
+        />
+      ) : (
+        <div
+          className="analytics-chart analytics-chart-compare"
+          role="img"
+          aria-label="Gráfico de barras: ventas de hoy versus ventas del mes"
+        >
+          {bars.map((bar) => {
+            const heightPct =
+              bar.amountUsd <= 0
+                ? 0
+                : Math.max(12, Math.round((bar.amountUsd / maxAmount) * 100));
+
+            return (
+              <div key={bar.key} className="analytics-chart-column">
+                <p className="analytics-chart-amount">
+                  {bar.amountUsd > 0 ? formatUsd(bar.amountUsd) : "—"}
+                </p>
+                <div className="analytics-chart-bar-track analytics-chart-bar-track-tall">
+                  {bar.amountUsd > 0 ? (
+                    <div
+                      className={`analytics-chart-bar ${
+                        bar.key === "today" ? "analytics-chart-bar-today" : ""
+                      }`}
+                      style={{ height: `${heightPct}%` }}
+                      title={`${bar.label}: ${formatUsd(bar.amountUsd)}`}
+                    />
+                  ) : (
+                    <div className="analytics-chart-bar-empty" aria-hidden="true" />
+                  )}
+                </div>
+                <p className="analytics-chart-label">{bar.label}</p>
               </div>
-              <p className="analytics-chart-label">{bar.label}</p>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
@@ -90,6 +133,9 @@ function RegistrationRateCard({
   const rateDisplay = metrics.trackingEnabled
     ? `${metrics.registrationRatePct.toFixed(1)}%`
     : "—";
+  const hasActivity =
+    metrics.trackingEnabled &&
+    (metrics.uniqueVisitors > 0 || metrics.registrations > 0);
 
   return (
     <section className="analytics-panel">
@@ -103,36 +149,49 @@ function RegistrationRateCard({
         <UserPlus className="h-5 w-5 text-teal-600 dark:text-teal-400" aria-hidden="true" />
       </div>
 
-      <div className="analytics-registration-rate">
-        <p className="analytics-registration-rate-value">{rateDisplay}</p>
-        <p className="analytics-registration-rate-caption">
-          {metrics.registrations} registro{metrics.registrations !== 1 ? "s" : ""} de{" "}
-          {metrics.uniqueVisitors} visitante
-          {metrics.uniqueVisitors !== 1 ? "s" : ""}
-        </p>
-      </div>
-
-      <dl className="analytics-registration-stats">
-        <div>
-          <dt>Visitantes únicos</dt>
-          <dd>{metrics.uniqueVisitors}</dd>
-        </div>
-        <div>
-          <dt>Nuevos clientes</dt>
-          <dd>{metrics.newCustomerProfiles}</dd>
-        </div>
-      </dl>
-
       {!metrics.trackingEnabled ? (
-        <p className="analytics-registration-note">
-          El tracking de visitas acaba de activarse. En unos días verás la tasa real
-          cuando haya tráfico en tu catálogo.
-        </p>
-      ) : metrics.registrationRatePct >= 5 ? (
-        <p className="analytics-registration-note analytics-registration-note-positive">
-          Buena señal: el banner y las promos exclusivas están atrayendo registros.
-        </p>
-      ) : null}
+        <DashboardEmptyMetric
+          icon={UserPlus}
+          title="Medición en preparación"
+          description="El tracking de visitas acaba de activarse. En unos días verás la tasa real cuando haya tráfico en tu catálogo."
+          compact
+        />
+      ) : !hasActivity ? (
+        <DashboardEmptyMetric
+          icon={UserPlus}
+          title="Sin visitantes todavía"
+          description="Comparte tu catálogo para empezar a medir cuántos clientes crean cuenta."
+          compact
+        />
+      ) : (
+        <>
+          <div className="analytics-registration-rate">
+            <p className="analytics-registration-rate-value">{rateDisplay}</p>
+            <p className="analytics-registration-rate-caption">
+              {metrics.registrations} registro{metrics.registrations !== 1 ? "s" : ""} de{" "}
+              {metrics.uniqueVisitors} visitante
+              {metrics.uniqueVisitors !== 1 ? "s" : ""}
+            </p>
+          </div>
+
+          <dl className="analytics-registration-stats">
+            <div>
+              <dt>Visitantes únicos</dt>
+              <dd>{metrics.uniqueVisitors}</dd>
+            </div>
+            <div>
+              <dt>Nuevos clientes</dt>
+              <dd>{metrics.newCustomerProfiles}</dd>
+            </div>
+          </dl>
+
+          {metrics.registrationRatePct >= 5 ? (
+            <p className="analytics-registration-note analytics-registration-note-positive">
+              Buena señal: el banner y las promos exclusivas están atrayendo registros.
+            </p>
+          ) : null}
+        </>
+      )}
     </section>
   );
 }
@@ -142,9 +201,14 @@ export function AnalyticsPanel({ analytics }: AnalyticsPanelProps) {
 
   return (
     <div className="space-y-6">
+      <AnalyticsKpiRow
+        salesComparison={salesComparison}
+        registrationMetrics={registrationMetrics}
+      />
+
       <DayVsMonthSalesChart salesComparison={salesComparison} />
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="dashboard-metrics-grid">
         <section className="analytics-panel">
           <div className="analytics-panel-header">
             <div>
@@ -157,15 +221,21 @@ export function AnalyticsPanel({ analytics }: AnalyticsPanelProps) {
           </div>
 
           {topProducts.length === 0 ? (
-            <p className="analytics-empty-state">
-              Aún no hay ventas. Cuando lleguen pedidos, verás aquí tus productos estrella.
-            </p>
+            <DashboardEmptyMetric
+              icon={Package}
+              title="Aún no hay productos estrella"
+              description="Cuando lleguen pedidos o ventas, verás aquí qué artículos lideran."
+              compact
+            />
           ) : (
             <ul className="analytics-insight-list">
               {topProducts.map((product, index) => (
                 <li key={product.productId} className="analytics-insight-item">
                   <span className="analytics-rank">{index + 1}</span>
-                  <ProductThumb name={product.name} thumbUrl={product.thumbUrl} />
+                  <DashboardProductThumb
+                    name={product.name}
+                    thumbUrl={product.thumbUrl}
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
                       {product.name}

@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -10,92 +9,12 @@ import {
 } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import type { StoreAnalytics } from "@/lib/analytics/types";
+import { DashboardProductThumb } from "@/components/dashboard/DashboardProductThumb";
+import { DashboardEmptyMetric } from "@/components/dashboard/DashboardEmptyMetric";
+import { DashboardKpiCard } from "@/components/dashboard/DashboardKpiCard";
 
 interface AnalyticsDashboardProps {
   analytics: StoreAnalytics;
-}
-
-type KpiTone = "default" | "warning" | "critical";
-
-function KpiCard({
-  label,
-  value,
-  icon: Icon,
-  href,
-  tone = "default",
-}: {
-  label: string;
-  value: string;
-  icon: typeof BarChart3;
-  href?: string;
-  tone?: KpiTone;
-}) {
-  const toneClasses: Record<KpiTone, string> = {
-    default: "border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950",
-    warning:
-      "border-amber-200/90 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/20",
-    critical:
-      "border-orange-200/90 bg-orange-50/80 dark:border-orange-900/50 dark:bg-orange-950/25",
-  };
-
-  const content = (
-    <>
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-          {label}
-        </p>
-        <span
-          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-            tone === "default"
-              ? "bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300"
-              : tone === "warning"
-                ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
-                : "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300"
-          }`}
-        >
-          <Icon className="h-4 w-4" aria-hidden="true" />
-        </span>
-      </div>
-      <p className="mt-3 text-2xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
-        {value}
-      </p>
-    </>
-  );
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className={`analytics-kpi-card transition-shadow hover:shadow-md ${toneClasses[tone]}`}
-      >
-        {content}
-      </Link>
-    );
-  }
-
-  return <div className={`analytics-kpi-card ${toneClasses[tone]}`}>{content}</div>;
-}
-
-function ProductThumb({
-  name,
-  thumbUrl,
-}: {
-  name: string;
-  thumbUrl: string | null;
-}) {
-  if (thumbUrl) {
-    return (
-      <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-zinc-200/80 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
-        <Image src={thumbUrl} alt={name} fill sizes="36px" className="object-cover" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50 text-xs font-semibold text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900">
-      {name.charAt(0).toUpperCase()}
-    </div>
-  );
 }
 
 function WeeklySalesChart({
@@ -103,6 +22,7 @@ function WeeklySalesChart({
 }: {
   weeklySales: StoreAnalytics["weeklySales"];
 }) {
+  const hasSales = weeklySales.some((day) => day.amountUsd > 0);
   const maxAmount = Math.max(...weeklySales.map((day) => day.amountUsd), 1);
 
   return (
@@ -115,69 +35,98 @@ function WeeklySalesChart({
         <BarChart3 className="h-5 w-5 text-teal-600 dark:text-teal-400" aria-hidden="true" />
       </div>
 
-      <div className="analytics-chart" role="img" aria-label="Gráfico de barras de ventas semanales">
-        {weeklySales.map((day) => {
-          const heightPct = Math.max(6, Math.round((day.amountUsd / maxAmount) * 100));
-          return (
-            <div key={day.date} className="analytics-chart-column">
-              <p className="analytics-chart-amount">{formatUsd(day.amountUsd)}</p>
-              <div className="analytics-chart-bar-track">
-                <div
-                  className="analytics-chart-bar"
-                  style={{ height: `${heightPct}%` }}
-                  title={`${day.label}: ${formatUsd(day.amountUsd)}`}
-                />
+      {!hasSales ? (
+        <DashboardEmptyMetric
+          icon={BarChart3}
+          title="Sin actividad reciente"
+          description="Los últimos 7 días no registran ventas. Comparte tu catálogo para impulsar pedidos."
+        />
+      ) : (
+        <div className="analytics-chart" role="img" aria-label="Gráfico de barras de ventas semanales">
+          {weeklySales.map((day) => {
+            const heightPct =
+              day.amountUsd <= 0
+                ? 0
+                : Math.max(8, Math.round((day.amountUsd / maxAmount) * 100));
+
+            return (
+              <div key={day.date} className="analytics-chart-column">
+                <p className="analytics-chart-amount">
+                  {day.amountUsd > 0 ? formatUsd(day.amountUsd) : "—"}
+                </p>
+                <div className="analytics-chart-bar-track">
+                  {day.amountUsd > 0 ? (
+                    <div
+                      className="analytics-chart-bar"
+                      style={{ height: `${heightPct}%` }}
+                      title={`${day.label}: ${formatUsd(day.amountUsd)}`}
+                    />
+                  ) : (
+                    <div className="analytics-chart-bar-empty" aria-hidden="true" />
+                  )}
+                </div>
+                <p className="analytics-chart-label">{day.label}</p>
               </div>
-              <p className="analytics-chart-label">{day.label}</p>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
 
+/** @deprecated Usar AnalyticsPanel en /dashboard/analiticas. */
 export function AnalyticsDashboard({ analytics }: AnalyticsDashboardProps) {
   const { kpis, weeklySales, topProducts, lowStockProducts } = analytics;
-  const inventoryTone: KpiTone =
+  const inventoryTone =
     kpis.activeInventoryCount === 0
-      ? "critical"
+      ? "warning"
       : kpis.lowStockCount > 0
         ? "warning"
         : "default";
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          label="Ventas totales"
-          value={formatUsd(kpis.totalSalesUsd)}
-          icon={TrendingUp}
-          href="/dashboard/ventas"
-        />
-        <KpiCard
-          label="Pedidos recibidos"
-          value={String(kpis.ordersReceived)}
-          icon={Receipt}
-          href="/dashboard/pedidos"
-        />
-        <KpiCard
+      <div className="dashboard-kpi-grid dashboard-kpi-grid-4">
+        <Link href="/dashboard/ventas" className="block">
+          <DashboardKpiCard
+            label="Ventas totales"
+            value={formatUsd(kpis.totalSalesUsd)}
+            icon={TrendingUp}
+            emptyHint="Sin ventas registradas"
+            className="h-full transition-shadow hover:shadow-md"
+          />
+        </Link>
+        <Link href="/dashboard/pedidos" className="block">
+          <DashboardKpiCard
+            label="Pedidos recibidos"
+            value={String(kpis.ordersReceived)}
+            icon={Receipt}
+            emptyHint="Aún no hay pedidos"
+            className="h-full transition-shadow hover:shadow-md"
+          />
+        </Link>
+        <DashboardKpiCard
           label="Ticket promedio"
           value={formatUsd(kpis.averageTicketUsd)}
           icon={ShoppingBag}
+          emptyHint="Se calcula con la primera venta"
         />
-        <KpiCard
-          label="Inventario activo"
-          value={String(kpis.activeInventoryCount)}
-          icon={Package}
-          href="/dashboard/catalogo"
-          tone={inventoryTone}
-        />
+        <Link href="/dashboard/catalogo" className="block">
+          <DashboardKpiCard
+            label="Inventario activo"
+            value={String(kpis.activeInventoryCount)}
+            icon={Package}
+            tone={inventoryTone}
+            emptyHint="No hay productos con stock"
+            className="h-full transition-shadow hover:shadow-md"
+          />
+        </Link>
       </div>
 
       <WeeklySalesChart weeklySales={weeklySales} />
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="dashboard-metrics-grid">
         <section className="analytics-panel">
           <div className="analytics-panel-header">
             <div>
@@ -187,15 +136,18 @@ export function AnalyticsDashboard({ analytics }: AnalyticsDashboardProps) {
           </div>
 
           {topProducts.length === 0 ? (
-            <p className="analytics-empty-state">
-              Aún no hay ventas registradas. Publica productos y registra tu primera venta.
-            </p>
+            <DashboardEmptyMetric
+              icon={Package}
+              title="Sin productos destacados"
+              description="Publica productos y registra tu primera venta para ver el ranking."
+              compact
+            />
           ) : (
             <ul className="analytics-insight-list">
               {topProducts.map((product, index) => (
                 <li key={product.productId} className="analytics-insight-item">
                   <span className="analytics-rank">{index + 1}</span>
-                  <ProductThumb name={product.name} thumbUrl={product.thumbUrl} />
+                  <DashboardProductThumb name={product.name} thumbUrl={product.thumbUrl} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
                       {product.name}
@@ -231,16 +183,19 @@ export function AnalyticsDashboard({ analytics }: AnalyticsDashboardProps) {
           </div>
 
           {lowStockProducts.length === 0 ? (
-            <p className="analytics-empty-state">
-              Todo en orden: no hay productos con stock crítico en este momento.
-            </p>
+            <DashboardEmptyMetric
+              icon={Package}
+              title="Inventario saludable"
+              description="No hay productos con stock crítico en este momento."
+              compact
+            />
           ) : (
             <ul className="analytics-insight-list">
               {lowStockProducts.map((product) => {
                 const isOut = product.availableStock <= 0;
                 return (
                   <li key={product.productId} className="analytics-insight-item">
-                    <ProductThumb name={product.name} thumbUrl={product.thumbUrl} />
+                    <DashboardProductThumb name={product.name} thumbUrl={product.thumbUrl} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
                         {product.name}
@@ -257,10 +212,7 @@ export function AnalyticsDashboard({ analytics }: AnalyticsDashboardProps) {
                           : `${product.availableStock} unidad${product.availableStock !== 1 ? "es" : ""} restantes`}
                       </p>
                     </div>
-                    <Link
-                      href="/dashboard/catalogo"
-                      className="analytics-insight-link"
-                    >
+                    <Link href="/dashboard/catalogo" className="analytics-insight-link">
                       Reponer
                     </Link>
                   </li>

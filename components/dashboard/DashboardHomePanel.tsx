@@ -4,10 +4,12 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { CatalogLinkCard } from "@/components/dashboard/settings/CatalogLinkCard";
 import { HomePriorities } from "@/components/dashboard/home/HomePriorities";
+import { DashboardKpiCard } from "@/components/dashboard/DashboardKpiCard";
 import type { HomeSummary } from "@/lib/dashboard/get-home-summary";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogOrder } from "@/lib/orders/types";
 import { formatUsd } from "@/lib/format";
+import { BarChart3, Package, ShoppingBag } from "lucide-react";
 
 interface DashboardHomePanelProps {
   summary: HomeSummary;
@@ -29,18 +31,25 @@ export function DashboardHomePanel({
       label: "Total productos",
       value: String(summary.productCount),
       href: "/dashboard/inventario",
+      icon: Package,
+      emptyHint: summary.productCount === 0 ? "Publica tu primer producto" : undefined,
     },
     {
       label: "Pedidos pendientes",
       value: String(summary.pendingCatalogOrders),
       href: "/dashboard/pedidos",
+      icon: ShoppingBag,
+      emptyHint:
+        summary.pendingCatalogOrders === 0 ? "Sin pedidos por atender" : undefined,
     },
     {
       label: "Total ventas (mes)",
       value: formatUsd(summary.monthSalesTotal),
       href: "/dashboard/ventas",
+      icon: BarChart3,
+      emptyHint: summary.monthSalesTotal === 0 ? "Sin ventas este mes" : undefined,
     },
-  ];
+  ] as const;
 
   return (
     <div className="space-y-8">
@@ -53,17 +62,16 @@ export function DashboardHomePanel({
       <CatalogLinkCard slug={storeSlug} variant="dashboard" />
 
       <section aria-label="Indicadores clave">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="dashboard-kpi-grid dashboard-kpi-grid-3">
           {kpis.map((kpi) => (
-            <Link
-              key={kpi.label}
-              href={kpi.href}
-              className="rounded-lg border border-neutral-200 bg-white px-4 py-3 transition-colors hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-700"
-            >
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">{kpi.label}</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
-                {kpi.value}
-              </p>
+            <Link key={kpi.label} href={kpi.href} className="block">
+              <DashboardKpiCard
+                label={kpi.label}
+                value={kpi.value}
+                icon={kpi.icon}
+                emptyHint={kpi.emptyHint}
+                className="h-full transition-shadow hover:shadow-md"
+              />
             </Link>
           ))}
         </div>

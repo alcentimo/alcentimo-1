@@ -80,6 +80,7 @@ import {
 } from "@/lib/inventory/constants";
 import { sanitizeInventorySearch } from "@/lib/inventory/search";
 import { InventoryListSkeleton } from "@/components/dashboard/InventoryListSkeleton";
+import { DashboardProductThumb } from "@/components/dashboard/DashboardProductThumb";
 import { cn } from "@/lib/cn";
 
 function getInventoryPageOffset(page: number, pageSize: number): number {
@@ -174,44 +175,6 @@ const StockBadge = memo(function StockBadge({
   }
 
   return null;
-});
-
-const ProductThumb = memo(function ProductThumb({
-  name,
-  thumbUrl,
-  size = "sm",
-}: {
-  name: string;
-  thumbUrl: string | null;
-  size?: "sm" | "md";
-}) {
-  const dimension = size === "md" ? "h-12 w-12" : "h-9 w-9";
-  const imageSizes = size === "md" ? "48px" : "36px";
-
-  if (thumbUrl) {
-    return (
-      <div
-        className={`relative ${dimension} shrink-0 overflow-hidden rounded-lg border border-zinc-200/80 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800`}
-      >
-        <Image
-          src={thumbUrl}
-          alt={name}
-          fill
-          sizes={imageSizes}
-          loading="lazy"
-          className="object-cover"
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`flex ${dimension} shrink-0 items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50 text-xs font-semibold text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900`}
-    >
-      {name.charAt(0).toUpperCase()}
-    </div>
-  );
 });
 
 const InventoryPriceDisplay = memo(function InventoryPriceDisplay({
@@ -448,8 +411,8 @@ const InventoryRow = memo(function InventoryRow({
           />
         </td>
       ) : null}
-      <td className="inventory-td w-12">
-        <ProductThumb name={product.product_name} thumbUrl={product.thumb_url} />
+      <td className="inventory-td inventory-td-thumb w-12">
+        <DashboardProductThumb name={product.product_name} thumbUrl={product.thumb_url} />
       </td>
       <td className="inventory-td">
         <div className="min-w-0">
@@ -519,7 +482,7 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
       className={`inventory-mobile-card ${critical ? "inventory-mobile-card-low" : ""} ${out ? "inventory-mobile-card-out" : ""}`}
     >
       <div className="flex items-start gap-3">
-        <ProductThumb
+        <DashboardProductThumb
           name={product.product_name}
           thumbUrl={product.thumb_url}
           size="md"
