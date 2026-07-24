@@ -59,35 +59,15 @@ export function CatalogFulfillmentProvider({
 
   const getAvailableStock = useCallback(
     (variantId: string | null | undefined, fallback: number) => {
-      if (!variantId || !multiLocation) return fallback;
-
-      if (mode === "delivery") {
-        // Envío: disponibilidad = suma en todas las sedes activas.
-        let total = 0;
-        let found = false;
-        for (const loc of activeLocations) {
-          const key = `${variantId}:${loc.id}`;
-          if (stockIndex.has(key)) {
-            found = true;
-            total += stockIndex.get(key) ?? 0;
-          }
-        }
-        return found ? total : fallback;
-      }
+      if (!variantId) return fallback;
 
       const locationId = selectedLocationId ?? defaultLocation?.id;
       if (!locationId) return fallback;
+
       const key = `${variantId}:${locationId}`;
       return stockIndex.has(key) ? (stockIndex.get(key) ?? 0) : fallback;
     },
-    [
-      activeLocations,
-      defaultLocation?.id,
-      mode,
-      multiLocation,
-      selectedLocationId,
-      stockIndex,
-    ],
+    [defaultLocation?.id, selectedLocationId, stockIndex],
   );
 
   const selectedLocation =

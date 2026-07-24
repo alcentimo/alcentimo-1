@@ -48,6 +48,10 @@ export default async function AjustesPage({
     remainingSlots: number;
     extraLocationMonthlyUsd: number;
     planId: string;
+    billableExtraCount?: number;
+    monthlyExtraCostUsd?: number;
+    nextBranchRequiresExtra?: boolean;
+    nextBranchMonthlyCostUsd?: number;
   } | null = null;
 
   let designPreview: {
@@ -102,6 +106,10 @@ export default async function AjustesPage({
       remainingSlots: limit.remainingSlots,
       extraLocationMonthlyUsd: limit.extraLocationMonthlyUsd,
       planId: effectivePlanId,
+      billableExtraCount: limit.billableExtraCount,
+      monthlyExtraCostUsd: limit.monthlyExtraCostUsd,
+      nextBranchRequiresExtra: limit.nextBranchRequiresExtra,
+      nextBranchMonthlyCostUsd: limit.nextBranchMonthlyCostUsd,
     };
   }
 

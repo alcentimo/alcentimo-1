@@ -26,8 +26,7 @@ export function CatalogCartHost({
   const { mode, selectedLocationId, locations } = useCatalogFulfillment();
   const defaultLocationId =
     locations.find((loc) => loc.is_default)?.id ?? locations[0]?.id ?? null;
-  const orderLocationId =
-    mode === "pickup" ? selectedLocationId : defaultLocationId;
+  const orderLocationId = selectedLocationId ?? defaultLocationId;
   const [panelView, setPanelView] = useState<CartPanelView>(
     openInitially ? "checkout" : "closed",
   );

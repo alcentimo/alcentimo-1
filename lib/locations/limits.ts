@@ -16,6 +16,43 @@ export interface LocationLimitInfo {
   extraLocationMonthlyUsd: number;
   canAddMore: boolean;
   remainingSlots: number;
+  /** Sucursales activas que exceden las incluidas en el plan. */
+  billableExtraCount: number;
+  /** Costo mensual total por sucursales extra en uso. */
+  monthlyExtraCostUsd: number;
+  /** La próxima sucursal a crear requeriría cargo extra. */
+  nextBranchRequiresExtra: boolean;
+  /** Costo mensual de la próxima sucursal extra (+$6 por defecto). */
+  nextBranchMonthlyCostUsd: number;
+}
+
+export function computeExtraLocationBilling(options: {
+  currentCount: number;
+  includedLocations: number;
+  extraLocationMonthlyUsd: number;
+}): Pick<
+  LocationLimitInfo,
+  | "billableExtraCount"
+  | "monthlyExtraCostUsd"
+  | "nextBranchRequiresExtra"
+  | "nextBranchMonthlyCostUsd"
+> {
+  const billableExtraCount = Math.max(
+    0,
+    options.currentCount - options.includedLocations,
+  );
+  const nextBranchRequiresExtra =
+    options.currentCount >= options.includedLocations;
+  const nextBranchMonthlyCostUsd = nextBranchRequiresExtra
+    ? options.extraLocationMonthlyUsd
+    : 0;
+
+  return {
+    billableExtraCount,
+    monthlyExtraCostUsd: billableExtraCount * options.extraLocationMonthlyUsd,
+    nextBranchRequiresExtra,
+    nextBranchMonthlyCostUsd,
+  };
 }
 
 export function getIncludedLocationsForPlan(
@@ -51,14 +88,21 @@ export function resolveLocationLimit(options: {
     includedLocations + extraAuthorized,
   );
   const remainingSlots = Math.max(0, maxAllowed - options.currentCount);
+  const extraLocationMonthlyUsd = getExtraLocationMonthlyUsd(settings);
+  const billing = computeExtraLocationBilling({
+    currentCount: options.currentCount,
+    includedLocations,
+    extraLocationMonthlyUsd,
+  });
 
   return {
     planId: options.planId,
     includedLocations,
     extraAuthorized,
     maxAllowed,
-    extraLocationMonthlyUsd: getExtraLocationMonthlyUsd(settings),
+    extraLocationMonthlyUsd,
     canAddMore: remainingSlots > 0,
     remainingSlots,
+    ...billing,
   };
 }

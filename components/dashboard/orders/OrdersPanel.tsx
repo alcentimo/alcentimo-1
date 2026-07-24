@@ -20,6 +20,7 @@ import { OrdersKpiRow } from "@/components/dashboard/orders/OrdersKpiRow";
 import { Button } from "@/components/ui/button";
 import { fetchStoreOrdersPage } from "@/lib/orders/actions";
 import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
+import type { StoreLocation } from "@/lib/locations/types";
 import { cn } from "@/lib/cn";
 
 const FILTER_TABS: { id: OrderFilterId; label: string }[] = [
@@ -54,6 +55,15 @@ interface OrdersPanelProps {
   initialHasMore?: boolean;
   storeName: string;
   messageTemplates: MessageTemplatesSettings;
+  locations?: StoreLocation[];
+}
+
+function formatOrderLocation(order: CatalogOrder): string | null {
+  if (!order.location_name) return null;
+  if (order.fulfillment_type === "pickup") {
+    return `Retiro: ${order.location_name}`;
+  }
+  return order.location_name;
 }
 
 function OrderSectionLabel({ label }: { label: string }) {
@@ -76,6 +86,7 @@ const OrderRow = memo(function OrderRow({
   dimmed = false,
   pendingStatusNotifyEstado,
   onDismissStatusNotify,
+  showLocationColumn = false,
 }: {
   order: CatalogOrder;
   storeName: string;
@@ -89,6 +100,7 @@ const OrderRow = memo(function OrderRow({
   pendingStatusNotifyEstado?: OrderEstado;
   onDismissStatusNotify?: () => void;
   dimmed?: boolean;
+  showLocationColumn?: boolean;
 }) {
   return (
     <tr
@@ -102,6 +114,11 @@ const OrderRow = memo(function OrderRow({
         <p className="mt-0.5 line-clamp-1 text-xs text-zinc-500">
           {summarizeItems(order)}
         </p>
+        {formatOrderLocation(order) ? (
+          <p className="mt-0.5 text-[11px] text-teal-700 dark:text-teal-400">
+            {formatOrderLocation(order)}
+          </p>
+        ) : null}
       </td>
       <td className="orders-ops-cell">
         <OrderStatusSelect
@@ -122,6 +139,11 @@ const OrderRow = memo(function OrderRow({
       <td className="orders-ops-cell tabular-nums font-medium text-zinc-900 dark:text-zinc-50">
         {formatUsd(order.total_usd)}
       </td>
+      {showLocationColumn ? (
+        <td className="orders-ops-cell hidden text-xs text-zinc-600 xl:table-cell dark:text-zinc-300">
+          {order.location_name ?? "—"}
+        </td>
+      ) : null}
       <td className="orders-ops-cell hidden text-zinc-500 lg:table-cell">
         {formatOrderDate(order.created_at)}
       </td>
@@ -195,6 +217,11 @@ const OrderMobileCard = memo(function OrderMobileCard({
             {formatOrderTime(order.created_at)}
             {order.customer_phone ? ` · ${order.customer_phone}` : ""}
           </p>
+          {formatOrderLocation(order) ? (
+            <p className="mt-0.5 text-[11px] font-medium text-teal-700 dark:text-teal-400">
+              {formatOrderLocation(order)}
+            </p>
+          ) : null}
           {pendingStatusNotifyEstado && onDismissStatusNotify ? (
             <OrderStatusWhatsAppPrompt
               order={order}
@@ -239,6 +266,7 @@ export function OrdersPanel({
   initialHasMore = false,
   storeName,
   messageTemplates,
+  locations = [],
 }: OrdersPanelProps) {
   const [orders, setOrders] = useState(initialOrders);
   const [totalCount, setTotalCount] = useState(
@@ -246,8 +274,13 @@ export function OrdersPanel({
   );
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingFilter, setLoadingFilter] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [filter, setFilter] = useState<OrderFilterId>("pending");
+  const [locationFilter, setLocationFilter] = useState<string>("all");
+  const multiLocation = locations.filter((loc) => loc.is_active).length > 1;
+  const tableColumnCount = multiLocation ? 7 : 6;
+  const skipInitialLocationReload = useRef(true);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [statusNotifyByOrderId, setStatusNotifyByOrderId] = useState<
     Record<string, OrderEstado>
@@ -296,11 +329,14 @@ export function OrdersPanel({
   }, []);
 
   const loadMoreOrders = useCallback(async () => {
-    if (!hasMore || loadingMore) return;
+    if (!hasMore || loadingMore || loadingFilter) return;
 
     setLoadingMore(true);
     try {
-      const result = await fetchStoreOrdersPage({ offset: orders.length });
+      const result = await fetchStoreOrdersPage({
+        offset: orders.length,
+        locationId: locationFilter === "all" ? null : locationFilter,
+      });
       if (result.error) return;
 
       setOrders((current) =>
@@ -311,7 +347,32 @@ export function OrdersPanel({
     } finally {
       setLoadingMore(false);
     }
-  }, [hasMore, loadingMore, orders.length]);
+  }, [hasMore, loadingFilter, loadingMore, locationFilter, orders.length]);
+
+  const reloadOrdersForLocation = useCallback(async (nextLocationFilter: string) => {
+    setLoadingFilter(true);
+    try {
+      const result = await fetchStoreOrdersPage({
+        offset: 0,
+        locationId: nextLocationFilter === "all" ? null : nextLocationFilter,
+      });
+      if (result.error) return;
+
+      setOrders(sortOrdersByBusinessRules(result.orders));
+      setTotalCount(result.totalCount);
+      setHasMore(result.hasMore);
+    } finally {
+      setLoadingFilter(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (skipInitialLocationReload.current) {
+      skipInitialLocationReload.current = false;
+      return;
+    }
+    void reloadOrdersForLocation(locationFilter);
+  }, [locationFilter, reloadOrdersForLocation]);
 
   useEffect(() => {
     const node = loadMoreRef.current;
@@ -408,6 +469,27 @@ export function OrdersPanel({
             </button>
           );
         })}
+        {multiLocation ? (
+          <label className="ml-1 inline-flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+            <span className="font-medium">Sucursal</span>
+            <select
+              value={locationFilter}
+              onChange={(event) => setLocationFilter(event.target.value)}
+              disabled={loadingFilter}
+              className="min-h-9 rounded-lg border border-zinc-200 bg-white px-2.5 text-xs dark:border-zinc-700 dark:bg-zinc-950"
+              aria-label="Filtrar pedidos por sucursal"
+            >
+              <option value="all">Todas</option>
+              {locations
+                .filter((loc) => loc.is_active)
+                .map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+        ) : null}
         {(filter === "today" || filter === "dispatch") && (
           <button
             type="button"
@@ -418,7 +500,17 @@ export function OrdersPanel({
           </button>
         )}
         <span className="ml-auto text-xs text-zinc-500">
-          {filteredOrders.length} pedido{filteredOrders.length !== 1 ? "s" : ""}
+          {loadingFilter ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+              Actualizando…
+            </span>
+          ) : (
+            <>
+              {filteredOrders.length} pedido{filteredOrders.length !== 1 ? "s" : ""}
+              {locationFilter !== "all" ? ` · ${totalCount} en sucursal` : ""}
+            </>
+          )}
         </span>
       </div>
 
@@ -469,6 +561,9 @@ export function OrdersPanel({
                 <th>Cliente</th>
                 <th>Estado</th>
                 <th>Total</th>
+                {multiLocation ? (
+                  <th className="hidden xl:table-cell">Sucursal</th>
+                ) : null}
                 <th className="hidden lg:table-cell">Fecha</th>
                 <th className="hidden sm:table-cell">
                   <span className="sr-only">WhatsApp</span>
@@ -481,7 +576,7 @@ export function OrdersPanel({
             <tbody>
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-zinc-500">
+                  <td colSpan={tableColumnCount} className="px-4 py-10 text-center text-sm text-zinc-500">
                     No hay pedidos en este filtro.
                   </td>
                 </tr>
@@ -489,7 +584,7 @@ export function OrdersPanel({
                 activeOrderGroups.map((group) => (
                   <Fragment key={group.id}>
                     <tr className="orders-ops-section-row">
-                      <td colSpan={6}>{group.label}</td>
+                      <td colSpan={tableColumnCount}>{group.label}</td>
                     </tr>
                     {group.orders.map((order) => (
                       <OrderRow
@@ -500,6 +595,7 @@ export function OrdersPanel({
                         onSelect={handleSelectOrder}
                         onEstadoUpdated={handleEstadoUpdated}
                         dimmed={isOrderDimmed(order)}
+                        showLocationColumn={multiLocation}
                         {...renderOrderRowProps(order)}
                       />
                     ))}
@@ -515,6 +611,7 @@ export function OrdersPanel({
                     onSelect={handleSelectOrder}
                     onEstadoUpdated={handleEstadoUpdated}
                     dimmed={isOrderDimmed(order)}
+                    showLocationColumn={multiLocation}
                     {...renderOrderRowProps(order)}
                   />
                 ))

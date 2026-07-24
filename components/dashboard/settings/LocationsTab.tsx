@@ -25,6 +25,10 @@ export interface LocationLimitSummary {
   remainingSlots: number;
   extraLocationMonthlyUsd: number;
   planId?: string;
+  billableExtraCount?: number;
+  monthlyExtraCostUsd?: number;
+  nextBranchRequiresExtra?: boolean;
+  nextBranchMonthlyCostUsd?: number;
 }
 
 interface LocationsTabProps {
@@ -79,7 +83,7 @@ export function LocationsTab({
       setAddress("");
       setCity("");
       setPhone("");
-      refreshMessage("Sucursal creada.");
+      refreshMessage(result.extraBranchNotice ?? "Sucursal creada.");
     });
   }
 
@@ -168,6 +172,15 @@ export function LocationsTab({
             </Link>
           </div>
         ) : null}
+        {isEnterprise && limit && (limit.billableExtraCount ?? 0) > 0 ? (
+          <div className="mb-4 rounded-lg border border-amber-200/80 bg-amber-50/70 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
+            Tienes {limit.billableExtraCount} sucursal
+            {limit.billableExtraCount === 1 ? "" : "es"} extra
+            {(limit.monthlyExtraCostUsd ?? 0) > 0
+              ? ` (+$${limit.monthlyExtraCostUsd} USD/mes en total).`
+              : "."}
+          </div>
+        ) : null}
         <div className="space-y-3">
           {locations.map((location) => (
             <LocationCard
@@ -194,6 +207,13 @@ export function LocationsTab({
         }
         variant="payments"
       >
+        {canAdd && isEnterprise && limit?.nextBranchRequiresExtra ? (
+          <div className="mb-3 rounded-lg border border-amber-200/80 bg-amber-50/60 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
+            La sucursal #{locations.length + 1} es extra: se aplicará un cargo de{" "}
+            <strong>+${limit.nextBranchMonthlyCostUsd ?? limit.extraLocationMonthlyUsd} USD/mes</strong>{" "}
+            por sede adicional en tu plan Enterprise.
+          </div>
+        ) : null}
         {canAdd ? (
           <div className="general-settings-card space-y-3">
             <div>

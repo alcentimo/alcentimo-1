@@ -18,6 +18,7 @@ export interface LocationActionResult {
   error?: string;
   location?: StoreLocation;
   locations?: StoreLocation[];
+  extraBranchNotice?: string;
   limit?: {
     maxAllowed: number;
     includedLocations: number;
@@ -25,6 +26,27 @@ export interface LocationActionResult {
     remainingSlots: number;
     extraLocationMonthlyUsd: number;
     planId: string;
+    billableExtraCount: number;
+    monthlyExtraCostUsd: number;
+    nextBranchRequiresExtra: boolean;
+    nextBranchMonthlyCostUsd: number;
+  };
+}
+
+function mapLocationLimitSummary(
+  limit: Awaited<ReturnType<typeof resolveStoreLocationLimit>>,
+) {
+  return {
+    maxAllowed: limit.maxAllowed,
+    includedLocations: limit.includedLocations,
+    extraAuthorized: limit.extraAuthorized,
+    remainingSlots: limit.remainingSlots,
+    extraLocationMonthlyUsd: limit.extraLocationMonthlyUsd,
+    planId: limit.planId,
+    billableExtraCount: limit.billableExtraCount,
+    monthlyExtraCostUsd: limit.monthlyExtraCostUsd,
+    nextBranchRequiresExtra: limit.nextBranchRequiresExtra,
+    nextBranchMonthlyCostUsd: limit.nextBranchMonthlyCostUsd,
   };
 }
 
@@ -64,14 +86,7 @@ export async function listStoreLocationsAction(): Promise<LocationActionResult> 
     const limit = await resolveStoreLocationLimit(auth.store.id, locations.length);
     return {
       locations,
-      limit: {
-        maxAllowed: limit.maxAllowed,
-        includedLocations: limit.includedLocations,
-        extraAuthorized: limit.extraAuthorized,
-        remainingSlots: limit.remainingSlots,
-        extraLocationMonthlyUsd: limit.extraLocationMonthlyUsd,
-        planId: limit.planId,
-      },
+      limit: mapLocationLimitSummary(limit),
     };
   } catch (error) {
     return {
@@ -98,31 +113,22 @@ export async function createStoreLocationAction(input: {
   const limit = await resolveStoreLocationLimit(auth.store.id, existing.length);
 
   if (!limit.canAddMore) {
+    const limitSummary = mapLocationLimitSummary(limit);
     if (limit.planId !== "enterprise") {
       return {
         error: `Tu plan incluye ${limit.includedLocations} sucursal(es). Actualiza a Enterprise para multi-sede.`,
-        limit: {
-          maxAllowed: limit.maxAllowed,
-          includedLocations: limit.includedLocations,
-          extraAuthorized: limit.extraAuthorized,
-          remainingSlots: limit.remainingSlots,
-          extraLocationMonthlyUsd: limit.extraLocationMonthlyUsd,
-          planId: limit.planId,
-        },
+        limit: limitSummary,
       };
     }
+    const nextIndex = existing.length + 1;
     return {
-      error: `Alcanzaste el máximo de ${limit.maxAllowed} sucursales (${limit.includedLocations} incluidas + ${limit.extraAuthorized} extras autorizadas). Contacta soporte para autorizar sedes adicionales (+$${limit.extraLocationMonthlyUsd}/mes c/u).`,
-      limit: {
-        maxAllowed: limit.maxAllowed,
-        includedLocations: limit.includedLocations,
-        extraAuthorized: limit.extraAuthorized,
-        remainingSlots: limit.remainingSlots,
-        extraLocationMonthlyUsd: limit.extraLocationMonthlyUsd,
-        planId: limit.planId,
-      },
+      error: `Alcanzaste el máximo de ${limit.maxAllowed} sucursales autorizadas (${limit.includedLocations} incluidas + ${limit.extraAuthorized} extras). La sucursal #${nextIndex} requiere autorización con un cargo adicional de +$${limit.extraLocationMonthlyUsd} USD/mes por sede. Contacta soporte para activarla.`,
+      limit: limitSummary,
     };
   }
+
+  const limitSummary = mapLocationLimitSummary(limit);
+  const creatingExtraBranch = limit.nextBranchRequiresExtra;
 
   const { data, error } = await supabase
     .from("store_locations")
@@ -147,7 +153,15 @@ export async function createStoreLocationAction(input: {
   revalidatePath("/dashboard/catalogo");
   revalidatePath(`/c/${auth.store.slug}`);
 
-  return { location: mapStoreLocationRow(data as Record<string, unknown>) };
+  return {
+    location: mapStoreLocationRow(data as Record<string, unknown>),
+    limit: mapLocationLimitSummary(
+      await resolveStoreLocationLimit(auth.store.id, existing.length + 1),
+    ),
+    extraBranchNotice: creatingExtraBranch
+      ? `Sucursal creada. Esta sede extra suma +$${limit.nextBranchMonthlyCostUsd} USD/mes a tu plan Enterprise.`
+      : undefined,
+  };
 }
 
 export async function updateStoreLocationAction(input: {

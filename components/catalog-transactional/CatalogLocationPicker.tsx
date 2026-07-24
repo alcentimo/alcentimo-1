@@ -4,7 +4,7 @@ import { MapPin, Truck } from "lucide-react";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { cn } from "@/lib/cn";
 
-/** Solo visible cuando la tienda tiene más de una sucursal activa. */
+/** Selector de sede y modalidad de entrega (multi-sucursal Enterprise). */
 export function CatalogLocationPicker() {
   const {
     multiLocation,
@@ -21,9 +21,41 @@ export function CatalogLocationPicker() {
   return (
     <div className="rounded-xl border border-zinc-200/80 bg-white/90 p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/80">
       <p className="text-xs font-medium text-zinc-700 dark:text-zinc-200">
-        ¿Cómo quieres recibir tu pedido?
+        Sede y forma de entrega
       </p>
-      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+
+      <div className="mt-3">
+        <label className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+          Sucursal
+        </label>
+        <select
+          className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          value={selectedLocationId ?? ""}
+          onChange={(e) => setSelectedLocationId(e.target.value || null)}
+          aria-label="Seleccionar sucursal"
+        >
+          {locations.map((loc) => (
+            <option key={loc.id} value={loc.id}>
+              {loc.name}
+              {loc.city ? ` — ${loc.city}` : ""}
+            </option>
+          ))}
+        </select>
+        {selectedLocation?.address ? (
+          <p className="mt-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+            {selectedLocation.address}
+          </p>
+        ) : null}
+        <p className="mt-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+          El stock y tu pedido se gestionan en{" "}
+          <strong className="font-medium text-zinc-700 dark:text-zinc-200">
+            {selectedLocation?.name ?? "esta sucursal"}
+          </strong>
+          .
+        </p>
+      </div>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <button
           type="button"
           onClick={() => setMode("delivery")}
@@ -51,35 +83,6 @@ export function CatalogLocationPicker() {
           Retiro en tienda
         </button>
       </div>
-
-      {mode === "pickup" ? (
-        <div className="mt-3">
-          <label className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
-            Sucursal de retiro
-          </label>
-          <select
-            className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-            value={selectedLocationId ?? ""}
-            onChange={(e) => setSelectedLocationId(e.target.value || null)}
-          >
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>
-                {loc.name}
-                {loc.city ? ` — ${loc.city}` : ""}
-              </option>
-            ))}
-          </select>
-          {selectedLocation?.address ? (
-            <p className="mt-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
-              {selectedLocation.address}
-            </p>
-          ) : null}
-        </div>
-      ) : (
-        <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-          La disponibilidad muestra el stock total de todas las sedes.
-        </p>
-      )}
     </div>
   );
 }

@@ -274,6 +274,7 @@ export async function submitTransactionalOrder(
 export async function fetchStoreOrdersPage(options: {
   offset: number;
   limit?: number;
+  locationId?: string | null;
 }): Promise<StoreOrdersResult & { error?: string }> {
   const supabase = await createClient();
   const auth = await requireAuthStore(supabase);
@@ -290,6 +291,7 @@ export async function fetchStoreOrdersPage(options: {
     return await getStoreOrders(auth.store.id, {
       offset: options.offset,
       limit: options.limit ?? ORDERS_PAGE_SIZE,
+      locationId: options.locationId,
     });
   } catch (error) {
     return {

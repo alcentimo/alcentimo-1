@@ -75,20 +75,27 @@ export interface StoreOrdersResult {
 
 export async function getStoreOrders(
   storeId: string,
-  options?: { limit?: number; offset?: number },
+  options?: { limit?: number; offset?: number; locationId?: string | null },
 ): Promise<StoreOrdersResult> {
   const limit = options?.limit ?? 100;
   const offset = options?.offset ?? 0;
+  const locationId = options?.locationId?.trim() || null;
 
   const supabase = await createClient();
 
-  const { data, error, count } = await supabase
+  let query = supabase
     .from("orders")
     .select(
       "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, store_locations(name)",
       { count: "exact" },
     )
-    .eq("store_id", storeId)
+    .eq("store_id", storeId);
+
+  if (locationId) {
+    query = query.eq("location_id", locationId);
+  }
+
+  const { data, error, count } = await query
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
