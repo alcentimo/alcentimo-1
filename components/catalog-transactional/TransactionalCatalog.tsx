@@ -264,11 +264,7 @@ function TransactionalCatalogInner({
         </div>
       </header>
 
-      {!previewMode ? (
-        <div className="txn-catalog-header-inner px-0 pb-0 pt-3">
-          <CatalogLocationPicker />
-        </div>
-      ) : null}
+      {!previewMode ? <CatalogLocationPicker /> : null}
 
       {availableProducts.length > 0 ? (
         <CatalogBrowseToolbar

@@ -1,10 +1,10 @@
 "use client";
 
-import { MapPin, Truck } from "lucide-react";
+import { ChevronDown, MapPin, Truck } from "lucide-react";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { cn } from "@/lib/cn";
 
-/** Selector de sede y modalidad de entrega (multi-sucursal Enterprise). */
+/** Barra compacta de sucursal y modalidad (multi-sucursal Enterprise). */
 export function CatalogLocationPicker() {
   const {
     multiLocation,
@@ -19,70 +19,72 @@ export function CatalogLocationPicker() {
   if (!multiLocation) return null;
 
   return (
-    <div className="rounded-xl border border-zinc-200/80 bg-white/90 p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/80">
-      <p className="text-xs font-medium text-zinc-700 dark:text-zinc-200">
-        Sede y forma de entrega
-      </p>
-
-      <div className="mt-3">
-        <label className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+    <div className="catalog-fulfillment-bar" aria-label="Sede y entrega">
+      <div className="catalog-fulfillment-bar-location">
+        <MapPin
+          className="catalog-fulfillment-bar-icon"
+          aria-hidden="true"
+        />
+        <label className="sr-only" htmlFor="catalog-fulfillment-location">
           Sucursal
         </label>
-        <select
-          className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-          value={selectedLocationId ?? ""}
-          onChange={(e) => setSelectedLocationId(e.target.value || null)}
-          aria-label="Seleccionar sucursal"
-        >
-          {locations.map((loc) => (
-            <option key={loc.id} value={loc.id}>
-              {loc.name}
-              {loc.city ? ` — ${loc.city}` : ""}
-            </option>
-          ))}
-        </select>
-        {selectedLocation?.address ? (
-          <p className="mt-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
-            {selectedLocation.address}
-          </p>
-        ) : null}
-        <p className="mt-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
-          El stock y tu pedido se gestionan en{" "}
-          <strong className="font-medium text-zinc-700 dark:text-zinc-200">
-            {selectedLocation?.name ?? "esta sucursal"}
-          </strong>
-          .
-        </p>
+        <div className="catalog-fulfillment-select-wrap">
+          <select
+            id="catalog-fulfillment-location"
+            className="catalog-fulfillment-select"
+            value={selectedLocationId ?? ""}
+            onChange={(e) => setSelectedLocationId(e.target.value || null)}
+          >
+            {locations.map((loc) => (
+              <option key={loc.id} value={loc.id}>
+                {loc.name}
+                {loc.city ? ` · ${loc.city}` : ""}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="catalog-fulfillment-select-chevron"
+            aria-hidden="true"
+          />
+        </div>
       </div>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <div
+        className="catalog-fulfillment-modes"
+        role="group"
+        aria-label="Forma de entrega"
+      >
         <button
           type="button"
           onClick={() => setMode("delivery")}
+          aria-pressed={mode === "delivery"}
           className={cn(
-            "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-medium transition",
-            mode === "delivery"
-              ? "border-teal-500 bg-teal-50 text-teal-900 dark:border-teal-600 dark:bg-teal-950/40 dark:text-teal-100"
-              : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900",
+            "catalog-fulfillment-mode-btn",
+            mode === "delivery" && "catalog-fulfillment-mode-btn-active",
           )}
         >
           <Truck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          Envío a domicilio
+          Envío
         </button>
         <button
           type="button"
           onClick={() => setMode("pickup")}
+          aria-pressed={mode === "pickup"}
           className={cn(
-            "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-medium transition",
-            mode === "pickup"
-              ? "border-teal-500 bg-teal-50 text-teal-900 dark:border-teal-600 dark:bg-teal-950/40 dark:text-teal-100"
-              : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900",
+            "catalog-fulfillment-mode-btn",
+            mode === "pickup" && "catalog-fulfillment-mode-btn-active",
           )}
         >
           <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          Retiro en tienda
+          Retiro
         </button>
       </div>
+
+      {selectedLocation?.address ? (
+        <p className="catalog-fulfillment-bar-hint sm:sr-only">
+          {selectedLocation.address}
+        </p>
+      ) : null}
     </div>
   );
 }

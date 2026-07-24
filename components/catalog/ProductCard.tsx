@@ -307,6 +307,28 @@ export const ProductCard = memo(function ProductCard({
             {isSaludBelleza ? <BeautyBadges product={product} /> : null}
           </div>
 
+        {showPrices ? (
+            <div className="store-product-slot store-product-slot-pricing">
+              <div className="store-product-price-row">
+                <p className="store-product-price-usd">
+                  {formatUsd(displayPriceUsd)}
+                </p>
+                {hasDiscount && compareAtDisplayUsd != null && (
+                  <p className="store-product-price-compare">
+                    {formatUsd(compareAtDisplayUsd)}
+                  </p>
+                )}
+              </div>
+              {showBsConversion ? (
+                <p className="store-product-price-ves">
+                  {formatApproxBs(selectedPriceVes)}
+                </p>
+              ) : (
+                <span className="store-product-price-ves-placeholder" aria-hidden="true" />
+              )}
+            </div>
+          ) : null}
+
           {showDescription ? (
             <div className="store-product-slot store-product-slot-desc">
               <p
@@ -336,28 +358,6 @@ export const ProductCard = memo(function ProductCard({
               <span className="store-product-variant-placeholder" aria-hidden="true" />
             )}
           </div>
-
-          {showPrices ? (
-            <div className="store-product-slot store-product-slot-pricing">
-              <div className="store-product-price-row">
-                <p className="store-product-price-usd">
-                  {formatUsd(displayPriceUsd)}
-                </p>
-                {hasDiscount && compareAtDisplayUsd != null && (
-                  <p className="store-product-price-compare">
-                    {formatUsd(compareAtDisplayUsd)}
-                  </p>
-                )}
-              </div>
-              {showBsConversion ? (
-                <p className="store-product-price-ves">
-                  {formatApproxBs(selectedPriceVes)}
-                </p>
-              ) : (
-                <span className="store-product-price-ves-placeholder" aria-hidden="true" />
-              )}
-            </div>
-          ) : null}
         </div>
 
         <div className="store-product-footer sm:hidden">

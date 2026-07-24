@@ -130,10 +130,8 @@ function CatalogCategoriesViewInner({
       <header className="txn-catalog-header">
         <div className="txn-catalog-header-inner">
           <h1 className="txn-catalog-title">{store.name}</h1>
-          <div className="mt-3">
-            <CatalogLocationPicker />
-          </div>
         </div>
+        <CatalogLocationPicker />
       </header>
 
       {availableProducts.length > 0 ? (
