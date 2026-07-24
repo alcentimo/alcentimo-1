@@ -1,10 +1,13 @@
 "use client";
 
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { CATALOG_SORT_OPTIONS, type CatalogSortKey } from "@/lib/catalog/catalog-browse";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/cn";
+
+const MAX_VISIBLE_CATEGORY_CHIPS = 4;
 
 interface CatalogBrowseToolbarProps {
   searchQuery: string;
@@ -21,6 +24,36 @@ interface CatalogBrowseToolbarProps {
   showCategoryFilter?: boolean;
 }
 
+function splitVisibleCategories(
+  categories: CatalogCategoryOption[],
+  activeSlug: string | null,
+): {
+  visible: CatalogCategoryOption[];
+  overflow: CatalogCategoryOption[];
+} {
+  if (categories.length <= MAX_VISIBLE_CATEGORY_CHIPS) {
+    return { visible: categories, overflow: [] };
+  }
+
+  const activeIndex = activeSlug
+    ? categories.findIndex((category) => category.slug === activeSlug)
+    : -1;
+
+  if (activeIndex >= MAX_VISIBLE_CATEGORY_CHIPS) {
+    const active = categories[activeIndex];
+    const leading = categories.slice(0, MAX_VISIBLE_CATEGORY_CHIPS - 1);
+    const visible = [...leading, active];
+    const visibleSlugs = new Set(visible.map((category) => category.slug));
+    const overflow = categories.filter((category) => !visibleSlugs.has(category.slug));
+    return { visible, overflow };
+  }
+
+  return {
+    visible: categories.slice(0, MAX_VISIBLE_CATEGORY_CHIPS),
+    overflow: categories.slice(MAX_VISIBLE_CATEGORY_CHIPS),
+  };
+}
+
 export function CatalogBrowseToolbar({
   searchQuery,
   onSearchQueryChange,
@@ -35,7 +68,17 @@ export function CatalogBrowseToolbar({
   onClearFilters,
   showCategoryFilter = true,
 }: CatalogBrowseToolbarProps) {
-  const showCategories = showCategoryFilter && categories.length > 0;
+  const [moreOpen, setMoreOpen] = useState(false);
+  const showCategories = showCategoryFilter && categories.length > 1;
+
+  const { visible: visibleCategories, overflow: overflowCategories } = useMemo(
+    () => splitVisibleCategories(categories, categorySlug),
+    [categories, categorySlug],
+  );
+
+  const activeOverflowCategory = overflowCategories.find(
+    (category) => category.slug === categorySlug,
+  );
 
   return (
     <section
@@ -108,7 +151,8 @@ export function CatalogBrowseToolbar({
           >
             Todas
           </button>
-          {categories.map((category) => (
+
+          {visibleCategories.map((category) => (
             <button
               key={category.slug}
               type="button"
@@ -123,6 +167,67 @@ export function CatalogBrowseToolbar({
               {category.name}
             </button>
           ))}
+
+          {overflowCategories.length > 0 ? (
+            <div className="catalog-category-more">
+              <button
+                type="button"
+                className={cn(
+                  "catalog-category-chip catalog-category-more-trigger",
+                  activeOverflowCategory && "catalog-category-chip-active",
+                )}
+                aria-expanded={moreOpen}
+                aria-haspopup="listbox"
+                onClick={() => setMoreOpen((open) => !open)}
+              >
+                {activeOverflowCategory ? activeOverflowCategory.name : "Ver más"}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 transition-transform",
+                    moreOpen && "rotate-180",
+                  )}
+                  aria-hidden="true"
+                />
+              </button>
+
+              {moreOpen ? (
+                <>
+                  <button
+                    type="button"
+                    className="catalog-category-more-backdrop"
+                    aria-label="Cerrar categorías"
+                    onClick={() => setMoreOpen(false)}
+                  />
+                  <ul
+                    className="catalog-category-more-menu"
+                    role="listbox"
+                    aria-label="Más categorías"
+                  >
+                    {overflowCategories.map((category) => (
+                      <li key={category.slug} role="presentation">
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={categorySlug === category.slug}
+                          className={cn(
+                            "catalog-category-more-option",
+                            categorySlug === category.slug &&
+                              "catalog-category-more-option-active",
+                          )}
+                          onClick={() => {
+                            onCategorySlugChange(category.slug);
+                            setMoreOpen(false);
+                          }}
+                        >
+                          {category.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
 

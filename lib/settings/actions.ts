@@ -11,7 +11,6 @@ import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings"
 import { uploadStoreAssetImage, uploadStoreLogoImage, removeStoreLogoAssets } from "@/lib/storage";
 import { isValidStoreSlug } from "@/lib/stores/slug";
 import { slugify } from "@/lib/slugify";
-import { syncStoreProductCategories } from "@/lib/products/rubro-categories";
 import { isValidStoreRubro, normalizeStoreRubro } from "@/src/config/categories";
 import {
   getFirstPaymentValidationError,
@@ -392,8 +391,6 @@ export async function saveGeneralStoreSettings(
   }
 
   const previousSlug = store.slug;
-  const previousRubro = normalizeStoreRubro(store.rubro_tienda as string | null);
-  const nextRubro = normalizeStoreRubro(rubroTienda);
 
   const { error: storeError } = await supabase
     .from("stores")
@@ -415,11 +412,6 @@ export async function saveGeneralStoreSettings(
 
   if (previousSlug !== slug) {
     scheduleStoreSubdomainRename(store.id, previousSlug, slug);
-  }
-
-  if (previousRubro !== nextRubro) {
-    const sync = await syncStoreProductCategories(supabase, store.id, nextRubro);
-    if (sync.error) return { error: sync.error };
   }
 
   revalidatePath("/dashboard/catalogo");

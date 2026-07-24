@@ -25,34 +25,12 @@ export async function getStoreRubroTienda(
   return normalizeStoreRubro(data.rubro_tienda as string | null);
 }
 
-/** Asegura que existan filas en `categories` para las opciones sugeridas del rubro. */
+/** @deprecated Ya no se insertan presets vacíos al crear o cambiar rubro. */
 export async function syncStoreProductCategories(
-  supabase: SupabaseClient,
-  storeId: string,
-  rubro: StoreRubro,
+  _supabase: SupabaseClient,
+  _storeId: string,
+  _rubro: StoreRubro,
 ): Promise<{ error?: string }> {
-  const options = getProductCategoriesForRubro(rubro);
-
-  for (const option of options) {
-    const { data: existing, error: lookupError } = await supabase
-      .from("categories")
-      .select("id")
-      .eq("store_id", storeId)
-      .eq("slug", option.slug)
-      .maybeSingle();
-
-    if (lookupError) return { error: lookupError.message };
-    if (existing) continue;
-
-    const { error: insertError } = await supabase.from("categories").insert({
-      store_id: storeId,
-      name: option.label,
-      slug: option.slug,
-    });
-
-    if (insertError) return { error: insertError.message };
-  }
-
   return {};
 }
 
@@ -124,8 +102,6 @@ export async function resolveProductCategoryId(
   );
 
   if (option) {
-    await syncStoreProductCategories(supabase, storeId, rubro);
-
     const { data: category, error: lookupError } = await supabase
       .from("categories")
       .select("id")

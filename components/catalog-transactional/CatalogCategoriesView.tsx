@@ -4,7 +4,10 @@ import { useMemo } from "react";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
-import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
+import {
+  resolvePublicCatalogCategories,
+  type CatalogCategoryOption,
+} from "@/lib/catalog/extract-categories";
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
 import {
   getCatalogDesignClasses,
@@ -106,6 +109,11 @@ function CatalogCategoriesViewInner({
     [locationAwareProducts],
   );
 
+  const categoryOptions = useMemo(
+    () => resolvePublicCatalogCategories(storeCategories, availableProducts),
+    [storeCategories, availableProducts],
+  );
+
   const browse = useCatalogBrowse(availableProducts, {
     initialCategorySlug: selectedCategorySlug,
     serverPagination: enableServerPagination
@@ -142,7 +150,7 @@ function CatalogCategoriesViewInner({
           onCategorySlugChange={browse.setCategorySlug}
           sortKey={browse.sortKey}
           onSortKeyChange={browse.setSortKey}
-          categories={storeCategories}
+          categories={categoryOptions}
           totalCount={availableProducts.length}
           filteredCount={browse.totalCount}
           hasActiveFilters={browse.hasActiveFilters}

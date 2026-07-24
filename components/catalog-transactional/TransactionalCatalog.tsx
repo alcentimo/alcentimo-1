@@ -7,7 +7,7 @@ import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
-import { extractCatalogCategories } from "@/lib/catalog/extract-categories";
+import { resolvePublicCatalogCategories } from "@/lib/catalog/extract-categories";
 import {
   getCatalogDesignClasses,
   getCatalogThemeStyle,
@@ -62,8 +62,7 @@ function resolveCategoryOptions(
   storeCategories: CatalogCategoryOption[],
   products: CatalogListItem[],
 ): CatalogCategoryOption[] {
-  if (storeCategories.length > 0) return storeCategories;
-  return extractCatalogCategories(products);
+  return resolvePublicCatalogCategories(storeCategories, products);
 }
 
 export function TransactionalCatalog({

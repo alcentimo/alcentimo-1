@@ -25,3 +25,34 @@ export async function getPublicStoreCategories(
     name: item.name as string,
   }));
 }
+
+/** Slugs de categorías que tienen al menos un producto activo en el catálogo público. */
+export async function getPublicStoreCategorySlugsWithProducts(
+  storeSlug: string,
+): Promise<CatalogCategoryOption[]> {
+  const client = getPublicServerClient();
+  const normalizedSlug = storeSlug.trim().toLowerCase();
+
+  const { data, error } = await client
+    .from("catalog_list_view")
+    .select("category_slug, category_name")
+    .eq("store_slug", normalizedSlug);
+
+  if (error) {
+    throw new Error(
+      `No se pudieron cargar las categorías con productos: ${error.message}`,
+    );
+  }
+
+  const map = new Map<string, CatalogCategoryOption>();
+  for (const row of data ?? []) {
+    const slug = row.category_slug as string | null;
+    const name = row.category_name as string | null;
+    if (!slug || !name) continue;
+    map.set(slug, { slug, name });
+  }
+
+  return Array.from(map.values()).sort((a, b) =>
+    a.name.localeCompare(b.name, "es"),
+  );
+}

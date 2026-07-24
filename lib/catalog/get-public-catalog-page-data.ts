@@ -9,8 +9,15 @@ import {
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
-import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
-import { getPublicStoreCategories } from "@/lib/catalog/get-public-store-categories";
+import {
+  mergeStoreCategoriesWithProductSlugs,
+  resolvePublicCatalogCategories,
+  type CatalogCategoryOption,
+} from "@/lib/catalog/extract-categories";
+import {
+  getPublicStoreCategories,
+  getPublicStoreCategorySlugsWithProducts,
+} from "@/lib/catalog/get-public-store-categories";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogPageData } from "@/lib/catalog";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
@@ -86,25 +93,37 @@ export async function getPublicCatalogPageData(
   const store = await fetchActiveStoreBySlug(storeSlug);
   if (!store) return null;
 
-  const [settingsConfig, storeCategories, locations, locationStocks] = await Promise.all([
+  const [
+    settingsConfig,
+    storeCategories,
+    categoriesWithProducts,
+    locations,
+    locationStocks,
+  ] = await Promise.all([
     fetchStoreSettingsConfig(store.id),
     getPublicStoreCategories(store.id),
+    getPublicStoreCategorySlugsWithProducts(store.slug),
     getPublicStoreLocations(store.id).catch(() => []),
     getVariantLocationStocksForStore(store.id).catch(() => []),
   ]);
+
+  const visibleStoreCategories = mergeStoreCategoriesWithProductSlugs(
+    storeCategories,
+    categoriesWithProducts,
+  );
 
   let selectedCategorySlug: string | null = null;
 
   if (options?.categoryFilter) {
     const requested = options.categorySlug?.trim().toLowerCase() ?? "";
-    const isAllowed = storeCategories.some(
+    const isAllowed = visibleStoreCategories.some(
       (category) => category.slug === requested,
     );
 
     if (requested && isAllowed) {
       selectedCategorySlug = requested;
-    } else if (storeCategories[0]) {
-      selectedCategorySlug = storeCategories[0].slug;
+    } else if (visibleStoreCategories[0]) {
+      selectedCategorySlug = visibleStoreCategories[0].slug;
     }
   }
 
@@ -121,9 +140,14 @@ export async function getPublicCatalogPageData(
     store.rubro_tienda,
   );
 
+  const populatedCategories =
+    catalogData.products.length > 0
+      ? resolvePublicCatalogCategories(storeCategories, catalogData.products)
+      : visibleStoreCategories;
+
   return {
     store,
-    storeCategories,
+    storeCategories: populatedCategories,
     selectedCategorySlug,
     ...catalogData,
     purchaseInfo,

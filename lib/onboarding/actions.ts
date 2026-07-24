@@ -8,7 +8,6 @@ import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { userHasStore } from "@/lib/stores";
 import { slugify, uniqueSlug } from "@/lib/slugify";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
-import { syncStoreProductCategories } from "@/lib/products/rubro-categories";
 import {
   isValidStoreRubro,
   normalizeStoreRubro,
@@ -139,11 +138,6 @@ export async function completeOnboarding(
 
   if (settingsError) {
     return { error: settingsError.message };
-  }
-
-  const sync = await syncStoreProductCategories(supabase, store.id, rubroTienda);
-  if (sync.error) {
-    return { error: sync.error };
   }
 
   revalidatePath("/dashboard");

@@ -4648,22 +4648,41 @@ body {
 }
 
 .catalog-category-chips {
-  @apply mb-0 flex gap-1.5 overflow-x-auto px-4 pb-0.5 sm:px-6;
-  scrollbar-width: none;
-}
-
-.catalog-category-chips::-webkit-scrollbar {
-  display: none;
+  @apply mb-0 flex flex-wrap items-center gap-2 px-0 pb-0.5;
 }
 
 .catalog-category-chip {
-  @apply inline-flex shrink-0 rounded-full border border-neutral-200/90 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 transition active:scale-95 sm:px-3.5 sm:py-2 sm:text-sm;
+  @apply inline-flex shrink-0 items-center rounded-lg border border-neutral-200/90 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 transition hover:border-neutral-300 hover:bg-neutral-50 sm:text-sm;
 }
 
 .catalog-category-chip-active {
   border-color: var(--txn-primary, #0d9488);
   color: var(--txn-primary, #0d9488);
   background-color: color-mix(in srgb, var(--txn-primary, #0d9488) 8%, white);
+}
+
+.catalog-category-more {
+  @apply relative;
+}
+
+.catalog-category-more-trigger {
+  @apply gap-1.5;
+}
+
+.catalog-category-more-backdrop {
+  @apply fixed inset-0 z-20 cursor-default bg-transparent;
+}
+
+.catalog-category-more-menu {
+  @apply absolute left-0 top-[calc(100%+0.35rem)] z-30 min-w-[10.5rem] overflow-hidden rounded-xl border border-neutral-200/90 bg-white py-1 shadow-lg;
+}
+
+.catalog-category-more-option {
+  @apply block w-full px-3 py-2 text-left text-sm text-neutral-700 transition hover:bg-neutral-50;
+}
+
+.catalog-category-more-option-active {
+  @apply bg-teal-50 font-medium text-teal-800;
 }
 
 .catalog-browse-toolbar {
