@@ -6,6 +6,7 @@ verify_jwt = false
 
 # Cron: configurar en Supabase Dashboard → Integrations → Cron, o Vercel (ver vercel.json).
 [functions.sync-bcv-midnight]
+verify_jwt = false
 
 [functions.sync-bcv-morning]
 verify_jwt = false
