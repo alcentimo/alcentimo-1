@@ -23,25 +23,37 @@ export function CatalogBrowseLoadMore({
   onRetry,
 }: CatalogBrowseLoadMoreProps) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const onLoadMoreRef = useRef(onLoadMore);
+  const loadingRef = useRef(loading);
+  const autoLoadCooldownRef = useRef(false);
+
+  onLoadMoreRef.current = onLoadMore;
+  loadingRef.current = loading;
 
   useEffect(() => {
-    if (!hasMore || loading) return;
+    if (!hasMore) return;
 
     const node = sentinelRef.current;
     if (!node) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          onLoadMore();
-        }
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        if (loadingRef.current || autoLoadCooldownRef.current) return;
+
+        autoLoadCooldownRef.current = true;
+        onLoadMoreRef.current();
+
+        window.setTimeout(() => {
+          autoLoadCooldownRef.current = false;
+        }, 400);
       },
       { rootMargin: "240px 0px" },
     );
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasMore, loading, onLoadMore]);
+  }, [hasMore]);
 
   if (totalCount === 0) return null;
 
@@ -71,7 +83,10 @@ export function CatalogBrowseLoadMore({
           <div ref={sentinelRef} className="catalog-browse-sentinel" aria-hidden="true" />
           <button
             type="button"
-            onClick={onLoadMore}
+            onClick={() => {
+              if (loadingRef.current) return;
+              onLoadMoreRef.current();
+            }}
             disabled={loading}
             className="catalog-browse-load-more"
             aria-busy={loading}

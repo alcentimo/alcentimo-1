@@ -115,14 +115,25 @@ function CatalogCategoriesViewInner({
     [storeCategories, availableProducts],
   );
 
+  const browseServerPagination = useMemo(
+    () =>
+      enableServerPagination
+        ? {
+            storeSlug: store.slug,
+            initialTotalCount: catalogTotalCount ?? availableProducts.length,
+          }
+        : undefined,
+    [
+      availableProducts.length,
+      catalogTotalCount,
+      enableServerPagination,
+      store.slug,
+    ],
+  );
+
   const browse = useCatalogBrowse(availableProducts, {
     initialCategorySlug: selectedCategorySlug,
-    serverPagination: enableServerPagination
-      ? {
-          storeSlug: store.slug,
-          initialTotalCount: catalogTotalCount ?? availableProducts.length,
-        }
-      : undefined,
+    serverPagination: browseServerPagination,
   });
 
   const gridClassName =

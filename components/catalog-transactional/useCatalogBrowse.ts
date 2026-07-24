@@ -10,10 +10,7 @@ import {
   hasActiveCatalogContentFilters,
   type CatalogSortKey,
 } from "@/lib/catalog/catalog-browse";
-import {
-  fetchPublicCatalogProducts,
-  type FetchPublicCatalogProductsResult,
-} from "@/lib/catalog/public-actions";
+import { fetchPublicCatalogProducts } from "@/lib/catalog/public-actions";
 
 interface UseCatalogBrowseOptions {
   initialCategorySlug?: string | null;
@@ -47,9 +44,17 @@ function buildInitialProductsSignature(products: CatalogListItem[]): string {
   return products
     .map(
       (product) =>
-        `${product.product_id}:${product.available_stock}:${product.updated_at ?? product.created_at}`,
+        `${product.product_id}:${product.available_stock}:${product.created_at}`,
     )
     .join("|");
+}
+
+function arraysEqualById(a: CatalogListItem[], b: CatalogListItem[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let index = 0; index < a.length; index += 1) {
+    if (a[index]?.product_id !== b[index]?.product_id) return false;
+  }
+  return true;
 }
 
 export function useCatalogBrowse(
@@ -57,7 +62,11 @@ export function useCatalogBrowse(
   options?: UseCatalogBrowseOptions,
 ) {
   const pageSize = options?.pageSize ?? CATALOG_PAGE_SIZE;
-  const serverPagination = options?.serverPagination;
+  const serverStoreSlug = options?.serverPagination?.storeSlug ?? null;
+  const serverInitialTotalCount =
+    options?.serverPagination?.initialTotalCount ?? initialProducts.length;
+  const serverPaginationEnabled = serverStoreSlug != null;
+
   const initialProductsRef = useRef(initialProducts);
   initialProductsRef.current = initialProducts;
 
@@ -68,7 +77,7 @@ export function useCatalogBrowse(
 
   const [allProducts, setAllProducts] = useState(initialProducts);
   const [catalogTotalCount, setCatalogTotalCount] = useState(
-    serverPagination?.initialTotalCount ?? initialProducts.length,
+    serverPaginationEnabled ? serverInitialTotalCount : initialProducts.length,
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [categorySlug, setCategorySlug] = useState<string | null>(
@@ -83,12 +92,21 @@ export function useCatalogBrowse(
     null,
   );
   const fetchRequestId = useRef(0);
+  const loadMoreInFlightRef = useRef(false);
   const [filterRetryNonce, setFilterRetryNonce] = useState(0);
 
+  const hasServerContentFilters = hasActiveCatalogContentFilters(
+    searchQuery,
+    categorySlug,
+  );
+
   useEffect(() => {
-    setAllProducts(initialProductsRef.current);
+    const nextProducts = initialProductsRef.current;
+    setAllProducts((current) =>
+      arraysEqualById(current, nextProducts) ? current : nextProducts,
+    );
     setCatalogTotalCount(
-      serverPagination?.initialTotalCount ?? initialProductsRef.current.length,
+      serverPaginationEnabled ? serverInitialTotalCount : nextProducts.length,
     );
     setVisibleCount(pageSize);
     setFetchError(null);
@@ -96,8 +114,9 @@ export function useCatalogBrowse(
   }, [
     initialProductsSignature,
     pageSize,
-    serverPagination?.initialTotalCount,
-    serverPagination?.storeSlug,
+    serverInitialTotalCount,
+    serverPaginationEnabled,
+    serverStoreSlug,
   ]);
 
   useEffect(() => {
@@ -108,77 +127,76 @@ export function useCatalogBrowse(
     setVisibleCount(pageSize);
   }, [searchQuery, categorySlug, sortKey, pageSize]);
 
-  const hasServerContentFilters = hasActiveCatalogContentFilters(
-    searchQuery,
-    categorySlug,
-  );
+  useEffect(() => {
+    if (!serverPaginationEnabled || hasServerContentFilters) return;
 
-  const runFilterFetch = useCallback(async () => {
-    if (!serverPagination || !hasServerContentFilters) return;
+    const nextProducts = initialProductsRef.current;
+    setAllProducts((current) =>
+      arraysEqualById(current, nextProducts) ? current : nextProducts,
+    );
+    setCatalogTotalCount(serverInitialTotalCount);
+    setLoadingFilter(false);
+  }, [
+    hasServerContentFilters,
+    initialProductsSignature,
+    serverInitialTotalCount,
+    serverPaginationEnabled,
+  ]);
+
+  useEffect(() => {
+    if (!serverPaginationEnabled || !hasServerContentFilters) return;
 
     const requestId = ++fetchRequestId.current;
-    setLoadingFilter(true);
-    setFetchError(null);
-    setFetchErrorSource(null);
+    const timer = window.setTimeout(async () => {
+      setLoadingFilter(true);
+      setFetchError(null);
+      setFetchErrorSource(null);
 
-    try {
-      const result: FetchPublicCatalogProductsResult =
-        await fetchPublicCatalogProducts({
-          storeSlug: serverPagination.storeSlug,
+      try {
+        const result = await fetchPublicCatalogProducts({
+          storeSlug: serverStoreSlug,
           offset: 0,
           limit: CATALOG_INITIAL_FETCH,
           categorySlug,
           search: searchQuery,
         });
 
-      if (requestId !== fetchRequestId.current) return;
+        if (requestId !== fetchRequestId.current) return;
 
-      if (result.error) {
-        setFetchError(result.error);
-        setFetchErrorSource("filter");
-        return;
+        if (result.error) {
+          setFetchError(result.error);
+          setFetchErrorSource("filter");
+          return;
+        }
+
+        setAllProducts(result.products);
+        setCatalogTotalCount(result.totalCount);
+      } finally {
+        if (requestId === fetchRequestId.current) {
+          setLoadingFilter(false);
+        }
       }
-
-      setAllProducts(result.products);
-      setCatalogTotalCount(result.totalCount);
-    } finally {
-      if (requestId === fetchRequestId.current) {
-        setLoadingFilter(false);
-      }
-    }
-  }, [categorySlug, hasServerContentFilters, searchQuery, serverPagination]);
-
-  useEffect(() => {
-    if (!serverPagination) return;
-
-    if (!hasServerContentFilters) {
-      setAllProducts(initialProductsRef.current);
-      setCatalogTotalCount(serverPagination.initialTotalCount);
-      setLoadingFilter(false);
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      void runFilterFetch();
     }, 300);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [
     categorySlug,
     filterRetryNonce,
     hasServerContentFilters,
-    runFilterFetch,
     searchQuery,
-    serverPagination,
+    serverPaginationEnabled,
+    serverStoreSlug,
   ]);
 
   const browseResult = useMemo(
     () =>
       browseCatalogProducts(allProducts, {
         searchQuery:
-          serverPagination && hasServerContentFilters ? "" : searchQuery,
+          serverPaginationEnabled && hasServerContentFilters ? "" : searchQuery,
         categorySlug:
-          serverPagination && hasServerContentFilters ? null : categorySlug,
+          serverPaginationEnabled && hasServerContentFilters ? null : categorySlug,
         sortKey,
         visibleCount,
       }),
@@ -187,7 +205,7 @@ export function useCatalogBrowse(
       categorySlug,
       hasServerContentFilters,
       searchQuery,
-      serverPagination,
+      serverPaginationEnabled,
       sortKey,
       visibleCount,
     ],
@@ -200,15 +218,24 @@ export function useCatalogBrowse(
   );
 
   const fetchMoreFromServer = useCallback(async () => {
-    if (!serverPagination || loadingMore || loadingFilter) return false;
+    if (
+      !serverPaginationEnabled ||
+      !serverStoreSlug ||
+      loadMoreInFlightRef.current ||
+      loadingMore ||
+      loadingFilter
+    ) {
+      return false;
+    }
 
+    loadMoreInFlightRef.current = true;
     setLoadingMore(true);
     setFetchError(null);
     setFetchErrorSource(null);
 
     try {
       const result = await fetchPublicCatalogProducts({
-        storeSlug: serverPagination.storeSlug,
+        storeSlug: serverStoreSlug,
         offset: allProducts.length,
         limit: pageSize,
         categorySlug: hasServerContentFilters ? categorySlug : undefined,
@@ -225,6 +252,7 @@ export function useCatalogBrowse(
       setCatalogTotalCount(result.totalCount);
       return true;
     } finally {
+      loadMoreInFlightRef.current = false;
       setLoadingMore(false);
     }
   }, [
@@ -235,14 +263,17 @@ export function useCatalogBrowse(
     loadingMore,
     pageSize,
     searchQuery,
-    serverPagination,
+    serverPaginationEnabled,
+    serverStoreSlug,
   ]);
 
   const loadMore = useCallback(() => {
+    if (loadMoreInFlightRef.current || loadingMore || loadingFilter) return;
+
     const nextVisible = visibleCount + pageSize;
     setVisibleCount(nextVisible);
 
-    if (!serverPagination) return;
+    if (!serverPaginationEnabled) return;
 
     const needsServerFetch =
       nextVisible > allProducts.length && allProducts.length < catalogTotalCount;
@@ -254,8 +285,10 @@ export function useCatalogBrowse(
     allProducts.length,
     catalogTotalCount,
     fetchMoreFromServer,
+    loadingFilter,
+    loadingMore,
     pageSize,
-    serverPagination,
+    serverPaginationEnabled,
     visibleCount,
   ]);
 
@@ -277,7 +310,7 @@ export function useCatalogBrowse(
   }
 
   const serverHasMore =
-    serverPagination != null && allProducts.length < catalogTotalCount;
+    serverPaginationEnabled && allProducts.length < catalogTotalCount;
 
   return {
     searchQuery,

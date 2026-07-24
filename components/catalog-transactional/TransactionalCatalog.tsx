@@ -155,14 +155,25 @@ function TransactionalCatalogInner({
     [storeCategories, availableProducts],
   );
 
-  const browse = useCatalogBrowse(availableProducts, {
-    serverPagination:
+  const browseServerPagination = useMemo(
+    () =>
       enableServerPagination && !previewMode
         ? {
             storeSlug: store.slug,
             initialTotalCount: catalogTotalCount ?? availableProducts.length,
           }
         : undefined,
+    [
+      availableProducts.length,
+      catalogTotalCount,
+      enableServerPagination,
+      previewMode,
+      store.slug,
+    ],
+  );
+
+  const browse = useCatalogBrowse(availableProducts, {
+    serverPagination: browseServerPagination,
   });
 
   const useFlatBrowseLayout =
