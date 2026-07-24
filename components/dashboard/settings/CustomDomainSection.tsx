@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Copy, Globe, Headphones, Loader2 } from "lucide-react";
+import { Check, Copy, Globe, Headphones, Loader2, RefreshCw } from "lucide-react";
 import {
   SettingsSection,
 } from "@/components/dashboard/settings/SettingsLayout";
@@ -11,7 +11,10 @@ import { Button } from "@/components/ui/button";
 import {
   clearStoreCustomDomainRequest,
   saveStoreCustomDomainRequest,
+  verifyStoreCustomDomainRequest,
 } from "@/lib/settings/custom-domain-actions";
+import type { CustomDomainDnsVerificationResult } from "@/lib/domains/verify-custom-domain-dns";
+import { CustomDomainVerificationPanel } from "@/components/dashboard/settings/CustomDomainVerificationPanel";
 import {
   getCustomDomainApexATarget,
   getCustomDomainCnameTarget,
@@ -118,7 +121,10 @@ export function CustomDomainSection({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [verification, setVerification] =
+    useState<CustomDomainDnsVerificationResult | null>(null);
   const [pending, startTransition] = useTransition();
+  const [verifying, setVerifying] = useState(false);
 
   const cnameTarget = getCustomDomainCnameTarget();
   const apexTarget = getCustomDomainApexATarget();
@@ -168,9 +174,39 @@ export function CustomDomainSection({
     }
   }
 
+  async function executeVerification(domain: string) {
+    setVerifying(true);
+    setVerification(null);
+
+    try {
+      const result = await verifyStoreCustomDomainRequest(domain);
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      if (result.verification) {
+        setVerification(result.verification);
+      }
+
+      if (result.customDomainVerified) {
+        setSavedVerified(true);
+        setSuccess(
+          "Dominio verificado y activo. Tu catálogo ya responde en esta URL.",
+        );
+      } else if (result.verification && !result.verification.ok) {
+        setSuccess(null);
+      }
+    } finally {
+      setVerifying(false);
+    }
+  }
+
   function handleSave() {
     setError(null);
     setSuccess(null);
+    setVerification(null);
 
     startTransition(async () => {
       const result = await saveStoreCustomDomainRequest(domainInput);
@@ -182,11 +218,48 @@ export function CustomDomainSection({
       setSavedDomain(result.customDomain ?? null);
       setSavedVerified(Boolean(result.customDomainVerified));
       setDomainInput(result.customDomain ?? "");
-      setSuccess(
-        result.customDomain
-          ? "Dominio guardado. Configura el DNS y espera la verificación del sistema."
-          : "Dominio eliminado.",
-      );
+
+      if (result.customDomain) {
+        setSuccess("Dominio guardado. Comprobando DNS…");
+        await executeVerification(result.customDomain);
+      } else {
+        setSuccess("Dominio eliminado.");
+        setVerification(null);
+      }
+    });
+  }
+
+  function handleVerifyConnection() {
+    setError(null);
+    setSuccess(null);
+
+    startTransition(async () => {
+      const domainToCheck = domainInput.trim();
+      if (!domainToCheck) {
+        setError("Ingresa un dominio válido antes de verificar.");
+        return;
+      }
+
+      let domainForVerify = savedDomain;
+
+      if (domainToCheck !== savedDomain) {
+        const saveResult = await saveStoreCustomDomainRequest(domainInput);
+        if (saveResult.error) {
+          setError(saveResult.error);
+          return;
+        }
+        domainForVerify = saveResult.customDomain ?? null;
+        setSavedDomain(domainForVerify);
+        setSavedVerified(false);
+        setDomainInput(saveResult.customDomain ?? "");
+      }
+
+      if (!domainForVerify) {
+        setError("Ingresa un dominio válido antes de verificar.");
+        return;
+      }
+
+      await executeVerification(domainForVerify);
     });
   }
 
@@ -204,6 +277,7 @@ export function CustomDomainSection({
       setSavedDomain(null);
       setSavedVerified(false);
       setDomainInput("");
+      setVerification(null);
       setSuccess("Dominio personalizado eliminado.");
     });
   }
@@ -262,7 +336,7 @@ export function CustomDomainSection({
                 <p className="mt-1 text-xs opacity-90">
                   {savedVerified
                     ? "Dominio activo y verificado. Tu catálogo responde en esta URL."
-                    : "Pendiente de verificación. Tras configurar el DNS, el equipo validará la conexión (puede tardar hasta 24 h)."}
+                    : "Pendiente de verificación DNS. Usa «Verificar conexión» cuando hayas configurado los registros."}
                 </p>
                 {publicUrl ? (
                   <p className="mt-2 break-all text-xs">{publicUrl}</p>
@@ -295,13 +369,18 @@ export function CustomDomainSection({
           ) : null}
 
           {!savedVerified && savedDomain ? (
-            <p className="mt-3 rounded-lg border border-amber-200/80 bg-amber-50/50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
-              <strong>Verificación del sistema:</strong> cuando el DNS esté activo,
-              nuestro equipo confirmará la conexión. No necesitas hacer nada más
-              salvo avisarnos si pasan más de 24 h sin cambios.
+            <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-300">
+              Tras crear los registros en tu proveedor, pulsa{" "}
+              <strong>Verificar conexión</strong>. Revisamos automáticamente si el
+              DNS ya apunta a Alcentimo.
             </p>
           ) : null}
         </div>
+
+        <CustomDomainVerificationPanel
+          verification={verification}
+          verifying={verifying}
+        />
 
         <div className="rounded-xl border border-zinc-200/80 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
           <div className="flex items-start gap-3">
@@ -354,7 +433,7 @@ export function CustomDomainSection({
         ) : null}
 
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={handleSave} disabled={pending}>
+          <Button type="button" onClick={handleSave} disabled={pending || verifying}>
             {pending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -364,12 +443,32 @@ export function CustomDomainSection({
               "Guardar dominio"
             )}
           </Button>
+          {savedDomain || domainInput.trim() ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleVerifyConnection}
+              disabled={pending || verifying}
+            >
+              {verifying ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  Verificando…
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                  Verificar conexión
+                </>
+              )}
+            </Button>
+          ) : null}
           {savedDomain ? (
             <Button
               type="button"
               variant="outline"
               onClick={handleClear}
-              disabled={pending}
+              disabled={pending || verifying}
             >
               Quitar dominio
             </Button>

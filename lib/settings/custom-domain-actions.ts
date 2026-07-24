@@ -7,12 +7,17 @@ import {
   normalizeCustomDomain,
   validateCustomDomainInput,
 } from "@/lib/domains/custom-domain";
+import {
+  verifyCustomDomainDns,
+  type CustomDomainDnsVerificationResult,
+} from "@/lib/domains/verify-custom-domain-dns";
 
 export type CustomDomainActionResult = {
   error?: string;
   success?: boolean;
   customDomain?: string | null;
   customDomainVerified?: boolean;
+  verification?: CustomDomainDnsVerificationResult;
 };
 
 async function findStoreIdByCustomDomain(
@@ -102,5 +107,69 @@ export async function clearStoreCustomDomainRequest(): Promise<CustomDomainActio
     success: true,
     customDomain: null,
     customDomainVerified: false,
+  };
+}
+
+export async function verifyStoreCustomDomainRequest(
+  domainInput?: string,
+): Promise<CustomDomainActionResult> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) return { error: auth.error };
+
+  const domain =
+    normalizeCustomDomain(domainInput ?? "") ??
+    normalizeCustomDomain(auth.store.custom_domain ?? "");
+
+  if (!domain) {
+    return {
+      error: "Guarda un dominio válido antes de verificar la conexión.",
+    };
+  }
+
+  if (
+    auth.store.custom_domain &&
+    normalizeCustomDomain(auth.store.custom_domain) !== domain
+  ) {
+    return {
+      error: "Guarda el dominio antes de verificar, o usa el dominio ya guardado.",
+    };
+  }
+
+  const verification = await verifyCustomDomainDns(domain);
+
+  if (!verification.ok) {
+    return {
+      success: false,
+      customDomain: domain,
+      customDomainVerified: false,
+      verification,
+    };
+  }
+
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("stores")
+    .update({
+      custom_domain: domain,
+      custom_domain_verified: true,
+      custom_domain_verified_at: now,
+    })
+    .eq("id", auth.store.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard/ajustes");
+  revalidatePath(`/c/${auth.store.slug}`);
+
+  return {
+    success: true,
+    customDomain: domain,
+    customDomainVerified: true,
+    verification: {
+      ...verification,
+      summary:
+        "Tu dominio apunta correctamente a Alcentimo y ya está activo en tu catálogo público.",
+    },
   };
 }
