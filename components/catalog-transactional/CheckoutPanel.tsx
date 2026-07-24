@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { CheckoutStepper, type CheckoutStep } from "@/components/catalog/CheckoutStepper";
 import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
+import { ShippingBranchPicker } from "@/components/shipping/ShippingBranchPicker";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { PaymentCheckoutDetails } from "@/components/payments/PaymentCheckoutDetails";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
@@ -19,7 +20,9 @@ import { loadCustomerCheckoutContext } from "@/lib/customers/checkout-actions";
 import { submitTransactionalOrder } from "@/lib/orders/actions";
 import type { SubmitOrderLineInput } from "@/lib/orders/types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
-import type { PaymentMethodKey } from "@/lib/store-settings/types";
+import type { PaymentMethodKey, ShippingCarrierKey } from "@/lib/store-settings/types";
+import { isNationalCarrierKey } from "@/src/config/shipping-methods";
+import { formatCarrierBranchAddress, getCarrierBranchById } from "@/lib/shipping/carrier-branches";
 import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
 import {
   redeemCustomerPromotionCode,
@@ -47,6 +50,8 @@ interface CustomerCheckoutProfile {
   displayName: string;
   phone: string;
   deliveryAddress?: string | null;
+  preferredShippingMethod?: string | null;
+  preferredShippingBranchCode?: string | null;
 }
 
 function pickDefaultPaymentKey(
@@ -76,6 +81,7 @@ export function CheckoutPanel({
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [shippingBranchCode, setShippingBranchCode] = useState<string | null>(null);
   const [successOrder, setSuccessOrder] = useState<{
     orderId: string;
     totalUsd: number;
@@ -99,15 +105,28 @@ export function CheckoutPanel({
     setSelectedPayment(pickDefaultPaymentKey(purchaseInfo.payments));
   }, [purchaseInfo.payments, purchaseInfo.shipping]);
 
+  const isNationalCarrierSelected = isNationalCarrierKey(selectedShipping);
+  const isLocalDeliverySelected = selectedShipping === "delivery";
+  const isPickupSelected = selectedShipping === "pickup";
+
   useEffect(() => {
+    if (!isNationalCarrierSelected) {
+      setShippingBranchCode(null);
+    }
+  }, [isNationalCarrierSelected, selectedShipping]);
+
+  useEffect(() => {
+    if (selectedShipping || purchaseInfo.shipping.length === 0) return;
+
     if (fulfillmentMode === "pickup") {
       const pickup = purchaseInfo.shipping.find((method) => method.key === "pickup");
       if (pickup) setSelectedShipping("pickup");
-    } else if (fulfillmentMode === "delivery") {
-      const delivery = purchaseInfo.shipping.find((method) => method.key === "delivery");
-      if (delivery) setSelectedShipping("delivery");
+      return;
     }
-  }, [fulfillmentMode, purchaseInfo.shipping]);
+
+    const delivery = purchaseInfo.shipping.find((method) => method.key === "delivery");
+    if (delivery) setSelectedShipping("delivery");
+  }, [fulfillmentMode, purchaseInfo.shipping, selectedShipping]);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,11 +142,35 @@ export function CheckoutPanel({
           displayName: name,
           phone,
           deliveryAddress: context.deliveryAddress,
+          preferredShippingMethod: context.preferredShippingMethod,
+          preferredShippingBranchCode: context.preferredShippingBranchCode,
         });
         setCustomerName(name);
         setCustomerPhone(phone);
         if (context.deliveryAddress) {
           setDeliveryAddress(context.deliveryAddress);
+        }
+
+        const preferredMethod = context.preferredShippingMethod;
+        if (
+          preferredMethod &&
+          purchaseInfo.shipping.some((option) => option.key === preferredMethod)
+        ) {
+          setSelectedShipping(preferredMethod);
+          if (
+            isNationalCarrierKey(preferredMethod) &&
+            context.preferredShippingBranchCode
+          ) {
+            setShippingBranchCode(context.preferredShippingBranchCode);
+          }
+        } else if (fulfillmentMode === "pickup") {
+          const pickup = purchaseInfo.shipping.find((method) => method.key === "pickup");
+          if (pickup) setSelectedShipping("pickup");
+        } else if (fulfillmentMode === "delivery") {
+          const delivery = purchaseInfo.shipping.find(
+            (method) => method.key === "delivery",
+          );
+          if (delivery) setSelectedShipping("delivery");
         }
       }
     });
@@ -135,7 +178,7 @@ export function CheckoutPanel({
     return () => {
       cancelled = true;
     };
-  }, [storeSlug]);
+  }, [storeSlug, fulfillmentMode, purchaseInfo.shipping]);
 
   useEffect(() => {
     if (!customerProfile || !autoApply) return;
@@ -213,7 +256,8 @@ export function CheckoutPanel({
   const canProceedStep1 =
     items.length > 0 &&
     (purchaseInfo.shipping.length === 0 || Boolean(selectedShipping)) &&
-    (activeFulfillmentMode !== "delivery" || deliveryAddress.trim().length >= 8);
+    (!isLocalDeliverySelected || deliveryAddress.trim().length >= 8) &&
+    (!isNationalCarrierSelected || Boolean(shippingBranchCode));
 
   const hasCustomerData = customerProfile
     ? true
@@ -232,8 +276,10 @@ export function CheckoutPanel({
 
     if (checkoutStep === 1) {
       if (!canProceedStep1) {
-        if (activeFulfillmentMode === "delivery" && deliveryAddress.trim().length < 8) {
+        if (isLocalDeliverySelected && deliveryAddress.trim().length < 8) {
           setError("Indica tu dirección de entrega (mínimo 8 caracteres).");
+        } else if (isNationalCarrierSelected && !shippingBranchCode) {
+          setError("Selecciona la sucursal de destino de la agencia.");
         } else {
           setError("Selecciona un método de envío para continuar.");
         }
@@ -275,11 +321,29 @@ export function CheckoutPanel({
     }
     if (selectedShipping) formData.set("shippingMethod", selectedShipping);
     if (selectedPayment) formData.set("paymentMethod", selectedPayment);
-    formData.set("fulfillmentType", activeFulfillmentMode);
-    if (locationId) formData.set("locationId", locationId);
-    if (activeFulfillmentMode === "delivery" && deliveryAddress.trim()) {
-      formData.set("deliveryAddress", deliveryAddress.trim());
+
+    if (isPickupSelected) {
+      formData.set("fulfillmentType", "pickup");
+    } else if (isLocalDeliverySelected) {
+      formData.set("fulfillmentType", "delivery");
+      if (deliveryAddress.trim()) {
+        formData.set("deliveryAddress", deliveryAddress.trim());
+      }
+    } else if (isNationalCarrierSelected) {
+      formData.set("fulfillmentType", "shipping");
+      if (shippingBranchCode) {
+        formData.set("shippingBranchCode", shippingBranchCode);
+        const branch = getCarrierBranchById(shippingBranchCode);
+        if (branch) {
+          formData.set("shippingBranchName", branch.name);
+          formData.set("shippingBranchAddress", formatCarrierBranchAddress(branch));
+        }
+      }
+    } else {
+      formData.set("fulfillmentType", activeFulfillmentMode);
     }
+
+    if (locationId) formData.set("locationId", locationId);
 
     startTransition(async () => {
       const result = await submitTransactionalOrder(formData);
@@ -300,6 +364,7 @@ export function CheckoutPanel({
       setCustomerName("");
       setCustomerPhone("");
       setDeliveryAddress("");
+      setShippingBranchCode(null);
       setAppliedPromotion(null);
       setPromotionInput("");
       setPromotionError(null);
@@ -497,7 +562,20 @@ export function CheckoutPanel({
                   </div>
                 )}
 
-                {activeFulfillmentMode === "delivery" ? (
+                {isNationalCarrierSelected ? (
+                  <div className="txn-checkout-form">
+                    <ShippingBranchPicker
+                      carrier={selectedShipping as ShippingCarrierKey}
+                      value={shippingBranchCode}
+                      onChange={(branch) => setShippingBranchCode(branch?.id ?? null)}
+                    />
+                    <p className="text-[11px] text-zinc-500">
+                      Guardamos tu agencia y sucursal preferida para la próxima compra.
+                    </p>
+                  </div>
+                ) : null}
+
+                {isLocalDeliverySelected ? (
                   <div className="txn-checkout-form">
                     <label className="txn-field">
                       <span>Dirección de entrega</span>
@@ -638,6 +716,20 @@ export function CheckoutPanel({
                         setCustomerPhone(profile.phone);
                         if (profile.deliveryAddress) {
                           setDeliveryAddress(profile.deliveryAddress);
+                        }
+                        if (
+                          profile.preferredShippingMethod &&
+                          purchaseInfo.shipping.some(
+                            (option) => option.key === profile.preferredShippingMethod,
+                          )
+                        ) {
+                          setSelectedShipping(profile.preferredShippingMethod);
+                          if (
+                            isNationalCarrierKey(profile.preferredShippingMethod) &&
+                            profile.preferredShippingBranchCode
+                          ) {
+                            setShippingBranchCode(profile.preferredShippingBranchCode);
+                          }
                         }
                       }}
                     />

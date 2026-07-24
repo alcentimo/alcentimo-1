@@ -10,6 +10,8 @@ interface CheckoutQuickAuthProps {
     displayName: string;
     phone: string;
     deliveryAddress?: string | null;
+    preferredShippingMethod?: string | null;
+    preferredShippingBranchCode?: string | null;
   }) => void;
 }
 
@@ -45,6 +47,8 @@ export function CheckoutQuickAuth({
       displayName: result.displayName,
       phone: result.phone,
       deliveryAddress: result.deliveryAddress ?? null,
+      preferredShippingMethod: result.preferredShippingMethod ?? null,
+      preferredShippingBranchCode: result.preferredShippingBranchCode ?? null,
     });
   }
 

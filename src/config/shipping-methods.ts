@@ -81,3 +81,14 @@ export const NATIONAL_CARRIER_METHODS = SHIPPING_METHODS.filter(
 export const LOCAL_SHIPPING_METHODS = SHIPPING_METHODS.filter(
   (method) => method.category === "local",
 );
+
+const NATIONAL_CARRIER_KEY_SET = new Set(
+  NATIONAL_CARRIER_METHODS.map((method) => method.key),
+);
+
+export function isNationalCarrierKey(
+  key: string | null | undefined,
+): key is ShippingCarrierKey {
+  if (!key) return false;
+  return NATIONAL_CARRIER_KEY_SET.has(key as ShippingCarrierKey);
+}

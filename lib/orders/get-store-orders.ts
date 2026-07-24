@@ -61,6 +61,12 @@ function mapOrderRows(
       location_name: locationName ?? null,
       fulfillment_type:
         (row.fulfillment_type as CatalogOrder["fulfillment_type"]) ?? null,
+      shipping_method: (row.shipping_method as string | null) ?? null,
+      shipping_branch_code: (row.shipping_branch_code as string | null) ?? null,
+      shipping_branch_name: (row.shipping_branch_name as string | null) ?? null,
+      shipping_branch_address:
+        (row.shipping_branch_address as string | null) ?? null,
+      delivery_address: (row.delivery_address as string | null) ?? null,
     };
   });
 
@@ -86,7 +92,7 @@ export async function getStoreOrders(
   let query = supabase
     .from("orders")
     .select(
-      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, store_locations(name)",
+      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, shipping_method, shipping_branch_code, shipping_branch_name, shipping_branch_address, delivery_address, store_locations(name)",
       { count: "exact" },
     )
     .eq("store_id", storeId);

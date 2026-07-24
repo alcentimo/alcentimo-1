@@ -25,6 +25,11 @@ export interface CatalogOrder {
   location_id?: string | null;
   location_name?: string | null;
   fulfillment_type?: "delivery" | "pickup" | "shipping" | null;
+  shipping_method?: string | null;
+  shipping_branch_code?: string | null;
+  shipping_branch_name?: string | null;
+  shipping_branch_address?: string | null;
+  delivery_address?: string | null;
 }
 
 export interface SubmitOrderLineInput {

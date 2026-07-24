@@ -21,6 +21,8 @@ export interface TransactionalOrderWhatsAppMessageInput {
   locationAddress?: string;
   deliveryAddress?: string;
   fulfillmentLabel?: string;
+  shippingBranchName?: string;
+  shippingBranchAddress?: string;
 }
 
 const STORAGE_URL_PATTERN =
@@ -91,6 +93,13 @@ export function buildTransactionalOrderWhatsAppMessage(
 
   if (input.shippingLabel?.trim()) {
     body.push(`🚚 Envío: ${sanitizeCustomerText(input.shippingLabel)}`);
+  }
+
+  if (input.shippingBranchName?.trim()) {
+    body.push(`🏢 Sucursal destino: ${sanitizeCustomerText(input.shippingBranchName)}`);
+    if (input.shippingBranchAddress?.trim()) {
+      body.push(`   ${sanitizeCustomerText(input.shippingBranchAddress)}`);
+    }
   }
 
   if (input.fulfillmentLabel?.trim()) {

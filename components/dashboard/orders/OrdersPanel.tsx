@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { fetchStoreOrdersPage } from "@/lib/orders/actions";
 import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
 import type { StoreLocation } from "@/lib/locations/types";
+import { formatOrderShippingSummary } from "@/lib/orders/shipping-display";
 import { cn } from "@/lib/cn";
 
 const FILTER_TABS: { id: OrderFilterId; label: string }[] = [
@@ -59,6 +60,9 @@ interface OrdersPanelProps {
 }
 
 function formatOrderLocation(order: CatalogOrder): string | null {
+  const shippingSummary = formatOrderShippingSummary(order);
+  if (shippingSummary) return shippingSummary;
+
   if (!order.location_name) return null;
   if (order.fulfillment_type === "pickup") {
     return `Retiro: ${order.location_name}`;

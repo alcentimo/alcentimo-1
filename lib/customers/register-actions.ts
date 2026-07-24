@@ -205,7 +205,14 @@ export async function quickRegisterOrSignInCustomer(input: {
 }
 
 export type InlineCustomerAuthResult =
-  | { ok: true; displayName: string; phone: string; deliveryAddress?: string | null }
+  | {
+      ok: true;
+      displayName: string;
+      phone: string;
+      deliveryAddress?: string | null;
+      preferredShippingMethod?: string | null;
+      preferredShippingBranchCode?: string | null;
+    }
   | { ok: false; error: string };
 
 /** Igual que quickRegisterOrSignInCustomer pero sin redirección (checkout embebido). */
@@ -244,7 +251,9 @@ export async function quickRegisterOrSignInCustomerInline(input: {
 
   const { data: profile } = await supabase
     .from("customer_profiles")
-    .select("display_name, phone, delivery_address")
+    .select(
+      "display_name, phone, delivery_address, preferred_shipping_method, preferred_shipping_branch_code",
+    )
     .eq("user_id", user.id)
     .eq("store_id", store.id)
     .maybeSingle();
@@ -254,6 +263,10 @@ export async function quickRegisterOrSignInCustomerInline(input: {
     displayName: profile?.display_name?.trim() || input.displayName.trim(),
     phone: profile?.phone?.trim() || input.phone.trim(),
     deliveryAddress: profile?.delivery_address?.trim() || null,
+    preferredShippingMethod:
+      (profile?.preferred_shipping_method as string | null)?.trim() || null,
+    preferredShippingBranchCode:
+      (profile?.preferred_shipping_branch_code as string | null)?.trim() || null,
   };
 }
 

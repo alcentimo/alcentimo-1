@@ -9,6 +9,10 @@ export interface CustomerCheckoutContext {
   displayName: string | null;
   phone: string | null;
   deliveryAddress: string | null;
+  preferredShippingMethod: string | null;
+  preferredShippingBranchCode: string | null;
+  preferredShippingBranchName: string | null;
+  preferredShippingBranchAddress: string | null;
 }
 
 async function getCustomerProfileForStore(
@@ -18,7 +22,9 @@ async function getCustomerProfileForStore(
 ) {
   const { data, error } = await supabase
     .from("customer_profiles")
-    .select("id, display_name, phone, delivery_address")
+    .select(
+      "id, display_name, phone, delivery_address, preferred_shipping_method, preferred_shipping_branch_code, preferred_shipping_branch_name, preferred_shipping_branch_address",
+    )
     .eq("user_id", userId)
     .eq("store_id", storeId)
     .maybeSingle();
@@ -43,6 +49,10 @@ export async function getCustomerCheckoutContext(
       displayName: null,
       phone: null,
       deliveryAddress: null,
+      preferredShippingMethod: null,
+      preferredShippingBranchCode: null,
+      preferredShippingBranchName: null,
+      preferredShippingBranchAddress: null,
     };
   }
 
@@ -55,6 +65,10 @@ export async function getCustomerCheckoutContext(
       displayName: null,
       phone: null,
       deliveryAddress: null,
+      preferredShippingMethod: null,
+      preferredShippingBranchCode: null,
+      preferredShippingBranchName: null,
+      preferredShippingBranchAddress: null,
     };
   }
 
@@ -67,6 +81,10 @@ export async function getCustomerCheckoutContext(
       displayName: null,
       phone: null,
       deliveryAddress: null,
+      preferredShippingMethod: null,
+      preferredShippingBranchCode: null,
+      preferredShippingBranchName: null,
+      preferredShippingBranchAddress: null,
     };
   }
 
@@ -77,6 +95,14 @@ export async function getCustomerCheckoutContext(
     displayName: profile.display_name,
     phone: profile.phone,
     deliveryAddress: (profile.delivery_address as string | null) ?? null,
+    preferredShippingMethod:
+      (profile.preferred_shipping_method as string | null) ?? null,
+    preferredShippingBranchCode:
+      (profile.preferred_shipping_branch_code as string | null) ?? null,
+    preferredShippingBranchName:
+      (profile.preferred_shipping_branch_name as string | null) ?? null,
+    preferredShippingBranchAddress:
+      (profile.preferred_shipping_branch_address as string | null) ?? null,
   };
 }
 

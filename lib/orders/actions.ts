@@ -10,7 +10,8 @@ import { getWhatsAppOrderDetailUrl } from "@/lib/orders/order-links";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { getPaymentMethod } from "@/src/config/payment-methods";
-import { getShippingMethod } from "@/src/config/shipping-methods";
+import { getShippingMethod, isNationalCarrierKey } from "@/src/config/shipping-methods";
+import { getCarrierBranchById } from "@/lib/shipping/carrier-branches";
 import type { PaymentMethodKey, ShippingCarrierKey } from "@/lib/store-settings/types";
 import { uploadOrderPaymentProof } from "@/lib/orders/storage";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
@@ -57,6 +58,19 @@ export async function submitTransactionalOrder(
   const locationIdRaw = String(formData.get("locationId") ?? "").trim();
   const fulfillmentTypeRaw = String(formData.get("fulfillmentType") ?? "").trim();
   const deliveryAddressRaw = String(formData.get("deliveryAddress") ?? "").trim();
+  const shippingBranchCodeRaw = String(
+    formData.get("shippingBranchCode") ?? "",
+  ).trim();
+  const shippingBranchNameRaw = String(
+    formData.get("shippingBranchName") ?? "",
+  ).trim();
+  const shippingBranchAddressRaw = String(
+    formData.get("shippingBranchAddress") ?? "",
+  ).trim();
+
+  const resolvedShippingBranch = shippingBranchCodeRaw
+    ? getCarrierBranchById(shippingBranchCodeRaw)
+    : null;
 
   const fulfillmentType =
     fulfillmentTypeRaw === "pickup" ||
@@ -65,9 +79,11 @@ export async function submitTransactionalOrder(
       ? fulfillmentTypeRaw
       : shippingMethodRaw === "pickup"
         ? "pickup"
-        : shippingMethodRaw
-          ? "shipping"
-          : null;
+        : shippingMethodRaw === "delivery"
+          ? "delivery"
+          : isNationalCarrierKey(shippingMethodRaw)
+            ? "shipping"
+            : null;
 
   if (!storeSlug) {
     return { error: "Tienda no válida." };
@@ -108,6 +124,26 @@ export async function submitTransactionalOrder(
   }
 
   const trimmedDeliveryAddress = deliveryAddressRaw.slice(0, 320);
+
+  if (isNationalCarrierKey(shippingMethodRaw)) {
+    if (!resolvedShippingBranch && !shippingBranchNameRaw) {
+      return { error: "Selecciona la sucursal de destino de la agencia." };
+    }
+  }
+
+  if (fulfillmentType === "delivery" && trimmedDeliveryAddress.length < 8) {
+    return { error: "Indica tu dirección de entrega (mínimo 8 caracteres)." };
+  }
+
+  const shippingBranchCode =
+    resolvedShippingBranch?.id ??
+    (shippingBranchCodeRaw.slice(0, 120) || null);
+  const shippingBranchName =
+    resolvedShippingBranch?.name ??
+    (shippingBranchNameRaw.slice(0, 160) || null);
+  const shippingBranchAddress = resolvedShippingBranch
+    ? `${resolvedShippingBranch.address}, ${resolvedShippingBranch.city}, ${resolvedShippingBranch.state}`
+    : shippingBranchAddressRaw.slice(0, 320) || null;
 
   const orderItems = buildOrderItems(lines);
   const subtotalUsd = orderItems.reduce((sum, item) => sum + item.line_total_usd, 0);
@@ -196,12 +232,34 @@ export async function submitTransactionalOrder(
     resolvedLocationAddress = (defaultLocation?.address as string | undefined) ?? null;
   }
 
-  if (customerUserId && trimmedDeliveryAddress) {
-    await admin
-      .from("customer_profiles")
-      .update({ delivery_address: trimmedDeliveryAddress })
-      .eq("user_id", customerUserId)
-      .eq("store_id", store.id);
+  if (customerUserId) {
+    const profileUpdate: Record<string, string | null> = {};
+
+    if (trimmedDeliveryAddress) {
+      profileUpdate.delivery_address = trimmedDeliveryAddress;
+    }
+
+    if (shippingMethodRaw) {
+      profileUpdate.preferred_shipping_method = shippingMethodRaw;
+    }
+
+    if (isNationalCarrierKey(shippingMethodRaw) && shippingBranchCode) {
+      profileUpdate.preferred_shipping_branch_code = shippingBranchCode;
+      profileUpdate.preferred_shipping_branch_name = shippingBranchName;
+      profileUpdate.preferred_shipping_branch_address = shippingBranchAddress;
+    } else if (shippingMethodRaw === "delivery" || shippingMethodRaw === "pickup") {
+      profileUpdate.preferred_shipping_branch_code = null;
+      profileUpdate.preferred_shipping_branch_name = null;
+      profileUpdate.preferred_shipping_branch_address = null;
+    }
+
+    if (Object.keys(profileUpdate).length > 0) {
+      await admin
+        .from("customer_profiles")
+        .update(profileUpdate)
+        .eq("user_id", customerUserId)
+        .eq("store_id", store.id);
+    }
   }
 
   const { error: insertError } = await admin.from("orders").insert({
@@ -216,6 +274,18 @@ export async function submitTransactionalOrder(
     estado: "pendiente",
     location_id: resolvedLocationId,
     fulfillment_type: fulfillmentType,
+    shipping_method: shippingMethodRaw || null,
+    shipping_branch_code: isNationalCarrierKey(shippingMethodRaw)
+      ? shippingBranchCode
+      : null,
+    shipping_branch_name: isNationalCarrierKey(shippingMethodRaw)
+      ? shippingBranchName
+      : null,
+    shipping_branch_address: isNationalCarrierKey(shippingMethodRaw)
+      ? shippingBranchAddress
+      : null,
+    delivery_address:
+      fulfillmentType === "delivery" ? trimmedDeliveryAddress || null : null,
   });
 
   if (insertError) {
@@ -266,7 +336,7 @@ export async function submitTransactionalOrder(
       : fulfillmentType === "delivery"
         ? "Envío a domicilio"
         : fulfillmentType === "shipping"
-          ? "Envío"
+          ? "Encomienda nacional"
           : undefined;
 
   const message = buildTransactionalOrderWhatsAppMessage({
@@ -284,6 +354,12 @@ export async function submitTransactionalOrder(
     deliveryAddress:
       fulfillmentType === "delivery" ? trimmedDeliveryAddress || undefined : undefined,
     fulfillmentLabel,
+    shippingBranchName: isNationalCarrierKey(shippingMethodRaw)
+      ? shippingBranchName ?? undefined
+      : undefined,
+    shippingBranchAddress: isNationalCarrierKey(shippingMethodRaw)
+      ? shippingBranchAddress ?? undefined
+      : undefined,
   });
 
   const whatsappUrl =

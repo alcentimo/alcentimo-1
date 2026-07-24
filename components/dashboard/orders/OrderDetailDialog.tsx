@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { OrderStatusSelect } from "@/components/dashboard/orders/OrderStatusSelect";
+import { OrderShippingDetails } from "@/components/dashboard/orders/OrderShippingDetails";
 import type { OrderEstado } from "@/lib/orders/order-status";
 
 function formatOrderDate(value: string): string {
@@ -64,20 +65,7 @@ export function OrderDetailDialog({
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
               {order.customer_phone ?? "Sin teléfono registrado"}
             </p>
-            {order.location_name || order.fulfillment_type ? (
-              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-                {order.fulfillment_type === "pickup"
-                  ? "Retiro en tienda"
-                  : order.fulfillment_type === "delivery"
-                    ? "Envío a domicilio"
-                    : order.fulfillment_type === "shipping"
-                      ? "Envío"
-                      : null}
-                {order.location_name
-                  ? `${order.fulfillment_type ? " · " : ""}Sucursal: ${order.location_name}`
-                  : null}
-              </p>
-            ) : null}
+            <OrderShippingDetails order={order} />
 
             {whatsappUrl ? (
               <a
