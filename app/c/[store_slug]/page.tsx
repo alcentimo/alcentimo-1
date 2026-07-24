@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
 import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
+import { CatalogProductGridSkeleton } from "@/components/catalog/CatalogProductGridSkeleton";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -53,7 +54,9 @@ export default async function TransactionalCatalogPage({
   return (
     <Suspense
       fallback={
-        <div className="txn-catalog-loading">Cargando catálogo…</div>
+        <div className="txn-catalog-loading">
+          <CatalogProductGridSkeleton count={8} />
+        </div>
       }
     >
       <CatalogContent

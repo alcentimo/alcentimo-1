@@ -15,6 +15,7 @@ interface CustomerProfilePanelProps {
   contactEmail: string | null;
   displayName: string | null;
   phone: string | null;
+  deliveryAddress: string | null;
   whatsappPhone: string | null;
 }
 
@@ -24,11 +25,13 @@ export function CustomerProfilePanel({
   contactEmail,
   displayName,
   phone,
+  deliveryAddress,
   whatsappPhone,
 }: CustomerProfilePanelProps) {
   const router = useRouter();
   const [name, setName] = useState(displayName ?? "");
   const [phoneValue, setPhoneValue] = useState(phone ?? "");
+  const [addressValue, setAddressValue] = useState(deliveryAddress ?? "");
   const [savePending, setSavePending] = useState(false);
   const [signOutPending, setSignOutPending] = useState(false);
   const [passwordPending, setPasswordPending] = useState(false);
@@ -51,6 +54,7 @@ export function CustomerProfilePanel({
       storeSlug,
       displayName: name,
       phone: phoneValue,
+      deliveryAddress: addressValue,
     });
 
     setSavePending(false);
@@ -147,6 +151,25 @@ export function CustomerProfilePanel({
             className="input-field"
             placeholder="04141234567"
           />
+        </div>
+
+        <div>
+          <label htmlFor="customer-address" className="label-field">
+            Dirección de entrega
+          </label>
+          <textarea
+            id="customer-address"
+            rows={3}
+            maxLength={500}
+            autoComplete="street-address"
+            value={addressValue}
+            onChange={(e) => setAddressValue(e.target.value)}
+            className="input-field min-h-[5rem] resize-y"
+            placeholder="Urbanización, calle, referencia…"
+          />
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Se usará para autocompletar tus próximos pedidos a domicilio.
+          </p>
         </div>
 
         {contactEmail ? (

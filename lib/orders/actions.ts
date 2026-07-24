@@ -56,6 +56,7 @@ export async function submitTransactionalOrder(
   const promotionCodeRaw = String(formData.get("promotionCode") ?? "").trim();
   const locationIdRaw = String(formData.get("locationId") ?? "").trim();
   const fulfillmentTypeRaw = String(formData.get("fulfillmentType") ?? "").trim();
+  const deliveryAddressRaw = String(formData.get("deliveryAddress") ?? "").trim();
 
   const fulfillmentType =
     fulfillmentTypeRaw === "pickup" ||
@@ -105,6 +106,8 @@ export async function submitTransactionalOrder(
   if (!(proof instanceof File) || proof.size === 0) {
     return { error: "Adjunta el comprobante de pago." };
   }
+
+  const trimmedDeliveryAddress = deliveryAddressRaw.slice(0, 320);
 
   const orderItems = buildOrderItems(lines);
   const subtotalUsd = orderItems.reduce((sum, item) => sum + item.line_total_usd, 0);
@@ -166,25 +169,39 @@ export async function submitTransactionalOrder(
   }
 
   let resolvedLocationId: string | null = null;
+  let resolvedLocationName: string | null = null;
+  let resolvedLocationAddress: string | null = null;
   if (locationIdRaw) {
     const { data: locationRow } = await admin
       .from("store_locations")
-      .select("id")
+      .select("id, name, address")
       .eq("id", locationIdRaw)
       .eq("store_id", store.id)
       .eq("is_active", true)
       .maybeSingle();
     resolvedLocationId = (locationRow?.id as string | undefined) ?? null;
+    resolvedLocationName = (locationRow?.name as string | undefined) ?? null;
+    resolvedLocationAddress = (locationRow?.address as string | undefined) ?? null;
   }
 
   if (!resolvedLocationId) {
     const { data: defaultLocation } = await admin
       .from("store_locations")
-      .select("id")
+      .select("id, name, address")
       .eq("store_id", store.id)
       .eq("is_default", true)
       .maybeSingle();
     resolvedLocationId = (defaultLocation?.id as string | undefined) ?? null;
+    resolvedLocationName = (defaultLocation?.name as string | undefined) ?? null;
+    resolvedLocationAddress = (defaultLocation?.address as string | undefined) ?? null;
+  }
+
+  if (customerUserId && trimmedDeliveryAddress) {
+    await admin
+      .from("customer_profiles")
+      .update({ delivery_address: trimmedDeliveryAddress })
+      .eq("user_id", customerUserId)
+      .eq("store_id", store.id);
   }
 
   const { error: insertError } = await admin.from("orders").insert({
@@ -243,6 +260,15 @@ export async function submitTransactionalOrder(
     ? getShippingMethod(shippingMethodRaw as ShippingCarrierKey).label
     : undefined;
 
+  const fulfillmentLabel =
+    fulfillmentType === "pickup"
+      ? "Retiro en tienda"
+      : fulfillmentType === "delivery"
+        ? "Envío a domicilio"
+        : fulfillmentType === "shipping"
+          ? "Envío"
+          : undefined;
+
   const message = buildTransactionalOrderWhatsAppMessage({
     customerName,
     items: orderItems,
@@ -253,6 +279,11 @@ export async function submitTransactionalOrder(
     subtotalUsd: discountUsd > 0 ? subtotalUsd : undefined,
     discountUsd: discountUsd > 0 ? discountUsd : undefined,
     promotionLabel,
+    locationName: resolvedLocationName ?? undefined,
+    locationAddress: resolvedLocationAddress ?? undefined,
+    deliveryAddress:
+      fulfillmentType === "delivery" ? trimmedDeliveryAddress || undefined : undefined,
+    fulfillmentLabel,
   });
 
   const whatsappUrl =

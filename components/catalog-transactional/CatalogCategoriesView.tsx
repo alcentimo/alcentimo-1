@@ -56,6 +56,7 @@ export function CatalogCategoriesView({
 }: CatalogCategoriesViewProps) {
   return (
     <CatalogFulfillmentProvider
+      storeSlug={store.slug}
       locations={locations}
       locationStocks={locationStocks}
     >

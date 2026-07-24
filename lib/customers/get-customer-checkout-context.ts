@@ -8,6 +8,7 @@ export interface CustomerCheckoutContext {
   userId: string | null;
   displayName: string | null;
   phone: string | null;
+  deliveryAddress: string | null;
 }
 
 async function getCustomerProfileForStore(
@@ -17,7 +18,7 @@ async function getCustomerProfileForStore(
 ) {
   const { data, error } = await supabase
     .from("customer_profiles")
-    .select("id, display_name, phone")
+    .select("id, display_name, phone, delivery_address")
     .eq("user_id", userId)
     .eq("store_id", storeId)
     .maybeSingle();
@@ -41,6 +42,7 @@ export async function getCustomerCheckoutContext(
       userId: null,
       displayName: null,
       phone: null,
+      deliveryAddress: null,
     };
   }
 
@@ -52,6 +54,7 @@ export async function getCustomerCheckoutContext(
       userId: user.id,
       displayName: null,
       phone: null,
+      deliveryAddress: null,
     };
   }
 
@@ -63,6 +66,7 @@ export async function getCustomerCheckoutContext(
       userId: user.id,
       displayName: null,
       phone: null,
+      deliveryAddress: null,
     };
   }
 
@@ -72,6 +76,7 @@ export async function getCustomerCheckoutContext(
     userId: user.id,
     displayName: profile.display_name,
     phone: profile.phone,
+    deliveryAddress: (profile.delivery_address as string | null) ?? null,
   };
 }
 

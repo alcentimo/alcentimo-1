@@ -37,7 +37,7 @@ export default async function CustomerProfilePage({
   const [profileResult, catalogData] = await Promise.all([
     supabase
       .from("customer_profiles")
-      .select("display_name, phone")
+      .select("display_name, phone, delivery_address")
       .eq("user_id", user.id)
       .eq("store_id", store.id)
       .maybeSingle(),
@@ -62,6 +62,7 @@ export default async function CustomerProfilePage({
         contactEmail={resolveCustomerContactEmail(user.email, user.user_metadata)}
         displayName={profile?.display_name ?? null}
         phone={profile?.phone ?? null}
+        deliveryAddress={(profile?.delivery_address as string | null) ?? null}
         whatsappPhone={whatsappPhone}
       />
     </div>

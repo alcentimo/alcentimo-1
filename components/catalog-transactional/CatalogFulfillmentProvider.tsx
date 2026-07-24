@@ -4,12 +4,17 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 import type { StoreLocation } from "@/lib/locations/types";
 import type { VariantLocationStock } from "@/lib/locations/types";
+import {
+  readFulfillmentPrefs,
+  writeFulfillmentPrefs,
+} from "@/lib/catalog/fulfillment-storage";
 
 export type CatalogFulfillmentMode = "delivery" | "pickup";
 
@@ -28,10 +33,12 @@ const CatalogFulfillmentContext =
   createContext<CatalogFulfillmentContextValue | null>(null);
 
 export function CatalogFulfillmentProvider({
+  storeSlug,
   locations,
   locationStocks,
   children,
 }: {
+  storeSlug: string;
   locations: StoreLocation[];
   locationStocks: VariantLocationStock[];
   children: ReactNode;
@@ -44,9 +51,50 @@ export function CatalogFulfillmentProvider({
   const defaultLocation =
     activeLocations.find((loc) => loc.is_default) ?? activeLocations[0] ?? null;
 
-  const [mode, setMode] = useState<CatalogFulfillmentMode>("delivery");
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
-    defaultLocation?.id ?? null,
+  const storedPrefs = useMemo(
+    () => readFulfillmentPrefs(storeSlug),
+    [storeSlug],
+  );
+
+  const initialLocationId = useMemo(() => {
+    const storedId = storedPrefs.selectedLocationId;
+    if (storedId && activeLocations.some((loc) => loc.id === storedId)) {
+      return storedId;
+    }
+    return defaultLocation?.id ?? null;
+  }, [activeLocations, defaultLocation?.id, storedPrefs.selectedLocationId]);
+
+  const [mode, setModeState] = useState<CatalogFulfillmentMode>(
+    storedPrefs.mode ?? "delivery",
+  );
+  const [selectedLocationId, setSelectedLocationIdState] = useState<string | null>(
+    initialLocationId,
+  );
+
+  useEffect(() => {
+    setSelectedLocationIdState(initialLocationId);
+  }, [initialLocationId]);
+
+  const setMode = useCallback(
+    (nextMode: CatalogFulfillmentMode) => {
+      setModeState(nextMode);
+      writeFulfillmentPrefs(storeSlug, {
+        mode: nextMode,
+        selectedLocationId: selectedLocationId ?? defaultLocation?.id ?? null,
+      });
+    },
+    [defaultLocation?.id, selectedLocationId, storeSlug],
+  );
+
+  const setSelectedLocationId = useCallback(
+    (id: string | null) => {
+      setSelectedLocationIdState(id);
+      writeFulfillmentPrefs(storeSlug, {
+        mode,
+        selectedLocationId: id,
+      });
+    },
+    [mode, storeSlug],
   );
 
   const stockIndex = useMemo(() => {
@@ -90,6 +138,8 @@ export function CatalogFulfillmentProvider({
       multiLocation,
       mode,
       selectedLocation,
+      setMode,
+      setSelectedLocationId,
       getAvailableStock,
     ],
   );

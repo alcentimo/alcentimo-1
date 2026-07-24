@@ -8,6 +8,10 @@ import { CheckoutStepper, type CheckoutStep } from "@/components/catalog/Checkou
 import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { PaymentCheckoutDetails } from "@/components/payments/PaymentCheckoutDetails";
+import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
+import { CheckoutQuickAuth } from "@/components/catalog-transactional/CheckoutQuickAuth";
+import { CheckoutSuccessScreen } from "@/components/catalog-transactional/CheckoutSuccessScreen";
+import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { cartItemKey } from "@/lib/catalog/cart-types";
 import { formatUsd } from "@/lib/format";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
@@ -42,6 +46,7 @@ interface CheckoutPanelProps {
 interface CustomerCheckoutProfile {
   displayName: string;
   phone: string;
+  deliveryAddress?: string | null;
 }
 
 function pickDefaultPaymentKey(
@@ -63,11 +68,19 @@ export function CheckoutPanel({
   const { items, subtotalUsd, updateQuantity, removeItem, clearCart } =
     useCart();
   const { autoApply, guestBanner } = usePromotionContext();
+  const { mode: fulfillmentModeFromContext, multiLocation } = useCatalogFulfillment();
+  const activeFulfillmentMode = fulfillmentMode ?? fulfillmentModeFromContext;
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(1);
   const [customerProfile, setCustomerProfile] =
     useState<CustomerCheckoutProfile | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [successOrder, setSuccessOrder] = useState<{
+    orderId: string;
+    totalUsd: number;
+    whatsappOpened: boolean;
+  } | null>(null);
   const [selectedShipping, setSelectedShipping] = useState("");
   const [selectedPayment, setSelectedPayment] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -106,9 +119,16 @@ export function CheckoutPanel({
       const phone = context.phone?.trim() ?? "";
 
       if (context.isCustomer && name.length >= 2 && phone.length >= 10) {
-        setCustomerProfile({ displayName: name, phone });
+        setCustomerProfile({
+          displayName: name,
+          phone,
+          deliveryAddress: context.deliveryAddress,
+        });
         setCustomerName(name);
         setCustomerPhone(phone);
+        if (context.deliveryAddress) {
+          setDeliveryAddress(context.deliveryAddress);
+        }
       }
     });
 
@@ -192,7 +212,8 @@ export function CheckoutPanel({
 
   const canProceedStep1 =
     items.length > 0 &&
-    (purchaseInfo.shipping.length === 0 || Boolean(selectedShipping));
+    (purchaseInfo.shipping.length === 0 || Boolean(selectedShipping)) &&
+    (activeFulfillmentMode !== "delivery" || deliveryAddress.trim().length >= 8);
 
   const hasCustomerData = customerProfile
     ? true
@@ -211,7 +232,11 @@ export function CheckoutPanel({
 
     if (checkoutStep === 1) {
       if (!canProceedStep1) {
-        setError("Selecciona un método de envío para continuar.");
+        if (activeFulfillmentMode === "delivery" && deliveryAddress.trim().length < 8) {
+          setError("Indica tu dirección de entrega (mínimo 8 caracteres).");
+        } else {
+          setError("Selecciona un método de envío para continuar.");
+        }
         return;
       }
       setCheckoutStep(2);
@@ -250,8 +275,11 @@ export function CheckoutPanel({
     }
     if (selectedShipping) formData.set("shippingMethod", selectedShipping);
     if (selectedPayment) formData.set("paymentMethod", selectedPayment);
-    formData.set("fulfillmentType", fulfillmentMode);
+    formData.set("fulfillmentType", activeFulfillmentMode);
     if (locationId) formData.set("locationId", locationId);
+    if (activeFulfillmentMode === "delivery" && deliveryAddress.trim()) {
+      formData.set("deliveryAddress", deliveryAddress.trim());
+    }
 
     startTransition(async () => {
       const result = await submitTransactionalOrder(formData);
@@ -261,24 +289,49 @@ export function CheckoutPanel({
         return;
       }
 
+      const openedWhatsApp = Boolean(result.whatsappUrl);
+      if (result.whatsappUrl) {
+        window.open(result.whatsappUrl, "_blank", "noopener,noreferrer");
+      }
+
       clearCart();
       setCheckoutStep(1);
       setCustomerProfile(null);
       setCustomerName("");
       setCustomerPhone("");
+      setDeliveryAddress("");
       setAppliedPromotion(null);
       setPromotionInput("");
       setPromotionError(null);
-      onClose();
+      setProofFile(null);
 
-      if (result.whatsappUrl) {
-        window.open(result.whatsappUrl, "_blank", "noopener,noreferrer");
-      } else if (!whatsappConfigured) {
-        setError(
-          "Pedido guardado. La tienda aún no configuró WhatsApp en Configuración de Tienda.",
-        );
+      if (result.orderId) {
+        setSuccessOrder({
+          orderId: result.orderId,
+          totalUsd,
+          whatsappOpened: openedWhatsApp,
+        });
+        return;
       }
+
+      onClose();
     });
+  }
+
+  if (successOrder) {
+    return (
+      <div className="txn-checkout">
+        <CheckoutSuccessScreen
+          orderId={successOrder.orderId}
+          totalUsd={successOrder.totalUsd}
+          whatsappOpened={successOrder.whatsappOpened}
+          onClose={() => {
+            setSuccessOrder(null);
+            onClose();
+          }}
+        />
+      </div>
+    );
   }
 
   return (
@@ -316,6 +369,12 @@ export function CheckoutPanel({
           <div className="txn-checkout-scroll">
             {checkoutStep === 1 ? (
               <>
+                {multiLocation ? (
+                  <div className="mb-4">
+                    <CatalogLocationPicker />
+                  </div>
+                ) : null}
+
                 <ul className="txn-checkout-items">
                   {items.map((item) => {
                     const key = cartItemKey(
@@ -438,6 +497,26 @@ export function CheckoutPanel({
                   </div>
                 )}
 
+                {activeFulfillmentMode === "delivery" ? (
+                  <div className="txn-checkout-form">
+                    <label className="txn-field">
+                      <span>Dirección de entrega</span>
+                      <textarea
+                        required
+                        minLength={8}
+                        rows={3}
+                        value={deliveryAddress}
+                        onChange={(event) => setDeliveryAddress(event.target.value)}
+                        placeholder="Calle, edificio, referencia…"
+                        className="txn-input min-h-[5rem] resize-y"
+                      />
+                    </label>
+                    <p className="text-[11px] text-zinc-500">
+                      La guardamos en tu cuenta para próximas compras.
+                    </p>
+                  </div>
+                ) : null}
+
                 {(customerProfile || autoApply) && (
                   <div className="txn-checkout-promo">
                     <p className="txn-checkout-section-title">
@@ -550,35 +629,51 @@ export function CheckoutPanel({
                     </Link>
                   </div>
                 ) : (
-                  <div className="txn-checkout-form">
-                    <label className="txn-field">
-                      <span>Nombre</span>
-                      <input
-                        type="text"
-                        required
-                        minLength={2}
-                        value={customerName}
-                        onChange={(event) => setCustomerName(event.target.value)}
-                        placeholder="Tu nombre completo"
-                        className="txn-input"
-                      />
-                    </label>
+                  <>
+                    <CheckoutQuickAuth
+                      storeSlug={storeSlug}
+                      onAuthenticated={(profile) => {
+                        setCustomerProfile(profile);
+                        setCustomerName(profile.displayName);
+                        setCustomerPhone(profile.phone);
+                        if (profile.deliveryAddress) {
+                          setDeliveryAddress(profile.deliveryAddress);
+                        }
+                      }}
+                    />
+                    <div className="txn-checkout-form">
+                      <p className="mb-2 text-xs font-medium text-zinc-500">
+                        O continúa como invitado
+                      </p>
+                      <label className="txn-field">
+                        <span>Nombre</span>
+                        <input
+                          type="text"
+                          required
+                          minLength={2}
+                          value={customerName}
+                          onChange={(event) => setCustomerName(event.target.value)}
+                          placeholder="Tu nombre completo"
+                          className="txn-input"
+                        />
+                      </label>
 
-                    <label className="txn-field">
-                      <span>Teléfono / WhatsApp</span>
-                      <input
-                        type="tel"
-                        required
-                        inputMode="tel"
-                        autoComplete="tel"
-                        minLength={10}
-                        value={customerPhone}
-                        onChange={(event) => setCustomerPhone(event.target.value)}
-                        placeholder="Ej: 0414-1234567"
-                        className="txn-input"
-                      />
-                    </label>
-                  </div>
+                      <label className="txn-field">
+                        <span>Teléfono / WhatsApp</span>
+                        <input
+                          type="tel"
+                          required
+                          inputMode="tel"
+                          autoComplete="tel"
+                          minLength={10}
+                          value={customerPhone}
+                          onChange={(event) => setCustomerPhone(event.target.value)}
+                          placeholder="Ej: 0414-1234567"
+                          className="txn-input"
+                        />
+                      </label>
+                    </div>
+                  </>
                 )}
 
                 <div className="txn-checkout-form">

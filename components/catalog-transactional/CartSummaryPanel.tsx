@@ -1,23 +1,50 @@
 "use client";
 
 import Image from "next/image";
-import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
+import { MessageCircle, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { cartItemKey } from "@/lib/catalog/cart-types";
+import { buildCartWhatsAppMessage } from "@/lib/catalog/cart-whatsapp-message";
+import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { formatUsd } from "@/lib/format";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
+import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 
 interface CartSummaryPanelProps {
   storeName: string;
+  whatsappPhone?: string | null;
   onClose: () => void;
   onCheckout: () => void;
 }
 
 export function CartSummaryPanel({
   storeName,
+  whatsappPhone,
   onClose,
   onCheckout,
 }: CartSummaryPanelProps) {
   const { items, subtotalUsd, updateQuantity, removeItem } = useCart();
+  const { mode, selectedLocation } = useCatalogFulfillment();
+
+  function handleWhatsAppInquiry() {
+    const phone = whatsappPhone?.trim();
+    if (!phone || items.length === 0) return;
+
+    const message = buildCartWhatsAppMessage({
+      storeName,
+      items,
+      subtotalUsd,
+      fulfillmentMode: mode,
+      locationName: selectedLocation?.name ?? null,
+      locationAddress: selectedLocation?.address ?? null,
+    });
+
+    const url = buildWhatsAppOrderUrl(phone, message);
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  const whatsappReady = Boolean(whatsappPhone?.trim()) && items.length > 0;
 
   return (
     <div className="txn-checkout txn-cart-summary">
@@ -161,6 +188,17 @@ export function CartSummaryPanel({
             >
               Finalizar pedido
             </button>
+
+            {whatsappReady ? (
+              <button
+                type="button"
+                onClick={handleWhatsAppInquiry}
+                className="txn-whatsapp-outline-btn"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                Consultar por WhatsApp
+              </button>
+            ) : null}
           </footer>
         </>
       )}

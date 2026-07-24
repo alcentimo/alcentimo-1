@@ -67,6 +67,7 @@ export function CatalogCartHost({
           {panelView === "summary" ? (
             <CartSummaryPanel
               storeName={store.name}
+              whatsappPhone={purchaseInfo.whatsappPhone}
               onClose={closePanel}
               onCheckout={() => setPanelView("checkout")}
             />

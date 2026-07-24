@@ -85,6 +85,7 @@ export function TransactionalCatalog({
 }: TransactionalCatalogProps) {
   return (
     <CatalogFulfillmentProvider
+      storeSlug={store.slug}
       locations={locations}
       locationStocks={locationStocks}
     >

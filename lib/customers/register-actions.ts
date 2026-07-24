@@ -4,7 +4,10 @@ import { randomBytes } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
-import { resolveCustomerNextDestination } from "@/lib/customers/middleware-access";
+import {
+  resolveActiveStoreBySlug,
+  resolveCustomerNextDestination,
+} from "@/lib/customers/middleware-access";
 import {
   ensureCustomerProfile,
   resolveCustomerStoreSlugFromNext,
@@ -199,6 +202,59 @@ export async function quickRegisterOrSignInCustomer(input: {
       err instanceof Error ? err.message : "Error inesperado al registrarte.";
     return { ok: false, error: message };
   }
+}
+
+export type InlineCustomerAuthResult =
+  | { ok: true; displayName: string; phone: string; deliveryAddress?: string | null }
+  | { ok: false; error: string };
+
+/** Igual que quickRegisterOrSignInCustomer pero sin redirección (checkout embebido). */
+export async function quickRegisterOrSignInCustomerInline(input: {
+  storeSlug: string;
+  displayName: string;
+  phone: string;
+}): Promise<InlineCustomerAuthResult> {
+  const result = await quickRegisterOrSignInCustomer({
+    storeSlug: input.storeSlug,
+    displayName: input.displayName,
+    phone: input.phone,
+  });
+
+  if (!result.ok) {
+    return result;
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, error: "No se pudo iniciar sesión." };
+  }
+
+  const store = await resolveActiveStoreBySlug(supabase, input.storeSlug.trim().toLowerCase());
+  if (!store) {
+    return {
+      ok: true,
+      displayName: input.displayName.trim(),
+      phone: input.phone.trim(),
+    };
+  }
+
+  const { data: profile } = await supabase
+    .from("customer_profiles")
+    .select("display_name, phone, delivery_address")
+    .eq("user_id", user.id)
+    .eq("store_id", store.id)
+    .maybeSingle();
+
+  return {
+    ok: true,
+    displayName: profile?.display_name?.trim() || input.displayName.trim(),
+    phone: profile?.phone?.trim() || input.phone.trim(),
+    deliveryAddress: profile?.delivery_address?.trim() || null,
+  };
 }
 
 /** Tras Google OAuth: completa WhatsApp obligatorio antes de vincular la tienda. */
