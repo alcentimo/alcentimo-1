@@ -110,7 +110,11 @@ export default async function TransactionalCatalogLayout({
 
   return (
     <div
-      className={cn("txn-catalog-root", themeContext?.rubroClass)}
+      className={cn(
+        "txn-catalog-root",
+        themeContext?.rubroClass,
+        themeContext?.designClasses,
+      )}
       style={themeContext?.style}
     >
       <CatalogPwaHeadLinks

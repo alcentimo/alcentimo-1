@@ -8,6 +8,7 @@ import { PromotionProvider } from "@/components/catalog-transactional/PromotionP
 import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
 import { CatalogTabBar } from "@/components/catalog-transactional/CatalogTabBar";
 import {
+  getCatalogDesignClasses,
   getCatalogRubroClass,
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
@@ -61,6 +62,11 @@ export function CatalogLivePreview({
     [settings.catalogDesign, store.rubro_tienda],
   );
 
+  const themeClasses = useMemo(
+    () => getCatalogDesignClasses(settings.catalogDesign, store.rubro_tienda),
+    [settings.catalogDesign, store.rubro_tienda],
+  );
+
   return (
     <PromotionProvider value={{ guestBanner: null, autoApply: null }}>
       <CartProvider
@@ -73,6 +79,7 @@ export function CatalogLivePreview({
           className={cn(
             "catalog-live-preview-root txn-catalog-root",
             getCatalogRubroClass(store.rubro_tienda),
+            themeClasses,
           )}
           style={themeStyle}
         >

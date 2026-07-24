@@ -114,6 +114,7 @@ function DesignAccordion({
 
 interface DesignOptionProps {
   label: string;
+  tagline?: string;
   description: string;
   selected: boolean;
   disabled?: boolean;
@@ -123,6 +124,7 @@ interface DesignOptionProps {
 
 function DesignOption({
   label,
+  tagline,
   description,
   selected,
   disabled = false,
@@ -155,6 +157,11 @@ function DesignOption({
         <span className="min-w-0 text-left">
           <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">
             {label}
+            {tagline ? (
+              <span className="ml-1.5 text-xs font-normal text-zinc-500">
+                ({tagline})
+              </span>
+            ) : null}
           </span>
           <span className="mt-0.5 block text-xs leading-snug text-zinc-500">
             {description}
@@ -299,7 +306,7 @@ export function DesignTab({
               </h2>
               <p className="mt-1 text-xs leading-relaxed text-zinc-500">
                 {isFashionStore
-                  ? "Elige uno de los tres looks de alta gama. Se aplica al instante en tu catálogo."
+                  ? "Tres looks profesionales para moda. Elige uno y se aplica al instante en tu catálogo."
                   : "Se guarda automáticamente al cambiar una opción."}
               </p>
             </div>
@@ -335,7 +342,7 @@ export function DesignTab({
             ) : null}
 
             <DesignAccordion
-              title={isFashionStore ? "Tema de moda" : "Tema"}
+              title="Tema visual"
               summary={themeSummary}
               open={openSection === "theme"}
               onToggle={() => toggleSection("theme")}
@@ -343,7 +350,8 @@ export function DesignTab({
               <div className="space-y-1">
                 {isFashionStore ? (
                   <p className="mb-2 text-xs leading-relaxed text-zinc-500">
-                    Estándar de alta gama: tres looks fijos, sin colores libres.
+                    Minimalista, Neutro Cálido o Editorial Oscuro — paletas fijas
+                    con contraste automático.
                   </p>
                 ) : null}
                 {availableThemeIds.map((themeId) => {
@@ -352,9 +360,10 @@ export function DesignTab({
                     <DesignOption
                       key={themeId}
                       label={preset.label}
+                      tagline={preset.tagline}
                       description={preset.description}
                       selected={design.theme === themeId}
-                      accent={preset.primaryColor}
+                      accent={preset.previewAccent}
                       disabled={isSaving && savingField === themeId}
                       onClick={() => setTheme(themeId)}
                     />

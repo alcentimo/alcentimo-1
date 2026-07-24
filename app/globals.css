@@ -3419,20 +3419,23 @@ body {
   color: var(--txn-page-fg, #171717);
 }
 
-/* Fondos de página para temas de moda (vars viven en .txn-catalog; el root las refleja). */
+/* Fondos de página para temas de moda (fallback si el inline style no cargó). */
+.txn-catalog-root.txn-catalog--theme-fashion-pure,
 .txn-catalog-root:has(.txn-catalog--theme-fashion-pure) {
-  --txn-page-bg: #fafafa;
-  --txn-page-fg: #171717;
+  --txn-page-bg: #faf9f7;
+  --txn-page-fg: #0a0a0a;
 }
 
+.txn-catalog-root.txn-catalog--theme-fashion-nocturne,
 .txn-catalog-root:has(.txn-catalog--theme-fashion-nocturne) {
-  --txn-page-bg: #0a0a0a;
+  --txn-page-bg: #141414;
   --txn-page-fg: #f5f5f4;
   color-scheme: dark;
 }
 
+.txn-catalog-root.txn-catalog--theme-fashion-editorial,
 .txn-catalog-root:has(.txn-catalog--theme-fashion-editorial) {
-  --txn-page-bg: #f3eee6;
+  --txn-page-bg: #f4efe6;
   --txn-page-fg: #3d3429;
 }
 
@@ -4183,15 +4186,73 @@ body {
 }
 
 .txn-catalog--theme-fashion-nocturne .store-add-btn-in-cart {
-  background-color: #262626;
-  border-color: #404040;
-  color: #d4d4d4;
+  --pc-btn-desktop-bg: #333333;
+  --pc-btn-desktop-fg: #e5e5e5;
+  --pc-btn-mobile-bg: #333333;
+  --pc-btn-mobile-fg: #e5e5e5;
+  border-color: #525252 !important;
 }
 
 .txn-catalog--theme-fashion-editorial .store-add-btn-in-cart {
-  background-color: #ebe4d8;
-  border-color: #d6cbb8;
-  color: #6b5744;
+  --pc-btn-desktop-bg: #ebe4d8;
+  --pc-btn-desktop-fg: #6b5744;
+  --pc-btn-mobile-bg: #ebe4d8;
+  --pc-btn-mobile-fg: #6b5744;
+  border-color: #d6cbb8 !important;
+}
+
+/* Shell del catálogo — temas de moda oscuros y cálidos */
+.txn-catalog-root.txn-catalog--theme-fashion-nocturne .catalog-tab-bar {
+  border-color: var(--pc-border, #2a2a2a);
+  background-color: color-mix(in srgb, var(--txn-page-bg) 92%, transparent);
+}
+
+.txn-catalog-root.txn-catalog--theme-fashion-nocturne .catalog-tab-item {
+  color: var(--pc-fg-muted, #a3a3a3);
+}
+
+.txn-catalog-root.txn-catalog--theme-fashion-nocturne .catalog-browse-toolbar {
+  border-color: var(--pc-border, #2a2a2a);
+  background-color: color-mix(in srgb, var(--txn-page-bg) 94%, transparent);
+}
+
+.txn-catalog-root.txn-catalog--theme-fashion-nocturne .catalog-category-chip {
+  border-color: var(--pc-border, #2a2a2a);
+  background-color: var(--pc-surface, #1c1c1c);
+  color: var(--pc-fg-muted, #a3a3a3);
+}
+
+.txn-catalog-root.txn-catalog--theme-fashion-nocturne .catalog-category-chip:hover {
+  border-color: var(--pc-border, #404040);
+  background-color: var(--pc-media-bg, #222222);
+}
+
+.txn-catalog-root.txn-catalog--theme-fashion-nocturne .catalog-category-more-menu {
+  border-color: var(--pc-border, #2a2a2a);
+  background-color: var(--pc-surface, #1c1c1c);
+}
+
+.txn-catalog-root.txn-catalog--theme-fashion-nocturne .catalog-category-more-option {
+  color: var(--pc-fg-muted, #a3a3a3);
+}
+
+.txn-catalog-root.txn-catalog--theme-fashion-nocturne .catalog-category-more-option:hover {
+  background-color: var(--pc-media-bg, #222222);
+}
+
+.txn-catalog-root.txn-catalog--theme-fashion-pure .catalog-category-chip,
+.txn-catalog-root.txn-catalog--theme-fashion-editorial .catalog-category-chip {
+  border-color: var(--pc-border);
+  background-color: var(--pc-surface, #ffffff);
+  color: var(--pc-fg-muted);
+}
+
+.txn-catalog-root.txn-catalog--theme-fashion-pure .store-product-card,
+.txn-catalog-root.txn-catalog--theme-fashion-editorial .store-product-card,
+.txn-catalog-root.txn-catalog--theme-fashion-nocturne .store-product-card {
+  border-color: var(--pc-border);
+  background-color: var(--pc-surface);
+  color: var(--pc-fg);
 }
 
 .txn-catalog--hide-stock .store-stock-badge,
@@ -4755,8 +4816,8 @@ body {
 
 .catalog-category-chip-active {
   border-color: var(--txn-primary, #0d9488);
-  color: var(--txn-primary, #0d9488);
-  background-color: color-mix(in srgb, var(--txn-primary, #0d9488) 8%, white);
+  color: var(--txn-primary-muted-fg, var(--txn-primary, #0d9488));
+  background-color: var(--txn-primary-muted);
 }
 
 .catalog-category-more {

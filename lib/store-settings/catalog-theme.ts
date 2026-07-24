@@ -204,7 +204,9 @@ export function getCatalogThemeStyle(
     ? normalizeHex6(resolved.primaryColor) ?? palette.primary
     : palette.primary;
 
-  const accent = palette.accent;
+  const accent = fashionPalette
+    ? normalizeHex6(preset.accentColor ?? preset.previewAccent) ?? palette.accent
+    : palette.accent;
   const pageBg = fashionPalette
     ? (preset.cssVars["--txn-page-bg"] ?? preset.pageBg)
     : palette.pageBg;

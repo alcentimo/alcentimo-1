@@ -85,11 +85,23 @@ export function buildCatalogAccentCssVars(input: {
   const primaryFg = getAccessibleForeground(primary);
   const accentFg = getAccessibleForeground(accent);
   const primaryHover = darkenHex(primary, 0.12);
-  const primaryMuted = mixHexColors(primary, "#ffffff", 0.12);
-  const primaryMutedFg =
-    relativeLuminance(primaryMuted) > 0.55 ? darkenHex(primary, 0.28) : primary;
-  const primaryBorder = mixHexColors(primary, "#ffffff", 0.55);
-  const primaryRing = mixHexColors(primary, "#ffffff", 0.82);
+  const isDarkSurface = input.pageBg
+    ? relativeLuminance(input.pageBg) < 0.35
+    : false;
+  const primaryMuted = isDarkSurface
+    ? mixHexColors(primary, input.pageBg ?? "#141414", 0.22)
+    : mixHexColors(primary, "#ffffff", 0.12);
+  const primaryMutedFg = isDarkSurface
+    ? primary
+    : relativeLuminance(primaryMuted) > 0.55
+      ? darkenHex(primary, 0.28)
+      : primary;
+  const primaryBorder = isDarkSurface
+    ? mixHexColors(primary, "#404040", 0.35)
+    : mixHexColors(primary, "#ffffff", 0.55);
+  const primaryRing = isDarkSurface
+    ? mixHexColors(primary, "#000000", 0.65)
+    : mixHexColors(primary, "#ffffff", 0.82);
   const includeButtonVars = input.includeButtonVars !== false;
 
   const vars: Record<string, string> = {
