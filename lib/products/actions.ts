@@ -106,7 +106,7 @@ function resolveProductFieldLabels(
   categorySlug: string,
 ): string[] {
   if (storeUsesRubroProductModule(rubro, "tecnologia")) {
-    return getTechSpecLabels(null);
+    return getTechSpecLabels(categorySlug);
   }
   if (storeUsesRubroProductModule(rubro, "coleccionables")) {
     return getCollectibleFieldLabels();

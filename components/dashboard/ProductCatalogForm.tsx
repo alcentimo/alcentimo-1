@@ -25,7 +25,12 @@ import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFi
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
-import { storeUsesRubroProductModule, storeRubroManagesProductVariants } from "@/lib/rubros/registry";
+import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
+import {
+  rubroHidesProductCategory,
+  storeUsesRubroProductModule,
+  storeRubroManagesProductVariants,
+} from "@/lib/rubros/registry";
 import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
 import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
 import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
@@ -47,6 +52,7 @@ import {
   type FoodModifiersConfig,
 } from "@/lib/rubros/modules/alimentos";
 import {
+  getPrimaryCategorySlugForPCBuilderSlot,
   storeHasPCBuilder,
   type PCBuilderSlotId,
 } from "@/lib/rubros/modules/tecnologia/pc-builder";
@@ -125,6 +131,9 @@ export function ProductCatalogForm({
   );
   const {
     categorySlug,
+    setCategorySlug,
+    customCategoryName,
+    setCustomCategoryName,
     fieldLabels,
     categoryLabel,
     extraFields,
@@ -133,6 +142,9 @@ export function ProductCatalogForm({
     productFormConfig,
     initialData?.categorySlug,
     initialData?.extraFields,
+  );
+  const showCategorySelector = !rubroHidesProductCategory(
+    productFormConfig.rubroTienda,
   );
   const isRopaModa = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
@@ -196,7 +208,10 @@ export function ProductCatalogForm({
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.set("product_category_slug", categorySlug);
-    formData.set("custom_category_name", "");
+    formData.set(
+      "custom_category_name",
+      showCategorySelector ? customCategoryName : "",
+    );
     formData.set(
       "variants_json",
       managesVariants
@@ -271,6 +286,20 @@ export function ProductCatalogForm({
           setLocalError(message);
         }}
       />
+
+      {showCategorySelector ? (
+        <ProductCategorySelector
+          id="catalog-product-category"
+          rubroLabel={productFormConfig.rubroLabel}
+          categories={productFormConfig.productCategories}
+          categorySlug={categorySlug}
+          customCategoryName={customCategoryName}
+          onCategorySlugChange={setCategorySlug}
+          onCustomCategoryNameChange={setCustomCategoryName}
+          labelClassName="payment-field-label"
+          selectClassName="payment-field-input"
+        />
+      ) : null}
 
       <ProductCopyAiFields
         idPrefix="catalog"
@@ -380,7 +409,13 @@ export function ProductCatalogForm({
       {pcBuilderEnabled ? (
         <PCBuilderSlotField
           value={pcBuilderSlot}
-          onChange={setPcBuilderSlot}
+          onChange={(slot) => {
+            setPcBuilderSlot(slot);
+            if (slot) {
+              const primarySlug = getPrimaryCategorySlugForPCBuilderSlot(slot);
+              if (primarySlug) setCategorySlug(primarySlug);
+            }
+          }}
           disabled={isBusy}
           variant="compact"
           id="catalog-pc-builder-slot"

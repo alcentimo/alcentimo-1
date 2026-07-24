@@ -155,6 +155,22 @@ export function getPCBuilderSlotDefinition(
   return SLOT_BY_ID.get(slotId)!;
 }
 
+/** Slug principal de categoría sugerida para un slot (p. ej. cpu → procesadores). */
+export function getPrimaryCategorySlugForPCBuilderSlot(
+  slotId: PCBuilderSlotId,
+): string {
+  return SLOT_BY_ID.get(slotId)?.categorySlugs[0] ?? "";
+}
+
+/** Slot inferido solo por slug de categoría (sin metadata). */
+export function resolvePCBuilderSlotFromCategorySlug(
+  categorySlug: string | null | undefined,
+): PCBuilderSlotId | null {
+  const slug = categorySlug?.trim().toLowerCase();
+  if (!slug) return null;
+  return CATEGORY_TO_SLOT.get(slug) ?? null;
+}
+
 export function filterProductsForPCBuilderSlot(
   products: CatalogListItem[],
   slotId: PCBuilderSlotId,

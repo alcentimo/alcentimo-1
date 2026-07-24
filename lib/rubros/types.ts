@@ -47,6 +47,19 @@ export const RUBRO_MODULE_MANAGED_EXTRA_FIELDS: Record<
     "Pantalla",
     "Modelo compatible",
     "Marca",
+    "Socket",
+    "Núcleos",
+    "Frecuencia",
+    "TDP",
+    "Chipset",
+    "Factor de forma",
+    "Capacidad",
+    "Tipo",
+    "Interfaz",
+    "VRAM",
+    "Potencia",
+    "Certificación",
+    "Modular",
   ],
   coleccionables: [
     "Condición",
@@ -75,12 +88,13 @@ export const RUBRO_MODULE_MANAGED_EXTRA_FIELDS: Record<
   ],
 };
 
-/** El rubro de tienda define el giro; el formulario de producto no pide categoría. */
+/** El rubro define el giro; la categoría de producto se pide cuando aporta (p. ej. PC Builder). */
 export const RUBRO_MODULE_HIDES_CATEGORY: Record<RubroProductModuleId, boolean> = {
   "ropa-moda": true,
   alimentos: true,
-  tecnologia: true,
+  /** Tecnología necesita categoría (celulares vs procesadores) para specs y Arma tu PC. */
+  tecnologia: false,
   coleccionables: true,
   "salud-belleza": true,
-  "papeleria-libreria-oficina": true,
+  "papeleria-libreria-oficina": false,
 };

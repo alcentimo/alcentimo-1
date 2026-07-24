@@ -26,13 +26,18 @@ import { areStationerySaleVariants } from "@/lib/rubros/modules/papeleria-librer
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
-import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
+import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
+import {
+  rubroHidesProductCategory,
+  storeUsesRubroProductModule,
+} from "@/lib/rubros/registry";
 import {
   emptyFoodModifiers,
   serializeFoodModifiersJson,
   type FoodModifiersConfig,
 } from "@/lib/rubros/modules/alimentos";
 import {
+  getPrimaryCategorySlugForPCBuilderSlot,
   storeHasPCBuilder,
   type PCBuilderSlotId,
 } from "@/lib/rubros/modules/tecnologia/pc-builder";
@@ -125,11 +130,17 @@ function QuickProductFormSession({
 
   const {
     categorySlug,
+    setCategorySlug,
+    customCategoryName,
+    setCustomCategoryName,
     fieldLabels,
     categoryLabel,
     extraFields,
     setExtraFields,
   } = useProductCategoryFields(productFormConfig);
+  const showCategorySelector = !rubroHidesProductCategory(
+    productFormConfig.rubroTienda,
+  );
 
   const isRopaModa = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
@@ -248,7 +259,10 @@ function QuickProductFormSession({
     submittedNameRef.current = String(formData.get("name") ?? "").trim();
     formData.set("price_usd", usd.toFixed(4));
     formData.set("product_category_slug", categorySlug);
-    formData.set("custom_category_name", "");
+    formData.set(
+      "custom_category_name",
+      showCategorySelector ? customCategoryName : "",
+    );
     formData.set("variants_json", serializeVariantsForForm(variants));
     formData.set(
       "extra_fields_json",
@@ -406,6 +420,20 @@ function QuickProductFormSession({
         readOnly
       />
 
+      {showCategorySelector ? (
+        <ProductCategorySelector
+          id="quick-product-category"
+          rubroLabel={productFormConfig.rubroLabel}
+          categories={productFormConfig.productCategories}
+          categorySlug={categorySlug}
+          customCategoryName={customCategoryName}
+          onCategorySlugChange={setCategorySlug}
+          onCustomCategoryNameChange={setCustomCategoryName}
+          labelClassName="payment-field-label"
+          selectClassName="payment-field-input"
+        />
+      ) : null}
+
       {!isRopaModa &&
       !isAlimentos &&
       !isTecnologia &&
@@ -438,7 +466,13 @@ function QuickProductFormSession({
       {pcBuilderEnabled ? (
         <PCBuilderSlotField
           value={pcBuilderSlot}
-          onChange={setPcBuilderSlot}
+          onChange={(slot) => {
+            setPcBuilderSlot(slot);
+            if (slot) {
+              const primarySlug = getPrimaryCategorySlugForPCBuilderSlot(slot);
+              if (primarySlug) setCategorySlug(primarySlug);
+            }
+          }}
           disabled={isBusy}
           variant="compact"
           id="quick-pc-builder-slot"

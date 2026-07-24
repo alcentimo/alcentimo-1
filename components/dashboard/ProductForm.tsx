@@ -37,7 +37,11 @@ import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import type { VariantFormInput } from "@/lib/products/variants";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
-import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
+import { ProductCategorySelector } from "@/components/dashboard/ProductCategorySelector";
+import {
+  rubroHidesProductCategory,
+  storeUsesRubroProductModule,
+} from "@/lib/rubros/registry";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
 import { ProductWholesaleField } from "@/components/dashboard/ProductWholesaleField";
 import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
@@ -48,6 +52,7 @@ import {
   type FoodModifiersConfig,
 } from "@/lib/rubros/modules/alimentos";
 import {
+  getPrimaryCategorySlugForPCBuilderSlot,
   storeHasPCBuilder,
   type PCBuilderSlotId,
 } from "@/lib/rubros/modules/tecnologia/pc-builder";
@@ -125,6 +130,9 @@ export function ProductForm({
   );
   const {
     categorySlug,
+    setCategorySlug,
+    customCategoryName,
+    setCustomCategoryName,
     fieldLabels,
     categoryLabel,
     extraFields,
@@ -133,6 +141,9 @@ export function ProductForm({
     productFormConfig,
     initialData?.categorySlug,
     initialData?.extraFields,
+  );
+  const showCategorySelector = !rubroHidesProductCategory(
+    productFormConfig.rubroTienda,
   );
   const isRopaModa = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
@@ -191,7 +202,10 @@ export function ProductForm({
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.set("product_category_slug", categorySlug);
-    formData.set("custom_category_name", "");
+    formData.set(
+      "custom_category_name",
+      showCategorySelector ? customCategoryName : "",
+    );
     formData.set(
       "variants_json",
       serializeVariantsForForm(
@@ -317,6 +331,18 @@ export function ProductForm({
         </Link>
       </div>
 
+      {showCategorySelector ? (
+        <ProductCategorySelector
+          id="product-category"
+          rubroLabel={productFormConfig.rubroLabel}
+          categories={productFormConfig.productCategories}
+          categorySlug={categorySlug}
+          customCategoryName={customCategoryName}
+          onCategorySlugChange={setCategorySlug}
+          onCustomCategoryNameChange={setCustomCategoryName}
+        />
+      ) : null}
+
       <ProductCopyAiFields
         idPrefix="product"
         name={productName}
@@ -429,7 +455,13 @@ export function ProductForm({
       {pcBuilderEnabled ? (
         <PCBuilderSlotField
           value={pcBuilderSlot}
-          onChange={setPcBuilderSlot}
+          onChange={(slot) => {
+            setPcBuilderSlot(slot);
+            if (slot) {
+              const primarySlug = getPrimaryCategorySlugForPCBuilderSlot(slot);
+              if (primarySlug) setCategorySlug(primarySlug);
+            }
+          }}
           disabled={isBusy}
         />
       ) : null}

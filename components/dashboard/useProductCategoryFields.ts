@@ -60,7 +60,7 @@ export function useProductCategoryFields(
     if (categorySlug === CUSTOM_PRODUCT_CATEGORY_VALUE) return [];
     const moduleId = getActiveProductModuleId(config.rubroTienda);
     if (moduleId === "tecnologia") {
-      return getTechSpecLabels(null);
+      return getTechSpecLabels(categorySlug);
     }
     if (moduleId === "coleccionables") {
       return getCollectibleFieldLabels();

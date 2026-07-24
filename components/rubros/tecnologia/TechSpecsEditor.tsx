@@ -27,7 +27,10 @@ export function TechSpecsEditor({
   disabled = false,
   variant = "default",
 }: TechSpecsEditorProps) {
-  const labels = useMemo(() => getTechSpecLabels(null), []);
+  const labels = useMemo(
+    () => getTechSpecLabels(categorySlug),
+    [categorySlug],
+  );
   const isCompact = variant === "compact";
 
   useEffect(() => {
@@ -49,6 +52,10 @@ export function TechSpecsEditor({
     onChange({ ...values, [label]: value });
   }
 
+  const helperText = categoryLabel
+    ? `Campos según ${categoryLabel}.`
+    : "Elige una categoría para ver las especificaciones adecuadas.";
+
   return (
     <div
       className={cn(
@@ -61,8 +68,7 @@ export function TechSpecsEditor({
           Especificaciones técnicas
         </p>
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-          Capacidad, memoria, color y compatibilidad
-          {categoryLabel ? ` · ${categoryLabel}` : ""}.
+          {helperText}
         </p>
       </div>
 
