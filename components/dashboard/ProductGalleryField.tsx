@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   Camera,
+  ChevronDown,
+  ChevronUp,
   GripVertical,
   ImagePlus,
   Images,
@@ -69,23 +71,26 @@ function createClientId(): string {
 }
 
 function mapInitialImages(initialImages: ProductEditImage[]): GalleryFieldItem[] {
-  return initialImages.map((image, index) => ({
+  const sorted = [...initialImages].sort((a, b) => {
+    if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
+    return a.sortOrder - b.sortOrder || a.id.localeCompare(b.id);
+  });
+
+  return sorted.map((image, index) => ({
     clientId: image.id,
     previewUrl: image.thumbUrl,
     dbId: image.id,
-    isPrimary: image.isPrimary,
-    sortOrder: image.sortOrder ?? index,
+    isPrimary: index === 0,
+    sortOrder: index,
   }));
 }
 
+/** La primera posición es siempre la foto principal del catálogo. */
 function normalizeItems(items: GalleryFieldItem[]): GalleryFieldItem[] {
-  const sorted = items.map((item, index) => ({ ...item, sortOrder: index }));
-  const primaryIndex = sorted.findIndex((item) => item.isPrimary);
-  const resolvedPrimaryIndex = primaryIndex >= 0 ? primaryIndex : 0;
-
-  return sorted.map((item, index) => ({
+  return items.map((item, index) => ({
     ...item,
-    isPrimary: index === resolvedPrimaryIndex,
+    sortOrder: index,
+    isPrimary: index === 0,
   }));
 }
 
@@ -291,12 +296,26 @@ export function ProductGalleryField({
   }
 
   function setPrimary(clientId: string) {
-    emitChange(
-      items.map((item) => ({
-        ...item,
-        isPrimary: item.clientId === clientId,
-      })),
-    );
+    const index = items.findIndex((item) => item.clientId === clientId);
+    if (index <= 0) return;
+
+    const nextItems = [...items];
+    const [selected] = nextItems.splice(index, 1);
+    nextItems.unshift(selected!);
+    emitChange(nextItems);
+  }
+
+  function moveItem(clientId: string, direction: -1 | 1) {
+    const index = items.findIndex((item) => item.clientId === clientId);
+    if (index < 0) return;
+
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= items.length) return;
+
+    const nextItems = [...items];
+    const [moved] = nextItems.splice(index, 1);
+    nextItems.splice(targetIndex, 0, moved!);
+    emitChange(nextItems);
   }
 
   function removeItem(clientId: string) {
@@ -314,7 +333,8 @@ export function ProductGalleryField({
     );
   }
 
-  function handleDragStart(clientId: string) {
+  function handleDragStart(event: React.DragEvent, clientId: string) {
+    event.dataTransfer.effectAllowed = "move";
     setDraggingId(clientId);
   }
 
@@ -364,7 +384,8 @@ export function ProductGalleryField({
               layout === "compact" ? "mt-0.5 text-[11px]" : "mt-1 text-xs",
             )}
           >
-            {PRODUCT_IMAGE_RECOMMENDED_HINT}. Puedes subir hasta {MAX_GALLERY_IMAGES} fotos.
+            {PRODUCT_IMAGE_RECOMMENDED_HINT}. Hasta {MAX_GALLERY_IMAGES} fotos.
+            La primera es la portada del catálogo.
           </p>
         </div>
 
@@ -389,11 +410,11 @@ export function ProductGalleryField({
         >
           {items.length > 0 ? (
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <li
                   key={item.clientId}
                   draggable={!isBusy}
-                  onDragStart={() => handleDragStart(item.clientId)}
+                  onDragStart={(event) => handleDragStart(event, item.clientId)}
                   onDragOver={(event) => handleDragOver(event, item.clientId)}
                   onDrop={(event) => handleDropReorder(event, item.clientId)}
                   onDragEnd={() => {
@@ -404,9 +425,37 @@ export function ProductGalleryField({
                     "group relative overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-950",
                     dragOverId === item.clientId && "ring-2 ring-teal-500",
                     draggingId === item.clientId && "opacity-60",
+                    item.isPrimary && "border-teal-300 ring-1 ring-teal-200 dark:border-teal-800 dark:ring-teal-900/50",
                   )}
                 >
-                  <div className="relative aspect-square">
+                  <div
+                    className={cn(
+                      "relative aspect-square",
+                      !item.isPrimary && !isBusy && "cursor-pointer",
+                    )}
+                    onClick={() => {
+                      if (!item.isPrimary && !isBusy) {
+                        setPrimary(item.clientId);
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (
+                        !item.isPrimary &&
+                        !isBusy &&
+                        (event.key === "Enter" || event.key === " ")
+                      ) {
+                        event.preventDefault();
+                        setPrimary(item.clientId);
+                      }
+                    }}
+                    role={!item.isPrimary ? "button" : undefined}
+                    tabIndex={!item.isPrimary && !isBusy ? 0 : undefined}
+                    aria-label={
+                      !item.isPrimary
+                        ? `Marcar foto ${index + 1} como principal`
+                        : undefined
+                    }
+                  >
                     <Image
                       src={item.previewUrl}
                       alt=""
@@ -415,37 +464,76 @@ export function ProductGalleryField({
                       className="object-cover"
                       unoptimized={item.previewUrl.startsWith("blob:")}
                     />
+                    <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-semibold text-white">
+                      {index + 1}
+                    </span>
                     {item.isPrimary ? (
-                      <span className="absolute left-2 top-2 rounded-full bg-teal-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                      <span className="absolute right-2 top-2 rounded-full bg-teal-600 px-2 py-0.5 text-[10px] font-semibold text-white">
                         Principal
                       </span>
                     ) : null}
                   </div>
 
-                  <div className="flex items-center justify-between gap-1 border-t border-zinc-100 px-2 py-1.5 dark:border-zinc-800">
-                    <span
-                      className="inline-flex h-7 w-7 items-center justify-center text-zinc-400"
-                      aria-hidden="true"
+                  <div className="flex items-center justify-between gap-1 border-t border-zinc-100 px-1.5 py-1 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      className="inline-flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-md text-zinc-400 active:cursor-grabbing"
+                      aria-label={`Arrastrar foto ${index + 1}`}
+                      onMouseDown={(event) => event.stopPropagation()}
                     >
                       <GripVertical className="h-4 w-4" />
-                    </span>
-                    <div className="flex items-center gap-1">
-                      {!item.isPrimary ? (
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() => setPrimary(item.clientId)}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-amber-50 hover:text-amber-600"
-                          aria-label="Marcar como principal"
-                        >
-                          <Star className="h-4 w-4" />
-                        </button>
-                      ) : null}
+                    </button>
+
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        type="button"
+                        disabled={isBusy || index === 0}
+                        onClick={() => moveItem(item.clientId, -1)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                        aria-label={`Subir foto ${index + 1}`}
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isBusy || index === items.length - 1}
+                        onClick={() => moveItem(item.clientId, 1)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                        aria-label={`Bajar foto ${index + 1}`}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isBusy || item.isPrimary}
+                        onClick={() => setPrimary(item.clientId)}
+                        className={cn(
+                          "inline-flex h-8 w-8 items-center justify-center rounded-md transition",
+                          item.isPrimary
+                            ? "text-amber-500"
+                            : "text-zinc-400 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-950/30",
+                        )}
+                        aria-label={
+                          item.isPrimary
+                            ? "Foto principal del catálogo"
+                            : "Marcar como principal y mover al inicio"
+                        }
+                        title={
+                          item.isPrimary
+                            ? "Foto principal"
+                            : "Marcar como principal"
+                        }
+                      >
+                        <Star
+                          className={cn("h-4 w-4", item.isPrimary && "fill-current")}
+                        />
+                      </button>
                       <button
                         type="button"
                         disabled={isBusy}
                         onClick={() => removeItem(item.clientId)}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-red-600"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
                         aria-label="Eliminar foto"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -550,7 +638,7 @@ export function ProductGalleryField({
 
         <p className="text-[11px] text-zinc-400">
           {PRODUCT_IMAGE_OPTIMIZE_HINT} {PRODUCT_IMAGE_CAMERA_HINT}
-          {mode === "edit" ? " Puedes reordenar, marcar principal o eliminar fotos." : ""}
+          Arrastra las fotos, usa las flechas o la estrella para definir el orden y la portada.
         </p>
       </div>
 
