@@ -7,6 +7,11 @@ import { CartProvider } from "@/components/catalog-transactional/CartProvider";
 import { PromotionProvider } from "@/components/catalog-transactional/PromotionProvider";
 import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
 import { CatalogTabBar } from "@/components/catalog-transactional/CatalogTabBar";
+import {
+  getCatalogRubroClass,
+  getCatalogThemeStyle,
+} from "@/lib/store-settings/catalog-theme";
+import { cn } from "@/lib/cn";
 
 interface CatalogLivePreviewProps {
   store: Store;
@@ -51,6 +56,11 @@ export function CatalogLivePreview({
     [exchangeRate, exchangeRateUpdatedAt],
   );
 
+  const themeStyle = useMemo(
+    () => getCatalogThemeStyle(settings.catalogDesign, store.rubro_tienda),
+    [settings.catalogDesign, store.rubro_tienda],
+  );
+
   return (
     <PromotionProvider value={{ guestBanner: null, autoApply: null }}>
       <CartProvider
@@ -59,7 +69,13 @@ export function CatalogLivePreview({
         userId={null}
         isCustomer={false}
       >
-        <div className="catalog-live-preview-root txn-catalog-root">
+        <div
+          className={cn(
+            "catalog-live-preview-root txn-catalog-root",
+            getCatalogRubroClass(store.rubro_tienda),
+          )}
+          style={themeStyle}
+        >
           <div className="catalog-live-preview-scroll">
             <TransactionalCatalog
               store={store}

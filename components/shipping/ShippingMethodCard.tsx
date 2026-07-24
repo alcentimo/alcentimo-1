@@ -75,7 +75,7 @@ export function ShippingMethodCard({
           {details ?? copy.description}
         </p>
         {copy.estimatedTime && (
-          <p className="mt-1.5 text-xs font-medium text-teal-700 dark:text-teal-400">
+          <p className="shipping-method-card-meta mt-1.5 text-xs font-medium">
             {copy.estimatedTime}
           </p>
         )}
@@ -83,7 +83,7 @@ export function ShippingMethodCard({
       {action && <div className="shrink-0 self-start">{action}</div>}
       {selectable && selected && (
         <span
-          className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-teal-600 ring-2 ring-teal-100 dark:ring-teal-900"
+          className="shipping-method-card-dot absolute right-3 top-3 h-2.5 w-2.5 rounded-full ring-2"
           aria-hidden="true"
         />
       )}

@@ -7,6 +7,8 @@ import { getCartAuthContext } from "@/lib/customers/get-cart-auth-context";
 import { getCatalogPromotionContext } from "@/lib/promotions/get-catalog-promotion";
 import { recordCatalogVisit } from "@/lib/analytics/track-catalog-visit";
 import { CatalogPwaHeadLinks } from "@/components/catalog-transactional/CatalogPwaHeadLinks";
+import { getPublicCatalogThemeContext } from "@/lib/catalog/get-public-catalog-theme";
+import { cn } from "@/lib/cn";
 import {
   getCatalogCanonicalUrl,
   getStoreCatalogManifestAbsoluteUrl,
@@ -104,9 +106,13 @@ export default async function TransactionalCatalogLayout({
     store?.pwa_icon_192_url ?? store?.pwa_icon_512_url ?? store?.logo_url ?? null;
   const origin = await getRequestOrigin();
   const manifestAbsoluteUrl = getStoreCatalogManifestAbsoluteUrl(storeSlug, origin);
+  const themeContext = await getPublicCatalogThemeContext(storeSlug);
 
   return (
-    <div className="txn-catalog-root">
+    <div
+      className={cn("txn-catalog-root", themeContext?.rubroClass)}
+      style={themeContext?.style}
+    >
       <CatalogPwaHeadLinks
         manifestAbsoluteUrl={manifestAbsoluteUrl}
         storeSlug={storeSlug}

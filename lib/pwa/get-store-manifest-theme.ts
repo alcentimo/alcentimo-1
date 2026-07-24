@@ -4,6 +4,7 @@ import {
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
+import { getDefaultPrimaryColorForRubro } from "@/lib/store-settings/rubro-palettes";
 import { CATALOG_THEME_PRESETS } from "@/lib/store-settings/catalog-theme-presets";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
 
@@ -34,7 +35,7 @@ export async function getStoreManifestTheme(store: Store): Promise<StoreManifest
     };
   } catch {
     return {
-      theme_color: "#0d9488",
+      theme_color: getDefaultPrimaryColorForRubro(null),
       background_color: "#ffffff",
     };
   }

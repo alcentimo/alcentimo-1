@@ -87,7 +87,7 @@ export function PaymentMethodCard({
       {action && <div className="shrink-0 self-center">{action}</div>}
       {!isSettings && selectable && selected && (
         <span
-          className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-teal-600 ring-2 ring-teal-100 dark:ring-teal-900"
+          className="shipping-method-card-dot absolute right-3 top-3 h-2.5 w-2.5 rounded-full ring-2"
           aria-hidden="true"
         />
       )}

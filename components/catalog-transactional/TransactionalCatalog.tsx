@@ -136,6 +136,10 @@ function TransactionalCatalogInner({
     store.rubro_tienda,
     "coleccionables",
   );
+  const isBeautyCatalog = storeUsesRubroProductModule(
+    store.rubro_tienda,
+    "salud-belleza",
+  );
 
   const locationAwareProducts = useMemo(
     () =>
@@ -232,6 +236,7 @@ function TransactionalCatalogInner({
         isFoodMenu && "txn-catalog--food-menu",
         isTechCatalog && "txn-catalog--tech",
         isCollectiblesCatalog && "txn-catalog--collectibles",
+        isBeautyCatalog && "txn-catalog--beauty",
         previewMode && "txn-catalog--preview",
         previewMode && referenceMode && "txn-catalog--reference-mode",
       )}
