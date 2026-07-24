@@ -123,17 +123,17 @@ function DashboardShell({
             />
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <PublicCatalogQuickLink
-              storeSlug={storeSlug}
-              customDomain={customDomain}
-              customDomainVerified={customDomainVerified}
-              variant="header"
-            />
             <DashboardPreferenceControls variant="compact" />
             <DashboardExchangeRateBadge
               rate={exchangeRate}
               updatedAt={exchangeRateUpdatedAt}
               stale={exchangeRateStale}
+            />
+            <PublicCatalogQuickLink
+              storeSlug={storeSlug}
+              customDomain={customDomain}
+              customDomainVerified={customDomainVerified}
+              variant="header"
             />
           </div>
         </header>

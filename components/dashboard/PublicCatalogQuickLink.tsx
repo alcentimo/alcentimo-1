@@ -68,19 +68,25 @@ export function PublicCatalogQuickLink({
         <button
           type="button"
           onClick={() => void handleCopyLink()}
-          title={copied ? "Enlace copiado" : "Copiar enlace del catálogo"}
-          aria-label={copied ? "Enlace copiado" : "Copiar enlace del catálogo"}
+          title={catalogUrl}
+          aria-label={copied ? "Enlace copiado" : "Copiar enlace de tienda"}
           className={cn(
-            "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors",
+            "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-sm font-semibold shadow-sm transition-colors sm:px-3",
             copied
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
-              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800",
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
+              : "border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800",
           )}
         >
           {copied ? (
-            <Check className="h-4 w-4" aria-hidden="true" />
+            <>
+              <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="hidden sm:inline">¡Copiado!</span>
+            </>
           ) : (
-            <Copy className="h-4 w-4" aria-hidden="true" />
+            <>
+              <Copy className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="hidden sm:inline">Copiar enlace de tienda</span>
+            </>
           )}
         </button>
 
@@ -91,10 +97,10 @@ export function PublicCatalogQuickLink({
           onClick={onNavigate}
           title="Ver mi catálogo"
           aria-label="Ver mi catálogo en una nueva pestaña"
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-teal-600/20 bg-teal-600 px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 dark:border-teal-500/30 dark:bg-teal-600 dark:hover:bg-teal-500"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-teal-600/20 bg-teal-600 px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 dark:border-teal-500/30 dark:bg-teal-600 dark:hover:bg-teal-500"
         >
           <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span className="hidden sm:inline">Ver catálogo</span>
+          <span className="hidden sm:inline">Ver mi catálogo</span>
           <span className="sm:hidden">Catálogo</span>
         </a>
       </div>
