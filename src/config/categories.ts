@@ -67,6 +67,13 @@ export const STORE_RUBRO_CONFIGS: StoreRubroConfig[] = [
       { slug: "audio", label: "Audio", campos: [] },
       { slug: "accesorios", label: "Accesorios", campos: [] },
       { slug: "repuestos", label: "Repuestos", campos: [] },
+      { slug: "procesadores", label: "Procesadores", campos: [] },
+      { slug: "tarjetas-madre", label: "Tarjetas madre", campos: [] },
+      { slug: "memorias-ram", label: "Memorias RAM", campos: [] },
+      { slug: "almacenamiento-pc", label: "Almacenamiento PC", campos: [] },
+      { slug: "tarjetas-graficas", label: "Tarjetas gráficas", campos: [] },
+      { slug: "fuentes-poder", label: "Fuentes de poder", campos: [] },
+      { slug: "gabinetes", label: "Gabinetes", campos: [] },
     ],
   },
   {

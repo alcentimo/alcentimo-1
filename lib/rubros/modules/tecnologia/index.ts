@@ -15,3 +15,16 @@ export {
   pickTechSpecValues,
   type TechSpecChip,
 } from "@/lib/rubros/modules/tecnologia/specs";
+
+export {
+  PC_BUILDER_SLOTS,
+  PC_BUILDER_SLOT_ORDER,
+  calculatePCBuilderTotalUsd,
+  filterProductsForPCBuilderSlot,
+  getPCBuilderSlotDefinition,
+  indexProductsByPCBuilderSlot,
+  isPCBuilderComplete,
+  resolvePCBuilderSlot,
+  type PCBuilderSelection,
+  type PCBuilderSlotId,
+} from "@/lib/rubros/modules/tecnologia/pc-builder";

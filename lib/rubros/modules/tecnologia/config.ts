@@ -33,6 +33,13 @@ export const TECH_SPECS_BY_CATEGORY: Record<string, readonly string[]> = {
   audio: ["Compatibilidad", "Color"],
   accesorios: ["Compatibilidad", "Color"],
   repuestos: ["Compatibilidad", "Modelo compatible", "Marca"],
+  procesadores: ["Socket", "Núcleos", "Frecuencia", "TDP"],
+  "tarjetas-madre": ["Socket", "Chipset", "Factor de forma", "Memoria RAM"],
+  "memorias-ram": ["Capacidad", "Tipo", "Frecuencia", "Compatibilidad"],
+  "almacenamiento-pc": ["Capacidad", "Tipo", "Interfaz", "Compatibilidad"],
+  "tarjetas-graficas": ["VRAM", "Interfaz", "TDP", "Compatibilidad"],
+  "fuentes-poder": ["Potencia", "Certificación", "Modular", "Compatibilidad"],
+  gabinetes: ["Factor de forma", "Color", "Compatibilidad"],
 };
 
 export function getTechSpecLabels(categorySlug: string | null | undefined): string[] {
