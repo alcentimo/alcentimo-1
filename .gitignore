@@ -58,6 +58,10 @@ Thumbs.db
 **/public/workbox-*.js.map
 **/public/worker-*.js
 **/public/worker-*.js.map
+**/public/fallback-*.js
+
+# Supabase CLI local state
+supabase/.temp/
 
 .vercel
 .env.local
