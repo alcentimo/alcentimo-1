@@ -26,7 +26,7 @@ export default async function AsistentePage() {
     <PageContainer as="div" className="py-6 sm:py-8">
       <DashboardPageHeader
         title="Asistente IA"
-        description={`Consultas de inventario, ventas y operaciones para ${store.name}. Los datos se actualizan en cada mensaje.`}
+        description={`Consultor de negocios con datos en tiempo real: inventario, ventas, clientes, promociones y mensajes de WhatsApp.`}
         storeSlug={store.slug}
       />
 

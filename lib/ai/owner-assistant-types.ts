@@ -21,13 +21,19 @@ export interface OwnerAssistantInventoryItem {
   priceUsd: number | null;
 }
 
+export interface OwnerAssistantSlowMovingItem extends OwnerAssistantInventoryItem {
+  unitsSoldThisMonth: number;
+}
+
 export interface OwnerAssistantOrderSummary {
   id: string;
   customerName: string;
+  customerPhone: string | null;
   totalUsd: number;
   status: string;
   createdAt: string;
   itemCount: number;
+  hasPaymentProof: boolean;
 }
 
 export interface OwnerAssistantSaleSummary {
@@ -35,6 +41,23 @@ export interface OwnerAssistantSaleSummary {
   amountUsd: number;
   quantity: number;
   createdAt: string;
+}
+
+export interface OwnerAssistantCustomerSummary {
+  name: string | null;
+  phone: string | null;
+  orderCount: number;
+  totalSpentUsd: number;
+  lastOrderAt: string | null;
+}
+
+export interface OwnerAssistantPendingAccount {
+  customerName: string;
+  customerPhone: string | null;
+  pendingOrders: number;
+  pendingTotalUsd: number;
+  oldestPendingAt: string;
+  statuses: string[];
 }
 
 export interface OwnerAssistantContext {
@@ -53,6 +76,8 @@ export interface OwnerAssistantContext {
     criticalStockCount: number;
     outOfStock: OwnerAssistantInventoryItem[];
     lowStock: OwnerAssistantInventoryItem[];
+    slowMoving: OwnerAssistantSlowMovingItem[];
+    excessStock: OwnerAssistantSlowMovingItem[];
   };
   sales: {
     todayUsd: number;
@@ -61,5 +86,16 @@ export interface OwnerAssistantContext {
     recentOrders: OwnerAssistantOrderSummary[];
     recentManualSales: OwnerAssistantSaleSummary[];
     topProducts: Array<{ name: string; unitsSold: number }>;
+  };
+  customers: {
+    registeredCount: number;
+    topCustomers: OwnerAssistantCustomerSummary[];
+    pendingAccounts: OwnerAssistantPendingAccount[];
+    ordersAwaitingPayment: OwnerAssistantOrderSummary[];
+  };
+  marketing: {
+    slowMovingCount: number;
+    excessStockCount: number;
+    comboOpportunityCategories: string[];
   };
 }

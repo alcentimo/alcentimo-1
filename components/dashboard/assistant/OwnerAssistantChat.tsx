@@ -12,9 +12,11 @@ interface OwnerAssistantChatProps {
 
 const QUICK_PROMPTS = [
   "¿Qué productos tienen stock bajo?",
-  "¿Cuánto vendimos hoy?",
-  "¿Cuántas órdenes pendientes hay?",
-  "¿Cuál es la tasa BCV actual?",
+  "¿Qué productos se mueven lento?",
+  "¿Quiénes son mis clientes frecuentes?",
+  "¿Hay cuentas o pagos pendientes?",
+  "Redacta un mensaje de WhatsApp para confirmar un pedido",
+  "Sugiere una promoción para productos con exceso de stock",
 ];
 
 function createMessage(
@@ -32,7 +34,7 @@ export function OwnerAssistantChat({
   const [messages, setMessages] = useState<OwnerAssistantMessage[]>(() => [
     createMessage(
       "assistant",
-      `Hola. Soy tu asistente de inventario y ventas para ${storeName}. Pregúntame sobre stock, pedidos, ventas del día o la tasa BCV.`,
+      `Hola. Soy tu consultor de negocios para ${storeName}. Puedo ayudarte con inventario, ventas, clientes, promociones y redactar mensajes de WhatsApp listos para enviar.`,
     ),
   ]);
   const [loading, setLoading] = useState(false);
