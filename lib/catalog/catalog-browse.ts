@@ -126,14 +126,19 @@ export function browseCatalogProducts(
   };
 }
 
+export function hasActiveCatalogContentFilters(
+  searchQuery: string,
+  categorySlug: string | null,
+): boolean {
+  return (
+    normalizeCatalogSearchText(searchQuery).length > 0 || categorySlug != null
+  );
+}
+
 export function hasActiveCatalogBrowseFilters(
   searchQuery: string,
   categorySlug: string | null,
   sortKey: CatalogSortKey,
 ): boolean {
-  return (
-    normalizeCatalogSearchText(searchQuery).length > 0 ||
-    categorySlug != null ||
-    sortKey !== "featured"
-  );
+  return hasActiveCatalogContentFilters(searchQuery, categorySlug) || sortKey !== "featured";
 }

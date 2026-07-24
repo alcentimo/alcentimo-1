@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import Image from "next/image";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
@@ -20,6 +20,7 @@ import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { CatalogCartHost } from "@/components/catalog-transactional/CatalogCartHost";
 import { CatalogBrowseToolbar } from "@/components/catalog-transactional/CatalogBrowseToolbar";
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
+import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
 import { useCatalogBrowse } from "@/components/catalog-transactional/useCatalogBrowse";
 import {
   CatalogFulfillmentProvider,
@@ -174,14 +175,12 @@ function TransactionalCatalogInner({
 
   const storeInitials = getStoreInitials(store.name);
 
-  function renderProductCard(product: CatalogListItem, index: number) {
-    return (
+  const renderProductCard = useCallback(
+    (product: CatalogListItem, index: number) => (
       <div
         key={product.product_id}
         className={
-          referenceMode && previewMode
-            ? "catalog-preview-product-enter"
-            : undefined
+          referenceMode && previewMode ? "catalog-preview-product-enter" : undefined
         }
         style={
           referenceMode && previewMode
@@ -199,8 +198,17 @@ function TransactionalCatalogInner({
           onAddToCart={referenceMode ? undefined : addItem}
         />
       </div>
-    );
-  }
+    ),
+    [
+      addItem,
+      catalogDesign.visibility,
+      liveExchangeRate,
+      previewMode,
+      referenceMode,
+      showBsConversion,
+      store.rubro_tienda,
+    ],
+  );
 
   const gridClassName =
     catalogDesign.layout === "list" ? "txn-product-list" : "txn-product-grid";
@@ -291,7 +299,7 @@ function TransactionalCatalogInner({
               Vuelve pronto para ver el catálogo actualizado.
             </p>
           </div>
-        ) : browse.totalCount === 0 ? (
+        ) : browse.totalCount === 0 && !browse.loadingFilter ? (
           <div className="txn-catalog-empty">
             <p className="text-sm font-medium text-neutral-800">
               No encontramos productos con esos filtros
@@ -302,7 +310,19 @@ function TransactionalCatalogInner({
           </div>
         ) : useFlatBrowseLayout ? (
           <>
-            <div className={gridClassName}>
+            <CatalogBrowseStatus
+              loading={browse.loadingFilter}
+              error={
+                browse.fetchErrorSource === "filter" ? browse.fetchError : null
+              }
+              onRetry={browse.retryFetch}
+            />
+            <div
+              className={cn(
+                gridClassName,
+                browse.loadingFilter && "catalog-product-grid-updating",
+              )}
+            >
               {browse.visibleProducts.map((product, index) =>
                 renderProductCard(product, index),
               )}
@@ -322,8 +342,11 @@ function TransactionalCatalogInner({
               totalCount={browse.totalCount}
               hasMore={browse.hasMore}
               loading={browse.loadingMore}
-              error={browse.fetchError}
+              error={
+                browse.fetchErrorSource === "more" ? browse.fetchError : null
+              }
               onLoadMore={browse.loadMore}
+              onRetry={browse.retryFetch}
             />
           </>
         ) : (

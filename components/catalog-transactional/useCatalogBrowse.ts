@@ -7,6 +7,7 @@ import {
   CATALOG_INITIAL_FETCH,
   CATALOG_PAGE_SIZE,
   hasActiveCatalogBrowseFilters,
+  hasActiveCatalogContentFilters,
   type CatalogSortKey,
 } from "@/lib/catalog/catalog-browse";
 import {
@@ -42,12 +43,29 @@ function mergeCatalogProducts(
   return merged;
 }
 
+function buildInitialProductsSignature(products: CatalogListItem[]): string {
+  return products
+    .map(
+      (product) =>
+        `${product.product_id}:${product.available_stock}:${product.updated_at ?? product.created_at}`,
+    )
+    .join("|");
+}
+
 export function useCatalogBrowse(
   initialProducts: CatalogListItem[],
   options?: UseCatalogBrowseOptions,
 ) {
   const pageSize = options?.pageSize ?? CATALOG_PAGE_SIZE;
   const serverPagination = options?.serverPagination;
+  const initialProductsRef = useRef(initialProducts);
+  initialProductsRef.current = initialProducts;
+
+  const initialProductsSignature = useMemo(
+    () => buildInitialProductsSignature(initialProducts),
+    [initialProducts],
+  );
+
   const [allProducts, setAllProducts] = useState(initialProducts);
   const [catalogTotalCount, setCatalogTotalCount] = useState(
     serverPagination?.initialTotalCount ?? initialProducts.length,
@@ -59,18 +77,24 @@ export function useCatalogBrowse(
   const [sortKey, setSortKey] = useState<CatalogSortKey>("featured");
   const [visibleCount, setVisibleCount] = useState(pageSize);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingFilter, setLoadingFilter] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [fetchErrorSource, setFetchErrorSource] = useState<"filter" | "more" | null>(
+    null,
+  );
   const fetchRequestId = useRef(0);
+  const [filterRetryNonce, setFilterRetryNonce] = useState(0);
 
   useEffect(() => {
-    setAllProducts(initialProducts);
+    setAllProducts(initialProductsRef.current);
     setCatalogTotalCount(
-      serverPagination?.initialTotalCount ?? initialProducts.length,
+      serverPagination?.initialTotalCount ?? initialProductsRef.current.length,
     );
     setVisibleCount(pageSize);
     setFetchError(null);
+    setFetchErrorSource(null);
   }, [
-    initialProducts,
+    initialProductsSignature,
     pageSize,
     serverPagination?.initialTotalCount,
     serverPagination?.storeSlug,
@@ -84,26 +108,20 @@ export function useCatalogBrowse(
     setVisibleCount(pageSize);
   }, [searchQuery, categorySlug, sortKey, pageSize]);
 
-  const hasServerFilters = hasActiveCatalogBrowseFilters(
+  const hasServerContentFilters = hasActiveCatalogContentFilters(
     searchQuery,
     categorySlug,
-    sortKey,
   );
 
-  useEffect(() => {
-    if (!serverPagination) return;
-
-    if (!hasServerFilters) {
-      setAllProducts(initialProducts);
-      setCatalogTotalCount(serverPagination.initialTotalCount);
-      return;
-    }
+  const runFilterFetch = useCallback(async () => {
+    if (!serverPagination || !hasServerContentFilters) return;
 
     const requestId = ++fetchRequestId.current;
-    const timer = window.setTimeout(async () => {
-      setLoadingMore(true);
-      setFetchError(null);
+    setLoadingFilter(true);
+    setFetchError(null);
+    setFetchErrorSource(null);
 
+    try {
       const result: FetchPublicCatalogProductsResult =
         await fetchPublicCatalogProducts({
           storeSlug: serverPagination.storeSlug,
@@ -115,22 +133,41 @@ export function useCatalogBrowse(
 
       if (requestId !== fetchRequestId.current) return;
 
-      setLoadingMore(false);
-
       if (result.error) {
         setFetchError(result.error);
+        setFetchErrorSource("filter");
         return;
       }
 
       setAllProducts(result.products);
       setCatalogTotalCount(result.totalCount);
+    } finally {
+      if (requestId === fetchRequestId.current) {
+        setLoadingFilter(false);
+      }
+    }
+  }, [categorySlug, hasServerContentFilters, searchQuery, serverPagination]);
+
+  useEffect(() => {
+    if (!serverPagination) return;
+
+    if (!hasServerContentFilters) {
+      setAllProducts(initialProductsRef.current);
+      setCatalogTotalCount(serverPagination.initialTotalCount);
+      setLoadingFilter(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void runFilterFetch();
     }, 300);
 
     return () => window.clearTimeout(timer);
   }, [
     categorySlug,
-    hasServerFilters,
-    initialProducts,
+    filterRetryNonce,
+    hasServerContentFilters,
+    runFilterFetch,
     searchQuery,
     serverPagination,
   ]);
@@ -138,15 +175,17 @@ export function useCatalogBrowse(
   const browseResult = useMemo(
     () =>
       browseCatalogProducts(allProducts, {
-        searchQuery: serverPagination && hasServerFilters ? "" : searchQuery,
-        categorySlug: serverPagination && hasServerFilters ? null : categorySlug,
+        searchQuery:
+          serverPagination && hasServerContentFilters ? "" : searchQuery,
+        categorySlug:
+          serverPagination && hasServerContentFilters ? null : categorySlug,
         sortKey,
         visibleCount,
       }),
     [
       allProducts,
       categorySlug,
-      hasServerFilters,
+      hasServerContentFilters,
       searchQuery,
       serverPagination,
       sortKey,
@@ -161,33 +200,38 @@ export function useCatalogBrowse(
   );
 
   const fetchMoreFromServer = useCallback(async () => {
-    if (!serverPagination || loadingMore) return false;
+    if (!serverPagination || loadingMore || loadingFilter) return false;
 
     setLoadingMore(true);
     setFetchError(null);
+    setFetchErrorSource(null);
 
-    const result = await fetchPublicCatalogProducts({
-      storeSlug: serverPagination.storeSlug,
-      offset: allProducts.length,
-      limit: pageSize,
-      categorySlug: hasServerFilters ? categorySlug : undefined,
-      search: hasServerFilters ? searchQuery : undefined,
-    });
+    try {
+      const result = await fetchPublicCatalogProducts({
+        storeSlug: serverPagination.storeSlug,
+        offset: allProducts.length,
+        limit: pageSize,
+        categorySlug: hasServerContentFilters ? categorySlug : undefined,
+        search: hasServerContentFilters ? searchQuery : undefined,
+      });
 
-    setLoadingMore(false);
+      if (result.error) {
+        setFetchError(result.error);
+        setFetchErrorSource("more");
+        return false;
+      }
 
-    if (result.error) {
-      setFetchError(result.error);
-      return false;
+      setAllProducts((current) => mergeCatalogProducts(current, result.products));
+      setCatalogTotalCount(result.totalCount);
+      return true;
+    } finally {
+      setLoadingMore(false);
     }
-
-    setAllProducts((current) => mergeCatalogProducts(current, result.products));
-    setCatalogTotalCount(result.totalCount);
-    return true;
   }, [
     allProducts.length,
     categorySlug,
-    hasServerFilters,
+    hasServerContentFilters,
+    loadingFilter,
     loadingMore,
     pageSize,
     searchQuery,
@@ -215,10 +259,21 @@ export function useCatalogBrowse(
     visibleCount,
   ]);
 
+  const retryFetch = useCallback(() => {
+    if (fetchErrorSource === "more") {
+      void fetchMoreFromServer();
+      return;
+    }
+
+    setFilterRetryNonce((value) => value + 1);
+  }, [fetchErrorSource, fetchMoreFromServer]);
+
   function clearFilters() {
     setSearchQuery("");
     setCategorySlug(null);
     setSortKey("featured");
+    setFetchError(null);
+    setFetchErrorSource(null);
   }
 
   const serverHasMore =
@@ -236,7 +291,10 @@ export function useCatalogBrowse(
     clearFilters,
     hasActiveFilters,
     loadingMore,
+    loadingFilter,
     fetchError,
+    fetchErrorSource,
+    retryFetch,
     catalogTotalCount,
     ...browseResult,
     hasMore: browseResult.hasMore || serverHasMore,

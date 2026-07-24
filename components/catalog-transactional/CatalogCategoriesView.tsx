@@ -18,6 +18,7 @@ import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { CatalogCartHost } from "@/components/catalog-transactional/CatalogCartHost";
 import { CatalogBrowseToolbar } from "@/components/catalog-transactional/CatalogBrowseToolbar";
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
+import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
 import { useCatalogBrowse } from "@/components/catalog-transactional/useCatalogBrowse";
 import {
   CatalogFulfillmentProvider,
@@ -168,7 +169,7 @@ function CatalogCategoriesViewInner({
               Vuelve pronto para ver el catálogo actualizado.
             </p>
           </div>
-        ) : browse.totalCount === 0 ? (
+        ) : browse.totalCount === 0 && !browse.loadingFilter ? (
           <div className="txn-catalog-empty">
             <p className="text-sm font-medium text-neutral-800">
               No hay productos en esta categoría
@@ -179,7 +180,19 @@ function CatalogCategoriesViewInner({
           </div>
         ) : (
           <>
-            <div className={gridClassName}>
+            <CatalogBrowseStatus
+              loading={browse.loadingFilter}
+              error={
+                browse.fetchErrorSource === "filter" ? browse.fetchError : null
+              }
+              onRetry={browse.retryFetch}
+            />
+            <div
+              className={cn(
+                gridClassName,
+                browse.loadingFilter && "catalog-product-grid-updating",
+              )}
+            >
               {browse.visibleProducts.map((product) => (
                 <ProductCard
                   key={product.product_id}
@@ -197,8 +210,11 @@ function CatalogCategoriesViewInner({
               totalCount={browse.totalCount}
               hasMore={browse.hasMore}
               loading={browse.loadingMore}
-              error={browse.fetchError}
+              error={
+                browse.fetchErrorSource === "more" ? browse.fetchError : null
+              }
               onLoadMore={browse.loadMore}
+              onRetry={browse.retryFetch}
             />
           </>
         )}

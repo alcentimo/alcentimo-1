@@ -10,6 +10,7 @@ interface CatalogBrowseLoadMoreProps {
   loading?: boolean;
   error?: string | null;
   onLoadMore: () => void;
+  onRetry?: () => void;
 }
 
 export function CatalogBrowseLoadMore({
@@ -19,6 +20,7 @@ export function CatalogBrowseLoadMore({
   loading = false,
   error = null,
   onLoadMore,
+  onRetry,
 }: CatalogBrowseLoadMoreProps) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -49,9 +51,20 @@ export function CatalogBrowseLoadMore({
         Mostrando {Math.min(visibleCount, totalCount)} de {totalCount}
       </p>
       {error ? (
-        <p className="catalog-browse-footer-error" role="alert">
-          {error}
-        </p>
+        <div className="catalog-browse-footer-error-wrap">
+          <p className="catalog-browse-footer-error" role="alert">
+            {error}
+          </p>
+          {onRetry ? (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="catalog-browse-footer-retry"
+            >
+              Reintentar
+            </button>
+          ) : null}
+        </div>
       ) : null}
       {hasMore ? (
         <>
