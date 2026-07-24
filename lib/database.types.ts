@@ -174,7 +174,7 @@ export interface TasasCambio {
 export interface TasasCambioSyncLog {
   id: string;
   sync_date: string;
-  slot: "midnight" | "retry" | "manual";
+  slot: "midnight" | "morning" | "retry" | "manual";
   status: "success" | "failure";
   rate: number | null;
   error_message: string | null;

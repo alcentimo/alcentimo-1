@@ -1,11 +1,13 @@
 project_id = "pboxqwrogkwxkrjvbsqo"
 
-# Manual / pruebas: GET/POST con ?slot=midnight|retry y Bearer CRON_SECRET
+# Manual / pruebas: GET/POST con ?slot=midnight|morning|retry y Bearer CRON_SECRET
 [functions.sync-bcv]
 verify_jwt = false
 
 # Cron: configurar en Supabase Dashboard → Integrations → Cron, o Vercel (ver vercel.json).
 [functions.sync-bcv-midnight]
+
+[functions.sync-bcv-morning]
 verify_jwt = false
 
 [functions.sync-bcv-retry]

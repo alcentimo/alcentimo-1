@@ -3,7 +3,7 @@ import { getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
 import { syncBcvTasaToDatabase } from "@/lib/exchange-rate/sync-bcv-tasa";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 
-export type BcvSyncSlot = "midnight" | "retry" | "manual";
+export type BcvSyncSlot = "midnight" | "morning" | "retry" | "manual";
 
 export type BcvSyncRunAction =
   | "success"
@@ -22,6 +22,12 @@ export interface BcvSyncRunResult {
 }
 
 const BCV_ALERT_TYPE = "bcv_sync_failure";
+
+const SLOT_SCHEDULE_LABEL: Record<Exclude<BcvSyncSlot, "manual">, string> = {
+  midnight: "01:00 America/Caracas",
+  morning: "06:00 America/Caracas",
+  retry: "12:00 America/Caracas",
+};
 
 async function logSyncAttempt(
   admin: SupabaseClient,
@@ -96,7 +102,7 @@ async function createBcvFailureAlert(
 
   const detail =
     errorMessage ??
-    "La API BCV no devolvió una tasa válida tras el reintento de las 06:00 (America/Caracas).";
+    "La API BCV no devolvió una tasa válida tras el reintento de las 12:00 (America/Caracas).";
 
   const { error } = await admin.from("platform_alerts").insert({
     alert_type: BCV_ALERT_TYPE,
@@ -111,7 +117,7 @@ async function createBcvFailureAlert(
   }
 }
 
-/** Ejecuta un intento de sincronización según la ventana (01:00 o reintento 06:00 VE). */
+/** Ejecuta un intento de sincronización (01:00, 06:00 o reintento 12:00 VE). */
 export async function runBcvSyncAttempt(
   admin: SupabaseClient,
   slot: BcvSyncSlot,
@@ -120,6 +126,8 @@ export async function runBcvSyncAttempt(
 
   logBcvSync("attempt_start", { slot, syncDate });
 
+  // Solo el reintento de mediodía se omite si ya hubo éxito hoy.
+  // 01:00 y 06:00 siempre consultan la API para refrescar la tasa.
   if (slot === "retry" && (await hasSuccessfulSyncToday(admin, syncDate))) {
     logBcvSync("attempt_skipped", { slot, syncDate, reason: "already_synced_today" });
     return {
@@ -143,16 +151,14 @@ export async function runBcvSyncAttempt(
   if (result.success) {
     await resolveBcvAlerts(admin, syncDate);
 
-    // Trazabilidad explícita del cron de las 01:00 (America/Caracas).
-    if (slot === "midnight") {
-      logBcvSync("early_morning_sync_confirmed", {
+    if (slot === "midnight" || slot === "morning") {
+      logBcvSync("scheduled_sync_confirmed", {
         slot,
         syncDate,
         rate: result.rate,
         updatedAt: result.updatedAt,
-        schedule: "01:00 America/Caracas",
-        message:
-          "Sincronización BCV de las 01:00 completada con éxito y registrada en tasas_cambio_sync_logs.",
+        schedule: SLOT_SCHEDULE_LABEL[slot],
+        message: `Sincronización BCV de las ${SLOT_SCHEDULE_LABEL[slot]} completada con éxito.`,
       });
     }
 
@@ -172,7 +178,7 @@ export async function runBcvSyncAttempt(
     };
   }
 
-  if (slot === "midnight") {
+  if (slot === "midnight" || slot === "morning") {
     logBcvSync(
       "attempt_failed_awaiting_retry",
       {
@@ -180,7 +186,9 @@ export async function runBcvSyncAttempt(
         syncDate,
         error: result.error,
         message:
-          "Falló la sync de las 01:00; el reintento de las 06:00 intentará de nuevo.",
+          slot === "midnight"
+            ? "Falló la sync de las 01:00; el intento de las 06:00 refrescará la tasa."
+            : "Falló la sync de las 06:00; el reintento de las 12:00 intentará de nuevo.",
       },
       "warn",
     );

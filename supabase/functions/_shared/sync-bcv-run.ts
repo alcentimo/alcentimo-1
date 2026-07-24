@@ -2,7 +2,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 import { getVenezuelaSyncDate } from "./sync-date.ts";
 import { syncBcvTasaToDatabase } from "./sync-bcv-tasa.ts";
 
-export type BcvSyncSlot = "midnight" | "retry";
+export type BcvSyncSlot = "midnight" | "morning" | "retry";
 
 export type BcvSyncRunAction =
   | "success"
@@ -94,7 +94,7 @@ async function createBcvFailureAlert(
   if (existing?.id) return;
 
   const detail = errorMessage ??
-    "La API BCV no devolvió una tasa válida tras el reintento de las 06:00.";
+    "La API BCV no devolvió una tasa válida tras el reintento de las 12:00.";
 
   const { error } = await admin.from("platform_alerts").insert({
     alert_type: BCV_ALERT_TYPE,
@@ -115,6 +115,7 @@ export async function runBcvSyncAttempt(
 ): Promise<BcvSyncRunResult> {
   const syncDate = getVenezuelaSyncDate();
 
+  // Solo el reintento de mediodía se omite si ya hubo éxito hoy.
   if (slot === "retry" && (await hasSuccessfulSyncToday(admin, syncDate))) {
     return {
       success: true,
@@ -136,16 +137,19 @@ export async function runBcvSyncAttempt(
 
   if (result.success) {
     await resolveBcvAlerts(admin, syncDate);
-    if (slot === "midnight") {
+    if (slot === "midnight" || slot === "morning") {
       console.log(
         JSON.stringify({
-          event: "early_morning_sync_confirmed",
+          event: "scheduled_sync_confirmed",
           slot,
           syncDate,
           rate: result.rate,
-          schedule: "01:00 America/Caracas",
-          message:
-            "Sincronización BCV de las 01:00 completada con éxito y registrada en tasas_cambio_sync_logs.",
+          schedule: slot === "midnight"
+            ? "01:00 America/Caracas"
+            : "06:00 America/Caracas",
+          message: `Sincronización BCV de las ${
+            slot === "midnight" ? "01:00" : "06:00"
+          } completada con éxito.`,
         }),
       );
     }
@@ -159,7 +163,7 @@ export async function runBcvSyncAttempt(
     };
   }
 
-  if (slot === "midnight") {
+  if (slot === "midnight" || slot === "morning") {
     return {
       success: false,
       action: "awaiting_retry",

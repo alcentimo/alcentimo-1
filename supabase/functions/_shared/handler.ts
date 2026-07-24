@@ -25,7 +25,9 @@ function parseSyncSlot(request: Request, forcedSlot?: BcvSyncSlot): BcvSyncSlot 
   if (forcedSlot) return forcedSlot;
 
   const slot = new URL(request.url).searchParams.get("slot");
-  return slot === "retry" ? "retry" : "midnight";
+  if (slot === "morning") return "morning";
+  if (slot === "retry") return "retry";
+  return "midnight";
 }
 
 function createAdminClient() {

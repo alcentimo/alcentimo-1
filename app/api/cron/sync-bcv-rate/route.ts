@@ -13,7 +13,15 @@ export const maxDuration = 30;
 
 function parseSyncSlot(request: Request): BcvSyncSlot {
   const slot = new URL(request.url).searchParams.get("slot");
-  return slot === "retry" ? "retry" : "midnight";
+  if (slot === "morning") return "morning";
+  if (slot === "retry") return "retry";
+  return "midnight";
+}
+
+function scheduleNoteForSlot(slot: BcvSyncSlot): string {
+  if (slot === "morning") return "06:00 America/Caracas (UTC 10:00)";
+  if (slot === "retry") return "12:00 America/Caracas (UTC 16:00)";
+  return "01:00 America/Caracas (UTC 05:00)";
 }
 
 async function handleSync(request: Request) {
@@ -44,10 +52,7 @@ async function handleSync(request: Request) {
     slot,
     source: auth.source ?? "unknown",
     isVercelCron: request.headers.get("x-vercel-cron") === "1",
-    scheduleNote:
-      slot === "midnight"
-        ? "01:00 America/Caracas (UTC 05:00)"
-        : "06:00 America/Caracas (UTC 10:00)",
+    scheduleNote: scheduleNoteForSlot(slot),
   });
 
   let admin;
