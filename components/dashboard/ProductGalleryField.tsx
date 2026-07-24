@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   Camera,
   GripVertical,
@@ -22,16 +22,12 @@ import {
   PRODUCT_IMAGE_FILE_ACCEPT,
   revokeProductImagePreview,
 } from "@/lib/product-image-picker";
-import type { ProductEditImage } from "@/lib/products/product-gallery-types";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  isCameraApiSupported,
+  isMobileCameraDevice,
+} from "@/lib/product-camera";
+import type { ProductEditImage } from "@/lib/products/product-gallery-types";
+import { ProductCameraCaptureDialog } from "@/components/dashboard/ProductCameraCaptureDialog";
 import { cn } from "@/lib/cn";
 
 const MAX_GALLERY_IMAGES = 10;
@@ -61,11 +57,6 @@ interface ProductGalleryFieldProps {
   onError?: (message: string) => void;
   onBusyChange?: (busy: boolean) => void;
   onReadyChange?: (ready: boolean) => void;
-}
-
-function isCoarsePointerDevice(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(pointer: coarse)").matches;
 }
 
 function isImageFile(file: File): boolean {
@@ -132,6 +123,9 @@ export function ProductGalleryField({
   onBusyChange,
   onReadyChange,
 }: ProductGalleryFieldProps) {
+  const reactId = useId();
+  const galleryInputId = `${id}-gallery-${reactId}`;
+  const cameraInputId = `${id}-camera-${reactId}`;
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const itemsRef = useRef<GalleryFieldItem[]>([]);
@@ -142,7 +136,8 @@ export function ProductGalleryField({
   );
   const [removedDbIds, setRemovedDbIds] = useState<string[]>([]);
   const [processingCount, setProcessingCount] = useState(0);
-  const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
+  const [fieldError, setFieldError] = useState<string | null>(null);
+  const [cameraDialogOpen, setCameraDialogOpen] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
@@ -151,6 +146,19 @@ export function ProductGalleryField({
 
   const isBusy = processingCount > 0 || disabled;
   const canAddMore = items.length < MAX_GALLERY_IMAGES;
+  const pickerDisabled = isBusy || !canAddMore;
+
+  const reportError = useCallback(
+    (message: string) => {
+      setFieldError(message);
+      onError?.(message);
+    },
+    [onError],
+  );
+
+  const clearError = useCallback(() => {
+    setFieldError(null);
+  }, []);
 
   const emitChange = useCallback(
     (nextItems: GalleryFieldItem[], nextRemoved = removedDbIdsRef.current) => {
@@ -179,100 +187,104 @@ export function ProductGalleryField({
     };
   }, []);
 
-  const triggerFileInput = useCallback(
-    (input: HTMLInputElement | null) => {
-      if (!input || isBusy) return;
-      input.value = "";
-      input.click();
+  const processFiles = useCallback(
+    async (fileList: FileList | File[]) => {
+      clearError();
+
+      const files = Array.from(fileList).filter(isImageFile);
+      if (files.length === 0) {
+        reportError("Selecciona archivos de imagen válidos (JPG, PNG o WebP).");
+        return;
+      }
+
+      const availableSlots = MAX_GALLERY_IMAGES - itemsRef.current.length;
+      if (availableSlots <= 0) {
+        reportError(`Máximo ${MAX_GALLERY_IMAGES} fotos por producto.`);
+        return;
+      }
+
+      const batch = files.slice(0, availableSlots);
+      if (batch.length < files.length) {
+        reportError(
+          `Solo se agregaron ${batch.length} foto(s). Máximo ${MAX_GALLERY_IMAGES} por producto.`,
+        );
+      }
+
+      setProcessingCount((count) => count + batch.length);
+
+      const nextItems = [...itemsRef.current];
+      let successCount = 0;
+
+      for (const file of batch) {
+        try {
+          const result = await autoCropAndCompressProductImage(file);
+
+          if (!result.ok) {
+            reportError(result.error);
+            continue;
+          }
+
+          nextItems.push({
+            clientId: createClientId(),
+            previewUrl: result.previewUrl,
+            file: result.file,
+            isPrimary: nextItems.length === 0,
+            sortOrder: nextItems.length,
+          });
+          successCount += 1;
+        } catch (error) {
+          reportError(
+            error instanceof Error
+              ? error.message
+              : "No se pudo procesar una de las fotos.",
+          );
+        } finally {
+          setProcessingCount((count) => Math.max(0, count - 1));
+        }
+      }
+
+      if (successCount > 0) {
+        clearError();
+        emitChange(nextItems);
+      }
     },
-    [isBusy],
+    [clearError, emitChange, reportError],
   );
 
-  const openGalleryPicker = useCallback(() => {
-    triggerFileInput(galleryInputRef.current);
-    setSourcePickerOpen(false);
-  }, [triggerFileInput]);
-
-  const openCameraPicker = useCallback(() => {
-    triggerFileInput(cameraInputRef.current);
-    setSourcePickerOpen(false);
-  }, [triggerFileInput]);
-
-  const handleAddPhotosClick = useCallback(() => {
-    if (isBusy || !canAddMore) return;
-    if (isCoarsePointerDevice()) {
-      setSourcePickerOpen(true);
-      return;
-    }
-    triggerFileInput(galleryInputRef.current);
-  }, [canAddMore, isBusy, triggerFileInput]);
-
-  async function processFiles(fileList: FileList | File[]) {
-    const files = Array.from(fileList).filter(isImageFile);
-    if (files.length === 0) {
-      onError?.("Selecciona archivos de imagen válidos (JPG, PNG o WebP).");
-      return;
-    }
-
-    const availableSlots = MAX_GALLERY_IMAGES - itemsRef.current.length;
-    if (availableSlots <= 0) {
-      onError?.(`Máximo ${MAX_GALLERY_IMAGES} fotos por producto.`);
-      return;
-    }
-
-    const batch = files.slice(0, availableSlots);
-    if (batch.length < files.length) {
-      onError?.(`Solo se agregaron ${batch.length} foto(s). Máximo ${MAX_GALLERY_IMAGES} por producto.`);
-    }
-
-    setProcessingCount((count) => count + batch.length);
-
-    const nextItems = [...itemsRef.current];
-    let successCount = 0;
-
-    for (const file of batch) {
-      try {
-        const result = await autoCropAndCompressProductImage(file);
-
-        if (!result.ok) {
-          onError?.(result.error);
-          continue;
-        }
-
-        nextItems.push({
-          clientId: createClientId(),
-          previewUrl: result.previewUrl,
-          file: result.file,
-          isPrimary: nextItems.length === 0,
-          sortOrder: nextItems.length,
-        });
-        successCount += 1;
-      } catch (error) {
-        onError?.(
-          error instanceof Error
-            ? error.message
-            : "No se pudo procesar una de las fotos.",
-        );
-      } finally {
-        setProcessingCount((count) => Math.max(0, count - 1));
-      }
-    }
-
-    if (successCount > 0) {
-      emitChange(nextItems);
-    }
-  }
-
-  function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function handleGalleryInputChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
-    event.target.value = "";
     if (!files?.length) return;
     void processFiles(files);
+    event.target.value = "";
+  }
+
+  function handleCameraInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    void processFiles([file]);
+  }
+
+  async function handleTakePhotoClick() {
+    if (pickerDisabled) return;
+    clearError();
+
+    if (isMobileCameraDevice()) {
+      cameraInputRef.current?.click();
+      return;
+    }
+
+    if (!isCameraApiSupported()) {
+      reportError("No se detectó una cámara web conectada.");
+      return;
+    }
+
+    setCameraDialogOpen(true);
   }
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
-    if (isBusy || !canAddMore) return;
+    if (pickerDisabled) return;
     const files = event.dataTransfer.files;
     if (!files?.length) return;
     void processFiles(files);
@@ -300,17 +312,6 @@ export function ProductGalleryField({
       items.filter((item) => item.clientId !== clientId),
       nextRemoved,
     );
-  }
-
-  function moveItem(clientId: string, direction: -1 | 1) {
-    const index = items.findIndex((item) => item.clientId === clientId);
-    const targetIndex = index + direction;
-    if (index < 0 || targetIndex < 0 || targetIndex >= items.length) return;
-
-    const nextItems = [...items];
-    const [moved] = nextItems.splice(index, 1);
-    nextItems.splice(targetIndex, 0, moved!);
-    emitChange(nextItems);
   }
 
   function handleDragStart(clientId: string) {
@@ -343,6 +344,11 @@ export function ProductGalleryField({
     setDragOverId(null);
   }
 
+  const pickerButtonClass = cn(
+    "inline-flex min-h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
+    pickerDisabled && "pointer-events-none cursor-not-allowed opacity-60",
+  );
+
   const label = layout === "compact" ? "Fotos del producto" : "Galería de fotos";
 
   return (
@@ -362,6 +368,15 @@ export function ProductGalleryField({
           </p>
         </div>
 
+        {fieldError ? (
+          <p
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400"
+            role="alert"
+          >
+            {fieldError}
+          </p>
+        ) : null}
+
         <div
           onDragOver={(event) => {
             event.preventDefault();
@@ -374,7 +389,7 @@ export function ProductGalleryField({
         >
           {items.length > 0 ? (
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {items.map((item, index) => (
+              {items.map((item) => (
                 <li
                   key={item.clientId}
                   draggable={!isBusy}
@@ -408,14 +423,12 @@ export function ProductGalleryField({
                   </div>
 
                   <div className="flex items-center justify-between gap-1 border-t border-zinc-100 px-2 py-1.5 dark:border-zinc-800">
-                    <button
-                      type="button"
-                      disabled={isBusy}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800"
-                      aria-label="Arrastrar para reordenar"
+                    <span
+                      className="inline-flex h-7 w-7 items-center justify-center text-zinc-400"
+                      aria-hidden="true"
                     >
                       <GripVertical className="h-4 w-4" />
-                    </button>
+                    </span>
                     <div className="flex items-center gap-1">
                       {!item.isPrimary ? (
                         <button
@@ -454,25 +467,23 @@ export function ProductGalleryField({
 
           <input
             ref={galleryInputRef}
-            id={`${id}-gallery`}
+            id={galleryInputId}
             type="file"
             accept={PRODUCT_IMAGE_FILE_ACCEPT}
             multiple
-            onChange={handleInputChange}
-            className="hidden"
+            onChange={handleGalleryInputChange}
+            className="product-file-input-offscreen"
             tabIndex={-1}
-            aria-hidden="true"
           />
           <input
             ref={cameraInputRef}
-            id={`${id}-camera`}
+            id={cameraInputId}
             type="file"
             accept={PRODUCT_IMAGE_FILE_ACCEPT}
             capture={PRODUCT_IMAGE_CAMERA_CAPTURE}
-            onChange={handleInputChange}
-            className="hidden"
+            onChange={handleCameraInputChange}
+            className="product-file-input-offscreen"
             tabIndex={-1}
-            aria-hidden="true"
           />
 
           <div
@@ -481,35 +492,59 @@ export function ProductGalleryField({
               layout === "compact" ? "sm:flex-col" : "",
             )}
           >
-            <button
-              type="button"
-              disabled={isBusy || !canAddMore}
-              onClick={handleAddPhotosClick}
-              className={cn(
-                "inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
-              )}
-            >
-              {processingCount > 0 ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  Procesando {processingCount} foto{processingCount !== 1 ? "s" : ""}…
-                </>
+            {pickerDisabled ? (
+              <span className={pickerButtonClass}>
+                {processingCount > 0 ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Procesando {processingCount} foto{processingCount !== 1 ? "s" : ""}…
+                  </>
+                ) : (
+                  <>
+                    <Images className="h-4 w-4" aria-hidden="true" />
+                    {items.length > 0 ? "Agregar de galería" : "Seleccionar fotos"}
+                  </>
+                )}
+              </span>
+            ) : (
+              <label htmlFor={galleryInputId} className={pickerButtonClass}>
+                {processingCount > 0 ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Procesando {processingCount} foto{processingCount !== 1 ? "s" : ""}…
+                  </>
+                ) : (
+                  <>
+                    <Images className="h-4 w-4" aria-hidden="true" />
+                    {items.length > 0 ? "Agregar de galería" : "Seleccionar fotos"}
+                  </>
+                )}
+              </label>
+            )}
+
+            {isMobileCameraDevice() ? (
+              pickerDisabled ? (
+                <span className={pickerButtonClass}>
+                  <Camera className="h-4 w-4" aria-hidden="true" />
+                  Tomar foto
+                </span>
               ) : (
-                <>
-                  <Images className="h-4 w-4" aria-hidden="true" />
-                  {items.length > 0 ? "Agregar de galería" : "Seleccionar fotos"}
-                </>
-              )}
-            </button>
-            <button
-              type="button"
-              disabled={isBusy || !canAddMore}
-              onClick={() => triggerFileInput(cameraInputRef.current)}
-              className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
-            >
-              <Camera className="h-4 w-4" aria-hidden="true" />
-              Tomar foto
-            </button>
+                <label htmlFor={cameraInputId} className={pickerButtonClass}>
+                  <Camera className="h-4 w-4" aria-hidden="true" />
+                  Tomar foto
+                </label>
+              )
+            ) : (
+              <button
+                type="button"
+                disabled={pickerDisabled}
+                onClick={() => void handleTakePhotoClick()}
+                className={pickerButtonClass}
+              >
+                <Camera className="h-4 w-4" aria-hidden="true" />
+                Tomar foto
+              </button>
+            )}
           </div>
         </div>
 
@@ -519,48 +554,12 @@ export function ProductGalleryField({
         </p>
       </div>
 
-      <Dialog open={sourcePickerOpen} onOpenChange={setSourcePickerOpen}>
-        <DialogContent className="max-w-sm" onClose={() => setSourcePickerOpen(false)}>
-          <DialogHeader>
-            <DialogTitle>Agregar fotos</DialogTitle>
-            <DialogDescription>
-              Elige cómo quieres agregar imágenes al producto.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isBusy}
-              onClick={openCameraPicker}
-              className="h-12 justify-start gap-3 px-4 text-sm font-semibold"
-            >
-              <Camera className="h-5 w-5 shrink-0 text-emerald-600" aria-hidden="true" />
-              Tomar foto
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isBusy}
-              onClick={openGalleryPicker}
-              className="h-12 justify-start gap-3 px-4 text-sm font-semibold"
-            >
-              <Images className="h-5 w-5 shrink-0 text-emerald-600" aria-hidden="true" />
-              Elegir de la galería
-            </Button>
-          </div>
-          <DialogFooter className="mt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setSourcePickerOpen(false)}
-              className="w-full sm:w-auto"
-            >
-              Cancelar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ProductCameraCaptureDialog
+        open={cameraDialogOpen}
+        onClose={() => setCameraDialogOpen(false)}
+        onCapture={(file) => void processFiles([file])}
+        onError={reportError}
+      />
     </>
   );
 }
