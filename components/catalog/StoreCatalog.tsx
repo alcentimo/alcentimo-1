@@ -9,6 +9,10 @@ import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types"
 import { formatExchangeRate } from "@/lib/format";
 import { StoreHeader } from "@/components/catalog/StoreHeader";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import {
+  CatalogProductDetailHost,
+  useCatalogProductDetail,
+} from "@/components/catalog/CatalogProductDetailHost";
 import { PurchaseInfoPanel } from "@/components/catalog/PurchaseInfoPanel";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
@@ -67,9 +71,59 @@ function StoreCatalogInner({
 }: Omit<StoreCatalogProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
-  const { itemCount } = useCart();
+  const { itemCount, addItem } = useCart();
   const { guestBanner } = usePromotionContext();
   const [cartPanelView, setCartPanelView] = useState<CartPanelView>("closed");
+
+  return (
+    <CatalogProductDetailHost
+      exchangeRate={liveExchangeRate}
+      showBsConversion={showBsConversion}
+      storeRubro={store.rubro_tienda}
+      onAddToCart={addItem}
+    >
+      <StoreCatalogContent
+        store={store}
+        products={products}
+        exchangeRate={exchangeRate}
+        purchaseInfo={purchaseInfo}
+        showOfficialRate={showOfficialRate}
+        showBsConversion={showBsConversion}
+        liveExchangeRate={liveExchangeRate}
+        itemCount={itemCount}
+        guestBanner={guestBanner}
+        cartPanelView={cartPanelView}
+        setCartPanelView={setCartPanelView}
+        addItem={addItem}
+      />
+    </CatalogProductDetailHost>
+  );
+}
+
+function StoreCatalogContent({
+  store,
+  products,
+  exchangeRate,
+  purchaseInfo,
+  showOfficialRate,
+  showBsConversion,
+  liveExchangeRate,
+  itemCount,
+  guestBanner,
+  cartPanelView,
+  setCartPanelView,
+  addItem,
+}: Omit<StoreCatalogProps, "locations" | "locationStocks" | "catalogCurrency"> & {
+  showOfficialRate: boolean;
+  showBsConversion: boolean;
+  liveExchangeRate: number | null;
+  itemCount: number;
+  guestBanner: ReturnType<typeof usePromotionContext>["guestBanner"];
+  cartPanelView: CartPanelView;
+  setCartPanelView: (view: CartPanelView) => void;
+  addItem: ReturnType<typeof useCart>["addItem"];
+}) {
+  const { openProduct } = useCatalogProductDetail();
 
   return (
     <div className="store-catalog-shell">
@@ -113,6 +167,8 @@ function StoreCatalogInner({
                     exchangeRate={liveExchangeRate}
                     showBsConversion={showBsConversion}
                     storeRubro={store.rubro_tienda}
+                    onAddToCart={addItem}
+                    onOpenDetail={openProduct}
                   />
                 ))}
               </div>

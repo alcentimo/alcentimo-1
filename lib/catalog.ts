@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { getSupabaseAnonClient } from "@/lib/supabase";
 import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
-import { CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
+import { PUBLIC_CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
 import { buildInventorySearchOrFilter } from "@/lib/inventory/search";
 import { roundExchangeRate } from "@/lib/format";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
@@ -42,6 +42,9 @@ function normalizeCatalogItem(row: CatalogListItem): CatalogListItem {
     price_ves: toNumber(row.price_ves),
     compare_at_usd: toNumber(row.compare_at_usd),
     compare_at_ves: toNumber(row.compare_at_ves),
+    wholesale_price_usd: toNumber(row.wholesale_price_usd),
+    wholesale_min_qty:
+      row.wholesale_min_qty != null ? Number(row.wholesale_min_qty) : null,
     exchange_rate_used: toNumber(row.exchange_rate_used),
     gallery_images: parseCatalogGalleryImages(row.gallery_images),
   };
@@ -101,7 +104,7 @@ export async function getCatalogProducts(
 
   let query = supabase
     .from("catalog_list_view")
-    .select(CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
+    .select(PUBLIC_CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
     .eq("store_slug", normalizedSlug)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });

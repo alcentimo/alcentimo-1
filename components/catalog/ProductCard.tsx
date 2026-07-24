@@ -77,6 +77,7 @@ interface ProductCardProps {
     variant: CatalogVariantOption,
     modifiers?: CartModifierSelection[],
   ) => void;
+  onOpenDetail?: (product: CatalogListItem) => void;
 }
 
 function StockBadge({
@@ -125,6 +126,7 @@ export const ProductCard = memo(function ProductCard({
   referenceCatalog = false,
   storeRubro = null,
   onAddToCart,
+  onOpenDetail,
 }: ProductCardProps) {
   const cartContext = useCartOptional();
   const activeExchangeRate = exchangeRate ?? product.exchange_rate_used;
@@ -248,11 +250,22 @@ export const ProductCard = memo(function ProductCard({
     onAddToCart?.(product, selectedVariant, selectedModifiers);
   }
 
+  function handleOpenDetail() {
+    onOpenDetail?.(product);
+  }
+
+  function stopCardClick(event: React.MouseEvent) {
+    event.stopPropagation();
+  }
+
   function renderAddButton(className: string) {
     return (
       <button
         type="button"
-        onClick={handleAdd}
+        onClick={(event) => {
+          event.stopPropagation();
+          handleAdd();
+        }}
         disabled={inCart && !canAddMore}
         className={cn(
           className,
@@ -280,7 +293,28 @@ export const ProductCard = memo(function ProductCard({
     <article
       className={cn("store-product-card group h-full", outOfStock && "opacity-90")}
     >
-      <div className="store-product-media">
+      <div
+        className={cn(
+          "store-product-media",
+          onOpenDetail && "store-product-media-openable",
+        )}
+        onClick={onOpenDetail ? handleOpenDetail : undefined}
+        onKeyDown={
+          onOpenDetail
+            ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleOpenDetail();
+                }
+              }
+            : undefined
+        }
+        role={onOpenDetail ? "button" : undefined}
+        tabIndex={onOpenDetail ? 0 : undefined}
+        aria-label={
+          onOpenDetail ? `Ver detalle de ${product.product_name}` : undefined
+        }
+      >
         <ProductImageGallery
           product={product}
           imageClassName="store-product-image"
@@ -318,7 +352,7 @@ export const ProductCard = memo(function ProductCard({
         </div>
 
         {showAddButton && (
-          <div className="store-product-action">
+          <div className="store-product-action" onClick={stopCardClick}>
             {renderAddButton("store-add-btn")}
           </div>
         )}
@@ -338,7 +372,17 @@ export const ProductCard = memo(function ProductCard({
           </div>
 
           <div className="store-product-slot store-product-slot-title">
-            <h2 className="store-product-name">{product.product_name}</h2>
+            {onOpenDetail ? (
+              <button
+                type="button"
+                className="store-product-name store-product-name-open"
+                onClick={handleOpenDetail}
+              >
+                {product.product_name}
+              </button>
+            ) : (
+              <h2 className="store-product-name">{product.product_name}</h2>
+            )}
             {isTecnologia ? <TechSpecsChips product={product} /> : null}
             {isColeccionables ? <CollectibleBadges product={product} /> : null}
             {isSaludBelleza ? <BeautyBadges product={product} /> : null}
@@ -390,7 +434,10 @@ export const ProductCard = memo(function ProductCard({
             </div>
           ) : null}
 
-          <div className="store-product-slot store-product-slot-variant">
+          <div
+            className="store-product-slot store-product-slot-variant"
+            onClick={stopCardClick}
+          >
             {showOrderOptions ? (
               <RubroCatalogVariantSlot
                 rubro={storeRubro}

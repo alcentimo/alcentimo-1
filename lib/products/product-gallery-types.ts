@@ -19,6 +19,8 @@ export interface ProductImagesFormPayload {
 export interface CatalogProductGalleryImage {
   id: string;
   thumb_url: string;
+  medium_url?: string;
+  full_url?: string;
   sort_order: number;
   is_primary: boolean;
 }

@@ -14,6 +14,10 @@ import {
 } from "@/lib/store-settings/catalog-theme";
 import { formatExchangeRate } from "@/lib/format";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import {
+  CatalogProductDetailHost,
+  useCatalogProductDetail,
+} from "@/components/catalog/CatalogProductDetailHost";
 import { CatalogUploadCtaCard } from "@/components/catalog/CatalogUploadCtaCard";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
@@ -126,6 +130,62 @@ function TransactionalCatalogInner({
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
   const { addItem } = useCart();
+
+  return (
+    <CatalogProductDetailHost
+      exchangeRate={liveExchangeRate}
+      showBsConversion={showBsConversion}
+      storeRubro={store.rubro_tienda}
+      onAddToCart={referenceMode ? undefined : addItem}
+    >
+      <TransactionalCatalogContent
+        store={store}
+        products={products}
+        storeCategories={storeCategories}
+        exchangeRate={exchangeRate}
+        purchaseInfo={purchaseInfo}
+        catalogDesign={catalogDesign}
+        catalogCurrency={catalogCurrency}
+        openCheckoutInitially={openCheckoutInitially}
+        previewMode={previewMode}
+        referenceMode={referenceMode}
+        showReferenceCta={showReferenceCta}
+        catalogTotalCount={catalogTotalCount}
+        enableServerPagination={enableServerPagination}
+        liveExchangeRate={liveExchangeRate}
+        showOfficialRate={showOfficialRate}
+        showBsConversion={showBsConversion}
+        addItem={addItem}
+      />
+    </CatalogProductDetailHost>
+  );
+}
+
+function TransactionalCatalogContent({
+  store,
+  products,
+  storeCategories = [],
+  exchangeRate,
+  purchaseInfo,
+  catalogDesign,
+  catalogCurrency,
+  openCheckoutInitially = false,
+  previewMode = false,
+  referenceMode = false,
+  showReferenceCta = false,
+  catalogTotalCount,
+  enableServerPagination = false,
+  liveExchangeRate,
+  showOfficialRate,
+  showBsConversion,
+  addItem,
+}: Omit<TransactionalCatalogProps, "locations" | "locationStocks"> & {
+  liveExchangeRate: number | null;
+  showOfficialRate: boolean;
+  showBsConversion: boolean;
+  addItem: ReturnType<typeof useCart>["addItem"];
+}) {
+  const { openProduct } = useCatalogProductDetail();
   const { getAvailableStock } = useCatalogFulfillment();
   const isFoodMenu = storeUsesRubroProductModule(store.rubro_tienda, "alimentos");
   const isTechCatalog = storeUsesRubroProductModule(
@@ -215,6 +275,7 @@ function TransactionalCatalogInner({
           referenceCatalog={referenceMode && previewMode}
           storeRubro={store.rubro_tienda}
           onAddToCart={referenceMode ? undefined : addItem}
+          onOpenDetail={openProduct}
         />
       </div>
     ),
@@ -226,6 +287,7 @@ function TransactionalCatalogInner({
       referenceMode,
       showBsConversion,
       store.rubro_tienda,
+      openProduct,
     ],
   );
 
