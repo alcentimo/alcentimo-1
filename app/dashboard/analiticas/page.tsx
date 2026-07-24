@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
@@ -8,7 +9,11 @@ import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader"
 
 export const dynamic = "force-dynamic";
 
-export default async function AnaliticasPage() {
+export default async function AnaliticasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string; from?: string; to?: string }>;
+}) {
   const supabase = await createClient();
   const session = await getDashboardSession();
 
@@ -22,16 +27,23 @@ export default async function AnaliticasPage() {
     redirect("/dashboard/productos/nuevo");
   }
 
-  const analytics = await getStoreAnalyticsPanel(supabase, store.id, store.slug);
+  const params = await searchParams;
+  const analytics = await getStoreAnalyticsPanel(supabase, store.id, store.slug, {
+    range: params.range,
+    from: params.from,
+    to: params.to,
+  });
 
   return (
     <PageContainer as="div" className="py-6 sm:py-8">
       <DashboardPageHeader
         title="Analíticas"
-        description={`Ventas, productos estrella y conversión de ${store.name}.`}
+        description={`Rendimiento comercial, tráfico y productos de ${store.name}.`}
       />
 
-      <AnalyticsPanel analytics={analytics} />
+      <Suspense fallback={<div className="analytics-range-picker-loading">Cargando métricas…</div>}>
+        <AnalyticsPanel analytics={analytics} />
+      </Suspense>
     </PageContainer>
   );
 }

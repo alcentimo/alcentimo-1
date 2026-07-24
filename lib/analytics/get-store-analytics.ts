@@ -2,29 +2,47 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getStoreInventory } from "@/lib/inventory";
 import type { CatalogOrder } from "@/lib/orders/types";
 import { getStoreOrders } from "@/lib/orders/get-store-orders";
+import {
+  buildDailySalesBuckets,
+  computeChangePct,
+  isIsoInDateRange,
+  parseAnalyticsDateRange,
+} from "@/lib/analytics/date-range";
 import type {
-  DailySalesVolume,
-  LowStockProductInsight,
-  RegistrationMetrics,
-  SalesComparison,
+  AnalyticsDateRange,
+  DailySalesPoint,
+  FinancialKpis,
+  MetricComparison,
+  ProductInsight,
+  StagnantProductInsight,
   StoreAnalytics,
   StoreAnalyticsPanel,
-  TopProductInsight,
+  TrafficMetrics,
 } from "@/lib/analytics/types";
 
 const ANALYTICS_LOW_STOCK_THRESHOLD = 3;
 const ANALYTICS_FETCH_LIMIT = 5000;
-const REGISTRATION_METRICS_DAYS = 30;
+const STAGNANT_PRODUCT_DAYS = 30;
+const WHATSAPP_CHANNEL_VALUE = "WhatsApp";
 
 interface VentaAnalyticsRow {
   producto_id: string;
   cantidad: number;
   monto: number;
+  canal_venta: string;
   created_at: string;
   products: {
     name?: string;
     product_images?: { thumb_url?: string | null; is_primary?: boolean }[];
   } | null;
+}
+
+interface ProductAccumulator {
+  productId: string;
+  name: string;
+  unitsSold: number;
+  revenueUsd: number;
+  thumbUrl: string | null;
 }
 
 function toDateKey(iso: string): string {
@@ -33,10 +51,6 @@ function toDateKey(iso: string): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-}
-
-function isToday(iso: string): boolean {
-  return toDateKey(iso) === toDateKey(new Date().toISOString());
 }
 
 function isCurrentMonth(iso: string): boolean {
@@ -48,21 +62,8 @@ function isCurrentMonth(iso: string): boolean {
   );
 }
 
-function getLast7Days(): { date: string; label: string }[] {
-  const weekday = new Intl.DateTimeFormat("es", { weekday: "short" });
-  const days: { date: string; label: string }[] = [];
-
-  for (let offset = 6; offset >= 0; offset -= 1) {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - offset);
-    days.push({
-      date: toDateKey(date.toISOString()),
-      label: weekday.format(date).replace(".", ""),
-    });
-  }
-
-  return days;
+function isToday(iso: string): boolean {
+  return toDateKey(iso) === toDateKey(new Date().toISOString());
 }
 
 function pickThumbUrl(
@@ -73,30 +74,12 @@ function pickThumbUrl(
   return primary?.thumb_url ?? null;
 }
 
-function accumulateProductSales(
-  map: Map<string, TopProductInsight>,
-  productId: string,
-  name: string,
-  units: number,
-  thumbUrl: string | null,
-) {
-  const current = map.get(productId);
-  if (current) {
-    current.unitsSold += units;
-    if (!current.thumbUrl && thumbUrl) current.thumbUrl = thumbUrl;
-    return;
-  }
-
-  map.set(productId, {
-    productId,
-    name,
-    unitsSold: units,
-    thumbUrl,
-  });
-}
-
-function getMonthLabel(): string {
-  return new Intl.DateTimeFormat("es", { month: "long" }).format(new Date());
+function metricComparison(current: number, previous: number): MetricComparison {
+  return {
+    value: current,
+    previousValue: previous,
+    changePct: computeChangePct(current, previous),
+  };
 }
 
 async function fetchSalesSources(
@@ -111,6 +94,7 @@ async function fetchSalesSources(
         producto_id,
         cantidad,
         monto,
+        canal_venta,
         created_at,
         products:producto_id (
           name,
@@ -137,158 +121,391 @@ async function fetchSalesSources(
   };
 }
 
-function buildProductSalesInsights(
+function sumSalesInRange(
+  ventas: VentaAnalyticsRow[],
+  orders: CatalogOrder[],
+  from: string,
+  to: string,
+): { totalUsd: number; transactionCount: number; conversionActions: number } {
+  let totalUsd = 0;
+  let ventasCount = 0;
+  let ordersCount = 0;
+  let whatsappVentasCount = 0;
+
+  for (const venta of ventas) {
+    if (!isIsoInDateRange(venta.created_at, from, to)) continue;
+    totalUsd += Number(venta.monto) || 0;
+    ventasCount += 1;
+    if (venta.canal_venta === WHATSAPP_CHANNEL_VALUE) {
+      whatsappVentasCount += 1;
+    }
+  }
+
+  for (const order of orders) {
+    if (!isIsoInDateRange(order.created_at, from, to)) continue;
+    totalUsd += order.total_usd;
+    ordersCount += 1;
+  }
+
+  return {
+    totalUsd,
+    transactionCount: ventasCount + ordersCount,
+    conversionActions: ordersCount + whatsappVentasCount,
+  };
+}
+
+function computeFinancialKpis(
+  ventas: VentaAnalyticsRow[],
+  orders: CatalogOrder[],
+  dateRange: AnalyticsDateRange,
+): FinancialKpis {
+  const current = sumSalesInRange(ventas, orders, dateRange.from, dateRange.to);
+  const previous = sumSalesInRange(
+    ventas,
+    orders,
+    dateRange.previousFrom,
+    dateRange.previousTo,
+  );
+
+  const currentAov =
+    current.transactionCount > 0
+      ? current.totalUsd / current.transactionCount
+      : 0;
+  const previousAov =
+    previous.transactionCount > 0
+      ? previous.totalUsd / previous.transactionCount
+      : 0;
+
+  let todaySalesUsd = 0;
+  let monthToDateUsd = 0;
+
+  for (const venta of ventas) {
+    const amount = Number(venta.monto) || 0;
+    if (isToday(venta.created_at)) todaySalesUsd += amount;
+    if (isCurrentMonth(venta.created_at)) monthToDateUsd += amount;
+  }
+
+  for (const order of orders) {
+    if (isToday(order.created_at)) todaySalesUsd += order.total_usd;
+    if (isCurrentMonth(order.created_at)) monthToDateUsd += order.total_usd;
+  }
+
+  return {
+    periodSalesUsd: metricComparison(current.totalUsd, previous.totalUsd),
+    averageOrderValueUsd: metricComparison(currentAov, previousAov),
+    transactionCount: metricComparison(
+      current.transactionCount,
+      previous.transactionCount,
+    ),
+    todaySalesUsd,
+    monthToDateUsd,
+  };
+}
+
+function accumulateProduct(
+  map: Map<string, ProductAccumulator>,
+  productId: string,
+  name: string,
+  units: number,
+  revenueUsd: number,
+  thumbUrl: string | null,
+) {
+  const current = map.get(productId);
+  if (current) {
+    current.unitsSold += units;
+    current.revenueUsd += revenueUsd;
+    if (!current.thumbUrl && thumbUrl) current.thumbUrl = thumbUrl;
+    return;
+  }
+
+  map.set(productId, {
+    productId,
+    name,
+    unitsSold: units,
+    revenueUsd,
+    thumbUrl,
+  });
+}
+
+function buildProductInsightsForRange(
   ventas: VentaAnalyticsRow[],
   orders: CatalogOrder[],
   inventoryThumbById: Map<string, string | null>,
-): TopProductInsight[] {
-  const productSales = new Map<string, TopProductInsight>();
+  from: string,
+  to: string,
+): ProductInsight[] {
+  const productMap = new Map<string, ProductAccumulator>();
 
   for (const venta of ventas) {
+    if (!isIsoInDateRange(venta.created_at, from, to)) continue;
     const product = venta.products;
-    accumulateProductSales(
-      productSales,
+    accumulateProduct(
+      productMap,
       venta.producto_id,
       product?.name ?? "Producto",
       Number(venta.cantidad) || 0,
+      Number(venta.monto) || 0,
       pickThumbUrl(product?.product_images),
     );
   }
 
   for (const order of orders) {
+    if (!isIsoInDateRange(order.created_at, from, to)) continue;
     for (const item of order.items) {
-      accumulateProductSales(
-        productSales,
+      accumulateProduct(
+        productMap,
         item.product_id,
         item.product_name,
         item.quantity,
+        item.line_total_usd ?? item.quantity * item.unit_price_usd,
         null,
       );
     }
   }
 
-  const topProducts = Array.from(productSales.values())
-    .sort((a, b) => b.unitsSold - a.unitsSold)
-    .slice(0, 5);
-
-  for (const product of topProducts) {
-    if (!product.thumbUrl) {
-      product.thumbUrl = inventoryThumbById.get(product.productId) ?? null;
-    }
-  }
-
-  return topProducts;
+  return Array.from(productMap.values()).map((product) => ({
+    ...product,
+    thumbUrl: product.thumbUrl ?? inventoryThumbById.get(product.productId) ?? null,
+  }));
 }
 
-function computeSalesComparison(
+function buildSalesTrend(
   ventas: VentaAnalyticsRow[],
   orders: CatalogOrder[],
-): SalesComparison {
-  let todayUsd = 0;
-  let monthToDateUsd = 0;
+  dateRange: AnalyticsDateRange,
+): DailySalesPoint[] {
+  const buckets = buildDailySalesBuckets(dateRange.from, dateRange.to);
+  const dailyTotals = new Map<string, number>();
 
   for (const venta of ventas) {
-    const amount = Number(venta.monto) || 0;
-    if (isToday(venta.created_at)) todayUsd += amount;
-    if (isCurrentMonth(venta.created_at)) monthToDateUsd += amount;
+    if (!isIsoInDateRange(venta.created_at, dateRange.from, dateRange.to)) continue;
+    const dateKey = toDateKey(venta.created_at);
+    dailyTotals.set(dateKey, (dailyTotals.get(dateKey) ?? 0) + (Number(venta.monto) || 0));
   }
 
   for (const order of orders) {
-    if (isToday(order.created_at)) todayUsd += order.total_usd;
-    if (isCurrentMonth(order.created_at)) monthToDateUsd += order.total_usd;
+    if (!isIsoInDateRange(order.created_at, dateRange.from, dateRange.to)) continue;
+    const dateKey = toDateKey(order.created_at);
+    dailyTotals.set(dateKey, (dailyTotals.get(dateKey) ?? 0) + order.total_usd);
   }
 
-  const monthName = getMonthLabel();
-
-  return {
-    todayUsd,
-    monthToDateUsd,
-    todayLabel: "Hoy",
-    monthLabel: monthName.charAt(0).toUpperCase() + monthName.slice(1),
-  };
+  return buckets.map((bucket) => ({
+    ...bucket,
+    amountUsd: dailyTotals.get(bucket.date) ?? 0,
+  }));
 }
 
-async function getRegistrationMetrics(
+function buildStagnantProducts(
+  ventas: VentaAnalyticsRow[],
+  orders: CatalogOrder[],
+  inventoryProducts: Awaited<ReturnType<typeof getStoreInventory>>["products"],
+): StagnantProductInsight[] {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - STAGNANT_PRODUCT_DAYS);
+  cutoff.setHours(0, 0, 0, 0);
+  const cutoffIso = cutoff.toISOString();
+
+  const soldProductIds = new Set<string>();
+
+  for (const venta of ventas) {
+    if (venta.created_at < cutoffIso) continue;
+    soldProductIds.add(venta.producto_id);
+  }
+
+  for (const order of orders) {
+    if (order.created_at < cutoffIso) continue;
+    for (const item of order.items) {
+      soldProductIds.add(item.product_id);
+    }
+  }
+
+  return inventoryProducts
+    .filter(
+      (product) =>
+        product.available_stock > 0 && !soldProductIds.has(product.product_id),
+    )
+    .sort((a, b) => b.available_stock - a.available_stock)
+    .slice(0, 8)
+    .map((product) => ({
+      productId: product.product_id,
+      name: product.product_name,
+      thumbUrl: product.thumb_url,
+      availableStock: product.available_stock,
+    }));
+}
+
+async function getTrafficMetrics(
   supabase: SupabaseClient,
   storeId: string,
-): Promise<RegistrationMetrics> {
-  const periodStart = new Date();
-  periodStart.setDate(periodStart.getDate() - REGISTRATION_METRICS_DAYS);
-  periodStart.setHours(0, 0, 0, 0);
-  const periodStartIso = periodStart.toISOString();
+  dateRange: AnalyticsDateRange,
+  ventas: VentaAnalyticsRow[],
+  orders: CatalogOrder[],
+): Promise<TrafficMetrics> {
+  const periodStartIso = `${dateRange.from}T00:00:00.000`;
+  const periodEndIso = `${dateRange.to}T23:59:59.999`;
+  const previousStartIso = `${dateRange.previousFrom}T00:00:00.000`;
+  const previousEndIso = `${dateRange.previousTo}T23:59:59.999`;
 
-  const [visitorsResult, registrationsResult, profilesResult] = await Promise.all([
+  const [
+    visitorsResult,
+    registrationsResult,
+    profilesResult,
+    previousVisitorsResult,
+    previousRegistrationsResult,
+    previousProfilesResult,
+  ] = await Promise.all([
     supabase
       .from("catalog_visits")
       .select("id", { count: "exact", head: true })
       .eq("store_id", storeId)
-      .gte("last_seen_at", periodStartIso),
+      .gte("last_seen_at", periodStartIso)
+      .lte("last_seen_at", periodEndIso),
     supabase
       .from("catalog_visits")
       .select("id", { count: "exact", head: true })
       .eq("store_id", storeId)
       .not("registered_at", "is", null)
-      .gte("registered_at", periodStartIso),
+      .gte("registered_at", periodStartIso)
+      .lte("registered_at", periodEndIso),
     supabase
       .from("customer_profiles")
       .select("id", { count: "exact", head: true })
       .eq("store_id", storeId)
-      .gte("created_at", periodStartIso),
+      .gte("created_at", periodStartIso)
+      .lte("created_at", periodEndIso),
+    supabase
+      .from("catalog_visits")
+      .select("id", { count: "exact", head: true })
+      .eq("store_id", storeId)
+      .gte("last_seen_at", previousStartIso)
+      .lte("last_seen_at", previousEndIso),
+    supabase
+      .from("catalog_visits")
+      .select("id", { count: "exact", head: true })
+      .eq("store_id", storeId)
+      .not("registered_at", "is", null)
+      .gte("registered_at", previousStartIso)
+      .lte("registered_at", previousEndIso),
+    supabase
+      .from("customer_profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("store_id", storeId)
+      .gte("created_at", previousStartIso)
+      .lte("created_at", previousEndIso),
   ]);
 
-  if (visitorsResult.error) {
-    throw new Error(visitorsResult.error.message);
-  }
-  if (registrationsResult.error) {
-    throw new Error(registrationsResult.error.message);
-  }
-  if (profilesResult.error) {
-    throw new Error(profilesResult.error.message);
+  for (const result of [
+    visitorsResult,
+    registrationsResult,
+    profilesResult,
+    previousVisitorsResult,
+    previousRegistrationsResult,
+    previousProfilesResult,
+  ]) {
+    if (result.error) throw new Error(result.error.message);
   }
 
   const uniqueVisitors = visitorsResult.count ?? 0;
-  const trackedRegistrations = registrationsResult.count ?? 0;
+  const previousUniqueVisitors = previousVisitorsResult.count ?? 0;
+  const registrations = Math.max(
+    registrationsResult.count ?? 0,
+    profilesResult.count ?? 0,
+  );
+  const previousRegistrations = Math.max(
+    previousRegistrationsResult.count ?? 0,
+    previousProfilesResult.count ?? 0,
+  );
   const newCustomerProfiles = profilesResult.count ?? 0;
-  const registrations = Math.max(trackedRegistrations, newCustomerProfiles);
+
+  const currentSales = sumSalesInRange(ventas, orders, dateRange.from, dateRange.to);
+  const previousSales = sumSalesInRange(
+    ventas,
+    orders,
+    dateRange.previousFrom,
+    dateRange.previousTo,
+  );
+
+  const conversionRatePct =
+    uniqueVisitors > 0
+      ? Math.round((currentSales.conversionActions / uniqueVisitors) * 1000) / 10
+      : 0;
+  const previousConversionRatePct =
+    previousUniqueVisitors > 0
+      ? Math.round((previousSales.conversionActions / previousUniqueVisitors) * 1000) / 10
+      : 0;
+
   const registrationRatePct =
     uniqueVisitors > 0
       ? Math.round((registrations / uniqueVisitors) * 1000) / 10
       : 0;
+  const previousRegistrationRatePct =
+    previousUniqueVisitors > 0
+      ? Math.round((previousRegistrations / previousUniqueVisitors) * 1000) / 10
+      : 0;
 
   return {
-    periodDays: REGISTRATION_METRICS_DAYS,
-    uniqueVisitors,
+    uniqueVisitors: metricComparison(uniqueVisitors, previousUniqueVisitors),
+    conversionRatePct: metricComparison(conversionRatePct, previousConversionRatePct),
+    conversionActions: currentSales.conversionActions,
+    registrationRatePct: metricComparison(registrationRatePct, previousRegistrationRatePct),
     registrations,
-    registrationRatePct,
     newCustomerProfiles,
-    trackingEnabled: uniqueVisitors > 0,
+    trackingEnabled: uniqueVisitors > 0 || previousUniqueVisitors > 0,
   };
 }
 
-/** Datos para el panel simplificado de analíticas. */
+export interface AnalyticsQueryParams {
+  range?: string | null;
+  from?: string | null;
+  to?: string | null;
+}
+
+/** Datos para el panel de analíticas con rango de fechas configurable. */
 export async function getStoreAnalyticsPanel(
   supabase: SupabaseClient,
   storeId: string,
   storeSlug: string,
+  query: AnalyticsQueryParams = {},
 ): Promise<StoreAnalyticsPanel> {
-  const [{ ventas, orders }, inventory, registrationMetrics] = await Promise.all([
+  const dateRange = parseAnalyticsDateRange(query);
+
+  const [{ ventas, orders }, inventory] = await Promise.all([
     fetchSalesSources(supabase, storeId),
     getStoreInventory(storeSlug),
-    getRegistrationMetrics(supabase, storeId),
   ]);
 
   const inventoryThumbById = new Map(
     inventory.products.map((product) => [product.product_id, product.thumb_url]),
   );
 
+  const productsInRange = buildProductInsightsForRange(
+    ventas,
+    orders,
+    inventoryThumbById,
+    dateRange.from,
+    dateRange.to,
+  );
+
+  const [trafficMetrics] = await Promise.all([
+    getTrafficMetrics(supabase, storeId, dateRange, ventas, orders),
+  ]);
+
   return {
-    salesComparison: computeSalesComparison(ventas, orders),
-    topProducts: buildProductSalesInsights(ventas, orders, inventoryThumbById),
-    registrationMetrics,
+    dateRange,
+    financialKpis: computeFinancialKpis(ventas, orders, dateRange),
+    trafficMetrics,
+    salesTrend: buildSalesTrend(ventas, orders, dateRange),
+    topProductsByUnits: [...productsInRange]
+      .sort((a, b) => b.unitsSold - a.unitsSold)
+      .slice(0, 5),
+    topProductsByRevenue: [...productsInRange]
+      .sort((a, b) => b.revenueUsd - a.revenueUsd)
+      .slice(0, 5),
+    stagnantProducts: buildStagnantProducts(ventas, orders, inventory.products),
   };
 }
 
-/** Tablero completo (KPIs, semanal, inventario bajo). */
+/** Tablero completo (KPIs, semanal, inventario bajo). @deprecated */
 export async function getStoreAnalytics(
   supabase: SupabaseClient,
   storeId: string,
@@ -304,33 +521,19 @@ export async function getStoreAnalytics(
   const totalSalesUsd = ventasTotalUsd + ordersTotalUsd;
   const transactionCount = ventas.length + orders.length;
 
-  const dailyTotals = new Map<string, number>();
-
-  for (const venta of ventas) {
-    const dateKey = toDateKey(venta.created_at);
-    dailyTotals.set(dateKey, (dailyTotals.get(dateKey) ?? 0) + Number(venta.monto));
-  }
-
-  for (const order of orders) {
-    dailyTotals.set(
-      toDateKey(order.created_at),
-      (dailyTotals.get(toDateKey(order.created_at)) ?? 0) + order.total_usd,
-    );
-  }
-
-  const weeklySales: DailySalesVolume[] = getLast7Days().map((day) => ({
-    date: day.date,
-    label: day.label,
-    amountUsd: dailyTotals.get(day.date) ?? 0,
-  }));
-
   const inventoryThumbById = new Map(
     inventory.products.map((product) => [product.product_id, product.thumb_url]),
   );
 
-  const topProducts = buildProductSalesInsights(ventas, orders, inventoryThumbById);
+  const productsAllTime = buildProductInsightsForRange(
+    ventas,
+    orders,
+    inventoryThumbById,
+    "1970-01-01",
+    "2999-12-31",
+  );
 
-  const lowStockProducts: LowStockProductInsight[] = inventory.products
+  const lowStockProducts = inventory.products
     .filter((product) => product.available_stock < ANALYTICS_LOW_STOCK_THRESHOLD)
     .sort((a, b) => a.available_stock - b.available_stock)
     .slice(0, 8)
@@ -345,6 +548,20 @@ export async function getStoreAnalytics(
     (product) => product.available_stock > 0,
   ).length;
 
+  const weeklySales = buildSalesTrend(ventas, orders, {
+    preset: "7d",
+    from: (() => {
+      const date = new Date();
+      date.setDate(date.getDate() - 6);
+      return toDateKey(date.toISOString());
+    })(),
+    to: toDateKey(new Date().toISOString()),
+    label: "",
+    previousFrom: "",
+    previousTo: "",
+    previousLabel: "",
+  });
+
   return {
     kpis: {
       totalSalesUsd,
@@ -355,7 +572,15 @@ export async function getStoreAnalytics(
       lowStockCount: lowStockProducts.length,
     },
     weeklySales,
-    topProducts,
+    topProducts: productsAllTime
+      .sort((a, b) => b.unitsSold - a.unitsSold)
+      .slice(0, 5)
+      .map(({ productId, name, unitsSold, thumbUrl }) => ({
+        productId,
+        name,
+        unitsSold,
+        thumbUrl,
+      })),
     lowStockProducts,
   };
 }

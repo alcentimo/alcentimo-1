@@ -269,8 +269,8 @@ export async function getOwnerAssistantContext(input: {
       excessStock,
     },
     sales: {
-      todayUsd: analyticsPanel.salesComparison.todayUsd,
-      monthToDateUsd: analyticsPanel.salesComparison.monthToDateUsd,
+      todayUsd: analyticsPanel.financialKpis.todaySalesUsd,
+      monthToDateUsd: analyticsPanel.financialKpis.monthToDateUsd,
       pendingOrders: pendingOrders.length,
       recentOrders: ordersResult.orders.slice(0, MAX_RECENT_ITEMS).map((order) => ({
         id: order.id,
@@ -288,7 +288,7 @@ export async function getOwnerAssistantContext(input: {
         quantity: sale.cantidad,
         createdAt: sale.created_at,
       })),
-      topProducts: analyticsPanel.topProducts.slice(0, 8).map((product) => ({
+      topProducts: analyticsPanel.topProductsByUnits.slice(0, 8).map((product) => ({
         name: product.name,
         unitsSold: product.unitsSold,
       })),
