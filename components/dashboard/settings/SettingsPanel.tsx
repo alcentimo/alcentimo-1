@@ -125,6 +125,8 @@ interface SettingsPanelProps {
   planId?: PlanId;
   initialLocations?: StoreLocation[];
   locationLimit?: LocationLimitSummary | null;
+  initialDomain?: string | null;
+  initialDomainMode?: "connect" | "purchase" | null;
 }
 
 export function SettingsPanel({
@@ -138,6 +140,8 @@ export function SettingsPanel({
   planId,
   initialLocations = [],
   locationLimit = null,
+  initialDomain = null,
+  initialDomainMode = null,
 }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() =>
     resolveInitialTab(initialTab),
@@ -196,6 +200,8 @@ export function SettingsPanel({
               custom_domain_verified: Boolean(store?.custom_domain_verified),
             }}
             planId={planId}
+            initialDomain={initialDomain}
+            initialDomainMode={initialDomainMode}
           />
         );
       case "design":

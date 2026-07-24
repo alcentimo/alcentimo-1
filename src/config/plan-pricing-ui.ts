@@ -4,6 +4,29 @@ export type BillingPeriod = "monthly" | "annual";
 
 export const PAID_PLAN_CTA = "Empezar ahora";
 
+/** Beneficio de dominio en planes de pago. */
+export const CUSTOM_DOMAIN_FEATURE =
+  "Dominio personalizado (.com incluido / conectable)";
+
+/** Enlace gratuito en plan Free (subdominio de plataforma). */
+export const FREE_SUBDOMAIN_FEATURE =
+  "Catálogo en subdominio Alcentimo (tuempresa.alcentimo.com)";
+
+/** Etiqueta promocional en facturación anual. */
+export const ANNUAL_DOMAIN_PROMO_LABEL =
+  "Incluye dominio .com gratis por 1 año";
+
+export function planIncludesCustomDomain(planId: PlanId): boolean {
+  return planId === "starter" || planId === "growth" || planId === "premium" || planId === "enterprise";
+}
+
+export function showsAnnualDomainPromo(
+  planId: PlanId,
+  billing: BillingPeriod,
+): boolean {
+  return billing === "annual" && planIncludesCustomDomain(planId);
+}
+
 export interface PlanPricingTier {
   planId: PlanId;
   displayName: string;
@@ -30,7 +53,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     annualUsd: null,
     productLimitLabel: "Hasta 10 productos",
     features: [
-      "Catálogo público con enlace único",
+      FREE_SUBDOMAIN_FEATURE,
       "Precios USD y Bs automáticos",
       "Cupones, variantes y alertas de stock",
     ],
@@ -46,6 +69,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     recommended: true,
     features: [
       "Todo lo del plan Gratis",
+      CUSTOM_DOMAIN_FEATURE,
       "Más capacidad de catálogo",
       "Soporte por email",
     ],
@@ -60,7 +84,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     productLimitLabel: "Productos ilimitados",
     features: [
       "Todo lo del plan Pro",
-      "Dominio personalizado (tutienda.com)",
+      CUSTOM_DOMAIN_FEATURE,
       "Usuarios y roles de equipo",
       "Soporte dedicado",
     ],
@@ -75,6 +99,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     productLimitLabel: "Productos ilimitados",
     features: [
       "Todo lo del plan Business",
+      CUSTOM_DOMAIN_FEATURE,
       "Hasta 3 sucursales incluidas",
       "Selector de sede y retiro en tienda",
       "Stock independiente por sucursal",

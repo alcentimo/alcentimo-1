@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { CheckCircle2, Loader2, Smartphone, Upload } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, Globe, Loader2, Smartphone, Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,12 +14,20 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CopyableInline } from "@/components/payments/CopyableInline";
+import {
+  PlanDomainStep,
+  type DomainSetupMode,
+  type PlanDomainSelection,
+} from "@/components/dashboard/plans/PlanDomainStep";
 import { submitManualPayment } from "@/lib/plans/manual-payment-actions";
 import { formatVes } from "@/lib/format";
 import {
+  ANNUAL_DOMAIN_PROMO_LABEL,
   formatPlanCheckoutSummary,
   getTierChargeUsd,
+  planIncludesCustomDomain,
   PLAN_PRICING_TIERS,
+  showsAnnualDomainPromo,
   type BillingPeriod,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
@@ -32,7 +41,7 @@ import type { PlanId } from "@/src/config/plans";
 
 const MIN_SUBMIT_DURATION_MS = 5000;
 
-type CheckoutStep = "checkout" | "success";
+type CheckoutStep = "domain" | "checkout" | "success";
 
 interface PlanCheckoutDialogProps {
   open: boolean;
@@ -59,7 +68,10 @@ export function PlanCheckoutDialog({
   pagoMovil: pagoMovilProp,
   pricingTiers = PLAN_PRICING_TIERS,
 }: PlanCheckoutDialogProps) {
-  const [step, setStep] = useState<CheckoutStep>("checkout");
+  const [step, setStep] = useState<CheckoutStep>("domain");
+  const [domainSelection, setDomainSelection] = useState<PlanDomainSelection | null>(
+    null,
+  );
   const [referenceNumber, setReferenceNumber] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -73,7 +85,8 @@ export function PlanCheckoutDialog({
 
   useEffect(() => {
     if (!open) return;
-    setStep("checkout");
+    setStep(tier && planIncludesCustomDomain(tier.planId) ? "domain" : "checkout");
+    setDomainSelection(null);
     setReferenceNumber("");
     setCouponCode("");
     setProofFile(null);
@@ -176,15 +189,33 @@ export function PlanCheckoutDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange} containerClassName="max-w-3xl">
       <DialogContent className="relative max-h-[90vh] overflow-y-auto p-0" onClose={handleClose}>
-        {step === "success" ? (
-          <SuccessView tier={tier} onClose={handleClose} />
+        {step === "domain" && tier ? (
+          <PlanDomainStep
+            tier={tier}
+            billing={billing}
+            onContinue={(selection) => {
+              setDomainSelection(selection);
+              setStep("checkout");
+            }}
+            onSkip={() => {
+              setDomainSelection(null);
+              setStep("checkout");
+            }}
+          />
+        ) : step === "success" ? (
+          <SuccessView
+            tier={tier}
+            billing={billing}
+            domainSelection={domainSelection}
+            onClose={handleClose}
+          />
         ) : (
           <div className="p-6 sm:p-8">
             <DialogHeader className="mb-6">
               <DialogTitle className="text-xl">Completa tu suscripción</DialogTitle>
               <DialogDescription>
-                Realiza el Pago Móvil, sube tu captura y obtén acceso Pro de
-                inmediato mientras verificamos el pago.
+                Realiza el Pago Móvil, sube tu captura y obtén acceso de inmediato
+                mientras verificamos el pago.
               </DialogDescription>
             </DialogHeader>
 
@@ -197,6 +228,22 @@ export function PlanCheckoutDialog({
                   <p className="mt-2 text-base font-semibold text-neutral-900 dark:text-neutral-50">
                     {formatPlanCheckoutSummary(tier, billing)}
                   </p>
+                  {showsAnnualDomainPromo(tier.planId, billing) ? (
+                    <p className="plan-domain-promo-badge mt-3">{ANNUAL_DOMAIN_PROMO_LABEL}</p>
+                  ) : null}
+                  {domainSelection?.domain ? (
+                    <div className="mt-3 rounded-lg border border-teal-200/80 bg-teal-50/60 px-3 py-2 text-xs text-teal-900 dark:border-teal-900/40 dark:bg-teal-950/20 dark:text-teal-200">
+                      <span className="inline-flex items-center gap-1.5 font-medium">
+                        <Globe className="h-3.5 w-3.5" aria-hidden="true" />
+                        Dominio seleccionado: {domainSelection.domain}
+                      </span>
+                      <p className="mt-1 opacity-90">
+                        {domainSelection.mode === "purchase"
+                          ? "Tras activar el plan, te guiamos para registrar y conectar tu .com."
+                          : "Tras activar el plan, configura el DNS para conectar tu dominio."}
+                      </p>
+                    </div>
+                  ) : null}
                   {proration.isUpgradeWithCredit ? (
                     <div className="mt-3 space-y-1 text-sm text-neutral-600 dark:text-neutral-400">
                       <p>
@@ -252,8 +299,7 @@ export function PlanCheckoutDialog({
                     Reporta tu pago
                   </p>
                   <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                    Acceso de Confianza: activamos tu plan Pro al enviar el
-                    comprobante.
+                    Acceso de Confianza: activamos tu plan al enviar el comprobante.
                   </p>
 
                   <div className="mt-5 space-y-4">
@@ -289,10 +335,6 @@ export function PlanCheckoutDialog({
                         disabled={submitting}
                         className="payment-field-input mt-1.5"
                       />
-                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                        Si hay una campaña vigente, el descuento se aplica
-                        automáticamente aunque no ingreses cupón.
-                      </p>
                     </div>
 
                     <div>
@@ -358,11 +400,21 @@ export function PlanCheckoutDialog({
                     </p>
                   )}
 
-                  <div className="mt-auto pt-6">
+                  <div className="mt-auto flex flex-col gap-2 pt-6 sm:flex-row">
+                    {planIncludesCustomDomain(tier.planId) ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setStep("domain")}
+                        disabled={submitting}
+                      >
+                        Volver al dominio
+                      </Button>
+                    ) : null}
                     <button
                       type="submit"
                       disabled={submitting || !proofFile}
-                      className="btn-brand inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-sm font-semibold disabled:opacity-60"
+                      className="btn-brand inline-flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-semibold disabled:opacity-60"
                     >
                       {submitting ? (
                         <>
@@ -370,7 +422,7 @@ export function PlanCheckoutDialog({
                           Enviando…
                         </>
                       ) : (
-                        "Confirmar pago y activar Pro"
+                        `Confirmar pago y activar ${tier.displayName}`
                       )}
                     </button>
                   </div>
@@ -405,11 +457,19 @@ function PagoMovilField({
 
 function SuccessView({
   tier,
+  billing,
+  domainSelection,
   onClose,
 }: {
   tier: PlanPricingTier;
+  billing: BillingPeriod;
+  domainSelection: PlanDomainSelection | null;
   onClose: () => void;
 }) {
+  const domainHref = domainSelection?.domain
+    ? `/dashboard/ajustes?tab=domains&domain=${encodeURIComponent(domainSelection.domain)}&mode=${domainSelection.mode}`
+    : "/dashboard/ajustes?tab=domains";
+
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center sm:px-10 sm:py-14">
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-400">
@@ -419,12 +479,33 @@ function SuccessView({
         ¡Plan {tier.displayName} activado!
       </h3>
       <p className="mt-2 max-w-sm text-sm text-neutral-600 dark:text-neutral-400">
-        Tu acceso Pro ya está disponible. Verificaremos tu pago en breve; si hay
-        algún problema, te avisaremos por correo.
+        Tu acceso ya está disponible. Verificaremos tu pago en breve; si hay algún
+        problema, te avisaremos por correo.
       </p>
-      <Button type="button" className="btn-brand mt-8 min-w-[10rem]" onClick={onClose}>
-        Entendido
-      </Button>
+      {showsAnnualDomainPromo(tier.planId, billing) ? (
+        <p className="plan-domain-promo-badge mt-4">{ANNUAL_DOMAIN_PROMO_LABEL}</p>
+      ) : null}
+      {domainSelection?.domain ? (
+        <p className="mt-3 max-w-sm text-sm text-neutral-600 dark:text-neutral-400">
+          Dominio reservado: <strong>{domainSelection.domain}</strong>. Completa la
+          conexión en el siguiente paso.
+        </p>
+      ) : null}
+      <div className="mt-8 flex flex-col gap-2 sm:flex-row">
+        {planIncludesCustomDomain(tier.planId) ? (
+          <Link
+            href={domainHref}
+            className="btn-brand inline-flex min-w-[10rem] items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold"
+            onClick={onClose}
+          >
+            <Globe className="h-4 w-4" aria-hidden="true" />
+            Configurar dominio
+          </Link>
+        ) : null}
+        <Button type="button" variant="outline" className="min-w-[10rem]" onClick={onClose}>
+          Entendido
+        </Button>
+      </div>
     </div>
   );
 }

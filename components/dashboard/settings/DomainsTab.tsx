@@ -15,13 +15,25 @@ export interface DomainsTabStore {
 interface DomainsTabProps {
   store: DomainsTabStore;
   planId?: PlanId;
+  initialDomain?: string | null;
+  initialDomainMode?: "connect" | "purchase" | null;
 }
 
 function hasCustomDomainPlan(planId: PlanId | undefined): boolean {
-  return planId === "premium" || planId === "enterprise";
+  return (
+    planId === "starter" ||
+    planId === "growth" ||
+    planId === "premium" ||
+    planId === "enterprise"
+  );
 }
 
-export function DomainsTab({ store, planId }: DomainsTabProps) {
+export function DomainsTab({
+  store,
+  planId,
+  initialDomain = null,
+  initialDomainMode = null,
+}: DomainsTabProps) {
   const canUseCustomDomain = hasCustomDomainPlan(planId);
 
   return (
@@ -39,13 +51,13 @@ export function DomainsTab({ store, planId }: DomainsTabProps) {
             />
             <div className="min-w-0">
               <p className="text-sm font-medium text-teal-900 dark:text-teal-100">
-                Dominio personalizado incluido en Business
+                Dominio personalizado en planes de pago
               </p>
               <p className="mt-1 text-xs leading-relaxed text-teal-800/90 dark:text-teal-200/90">
                 Conecta tu propio dominio (por ejemplo{" "}
                 <strong>tutienda.com</strong>) para que tus clientes vean tu marca
-                en la URL. Puedes preparar la configuración aquí y activarla al
-                pasar al plan Business.
+                en la URL. Incluido en Pro, Business y Enterprise; con plan anual,
+                el .com del primer año va incluido.
               </p>
               <Link
                 href="/dashboard/planes"
@@ -62,6 +74,8 @@ export function DomainsTab({ store, planId }: DomainsTabProps) {
         storeSlug={store.slug}
         customDomain={store.custom_domain ?? null}
         customDomainVerified={Boolean(store.custom_domain_verified)}
+        initialDomain={initialDomain}
+        initialDomainMode={initialDomainMode}
       />
     </div>
   );

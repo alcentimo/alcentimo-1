@@ -1,5 +1,7 @@
 import type { ProfilePlanDb } from "@/lib/database.types";
 import {
+  CUSTOM_DOMAIN_FEATURE,
+  FREE_SUBDOMAIN_FEATURE,
   PAID_PLAN_CTA,
   type BillingPeriod,
   type PlanPricingTier,
@@ -86,7 +88,7 @@ const TIER_STATIC: Record<
   free: {
     tagline: "Ideal para empezar",
     features: [
-      "Catálogo público con enlace único",
+      FREE_SUBDOMAIN_FEATURE,
       "Precios USD y Bs automáticos",
       "Cupones, variantes y alertas de stock",
     ],
@@ -96,6 +98,7 @@ const TIER_STATIC: Record<
     tagline: "Para negocios en crecimiento",
     features: [
       "Todo lo del plan Gratis",
+      CUSTOM_DOMAIN_FEATURE,
       "Más capacidad de catálogo",
       "Soporte por email",
     ],
@@ -111,7 +114,7 @@ const TIER_STATIC: Record<
     tagline: "Para marcas establecidas",
     features: [
       "Todo lo del plan Pro",
-      "Dominio personalizado (tutienda.com)",
+      CUSTOM_DOMAIN_FEATURE,
       "Usuarios y roles de equipo",
       "Soporte dedicado",
     ],
@@ -121,6 +124,7 @@ const TIER_STATIC: Record<
     tagline: "Multi-sucursal y operaciones avanzadas",
     features: [
       "Todo lo del plan Business",
+      CUSTOM_DOMAIN_FEATURE,
       "Hasta 3 sucursales incluidas",
       "Selector de sede y retiro en tienda",
       "Stock independiente por sucursal",

@@ -2,13 +2,17 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Check, Globe } from "lucide-react";
+import { Check, Globe, Sparkles } from "lucide-react";
 import { PlanCheckoutDialog } from "@/components/dashboard/plans/PlanCheckoutDialog";
 import {
+  ANNUAL_DOMAIN_PROMO_LABEL,
+  CUSTOM_DOMAIN_FEATURE,
   formatAnnualSavingsLabel,
   formatPlanPriceForTier,
   getRecommendedAnnualSavingsLabel,
+  planIncludesCustomDomain,
   PLAN_PRICING_TIERS,
+  showsAnnualDomainPromo,
   type BillingPeriod,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
@@ -196,6 +200,58 @@ export function PlansPanel({
         </section>
       ) : null}
 
+      {isActivation ? (
+        <section className="rounded-xl border border-violet-200/80 bg-violet-50/40 px-5 py-4 dark:border-violet-900/40 dark:bg-violet-950/20">
+          <div className="flex items-start gap-3">
+            <Globe
+              className="mt-0.5 h-5 w-5 shrink-0 text-violet-700 dark:text-violet-400"
+              aria-hidden="true"
+            />
+            <div>
+              <p className="text-sm font-semibold text-violet-950 dark:text-violet-100">
+                Planes de pago: dominio personalizado incluido
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-violet-900/90 dark:text-violet-200/90">
+                Pro, Business y Enterprise incluyen{" "}
+                <strong>dominio .com incluido / conectable</strong>. Con facturación
+                anual: <strong>{ANNUAL_DOMAIN_PROMO_LABEL.toLowerCase()}</strong>.
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {!isActivation ? (
+        <section className="rounded-xl border border-violet-200/80 bg-violet-50/40 px-5 py-4 dark:border-violet-900/40 dark:bg-violet-950/20">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <Globe
+                className="mt-0.5 h-5 w-5 shrink-0 text-violet-700 dark:text-violet-400"
+                aria-hidden="true"
+              />
+              <div>
+                <p className="text-sm font-semibold text-violet-950 dark:text-violet-100">
+                  Tu marca, tu dominio
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-violet-900/90 dark:text-violet-200/90">
+                  Los planes <strong>Pro</strong>, <strong>Business</strong> y{" "}
+                  <strong>Enterprise</strong> incluyen{" "}
+                  <strong>dominio personalizado (.com incluido / conectable)</strong>.
+                  En plan anual, además recibes{" "}
+                  <strong>dominio .com gratis por 1 año</strong>.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/dashboard/ajustes?tab=domains"
+              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-violet-300 bg-white px-4 py-2 text-sm font-medium text-violet-900 transition hover:bg-violet-50 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-100 dark:hover:bg-violet-900/40"
+            >
+              Gestionar dominio
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       {!isActivation ? (
         <section className="rounded-xl border border-teal-200/80 bg-teal-50/40 px-5 py-4 dark:border-teal-900/40 dark:bg-teal-950/20">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -237,6 +293,12 @@ export function PlansPanel({
           )}
         >
           <BillingToggle billing={billing} onChange={setBilling} />
+          {billing === "annual" ? (
+            <div className="plan-domain-promo-banner max-w-xl">
+              <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>{ANNUAL_DOMAIN_PROMO_LABEL} en planes Pro, Business y Enterprise</span>
+            </div>
+          ) : null}
           {billing === "annual" && recommendedSavings && (
             <p className="text-sm font-medium text-teal-700 dark:text-teal-400">
               {recommendedSavings} con facturación anual
@@ -341,6 +403,7 @@ function PricingCard({
   const isFree = tier.monthlyUsd === 0;
   const savingsLabel =
     billing === "annual" ? formatAnnualSavingsLabel(tier) : null;
+  const annualDomainPromo = showsAnnualDomainPromo(tier.planId, billing);
   const annualTotal =
     billing === "annual" && tier.annualUsd != null ? tier.annualUsd : null;
 
@@ -381,6 +444,9 @@ function PricingCard({
             Facturado ${annualTotal} al año
           </p>
         )}
+        {annualDomainPromo ? (
+          <p className="plan-domain-promo-badge mt-2">{ANNUAL_DOMAIN_PROMO_LABEL}</p>
+        ) : null}
         {savingsLabel && (
           <p
             className={cn(
@@ -399,19 +465,39 @@ function PricingCard({
       </div>
 
       <ul className="mt-5 flex-1 space-y-2.5">
-        {tier.features.map((feature) => (
-          <li
-            key={feature}
-            className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-400"
-          >
-            <Check
-              className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-600 dark:text-teal-400"
-              aria-hidden="true"
-            />
-            <span>{feature}</span>
-          </li>
-        ))}
+        {tier.features.map((feature) => {
+          const isDomainFeature = feature === CUSTOM_DOMAIN_FEATURE;
+          return (
+            <li
+              key={feature}
+              className={cn(
+                "flex items-start gap-2 text-sm",
+                isDomainFeature
+                  ? "font-medium text-violet-800 dark:text-violet-200"
+                  : "text-neutral-600 dark:text-neutral-400",
+              )}
+            >
+              <Check
+                className={cn(
+                  "mt-0.5 h-3.5 w-3.5 shrink-0",
+                  isDomainFeature
+                    ? "text-violet-600 dark:text-violet-400"
+                    : "text-teal-600 dark:text-teal-400",
+                )}
+                aria-hidden="true"
+              />
+              <span>{feature}</span>
+            </li>
+          );
+        })}
       </ul>
+
+      {planIncludesCustomDomain(tier.planId) ? (
+        <p className="mt-4 rounded-lg border border-violet-200/70 bg-violet-50/50 px-3 py-2 text-[11px] leading-relaxed text-violet-900 dark:border-violet-900/40 dark:bg-violet-950/20 dark:text-violet-200">
+          Al activar este plan podrás buscar, conectar o registrar tu dominio .com en
+          el siguiente paso.
+        </p>
+      ) : null}
 
       {tier.addonNote ? (
         <p className="mt-4 rounded-lg border border-amber-200/80 bg-amber-50/70 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">

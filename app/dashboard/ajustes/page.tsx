@@ -23,9 +23,9 @@ export const dynamic = "force-dynamic";
 export default async function AjustesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; domain?: string; mode?: string }>;
 }) {
-  const { tab } = await searchParams;
+  const { tab, domain, mode } = await searchParams;
   const supabase = await createClient();
   const session = await getDashboardSession();
 
@@ -148,6 +148,10 @@ export default async function AjustesPage({
         planId={session.authUser.planId}
         initialLocations={locations}
         locationLimit={locationLimit}
+        initialDomain={domain?.trim() || null}
+        initialDomainMode={
+          mode === "connect" || mode === "purchase" ? mode : null
+        }
       />
     </div>
   );

@@ -26,6 +26,8 @@ interface CustomDomainSectionProps {
   storeSlug: string;
   customDomain: string | null;
   customDomainVerified: boolean;
+  initialDomain?: string | null;
+  initialDomainMode?: "connect" | "purchase" | null;
 }
 
 interface DnsRecordRow {
@@ -106,9 +108,11 @@ export function CustomDomainSection({
   storeSlug,
   customDomain,
   customDomainVerified,
+  initialDomain = null,
+  initialDomainMode = null,
 }: CustomDomainSectionProps) {
   const { supportEmail } = usePlatformSettings();
-  const [domainInput, setDomainInput] = useState(customDomain ?? "");
+  const [domainInput, setDomainInput] = useState(customDomain ?? initialDomain ?? "");
   const [savedDomain, setSavedDomain] = useState(customDomain);
   const [savedVerified, setSavedVerified] = useState(customDomainVerified);
   const [error, setError] = useState<string | null>(null);
@@ -209,6 +213,18 @@ export function CustomDomainSection({
       title="Dominio personalizado"
       description="Usa tu propio dominio (ej. tutienda.com) para que tus clientes vean tu marca en la URL pública."
     >
+      {initialDomain && !customDomain ? (
+        <div className="rounded-xl border border-violet-200/80 bg-violet-50/60 px-4 py-3 text-sm text-violet-900 dark:border-violet-900/40 dark:bg-violet-950/20 dark:text-violet-200">
+          <p className="font-medium">
+            Dominio seleccionado al activar tu plan: {initialDomain}
+          </p>
+          <p className="mt-1 text-xs opacity-90">
+            {initialDomainMode === "purchase"
+              ? "Guarda el dominio abajo y solicita la gestión si quieres que Alcentimo lo registre por ti."
+              : "Guarda el dominio y configura los registros DNS indicados más abajo."}
+          </p>
+        </div>
+      ) : null}
       <div className="space-y-4">
         <div>
           <Label htmlFor="custom-domain-input" className="payment-field-label">
