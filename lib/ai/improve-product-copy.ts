@@ -1,4 +1,7 @@
-import { getOpenAiApiKey } from "@/lib/env/server";
+import {
+  createOpenRouterChatCompletion,
+  OpenRouterChatError,
+} from "@/lib/ai/openrouter-client";
 import type {
   ImproveProductCopyInput,
   ImproveProductCopyResult,
@@ -92,13 +95,6 @@ function parseModelJson(content: string): ImproveProductCopyResult {
 export async function improveProductCopy(
   input: ImproveProductCopyInput,
 ): Promise<ImproveProductCopyResult> {
-  const apiKey = getOpenAiApiKey();
-  if (!apiKey) {
-    throw new Error(
-      "OpenAI no está configurado. Añade OPENAI_API_KEY en las variables de entorno.",
-    );
-  }
-
   const draftTitle = input.draftTitle?.trim() ?? "";
   const draftDescription = input.draftDescription?.trim() ?? "";
 
@@ -108,14 +104,8 @@ export async function improveProductCopy(
     );
   }
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
+  try {
+    const content = await createOpenRouterChatCompletion({
       temperature: 0.65,
       max_tokens: 700,
       response_format: { type: "json_object" },
@@ -123,29 +113,13 @@ export async function improveProductCopy(
         { role: "system", content: buildSystemPrompt() },
         { role: "user", content: buildUserPrompt(input) },
       ],
-    }),
-  });
+    });
 
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => "");
-    if (response.status === 429) {
-      throw new Error("Demasiadas solicitudes a la IA. Espera un momento e intenta de nuevo.");
+    return parseModelJson(content);
+  } catch (error) {
+    if (error instanceof OpenRouterChatError) {
+      throw new Error(error.message);
     }
-    throw new Error(
-      errorBody.includes("invalid_api_key")
-        ? "Clave de OpenAI inválida. Revisa OPENAI_API_KEY."
-        : "No se pudo contactar con la IA. Intenta de nuevo en unos segundos.",
-    );
+    throw error;
   }
-
-  const payload = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string | null } }>;
-  };
-
-  const content = payload.choices?.[0]?.message?.content;
-  if (!content?.trim()) {
-    throw new Error("La IA no devolvió contenido. Intenta de nuevo.");
-  }
-
-  return parseModelJson(content);
 }

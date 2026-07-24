@@ -1,4 +1,7 @@
-import { getOpenAiApiKey } from "@/lib/env/server";
+import {
+  createOpenRouterChatCompletion,
+  OpenRouterChatError,
+} from "@/lib/ai/openrouter-client";
 import type {
   StorefrontAssistantContext,
   StorefrontAssistantMessage,
@@ -57,26 +60,13 @@ export async function answerStorefrontAssistantQuestion(input: {
   context: StorefrontAssistantContext;
   messages: StorefrontAssistantMessage[];
 }): Promise<string> {
-  const apiKey = getOpenAiApiKey();
-  if (!apiKey) {
-    throw new Error(
-      "El asistente no está disponible en este momento. Intenta más tarde o contáctanos por WhatsApp.",
-    );
-  }
-
   const history = sanitizeMessages(input.messages);
   if (history.length === 0 || history[history.length - 1]?.role !== "user") {
     throw new Error("Escribe tu pregunta para continuar.");
   }
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
+  try {
+    const content = await createOpenRouterChatCompletion({
       temperature: 0.55,
       max_tokens: 450,
       messages: [
@@ -86,28 +76,13 @@ export async function answerStorefrontAssistantQuestion(input: {
           content: message.content,
         })),
       ],
-    }),
-  });
+    });
 
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new Error(
-        "Estamos recibiendo muchas consultas. Espera un momento e intenta de nuevo.",
-      );
+    return truncate(content, MAX_REPLY);
+  } catch (error) {
+    if (error instanceof OpenRouterChatError) {
+      throw new Error(error.message);
     }
-    throw new Error(
-      "No pudimos responder en este momento. Intenta de nuevo en unos segundos.",
-    );
+    throw error;
   }
-
-  const payload = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string | null } }>;
-  };
-
-  const content = payload.choices?.[0]?.message?.content?.trim();
-  if (!content) {
-    throw new Error("No recibimos respuesta. Intenta reformular tu pregunta.");
-  }
-
-  return truncate(content, MAX_REPLY);
 }
