@@ -380,6 +380,8 @@ function seedToReferenceCatalogItem(
     compare_at_ves: seed.compareAtUsd
       ? usdToVes(seed.compareAtUsd, exchangeRate)
       : null,
+    wholesale_price_usd: null,
+    wholesale_min_qty: null,
     exchange_rate_used: exchangeRate,
     product_variants: null,
     thumb_url: resolveReferenceAssetUrl(rubro, seed.assetKey),

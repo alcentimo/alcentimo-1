@@ -1,5 +1,6 @@
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
+import { computeUsdToVes, resolveUnitPriceUsd } from "@/lib/catalog/pricing";
 
 export interface CartModifierSelection {
   groupId: string;
@@ -17,6 +18,8 @@ export interface CartItem {
   unitPriceUsd: number;
   unitPriceVes: number | null;
   availableStock: number;
+  wholesaleApplied?: boolean;
+  retailUnitUsd?: number;
   modifiers?: CartModifierSelection[];
 }
 
@@ -62,7 +65,15 @@ export function buildCartItem(
   modifiers: CartModifierSelection[] = [],
 ): CartItem {
   const modifiersExtra = sumModifiersExtraUsd(modifiers);
-  const unitPriceUsd = variant.priceUsd + modifiersExtra;
+  const retailBaseUsd = product.price_usd ?? 0;
+  const pricing = resolveUnitPriceUsd({
+    retailUsd: retailBaseUsd,
+    wholesalePriceUsd: product.wholesale_price_usd,
+    wholesaleMinQty: product.wholesale_min_qty,
+    quantity,
+    priceExtraUsd: variant.priceExtraUsd + modifiersExtra,
+  });
+  const unitPriceUsd = pricing.unitPriceUsd;
   const modifiersLabel = formatModifiersLabel(modifiers);
   const variantName = modifiersLabel
     ? `${variant.name} · ${modifiersLabel}`
@@ -75,13 +86,13 @@ export function buildCartItem(
     variantName,
     unitPriceUsd,
     unitPriceVes:
-      variant.priceVes != null
-        ? variant.priceVes +
-          (variant.priceUsd > 0 && variant.priceVes > 0
-            ? (modifiersExtra * variant.priceVes) / variant.priceUsd
-            : 0)
-        : null,
+      computeUsdToVes(unitPriceUsd, product.exchange_rate_used) ??
+      (variant.priceVes != null && variant.priceUsd > 0
+        ? (unitPriceUsd / variant.priceUsd) * variant.priceVes
+        : null),
     availableStock: variant.availableStock,
+    wholesaleApplied: pricing.wholesaleApplied,
+    retailUnitUsd: pricing.retailUnitUsd,
     modifiers: modifiers.length > 0 ? modifiers : undefined,
   };
 }

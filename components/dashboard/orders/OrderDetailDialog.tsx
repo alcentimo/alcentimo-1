@@ -115,6 +115,14 @@ export function OrderDetailDialog({
                     {item.variant_name !== "Estándar" && (
                       <p className="text-xs text-zinc-500">{item.variant_name}</p>
                     )}
+                    {item.pricing_tier === "wholesale" ? (
+                      <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                        Precio al mayor
+                        {item.retail_unit_price_usd != null
+                          ? ` · detal ${formatUsd(item.retail_unit_price_usd)}/u`
+                          : ""}
+                      </p>
+                    ) : null}
                   </div>
                   <span className="shrink-0 tabular-nums text-zinc-700 dark:text-zinc-200">
                     {formatUsd(item.line_total_usd)}

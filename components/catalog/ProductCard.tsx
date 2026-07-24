@@ -8,7 +8,11 @@ import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVisibilitySettings } from "@/lib/store-settings/types";
 import { getProductBodyLayoutClass } from "@/lib/store-settings/catalog-theme";
 import { formatUsd, formatApproxBs } from "@/lib/format";
-import { computeUsdToVes, computeProductDiscountPercent, isProductOnSale } from "@/lib/catalog/pricing";
+import { computeUsdToVes, computeProductDiscountPercent, hasWholesalePricing, isProductOnSale, resolveUnitPriceUsd } from "@/lib/catalog/pricing";
+import {
+  WholesaleCatalogHint,
+  WholesalePriceBadge,
+} from "@/components/catalog/WholesalePriceBadge";
 import { cartItemKey, sumModifiersExtraUsd, type CartModifierSelection } from "@/lib/catalog/cart-types";
 import { getLowStockThreshold } from "@/lib/inventory/stock-status";
 import {
@@ -164,8 +168,12 @@ export const ProductCard = memo(function ProductCard({
   );
 
   const modifiersExtra = sumModifiersExtraUsd(selectedModifiers);
-  const displayPriceUsd =
+  const retailDisplayUsd =
     (selectedVariant?.priceUsd ?? product.price_usd ?? 0) + modifiersExtra;
+  const wholesaleConfigured = hasWholesalePricing(
+    product.wholesale_price_usd,
+    product.wholesale_min_qty,
+  );
 
   const outOfStock = isProductOutOfStock(product);
   const { showStock, showDescription, showPrices } = catalogVisibility;
@@ -190,6 +198,25 @@ export const ProductCard = memo(function ProductCard({
     )?.quantity ?? 0;
   const effectiveCartQuantity =
     cartQuantity > 0 ? cartQuantity : contextCartQuantity;
+  const activePricing = useMemo(() => {
+    if (effectiveCartQuantity <= 0) return null;
+    return resolveUnitPriceUsd({
+      retailUsd: product.price_usd ?? 0,
+      wholesalePriceUsd: product.wholesale_price_usd,
+      wholesaleMinQty: product.wholesale_min_qty,
+      quantity: effectiveCartQuantity,
+      priceExtraUsd: (selectedVariant?.priceExtraUsd ?? 0) + modifiersExtra,
+    });
+  }, [
+    effectiveCartQuantity,
+    modifiersExtra,
+    product.price_usd,
+    product.wholesale_min_qty,
+    product.wholesale_price_usd,
+    selectedVariant?.priceExtraUsd,
+  ]);
+  const displayPriceUsd = activePricing?.unitPriceUsd ?? retailDisplayUsd;
+  const wholesaleApplied = activePricing?.wholesaleApplied ?? false;
   const inCart = effectiveCartQuantity > 0;
   const remaining = Math.max(0, activeStock - effectiveCartQuantity);
   const canAddMore =
@@ -337,6 +364,16 @@ export const ProductCard = memo(function ProductCard({
               ) : (
                 <span className="store-product-price-ves-placeholder" aria-hidden="true" />
               )}
+              {wholesaleApplied ? (
+                <WholesalePriceBadge className="mt-2" compact />
+              ) : wholesaleConfigured &&
+                product.wholesale_min_qty != null ? (
+                <WholesaleCatalogHint
+                  wholesalePriceUsd={product.wholesale_price_usd as number}
+                  wholesaleMinQty={product.wholesale_min_qty}
+                  className="mt-1.5"
+                />
+              ) : null}
             </div>
           ) : null}
 

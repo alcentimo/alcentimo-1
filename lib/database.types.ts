@@ -425,6 +425,8 @@ export interface ProductPrice {
   variant_id: string;
   amount_usd: number;
   compare_at_usd: number | null;
+  wholesale_price_usd: number | null;
+  wholesale_min_qty: number | null;
   effective_from: string;
   effective_until: string | null;
   created_at: string;
@@ -512,6 +514,8 @@ export interface CatalogListItem {
   price_ves: number | null;
   compare_at_usd: number | null;
   compare_at_ves: number | null;
+  wholesale_price_usd: number | null;
+  wholesale_min_qty: number | null;
   exchange_rate_used: number | null;
   product_variants: ProductVariantJson[] | null;
   metadata?: Record<string, unknown> | null;

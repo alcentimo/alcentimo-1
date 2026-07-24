@@ -6,6 +6,7 @@ import { cartItemKey } from "@/lib/catalog/cart-types";
 import { buildCartWhatsAppMessage } from "@/lib/catalog/cart-whatsapp-message";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { formatUsd } from "@/lib/format";
+import { WholesalePriceBadge } from "@/components/catalog/WholesalePriceBadge";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 
@@ -112,6 +113,9 @@ export function CartSummaryPanel({
                               {item.variantName}
                             </p>
                           )}
+                          {item.wholesaleApplied ? (
+                            <WholesalePriceBadge className="mt-1.5" compact />
+                          ) : null}
                         </div>
                         <button
                           type="button"

@@ -16,6 +16,7 @@ import { CheckoutSuccessScreen } from "@/components/catalog-transactional/Checko
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { cartItemKey } from "@/lib/catalog/cart-types";
 import { formatUsd, formatExchangeRate } from "@/lib/format";
+import { WholesalePriceBadge } from "@/components/catalog/WholesalePriceBadge";
 import { formatCountryCurrency } from "@/lib/country-config";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { loadCustomerCheckoutContext } from "@/lib/customers/checkout-actions";
@@ -295,6 +296,7 @@ export function CheckoutPanel({
         variantName: item.variantName,
         quantity: item.quantity,
         unitPriceUsd: item.unitPriceUsd,
+        wholesaleApplied: item.wholesaleApplied,
       })),
     [items],
   );
@@ -566,6 +568,9 @@ export function CheckoutPanel({
                                   {item.variantName}
                                 </p>
                               )}
+                              {item.wholesaleApplied ? (
+                                <WholesalePriceBadge className="mt-1.5" compact />
+                              ) : null}
                             </div>
                             <button
                               type="button"

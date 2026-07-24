@@ -5,6 +5,7 @@ export interface TransactionalOrderWhatsAppItem {
   variant_name: string;
   quantity: number;
   line_total_usd: number;
+  pricing_tier?: "retail" | "wholesale";
 }
 
 export interface TransactionalOrderWhatsAppMessageInput {
@@ -60,7 +61,9 @@ export function buildTransactionalOrderWhatsAppMessage(
       item.variant_name !== "Estándar"
         ? `${item.product_name} (${item.variant_name})`
         : item.product_name;
-    return `• ${item.quantity} x ${sanitizeCustomerText(productName)} - ${formatUsd(item.line_total_usd)}`;
+    const tierLabel =
+      item.pricing_tier === "wholesale" ? " · mayor" : "";
+    return `• ${item.quantity} x ${sanitizeCustomerText(productName)}${tierLabel} - ${formatUsd(item.line_total_usd)}`;
   });
 
   const body = [

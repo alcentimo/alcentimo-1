@@ -143,6 +143,46 @@ function parseCompareAtUsdFromForm(
   return { compareAtUsd: compareAtUsd > 0 ? compareAtUsd : null };
 }
 
+function parseWholesaleFromForm(
+  formData: FormData,
+  priceUsd: number,
+): {
+  wholesalePriceUsd?: number | null;
+  wholesaleMinQty?: number | null;
+  error?: string;
+} {
+  const priceRaw = String(formData.get("wholesale_price_usd") ?? "").trim();
+  const minQtyRaw = String(formData.get("wholesale_min_qty") ?? "").trim();
+
+  if (!priceRaw && !minQtyRaw) {
+    return { wholesalePriceUsd: null, wholesaleMinQty: null };
+  }
+
+  if (!priceRaw || !minQtyRaw) {
+    return {
+      error:
+        "Para precio al mayor, indica tanto el precio mayorista como la cantidad mínima.",
+    };
+  }
+
+  const wholesalePriceUsd = parseFloat(priceRaw);
+  const wholesaleMinQty = parseInt(minQtyRaw, 10);
+
+  if (!Number.isFinite(wholesalePriceUsd) || wholesalePriceUsd < 0) {
+    return { error: "Ingresa un precio mayorista válido." };
+  }
+  if (!Number.isFinite(wholesaleMinQty) || wholesaleMinQty < 2) {
+    return { error: "La cantidad mínima para precio mayor debe ser 2 o más." };
+  }
+  if (wholesalePriceUsd >= priceUsd) {
+    return {
+      error: "El precio mayorista debe ser menor al precio de detal.",
+    };
+  }
+
+  return { wholesalePriceUsd, wholesaleMinQty };
+}
+
 async function getNextProductSortOrder(
   supabase: SupabaseClient,
   storeId: string,
@@ -178,6 +218,8 @@ export interface ProductEditData {
   description: string;
   priceUsd: number;
   compareAtUsd: number | null;
+  wholesalePriceUsd: number | null;
+  wholesaleMinQty: number | null;
   stockQuantity: number;
   lowStockThreshold: number;
   categoryId: string;
@@ -280,6 +322,8 @@ export async function createProduct(
   }
   const compareAtParsed = parseCompareAtUsdFromForm(formData, priceUsd);
   if (compareAtParsed.error) return { error: compareAtParsed.error };
+  const wholesaleParsed = parseWholesaleFromForm(formData, priceUsd);
+  if (wholesaleParsed.error) return { error: wholesaleParsed.error };
   if (!hasCustomVariants || stationeryUnifiedStock) {
     if (!Number.isFinite(stockQuantity) || stockQuantity < 0) {
       return { error: "Ingresa un stock válido (0 o más)." };
@@ -411,6 +455,8 @@ export async function createProduct(
     variant_id: variantId,
     amount_usd: priceUsd,
     compare_at_usd: compareAtParsed.compareAtUsd ?? null,
+    wholesale_price_usd: wholesaleParsed.wholesalePriceUsd ?? null,
+    wholesale_min_qty: wholesaleParsed.wholesaleMinQty ?? null,
   });
 
   if (priceError) return { error: priceError.message };
@@ -501,7 +547,7 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
 
   const { data: priceRow } = await supabase
     .from("product_prices")
-    .select("amount_usd, compare_at_usd")
+    .select("amount_usd, compare_at_usd, wholesale_price_usd, wholesale_min_qty")
     .eq("variant_id", defaultVariant.id)
     .maybeSingle();
 
@@ -544,6 +590,14 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     compareAtUsd:
       priceRow?.compare_at_usd != null
         ? Number(priceRow.compare_at_usd)
+        : null,
+    wholesalePriceUsd:
+      priceRow?.wholesale_price_usd != null
+        ? Number(priceRow.wholesale_price_usd)
+        : null,
+    wholesaleMinQty:
+      priceRow?.wholesale_min_qty != null
+        ? Number(priceRow.wholesale_min_qty)
         : null,
     stockQuantity: Number(defaultVariant.stock_quantity ?? 0),
     lowStockThreshold: Number(defaultVariant.low_stock_threshold ?? 5),
@@ -620,6 +674,8 @@ export async function updateProduct(
   }
   const compareAtParsed = parseCompareAtUsdFromForm(formData, priceUsd);
   if (compareAtParsed.error) return { error: compareAtParsed.error };
+  const wholesaleParsed = parseWholesaleFromForm(formData, priceUsd);
+  if (wholesaleParsed.error) return { error: wholesaleParsed.error };
   if (
     (!hasCustomVariants || stationeryUnifiedStock) &&
     (!Number.isFinite(stockQuantity) || stockQuantity < 0)
@@ -715,6 +771,8 @@ export async function updateProduct(
     .update({
       amount_usd: priceUsd,
       compare_at_usd: compareAtParsed.compareAtUsd ?? null,
+      wholesale_price_usd: wholesaleParsed.wholesalePriceUsd ?? null,
+      wholesale_min_qty: wholesaleParsed.wholesaleMinQty ?? null,
     })
     .eq("variant_id", defaultVariantId);
 
@@ -1146,7 +1204,7 @@ export async function duplicateProduct(
 
   const { data: priceRow } = await supabase
     .from("product_prices")
-    .select("amount_usd, compare_at_usd")
+    .select("amount_usd, compare_at_usd, wholesale_price_usd, wholesale_min_qty")
     .eq("variant_id", variant.id)
     .maybeSingle();
 

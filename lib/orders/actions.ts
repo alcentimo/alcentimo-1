@@ -25,7 +25,7 @@ import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import { reserveOrderInventory } from "@/lib/orders/order-inventory";
 import { enrichOrderItemsWithStockUnits } from "@/lib/orders/stationery-inventory";
 import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
-import type { OrderLineItem, SubmitOrderLineInput } from "@/lib/orders/types";
+import type { SubmitOrderLineInput } from "@/lib/orders/types";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import {
@@ -33,6 +33,7 @@ import {
   type StoreOrdersResult,
 } from "@/lib/orders/get-store-orders";
 import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
+import { resolveOrderLinesWithPricing } from "@/lib/orders/resolve-order-line-prices";
 
 export interface SubmitTransactionalOrderResult {
   error?: string;
@@ -40,17 +41,6 @@ export interface SubmitTransactionalOrderResult {
   whatsappUrl?: string;
 }
 
-function buildOrderItems(lines: SubmitOrderLineInput[]): OrderLineItem[] {
-  return lines.map((line) => ({
-    product_id: line.productId,
-    variant_id: line.variantId,
-    product_name: line.productName,
-    variant_name: line.variantName,
-    quantity: line.quantity,
-    unit_price_usd: line.unitPriceUsd,
-    line_total_usd: line.unitPriceUsd * line.quantity,
-  }));
-}
 
 export async function submitTransactionalOrder(
   formData: FormData,
@@ -195,7 +185,11 @@ export async function submitTransactionalOrder(
     : shippingBranchAddressRaw.slice(0, 320) || null;
 
   const admin = createAdminClient();
-  const orderItems = buildOrderItems(lines);
+  const pricedLines = await resolveOrderLinesWithPricing(admin, store.id, lines);
+  if (pricedLines.error) {
+    return { error: pricedLines.error };
+  }
+  const orderItems = pricedLines.items;
   const enrichedOrderItems = await enrichOrderItemsWithStockUnits(
     admin,
     store.id,

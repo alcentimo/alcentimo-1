@@ -113,6 +113,8 @@ export interface CatalogVariantOption {
   priceVes: number | null;
   availableStock: number;
   priceExtraUsd: number;
+  wholesalePriceUsd: number | null;
+  wholesaleMinQty: number | null;
 }
 
 export function getCatalogVariantOptions(
@@ -123,11 +125,15 @@ export function getCatalogVariantOptions(
     default_variant_id: string;
     product_variants?: unknown;
     metadata?: Record<string, unknown> | null;
+    wholesale_price_usd?: number | null;
+    wholesale_min_qty?: number | null;
   },
   exchangeRate?: number | null,
 ): CatalogVariantOption[] {
   const basePrice = product.price_usd ?? 0;
   const baseVes = product.price_ves;
+  const wholesalePriceUsd = product.wholesale_price_usd ?? null;
+  const wholesaleMinQty = product.wholesale_min_qty ?? null;
   const variants = parseVariantsJson(product.product_variants);
   const metadata = product.metadata ?? null;
   const usesUnifiedStock =
@@ -143,6 +149,8 @@ export function getCatalogVariantOptions(
         priceVes: computeUsdToVes(basePrice, exchangeRate) ?? baseVes,
         availableStock: product.available_stock,
         priceExtraUsd: 0,
+        wholesalePriceUsd,
+        wholesaleMinQty,
       },
     ];
   }
@@ -169,6 +177,8 @@ export function getCatalogVariantOptions(
       priceVes,
       availableStock,
       priceExtraUsd: variant.price_extra_usd,
+      wholesalePriceUsd,
+      wholesaleMinQty,
     };
   });
 }

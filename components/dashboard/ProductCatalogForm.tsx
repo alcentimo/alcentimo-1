@@ -37,6 +37,7 @@ import { useStationerySaleVariants } from "@/components/dashboard/useStationeryS
 import { areStationerySaleVariants } from "@/lib/rubros/modules/papeleria-libreria-oficina/variants";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
+import { ProductWholesaleField } from "@/components/dashboard/ProductWholesaleField";
 import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
 import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
 import {
@@ -77,6 +78,14 @@ export function ProductCatalogForm({
   );
   const [compareAtUsd, setCompareAtUsd] = useState(
     initialData?.compareAtUsd != null ? String(initialData.compareAtUsd) : "",
+  );
+  const [wholesalePriceUsd, setWholesalePriceUsd] = useState(
+    initialData?.wholesalePriceUsd != null
+      ? String(initialData.wholesalePriceUsd)
+      : "",
+  );
+  const [wholesaleMinQty, setWholesaleMinQty] = useState(
+    initialData?.wholesaleMinQty != null ? String(initialData.wholesaleMinQty) : "",
   );
   const [galleryValue, setGalleryValue] = useState<ProductGalleryFieldValue>({
     items: [],
@@ -314,6 +323,17 @@ export function ProductCatalogForm({
         disabled={isBusy}
         variant="compact"
         idPrefix="catalog-compare-at"
+      />
+
+      <ProductWholesaleField
+        priceUsd={priceUsd}
+        wholesalePriceUsd={wholesalePriceUsd}
+        wholesaleMinQty={wholesaleMinQty}
+        onWholesalePriceUsdChange={setWholesalePriceUsd}
+        onWholesaleMinQtyChange={setWholesaleMinQty}
+        disabled={isBusy}
+        variant="compact"
+        idPrefix="catalog-wholesale"
       />
 
       {!isRopaModa &&

@@ -17,6 +17,7 @@ import {
   type CartItem,
 } from "@/lib/catalog/cart-types";
 import { cartItemsToLines } from "@/lib/catalog/cart-lines";
+import { getCatalogVariantOptions } from "@/lib/products/variants";
 import {
   clearStoredCart,
   readStoredCart,
@@ -66,6 +67,21 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null);
 
 const SYNC_DEBOUNCE_MS = 400;
+
+function refreshCartItemPricing(item: CartItem, quantity: number): CartItem {
+  const variant = getCatalogVariantOptions(item.product).find(
+    (option) => option.id === item.variantId,
+  );
+  if (!variant) {
+    return { ...item, quantity };
+  }
+  return buildCartItem(
+    item.product,
+    variant,
+    quantity,
+    item.modifiers ?? [],
+  );
+}
 
 type PersistMode = "guest" | "customer";
 
@@ -280,7 +296,7 @@ export function CartProvider({
               item.variantId,
               item.modifiers,
             ) === key
-              ? { ...item, quantity: nextQty }
+              ? refreshCartItemPricing(item, nextQty)
               : item,
           );
         }
@@ -336,7 +352,7 @@ export function CartProvider({
               0,
               Math.min(quantity, item.availableStock),
             );
-            return { ...item, quantity: nextQty };
+            return refreshCartItemPricing(item, nextQty);
           })
           .filter((item) => item.quantity > 0),
       );

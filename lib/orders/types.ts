@@ -14,6 +14,10 @@ export interface OrderLineItem {
   stock_units?: number;
   /** Variante que concentra el stock cuando hay venta por empaque. */
   inventory_variant_id?: string;
+  /** Detal o mayorista según cantidad al momento del pedido. */
+  pricing_tier?: "retail" | "wholesale";
+  /** Precio unitario de detal de referencia cuando aplica mayorista. */
+  retail_unit_price_usd?: number;
 }
 
 export interface CatalogOrder {
@@ -43,4 +47,5 @@ export interface SubmitOrderLineInput {
   variantName: string;
   quantity: number;
   unitPriceUsd: number;
+  wholesaleApplied?: boolean;
 }

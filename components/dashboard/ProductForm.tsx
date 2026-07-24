@@ -38,6 +38,7 @@ import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
+import { ProductWholesaleField } from "@/components/dashboard/ProductWholesaleField";
 import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
 import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
 import {
@@ -83,6 +84,14 @@ export function ProductForm({
   );
   const [compareAtUsd, setCompareAtUsd] = useState(
     initialData?.compareAtUsd != null ? String(initialData.compareAtUsd) : "",
+  );
+  const [wholesalePriceUsd, setWholesalePriceUsd] = useState(
+    initialData?.wholesalePriceUsd != null
+      ? String(initialData.wholesalePriceUsd)
+      : "",
+  );
+  const [wholesaleMinQty, setWholesaleMinQty] = useState(
+    initialData?.wholesaleMinQty != null ? String(initialData.wholesaleMinQty) : "",
   );
   const [variants, setVariants] = useState<VariantFormInput[]>(
     initialData ? toVariantInputs(initialData.variants) : [],
@@ -365,6 +374,17 @@ export function ProductForm({
         disabled={pending}
         variant="default"
         idPrefix="product-compare-at"
+      />
+
+      <ProductWholesaleField
+        priceUsd={priceUsd}
+        wholesalePriceUsd={wholesalePriceUsd}
+        wholesaleMinQty={wholesaleMinQty}
+        onWholesalePriceUsdChange={setWholesalePriceUsd}
+        onWholesaleMinQtyChange={setWholesaleMinQty}
+        disabled={pending}
+        variant="default"
+        idPrefix="product-wholesale"
       />
 
       {!isRopaModa &&
