@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ImageOff } from "lucide-react";
+import { CatalogProductMediaFallback } from "@/components/catalog/CatalogProductMediaFallback";
 import { cn } from "@/lib/cn";
 
 interface CatalogProductImageProps {
@@ -30,14 +30,10 @@ export function CatalogProductImage({
 
   if (status === "error") {
     return (
-      <div
+      <CatalogProductMediaFallback
+        alt={alt}
         className="catalog-product-image-fallback"
-        role="img"
-        aria-label={`Imagen no disponible: ${alt}`}
-      >
-        <ImageOff className="catalog-product-image-fallback-icon" aria-hidden="true" />
-        <span className="catalog-product-image-fallback-text">Sin imagen</span>
-      </div>
+      />
     );
   }
 
@@ -58,7 +54,7 @@ export function CatalogProductImage({
         loading={priority ? undefined : loading}
         className={cn(
           className,
-          "object-cover transition-opacity duration-300 ease-out",
+          "object-cover object-center transition-opacity duration-300 ease-out",
           status === "loading" ? "opacity-0" : "opacity-100",
         )}
         onLoad={() => setStatus("loaded")}

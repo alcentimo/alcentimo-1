@@ -3,6 +3,7 @@
 import { memo, useMemo, useState } from "react";
 import { Check, Plus } from "lucide-react";
 import { CatalogProductImage } from "@/components/catalog/CatalogProductImage";
+import { CatalogProductMediaFallback } from "@/components/catalog/CatalogProductMediaFallback";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVisibilitySettings } from "@/lib/store-settings/types";
 import { getProductBodyLayoutClass } from "@/lib/store-settings/catalog-theme";
@@ -214,7 +215,12 @@ export const ProductCard = memo(function ProductCard({
         type="button"
         onClick={handleAdd}
         disabled={inCart && !canAddMore}
-        className={cn(className, inCart && "store-add-btn-in-cart")}
+        className={cn(
+          className,
+          inCart && "store-add-btn-in-cart",
+          inCart && canAddMore && "store-add-btn-in-cart-active",
+          inCart && !canAddMore && "store-add-btn-in-cart-max",
+        )}
         aria-label={
           inCart
             ? `${addButtonLabel}. ${canAddMore ? "Pulsa para añadir otro." : "Cantidad máxima en carrito."}`
@@ -249,11 +255,10 @@ export const ProductCard = memo(function ProductCard({
             }
           />
         ) : (
-          <div className="store-product-media-fallback" aria-hidden="true">
-            <span className="store-product-media-fallback-label">
-              {product.product_name.charAt(0).toUpperCase()}
-            </span>
-          </div>
+          <CatalogProductMediaFallback
+            alt={product.image_alt ?? product.product_name}
+            className="store-product-media-fallback"
+          />
         )}
 
         {showStockOverlay && (
