@@ -108,7 +108,8 @@ export function CatalogFulfillmentProvider({
   const getAvailableStock = useCallback(
     (variantId: string | null | undefined, fallback: number) => {
       if (!variantId) return fallback;
-      if (activeLocations.length === 0) return fallback;
+      // Una sola sede: usar stock del listado (misma fuente que el panel admin).
+      if (activeLocations.length <= 1) return fallback;
 
       const hasAnyLocationRow = locationStocks.some(
         (row) => row.variant_id === variantId,
@@ -119,7 +120,12 @@ export function CatalogFulfillmentProvider({
       if (!locationId) return fallback;
 
       const key = `${variantId}:${locationId}`;
-      return stockIndex.has(key) ? (stockIndex.get(key) ?? 0) : fallback;
+      if (!stockIndex.has(key)) return fallback;
+
+      const locationStock = stockIndex.get(key) ?? 0;
+      // Evita marcar agotado por desincronización sede vs. variante principal.
+      if (locationStock <= 0 && fallback > 0) return fallback;
+      return locationStock;
     },
     [
       activeLocations.length,

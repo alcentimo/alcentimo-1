@@ -189,18 +189,24 @@ export function hasMultipleVariants(product: { product_variants?: unknown }): bo
 
 export function getTotalVariantStock(product: {
   available_stock: number;
+  stock_quantity?: number;
   product_variants?: unknown;
   metadata?: Record<string, unknown> | null;
 }): number {
+  const catalogStock = Math.max(
+    product.available_stock,
+    product.stock_quantity ?? 0,
+  );
   const variants = parseVariantsJson(product.product_variants);
   if (
     parseStationeryMetadata(product.metadata)?.unified_stock &&
     areStationerySaleVariants(variants)
   ) {
-    return product.available_stock;
+    return catalogStock;
   }
-  if (variants.length === 0) return product.available_stock;
-  return variants.reduce((sum, variant) => sum + variant.stock, 0);
+  if (variants.length === 0) return catalogStock;
+  const variantTotal = variants.reduce((sum, variant) => sum + variant.stock, 0);
+  return Math.max(variantTotal, catalogStock);
 }
 
 export function isProductOutOfStock(product: {
