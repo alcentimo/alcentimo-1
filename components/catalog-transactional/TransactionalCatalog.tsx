@@ -128,6 +128,7 @@ function TransactionalCatalogInner({
 }: Omit<TransactionalCatalogProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
+  const wholesaleEnabled = catalogCurrency.wholesaleEnabled;
   const { addItem } = useCart();
 
   return (
@@ -135,6 +136,7 @@ function TransactionalCatalogInner({
       exchangeRate={liveExchangeRate}
       showBsConversion={showBsConversion}
       storeRubro={store.rubro_tienda}
+      wholesaleEnabled={wholesaleEnabled}
       onAddToCart={referenceMode ? undefined : addItem}
     >
       <TransactionalCatalogContent
@@ -154,6 +156,7 @@ function TransactionalCatalogInner({
         liveExchangeRate={liveExchangeRate}
         showOfficialRate={showOfficialRate}
         showBsConversion={showBsConversion}
+        wholesaleEnabled={wholesaleEnabled}
         addItem={addItem}
       />
     </CatalogProductDetailHost>
@@ -177,11 +180,13 @@ function TransactionalCatalogContent({
   liveExchangeRate,
   showOfficialRate,
   showBsConversion,
+  wholesaleEnabled,
   addItem,
 }: Omit<TransactionalCatalogProps, "locations" | "locationStocks"> & {
   liveExchangeRate: number | null;
   showOfficialRate: boolean;
   showBsConversion: boolean;
+  wholesaleEnabled: boolean;
   addItem: ReturnType<typeof useCart>["addItem"];
 }) {
   const { openProduct } = useCatalogProductDetail();
@@ -268,6 +273,7 @@ function TransactionalCatalogContent({
           catalogVisibility={catalogDesign.visibility}
           referenceCatalog={referenceMode && previewMode}
           storeRubro={store.rubro_tienda}
+          wholesaleEnabled={wholesaleEnabled}
           onAddToCart={referenceMode ? undefined : addItem}
           onOpenDetail={openProduct}
         />
@@ -281,6 +287,7 @@ function TransactionalCatalogContent({
       referenceMode,
       showBsConversion,
       store.rubro_tienda,
+      wholesaleEnabled,
       openProduct,
     ],
   );

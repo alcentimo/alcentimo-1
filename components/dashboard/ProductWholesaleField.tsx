@@ -49,24 +49,28 @@ export function ProductWholesaleField({
     }
     const saved = retail - wholesale;
     const pct = Math.round((saved / retail) * 100);
-    return `Desde ${minQty} u.: ${formatUsd(wholesale)}/u (−${pct}% vs detal)`;
+    return `Desde ${minQty} unidades: ${formatUsd(wholesale)}/u (−${pct}% vs detal)`;
   }, [priceUsd, wholesalePriceUsd, wholesaleMinQty]);
 
   return (
-    <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-4 dark:border-zinc-800 dark:bg-zinc-900/30">
+    <div
+      className={cn(
+        "rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/20",
+        variant === "compact" && "p-3.5",
+      )}
+    >
       <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-        Precio al mayor
+        Venta al mayor
       </p>
-      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-        Opcional. Si el cliente compra la cantidad mínima o más, se aplica
-        automáticamente en el catálogo.
+      <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+        Configura un precio especial por volumen. Ambos campos son opcionales,
+        pero debes completar los dos para activar el mayorista en este producto.
       </p>
 
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor={`${idPrefix}-price`} className={labelClass}>
-            Precio mayor ($){" "}
-            <span className="font-normal text-zinc-500">(opcional)</span>
+            Precio Mayorista ($)
           </Label>
           <Input
             id={`${idPrefix}-price`}
@@ -81,11 +85,13 @@ export function ProductWholesaleField({
             className={cn(inputClass, variant === "default" && "mt-1.5")}
             inputMode="decimal"
           />
+          <p className="mt-1.5 text-xs text-zinc-500">
+            Debe ser menor al precio de detal.
+          </p>
         </div>
         <div>
           <Label htmlFor={`${idPrefix}-min-qty`} className={labelClass}>
-            Cantidad mínima (MOQ){" "}
-            <span className="font-normal text-zinc-500">(opcional)</span>
+            Cantidad mínima (MOQ)
           </Label>
           <Input
             id={`${idPrefix}-min-qty`}
@@ -100,11 +106,14 @@ export function ProductWholesaleField({
             className={cn(inputClass, variant === "default" && "mt-1.5")}
             inputMode="numeric"
           />
+          <p className="mt-1.5 text-xs text-zinc-500">
+            Unidades mínimas para aplicar el precio mayorista (2 o más).
+          </p>
         </div>
       </div>
 
       {savingsHint ? (
-        <p className="mt-2 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+        <p className="mt-3 rounded-lg border border-emerald-200/70 bg-white/70 px-3 py-2 text-xs font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
           {savingsHint}
         </p>
       ) : null}

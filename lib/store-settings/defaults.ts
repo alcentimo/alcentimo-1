@@ -106,6 +106,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
     catalogCurrency: {
       showOfficialRate: true,
       showBsConversion: true,
+      wholesaleEnabled: false,
     },
     messageTemplates: defaultMessageTemplates(),
     interfacePreferences: {
@@ -312,6 +313,10 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
         typeof currencyRaw.showBsConversion === "boolean"
           ? currencyRaw.showBsConversion
           : defaults.catalogCurrency.showBsConversion,
+      wholesaleEnabled:
+        typeof currencyRaw.wholesaleEnabled === "boolean"
+          ? currencyRaw.wholesaleEnabled
+          : defaults.catalogCurrency.wholesaleEnabled,
     },
     messageTemplates: {
       nuevo:

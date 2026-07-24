@@ -70,7 +70,7 @@ function StoreCatalogInner({
   catalogCurrency,
 }: Omit<StoreCatalogProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
-  const { showOfficialRate, showBsConversion } = catalogCurrency;
+  const { showOfficialRate, showBsConversion, wholesaleEnabled } = catalogCurrency;
   const { itemCount, addItem } = useCart();
   const { guestBanner } = usePromotionContext();
   const [cartPanelView, setCartPanelView] = useState<CartPanelView>("closed");
@@ -80,6 +80,7 @@ function StoreCatalogInner({
       exchangeRate={liveExchangeRate}
       showBsConversion={showBsConversion}
       storeRubro={store.rubro_tienda}
+      wholesaleEnabled={wholesaleEnabled}
       onAddToCart={addItem}
     >
       <StoreCatalogContent
@@ -89,6 +90,7 @@ function StoreCatalogInner({
         purchaseInfo={purchaseInfo}
         showOfficialRate={showOfficialRate}
         showBsConversion={showBsConversion}
+        wholesaleEnabled={wholesaleEnabled}
         liveExchangeRate={liveExchangeRate}
         itemCount={itemCount}
         guestBanner={guestBanner}
@@ -107,6 +109,7 @@ function StoreCatalogContent({
   purchaseInfo,
   showOfficialRate,
   showBsConversion,
+  wholesaleEnabled,
   liveExchangeRate,
   itemCount,
   guestBanner,
@@ -116,6 +119,7 @@ function StoreCatalogContent({
 }: Omit<StoreCatalogProps, "locations" | "locationStocks" | "catalogCurrency"> & {
   showOfficialRate: boolean;
   showBsConversion: boolean;
+  wholesaleEnabled: boolean;
   liveExchangeRate: number | null;
   itemCount: number;
   guestBanner: ReturnType<typeof usePromotionContext>["guestBanner"];
@@ -167,6 +171,7 @@ function StoreCatalogContent({
                     exchangeRate={liveExchangeRate}
                     showBsConversion={showBsConversion}
                     storeRubro={store.rubro_tienda}
+                    wholesaleEnabled={wholesaleEnabled}
                     onAddToCart={addItem}
                     onOpenDetail={openProduct}
                   />

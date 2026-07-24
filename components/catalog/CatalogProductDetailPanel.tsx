@@ -75,6 +75,7 @@ interface CatalogProductDetailPanelProps {
   exchangeRate?: number | null;
   showBsConversion?: boolean;
   storeRubro?: string | null;
+  wholesaleEnabled?: boolean;
   onClose: () => void;
   onAddToCart?: (
     product: CatalogListItem,
@@ -94,6 +95,7 @@ export function CatalogProductDetailPanel({
   exchangeRate = null,
   showBsConversion = true,
   storeRubro = null,
+  wholesaleEnabled = false,
   onClose,
   onAddToCart,
 }: CatalogProductDetailPanelProps) {
@@ -168,6 +170,7 @@ export function CatalogProductDetailPanel({
   const wholesaleConfigured = hasWholesalePricing(
     product.wholesale_price_usd,
     product.wholesale_min_qty,
+    wholesaleEnabled,
   );
 
   const contextCartQuantity =
@@ -188,6 +191,7 @@ export function CatalogProductDetailPanel({
     wholesaleMinQty: product.wholesale_min_qty,
     quantity: previewQty,
     priceExtraUsd: (selectedVariant?.priceExtraUsd ?? 0) + modifiersExtra,
+    wholesaleEnabled,
   });
   const displayPriceUsd = activePricing.unitPriceUsd;
 

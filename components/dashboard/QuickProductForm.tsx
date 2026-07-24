@@ -46,6 +46,7 @@ import { getTransactionalCatalogPublicUrl } from "@/lib/stores";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
+import { ProductWholesaleField } from "@/components/dashboard/ProductWholesaleField";
 import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -102,6 +103,8 @@ function QuickProductFormSession({
   const [state, formAction, pending] = useActionState(createProduct, initialState);
   const [priceUsd, setPriceUsd] = useState("");
   const [compareAtUsd, setCompareAtUsd] = useState("");
+  const [wholesalePriceUsd, setWholesalePriceUsd] = useState("");
+  const [wholesaleMinQty, setWholesaleMinQty] = useState("");
   const [variants, setVariants] = useState<VariantFormInput[]>([]);
   const [foodModifiers, setFoodModifiers] =
     useState<FoodModifiersConfig>(emptyFoodModifiers);
@@ -141,6 +144,7 @@ function QuickProductFormSession({
     "tecnologia",
   );
   const pcBuilderEnabled = storeHasPCBuilder(productFormConfig.rubroTienda);
+  const wholesaleEnabled = productFormConfig.wholesaleEnabled;
   const isColeccionables = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
     "coleccionables",
@@ -212,6 +216,8 @@ function QuickProductFormSession({
   function resetFormState() {
     setPriceUsd("");
     setCompareAtUsd("");
+    setWholesalePriceUsd("");
+    setWholesaleMinQty("");
     setVariants([]);
     setFoodModifiers(emptyFoodModifiers());
     setPcBuilderSlot("");
@@ -366,6 +372,19 @@ function QuickProductFormSession({
         variant="compact"
         idPrefix="quick-compare-at"
       />
+
+      {wholesaleEnabled ? (
+        <ProductWholesaleField
+          priceUsd={priceUsd}
+          wholesalePriceUsd={wholesalePriceUsd}
+          wholesaleMinQty={wholesaleMinQty}
+          onWholesalePriceUsdChange={setWholesalePriceUsd}
+          onWholesaleMinQtyChange={setWholesaleMinQty}
+          disabled={isBusy}
+          variant="compact"
+          idPrefix="quick-wholesale"
+        />
+      ) : null}
 
       <ProductGalleryField
         id="quick-image"

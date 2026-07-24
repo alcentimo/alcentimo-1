@@ -15,6 +15,7 @@ interface CatalogProductDetailHostProps {
   exchangeRate?: number | null;
   showBsConversion?: boolean;
   storeRubro?: string | null;
+  wholesaleEnabled?: boolean;
   onAddToCart?: (
     product: CatalogListItem,
     variant: CatalogVariantOption,
@@ -26,6 +27,7 @@ function CatalogProductDetailLayer({
   exchangeRate,
   showBsConversion,
   storeRubro,
+  wholesaleEnabled,
   onAddToCart,
 }: Omit<CatalogProductDetailHostProps, "children">) {
   const { selectedProduct, closeProduct } = useCatalogProductDetail();
@@ -38,6 +40,7 @@ function CatalogProductDetailLayer({
       exchangeRate={exchangeRate}
       showBsConversion={showBsConversion}
       storeRubro={storeRubro}
+      wholesaleEnabled={wholesaleEnabled}
       onClose={closeProduct}
       onAddToCart={onAddToCart}
     />
@@ -49,6 +52,7 @@ export function CatalogProductDetailHost({
   exchangeRate,
   showBsConversion,
   storeRubro,
+  wholesaleEnabled,
   onAddToCart,
 }: CatalogProductDetailHostProps) {
   return (
@@ -58,6 +62,7 @@ export function CatalogProductDetailHost({
         exchangeRate={exchangeRate}
         showBsConversion={showBsConversion}
         storeRubro={storeRubro}
+        wholesaleEnabled={wholesaleEnabled}
         onAddToCart={onAddToCart}
       />
     </CatalogProductDetailProvider>

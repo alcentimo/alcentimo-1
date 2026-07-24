@@ -165,6 +165,7 @@ export function ProductCatalogForm({
   useStationerySaleVariants(isPapeleria, extraFields, variants, setVariants);
 
   const managesVariants = storeRubroManagesProductVariants(productFormConfig.rubroTienda);
+  const wholesaleEnabled = productFormConfig.wholesaleEnabled;
 
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
@@ -334,16 +335,18 @@ export function ProductCatalogForm({
         idPrefix="catalog-compare-at"
       />
 
-      <ProductWholesaleField
-        priceUsd={priceUsd}
-        wholesalePriceUsd={wholesalePriceUsd}
-        wholesaleMinQty={wholesaleMinQty}
-        onWholesalePriceUsdChange={setWholesalePriceUsd}
-        onWholesaleMinQtyChange={setWholesaleMinQty}
-        disabled={isBusy}
-        variant="compact"
-        idPrefix="catalog-wholesale"
-      />
+      {wholesaleEnabled ? (
+        <ProductWholesaleField
+          priceUsd={priceUsd}
+          wholesalePriceUsd={wholesalePriceUsd}
+          wholesaleMinQty={wholesaleMinQty}
+          onWholesalePriceUsdChange={setWholesalePriceUsd}
+          onWholesaleMinQtyChange={setWholesaleMinQty}
+          disabled={isBusy}
+          variant="compact"
+          idPrefix="catalog-wholesale"
+        />
+      ) : null}
 
       {!isRopaModa &&
       !isAlimentos &&

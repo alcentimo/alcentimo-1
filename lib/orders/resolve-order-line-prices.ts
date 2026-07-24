@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveUnitPriceUsd } from "@/lib/catalog/pricing";
 import { parseVariantsJson } from "@/lib/products/variants";
 import type { OrderLineItem, SubmitOrderLineInput } from "@/lib/orders/types";
+import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 
 export async function resolveOrderLinesWithPricing(
   admin: SupabaseClient,
@@ -11,6 +12,9 @@ export async function resolveOrderLinesWithPricing(
   if (lines.length === 0) {
     return { items: [], error: "El carrito está vacío." };
   }
+
+  const storeSettings = await getStoreSettingsConfig(storeId);
+  const wholesaleEnabled = storeSettings.catalogCurrency.wholesaleEnabled;
 
   const productIds = [...new Set(lines.map((line) => line.productId))];
   const { data: products, error: productsError } = await admin
@@ -101,6 +105,7 @@ export async function resolveOrderLinesWithPricing(
       wholesaleMinQty: defaultPricing.wholesale_min_qty,
       quantity: line.quantity,
       priceExtraUsd,
+      wholesaleEnabled,
     });
 
     const tolerance = 0.02;

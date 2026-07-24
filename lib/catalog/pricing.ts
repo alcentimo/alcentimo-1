@@ -46,7 +46,10 @@ export function isProductOnSale(
 export function hasWholesalePricing(
   wholesalePriceUsd: number | null | undefined,
   wholesaleMinQty: number | null | undefined,
+  wholesaleEnabled = true,
 ): boolean {
+  if (!wholesaleEnabled) return false;
+
   return (
     wholesalePriceUsd != null &&
     Number.isFinite(wholesalePriceUsd) &&
@@ -63,6 +66,7 @@ export function resolveUnitPriceUsd(input: {
   wholesaleMinQty?: number | null;
   quantity: number;
   priceExtraUsd?: number;
+  wholesaleEnabled?: boolean;
 }): {
   unitPriceUsd: number;
   wholesaleApplied: boolean;
@@ -71,8 +75,14 @@ export function resolveUnitPriceUsd(input: {
   const extra = input.priceExtraUsd ?? 0;
   const retailUnitUsd = input.retailUsd + extra;
 
+  const wholesaleEnabled = input.wholesaleEnabled ?? true;
+
   if (
-    hasWholesalePricing(input.wholesalePriceUsd, input.wholesaleMinQty) &&
+    hasWholesalePricing(
+      input.wholesalePriceUsd,
+      input.wholesaleMinQty,
+      wholesaleEnabled,
+    ) &&
     input.quantity >= (input.wholesaleMinQty as number)
   ) {
     return {

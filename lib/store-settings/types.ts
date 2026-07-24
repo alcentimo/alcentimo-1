@@ -149,6 +149,8 @@ export interface CatalogCurrencySettings {
   showOfficialRate: boolean;
   /** Muestra precios convertidos a Bs en catálogo, carrito y checkout. */
   showBsConversion: boolean;
+  /** Activa precios mayoristas por producto en catálogo, carrito y checkout. */
+  wholesaleEnabled: boolean;
 }
 
 export type OrderMessageTemplateKey = "nuevo" | "confirmado" | "enviado";

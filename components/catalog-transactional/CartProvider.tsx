@@ -37,6 +37,7 @@ interface CartProviderProps {
   storeId: string | null;
   userId: string | null;
   isCustomer: boolean;
+  wholesaleEnabled?: boolean;
   children: ReactNode;
 }
 
@@ -68,7 +69,11 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 const SYNC_DEBOUNCE_MS = 400;
 
-function refreshCartItemPricing(item: CartItem, quantity: number): CartItem {
+function refreshCartItemPricing(
+  item: CartItem,
+  quantity: number,
+  wholesaleEnabled: boolean,
+): CartItem {
   const variant = getCatalogVariantOptions(item.product).find(
     (option) => option.id === item.variantId,
   );
@@ -80,6 +85,7 @@ function refreshCartItemPricing(item: CartItem, quantity: number): CartItem {
     variant,
     quantity,
     item.modifiers ?? [],
+    wholesaleEnabled,
   );
 }
 
@@ -90,6 +96,7 @@ export function CartProvider({
   storeId,
   userId,
   isCustomer,
+  wholesaleEnabled = false,
   children,
 }: CartProviderProps) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -296,15 +303,18 @@ export function CartProvider({
               item.variantId,
               item.modifiers,
             ) === key
-              ? refreshCartItemPricing(item, nextQty)
+              ? refreshCartItemPricing(item, nextQty, wholesaleEnabled)
               : item,
           );
         }
 
-        return [...current, buildCartItem(product, variant, 1, modifiers)];
+        return [
+          ...current,
+          buildCartItem(product, variant, 1, modifiers, wholesaleEnabled),
+        ];
       });
     },
-    [],
+    [wholesaleEnabled],
   );
 
   const removeItem = useCallback(
@@ -352,12 +362,12 @@ export function CartProvider({
               0,
               Math.min(quantity, item.availableStock),
             );
-            return refreshCartItemPricing(item, nextQty);
+            return refreshCartItemPricing(item, nextQty, wholesaleEnabled);
           })
           .filter((item) => item.quantity > 0),
       );
     },
-    [],
+    [wholesaleEnabled],
   );
 
   const clearCart = useCallback(() => {

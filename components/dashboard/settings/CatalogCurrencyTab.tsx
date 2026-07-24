@@ -75,6 +75,21 @@ export function CatalogCurrencyTab({ initialSettings }: CatalogCurrencyTabProps)
           />
         </div>
       </SettingsSection>
+
+      <SettingsSection
+        title="Venta al mayor"
+        description="Permite ofrecer precios especiales por volumen. Al activarlo, podrás configurar precio mayorista y cantidad mínima (MOQ) en cada producto."
+        variant="payments"
+      >
+        <SettingsOptionCard
+          id="wholesale-enabled"
+          label="Activar venta al mayor en la tienda"
+          description="Los clientes verán el precio mayorista cuando compren la cantidad mínima configurada en cada producto. Si lo desactivas, se usará solo el precio de detal."
+          checked={settings.wholesaleEnabled}
+          onChange={(checked) => toggleSetting("wholesaleEnabled", checked)}
+          saving={savingToggle === "wholesaleEnabled"}
+        />
+      </SettingsSection>
     </SettingsTabShell>
   );
 }

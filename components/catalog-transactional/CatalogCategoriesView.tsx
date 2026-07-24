@@ -92,7 +92,7 @@ function CatalogCategoriesViewInner({
   enableServerPagination = false,
 }: Omit<CatalogCategoriesViewProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
-  const { showBsConversion } = catalogCurrency;
+  const { showBsConversion, wholesaleEnabled } = catalogCurrency;
   const { addItem } = useCart();
   const { getAvailableStock } = useCatalogFulfillment();
 
@@ -206,6 +206,7 @@ function CatalogCategoriesViewInner({
                   showBsConversion={showBsConversion}
                   catalogVisibility={catalogDesign.visibility}
                   storeRubro={store.rubro_tienda}
+                  wholesaleEnabled={wholesaleEnabled}
                   onAddToCart={addItem}
                 />
               ))}

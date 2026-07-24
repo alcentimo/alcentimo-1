@@ -9,11 +9,13 @@ import {
   getStoreRubroTienda,
   mergeStoreProductCategories,
 } from "@/lib/products/rubro-categories";
+import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 
 export interface StoreProductFormConfig {
   rubroTienda: StoreRubro;
   rubroLabel: string;
   productCategories: ProductCategoryOption[];
+  wholesaleEnabled: boolean;
 }
 
 export async function getStoreProductFormConfig(
@@ -38,9 +40,12 @@ export async function getStoreProductFormConfig(
     name: item.name as string,
   }));
 
+  const storeSettings = await getStoreSettingsConfig(storeId);
+
   return {
     rubroTienda,
     rubroLabel: getRubroLabel(rubroTienda),
     productCategories: mergeStoreProductCategories(rubroTienda, storeCategoryRows),
+    wholesaleEnabled: storeSettings.catalogCurrency.wholesaleEnabled,
   };
 }

@@ -44,6 +44,7 @@ import {
   parsePCBuilderSlotFromMetadata,
   type PCBuilderSlotId,
 } from "@/lib/rubros/modules/tecnologia/pc-builder";
+import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { getCollectibleFieldLabels } from "@/lib/rubros/modules/coleccionables/config";
 import { getBeautyFieldLabels } from "@/lib/rubros/modules/salud-belleza/config";
 import { getStationeryFieldLabels } from "@/lib/rubros/modules/papeleria-libreria-oficina/config";
@@ -188,6 +189,30 @@ function parseWholesaleFromForm(
   return { wholesalePriceUsd, wholesaleMinQty };
 }
 
+async function parseWholesaleForStore(
+  supabase: SupabaseClient,
+  storeId: string,
+  formData: FormData,
+  priceUsd: number,
+): Promise<{
+  wholesalePriceUsd?: number | null;
+  wholesaleMinQty?: number | null;
+  error?: string;
+  applyWholesale: boolean;
+}> {
+  const settings = await getStoreSettingsConfig(storeId);
+  if (!settings.catalogCurrency.wholesaleEnabled) {
+    return { applyWholesale: false };
+  }
+
+  const parsed = parseWholesaleFromForm(formData, priceUsd);
+  if (parsed.error) {
+    return { ...parsed, applyWholesale: true };
+  }
+
+  return { ...parsed, applyWholesale: true };
+}
+
 async function getNextProductSortOrder(
   supabase: SupabaseClient,
   storeId: string,
@@ -328,7 +353,12 @@ export async function createProduct(
   }
   const compareAtParsed = parseCompareAtUsdFromForm(formData, priceUsd);
   if (compareAtParsed.error) return { error: compareAtParsed.error };
-  const wholesaleParsed = parseWholesaleFromForm(formData, priceUsd);
+  const wholesaleParsed = await parseWholesaleForStore(
+    supabase,
+    store.id,
+    formData,
+    priceUsd,
+  );
   if (wholesaleParsed.error) return { error: wholesaleParsed.error };
   if (!hasCustomVariants || stationeryUnifiedStock) {
     if (!Number.isFinite(stockQuantity) || stockQuantity < 0) {
@@ -470,8 +500,12 @@ export async function createProduct(
     variant_id: variantId,
     amount_usd: priceUsd,
     compare_at_usd: compareAtParsed.compareAtUsd ?? null,
-    wholesale_price_usd: wholesaleParsed.wholesalePriceUsd ?? null,
-    wholesale_min_qty: wholesaleParsed.wholesaleMinQty ?? null,
+    wholesale_price_usd: wholesaleParsed.applyWholesale
+      ? (wholesaleParsed.wholesalePriceUsd ?? null)
+      : null,
+    wholesale_min_qty: wholesaleParsed.applyWholesale
+      ? (wholesaleParsed.wholesaleMinQty ?? null)
+      : null,
   });
 
   if (priceError) return { error: priceError.message };
@@ -691,7 +725,12 @@ export async function updateProduct(
   }
   const compareAtParsed = parseCompareAtUsdFromForm(formData, priceUsd);
   if (compareAtParsed.error) return { error: compareAtParsed.error };
-  const wholesaleParsed = parseWholesaleFromForm(formData, priceUsd);
+  const wholesaleParsed = await parseWholesaleForStore(
+    supabase,
+    store.id,
+    formData,
+    priceUsd,
+  );
   if (wholesaleParsed.error) return { error: wholesaleParsed.error };
   if (
     (!hasCustomVariants || stationeryUnifiedStock) &&
@@ -792,14 +831,26 @@ export async function updateProduct(
     if (locationStock.error) return { error: locationStock.error };
   }
 
+  const priceUpdatePayload: {
+    amount_usd: number;
+    compare_at_usd: number | null;
+    wholesale_price_usd?: number | null;
+    wholesale_min_qty?: number | null;
+  } = {
+    amount_usd: priceUsd,
+    compare_at_usd: compareAtParsed.compareAtUsd ?? null,
+  };
+
+  if (wholesaleParsed.applyWholesale) {
+    priceUpdatePayload.wholesale_price_usd =
+      wholesaleParsed.wholesalePriceUsd ?? null;
+    priceUpdatePayload.wholesale_min_qty =
+      wholesaleParsed.wholesaleMinQty ?? null;
+  }
+
   const priceUpdate = await supabase
     .from("product_prices")
-    .update({
-      amount_usd: priceUsd,
-      compare_at_usd: compareAtParsed.compareAtUsd ?? null,
-      wholesale_price_usd: wholesaleParsed.wholesalePriceUsd ?? null,
-      wholesale_min_qty: wholesaleParsed.wholesaleMinQty ?? null,
-    })
+    .update(priceUpdatePayload)
     .eq("variant_id", defaultVariantId);
 
   if (priceUpdate.error) return { error: priceUpdate.error.message };

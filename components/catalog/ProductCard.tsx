@@ -78,6 +78,7 @@ interface ProductCardProps {
     modifiers?: CartModifierSelection[],
   ) => void;
   onOpenDetail?: (product: CatalogListItem) => void;
+  wholesaleEnabled?: boolean;
 }
 
 function StockBadge({
@@ -127,6 +128,7 @@ export const ProductCard = memo(function ProductCard({
   storeRubro = null,
   onAddToCart,
   onOpenDetail,
+  wholesaleEnabled = false,
 }: ProductCardProps) {
   const cartContext = useCartOptional();
   const activeExchangeRate = exchangeRate ?? product.exchange_rate_used;
@@ -175,6 +177,7 @@ export const ProductCard = memo(function ProductCard({
   const wholesaleConfigured = hasWholesalePricing(
     product.wholesale_price_usd,
     product.wholesale_min_qty,
+    wholesaleEnabled,
   );
 
   const outOfStock = isProductOutOfStock(product);
@@ -207,6 +210,7 @@ export const ProductCard = memo(function ProductCard({
       wholesalePriceUsd: product.wholesale_price_usd,
       wholesaleMinQty: product.wholesale_min_qty,
       quantity: effectiveCartQuantity,
+      wholesaleEnabled,
       priceExtraUsd: (selectedVariant?.priceExtraUsd ?? 0) + modifiersExtra,
     });
   }, [
@@ -216,6 +220,7 @@ export const ProductCard = memo(function ProductCard({
     product.wholesale_min_qty,
     product.wholesale_price_usd,
     selectedVariant?.priceExtraUsd,
+    wholesaleEnabled,
   ]);
   const displayPriceUsd = activePricing?.unitPriceUsd ?? retailDisplayUsd;
   const wholesaleApplied = activePricing?.wholesaleApplied ?? false;

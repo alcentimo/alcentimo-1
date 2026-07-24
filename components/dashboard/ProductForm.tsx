@@ -160,6 +160,7 @@ export function ProductForm({
     "papeleria-libreria-oficina",
   );
   const catalogUrl = getStoreCatalogUrl(store.slug);
+  const wholesaleEnabled = productFormConfig.wholesaleEnabled;
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
   const stationeryUnifiedStock = areStationerySaleVariants(variants);
 
@@ -385,16 +386,18 @@ export function ProductForm({
         idPrefix="product-compare-at"
       />
 
-      <ProductWholesaleField
-        priceUsd={priceUsd}
-        wholesalePriceUsd={wholesalePriceUsd}
-        wholesaleMinQty={wholesaleMinQty}
-        onWholesalePriceUsdChange={setWholesalePriceUsd}
-        onWholesaleMinQtyChange={setWholesaleMinQty}
-        disabled={pending}
-        variant="default"
-        idPrefix="product-wholesale"
-      />
+      {wholesaleEnabled ? (
+        <ProductWholesaleField
+          priceUsd={priceUsd}
+          wholesalePriceUsd={wholesalePriceUsd}
+          wholesaleMinQty={wholesaleMinQty}
+          onWholesalePriceUsdChange={setWholesalePriceUsd}
+          onWholesaleMinQtyChange={setWholesaleMinQty}
+          disabled={pending}
+          variant="default"
+          idPrefix="product-wholesale"
+        />
+      ) : null}
 
       {!isRopaModa &&
       !isAlimentos &&

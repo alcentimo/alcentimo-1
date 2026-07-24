@@ -63,6 +63,7 @@ export function buildCartItem(
   variant: CatalogVariantOption,
   quantity = 1,
   modifiers: CartModifierSelection[] = [],
+  wholesaleEnabled = true,
 ): CartItem {
   const modifiersExtra = sumModifiersExtraUsd(modifiers);
   const retailBaseUsd = product.price_usd ?? 0;
@@ -72,6 +73,7 @@ export function buildCartItem(
     wholesaleMinQty: product.wholesale_min_qty,
     quantity,
     priceExtraUsd: variant.priceExtraUsd + modifiersExtra,
+    wholesaleEnabled,
   });
   const unitPriceUsd = pricing.unitPriceUsd;
   const modifiersLabel = formatModifiersLabel(modifiers);

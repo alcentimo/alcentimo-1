@@ -75,6 +75,7 @@ export function CatalogLivePreview({
         storeId={store.id}
         userId={null}
         isCustomer={false}
+        wholesaleEnabled={settings.catalogCurrency.wholesaleEnabled}
       >
         <div
           className={cn(

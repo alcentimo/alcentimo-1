@@ -17,6 +17,7 @@ import { getRequestOrigin } from "@/lib/pwa/get-request-origin";
 import { getStoreManifestTheme } from "@/lib/pwa/get-store-manifest-theme";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { getOpenAiApiKey } from "@/lib/env/server";
+import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 
 interface TransactionalCatalogLayoutProps {
   children: ReactNode;
@@ -109,6 +110,11 @@ export default async function TransactionalCatalogLayout({
   const manifestAbsoluteUrl = getStoreCatalogManifestAbsoluteUrl(storeSlug, origin);
   const themeContext = await getPublicCatalogThemeContext(storeSlug);
   const assistantEnabled = Boolean(getOpenAiApiKey());
+  const storeSettings = cartAuth.storeId
+    ? await getPublicStoreSettingsConfig(cartAuth.storeId)
+    : null;
+  const wholesaleEnabled =
+    storeSettings?.catalogCurrency.wholesaleEnabled ?? false;
 
   return (
     <div
@@ -128,6 +134,7 @@ export default async function TransactionalCatalogLayout({
         storeId={cartAuth.storeId}
         userId={cartAuth.userId}
         isCustomer={cartAuth.isCustomer}
+        wholesaleEnabled={wholesaleEnabled}
       >
         <PromotionProvider value={promotionContext}>
           <CatalogAppShell
