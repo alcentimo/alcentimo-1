@@ -162,6 +162,56 @@ export function getProductCategoriesForRubro(rubro: StoreRubro): ProductCategory
   );
 }
 
+/**
+ * Presets de otros rubros que NO pertenecen al rubro actual.
+ * Respeta slugs compartidos (p. ej. "accesorios" en moda y tecnología).
+ */
+export function getOtherRubroExclusivePresetSlugs(rubro: StoreRubro): Set<string> {
+  const currentSlugs = new Set(
+    getProductCategoriesForRubro(rubro).map((category) => category.slug),
+  );
+  const exclusive = new Set<string>();
+
+  for (const config of STORE_RUBRO_CONFIGS) {
+    if (config.rubro === rubro) continue;
+    for (const category of config.categorias) {
+      if (!currentSlugs.has(category.slug)) {
+        exclusive.add(category.slug);
+      }
+    }
+  }
+
+  return exclusive;
+}
+
+/** ¿La categoría es válida para mostrar en el catálogo público de este rubro? */
+export function isCategoryVisibleForRubro(
+  categorySlug: string | null | undefined,
+  rubro: StoreRubro,
+): boolean {
+  const slug = categorySlug?.trim().toLowerCase() ?? "";
+  if (!slug) return false;
+  return !getOtherRubroExclusivePresetSlugs(rubro).has(slug);
+}
+
+/**
+ * Etiqueta pública de categoría según rubro.
+ * Oculta presets de otros rubros; usa el label oficial del rubro actual si existe.
+ */
+export function resolvePublicCategoryLabel(
+  categorySlug: string | null | undefined,
+  categoryName: string | null | undefined,
+  rubro: StoreRubro,
+): string | null {
+  const slug = categorySlug?.trim().toLowerCase() ?? "";
+  const name = categoryName?.trim() ?? "";
+  if (!slug || !name) return null;
+  if (!isCategoryVisibleForRubro(slug, rubro)) return null;
+
+  const preset = findProductCategoryOption(rubro, slug);
+  return preset?.label ?? name;
+}
+
 export function findProductCategoryOption(
   rubro: StoreRubro,
   categorySlug: string,

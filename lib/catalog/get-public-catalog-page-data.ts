@@ -11,7 +11,7 @@ import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
 import {
   mergeStoreCategoriesWithProductSlugs,
-  resolvePublicCatalogCategories,
+  filterCatalogCategoriesForRubro,
   type CatalogCategoryOption,
 } from "@/lib/catalog/extract-categories";
 import {
@@ -24,6 +24,7 @@ import { getPublicServerClient } from "@/lib/supabase/public-server";
 
 import { getPublicStoreLocations, getVariantLocationStocksForStore } from "@/lib/locations/get-store-locations";
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
+import { normalizeStoreRubro } from "@/src/config/categories";
 
 export interface PublicCatalogPageData extends CatalogPageData {
   store: Store;
@@ -107,9 +108,14 @@ export async function getPublicCatalogPageData(
     getVariantLocationStocksForStore(store.id).catch(() => []),
   ]);
 
-  const visibleStoreCategories = mergeStoreCategoriesWithProductSlugs(
-    storeCategories,
-    categoriesWithProducts,
+  const rubro = normalizeStoreRubro(store.rubro_tienda);
+
+  const visibleStoreCategories = filterCatalogCategoriesForRubro(
+    mergeStoreCategoriesWithProductSlugs(
+      storeCategories,
+      categoriesWithProducts,
+    ),
+    rubro,
   );
 
   let selectedCategorySlug: string | null = null;
@@ -140,14 +146,10 @@ export async function getPublicCatalogPageData(
     store.rubro_tienda,
   );
 
-  const populatedCategories =
-    catalogData.products.length > 0
-      ? resolvePublicCatalogCategories(storeCategories, catalogData.products)
-      : visibleStoreCategories;
-
   return {
     store,
-    storeCategories: populatedCategories,
+    // Lista completa filtrada por rubro — no reconstruir solo desde la 1ª página.
+    storeCategories: visibleStoreCategories,
     selectedCategorySlug,
     ...catalogData,
     purchaseInfo,

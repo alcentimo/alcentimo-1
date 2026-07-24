@@ -7,7 +7,10 @@ import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
-import { resolvePublicCatalogCategories } from "@/lib/catalog/extract-categories";
+import {
+  filterCatalogCategoriesForRubro,
+  resolvePublicCatalogCategories,
+} from "@/lib/catalog/extract-categories";
 import {
   getCatalogDesignClasses,
   getCatalogThemeStyle,
@@ -65,8 +68,15 @@ function getStoreInitials(name: string): string {
 function resolveCategoryOptions(
   storeCategories: CatalogCategoryOption[],
   products: CatalogListItem[],
+  storeRubro: string | null | undefined,
 ): CatalogCategoryOption[] {
-  return resolvePublicCatalogCategories(storeCategories, products);
+  // Si el servidor ya envió categorías filtradas por rubro, no reexpandir
+  // desde la página actual de productos (reintroduciría presets ajenos).
+  if (storeCategories.length > 0) {
+    return filterCatalogCategoriesForRubro(storeCategories, storeRubro);
+  }
+
+  return resolvePublicCatalogCategories(storeCategories, products, storeRubro);
 }
 
 export function TransactionalCatalog({
@@ -218,8 +228,13 @@ function TransactionalCatalogContent({
   );
 
   const categoryOptions = useMemo(
-    () => resolveCategoryOptions(storeCategories, catalogProducts),
-    [storeCategories, catalogProducts],
+    () =>
+      resolveCategoryOptions(
+        storeCategories,
+        catalogProducts,
+        store.rubro_tienda,
+      ),
+    [storeCategories, catalogProducts, store.rubro_tienda],
   );
 
   const browseServerPagination = useMemo(

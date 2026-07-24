@@ -28,6 +28,10 @@ import {
   hasFoodModifiers,
   parseFoodModifiersFromMetadata,
 } from "@/lib/rubros/modules/alimentos";
+import {
+  normalizeStoreRubro,
+  resolvePublicCategoryLabel,
+} from "@/src/config/categories";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/cn";
 
@@ -144,6 +148,11 @@ export const ProductCard = memo(function ProductCard({
     CartModifierSelection[]
   >([]);
 
+  const publicCategoryLabel = resolvePublicCategoryLabel(
+    product.category_slug,
+    product.category_name,
+    normalizeStoreRubro(storeRubro),
+  );
   const isAlimentos = storeUsesRubroProductModule(storeRubro, "alimentos");
   const isTecnologia = storeUsesRubroProductModule(storeRubro, "tecnologia");
   const isColeccionables = storeUsesRubroProductModule(
@@ -158,6 +167,7 @@ export const ProductCard = memo(function ProductCard({
     storeRubro,
     "papeleria-libreria-oficina",
   );
+
   const foodHasModifiers =
     isAlimentos &&
     hasFoodModifiers(parseFoodModifiersFromMetadata(product.metadata ?? null));
@@ -369,10 +379,10 @@ export const ProductCard = memo(function ProductCard({
             <p
               className={cn(
                 "store-product-category",
-                !product.category_name && "store-product-slot-empty",
+                !publicCategoryLabel && "store-product-slot-empty",
               )}
             >
-              {product.category_name ?? "\u00A0"}
+              {publicCategoryLabel ?? "\u00A0"}
             </p>
           </div>
 

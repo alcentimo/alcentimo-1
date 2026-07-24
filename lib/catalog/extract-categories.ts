@@ -1,4 +1,10 @@
 import type { CatalogListItem } from "@/lib/database.types";
+import {
+  getOtherRubroExclusivePresetSlugs,
+  getProductCategoriesForRubro,
+  normalizeStoreRubro,
+  type StoreRubro,
+} from "@/src/config/categories";
 
 export interface CatalogCategoryOption {
   slug: string;
@@ -23,15 +29,45 @@ export function extractCatalogCategories(
   );
 }
 
+/** Filtra y renombra categorías públicas según el rubro de la tienda. */
+export function filterCatalogCategoriesForRubro(
+  categories: CatalogCategoryOption[],
+  rubroInput: StoreRubro | string | null | undefined,
+): CatalogCategoryOption[] {
+  const rubro = normalizeStoreRubro(rubroInput);
+  const blocked = getOtherRubroExclusivePresetSlugs(rubro);
+  const officialLabelBySlug = new Map(
+    getProductCategoriesForRubro(rubro).map((category) => [
+      category.slug,
+      category.label,
+    ]),
+  );
+
+  return categories
+    .filter((category) => !blocked.has(category.slug.trim().toLowerCase()))
+    .map((category) => {
+      const slug = category.slug.trim().toLowerCase();
+      return {
+        slug,
+        name: officialLabelBySlug.get(slug) ?? category.name,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, "es"));
+}
+
 /** Solo categorías con al menos un producto activo en el catálogo. */
 export function resolvePublicCatalogCategories(
   storeCategories: CatalogCategoryOption[],
   products: CatalogListItem[],
+  rubro?: StoreRubro | string | null,
 ): CatalogCategoryOption[] {
-  return mergeStoreCategoriesWithProductSlugs(
+  const merged = mergeStoreCategoriesWithProductSlugs(
     storeCategories,
     extractCatalogCategories(products),
   );
+
+  if (rubro == null) return merged;
+  return filterCatalogCategoriesForRubro(merged, rubro);
 }
 
 /** Une nombres de la tienda con categorías que tienen productos. */

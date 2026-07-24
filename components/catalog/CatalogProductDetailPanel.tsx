@@ -37,6 +37,10 @@ import {
   hasFoodModifiers,
   parseFoodModifiersFromMetadata,
 } from "@/lib/rubros/modules/alimentos";
+import {
+  normalizeStoreRubro,
+  resolvePublicCategoryLabel,
+} from "@/src/config/categories";
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/cn";
@@ -215,6 +219,11 @@ export function CatalogProductDetailPanel({
     computeUsdToVes(displayPriceUsd, activeExchangeRate) ?? product.price_ves;
 
   const isAlimentos = storeUsesRubroProductModule(storeRubro, "alimentos");
+  const publicCategoryLabel = resolvePublicCategoryLabel(
+    product.category_slug,
+    product.category_name,
+    normalizeStoreRubro(storeRubro),
+  );
   const foodHasModifiers =
     isAlimentos &&
     hasFoodModifiers(parseFoodModifiersFromMetadata(product.metadata ?? null));
@@ -248,7 +257,13 @@ export function CatalogProductDetailPanel({
 
       <div className="product-detail-panel">
         <header className="product-detail-header">
-          <p className="product-detail-kicker">{product.category_name}</p>
+          {publicCategoryLabel ? (
+            <p className="product-detail-kicker">{publicCategoryLabel}</p>
+          ) : (
+            <p className="product-detail-kicker" aria-hidden="true">
+              &nbsp;
+            </p>
+          )}
           <button
             type="button"
             onClick={onClose}

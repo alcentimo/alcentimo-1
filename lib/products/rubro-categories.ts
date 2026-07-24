@@ -3,7 +3,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import { slugify } from "@/lib/slugify";
 import { CUSTOM_PRODUCT_CATEGORY_VALUE } from "@/lib/products/category-selection";
 import {
-  STORE_RUBRO_CONFIGS,
+  getOtherRubroExclusivePresetSlugs,
   getProductCategoriesForRubro,
   normalizeStoreRubro,
   type ProductCategoryOption,
@@ -160,11 +160,7 @@ export function mergeStoreProductCategories(
   const suggestedSlugs = new Set(suggested.map((item) => item.slug));
 
   /** Slugs de presets de otros rubros (quedan tras un cambio de giro). */
-  const otherRubroPresetSlugs = new Set(
-    STORE_RUBRO_CONFIGS.filter((config) => config.rubro !== rubro).flatMap((config) =>
-      config.categorias.map((category) => category.slug),
-    ),
-  );
+  const otherRubroPresetSlugs = getOtherRubroExclusivePresetSlugs(rubro);
 
   const custom = storeCategories
     .filter((item) => !suggestedSlugs.has(item.slug))
