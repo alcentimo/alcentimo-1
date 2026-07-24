@@ -2936,6 +2936,22 @@ body {
   @apply relative min-h-dvh overflow-hidden bg-[#FAFAF9] dark:bg-zinc-950;
 }
 
+.activar-plans-panel {
+  @apply space-y-0;
+}
+
+.activar-plans-section {
+  @apply mx-auto w-full max-w-6xl;
+}
+
+.activar-plans-billing-toggle {
+  @apply mb-2 pt-2;
+}
+
+.activar-plans-grid {
+  @apply items-stretch xl:items-end;
+}
+
 .auth-shell-grid {
   @apply pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[linear-gradient(to_bottom,white,transparent)] opacity-35 dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)] dark:opacity-20;
 }

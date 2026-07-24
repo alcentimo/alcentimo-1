@@ -30,6 +30,8 @@ interface PlansPanelProps {
   currentBillingPeriod?: BillingPeriod | null;
   pagoMovil?: SubscriptionPagoMovilDetails;
   pricingTiers?: PlanPricingTier[];
+  /** Vista limpia de activación: sin bloques auxiliares encima de las tarjetas. */
+  variant?: "default" | "activation";
 }
 
 function isCurrentTier(tierPlanId: PlanId, currentPlanId: PlanId): boolean {
@@ -132,7 +134,9 @@ export function PlansPanel({
   currentBillingPeriod = "monthly",
   pagoMovil,
   pricingTiers = PLAN_PRICING_TIERS,
+  variant = "default",
 }: PlansPanelProps) {
+  const isActivation = variant === "activation";
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutTier, setCheckoutTier] = useState<PlanPricingTier | null>(null);
@@ -148,81 +152,90 @@ export function PlansPanel({
   }
 
   return (
-    <div className="space-y-10">
-      <section className="rounded-xl border border-neutral-200 bg-white px-5 py-4 dark:border-neutral-800 dark:bg-neutral-950">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Tu plan</p>
-            <p className="mt-0.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
-              {currentPlanName}
-            </p>
-            {trialActive && trialEndsAt ? (
-              <p className="mt-1 text-sm text-teal-700 dark:text-teal-300">
-                Prueba Pro activa hasta el {formatProTrialEndsAt(trialEndsAt)}
-              </p>
-            ) : null}
-            {subscriptionStatus === "provisional" ? (
-              <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
-                Acceso provisional —{" "}
-                <Link
-                  href="/dashboard/pago"
-                  className="font-medium underline underline-offset-2"
-                >
-                  ver estado de tu pago
-                </Link>
-              </p>
-            ) : null}
-            {productCount != null && productLimit != null && currentPlanId !== "premium" && currentPlanId !== "enterprise" && (
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                {productCount} / {formatProductLimit(productLimit)} productos activos
-              </p>
-            )}
-            {(currentPlanId === "premium" || currentPlanId === "enterprise") && (
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                Productos ilimitados
-                {currentPlanId === "enterprise" ? " · Multi-sucursal" : null}
-              </p>
-            )}
-          </div>
-          <span className="inline-flex w-fit items-center rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
-            Activo
-          </span>
-        </div>
-      </section>
-
-      <section className="rounded-xl border border-teal-200/80 bg-teal-50/40 px-5 py-4 dark:border-teal-900/40 dark:bg-teal-950/20">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3">
-            <Globe
-              className="mt-0.5 h-5 w-5 shrink-0 text-teal-700 dark:text-teal-400"
-              aria-hidden="true"
-            />
+    <div className={cn("space-y-10", isActivation && "activar-plans-panel")}>
+      {!isActivation ? (
+        <section className="rounded-xl border border-neutral-200 bg-white px-5 py-4 dark:border-neutral-800 dark:bg-neutral-950">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-teal-950 dark:text-teal-100">
-                Multi-sucursal con Enterprise
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">Tu plan</p>
+              <p className="mt-0.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+                {currentPlanName}
               </p>
-              <p className="mt-1 text-sm leading-relaxed text-teal-900/90 dark:text-teal-200/90">
-                Enterprise incluye hasta <strong>3 sucursales</strong>, selector de sede
-                y retiro en tienda, stock por ubicación, y todo lo de Business.
-                Sedes adicionales: <strong>+$6 USD/mes</strong> cada una.
-              </p>
+              {trialActive && trialEndsAt ? (
+                <p className="mt-1 text-sm text-teal-700 dark:text-teal-300">
+                  Prueba Pro activa hasta el {formatProTrialEndsAt(trialEndsAt)}
+                </p>
+              ) : null}
+              {subscriptionStatus === "provisional" ? (
+                <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                  Acceso provisional —{" "}
+                  <Link
+                    href="/dashboard/pago"
+                    className="font-medium underline underline-offset-2"
+                  >
+                    ver estado de tu pago
+                  </Link>
+                </p>
+              ) : null}
+              {productCount != null && productLimit != null && currentPlanId !== "premium" && currentPlanId !== "enterprise" && (
+                <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                  {productCount} / {formatProductLimit(productLimit)} productos activos
+                </p>
+              )}
+              {(currentPlanId === "premium" || currentPlanId === "enterprise") && (
+                <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                  Productos ilimitados
+                  {currentPlanId === "enterprise" ? " · Multi-sucursal" : null}
+                </p>
+              )}
             </div>
+            <span className="inline-flex w-fit items-center rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
+              Activo
+            </span>
           </div>
-          <Link
-            href={
-              currentPlanId === "enterprise"
-                ? "/dashboard/ajustes?tab=branches"
-                : "#planes"
-            }
-            className="inline-flex shrink-0 items-center justify-center rounded-lg border border-teal-300 bg-white px-4 py-2 text-sm font-medium text-teal-900 transition hover:bg-teal-50 dark:border-teal-800 dark:bg-teal-950 dark:text-teal-100 dark:hover:bg-teal-900/40"
-          >
-            {currentPlanId === "enterprise" ? "Gestionar sucursales" : "Ver Enterprise"}
-          </Link>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
-      <section>
-        <div className="flex flex-col items-center gap-3 text-center">
+      {!isActivation ? (
+        <section className="rounded-xl border border-teal-200/80 bg-teal-50/40 px-5 py-4 dark:border-teal-900/40 dark:bg-teal-950/20">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <Globe
+                className="mt-0.5 h-5 w-5 shrink-0 text-teal-700 dark:text-teal-400"
+                aria-hidden="true"
+              />
+              <div>
+                <p className="text-sm font-semibold text-teal-950 dark:text-teal-100">
+                  Multi-sucursal con Enterprise
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-teal-900/90 dark:text-teal-200/90">
+                  Enterprise incluye hasta <strong>3 sucursales</strong>, selector de sede
+                  y retiro en tienda, stock por ubicación, y todo lo de Business.
+                  Sedes adicionales: <strong>+$6 USD/mes</strong> cada una.
+                </p>
+              </div>
+            </div>
+            <Link
+              href={
+                currentPlanId === "enterprise"
+                  ? "/dashboard/ajustes?tab=branches"
+                  : "#planes"
+              }
+              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-teal-300 bg-white px-4 py-2 text-sm font-medium text-teal-900 transition hover:bg-teal-50 dark:border-teal-800 dark:bg-teal-950 dark:text-teal-100 dark:hover:bg-teal-900/40"
+            >
+              {currentPlanId === "enterprise" ? "Gestionar sucursales" : "Ver Enterprise"}
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      <section id="planes" className={cn(isActivation && "activar-plans-section")}>
+        <div
+          className={cn(
+            "flex flex-col items-center gap-3 text-center",
+            isActivation && "activar-plans-billing-toggle",
+          )}
+        >
           <BillingToggle billing={billing} onChange={setBilling} />
           {billing === "annual" && recommendedSavings && (
             <p className="text-sm font-medium text-teal-700 dark:text-teal-400">
@@ -231,7 +244,13 @@ export function PlansPanel({
           )}
         </div>
 
-        <div className="mt-8 grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:items-end xl:gap-4">
+        <div
+          className={cn(
+            "mt-8 grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:items-end xl:gap-4",
+            isActivation &&
+              "activar-plans-grid mt-10 gap-6 pt-2 sm:gap-6 xl:gap-6 xl:pt-4",
+          )}
+        >
           {pricingTiers.map((tier) => (
             <PricingCard
               key={tier.planId}
@@ -330,7 +349,7 @@ function PricingCard({
       className={cn(
         "relative flex flex-col rounded-2xl border bg-white p-6 dark:bg-neutral-950",
         tier.recommended
-          ? "z-10 border-teal-500 shadow-md ring-2 ring-teal-500/25 md:scale-[1.04] md:px-7 md:py-8"
+          ? "z-10 border-teal-500 shadow-lg ring-2 ring-teal-500/25 md:scale-[1.03] md:px-7 md:py-8"
           : "border-neutral-200 dark:border-neutral-800",
         isCurrent && !tier.recommended && "ring-1 ring-neutral-300 dark:ring-neutral-700",
       )}

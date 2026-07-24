@@ -22,7 +22,6 @@ import { PermanentRejectionNotice } from "@/components/dashboard/plans/Permanent
 import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
 import {
   PromoOfferBanner,
-  SubscriptionCouponRedeemCard,
 } from "@/components/dashboard/plans/SubscriptionPromoCards";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { PageContainer } from "@/components/ui/PageContainer";
@@ -119,7 +118,7 @@ export default async function ActivarPage() {
         aria-hidden="true"
       />
 
-      <PageContainer className="relative py-10 sm:py-14">
+      <PageContainer className="relative max-w-6xl py-10 sm:py-14">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <BrandLogo href="/dashboard/catalogo" />
           <Link
@@ -131,7 +130,7 @@ export default async function ActivarPage() {
           </Link>
         </div>
 
-        <header className="page-header mb-6 max-w-2xl">
+        <header className="page-header mb-8 max-w-2xl sm:mb-10">
           <p className="section-label">Activación</p>
           <h1 className="page-header-title">Activa tu cuenta</h1>
           <p className="page-header-desc">
@@ -144,7 +143,7 @@ export default async function ActivarPage() {
         </header>
 
         {showProTrialSection ? (
-          <div className="mb-8 max-w-3xl">
+          <div className="mb-10 max-w-3xl">
             <ProTrialBanner
               showBanner
               currentCount={currentCount}
@@ -156,12 +155,6 @@ export default async function ActivarPage() {
           </div>
         ) : null}
 
-        {showProTrialSection && !trial.active ? (
-          <p className="mb-4 max-w-2xl text-sm font-medium text-neutral-600 dark:text-neutral-400">
-            También puedes elegir un plan de pago
-          </p>
-        ) : null}
-
         {permanentRejection ? (
           <div className="mb-8 max-w-2xl">
             <PermanentRejectionNotice payment={permanentRejection} />
@@ -169,16 +162,13 @@ export default async function ActivarPage() {
         ) : null}
 
         {promoOffers.length > 0 ? (
-          <div className="mb-6 max-w-2xl">
+          <div className="mb-8 max-w-2xl">
             <PromoOfferBanner offers={promoOffers} />
           </div>
         ) : null}
 
-        <div className="mb-8 max-w-2xl">
-          <SubscriptionCouponRedeemCard />
-        </div>
-
         <PlansPanel
+          variant="activation"
           currentPlanId={authUser.planId}
           currentPlanName={authUser.plan.name}
           productCount={productLimitStatus?.currentCount ?? null}
