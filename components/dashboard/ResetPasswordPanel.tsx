@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { formatAuthError } from "@/lib/auth/format-auth-error";
 import {
   establishRecoverySession,
   getRecoveryUrlDebug,
@@ -11,29 +12,6 @@ import { createClient } from "@/lib/supabase/client";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 
 const MIN_PASSWORD_LENGTH = 8;
-
-function formatAuthError(message: string): string {
-  const lower = message.toLowerCase();
-
-  if (
-    lower.includes("expired") ||
-    lower.includes("expirado") ||
-    (lower.includes("invalid") &&
-      (lower.includes("token") || lower.includes("session")))
-  ) {
-    return "El enlace ha expirado o ya no es válido. Solicita uno nuevo.";
-  }
-
-  if (lower.includes("same password") || lower.includes("misma contraseña")) {
-    return "La nueva contraseña debe ser diferente a la anterior.";
-  }
-
-  if (lower.includes("weak") || lower.includes("débil")) {
-    return "La contraseña es demasiado débil. Usa al menos 8 caracteres.";
-  }
-
-  return message;
-}
 
 export function ResetPasswordPanel() {
   const router = useRouter();

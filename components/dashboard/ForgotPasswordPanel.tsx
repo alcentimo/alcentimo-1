@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { createClient } from "@/lib/supabase/client";
 import { getPasswordResetRedirectUrl } from "@/lib/site-url";
 
@@ -34,7 +35,7 @@ export function ForgotPasswordPanel() {
         );
         return;
       }
-      setError(message);
+      setError(formatAuthError(message));
       return;
     }
 

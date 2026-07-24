@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { devSignUpAndSignIn } from "@/lib/auth/dev-signup";
 import { createClient } from "@/lib/supabase/client";
 import { getAuthCallbackUrl } from "@/lib/site-url";
@@ -69,7 +70,7 @@ export function AuthPanel() {
 
     if (oauthError) {
       setGoogleLoading(false);
-      setError(oauthError.message);
+      setError(formatAuthError(oauthError.message));
     }
   }
 
@@ -91,7 +92,7 @@ export function AuthPanel() {
       setLoading(false);
 
       if (!devResult.ok) {
-        setError(devResult.error);
+        setError(formatAuthError(devResult.error));
         return;
       }
 
@@ -121,7 +122,7 @@ export function AuthPanel() {
         );
         return;
       }
-      setError(message);
+      setError(formatAuthError(message));
       return;
     }
 
