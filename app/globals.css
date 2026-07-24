@@ -4271,10 +4271,6 @@ body {
   @apply truncate font-semibold tabular-nums text-slate-800;
 }
 
-.pc-builder-entry-link {
-  @apply mt-3 inline-flex rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-900 transition hover:border-sky-300 hover:bg-sky-100;
-}
-
 .txn-catalog--pc-builder {
   @apply pb-28;
 }
@@ -5277,6 +5273,18 @@ body {
 
 .catalog-tab-bar-inner {
   @apply mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1.5;
+}
+
+.catalog-tab-bar-inner--pc-builder {
+  @apply max-w-2xl;
+}
+
+.catalog-tab-bar-inner--pc-builder .catalog-tab-item {
+  @apply min-w-0 px-1 text-[9px] sm:text-[10px];
+}
+
+.catalog-tab-bar-inner--pc-builder .catalog-tab-item span {
+  @apply max-w-full truncate text-center leading-tight;
 }
 
 .catalog-tab-item {

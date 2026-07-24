@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { PCBuilderView } from "@/components/rubros/tecnologia/PCBuilderView";
 import { getCatalogProducts } from "@/lib/catalog";
 import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
-import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
+import { storeHasPCBuilder } from "@/lib/rubros/modules/tecnologia/pc-builder";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -18,7 +18,7 @@ async function PCBuilderContent({ storeSlug }: { storeSlug: string }) {
 
   const { store, purchaseInfo, catalogCurrency } = pageData;
 
-  if (!storeUsesRubroProductModule(store.rubro_tienda, "tecnologia")) {
+  if (!storeHasPCBuilder(store.rubro_tienda)) {
     notFound();
   }
 

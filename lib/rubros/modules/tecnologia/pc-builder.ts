@@ -1,4 +1,10 @@
 import type { CatalogListItem } from "@/lib/database.types";
+import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
+
+/** PC Builder disponible solo para tiendas con rubro Tecnología y Electrónica. */
+export function storeHasPCBuilder(rubro: string | null | undefined): boolean {
+  return storeUsesRubroProductModule(rubro, "tecnologia");
+}
 
 export const PC_BUILDER_SLOT_ORDER = [
   "cpu",

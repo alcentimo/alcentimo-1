@@ -25,6 +25,7 @@ export {
   indexProductsByPCBuilderSlot,
   isPCBuilderComplete,
   resolvePCBuilderSlot,
+  storeHasPCBuilder,
   type PCBuilderSelection,
   type PCBuilderSlotId,
 } from "@/lib/rubros/modules/tecnologia/pc-builder";

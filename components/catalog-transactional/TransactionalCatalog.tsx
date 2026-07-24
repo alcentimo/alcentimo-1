@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
@@ -35,7 +34,6 @@ import { CatalogLocationPicker } from "@/components/catalog-transactional/Catalo
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { groupProductsByFoodMenu } from "@/lib/rubros/modules/alimentos";
-import { getStoreCatalogBasePath } from "@/lib/store-host";
 import { cn } from "@/lib/cn";
 
 interface TransactionalCatalogProps {
@@ -347,14 +345,6 @@ function TransactionalCatalogContent({
                   Tasa BCV: Bs. {formatExchangeRate(exchangeRate.rate)} / USD
                 </p>
               )}
-              {isTechCatalog && !previewMode ? (
-                <Link
-                  href={`${getStoreCatalogBasePath(store.slug)}/armar-pc`}
-                  className="pc-builder-entry-link"
-                >
-                  Arma tu PC — configura componentes y cotiza por WhatsApp
-                </Link>
-              ) : null}
             </div>
           </div>
         </div>
