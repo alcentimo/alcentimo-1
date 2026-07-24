@@ -52,7 +52,7 @@ export function PaymentMethodCard({
       <span
         className={
           isSettings
-            ? "payment-method-logo-tile flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100 ring-1 ring-zinc-200/70 dark:bg-zinc-900 dark:ring-zinc-800"
+            ? "flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg"
             : "shrink-0"
         }
       >
