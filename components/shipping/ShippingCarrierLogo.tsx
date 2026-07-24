@@ -24,10 +24,10 @@ function iconSize(className: string): string {
 }
 
 /**
- * Logotipos de encomiendas (SVG con colores oficiales) y entrega local (Lucide).
+ * Logotipos de encomiendas (marcas oficiales en PNG) y entrega local (Lucide).
  *
  * MRW, Tealca, Zoom, Domesa y Liberty Express no existen en react-icons/si;
- * usamos marcas SVG dedicadas en lugar de SiZoom (videoconferencia).
+ * usamos assets oficiales en lugar de SiZoom (videoconferencia) u iconos genéricos.
  */
 export function ShippingCarrierLogo({
   carrierKey,
