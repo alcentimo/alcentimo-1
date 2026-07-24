@@ -19,6 +19,7 @@ const MESSAGES = {
     "nav.orders": "Órdenes",
     "nav.customers": "Mis Clientes",
     "nav.analytics": "Analíticas",
+    "nav.assistant": "Asistente IA",
     "nav.settings": "Configuración de Tienda",
     "nav.logout": "Cerrar sesión",
     "nav.support": "Soporte",
@@ -53,6 +54,7 @@ const MESSAGES = {
     "nav.orders": "Orders",
     "nav.customers": "Customers",
     "nav.analytics": "Analytics",
+    "nav.assistant": "AI Assistant",
     "nav.settings": "Store Settings",
     "nav.logout": "Log out",
     "nav.support": "Support",
@@ -82,5 +84,6 @@ export const NAV_LABEL_KEYS: Record<string, MessageKey> = {
   "/dashboard/pedidos": "nav.orders",
   "/dashboard/clientes": "nav.customers",
   "/dashboard/analiticas": "nav.analytics",
+  "/dashboard/asistente": "nav.assistant",
   "/dashboard/ajustes": "nav.settings",
 };

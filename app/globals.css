@@ -1707,6 +1707,78 @@ body {
   @apply inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-violet-200/80 bg-violet-50/80 px-2.5 py-1 text-xs font-medium text-violet-700 transition hover:border-violet-300 hover:bg-violet-100 disabled:pointer-events-none disabled:opacity-50 dark:border-violet-500/30 dark:bg-violet-950/40 dark:text-violet-300 dark:hover:bg-violet-950/60;
 }
 
+.owner-assistant-shell {
+  @apply flex min-h-[min(42rem,calc(100dvh-12rem))] flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.owner-assistant-header {
+  @apply flex items-start gap-3 border-b border-zinc-200/80 px-4 py-4 dark:border-zinc-800 sm:px-5;
+}
+
+.owner-assistant-header-icon {
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300;
+}
+
+.owner-assistant-title {
+  @apply text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+}
+
+.owner-assistant-subtitle {
+  @apply mt-0.5 text-xs text-zinc-500 dark:text-zinc-400;
+}
+
+.owner-assistant-badge {
+  @apply ml-auto inline-flex items-center gap-1 rounded-full border border-violet-200/80 bg-violet-50/80 px-2.5 py-1 text-[11px] font-medium text-violet-700 dark:border-violet-500/30 dark:bg-violet-950/40 dark:text-violet-300;
+}
+
+.owner-assistant-disabled {
+  @apply mx-4 mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300;
+}
+
+.owner-assistant-messages {
+  @apply min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5;
+}
+
+.owner-assistant-bubble {
+  @apply max-w-[90%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed;
+}
+
+.owner-assistant-bubble-assistant {
+  @apply mr-auto rounded-bl-md bg-zinc-100 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-100;
+}
+
+.owner-assistant-bubble-user {
+  @apply ml-auto rounded-br-md bg-emerald-600 text-white dark:bg-emerald-700;
+}
+
+.owner-assistant-typing {
+  @apply inline-flex items-center gap-2 text-zinc-500;
+}
+
+.owner-assistant-error {
+  @apply mx-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400;
+}
+
+.owner-assistant-quick-prompts {
+  @apply flex gap-2 overflow-x-auto border-t border-zinc-200/80 px-4 py-3 dark:border-zinc-800 sm:px-5;
+}
+
+.owner-assistant-quick-prompt {
+  @apply shrink-0 rounded-full border border-emerald-200/80 bg-emerald-50/70 px-3 py-1.5 text-[11px] font-medium text-emerald-800 transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-500/30 dark:bg-emerald-950/30 dark:text-emerald-200 dark:hover:bg-emerald-950/50;
+}
+
+.owner-assistant-input-row {
+  @apply flex items-end gap-2 border-t border-zinc-200/80 px-4 py-3 dark:border-zinc-800 sm:px-5 sm:py-4;
+}
+
+.owner-assistant-input {
+  @apply min-h-[3rem] max-h-32 flex-1 resize-none rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-900;
+}
+
+.owner-assistant-send-btn {
+  @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-700 dark:hover:bg-emerald-600;
+}
+
 .payment-field-input {
   @apply h-8 text-xs;
 }

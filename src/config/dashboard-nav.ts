@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Bot,
   ClipboardList,
   Settings2,
   Store,
@@ -50,6 +51,13 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     description: "Métricas de rendimiento",
     icon: BarChart3,
     match: (pathname) => pathname.startsWith("/dashboard/analiticas"),
+  },
+  {
+    href: "/dashboard/asistente",
+    label: "Asistente IA",
+    description: "Consultas de inventario, ventas y operaciones",
+    icon: Bot,
+    match: (pathname) => pathname.startsWith("/dashboard/asistente"),
   },
   {
     href: "/dashboard/ajustes",
