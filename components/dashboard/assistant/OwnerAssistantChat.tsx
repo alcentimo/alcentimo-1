@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, Loader2, Send, Sparkles } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { OwnerAssistantMessage } from "@/lib/ai/owner-assistant-types";
+import { AssistantMessageContent } from "@/components/dashboard/assistant/AssistantMessageContent";
 
 interface OwnerAssistantChatProps {
   storeName: string;
@@ -144,7 +145,11 @@ export function OwnerAssistantChat({
                 : "owner-assistant-bubble-assistant",
             )}
           >
-            {message.content}
+            {message.role === "user" ? (
+              message.content
+            ) : (
+              <AssistantMessageContent content={message.content} variant="assistant" />
+            )}
           </div>
         ))}
         {loading ? (
