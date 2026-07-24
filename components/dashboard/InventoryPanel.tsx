@@ -45,6 +45,7 @@ import {
 import { InventoryPagination } from "@/components/dashboard/InventoryPagination";
 
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
+import { fetchStoreProductFormConfig } from "@/lib/products/fetch-store-product-form-config";
 import type { StoreProductLimitContext } from "@/lib/plans/product-limit";
 import { shouldShowProductLimitBanner } from "@/src/config/plans";
 import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
@@ -565,6 +566,8 @@ export function InventoryPanel({
   const [trialDialogOpen, setTrialDialogOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [importSheetOpen, setImportSheetOpen] = useState(false);
+  const [liveProductFormConfig, setLiveProductFormConfig] =
+    useState(productFormConfig);
   const [sheetMode, setSheetMode] = useState<"create" | "edit">("create");
   const [editingProductId, setEditingProductId] = useState<string | undefined>();
   const [deleteTarget, setDeleteTarget] = useState<CatalogListItem | null>(null);
@@ -577,6 +580,19 @@ export function InventoryPanel({
   const [exportingCsv, startExportCsv] = useTransition();
   const [exportError, setExportError] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLiveProductFormConfig(productFormConfig);
+  }, [productFormConfig]);
+
+  useEffect(() => {
+    void import("@/components/dashboard/ProductFormSheet");
+    void fetchStoreProductFormConfig().then((result) => {
+      if (result.config) {
+        setLiveProductFormConfig(result.config);
+      }
+    });
+  }, []);
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfPreviewBase64, setPdfPreviewBase64] = useState<string | null>(null);
@@ -1399,7 +1415,7 @@ export function InventoryPanel({
         onOpenChange={setSheetOpen}
         store={store}
         exchangeRate={exchangeRate}
-        productFormConfig={productFormConfig}
+        productFormConfig={liveProductFormConfig}
         mode={sheetMode}
         productId={editingProductId}
         onSaved={handleProductSaved}

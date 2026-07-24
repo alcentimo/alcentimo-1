@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import type { ProductEditData } from "@/lib/products/actions";
 import { getProductForEdit } from "@/lib/products/actions";
 import { fetchStoreProductFormConfig } from "@/lib/products/fetch-store-product-form-config";
@@ -53,78 +53,75 @@ export function ProductFormSheet({
 }: ProductFormSheetProps) {
   const [editData, setEditData] = useState<ProductEditData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [loading, startTransition] = useTransition();
+  const [editLoading, setEditLoading] = useState(false);
   const [createFormKey, setCreateFormKey] = useState(0);
   const [liveFormConfig, setLiveFormConfig] =
     useState<StoreProductFormConfig>(productFormConfig);
-  const [configReady, setConfigReady] = useState(false);
 
   useEffect(() => {
     setLiveFormConfig(productFormConfig);
   }, [productFormConfig]);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!open) {
-      setConfigReady(false);
       setEditData(null);
       setLoadError(null);
+      setEditLoading(false);
       return;
     }
-    setConfigReady(false);
-  }, [open, mode, productId]);
 
-  useEffect(() => {
-    if (!open) return;
+    if (mode === "create") {
+      setCreateFormKey((key) => key + 1);
+    }
 
     let cancelled = false;
-    setLoadError(null);
 
-    startTransition(async () => {
-      const configResult = await fetchStoreProductFormConfig();
-      if (cancelled) return;
-
-      if (configResult.config) {
-        setLiveFormConfig(configResult.config);
-      } else {
-        setLiveFormConfig(productFormConfig);
-      }
-
-      if (mode === "create") {
-        setCreateFormKey((key) => key + 1);
-        setConfigReady(true);
-        return;
-      }
-
-      if (!productId) {
-        setLoadError("Producto no válido.");
-        setConfigReady(true);
-        return;
-      }
-
-      const data = await getProductForEdit(productId);
-      if (cancelled) return;
-
-      if (!data) {
-        setLoadError("No se pudo cargar el producto.");
-        setConfigReady(true);
-        return;
-      }
-
-      setEditData(data);
-      setConfigReady(true);
+    void fetchStoreProductFormConfig().then((configResult) => {
+      if (cancelled || !configResult.config) return;
+      setLiveFormConfig(configResult.config);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [open, mode, productId, productFormConfig]);
+  }, [open, mode]);
+
+  useEffect(() => {
+    if (!open || mode !== "edit") return;
+
+    if (!productId) {
+      setLoadError("Producto no válido.");
+      setEditData(null);
+      setEditLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setEditLoading(true);
+    setLoadError(null);
+    setEditData(null);
+
+    void getProductForEdit(productId).then((data) => {
+      if (cancelled) return;
+      setEditLoading(false);
+      if (!data) {
+        setLoadError("No se pudo cargar el producto.");
+        return;
+      }
+      setEditData(data);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, mode, productId]);
 
   function handleCreateComplete(result?: PublishedProductResult) {
     onSaved(result);
     onOpenChange(false);
   }
 
-  const formBusy = open && (!configReady || loading);
+  const editBusy = mode === "edit" && open && editLoading;
 
   if (mode === "create") {
     return (
@@ -137,29 +134,22 @@ export function ProductFormSheet({
             <DialogTitle>Nuevo producto</DialogTitle>
             <DialogDescription>
               Nombre, precio en dólares y foto. Lo demás queda en opciones avanzadas.
-              {configReady && liveFormConfig.rubroLabel
+              {liveFormConfig.rubroLabel
                 ? ` Rubro: ${liveFormConfig.rubroLabel}.`
                 : ""}
             </DialogDescription>
           </DialogHeader>
 
-          {formBusy ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-sm text-zinc-500">
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              Cargando campos del rubro…
-            </div>
-          ) : (
-            <QuickProductForm
-              key={`${createFormKey}-${liveFormConfig.rubroTienda}`}
-              store={store}
-              exchangeRate={exchangeRate}
-              productFormConfig={liveFormConfig}
-              onComplete={handleCreateComplete}
-              onRefresh={onSaved}
-              onCancel={() => onOpenChange(false)}
-              onLimitHit={onLimitHit}
-            />
-          )}
+          <QuickProductForm
+            key={`${createFormKey}-${liveFormConfig.rubroTienda}`}
+            store={store}
+            exchangeRate={exchangeRate}
+            productFormConfig={liveFormConfig}
+            onComplete={handleCreateComplete}
+            onRefresh={onSaved}
+            onCancel={() => onOpenChange(false)}
+            onLimitHit={onLimitHit}
+          />
         </DialogContent>
       </Dialog>
     );
@@ -179,20 +169,20 @@ export function ProductFormSheet({
         </SheetHeader>
 
         <SheetBody>
-          {formBusy && (
+          {editBusy && (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-zinc-500">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               Cargando producto…
             </div>
           )}
 
-          {loadError && (
+          {loadError && !editBusy ? (
             <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
               {loadError}
             </p>
-          )}
+          ) : null}
 
-          {editData && !formBusy && (
+          {editData && !editBusy ? (
             <ProductCatalogForm
               key={`${editData.productId}-${liveFormConfig.rubroTienda}`}
               store={store}
@@ -206,7 +196,7 @@ export function ProductFormSheet({
               }}
               onCancel={() => onOpenChange(false)}
             />
-          )}
+          ) : null}
         </SheetBody>
       </SheetContent>
     </Sheet>
