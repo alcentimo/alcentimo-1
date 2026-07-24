@@ -31,6 +31,7 @@ import { useProductCategoryFields } from "@/components/dashboard/useProductCateg
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
 import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
+import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
 import {
   emptyFoodModifiers,
   serializeFoodModifiersJson,
@@ -85,6 +86,13 @@ export function ProductForm({
   const [imageBusy, setImageBusy] = useState(false);
   const [imageProcessed, setImageProcessed] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [productName, setProductName] = useState(initialData?.name ?? "");
+  const [shortDescription, setShortDescription] = useState(
+    initialData?.shortDescription ?? "",
+  );
+  const [description, setDescription] = useState(
+    initialData?.description ?? "",
+  );
   const {
     categorySlug,
     fieldLabels,
@@ -263,34 +271,19 @@ export function ProductForm({
         </Link>
       </div>
 
-      <div>
-        <label htmlFor="name" className="label-field">
-          Nombre del producto <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="name"
-          name="name"
-          required
-          maxLength={120}
-          defaultValue={initialData?.name ?? ""}
-          placeholder="Ej: Arroz Premium 1kg"
-          className="input-field"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="short_description" className="label-field">
-          Descripción corta
-        </label>
-        <input
-          id="short_description"
-          name="short_description"
-          maxLength={160}
-          defaultValue={initialData?.shortDescription ?? ""}
-          placeholder="Aparece en el listado del catálogo"
-          className="input-field"
-        />
-      </div>
+      <ProductCopyAiFields
+        idPrefix="product"
+        name={productName}
+        onNameChange={setProductName}
+        shortDescription={shortDescription}
+        onShortDescriptionChange={setShortDescription}
+        description={description}
+        onDescriptionChange={setDescription}
+        storeRubro={productFormConfig.rubroTienda}
+        categoryLabel={categoryLabel}
+        disabled={isBusy}
+        variant="default"
+      />
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div>

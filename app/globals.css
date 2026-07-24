@@ -1703,6 +1703,10 @@ body {
   @apply text-xs font-medium text-zinc-600 dark:text-zinc-400;
 }
 
+.product-ai-improve-btn {
+  @apply inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-violet-200/80 bg-violet-50/80 px-2.5 py-1 text-xs font-medium text-violet-700 transition hover:border-violet-300 hover:bg-violet-100 disabled:pointer-events-none disabled:opacity-50 dark:border-violet-500/30 dark:bg-violet-950/40 dark:text-violet-300 dark:hover:bg-violet-950/60;
+}
+
 .payment-field-input {
   @apply h-8 text-xs;
 }

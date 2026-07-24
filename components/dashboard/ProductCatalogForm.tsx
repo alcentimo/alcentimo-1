@@ -30,6 +30,7 @@ import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
 import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
+import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
 import {
   emptyFoodModifiers,
   serializeFoodModifiersJson,
@@ -73,6 +74,13 @@ export function ProductCatalogForm({
   const [imageBusy, setImageBusy] = useState(false);
   const [imageProcessed, setImageProcessed] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [productName, setProductName] = useState(initialData?.name ?? "");
+  const [shortDescription, setShortDescription] = useState(
+    initialData?.shortDescription ?? "",
+  );
+  const [description, setDescription] = useState(
+    initialData?.description ?? "",
+  );
   const [variants, setVariants] = useState<VariantFormInput[]>(() =>
     (initialData?.variants ?? []).map((variant) => ({
       id: variant.id,
@@ -222,34 +230,19 @@ export function ProductCatalogForm({
         }}
       />
 
-      <div>
-        <Label htmlFor="catalog-name" className="payment-field-label">
-          Nombre
-        </Label>
-        <Input
-          id="catalog-name"
-          name="name"
-          required
-          maxLength={120}
-          defaultValue={initialData?.name ?? ""}
-          placeholder="Ej: Arroz Premium 1kg"
-          className="payment-field-input mt-1.5"
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="catalog-short-description" className="payment-field-label">
-          Descripción corta
-        </Label>
-        <Input
-          id="catalog-short-description"
-          name="short_description"
-          maxLength={160}
-          defaultValue={initialData?.shortDescription ?? ""}
-          placeholder="Aparece en el listado del catálogo"
-          className="payment-field-input mt-1.5"
-        />
-      </div>
+      <ProductCopyAiFields
+        idPrefix="catalog"
+        name={productName}
+        onNameChange={setProductName}
+        shortDescription={shortDescription}
+        onShortDescriptionChange={setShortDescription}
+        description={description}
+        onDescriptionChange={setDescription}
+        storeRubro={productFormConfig.rubroTienda}
+        categoryLabel={categoryLabel}
+        disabled={isBusy}
+        variant="compact"
+      />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>

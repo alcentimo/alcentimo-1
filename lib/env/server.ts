@@ -52,3 +52,8 @@ export function isVercelProduction(): boolean {
 export function getApiSecretKey(): string | undefined {
   return optionalEnv("API_SECRET_KEY");
 }
+
+export function getOpenAiApiKey(): string | undefined {
+  const key = optionalEnv("OPENAI_API_KEY");
+  return isConfiguredEnvValue(key) ? key : undefined;
+}

@@ -33,6 +33,7 @@ import { getTransactionalCatalogPublicUrl } from "@/lib/stores";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
+import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
@@ -96,6 +97,9 @@ function QuickProductFormSession({
   const [imageBusy, setImageBusy] = useState(false);
   const [imageProcessed, setImageProcessed] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [productName, setProductName] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
+  const [description, setDescription] = useState("");
   const saveIntentRef = useRef<SaveIntent>("close");
   const submittedNameRef = useRef("");
 
@@ -129,6 +133,16 @@ function QuickProductFormSession({
   );
 
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
+
+  const namePlaceholder = isAlimentos
+    ? "Ej: Arepa reina pepiada"
+    : isTecnologia
+      ? "Ej: Smartphone Nova X 256 GB"
+      : isColeccionables
+        ? "Ej: Figura Exclusive Chase #42"
+        : isSaludBelleza
+          ? "Ej: Sérum vitamina C 30 ml"
+          : "Ej: Arroz Premium 1kg";
 
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
@@ -221,7 +235,6 @@ function QuickProductFormSession({
 
     if (!advancedOpen) {
       formData.set("low_stock_threshold", "5");
-      formData.set("short_description", "");
     }
 
     if (compressedImageFile) {
@@ -251,30 +264,20 @@ function QuickProductFormSession({
       >
       <input type="hidden" name="store_id" value={store.id} readOnly />
 
-      <div>
-        <Label htmlFor="quick-name" className="payment-field-label">
-          Nombre <span className="text-red-500">*</span>
-        </Label>
-        <Input
-          id="quick-name"
-          name="name"
-          required
-          maxLength={120}
-          placeholder={
-            isAlimentos
-              ? "Ej: Arepa reina pepiada"
-              : isTecnologia
-                ? "Ej: Smartphone Nova X 256 GB"
-                : isColeccionables
-                  ? "Ej: Figura Exclusive Chase #42"
-                  : isSaludBelleza
-                    ? "Ej: Sérum vitamina C 30 ml"
-                    : "Ej: Arroz Premium 1kg"
-          }
-          className="payment-field-input mt-1.5"
-          autoFocus
-        />
-      </div>
+      <ProductCopyAiFields
+        idPrefix="quick"
+        name={productName}
+        onNameChange={setProductName}
+        shortDescription={shortDescription}
+        onShortDescriptionChange={setShortDescription}
+        description={description}
+        onDescriptionChange={setDescription}
+        storeRubro={productFormConfig.rubroTienda}
+        categoryLabel={categoryLabel}
+        disabled={isBusy}
+        variant="compact"
+        namePlaceholder={namePlaceholder}
+      />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
@@ -440,19 +443,6 @@ function QuickProductFormSession({
 
         {advancedOpen && (
           <div className="space-y-4 border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-800">
-            <div>
-              <Label htmlFor="quick-short-description" className="payment-field-label">
-                Descripción corta
-              </Label>
-              <Input
-                id="quick-short-description"
-                name="short_description"
-                maxLength={160}
-                placeholder="Aparece en el listado del catálogo"
-                className="payment-field-input mt-1.5"
-              />
-            </div>
-
             {!hasCustomVariants && (
               <div>
                 <Label htmlFor="quick-stock" className="payment-field-label">
