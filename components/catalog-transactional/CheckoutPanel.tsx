@@ -10,7 +10,6 @@ import { ShippingBranchPicker } from "@/components/shipping/ShippingBranchPicker
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { PaymentCheckoutDetails } from "@/components/payments/PaymentCheckoutDetails";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
-import { CheckoutQuickAuth } from "@/components/catalog-transactional/CheckoutQuickAuth";
 import { CheckoutSuccessScreen } from "@/components/catalog-transactional/CheckoutSuccessScreen";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { cartItemKey } from "@/lib/catalog/cart-types";
@@ -31,7 +30,6 @@ import {
 import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
 import type { AppliedPromotion } from "@/lib/promotions/types";
 import {
-  getStoreCatalogPublicUrl,
   getStoreCustomerAccountPath,
 } from "@/lib/store-host";
 import type { CatalogFulfillmentMode } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
@@ -72,7 +70,7 @@ export function CheckoutPanel({
 }: CheckoutPanelProps) {
   const { items, subtotalUsd, updateQuantity, removeItem, clearCart } =
     useCart();
-  const { autoApply, guestBanner } = usePromotionContext();
+  const { autoApply } = usePromotionContext();
   const { mode: fulfillmentModeFromContext, multiLocation } = useCatalogFulfillment();
   const activeFulfillmentMode = fulfillmentMode ?? fulfillmentModeFromContext;
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(1);
@@ -86,6 +84,9 @@ export function CheckoutPanel({
     orderId: string;
     totalUsd: number;
     whatsappOpened: boolean;
+    wasGuest: boolean;
+    customerName: string;
+    customerPhone: string;
   } | null>(null);
   const [selectedShipping, setSelectedShipping] = useState("");
   const [selectedPayment, setSelectedPayment] = useState("");
@@ -358,6 +359,10 @@ export function CheckoutPanel({
         window.open(result.whatsappUrl, "_blank", "noopener,noreferrer");
       }
 
+      const wasGuest = !customerProfile;
+      const submittedName = customerProfile?.displayName ?? customerName.trim();
+      const submittedPhone = customerProfile?.phone ?? customerPhone.trim();
+
       clearCart();
       setCheckoutStep(1);
       setCustomerProfile(null);
@@ -375,6 +380,9 @@ export function CheckoutPanel({
           orderId: result.orderId,
           totalUsd,
           whatsappOpened: openedWhatsApp,
+          wasGuest,
+          customerName: submittedName,
+          customerPhone: submittedPhone,
         });
         return;
       }
@@ -387,9 +395,13 @@ export function CheckoutPanel({
     return (
       <div className="txn-checkout">
         <CheckoutSuccessScreen
+          storeSlug={storeSlug}
           orderId={successOrder.orderId}
           totalUsd={successOrder.totalUsd}
           whatsappOpened={successOrder.whatsappOpened}
+          wasGuest={successOrder.wasGuest}
+          customerName={successOrder.customerName}
+          customerPhone={successOrder.customerPhone}
           onClose={() => {
             setSuccessOrder(null);
             onClose();
@@ -570,7 +582,7 @@ export function CheckoutPanel({
                       onChange={(branch) => setShippingBranchCode(branch?.id ?? null)}
                     />
                     <p className="text-[11px] text-zinc-500">
-                      Guardamos tu agencia y sucursal preferida para la próxima compra.
+                      Usaremos esta sucursal para coordinar el envío de este pedido.
                     </p>
                   </div>
                 ) : null}
@@ -590,7 +602,7 @@ export function CheckoutPanel({
                       />
                     </label>
                     <p className="text-[11px] text-zinc-500">
-                      La guardamos en tu cuenta para próximas compras.
+                      La usaremos para entregar este pedido.
                     </p>
                   </div>
                 ) : null}
@@ -644,20 +656,6 @@ export function CheckoutPanel({
                   </div>
                 )}
 
-                {!customerProfile && guestBanner ? (
-                  <div className="txn-checkout-guest-promo">
-                    <p className="text-sm text-orange-950 dark:text-orange-100">
-                      ¿Quieres {guestBanner.discountPercent}% de descuento?{" "}
-                      <Link
-                        href={guestBanner.registerPath}
-                        className="font-semibold underline"
-                      >
-                        Regístrate
-                      </Link>{" "}
-                      y activa el beneficio exclusivo.
-                    </p>
-                  </div>
-                ) : null}
               </>
             ) : (
               <>
@@ -707,65 +705,40 @@ export function CheckoutPanel({
                     </Link>
                   </div>
                 ) : (
-                  <>
-                    <CheckoutQuickAuth
-                      storeSlug={storeSlug}
-                      onAuthenticated={(profile) => {
-                        setCustomerProfile(profile);
-                        setCustomerName(profile.displayName);
-                        setCustomerPhone(profile.phone);
-                        if (profile.deliveryAddress) {
-                          setDeliveryAddress(profile.deliveryAddress);
-                        }
-                        if (
-                          profile.preferredShippingMethod &&
-                          purchaseInfo.shipping.some(
-                            (option) => option.key === profile.preferredShippingMethod,
-                          )
-                        ) {
-                          setSelectedShipping(profile.preferredShippingMethod);
-                          if (
-                            isNationalCarrierKey(profile.preferredShippingMethod) &&
-                            profile.preferredShippingBranchCode
-                          ) {
-                            setShippingBranchCode(profile.preferredShippingBranchCode);
-                          }
-                        }
-                      }}
-                    />
-                    <div className="txn-checkout-form">
-                      <p className="mb-2 text-xs font-medium text-zinc-500">
-                        O continúa como invitado
-                      </p>
-                      <label className="txn-field">
-                        <span>Nombre</span>
-                        <input
-                          type="text"
-                          required
-                          minLength={2}
-                          value={customerName}
-                          onChange={(event) => setCustomerName(event.target.value)}
-                          placeholder="Tu nombre completo"
-                          className="txn-input"
-                        />
-                      </label>
+                  <div className="txn-checkout-form">
+                    <p className="txn-checkout-section-title">Tus datos de contacto</p>
+                    <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+                      Solo los necesitamos para coordinar tu pedido. No necesitas crear
+                      una cuenta.
+                    </p>
+                    <label className="txn-field">
+                      <span>Nombre</span>
+                      <input
+                        type="text"
+                        required
+                        minLength={2}
+                        value={customerName}
+                        onChange={(event) => setCustomerName(event.target.value)}
+                        placeholder="Tu nombre completo"
+                        className="txn-input"
+                      />
+                    </label>
 
-                      <label className="txn-field">
-                        <span>Teléfono / WhatsApp</span>
-                        <input
-                          type="tel"
-                          required
-                          inputMode="tel"
-                          autoComplete="tel"
-                          minLength={10}
-                          value={customerPhone}
-                          onChange={(event) => setCustomerPhone(event.target.value)}
-                          placeholder="Ej: 0414-1234567"
-                          className="txn-input"
-                        />
-                      </label>
-                    </div>
-                  </>
+                    <label className="txn-field">
+                      <span>Teléfono / WhatsApp</span>
+                      <input
+                        type="tel"
+                        required
+                        inputMode="tel"
+                        autoComplete="tel"
+                        minLength={10}
+                        value={customerPhone}
+                        onChange={(event) => setCustomerPhone(event.target.value)}
+                        placeholder="Ej: 0414-1234567"
+                        className="txn-input"
+                      />
+                    </label>
+                  </div>
                 )}
 
                 <div className="txn-checkout-form">
@@ -835,19 +808,6 @@ export function CheckoutPanel({
                   ? "Continuar"
                   : "Finalizar pedido por WhatsApp"}
             </button>
-
-            {checkoutStep === 2 && !customerProfile && (
-              <p className="txn-checkout-hint">
-                ¿Ya tienes cuenta?{" "}
-                <Link
-                  href={`/register?store=${encodeURIComponent(storeSlug)}&next=${encodeURIComponent(`${getStoreCatalogPublicUrl(storeSlug)}?checkout=1`)}`}
-                  className="link-brand"
-                >
-                  Inicia sesión
-                </Link>{" "}
-                para autocompletar tus datos la próxima vez.
-              </p>
-            )}
 
             {checkoutStep === 2 && !whatsappConfigured && (
               <p className="txn-checkout-hint">

@@ -39,6 +39,7 @@ interface CustomerRegisterPanelProps {
   nextPath: string;
   needsPhoneCompletion?: boolean;
   suggestedDisplayName?: string | null;
+  orderId?: string | null;
 }
 
 export function CustomerRegisterPanel({
@@ -47,6 +48,7 @@ export function CustomerRegisterPanel({
   nextPath,
   needsPhoneCompletion = false,
   suggestedDisplayName = null,
+  orderId = null,
 }: CustomerRegisterPanelProps) {
   const [displayName, setDisplayName] = useState(suggestedDisplayName ?? "");
   const [phone, setPhone] = useState("");
@@ -60,7 +62,10 @@ export function CustomerRegisterPanel({
     setGoogleLoading(true);
 
     const supabase = createClient();
-    const redirectTo = getAuthCallbackUrl(nextPath, { store: storeSlug });
+    const redirectTo = getAuthCallbackUrl(nextPath, {
+      store: storeSlug,
+      orderId: orderId ?? undefined,
+    });
 
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -89,6 +94,7 @@ export function CustomerRegisterPanel({
       displayName,
       phone,
       email: email.trim() || null,
+      orderId,
     });
 
     setLoading(false);
@@ -111,6 +117,7 @@ export function CustomerRegisterPanel({
       nextPath,
       phone,
       displayName: displayName.trim() || suggestedDisplayName,
+      orderId,
     });
 
     setLoading(false);

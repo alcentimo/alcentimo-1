@@ -6,6 +6,10 @@ import { quickRegisterOrSignInCustomerInline } from "@/lib/customers/register-ac
 
 interface CheckoutQuickAuthProps {
   storeSlug: string;
+  variant?: "checkout" | "postPurchase";
+  orderId?: string | null;
+  initialDisplayName?: string;
+  initialPhone?: string;
   onAuthenticated: (profile: {
     displayName: string;
     phone: string;
@@ -18,12 +22,18 @@ interface CheckoutQuickAuthProps {
 /** Registro / acceso instantáneo sin salir del checkout. */
 export function CheckoutQuickAuth({
   storeSlug,
+  variant = "checkout",
+  orderId = null,
+  initialDisplayName = "",
+  initialPhone = "",
   onAuthenticated,
 }: CheckoutQuickAuthProps) {
-  const [displayName, setDisplayName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [displayName, setDisplayName] = useState(initialDisplayName);
+  const [phone, setPhone] = useState(initialPhone);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  const isPostPurchase = variant === "postPurchase";
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -34,6 +44,7 @@ export function CheckoutQuickAuth({
       storeSlug,
       displayName,
       phone,
+      orderId,
     });
 
     setPending(false);
@@ -54,10 +65,13 @@ export function CheckoutQuickAuth({
 
   return (
     <div className="txn-checkout-quick-auth">
-      <p className="txn-checkout-section-title">Accede en segundos</p>
+      <p className="txn-checkout-section-title">
+        {isPostPurchase ? "Guardar con WhatsApp" : "Accede en segundos"}
+      </p>
       <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-        Usa tu WhatsApp: la próxima vez autocompletamos tus datos y guardamos tu
-        dirección.
+        {isPostPurchase
+          ? "Confirmamos tu nombre y número. La próxima vez autocompletamos todo."
+          : "Usa tu WhatsApp: la próxima vez autocompletamos tus datos y guardamos tu dirección."}
       </p>
       <form onSubmit={handleSubmit} className="space-y-3">
         <label className="txn-field">
@@ -96,8 +110,10 @@ export function CheckoutQuickAuth({
           {pending ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              Entrando…
+              {isPostPurchase ? "Guardando…" : "Entrando…"}
             </>
+          ) : isPostPurchase ? (
+            "Guardar mis datos"
           ) : (
             "Continuar con mi WhatsApp"
           )}

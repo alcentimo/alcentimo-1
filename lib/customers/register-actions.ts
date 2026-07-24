@@ -19,6 +19,7 @@ import {
   validateCustomerRegistrationInput,
 } from "@/lib/customers/phone-auth";
 import { markCatalogVisitRegistered } from "@/lib/analytics/track-catalog-visit";
+import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
 
 export type LinkCustomerToStoreResult =
   | { ok: true; redirectTo: string }
@@ -110,6 +111,7 @@ async function finalizeLinkedCustomer(input: {
   displayName: string;
   phone: string;
   contactEmail?: string | null;
+  orderId?: string | null;
 }): Promise<LinkCustomerToStoreResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
   const supabase = await createClient();
@@ -155,6 +157,17 @@ async function finalizeLinkedCustomer(input: {
 
   await markCatalogVisitRegistered(result.storeSlug, user.id);
 
+  try {
+    await linkGuestOrdersToCustomer({
+      storeSlug: result.storeSlug,
+      userId: user.id,
+      phone: input.phone,
+      orderId: input.orderId,
+    });
+  } catch {
+    // No bloquear registro si falla el vínculo de pedidos previos.
+  }
+
   return {
     ok: true,
     redirectTo: sanitizeNextPath(input.nextPath, result.storeSlug),
@@ -168,6 +181,7 @@ export async function quickRegisterOrSignInCustomer(input: {
   displayName: string;
   phone: string;
   email?: string | null;
+  orderId?: string | null;
 }): Promise<LinkCustomerToStoreResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
   if (!storeSlug) {
@@ -196,6 +210,7 @@ export async function quickRegisterOrSignInCustomer(input: {
       displayName: validation.displayName,
       phone: validation.phone,
       contactEmail: validation.contactEmail,
+      orderId: input.orderId,
     });
   } catch (err) {
     const message =
@@ -220,11 +235,13 @@ export async function quickRegisterOrSignInCustomerInline(input: {
   storeSlug: string;
   displayName: string;
   phone: string;
+  orderId?: string | null;
 }): Promise<InlineCustomerAuthResult> {
   const result = await quickRegisterOrSignInCustomer({
     storeSlug: input.storeSlug,
     displayName: input.displayName,
     phone: input.phone,
+    orderId: input.orderId,
   });
 
   if (!result.ok) {
@@ -276,6 +293,7 @@ export async function completeCustomerPhone(input: {
   nextPath?: string | null;
   phone: string;
   displayName?: string | null;
+  orderId?: string | null;
 }): Promise<LinkCustomerToStoreResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
   if (!storeSlug) {
@@ -320,6 +338,7 @@ export async function completeCustomerPhone(input: {
         : isSyntheticCustomerAuthEmail(user.email)
           ? null
           : user.email,
+    orderId: input.orderId,
   });
 }
 

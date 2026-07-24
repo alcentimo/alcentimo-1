@@ -5119,6 +5119,32 @@ body {
   @apply flex flex-col items-center px-6 py-10 text-center;
 }
 
+.txn-checkout-success-save {
+  @apply rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-4 py-4 dark:border-zinc-800 dark:bg-zinc-900/40;
+}
+
+.txn-checkout-success-save .txn-checkout-quick-auth {
+  @apply mx-0 mb-0 mt-4 border-0 bg-transparent p-0;
+}
+
+.txn-checkout-success-divider {
+  @apply relative my-4 flex items-center justify-center text-xs text-zinc-400;
+}
+
+.txn-checkout-success-divider::before,
+.txn-checkout-success-divider::after {
+  content: "";
+  @apply h-px flex-1 bg-zinc-200 dark:bg-zinc-700;
+}
+
+.txn-checkout-success-divider span {
+  @apply px-3;
+}
+
+.txn-google-auth-btn {
+  @apply flex min-h-11 w-full items-center justify-center gap-3 rounded-xl border border-zinc-200/80 bg-white px-4 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900;
+}
+
 .txn-checkout-success-icon {
   @apply flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/40;
 }

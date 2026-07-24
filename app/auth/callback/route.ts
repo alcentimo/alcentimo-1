@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import { ensureCustomerProfileAfterAuth } from "@/lib/customers/ensure-customer-profile";
 import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
+import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
 import { getSiteUrl } from "@/lib/site-url";
 
 function resolveAuthRedirectTarget(next: string, siteUrl: string): string {
@@ -20,6 +21,7 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/onboarding";
   const storeSlug = searchParams.get("store");
+  const orderId = searchParams.get("orderId");
 
   if (!code) {
     return NextResponse.redirect(
@@ -64,6 +66,14 @@ export async function GET(request: Request) {
             safeNext,
             normalizedStoreSlug,
           );
+          if (orderId?.trim()) {
+            await linkGuestOrdersToCustomer({
+              storeSlug: normalizedStoreSlug,
+              userId: user.id,
+              phone: metadataPhone,
+              orderId: orderId.trim(),
+            });
+          }
         } catch {
           // No bloquear login si falla el vínculo cliente; /register puede reintentar.
         }
@@ -72,6 +82,9 @@ export async function GET(request: Request) {
         completeUrl.searchParams.set("store", normalizedStoreSlug);
         completeUrl.searchParams.set("next", safeNext);
         completeUrl.searchParams.set("complete", "phone");
+        if (orderId?.trim()) {
+          completeUrl.searchParams.set("orderId", orderId.trim());
+        }
         return NextResponse.redirect(completeUrl.toString());
       }
     } else {

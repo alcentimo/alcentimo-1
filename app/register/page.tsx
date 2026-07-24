@@ -18,6 +18,7 @@ interface RegisterPageProps {
     store?: string;
     next?: string;
     complete?: string;
+    orderId?: string;
   }>;
 }
 
@@ -142,6 +143,7 @@ export default async function CustomerRegisterPage({
         nextPath={nextPath}
         needsPhoneCompletion={needsPhoneCompletion}
         suggestedDisplayName={suggestedDisplayName}
+        orderId={params.orderId?.trim() || null}
       />
     </AuthPageShell>
   );
