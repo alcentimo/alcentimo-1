@@ -21,7 +21,7 @@ async function CatalogContent({
   const data = await getPublicCatalogPageData(storeSlug);
   if (!data) notFound();
 
-  const { store, products, exchangeRate, purchaseInfo, catalogDesign, catalogCurrency, storeCategories, locations, locationStocks } =
+  const { store, products, exchangeRate, purchaseInfo, catalogDesign, catalogCurrency, storeCategories, locations, locationStocks, totalCount } =
     data;
 
   return (
@@ -36,6 +36,8 @@ async function CatalogContent({
       openCheckoutInitially={openCheckoutInitially}
       locations={locations}
       locationStocks={locationStocks}
+      catalogTotalCount={totalCount}
+      enableServerPagination
     />
   );
 }

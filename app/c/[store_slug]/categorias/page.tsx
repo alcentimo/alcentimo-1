@@ -18,28 +18,24 @@ async function CategoriesContent({
   storeSlug: string;
   categorySlug?: string;
 }) {
-  const data = await getPublicCatalogPageData(storeSlug);
+  const data = await getPublicCatalogPageData(storeSlug, {
+    categoryFilter: true,
+    categorySlug,
+  });
   if (!data) notFound();
-
-  const requested = categorySlug?.trim().toLowerCase() ?? "";
-  const isAllowed = data.storeCategories.some(
-    (category) => category.slug === requested,
-  );
-  const selectedCategorySlug =
-    requested && isAllowed
-      ? requested
-      : (data.storeCategories[0]?.slug ?? null);
 
   const {
     store,
     products,
     storeCategories,
+    selectedCategorySlug,
     exchangeRate,
     purchaseInfo,
     catalogDesign,
     catalogCurrency,
     locations,
     locationStocks,
+    totalCount,
   } = data;
 
   return (
@@ -47,13 +43,15 @@ async function CategoriesContent({
       store={store}
       products={products}
       storeCategories={storeCategories}
-      selectedCategorySlug={selectedCategorySlug}
+      selectedCategorySlug={selectedCategorySlug ?? null}
       exchangeRate={exchangeRate}
       purchaseInfo={purchaseInfo}
       catalogDesign={catalogDesign}
       catalogCurrency={catalogCurrency}
       locations={locations}
       locationStocks={locationStocks}
+      catalogTotalCount={totalCount}
+      enableServerPagination
     />
   );
 }

@@ -9,6 +9,7 @@ import {
   type ProductFormState,
 } from "@/lib/products/actions";
 import { ProductImageField } from "@/components/dashboard/ProductImageField";
+import { ProductSubmitOverlay } from "@/components/dashboard/ProductSubmitOverlay";
 import type { Store } from "@/lib/database.types";
 import { getStoreCatalogUrl } from "@/lib/stores";
 import { formatUsd, formatExchangeRate } from "@/lib/format";
@@ -214,11 +215,17 @@ export function ProductForm({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      encType="multipart/form-data"
-      className="space-y-5"
-    >
+    <>
+      <ProductSubmitOverlay
+        visible={pending}
+        hasImage={Boolean(compressedImageFile)}
+        mode={mode}
+      />
+      <form
+        onSubmit={handleSubmit}
+        encType="multipart/form-data"
+        className="space-y-5"
+      >
       <input type="hidden" name="store_id" value={store.id} readOnly />
       <input
         type="hidden"
@@ -475,5 +482,6 @@ export function ProductForm({
               : "Publicar producto"}
       </button>
     </form>
+    </>
   );
 }

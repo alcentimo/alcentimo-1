@@ -2,12 +2,15 @@ import { cache } from "react";
 import { getSupabaseAnonClient } from "@/lib/supabase";
 import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
 import { CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
+import { buildInventorySearchOrFilter } from "@/lib/inventory/search";
 import { roundExchangeRate } from "@/lib/format";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 
 export interface CatalogPageData {
   products: CatalogListItem[];
   exchangeRate: ExchangeRate | null;
+  totalCount: number;
+  hasMore: boolean;
 }
 
 export interface GetCatalogOptions {
@@ -15,6 +18,10 @@ export interface GetCatalogOptions {
   limit?: number;
   offset?: number;
   categorySlug?: string;
+  /** Búsqueda por nombre, SKU o slug (server-side). */
+  search?: string;
+  /** Restringe a IDs concretos (p. ej. hidratar carrito). */
+  productIds?: string[];
 }
 
 function toNumber(value: number | string | null | undefined): number | null {
@@ -78,20 +85,40 @@ export const getCurrentExchangeRate = cache(
 export async function getCatalogProducts(
   options: GetCatalogOptions,
 ): Promise<CatalogPageData> {
-  const { storeSlug, limit = 24, offset = 0, categorySlug } = options;
+  const {
+    storeSlug,
+    limit = 24,
+    offset = 0,
+    categorySlug,
+    search,
+    productIds,
+  } = options;
   const normalizedSlug = storeSlug.trim().toLowerCase();
   const supabase = getSupabaseAnonClient();
+  const paginated = limit != null && productIds == null;
 
   let query = supabase
     .from("catalog_list_view")
-    .select(CATALOG_LIST_SELECT)
+    .select(CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
     .eq("store_slug", normalizedSlug)
     .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order("created_at", { ascending: false });
 
   if (categorySlug) {
     query = query.eq("category_slug", categorySlug);
+  }
+
+  if (productIds?.length) {
+    query = query.in("product_id", productIds);
+  }
+
+  const searchOr = buildInventorySearchOrFilter(search ?? "");
+  if (searchOr) {
+    query = query.or(searchOr);
+  }
+
+  if (paginated) {
+    query = query.range(offset, offset + limit - 1);
   }
 
   const [productsResult, exchangeRate] = await Promise.all([
@@ -103,10 +130,17 @@ export async function getCatalogProducts(
     throw new Error(productsResult.error.message);
   }
 
+  const products = (productsResult.data ?? []).map((row) =>
+    normalizeCatalogItem(row as unknown as CatalogListItem),
+  );
+  const totalCount = paginated
+    ? (productsResult.count ?? products.length)
+    : products.length;
+
   return {
-    products: (productsResult.data ?? []).map((row) =>
-      normalizeCatalogItem(row as unknown as CatalogListItem),
-    ),
+    products,
     exchangeRate,
+    totalCount,
+    hasMore: paginated ? offset + products.length < totalCount : false,
   };
 }

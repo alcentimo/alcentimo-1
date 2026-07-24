@@ -12,7 +12,6 @@ import {
   PRODUCT_IMAGE_RECOMMENDED_HINT,
 } from "@/lib/product-image";
 import {
-  autoCropAndCompressProductImage,
   compressSelectedProductImage,
   PRODUCT_IMAGE_CAMERA_CAPTURE,
   PRODUCT_IMAGE_CAMERA_HINT,
@@ -20,9 +19,11 @@ import {
   revokeProductImagePreview,
 } from "@/lib/product-image-picker";
 import {
+  getCenteredCropAreaPercentages,
   getCroppedImageBlob,
   loadImage,
   percentCropToPixels,
+  readFileAsObjectUrl,
   PRODUCT_IMAGE_ASPECT_RATIO,
 } from "@/lib/product-image-crop";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,14 @@ function isCoarsePointerDevice(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(pointer: coarse)").matches;
 }
+
+type ImageProcessingStep = "reading" | "cropping" | "compressing";
+
+const PROCESSING_STEP_LABEL: Record<ImageProcessingStep, string> = {
+  reading: "Leyendo imagen…",
+  cropping: "Recortando al formato 1:1…",
+  compressing: "Comprimiendo a WebP…",
+};
 
 export interface ProductImageReadyPayload {
   file: File;
@@ -79,6 +88,9 @@ export function ProductImageField({
   );
   const [optimizeHint, setOptimizeHint] = useState<string | null>(null);
   const [compressing, setCompressing] = useState(false);
+  const [processingStep, setProcessingStep] = useState<ImageProcessingStep | null>(
+    null,
+  );
   const [hasProcessedUpload, setHasProcessedUpload] = useState(false);
 
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
@@ -138,27 +150,57 @@ export function ProductImageField({
 
     void (async () => {
       setCompressing(true);
+      setProcessingStep("reading");
       setOptimizeHint(null);
       setHasProcessedUpload(false);
       revokeOriginalSource();
 
-      const result = await autoCropAndCompressProductImage(file);
-      setCompressing(false);
+      let originalUrl: string | null = null;
 
-      if (!result.ok) {
-        onError?.(result.error);
+      try {
+        originalUrl = readFileAsObjectUrl(file);
+        setProcessingStep("cropping");
+        const image = await loadImage(originalUrl);
+        const cropPercentages = getCenteredCropAreaPercentages(
+          image.naturalWidth,
+          image.naturalHeight,
+        );
+        const pixelCrop = percentCropToPixels(
+          cropPercentages,
+          image.naturalWidth,
+          image.naturalHeight,
+        );
+        const croppedBlob = await getCroppedImageBlob(originalUrl, pixelCrop);
+        setProcessingStep("compressing");
+        const result = await compressSelectedProductImage(croppedBlob, file.name);
+
+        if (!result.ok) {
+          if (originalUrl) URL.revokeObjectURL(originalUrl);
+          onError?.(result.error);
+          onProcessedChange?.(false);
+          return;
+        }
+
+        setOriginalImageSrc(originalUrl);
+        setPendingFileName(file.name);
+        setSavedCropPercentages(cropPercentages);
+        applyProcessedImage({
+          file: result.file,
+          previewUrl: result.previewUrl,
+          message: result.message,
+        });
+      } catch (error) {
+        if (originalUrl) URL.revokeObjectURL(originalUrl);
+        onError?.(
+          error instanceof Error
+            ? error.message
+            : "No se pudo procesar la imagen. Prueba con otra foto.",
+        );
         onProcessedChange?.(false);
-        return;
+      } finally {
+        setCompressing(false);
+        setProcessingStep(null);
       }
-
-      setOriginalImageSrc(result.originalUrl);
-      setPendingFileName(result.fileName);
-      setSavedCropPercentages(result.cropPercentages);
-      applyProcessedImage({
-        file: result.file,
-        previewUrl: result.previewUrl,
-        message: result.message,
-      });
     })();
   }
 
@@ -205,8 +247,10 @@ export function ProductImageField({
     if (!originalImageSrc || !croppedAreaPixels) return;
 
     setCompressing(true);
+    setProcessingStep("cropping");
     try {
       const croppedBlob = await getCroppedImageBlob(originalImageSrc, croppedAreaPixels);
+      setProcessingStep("compressing");
       const result = await compressSelectedProductImage(croppedBlob, pendingFileName);
 
       if (!result.ok) {
@@ -232,8 +276,13 @@ export function ProductImageField({
       );
     } finally {
       setCompressing(false);
+      setProcessingStep(null);
     }
   }
+
+  const processingLabel = processingStep
+    ? PROCESSING_STEP_LABEL[processingStep]
+    : "Procesando…";
 
   const triggerFileInput = useCallback(
     (input: HTMLInputElement | null) => {
@@ -267,7 +316,7 @@ export function ProductImageField({
   }, [isBusy, triggerFileInput]);
 
   const pickButtonLabel = compressing
-    ? "Procesando…"
+    ? processingLabel
     : confirmedPreviewUrl
       ? "Cambiar imagen"
       : "Subir imagen";
@@ -295,7 +344,7 @@ export function ProductImageField({
           aria-live="polite"
         >
           <Loader2 className="h-5 w-5 animate-spin text-teal-400" aria-hidden="true" />
-          <span className="text-[10px] font-medium text-zinc-200">Procesando…</span>
+          <span className="text-[10px] font-medium text-zinc-200">{processingLabel}</span>
         </div>
       )}
       {canEditFraming && (

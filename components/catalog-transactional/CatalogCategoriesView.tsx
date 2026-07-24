@@ -36,6 +36,8 @@ interface CatalogCategoriesViewProps {
   catalogCurrency: CatalogCurrencySettings;
   locations?: StoreLocation[];
   locationStocks?: VariantLocationStock[];
+  catalogTotalCount?: number;
+  enableServerPagination?: boolean;
 }
 
 export function CatalogCategoriesView({
@@ -49,6 +51,8 @@ export function CatalogCategoriesView({
   catalogCurrency,
   locations = [],
   locationStocks = [],
+  catalogTotalCount,
+  enableServerPagination = false,
 }: CatalogCategoriesViewProps) {
   return (
     <CatalogFulfillmentProvider
@@ -64,6 +68,8 @@ export function CatalogCategoriesView({
         purchaseInfo={purchaseInfo}
         catalogDesign={catalogDesign}
         catalogCurrency={catalogCurrency}
+        catalogTotalCount={catalogTotalCount}
+        enableServerPagination={enableServerPagination}
       />
     </CatalogFulfillmentProvider>
   );
@@ -78,6 +84,8 @@ function CatalogCategoriesViewInner({
   purchaseInfo,
   catalogDesign,
   catalogCurrency,
+  catalogTotalCount,
+  enableServerPagination = false,
 }: Omit<CatalogCategoriesViewProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showBsConversion } = catalogCurrency;
@@ -99,6 +107,12 @@ function CatalogCategoriesViewInner({
 
   const browse = useCatalogBrowse(availableProducts, {
     initialCategorySlug: selectedCategorySlug,
+    serverPagination: enableServerPagination
+      ? {
+          storeSlug: store.slug,
+          initialTotalCount: catalogTotalCount ?? availableProducts.length,
+        }
+      : undefined,
   });
 
   const gridClassName =
@@ -175,6 +189,8 @@ function CatalogCategoriesViewInner({
               visibleCount={browse.visibleCount}
               totalCount={browse.totalCount}
               hasMore={browse.hasMore}
+              loading={browse.loadingMore}
+              error={browse.fetchError}
               onLoadMore={browse.loadMore}
             />
           </>

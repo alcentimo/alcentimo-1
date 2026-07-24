@@ -9,6 +9,9 @@ export type CatalogSortKey =
 
 export const CATALOG_PAGE_SIZE = 20;
 
+/** Productos cargados en el primer render del catálogo público (SSR). */
+export const CATALOG_INITIAL_FETCH = 48;
+
 export const CATALOG_SORT_OPTIONS: ReadonlyArray<{
   value: CatalogSortKey;
   label: string;

@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import type { Store } from "@/lib/database.types";
 import { getCatalogProducts } from "@/lib/catalog";
+import { CATALOG_INITIAL_FETCH } from "@/lib/catalog/catalog-browse";
 import {
   defaultStoreSettingsConfig,
   normalizeStoreSettingsConfig,
@@ -109,7 +110,8 @@ export async function getPublicCatalogPageData(
 
   const catalogData = await getCatalogProducts({
     storeSlug: store.slug,
-    limit: 500,
+    limit: CATALOG_INITIAL_FETCH,
+    offset: 0,
     categorySlug: selectedCategorySlug ?? undefined,
   });
 

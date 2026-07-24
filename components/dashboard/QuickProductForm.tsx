@@ -7,6 +7,7 @@ import {
   type ProductFormState,
 } from "@/lib/products/actions";
 import { ProductImageField } from "@/components/dashboard/ProductImageField";
+import { ProductSubmitOverlay } from "@/components/dashboard/ProductSubmitOverlay";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
 import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
@@ -237,11 +238,17 @@ function QuickProductFormSession({
   const submitDisabled = isBusy || !imageProcessed;
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      encType="multipart/form-data"
-      className="space-y-4"
-    >
+    <>
+      <ProductSubmitOverlay
+        visible={pending}
+        hasImage={Boolean(compressedImageFile)}
+        mode="create"
+      />
+      <form
+        onSubmit={handleSubmit}
+        encType="multipart/form-data"
+        className="space-y-4"
+      >
       <input type="hidden" name="store_id" value={store.id} readOnly />
 
       <div>
@@ -561,5 +568,6 @@ function QuickProductFormSession({
         </Button>
       </div>
     </form>
+    </>
   );
 }

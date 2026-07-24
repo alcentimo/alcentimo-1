@@ -9,6 +9,7 @@ import {
   type ProductFormState,
 } from "@/lib/products/actions";
 import { ProductImageField } from "@/components/dashboard/ProductImageField";
+import { ProductSubmitOverlay } from "@/components/dashboard/ProductSubmitOverlay";
 import type { Store } from "@/lib/database.types";
 import { formatCountryCurrency } from "@/lib/country-config";
 import { useCountry } from "@/components/providers/CountryProvider";
@@ -181,7 +182,13 @@ export function ProductCatalogForm({
   const submitDisabled = isBusy || (mode === "create" && !imageProcessed);
 
   return (
-    <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-4">
+    <>
+      <ProductSubmitOverlay
+        visible={pending}
+        hasImage={Boolean(compressedImageFile)}
+        mode={mode}
+      />
+      <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-4">
       <input type="hidden" name="store_id" value={store.id} readOnly />
       <input type="hidden" name="product_category_slug" value={categorySlug} readOnly />
       {mode === "edit" && initialData && (
@@ -440,5 +447,6 @@ export function ProductCatalogForm({
         </Button>
       </div>
     </form>
+    </>
   );
 }

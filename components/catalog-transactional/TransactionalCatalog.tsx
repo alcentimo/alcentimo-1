@@ -46,6 +46,9 @@ interface TransactionalCatalogProps {
   showReferenceCta?: boolean;
   locations?: StoreLocation[];
   locationStocks?: VariantLocationStock[];
+  /** Total de productos en BD (catálogo público paginado). */
+  catalogTotalCount?: number;
+  enableServerPagination?: boolean;
 }
 
 function getStoreInitials(name: string): string {
@@ -77,6 +80,8 @@ export function TransactionalCatalog({
   showReferenceCta = false,
   locations = [],
   locationStocks = [],
+  catalogTotalCount,
+  enableServerPagination = false,
 }: TransactionalCatalogProps) {
   return (
     <CatalogFulfillmentProvider
@@ -95,6 +100,8 @@ export function TransactionalCatalog({
         previewMode={previewMode}
         referenceMode={referenceMode}
         showReferenceCta={showReferenceCta}
+        catalogTotalCount={catalogTotalCount}
+        enableServerPagination={enableServerPagination}
       />
     </CatalogFulfillmentProvider>
   );
@@ -112,6 +119,8 @@ function TransactionalCatalogInner({
   previewMode = false,
   referenceMode = false,
   showReferenceCta = false,
+  catalogTotalCount,
+  enableServerPagination = false,
 }: Omit<TransactionalCatalogProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
@@ -145,7 +154,15 @@ function TransactionalCatalogInner({
     [storeCategories, availableProducts],
   );
 
-  const browse = useCatalogBrowse(availableProducts);
+  const browse = useCatalogBrowse(availableProducts, {
+    serverPagination:
+      enableServerPagination && !previewMode
+        ? {
+            storeSlug: store.slug,
+            initialTotalCount: catalogTotalCount ?? availableProducts.length,
+          }
+        : undefined,
+  });
 
   const useFlatBrowseLayout =
     !isFoodMenu || browse.hasActiveFilters || availableProducts.length > 20;
@@ -308,6 +325,8 @@ function TransactionalCatalogInner({
               visibleCount={browse.visibleCount}
               totalCount={browse.totalCount}
               hasMore={browse.hasMore}
+              loading={browse.loadingMore}
+              error={browse.fetchError}
               onLoadMore={browse.loadMore}
             />
           </>

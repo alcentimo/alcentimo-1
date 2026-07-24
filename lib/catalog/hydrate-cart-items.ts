@@ -12,9 +12,11 @@ export async function hydrateCartLines(
 ): Promise<CartItem[]> {
   if (lines.length === 0) return [];
 
+  const productIds = [...new Set(lines.map((line) => line.productId))];
   const { products, exchangeRate } = await getCatalogProducts({
     storeSlug,
-    limit: 500,
+    productIds,
+    limit: productIds.length,
   });
   const exchangeRateValue = exchangeRate?.rate ?? null;
   const productMap = new Map(products.map((product) => [product.product_id, product]));

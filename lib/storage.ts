@@ -4,7 +4,12 @@ import {
   formatFileSize,
   type ImageOptimizationResult,
 } from "@/lib/image-compress";
-import { PRODUCT_IMAGE_MAX_INPUT_BYTES, PRODUCT_IMAGE_MAX_OUTPUT_BYTES } from "@/lib/product-image";
+import {
+  PRODUCT_IMAGE_MAX_DIMENSION,
+  PRODUCT_IMAGE_MAX_INPUT_BYTES,
+  PRODUCT_IMAGE_MAX_OUTPUT_BYTES,
+  PRODUCT_IMAGE_WEBP_QUALITY,
+} from "@/lib/product-image";
 import { processStoreLogoFile } from "@/lib/store-logo/process-logo";
 import { processPlatformLogoFile } from "@/lib/platform/process-platform-logo";
 
@@ -22,6 +27,46 @@ const ALLOWED_TYPES = new Set([
   "image/webp",
   "image/gif",
 ]);
+
+/** Imagen ya optimizada en cliente (WebP ≤120 KB) — evita recomprimir con Sharp. */
+function isClientOptimizedProductImage(file: File): boolean {
+  return (
+    file.type === "image/webp" &&
+    file.size > 0 &&
+    file.size <= PRODUCT_IMAGE_MAX_OUTPUT_BYTES
+  );
+}
+
+async function resolveProductImageOptimization(
+  inputBuffer: Buffer,
+  file: File,
+): Promise<ImageOptimizationResult> {
+  if (!isClientOptimizedProductImage(file)) {
+    return compressProductImage(inputBuffer);
+  }
+
+  const sharp = (await import("sharp")).default;
+  const meta = await sharp(inputBuffer, { animated: false }).metadata();
+  const width = meta.width ?? PRODUCT_IMAGE_MAX_DIMENSION;
+  const height = meta.height ?? PRODUCT_IMAGE_MAX_DIMENSION;
+
+  if (
+    width <= PRODUCT_IMAGE_MAX_DIMENSION &&
+    height <= PRODUCT_IMAGE_MAX_DIMENSION
+  ) {
+    return {
+      buffer: inputBuffer,
+      width,
+      height,
+      originalSize: inputBuffer.length,
+      compressedSize: inputBuffer.length,
+      quality: Math.round(PRODUCT_IMAGE_WEBP_QUALITY * 100),
+      format: "webp",
+    };
+  }
+
+  return compressProductImage(inputBuffer);
+}
 
 export interface UploadProductImageResult {
   url?: string;
@@ -48,7 +93,7 @@ export async function uploadProductImage(
 
   let optimization: ImageOptimizationResult;
   try {
-    optimization = await compressProductImage(inputBuffer);
+    optimization = await resolveProductImageOptimization(inputBuffer, file);
   } catch (error) {
     if (error instanceof Error && error.message === "IMAGE_TOO_LARGE") {
       return {
