@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Globe } from "lucide-react";
-import { CatalogLinkCard } from "@/components/dashboard/settings/CatalogLinkCard";
 import { CustomDomainSection } from "@/components/dashboard/settings/CustomDomainSection";
 import type { PlanId } from "@/src/config/plans";
 import { cn } from "@/lib/cn";
@@ -58,12 +57,6 @@ export function DomainsTab({ store, planId }: DomainsTabProps) {
           </div>
         </div>
       ) : null}
-
-      <CatalogLinkCard
-        slug={store.slug}
-        customDomain={store.custom_domain ?? null}
-        customDomainVerified={Boolean(store.custom_domain_verified)}
-      />
 
       <CustomDomainSection
         storeSlug={store.slug}

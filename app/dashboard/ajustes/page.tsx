@@ -120,10 +120,9 @@ export default async function AjustesPage({
         title="Configuración de Tienda"
         description={
           store
-            ? `Cómo se ve tu negocio: marca, ubicación, pagos y horarios · ${store.name}.`
-            : "Cómo se ve tu negocio: marca, ubicación, pagos y horarios."
+            ? `Marca, envíos, pagos y presencia en línea · ${store.name}.`
+            : "Marca, envíos, pagos y presencia en línea."
         }
-        storeSlug={store?.slug ?? null}
       />
 
       <SettingsPanel

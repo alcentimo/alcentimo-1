@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CatalogLinkCard } from "@/components/dashboard/settings/CatalogLinkCard";
 import { StoreLogoField } from "@/components/dashboard/settings/StoreLogoField";
 import {
   SettingsSection,
@@ -201,29 +200,24 @@ export function GeneralTab({ store }: GeneralTabProps) {
         </p>
       ) : null}
 
-      <CatalogLinkCard
-        slug={slugPreview}
-        customDomain={store.custom_domain ?? null}
-        customDomainVerified={Boolean(store.custom_domain_verified)}
-        className="mb-4"
-      />
-
       <SettingsSection
         title="Identidad de marca"
-        description="Nombre comercial, logo y descripción que ven tus clientes."
+        description="Logo, nombre comercial y descripción que ven tus clientes en el catálogo."
         variant="payments"
       >
-        <div className="general-settings-card space-y-3">
-          <StoreLogoField
-            storeName={storeName}
-            value={logoUrl}
-            onChange={(url) => {
-              setLogoUrl(url);
-              setSuccessMessage(null);
-            }}
-          />
+        <div className="settings-identity-grid">
+          <div className="settings-identity-card settings-identity-card--logo">
+            <StoreLogoField
+              storeName={storeName}
+              value={logoUrl}
+              onChange={(url) => {
+                setLogoUrl(url);
+                setSuccessMessage(null);
+              }}
+            />
+          </div>
 
-          <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800/80">
+          <div className="settings-identity-card settings-identity-card--fields">
             <Label htmlFor="store-name" className="payment-field-label">
               Nombre comercial
             </Label>
@@ -236,16 +230,16 @@ export function GeneralTab({ store }: GeneralTabProps) {
                 setSuccessMessage(null);
               }}
               placeholder="Ej: Repuestos El Sol"
-              className="payment-field-input mt-1.5"
+              className="payment-field-input mt-2"
             />
 
-            <div className="mt-3">
+            <div className="mt-5">
               <Label htmlFor="store-description" className="payment-field-label">
                 Descripción
               </Label>
               <textarea
                 id="store-description"
-                rows={3}
+                rows={4}
                 maxLength={500}
                 value={description}
                 onChange={(e) => {
@@ -253,49 +247,50 @@ export function GeneralTab({ store }: GeneralTabProps) {
                   setSuccessMessage(null);
                 }}
                 placeholder="Ej: Repuestos y accesorios para vehículos con envío a todo el país."
-                className="input-field payment-field-textarea mt-1.5 resize-none"
+                className="input-field payment-field-textarea mt-2 min-h-[6rem] resize-y"
               />
-              <p className="mt-1.5 text-[11px] text-zinc-400">
+              <p className="mt-2 text-[11px] text-zinc-400">
                 Aparece en la portada de tu catálogo público.
               </p>
             </div>
+          </div>
 
-            <div className="mt-3">
-              <Label htmlFor="store-slug-preview" className="payment-field-label">
-                Enlace público
-              </Label>
-              <div
-                id="store-slug-preview"
-                className="payment-field-input mt-1.5 flex items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400"
-                aria-readonly="true"
-              >
-                <span className="truncate">
-                  {siteHost}/c/
-                  <span className="font-medium text-zinc-700 dark:text-zinc-200">
-                    {slugPreview}
-                  </span>
-                </span>
-              </div>
-
-              {slugStatus === "checking" && (
-                <p className="mt-1.5 text-[11px] text-zinc-400">Verificando enlace…</p>
-              )}
-              {slugStatus === "available" && storeName.trim() && (
-                <p className="mt-1.5 text-[11px] text-green-600 dark:text-green-500">
-                  ✓ Enlace disponible
-                </p>
-              )}
-              {slugStatus === "taken" && (
-                <p className="mt-1.5 text-[11px] text-red-600 dark:text-red-400">
-                  ✗ Este enlace ya está registrado por otro negocio
-                </p>
-              )}
-              {slugStatus === "invalid" && storeName.trim() && (
-                <p className="mt-1.5 text-[11px] text-red-600 dark:text-red-400">
-                  ✗ El nombre genera un enlace no válido. Usa letras y números.
-                </p>
-              )}
+          <div className="settings-identity-card settings-identity-card--slug">
+            <Label htmlFor="store-slug-preview" className="payment-field-label">
+              Enlace del catálogo
+            </Label>
+            <p className="mt-1 text-[11px] text-zinc-400">
+              Se genera automáticamente a partir del nombre comercial.
+            </p>
+            <div
+              id="store-slug-preview"
+              className="settings-slug-preview mt-3"
+              aria-readonly="true"
+            >
+              <span className="text-zinc-400">{siteHost}/c/</span>
+              <span className="font-medium text-zinc-800 dark:text-zinc-100">
+                {slugPreview}
+              </span>
             </div>
+
+            {slugStatus === "checking" && (
+              <p className="mt-2 text-[11px] text-zinc-400">Verificando enlace…</p>
+            )}
+            {slugStatus === "available" && storeName.trim() && (
+              <p className="mt-2 text-[11px] text-green-600 dark:text-green-500">
+                Enlace disponible
+              </p>
+            )}
+            {slugStatus === "taken" && (
+              <p className="mt-2 text-[11px] text-red-600 dark:text-red-400">
+                Este enlace ya está registrado por otro negocio
+              </p>
+            )}
+            {slugStatus === "invalid" && storeName.trim() && (
+              <p className="mt-2 text-[11px] text-red-600 dark:text-red-400">
+                El nombre genera un enlace no válido. Usa letras y números.
+              </p>
+            )}
           </div>
         </div>
       </SettingsSection>
@@ -305,7 +300,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
         description="Elige el giro operativo de tu tienda. Cada rubro activa formularios y catálogo especializados."
         variant="payments"
       >
-        <div className="general-settings-card">
+        <div className="settings-identity-card">
           <Label htmlFor="store-rubro" className="payment-field-label">
             Rubro <span className="text-red-500">*</span>
           </Label>

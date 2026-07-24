@@ -1522,6 +1522,80 @@ body {
   @apply min-w-0 max-w-full overflow-x-hidden rounded-[12px] border border-zinc-200/70 bg-white shadow-[0_1px_3px_rgba(24,24,27,0.05)] dark:border-zinc-800/70 dark:bg-zinc-950;
 }
 
+.settings-public-link-bar {
+  @apply flex flex-col gap-4 border-b border-zinc-200/70 bg-zinc-50/50 px-4 py-4 dark:border-zinc-800/70 dark:bg-zinc-900/20 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5;
+}
+
+.settings-public-link-label {
+  @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400;
+}
+
+.settings-public-link-url {
+  @apply mt-1.5 break-all text-sm font-medium text-zinc-900 dark:text-zinc-50;
+}
+
+.settings-public-link-actions {
+  @apply flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center;
+}
+
+.settings-public-link-btn {
+  @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition;
+}
+
+.settings-public-link-btn-secondary {
+  @apply border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900;
+}
+
+.settings-public-link-btn-copied {
+  @apply border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300;
+}
+
+.settings-public-link-btn-primary {
+  @apply border border-teal-600/20 bg-teal-600 text-white hover:bg-teal-700 dark:border-teal-500/30 dark:bg-teal-600 dark:hover:bg-teal-500;
+}
+
+.settings-workspace-layout {
+  @apply grid min-w-0 grid-cols-1 lg:grid-cols-[15.5rem_minmax(0,1fr)];
+}
+
+.settings-sidebar {
+  @apply min-w-0 border-b border-zinc-200/70 bg-[#FAFAF9] dark:border-zinc-800/70 dark:bg-zinc-900/20 lg:border-b-0 lg:border-r;
+}
+
+.settings-sidebar-nav {
+  @apply flex gap-1 overflow-x-auto px-3 py-3 lg:block lg:overflow-visible lg:px-0 lg:py-4;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.settings-sidebar-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-sidebar-group {
+  @apply shrink-0 lg:shrink lg:px-3;
+}
+
+.settings-sidebar-group + .settings-sidebar-group {
+  @apply lg:mt-2;
+}
+
+.settings-sidebar-group-label {
+  @apply hidden px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400 lg:block;
+}
+
+.settings-sidebar-list {
+  @apply flex gap-1 lg:flex-col lg:gap-0.5;
+}
+
+.settings-sidebar-link {
+  @apply inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-600 transition hover:bg-white hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-950/60 dark:hover:text-zinc-100 lg:w-full;
+}
+
+.settings-sidebar-link-active {
+  @apply bg-white text-emerald-800 shadow-sm ring-1 ring-zinc-200/80 dark:bg-zinc-950 dark:text-emerald-300 dark:ring-zinc-800;
+}
+
 .settings-tab-nav {
   @apply flex flex-nowrap gap-1 overflow-x-auto border-b border-zinc-200/70 bg-[#FAFAF9] px-3 dark:border-zinc-800/70 dark:bg-zinc-900/30 sm:gap-2 sm:px-6;
   -webkit-overflow-scrolling: touch;
@@ -1546,7 +1620,31 @@ body {
 }
 
 .settings-workspace-body {
-  @apply min-w-0 p-3 sm:p-5 md:p-7;
+  @apply min-w-0 p-4 sm:p-6 lg:p-8;
+}
+
+.settings-identity-grid {
+  @apply grid gap-4 lg:grid-cols-2;
+}
+
+.settings-identity-card {
+  @apply rounded-xl border border-zinc-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(24,24,27,0.04)] dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.settings-identity-card--logo {
+  @apply lg:col-span-1;
+}
+
+.settings-identity-card--fields {
+  @apply lg:col-span-1;
+}
+
+.settings-identity-card--slug {
+  @apply lg:col-span-2;
+}
+
+.settings-slug-preview {
+  @apply break-all rounded-xl border border-zinc-200/80 bg-zinc-50 px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900/50;
 }
 
 .settings-secondary-nav {
@@ -2926,7 +3024,7 @@ body {
 }
 
 .general-settings-card {
-  @apply rounded-xl border border-neutral-200/90 bg-white px-3.5 py-3.5 shadow-none dark:border-zinc-800 dark:bg-zinc-950;
+  @apply rounded-xl border border-zinc-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(24,24,27,0.04)] dark:border-zinc-800 dark:bg-zinc-950;
 }
 
 .general-catalog-link-card {
