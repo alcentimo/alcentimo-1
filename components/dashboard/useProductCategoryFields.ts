@@ -10,6 +10,7 @@ import {
 import { getTechSpecLabels } from "@/lib/rubros/modules/tecnologia/config";
 import { getCollectibleFieldLabels } from "@/lib/rubros/modules/coleccionables/config";
 import { getBeautyFieldLabels } from "@/lib/rubros/modules/salud-belleza/config";
+import { getStationeryFieldLabels } from "@/lib/rubros/modules/papeleria-libreria-oficina/config";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import {
   pickExtraFieldValues,
@@ -66,6 +67,9 @@ export function useProductCategoryFields(
     }
     if (moduleId === "salud-belleza") {
       return getBeautyFieldLabels();
+    }
+    if (moduleId === "papeleria-libreria-oficina") {
+      return getStationeryFieldLabels(categorySlug);
     }
     return filterExtraFieldsForActiveModule(
       config.rubroTienda,

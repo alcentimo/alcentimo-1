@@ -51,6 +51,14 @@ const BeautyBadges = dynamic(
   { ssr: false },
 );
 
+const StationeryBadges = dynamic(
+  () =>
+    import("@/components/rubros/papeleria-libreria-oficina/StationeryBadges").then(
+      (mod) => mod.StationeryBadges,
+    ),
+  { ssr: false },
+);
+
 interface ProductCardProps {
   product: CatalogListItem;
   exchangeRate?: number | null;
@@ -137,6 +145,10 @@ export const ProductCard = memo(function ProductCard({
   const isSaludBelleza = storeUsesRubroProductModule(
     storeRubro,
     "salud-belleza",
+  );
+  const isPapeleria = storeUsesRubroProductModule(
+    storeRubro,
+    "papeleria-libreria-oficina",
   );
   const foodHasModifiers =
     isAlimentos &&
@@ -303,6 +315,7 @@ export const ProductCard = memo(function ProductCard({
             {isTecnologia ? <TechSpecsChips product={product} /> : null}
             {isColeccionables ? <CollectibleBadges product={product} /> : null}
             {isSaludBelleza ? <BeautyBadges product={product} /> : null}
+            {isPapeleria ? <StationeryBadges product={product} /> : null}
           </div>
 
         {showPrices ? (

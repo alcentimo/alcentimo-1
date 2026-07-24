@@ -8,7 +8,7 @@
  * 4. Registrar en `ACTIVE_RUBRO_PRODUCT_MODULES` (`lib/rubros/types.ts`).
  * 5. Añadir case en `loadRubroProductModule` y wrappers de sección.
  *
- * Módulos activos: ropa-moda, alimentos, tecnologia, coleccionables, salud-belleza.
+ * Módulos activos: ropa-moda, alimentos, tecnologia, coleccionables, salud-belleza, papeleria-libreria-oficina.
  * El registro es liviano: no importa React ni datos pesados de otros rubros.
  */
 export {

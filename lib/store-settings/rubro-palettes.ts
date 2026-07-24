@@ -59,6 +59,13 @@ export const RUBRO_PALETTES: Record<StoreRubro, RubroPalette> = {
     accent: "#db2777",
     pageBg: "#fff1f2",
   },
+  "papeleria-libreria-oficina": {
+    rubro: "papeleria-libreria-oficina",
+    label: "Papelería y Oficina",
+    primary: "#1e3a8a",
+    accent: "#0f766e",
+    pageBg: "#f8fafc",
+  },
 };
 
 export function getRubroPalette(rubro: string | null | undefined): RubroPalette {

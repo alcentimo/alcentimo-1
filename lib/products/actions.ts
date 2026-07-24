@@ -41,6 +41,7 @@ import {
 import { getTechSpecLabels } from "@/lib/rubros/modules/tecnologia/config";
 import { getCollectibleFieldLabels } from "@/lib/rubros/modules/coleccionables/config";
 import { getBeautyFieldLabels } from "@/lib/rubros/modules/salud-belleza/config";
+import { getStationeryFieldLabels } from "@/lib/rubros/modules/papeleria-libreria-oficina/config";
 import type { ProductEditImage } from "@/lib/products/product-gallery-types";
 import {
   createProductImagesFromFormData,
@@ -59,6 +60,9 @@ function resolveProductFieldLabels(
   }
   if (storeUsesRubroProductModule(rubro, "salud-belleza")) {
     return getBeautyFieldLabels();
+  }
+  if (storeUsesRubroProductModule(rubro, "papeleria-libreria-oficina")) {
+    return getStationeryFieldLabels(categorySlug);
   }
   const normalized = normalizeStoreRubro(rubro);
   return filterExtraFieldsForActiveModule(

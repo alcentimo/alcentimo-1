@@ -140,6 +140,10 @@ function TransactionalCatalogInner({
     store.rubro_tienda,
     "salud-belleza",
   );
+  const isStationeryCatalog = storeUsesRubroProductModule(
+    store.rubro_tienda,
+    "papeleria-libreria-oficina",
+  );
 
   const locationAwareProducts = useMemo(
     () =>
@@ -237,6 +241,7 @@ function TransactionalCatalogInner({
         isTechCatalog && "txn-catalog--tech",
         isCollectiblesCatalog && "txn-catalog--collectibles",
         isBeautyCatalog && "txn-catalog--beauty",
+        isStationeryCatalog && "txn-catalog--stationery",
         previewMode && "txn-catalog--preview",
         previewMode && referenceMode && "txn-catalog--reference-mode",
       )}
@@ -269,7 +274,9 @@ function TransactionalCatalogInner({
                       ? "Tech"
                       : isCollectiblesCatalog
                         ? "Colección"
-                        : "Catálogo"}
+                        : isStationeryCatalog
+                          ? "Papelería"
+                          : "Catálogo"}
                 </p>
                 <StoreOpenBadge locationHours={purchaseInfo.locationHours} />
               </div>

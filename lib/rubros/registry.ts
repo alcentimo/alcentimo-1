@@ -72,6 +72,8 @@ export async function loadRubroProductModule(moduleId: RubroProductModuleId) {
       return import("@/lib/rubros/modules/coleccionables");
     case "salud-belleza":
       return import("@/lib/rubros/modules/salud-belleza");
+    case "papeleria-libreria-oficina":
+      return import("@/lib/rubros/modules/papeleria-libreria-oficina");
     default: {
       const _exhaustive: never = moduleId;
       return _exhaustive;

@@ -31,6 +31,7 @@ import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
 import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
 import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
 import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
+import { RubroStationerySection } from "@/components/rubros/RubroStationerySection";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
 import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
@@ -132,6 +133,10 @@ export function ProductCatalogForm({
   const isSaludBelleza = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
     "salud-belleza",
+  );
+  const isPapeleria = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "papeleria-libreria-oficina",
   );
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
 
@@ -310,6 +315,7 @@ export function ProductCatalogForm({
       !isTecnologia &&
       !isColeccionables &&
       !isSaludBelleza &&
+      !isPapeleria &&
       fieldLabels.length > 0 ? (
         <ProductExtraFieldsSection
           fieldLabels={fieldLabels}
@@ -336,6 +342,18 @@ export function ProductCatalogForm({
       {isColeccionables ? (
         <RubroCollectibleSection
           rubro={productFormConfig.rubroTienda}
+          values={extraFields}
+          onChange={setExtraFields}
+          disabled={isBusy}
+          variant="compact"
+        />
+      ) : null}
+
+      {isPapeleria ? (
+        <RubroStationerySection
+          rubro={productFormConfig.rubroTienda}
+          categorySlug={categorySlug}
+          categoryLabel={categoryLabel}
           values={extraFields}
           onChange={setExtraFields}
           disabled={isBusy}

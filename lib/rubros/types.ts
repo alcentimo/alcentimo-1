@@ -10,7 +10,8 @@ export type RubroProductModuleId =
   | "alimentos"
   | "tecnologia"
   | "coleccionables"
-  | "salud-belleza";
+  | "salud-belleza"
+  | "papeleria-libreria-oficina";
 
 /** Registro ligero: no importa componentes ni datos pesados. */
 export const ACTIVE_RUBRO_PRODUCT_MODULES: Partial<
@@ -21,6 +22,7 @@ export const ACTIVE_RUBRO_PRODUCT_MODULES: Partial<
   tecnologia: "tecnologia",
   coleccionables: "coleccionables",
   "salud-belleza": "salud-belleza",
+  "papeleria-libreria-oficina": "papeleria-libreria-oficina",
 };
 
 /** Campos que el módulo de variantes/specs sustituye (no mostrar como texto libre genérico). */
@@ -60,6 +62,16 @@ export const RUBRO_MODULE_MANAGED_EXTRA_FIELDS: Record<
     "Tipo de piel",
     "Ingredientes clave",
   ],
+  "papeleria-libreria-oficina": [
+    "Marca",
+    "Presentación",
+    "Segmento",
+    "Formato / Tamaño",
+    "Color",
+    "Modelo / Referencia",
+    "Gramaje",
+    "Tipo de hoja",
+  ],
 };
 
 /** El rubro de tienda define el giro; el formulario de producto no pide categoría. */
@@ -69,4 +81,5 @@ export const RUBRO_MODULE_HIDES_CATEGORY: Record<RubroProductModuleId, boolean> 
   tecnologia: true,
   coleccionables: true,
   "salud-belleza": true,
+  "papeleria-libreria-oficina": true,
 };

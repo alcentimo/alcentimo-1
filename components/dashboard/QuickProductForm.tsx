@@ -18,6 +18,7 @@ import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection
 import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
 import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
 import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
+import { RubroStationerySection } from "@/components/rubros/RubroStationerySection";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
@@ -138,6 +139,10 @@ function QuickProductFormSession({
     productFormConfig.rubroTienda,
     "salud-belleza",
   );
+  const isPapeleria = storeUsesRubroProductModule(
+    productFormConfig.rubroTienda,
+    "papeleria-libreria-oficina",
+  );
 
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
 
@@ -149,7 +154,9 @@ function QuickProductFormSession({
         ? "Ej: Figura Exclusive Chase #42"
         : isSaludBelleza
           ? "Ej: Sérum vitamina C 30 ml"
-          : "Ej: Arroz Premium 1kg";
+          : isPapeleria
+            ? "Ej: Cuaderno A4 rayado 100 hojas"
+            : "Ej: Arroz Premium 1kg";
 
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
@@ -371,6 +378,7 @@ function QuickProductFormSession({
       !isTecnologia &&
       !isColeccionables &&
       !isSaludBelleza &&
+      !isPapeleria &&
       fieldLabels.length > 0 ? (
         <ProductExtraFieldsSection
           fieldLabels={fieldLabels}
@@ -407,6 +415,18 @@ function QuickProductFormSession({
       {isSaludBelleza ? (
         <RubroBeautySection
           rubro={productFormConfig.rubroTienda}
+          values={extraFields}
+          onChange={setExtraFields}
+          disabled={isBusy}
+          variant="compact"
+        />
+      ) : null}
+
+      {isPapeleria ? (
+        <RubroStationerySection
+          rubro={productFormConfig.rubroTienda}
+          categorySlug={categorySlug}
+          categoryLabel={categoryLabel}
           values={extraFields}
           onChange={setExtraFields}
           disabled={isBusy}

@@ -9,6 +9,10 @@ export const STORE_RUBRO_OPTIONS = [
   { value: "tecnologia", label: "Tecnología y Electrónica" },
   { value: "coleccionables", label: "Coleccionables y Cómics" },
   { value: "salud-belleza", label: "Salud, Belleza y Cuidado Personal" },
+  {
+    value: "papeleria-libreria-oficina",
+    label: "Papelería, Librería y Oficina",
+  },
 ] as const;
 
 export type StoreRubro = (typeof STORE_RUBRO_OPTIONS)[number]["value"];
@@ -87,6 +91,18 @@ export const STORE_RUBRO_CONFIGS: StoreRubroConfig[] = [
       { slug: "cabello", label: "Cabello", campos: [] },
     ],
   },
+  {
+    rubro: "papeleria-libreria-oficina",
+    label: "Papelería, Librería y Oficina",
+    categorias: [
+      { slug: "cuadernos", label: "Cuadernos", campos: [] },
+      { slug: "utiles-escolares", label: "Útiles escolares", campos: [] },
+      { slug: "papeleria", label: "Papelería", campos: [] },
+      { slug: "material-oficina", label: "Material de oficina", campos: [] },
+      { slug: "impresion", label: "Impresión", campos: [] },
+      { slug: "libros", label: "Libros", campos: [] },
+    ],
+  },
 ];
 
 const RUBRO_SET = new Set<string>(STORE_RUBRO_OPTIONS.map((item) => item.value));
@@ -103,6 +119,9 @@ const LEGACY_RUBRO_ALIASES: Record<string, StoreRubro> = {
   repuestos: "tecnologia",
   joyeria: "coleccionables",
   cosmeticos: "salud-belleza",
+  papeleria: "papeleria-libreria-oficina",
+  libreria: "papeleria-libreria-oficina",
+  oficina: "papeleria-libreria-oficina",
   "hogar-decoracion": "ropa-moda",
   general: "ropa-moda",
 };

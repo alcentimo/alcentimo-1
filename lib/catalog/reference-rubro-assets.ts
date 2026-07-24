@@ -63,6 +63,14 @@ export const REFERENCE_RUBRO_ASSETS: Record<StoreRubro, ReferenceRubroAssetMap> 
     img5: REF("salud-belleza", "crema-hydra.webp"),
     img6: REF("salud-belleza", "mascarilla-facial.webp"),
   },
+  "papeleria-libreria-oficina": {
+    img1: REF("papeleria-libreria-oficina", "cuaderno-universitario.webp"),
+    img2: REF("papeleria-libreria-oficina", "lapices-hb-pack.webp"),
+    img3: REF("papeleria-libreria-oficina", "resma-bond-a4.webp"),
+    img4: REF("papeleria-libreria-oficina", "archivador-oficio.webp"),
+    img5: REF("papeleria-libreria-oficina", "marcadores-finos.webp"),
+    img6: REF("papeleria-libreria-oficina", "cuaderno-dibujo.webp"),
+  },
 };
 
 const prefetchedUrls = new Set<string>();

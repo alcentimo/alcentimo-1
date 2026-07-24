@@ -284,6 +284,57 @@ const REFERENCE_CATALOG_SEEDS: Record<StoreRubro, ReferenceCatalogProductSeed[]>
       assetKey: "img6",
     },
   ],
+  "papeleria-libreria-oficina": [
+    {
+      name: "Cuaderno Universitario A4 Rayado",
+      shortDescription: "100 hojas, tapa dura · Resma disponible · Tip: Indica gramaje y presentación",
+      categoryName: "Cuadernos",
+      categorySlug: "cuadernos",
+      priceUsd: 4.5,
+      isFeatured: true,
+      assetKey: "img1",
+    },
+    {
+      name: "Pack Lápices HB x12",
+      shortDescription: "Madera certificada, goma integrada · Segmento escolar",
+      categoryName: "Útiles escolares",
+      categorySlug: "utiles-escolares",
+      priceUsd: 3.2,
+      assetKey: "img2",
+    },
+    {
+      name: "Resma Bond A4 75 g",
+      shortDescription: "500 hojas blancas, ideal impresión · Presentación resma",
+      categoryName: "Impresión",
+      categorySlug: "impresion",
+      priceUsd: 6.8,
+      assetKey: "img3",
+    },
+    {
+      name: "Archivador Palanca Oficio",
+      shortDescription: "Lomo 8 cm, color azul · Material de oficina",
+      categoryName: "Material de oficina",
+      categorySlug: "material-oficina",
+      priceUsd: 5.5,
+      assetKey: "img4",
+    },
+    {
+      name: "Marcadores Permanentes Finos x4",
+      shortDescription: "Punta fina, colores surtidos · Marca destacada en ficha",
+      categoryName: "Papelería",
+      categorySlug: "papeleria",
+      priceUsd: 4.9,
+      assetKey: "img5",
+    },
+    {
+      name: "Cuaderno de Dibujo A4 180 g",
+      shortDescription: "Hojas lisas para arte, 50 páginas · Segmento arte",
+      categoryName: "Libros",
+      categorySlug: "libros",
+      priceUsd: 7.5,
+      assetKey: "img6",
+    },
+  ],
 };
 
 function usdToVes(usd: number, rate: number): number {
