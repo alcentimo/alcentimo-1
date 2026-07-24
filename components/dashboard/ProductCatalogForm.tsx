@@ -239,7 +239,6 @@ export function ProductCatalogForm({
         onChange={setGalleryValue}
         onError={(message) => {
           setLocalError(message);
-          setGalleryReady(galleryValue.items.length > 0);
         }}
       />
 

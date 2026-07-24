@@ -65,14 +65,26 @@ export async function compressImageForUpload(
     let quality = PRODUCT_IMAGE_WEBP_QUALITY;
 
     while (quality >= MIN_QUALITY) {
-      const compressed = await imageCompression(file, {
-        maxSizeMB: MAX_OUTPUT_MB,
-        maxWidthOrHeight: maxDim,
-        useWebWorker: true,
-        fileType: "image/webp",
-        initialQuality: quality,
-        maxIteration: 20,
-      });
+      let compressed: File | Blob;
+      try {
+        compressed = await imageCompression(file, {
+          maxSizeMB: MAX_OUTPUT_MB,
+          maxWidthOrHeight: maxDim,
+          useWebWorker: true,
+          fileType: "image/webp",
+          initialQuality: quality,
+          maxIteration: 20,
+        });
+      } catch {
+        compressed = await imageCompression(file, {
+          maxSizeMB: MAX_OUTPUT_MB,
+          maxWidthOrHeight: maxDim,
+          useWebWorker: false,
+          fileType: "image/webp",
+          initialQuality: quality,
+          maxIteration: 20,
+        });
+      }
 
       const candidate = toWebpFile(compressed, file.name);
       webpFile = candidate;

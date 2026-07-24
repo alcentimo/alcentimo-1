@@ -142,6 +142,19 @@ async function applyExistingImageUpdates(
     );
   }
 
+  if (payload.keep.length === 0) {
+    return {};
+  }
+
+  const keepIds = payload.keep.map((item) => item.id);
+  const { error: clearPrimaryError } = await supabase
+    .from("product_images")
+    .update({ is_primary: false })
+    .eq("product_id", productId)
+    .in("id", keepIds);
+
+  if (clearPrimaryError) return { error: clearPrimaryError.message };
+
   for (const item of payload.keep) {
     const { error } = await supabase
       .from("product_images")
