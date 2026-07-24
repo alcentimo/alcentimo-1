@@ -95,15 +95,46 @@ for (const slot of PC_BUILDER_SLOTS) {
 
 export type PCBuilderSelection = Partial<Record<PCBuilderSlotId, CatalogListItem>>;
 
+export const PC_BUILDER_SLOT_METADATA_KEY = "pc_builder_slot";
+
 function readMetadataSlot(
   metadata: Record<string, unknown> | null | undefined,
 ): PCBuilderSlotId | null {
-  const raw = metadata?.pc_builder_slot;
+  const raw = metadata?.[PC_BUILDER_SLOT_METADATA_KEY];
   if (typeof raw !== "string") return null;
   const normalized = raw.trim().toLowerCase();
   return SLOT_BY_ID.has(normalized as PCBuilderSlotId)
     ? (normalized as PCBuilderSlotId)
     : null;
+}
+
+/** Lee el slot explícito guardado en metadata (sin fallback por categoría). */
+export function parsePCBuilderSlotFromMetadata(
+  metadata: Record<string, unknown> | null | undefined,
+): PCBuilderSlotId | null {
+  return readMetadataSlot(metadata);
+}
+
+/** Fusiona o limpia `pc_builder_slot` en metadata sin tocar otros keys. */
+export function applyPCBuilderSlotToMetadata(
+  metadata: Record<string, unknown>,
+  rawValue: string | null | undefined,
+): { metadata: Record<string, unknown>; error?: string } {
+  const next = { ...metadata };
+  const trimmed = String(rawValue ?? "").trim();
+
+  if (!trimmed) {
+    delete next[PC_BUILDER_SLOT_METADATA_KEY];
+    return { metadata: next };
+  }
+
+  const normalized = trimmed.toLowerCase();
+  if (!SLOT_BY_ID.has(normalized as PCBuilderSlotId)) {
+    return { metadata: next, error: "Slot de PC Builder no válido." };
+  }
+
+  next[PC_BUILDER_SLOT_METADATA_KEY] = normalized;
+  return { metadata: next };
 }
 
 /** Determina el slot de PC Builder de un producto (metadata o categoría). */

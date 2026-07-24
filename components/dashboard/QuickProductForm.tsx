@@ -16,6 +16,7 @@ import { serializeVariantsForForm } from "@/components/dashboard/ProductVariants
 import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
 import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
 import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
+import { PCBuilderSlotField } from "@/components/rubros/tecnologia/PCBuilderSlotField";
 import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
 import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
 import { RubroStationerySection } from "@/components/rubros/RubroStationerySection";
@@ -31,6 +32,10 @@ import {
   serializeFoodModifiersJson,
   type FoodModifiersConfig,
 } from "@/lib/rubros/modules/alimentos";
+import {
+  storeHasPCBuilder,
+  type PCBuilderSlotId,
+} from "@/lib/rubros/modules/tecnologia/pc-builder";
 import type { Store } from "@/lib/database.types";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { VariantFormInput } from "@/lib/products/variants";
@@ -100,6 +105,7 @@ function QuickProductFormSession({
   const [variants, setVariants] = useState<VariantFormInput[]>([]);
   const [foodModifiers, setFoodModifiers] =
     useState<FoodModifiersConfig>(emptyFoodModifiers);
+  const [pcBuilderSlot, setPcBuilderSlot] = useState<PCBuilderSlotId | "">("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [galleryValue, setGalleryValue] = useState<ProductGalleryFieldValue>({
     items: [],
@@ -134,6 +140,7 @@ function QuickProductFormSession({
     productFormConfig.rubroTienda,
     "tecnologia",
   );
+  const pcBuilderEnabled = storeHasPCBuilder(productFormConfig.rubroTienda);
   const isColeccionables = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
     "coleccionables",
@@ -207,6 +214,7 @@ function QuickProductFormSession({
     setCompareAtUsd("");
     setVariants([]);
     setFoodModifiers(emptyFoodModifiers());
+    setPcBuilderSlot("");
     setAdvancedOpen(false);
     setGalleryValue({ items: [], removedDbIds: [] });
     setGalleryReady(false);
@@ -405,6 +413,16 @@ function QuickProductFormSession({
           onChange={setExtraFields}
           disabled={isBusy}
           variant="compact"
+        />
+      ) : null}
+
+      {pcBuilderEnabled ? (
+        <PCBuilderSlotField
+          value={pcBuilderSlot}
+          onChange={setPcBuilderSlot}
+          disabled={isBusy}
+          variant="compact"
+          id="quick-pc-builder-slot"
         />
       ) : null}
 

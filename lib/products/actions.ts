@@ -39,6 +39,11 @@ import {
   type FoodModifiersConfig,
 } from "@/lib/rubros/modules/alimentos";
 import { getTechSpecLabels } from "@/lib/rubros/modules/tecnologia/config";
+import {
+  applyPCBuilderSlotToMetadata,
+  parsePCBuilderSlotFromMetadata,
+  type PCBuilderSlotId,
+} from "@/lib/rubros/modules/tecnologia/pc-builder";
 import { getCollectibleFieldLabels } from "@/lib/rubros/modules/coleccionables/config";
 import { getBeautyFieldLabels } from "@/lib/rubros/modules/salud-belleza/config";
 import { getStationeryFieldLabels } from "@/lib/rubros/modules/papeleria-libreria-oficina/config";
@@ -230,6 +235,7 @@ export interface ProductEditData {
   images: ProductEditImage[];
   extraFields: Record<string, string>;
   foodModifiers: FoodModifiersConfig;
+  pcBuilderSlot: PCBuilderSlotId | null;
 }
 
 export type StoreFormState = {
@@ -373,6 +379,15 @@ export async function createProduct(
     );
   }
 
+  if (storeUsesRubroProductModule(rubro, "tecnologia")) {
+    const withSlot = applyPCBuilderSlotToMetadata(
+      metadata,
+      String(formData.get("pc_builder_slot") ?? ""),
+    );
+    if (withSlot.error) return { error: withSlot.error };
+    metadata = withSlot.metadata;
+  }
+
   const { data: category, error: categoryError } = await supabase
     .from("categories")
     .select("id")
@@ -496,8 +511,7 @@ export async function createProduct(
 
     if (imageResult.error) return { error: imageResult.error };
 
-    revalidatePath(`/tienda/${store.slug}`);
-    revalidatePath(`/c/${store.slug}`);
+    revalidatePublicCatalogPaths(store.slug);
     revalidatePath("/dashboard/productos/nuevo");
     revalidatePath("/dashboard/catalogo");
     revalidatePath("/dashboard/inventario");
@@ -609,6 +623,9 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     images: editImages,
     extraFields: pickExtraFieldValues(storedExtraFields, fieldLabels),
     foodModifiers: parseFoodModifiersFromMetadata(
+      product.metadata as Record<string, unknown> | null,
+    ),
+    pcBuilderSlot: parsePCBuilderSlotFromMetadata(
       product.metadata as Record<string, unknown> | null,
     ),
   };
@@ -725,6 +742,15 @@ export async function updateProduct(
       extraFieldsParsed.fields,
       customVariants,
     );
+  }
+
+  if (storeUsesRubroProductModule(rubro, "tecnologia")) {
+    const withSlot = applyPCBuilderSlotToMetadata(
+      metadata,
+      String(formData.get("pc_builder_slot") ?? ""),
+    );
+    if (withSlot.error) return { error: withSlot.error };
+    metadata = withSlot.metadata;
   }
 
   const { error: productUpdateError } = await supabase
@@ -1032,12 +1058,18 @@ async function assertStoreProductVariant(
   return { ok: true };
 }
 
+function revalidatePublicCatalogPaths(storeSlug: string) {
+  revalidatePath(`/tienda/${storeSlug}`);
+  revalidatePath(`/tienda/${storeSlug}/armar-pc`);
+  revalidatePath(`/c/${storeSlug}`);
+  revalidatePath(`/c/${storeSlug}/armar-pc`);
+}
+
 function revalidateInventoryPaths(storeSlug: string) {
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
   revalidatePath("/dashboard");
-  revalidatePath(`/tienda/${storeSlug}`);
-  revalidatePath(`/c/${storeSlug}`);
+  revalidatePublicCatalogPaths(storeSlug);
   revalidatePath("/dashboard/productos/nuevo");
 }
 

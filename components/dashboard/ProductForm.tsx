@@ -24,6 +24,7 @@ import {
 } from "@/components/rubros/RubroVariantsSection";
 import { RubroModifiersSection } from "@/components/rubros/RubroModifiersSection";
 import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection";
+import { PCBuilderSlotField } from "@/components/rubros/tecnologia/PCBuilderSlotField";
 import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
 import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
 import { RubroStationerySection } from "@/components/rubros/RubroStationerySection";
@@ -46,6 +47,10 @@ import {
   serializeFoodModifiersJson,
   type FoodModifiersConfig,
 } from "@/lib/rubros/modules/alimentos";
+import {
+  storeHasPCBuilder,
+  type PCBuilderSlotId,
+} from "@/lib/rubros/modules/tecnologia/pc-builder";
 
 interface ProductFormProps {
   store: Store;
@@ -99,6 +104,9 @@ export function ProductForm({
   const [foodModifiers, setFoodModifiers] = useState<FoodModifiersConfig>(
     () => initialData?.foodModifiers ?? emptyFoodModifiers(),
   );
+  const [pcBuilderSlot, setPcBuilderSlot] = useState<PCBuilderSlotId | "">(
+    () => initialData?.pcBuilderSlot ?? "",
+  );
   const [galleryValue, setGalleryValue] = useState<ProductGalleryFieldValue>({
     items: [],
     removedDbIds: [],
@@ -138,6 +146,7 @@ export function ProductForm({
     productFormConfig.rubroTienda,
     "tecnologia",
   );
+  const pcBuilderEnabled = storeHasPCBuilder(productFormConfig.rubroTienda);
   const isColeccionables = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
     "coleccionables",
@@ -410,6 +419,14 @@ export function ProductForm({
           categoryLabel={categoryLabel}
           values={extraFields}
           onChange={setExtraFields}
+          disabled={isBusy}
+        />
+      ) : null}
+
+      {pcBuilderEnabled ? (
+        <PCBuilderSlotField
+          value={pcBuilderSlot}
+          onChange={setPcBuilderSlot}
           disabled={isBusy}
         />
       ) : null}

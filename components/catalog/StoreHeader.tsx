@@ -2,10 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
+import { Cpu, ShoppingBag } from "lucide-react";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import type { Store } from "@/lib/database.types";
 import type { LocationHoursSettings } from "@/lib/store-settings/types";
+import { storeHasPCBuilder } from "@/lib/rubros/modules/tecnologia/pc-builder";
+import { getStoreCatalogUrl } from "@/lib/stores";
 
 interface StoreHeaderProps {
   store: Store;
@@ -42,6 +44,9 @@ export function StoreHeader({
   locationHours,
   onCartClick,
 }: StoreHeaderProps) {
+  const pcBuilderEnabled = storeHasPCBuilder(store.rubro_tienda);
+  const catalogUrl = getStoreCatalogUrl(store.slug);
+
   return (
     <>
       <div className="store-banner safe-area-inset">
@@ -50,7 +55,7 @@ export function StoreHeader({
 
       <header className="store-header safe-area-inset">
         <div className="store-header-inner">
-          <Link href={`/tienda/${store.slug}`} className="flex min-w-0 items-center gap-3">
+          <Link href={catalogUrl} className="flex min-w-0 items-center gap-3">
             <StoreLogo store={store} />
             <span className="min-w-0">
               <span className="block truncate text-base font-semibold text-zinc-900 sm:text-lg">
@@ -63,17 +68,29 @@ export function StoreHeader({
             </span>
           </Link>
 
-          <button
-            type="button"
-            onClick={onCartClick}
-            className="store-cart-btn"
-            aria-label={`Carrito${cartCount > 0 ? `, ${cartCount} productos` : ""}`}
-          >
-            <ShoppingBag className="h-5 w-5" aria-hidden="true" />
-            {cartCount > 0 && (
-              <span className="store-cart-badge">{cartCount > 99 ? "99+" : cartCount}</span>
-            )}
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {pcBuilderEnabled ? (
+              <Link
+                href={`${catalogUrl}/armar-pc`}
+                className="store-pc-builder-link"
+              >
+                <Cpu className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Arma tu PC</span>
+              </Link>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={onCartClick}
+              className="store-cart-btn"
+              aria-label={`Carrito${cartCount > 0 ? `, ${cartCount} productos` : ""}`}
+            >
+              <ShoppingBag className="h-5 w-5" aria-hidden="true" />
+              {cartCount > 0 && (
+                <span className="store-cart-badge">{cartCount > 99 ? "99+" : cartCount}</span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
     </>

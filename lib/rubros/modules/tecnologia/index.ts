@@ -18,12 +18,15 @@ export {
 
 export {
   PC_BUILDER_SLOTS,
+  PC_BUILDER_SLOT_METADATA_KEY,
   PC_BUILDER_SLOT_ORDER,
+  applyPCBuilderSlotToMetadata,
   calculatePCBuilderTotalUsd,
   filterProductsForPCBuilderSlot,
   getPCBuilderSlotDefinition,
   indexProductsByPCBuilderSlot,
   isPCBuilderComplete,
+  parsePCBuilderSlotFromMetadata,
   resolvePCBuilderSlot,
   storeHasPCBuilder,
   type PCBuilderSelection,

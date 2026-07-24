@@ -52,6 +52,10 @@ interface PCBuilderViewProps {
   exchangeRate: ExchangeRate | null;
   purchaseInfo: PublicPurchaseInfo;
   catalogCurrency: CatalogCurrencySettings;
+  /** Base path del catálogo (p. ej. `/tienda/slug` en legacy). */
+  catalogBasePath?: string;
+  /** Padding inferior para tab bar del catálogo moderno. */
+  showTabBarPadding?: boolean;
 }
 
 export function PCBuilderView({
@@ -60,6 +64,8 @@ export function PCBuilderView({
   exchangeRate,
   purchaseInfo,
   catalogCurrency,
+  catalogBasePath,
+  showTabBarPadding = true,
 }: PCBuilderViewProps) {
   const [activeSlotId, setActiveSlotId] =
     useState<PCBuilderSlotId>("cpu");
@@ -79,7 +85,7 @@ export function PCBuilderView({
     liveRate != null && catalogCurrency.showBsConversion
       ? totalUsd * liveRate
       : null;
-  const catalogBase = getStoreCatalogBasePath(store.slug);
+  const catalogBase = catalogBasePath ?? getStoreCatalogBasePath(store.slug);
 
   function selectProduct(slotId: PCBuilderSlotId, product: CatalogListItem) {
     setSelection((current) => ({ ...current, [slotId]: product }));
@@ -107,7 +113,12 @@ export function PCBuilderView({
   }
 
   return (
-    <div className="pc-builder txn-catalog txn-catalog--tech txn-catalog--pc-builder">
+    <div
+      className={cn(
+        "pc-builder txn-catalog txn-catalog--tech",
+        showTabBarPadding && "txn-catalog--pc-builder",
+      )}
+    >
       <header className="pc-builder-header">
         <Link href={catalogBase} className="pc-builder-back">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
