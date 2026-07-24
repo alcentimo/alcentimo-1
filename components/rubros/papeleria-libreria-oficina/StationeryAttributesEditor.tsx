@@ -15,12 +15,15 @@ import {
   STATIONERY_FIELD_PRESENTATION,
   STATIONERY_FIELD_SEGMENT,
   STATIONERY_FIELD_SHEET_TYPE,
+  STATIONERY_FIELD_UNITS_PER_PACK,
   STATIONERY_FORMAT_OPTIONS,
   STATIONERY_GRAMMAGE_OPTIONS,
   STATIONERY_PRESENTATION_OPTIONS,
   STATIONERY_SEGMENT_OPTIONS,
   STATIONERY_SHEET_TYPE_OPTIONS,
-  getStationeryFieldLabels,
+  getStationeryFieldLabelsForEditor,
+  getStationeryUnitsPerPackFromFields,
+  isStationeryMultiPackPresentation,
 } from "@/lib/rubros/modules/papeleria-libreria-oficina";
 import { cn } from "@/lib/cn";
 
@@ -42,9 +45,11 @@ export function StationeryAttributesEditor({
   variant = "default",
 }: StationeryAttributesEditorProps) {
   const isCompact = variant === "compact";
+  const presentation = values[STATIONERY_FIELD_PRESENTATION] ?? "";
+  const unitsPerPack = getStationeryUnitsPerPackFromFields(values);
   const labels = useMemo(
-    () => getStationeryFieldLabels(categorySlug),
-    [categorySlug],
+    () => getStationeryFieldLabelsForEditor(categorySlug, presentation),
+    [categorySlug, presentation],
   );
   const labelsKey = labels.join("|");
 
@@ -59,11 +64,18 @@ export function StationeryAttributesEditor({
       if (!labels.includes(key)) changed = true;
     }
     if (changed) onChange(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- alinear keys al cambiar categoría
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- alinear keys al cambiar categoría/presentación
   }, [labelsKey]);
 
   function updateField(label: string, value: string) {
-    onChange({ ...values, [label]: value });
+    const next = { ...values, [label]: value };
+    if (
+      label === STATIONERY_FIELD_PRESENTATION &&
+      !isStationeryMultiPackPresentation(value)
+    ) {
+      next[STATIONERY_FIELD_UNITS_PER_PACK] = "";
+    }
+    onChange(next);
   }
 
   function renderField(label: string) {
@@ -80,7 +92,9 @@ export function StationeryAttributesEditor({
             <Select
               id="stationery-presentation"
               value={values[label] ?? ""}
-              onChange={(e) => updateField(label, e.target.value)}
+              onChange={(e) =>
+                updateField(label, e.target.value)
+              }
               disabled={disabled}
               className={cn("mt-1.5", isCompact && "payment-field-input")}
             >
@@ -91,6 +105,41 @@ export function StationeryAttributesEditor({
                 </option>
               ))}
             </Select>
+          </div>
+        );
+      case STATIONERY_FIELD_UNITS_PER_PACK:
+        return (
+          <div key={label}>
+            <Label
+              htmlFor="stationery-units-per-pack"
+              className={isCompact ? "payment-field-label" : "label-field"}
+            >
+              Unidades por empaque
+              <span className="ml-1 font-normal text-zinc-500">(opcional)</span>
+            </Label>
+            <Input
+              id="stationery-units-per-pack"
+              type="number"
+              min={2}
+              step={1}
+              inputMode="numeric"
+              value={values[label] ?? ""}
+              onChange={(e) => updateField(label, e.target.value)}
+              disabled={disabled}
+              placeholder={
+                presentation === "Resma"
+                  ? "Ej: 500 hojas"
+                  : "Ej: 12 unidades"
+              }
+              className={cn(
+                "mt-1.5",
+                isCompact ? "payment-field-input" : "input-field",
+              )}
+            />
+            <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+              Activa venta por {presentation.toLowerCase()} o por unidad suelta en
+              el catálogo.
+            </p>
           </div>
         );
       case STATIONERY_FIELD_SEGMENT:
@@ -283,6 +332,12 @@ export function StationeryAttributesEditor({
             ? `Campos sugeridos para ${categoryLabel.toLowerCase()}: presentación, marca y formato.`
             : "Presentación, marca, segmento y formato para útiles, oficina y material escolar."}
         </p>
+        {unitsPerPack ? (
+          <p className="mt-2 rounded-md border border-teal-200/80 bg-teal-50/70 px-2.5 py-1.5 text-[11px] text-teal-900 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-100">
+            Venta habilitada por {presentation.toLowerCase()} ({unitsPerPack} u.)
+            y por unidad suelta. El stock se registra siempre en unidades base.
+          </p>
+        ) : null}
       </div>
 
       <div className={cn("grid gap-3", !isCompact && "sm:grid-cols-2")}>

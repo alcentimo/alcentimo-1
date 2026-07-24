@@ -10,6 +10,10 @@ export interface OrderLineItem {
   quantity: number;
   unit_price_usd: number;
   line_total_usd: number;
+  /** Unidades base de inventario (p. ej. 2 cajas × 12 = 24). */
+  stock_units?: number;
+  /** Variante que concentra el stock cuando hay venta por empaque. */
+  inventory_variant_id?: string;
 }
 
 export interface CatalogOrder {

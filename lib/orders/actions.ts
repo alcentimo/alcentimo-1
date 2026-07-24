@@ -16,6 +16,7 @@ import type { PaymentMethodKey, ShippingCarrierKey } from "@/lib/store-settings/
 import { uploadOrderPaymentProof } from "@/lib/orders/storage";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import { reserveOrderInventory } from "@/lib/orders/order-inventory";
+import { enrichOrderItemsWithStockUnits } from "@/lib/orders/stationery-inventory";
 import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
 import type { OrderLineItem, SubmitOrderLineInput } from "@/lib/orders/types";
 import { createClient } from "@/lib/supabase/server";
@@ -145,8 +146,17 @@ export async function submitTransactionalOrder(
     ? `${resolvedShippingBranch.address}, ${resolvedShippingBranch.city}, ${resolvedShippingBranch.state}`
     : shippingBranchAddressRaw.slice(0, 320) || null;
 
+  const admin = createAdminClient();
   const orderItems = buildOrderItems(lines);
-  const subtotalUsd = orderItems.reduce((sum, item) => sum + item.line_total_usd, 0);
+  const enrichedOrderItems = await enrichOrderItemsWithStockUnits(
+    admin,
+    store.id,
+    orderItems,
+  );
+  const subtotalUsd = enrichedOrderItems.reduce(
+    (sum, item) => sum + item.line_total_usd,
+    0,
+  );
 
   if (subtotalUsd <= 0) {
     return { error: "El total del pedido no es válido." };
@@ -154,7 +164,6 @@ export async function submitTransactionalOrder(
 
   let discountUsd = 0;
   let promotionLabel: string | undefined;
-  const admin = createAdminClient();
 
   if (promotionCodeRaw) {
     if (!customerUserId) {
@@ -268,7 +277,7 @@ export async function submitTransactionalOrder(
     customer_user_id: customerUserId,
     customer_name: customerName,
     customer_phone: customerPhone,
-    items: orderItems,
+    items: enrichedOrderItems,
     total_usd: totalUsd,
     payment_proof_url: proofUpload.url,
     estado: "pendiente",

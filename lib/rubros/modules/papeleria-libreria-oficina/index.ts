@@ -12,6 +12,7 @@ export {
   STATIONERY_FIELD_MODEL,
   STATIONERY_FIELD_GRAMMAGE,
   STATIONERY_FIELD_SHEET_TYPE,
+  STATIONERY_FIELD_UNITS_PER_PACK,
   STATIONERY_FIELD_LABELS,
   STATIONERY_PRESENTATION_OPTIONS,
   STATIONERY_SEGMENT_OPTIONS,
@@ -20,8 +21,27 @@ export {
   STATIONERY_GRAMMAGE_OPTIONS,
   STATIONERY_SHEET_TYPE_OPTIONS,
   STATIONERY_FIELDS_BY_CATEGORY,
+  STATIONERY_METADATA_KEY,
+  isStationeryMultiPackPresentation,
+  parseStationeryUnitsPerPack,
+  getStationeryPackVariantLabel,
+  getStationeryFieldLabelsForEditor,
+  getStationeryUnitsPerPackFromFields,
+  buildStationeryMetadataPatch,
+  parseStationeryMetadata,
   getStationeryFieldLabels,
 } from "@/lib/rubros/modules/papeleria-libreria-oficina/config";
+
+export {
+  isStationerySaleVariant,
+  areStationerySaleVariants,
+  shouldUseStationerySaleVariants,
+  syncStationerySaleVariants,
+  resolveStationeryUnitsPerSale,
+  resolveStationeryVariantAvailableStock,
+  resolveStationeryOrderStockUnits,
+  formatStationeryStockSummary,
+} from "@/lib/rubros/modules/papeleria-libreria-oficina/variants";
 
 export {
   pickStationeryValues,

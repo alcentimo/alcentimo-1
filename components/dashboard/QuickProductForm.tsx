@@ -19,6 +19,9 @@ import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection
 import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
 import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
 import { RubroStationerySection } from "@/components/rubros/RubroStationerySection";
+import { StationeryStockHint } from "@/components/rubros/papeleria-libreria-oficina/StationeryStockHint";
+import { useStationerySaleVariants } from "@/components/dashboard/useStationerySaleVariants";
+import { areStationerySaleVariants } from "@/lib/rubros/modules/papeleria-libreria-oficina/variants";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
 import { useProductCategoryFields } from "@/components/dashboard/useProductCategoryFields";
@@ -145,6 +148,9 @@ function QuickProductFormSession({
   );
 
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
+  const stationeryUnifiedStock = areStationerySaleVariants(variants);
+
+  useStationerySaleVariants(isPapeleria, extraFields, variants, setVariants);
 
   const namePlaceholder = isAlimentos
     ? "Ej: Arepa reina pepiada"
@@ -472,24 +478,29 @@ function QuickProductFormSession({
 
         {advancedOpen && (
           <div className="space-y-4 border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-800">
-            {!hasCustomVariants && (
-              <div>
-                <Label htmlFor="quick-stock" className="payment-field-label">
-                  Cantidad en stock
-                </Label>
-                <Input
-                  id="quick-stock"
-                  name="stock_quantity"
-                  type="number"
-                  min={0}
-                  step={1}
-                  defaultValue={0}
-                  className="payment-field-input mt-1.5"
-                />
-              </div>
+            {(!hasCustomVariants || stationeryUnifiedStock) && (
+              <>
+                {stationeryUnifiedStock ? (
+                  <StationeryStockHint extraFields={extraFields} stockQuantity={0} />
+                ) : null}
+                <div>
+                  <Label htmlFor="quick-stock" className="payment-field-label">
+                    Cantidad en stock
+                  </Label>
+                  <Input
+                    id="quick-stock"
+                    name="stock_quantity"
+                    type="number"
+                    min={0}
+                    step={1}
+                    defaultValue={0}
+                    className="payment-field-input mt-1.5"
+                  />
+                </div>
+              </>
             )}
 
-            {hasCustomVariants && (
+            {hasCustomVariants && !stationeryUnifiedStock && (
               <input type="hidden" name="stock_quantity" value="0" readOnly />
             )}
 

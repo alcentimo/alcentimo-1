@@ -4,11 +4,14 @@ import {
   STATIONERY_FIELD_FORMAT,
   STATIONERY_FIELD_PRESENTATION,
   STATIONERY_FIELD_SEGMENT,
+  STATIONERY_FIELD_UNITS_PER_PACK,
   getStationeryFieldLabels,
+  getStationeryUnitsPerPackFromFields,
+  isStationeryMultiPackPresentation,
 } from "@/lib/rubros/modules/papeleria-libreria-oficina/config";
 
 export interface StationeryBadge {
-  kind: "presentation" | "segment" | "format" | "brand";
+  kind: "presentation" | "segment" | "format" | "brand" | "units";
   label: string;
 }
 
@@ -19,6 +22,10 @@ export function pickStationeryValues(
   const picked: ProductExtraFieldsMap = {};
   for (const label of getStationeryFieldLabels(categorySlug)) {
     picked[label] = fields[label] ?? "";
+  }
+  if (isStationeryMultiPackPresentation(fields[STATIONERY_FIELD_PRESENTATION])) {
+    picked[STATIONERY_FIELD_UNITS_PER_PACK] =
+      fields[STATIONERY_FIELD_UNITS_PER_PACK] ?? "";
   }
   return picked;
 }
@@ -39,6 +46,16 @@ export function getStationeryBadgesFromMetadata(
     badges.push({
       kind: "presentation",
       label: presentation.trim(),
+    });
+  }
+
+  const unitsPerPack = getStationeryUnitsPerPackFromFields(
+    fields as Record<string, string>,
+  );
+  if (unitsPerPack && typeof presentation === "string" && presentation.trim()) {
+    badges.push({
+      kind: "units",
+      label: `${unitsPerPack} u./${presentation.trim().toLowerCase()}`,
     });
   }
 

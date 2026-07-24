@@ -1,4 +1,10 @@
 import { computeUsdToVes } from "@/lib/catalog/pricing";
+import { parseStationeryMetadata } from "@/lib/rubros/modules/papeleria-libreria-oficina/config";
+import {
+  areStationerySaleVariants,
+  resolveStationeryUnitsPerSale,
+  resolveStationeryVariantAvailableStock,
+} from "@/lib/rubros/modules/papeleria-libreria-oficina/variants";
 
 export interface ProductVariantJson {
   id: string;
@@ -116,12 +122,17 @@ export function getCatalogVariantOptions(
     available_stock: number;
     default_variant_id: string;
     product_variants?: unknown;
+    metadata?: Record<string, unknown> | null;
   },
   exchangeRate?: number | null,
 ): CatalogVariantOption[] {
   const basePrice = product.price_usd ?? 0;
   const baseVes = product.price_ves;
   const variants = parseVariantsJson(product.product_variants);
+  const metadata = product.metadata ?? null;
+  const usesUnifiedStock =
+    parseStationeryMetadata(metadata)?.unified_stock === true &&
+    areStationerySaleVariants(variants);
 
   if (variants.length === 0) {
     return [
@@ -143,13 +154,20 @@ export function getCatalogVariantOptions(
       (baseVes != null && product.price_usd
         ? (priceUsd / product.price_usd) * baseVes
         : null);
+    const unitsPerSale = resolveStationeryUnitsPerSale(variant, metadata);
+    const availableStock = usesUnifiedStock
+      ? resolveStationeryVariantAvailableStock(
+          product.available_stock,
+          unitsPerSale,
+        )
+      : variant.stock;
 
     return {
       id: variant.id,
       name: variant.name,
       priceUsd,
       priceVes,
-      availableStock: variant.stock,
+      availableStock,
       priceExtraUsd: variant.price_extra_usd,
     };
   });
@@ -162,8 +180,15 @@ export function hasMultipleVariants(product: { product_variants?: unknown }): bo
 export function getTotalVariantStock(product: {
   available_stock: number;
   product_variants?: unknown;
+  metadata?: Record<string, unknown> | null;
 }): number {
   const variants = parseVariantsJson(product.product_variants);
+  if (
+    parseStationeryMetadata(product.metadata)?.unified_stock &&
+    areStationerySaleVariants(variants)
+  ) {
+    return product.available_stock;
+  }
   if (variants.length === 0) return product.available_stock;
   return variants.reduce((sum, variant) => sum + variant.stock, 0);
 }
@@ -171,6 +196,7 @@ export function getTotalVariantStock(product: {
 export function isProductOutOfStock(product: {
   available_stock: number;
   product_variants?: unknown;
+  metadata?: Record<string, unknown> | null;
 }): boolean {
   return getTotalVariantStock(product) <= 0;
 }

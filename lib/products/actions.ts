@@ -42,11 +42,57 @@ import { getTechSpecLabels } from "@/lib/rubros/modules/tecnologia/config";
 import { getCollectibleFieldLabels } from "@/lib/rubros/modules/coleccionables/config";
 import { getBeautyFieldLabels } from "@/lib/rubros/modules/salud-belleza/config";
 import { getStationeryFieldLabels } from "@/lib/rubros/modules/papeleria-libreria-oficina/config";
+import {
+  STATIONERY_FIELD_UNITS_PER_PACK,
+  STATIONERY_METADATA_KEY,
+  buildStationeryMetadataPatch,
+} from "@/lib/rubros/modules/papeleria-libreria-oficina/config";
+import { areStationerySaleVariants } from "@/lib/rubros/modules/papeleria-libreria-oficina/variants";
 import type { ProductEditImage } from "@/lib/products/product-gallery-types";
 import {
   createProductImagesFromFormData,
   syncProductImagesFromFormData,
 } from "@/lib/products/sync-product-images";
+
+function mergeStationeryProductMetadata(
+  metadata: Record<string, unknown>,
+  extraFields: Record<string, string>,
+  variants: import("@/lib/products/variants").ProductVariantJson[],
+): Record<string, unknown> {
+  const patch = buildStationeryMetadataPatch(
+    extraFields,
+    areStationerySaleVariants(variants),
+  );
+  const next = { ...metadata };
+  if (!patch) {
+    delete next[STATIONERY_METADATA_KEY];
+    return next;
+  }
+  return { ...next, ...patch };
+}
+
+async function applyStationeryUnifiedStock(
+  supabase: SupabaseClient,
+  storeId: string,
+  defaultVariantId: string,
+  stockQuantity: number,
+  formData: FormData,
+): Promise<{ error?: string }> {
+  const { error } = await supabase
+    .from("product_variants")
+    .update({ stock_quantity: stockQuantity })
+    .eq("id", defaultVariantId);
+
+  if (error) return { error: error.message };
+
+  return applyLocationStocksFromForm(
+    supabase,
+    storeId,
+    defaultVariantId,
+    formData,
+    stockQuantity,
+  );
+}
 
 function resolveProductFieldLabels(
   rubro: string,
@@ -62,7 +108,11 @@ function resolveProductFieldLabels(
     return getBeautyFieldLabels();
   }
   if (storeUsesRubroProductModule(rubro, "papeleria-libreria-oficina")) {
-    return getStationeryFieldLabels(categorySlug);
+    const labels = getStationeryFieldLabels(categorySlug);
+    if (!labels.includes(STATIONERY_FIELD_UNITS_PER_PACK)) {
+      labels.push(STATIONERY_FIELD_UNITS_PER_PACK);
+    }
+    return labels;
   }
   const normalized = normalizeStoreRubro(rubro);
   return filterExtraFieldsForActiveModule(
@@ -222,6 +272,7 @@ export async function createProduct(
   if (parsedVariants.error) return { error: parsedVariants.error };
   const customVariants = parsedVariants.variants;
   const hasCustomVariants = customVariants.length > 0;
+  const stationeryUnifiedStock = areStationerySaleVariants(customVariants);
 
   if (!name) return { error: "El nombre es obligatorio." };
   if (!Number.isFinite(priceUsd) || priceUsd < 0) {
@@ -229,7 +280,7 @@ export async function createProduct(
   }
   const compareAtParsed = parseCompareAtUsdFromForm(formData, priceUsd);
   if (compareAtParsed.error) return { error: compareAtParsed.error };
-  if (!hasCustomVariants) {
+  if (!hasCustomVariants || stationeryUnifiedStock) {
     if (!Number.isFinite(stockQuantity) || stockQuantity < 0) {
       return { error: "Ingresa un stock válido (0 o más)." };
     }
@@ -268,6 +319,14 @@ export async function createProduct(
     );
     if (withModifiers.error) return { error: withModifiers.error };
     metadata = withModifiers.metadata;
+  }
+
+  if (storeUsesRubroProductModule(rubro, "papeleria-libreria-oficina")) {
+    metadata = mergeStationeryProductMetadata(
+      metadata,
+      extraFieldsParsed.fields,
+      customVariants,
+    );
   }
 
   const { data: category, error: categoryError } = await supabase
@@ -326,7 +385,7 @@ export async function createProduct(
       product_id: productId,
       sku,
       name: hasCustomVariants ? "Base" : "Estándar",
-      stock_quantity: hasCustomVariants ? 0 : stockQuantity,
+      stock_quantity: hasCustomVariants && !stationeryUnifiedStock ? 0 : stockQuantity,
       low_stock_threshold: lowStockThreshold,
       is_default: true,
     })
@@ -337,7 +396,7 @@ export async function createProduct(
 
   const variantId = variant.id as string;
 
-  if (!hasCustomVariants) {
+  if (!hasCustomVariants || stationeryUnifiedStock) {
     const locationStock = await applyLocationStocksFromForm(
       supabase,
       store.id,
@@ -368,6 +427,16 @@ export async function createProduct(
       storeId: store.id,
     });
     if (synced.error) return { error: synced.error };
+    if (stationeryUnifiedStock) {
+      const stockResult = await applyStationeryUnifiedStock(
+        supabase,
+        store.id,
+        variantId,
+        stockQuantity,
+        formData,
+      );
+      if (stockResult.error) return { error: stockResult.error };
+    }
   }
 
   if (hasGalleryUpload) {
@@ -543,6 +612,7 @@ export async function updateProduct(
   if (parsedVariants.error) return { error: parsedVariants.error };
   const customVariants = parsedVariants.variants;
   const hasCustomVariants = customVariants.length > 0;
+  const stationeryUnifiedStock = areStationerySaleVariants(customVariants);
 
   if (!name) return { error: "El nombre es obligatorio." };
   if (!Number.isFinite(priceUsd) || priceUsd < 0) {
@@ -550,7 +620,10 @@ export async function updateProduct(
   }
   const compareAtParsed = parseCompareAtUsdFromForm(formData, priceUsd);
   if (compareAtParsed.error) return { error: compareAtParsed.error };
-  if (!hasCustomVariants && (!Number.isFinite(stockQuantity) || stockQuantity < 0)) {
+  if (
+    (!hasCustomVariants || stationeryUnifiedStock) &&
+    (!Number.isFinite(stockQuantity) || stockQuantity < 0)
+  ) {
     return { error: "Ingresa un stock válido (0 o más)." };
   }
   if (!Number.isFinite(lowStockThreshold) || lowStockThreshold < 0) {
@@ -590,6 +663,14 @@ export async function updateProduct(
     metadata = withModifiers.metadata;
   }
 
+  if (storeUsesRubroProductModule(rubro, "papeleria-libreria-oficina")) {
+    metadata = mergeStationeryProductMetadata(
+      metadata,
+      extraFieldsParsed.fields,
+      customVariants,
+    );
+  }
+
   const { error: productUpdateError } = await supabase
     .from("products")
     .update({
@@ -608,7 +689,8 @@ export async function updateProduct(
     .from("product_variants")
     .update({
       name: hasCustomVariants ? "Base" : "Estándar",
-      stock_quantity: hasCustomVariants ? 0 : stockQuantity,
+      stock_quantity:
+        hasCustomVariants && !stationeryUnifiedStock ? 0 : stockQuantity,
       low_stock_threshold: lowStockThreshold,
       is_default: true,
     })
@@ -617,7 +699,7 @@ export async function updateProduct(
 
   if (defaultVariantError) return { error: defaultVariantError.message };
 
-  if (!hasCustomVariants) {
+  if (!hasCustomVariants || stationeryUnifiedStock) {
     const locationStock = await applyLocationStocksFromForm(
       supabase,
       store.id,
@@ -650,6 +732,16 @@ export async function updateProduct(
       storeId: store.id,
     });
     if (synced.error) return { error: synced.error };
+    if (stationeryUnifiedStock) {
+      const stockResult = await applyStationeryUnifiedStock(
+        supabase,
+        store.id,
+        defaultVariantId,
+        stockQuantity,
+        formData,
+      );
+      if (stockResult.error) return { error: stockResult.error };
+    }
   } else if (storeRubroManagesProductVariants(rubro)) {
     await supabase.from("products").update({ variants: [] }).eq("id", productId);
   }

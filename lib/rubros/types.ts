@@ -71,6 +71,7 @@ export const RUBRO_MODULE_MANAGED_EXTRA_FIELDS: Record<
     "Modelo / Referencia",
     "Gramaje",
     "Tipo de hoja",
+    "Unidades por empaque",
   ],
 };
 

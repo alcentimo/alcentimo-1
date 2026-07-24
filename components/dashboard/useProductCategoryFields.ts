@@ -69,7 +69,11 @@ export function useProductCategoryFields(
       return getBeautyFieldLabels();
     }
     if (moduleId === "papeleria-libreria-oficina") {
-      return getStationeryFieldLabels(categorySlug);
+      const labels = getStationeryFieldLabels(categorySlug);
+      if (!labels.includes("Unidades por empaque")) {
+        labels.push("Unidades por empaque");
+      }
+      return labels;
     }
     return filterExtraFieldsForActiveModule(
       config.rubroTienda,

@@ -27,6 +27,7 @@ export function StationeryBadges({ product }: StationeryBadgesProps) {
             badge.kind === "presentation" && "stationery-badge--presentation",
             badge.kind === "segment" && "stationery-badge--segment",
             badge.kind === "format" && "stationery-badge--format",
+            badge.kind === "units" && "stationery-badge--units",
           )}
         >
           {badge.label}

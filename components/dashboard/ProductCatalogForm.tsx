@@ -32,6 +32,9 @@ import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection
 import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
 import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
 import { RubroStationerySection } from "@/components/rubros/RubroStationerySection";
+import { StationeryStockHint } from "@/components/rubros/papeleria-libreria-oficina/StationeryStockHint";
+import { useStationerySaleVariants } from "@/components/dashboard/useStationerySaleVariants";
+import { areStationerySaleVariants } from "@/lib/rubros/modules/papeleria-libreria-oficina/variants";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
 import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
@@ -139,6 +142,9 @@ export function ProductCatalogForm({
     "papeleria-libreria-oficina",
   );
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
+  const stationeryUnifiedStock = areStationerySaleVariants(variants);
+
+  useStationerySaleVariants(isPapeleria, extraFields, variants, setVariants);
 
   const managesVariants = storeRubroManagesProductVariants(productFormConfig.rubroTienda);
 
@@ -191,7 +197,7 @@ export function ProductCatalogForm({
         serializeFoodModifiersJson(foodModifiers),
       );
     }
-    if ((isAlimentos || isSaludBelleza) && hasCustomVariants) {
+    if ((isAlimentos || isSaludBelleza) && hasCustomVariants && !stationeryUnifiedStock) {
       formData.set("stock_quantity", "0");
     }
 
@@ -405,11 +411,20 @@ export function ProductCatalogForm({
         </>
       ) : null}
 
-      {!((isAlimentos || isSaludBelleza || isRopaModa) && hasCustomVariants) ? (
-        <LocationStockFields
-          defaultStock={initialData?.stockQuantity ?? 0}
-          initialByLocation={initialLocationStocks}
-        />
+      {!((isAlimentos || isSaludBelleza || isRopaModa) && hasCustomVariants) ||
+      stationeryUnifiedStock ? (
+        <>
+          {stationeryUnifiedStock ? (
+            <StationeryStockHint
+              extraFields={extraFields}
+              stockQuantity={initialData?.stockQuantity ?? 0}
+            />
+          ) : null}
+          <LocationStockFields
+            defaultStock={initialData?.stockQuantity ?? 0}
+            initialByLocation={initialLocationStocks}
+          />
+        </>
       ) : (
         <LocationStockFields hidden />
       )}

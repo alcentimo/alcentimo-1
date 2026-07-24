@@ -27,6 +27,9 @@ import { RubroTechSpecsSection } from "@/components/rubros/RubroTechSpecsSection
 import { RubroCollectibleSection } from "@/components/rubros/RubroCollectibleSection";
 import { RubroBeautySection } from "@/components/rubros/RubroBeautySection";
 import { RubroStationerySection } from "@/components/rubros/RubroStationerySection";
+import { StationeryStockHint } from "@/components/rubros/papeleria-libreria-oficina/StationeryStockHint";
+import { useStationerySaleVariants } from "@/components/dashboard/useStationerySaleVariants";
+import { areStationerySaleVariants } from "@/lib/rubros/modules/papeleria-libreria-oficina/variants";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { ProductExtraFieldsSection } from "@/components/dashboard/ProductExtraFieldsSection";
 import { serializeExtraFieldsJson } from "@/lib/products/extra-fields";
@@ -140,6 +143,9 @@ export function ProductForm({
   );
   const catalogUrl = getStoreCatalogUrl(store.slug);
   const hasCustomVariants = variants.some((variant) => variant.name.trim().length > 0);
+  const stationeryUnifiedStock = areStationerySaleVariants(variants);
+
+  useStationerySaleVariants(isPapeleria, extraFields, variants, setVariants);
 
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
@@ -436,8 +442,16 @@ export function ProductForm({
         />
       ) : null}
 
-      {!hasCustomVariants ? (
-        <LocationStockFields defaultStock={initialData?.stockQuantity ?? 0} />
+      {!hasCustomVariants || stationeryUnifiedStock ? (
+        <>
+          {stationeryUnifiedStock ? (
+            <StationeryStockHint
+              extraFields={extraFields}
+              stockQuantity={initialData?.stockQuantity ?? 0}
+            />
+          ) : null}
+          <LocationStockFields defaultStock={initialData?.stockQuantity ?? 0} />
+        </>
       ) : (
         <LocationStockFields hidden />
       )}
