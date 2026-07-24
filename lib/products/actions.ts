@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore, requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { getUserStore } from "@/lib/stores";
 import { slugify, uniqueSlug } from "@/lib/slugify";
+import { scheduleStoreSubdomainProvision } from "@/lib/domains/provision-store-subdomain";
 import { parseVariantFormInputs, parseVariantsJson } from "@/lib/products/variants";
 import { syncProductVariants } from "@/lib/products/sync-variants";
 import {
@@ -927,11 +928,11 @@ export async function createStore(
   if (!name) return { error: "El nombre de la tienda es obligatorio." };
   if (!slug) return { error: "El slug no es válido." };
 
-  const { error } = await supabase.from("stores").insert({
+  const { data: store, error } = await supabase.from("stores").insert({
     owner_id: auth.authUser.id,
     name,
     slug,
-  });
+  }).select("id").single();
 
   if (error) {
     if (error.code === "23505") {
@@ -940,9 +941,12 @@ export async function createStore(
     return { error: error.message };
   }
 
+  scheduleStoreSubdomainProvision({ storeId: store.id, slug });
+
   revalidatePath("/dashboard/productos/nuevo");
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
+  revalidatePath(`/c/${slug}`);
 
   return { success: true };
 }

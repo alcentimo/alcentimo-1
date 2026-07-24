@@ -31,14 +31,14 @@ export function getSiteUrl(): string {
   return DEFAULT_SITE_URL;
 }
 
-/** Host apex sin protocolo (ej. alcentimo.com). */
-export function getApexSiteHost(): string {
-  return getPublicSiteHost();
-}
-
-/** Host público sin protocolo (ej. alcentimo.com). */
+/** Host público sin protocolo (ej. www.alcentimo.com o alcentimo.com). */
 export function getPublicSiteHost(): string {
   return getSiteUrl().replace(/^https?:\/\//, "");
+}
+
+/** Host apex sin www ni protocolo — base de subdominios de tienda (ej. alcentimo.com). */
+export function getApexSiteHost(): string {
+  return getPublicSiteHost().replace(/^www\./, "");
 }
 
 /** Callback OAuth/email: p. ej. https://alcentimo.com/auth/callback?next=...&store=mi-tienda */

@@ -10,7 +10,9 @@ function optionalEnv(name: string): string | undefined {
 
 /** Activa la invocación de la Edge Function al crear o renombrar tiendas. */
 export function isStoreSubdomainProvisioningEnabled(): boolean {
-  return process.env.STORE_SUBDOMAIN_PROVISION_ENABLED === "true";
+  if (process.env.STORE_SUBDOMAIN_PROVISION_ENABLED === "true") return true;
+  if (process.env.STORE_SUBDOMAIN_PROVISION_ENABLED === "false") return false;
+  return process.env.NODE_ENV === "production";
 }
 
 function getProvisionFunctionUrl(): string | null {

@@ -169,6 +169,7 @@ export function toInternalCatalogPath(
 /** Rutas públicas del catálogo que viven bajo app/c/[store_slug]/ */
 const SUBDOMAIN_CATALOG_PUBLIC_PATHS = new Set([
   "/",
+  "/armar-pc",
   "/categorias",
   "/cuenta",
   "/perfil",
@@ -180,6 +181,7 @@ function isSubdomainCatalogPublicPath(pathname: string): boolean {
   if (SUBDOMAIN_CATALOG_PUBLIC_PATHS.has(pathname)) return true;
 
   return (
+    pathname.startsWith("/armar-pc/") ||
     pathname.startsWith("/categorias/") ||
     pathname.startsWith("/cuenta/") ||
     pathname.startsWith("/perfil/")
