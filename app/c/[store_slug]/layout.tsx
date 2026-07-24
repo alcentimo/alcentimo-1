@@ -16,6 +16,7 @@ import {
 import { getRequestOrigin } from "@/lib/pwa/get-request-origin";
 import { getStoreManifestTheme } from "@/lib/pwa/get-store-manifest-theme";
 import { getPublicStoreBySlug } from "@/lib/stores";
+import { getOpenAiApiKey } from "@/lib/env/server";
 
 interface TransactionalCatalogLayoutProps {
   children: ReactNode;
@@ -107,6 +108,7 @@ export default async function TransactionalCatalogLayout({
   const origin = await getRequestOrigin();
   const manifestAbsoluteUrl = getStoreCatalogManifestAbsoluteUrl(storeSlug, origin);
   const themeContext = await getPublicCatalogThemeContext(storeSlug);
+  const assistantEnabled = Boolean(getOpenAiApiKey());
 
   return (
     <div
@@ -132,6 +134,7 @@ export default async function TransactionalCatalogLayout({
             storeSlug={storeSlug}
             storeName={store?.name ?? ""}
             storeLogoUrl={storeLogoUrl}
+            assistantEnabled={assistantEnabled}
           >
             {children}
           </CatalogAppShell>

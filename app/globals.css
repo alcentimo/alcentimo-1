@@ -4752,6 +4752,106 @@ body {
   color: var(--txn-primary-fg, #ffffff);
 }
 
+.catalog-chat-fab {
+  @apply fixed z-30 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition active:scale-95;
+  left: max(1rem, env(safe-area-inset-left, 0px));
+  bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+  background-color: var(--txn-primary, #0d9488);
+  color: var(--txn-primary-fg, #ffffff);
+}
+
+.catalog-chat-fab-hidden {
+  @apply pointer-events-none opacity-0;
+}
+
+.catalog-chat-overlay {
+  @apply fixed inset-0 z-50 flex items-end justify-start p-0 sm:items-end sm:p-4;
+}
+
+.catalog-chat-panel {
+  @apply relative z-10 flex h-[min(32rem,calc(100dvh-5.5rem))] w-full max-w-md flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl dark:bg-zinc-950 sm:h-[min(34rem,calc(100dvh-6rem))] sm:rounded-2xl;
+  animation: catalog-chat-slide-up 0.24s ease-out;
+}
+
+@keyframes catalog-chat-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.catalog-chat-header {
+  @apply flex items-start justify-between gap-3 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800;
+}
+
+.catalog-chat-title {
+  @apply text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+}
+
+.catalog-chat-subtitle {
+  @apply mt-0.5 text-xs text-zinc-500 dark:text-zinc-400;
+}
+
+.catalog-chat-messages {
+  @apply min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4;
+}
+
+.catalog-chat-bubble {
+  @apply max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed;
+}
+
+.catalog-chat-bubble-assistant {
+  @apply mr-auto rounded-bl-md bg-zinc-100 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-100;
+}
+
+.catalog-chat-bubble-user {
+  @apply ml-auto rounded-br-md text-white;
+  background-color: var(--txn-primary, #0d9488);
+  color: var(--txn-primary-fg, #ffffff);
+}
+
+.catalog-chat-typing {
+  @apply inline-flex items-center gap-2 text-zinc-500;
+}
+
+.catalog-chat-error {
+  @apply mx-4 mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400;
+}
+
+.catalog-chat-quick-prompts {
+  @apply flex gap-2 overflow-x-auto px-4 pb-2;
+}
+
+.catalog-chat-quick-prompt {
+  @apply shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-medium transition disabled:opacity-50;
+  border-color: color-mix(in srgb, var(--txn-primary) 25%, transparent);
+  color: var(--txn-primary, #0d9488);
+  background-color: color-mix(in srgb, var(--txn-primary) 8%, white);
+}
+
+.catalog-chat-quick-prompt:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--txn-primary) 14%, white);
+}
+
+.catalog-chat-input-row {
+  @apply flex items-end gap-2 border-t border-zinc-200 px-3 py-3 dark:border-zinc-800;
+}
+
+.catalog-chat-input {
+  @apply min-h-[2.5rem] max-h-28 flex-1 resize-none rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-transparent focus:ring-2 dark:border-zinc-700 dark:bg-zinc-900;
+  --tw-ring-color: var(--txn-primary-ring, rgba(13, 148, 136, 0.25));
+}
+
+.catalog-chat-send-btn {
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white transition disabled:opacity-50;
+  background-color: var(--txn-primary, #0d9488);
+  color: var(--txn-primary-fg, #ffffff);
+}
+
 /* Acentos del storefront público (checkout, envío, chips) */
 .txn-catalog-root .shipping-method-card-interactive:hover {
   border-color: color-mix(in srgb, var(--txn-primary) 35%, white);
