@@ -7,6 +7,7 @@ import { BrandLogo } from "@/components/ui/BrandLogo";
 
 const navLinks = [
   { href: "#experiencia", label: "Producto" },
+  { href: "#marca-blanca", label: "Marca blanca" },
   { href: "#precios", label: "Precios" },
 ];
 

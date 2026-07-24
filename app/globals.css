@@ -319,6 +319,103 @@ body {
   @apply mt-3 text-center text-[11px] font-medium text-zinc-500 dark:text-zinc-400;
 }
 
+/* White label section */
+.landing-whitelabel-preview {
+  @apply overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-lg shadow-zinc-900/5 ring-1 ring-zinc-900/5 dark:border-zinc-700/80 dark:bg-zinc-900 dark:shadow-black/20 dark:ring-white/10;
+}
+
+.landing-whitelabel-preview-branded {
+  @apply border-emerald-200/80 shadow-emerald-500/10 ring-emerald-500/10 dark:border-emerald-800/50 dark:shadow-emerald-500/5;
+}
+
+.landing-whitelabel-preview-chrome {
+  @apply flex items-center gap-1.5 border-b border-zinc-200/80 bg-zinc-50 px-3 py-2 dark:border-zinc-700/80 dark:bg-zinc-900/80;
+}
+
+.landing-whitelabel-preview-url {
+  @apply ml-2 truncate rounded-md bg-white px-2 py-0.5 text-[10px] text-zinc-500 ring-1 ring-zinc-200/80 dark:bg-zinc-950 dark:text-zinc-400 dark:ring-zinc-700/80;
+}
+
+.landing-whitelabel-preview-body {
+  @apply p-3 sm:p-4;
+}
+
+.landing-whitelabel-preview-header {
+  @apply mb-3 flex items-center gap-2.5;
+}
+
+.landing-whitelabel-preview-logo {
+  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white;
+}
+
+.landing-whitelabel-preview-logo-generic {
+  @apply bg-zinc-400 dark:bg-zinc-600;
+}
+
+.landing-whitelabel-preview-logo-branded {
+  @apply bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-md shadow-emerald-500/25;
+}
+
+.landing-whitelabel-preview-grid {
+  @apply grid grid-cols-2 gap-2;
+}
+
+.landing-whitelabel-preview-product {
+  @apply rounded-lg border border-zinc-100 bg-zinc-50/80 p-2 dark:border-zinc-800 dark:bg-zinc-900/50;
+}
+
+.landing-whitelabel-preview-product-img {
+  @apply aspect-[4/3] w-full rounded-md bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-700 dark:to-zinc-800;
+}
+
+.landing-whitelabel-preview-product-img-branded {
+  @apply from-emerald-100 to-emerald-200/80 dark:from-emerald-900/40 dark:to-emerald-800/30;
+}
+
+.landing-whitelabel-preview-product-line {
+  @apply mt-1.5 h-1.5 w-full rounded-full bg-zinc-200/80 dark:bg-zinc-700/80;
+}
+
+.landing-whitelabel-preview-product-line-short {
+  @apply w-2/3;
+}
+
+.landing-whitelabel-showcase {
+  @apply rounded-2xl border border-zinc-200/70 bg-gradient-to-b from-zinc-50/80 to-white p-6 sm:p-8 dark:border-zinc-800/70 dark:from-zinc-900/40 dark:to-zinc-950;
+}
+
+.landing-whitelabel-showcase-header {
+  @apply mb-6 text-center;
+}
+
+.landing-whitelabel-showcase-grid {
+  @apply grid grid-cols-1 items-center gap-6 md:grid-cols-[1fr_auto_1fr] md:gap-4 lg:gap-8;
+}
+
+.landing-whitelabel-showcase-col {
+  @apply flex flex-col items-center gap-3;
+}
+
+.landing-whitelabel-showcase-label {
+  @apply rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide;
+}
+
+.landing-whitelabel-showcase-label-before {
+  @apply bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300;
+}
+
+.landing-whitelabel-showcase-label-after {
+  @apply bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300;
+}
+
+.landing-whitelabel-showcase-arrow {
+  @apply hidden h-10 w-10 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 md:flex dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400;
+}
+
+.landing-whitelabel-showcase-caption {
+  @apply max-w-[220px] text-center text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400;
+}
+
 /* ── Dashboard tech-minimalist ── */
 
 .dashboard-shell {

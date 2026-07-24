@@ -3,6 +3,7 @@ import { RecoveryUrlRedirect } from "@/components/auth/RecoveryUrlRedirect";
 import { Hero } from "@/components/landing/Hero";
 import { LandingCustomerExperience } from "@/components/landing/LandingCustomerExperience";
 import { LandingBenefits } from "@/components/landing/LandingBenefits";
+import { LandingWhiteLabel } from "@/components/landing/LandingWhiteLabel";
 import { LandingCta } from "@/components/landing/LandingCta";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingNav } from "@/components/landing/LandingNav";
@@ -25,6 +26,7 @@ export default async function Home() {
         <Hero />
         <LandingCustomerExperience />
         <LandingBenefits />
+        <LandingWhiteLabel />
         <LandingPricing pricingTiers={pricingTiers} />
         <LandingCta />
       </main>
