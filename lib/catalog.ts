@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { getSupabaseAnonClient } from "@/lib/supabase";
 import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
-import { PUBLIC_CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
+import { CATALOG_LIST_SELECT, PUBLIC_CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
 import { buildInventorySearchOrFilter } from "@/lib/inventory/search";
 import { roundExchangeRate } from "@/lib/format";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
@@ -126,13 +126,45 @@ export async function getCatalogProducts(
     query = query.range(offset, offset + limit - 1);
   }
 
-  const [productsResult, exchangeRate] = await Promise.all([
+  let [productsResult, exchangeRate] = await Promise.all([
     query,
     getCurrentExchangeRate(),
   ]);
 
   if (productsResult.error) {
-    throw new Error(productsResult.error.message);
+    const missingColumn =
+      /column|does not exist|Could not find/i.test(productsResult.error.message);
+
+    if (missingColumn) {
+      let fallbackQuery = supabase
+        .from("catalog_list_view")
+        .select(CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
+        .eq("store_slug", normalizedSlug)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
+
+      if (categorySlug) {
+        fallbackQuery = fallbackQuery.eq("category_slug", categorySlug);
+      }
+
+      if (productIds?.length) {
+        fallbackQuery = fallbackQuery.in("product_id", productIds);
+      }
+
+      if (searchOr) {
+        fallbackQuery = fallbackQuery.or(searchOr);
+      }
+
+      if (paginated) {
+        fallbackQuery = fallbackQuery.range(offset, offset + limit - 1);
+      }
+
+      productsResult = await fallbackQuery;
+    }
+
+    if (productsResult.error) {
+      throw new Error(productsResult.error.message);
+    }
   }
 
   const products = (productsResult.data ?? []).map((row) =>

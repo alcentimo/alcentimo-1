@@ -32,7 +32,6 @@ import {
 } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
-import { isProductOutOfStock } from "@/lib/products/variants";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { groupProductsByFoodMenu } from "@/lib/rubros/modules/alimentos";
 import { cn } from "@/lib/cn";
@@ -205,7 +204,7 @@ function TransactionalCatalogContent({
     "papeleria-libreria-oficina",
   );
 
-  const locationAwareProducts = useMemo(
+  const catalogProducts = useMemo(
     () =>
       products.map((product) =>
         applyLocationStockToProduct(product, getAvailableStock),
@@ -213,14 +212,9 @@ function TransactionalCatalogContent({
     [products, getAvailableStock],
   );
 
-  const availableProducts = useMemo(
-    () => locationAwareProducts.filter((product) => !isProductOutOfStock(product)),
-    [locationAwareProducts],
-  );
-
   const categoryOptions = useMemo(
-    () => resolveCategoryOptions(storeCategories, availableProducts),
-    [storeCategories, availableProducts],
+    () => resolveCategoryOptions(storeCategories, catalogProducts),
+    [storeCategories, catalogProducts],
   );
 
   const browseServerPagination = useMemo(
@@ -228,11 +222,11 @@ function TransactionalCatalogContent({
       enableServerPagination && !previewMode
         ? {
             storeSlug: store.slug,
-            initialTotalCount: catalogTotalCount ?? availableProducts.length,
+            initialTotalCount: catalogTotalCount ?? catalogProducts.length,
           }
         : undefined,
     [
-      availableProducts.length,
+      catalogProducts.length,
       catalogTotalCount,
       enableServerPagination,
       previewMode,
@@ -240,12 +234,12 @@ function TransactionalCatalogContent({
     ],
   );
 
-  const browse = useCatalogBrowse(availableProducts, {
+  const browse = useCatalogBrowse(catalogProducts, {
     serverPagination: browseServerPagination,
   });
 
   const useFlatBrowseLayout =
-    !isFoodMenu || browse.hasActiveFilters || availableProducts.length > 20;
+    !isFoodMenu || browse.hasActiveFilters || catalogProducts.length > 20;
 
   const menuSections = useMemo(() => {
     if (!isFoodMenu || useFlatBrowseLayout) return [];
@@ -358,7 +352,7 @@ function TransactionalCatalogContent({
 
       {!previewMode ? <CatalogLocationPicker /> : null}
 
-      {availableProducts.length > 0 ? (
+      {catalogProducts.length > 0 ? (
         <CatalogBrowseToolbar
           searchQuery={browse.searchQuery}
           onSearchQueryChange={browse.setSearchQuery}
@@ -367,7 +361,7 @@ function TransactionalCatalogContent({
           sortKey={browse.sortKey}
           onSortKeyChange={browse.setSortKey}
           categories={categoryOptions}
-          totalCount={availableProducts.length}
+          totalCount={catalogProducts.length}
           filteredCount={browse.totalCount}
           hasActiveFilters={browse.hasActiveFilters}
           onClearFilters={browse.clearFilters}
@@ -375,7 +369,7 @@ function TransactionalCatalogContent({
       ) : null}
 
       <main className="txn-catalog-main">
-        {availableProducts.length === 0 ? (
+        {products.length === 0 ? (
           <div className="txn-catalog-empty">
             <p className="text-sm font-medium text-neutral-800">
               No hay productos disponibles

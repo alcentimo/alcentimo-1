@@ -108,6 +108,12 @@ export function CatalogFulfillmentProvider({
   const getAvailableStock = useCallback(
     (variantId: string | null | undefined, fallback: number) => {
       if (!variantId) return fallback;
+      if (activeLocations.length === 0) return fallback;
+
+      const hasAnyLocationRow = locationStocks.some(
+        (row) => row.variant_id === variantId,
+      );
+      if (!hasAnyLocationRow) return fallback;
 
       const locationId = selectedLocationId ?? defaultLocation?.id;
       if (!locationId) return fallback;
@@ -115,7 +121,13 @@ export function CatalogFulfillmentProvider({
       const key = `${variantId}:${locationId}`;
       return stockIndex.has(key) ? (stockIndex.get(key) ?? 0) : fallback;
     },
-    [defaultLocation?.id, selectedLocationId, stockIndex],
+    [
+      activeLocations.length,
+      defaultLocation?.id,
+      locationStocks,
+      selectedLocationId,
+      stockIndex,
+    ],
   );
 
   const selectedLocation =

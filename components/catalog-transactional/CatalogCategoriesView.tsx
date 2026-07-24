@@ -26,7 +26,6 @@ import {
 } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
-import { isProductOutOfStock } from "@/lib/products/variants";
 import { cn } from "@/lib/cn";
 
 interface CatalogCategoriesViewProps {
@@ -97,7 +96,7 @@ function CatalogCategoriesViewInner({
   const { addItem } = useCart();
   const { getAvailableStock } = useCatalogFulfillment();
 
-  const locationAwareProducts = useMemo(
+  const catalogProducts = useMemo(
     () =>
       products.map((product) =>
         applyLocationStockToProduct(product, getAvailableStock),
@@ -105,14 +104,9 @@ function CatalogCategoriesViewInner({
     [products, getAvailableStock],
   );
 
-  const availableProducts = useMemo(
-    () => locationAwareProducts.filter((product) => !isProductOutOfStock(product)),
-    [locationAwareProducts],
-  );
-
   const categoryOptions = useMemo(
-    () => resolvePublicCatalogCategories(storeCategories, availableProducts),
-    [storeCategories, availableProducts],
+    () => resolvePublicCatalogCategories(storeCategories, catalogProducts),
+    [storeCategories, catalogProducts],
   );
 
   const browseServerPagination = useMemo(
@@ -120,18 +114,18 @@ function CatalogCategoriesViewInner({
       enableServerPagination
         ? {
             storeSlug: store.slug,
-            initialTotalCount: catalogTotalCount ?? availableProducts.length,
+            initialTotalCount: catalogTotalCount ?? catalogProducts.length,
           }
         : undefined,
     [
-      availableProducts.length,
+      catalogProducts.length,
       catalogTotalCount,
       enableServerPagination,
       store.slug,
     ],
   );
 
-  const browse = useCatalogBrowse(availableProducts, {
+  const browse = useCatalogBrowse(catalogProducts, {
     initialCategorySlug: selectedCategorySlug,
     serverPagination: browseServerPagination,
   });
@@ -154,7 +148,7 @@ function CatalogCategoriesViewInner({
         <CatalogLocationPicker />
       </header>
 
-      {availableProducts.length > 0 ? (
+      {catalogProducts.length > 0 ? (
         <CatalogBrowseToolbar
           searchQuery={browse.searchQuery}
           onSearchQueryChange={browse.setSearchQuery}
@@ -163,7 +157,7 @@ function CatalogCategoriesViewInner({
           sortKey={browse.sortKey}
           onSortKeyChange={browse.setSortKey}
           categories={categoryOptions}
-          totalCount={availableProducts.length}
+          totalCount={catalogProducts.length}
           filteredCount={browse.totalCount}
           hasActiveFilters={browse.hasActiveFilters}
           onClearFilters={browse.clearFilters}
@@ -171,7 +165,7 @@ function CatalogCategoriesViewInner({
       ) : null}
 
       <main className="txn-catalog-main">
-        {availableProducts.length === 0 ? (
+        {products.length === 0 ? (
           <div className="txn-catalog-empty">
             <p className="text-sm font-medium text-neutral-800">
               No hay productos disponibles
