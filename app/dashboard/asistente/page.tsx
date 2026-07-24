@@ -27,7 +27,6 @@ export default async function AsistentePage() {
       <DashboardPageHeader
         title="Asistente IA"
         description={`Consultor de negocios con datos en tiempo real: inventario, ventas, clientes, promociones y mensajes de WhatsApp.`}
-        storeSlug={store.slug}
       />
 
       <OwnerAssistantChat

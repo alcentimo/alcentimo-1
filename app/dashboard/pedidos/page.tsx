@@ -9,7 +9,6 @@ import { getStoreLocations } from "@/lib/locations/get-store-locations";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { OrdersPanel } from "@/components/dashboard/orders/OrdersPanel";
-import { getTransactionalCatalogPublicUrl } from "@/lib/stores";
 
 export const dynamic = "force-dynamic";
 
@@ -57,16 +56,8 @@ export default async function PedidosPage() {
         <p className="section-label">Centro de operaciones</p>
         <h1 className="page-header-title">Pedidos</h1>
         <p className="page-header-desc">
-          Gestiona ventas, estados y clientes desde{" "}
-          <Link
-            href={getTransactionalCatalogPublicUrl(store.slug)}
-            className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {new URL(getTransactionalCatalogPublicUrl(store.slug)).host}
-          </Link>
-          . Toca un pedido para ver el detalle sin salir de la lista.
+          Gestiona ventas, estados y clientes del catálogo público de {store.name}.
+          Toca un pedido para ver el detalle sin salir de la lista.
         </p>
       </header>
 

@@ -23,7 +23,6 @@ import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursT
 import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
 import { PaymentsTab } from "@/components/dashboard/settings/PaymentsTab";
 import { PromotionsTab } from "@/components/dashboard/settings/PromotionsTab";
-import { StorePublicLinkBar } from "@/components/dashboard/settings/StorePublicLinkBar";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { Store } from "@/lib/database.types";
@@ -232,12 +231,6 @@ export function SettingsPanel({
 
   return (
     <div className="settings-workspace">
-      <StorePublicLinkBar
-        slug={storeSlug}
-        customDomain={store?.custom_domain ?? null}
-        customDomainVerified={Boolean(store?.custom_domain_verified)}
-      />
-
       <div className="settings-workspace-layout">
         <aside className="settings-sidebar" aria-label="Secciones de configuración">
           <nav className="settings-sidebar-nav">

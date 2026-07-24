@@ -119,7 +119,6 @@ export default async function CatalogoPage({
       <DashboardPageHeader
         title="Catálogo"
         description={`Gestiona lo que vendes: productos, fotos, precios y stock de ${store.name}.`}
-        storeSlug={store.slug}
       />
 
       <BcvRateStripWithSync

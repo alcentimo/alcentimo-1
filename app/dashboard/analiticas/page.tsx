@@ -29,7 +29,6 @@ export default async function AnaliticasPage() {
       <DashboardPageHeader
         title="Analíticas"
         description={`Ventas, productos estrella y conversión de ${store.name}.`}
-        storeSlug={store.slug}
       />
 
       <AnalyticsPanel analytics={analytics} />

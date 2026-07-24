@@ -9,6 +9,7 @@ import { BrandLogo } from "@/components/ui/BrandLogo";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
 import { DashboardPreferenceControls } from "@/components/dashboard/DashboardPreferenceControls";
+import { PublicCatalogQuickLink } from "@/components/dashboard/PublicCatalogQuickLink";
 import { DashboardViewKeepAlive } from "@/components/dashboard/DashboardViewKeepAlive";
 import { DashboardRouteVisitTracker } from "@/components/dashboard/DashboardRouteVisitTracker";
 import { useOptionalLocale } from "@/components/providers/UiPreferencesProvider";
@@ -17,6 +18,8 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
   storeName: string | null;
   storeSlug: string | null;
+  customDomain?: string | null;
+  customDomainVerified?: boolean;
   userEmail: string | null;
   planName?: string | null;
   exchangeRate?: number | null;
@@ -37,6 +40,9 @@ function isStandaloneAuthPath(pathname: string): boolean {
 function DashboardShell({
   children,
   storeName,
+  storeSlug,
+  customDomain = null,
+  customDomainVerified = false,
   userEmail,
   planName = null,
   exchangeRate = null,
@@ -117,6 +123,12 @@ function DashboardShell({
             />
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <PublicCatalogQuickLink
+              storeSlug={storeSlug}
+              customDomain={customDomain}
+              customDomainVerified={customDomainVerified}
+              variant="header"
+            />
             <DashboardPreferenceControls variant="compact" />
             <DashboardExchangeRateBadge
               rate={exchangeRate}

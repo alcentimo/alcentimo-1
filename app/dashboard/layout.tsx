@@ -76,6 +76,8 @@ export default async function DashboardRootLayout({
           <DashboardLayout
             storeName={store?.name ?? null}
             storeSlug={store?.slug ?? null}
+            customDomain={store?.custom_domain ?? null}
+            customDomainVerified={Boolean(store?.custom_domain_verified)}
             userEmail={authUser.email ?? null}
             planName={authUser.plan.name}
             exchangeRate={exchangeRate}

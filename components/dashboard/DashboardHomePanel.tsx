@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { CatalogLinkCard } from "@/components/dashboard/settings/CatalogLinkCard";
 import { HomePriorities } from "@/components/dashboard/home/HomePriorities";
 import { DashboardKpiCard } from "@/components/dashboard/DashboardKpiCard";
 import type { HomeSummary } from "@/lib/dashboard/get-home-summary";
@@ -14,7 +13,6 @@ import { BarChart3, Package, ShoppingBag } from "lucide-react";
 interface DashboardHomePanelProps {
   summary: HomeSummary;
   storeName: string;
-  storeSlug: string;
   outOfStockProducts: CatalogListItem[];
   pendingOrders: CatalogOrder[];
 }
@@ -22,7 +20,6 @@ interface DashboardHomePanelProps {
 export function DashboardHomePanel({
   summary,
   storeName,
-  storeSlug,
   outOfStockProducts,
   pendingOrders,
 }: DashboardHomePanelProps) {
@@ -58,8 +55,6 @@ export function DashboardHomePanel({
           Hola, {storeName}
         </h1>
       </header>
-
-      <CatalogLinkCard slug={storeSlug} variant="dashboard" />
 
       <section aria-label="Indicadores clave">
         <div className="dashboard-kpi-grid dashboard-kpi-grid-3">
