@@ -56,12 +56,17 @@ export function getStoreOpenStatus(
   now: Date = new Date(),
 ): StoreOpenStatus {
   const dayKey = JS_DAY_TO_WEEKDAY[now.getDay()];
-  const dayEnabled = locationHours.schedule[dayKey]?.enabled ?? false;
-  const openMinutes = parseTimeToMinutes(locationHours.openTime);
-  const closeMinutes = parseTimeToMinutes(locationHours.closeTime);
+  const day = locationHours.schedule[dayKey];
+  const dayEnabled = day?.enabled ?? false;
+  const openTime = day?.openTime || locationHours.openTime;
+  const closeTime = day?.closeTime || locationHours.closeTime;
+  const openMinutes = parseTimeToMinutes(openTime);
+  const closeMinutes = parseTimeToMinutes(closeTime);
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-  const scheduleHint = `Hoy ${formatTimeLabel(locationHours.openTime)} – ${formatTimeLabel(locationHours.closeTime)}`;
+  const scheduleHint = dayEnabled
+    ? `Hoy ${formatTimeLabel(openTime)} – ${formatTimeLabel(closeTime)}`
+    : "Hoy cerrado";
 
   if (!dayEnabled || openMinutes == null || closeMinutes == null) {
     return { isOpen: false, label: "Cerrada", scheduleHint };

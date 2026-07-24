@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, Plus, Trash2 } from "lucide-react";
 import { ChannelLogo } from "@/components/inbox/ChannelLogo";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import {
@@ -18,7 +18,7 @@ import type {
   LocationHoursSettings,
   WeekdayKey,
 } from "@/lib/store-settings/types";
-import { WEEKDAY_KEYS } from "@/lib/store-settings/types";
+import { MAX_WHATSAPP_PHONES, WEEKDAY_KEYS } from "@/lib/store-settings/types";
 
 const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
   mon: "Lunes",
@@ -35,49 +35,108 @@ interface LocationHoursTabProps {
   initialContact: ContactSettings;
 }
 
+function initialPhones(contact: ContactSettings): string[] {
+  const phones = (contact.whatsappPhones ?? [])
+    .map((phone) => phone.trim())
+    .filter(Boolean);
+  if (phones.length > 0) return phones.slice(0, MAX_WHATSAPP_PHONES);
+  const legacy = contact.whatsappPhone.trim();
+  return legacy ? [legacy] : [""];
+}
+
 export function LocationHoursTab({
   initialLocationHours,
   initialContact,
 }: LocationHoursTabProps) {
   const [locationHours, setLocationHours] = useState(initialLocationHours);
-  const [whatsappPhone, setWhatsappPhone] = useState(initialContact.whatsappPhone);
+  const [whatsappPhones, setWhatsappPhones] = useState(() =>
+    initialPhones(initialContact),
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [, startTransition] = useTransition();
 
-  const normalizedWhatsapp = normalizeWhatsAppPhone(whatsappPhone);
-
-  function toggleDay(key: WeekdayKey, enabled: boolean) {
+  function updateDay(
+    key: WeekdayKey,
+    patch: Partial<LocationHoursSettings["schedule"][WeekdayKey]>,
+  ) {
     setLocationHours((prev) => ({
       ...prev,
       schedule: {
         ...prev.schedule,
-        [key]: { enabled },
+        [key]: {
+          ...prev.schedule[key],
+          ...patch,
+        },
       },
     }));
+    setSuccess(false);
+  }
+
+  function setPhoneAt(index: number, value: string) {
+    setWhatsappPhones((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+    setSuccess(false);
+  }
+
+  function addPhone() {
+    if (whatsappPhones.length >= MAX_WHATSAPP_PHONES) return;
+    setWhatsappPhones((prev) => [...prev, ""]);
+    setSuccess(false);
+  }
+
+  function removePhone(index: number) {
+    setWhatsappPhones((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      return next.length > 0 ? next : [""];
+    });
     setSuccess(false);
   }
 
   function handleSave() {
     setError(null);
     setSuccess(false);
+
+    const cleanedPhones = whatsappPhones
+      .map((phone) => phone.trim())
+      .filter(Boolean);
+
+    for (const phone of cleanedPhones) {
+      if (!normalizeWhatsAppPhone(phone)) {
+        setError(
+          "Revisa los números de WhatsApp — cada uno debe tener al menos 10 dígitos.",
+        );
+        return;
+      }
+    }
+
+    if (cleanedPhones.length > MAX_WHATSAPP_PHONES) {
+      setError(`Puedes configurar hasta ${MAX_WHATSAPP_PHONES} números de WhatsApp.`);
+      return;
+    }
+
     setSaving(true);
 
     startTransition(async () => {
       const result = await saveLocationHoursSettings({
         locationHours,
-        whatsappPhone,
+        whatsappPhones: cleanedPhones,
+        whatsappPhone: cleanedPhones[0] ?? "",
       });
       setSaving(false);
 
       if (result.error) {
         setError(result.error);
         setLocationHours(initialLocationHours);
-        setWhatsappPhone(initialContact.whatsappPhone);
+        setWhatsappPhones(initialPhones(initialContact));
         return;
       }
 
+      setWhatsappPhones(cleanedPhones.length > 0 ? cleanedPhones : [""]);
       setSuccess(true);
     });
   }
@@ -161,20 +220,29 @@ export function LocationHoursTab({
 
       <SettingsSection
         title="Horario de atención"
-        description="Días y horas en los que atiendes pedidos o recibes clientes."
+        description="Configura apertura y cierre de forma independiente para cada día."
         variant="payments"
       >
-        <div className="general-settings-card space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {WEEKDAY_KEYS.map((key) => {
-              const enabled = locationHours.schedule[key].enabled;
-              return (
+        <div className="general-settings-card space-y-2">
+          {WEEKDAY_KEYS.map((key) => {
+            const day = locationHours.schedule[key];
+            const enabled = day.enabled;
+
+            return (
+              <div
+                key={key}
+                className={cn(
+                  "flex flex-col gap-2 rounded-xl border px-3 py-2.5 sm:flex-row sm:items-center sm:gap-3",
+                  enabled
+                    ? "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950/40"
+                    : "border-zinc-100 bg-zinc-50/80 dark:border-zinc-900 dark:bg-zinc-950/20",
+                )}
+              >
                 <button
-                  key={key}
                   type="button"
-                  onClick={() => toggleDay(key, !enabled)}
+                  onClick={() => updateDay(key, { enabled: !enabled })}
                   className={cn(
-                    "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                    "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors sm:w-28",
                     enabled
                       ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
                       : "border-zinc-200 bg-white text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400",
@@ -183,74 +251,115 @@ export function LocationHoursTab({
                 >
                   {WEEKDAY_LABELS[key]}
                 </button>
-              );
-            })}
-          </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="open-time" className="payment-field-label">
-                Hora de apertura
-              </Label>
-              <Input
-                id="open-time"
-                type="time"
-                value={locationHours.openTime}
-                onChange={(e) => {
-                  setLocationHours((prev) => ({ ...prev, openTime: e.target.value }));
-                  setSuccess(false);
-                }}
-                className="payment-field-input mt-1.5"
-              />
-            </div>
-            <div>
-              <Label htmlFor="close-time" className="payment-field-label">
-                Hora de cierre
-              </Label>
-              <Input
-                id="close-time"
-                type="time"
-                value={locationHours.closeTime}
-                onChange={(e) => {
-                  setLocationHours((prev) => ({ ...prev, closeTime: e.target.value }));
-                  setSuccess(false);
-                }}
-                className="payment-field-input mt-1.5"
-              />
-            </div>
-          </div>
+                <div className="grid flex-1 grid-cols-2 gap-2">
+                  <div>
+                    <Label
+                      htmlFor={`open-${key}`}
+                      className="payment-field-label text-[11px]"
+                    >
+                      Apertura
+                    </Label>
+                    <Input
+                      id={`open-${key}`}
+                      type="time"
+                      disabled={!enabled}
+                      value={day.openTime}
+                      onChange={(e) =>
+                        updateDay(key, { openTime: e.target.value })
+                      }
+                      className="payment-field-input mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor={`close-${key}`}
+                      className="payment-field-label text-[11px]"
+                    >
+                      Cierre
+                    </Label>
+                    <Input
+                      id={`close-${key}`}
+                      type="time"
+                      disabled={!enabled}
+                      value={day.closeTime}
+                      onChange={(e) =>
+                        updateDay(key, { closeTime: e.target.value })
+                      }
+                      className="payment-field-input mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </SettingsSection>
 
       <SettingsSection
         title="WhatsApp para pedidos"
-        description="Número al que llegan los pedidos del catálogo."
+        description={`Hasta ${MAX_WHATSAPP_PHONES} números. El primero se usa como principal en el catálogo y checkout.`}
         variant="payments"
       >
-        <div className="general-settings-card">
-          <ChannelLogo provider="whatsapp" className="mb-2.5 h-7 w-7" />
-          <Label htmlFor="store-whatsapp" className="payment-field-label">
-            Número de WhatsApp
-          </Label>
-          <Input
-            id="store-whatsapp"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={whatsappPhone}
-            onChange={(e) => {
-              setWhatsappPhone(e.target.value);
-              setSuccess(false);
-            }}
-            placeholder="Ej: 0414-1234567"
-            className="payment-field-input mt-1.5"
-          />
-          {whatsappPhone.trim() ? (
-            <p className="mt-2 text-[11px] text-zinc-400">
-              {normalizedWhatsapp
-                ? `Formato internacional: +${normalizedWhatsapp}`
-                : "Revisa el número — debe tener al menos 10 dígitos."}
-            </p>
+        <div className="general-settings-card space-y-3">
+          <ChannelLogo provider="whatsapp" className="h-7 w-7" />
+
+          {whatsappPhones.map((phone, index) => {
+            const normalized = normalizeWhatsAppPhone(phone);
+            return (
+              <div key={`wa-${index}`} className="space-y-1.5">
+                <div className="flex items-end gap-2">
+                  <div className="min-w-0 flex-1">
+                    <Label
+                      htmlFor={`store-whatsapp-${index}`}
+                      className="payment-field-label"
+                    >
+                      {index === 0
+                        ? "WhatsApp principal"
+                        : `WhatsApp adicional ${index}`}
+                    </Label>
+                    <Input
+                      id={`store-whatsapp-${index}`}
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      value={phone}
+                      onChange={(e) => setPhoneAt(index, e.target.value)}
+                      placeholder="Ej: 0414-1234567"
+                      className="payment-field-input mt-1.5"
+                    />
+                  </div>
+                  {whatsappPhones.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => removePhone(index)}
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-200 text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-red-600 dark:border-zinc-800 dark:hover:bg-zinc-900 dark:hover:text-red-400"
+                      aria-label={`Eliminar WhatsApp ${index + 1}`}
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  ) : null}
+                </div>
+                {phone.trim() ? (
+                  <p className="text-[11px] text-zinc-400">
+                    {normalized
+                      ? `Formato internacional: +${normalized}`
+                      : "Revisa el número — debe tener al menos 10 dígitos."}
+                  </p>
+                ) : null}
+              </div>
+            );
+          })}
+
+          {whatsappPhones.length < MAX_WHATSAPP_PHONES ? (
+            <button
+              type="button"
+              onClick={addPhone}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 transition-colors hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              Agregar otro WhatsApp
+            </button>
           ) : null}
         </div>
       </SettingsSection>

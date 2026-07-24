@@ -88,8 +88,16 @@ export interface StoreSettingsConfig {
   interfacePreferences: InterfacePreferencesSettings;
 }
 
+export const MAX_WHATSAPP_PHONES = 3;
+
 export interface ContactSettings {
+  /**
+   * Número principal (pedidos / wa.me).
+   * Se mantiene sincronizado con `whatsappPhones[0]` por compatibilidad.
+   */
   whatsappPhone: string;
+  /** Hasta 3 números de WhatsApp para recepción de pedidos. */
+  whatsappPhones: string[];
 }
 
 export const WEEKDAY_KEYS = [
@@ -106,13 +114,23 @@ export type WeekdayKey = (typeof WEEKDAY_KEYS)[number];
 
 export interface DaySchedule {
   enabled: boolean;
+  openTime: string;
+  closeTime: string;
 }
 
 export interface LocationHoursSettings {
   address: string;
   city: string;
   schedule: Record<WeekdayKey, DaySchedule>;
+  /**
+   * @deprecated Preferir `schedule[day].openTime`.
+   * Se conserva como plantilla / fallback legacy.
+   */
   openTime: string;
+  /**
+   * @deprecated Preferir `schedule[day].closeTime`.
+   * Se conserva como plantilla / fallback legacy.
+   */
   closeTime: string;
 }
 

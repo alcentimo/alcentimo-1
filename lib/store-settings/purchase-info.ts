@@ -38,7 +38,10 @@ export interface PublicPurchaseInfo {
     maxInstallments: string;
     conditions: string;
   } | null;
+  /** Número principal para wa.me / pedidos. */
   whatsappPhone: string;
+  /** Hasta 3 números configurados para recepción de pedidos. */
+  whatsappPhones: string[];
   locationHours: LocationHoursSettings;
   deliveryZones: DeliveryZone[];
   pickupPoints: DeliveryMeetingPoint[];
@@ -92,6 +95,9 @@ export function buildPublicPurchaseInfo(
     payments,
     installments,
     whatsappPhone: config.contact.whatsappPhone.trim(),
+    whatsappPhones: config.contact.whatsappPhones
+      .map((phone) => phone.trim())
+      .filter(Boolean),
     locationHours: config.locationHours,
     deliveryZones: config.shipping.deliveryZones,
     pickupPoints: config.shipping.pickupPoints,

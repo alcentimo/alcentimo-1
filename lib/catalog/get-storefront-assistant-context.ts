@@ -7,7 +7,7 @@ import {
 } from "@/lib/store-settings/defaults";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { getStoreOpenStatus } from "@/lib/store-settings/store-hours";
-import type { WeekdayKey } from "@/lib/store-settings/types";
+import type { DaySchedule, WeekdayKey } from "@/lib/store-settings/types";
 import { WEEKDAY_KEYS } from "@/lib/store-settings/types";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
 import {
@@ -36,23 +36,16 @@ const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
 function formatLocationHoursSummary(
   address: string,
   city: string,
-  schedule: Record<WeekdayKey, { enabled: boolean }>,
-  openTime: string,
-  closeTime: string,
+  schedule: Record<WeekdayKey, DaySchedule>,
 ): string {
-  const openDays = WEEKDAY_KEYS.filter((key) => schedule[key]?.enabled).map(
-    (key) => WEEKDAY_LABELS[key],
+  const dayParts = WEEKDAY_KEYS.filter((key) => schedule[key]?.enabled).map(
+    (key) =>
+      `${WEEKDAY_LABELS[key]} ${schedule[key].openTime}–${schedule[key].closeTime}`,
   );
   const daysLabel =
-    openDays.length === 7
-      ? "Todos los días"
-      : openDays.length > 0
-        ? openDays.join(", ")
-        : "Consultar horario";
+    dayParts.length > 0 ? dayParts.join(" · ") : "Consultar horario";
   const locationLine = [address.trim(), city.trim()].filter(Boolean).join(", ");
-  return [locationLine, `${daysLabel}: ${openTime} – ${closeTime}`]
-    .filter(Boolean)
-    .join(" · ");
+  return [locationLine, daysLabel].filter(Boolean).join(" · ");
 }
 
 function buildLocationStockIndex(
@@ -195,8 +188,6 @@ export async function getStorefrontAssistantContext(
       purchaseInfo.locationHours.address,
       purchaseInfo.locationHours.city,
       purchaseInfo.locationHours.schedule,
-      purchaseInfo.locationHours.openTime,
-      purchaseInfo.locationHours.closeTime,
     ),
     whatsappAvailable: Boolean(purchaseInfo.whatsappPhone.trim()),
     locations: locations.map((loc) => ({

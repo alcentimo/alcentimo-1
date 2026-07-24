@@ -1,11 +1,12 @@
 import type {
   CatalogDesignSettings,
+  DaySchedule,
   PaymentMethodKey,
   ShippingCarrierKey,
   StoreSettingsConfig,
   WeekdayKey,
 } from "@/lib/store-settings/types";
-import { WEEKDAY_KEYS } from "@/lib/store-settings/types";
+import { MAX_WHATSAPP_PHONES, WEEKDAY_KEYS } from "@/lib/store-settings/types";
 import { defaultMessageTemplates } from "@/lib/orders/message-templates";
 import {
   normalizeDeliveryZones,
@@ -34,13 +35,69 @@ const PAYMENT_METHOD_KEYS: PaymentMethodKey[] = [
   "cashea",
 ];
 
-function defaultWeekdaySchedule(): Record<WeekdayKey, { enabled: boolean }> {
+const DEFAULT_OPEN_TIME = "09:00";
+const DEFAULT_CLOSE_TIME = "18:00";
+
+function defaultDaySchedule(enabled: boolean): DaySchedule {
+  return {
+    enabled,
+    openTime: DEFAULT_OPEN_TIME,
+    closeTime: DEFAULT_CLOSE_TIME,
+  };
+}
+
+function defaultWeekdaySchedule(): Record<WeekdayKey, DaySchedule> {
   return Object.fromEntries(
-    WEEKDAY_KEYS.map((key) => [
-      key,
-      { enabled: key !== "sun" },
-    ]),
-  ) as Record<WeekdayKey, { enabled: boolean }>;
+    WEEKDAY_KEYS.map((key) => [key, defaultDaySchedule(key !== "sun")]),
+  ) as Record<WeekdayKey, DaySchedule>;
+}
+
+function normalizeWhatsAppPhones(raw: unknown, legacyPhone: string): string[] {
+  const fromArray = Array.isArray(raw)
+    ? raw
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim())
+        .filter(Boolean)
+    : [];
+
+  if (fromArray.length > 0) {
+    return fromArray.slice(0, MAX_WHATSAPP_PHONES);
+  }
+
+  const legacy = legacyPhone.trim();
+  return legacy ? [legacy] : [];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeDaySchedule(
+  dayRaw: unknown,
+  fallbackOpen: string,
+  fallbackClose: string,
+  defaultEnabled: boolean,
+): DaySchedule {
+  if (!isRecord(dayRaw)) {
+    return {
+      enabled: defaultEnabled,
+      openTime: fallbackOpen,
+      closeTime: fallbackClose,
+    };
+  }
+
+  return {
+    enabled:
+      typeof dayRaw.enabled === "boolean" ? dayRaw.enabled : defaultEnabled,
+    openTime:
+      typeof dayRaw.openTime === "string" && dayRaw.openTime.trim()
+        ? dayRaw.openTime.trim()
+        : fallbackOpen,
+    closeTime:
+      typeof dayRaw.closeTime === "string" && dayRaw.closeTime.trim()
+        ? dayRaw.closeTime.trim()
+        : fallbackClose,
+  };
 }
 
 const DEFAULT_PAYMENT_FIELDS: Record<PaymentMethodKey, Record<string, string>> = {
@@ -86,13 +143,14 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
     promotions: [],
     contact: {
       whatsappPhone: "",
+      whatsappPhones: [],
     },
     locationHours: {
       address: "",
       city: "",
       schedule: defaultWeekdaySchedule(),
-      openTime: "09:00",
-      closeTime: "18:00",
+      openTime: DEFAULT_OPEN_TIME,
+      closeTime: DEFAULT_CLOSE_TIME,
     },
     catalogDesign: {
       theme: "minimal",
@@ -114,10 +172,6 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       locale: "es",
     },
   };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig {
@@ -194,7 +248,6 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
   const contactRaw = isRecord(raw.contact) ? raw.contact : {};
   const locationRaw = isRecord(raw.locationHours) ? raw.locationHours : {};
   const scheduleRaw = isRecord(locationRaw.schedule) ? locationRaw.schedule : {};
-  const schedule = { ...defaults.locationHours.schedule };
   const designRaw = isRecord(raw.catalogDesign) ? raw.catalogDesign : {};
   const visibilityRaw = isRecord(designRaw.visibility) ? designRaw.visibility : {};
   const currencyRaw = isRecord(raw.catalogCurrency) ? raw.catalogCurrency : {};
@@ -203,12 +256,29 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
     ? raw.interfacePreferences
     : {};
 
+  const fallbackOpen =
+    typeof locationRaw.openTime === "string" && locationRaw.openTime.trim()
+      ? locationRaw.openTime.trim()
+      : defaults.locationHours.openTime;
+  const fallbackClose =
+    typeof locationRaw.closeTime === "string" && locationRaw.closeTime.trim()
+      ? locationRaw.closeTime.trim()
+      : defaults.locationHours.closeTime;
+
+  const schedule = { ...defaults.locationHours.schedule };
   for (const key of WEEKDAY_KEYS) {
-    const dayRaw = scheduleRaw[key];
-    if (isRecord(dayRaw) && typeof dayRaw.enabled === "boolean") {
-      schedule[key] = { enabled: dayRaw.enabled };
-    }
+    schedule[key] = normalizeDaySchedule(
+      scheduleRaw[key],
+      fallbackOpen,
+      fallbackClose,
+      defaults.locationHours.schedule[key].enabled,
+    );
   }
+
+  const whatsappPhones = normalizeWhatsAppPhones(
+    contactRaw.whatsappPhones,
+    typeof contactRaw.whatsappPhone === "string" ? contactRaw.whatsappPhone : "",
+  );
 
   return {
     shipping: {
@@ -243,10 +313,8 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
     },
     promotions,
     contact: {
-      whatsappPhone:
-        typeof contactRaw.whatsappPhone === "string"
-          ? contactRaw.whatsappPhone
-          : defaults.contact.whatsappPhone,
+      whatsappPhone: whatsappPhones[0] ?? "",
+      whatsappPhones,
     },
     locationHours: {
       address:
@@ -258,14 +326,8 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           ? locationRaw.city
           : defaults.locationHours.city,
       schedule,
-      openTime:
-        typeof locationRaw.openTime === "string"
-          ? locationRaw.openTime
-          : defaults.locationHours.openTime,
-      closeTime:
-        typeof locationRaw.closeTime === "string"
-          ? locationRaw.closeTime
-          : defaults.locationHours.closeTime,
+      openTime: fallbackOpen,
+      closeTime: fallbackClose,
     },
     catalogDesign: {
       theme:
@@ -394,13 +456,32 @@ export function mergeStoreSettingsConfig(
         }
       : base.payments,
     promotions: patch.promotions ?? base.promotions,
-    contact: patch.contact ? { ...base.contact, ...patch.contact } : base.contact,
+    contact: patch.contact
+      ? (() => {
+          const phones = normalizeWhatsAppPhones(
+            patch.contact.whatsappPhones ?? base.contact.whatsappPhones,
+            patch.contact.whatsappPhone ?? base.contact.whatsappPhone,
+          );
+          return {
+            whatsappPhone: phones[0] ?? "",
+            whatsappPhones: phones,
+          };
+        })()
+      : base.contact,
     locationHours: patch.locationHours
       ? {
           ...base.locationHours,
           ...patch.locationHours,
           schedule: patch.locationHours.schedule
-            ? { ...base.locationHours.schedule, ...patch.locationHours.schedule }
+            ? (Object.fromEntries(
+                WEEKDAY_KEYS.map((key) => [
+                  key,
+                  {
+                    ...base.locationHours.schedule[key],
+                    ...patch.locationHours!.schedule![key],
+                  },
+                ]),
+              ) as StoreSettingsConfig["locationHours"]["schedule"])
             : base.locationHours.schedule,
         }
       : base.locationHours,

@@ -119,7 +119,7 @@ export async function completeOnboarding(
   scheduleStoreSubdomainProvision({ storeId: store.id, slug });
 
   const settingsConfig = mergeStoreSettingsConfig(defaultStoreSettingsConfig(), {
-    contact: { whatsappPhone: whatsapp },
+    contact: { whatsappPhone: whatsapp, whatsappPhones: [whatsapp] },
     catalogDesign: {
       theme: "minimal",
       saleMode: "quick",

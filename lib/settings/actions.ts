@@ -154,18 +154,27 @@ export async function saveContactSettings(
 export async function saveLocationHoursSettings(input: {
   locationHours: LocationHoursSettings;
   whatsappPhone?: string;
+  whatsappPhones?: string[];
 }): Promise<SettingsActionResult> {
   const normalized = normalizeStoreSettingsConfig({
     locationHours: input.locationHours,
     contact:
-      typeof input.whatsappPhone === "string"
-        ? { whatsappPhone: input.whatsappPhone.trim() }
+      Array.isArray(input.whatsappPhones) || typeof input.whatsappPhone === "string"
+        ? {
+            whatsappPhone:
+              typeof input.whatsappPhone === "string"
+                ? input.whatsappPhone.trim()
+                : input.whatsappPhones?.[0]?.trim() ?? "",
+            whatsappPhones: Array.isArray(input.whatsappPhones)
+              ? input.whatsappPhones
+              : undefined,
+          }
         : undefined,
   });
 
   return persistSettingsPatch({
     locationHours: normalized.locationHours,
-    ...(typeof input.whatsappPhone === "string"
+    ...(Array.isArray(input.whatsappPhones) || typeof input.whatsappPhone === "string"
       ? { contact: normalized.contact }
       : {}),
   });
@@ -175,6 +184,7 @@ export interface LocationLogisticsSettingsInput {
   locationHours: LocationHoursSettings;
   shipping: ShippingSettings;
   whatsappPhone?: string;
+  whatsappPhones?: string[];
 }
 
 export async function saveLocationLogisticsSettings(
@@ -184,15 +194,23 @@ export async function saveLocationLogisticsSettings(
     locationHours: input.locationHours,
     shipping: input.shipping,
     contact:
-      typeof input.whatsappPhone === "string"
-        ? { whatsappPhone: input.whatsappPhone.trim() }
+      Array.isArray(input.whatsappPhones) || typeof input.whatsappPhone === "string"
+        ? {
+            whatsappPhone:
+              typeof input.whatsappPhone === "string"
+                ? input.whatsappPhone.trim()
+                : input.whatsappPhones?.[0]?.trim() ?? "",
+            whatsappPhones: Array.isArray(input.whatsappPhones)
+              ? input.whatsappPhones
+              : undefined,
+          }
         : undefined,
   });
 
   return persistSettingsPatch({
     locationHours: normalized.locationHours,
     shipping: normalized.shipping,
-    ...(typeof input.whatsappPhone === "string"
+    ...(Array.isArray(input.whatsappPhones) || typeof input.whatsappPhone === "string"
       ? { contact: normalized.contact }
       : {}),
   });
