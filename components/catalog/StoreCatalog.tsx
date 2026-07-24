@@ -1,26 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogCurrencySettings } from "@/lib/store-settings/types";
+import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
 import { formatExchangeRate } from "@/lib/format";
 import { StoreHeader } from "@/components/catalog/StoreHeader";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PurchaseInfoPanel } from "@/components/catalog/PurchaseInfoPanel";
-import { CartDrawer } from "@/components/catalog/CartDrawer";
-import {
-  buildCartItem,
-  cartItemKey,
-  type CartItem,
-} from "@/lib/catalog/cart-types";
-import {
-  getCatalogVariantOptions,
-  parseVariantsJson,
-} from "@/lib/products/variants";
-import type { CatalogVariantOption } from "@/lib/products/variants";
 import { PageContainer } from "@/components/ui/PageContainer";
+import { useCart } from "@/components/catalog-transactional/CartProvider";
+import {
+  CatalogCartHost,
+  type CartPanelView,
+} from "@/components/catalog-transactional/CatalogCartHost";
+import {
+  CatalogFulfillmentProvider,
+} from "@/components/catalog-transactional/CatalogFulfillmentProvider";
+import { CustomerPromoBanner } from "@/components/catalog-transactional/CustomerPromoBanner";
+import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
 
 interface StoreCatalogProps {
   store: Store;
@@ -28,6 +28,8 @@ interface StoreCatalogProps {
   exchangeRate: ExchangeRate | null;
   purchaseInfo: PublicPurchaseInfo;
   catalogCurrency: CatalogCurrencySettings;
+  locations?: StoreLocation[];
+  locationStocks?: VariantLocationStock[];
 }
 
 export function StoreCatalog({
@@ -36,142 +38,48 @@ export function StoreCatalog({
   exchangeRate,
   purchaseInfo,
   catalogCurrency,
+  locations = [],
+  locationStocks = [],
 }: StoreCatalogProps) {
+  return (
+    <CatalogFulfillmentProvider
+      storeSlug={store.slug}
+      locations={locations}
+      locationStocks={locationStocks}
+    >
+      <StoreCatalogInner
+        store={store}
+        products={products}
+        exchangeRate={exchangeRate}
+        purchaseInfo={purchaseInfo}
+        catalogCurrency={catalogCurrency}
+      />
+    </CatalogFulfillmentProvider>
+  );
+}
+
+function StoreCatalogInner({
+  store,
+  products,
+  exchangeRate,
+  purchaseInfo,
+  catalogCurrency,
+}: Omit<StoreCatalogProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
-  const [catalogProducts, setCatalogProducts] = useState(products);
-  const [cartOpen, setCartOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-
-  useEffect(() => {
-    setCatalogProducts(products);
-  }, [products]);
-
-  const productById = useMemo(() => {
-    const map = new Map<string, CatalogListItem>();
-    for (const product of catalogProducts) {
-      map.set(product.product_id, product);
-    }
-    return map;
-  }, [catalogProducts]);
-
-  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-
-  const cartQuantities = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const item of cartItems) {
-      const productId = item.product.product_id;
-      map.set(productId, (map.get(productId) ?? 0) + item.quantity);
-    }
-    return map;
-  }, [cartItems]);
-
-  const addToCart = useCallback(
-    (product: CatalogListItem, variant: CatalogVariantOption) => {
-      const live = productById.get(product.product_id) ?? product;
-      const liveVariant =
-        getCatalogVariantOptions(live, liveExchangeRate).find(
-          (option) => option.id === variant.id,
-        ) ?? variant;
-
-      if (liveVariant.availableStock <= 0) return;
-
-      const key = cartItemKey(live.product_id, liveVariant.id);
-
-      setCartItems((prev) => {
-        const existing = prev.find(
-          (item) => cartItemKey(item.product.product_id, item.variantId) === key,
-        );
-        const nextQty = (existing?.quantity ?? 0) + 1;
-        if (nextQty > liveVariant.availableStock) return prev;
-
-        if (existing) {
-          return prev.map((item) =>
-            cartItemKey(item.product.product_id, item.variantId) === key
-              ? {
-                  ...buildCartItem(live, liveVariant, nextQty),
-                }
-              : item,
-          );
-        }
-        return [...prev, buildCartItem(live, liveVariant, 1)];
-      });
-      setCartOpen(true);
-    },
-    [liveExchangeRate, productById],
-  );
-
-  function removeFromCart(productId: string, variantId: string) {
-    const key = cartItemKey(productId, variantId);
-    setCartItems((prev) =>
-      prev.filter((item) => cartItemKey(item.product.product_id, item.variantId) !== key),
-    );
-  }
-
-  function updateCartQuantity(productId: string, variantId: string, quantity: number) {
-    const live = productById.get(productId);
-    if (!live) return;
-
-    const liveVariant = getCatalogVariantOptions(live, liveExchangeRate).find(
-      (option) => option.id === variantId,
-    );
-    if (!liveVariant) return;
-
-    const nextQty = Math.min(Math.max(1, quantity), liveVariant.availableStock);
-    const key = cartItemKey(productId, variantId);
-
-    setCartItems((prev) =>
-      prev.map((item) =>
-        cartItemKey(item.product.product_id, item.variantId) === key
-          ? buildCartItem(live, liveVariant, nextQty)
-          : item,
-      ),
-    );
-  }
-
-  function applyStockDeduction(items: CartItem[]) {
-    setCatalogProducts((prev) =>
-      prev.map((product) => {
-        const orderedLines = items.filter(
-          (item) => item.product.product_id === product.product_id,
-        );
-        if (orderedLines.length === 0) return product;
-
-        const customVariants = parseVariantsJson(product.product_variants);
-        if (customVariants.length > 0) {
-          const updatedVariants = customVariants.map((variant) => {
-            const ordered = orderedLines.find((line) => line.variantId === variant.id);
-            if (!ordered) return variant;
-            return {
-              ...variant,
-              stock: Math.max(0, variant.stock - ordered.quantity),
-            };
-          });
-
-          return {
-            ...product,
-            product_variants: updatedVariants,
-          };
-        }
-
-        const totalOrdered = orderedLines.reduce((sum, line) => sum + line.quantity, 0);
-        return {
-          ...product,
-          available_stock: Math.max(0, product.available_stock - totalOrdered),
-          stock_quantity: Math.max(0, product.stock_quantity - totalOrdered),
-        };
-      }),
-    );
-    setCartItems([]);
-  }
+  const { itemCount } = useCart();
+  const { guestBanner } = usePromotionContext();
+  const [cartPanelView, setCartPanelView] = useState<CartPanelView>("closed");
 
   return (
     <div className="store-catalog-shell">
+      <CustomerPromoBanner promotion={guestBanner} />
+
       <StoreHeader
         store={store}
-        cartCount={cartCount}
+        cartCount={itemCount}
         locationHours={purchaseInfo.locationHours}
-        onCartClick={() => setCartOpen(true)}
+        onCartClick={() => setCartPanelView("summary")}
       />
 
       <PageContainer className="store-catalog-main safe-area-inset">
@@ -187,7 +95,7 @@ export function StoreCatalog({
 
         <div className="store-catalog-layout">
           <main className="store-catalog-products">
-            {catalogProducts.length === 0 ? (
+            {products.length === 0 ? (
               <div className="store-empty-state">
                 <p className="text-base font-medium text-zinc-800">
                   Esta tienda aún no tiene productos
@@ -198,15 +106,13 @@ export function StoreCatalog({
               </div>
             ) : (
               <div className="store-product-grid">
-                {catalogProducts.map((product) => (
+                {products.map((product) => (
                   <ProductCard
                     key={product.product_id}
                     product={product}
                     exchangeRate={liveExchangeRate}
                     showBsConversion={showBsConversion}
-                    cartQuantity={cartQuantities.get(product.product_id) ?? 0}
                     storeRubro={store.rubro_tienda}
-                    onAddToCart={addToCart}
                   />
                 ))}
               </div>
@@ -231,17 +137,15 @@ export function StoreCatalog({
         </PageContainer>
       </footer>
 
-      <CartDrawer
-        open={cartOpen}
-        storeSlug={store.slug}
-        storeName={store.name}
+      <CatalogCartHost
+        store={store}
         purchaseInfo={purchaseInfo}
-        items={cartItems}
+        exchangeRate={liveExchangeRate}
+        showOfficialRate={showOfficialRate}
         showBsConversion={showBsConversion}
-        onClose={() => setCartOpen(false)}
-        onRemove={removeFromCart}
-        onUpdateQuantity={updateCartQuantity}
-        onOrderComplete={applyStockDeduction}
+        showFab={false}
+        panelView={cartPanelView}
+        onPanelViewChange={setCartPanelView}
       />
     </div>
   );

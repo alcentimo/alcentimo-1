@@ -405,6 +405,9 @@ function TransactionalCatalogInner({
         <CatalogCartHost
           store={store}
           purchaseInfo={purchaseInfo}
+          exchangeRate={liveExchangeRate}
+          showOfficialRate={showOfficialRate}
+          showBsConversion={showBsConversion}
           openInitially={openCheckoutInitially}
         />
       ) : null}

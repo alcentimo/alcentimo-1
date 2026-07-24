@@ -231,7 +231,13 @@ function CatalogCategoriesViewInner({
         )}
       </main>
 
-      <CatalogCartHost store={store} purchaseInfo={purchaseInfo} />
+      <CatalogCartHost
+        store={store}
+        purchaseInfo={purchaseInfo}
+        exchangeRate={liveExchangeRate}
+        showOfficialRate={catalogCurrency.showOfficialRate}
+        showBsConversion={catalogCurrency.showBsConversion}
+      />
     </div>
   );
 }

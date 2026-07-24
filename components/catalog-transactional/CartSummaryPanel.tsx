@@ -189,6 +189,10 @@ export function CartSummaryPanel({
               Finalizar pedido
             </button>
 
+            <p className="txn-checkout-hint text-center">
+              Compra sin registro · Solo pides nombre y teléfono al pagar.
+            </p>
+
             {whatsappReady ? (
               <button
                 type="button"

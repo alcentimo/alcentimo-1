@@ -19,11 +19,11 @@ export function CustomerPromoBanner({ promotion }: CustomerPromoBannerProps) {
     <div className="customer-promo-banner" role="status">
       <Tag className="h-4 w-4 shrink-0" aria-hidden="true" />
       <p className="min-w-0 flex-1 text-sm">
-        ¿Quieres <strong>{discountLabel}</strong> de descuento?{" "}
+        Opcional: <strong>{discountLabel}</strong> de descuento si te{" "}
         <Link href={promotion.registerPath} className="customer-promo-banner-link">
-          Regístrate
-        </Link>{" "}
-        y activa el beneficio exclusivo.
+          registras
+        </Link>
+        . Puedes comprar igual sin cuenta.
       </p>
     </div>
   );

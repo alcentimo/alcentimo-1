@@ -5407,6 +5407,14 @@ body {
   @apply text-center text-xs text-zinc-500;
 }
 
+.txn-checkout-rate-box {
+  @apply rounded-xl border border-teal-200/80 bg-teal-50/60 px-3 py-2.5 text-xs text-teal-900 dark:border-teal-900/50 dark:bg-teal-950/25 dark:text-teal-100;
+}
+
+.txn-checkout-success-steps {
+  @apply list-none space-y-1 rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-3 py-3 dark:border-zinc-800 dark:bg-zinc-900/40;
+}
+
 .shipping-branch-picker {
   @apply space-y-3 rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-4 dark:border-zinc-800 dark:bg-zinc-900/30;
 }

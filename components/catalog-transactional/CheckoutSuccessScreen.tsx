@@ -93,7 +93,7 @@ export function CheckoutSuccessScreen({
         <CheckCircle2 className="h-10 w-10 text-emerald-600" />
       </div>
       <h3 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-        ¡Pedido registrado!
+        ¡Pedido confirmado!
       </h3>
       <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
         Referencia <strong>#{orderId.slice(0, 8).toUpperCase()}</strong> ·{" "}
@@ -101,18 +101,26 @@ export function CheckoutSuccessScreen({
       </p>
       <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
         {whatsappOpened
-          ? "Te abrimos WhatsApp para confirmar el pago con la tienda."
-          : "La tienda recibirá tu pedido en su panel."}
+          ? "Tu pedido ya está en la tienda. Te abrimos WhatsApp para que envíes el comprobante y confirmes con el comercio."
+          : "Tu pedido quedó registrado. La tienda lo revisará y te contactará si hace falta."}
       </p>
+
+      {whatsappOpened ? (
+        <ol className="txn-checkout-success-steps mt-4 w-full text-left text-xs text-zinc-600 dark:text-zinc-300">
+          <li>1. Envía el comprobante por WhatsApp.</li>
+          <li>2. Espera la confirmación de la tienda.</li>
+          <li>3. Opcional: guarda tus datos abajo para la próxima compra.</li>
+        </ol>
+      ) : null}
 
       {wasGuest && !savedAccount ? (
         <div className="txn-checkout-success-save mt-6 w-full text-left">
           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            ¿Quieres agilizar tu próxima compra?
+            ¿Quieres guardar tus datos? (opcional)
           </p>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Guarda tus datos con un clic. Tu pedido quedará en{" "}
-            <strong>Mi cuenta</strong> para que puedas verlo cuando quieras.
+            Sin contraseña: confirma tu WhatsApp y la próxima vez autocompletamos
+            todo. Tu pedido aparecerá en <strong>Mi cuenta</strong>.
           </p>
 
           <CheckoutQuickAuth

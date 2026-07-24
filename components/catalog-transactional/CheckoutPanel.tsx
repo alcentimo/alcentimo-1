@@ -13,7 +13,8 @@ import { CatalogLocationPicker } from "@/components/catalog-transactional/Catalo
 import { CheckoutSuccessScreen } from "@/components/catalog-transactional/CheckoutSuccessScreen";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { cartItemKey } from "@/lib/catalog/cart-types";
-import { formatUsd } from "@/lib/format";
+import { formatUsd, formatExchangeRate } from "@/lib/format";
+import { formatCountryCurrency } from "@/lib/country-config";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { loadCustomerCheckoutContext } from "@/lib/customers/checkout-actions";
 import { submitTransactionalOrder } from "@/lib/orders/actions";
@@ -39,6 +40,9 @@ interface CheckoutPanelProps {
   storeName: string;
   purchaseInfo: PublicPurchaseInfo;
   whatsappConfigured: boolean;
+  exchangeRate?: number | null;
+  showOfficialRate?: boolean;
+  showBsConversion?: boolean;
   onClose: () => void;
   fulfillmentMode?: CatalogFulfillmentMode;
   locationId?: string | null;
@@ -64,6 +68,9 @@ export function CheckoutPanel({
   storeName,
   purchaseInfo,
   whatsappConfigured,
+  exchangeRate = null,
+  showOfficialRate = false,
+  showBsConversion = false,
   onClose,
   fulfillmentMode = "delivery",
   locationId = null,
@@ -196,6 +203,18 @@ export function CheckoutPanel({
   }, [appliedPromotion, subtotalUsd]);
 
   const totalUsd = Math.max(0, subtotalUsd - discountUsd);
+  const totalLocal =
+    showBsConversion && exchangeRate && exchangeRate > 0
+      ? totalUsd * exchangeRate
+      : null;
+
+  const submitButtonLabel = pending
+    ? "Procesando…"
+    : checkoutStep === 1
+      ? "Continuar al pago"
+      : whatsappConfigured
+        ? "Confirmar pedido y enviar por WhatsApp"
+        : "Confirmar pedido";
 
   function handleApplyPromotion() {
     setPromotionError(null);
@@ -439,8 +458,8 @@ export function CheckoutPanel({
         <>
           <CheckoutStepper
             step={checkoutStep}
-            step1Label="Productos y envío"
-            step2Label="Pago y datos"
+            step1Label="Carrito y envío"
+            step2Label="Pago y contacto"
           />
 
           <div className="txn-checkout-scroll">
@@ -708,8 +727,8 @@ export function CheckoutPanel({
                   <div className="txn-checkout-form">
                     <p className="txn-checkout-section-title">Tus datos de contacto</p>
                     <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-                      Solo los necesitamos para coordinar tu pedido. No necesitas crear
-                      una cuenta.
+                      Compra sin registro: solo nombre y teléfono para coordinar tu
+                      pedido. Crear una cuenta es opcional al finalizar.
                     </p>
                     <label className="txn-field">
                       <span>Nombre</span>
@@ -790,6 +809,23 @@ export function CheckoutPanel({
               </div>
             ) : null}
 
+            {checkoutStep === 2 && showOfficialRate && exchangeRate ? (
+              <div className="txn-checkout-rate-box">
+                <p>
+                  Tasa BCV:{" "}
+                  <strong>Bs. {formatExchangeRate(exchangeRate)} / USD</strong>
+                </p>
+                {totalLocal != null ? (
+                  <p className="mt-1">
+                    Equivalente:{" "}
+                    <strong>
+                      {formatCountryCurrency(totalLocal, "VES", "es-VE")}
+                    </strong>
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
             {error && (
               <p className="txn-checkout-error" role="alert">
                 {error}
@@ -802,17 +838,14 @@ export function CheckoutPanel({
               disabled={checkoutStep === 1 ? !canProceedStep1 : !canSubmitStep2}
               className="txn-submit-btn"
             >
-              {pending
-                ? "Procesando…"
-                : checkoutStep === 1
-                  ? "Continuar"
-                  : "Finalizar pedido por WhatsApp"}
+              {submitButtonLabel}
             </button>
 
-            {checkoutStep === 2 && !whatsappConfigured && (
+            {checkoutStep === 2 && (
               <p className="txn-checkout-hint">
-                Si WhatsApp no está configurado, el pedido se guardará igual en
-                el panel del dueño.
+                {whatsappConfigured
+                  ? "Tu pedido se guarda en la tienda y se abre WhatsApp para confirmar el pago."
+                  : "Tu pedido quedará registrado en el panel de la tienda."}
               </p>
             )}
 
