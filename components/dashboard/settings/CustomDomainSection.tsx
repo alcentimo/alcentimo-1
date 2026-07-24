@@ -220,7 +220,7 @@ export function CustomDomainSection({
           </p>
           <p className="mt-1 text-xs opacity-90">
             {initialDomainMode === "purchase"
-              ? "Guarda el dominio abajo y solicita la gestión si quieres que Alcentimo lo registre por ti."
+              ? "Guarda el dominio abajo y regístralo con tu proveedor; luego conecta el DNS."
               : "Guarda el dominio y configura los registros DNS indicados más abajo."}
           </p>
         </div>
@@ -314,9 +314,9 @@ export function CustomDomainSection({
                 ¿Prefieres que Alcentimo lo configure por ti?
               </p>
               <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-                Si no tienes un dominio o prefieres que compremos y conectemos el
-                dominio por ti, nuestro equipo puede encargarse de la compra,
-                configuración DNS y verificación.
+                Si no tienes un dominio, regístralo con tu proveedor preferido.
+                Nuestro equipo puede orientarte en la compra, configuración DNS y
+                verificación (el costo del dominio no está incluido en el plan).
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {managedDomainMailto ? (

@@ -4,27 +4,15 @@ export type BillingPeriod = "monthly" | "annual";
 
 export const PAID_PLAN_CTA = "Empezar ahora";
 
-/** Beneficio de dominio en planes de pago. */
-export const CUSTOM_DOMAIN_FEATURE =
-  "Dominio personalizado (.com incluido / conectable)";
+/** Beneficio de conexión DNS en Business y Enterprise. */
+export const CUSTOM_DOMAIN_FEATURE = "Conexión de dominio personalizado (.com)";
 
-/** Enlace gratuito en plan Free (subdominio de plataforma). */
+/** Enlace en subdominio de plataforma (Gratis y Pro). */
 export const FREE_SUBDOMAIN_FEATURE =
   "Catálogo en subdominio Alcentimo (tuempresa.alcentimo.com)";
 
-/** Etiqueta promocional en facturación anual. */
-export const ANNUAL_DOMAIN_PROMO_LABEL =
-  "Incluye dominio .com gratis por 1 año";
-
 export function planIncludesCustomDomain(planId: PlanId): boolean {
-  return planId === "starter" || planId === "growth" || planId === "premium" || planId === "enterprise";
-}
-
-export function showsAnnualDomainPromo(
-  planId: PlanId,
-  billing: BillingPeriod,
-): boolean {
-  return billing === "annual" && planIncludesCustomDomain(planId);
+  return planId === "premium" || planId === "enterprise";
 }
 
 export interface PlanPricingTier {
@@ -69,7 +57,6 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     recommended: true,
     features: [
       "Todo lo del plan Gratis",
-      CUSTOM_DOMAIN_FEATURE,
       "Más capacidad de catálogo",
       "Soporte por email",
     ],

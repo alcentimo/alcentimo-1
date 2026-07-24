@@ -1,7 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { Check, Globe, Sparkles } from "lucide-react";
+import { Check, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -9,7 +7,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import {
-  ANNUAL_DOMAIN_PROMO_LABEL,
   CUSTOM_DOMAIN_FEATURE,
   FREE_SUBDOMAIN_FEATURE,
   planIncludesCustomDomain,
@@ -49,13 +46,9 @@ export function LandingPricing({
           </Badge>
           <h2 className="section-title">Empieza gratis, crece cuando quieras</h2>
           <p className="mt-4 text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Sin sorpresas ni contratos largos. El plan Gratis usa subdominio
-            Alcentimo; los planes de pago incluyen dominio personalizado (.com
-            incluido / conectable).
-          </p>
-          <p className="plan-domain-promo-banner mx-auto mt-4 max-w-xl justify-center">
-            <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>{ANNUAL_DOMAIN_PROMO_LABEL} en planes anuales Pro, Business y Enterprise</span>
+            Sin sorpresas ni contratos largos. Gratis y Pro usan subdominio
+            Alcentimo; Business y Enterprise permiten conectar tu dominio .com
+            propio (DNS a tu cargo).
           </p>
         </div>
 
@@ -88,7 +81,7 @@ export function LandingPricing({
                         className="mb-3 w-fit border-violet-200 text-violet-800 dark:border-violet-800 dark:text-violet-200"
                       >
                         <Globe className="mr-1 h-3 w-3" aria-hidden="true" />
-                        Dominio .com
+                        Conexión DNS
                       </Badge>
                     ) : null}
                     <h3 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">

@@ -22,12 +22,10 @@ import {
 import { submitManualPayment } from "@/lib/plans/manual-payment-actions";
 import { formatVes } from "@/lib/format";
 import {
-  ANNUAL_DOMAIN_PROMO_LABEL,
   formatPlanCheckoutSummary,
   getTierChargeUsd,
   planIncludesCustomDomain,
   PLAN_PRICING_TIERS,
-  showsAnnualDomainPromo,
   type BillingPeriod,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
@@ -192,7 +190,6 @@ export function PlanCheckoutDialog({
         {step === "domain" && tier ? (
           <PlanDomainStep
             tier={tier}
-            billing={billing}
             onContinue={(selection) => {
               setDomainSelection(selection);
               setStep("checkout");
@@ -228,9 +225,6 @@ export function PlanCheckoutDialog({
                   <p className="mt-2 text-base font-semibold text-neutral-900 dark:text-neutral-50">
                     {formatPlanCheckoutSummary(tier, billing)}
                   </p>
-                  {showsAnnualDomainPromo(tier.planId, billing) ? (
-                    <p className="plan-domain-promo-badge mt-3">{ANNUAL_DOMAIN_PROMO_LABEL}</p>
-                  ) : null}
                   {domainSelection?.domain ? (
                     <div className="mt-3 rounded-lg border border-teal-200/80 bg-teal-50/60 px-3 py-2 text-xs text-teal-900 dark:border-teal-900/40 dark:bg-teal-950/20 dark:text-teal-200">
                       <span className="inline-flex items-center gap-1.5 font-medium">
@@ -239,8 +233,8 @@ export function PlanCheckoutDialog({
                       </span>
                       <p className="mt-1 opacity-90">
                         {domainSelection.mode === "purchase"
-                          ? "Tras activar el plan, te guiamos para registrar y conectar tu .com."
-                          : "Tras activar el plan, configura el DNS para conectar tu dominio."}
+                          ? "Tras activar el plan, te orientamos para registrar el dominio con tu proveedor y conectarlo."
+                          : "Tras activar el plan, configura los registros DNS para conectar tu dominio."}
                       </p>
                     </div>
                   ) : null}
@@ -482,13 +476,10 @@ function SuccessView({
         Tu acceso ya está disponible. Verificaremos tu pago en breve; si hay algún
         problema, te avisaremos por correo.
       </p>
-      {showsAnnualDomainPromo(tier.planId, billing) ? (
-        <p className="plan-domain-promo-badge mt-4">{ANNUAL_DOMAIN_PROMO_LABEL}</p>
-      ) : null}
       {domainSelection?.domain ? (
         <p className="mt-3 max-w-sm text-sm text-neutral-600 dark:text-neutral-400">
-          Dominio reservado: <strong>{domainSelection.domain}</strong>. Completa la
-          conexión en el siguiente paso.
+          Dominio indicado: <strong>{domainSelection.domain}</strong>. Completa la
+          conexión DNS en el siguiente paso.
         </p>
       ) : null}
       <div className="mt-8 flex flex-col gap-2 sm:flex-row">

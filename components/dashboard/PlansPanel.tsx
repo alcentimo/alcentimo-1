@@ -2,17 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Check, Globe, Sparkles } from "lucide-react";
+import { Check, Globe } from "lucide-react";
 import { PlanCheckoutDialog } from "@/components/dashboard/plans/PlanCheckoutDialog";
 import {
-  ANNUAL_DOMAIN_PROMO_LABEL,
   CUSTOM_DOMAIN_FEATURE,
   formatAnnualSavingsLabel,
   formatPlanPriceForTier,
   getRecommendedAnnualSavingsLabel,
   planIncludesCustomDomain,
   PLAN_PRICING_TIERS,
-  showsAnnualDomainPromo,
   type BillingPeriod,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
@@ -209,12 +207,13 @@ export function PlansPanel({
             />
             <div>
               <p className="text-sm font-semibold text-violet-950 dark:text-violet-100">
-                Planes de pago: dominio personalizado incluido
+                Business y Enterprise: conecta tu dominio propio
               </p>
               <p className="mt-1 text-sm leading-relaxed text-violet-900/90 dark:text-violet-200/90">
-                Pro, Business y Enterprise incluyen{" "}
-                <strong>dominio .com incluido / conectable</strong>. Con facturación
-                anual: <strong>{ANNUAL_DOMAIN_PROMO_LABEL.toLowerCase()}</strong>.
+                Los planes <strong>Business</strong> y <strong>Enterprise</strong>{" "}
+                permiten apuntar un dominio .com que ya tengas (configuración DNS).
+                Gratis y Pro usan el subdominio{" "}
+                <strong>tuempresa.alcentimo.com</strong>.
               </p>
             </div>
           </div>
@@ -234,11 +233,10 @@ export function PlansPanel({
                   Tu marca, tu dominio
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-violet-900/90 dark:text-violet-200/90">
-                  Los planes <strong>Pro</strong>, <strong>Business</strong> y{" "}
-                  <strong>Enterprise</strong> incluyen{" "}
-                  <strong>dominio personalizado (.com incluido / conectable)</strong>.
-                  En plan anual, además recibes{" "}
-                  <strong>dominio .com gratis por 1 año</strong>.
+                  Con <strong>Business</strong> o <strong>Enterprise</strong> puedes
+                  conectar un dominio .com propio (tú configuras el DNS o lo
+                  apuntas). Gratis y Pro publican en{" "}
+                  <strong>tuempresa.alcentimo.com</strong>.
                 </p>
               </div>
             </div>
@@ -293,12 +291,6 @@ export function PlansPanel({
           )}
         >
           <BillingToggle billing={billing} onChange={setBilling} />
-          {billing === "annual" ? (
-            <div className="plan-domain-promo-banner max-w-xl">
-              <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span>{ANNUAL_DOMAIN_PROMO_LABEL} en planes Pro, Business y Enterprise</span>
-            </div>
-          ) : null}
           {billing === "annual" && recommendedSavings && (
             <p className="text-sm font-medium text-teal-700 dark:text-teal-400">
               {recommendedSavings} con facturación anual
@@ -403,7 +395,6 @@ function PricingCard({
   const isFree = tier.monthlyUsd === 0;
   const savingsLabel =
     billing === "annual" ? formatAnnualSavingsLabel(tier) : null;
-  const annualDomainPromo = showsAnnualDomainPromo(tier.planId, billing);
   const annualTotal =
     billing === "annual" && tier.annualUsd != null ? tier.annualUsd : null;
 
@@ -444,9 +435,6 @@ function PricingCard({
             Facturado ${annualTotal} al año
           </p>
         )}
-        {annualDomainPromo ? (
-          <p className="plan-domain-promo-badge mt-2">{ANNUAL_DOMAIN_PROMO_LABEL}</p>
-        ) : null}
         {savingsLabel && (
           <p
             className={cn(
@@ -494,8 +482,8 @@ function PricingCard({
 
       {planIncludesCustomDomain(tier.planId) ? (
         <p className="mt-4 rounded-lg border border-violet-200/70 bg-violet-50/50 px-3 py-2 text-[11px] leading-relaxed text-violet-900 dark:border-violet-900/40 dark:bg-violet-950/20 dark:text-violet-200">
-          Al activar este plan podrás buscar, conectar o registrar tu dominio .com en
-          el siguiente paso.
+          Tras activar el plan podrás indicar tu dominio y te guiamos para
+          conectarlo vía DNS.
         </p>
       ) : null}
 

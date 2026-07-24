@@ -98,7 +98,6 @@ const TIER_STATIC: Record<
     tagline: "Para negocios en crecimiento",
     features: [
       "Todo lo del plan Gratis",
-      CUSTOM_DOMAIN_FEATURE,
       "Más capacidad de catálogo",
       "Soporte por email",
     ],

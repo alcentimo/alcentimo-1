@@ -20,12 +20,7 @@ interface DomainsTabProps {
 }
 
 function hasCustomDomainPlan(planId: PlanId | undefined): boolean {
-  return (
-    planId === "starter" ||
-    planId === "growth" ||
-    planId === "premium" ||
-    planId === "enterprise"
-  );
+  return planId === "premium" || planId === "enterprise";
 }
 
 export function DomainsTab({
@@ -51,13 +46,13 @@ export function DomainsTab({
             />
             <div className="min-w-0">
               <p className="text-sm font-medium text-teal-900 dark:text-teal-100">
-                Dominio personalizado en planes de pago
+                Conexión de dominio personalizado en Business y Enterprise
               </p>
               <p className="mt-1 text-xs leading-relaxed text-teal-800/90 dark:text-teal-200/90">
-                Conecta tu propio dominio (por ejemplo{" "}
-                <strong>tutienda.com</strong>) para que tus clientes vean tu marca
-                en la URL. Incluido en Pro, Business y Enterprise; con plan anual,
-                el .com del primer año va incluido.
+                Conecta un dominio que ya posees (por ejemplo{" "}
+                <strong>tutienda.com</strong>) apuntando el DNS hacia Alcentimo.
+                El registro del dominio corre por tu cuenta; nosotros te guiamos
+                en la conexión.
               </p>
               <Link
                 href="/dashboard/planes"

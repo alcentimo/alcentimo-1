@@ -1,16 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Globe, Search, Sparkles } from "lucide-react";
+import { Check, Globe, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  ANNUAL_DOMAIN_PROMO_LABEL,
-  showsAnnualDomainPromo,
-  type BillingPeriod,
-  type PlanPricingTier,
-} from "@/src/config/plan-pricing-ui";
+import type { PlanPricingTier } from "@/src/config/plan-pricing-ui";
 import {
   normalizeCustomDomain,
   validateCustomDomainInput,
@@ -26,7 +21,6 @@ export interface PlanDomainSelection {
 
 interface PlanDomainStepProps {
   tier: PlanPricingTier;
-  billing: BillingPeriod;
   onContinue: (selection: PlanDomainSelection) => void;
   onSkip: () => void;
 }
@@ -46,13 +40,11 @@ function buildSuggestedDomain(raw: string): string {
 
 export function PlanDomainStep({
   tier,
-  billing,
   onContinue,
   onSkip,
 }: PlanDomainStepProps) {
   const [mode, setMode] = useState<DomainSetupMode>("connect");
   const [domainInput, setDomainInput] = useState("");
-  const showAnnualPromo = showsAnnualDomainPromo(tier.planId, billing);
 
   const normalizedDomain = useMemo(() => {
     const value = buildSuggestedDomain(domainInput);
@@ -82,20 +74,13 @@ export function PlanDomainStep({
           <Globe className="h-6 w-6" aria-hidden="true" />
         </div>
         <h3 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">
-          Configura tu dominio de marca
+          Conecta tu dominio personalizado
         </h3>
         <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-          El plan {tier.displayName} incluye{" "}
-          <strong>dominio personalizado (.com incluido / conectable)</strong>.
-          Elige si conectarás uno existente o si quieres que te ayudemos con uno
-          nuevo.
+          El plan {tier.displayName} permite usar un dominio .com propio. El
+          registro y la renovación del dominio son responsabilidad del comerciante;
+          Alcentimo te guía para apuntar el DNS hacia tu catálogo.
         </p>
-        {showAnnualPromo ? (
-          <p className="plan-domain-promo-badge mt-4 inline-flex items-center gap-2">
-            <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
-            {ANNUAL_DOMAIN_PROMO_LABEL}
-          </p>
-        ) : null}
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -113,7 +98,7 @@ export function PlanDomainStep({
             Ya tengo dominio
           </p>
           <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-            Conecta tutienda.com o tienda.tudominio.com con DNS.
+            Conecta tutienda.com o tienda.tudominio.com configurando DNS.
           </p>
         </button>
         <button
@@ -127,12 +112,11 @@ export function PlanDomainStep({
           )}
         >
           <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
-            Quiero un .com nuevo
+            Aún no tengo dominio
           </p>
           <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-            {showAnnualPromo
-              ? "Registro y conexión incluidos el primer año con plan anual."
-              : "Te ayudamos a registrar y conectar tu dominio."}
+            Indica el nombre deseado; te orientamos para registrarlo con tu
+            proveedor y conectarlo después.
           </p>
         </button>
       </div>
@@ -163,9 +147,7 @@ export function PlanDomainStep({
             {validation.valid && normalizedDomain ? (
               <p className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-xs font-medium text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-200">
                 <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                {normalizedDomain} — listo para{" "}
-                {mode === "purchase" ? "registrar y conectar" : "conectar"} tras
-                activar tu plan
+                {normalizedDomain} — listo para configurar DNS tras activar tu plan
               </p>
             ) : validation.error ? (
               <p className="text-xs text-red-600 dark:text-red-400" role="alert">
@@ -176,7 +158,7 @@ export function PlanDomainStep({
         ) : (
           <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
             {mode === "purchase"
-              ? "Escribe el nombre de tu marca; agregamos .com automáticamente si no incluyes extensión."
+              ? "Escribe el nombre de tu marca; agregamos .com si no incluyes extensión."
               : "Ingresa el dominio que ya posees (ej. tutienda.com)."}
           </p>
         )}
