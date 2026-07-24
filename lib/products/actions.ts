@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore, requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { getUserStore } from "@/lib/stores";
 import { slugify, uniqueSlug } from "@/lib/slugify";
-import { uploadProductImage, buildOptimizationMessage } from "@/lib/storage";
 import { parseVariantFormInputs, parseVariantsJson } from "@/lib/products/variants";
 import { syncProductVariants } from "@/lib/products/sync-variants";
 import {
@@ -42,6 +41,11 @@ import {
 import { getTechSpecLabels } from "@/lib/rubros/modules/tecnologia/config";
 import { getCollectibleFieldLabels } from "@/lib/rubros/modules/coleccionables/config";
 import { getBeautyFieldLabels } from "@/lib/rubros/modules/salud-belleza/config";
+import type { ProductEditImage } from "@/lib/products/product-gallery-types";
+import {
+  createProductImagesFromFormData,
+  syncProductImagesFromFormData,
+} from "@/lib/products/sync-product-images";
 
 function resolveProductFieldLabels(
   rubro: string,
@@ -127,6 +131,7 @@ export interface ProductEditData {
   defaultVariantId: string;
   variants: import("@/lib/products/variants").ProductVariantJson[];
   thumbUrl: string | null;
+  images: ProductEditImage[];
   extraFields: Record<string, string>;
   foodModifiers: FoodModifiersConfig;
 }
@@ -205,6 +210,9 @@ export async function createProduct(
     10,
   );
   const imageFile = formData.get("image");
+  const hasGalleryUpload =
+    formData.getAll("images").some((entry) => entry instanceof File && entry.size > 0) ||
+    (imageFile instanceof File && imageFile.size > 0);
   const variantsRaw = String(formData.get("variants_json") ?? "");
   const parsedVariants = parseVariantFormInputs(variantsRaw);
   if (parsedVariants.error) return { error: parsedVariants.error };
@@ -358,58 +366,37 @@ export async function createProduct(
     if (synced.error) return { error: synced.error };
   }
 
-  if (imageFile instanceof File && imageFile.size > 0) {
-    const uploaded = await uploadProductImage(supabase, store.id, imageFile);
+  if (hasGalleryUpload) {
+    const imageResult = await createProductImagesFromFormData(
+      supabase,
+      store.id,
+      productId,
+      formData,
+      name,
+    );
 
-    if (uploaded.error || !uploaded.url) {
-      return { error: uploaded.error ?? "No se pudo subir la imagen." };
-    }
-
-    const optimization = uploaded.optimization;
-
-    const { error: imageError } = await supabase.from("product_images").insert({
-      product_id: productId,
-      thumb_url: uploaded.url,
-      medium_url: uploaded.url,
-      full_url: uploaded.url,
-      is_primary: true,
-      alt_text: name,
-      mime_type: "image/webp",
-      byte_size: optimization?.compressedSize ?? imageFile.size,
-      width: optimization?.width ?? null,
-      height: optimization?.height ?? null,
-    });
-
-    if (imageError) return { error: imageError.message };
+    if (imageResult.error) return { error: imageResult.error };
 
     revalidatePath(`/tienda/${store.slug}`);
     revalidatePath(`/c/${store.slug}`);
     revalidatePath("/dashboard/productos/nuevo");
     revalidatePath("/dashboard/catalogo");
-  revalidatePath("/dashboard/inventario");
+    revalidatePath("/dashboard/inventario");
 
     return {
       success: true,
       catalogUrl: `/c/${store.slug}`,
       productSlug,
       productName: name,
-      imageOptimizedMessage: optimization
-        ? buildOptimizationMessage(optimization)
-        : undefined,
+      imageOptimizedMessage:
+        imageResult.uploadedCount > 1
+          ? `${imageResult.uploadedCount} imágenes subidas correctamente.`
+          : undefined,
     };
   }
 
-  revalidatePath(`/tienda/${store.slug}`);
-  revalidatePath(`/c/${store.slug}`);
-  revalidatePath("/dashboard/productos/nuevo");
-  revalidatePath("/dashboard/catalogo");
-  revalidatePath("/dashboard/inventario");
-
   return {
-    success: true,
-    catalogUrl: `/c/${store.slug}`,
-    productSlug,
-    productName: name,
+    error: "Sube al menos una foto del producto.",
   };
 }
 
@@ -421,7 +408,7 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
   const { data: product, error: productError } = await supabase
     .from("products")
     .select(
-      "id, name, short_description, description, category_id, metadata, variants, product_images(thumb_url, is_primary), categories(slug)",
+      "id, name, short_description, description, category_id, metadata, variants, product_images(id, thumb_url, is_primary, sort_order), categories(slug)",
     )
     .eq("id", productId)
     .eq("store_id", store.id)
@@ -445,11 +432,24 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     .eq("variant_id", defaultVariant.id)
     .maybeSingle();
 
-  const images = (product.product_images ?? []) as {
+  const images = ((product.product_images ?? []) as {
+    id: string;
     thumb_url: string;
     is_primary: boolean;
-  }[];
+    sort_order: number;
+  }[])
+    .slice()
+    .sort((a, b) => {
+      if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
+      return a.sort_order - b.sort_order || a.id.localeCompare(b.id);
+    });
   const primaryImage = images.find((img) => img.is_primary) ?? images[0];
+  const editImages: ProductEditImage[] = images.map((img, index) => ({
+    id: img.id,
+    thumbUrl: img.thumb_url,
+    sortOrder: img.sort_order ?? index,
+    isPrimary: img.is_primary,
+  }));
   const rubro = await getStoreRubroTienda(supabase, store.id);
   const categoryRelation = product.categories as { slug: string } | { slug: string }[] | null;
   const categorySlug = Array.isArray(categoryRelation)
@@ -479,6 +479,7 @@ export async function getProductForEdit(productId: string): Promise<ProductEditD
     defaultVariantId: defaultVariant.id as string,
     variants: parseVariantsJson(product.variants),
     thumbUrl: primaryImage?.thumb_url ?? null,
+    images: editImages,
     extraFields: pickExtraFieldValues(storedExtraFields, fieldLabels),
     foodModifiers: parseFoodModifiersFromMetadata(
       product.metadata as Record<string, unknown> | null,
@@ -531,6 +532,9 @@ export async function updateProduct(
   const defaultVariantId = String(formData.get("default_variant_id") ?? "").trim();
   const variantsRaw = String(formData.get("variants_json") ?? "");
   const imageFile = formData.get("image");
+  const hasGalleryUpload =
+    formData.getAll("images").some((entry) => entry instanceof File && entry.size > 0) ||
+    (imageFile instanceof File && imageFile.size > 0);
   const parsedVariants = parseVariantFormInputs(variantsRaw);
   if (parsedVariants.error) return { error: parsedVariants.error };
   const customVariants = parsedVariants.variants;
@@ -646,39 +650,30 @@ export async function updateProduct(
     await supabase.from("products").update({ variants: [] }).eq("id", productId);
   }
 
-  if (imageFile instanceof File && imageFile.size > 0) {
-    const uploaded = await uploadProductImage(supabase, store.id, imageFile);
-    if (uploaded.error || !uploaded.url) {
-      return { error: uploaded.error ?? "No se pudo subir la imagen." };
-    }
-
-    await supabase.from("product_images").delete().eq("product_id", productId);
-
-    const optimization = uploaded.optimization;
-    const { error: imageError } = await supabase.from("product_images").insert({
-      product_id: productId,
-      thumb_url: uploaded.url,
-      medium_url: uploaded.url,
-      full_url: uploaded.url,
-      is_primary: true,
-      alt_text: name,
-      mime_type: "image/webp",
-      byte_size: optimization?.compressedSize ?? imageFile.size,
-      width: optimization?.width ?? null,
-      height: optimization?.height ?? null,
-    });
-
-    if (imageError) return { error: imageError.message };
-
-    revalidateInventoryPaths(store.slug);
-    return {
-      success: true,
-      catalogUrl: `/tienda/${store.slug}`,
+  if (hasGalleryUpload || formData.get("product_images_json")) {
+    const imageResult = await syncProductImagesFromFormData(
+      supabase,
+      store.id,
       productId,
-      imageOptimizedMessage: optimization
-        ? buildOptimizationMessage(optimization)
-        : undefined,
-    };
+      formData,
+      name,
+    );
+    if (imageResult.error) return { error: imageResult.error };
+
+    if (imageResult.changed) {
+      revalidateInventoryPaths(store.slug);
+      return {
+        success: true,
+        catalogUrl: `/tienda/${store.slug}`,
+        productId,
+        imageOptimizedMessage:
+          imageResult.uploadedCount > 1
+            ? `${imageResult.uploadedCount} imágenes nuevas subidas.`
+            : imageResult.uploadedCount === 1
+              ? "Imagen actualizada correctamente."
+              : undefined,
+      };
+    }
   }
 
   revalidateInventoryPaths(store.slug);
@@ -1059,14 +1054,14 @@ export async function duplicateProduct(
     .eq("variant_id", variant.id)
     .maybeSingle();
 
-  const { data: imageRow } = await supabase
+  const { data: imageRows } = await supabase
     .from("product_images")
     .select(
-      "thumb_url, medium_url, full_url, alt_text, mime_type, byte_size, width, height, blur_hash",
+      "thumb_url, medium_url, full_url, alt_text, mime_type, byte_size, width, height, blur_hash, sort_order, is_primary",
     )
     .eq("product_id", productId)
-    .eq("is_primary", true)
-    .maybeSingle();
+    .order("is_primary", { ascending: false })
+    .order("sort_order", { ascending: true });
 
   const copyName = `${source.name} (copia)`;
   let productSlug = slugify(copyName) || "producto-copia";
@@ -1129,20 +1124,23 @@ export async function duplicateProduct(
     if (priceError) return { error: priceError.message };
   }
 
-  if (imageRow?.thumb_url) {
-    await supabase.from("product_images").insert({
-      product_id: newProductId,
-      thumb_url: imageRow.thumb_url,
-      medium_url: imageRow.medium_url,
-      full_url: imageRow.full_url,
-      is_primary: true,
-      alt_text: copyName,
-      mime_type: imageRow.mime_type,
-      byte_size: imageRow.byte_size,
-      width: imageRow.width,
-      height: imageRow.height,
-      blur_hash: imageRow.blur_hash,
-    });
+  if (imageRows && imageRows.length > 0) {
+    await supabase.from("product_images").insert(
+      imageRows.map((imageRow, index) => ({
+        product_id: newProductId,
+        thumb_url: imageRow.thumb_url,
+        medium_url: imageRow.medium_url,
+        full_url: imageRow.full_url,
+        is_primary: imageRow.is_primary ?? index === 0,
+        sort_order: imageRow.sort_order ?? index,
+        alt_text: copyName,
+        mime_type: imageRow.mime_type,
+        byte_size: imageRow.byte_size,
+        width: imageRow.width,
+        height: imageRow.height,
+        blur_hash: imageRow.blur_hash,
+      })),
+    );
   }
 
   revalidateInventoryPaths(store.slug);

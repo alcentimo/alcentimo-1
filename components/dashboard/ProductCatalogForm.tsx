@@ -8,7 +8,11 @@ import {
   type ProductEditData,
   type ProductFormState,
 } from "@/lib/products/actions";
-import { ProductImageField } from "@/components/dashboard/ProductImageField";
+import {
+  buildProductImagesFormPayload,
+  ProductGalleryField,
+  type ProductGalleryFieldValue,
+} from "@/components/dashboard/ProductGalleryField";
 import { ProductSubmitOverlay } from "@/components/dashboard/ProductSubmitOverlay";
 import type { Store } from "@/lib/database.types";
 import { formatCountryCurrency } from "@/lib/country-config";
@@ -70,9 +74,14 @@ export function ProductCatalogForm({
   const [compareAtUsd, setCompareAtUsd] = useState(
     initialData?.compareAtUsd != null ? String(initialData.compareAtUsd) : "",
   );
-  const [compressedImageFile, setCompressedImageFile] = useState<File | null>(null);
-  const [imageBusy, setImageBusy] = useState(false);
-  const [imageProcessed, setImageProcessed] = useState(false);
+  const [galleryValue, setGalleryValue] = useState<ProductGalleryFieldValue>({
+    items: [],
+    removedDbIds: [],
+  });
+  const [galleryBusy, setGalleryBusy] = useState(false);
+  const [galleryReady, setGalleryReady] = useState(
+    mode === "edit" && (initialData?.images.length ?? 0) > 0,
+  );
   const [localError, setLocalError] = useState<string | null>(null);
   const [productName, setProductName] = useState(initialData?.name ?? "");
   const [shortDescription, setShortDescription] = useState(
@@ -149,6 +158,11 @@ export function ProductCatalogForm({
     e.preventDefault();
     setLocalError(null);
 
+    if (galleryValue.items.length === 0) {
+      setLocalError("Agrega al menos una foto del producto.");
+      return;
+    }
+
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.set("product_category_slug", categorySlug);
@@ -176,24 +190,26 @@ export function ProductCatalogForm({
       formData.set("stock_quantity", "0");
     }
 
-    if (compressedImageFile) {
-      formData.set("image", compressedImageFile);
-    } else {
-      formData.delete("image");
+    const { json, files } = buildProductImagesFormPayload(galleryValue);
+    formData.set("product_images_json", json);
+    formData.delete("images");
+    formData.delete("image");
+    for (const file of files) {
+      formData.append("images", file);
     }
 
     formAction(formData);
   }
 
-  const isBusy = pending || imageBusy;
+  const isBusy = pending || galleryBusy;
   const displayError = localError ?? state.error;
-  const submitDisabled = isBusy || (mode === "create" && !imageProcessed);
+  const submitDisabled = isBusy || (mode === "create" && !galleryReady);
 
   return (
     <>
       <ProductSubmitOverlay
         visible={pending}
-        hasImage={Boolean(compressedImageFile)}
+        hasImage={galleryValue.items.some((item) => item.file) || galleryValue.removedDbIds.length > 0}
         mode={mode}
       />
       <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-4">
@@ -211,22 +227,19 @@ export function ProductCatalogForm({
         </>
       )}
 
-      <ProductImageField
+      <ProductGalleryField
+        key={initialData?.productId ?? "create"}
         id="catalog-image"
         mode={mode}
         layout="compact"
-        initialPreviewUrl={initialData?.thumbUrl ?? null}
+        initialImages={initialData?.images ?? []}
         disabled={pending}
-        onBusyChange={setImageBusy}
-        onProcessedChange={setImageProcessed}
-        onImageReady={({ file }) => {
-          setCompressedImageFile(file);
-          setLocalError(null);
-        }}
+        onBusyChange={setGalleryBusy}
+        onReadyChange={setGalleryReady}
+        onChange={setGalleryValue}
         onError={(message) => {
           setLocalError(message);
-          setCompressedImageFile(null);
-          setImageProcessed(false);
+          setGalleryReady(galleryValue.items.length > 0);
         }}
       />
 

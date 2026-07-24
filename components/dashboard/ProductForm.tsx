@@ -8,7 +8,11 @@ import {
   type ProductEditData,
   type ProductFormState,
 } from "@/lib/products/actions";
-import { ProductImageField } from "@/components/dashboard/ProductImageField";
+import {
+  buildProductImagesFormPayload,
+  ProductGalleryField,
+  type ProductGalleryFieldValue,
+} from "@/components/dashboard/ProductGalleryField";
 import { ProductSubmitOverlay } from "@/components/dashboard/ProductSubmitOverlay";
 import type { Store } from "@/lib/database.types";
 import { getStoreCatalogUrl } from "@/lib/stores";
@@ -82,9 +86,14 @@ export function ProductForm({
   const [foodModifiers, setFoodModifiers] = useState<FoodModifiersConfig>(
     () => initialData?.foodModifiers ?? emptyFoodModifiers(),
   );
-  const [compressedImageFile, setCompressedImageFile] = useState<File | null>(null);
-  const [imageBusy, setImageBusy] = useState(false);
-  const [imageProcessed, setImageProcessed] = useState(false);
+  const [galleryValue, setGalleryValue] = useState<ProductGalleryFieldValue>({
+    items: [],
+    removedDbIds: [],
+  });
+  const [galleryBusy, setGalleryBusy] = useState(false);
+  const [galleryReady, setGalleryReady] = useState(
+    mode === "edit" && (initialData?.images.length ?? 0) > 0,
+  );
   const [localError, setLocalError] = useState<string | null>(null);
   const [productName, setProductName] = useState(initialData?.name ?? "");
   const [shortDescription, setShortDescription] = useState(
@@ -144,6 +153,11 @@ export function ProductForm({
     e.preventDefault();
     setLocalError(null);
 
+    if (galleryValue.items.length === 0) {
+      setLocalError("Agrega al menos una foto del producto.");
+      return;
+    }
+
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.set("product_category_slug", categorySlug);
@@ -166,20 +180,22 @@ export function ProductForm({
       );
     }
 
-    if (compressedImageFile) {
-      formData.set("image", compressedImageFile);
-    } else {
-      formData.delete("image");
+    const { json, files } = buildProductImagesFormPayload(galleryValue);
+    formData.set("product_images_json", json);
+    formData.delete("images");
+    formData.delete("image");
+    for (const file of files) {
+      formData.append("images", file);
     }
 
     formAction(formData);
   }
 
-  const isBusy = pending || imageBusy;
+  const isBusy = pending || galleryBusy;
   const displayError = localError ?? state.error;
   const requiresNewImage = mode === "create";
   const submitDisabled =
-    isBusy || (requiresNewImage && !imageProcessed);
+    isBusy || (requiresNewImage && !galleryReady);
 
   if (state.success) {
     return (
@@ -226,7 +242,7 @@ export function ProductForm({
     <>
       <ProductSubmitOverlay
         visible={pending}
-        hasImage={Boolean(compressedImageFile)}
+        hasImage={galleryValue.items.some((item) => item.file) || galleryValue.removedDbIds.length > 0}
         mode={mode}
       />
       <form
@@ -436,28 +452,25 @@ export function ProductForm({
         />
       ) : null}
 
-      <ProductImageField
+      <ProductGalleryField
+        key={initialData?.productId ?? "create"}
         id="image"
         mode={mode}
         layout="stacked"
-        initialPreviewUrl={initialData?.thumbUrl ?? null}
+        initialImages={initialData?.images ?? []}
         disabled={pending}
-        onBusyChange={setImageBusy}
-        onProcessedChange={setImageProcessed}
-        onImageReady={({ file }) => {
-          setCompressedImageFile(file);
-          setLocalError(null);
-        }}
+        onBusyChange={setGalleryBusy}
+        onReadyChange={setGalleryReady}
+        onChange={setGalleryValue}
         onError={(message) => {
           setLocalError(message);
-          setCompressedImageFile(null);
-          setImageProcessed(false);
+          setGalleryReady(galleryValue.items.length > 0);
         }}
       />
 
-      {requiresNewImage && !imageProcessed && !imageBusy && (
+      {requiresNewImage && !galleryReady && !galleryBusy && (
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Sube y procesa una foto del producto para habilitar la publicación.
+          Sube al menos una foto del producto para habilitar la publicación.
         </p>
       )}
 
@@ -470,8 +483,8 @@ export function ProductForm({
             : "Publicando producto…"
           : mode === "edit"
             ? "Guardar cambios"
-            : imageBusy
-              ? "Procesando imagen…"
+            : galleryBusy
+              ? "Procesando fotos…"
               : "Publicar producto"}
       </button>
     </form>

@@ -518,6 +518,7 @@ export interface CatalogListItem {
   thumb_url: string | null;
   blur_hash: string | null;
   image_alt: string | null;
+  gallery_images?: import("@/lib/products/product-gallery-types").CatalogProductGalleryImage[] | null;
 }
 
 export type CategoryInsert = {

@@ -2,8 +2,8 @@
 
 import { memo, useMemo, useState } from "react";
 import { Check, Plus } from "lucide-react";
-import { CatalogProductImage } from "@/components/catalog/CatalogProductImage";
 import { CatalogProductMediaFallback } from "@/components/catalog/CatalogProductMediaFallback";
+import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVisibilitySettings } from "@/lib/store-settings/types";
 import { getProductBodyLayoutClass } from "@/lib/store-settings/catalog-theme";
@@ -242,24 +242,17 @@ export const ProductCard = memo(function ProductCard({
       className={cn("store-product-card group h-full", outOfStock && "opacity-90")}
     >
       <div className="store-product-media">
-        {product.thumb_url ? (
-          <CatalogProductImage
-            src={product.thumb_url}
-            alt={product.image_alt ?? product.product_name}
-            className="store-product-image"
-            loading="lazy"
-            sizes={
-              referenceCatalog
-                ? "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, 25vw"
-            }
-          />
-        ) : (
-          <CatalogProductMediaFallback
-            alt={product.image_alt ?? product.product_name}
-            className="store-product-media-fallback"
-          />
-        )}
+        <ProductImageGallery
+          product={product}
+          imageClassName="store-product-image"
+          fallbackClassName="store-product-media-fallback"
+          loading="lazy"
+          sizes={
+            referenceCatalog
+              ? "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, 25vw"
+          }
+        />
 
         {showStockOverlay && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/55">

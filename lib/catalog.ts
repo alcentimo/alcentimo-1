@@ -5,6 +5,7 @@ import { CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
 import { buildInventorySearchOrFilter } from "@/lib/inventory/search";
 import { roundExchangeRate } from "@/lib/format";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
+import { parseCatalogGalleryImages } from "@/lib/products/product-gallery-types";
 
 export interface CatalogPageData {
   products: CatalogListItem[];
@@ -42,6 +43,7 @@ function normalizeCatalogItem(row: CatalogListItem): CatalogListItem {
     compare_at_usd: toNumber(row.compare_at_usd),
     compare_at_ves: toNumber(row.compare_at_ves),
     exchange_rate_used: toNumber(row.exchange_rate_used),
+    gallery_images: parseCatalogGalleryImages(row.gallery_images),
   };
 }
 

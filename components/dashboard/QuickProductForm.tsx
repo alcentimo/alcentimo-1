@@ -6,7 +6,11 @@ import {
   createProduct,
   type ProductFormState,
 } from "@/lib/products/actions";
-import { ProductImageField } from "@/components/dashboard/ProductImageField";
+import {
+  buildProductImagesFormPayload,
+  ProductGalleryField,
+  type ProductGalleryFieldValue,
+} from "@/components/dashboard/ProductGalleryField";
 import { ProductSubmitOverlay } from "@/components/dashboard/ProductSubmitOverlay";
 import { serializeVariantsForForm } from "@/components/dashboard/ProductVariantsEditor";
 import { RubroVariantsSection } from "@/components/rubros/RubroVariantsSection";
@@ -93,9 +97,12 @@ function QuickProductFormSession({
   const [foodModifiers, setFoodModifiers] =
     useState<FoodModifiersConfig>(emptyFoodModifiers);
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [compressedImageFile, setCompressedImageFile] = useState<File | null>(null);
-  const [imageBusy, setImageBusy] = useState(false);
-  const [imageProcessed, setImageProcessed] = useState(false);
+  const [galleryValue, setGalleryValue] = useState<ProductGalleryFieldValue>({
+    items: [],
+    removedDbIds: [],
+  });
+  const [galleryBusy, setGalleryBusy] = useState(false);
+  const [galleryReady, setGalleryReady] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [productName, setProductName] = useState("");
   const [shortDescription, setShortDescription] = useState("");
@@ -188,8 +195,8 @@ function QuickProductFormSession({
     setVariants([]);
     setFoodModifiers(emptyFoodModifiers());
     setAdvancedOpen(false);
-    setCompressedImageFile(null);
-    setImageProcessed(false);
+    setGalleryValue({ items: [], removedDbIds: [] });
+    setGalleryReady(false);
     setLocalError(null);
     setExtraFields({});
   }
@@ -201,6 +208,11 @@ function QuickProductFormSession({
     const usd = parseFloat(priceUsd);
     if (!Number.isFinite(usd) || usd <= 0) {
       setLocalError("Ingresa un precio válido en dólares.");
+      return;
+    }
+
+    if (galleryValue.items.length === 0) {
+      setLocalError("Agrega al menos una foto del producto.");
       return;
     }
 
@@ -237,24 +249,26 @@ function QuickProductFormSession({
       formData.set("low_stock_threshold", "5");
     }
 
-    if (compressedImageFile) {
-      formData.set("image", compressedImageFile);
-    } else {
-      formData.delete("image");
+    const { json, files } = buildProductImagesFormPayload(galleryValue);
+    formData.set("product_images_json", json);
+    formData.delete("images");
+    formData.delete("image");
+    for (const file of files) {
+      formData.append("images", file);
     }
 
     formAction(formData);
   }
 
-  const isBusy = pending || imageBusy;
+  const isBusy = pending || galleryBusy;
   const displayError = localError ?? state.error;
-  const submitDisabled = isBusy || !imageProcessed;
+  const submitDisabled = isBusy || !galleryReady;
 
   return (
     <>
       <ProductSubmitOverlay
         visible={pending}
-        hasImage={Boolean(compressedImageFile)}
+        hasImage={galleryValue.items.some((item) => item.file)}
         mode="create"
       />
       <form
@@ -332,21 +346,17 @@ function QuickProductFormSession({
         idPrefix="quick-compare-at"
       />
 
-      <ProductImageField
+      <ProductGalleryField
         id="quick-image"
         mode="create"
         layout="compact"
         disabled={pending}
-        onBusyChange={setImageBusy}
-        onProcessedChange={setImageProcessed}
-        onImageReady={({ file }) => {
-          setCompressedImageFile(file);
-          setLocalError(null);
-        }}
+        onBusyChange={setGalleryBusy}
+        onReadyChange={setGalleryReady}
+        onChange={setGalleryValue}
         onError={(message) => {
           setLocalError(message);
-          setCompressedImageFile(null);
-          setImageProcessed(false);
+          setGalleryReady(galleryValue.items.length > 0);
         }}
       />
 
@@ -491,9 +501,9 @@ function QuickProductFormSession({
         )}
       </div>
 
-      {!imageProcessed && !imageBusy && (
+      {!galleryReady && !galleryBusy && (
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Sube una foto para habilitar la publicación.
+          Sube al menos una foto para habilitar la publicación.
         </p>
       )}
 
