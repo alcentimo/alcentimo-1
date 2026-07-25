@@ -18,6 +18,7 @@ import { getStoreManifestTheme } from "@/lib/pwa/get-store-manifest-theme";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { getOpenAiApiKey } from "@/lib/env/server";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
+import { getStorefrontSupportBranding } from "@/lib/catalog/get-storefront-support-branding";
 
 interface TransactionalCatalogLayoutProps {
   children: ReactNode;
@@ -116,6 +117,9 @@ export default async function TransactionalCatalogLayout({
   const wholesaleEnabled =
     storeSettings?.catalogCurrency.wholesaleEnabled ?? false;
   const whatsappPhone = storeSettings?.contact.whatsappPhone?.trim() || null;
+  const supportBranding = store
+    ? await getStorefrontSupportBranding(store)
+    : null;
 
   return (
     <div
@@ -146,6 +150,8 @@ export default async function TransactionalCatalogLayout({
             enablePcBuilder={store?.enable_pc_builder}
             assistantEnabled={assistantEnabled}
             whatsappPhone={whatsappPhone}
+            supportAvatarUrl={supportBranding?.avatarUrl ?? storeLogoUrl}
+            supportMerchantName={supportBranding?.merchantName ?? null}
           >
             {children}
           </CatalogAppShell>

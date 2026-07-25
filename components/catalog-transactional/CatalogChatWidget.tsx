@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Send, X } from "lucide-react";
+import { CatalogChatAvatar } from "@/components/catalog-transactional/CatalogChatAvatar";
 import { cn } from "@/lib/cn";
 import { readFulfillmentPrefs } from "@/lib/catalog/fulfillment-storage";
 import { buildStorefrontSupportWhatsAppMessage } from "@/lib/catalog/storefront-support-whatsapp";
@@ -11,6 +12,8 @@ import type { StorefrontAssistantMessage } from "@/lib/ai/storefront-assistant-t
 interface CatalogChatWidgetProps {
   storeSlug: string;
   storeName: string;
+  avatarUrl?: string | null;
+  merchantName?: string | null;
   whatsappPhone?: string | null;
 }
 
@@ -27,18 +30,31 @@ function createMessage(
   return { role, content };
 }
 
+function buildWelcomeMessage(storeName: string, merchantName: string | null): string {
+  const hostLabel =
+    merchantName && merchantName.toLowerCase() !== storeName.toLowerCase()
+      ? `${storeName} (${merchantName})`
+      : storeName;
+
+  return `¡Hola! Bienvenido al soporte de ${hostLabel}. Puedo ayudarte con productos, stock, envíos y pagos. Si prefieres hablar con una persona, usa el botón de WhatsApp abajo.`;
+}
+
 export function CatalogChatWidget({
   storeSlug,
   storeName,
+  avatarUrl = null,
+  merchantName = null,
   whatsappPhone = null,
 }: CatalogChatWidgetProps) {
+  const supportTitle = useMemo(
+    () => `Soporte — ${storeName}`,
+    [storeName],
+  );
+
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<StorefrontAssistantMessage[]>(() => [
-    createMessage(
-      "assistant",
-      `¡Hola! Soy el asistente de ${storeName} 🤖 Puedo ayudarte con productos, stock, envíos y pagos. Si prefieres hablar con una persona, usa el botón de WhatsApp abajo.`,
-    ),
+    createMessage("assistant", buildWelcomeMessage(storeName, merchantName)),
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +64,10 @@ export function CatalogChatWidget({
   const lastUserQuestionRef = useRef<string | null>(null);
 
   const whatsappReady = Boolean(whatsappPhone?.trim());
+  const avatarLabel = merchantName ?? storeName;
+  const showMerchantSubtitle =
+    Boolean(merchantName) &&
+    merchantName!.trim().toLowerCase() !== storeName.trim().toLowerCase();
 
   useEffect(() => {
     if (!open) return;
@@ -150,15 +170,22 @@ export function CatalogChatWidget({
         type="button"
         onClick={() => setOpen(true)}
         className={cn("catalog-chat-fab", open && "catalog-chat-fab-hidden")}
-        aria-label="Abrir Soporte IA"
+        aria-label={`Abrir soporte de ${storeName}`}
       >
-        <span className="catalog-chat-fab-avatar" aria-hidden="true">
-          🤖
-        </span>
+        <CatalogChatAvatar
+          imageUrl={avatarUrl}
+          label={avatarLabel}
+          size="sm"
+          className="catalog-chat-fab-avatar"
+        />
       </button>
 
       {open ? (
-        <div className="catalog-chat-overlay" role="dialog" aria-label="Soporte IA">
+        <div
+          className="catalog-chat-overlay"
+          role="dialog"
+          aria-label={supportTitle}
+        >
           <button
             type="button"
             className="txn-cart-backdrop"
@@ -168,12 +195,21 @@ export function CatalogChatWidget({
           <div className="catalog-chat-panel">
             <header className="catalog-chat-header">
               <div className="catalog-chat-header-main">
-                <span className="catalog-chat-avatar" aria-hidden="true">
-                  🤖
-                </span>
-                <div>
-                  <h2 className="catalog-chat-title">Soporte IA</h2>
-                  <p className="catalog-chat-subtitle">{storeName}</p>
+                <CatalogChatAvatar
+                  imageUrl={avatarUrl}
+                  label={avatarLabel}
+                  size="md"
+                />
+                <div className="min-w-0">
+                  <h2 className="catalog-chat-title">{supportTitle}</h2>
+                  <div className="catalog-chat-subtitle-row">
+                    {showMerchantSubtitle ? (
+                      <p className="catalog-chat-subtitle">{merchantName}</p>
+                    ) : null}
+                    <span className="catalog-chat-ai-badge">
+                      Asistencia inteligente
+                    </span>
+                  </div>
                 </div>
               </div>
               <button
@@ -191,22 +227,42 @@ export function CatalogChatWidget({
                 <div
                   key={`${message.role}-${index}`}
                   className={cn(
-                    "catalog-chat-bubble",
-                    message.role === "user"
-                      ? "catalog-chat-bubble-user"
-                      : "catalog-chat-bubble-assistant",
+                    "catalog-chat-bubble-row",
+                    message.role === "user" && "catalog-chat-bubble-row-user",
                   )}
                 >
-                  {message.role === "assistant" && index === 0 ? (
-                    <span className="catalog-chat-bubble-label">Asistente</span>
+                  {message.role === "assistant" ? (
+                    <CatalogChatAvatar
+                      imageUrl={avatarUrl}
+                      label={avatarLabel}
+                      size="sm"
+                      className="catalog-chat-bubble-avatar"
+                    />
                   ) : null}
-                  {message.content}
+                  <div
+                    className={cn(
+                      "catalog-chat-bubble",
+                      message.role === "user"
+                        ? "catalog-chat-bubble-user"
+                        : "catalog-chat-bubble-assistant",
+                    )}
+                  >
+                    {message.content}
+                  </div>
                 </div>
               ))}
               {loading ? (
-                <div className="catalog-chat-bubble catalog-chat-bubble-assistant catalog-chat-typing">
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  <span>Consultando catálogo…</span>
+                <div className="catalog-chat-bubble-row">
+                  <CatalogChatAvatar
+                    imageUrl={avatarUrl}
+                    label={avatarLabel}
+                    size="sm"
+                    className="catalog-chat-bubble-avatar"
+                  />
+                  <div className="catalog-chat-bubble catalog-chat-bubble-assistant catalog-chat-typing">
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    <span>Consultando catálogo…</span>
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -260,7 +316,7 @@ export function CatalogChatWidget({
                 disabled={loading}
                 placeholder="Pregunta por productos, stock o envíos…"
                 className="catalog-chat-input"
-                aria-label="Mensaje para Soporte IA"
+                aria-label={`Mensaje para ${supportTitle}`}
               />
               <button
                 type="submit"

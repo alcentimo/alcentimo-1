@@ -13,6 +13,8 @@ interface CatalogAppShellProps {
   storeSlug: string;
   storeName: string;
   storeLogoUrl: string | null;
+  supportAvatarUrl?: string | null;
+  supportMerchantName?: string | null;
   storeRubro?: string | null;
   enablePcBuilder?: boolean;
   assistantEnabled?: boolean;
@@ -24,6 +26,8 @@ export function CatalogAppShell({
   storeSlug,
   storeName,
   storeLogoUrl,
+  supportAvatarUrl = null,
+  supportMerchantName = null,
   storeRubro = null,
   enablePcBuilder = false,
   assistantEnabled = false,
@@ -47,6 +51,8 @@ export function CatalogAppShell({
         <CatalogChatWidget
           storeSlug={storeSlug}
           storeName={storeName}
+          avatarUrl={supportAvatarUrl}
+          merchantName={supportMerchantName}
           whatsappPhone={whatsappPhone}
         />
       ) : null}
