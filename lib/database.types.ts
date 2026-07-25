@@ -153,6 +153,22 @@ export interface StoreMember {
   store_id: string;
   user_id: string;
   role: StoreMemberRole;
+  invited_by?: string | null;
+  invited_at?: string | null;
+  accepted_at?: string | null;
+  created_at: string;
+}
+
+export interface StoreInvitation {
+  id: string;
+  store_id: string;
+  email: string;
+  role: Extract<StoreMemberRole, "admin" | "staff">;
+  token_hash: string;
+  invited_by: string;
+  expires_at: string;
+  accepted_at: string | null;
+  revoked_at: string | null;
   created_at: string;
 }
 
@@ -817,8 +833,25 @@ export interface Database {
         Insert: Omit<StoreMember, "id" | "created_at"> & {
           id?: string;
           created_at?: string;
+          invited_by?: string | null;
+          invited_at?: string | null;
+          accepted_at?: string | null;
         };
         Update: Partial<StoreMember>;
+        Relationships: [];
+      };
+      store_invitations: {
+        Row: StoreInvitation;
+        Insert: Omit<
+          StoreInvitation,
+          "id" | "created_at" | "accepted_at" | "revoked_at"
+        > & {
+          id?: string;
+          created_at?: string;
+          accepted_at?: string | null;
+          revoked_at?: string | null;
+        };
+        Update: Partial<StoreInvitation>;
         Relationships: [];
       };
       store_settings: {
