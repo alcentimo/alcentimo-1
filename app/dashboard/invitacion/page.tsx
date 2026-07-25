@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft, LogOut, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { AcceptInvitationPanel } from "@/components/dashboard/team/AcceptInvitationPanel";
@@ -90,6 +90,7 @@ export default async function InvitacionPage({
               roleLabel={INVITABLE_ROLE_LABELS[preview.role]}
               invitedEmail={preview.email}
               userEmail={session.authUser.email ?? ""}
+              loginHref={`/dashboard/login?next=${encodeURIComponent(`/dashboard/invitacion?token=${encodeURIComponent(trimmedToken)}`)}`}
             />
           )}
         </div>

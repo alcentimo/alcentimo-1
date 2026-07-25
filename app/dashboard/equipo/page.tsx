@@ -1,19 +1,16 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { TeamTab } from "@/components/dashboard/settings/TeamTab";
-import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreTeamSnapshot } from "@/lib/team/get-store-team";
+import { requireDashboardRouteAccess } from "@/lib/team/route-guard";
 
 export const dynamic = "force-dynamic";
 
 export default async function EquipoPage() {
-  const session = await getDashboardSession();
-
-  if (!session) {
-    redirect("/dashboard/login?next=/dashboard/equipo");
-  }
+  const { session } = await requireDashboardRouteAccess("/dashboard/equipo", {
+    minimumRole: "admin",
+  });
 
   const { store, authUser } = session;
 

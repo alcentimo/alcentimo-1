@@ -9,11 +9,12 @@ import {
 } from "@/src/config/dashboard-nav";
 import { useLocale } from "@/components/providers/UiPreferencesProvider";
 import { useDashboardRoutePrefetch } from "@/components/dashboard/use-dashboard-route-prefetch";
+import type { DashboardStoreRole } from "@/lib/team/permissions";
 import { cn } from "@/lib/cn";
 
 interface DashboardMobileBottomNavProps {
   pathname: string;
-  isStoreOwner?: boolean;
+  storeRole?: DashboardStoreRole | null;
   onOpenMenu: () => void;
 }
 
@@ -51,16 +52,17 @@ function BottomNavLink({
 
 export function DashboardMobileBottomNav({
   pathname,
-  isStoreOwner = false,
+  storeRole = null,
   onOpenMenu,
 }: DashboardMobileBottomNavProps) {
   const { navLabel } = useLocale();
   const { prefetchRoute } = useDashboardRoutePrefetch();
-  const items = getDashboardMobileBottomNavItems({ isStoreOwner });
+  const items = getDashboardMobileBottomNavItems({ storeRole });
   const menuActive =
     !items.some((item) => isDashboardNavItemActive(pathname, item)) &&
     (pathname.startsWith("/dashboard/analiticas") ||
       pathname.startsWith("/dashboard/asistente") ||
+      pathname.startsWith("/dashboard/equipo") ||
       pathname.startsWith("/dashboard/tasas") ||
       pathname.startsWith("/dashboard/planes") ||
       pathname.startsWith("/dashboard/upgrade") ||

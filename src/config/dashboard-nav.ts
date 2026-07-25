@@ -8,6 +8,10 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import {
+  canAccessDashboardPath,
+  type DashboardStoreRole,
+} from "@/lib/team/permissions";
 
 export interface DashboardNavItem {
   href: string;
@@ -15,8 +19,6 @@ export interface DashboardNavItem {
   description: string;
   icon: LucideIcon;
   match?: (pathname: string) => boolean;
-  /** Solo visible para el dueño de la tienda (`stores.owner_id`). */
-  ownerOnly?: boolean;
 }
 
 export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
@@ -36,7 +38,9 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     label: "Órdenes",
     description: "Gestión de ventas y pedidos",
     icon: ClipboardList,
-    match: (pathname) => pathname.startsWith("/dashboard/pedidos"),
+    match: (pathname) =>
+      pathname.startsWith("/dashboard/pedidos") ||
+      pathname.startsWith("/dashboard/ventas"),
   },
   {
     href: "/dashboard/clientes",
@@ -44,7 +48,6 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     description: "Clientes registrados y su historial de compras",
     icon: Users,
     match: (pathname) => pathname.startsWith("/dashboard/clientes"),
-    ownerOnly: true,
   },
   {
     href: "/dashboard/equipo",
@@ -93,11 +96,17 @@ export function isDashboardNavItemActive(
 }
 
 export function getDashboardNavItems(options?: {
-  isStoreOwner?: boolean;
+  storeRole?: DashboardStoreRole | null;
 }): DashboardNavItem[] {
-  const isStoreOwner = options?.isStoreOwner ?? false;
-  return DASHBOARD_NAV_ITEMS.filter(
-    (item) => !item.ownerOnly || isStoreOwner,
+  const role = options?.storeRole ?? null;
+  if (!role) {
+    return DASHBOARD_NAV_ITEMS.filter((item) =>
+      canAccessDashboardPath("owner", item.href),
+    );
+  }
+
+  return DASHBOARD_NAV_ITEMS.filter((item) =>
+    canAccessDashboardPath(role, item.href),
   );
 }
 
@@ -110,7 +119,7 @@ const MOBILE_BOTTOM_NAV_HREFS = [
 
 /** Pestañas principales para la barra inferior en móvil. */
 export function getDashboardMobileBottomNavItems(options?: {
-  isStoreOwner?: boolean;
+  storeRole?: DashboardStoreRole | null;
 }): DashboardNavItem[] {
   const allowed = new Set<string>(MOBILE_BOTTOM_NAV_HREFS);
   return getDashboardNavItems(options).filter((item) => allowed.has(item.href));

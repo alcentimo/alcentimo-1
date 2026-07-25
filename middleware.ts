@@ -16,6 +16,15 @@ import {
   checkSupportAdminAccess,
   resolveAuthEmail,
 } from "@/lib/support/admin-access";
+import {
+  canAccessDashboardPath,
+  DASHBOARD_INVITATION_PATH,
+  getDefaultDashboardPathForRole,
+  isDashboardInvitationPath,
+  isDashboardPublicAuthPath,
+} from "@/lib/team/permissions";
+import { getMerchantStoreRole } from "@/lib/team/store-context";
+import { applySafeInternalNextRedirect } from "@/lib/auth/post-auth-redirect";
 import { getCatalogVisitorCookieName } from "@/lib/analytics/track-catalog-visit";
 import {
   getStoreCatalogPublicUrl,
@@ -34,6 +43,7 @@ const RECOVER_PASSWORD_PATH = "/dashboard/recuperar-contrasena";
 const RESET_PASSWORD_PATH = "/dashboard/restablecer-contrasena";
 const RESET_PASSWORD_SUCCESS_PATH = "/dashboard/restablecer-contrasena/exito";
 const ONBOARDING_PATH = "/onboarding";
+const ACTIVAR_PATH = "/activar";
 const AUTH_CONFIRM_PATH = "/auth/confirm";
 const AUTH_CALLBACK_PATH = "/auth/callback";
 
@@ -185,6 +195,8 @@ export async function middleware(request: NextRequest) {
     isRecoverPasswordPage ||
     isResetPasswordFlow;
   const isOnboarding = pathname === ONBOARDING_PATH;
+  const isActivar = pathname === ACTIVAR_PATH;
+  const isInvitationPage = isDashboardInvitationPath(pathname);
 
   const authenticatedUser = user ?? null;
 
@@ -318,6 +330,19 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
+  if (isActivar && authenticatedUser) {
+    const role = await getMerchantStoreRole(supabase, authenticatedUser.id);
+    if (role && role !== "owner") {
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = getDefaultDashboardPathForRole(role);
+      dashboardUrl.searchParams.set("access_denied", "1");
+      dashboardUrl.search = dashboardUrl.searchParams.toString()
+        ? dashboardUrl.search
+        : "";
+      return NextResponse.redirect(dashboardUrl);
+    }
+  }
+
   if (isOnboarding) {
     if (!authenticatedUser) {
       const loginUrl = request.nextUrl.clone();
@@ -356,6 +381,10 @@ export async function middleware(request: NextRequest) {
     }
 
     if (authenticatedUser && !isLoginPage && !isResetPasswordFlow) {
+      if (isInvitationPage) {
+        return supabaseResponse;
+      }
+
       const hasMerchantStore = await userHasMerchantStore(
         supabase,
         authenticatedUser.id,
@@ -379,6 +408,17 @@ export async function middleware(request: NextRequest) {
         onboardingUrl.search = "";
         return NextResponse.redirect(onboardingUrl);
       }
+
+      if (!isDashboardPublicAuthPath(pathname)) {
+        const role = await getMerchantStoreRole(supabase, authenticatedUser.id);
+        if (role && !canAccessDashboardPath(role, pathname)) {
+          const redirectUrl = request.nextUrl.clone();
+          redirectUrl.pathname = getDefaultDashboardPathForRole(role);
+          redirectUrl.search = "";
+          redirectUrl.searchParams.set("access_denied", "1");
+          return NextResponse.redirect(redirectUrl);
+        }
+      }
     }
 
     if (authenticatedUser && isLoginPage) {
@@ -389,8 +429,7 @@ export async function middleware(request: NextRequest) {
         next?.startsWith(ADMIN_PREFIX) &&
         checkSupportAdminAccess(resolveAuthEmail(authenticatedUser)).ok
       ) {
-        redirectUrl.pathname = next;
-        redirectUrl.search = "";
+        applySafeInternalNextRedirect(redirectUrl, next, "/admin/dashboard");
         return NextResponse.redirect(redirectUrl);
       }
 
@@ -400,11 +439,18 @@ export async function middleware(request: NextRequest) {
       );
 
       if (hasMerchantStore) {
-        redirectUrl.pathname =
+        applySafeInternalNextRedirect(
+          redirectUrl,
           next &&
-          (next.startsWith(DASHBOARD_PREFIX) || next.startsWith(ADMIN_PREFIX))
+            (next.startsWith(DASHBOARD_PREFIX) ||
+              next.startsWith(ADMIN_PREFIX) ||
+              next.startsWith(DASHBOARD_INVITATION_PATH))
             ? next
-            : "/dashboard";
+            : null,
+          "/dashboard",
+        );
+      } else if (next?.startsWith(DASHBOARD_INVITATION_PATH)) {
+        applySafeInternalNextRedirect(redirectUrl, next, DASHBOARD_INVITATION_PATH);
       } else {
         const customerStore = await getPrimaryCustomerStore(
           supabase,
@@ -413,12 +459,13 @@ export async function middleware(request: NextRequest) {
 
         if (customerStore) {
           redirectUrl.pathname = buildCustomerAccountPath(customerStore.storeSlug);
+          redirectUrl.search = "";
         } else {
           redirectUrl.pathname = ONBOARDING_PATH;
+          redirectUrl.search = "";
         }
       }
 
-      redirectUrl.search = "";
       return NextResponse.redirect(redirectUrl);
     }
   }

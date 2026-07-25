@@ -39,6 +39,7 @@ export default async function DashboardRootLayout({
     resolveAuthEmail({ email: authUser.email, user_metadata: {} }),
   );
   const isStoreOwnerUser = store ? isStoreOwner(store, authUser.id) : false;
+  const storeRole = session.storeRole;
   const canUpgradeToBusiness =
     normalizeDbPlan(authUser.profile?.plan ?? authUser.rawPlan) === "PRO";
   const [bcvSyncAlert, exchangeRateRow, settingsConfig] = await Promise.all([
@@ -85,6 +86,7 @@ export default async function DashboardRootLayout({
             exchangeRateStale={exchangeRateStale}
             isSupportAdmin={isAdmin}
             isStoreOwner={isStoreOwnerUser}
+            storeRole={storeRole}
             canUpgradeToBusiness={canUpgradeToBusiness}
           >
             {bcvSyncAlert ? <BcvSyncAlertBanner alert={bcvSyncAlert} /> : null}

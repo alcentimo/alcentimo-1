@@ -10,6 +10,7 @@ import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import { SettingsPanel } from "@/components/dashboard/settings/SettingsPanel";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import { requireDashboardRouteAccess } from "@/lib/team/route-guard";
 import { getStoreLocations } from "@/lib/locations/get-store-locations";
 import { resolveLocationLimit } from "@/lib/locations/limits";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
@@ -30,6 +31,8 @@ export default async function AjustesPage({
   if (tab === "team") {
     redirect("/dashboard/equipo");
   }
+
+  await requireDashboardRouteAccess("/dashboard/ajustes");
 
   const supabase = await createClient();
   const session = await getDashboardSession();

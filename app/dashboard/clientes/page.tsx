@@ -1,23 +1,14 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { CustomersPanel } from "@/components/dashboard/customers/CustomersPanel";
-import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreCustomers } from "@/lib/customers/get-store-customers";
-import { createClient } from "@/lib/supabase/server";
-import { isStoreOwner } from "@/lib/stores/owner-access";
+import { requireDashboardRouteAccess } from "@/lib/team/route-guard";
 
 export const dynamic = "force-dynamic";
 
 export default async function ClientesPage() {
-  const supabase = await createClient();
-  const session = await getDashboardSession();
-
-  if (!session) {
-    redirect("/dashboard/login?next=/dashboard/clientes");
-  }
-
-  const { authUser, store } = session;
+  const { session } = await requireDashboardRouteAccess("/dashboard/clientes");
+  const { store } = session;
 
   if (!store) {
     return (
@@ -36,10 +27,6 @@ export default async function ClientesPage() {
         </div>
       </PageContainer>
     );
-  }
-
-  if (!isStoreOwner(store, authUser.id)) {
-    redirect("/dashboard/catalogo");
   }
 
   const customers = await getStoreCustomers(store.id);

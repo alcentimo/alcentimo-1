@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { devSignUpAndSignIn } from "@/lib/auth/dev-signup";
+import {
+  isInvitationNextPath,
+  resolvePostAuthPath,
+} from "@/lib/auth/post-auth-redirect";
 import { createClient } from "@/lib/supabase/client";
 import { getAuthCallbackUrl } from "@/lib/site-url";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -35,7 +40,14 @@ function GoogleIcon() {
 }
 
 export function AuthPanel() {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next");
+  const postAuthPath = resolvePostAuthPath(nextParam);
+  const isInvitationFlow = isInvitationNextPath(nextParam);
+
+  const [mode, setMode] = useState<"login" | "signup">(
+    isInvitationFlow ? "signup" : "login",
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -56,7 +68,7 @@ export function AuthPanel() {
     setGoogleLoading(true);
 
     const supabase = createClient();
-    const redirectTo = getAuthCallbackUrl("/onboarding");
+    const redirectTo = getAuthCallbackUrl(postAuthPath);
 
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -96,12 +108,12 @@ export function AuthPanel() {
         return;
       }
 
-      window.location.href = "/onboarding";
+      window.location.href = postAuthPath;
       return;
     }
 
     const supabase = createClient();
-    const emailRedirectTo = getAuthCallbackUrl("/onboarding");
+    const emailRedirectTo = getAuthCallbackUrl(postAuthPath);
 
     const result =
       mode === "login"
@@ -131,7 +143,7 @@ export function AuthPanel() {
       return;
     }
 
-    window.location.href = "/onboarding";
+    window.location.href = postAuthPath;
   }
 
   if (signupConfirmationSent) {
@@ -145,8 +157,9 @@ export function AuthPanel() {
           favor, revísalo para activar tu cuenta.
         </div>
         <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
-          Cuando confirmes tu cuenta, podrás iniciar sesión y configurar tu
-          tienda.
+          {isInvitationFlow
+            ? "Cuando confirmes tu cuenta, volverás automáticamente al enlace de invitación para unirte al equipo."
+            : "Cuando confirmes tu cuenta, podrás iniciar sesión y configurar tu tienda."}
         </p>
         <button
           type="button"
@@ -167,8 +180,16 @@ export function AuthPanel() {
         {mode === "login" ? "Iniciar sesión" : "Crear cuenta"}
       </h2>
       <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-        Accede al panel para gestionar tu catálogo.
+        {isInvitationFlow
+          ? "Crea tu cuenta o inicia sesión para aceptar la invitación al equipo."
+          : "Accede al panel para gestionar tu catálogo."}
       </p>
+
+      {isInvitationFlow ? (
+        <p className="mt-3 rounded-lg border border-teal-200/80 bg-teal-50/70 px-3 py-2 text-xs text-teal-900 dark:border-teal-900/40 dark:bg-teal-950/20 dark:text-teal-200">
+          Usa el mismo correo al que te llegó la invitación.
+        </p>
+      ) : null}
 
       {devSkipEmailConfirmation && mode === "signup" && (
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">

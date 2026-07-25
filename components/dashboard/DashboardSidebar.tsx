@@ -23,6 +23,8 @@ import {
 import { cn } from "@/lib/cn";
 import { useLocale } from "@/components/providers/UiPreferencesProvider";
 import { useDashboardRoutePrefetch } from "@/components/dashboard/use-dashboard-route-prefetch";
+import type { DashboardStoreRole } from "@/lib/team/permissions";
+import { isDashboardStoreOwner } from "@/lib/team/permissions";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "alcentimo-dashboard-sidebar-collapsed";
 
@@ -37,6 +39,7 @@ interface DashboardSidebarProps {
   onLogout: () => void;
   isSupportAdmin?: boolean;
   isStoreOwner?: boolean;
+  storeRole?: DashboardStoreRole | null;
   canUpgradeToBusiness?: boolean;
 }
 
@@ -105,13 +108,14 @@ export function DashboardSidebar({
   onCloseMobile,
   onLogout,
   isSupportAdmin = false,
-  isStoreOwner = false,
+  storeRole = null,
   canUpgradeToBusiness = false,
 }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [supportKey, setSupportKey] = useState(0);
-  const navItems = getDashboardNavItems({ isStoreOwner });
+  const navItems = getDashboardNavItems({ storeRole });
+  const showOwnerBillingLinks = isDashboardStoreOwner(storeRole);
   const { t, navLabel } = useLocale();
   const { prefetchRoute } = useDashboardRoutePrefetch();
 
@@ -242,21 +246,23 @@ export function DashboardSidebar({
             </p>
           )}
 
-          <Link
-            href="/activar"
-            prefetch={true}
-            className={navLinkClass(pathname === "/activar", !drawerExpanded)}
-            onClick={onCloseMobile}
-            onMouseEnter={() => prefetchRoute("/activar")}
-            onFocus={() => prefetchRoute("/activar")}
-            onTouchStart={() => prefetchRoute("/activar")}
-            title={drawerExpanded ? undefined : "Activar cuenta"}
-          >
-            <Rocket className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-            {drawerExpanded && <span>Activar cuenta</span>}
-          </Link>
+          {showOwnerBillingLinks ? (
+            <Link
+              href="/activar"
+              prefetch={true}
+              className={navLinkClass(pathname === "/activar", !drawerExpanded)}
+              onClick={onCloseMobile}
+              onMouseEnter={() => prefetchRoute("/activar")}
+              onFocus={() => prefetchRoute("/activar")}
+              onTouchStart={() => prefetchRoute("/activar")}
+              title={drawerExpanded ? undefined : "Activar cuenta"}
+            >
+              <Rocket className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+              {drawerExpanded && <span>Activar cuenta</span>}
+            </Link>
+          ) : null}
 
-          {canUpgradeToBusiness ? (
+          {showOwnerBillingLinks && canUpgradeToBusiness ? (
             <Link
               href="/dashboard/upgrade"
               prefetch={true}
@@ -292,7 +298,7 @@ export function DashboardSidebar({
             {drawerExpanded && <span>{t("nav.logout")}</span>}
           </button>
 
-          {drawerExpanded && (
+          {drawerExpanded && showOwnerBillingLinks ? (
             <p className="px-1 pt-1 text-center text-[11px] text-zinc-400 dark:text-zinc-500">
               <Link
                 href={DASHBOARD_PLANS_HREF}
@@ -302,7 +308,7 @@ export function DashboardSidebar({
                 Planes
               </Link>
             </p>
-          )}
+          ) : null}
 
           <button
             type="button"

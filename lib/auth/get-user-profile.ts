@@ -12,6 +12,8 @@ import {
 } from "@/src/config/plans";
 import { getDisplayPlanForProfile } from "@/lib/plans/trial";
 import { getStoreOwnerPlanProfile } from "@/lib/plans/product-limit";
+import { getStoreMemberRole } from "@/lib/team/access";
+import type { DashboardStoreRole } from "@/lib/team/permissions";
 
 export interface UserWithPlan {
   id: string;
@@ -26,6 +28,7 @@ export interface UserWithPlan {
 export interface DashboardSession {
   authUser: UserWithPlan;
   store: Store | null;
+  storeRole: import("@/lib/team/permissions").DashboardStoreRole | null;
 }
 
 export async function getUserPlanIdById(userId: string): Promise<PlanId> {
@@ -45,7 +48,12 @@ export const getDashboardSession = cache(
       ? await applyStoreOwnerPlanToUser(authUser, store.id)
       : authUser;
 
-    return { authUser: sessionUser, store };
+    let storeRole: DashboardStoreRole | null = null;
+    if (store) {
+      storeRole = await getStoreMemberRole(client, store.id, authUser.id);
+    }
+
+    return { authUser: sessionUser, store, storeRole };
   },
 );
 

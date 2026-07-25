@@ -2,8 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Loader2, Users } from "lucide-react";
+import { Loader2, LogOut, Users } from "lucide-react";
 import { acceptStoreInvitationAction } from "@/lib/team/actions";
+import { createClient } from "@/lib/supabase/client";
+import {
+  getDefaultDashboardPathForRole,
+  type DashboardStoreRole,
+} from "@/lib/team/permissions";
 import { Button } from "@/components/ui/button";
 
 interface AcceptInvitationPanelProps {
@@ -12,6 +17,7 @@ interface AcceptInvitationPanelProps {
   roleLabel: string;
   invitedEmail: string;
   userEmail: string;
+  loginHref: string;
 }
 
 export function AcceptInvitationPanel({
@@ -20,6 +26,7 @@ export function AcceptInvitationPanel({
   roleLabel,
   invitedEmail,
   userEmail,
+  loginHref,
 }: AcceptInvitationPanelProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +34,14 @@ export function AcceptInvitationPanel({
 
   const emailMatches =
     userEmail.trim().toLowerCase() === invitedEmail.trim().toLowerCase();
+
+  function handleSwitchAccount() {
+    startTransition(async () => {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      window.location.href = loginHref;
+    });
+  }
 
   function handleAccept() {
     setError(null);
@@ -36,7 +51,9 @@ export function AcceptInvitationPanel({
         setError(result.error);
         return;
       }
-      router.push("/dashboard/catalogo");
+      const role = result.role as DashboardStoreRole | undefined;
+      const destination = getDefaultDashboardPathForRole(role ?? "staff");
+      router.push(destination);
       router.refresh();
     });
   }
@@ -68,10 +85,21 @@ export function AcceptInvitationPanel({
       </dl>
 
       {!emailMatches ? (
-        <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
-          Esta invitación fue enviada a {invitedEmail}. Cierra sesión e ingresa con ese
-          correo para aceptarla.
-        </p>
+        <div className="mt-4 space-y-3">
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
+            Esta invitación fue enviada a {invitedEmail}. Cierra sesión e ingresa con ese
+            correo para aceptarla.
+          </p>
+          <button
+            type="button"
+            onClick={handleSwitchAccount}
+            disabled={pending}
+            className="inline-flex items-center gap-2 text-sm font-medium text-teal-700 hover:text-teal-900 dark:text-teal-300 dark:hover:text-teal-100"
+          >
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+            Cambiar de cuenta
+          </button>
+        </div>
       ) : null}
 
       {error ? (

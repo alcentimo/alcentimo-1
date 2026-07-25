@@ -356,7 +356,7 @@ export async function previewStoreInvitationAction(
 
 export async function acceptStoreInvitationAction(
   token: string,
-): Promise<{ error?: string; storeSlug?: string }> {
+): Promise<{ error?: string; storeSlug?: string; role?: string }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -428,5 +428,5 @@ export async function acceptStoreInvitationAction(
 
   revalidatePath("/dashboard");
   revalidatePath(TEAM_SETTINGS_PATH);
-  return { storeSlug: preview.storeSlug };
+  return { storeSlug: preview.storeSlug, role: preview.role };
 }

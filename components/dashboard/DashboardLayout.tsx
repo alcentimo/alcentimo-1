@@ -14,6 +14,8 @@ import { DashboardMobileBottomNav } from "@/components/dashboard/DashboardMobile
 import { DashboardViewKeepAlive } from "@/components/dashboard/DashboardViewKeepAlive";
 import { DashboardRouteVisitTracker } from "@/components/dashboard/DashboardRouteVisitTracker";
 import { useOptionalLocale } from "@/components/providers/UiPreferencesProvider";
+import type { DashboardStoreRole } from "@/lib/team/permissions";
+import { isDashboardStoreOwner } from "@/lib/team/permissions";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -28,11 +30,14 @@ interface DashboardLayoutProps {
   exchangeRateStale?: boolean;
   isSupportAdmin?: boolean;
   isStoreOwner?: boolean;
+  storeRole?: DashboardStoreRole | null;
   canUpgradeToBusiness?: boolean;
 }
 
 function isStandaloneAuthPath(pathname: string): boolean {
   return (
+    pathname === "/dashboard/login" ||
+    pathname === "/dashboard/invitacion" ||
     pathname === "/dashboard/recuperar-contrasena" ||
     pathname.startsWith("/dashboard/restablecer-contrasena")
   );
@@ -51,6 +56,7 @@ function DashboardShell({
   exchangeRateStale = false,
   isSupportAdmin = false,
   isStoreOwner = false,
+  storeRole = null,
   canUpgradeToBusiness = false,
 }: DashboardLayoutProps) {
   const router = useRouter();
@@ -106,7 +112,8 @@ function DashboardShell({
         onLogout={() => void handleLogout()}
         isSupportAdmin={isSupportAdmin}
         isStoreOwner={isStoreOwner}
-        canUpgradeToBusiness={canUpgradeToBusiness}
+        storeRole={storeRole}
+        canUpgradeToBusiness={canUpgradeToBusiness && isDashboardStoreOwner(storeRole)}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -152,7 +159,7 @@ function DashboardShell({
 
         <DashboardMobileBottomNav
           pathname={pathname}
-          isStoreOwner={isStoreOwner}
+          storeRole={storeRole}
           onOpenMenu={() => setSidebarOpen(true)}
         />
       </div>
