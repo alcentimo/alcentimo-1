@@ -122,7 +122,7 @@ function DashboardShell({
             </button>
             <BrandLogo
               href="/dashboard/catalogo"
-              size="sm"
+              size="md"
               responsive
               showName={false}
               subtitle={storeName ?? undefined}

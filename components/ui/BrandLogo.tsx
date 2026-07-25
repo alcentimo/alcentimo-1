@@ -28,22 +28,22 @@ interface BrandLogoProps {
 function brandMarkImageSize(size: "sm" | "md" | "lg") {
   if (size === "sm") {
     return {
-      container: "h-8 max-w-[7.5rem]",
-      width: 120,
-      height: 32,
+      container: "h-10 w-auto max-w-[9rem]",
+      width: 144,
+      height: 40,
     };
   }
   if (size === "lg") {
     return {
-      container: "h-10 max-w-[11rem] sm:h-11 sm:max-w-[13rem]",
-      width: 208,
-      height: 44,
+      container: "h-10 w-auto max-w-[9rem] md:h-12 md:max-w-[14rem]",
+      width: 224,
+      height: 48,
     };
   }
   return {
-    container: "h-9 max-w-[9rem]",
-    width: 144,
-    height: 36,
+    container: "h-11 w-auto max-w-[11rem]",
+    width: 176,
+    height: 44,
   };
 }
 
@@ -68,23 +68,33 @@ function BrandMark({
   if (logoUrl) {
     const resolvedLogoUrl = logoUrl;
     const imageSize = brandMarkImageSize(size);
-    const compactSize =
-      size === "lg" ? brandMarkImageSize("sm") : brandMarkImageSize("sm");
+    const mobileImageSize =
+      size === "lg"
+        ? { container: "h-10 w-auto max-w-[9rem]", width: 160, height: 40 }
+        : brandMarkImageSize("sm");
 
-    function LogoImage({ containerClass }: { containerClass: string }) {
+    function LogoImage({
+      containerClass,
+      width,
+      height,
+    }: {
+      containerClass: string;
+      width: number;
+      height: number;
+    }) {
       return (
         <span
           className={cn(
-            "relative flex shrink-0 items-center justify-center overflow-hidden",
+            "relative flex shrink-0 items-center justify-center self-center overflow-visible",
             containerClass,
           )}
         >
           <Image
             src={resolvedLogoUrl}
             alt={`Logo de ${platformName}`}
-            width={imageSize.width}
-            height={imageSize.height}
-            className="h-full w-auto max-w-full object-contain object-left"
+            width={width}
+            height={height}
+            className="block h-full w-auto max-h-full max-w-full object-contain object-left"
             unoptimized={
               resolvedLogoUrl.includes("?v=") || isVectorLogoUrl(resolvedLogoUrl)
             }
@@ -96,13 +106,27 @@ function BrandMark({
     if (responsive) {
       return (
         <>
-          <LogoImage containerClass={cn(compactSize.container, "md:hidden")} />
-          <LogoImage containerClass={cn(imageSize.container, "hidden md:block")} />
+          <LogoImage
+            containerClass={cn(mobileImageSize.container, "md:hidden")}
+            width={mobileImageSize.width}
+            height={mobileImageSize.height}
+          />
+          <LogoImage
+            containerClass={cn(imageSize.container, "hidden md:flex")}
+            width={imageSize.width}
+            height={imageSize.height}
+          />
         </>
       );
     }
 
-    return <LogoImage containerClass={imageSize.container} />;
+    return (
+      <LogoImage
+        containerClass={imageSize.container}
+        width={imageSize.width}
+        height={imageSize.height}
+      />
+    );
   }
 
   if (responsive) {
@@ -189,7 +213,7 @@ export function BrandLogo({
   );
 
   const baseClass = cn(
-    "brand-logo inline-flex min-w-0 items-center gap-2.5",
+    "brand-logo inline-flex min-w-0 items-center gap-2.5 self-center",
     responsive && "brand-logo-responsive",
     isLanding && "brand-logo-landing",
     centered && "justify-center",

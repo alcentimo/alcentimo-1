@@ -447,22 +447,26 @@ body {
   color-scheme: light;
 }
 
+.landing-header-brand {
+  @apply items-center self-center;
+}
+
 .landing-header-brand .brand-logo-name {
   @apply font-extrabold text-emerald-950;
 }
 
 .brand-isotype {
-  @apply block aspect-square h-auto w-auto shrink-0;
+  @apply block aspect-square h-auto w-auto shrink-0 self-center;
 }
 
 .brand-isotype-sm {
-  height: 2rem;
-  width: 2rem;
+  height: 2.5rem;
+  width: 2.5rem;
 }
 
 .brand-isotype-md {
-  height: 2.25rem;
-  width: 2.25rem;
+  height: 2.75rem;
+  width: 2.75rem;
 }
 
 .brand-isotype-lg {
@@ -470,24 +474,21 @@ body {
   width: 2.5rem;
 }
 
-@media (min-width: 640px) {
-  .brand-isotype-lg {
-    height: 2.75rem;
-    width: 2.75rem;
-  }
-}
-
 .brand-logo-wordmark {
   @apply min-h-0 self-center;
 }
 
 .brand-logo-responsive {
-  @apply items-center;
+  @apply items-center self-center;
 }
 
 .brand-logo-responsive-mark {
   height: 2.5rem;
   width: 2.5rem;
+}
+
+.brand-logo-header-mobile {
+  @apply items-center self-center;
 }
 
 .brand-logo-header-mobile .brand-logo-wordmark {
@@ -498,33 +499,43 @@ body {
   @apply truncate;
 }
 
-.brand-logo-header-mobile .brand-logo-responsive-mark {
+.brand-logo-header-mobile .brand-logo-responsive-mark,
+.brand-logo-header-mobile .brand-isotype-sm,
+.brand-logo-header-mobile .brand-isotype-md {
   height: 2.5rem;
   width: 2.5rem;
 }
 
 .brand-logo-full {
-  @apply block h-auto w-auto max-w-none;
+  @apply block h-auto w-auto max-w-none self-center;
 }
 
 .brand-logo-full-sm {
-  height: 2rem;
-  width: auto;
-}
-
-.brand-logo-full-md {
-  height: 2.25rem;
-  width: auto;
-}
-
-.brand-logo-full-lg {
   height: 2.5rem;
   width: auto;
 }
 
-@media (min-width: 640px) {
-  .brand-logo-full-lg {
-    height: 2.75rem;
+.brand-logo-full-md {
+  height: 2.75rem;
+  width: auto;
+}
+
+.brand-logo-full-lg {
+  height: 3rem;
+  width: auto;
+}
+
+@media (min-width: 768px) {
+  .landing-header-brand .brand-logo-responsive-mark,
+  .landing-header-brand .brand-isotype-lg {
+    height: 2.5rem;
+    width: 2.5rem;
+  }
+
+  .landing-header-brand .brand-logo-full,
+  .landing-header-brand .brand-logo-full-lg {
+    height: 3rem;
+    width: auto;
   }
 }
 
