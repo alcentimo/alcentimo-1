@@ -109,18 +109,3 @@ export function getDashboardNavItems(options?: {
     canAccessDashboardPath(role, item.href),
   );
 }
-
-const MOBILE_BOTTOM_NAV_HREFS = [
-  "/dashboard/catalogo",
-  "/dashboard/pedidos",
-  "/dashboard/clientes",
-  "/dashboard/ajustes",
-] as const;
-
-/** Pestañas principales para la barra inferior en móvil. */
-export function getDashboardMobileBottomNavItems(options?: {
-  storeRole?: DashboardStoreRole | null;
-}): DashboardNavItem[] {
-  const allowed = new Set<string>(MOBILE_BOTTOM_NAV_HREFS);
-  return getDashboardNavItems(options).filter((item) => allowed.has(item.href));
-}

@@ -856,8 +856,6 @@ body {
   @apply max-w-[min(100%,14rem)] sm:max-w-none;
 }
 
-/* Bottom nav va en el flujo del layout (no fixed overlay); el padding del main lo define Tailwind. */
-
 .inventory-actions-group {
   @apply inline-flex items-center justify-end gap-0.5;
 }
@@ -1014,13 +1012,7 @@ body {
 
 .onboarding-checklist {
   @apply fixed right-4 z-40 w-[min(100vw-2rem,22rem)] overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950;
-  bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
-}
-
-@media (min-width: 1024px) {
-  .onboarding-checklist {
-    bottom: 1rem;
-  }
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
 }
 
 .onboarding-checklist-collapsed {
@@ -4182,22 +4174,6 @@ body {
 
 .input-prefix-field {
   @apply min-w-0 flex-1 rounded-r-xl bg-white px-3 py-3 text-base outline-none md:py-2.5 md:text-sm dark:bg-zinc-900;
-}
-
-.bottom-nav {
-  @apply relative z-20 shrink-0 border-t border-zinc-200/80 bg-white/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.04)] backdrop-blur-md lg:hidden dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:shadow-[0_-4px_16px_rgba(0,0,0,0.2)];
-}
-
-.bottom-nav-item {
-  @apply flex min-h-14 flex-1 touch-manipulation flex-col items-center justify-center gap-0.5 px-2 text-xs font-medium transition-colors active:scale-[0.98];
-}
-
-.bottom-nav-item-active {
-  @apply text-emerald-700 dark:text-emerald-400;
-}
-
-.bottom-nav-item-default {
-  @apply text-zinc-500 dark:text-zinc-400;
 }
 
 /* ── Inbox Pro (Zendesk / Slack layout) ── */
