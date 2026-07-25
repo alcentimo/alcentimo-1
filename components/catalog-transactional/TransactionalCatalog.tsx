@@ -13,6 +13,7 @@ import {
 } from "@/lib/catalog/extract-categories";
 import {
   getCatalogDesignClasses,
+  getCatalogProductGridClassName,
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
 import { formatExchangeRate } from "@/lib/format";
@@ -308,8 +309,10 @@ function TransactionalCatalogContent({
     ],
   );
 
-  const gridClassName =
-    catalogDesign.layout === "list" ? "txn-product-list" : "txn-product-grid";
+  const gridClassName = getCatalogProductGridClassName(
+    catalogDesign,
+    store.rubro_tienda,
+  );
 
   return (
     <div
@@ -468,11 +471,11 @@ function TransactionalCatalogContent({
                   </h2>
                 </div>
                 <div
-                  className={
-                    catalogDesign.layout === "list"
-                      ? "txn-product-list"
-                      : "txn-product-grid food-menu-grid"
-                  }
+                  className={getCatalogProductGridClassName(
+                    catalogDesign,
+                    store.rubro_tienda,
+                    "food-menu-grid",
+                  )}
                 >
                   {section.products.map((product, index) =>
                     renderProductCard(product, index),

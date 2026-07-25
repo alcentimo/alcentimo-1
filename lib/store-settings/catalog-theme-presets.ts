@@ -30,7 +30,7 @@ export interface CatalogSaleModePreset {
 export const CATALOG_THEME_IDS: CatalogThemeId[] = [
   "minimal",
   "impact",
-  "classic",
+  "immersive",
 ];
 
 /** Temas exclusivos para tiendas de Ropa y Moda (orden: claro → cálido → oscuro). */
@@ -81,22 +81,25 @@ export const CATALOG_THEME_PRESETS: Record<CatalogThemeId, CatalogThemePreset> =
       "--pc-title-size": "0.9375rem",
     },
   },
-  classic: {
-    id: "classic",
-    label: "Clásico",
-    description: "Vista en lista, estilo catálogo tradicional y ordenado.",
-    primaryColor: "#0f766e",
-    layout: "list",
-    pageBg: "#ffffff",
-    previewBg: "#f8fafc",
-    previewAccent: "#0f766e",
+  immersive: {
+    id: "immersive",
+    label: "Inmersivo",
+    description:
+      "Fotos protagonistas en formato feed, textos superpuestos y compra rápida en móvil.",
+    primaryColor: "#7c3aed",
+    layout: "grid",
+    pageBg: "#f4f4f5",
+    previewBg: "#f4f4f5",
+    previewAccent: "#7c3aed",
     cssVars: {
       "--pc-body-pad": "0.75rem",
-      "--pc-grid-gap": "0.75rem",
-      "--pc-btn-radius": "0.375rem",
-      "--pc-btn-min-h": "2.125rem",
-      "--pc-price-size": "0.875rem",
-      "--pc-title-size": "0.8125rem",
+      "--pc-grid-gap": "0.625rem",
+      "--pc-btn-radius": "0.75rem",
+      "--pc-btn-min-h": "2.625rem",
+      "--pc-price-size": "1rem",
+      "--pc-title-size": "0.875rem",
+      "--pc-radius": "1rem",
+      "--pc-media-ratio": "4 / 5",
     },
   },
   "fashion-pure": {

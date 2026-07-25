@@ -12,6 +12,7 @@ import {
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
 import {
   getCatalogDesignClasses,
+  getCatalogProductGridClassName,
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
 import { ProductCard } from "@/components/catalog/ProductCard";
@@ -140,8 +141,10 @@ function CatalogCategoriesViewInner({
     serverPagination: browseServerPagination,
   });
 
-  const gridClassName =
-    catalogDesign.layout === "list" ? "txn-product-list" : "txn-product-grid";
+  const gridClassName = getCatalogProductGridClassName(
+    catalogDesign,
+    store.rubro_tienda,
+  );
 
   return (
     <div

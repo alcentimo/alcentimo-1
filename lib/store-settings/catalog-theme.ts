@@ -27,10 +27,10 @@ export { getDefaultPrimaryColorForRubro } from "@/lib/store-settings/rubro-palet
 
 const HEX_COLOR_PATTERN = /^#([0-9a-fA-F]{6})$/;
 
-const LEGACY_TO_FASHION: Record<"minimal" | "impact" | "classic", CatalogThemeId> = {
+const LEGACY_TO_FASHION: Record<"minimal" | "impact" | "immersive", CatalogThemeId> = {
   minimal: "fashion-pure",
   impact: "fashion-nocturne",
-  classic: "fashion-editorial",
+  immersive: "fashion-editorial",
 };
 
 const FASHION_TO_LEGACY: Record<
@@ -39,7 +39,7 @@ const FASHION_TO_LEGACY: Record<
 > = {
   "fashion-pure": "minimal",
   "fashion-nocturne": "impact",
-  "fashion-editorial": "classic",
+  "fashion-editorial": "immersive",
 };
 
 export function normalizeCatalogPrimaryColor(value: string | undefined): string {
@@ -55,10 +55,14 @@ export function normalizeCatalogLayout(value: unknown): CatalogLayoutMode {
 }
 
 export function normalizeCatalogTheme(value: unknown): CatalogThemeId | null {
+  if (value === "classic") {
+    return "immersive";
+  }
+
   if (
     value === "minimal" ||
     value === "impact" ||
-    value === "classic" ||
+    value === "immersive" ||
     value === "fashion-pure" ||
     value === "fashion-nocturne" ||
     value === "fashion-editorial"
@@ -104,7 +108,7 @@ function inferThemeFromLegacy(
   design: Partial<CatalogDesignSettings> | undefined,
 ): CatalogThemeId {
   if (design?.layout === "list") {
-    return "classic";
+    return "immersive";
   }
   return "minimal";
 }
@@ -130,7 +134,7 @@ export function coerceThemeForRubro(
     if (isFashionCatalogThemeId(theme)) {
       return theme;
     }
-    if (theme === "minimal" || theme === "impact" || theme === "classic") {
+    if (theme === "minimal" || theme === "impact" || theme === "immersive") {
       return LEGACY_TO_FASHION[theme];
     }
     return FASHION_CATALOG_THEME_IDS[0];
@@ -245,6 +249,24 @@ export function getCatalogDesignClasses(
     !resolved.visibility.showPrices && "txn-catalog--hide-prices",
     !resolved.visibility.showStock && "txn-catalog--hide-stock",
   );
+}
+
+export function getCatalogProductGridClassName(
+  design: CatalogDesignSettings,
+  storeRubro?: string | null,
+  extra?: string,
+): string {
+  const resolved = resolveCatalogDesign(design, storeRubro);
+
+  if (resolved.layout === "list") {
+    return cn("txn-product-list", extra);
+  }
+
+  if (resolved.theme === "immersive") {
+    return cn("txn-product-grid txn-product-grid--immersive", extra);
+  }
+
+  return cn("txn-product-grid", extra);
 }
 
 export function getProductBodyLayoutClass(

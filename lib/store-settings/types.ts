@@ -139,7 +139,7 @@ export type CatalogLayoutMode = "grid" | "list";
 export type CatalogThemeId =
   | "minimal"
   | "impact"
-  | "classic"
+  | "immersive"
   | "fashion-pure"
   | "fashion-nocturne"
   | "fashion-editorial";
