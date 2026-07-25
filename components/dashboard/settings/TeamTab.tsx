@@ -75,6 +75,8 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
     limit?: TeamLimitSummary;
     inviteUrl?: string;
     error?: string;
+    emailSent?: boolean;
+    emailError?: string;
   }) {
     if (result.limit) setLimit(result.limit);
     if (result.team) setTeam(result.team);
@@ -85,24 +87,31 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
     refreshMessage(null);
     setInviteUrl(null);
     startTransition(async () => {
-      const result = await inviteStoreTeamMemberAction({
-        email: inviteEmail,
-        role: inviteRole,
-      });
-      applyTeamResult(result);
-      if (result.error) {
-        refreshMessage(null, result.error);
-        return;
-      }
-      setInviteEmail("");
-      if (result.emailSent) {
-        refreshMessage("Invitación creada y correo enviado al invitado.");
-      } else if (result.emailError) {
+      try {
+        const result = await inviteStoreTeamMemberAction({
+          email: inviteEmail,
+          role: inviteRole,
+        });
+        applyTeamResult(result);
+        if (result.error) {
+          refreshMessage(null, result.error);
+          return;
+        }
+        setInviteEmail("");
+        if (result.emailSent) {
+          refreshMessage("Invitación creada y correo enviado al invitado.");
+        } else if (result.emailError) {
+          refreshMessage(
+            `Invitación creada, pero no se pudo enviar el correo: ${result.emailError} Puedes copiar el enlace abajo.`,
+          );
+        } else {
+          refreshMessage("Invitación creada. Comparte el enlace con tu equipo.");
+        }
+      } catch {
         refreshMessage(
-          `Invitación creada, pero no se pudo enviar el correo: ${result.emailError} Puedes copiar el enlace abajo.`,
+          null,
+          "No se pudo procesar la invitación. Intenta de nuevo en unos segundos.",
         );
-      } else {
-        refreshMessage("Invitación creada. Comparte el enlace con tu equipo.");
       }
     });
   }

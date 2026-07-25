@@ -25,7 +25,6 @@ import {
   normalizeInviteEmail,
   INVITABLE_ROLE_LABELS,
 } from "@/lib/team/roles";
-import { sendTeamInvitationEmail } from "@/lib/email/send-team-invitation-email";
 import type {
   InvitationPreview,
   StoreTeamSnapshot,
@@ -174,27 +173,56 @@ export async function inviteStoreTeamMemberAction(input: {
 
     const inviteUrl = `${getSiteUrl().replace(/\/$/, "")}/dashboard/invitacion?token=${encodeURIComponent(token)}`;
 
-    const emailResult = await sendTeamInvitationEmail({
-      to: email,
-      storeName: auth.store.name,
-      roleLabel: INVITABLE_ROLE_LABELS[input.role],
-      inviteUrl,
-      inviterEmail: auth.authUser.email,
-      expiresInDays: INVITATION_TTL_DAYS,
-    });
+    let emailSent = false;
+    let emailError: string | undefined;
+    try {
+      const { sendTeamInvitationEmail } = await import(
+        "@/lib/email/send-team-invitation-email"
+      );
+      const emailResult = await sendTeamInvitationEmail({
+        to: email,
+        storeName: auth.store.name,
+        roleLabel: INVITABLE_ROLE_LABELS[input.role],
+        inviteUrl,
+        inviterEmail: auth.authUser.email,
+        expiresInDays: INVITATION_TTL_DAYS,
+      });
+      emailSent = emailResult.ok;
+      if (!emailResult.ok) {
+        emailError = emailResult.error;
+      }
+    } catch (emailFailure) {
+      console.error("[inviteStoreTeamMemberAction] email", emailFailure);
+      emailError =
+        emailFailure instanceof Error
+          ? emailFailure.message
+          : "No se pudo enviar el correo de invitación.";
+    }
 
-    const refreshedTeam = await getStoreTeamSnapshot({
-      store: auth.store,
-      currentUserId: auth.authUser.id,
-    });
+    let refreshedTeam: StoreTeamSnapshot | undefined;
+    let refreshedLimit: TeamLimitSummary | undefined;
+    try {
+      refreshedTeam = await getStoreTeamSnapshot({
+        store: auth.store,
+        currentUserId: auth.authUser.id,
+      });
+      refreshedLimit = mapTeamLimit(refreshedTeam.limit);
+    } catch (refreshFailure) {
+      console.error("[inviteStoreTeamMemberAction] refresh", refreshFailure);
+    }
 
-    revalidatePath(TEAM_SETTINGS_PATH);
+    try {
+      revalidatePath(TEAM_SETTINGS_PATH);
+    } catch {
+      // La invalidación de caché no debe bloquear la respuesta de la invitación.
+    }
+
     return {
       team: refreshedTeam,
-      limit: mapTeamLimit(refreshedTeam.limit),
+      limit: refreshedLimit,
       inviteUrl,
-      emailSent: emailResult.ok,
-      emailError: emailResult.ok ? undefined : emailResult.error,
+      emailSent,
+      emailError,
     };
   } catch (error) {
     return {

@@ -1,4 +1,3 @@
-import { Resend } from "resend";
 import { getResendApiKey } from "@/lib/env/server";
 
 const TEAM_INVITATION_FROM = "onboarding@resend.dev";
@@ -51,38 +50,51 @@ function buildTeamInvitationHtml(input: SendTeamInvitationEmailInput): string {
   `.trim();
 }
 
+function formatEmailFailure(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return "No se pudo enviar el correo de invitación.";
+}
+
 export async function sendTeamInvitationEmail(
   input: SendTeamInvitationEmailInput,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const apiKey = getResendApiKey();
-  if (!apiKey) {
-    return { ok: false, error: "RESEND_API_KEY no está configurada." };
+  try {
+    const apiKey = getResendApiKey();
+    if (!apiKey) {
+      return { ok: false, error: "RESEND_API_KEY no está configurada." };
+    }
+
+    const { Resend } = await import("resend");
+    const resend = new Resend(apiKey);
+    const subject = `Invitación al equipo de ${input.storeName}`;
+
+    const { error } = await resend.emails.send({
+      from: `Alcentimo <${TEAM_INVITATION_FROM}>`,
+      to: input.to,
+      subject,
+      html: buildTeamInvitationHtml(input),
+      text: [
+        `Te invitaron al equipo de ${input.storeName} como ${input.roleLabel}.`,
+        input.inviterEmail ? `Invitado por: ${input.inviterEmail}` : null,
+        `Acepta la invitación aquí: ${input.inviteUrl}`,
+        `El enlace vence en ${input.expiresInDays} días.`,
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+    });
+
+    if (error) {
+      return {
+        ok: false,
+        error: error.message || "No se pudo enviar el correo de invitación.",
+      };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    console.error("[sendTeamInvitationEmail]", error);
+    return { ok: false, error: formatEmailFailure(error) };
   }
-
-  const resend = new Resend(apiKey);
-  const subject = `Invitación al equipo de ${input.storeName}`;
-
-  const { error } = await resend.emails.send({
-    from: `Alcentimo <${TEAM_INVITATION_FROM}>`,
-    to: input.to,
-    subject,
-    html: buildTeamInvitationHtml(input),
-    text: [
-      `Te invitaron al equipo de ${input.storeName} como ${input.roleLabel}.`,
-      input.inviterEmail ? `Invitado por: ${input.inviterEmail}` : null,
-      `Acepta la invitación aquí: ${input.inviteUrl}`,
-      `El enlace vence en ${input.expiresInDays} días.`,
-    ]
-      .filter(Boolean)
-      .join("\n\n"),
-  });
-
-  if (error) {
-    return {
-      ok: false,
-      error: error.message || "No se pudo enviar el correo de invitación.",
-    };
-  }
-
-  return { ok: true };
 }

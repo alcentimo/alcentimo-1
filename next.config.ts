@@ -26,7 +26,7 @@ const oauthSecurityHeaders = [
 const nextConfig: NextConfig = {
   turbopack: {},
   poweredByHeader: false,
-  serverExternalPackages: ["sharp"],
+  serverExternalPackages: ["sharp", "resend"],
   // Disponible en middleware (Edge) tras el build en Vercel.
   env: {
     SUPPORT_ADMIN_EMAILS: process.env.SUPPORT_ADMIN_EMAILS ?? "",
