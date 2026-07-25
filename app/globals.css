@@ -162,7 +162,19 @@ body {
 /* ── Landing page ── */
 
 .landing-hero-title {
-  @apply text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl lg:text-[3.25rem] lg:leading-[1.06] xl:text-[3.5rem] dark:text-zinc-50;
+  @apply text-[2rem] font-extrabold leading-[1.08] tracking-[-0.03em] text-zinc-900 sm:text-5xl sm:leading-[1.05] lg:text-[3.5rem] xl:text-[3.75rem] dark:text-zinc-50;
+}
+
+.landing-hero-badge {
+  @apply mb-6 border border-emerald-200/80 bg-white/90 px-3.5 py-1.5 text-xs font-semibold tracking-tight text-emerald-800 shadow-sm shadow-emerald-500/10 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-200;
+}
+
+.landing-hero-lead {
+  @apply mt-6 max-w-xl text-pretty text-base leading-[1.65] text-zinc-600 sm:text-lg sm:leading-[1.7] dark:text-zinc-400;
+}
+
+.landing-hero-accent {
+  @apply bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent dark:from-emerald-400 dark:to-emerald-300;
 }
 
 .landing-surface {

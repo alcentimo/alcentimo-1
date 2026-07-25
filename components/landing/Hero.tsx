@@ -18,21 +18,19 @@ export function Hero() {
       <div className="page-container relative pb-20 sm:pb-24 lg:pb-28">
         <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-12 xl:gap-16">
           <div className="max-w-xl lg:max-w-none">
-            <Badge variant="success" className="mb-5 px-3 py-1 text-xs">
-              Plataforma para comercios en Venezuela
+            <Badge variant="success" className="landing-hero-badge">
+              🚀 El software todo en uno para digitalizar tu negocio
             </Badge>
 
             <h1 className="landing-hero-title text-balance">
-              Tu negocio profesional,{" "}
-              <span className="text-emerald-600 dark:text-emerald-400">
-                online en minutos
-              </span>
+              Tu gestor de ventas y e-commerce con{" "}
+              <span className="landing-hero-accent">marca blanca</span>.
             </h1>
 
-            <p className="mt-6 max-w-lg text-pretty text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
-              Crea tu catálogo, comparte un enlace con tus clientes y recibe
-              pedidos organizados en WhatsApp. Todo desde un panel claro que
-              puedes usar tú mismo, sin depender de nadie.
+            <p className="landing-hero-lead">
+              Controla tu inventario, sincroniza tasas de cambio en tiempo real y
+              lanza tu catálogo online con tu propio dominio y logo. Recibe pedidos
+              organizados directamente en WhatsApp, sin depender de intermediarios.
             </p>
 
             <div className="mt-10">
