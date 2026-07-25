@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   LifeBuoy,
+  LogOut,
   PanelLeftClose,
   PanelLeftOpen,
   X,
@@ -244,48 +245,62 @@ export function DashboardSidebar({
           active={accountSettingsActive}
           navLinkClass={navLinkClass}
           onOpenAccountSettings={onOpenAccountSettings}
-          onLogout={onLogout}
         />
 
-        <div className={cn(!drawerExpanded && "px-0")}>
-          <button
-            type="button"
-            onClick={() => {
-              setSupportKey((key) => key + 1);
-              setSupportOpen(true);
-              onCloseMobile();
-            }}
-            className={navLinkClass(false, !drawerExpanded)}
-            title={drawerExpanded ? undefined : t("nav.support")}
+        {isSupportAdmin ? (
+          <Link
+            href="/admin/dashboard"
+            prefetch={true}
+            className={navLinkClass(pathname.startsWith("/admin"), !drawerExpanded)}
+            onClick={onCloseMobile}
+            onMouseEnter={() => prefetchRoute("/admin/dashboard")}
+            onFocus={() => prefetchRoute("/admin/dashboard")}
+            onTouchStart={() => prefetchRoute("/admin/dashboard")}
+            title={drawerExpanded ? undefined : "Panel Admin"}
+            aria-current={pathname.startsWith("/admin") ? "page" : undefined}
           >
-            <LifeBuoy className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-            {drawerExpanded && <span>{t("nav.support")}</span>}
-          </button>
+            <LayoutDashboard
+              className="h-4 w-4 shrink-0"
+              strokeWidth={1.75}
+              aria-hidden="true"
+            />
+            {drawerExpanded && <span>Panel Admin</span>}
+          </Link>
+        ) : null}
 
-          {isSupportAdmin ? (
-            <Link
-              href="/admin/dashboard"
-              prefetch={true}
-              className={cn(
-                navLinkClass(pathname.startsWith("/admin"), !drawerExpanded),
-                "mt-1",
-              )}
-              onClick={onCloseMobile}
-              onMouseEnter={() => prefetchRoute("/admin/dashboard")}
-              onFocus={() => prefetchRoute("/admin/dashboard")}
-              onTouchStart={() => prefetchRoute("/admin/dashboard")}
-              title={drawerExpanded ? undefined : "Panel Admin"}
-              aria-current={pathname.startsWith("/admin") ? "page" : undefined}
-            >
-              <LayoutDashboard
-                className="h-4 w-4 shrink-0"
-                strokeWidth={1.75}
-                aria-hidden="true"
-              />
-              {drawerExpanded && <span>Panel Admin</span>}
-            </Link>
-          ) : null}
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setSupportKey((key) => key + 1);
+            setSupportOpen(true);
+            onCloseMobile();
+          }}
+          className={navLinkClass(false, !drawerExpanded)}
+          title={drawerExpanded ? undefined : t("nav.support")}
+        >
+          <LifeBuoy className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+          {drawerExpanded && <span>{t("nav.support")}</span>}
+        </button>
+
+        <button
+          type="button"
+          className={cn(
+            navLinkClass(false, !drawerExpanded),
+            "touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300",
+          )}
+          onClick={onLogout}
+          title={drawerExpanded ? undefined : "Cerrar sesión"}
+        >
+          <LogOut
+            className={cn(
+              "shrink-0",
+              !drawerExpanded ? "h-[18px] w-[18px]" : "h-4 w-4",
+            )}
+            strokeWidth={1.75}
+            aria-hidden="true"
+          />
+          {drawerExpanded && <span className="truncate">Cerrar sesión</span>}
+        </button>
       </div>
 
       <SupportModal
