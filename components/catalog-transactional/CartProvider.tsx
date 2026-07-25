@@ -297,6 +297,7 @@ export function CartProvider({
             existing.quantity + 1,
             existing.availableStock,
           );
+          if (nextQty === existing.quantity) return current;
           return current.map((item) =>
             cartItemKey(
               item.product.product_id,
@@ -306,6 +307,10 @@ export function CartProvider({
               ? refreshCartItemPricing(item, nextQty, wholesaleEnabled)
               : item,
           );
+        }
+
+        if (variant.availableStock <= 0) {
+          return current;
         }
 
         return [

@@ -15,7 +15,12 @@ import {
   getCatalogProductGridClassName,
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
+import { formatExchangeRate } from "@/lib/format";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import {
+  CatalogProductDetailHost,
+  useCatalogProductDetail,
+} from "@/components/catalog/CatalogProductDetailHost";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { CatalogCartHost } from "@/components/catalog-transactional/CatalogCartHost";
 import { CatalogBrowseToolbar } from "@/components/catalog-transactional/CatalogBrowseToolbar";
@@ -94,7 +99,7 @@ function CatalogCategoriesViewInner({
   enableServerPagination = false,
 }: Omit<CatalogCategoriesViewProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
-  const { showBsConversion, wholesaleEnabled } = catalogCurrency;
+  const { showOfficialRate, showBsConversion, wholesaleEnabled } = catalogCurrency;
   const { addItem } = useCart();
   const { getAvailableStock } = useCatalogFulfillment();
 
@@ -147,6 +152,72 @@ function CatalogCategoriesViewInner({
   );
 
   return (
+    <CatalogProductDetailHost
+      exchangeRate={liveExchangeRate}
+      showBsConversion={showBsConversion}
+      storeRubro={store.rubro_tienda}
+      wholesaleEnabled={wholesaleEnabled}
+      onAddToCart={addItem}
+    >
+      <CatalogCategoriesPageContent
+        store={store}
+        products={products}
+        purchaseInfo={purchaseInfo}
+        catalogDesign={catalogDesign}
+        catalogCurrency={catalogCurrency}
+        exchangeRate={exchangeRate}
+        showOfficialRate={showOfficialRate}
+        showBsConversion={showBsConversion}
+        wholesaleEnabled={wholesaleEnabled}
+        liveExchangeRate={liveExchangeRate}
+        catalogProducts={catalogProducts}
+        categoryOptions={categoryOptions}
+        browse={browse}
+        gridClassName={gridClassName}
+        addItem={addItem}
+      />
+    </CatalogProductDetailHost>
+  );
+}
+
+interface CatalogCategoriesPageContentProps {
+  store: Store;
+  products: CatalogListItem[];
+  purchaseInfo: PublicPurchaseInfo;
+  catalogDesign: CatalogDesignSettings;
+  catalogCurrency: CatalogCurrencySettings;
+  exchangeRate: ExchangeRate | null;
+  showOfficialRate: boolean;
+  showBsConversion: boolean;
+  wholesaleEnabled: boolean;
+  liveExchangeRate: number | null;
+  catalogProducts: CatalogListItem[];
+  categoryOptions: CatalogCategoryOption[];
+  browse: ReturnType<typeof useCatalogBrowse>;
+  gridClassName: string;
+  addItem: ReturnType<typeof useCart>["addItem"];
+}
+
+function CatalogCategoriesPageContent({
+  store,
+  products,
+  purchaseInfo,
+  catalogDesign,
+  catalogCurrency,
+  exchangeRate,
+  showOfficialRate,
+  showBsConversion,
+  wholesaleEnabled,
+  liveExchangeRate,
+  catalogProducts,
+  categoryOptions,
+  browse,
+  gridClassName,
+  addItem,
+}: CatalogCategoriesPageContentProps) {
+  const { openProduct } = useCatalogProductDetail();
+
+  return (
     <div
       className={cn(
         "txn-catalog",
@@ -157,6 +228,11 @@ function CatalogCategoriesViewInner({
       <header className="txn-catalog-header">
         <div className="txn-catalog-header-inner">
           <h1 className="txn-catalog-title">{store.name}</h1>
+          {showOfficialRate && exchangeRate ? (
+            <p className="txn-catalog-rate">
+              Tasa BCV: Bs. {formatExchangeRate(exchangeRate.rate)} / USD
+            </p>
+          ) : null}
         </div>
         <CatalogLocationPicker />
       </header>
@@ -221,6 +297,7 @@ function CatalogCategoriesViewInner({
                   storeRubro={store.rubro_tienda}
                   wholesaleEnabled={wholesaleEnabled}
                   onAddToCart={addItem}
+                  onOpenDetail={openProduct}
                 />
               ))}
             </div>
