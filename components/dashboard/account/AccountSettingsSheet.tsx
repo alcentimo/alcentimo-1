@@ -20,6 +20,7 @@ interface AccountSettingsSheetProps {
   initialTab?: string;
   showBillingTab?: boolean;
   canUpgradeToBusiness?: boolean;
+  onTabChange?: (tab: string) => void;
 }
 
 export function AccountSettingsSheet({
@@ -28,6 +29,7 @@ export function AccountSettingsSheet({
   initialTab,
   showBillingTab = false,
   canUpgradeToBusiness = false,
+  onTabChange,
 }: AccountSettingsSheetProps) {
   const [account, setAccount] = useState<AccountSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
@@ -94,6 +96,7 @@ export function AccountSettingsSheet({
               showBillingTab={showBillingTab}
               canUpgradeToBusiness={canUpgradeToBusiness}
               onNavigate={() => onOpenChange(false)}
+              onTabChange={onTabChange}
             />
           ) : null}
         </SheetBody>

@@ -56,6 +56,7 @@ interface AccountSettingsPanelProps {
   showBillingTab?: boolean;
   canUpgradeToBusiness?: boolean;
   onNavigate?: () => void;
+  onTabChange?: (tab: AccountSettingsTab) => void;
 }
 
 export function AccountSettingsPanel({
@@ -64,6 +65,7 @@ export function AccountSettingsPanel({
   showBillingTab = false,
   canUpgradeToBusiness = false,
   onNavigate,
+  onTabChange,
 }: AccountSettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<AccountSettingsTab>(() =>
     resolveInitialTab(initialTab, showBillingTab),
@@ -111,7 +113,10 @@ export function AccountSettingsPanel({
                       <li key={item.id}>
                         <button
                           type="button"
-                          onClick={() => setActiveTab(item.id)}
+                          onClick={() => {
+                            setActiveTab(item.id);
+                            onTabChange?.(item.id);
+                          }}
                           aria-current={isActive ? "page" : undefined}
                           className={cn(
                             "settings-sidebar-link",

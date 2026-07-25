@@ -63,22 +63,42 @@ function DashboardShell({
   const [accountSheetTab, setAccountSheetTab] = useState<string | undefined>();
   const locale = useOptionalLocale();
   const showOwnerBillingLinks = isDashboardStoreOwner(storeRole);
+  const accountQueryParam = searchParams.get("account");
 
   function closeSidebar() {
     setSidebarOpen(false);
   }
 
+  function syncAccountQueryParam(tab: string | null) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab) {
+      params.set("account", tab);
+    } else {
+      params.delete("account");
+    }
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
+
   function openAccountSettings(tab?: string) {
-    setAccountSheetTab(tab);
+    const nextTab = tab ?? "perfil";
+    setAccountSheetTab(nextTab);
     setAccountSheetOpen(true);
     closeSidebar();
+    syncAccountQueryParam(nextTab);
   }
 
   function closeAccountSettings() {
     setAccountSheetOpen(false);
-    if (pathname.startsWith("/dashboard/cuenta")) {
-      router.replace("/dashboard/catalogo");
+    setAccountSheetTab(undefined);
+    if (accountQueryParam) {
+      syncAccountQueryParam(null);
     }
+  }
+
+  function handleAccountTabChange(tab: string) {
+    setAccountSheetTab(tab);
+    syncAccountQueryParam(tab);
   }
 
   useEffect(() => {
@@ -86,11 +106,10 @@ function DashboardShell({
   }, [pathname]);
 
   useEffect(() => {
-    if (!pathname.startsWith("/dashboard/cuenta")) return;
-    const tab = searchParams.get("tab") ?? undefined;
-    setAccountSheetTab(tab);
+    if (!accountQueryParam) return;
+    setAccountSheetTab(accountQueryParam);
     setAccountSheetOpen(true);
-  }, [pathname, searchParams]);
+  }, [accountQueryParam]);
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -134,9 +153,7 @@ function DashboardShell({
         onCloseMobile={closeSidebar}
         onLogout={() => void handleLogout()}
         onOpenAccountSettings={() => openAccountSettings()}
-        accountSettingsActive={
-          accountSheetOpen || pathname.startsWith("/dashboard/cuenta")
-        }
+        accountSettingsActive={accountSheetOpen || Boolean(accountQueryParam)}
         isSupportAdmin={isSupportAdmin}
         storeRole={storeRole}
       />
@@ -195,6 +212,7 @@ function DashboardShell({
         initialTab={accountSheetTab}
         showBillingTab={showOwnerBillingLinks}
         canUpgradeToBusiness={canUpgradeToBusiness}
+        onTabChange={handleAccountTabChange}
       />
     </div>
   );

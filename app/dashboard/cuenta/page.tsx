@@ -1,9 +1,18 @@
+import { redirect } from "next/navigation";
+
 export const dynamic = "force-dynamic";
 
 /**
- * La UI de cuenta se abre como panel lateral desde el layout del dashboard.
- * Esta ruta existe para enlaces directos (/dashboard/cuenta?tab=seguridad).
+ * Compatibilidad con enlaces antiguos: abre el panel lateral vía query param
+ * sin montar una página de cuenta dedicada.
  */
-export default function CuentaPage() {
-  return null;
+export default async function CuentaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
+  const account =
+    tab === "seguridad" ? "seguridad" : tab === "planes" ? "planes" : "perfil";
+  redirect(`/dashboard/catalogo?account=${account}`);
 }
