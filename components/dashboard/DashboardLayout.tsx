@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Menu } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/BrandLogo";
@@ -11,6 +11,7 @@ import { DashboardPreferenceControls } from "@/components/dashboard/DashboardPre
 import { PublicCatalogQuickLink } from "@/components/dashboard/PublicCatalogQuickLink";
 import { DashboardViewKeepAlive } from "@/components/dashboard/DashboardViewKeepAlive";
 import { DashboardRouteVisitTracker } from "@/components/dashboard/DashboardRouteVisitTracker";
+import { AccountSettingsSheet } from "@/components/dashboard/account/AccountSettingsSheet";
 import { useOptionalLocale } from "@/components/providers/UiPreferencesProvider";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
 import { isDashboardStoreOwner } from "@/lib/team/permissions";
@@ -47,28 +48,49 @@ function DashboardShell({
   storeSlug,
   customDomain = null,
   customDomainVerified = false,
-  userEmail,
-  planName = null,
   exchangeRate = null,
   exchangeRateUpdatedAt = null,
   exchangeRateStale = false,
   isSupportAdmin = false,
-  isStoreOwner = false,
   storeRole = null,
   canUpgradeToBusiness = false,
 }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [accountSheetOpen, setAccountSheetOpen] = useState(false);
+  const [accountSheetTab, setAccountSheetTab] = useState<string | undefined>();
   const locale = useOptionalLocale();
+  const showOwnerBillingLinks = isDashboardStoreOwner(storeRole);
 
   function closeSidebar() {
     setSidebarOpen(false);
   }
 
+  function openAccountSettings(tab?: string) {
+    setAccountSheetTab(tab);
+    setAccountSheetOpen(true);
+    closeSidebar();
+  }
+
+  function closeAccountSettings() {
+    setAccountSheetOpen(false);
+    if (pathname.startsWith("/dashboard/cuenta")) {
+      router.replace("/dashboard/catalogo");
+    }
+  }
+
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!pathname.startsWith("/dashboard/cuenta")) return;
+    const tab = searchParams.get("tab") ?? undefined;
+    setAccountSheetTab(tab);
+    setAccountSheetOpen(true);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -107,16 +129,16 @@ function DashboardShell({
       <DashboardSidebar
         pathname={pathname}
         storeName={storeName}
-        userEmail={userEmail}
-        planName={planName}
         mobileOpen={sidebarOpen}
         immersiveHidden={false}
         onCloseMobile={closeSidebar}
         onLogout={() => void handleLogout()}
+        onOpenAccountSettings={() => openAccountSettings()}
+        accountSettingsActive={
+          accountSheetOpen || pathname.startsWith("/dashboard/cuenta")
+        }
         isSupportAdmin={isSupportAdmin}
-        isStoreOwner={isStoreOwner}
         storeRole={storeRole}
-        canUpgradeToBusiness={canUpgradeToBusiness && isDashboardStoreOwner(storeRole)}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -160,6 +182,20 @@ function DashboardShell({
           <DashboardViewKeepAlive pathname={pathname}>{children}</DashboardViewKeepAlive>
         </main>
       </div>
+
+      <AccountSettingsSheet
+        open={accountSheetOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            setAccountSheetOpen(true);
+          } else {
+            closeAccountSettings();
+          }
+        }}
+        initialTab={accountSheetTab}
+        showBillingTab={showOwnerBillingLinks}
+        canUpgradeToBusiness={canUpgradeToBusiness}
+      />
     </div>
   );
 }
@@ -173,5 +209,9 @@ export function DashboardLayout(props: DashboardLayoutProps) {
     );
   }
 
-  return <DashboardShell {...props} />;
+  return (
+    <Suspense fallback={null}>
+      <DashboardShell {...props} />
+    </Suspense>
+  );
 }

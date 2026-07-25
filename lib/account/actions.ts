@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { sendPasswordResetEmailAction } from "@/lib/auth/auth-email-actions";
+import { getDashboardSession } from "@/lib/auth/get-user-profile";
+import { buildAccountSnapshot } from "@/lib/account/get-account-snapshot";
+import type { AccountSnapshot } from "@/lib/account/types";
 
 const MIN_PASSWORD_LENGTH = 8;
 const ACCOUNT_PATH = "/dashboard/cuenta";
@@ -11,6 +14,27 @@ const ACCOUNT_PATH = "/dashboard/cuenta";
 export type AccountActionResult =
   | { ok: true; displayName?: string }
   | { ok: false; error: string };
+
+export async function getAccountSnapshotAction(): Promise<
+  { ok: true; account: AccountSnapshot } | { ok: false; error: string }
+> {
+  const supabase = await createClient();
+  const session = await getDashboardSession();
+  if (!session) {
+    return { ok: false, error: "Debes iniciar sesión." };
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { ok: false, error: "Debes iniciar sesión." };
+  }
+
+  return { ok: true, account: buildAccountSnapshot(user, session) };
+}
 
 export async function updateAccountProfileAction(input: {
   displayName: string;

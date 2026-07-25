@@ -21,23 +21,20 @@ import { cn } from "@/lib/cn";
 import { useLocale } from "@/components/providers/UiPreferencesProvider";
 import { useDashboardRoutePrefetch } from "@/components/dashboard/use-dashboard-route-prefetch";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
-import { isDashboardStoreOwner } from "@/lib/team/permissions";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "alcentimo-dashboard-sidebar-collapsed";
 
 interface DashboardSidebarProps {
   pathname: string;
   storeName: string | null;
-  userEmail: string | null;
-  planName?: string | null;
   mobileOpen: boolean;
   immersiveHidden: boolean;
   onCloseMobile: () => void;
   onLogout: () => void;
+  onOpenAccountSettings: () => void;
+  accountSettingsActive?: boolean;
   isSupportAdmin?: boolean;
-  isStoreOwner?: boolean;
   storeRole?: DashboardStoreRole | null;
-  canUpgradeToBusiness?: boolean;
 }
 
 function navLinkClass(active: boolean, collapsed: boolean) {
@@ -98,21 +95,19 @@ function SidebarNavLink({
 export function DashboardSidebar({
   pathname,
   storeName,
-  userEmail,
-  planName = null,
   mobileOpen,
   immersiveHidden,
   onCloseMobile,
   onLogout,
+  onOpenAccountSettings,
+  accountSettingsActive = false,
   isSupportAdmin = false,
   storeRole = null,
-  canUpgradeToBusiness = false,
 }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [supportKey, setSupportKey] = useState(0);
   const navItems = getDashboardNavItems({ storeRole });
-  const showOwnerBillingLinks = isDashboardStoreOwner(storeRole);
   const { t, navLabel } = useLocale();
   const { prefetchRoute } = useDashboardRoutePrefetch();
 
@@ -245,14 +240,11 @@ export function DashboardSidebar({
         ) : null}
 
         <DashboardAccountMenu
-          userEmail={userEmail}
-          planName={planName}
           expanded={drawerExpanded}
+          active={accountSettingsActive}
           navLinkClass={navLinkClass}
-          showOwnerBillingLinks={showOwnerBillingLinks}
-          canUpgradeToBusiness={canUpgradeToBusiness}
+          onOpenAccountSettings={onOpenAccountSettings}
           onLogout={onLogout}
-          onNavigate={onCloseMobile}
         />
 
         <div className={cn(!drawerExpanded && "px-0")}>

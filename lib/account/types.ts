@@ -13,4 +13,4 @@ export interface AccountSnapshot {
   storeName: string | null;
 }
 
-export type AccountSettingsTab = "perfil" | "seguridad";
+export type AccountSettingsTab = "perfil" | "seguridad" | "planes";

@@ -6177,6 +6177,20 @@ body {
   @apply bg-zinc-100 px-4 py-4 dark:bg-zinc-950;
 }
 
+.account-settings-sheet {
+  animation: account-settings-sheet-in 0.28s ease-out;
+}
+
+@keyframes account-settings-sheet-in {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
 .catalog-preview-stage {
   @apply flex min-h-full justify-center overflow-x-auto pb-6;
 }
