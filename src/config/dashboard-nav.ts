@@ -92,3 +92,18 @@ export function getDashboardNavItems(options?: {
     (item) => !item.ownerOnly || isStoreOwner,
   );
 }
+
+const MOBILE_BOTTOM_NAV_HREFS = [
+  "/dashboard/catalogo",
+  "/dashboard/pedidos",
+  "/dashboard/clientes",
+  "/dashboard/ajustes",
+] as const;
+
+/** Pestañas principales para la barra inferior en móvil. */
+export function getDashboardMobileBottomNavItems(options?: {
+  isStoreOwner?: boolean;
+}): DashboardNavItem[] {
+  const allowed = new Set<string>(MOBILE_BOTTOM_NAV_HREFS);
+  return getDashboardNavItems(options).filter((item) => allowed.has(item.href));
+}

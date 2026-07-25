@@ -84,7 +84,7 @@ export function DashboardExchangeRateBadge({
 
   return (
     <div
-      className={`flex shrink-0 items-center gap-2 rounded-[10px] border px-3 py-1.5 text-xs ${
+      className={`dashboard-exchange-rate-badge flex shrink-0 items-center gap-2 rounded-[10px] border px-2 py-1 text-[10px] sm:px-3 sm:py-1.5 sm:text-xs ${
         stale
           ? "border-amber-200/80 bg-amber-50/90 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
           : "border-zinc-200/70 bg-white text-zinc-600 shadow-[0_1px_2px_rgba(24,24,27,0.03)] dark:border-zinc-800/70 dark:bg-zinc-900/50 dark:text-zinc-400"
@@ -97,16 +97,16 @@ export function DashboardExchangeRateBadge({
       }
     >
       <span
-        className={`font-medium ${stale ? "text-amber-950 dark:text-amber-100" : "text-zinc-700 dark:text-zinc-300"}`}
+        className={`hidden font-medium sm:inline ${stale ? "text-amber-950 dark:text-amber-100" : "text-zinc-700 dark:text-zinc-300"}`}
       >
         {stale ? "Tasa desactualizada" : "BCV"}
       </span>
       <span
-        className={
+        className={`hidden sm:inline ${
           stale
             ? "text-amber-700/60 dark:text-amber-300/60"
             : "text-zinc-300 dark:text-zinc-600"
-        }
+        }`}
         aria-hidden="true"
       >
         ·

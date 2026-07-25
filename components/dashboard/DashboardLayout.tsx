@@ -10,6 +10,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
 import { DashboardPreferenceControls } from "@/components/dashboard/DashboardPreferenceControls";
 import { PublicCatalogQuickLink } from "@/components/dashboard/PublicCatalogQuickLink";
+import { DashboardMobileBottomNav } from "@/components/dashboard/DashboardMobileBottomNav";
 import { DashboardViewKeepAlive } from "@/components/dashboard/DashboardViewKeepAlive";
 import { DashboardRouteVisitTracker } from "@/components/dashboard/DashboardRouteVisitTracker";
 import { useOptionalLocale } from "@/components/providers/UiPreferencesProvider";
@@ -62,6 +63,10 @@ function DashboardShell({
   }
 
   useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
     if (!sidebarOpen) return;
 
     function onKeyDown(event: KeyboardEvent) {
@@ -105,12 +110,12 @@ function DashboardShell({
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="dashboard-header flex h-14 shrink-0 items-center justify-between gap-3 px-4 lg:px-6">
-          <div className="flex min-w-0 items-center gap-3">
+        <header className="dashboard-header flex h-14 shrink-0 items-center gap-2 px-3 sm:gap-3 sm:px-4 lg:px-6">
+          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className="touch-target rounded-xl text-zinc-700 lg:hidden dark:text-zinc-300"
+              className="touch-target shrink-0 rounded-xl text-zinc-700 lg:hidden dark:text-zinc-300"
               aria-label={locale?.t("nav.openMenu") ?? "Abrir menú"}
             >
               <Menu className="h-5 w-5" />
@@ -119,11 +124,11 @@ function DashboardShell({
               href="/dashboard/catalogo"
               size="sm"
               subtitle={storeName ?? undefined}
-              className="lg:hidden"
+              className="min-w-0 lg:hidden [&_span]:truncate"
             />
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <DashboardPreferenceControls variant="compact" />
+          <div className="dashboard-header-actions flex shrink-0 items-center gap-1 sm:gap-2">
+            <DashboardPreferenceControls variant="compact" className="hidden sm:flex" />
             <DashboardExchangeRateBadge
               rate={exchangeRate}
               updatedAt={exchangeRateUpdatedAt}
@@ -138,10 +143,16 @@ function DashboardShell({
           </div>
         </header>
 
-        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 safe-area-inset sm:p-7 lg:p-9">
+        <main className="dashboard-main flex min-h-0 flex-1 flex-col overflow-y-auto p-4 safe-area-inset sm:p-7 lg:p-9">
           <DashboardRouteVisitTracker pathname={pathname} />
           <DashboardViewKeepAlive pathname={pathname}>{children}</DashboardViewKeepAlive>
         </main>
+
+        <DashboardMobileBottomNav
+          pathname={pathname}
+          isStoreOwner={isStoreOwner}
+          onOpenMenu={() => setSidebarOpen(true)}
+        />
       </div>
     </div>
   );

@@ -684,6 +684,20 @@ body {
   @apply border-b border-zinc-200/60 bg-white shadow-[0_1px_2px_rgba(24,24,27,0.03)] dark:border-zinc-800/60 dark:bg-zinc-950;
 }
 
+.dashboard-header-actions {
+  @apply max-w-[min(100%,14rem)] sm:max-w-none;
+}
+
+.dashboard-main {
+  padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .dashboard-main {
+    padding-bottom: inherit;
+  }
+}
+
 .inventory-actions-group {
   @apply inline-flex items-center justify-end gap-0.5;
 }
@@ -839,7 +853,14 @@ body {
 }
 
 .onboarding-checklist {
-  @apply fixed bottom-4 right-4 z-40 w-[min(100vw-2rem,22rem)] overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950;
+  @apply fixed right-4 z-40 w-[min(100vw-2rem,22rem)] overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950;
+  bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .onboarding-checklist {
+    bottom: 1rem;
+  }
 }
 
 .onboarding-checklist-collapsed {
