@@ -170,6 +170,7 @@ export interface StoreInvitation {
   accepted_at: string | null;
   revoked_at: string | null;
   created_at: string;
+  last_sent_at: string | null;
 }
 
 export interface ExchangeRate {

@@ -76,3 +76,18 @@ export async function isStoreTeamOwner(
   const role = await getStoreMemberRole(client, store.id, userId);
   return role === "owner";
 }
+
+export async function requireStoreTeamOwner(
+  client: SupabaseServerClient,
+  store: Pick<Store, "id" | "owner_id">,
+  userId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const allowed = await isStoreTeamOwner(client, store, userId);
+  if (!allowed) {
+    return {
+      ok: false,
+      error: "Solo el dueño puede gestionar el equipo de esta tienda.",
+    };
+  }
+  return { ok: true };
+}

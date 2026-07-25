@@ -1,4 +1,5 @@
 import type { StoreMemberRole } from "@/lib/database.types";
+import type { InvitationStatus, TeamMemberStatus } from "@/lib/team/status";
 
 export type InvitableTeamRole = Extract<StoreMemberRole, "admin" | "staff">;
 
@@ -12,6 +13,7 @@ export interface TeamMemberRow {
   is_owner: boolean;
   email: string | null;
   display_name: string | null;
+  status: TeamMemberStatus;
 }
 
 export interface StoreInvitationRow {
@@ -22,6 +24,8 @@ export interface StoreInvitationRow {
   created_at: string;
   invited_by: string;
   invited_by_email: string | null;
+  last_sent_at: string | null;
+  status: InvitationStatus;
 }
 
 export interface TeamLimitSummary {

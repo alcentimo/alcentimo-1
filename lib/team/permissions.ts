@@ -32,7 +32,7 @@ export function isDashboardStoreOwner(
 export function canManageStoreTeam(
   role: DashboardStoreRole | null | undefined,
 ): boolean {
-  return hasMinimumStoreRole(role, "admin");
+  return role === "owner";
 }
 
 export function canManageStoreSettings(
@@ -52,19 +52,19 @@ const DASHBOARD_ROUTE_ACCESS: Array<{
   { prefix: "/dashboard/referidos", roles: ["owner"] },
   { prefix: "/dashboard/pago", roles: ["owner"] },
   { prefix: "/activar", roles: ["owner"] },
-  { prefix: "/dashboard/equipo", roles: ["owner", "admin"] },
+  { prefix: "/dashboard/equipo", roles: ["owner"] },
+  { prefix: "/dashboard/analiticas", roles: ["owner"] },
+  { prefix: "/dashboard/asistente", roles: ["owner"] },
+  { prefix: "/dashboard/tasas", roles: ["owner"] },
+  { prefix: "/dashboard/mensajes", roles: ["owner"] },
+  { prefix: "/dashboard/soporte", roles: ["owner"] },
   { prefix: "/dashboard/clientes", roles: ["owner", "admin"] },
-  { prefix: "/dashboard/analiticas", roles: ["owner", "admin"] },
-  { prefix: "/dashboard/asistente", roles: ["owner", "admin"] },
-  { prefix: "/dashboard/tasas", roles: ["owner", "admin"] },
   { prefix: "/dashboard/inventario", roles: ["owner", "admin"] },
   { prefix: "/dashboard/productos", roles: ["owner", "admin"] },
-  { prefix: "/dashboard/mensajes", roles: ["owner", "admin"] },
   { prefix: "/dashboard/ventas", roles: ["owner", "admin", "staff"] },
   { prefix: "/dashboard/pedidos", roles: ["owner", "admin", "staff"] },
   { prefix: "/dashboard/catalogo", roles: ["owner", "admin", "staff"] },
-  { prefix: "/dashboard/soporte", roles: ["owner", "admin", "staff"] },
-  { prefix: "/dashboard", roles: ["owner", "admin", "staff"] },
+  { prefix: "/dashboard", roles: ["owner", "admin"] },
 ];
 
 const DEFAULT_MERCHANT_ROLES: DashboardStoreRole[] = [
@@ -105,6 +105,7 @@ export function getDefaultDashboardPathForRole(
   role: DashboardStoreRole | null | undefined,
 ): string {
   if (role === "staff") return "/dashboard/pedidos";
+  if (role === "admin") return "/dashboard/catalogo";
   return "/dashboard/catalogo";
 }
 

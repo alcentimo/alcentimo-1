@@ -10,10 +10,12 @@ import {
 } from "@/lib/plans/trial";
 import { resolvePlanId } from "@/src/config/plans";
 import {
-  isStoreTeamAdmin,
   isStoreTeamOwner,
 } from "@/lib/team/access";
 import { resolveTeamLimit } from "@/lib/team/limits";
+import {
+  resolveInvitationStatus,
+} from "@/lib/team/status";
 import type {
   StoreInvitationRow,
   StoreTeamSnapshot,
@@ -63,6 +65,7 @@ function mapMemberRow(
     is_owner: isOwner,
     email: emails.get(row.user_id) ?? null,
     display_name: null,
+    status: "active",
   };
 }
 
@@ -74,7 +77,7 @@ export async function getStoreTeamSnapshot(options: {
   const supabase = await createClient();
   const { store, currentUserId } = options;
 
-  const [membersResult, invitationsResult, canManage, isOwner, planSettings, ownerProfile] =
+  const [membersResult, invitationsResult, isOwner, planSettings, ownerProfile] =
     await Promise.all([
       supabase
         .from("store_members")
@@ -83,13 +86,12 @@ export async function getStoreTeamSnapshot(options: {
         .order("created_at", { ascending: true }),
       supabase
         .from("store_invitations")
-        .select("id, email, role, expires_at, created_at, invited_by")
+        .select("id, email, role, expires_at, created_at, invited_by, last_sent_at")
         .eq("store_id", store.id)
         .is("accepted_at", null)
         .is("revoked_at", null)
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false }),
-      isStoreTeamAdmin(supabase, store, currentUserId),
       isStoreTeamOwner(supabase, store, currentUserId),
       fetchPlanSettings().catch(() => null),
       getStoreOwnerPlanProfile(store.id),
@@ -131,6 +133,12 @@ export async function getStoreTeamSnapshot(options: {
     created_at: row.created_at,
     invited_by: row.invited_by,
     invited_by_email: emails.get(row.invited_by) ?? null,
+    last_sent_at: row.last_sent_at ?? row.created_at,
+    status: resolveInvitationStatus({
+      expires_at: row.expires_at,
+      accepted_at: null,
+      revoked_at: null,
+    }),
   }));
 
   const planId = ownerProfile
@@ -149,7 +157,7 @@ export async function getStoreTeamSnapshot(options: {
     members,
     invitations,
     limit,
-    canManage,
+    canManage: isOwner,
     currentUserId,
     isOwner,
   };

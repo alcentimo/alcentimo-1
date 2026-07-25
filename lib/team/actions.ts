@@ -13,10 +13,9 @@ import {
 import { resolvePlanId, DASHBOARD_PLANS_HREF } from "@/src/config/plans";
 import {
   generateInvitationToken,
-  getStoreMemberRole,
   hashInvitationToken,
   isStoreTeamOwner,
-  requireStoreTeamAdmin,
+  requireStoreTeamOwner,
 } from "@/lib/team/access";
 import { getStoreTeamSnapshot } from "@/lib/team/get-store-team";
 import { resolveTeamLimit } from "@/lib/team/limits";
@@ -65,6 +64,46 @@ async function resolveStoreTeamLimitForStore(
   });
 }
 
+async function deliverStoreInvitationEmail(options: {
+  email: string;
+  role: string;
+  storeName: string;
+  inviterEmail?: string | null;
+  token: string;
+}): Promise<{ inviteUrl: string; emailSent: boolean; emailError?: string }> {
+  const inviteUrl = `${getSiteUrl().replace(/\/$/, "")}/dashboard/invitacion?token=${encodeURIComponent(options.token)}`;
+
+  let emailSent = false;
+  let emailError: string | undefined;
+  try {
+    const { sendTeamInvitationEmail } = await import(
+      "@/lib/email/send-team-invitation-email"
+    );
+    const emailResult = await sendTeamInvitationEmail({
+      to: options.email,
+      storeName: options.storeName,
+      roleLabel: isInvitableTeamRole(options.role)
+        ? INVITABLE_ROLE_LABELS[options.role]
+        : options.role,
+      inviteUrl,
+      inviterEmail: options.inviterEmail,
+      expiresInDays: INVITATION_TTL_DAYS,
+    });
+    emailSent = emailResult.ok;
+    if (!emailResult.ok) {
+      emailError = emailResult.error;
+    }
+  } catch (emailFailure) {
+    console.error("[deliverStoreInvitationEmail]", emailFailure);
+    emailError =
+      emailFailure instanceof Error
+        ? emailFailure.message
+        : "No se pudo enviar el correo de invitación.";
+  }
+
+  return { inviteUrl, emailSent, emailError };
+}
+
 function teamLimitError(limit: TeamLimitSummary): string | null {
   if (!limit.canManageTeam) {
     return `El equipo multiusuario está disponible en Plan Business o Enterprise. Mejora tu plan en ${DASHBOARD_PLANS_HREF}.`;
@@ -107,12 +146,12 @@ export async function inviteStoreTeamMemberAction(input: {
   const auth = await requireAuthStore(supabase);
   if (!auth.ok) return { error: auth.error };
 
-  const adminCheck = await requireStoreTeamAdmin(
+  const ownerCheck = await requireStoreTeamOwner(
     supabase,
     auth.store,
     auth.authUser.id,
   );
-  if (!adminCheck.ok) return { error: adminCheck.error };
+  if (!ownerCheck.ok) return { error: ownerCheck.error };
 
   const email = normalizeInviteEmail(input.email);
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -154,6 +193,7 @@ export async function inviteStoreTeamMemberAction(input: {
     const tokenHash = hashInvitationToken(token);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + INVITATION_TTL_DAYS);
+    const sentAt = new Date().toISOString();
 
     const { error: insertError } = await supabase.from("store_invitations").insert({
       store_id: auth.store.id,
@@ -162,6 +202,7 @@ export async function inviteStoreTeamMemberAction(input: {
       token_hash: tokenHash,
       invited_by: auth.authUser.id,
       expires_at: expiresAt.toISOString(),
+      last_sent_at: sentAt,
     });
 
     if (insertError) {
@@ -171,33 +212,13 @@ export async function inviteStoreTeamMemberAction(input: {
       return { error: insertError.message };
     }
 
-    const inviteUrl = `${getSiteUrl().replace(/\/$/, "")}/dashboard/invitacion?token=${encodeURIComponent(token)}`;
-
-    let emailSent = false;
-    let emailError: string | undefined;
-    try {
-      const { sendTeamInvitationEmail } = await import(
-        "@/lib/email/send-team-invitation-email"
-      );
-      const emailResult = await sendTeamInvitationEmail({
-        to: email,
-        storeName: auth.store.name,
-        roleLabel: INVITABLE_ROLE_LABELS[input.role],
-        inviteUrl,
-        inviterEmail: auth.authUser.email,
-        expiresInDays: INVITATION_TTL_DAYS,
-      });
-      emailSent = emailResult.ok;
-      if (!emailResult.ok) {
-        emailError = emailResult.error;
-      }
-    } catch (emailFailure) {
-      console.error("[inviteStoreTeamMemberAction] email", emailFailure);
-      emailError =
-        emailFailure instanceof Error
-          ? emailFailure.message
-          : "No se pudo enviar el correo de invitación.";
-    }
+    const delivery = await deliverStoreInvitationEmail({
+      email,
+      role: input.role,
+      storeName: auth.store.name,
+      inviterEmail: auth.authUser.email,
+      token,
+    });
 
     let refreshedTeam: StoreTeamSnapshot | undefined;
     let refreshedLimit: TeamLimitSummary | undefined;
@@ -220,9 +241,9 @@ export async function inviteStoreTeamMemberAction(input: {
     return {
       team: refreshedTeam,
       limit: refreshedLimit,
-      inviteUrl,
-      emailSent,
-      emailError,
+      inviteUrl: delivery.inviteUrl,
+      emailSent: delivery.emailSent,
+      emailError: delivery.emailError,
     };
   } catch (error) {
     return {
@@ -239,12 +260,12 @@ export async function revokeStoreInvitationAction(
   const auth = await requireAuthStore(supabase);
   if (!auth.ok) return { error: auth.error };
 
-  const adminCheck = await requireStoreTeamAdmin(
+  const ownerCheck = await requireStoreTeamOwner(
     supabase,
     auth.store,
     auth.authUser.id,
   );
-  if (!adminCheck.ok) return { error: adminCheck.error };
+  if (!ownerCheck.ok) return { error: ownerCheck.error };
 
   const { error } = await supabase
     .from("store_invitations")
@@ -262,6 +283,82 @@ export async function revokeStoreInvitationAction(
   });
   revalidatePath(TEAM_SETTINGS_PATH);
   return { team, limit: mapTeamLimit(team.limit) };
+}
+
+export async function resendStoreInvitationAction(
+  invitationId: string,
+): Promise<TeamActionResult> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) return { error: auth.error };
+
+  const ownerCheck = await requireStoreTeamOwner(
+    supabase,
+    auth.store,
+    auth.authUser.id,
+  );
+  if (!ownerCheck.ok) return { error: ownerCheck.error };
+
+  const { data: invitation, error: invitationError } = await supabase
+    .from("store_invitations")
+    .select("id, email, role")
+    .eq("id", invitationId)
+    .eq("store_id", auth.store.id)
+    .is("accepted_at", null)
+    .is("revoked_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  if (invitationError) return { error: invitationError.message };
+  if (!invitation) return { error: "Invitación pendiente no encontrada." };
+
+  const token = generateInvitationToken();
+  const tokenHash = hashInvitationToken(token);
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + INVITATION_TTL_DAYS);
+  const sentAt = new Date().toISOString();
+
+  const { error: updateError } = await supabase
+    .from("store_invitations")
+    .update({
+      token_hash: tokenHash,
+      expires_at: expiresAt.toISOString(),
+      last_sent_at: sentAt,
+    })
+    .eq("id", invitationId)
+    .eq("store_id", auth.store.id);
+
+  if (updateError) return { error: updateError.message };
+
+  const delivery = await deliverStoreInvitationEmail({
+    email: invitation.email,
+    role: invitation.role,
+    storeName: auth.store.name,
+    inviterEmail: auth.authUser.email,
+    token,
+  });
+
+  let refreshedTeam: StoreTeamSnapshot | undefined;
+  let refreshedLimit: TeamLimitSummary | undefined;
+  try {
+    refreshedTeam = await getStoreTeamSnapshot({
+      store: auth.store,
+      currentUserId: auth.authUser.id,
+    });
+    refreshedLimit = mapTeamLimit(refreshedTeam.limit);
+  } catch (refreshFailure) {
+    console.error("[resendStoreInvitationAction] refresh", refreshFailure);
+  }
+
+  revalidatePath(TEAM_SETTINGS_PATH);
+
+  return {
+    team: refreshedTeam,
+    limit: refreshedLimit,
+    inviteUrl: delivery.inviteUrl,
+    emailSent: delivery.emailSent,
+    emailError: delivery.emailError,
+  };
 }
 
 export async function updateStoreMemberRoleAction(input: {
@@ -316,12 +413,12 @@ export async function removeStoreMemberAction(
   const auth = await requireAuthStore(supabase);
   if (!auth.ok) return { error: auth.error };
 
-  const adminCheck = await requireStoreTeamAdmin(
+  const ownerCheck = await requireStoreTeamOwner(
     supabase,
     auth.store,
     auth.authUser.id,
   );
-  if (!adminCheck.ok) return { error: adminCheck.error };
+  if (!ownerCheck.ok) return { error: ownerCheck.error };
 
   const { data: member, error: memberError } = await supabase
     .from("store_members")
@@ -335,14 +432,8 @@ export async function removeStoreMemberAction(
   if (member.user_id === auth.store.owner_id || member.role === "owner") {
     return { error: "No puedes eliminar al dueño de la tienda." };
   }
-
-  const actorRole = await getStoreMemberRole(
-    supabase,
-    auth.store.id,
-    auth.authUser.id,
-  );
-  if (actorRole === "admin" && member.role === "admin") {
-    return { error: "Solo el dueño puede eliminar a otro encargado." };
+  if (member.user_id === auth.authUser.id) {
+    return { error: "No puedes eliminarte a ti mismo desde aquí." };
   }
 
   const { error } = await supabase

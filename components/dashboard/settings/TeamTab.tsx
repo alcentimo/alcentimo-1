@@ -6,6 +6,7 @@ import {
   Copy,
   Loader2,
   Mail,
+  RefreshCw,
   Shield,
   Trash2,
   UserPlus,
@@ -21,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import {
   inviteStoreTeamMemberAction,
   removeStoreMemberAction,
+  resendStoreInvitationAction,
   revokeStoreInvitationAction,
   updateStoreMemberRoleAction,
 } from "@/lib/team/actions";
@@ -30,8 +32,15 @@ import {
   INVITABLE_ROLE_DESCRIPTIONS,
   INVITABLE_ROLE_LABELS,
   INVITABLE_TEAM_ROLES,
+  ROLE_PERMISSIONS_SUMMARY,
   TEAM_ROLE_LABELS,
 } from "@/lib/team/roles";
+import {
+  INVITATION_STATUS_LABELS,
+  TEAM_MEMBER_STATUS_LABELS,
+  type InvitationStatus,
+  type TeamMemberStatus,
+} from "@/lib/team/status";
 import type {
   StoreInvitationRow,
   StoreTeamSnapshot,
@@ -116,6 +125,31 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
     });
   }
 
+  function handleResendInvitation(invitationId: string) {
+    refreshMessage(null);
+    startTransition(async () => {
+      try {
+        const result = await resendStoreInvitationAction(invitationId);
+        applyTeamResult(result);
+        if (result.error) {
+          refreshMessage(null, result.error);
+          return;
+        }
+        if (result.emailSent) {
+          refreshMessage("Invitación reenviada por correo.");
+        } else if (result.emailError) {
+          refreshMessage(
+            `Invitación renovada, pero no se pudo enviar el correo: ${result.emailError}`,
+          );
+        } else {
+          refreshMessage("Invitación renovada. Comparte el enlace si hace falta.");
+        }
+      } catch {
+        refreshMessage(null, "No se pudo reenviar la invitación.");
+      }
+    });
+  }
+
   function handleRevokeInvitation(invitationId: string) {
     refreshMessage(null);
     startTransition(async () => {
@@ -130,6 +164,13 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
   }
 
   function handleRemoveMember(memberId: string) {
+    if (
+      !window.confirm(
+        "¿Eliminar el acceso de este miembro? Ya no podrá entrar al panel de la tienda.",
+      )
+    ) {
+      return;
+    }
     refreshMessage(null);
     startTransition(async () => {
       const result = await removeStoreMemberAction(memberId);
@@ -181,7 +222,7 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
       ) : null}
 
       <SettingsSection
-        title="Equipo"
+        title="Miembros activos"
         description={`${formatTeamLimitLabel(limit)} · ${usageLabel}.`}
         variant="payments"
       >
@@ -223,12 +264,37 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
                 invitation={invitation}
                 canManage={canManage}
                 disabled={pending}
+                onResend={() => handleResendInvitation(invitation.id)}
                 onRevoke={() => handleRevokeInvitation(invitation.id)}
               />
             ))}
           </div>
         </SettingsSection>
       ) : null}
+
+      <SettingsSection
+        title="Permisos por rol"
+        description="Resumen de lo que puede hacer cada rol en el panel."
+        variant="payments"
+      >
+        <div className="grid gap-3 md:grid-cols-3">
+          {(["owner", "admin", "staff"] as const).map((role) => (
+            <article
+              key={role}
+              className="rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-4 dark:border-zinc-800 dark:bg-zinc-900/30"
+            >
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {ROLE_PERMISSIONS_SUMMARY[role].title}
+              </h3>
+              <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                {ROLE_PERMISSIONS_SUMMARY[role].items.map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+      </SettingsSection>
 
       {canManage ? (
         <SettingsSection
@@ -336,10 +402,7 @@ function MemberCard({
 }) {
   const canEditRole = isOwner && !member.is_owner && canManage;
   const canRemove =
-    canManage &&
-    !member.is_owner &&
-    !isSelf &&
-    (isOwner || member.role === "staff");
+    canManage && !member.is_owner && !isSelf;
 
   return (
     <article className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/40">
@@ -350,6 +413,7 @@ function MemberCard({
             <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               {member.email ?? "Usuario sin correo"}
             </p>
+            <StatusBadge kind="member" status={member.status} />
             {isSelf ? (
               <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                 Tú
@@ -406,7 +470,7 @@ function MemberCard({
               onClick={onRemove}
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-              Quitar
+              Eliminar acceso
             </Button>
           ) : null}
         </div>
@@ -419,41 +483,97 @@ function InvitationCard({
   invitation,
   canManage,
   disabled,
+  onResend,
   onRevoke,
 }: {
   invitation: StoreInvitationRow;
   canManage: boolean;
   disabled: boolean;
+  onResend: () => void;
   onRevoke: () => void;
 }) {
   return (
     <article className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-900/20">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Mail className="h-4 w-4 shrink-0 text-zinc-400" aria-hidden="true" />
             <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
               {invitation.email}
             </p>
+            <StatusBadge kind="invitation" status={invitation.status} />
           </div>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
             {INVITABLE_ROLE_LABELS[invitation.role]} · Expira{" "}
             {formatExpiresAt(invitation.expires_at)}
           </p>
+          <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+            {invitation.last_sent_at
+              ? `Último envío ${formatExpiresAt(invitation.last_sent_at)}`
+              : `Creada ${formatExpiresAt(invitation.created_at)}`}
+          </p>
         </div>
 
         {canManage ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={disabled}
-            onClick={onRevoke}
-          >
-            Revocar
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              disabled={disabled}
+              onClick={onResend}
+            >
+              <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+              Reenviar
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1 text-red-600 hover:text-red-700 dark:text-red-400"
+              disabled={disabled}
+              onClick={onRevoke}
+            >
+              Revocar
+            </Button>
+          </div>
         ) : null}
       </div>
     </article>
+  );
+}
+
+function StatusBadge({
+  kind,
+  status,
+}: {
+  kind: "member";
+  status: TeamMemberStatus;
+} | {
+  kind: "invitation";
+  status: InvitationStatus;
+}) {
+  const label =
+    kind === "member"
+      ? TEAM_MEMBER_STATUS_LABELS[status]
+      : INVITATION_STATUS_LABELS[status];
+
+  const styles =
+    kind === "member"
+      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+      : status === "pending"
+        ? "bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+        : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300";
+
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+        styles,
+      )}
+    >
+      {label}
+    </span>
   );
 }
