@@ -72,6 +72,10 @@ import {
   InventoryProductOrderCell,
   reorderProductIds,
 } from "@/components/dashboard/InventoryProductOrderCell";
+import { CatalogEmptyOnboardingBanner } from "@/components/onboarding/CatalogEmptyOnboardingBanner";
+import {
+  isCatalogEmptyGuideDismissed,
+} from "@/lib/onboarding/client-storage";
 import { isProductOnSale } from "@/lib/catalog/pricing";
 import {
   INVENTORY_PAGE_SIZE,
@@ -154,11 +158,15 @@ interface InventoryPanelProps {
   previewSettings: CatalogPreviewSettings;
   autoOpenCreate?: boolean;
   onAutoOpenCreateHandled?: () => void;
+  autoOpenImport?: boolean;
+  onAutoOpenImportHandled?: () => void;
   initialStockFilter?: CatalogStockFilter;
   initialSearchQuery?: string;
   initialPage?: number;
   initialPageSize?: InventoryPageSize;
   productLimitContext?: StoreProductLimitContext | null;
+  rubroLabel?: string;
+  onSampleProductsCreated?: () => void;
 }
 
 const StockBadge = memo(function StockBadge({
@@ -542,11 +550,15 @@ export function InventoryPanel({
   previewSettings,
   autoOpenCreate = false,
   onAutoOpenCreateHandled,
+  autoOpenImport = false,
+  onAutoOpenImportHandled,
   initialStockFilter = "all",
   initialSearchQuery = "",
   initialPage = 1,
   initialPageSize = INVENTORY_PAGE_SIZE,
   productLimitContext = null,
+  rubroLabel = "",
+  onSampleProductsCreated,
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
   const [totalCount, setTotalCount] = useState(
@@ -565,6 +577,9 @@ export function InventoryPanel({
   const [trialDialogOpen, setTrialDialogOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [importSheetOpen, setImportSheetOpen] = useState(false);
+  const [emptyGuideVisible, setEmptyGuideVisible] = useState(
+    () => !isCatalogEmptyGuideDismissed(store.id),
+  );
   const [liveProductFormConfig, setLiveProductFormConfig] =
     useState(productFormConfig);
   const [sheetMode, setSheetMode] = useState<"create" | "edit">("create");
@@ -770,6 +785,12 @@ export function InventoryPanel({
     openCreate();
     onAutoOpenCreateHandled?.();
   }, [autoOpenCreate, openCreate, onAutoOpenCreateHandled, productLimitContext?.hasReachedLimit]);
+
+  useEffect(() => {
+    if (!autoOpenImport) return;
+    setImportSheetOpen(true);
+    onAutoOpenImportHandled?.();
+  }, [autoOpenImport, onAutoOpenImportHandled]);
 
   const openEdit = useCallback((productId: string) => {
     setSheetMode("edit");
@@ -1285,17 +1306,33 @@ export function InventoryPanel({
           <InventoryListSkeleton rows={5} showReorderColumn={false} />
         </div>
       ) : showEmptyCatalogCta ? (
-        <div className="card-panel flex flex-col items-center border-dashed py-12 text-center">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-            Sin productos en el catálogo
-          </h2>
-          <p className="mt-1.5 max-w-sm text-xs text-zinc-500">
-            Crea tu primer producto para empezar a vender.
-          </p>
-          <Button onClick={openCreate} className="btn-brand inventory-primary-cta mt-6">
-            <Plus className="h-5 w-5" aria-hidden="true" />
-            Nuevo producto
-          </Button>
+        <div className="space-y-4">
+          {emptyGuideVisible && rubroLabel ? (
+            <CatalogEmptyOnboardingBanner
+              storeId={store.id}
+              storeName={store.name}
+              rubroLabel={rubroLabel}
+              onOpenCreate={openCreate}
+              onOpenImport={() => setImportSheetOpen(true)}
+              onSampleProductsCreated={() => {
+                onSampleProductsCreated?.();
+                refreshProducts();
+              }}
+              onDismiss={() => setEmptyGuideVisible(false)}
+            />
+          ) : null}
+          <div className="card-panel flex flex-col items-center border-dashed py-12 text-center">
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+              Sin productos en el catálogo
+            </h2>
+            <p className="mt-1.5 max-w-sm text-xs text-zinc-500">
+              Crea tu primer producto para empezar a vender.
+            </p>
+            <Button onClick={openCreate} className="btn-brand inventory-primary-cta mt-6">
+              <Plus className="h-5 w-5" aria-hidden="true" />
+              Nuevo producto
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950">

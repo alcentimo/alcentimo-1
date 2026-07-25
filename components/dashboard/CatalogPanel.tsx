@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
+import { OnboardingExperience } from "@/components/onboarding/OnboardingExperience";
 import type { CatalogListItem, Store } from "@/lib/database.types";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { InventoryPageSize } from "@/lib/inventory/constants";
 import type { CatalogStockFilter } from "@/lib/inventory/stock-status";
 import type { StoreProductLimitContext } from "@/lib/plans/product-limit";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
+import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 
 interface CatalogPanelProps {
   store: Store;
@@ -24,6 +26,9 @@ interface CatalogPanelProps {
   productFormConfig: StoreProductFormConfig;
   previewSettings: CatalogPreviewSettings;
   productLimitContext?: StoreProductLimitContext | null;
+  rubroLabel: string;
+  setupStatus: OnboardingSetupStatus;
+  showWelcomeFromUrl?: boolean;
 }
 
 export function CatalogPanel({
@@ -40,12 +45,28 @@ export function CatalogPanel({
   productFormConfig,
   previewSettings,
   productLimitContext = null,
+  rubroLabel,
+  setupStatus,
+  showWelcomeFromUrl = false,
 }: CatalogPanelProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [autoOpenCreate, setAutoOpenCreate] = useState(
     () => searchParams.get("nuevo") === "1",
   );
+  const [autoOpenImport, setAutoOpenImport] = useState(false);
+
+  const handleOpenCreate = useCallback(() => {
+    setAutoOpenCreate(true);
+  }, []);
+
+  const handleOpenImport = useCallback(() => {
+    setAutoOpenImport(true);
+  }, []);
+
+  const handleSampleProductsCreated = useCallback(() => {
+    router.refresh();
+  }, [router]);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -75,23 +96,41 @@ export function CatalogPanel({
   }, [searchParams, router]);
 
   return (
-    <InventoryPanel
-      key={`catalog-${productFormConfig.rubroTienda}`}
-      store={store}
-      exchangeRate={exchangeRate}
-      exchangeRateUpdatedAt={exchangeRateUpdatedAt}
-      initialProducts={initialProducts}
-      initialTotalCount={initialTotalCount}
-      initialCriticalStockCount={initialCriticalStockCount}
-      productFormConfig={productFormConfig}
-      previewSettings={previewSettings}
-      autoOpenCreate={autoOpenCreate}
-      onAutoOpenCreateHandled={() => setAutoOpenCreate(false)}
-      initialStockFilter={initialStockFilter}
-      initialSearchQuery={initialSearchQuery}
-      initialPage={initialPage}
-      initialPageSize={initialPageSize}
-      productLimitContext={productLimitContext}
-    />
+    <>
+      <Suspense fallback={null}>
+        <OnboardingExperience
+          storeId={store.id}
+          storeName={store.name}
+          rubroLabel={rubroLabel}
+          setupStatus={setupStatus}
+          showWelcomeFromUrl={showWelcomeFromUrl}
+          onOpenCreateProduct={handleOpenCreate}
+          onOpenImport={handleOpenImport}
+        />
+      </Suspense>
+
+      <InventoryPanel
+        key={`catalog-${productFormConfig.rubroTienda}`}
+        store={store}
+        exchangeRate={exchangeRate}
+        exchangeRateUpdatedAt={exchangeRateUpdatedAt}
+        initialProducts={initialProducts}
+        initialTotalCount={initialTotalCount}
+        initialCriticalStockCount={initialCriticalStockCount}
+        productFormConfig={productFormConfig}
+        previewSettings={previewSettings}
+        autoOpenCreate={autoOpenCreate}
+        onAutoOpenCreateHandled={() => setAutoOpenCreate(false)}
+        autoOpenImport={autoOpenImport}
+        onAutoOpenImportHandled={() => setAutoOpenImport(false)}
+        initialStockFilter={initialStockFilter}
+        initialSearchQuery={initialSearchQuery}
+        initialPage={initialPage}
+        initialPageSize={initialPageSize}
+        productLimitContext={productLimitContext}
+        rubroLabel={rubroLabel}
+        onSampleProductsCreated={handleSampleProductsCreated}
+      />
+    </>
   );
 }

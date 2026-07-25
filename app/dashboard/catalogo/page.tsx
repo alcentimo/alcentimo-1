@@ -13,8 +13,11 @@ import { getCriticalStockCount } from "@/lib/inventory/get-critical-stock-count"
 import { sanitizeInventorySearch } from "@/lib/inventory/search";
 import { parseCatalogStockFilter } from "@/lib/inventory/stock-status";
 import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
+import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
+import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import { isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
+import { getRubroLabel, normalizeStoreRubro, type StoreRubro } from "@/src/config/categories";
 import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
 import { InventoryListSkeleton } from "@/components/dashboard/InventoryListSkeleton";
 import { BcvRateStripWithSync } from "@/components/dashboard/BcvRateStripWithSync";
@@ -74,7 +77,7 @@ export default async function CatalogoPage({
   const requestedPage = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
   const offset = getInventoryPageOffset(requestedPage, pageSize);
 
-  const [inventory, exchangeRateRow, productFormConfig, previewSettings, productLimitContext, criticalStockCount] =
+  const [inventory, exchangeRateRow, productFormConfig, previewSettings, productLimitContext, criticalStockCount, storeSettings] =
     await Promise.all([
       getStoreInventory(store.slug, {
         limit: pageSize,
@@ -87,6 +90,7 @@ export default async function CatalogoPage({
       getCatalogPreviewSettings(store),
       getStoreProductLimitContext(store.id),
       getCriticalStockCount(store.slug),
+      getStoreSettingsConfig(store.id),
     ]);
 
   let { products, totalCount } = inventory;
@@ -107,15 +111,12 @@ export default async function CatalogoPage({
   const exchangeRate = exchangeRateRow?.rate ?? null;
   const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
   const exchangeRateStale = isBcvRateStale(exchangeRateUpdatedAt);
+  const rubro = normalizeStoreRubro(store.rubro_tienda as StoreRubro);
+  const rubroLabel = getRubroLabel(rubro);
+  const setupStatus = getOnboardingSetupStatus(totalCount, storeSettings, store.slug);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      {showOnboardingSuccess ? (
-        <div className="alert-success" role="status">
-          ¡Tu tienda está lista! Publica tu primer producto y comparte tu catálogo.
-        </div>
-      ) : null}
-
       <DashboardPageHeader
         title="Catálogo"
         description={`Gestiona lo que vendes: productos, fotos, precios y stock de ${store.name}.`}
@@ -142,6 +143,9 @@ export default async function CatalogoPage({
           initialSearchQuery={searchQuery}
           initialPage={page}
           initialPageSize={pageSize}
+          rubroLabel={rubroLabel}
+          setupStatus={setupStatus}
+          showWelcomeFromUrl={showOnboardingSuccess}
         />
       </Suspense>
     </div>
