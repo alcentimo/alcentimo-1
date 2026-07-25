@@ -95,7 +95,15 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
         return;
       }
       setInviteEmail("");
-      refreshMessage("Invitación creada. Comparte el enlace con tu equipo.");
+      if (result.emailSent) {
+        refreshMessage("Invitación creada y correo enviado al invitado.");
+      } else if (result.emailError) {
+        refreshMessage(
+          `Invitación creada, pero no se pudo enviar el correo: ${result.emailError} Puedes copiar el enlace abajo.`,
+        );
+      } else {
+        refreshMessage("Invitación creada. Comparte el enlace con tu equipo.");
+      }
     });
   }
 

@@ -57,3 +57,8 @@ export function getOpenAiApiKey(): string | undefined {
   const key = optionalEnv("OPENAI_API_KEY");
   return isConfiguredEnvValue(key) ? key : undefined;
 }
+
+export function getResendApiKey(): string | undefined {
+  const key = optionalEnv("RESEND_API_KEY");
+  return isConfiguredEnvValue(key) ? key : undefined;
+}

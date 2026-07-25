@@ -23,7 +23,9 @@ import { resolveTeamLimit } from "@/lib/team/limits";
 import {
   isInvitableTeamRole,
   normalizeInviteEmail,
+  INVITABLE_ROLE_LABELS,
 } from "@/lib/team/roles";
+import { sendTeamInvitationEmail } from "@/lib/email/send-team-invitation-email";
 import type {
   InvitationPreview,
   StoreTeamSnapshot,
@@ -38,6 +40,8 @@ export interface TeamActionResult {
   team?: StoreTeamSnapshot;
   limit?: TeamLimitSummary;
   inviteUrl?: string;
+  emailSent?: boolean;
+  emailError?: string;
 }
 
 function mapTeamLimit(limit: TeamLimitSummary): TeamLimitSummary {
@@ -169,6 +173,16 @@ export async function inviteStoreTeamMemberAction(input: {
     }
 
     const inviteUrl = `${getSiteUrl().replace(/\/$/, "")}/dashboard/invitacion?token=${encodeURIComponent(token)}`;
+
+    const emailResult = await sendTeamInvitationEmail({
+      to: email,
+      storeName: auth.store.name,
+      roleLabel: INVITABLE_ROLE_LABELS[input.role],
+      inviteUrl,
+      inviterEmail: auth.authUser.email,
+      expiresInDays: INVITATION_TTL_DAYS,
+    });
+
     const refreshedTeam = await getStoreTeamSnapshot({
       store: auth.store,
       currentUserId: auth.authUser.id,
@@ -179,6 +193,8 @@ export async function inviteStoreTeamMemberAction(input: {
       team: refreshedTeam,
       limit: mapTeamLimit(refreshedTeam.limit),
       inviteUrl,
+      emailSent: emailResult.ok,
+      emailError: emailResult.ok ? undefined : emailResult.error,
     };
   } catch (error) {
     return {
