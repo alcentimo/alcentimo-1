@@ -33,7 +33,14 @@ export function LandingNav() {
       }`}
     >
       <div className="page-container flex h-14 items-center justify-between gap-4 lg:h-16">
-        <BrandLogo href="/" size="lg" variant="landing" className="landing-header-brand" />
+        <BrandLogo
+          href="/"
+          size="lg"
+          variant="landing"
+          responsive
+          showName={false}
+          className="landing-header-brand"
+        />
 
         <nav
           className="hidden items-center gap-0.5 md:flex"

@@ -481,6 +481,53 @@ body {
   @apply min-h-0 self-center;
 }
 
+.brand-logo-responsive {
+  @apply items-center;
+}
+
+.brand-logo-responsive-mark {
+  height: 2.5rem;
+  width: 2.5rem;
+}
+
+.brand-logo-header-mobile .brand-logo-wordmark {
+  @apply max-w-[9rem];
+}
+
+.brand-logo-header-mobile .brand-subtitle {
+  @apply truncate;
+}
+
+.brand-logo-header-mobile .brand-logo-responsive-mark {
+  height: 2.5rem;
+  width: 2.5rem;
+}
+
+.brand-logo-full {
+  @apply block h-auto w-auto max-w-none;
+}
+
+.brand-logo-full-sm {
+  height: 2rem;
+  width: auto;
+}
+
+.brand-logo-full-md {
+  height: 2.25rem;
+  width: auto;
+}
+
+.brand-logo-full-lg {
+  height: 2.5rem;
+  width: auto;
+}
+
+@media (min-width: 640px) {
+  .brand-logo-full-lg {
+    height: 2.75rem;
+  }
+}
+
 .brand-mark-landing {
   @apply bg-emerald-700 text-white shadow-[0_1px_3px_rgba(4,120,87,0.35)];
 }

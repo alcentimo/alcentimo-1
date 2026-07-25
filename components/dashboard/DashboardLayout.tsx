@@ -123,8 +123,10 @@ function DashboardShell({
             <BrandLogo
               href="/dashboard/catalogo"
               size="sm"
+              responsive
+              showName={false}
               subtitle={storeName ?? undefined}
-              className="min-w-0 lg:hidden [&_span]:truncate"
+              className="brand-logo-header-mobile min-w-0 lg:hidden"
             />
           </div>
           <div className="dashboard-header-actions flex shrink-0 items-center gap-1 sm:gap-2">

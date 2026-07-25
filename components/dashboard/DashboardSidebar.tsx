@@ -174,7 +174,8 @@ export function DashboardSidebar({
         <BrandLogo
           href="/dashboard/catalogo"
           subtitle={drawerExpanded ? storeName ?? "Panel" : undefined}
-          showName={drawerExpanded}
+          showName={false}
+          responsive={drawerExpanded}
           size={drawerExpanded ? "md" : "sm"}
           className={drawerExpanded ? "" : "justify-center"}
         />

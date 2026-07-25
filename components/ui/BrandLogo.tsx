@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BrandIsotype } from "@/components/ui/BrandIsotype";
+import { BrandLogoFull } from "@/components/ui/BrandLogoFull";
 import { usePlatformSettings } from "@/components/providers/PlatformSettingsProvider";
 import { cn } from "@/lib/cn";
 
@@ -16,6 +17,8 @@ interface BrandLogoProps {
   theme?: "light" | "dark";
   /** Estilo de alto contraste para la landing pública. */
   variant?: "default" | "landing";
+  /** Móvil: solo isotipo. Desktop (md+): logo horizontal completo. */
+  responsive?: boolean;
   /** Sobrescribe el logo de plataforma (p. ej. vista previa en admin). */
   logoUrl?: string | null;
   /** Sobrescribe el nombre de plataforma. */
@@ -54,16 +57,36 @@ function BrandMark({
   logoUrl,
   platformName,
   variant = "default",
+  responsive = false,
 }: {
   size: "sm" | "md" | "lg";
   logoUrl: string | null;
   platformName: string;
   variant?: "default" | "landing";
+  responsive?: boolean;
 }) {
   const useSvgIsotype =
-    variant === "landing" || !logoUrl || (logoUrl ? isVectorLogoUrl(logoUrl) : false);
+    variant === "landing" || !logoUrl || isVectorLogoUrl(logoUrl);
 
   if (useSvgIsotype) {
+    if (responsive) {
+      return (
+        <>
+          <BrandIsotype
+            size={size}
+            variant={variant}
+            className="brand-logo-responsive-mark md:hidden"
+          />
+          <BrandLogoFull
+            size={size}
+            variant={variant}
+            platformName={platformName}
+            className="brand-logo-responsive-full hidden md:block"
+          />
+        </>
+      );
+    }
+
     return <BrandIsotype size={size} variant={variant} />;
   }
 
@@ -97,6 +120,7 @@ export function BrandLogo({
   centered = false,
   theme = "light",
   variant = "default",
+  responsive = false,
   logoUrl: logoUrlOverride,
   platformName: platformNameOverride,
 }: BrandLogoProps) {
@@ -109,6 +133,8 @@ export function BrandLogo({
 
   const isLanding = variant === "landing";
   const resolvedTheme = isLanding ? "light" : theme;
+  const useResponsiveSvg =
+    responsive && (variant === "landing" || !logoUrl || isVectorLogoUrl(logoUrl ?? ""));
 
   const nameClass = cn(
     "brand-logo-name truncate font-bold tracking-tight leading-none",
@@ -128,6 +154,8 @@ export function BrandLogo({
     ? platformName.trim() || "Alcentimo"
     : platformName.toLowerCase();
 
+  const showWordmarkText = showName && !useResponsiveSvg;
+
   const content = (
     <>
       <BrandMark
@@ -135,10 +163,11 @@ export function BrandLogo({
         logoUrl={logoUrl}
         platformName={platformName}
         variant={variant}
+        responsive={responsive}
       />
-      {(showName || subtitle) && (
+      {(showWordmarkText || subtitle) && (
         <span className="brand-logo-wordmark flex min-w-0 flex-col justify-center gap-0.5">
-          {showName && <span className={nameClass}>{displayName}</span>}
+          {showWordmarkText && <span className={nameClass}>{displayName}</span>}
           {subtitle && <span className={subtitleClass}>{subtitle}</span>}
         </span>
       )}
@@ -147,6 +176,7 @@ export function BrandLogo({
 
   const baseClass = cn(
     "brand-logo inline-flex min-w-0 items-center gap-2.5",
+    responsive && "brand-logo-responsive",
     isLanding && "brand-logo-landing",
     centered && "justify-center",
     className,
@@ -154,7 +184,7 @@ export function BrandLogo({
 
   if (href) {
     return (
-      <Link href={href} className={baseClass}>
+      <Link href={href} className={baseClass} aria-label={platformName}>
         {content}
       </Link>
     );
