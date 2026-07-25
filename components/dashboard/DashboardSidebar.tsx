@@ -234,7 +234,7 @@ export function DashboardSidebar({
         className={cn(
           "shrink-0 border-t border-zinc-200 dark:border-zinc-800",
           drawerExpanded
-            ? "space-y-2 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            ? "flex max-h-[min(55vh,24rem)] flex-col gap-2 overflow-y-auto overscroll-contain px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
             : "space-y-2 px-2 py-3",
         )}
       >
@@ -248,7 +248,6 @@ export function DashboardSidebar({
           userEmail={userEmail}
           planName={planName}
           expanded={drawerExpanded}
-          inlinePanel={mobileOpen}
           showOwnerBillingLinks={showOwnerBillingLinks}
           canUpgradeToBusiness={canUpgradeToBusiness}
           onLogout={onLogout}
