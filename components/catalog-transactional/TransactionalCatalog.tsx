@@ -272,9 +272,10 @@ function TransactionalCatalogContent({
     (product: CatalogListItem, index: number) => (
       <div
         key={product.product_id}
-        className={
-          referenceMode && previewMode ? "catalog-preview-product-enter" : undefined
-        }
+        className={cn(
+          "w-full min-w-0",
+          referenceMode && previewMode && "catalog-preview-product-enter",
+        )}
         style={
           referenceMode && previewMode
             ? { animationDelay: `${index * 40}ms` }
