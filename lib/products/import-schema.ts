@@ -12,6 +12,10 @@ export type ProductImportColumn = (typeof PRODUCT_IMPORT_COLUMNS)[number];
 
 export const PRODUCT_IMPORT_TEMPLATE_PATH = "/plantilla_alcentimo.xlsx";
 export const PRODUCT_IMPORT_TEMPLATE_FILENAME = "plantilla_alcentimo.xlsx";
+export const PRODUCT_IMPORT_TEMPLATE_CSV_PATH = "/plantilla_alcentimo.csv";
+export const PRODUCT_IMPORT_TEMPLATE_CSV_FILENAME = "plantilla_alcentimo.csv";
+
+export const PRODUCT_IMPORT_PREVIEW_ROWS = 8;
 
 export const PRODUCT_IMPORT_MAX_ROWS = 500;
 export const PRODUCT_IMPORT_MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -33,15 +37,38 @@ export interface ValidatedImportRow {
   categoria: string;
 }
 
+export interface ImportPreviewCellValues {
+  nombre: string;
+  descripcion: string;
+  precio: string;
+  stock: string;
+  categoria: string;
+  url_imagen: string;
+}
+
+export interface ImportPreviewRow {
+  rowNumber: number;
+  valid: boolean;
+  errors: string[];
+  preview: ImportPreviewCellValues;
+  validated?: ValidatedImportRow;
+}
+
 export interface ProductImportValidationResult {
   ok: boolean;
   rows: ValidatedImportRow[];
+  previewRows: ImportPreviewRow[];
   errors: string[];
+  totalDataRows: number;
+  validRowCount: number;
+  invalidRowCount: number;
 }
 
 export interface ProductImportResult {
   ok: boolean;
   created: number;
   updated: number;
+  failed: number;
   errors: string[];
+  partialSuccess: boolean;
 }

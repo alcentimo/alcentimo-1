@@ -706,6 +706,122 @@ body {
   @apply inline-flex min-h-9 w-fit max-w-full shrink-0 items-center justify-center self-start rounded-lg border border-orange-300/80 bg-white px-4 py-2 text-center text-xs font-semibold leading-snug text-orange-900 transition-colors hover:bg-orange-100 sm:self-center dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-100 dark:hover:bg-orange-900/40;
 }
 
+.product-import-steps {
+  @apply grid grid-cols-2 gap-2 sm:grid-cols-4;
+}
+
+.product-import-step {
+  @apply flex items-center gap-2 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-2.5 py-2 text-[11px] font-medium text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400;
+}
+
+.product-import-step-active {
+  @apply border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-200;
+}
+
+.product-import-step-done {
+  @apply border-emerald-200 bg-emerald-50/70 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300;
+}
+
+.product-import-step-index {
+  @apply inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-inherit shadow-sm dark:bg-zinc-950;
+}
+
+.product-import-panel {
+  @apply rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40;
+}
+
+.product-import-panel-title {
+  @apply text-sm font-semibold text-zinc-900 dark:text-zinc-50;
+}
+
+.product-import-panel-copy {
+  @apply mt-1 text-xs leading-relaxed text-zinc-500;
+}
+
+.product-import-column-help {
+  @apply mt-3 space-y-2 text-xs;
+}
+
+.product-import-column-help li {
+  @apply grid gap-0.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-3;
+}
+
+.product-import-dropzone {
+  @apply flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center transition hover:border-emerald-400 hover:bg-emerald-50/40 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-emerald-500/60 dark:hover:bg-emerald-950/20;
+}
+
+.product-import-mapping-row {
+  @apply grid gap-2 rounded-lg border border-zinc-200/70 bg-white p-3 sm:grid-cols-[minmax(0,1fr)_12rem] sm:items-center dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.product-import-mapping-select {
+  @apply h-9 w-full min-w-0 text-sm;
+}
+
+.product-import-alert {
+  @apply flex items-start gap-2 rounded-lg border p-3 text-sm;
+}
+
+.product-import-alert-error {
+  @apply border-red-200 bg-red-50 text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200;
+}
+
+.product-import-alert-warning {
+  @apply border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200;
+}
+
+.product-import-alert-success {
+  @apply border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-200;
+}
+
+.product-import-stat {
+  @apply rounded-lg border border-zinc-200/80 bg-white px-3 py-2 text-center dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.product-import-stat-success {
+  @apply border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20;
+}
+
+.product-import-stat-error {
+  @apply border-red-200/80 bg-red-50/60 dark:border-red-900/40 dark:bg-red-950/20;
+}
+
+.product-import-stat-value {
+  @apply block text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50;
+}
+
+.product-import-stat-label {
+  @apply block text-[10px] uppercase tracking-wide text-zinc-500;
+}
+
+.product-import-preview-wrap {
+  @apply overflow-x-auto rounded-lg border border-zinc-200/80 dark:border-zinc-800;
+}
+
+.product-import-preview-table {
+  @apply w-full min-w-[36rem] text-left text-xs;
+}
+
+.product-import-preview-table th {
+  @apply border-b border-zinc-200/80 bg-zinc-50 px-3 py-2 font-semibold text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-300;
+}
+
+.product-import-preview-table td {
+  @apply border-b border-zinc-100 px-3 py-2 text-zinc-700 dark:border-zinc-800/80 dark:text-zinc-300;
+}
+
+.product-import-preview-row-error {
+  @apply bg-red-50/70 dark:bg-red-950/15;
+}
+
+.product-import-status-ok {
+  @apply inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300;
+}
+
+.product-import-status-error {
+  @apply inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800 dark:bg-red-950/40 dark:text-red-300;
+}
+
 .fx-conversion-widget {
   @apply relative overflow-hidden rounded-[12px] border border-zinc-200/70 bg-white shadow-[0_1px_3px_rgba(24,24,27,0.05)] dark:border-zinc-800/70 dark:bg-zinc-950;
 }

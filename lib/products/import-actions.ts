@@ -110,7 +110,14 @@ export async function importProductsBulk(
   const auth = await requireAuthStore(supabase);
 
   if (!auth.ok) {
-    return { ok: false, created: 0, updated: 0, errors: [auth.error] };
+    return {
+      ok: false,
+      created: 0,
+      updated: 0,
+      failed: 0,
+      partialSuccess: false,
+      errors: [auth.error],
+    };
   }
 
   const { store } = auth;
@@ -120,6 +127,8 @@ export async function importProductsBulk(
       ok: false,
       created: 0,
       updated: 0,
+      failed: 0,
+      partialSuccess: false,
       errors: ["No hay productos para importar."],
     };
   }
@@ -129,6 +138,8 @@ export async function importProductsBulk(
       ok: false,
       created: 0,
       updated: 0,
+      failed: 0,
+      partialSuccess: false,
       errors: [
         `Máximo ${PRODUCT_IMPORT_MAX_ROWS} productos por importación.`,
       ],
@@ -144,13 +155,22 @@ export async function importProductsBulk(
       ok: false,
       created: 0,
       updated: 0,
+      failed: rows.length,
+      partialSuccess: false,
       errors: ["Los datos enviados no pasaron la validación del servidor."],
     };
   }
 
   const duplicateErrors = findDuplicateImportNames(sanitizedRows);
   if (duplicateErrors.length > 0) {
-    return { ok: false, created: 0, updated: 0, errors: duplicateErrors };
+    return {
+      ok: false,
+      created: 0,
+      updated: 0,
+      failed: sanitizedRows.length,
+      partialSuccess: false,
+      errors: duplicateErrors,
+    };
   }
 
   const { data: storeCategories, error: categoriesError } = await supabase
@@ -163,6 +183,8 @@ export async function importProductsBulk(
       ok: false,
       created: 0,
       updated: 0,
+      failed: sanitizedRows.length,
+      partialSuccess: false,
       errors: [categoriesError.message],
     };
   }
@@ -181,6 +203,8 @@ export async function importProductsBulk(
       ok: false,
       created: 0,
       updated: 0,
+      failed: sanitizedRows.length,
+      partialSuccess: false,
       errors: [existingError.message],
     };
   }
@@ -262,10 +286,15 @@ export async function importProductsBulk(
     revalidateAfterImport(store.slug);
   }
 
+  const importedCount = created + updated;
+  const failed = sanitizedRows.length - importedCount;
+
   return {
     ok: errors.length === 0,
     created,
     updated,
+    failed,
+    partialSuccess: importedCount > 0 && errors.length > 0,
     errors,
   };
 }
@@ -450,6 +479,8 @@ export async function validateAndImportProducts(
       ok: false,
       created: 0,
       updated: 0,
+      failed: 0,
+      partialSuccess: false,
       errors: validation.errors,
       validationErrors: validation.errors,
     };
@@ -461,6 +492,8 @@ export async function validateAndImportProducts(
       ok: false,
       created: 0,
       updated: 0,
+      failed: validation.rows.length,
+      partialSuccess: false,
       errors: duplicateErrors,
       validationErrors: duplicateErrors,
     };

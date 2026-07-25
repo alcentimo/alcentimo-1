@@ -52,9 +52,8 @@ import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
 import { TrialLimitDialog } from "@/components/dashboard/plans/TrialLimitDialog";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import {
-  PRODUCT_IMPORT_TEMPLATE_FILENAME,
-  PRODUCT_IMPORT_TEMPLATE_PATH,
-} from "@/lib/products/import-schema";
+  downloadProductImportTemplateXlsx,
+} from "@/lib/products/import-template-download";
 import {
   exportProductsToCsv,
   exportProductsToExcel,
@@ -1129,10 +1128,7 @@ export function InventoryPanel({
                 <DropdownMenuItem
                   onClick={() => {
                     close();
-                    const anchor = document.createElement("a");
-                    anchor.href = PRODUCT_IMPORT_TEMPLATE_PATH;
-                    anchor.download = PRODUCT_IMPORT_TEMPLATE_FILENAME;
-                    anchor.click();
+                    downloadProductImportTemplateXlsx();
                   }}
                 >
                   <Download className="h-3.5 w-3.5" aria-hidden="true" />
