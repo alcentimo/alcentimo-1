@@ -10,16 +10,12 @@ import {
   Store,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { AdminDashboardTab } from "@/lib/admin/dashboard-nav";
 import { cn } from "@/lib/cn";
 
-export type AdminDashboardTab =
-  | "resumen"
-  | "pagos"
-  | "tiendas"
-  | "planes"
-  | "soporte";
+export type { AdminDashboardTab };
 
-export interface AdminNavItem {
+interface AdminNavItem {
   id: AdminDashboardTab;
   label: string;
   description: string;
@@ -61,27 +57,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     showBadge: true,
   },
 ];
-
-const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
-  resumen: "resumen",
-  pagos: "pagos",
-  tiendas: "tiendas",
-  planes: "planes",
-  soporte: "soporte",
-  metricas: "resumen",
-  crecimiento: "tiendas",
-  dominios: "tiendas",
-  sucursales: "tiendas",
-  configuracion: "planes",
-  plataforma: "planes",
-};
-
-export function resolveAdminDashboardTab(
-  value: string | null | undefined,
-): AdminDashboardTab {
-  if (!value) return "resumen";
-  return LEGACY_TAB_MAP[value] ?? "resumen";
-}
 
 interface AdminDashboardShellProps {
   activeTab: AdminDashboardTab;

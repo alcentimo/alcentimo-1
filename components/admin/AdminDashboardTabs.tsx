@@ -3,12 +3,8 @@
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { ManualPaymentsPanel } from "@/components/admin/ManualPaymentsPanel";
-import {
-  AdminDashboardShell,
-  resolveAdminDashboardTab,
-  type AdminDashboardTab,
-} from "@/components/admin/AdminDashboardShell";
-import { AdminStoresPanel, type AdminStoresSubTab } from "@/components/admin/AdminStoresPanel";
+import { AdminDashboardShell } from "@/components/admin/AdminDashboardShell";
+import { AdminStoresPanel } from "@/components/admin/AdminStoresPanel";
 import { AdminPlansHubPanel } from "@/components/admin/AdminPlansHubPanel";
 import { SupportMessagesPanel } from "@/components/dashboard/SupportMessagesPanel";
 import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
@@ -24,6 +20,11 @@ import type { SubscriptionPagoMovilDetails } from "@/src/config/subscription-pag
 import type { PlanSettingsMap } from "@/lib/plans/plan-settings";
 import type { PlatformSettings } from "@/lib/platform/platform-settings";
 import type { AdminStoreDomainRow } from "@/lib/admin/custom-domain-actions";
+import {
+  resolveAdminDashboardTab,
+  resolveAdminStoresSubTab,
+  type AdminDashboardTab,
+} from "@/lib/admin/dashboard-nav";
 
 export type { AdminDashboardTab };
 
@@ -125,14 +126,6 @@ const AdminStoreLocationsPanel = dynamic(
   },
 );
 
-function resolveStoresSubTab(
-  legacyTab: string | null | undefined,
-): AdminStoresSubTab {
-  if (legacyTab === "dominios") return "dominios";
-  if (legacyTab === "sucursales") return "sucursales";
-  return "usuarios";
-}
-
 interface AdminDashboardTabsProps {
   payments: ManualPaymentWithEmail[];
   messages: SupportMessage[];
@@ -222,7 +215,7 @@ export function AdminDashboardTabs({
     window.history.replaceState(null, "", nextUrl);
   }
 
-  const storesInitialSubTab = resolveStoresSubTab(legacyTabParam);
+  const storesInitialSubTab = resolveAdminStoresSubTab(legacyTabParam);
 
   return (
     <AdminDashboardShell

@@ -2,7 +2,9 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AdminDashboardTabs } from "@/components/admin/AdminDashboardTabs";
-import { resolveAdminDashboardTab } from "@/components/admin/AdminDashboardShell";
+import {
+  resolveAdminDashboardTab,
+} from "@/lib/admin/dashboard-nav";
 import { getManualPayments } from "@/lib/plans/get-manual-payments";
 import { getAdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import { getAdminUsers } from "@/lib/admin/get-admin-users";
@@ -12,6 +14,9 @@ import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin
 import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
+import { DEFAULT_PLAN_SETTINGS } from "@/lib/plans/plan-settings";
+import { DEFAULT_PLATFORM_SETTINGS } from "@/lib/platform/platform-settings";
+import { getSubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
 import { listAdminStoreDomains } from "@/lib/admin/custom-domain-actions";
 import {
   listSubscriptionCampaigns,
@@ -52,6 +57,20 @@ function resolveMinProducts(raw: string | string[] | undefined): number | undefi
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
+async function safeLoad<T>(
+  loader: () => Promise<T>,
+  fallbackMessage: string,
+): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
+  try {
+    return { ok: true, data: await loader() };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : fallbackMessage,
+    };
+  }
+}
+
 export default async function AdminDashboardPage({
   searchParams,
 }: {
@@ -86,74 +105,53 @@ export default async function AdminDashboardPage({
     metricsResult,
     growthResult,
     storeDomainsResult,
-    pagoMovil,
-    planSettings,
-    platformSettings,
+    pagoMovilResult,
+    planSettingsResult,
+    platformSettingsResult,
   ] = await Promise.all([
-    getManualPayments({ status: "all", limit: 200 }).then(
-      (data) => ({ ok: true as const, data }),
-      (error: unknown) => ({
-        ok: false as const,
-        error:
-          error instanceof Error
-            ? error.message
-            : "No se pudieron cargar los pagos manuales.",
-      }),
+    safeLoad(
+      () => getManualPayments({ status: "all", limit: 200 }),
+      "No se pudieron cargar los pagos manuales.",
     ),
-    getSupportMessages().then(
-      (data) => ({ ok: true as const, data }),
-      (error: unknown) => ({
-        ok: false as const,
-        error:
-          error instanceof Error
-            ? error.message
-            : "No se pudieron cargar los mensajes de soporte.",
-      }),
+    safeLoad(
+      () => getSupportMessages(),
+      "No se pudieron cargar los mensajes de soporte.",
     ),
-    getAdminPlanMetrics().then(
-      (data) => ({ ok: true as const, data }),
-      (error: unknown) => ({
-        ok: false as const,
-        error:
-          error instanceof Error
-            ? error.message
-            : "No se pudieron cargar las métricas.",
-      }),
+    safeLoad(
+      () => getAdminPlanMetrics(),
+      "No se pudieron cargar las métricas.",
     ),
-    Promise.all([
-      getAdminUsers({ limit: 300 }),
-      listSubscriptionCoupons(),
-      listSubscriptionCampaigns(),
-      getGrowthAuditLog(200),
-    ]).then(
-      ([users, coupons, campaigns, auditLog]) => ({
-        ok: true as const,
-        users,
-        coupons,
-        campaigns,
-        auditLog,
-      }),
-      (error: unknown) => ({
-        ok: false as const,
-        error:
-          error instanceof Error
-            ? error.message
-            : "No se pudo cargar el módulo de tiendas.",
-      }),
+    safeLoad(
+      () =>
+        Promise.all([
+          getAdminUsers({ limit: 300 }),
+          listSubscriptionCoupons(),
+          listSubscriptionCampaigns(),
+          getGrowthAuditLog(200),
+        ]).then(([users, coupons, campaigns, auditLog]) => ({
+          users,
+          coupons,
+          campaigns,
+          auditLog,
+        })),
+      "No se pudo cargar el módulo de tiendas.",
     ),
-    listAdminStoreDomains().then(
-      (data) => ({ ok: true as const, data }),
-      (error: unknown) => ({
-        ok: false as const,
-        error:
-          error instanceof Error
-            ? error.message
-            : "No se pudieron cargar los dominios personalizados.",
-      }),
+    safeLoad(
+      () => listAdminStoreDomains(),
+      "No se pudieron cargar los dominios personalizados.",
     ),
-    fetchSubscriptionPagoMovilDetails(),
-    fetchPlanSettings(),
-    fetchPlatformSettings(),
+    safeLoad(
+      () => fetchSubscriptionPagoMovilDetails(),
+      "No se pudieron cargar los métodos de pago.",
+    ),
+    safeLoad(
+      () => fetchPlanSettings(),
+      "No se pudieron cargar los planes.",
+    ),
+    safeLoad(
+      () => fetchPlatformSettings(),
+      "No se pudieron cargar los ajustes de plataforma.",
+    ),
   ]);
 
   const payments = paymentsResult.ok ? paymentsResult.data : [];
@@ -162,13 +160,22 @@ export default async function AdminDashboardPage({
   const messagesError = messagesResult.ok ? null : messagesResult.error;
   const metrics = metricsResult.ok ? metricsResult.data : null;
   const metricsError = metricsResult.ok ? null : metricsResult.error;
-  const growthUsers = growthResult.ok ? growthResult.users : [];
-  const growthCoupons = growthResult.ok ? growthResult.coupons : [];
-  const growthCampaigns = growthResult.ok ? growthResult.campaigns : [];
-  const growthAuditLog = growthResult.ok ? growthResult.auditLog : [];
+  const growthUsers = growthResult.ok ? growthResult.data.users : [];
+  const growthCoupons = growthResult.ok ? growthResult.data.coupons : [];
+  const growthCampaigns = growthResult.ok ? growthResult.data.campaigns : [];
+  const growthAuditLog = growthResult.ok ? growthResult.data.auditLog : [];
   const growthError = growthResult.ok ? null : growthResult.error;
   const storeDomains = storeDomainsResult.ok ? storeDomainsResult.data : [];
   const storeDomainsError = storeDomainsResult.ok ? null : storeDomainsResult.error;
+  const pagoMovil = pagoMovilResult.ok
+    ? pagoMovilResult.data
+    : getSubscriptionPagoMovilDetails();
+  const planSettings = planSettingsResult.ok
+    ? planSettingsResult.data
+    : DEFAULT_PLAN_SETTINGS;
+  const platformSettings = platformSettingsResult.ok
+    ? platformSettingsResult.data
+    : DEFAULT_PLATFORM_SETTINGS;
 
   const pendingPayments = metrics?.pendingPayments ??
     payments.filter(

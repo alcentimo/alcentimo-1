@@ -75,7 +75,9 @@ export function AdminGrowthPanel({
   initialSubTab = "usuarios",
   mode = "full",
 }: AdminGrowthPanelProps) {
-  const [subTab, setSubTab] = useState<GrowthSubTab>(initialSubTab);
+  const [subTab, setSubTab] = useState<GrowthSubTab>(
+    mode === "promociones" ? "cupones" : initialSubTab,
+  );
   const [users, setUsers] = useState(initialUsers);
   const [coupons, setCoupons] = useState(initialCoupons);
   const [campaigns, setCampaigns] = useState(initialCampaigns);
