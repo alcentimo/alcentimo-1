@@ -5313,10 +5313,6 @@ body {
     display: none;
   }
 
-  .design-preview-rubro-picker {
-    @apply space-y-1.5 px-3 py-2.5;
-  }
-
   .design-accordion-trigger {
     @apply px-3 py-3;
   }
@@ -5364,22 +5360,6 @@ body {
   height: auto;
   min-height: 0;
   max-height: none;
-}
-
-.design-preview-rubro-picker {
-  @apply space-y-2 px-4 py-3.5;
-}
-
-.design-preview-rubro-label {
-  @apply block text-xs font-medium text-zinc-600 dark:text-zinc-400;
-}
-
-.design-preview-rubro-select {
-  @apply h-9 border-zinc-200/90 bg-zinc-50/80 font-medium dark:border-zinc-700 dark:bg-zinc-900/60;
-}
-
-.design-preview-rubro-hint {
-  @apply text-[11px] leading-relaxed text-zinc-400;
 }
 
 .design-preview-rubro-enter {

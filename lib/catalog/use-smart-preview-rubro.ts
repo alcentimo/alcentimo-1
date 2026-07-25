@@ -16,7 +16,7 @@ interface UseSmartPreviewRubroResult {
 }
 
 /**
- * Escucha el rubro del selector sandbox y pre-carga solo su colección de assets.
+ * Escucha el rubro de la tienda y pre-carga solo su colección de assets.
  * Nunca descarga el paquete completo — carga condicional por rubro.
  */
 export function useSmartPreviewRubro(

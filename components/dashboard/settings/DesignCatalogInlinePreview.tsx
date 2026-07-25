@@ -15,7 +15,7 @@ import {
   CATALOG_SALE_MODE_PRESETS,
   CATALOG_THEME_PRESETS,
 } from "@/lib/store-settings/catalog-theme-presets";
-import type { StoreRubro } from "@/src/config/categories";
+import { normalizeStoreRubro } from "@/src/config/categories";
 import { cn } from "@/lib/cn";
 
 interface DesignCatalogInlinePreviewProps {
@@ -24,7 +24,6 @@ interface DesignCatalogInlinePreviewProps {
   exchangeRateUpdatedAt?: string | null;
   baseSettings: CatalogPreviewSettings;
   design: CatalogDesignSettings;
-  previewRubro: StoreRubro;
 }
 
 export function DesignCatalogInlinePreview({
@@ -33,21 +32,21 @@ export function DesignCatalogInlinePreview({
   exchangeRateUpdatedAt = null,
   baseSettings,
   design,
-  previewRubro,
 }: DesignCatalogInlinePreviewProps) {
-  const { isPrefetching } = useSmartPreviewRubro(previewRubro);
+  const storeRubro = normalizeStoreRubro(store.rubro_tienda);
+  const { isPrefetching } = useSmartPreviewRubro(storeRubro);
 
   const resolvedDesign = useMemo(
-    () => resolveCatalogDesign(design, store.rubro_tienda ?? previewRubro),
-    [design, store.rubro_tienda, previewRubro],
+    () => resolveCatalogDesign(design, storeRubro),
+    [design, storeRubro],
   );
 
   const themeLabel = CATALOG_THEME_PRESETS[resolvedDesign.theme].label;
   const saleLabel = CATALOG_SALE_MODE_PRESETS[resolvedDesign.saleMode].label;
 
   const referenceCatalog = useMemo(
-    () => getReferenceCatalogForStore(store, exchangeRate, previewRubro),
-    [store, exchangeRate, previewRubro],
+    () => getReferenceCatalogForStore(store, exchangeRate),
+    [store, exchangeRate],
   );
 
   const settings = useMemo(
@@ -74,15 +73,15 @@ export function DesignCatalogInlinePreview({
           {themeLabel} · {saleLabel} · {referenceCatalog.rubroLabel}
         </p>
         <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-          Mockup estático por rubro para comparar temas. Tus productos reales
-          no se muestran aquí — el selector es solo sandbox de diseño.
+          Mockup estático según el rubro configurado en Identidad. Tus productos
+          reales no se muestran aquí.
         </p>
       </div>
 
       <div className="design-studio-preview-frame">
         <span className="design-reference-badge">Diseño de Referencia</span>
         <div
-          key={previewRubro}
+          key={storeRubro}
           className={cn(
             "design-preview-rubro-enter",
             isPrefetching && "design-preview-rubro-swapping",
