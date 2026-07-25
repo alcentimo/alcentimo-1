@@ -32,7 +32,7 @@ export function LandingNav() {
           : "border-b border-transparent bg-[#FAFAF9]/95 backdrop-blur-sm"
       }`}
     >
-      <div className="page-container flex h-14 items-center justify-between gap-4 lg:h-16">
+      <div className="page-container flex min-h-[4.5rem] items-center justify-between gap-4 py-2.5 md:min-h-20 md:py-3 lg:min-h-[5.25rem] lg:py-3.5">
         <BrandLogo
           href="/"
           size="lg"

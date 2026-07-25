@@ -35,9 +35,9 @@ function brandMarkImageSize(size: "sm" | "md" | "lg") {
   if (size === "lg") {
     return {
       container:
-        "brand-logo-header-public h-10 w-auto max-w-[16rem] md:h-11 md:max-w-[18rem]",
-      width: 360,
-      height: 44,
+        "brand-logo-header-public h-14 w-auto max-w-[min(80vw,20rem)] md:h-16 md:max-w-[24rem]",
+      width: 512,
+      height: 64,
     };
   }
   return {
