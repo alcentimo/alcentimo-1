@@ -5,12 +5,13 @@ import { useState } from "react";
 import { Check, Globe } from "lucide-react";
 import { PlanCheckoutDialog } from "@/components/dashboard/plans/PlanCheckoutDialog";
 import {
-  CUSTOM_DOMAIN_FEATURE,
   formatAnnualSavingsLabel,
   formatPlanPriceForTier,
   getRecommendedAnnualSavingsLabel,
+  isCustomDomainFeature,
   planIncludesCustomDomain,
   PLAN_PRICING_TIERS,
+  PRICING_DOMAIN_DISCLAIMER,
   type BillingPeriod,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
@@ -179,15 +180,14 @@ export function PlansPanel({
                   </Link>
                 </p>
               ) : null}
-              {productCount != null && productLimit != null && currentPlanId !== "premium" && currentPlanId !== "enterprise" && (
+              {productCount != null && productLimit != null && currentPlanId !== "enterprise" && (
                 <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
                   {productCount} / {formatProductLimit(productLimit)} productos activos
                 </p>
               )}
-              {(currentPlanId === "premium" || currentPlanId === "enterprise") && (
+              {currentPlanId === "enterprise" && (
                 <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                  Productos ilimitados
-                  {currentPlanId === "enterprise" ? " · Multi-sucursal" : null}
+                  Productos ilimitados · Multi-sucursal
                 </p>
               )}
             </div>
@@ -207,13 +207,10 @@ export function PlansPanel({
             />
             <div>
               <p className="text-sm font-semibold text-violet-950 dark:text-violet-100">
-                Business y Enterprise: conecta tu dominio propio
+                Todos los planes de pago: conecta tu dominio propio
               </p>
               <p className="mt-1 text-sm leading-relaxed text-violet-900/90 dark:text-violet-200/90">
-                Los planes <strong>Business</strong> y <strong>Enterprise</strong>{" "}
-                permiten apuntar un dominio .com que ya tengas (configuración DNS).
-                Gratis y Pro usan el subdominio{" "}
-                <strong>tuempresa.alcentimo.com</strong>.
+                {PRICING_DOMAIN_DISCLAIMER}
               </p>
             </div>
           </div>
@@ -233,9 +230,8 @@ export function PlansPanel({
                   Tu marca, tu dominio
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-violet-900/90 dark:text-violet-200/90">
-                  Con <strong>Business</strong> o <strong>Enterprise</strong> puedes
-                  conectar un dominio .com propio (tú configuras el DNS o lo
-                  apuntas). Gratis y Pro publican en{" "}
+                  Todos los planes de pago permiten conectar tu dominio .com (DNS a
+                  tu cargo). El plan Gratis usa{" "}
                   <strong>tuempresa.alcentimo.com</strong>.
                 </p>
               </div>
@@ -454,7 +450,7 @@ function PricingCard({
 
       <ul className="mt-5 flex-1 space-y-2.5">
         {tier.features.map((feature) => {
-          const isDomainFeature = feature === CUSTOM_DOMAIN_FEATURE;
+          const isDomainFeature = isCustomDomainFeature(feature);
           return (
             <li
               key={feature}
@@ -479,6 +475,12 @@ function PricingCard({
           );
         })}
       </ul>
+
+      {tier.footnote ? (
+        <p className="mt-4 rounded-lg border border-amber-200/80 bg-amber-50/70 px-3 py-2 text-[11px] leading-relaxed font-medium text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
+          {tier.footnote}
+        </p>
+      ) : null}
 
       {planIncludesCustomDomain(tier.planId) ? (
         <p className="mt-4 rounded-lg border border-violet-200/70 bg-violet-50/50 px-3 py-2 text-[11px] leading-relaxed text-violet-900 dark:border-violet-900/40 dark:bg-violet-950/20 dark:text-violet-200">

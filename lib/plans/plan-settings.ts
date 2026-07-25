@@ -1,5 +1,8 @@
 import type { ProfilePlanDb } from "@/lib/database.types";
 import {
+  AI_ASSISTANT_ADVANCED_FEATURE,
+  AI_ASSISTANT_FEATURE,
+  AI_MULTISEDED_FEATURE,
   CUSTOM_DOMAIN_FEATURE,
   FREE_SUBDOMAIN_FEATURE,
   PAID_PLAN_CTA,
@@ -64,7 +67,7 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
     displayName: "Business",
     monthlyUsd: 15,
     annualUsd: 144,
-    productLimit: null,
+    productLimit: 2000,
     userLimit: null,
     includedLocations: 1,
     extraLocationMonthlyUsd: 0,
@@ -83,7 +86,10 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
 
 const TIER_STATIC: Record<
   PlanId,
-  Pick<PlanPricingTier, "tagline" | "features" | "cta" | "recommended" | "addonNote">
+  Pick<
+    PlanPricingTier,
+    "tagline" | "features" | "cta" | "recommended" | "addonNote" | "footnote"
+  >
 > = {
   free: {
     tagline: "Ideal para empezar",
@@ -97,16 +103,16 @@ const TIER_STATIC: Record<
   starter: {
     tagline: "Para negocios en crecimiento",
     features: [
-      "Todo lo del plan Gratis",
-      "Más capacidad de catálogo",
-      "Soporte por email",
+      CUSTOM_DOMAIN_FEATURE,
+      AI_ASSISTANT_FEATURE,
+      "Precios USD y Bs automáticos + cupones y variantes",
     ],
     cta: PAID_PLAN_CTA,
     recommended: true,
   },
   growth: {
     tagline: "Para negocios en crecimiento",
-    features: ["Más capacidad de catálogo"],
+    features: [CUSTOM_DOMAIN_FEATURE, AI_ASSISTANT_FEATURE],
     cta: PAID_PLAN_CTA,
   },
   premium: {
@@ -114,19 +120,19 @@ const TIER_STATIC: Record<
     features: [
       "Todo lo del plan Pro",
       CUSTOM_DOMAIN_FEATURE,
-      "Usuarios y roles de equipo",
-      "Soporte dedicado",
+      "Usuarios y roles de equipo + Soporte dedicado",
+      AI_ASSISTANT_ADVANCED_FEATURE,
     ],
+    footnote: "Importante: este plan no incluye multisede.",
     cta: PAID_PLAN_CTA,
   },
   enterprise: {
     tagline: "Multi-sucursal y operaciones avanzadas",
     features: [
       "Todo lo del plan Business",
+      "Hasta 3 sucursales incluidas con stock independiente por sede y selector de sede",
       CUSTOM_DOMAIN_FEATURE,
-      "Hasta 3 sucursales incluidas",
-      "Selector de sede y retiro en tienda",
-      "Stock independiente por sucursal",
+      AI_MULTISEDED_FEATURE,
     ],
     addonNote: "Sedes adicionales: +$6 USD/mes por cada sede extra",
     cta: PAID_PLAN_CTA,
@@ -195,7 +201,8 @@ export function buildChargeTableFromTiers(
 
 function productLimitLabel(limit: number | null): string {
   if (limit == null) return "Productos ilimitados";
-  return `Hasta ${formatProductLimit(limit)} productos`;
+  const formatted = limit.toLocaleString("es-VE");
+  return `Hasta ${formatted} productos`;
 }
 
 function formatAddonNote(row: PlanSettingRow): string | null {
@@ -228,7 +235,7 @@ export function buildPlanPricingTiers(
 
     if (planId === "enterprise" && row.includedLocations > 0) {
       const idx = features.findIndex((f) => f.includes("sucursales"));
-      const label = `Hasta ${row.includedLocations} sucursales incluidas`;
+      const label = `Hasta ${row.includedLocations} sucursales incluidas con stock independiente por sede y selector de sede`;
       if (idx >= 0) features[idx] = label;
       else features.splice(1, 0, label);
     }
@@ -243,6 +250,7 @@ export function buildPlanPricingTiers(
       recommended: staticMeta.recommended,
       features,
       addonNote: formatAddonNote(row) ?? staticMeta.addonNote ?? null,
+      footnote: staticMeta.footnote ?? null,
       cta: staticMeta.cta,
     };
   });

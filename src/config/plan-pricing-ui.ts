@@ -4,15 +4,35 @@ export type BillingPeriod = "monthly" | "annual";
 
 export const PAID_PLAN_CTA = "Empezar ahora";
 
-/** Beneficio de conexión DNS en Business y Enterprise. */
-export const CUSTOM_DOMAIN_FEATURE = "Conexión de dominio personalizado (.com)";
+/** Aclaratoria legal sobre dominios en la sección de precios. */
+export const PRICING_DOMAIN_DISCLAIMER =
+  "Nota: Todos los planes de pago permiten conectar tu propio dominio (.com). El dominio no viene incluido con la suscripción; debes adquirirlo y registrarlo por tu cuenta con tu proveedor preferido (GoDaddy, Namecheap, etc.) y nosotros te guiamos en la conexión.";
 
-/** Enlace en subdominio de plataforma (Gratis y Pro). */
+/** Beneficio de conexión DNS en planes de pago. */
+export const CUSTOM_DOMAIN_FEATURE =
+  "Conexión de dominio personalizado (.com) (DNS a tu cargo)";
+
+/** Enlace en subdominio de plataforma (plan Gratis). */
 export const FREE_SUBDOMAIN_FEATURE =
   "Catálogo en subdominio Alcentimo (tuempresa.alcentimo.com)";
 
+export const AI_ASSISTANT_FEATURE =
+  "Asistente de IA integrado (redacción, optimización y soporte)";
+
+export const AI_ASSISTANT_ADVANCED_FEATURE =
+  "Asistente de IA integrado avanzado";
+
+export const AI_MULTISEDED_FEATURE =
+  "Asistente IA Multisede de alta precisión (audita, centraliza y analiza inventarios y ventas de todas tus sucursales)";
+
+export function isCustomDomainFeature(feature: string): boolean {
+  return feature.startsWith("Conexión de dominio personalizado");
+}
+
 export function planIncludesCustomDomain(planId: PlanId): boolean {
-  return planId === "premium" || planId === "enterprise";
+  return (
+    planId === "starter" || planId === "premium" || planId === "enterprise"
+  );
 }
 
 export interface PlanPricingTier {
@@ -28,6 +48,8 @@ export interface PlanPricingTier {
   features: string[];
   /** Nota visual de add-on (p. ej. sedes extras). */
   addonNote?: string | null;
+  /** Aclaratoria destacada bajo la lista de beneficios. */
+  footnote?: string | null;
   cta: string;
 }
 
@@ -56,9 +78,9 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     productLimitLabel: "Hasta 250 productos",
     recommended: true,
     features: [
-      "Todo lo del plan Gratis",
-      "Más capacidad de catálogo",
-      "Soporte por email",
+      CUSTOM_DOMAIN_FEATURE,
+      AI_ASSISTANT_FEATURE,
+      "Precios USD y Bs automáticos + cupones y variantes",
     ],
     cta: PAID_PLAN_CTA,
   },
@@ -68,13 +90,14 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     tagline: "Para marcas establecidas",
     monthlyUsd: 15,
     annualUsd: 144,
-    productLimitLabel: "Productos ilimitados",
+    productLimitLabel: "Hasta 2.000 productos",
     features: [
       "Todo lo del plan Pro",
       CUSTOM_DOMAIN_FEATURE,
-      "Usuarios y roles de equipo",
-      "Soporte dedicado",
+      "Usuarios y roles de equipo + Soporte dedicado",
+      AI_ASSISTANT_ADVANCED_FEATURE,
     ],
+    footnote: "Importante: este plan no incluye multisede.",
     cta: PAID_PLAN_CTA,
   },
   {
@@ -86,10 +109,9 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     productLimitLabel: "Productos ilimitados",
     features: [
       "Todo lo del plan Business",
+      "Hasta 3 sucursales incluidas con stock independiente por sede y selector de sede",
       CUSTOM_DOMAIN_FEATURE,
-      "Hasta 3 sucursales incluidas",
-      "Selector de sede y retiro en tienda",
-      "Stock independiente por sucursal",
+      AI_MULTISEDED_FEATURE,
     ],
     addonNote: "Sedes adicionales: +$6 USD/mes por cada sede extra",
     cta: PAID_PLAN_CTA,

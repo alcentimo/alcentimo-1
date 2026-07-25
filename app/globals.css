@@ -177,6 +177,10 @@ body {
   @apply bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent dark:from-emerald-400 dark:to-emerald-300;
 }
 
+.landing-pricing-disclaimer {
+  @apply rounded-xl border border-violet-200/80 bg-violet-50/70 px-4 py-3 text-sm leading-relaxed text-violet-950 dark:border-violet-900/40 dark:bg-violet-950/20 dark:text-violet-100;
+}
+
 .landing-surface {
   @apply rounded-xl border border-zinc-200/60 bg-white dark:border-zinc-800/60 dark:bg-zinc-950;
 }

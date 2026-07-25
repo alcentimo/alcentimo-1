@@ -21,9 +21,9 @@ const benefits = [
     icon: Globe,
     title: "Dominio propio (.com)",
     description:
-      "Conecta tu dirección web personalizada para que tus clientes te recuerden siempre. Disponible en planes Business y Enterprise.",
+      "Conecta tu dirección web personalizada para que tus clientes te recuerden siempre. Disponible en todos los planes de pago (dominio a tu cargo).",
     accent: "violet",
-    badge: "Business+",
+    badge: "Planes de pago",
   },
 ] as const;
 

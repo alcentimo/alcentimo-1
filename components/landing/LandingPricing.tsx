@@ -7,9 +7,10 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import {
-  CUSTOM_DOMAIN_FEATURE,
   FREE_SUBDOMAIN_FEATURE,
+  isCustomDomainFeature,
   planIncludesCustomDomain,
+  PRICING_DOMAIN_DISCLAIMER,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
 import { PLAN_PRICING_TIERS } from "@/src/config/plan-pricing-ui";
@@ -40,15 +41,17 @@ export function LandingPricing({
       className="section-padding border-t border-zinc-200/60 dark:border-zinc-800/60"
     >
       <div className="page-container">
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-3xl text-center">
           <Badge variant="success" className="mb-4">
             Precios simples
           </Badge>
           <h2 className="section-title">Empieza gratis, crece cuando quieras</h2>
           <p className="mt-4 text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Sin sorpresas ni contratos largos. Gratis y Pro usan subdominio
-            Alcentimo; Business y Enterprise permiten conectar tu dominio .com
-            propio (DNS a tu cargo).
+            Planes claros para cada etapa de tu negocio. Escala tu catálogo, activa
+            tu marca y conecta tu dominio cuando lo necesites.
+          </p>
+          <p className="landing-pricing-disclaimer mt-5 text-left sm:text-center">
+            {PRICING_DOMAIN_DISCLAIMER}
           </p>
         </div>
 
@@ -81,7 +84,7 @@ export function LandingPricing({
                         className="mb-3 w-fit border-violet-200 text-violet-800 dark:border-violet-800 dark:text-violet-200"
                       >
                         <Globe className="mr-1 h-3 w-3" aria-hidden="true" />
-                        Conexión DNS
+                        Dominio .com
                       </Badge>
                     ) : null}
                     <h3 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -112,21 +115,21 @@ export function LandingPricing({
                         {tier.productLimitLabel}
                       </li>
                       {tier.features.map((feature) => {
-                        const isDomainFeature =
-                          feature === CUSTOM_DOMAIN_FEATURE ||
-                          feature === FREE_SUBDOMAIN_FEATURE;
+                        const isDomainFeature = isCustomDomainFeature(feature);
+                        const isSubdomainFeature = feature === FREE_SUBDOMAIN_FEATURE;
+                        const isHighlighted = isDomainFeature || isSubdomainFeature;
                         return (
                           <li
                             key={feature}
                             className={`flex items-start gap-2.5 text-sm leading-relaxed ${
-                              isDomainFeature
+                              isHighlighted
                                 ? "font-medium text-violet-800 dark:text-violet-200"
                                 : "text-zinc-600 dark:text-zinc-400"
                             }`}
                           >
                             <Check
                               className={`mt-0.5 h-4 w-4 shrink-0 ${
-                                isDomainFeature
+                                isHighlighted
                                   ? "text-violet-600 dark:text-violet-400"
                                   : "text-emerald-600 dark:text-emerald-400"
                               }`}
@@ -137,6 +140,19 @@ export function LandingPricing({
                         );
                       })}
                     </ul>
+
+                    {tier.footnote ? (
+                      <p className="mt-4 rounded-lg border border-amber-200/80 bg-amber-50/70 px-3 py-2 text-[11px] leading-relaxed font-medium text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
+                        {tier.footnote}
+                      </p>
+                    ) : null}
+
+                    {tier.addonNote ? (
+                      <p className="mt-3 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-[11px] leading-relaxed text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
+                        {tier.addonNote}
+                      </p>
+                    ) : null}
+
                     <Link
                       href={ctaHref}
                       className={`mt-8 inline-flex justify-center gap-2 ${

@@ -32,7 +32,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   premium: {
     id: "premium",
     name: "Plan Business",
-    productLimit: null,
+    productLimit: 2000,
     priceUsdYearly: 199,
   },
   enterprise: {
