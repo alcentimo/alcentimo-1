@@ -16,12 +16,56 @@ import {
 } from "@/lib/locations/get-store-locations";
 import type {
   StorefrontAssistantContext,
+  StorefrontAssistantMessage,
   StorefrontAssistantProduct,
   StorefrontAssistantProductVariant,
 } from "@/lib/ai/storefront-assistant-types";
 import { getPublicStoreBySlug } from "@/lib/stores";
 
 const MAX_PRODUCTS = 100;
+const MAX_SEARCH_PRODUCTS = 40;
+
+function extractSearchQueryFromMessages(
+  messages: StorefrontAssistantMessage[] | undefined,
+): string | null {
+  if (!messages?.length) return null;
+  const lastUser = [...messages].reverse().find((m) => m.role === "user");
+  if (!lastUser) return null;
+  const query = lastUser.content.trim();
+  if (query.length < 3 || query.length > 120) return null;
+  return query;
+}
+
+async function fetchAssistantCatalogProducts(
+  storeSlug: string,
+  searchQuery: string | null,
+): Promise<CatalogListItem[]> {
+  const base = await getCatalogProducts({
+    storeSlug,
+    limit: MAX_PRODUCTS,
+    offset: 0,
+  });
+
+  if (!searchQuery) {
+    return base.products;
+  }
+
+  const searched = await getCatalogProducts({
+    storeSlug,
+    limit: MAX_SEARCH_PRODUCTS,
+    offset: 0,
+    search: searchQuery,
+  });
+
+  const byId = new Map(base.products.map((product) => [product.product_id, product]));
+  for (const product of searched.products) {
+    if (!byId.has(product.product_id)) {
+      byId.set(product.product_id, product);
+    }
+  }
+
+  return Array.from(byId.values());
+}
 
 const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
   mon: "Lunes",
@@ -147,7 +191,7 @@ async function fetchStoreSettingsConfig(storeId: string) {
 
 export async function getStorefrontAssistantContext(
   storeSlug: string,
-  options?: { locationId?: string | null },
+  options?: { locationId?: string | null; searchQuery?: string | null },
 ): Promise<StorefrontAssistantContext | null> {
   noStore();
 
@@ -155,12 +199,13 @@ export async function getStorefrontAssistantContext(
   if (!store) return null;
 
   const selectedLocationId = options?.locationId?.trim() || null;
+  const searchQuery = options?.searchQuery?.trim() || null;
 
-  const [settingsConfig, locations, locationStocks, catalog] = await Promise.all([
+  const [settingsConfig, locations, locationStocks, catalogProducts] = await Promise.all([
     fetchStoreSettingsConfig(store.id),
     getPublicStoreLocations(store.id),
     getVariantLocationStocksForStore(store.id),
-    getCatalogProducts({ storeSlug: store.slug, limit: MAX_PRODUCTS, offset: 0 }),
+    fetchAssistantCatalogProducts(store.slug, searchQuery),
   ]);
 
   const purchaseInfo = buildPublicPurchaseInfo(settingsConfig);
@@ -171,7 +216,7 @@ export async function getStorefrontAssistantContext(
     ? locations.find((loc) => loc.id === selectedLocationId)
     : null;
 
-  const products = catalog.products.map((product) =>
+  const products = catalogProducts.map((product) =>
     mapProductToAssistantContext(
       product,
       locationStockIndex,
@@ -207,5 +252,8 @@ export async function getStorefrontAssistantContext(
     paymentMethods: purchaseInfo.payments.map((payment) => payment.label),
     products,
     selectedLocationName: selectedLocation?.name ?? null,
+    liveSearchQuery: searchQuery,
   };
 }
+
+export { extractSearchQueryFromMessages };

@@ -4,7 +4,10 @@ import type {
   StorefrontAssistantMessage,
   StorefrontAssistantRequest,
 } from "@/lib/ai/storefront-assistant-types";
-import { getStorefrontAssistantContext } from "@/lib/catalog/get-storefront-assistant-context";
+import {
+  extractSearchQueryFromMessages,
+  getStorefrontAssistantContext,
+} from "@/lib/catalog/get-storefront-assistant-context";
 import { getOpenAiApiKey } from "@/lib/env/server";
 
 export const dynamic = "force-dynamic";
@@ -68,8 +71,11 @@ export async function POST(
     );
   }
 
+  const searchQuery = extractSearchQueryFromMessages(body.messages);
+
   const assistantContext = await getStorefrontAssistantContext(normalizedSlug, {
     locationId: body.locationId,
+    searchQuery,
   });
 
   if (!assistantContext) {
@@ -77,13 +83,16 @@ export async function POST(
   }
 
   try {
-    const reply = await answerStorefrontAssistantQuestion({
+    const result = await answerStorefrontAssistantQuestion({
       context: assistantContext,
       messages: body.messages,
     });
 
     return NextResponse.json(
-      { reply },
+      {
+        reply: result.reply,
+        suggestHumanSupport: result.suggestHumanSupport ?? false,
+      },
       { headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (error) {

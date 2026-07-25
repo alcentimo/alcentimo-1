@@ -13,6 +13,8 @@ export interface StorefrontAssistantRequest {
 
 export interface StorefrontAssistantResponse {
   reply: string;
+  /** Sugiere al comprador contactar a un humano por WhatsApp. */
+  suggestHumanSupport?: boolean;
 }
 
 export interface StorefrontAssistantProductVariant {
@@ -58,4 +60,6 @@ export interface StorefrontAssistantContext {
   paymentMethods: string[];
   products: StorefrontAssistantProduct[];
   selectedLocationName: string | null;
+  /** Consulta usada para enriquecer el catálogo en tiempo real (si aplica). */
+  liveSearchQuery?: string | null;
 }

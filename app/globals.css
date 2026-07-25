@@ -6367,6 +6367,10 @@ body {
   color: var(--txn-primary-fg, #ffffff);
 }
 
+.catalog-chat-fab-avatar {
+  @apply text-2xl leading-none;
+}
+
 .catalog-chat-fab-hidden {
   @apply pointer-events-none opacity-0;
 }
@@ -6395,6 +6399,14 @@ body {
   @apply flex items-start justify-between gap-3 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800;
 }
 
+.catalog-chat-header-main {
+  @apply flex min-w-0 items-center gap-3;
+}
+
+.catalog-chat-avatar {
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xl dark:bg-zinc-900;
+}
+
 .catalog-chat-title {
   @apply text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
 }
@@ -6413,6 +6425,10 @@ body {
 
 .catalog-chat-bubble-assistant {
   @apply mr-auto rounded-bl-md bg-zinc-100 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-100;
+}
+
+.catalog-chat-bubble-label {
+  @apply mb-1 block text-[10px] font-semibold uppercase tracking-wide text-zinc-400;
 }
 
 .catalog-chat-bubble-user {
@@ -6457,6 +6473,22 @@ body {
   @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white transition disabled:opacity-50;
   background-color: var(--txn-primary, #0d9488);
   color: var(--txn-primary-fg, #ffffff);
+}
+
+.catalog-chat-human-banner {
+  @apply mx-4 mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100;
+}
+
+.catalog-chat-human-btn {
+  @apply mt-2 w-full rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-amber-700;
+}
+
+.catalog-chat-footer {
+  @apply border-t border-zinc-200 px-3 py-2.5 dark:border-zinc-800;
+}
+
+.catalog-chat-whatsapp-btn {
+  @apply w-full rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200 dark:hover:bg-emerald-950/50;
 }
 
 /* Acentos del storefront público (checkout, envío, chips) */

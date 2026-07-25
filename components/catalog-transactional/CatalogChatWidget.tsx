@@ -1,14 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, MessageCircle, Send, X } from "lucide-react";
+import { Loader2, Send, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { readFulfillmentPrefs } from "@/lib/catalog/fulfillment-storage";
+import { buildStorefrontSupportWhatsAppMessage } from "@/lib/catalog/storefront-support-whatsapp";
+import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import type { StorefrontAssistantMessage } from "@/lib/ai/storefront-assistant-types";
 
 interface CatalogChatWidgetProps {
   storeSlug: string;
   storeName: string;
+  whatsappPhone?: string | null;
 }
 
 const QUICK_PROMPTS = [
@@ -27,19 +30,24 @@ function createMessage(
 export function CatalogChatWidget({
   storeSlug,
   storeName,
+  whatsappPhone = null,
 }: CatalogChatWidgetProps) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<StorefrontAssistantMessage[]>(() => [
     createMessage(
       "assistant",
-      `¡Hola! Soy el asistente de ${storeName}. Puedo ayudarte con productos, stock, sucursales y formas de entrega.`,
+      `¡Hola! Soy el asistente de ${storeName} 🤖 Puedo ayudarte con productos, stock, envíos y pagos. Si prefieres hablar con una persona, usa el botón de WhatsApp abajo.`,
     ),
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showHumanSupport, setShowHumanSupport] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const lastUserQuestionRef = useRef<string | null>(null);
+
+  const whatsappReady = Boolean(whatsappPhone?.trim());
 
   useEffect(() => {
     if (!open) return;
@@ -47,7 +55,7 @@ export function CatalogChatWidget({
       top: scrollRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [messages, open, loading]);
+  }, [messages, open, loading, showHumanSupport]);
 
   useEffect(() => {
     if (open) {
@@ -55,12 +63,30 @@ export function CatalogChatWidget({
     }
   }, [open]);
 
+  const openWhatsAppSupport = useCallback(
+    (question?: string | null) => {
+      const phone = whatsappPhone?.trim();
+      if (!phone) return;
+      const message = buildStorefrontSupportWhatsAppMessage(
+        storeName,
+        question ?? lastUserQuestionRef.current,
+      );
+      const url = buildWhatsAppOrderUrl(phone, message);
+      if (url) {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    },
+    [storeName, whatsappPhone],
+  );
+
   const sendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || loading) return;
 
+      lastUserQuestionRef.current = trimmed;
       setError(null);
+      setShowHumanSupport(false);
       const nextMessages = [...messages, createMessage("user", trimmed)];
       setMessages(nextMessages);
       setInput("");
@@ -82,6 +108,7 @@ export function CatalogChatWidget({
 
         const payload = (await response.json()) as {
           reply?: string;
+          suggestHumanSupport?: boolean;
           error?: string;
         };
 
@@ -97,17 +124,19 @@ export function CatalogChatWidget({
           ...current,
           createMessage("assistant", payload.reply!.trim()),
         ]);
+        setShowHumanSupport(Boolean(payload.suggestHumanSupport && whatsappReady));
       } catch (sendError) {
         setError(
           sendError instanceof Error
             ? sendError.message
             : "Error al enviar el mensaje.",
         );
+        setShowHumanSupport(whatsappReady);
       } finally {
         setLoading(false);
       }
     },
-    [loading, messages, storeSlug],
+    [loading, messages, storeSlug, whatsappReady],
   );
 
   function handleSubmit(event: React.FormEvent) {
@@ -121,13 +150,15 @@ export function CatalogChatWidget({
         type="button"
         onClick={() => setOpen(true)}
         className={cn("catalog-chat-fab", open && "catalog-chat-fab-hidden")}
-        aria-label="Abrir asistente virtual"
+        aria-label="Abrir Soporte IA"
       >
-        <MessageCircle className="h-5 w-5" aria-hidden="true" />
+        <span className="catalog-chat-fab-avatar" aria-hidden="true">
+          🤖
+        </span>
       </button>
 
       {open ? (
-        <div className="catalog-chat-overlay" role="dialog" aria-label="Asistente virtual">
+        <div className="catalog-chat-overlay" role="dialog" aria-label="Soporte IA">
           <button
             type="button"
             className="txn-cart-backdrop"
@@ -136,9 +167,14 @@ export function CatalogChatWidget({
           />
           <div className="catalog-chat-panel">
             <header className="catalog-chat-header">
-              <div>
-                <h2 className="catalog-chat-title">Asistente</h2>
-                <p className="catalog-chat-subtitle">{storeName}</p>
+              <div className="catalog-chat-header-main">
+                <span className="catalog-chat-avatar" aria-hidden="true">
+                  🤖
+                </span>
+                <div>
+                  <h2 className="catalog-chat-title">Soporte IA</h2>
+                  <p className="catalog-chat-subtitle">{storeName}</p>
+                </div>
               </div>
               <button
                 type="button"
@@ -161,13 +197,16 @@ export function CatalogChatWidget({
                       : "catalog-chat-bubble-assistant",
                   )}
                 >
+                  {message.role === "assistant" && index === 0 ? (
+                    <span className="catalog-chat-bubble-label">Asistente</span>
+                  ) : null}
                   {message.content}
                 </div>
               ))}
               {loading ? (
                 <div className="catalog-chat-bubble catalog-chat-bubble-assistant catalog-chat-typing">
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  <span>Escribiendo…</span>
+                  <span>Consultando catálogo…</span>
                 </div>
               ) : null}
             </div>
@@ -176,6 +215,19 @@ export function CatalogChatWidget({
               <p className="catalog-chat-error" role="alert">
                 {error}
               </p>
+            ) : null}
+
+            {showHumanSupport && whatsappReady ? (
+              <div className="catalog-chat-human-banner">
+                <p>¿Quieres que te atienda una persona? Escríbenos por WhatsApp.</p>
+                <button
+                  type="button"
+                  className="catalog-chat-human-btn"
+                  onClick={() => openWhatsAppSupport()}
+                >
+                  Hablar con un operador
+                </button>
+              </div>
             ) : null}
 
             <div className="catalog-chat-quick-prompts">
@@ -206,9 +258,9 @@ export function CatalogChatWidget({
                 rows={1}
                 maxLength={500}
                 disabled={loading}
-                placeholder="Escribe tu pregunta…"
+                placeholder="Pregunta por productos, stock o envíos…"
                 className="catalog-chat-input"
-                aria-label="Mensaje para el asistente"
+                aria-label="Mensaje para Soporte IA"
               />
               <button
                 type="submit"
@@ -223,6 +275,18 @@ export function CatalogChatWidget({
                 )}
               </button>
             </form>
+
+            {whatsappReady ? (
+              <div className="catalog-chat-footer">
+                <button
+                  type="button"
+                  className="catalog-chat-whatsapp-btn"
+                  onClick={() => openWhatsAppSupport()}
+                >
+                  Hablar con un humano por WhatsApp
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}

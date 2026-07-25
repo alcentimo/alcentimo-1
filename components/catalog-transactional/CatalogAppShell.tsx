@@ -16,6 +16,7 @@ interface CatalogAppShellProps {
   storeRubro?: string | null;
   enablePcBuilder?: boolean;
   assistantEnabled?: boolean;
+  whatsappPhone?: string | null;
   children: ReactNode;
 }
 
@@ -26,6 +27,7 @@ export function CatalogAppShell({
   storeRubro = null,
   enablePcBuilder = false,
   assistantEnabled = false,
+  whatsappPhone = null,
   children,
 }: CatalogAppShellProps) {
   const { guestBanner } = usePromotionContext();
@@ -42,7 +44,11 @@ export function CatalogAppShell({
       <CustomerPromoBanner promotion={guestBanner} />
       <div className="catalog-shell-content">{children}</div>
       {assistantEnabled ? (
-        <CatalogChatWidget storeSlug={storeSlug} storeName={storeName} />
+        <CatalogChatWidget
+          storeSlug={storeSlug}
+          storeName={storeName}
+          whatsappPhone={whatsappPhone}
+        />
       ) : null}
       <CatalogTabBar storeSlug={storeSlug} pcBuilderEnabled={pcBuilderEnabled} />
     </>

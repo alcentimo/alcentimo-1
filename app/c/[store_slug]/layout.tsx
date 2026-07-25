@@ -115,6 +115,7 @@ export default async function TransactionalCatalogLayout({
     : null;
   const wholesaleEnabled =
     storeSettings?.catalogCurrency.wholesaleEnabled ?? false;
+  const whatsappPhone = storeSettings?.contact.whatsappPhone?.trim() || null;
 
   return (
     <div
@@ -144,6 +145,7 @@ export default async function TransactionalCatalogLayout({
             storeRubro={store?.rubro_tienda}
             enablePcBuilder={store?.enable_pc_builder}
             assistantEnabled={assistantEnabled}
+            whatsappPhone={whatsappPhone}
           >
             {children}
           </CatalogAppShell>
