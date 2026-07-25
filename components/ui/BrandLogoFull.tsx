@@ -1,5 +1,5 @@
 import { cn } from "@/lib/cn";
-import { BrandIsotypeGraphic } from "@/components/ui/BrandIsotype";
+import { BRAND_ISOTYPE_COLORS } from "@/components/ui/BrandIsotype";
 
 const WORDMARK_COLOR = {
   default: "#18181B",
@@ -12,6 +12,11 @@ const SIZE_CLASS = {
   lg: "brand-logo-full-lg",
 } as const;
 
+const SVG_CRISP_PROPS = {
+  shapeRendering: "geometricPrecision" as const,
+  textRendering: "geometricPrecision" as const,
+};
+
 interface BrandLogoFullProps {
   size?: "sm" | "md" | "lg";
   variant?: "default" | "landing";
@@ -19,7 +24,7 @@ interface BrandLogoFullProps {
   className?: string;
 }
 
-/** Logo horizontal completo: isotipo + wordmark. */
+/** Logo horizontal completo: isotipo + wordmark (SVG vectorial). */
 export function BrandLogoFull({
   size = "md",
   variant = "default",
@@ -30,6 +35,7 @@ export function BrandLogoFull({
   const displayName =
     variant === "landing" ? wordmark : wordmark.toLowerCase();
   const wordmarkColor = WORDMARK_COLOR[variant];
+  const isotypeColors = BRAND_ISOTYPE_COLORS[variant];
 
   return (
     <svg
@@ -39,18 +45,49 @@ export function BrandLogoFull({
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-label={wordmark}
+      {...SVG_CRISP_PROPS}
     >
-      <g>
-        <BrandIsotypeGraphic variant={variant} />
-      </g>
+      <rect width="40" height="40" rx="7.2" fill={isotypeColors.background} />
+      <text
+        x="17.5"
+        y="22"
+        fill={isotypeColors.foreground}
+        fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+        fontSize="16"
+        fontWeight="700"
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
+        a
+      </text>
+      <text
+        x="27.5"
+        y="24.5"
+        fill={isotypeColors.accent}
+        fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+        fontSize="11"
+        fontWeight="700"
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
+        ¢
+      </text>
+      <path
+        d="M27.5 9.5 31.5 13.5M31.5 13.5 27.5 13.5M31.5 13.5 31.5 9.5"
+        stroke={isotypeColors.accent}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       <text
         x="48"
-        y="25"
+        y="20"
         fill={wordmarkColor}
         fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
         fontSize="18"
         fontWeight="800"
         letterSpacing="-0.02em"
+        dominantBaseline="middle"
       >
         {displayName}
       </text>

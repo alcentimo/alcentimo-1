@@ -457,6 +457,39 @@ body {
 
 .brand-isotype {
   @apply block aspect-square h-auto w-auto shrink-0 self-center;
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+}
+
+.brand-logo-mark-wrap {
+  @apply flex shrink-0 items-center justify-center self-center;
+}
+
+.brand-logo-mark-wrap-isotype {
+  height: 2.5rem;
+  width: 2.5rem;
+}
+
+.brand-logo-mark-wrap-full {
+  height: 2.5rem;
+  width: auto;
+}
+
+@media (min-width: 768px) {
+  .brand-logo-mark-wrap-full {
+    height: 3rem;
+  }
+}
+
+.brand-logo-svg-img {
+  image-rendering: auto;
+  shape-rendering: geometricPrecision;
+}
+
+.brand-logo-full {
+  @apply block h-auto w-auto max-w-none self-center;
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
 }
 
 .brand-isotype-sm {
@@ -504,10 +537,6 @@ body {
 .brand-logo-header-mobile .brand-isotype-md {
   height: 2.5rem;
   width: 2.5rem;
-}
-
-.brand-logo-full {
-  @apply block h-auto w-auto max-w-none self-center;
 }
 
 .brand-logo-full-sm {

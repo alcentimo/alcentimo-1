@@ -1,6 +1,6 @@
-<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Alcentimo">
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Alcentimo" shape-rendering="geometricPrecision" text-rendering="geometricPrecision">
   <rect width="40" height="40" rx="7.2" fill="#047857"/>
   <text x="17.5" y="22" fill="#FFFFFF" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="700" text-anchor="middle" dominant-baseline="middle">a</text>
-  <text x="27.5" y="24.5" fill="#FFFFFF" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="700" text-anchor="middle" dominant-baseline="middle">¢</text>
+  <text x="27.5" y="24.5" fill="#FFFFFF" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="700" text-anchor="middle" dominant-baseline="middle">&#162;</text>
   <path d="M27.5 9.5 31.5 13.5M31.5 13.5 27.5 13.5M31.5 13.5 31.5 9.5" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

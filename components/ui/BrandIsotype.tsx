@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
 
-const BRAND_ISOTYPE_COLORS = {
+export const BRAND_ISOTYPE_COLORS = {
   default: {
     background: "#059669",
     foreground: "#FFFFFF",
@@ -18,6 +18,11 @@ const SIZE_CLASS = {
   md: "brand-isotype-md",
   lg: "brand-isotype-lg",
 } as const;
+
+const SVG_CRISP_PROPS = {
+  shapeRendering: "geometricPrecision" as const,
+  textRendering: "geometricPrecision" as const,
+};
 
 interface BrandIsotypeProps {
   size?: "sm" | "md" | "lg";
@@ -84,6 +89,7 @@ export function BrandIsotype({
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-hidden="true"
+      {...SVG_CRISP_PROPS}
     >
       <IsotypeGraphic colors={colors} />
     </svg>
