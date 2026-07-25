@@ -1,6 +1,6 @@
 import { getResendApiKey } from "@/lib/env/server";
 
-const TEAM_INVITATION_FROM = "onboarding@resend.dev";
+const TEAM_INVITATION_FROM = "no-reply@alcentimo.com";
 
 export interface SendTeamInvitationEmailInput {
   to: string;
