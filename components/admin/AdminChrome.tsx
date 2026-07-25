@@ -11,7 +11,7 @@ export function AdminChrome({ email, children }: AdminChromeProps) {
   return (
     <div className="min-h-dvh bg-zinc-50 dark:bg-zinc-950">
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-7">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-7">
           <div className="flex min-w-0 items-center gap-3">
             <BrandLogo href="/admin/dashboard" size="sm" showName={false} />
             <div className="min-w-0">

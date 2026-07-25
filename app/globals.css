@@ -181,6 +181,248 @@ body {
   @apply rounded-xl border border-violet-200/80 bg-violet-50/70 px-4 py-3 text-sm leading-relaxed text-violet-950 dark:border-violet-900/40 dark:bg-violet-950/20 dark:text-violet-100;
 }
 
+/* ── Admin dashboard ── */
+
+.admin-dashboard-page {
+  @apply mx-auto max-w-7xl px-5 py-8 sm:px-7 sm:py-10;
+}
+
+.admin-dashboard-page-header {
+  @apply mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between;
+}
+
+.admin-dashboard-quick-stats {
+  @apply grid grid-cols-2 gap-3 sm:grid-cols-4;
+}
+
+.admin-dashboard-quick-stat {
+  @apply rounded-xl border border-zinc-200/80 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.admin-dashboard-quick-stat-label {
+  @apply block text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400;
+}
+
+.admin-dashboard-quick-stat strong {
+  @apply mt-1 block text-xl font-semibold text-zinc-900 dark:text-zinc-50;
+}
+
+.admin-dashboard-layout {
+  @apply grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)];
+}
+
+.admin-dashboard-sidebar {
+  @apply rounded-2xl border border-zinc-200/80 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 lg:sticky lg:top-6 lg:self-start;
+}
+
+.admin-dashboard-sidebar-title {
+  @apply px-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-400;
+}
+
+.admin-dashboard-nav {
+  @apply mt-3 space-y-1;
+}
+
+.admin-dashboard-nav-item {
+  @apply flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-900;
+}
+
+.admin-dashboard-nav-item-active {
+  @apply bg-zinc-900 text-white hover:bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-100;
+}
+
+.admin-dashboard-nav-badge {
+  @apply inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-amber-100 px-1.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300;
+}
+
+.admin-dashboard-nav-item-active .admin-dashboard-nav-badge {
+  @apply bg-white/20 text-white dark:bg-zinc-900/15 dark:text-zinc-900;
+}
+
+.admin-dashboard-sidebar-footer {
+  @apply mt-6 border-t border-zinc-200/80 pt-4 dark:border-zinc-800;
+}
+
+.admin-dashboard-content {
+  @apply min-w-0 rounded-2xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.admin-dashboard-content-header {
+  @apply border-b border-zinc-200/80 px-5 py-4 dark:border-zinc-800 sm:px-6;
+}
+
+.admin-dashboard-content-body {
+  @apply px-5 py-5 sm:px-6 sm:py-6;
+}
+
+.admin-subnav {
+  @apply flex flex-wrap gap-2;
+}
+
+.admin-subnav-item {
+  @apply rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800;
+}
+
+.admin-subnav-item-active {
+  @apply border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900;
+}
+
+.admin-kpi-grid {
+  @apply grid gap-4 sm:grid-cols-2 xl:grid-cols-4;
+}
+
+.admin-kpi-card {
+  @apply rounded-xl border border-zinc-200/80 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.admin-kpi-card-icon {
+  @apply mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl;
+}
+
+.admin-kpi-card-icon-emerald {
+  @apply bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400;
+}
+
+.admin-kpi-card-icon-teal {
+  @apply bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-400;
+}
+
+.admin-kpi-card-icon-violet {
+  @apply bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400;
+}
+
+.admin-kpi-card-icon-amber {
+  @apply bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400;
+}
+
+.admin-kpi-card-label {
+  @apply text-sm font-medium text-zinc-500 dark:text-zinc-400;
+}
+
+.admin-kpi-card-value {
+  @apply mt-1 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+}
+
+.admin-kpi-card-hint {
+  @apply mt-1 text-[11px] text-zinc-400 dark:text-zinc-500;
+}
+
+.admin-alert-list {
+  @apply flex flex-wrap gap-2;
+}
+
+.admin-alert-item {
+  @apply rounded-full border px-3 py-1.5 text-xs font-medium transition hover:opacity-90;
+}
+
+.admin-alert-item-amber {
+  @apply border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200;
+}
+
+.admin-alert-item-violet {
+  @apply border-violet-200 bg-violet-50 text-violet-900 dark:border-violet-900/40 dark:bg-violet-950/30 dark:text-violet-200;
+}
+
+.admin-panel-section {
+  @apply rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-5 dark:border-zinc-800 dark:bg-zinc-900/20;
+}
+
+.admin-panel-section-title {
+  @apply text-sm font-semibold text-zinc-900 dark:text-zinc-50;
+}
+
+.admin-plan-stat {
+  @apply rounded-lg border border-zinc-200/70 bg-white px-3 py-3 dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.admin-ai-panel {
+  @apply rounded-xl border border-dashed border-violet-300/80 bg-gradient-to-br from-violet-50/80 to-white p-5 dark:border-violet-800/50 dark:from-violet-950/20 dark:to-zinc-950;
+}
+
+.admin-ai-panel-header {
+  @apply flex flex-wrap items-start justify-between gap-3;
+}
+
+.admin-ai-panel-icon {
+  @apply inline-flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300;
+}
+
+.admin-ai-panel-badge {
+  @apply inline-flex items-center gap-1 rounded-full border border-violet-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-200;
+}
+
+.admin-ai-panel-body {
+  @apply mt-4;
+}
+
+.admin-ai-panel-input {
+  @apply bg-white/80 dark:bg-zinc-900/60;
+}
+
+.admin-payment-card {
+  @apply overflow-hidden rounded-2xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+.admin-payment-card-grid {
+  @apply grid gap-0 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)];
+}
+
+.admin-payment-receipt {
+  @apply relative min-h-[280px] border-b border-zinc-200/80 bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-900/60 lg:min-h-[360px] lg:border-b-0 lg:border-r;
+}
+
+.admin-payment-receipt-link {
+  @apply relative block h-full min-h-[280px] lg:min-h-[360px];
+}
+
+.admin-payment-receipt-overlay {
+  @apply absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-zinc-950/70 px-3 py-2 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100;
+}
+
+.admin-payment-details {
+  @apply flex flex-col gap-4 p-5;
+}
+
+.admin-payment-meta {
+  @apply grid gap-3 sm:grid-cols-2;
+}
+
+.admin-payment-meta div {
+  @apply rounded-lg border border-zinc-100 bg-zinc-50/80 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/40;
+}
+
+.admin-payment-meta dt {
+  @apply text-[11px] font-medium uppercase tracking-wide text-zinc-400;
+}
+
+.admin-payment-meta dd {
+  @apply mt-1 text-sm font-medium text-zinc-900 dark:text-zinc-50;
+}
+
+.admin-payment-amount {
+  @apply border-emerald-200/80 bg-emerald-50/70 dark:border-emerald-900/40 dark:bg-emerald-950/20;
+}
+
+.admin-payment-amount dd {
+  @apply text-lg font-semibold text-emerald-800 dark:text-emerald-300;
+}
+
+.admin-payment-actions {
+  @apply mt-auto flex flex-wrap gap-2 border-t border-zinc-200/80 pt-4 dark:border-zinc-800;
+}
+
+.admin-payment-action-secondary {
+  @apply rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800;
+}
+
+.admin-payment-action-warning {
+  @apply rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 disabled:opacity-60 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300;
+}
+
+.admin-payment-action-danger {
+  @apply rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-60 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300;
+}
+
 .landing-surface {
   @apply rounded-xl border border-zinc-200/60 bg-white dark:border-zinc-800/60 dark:bg-zinc-950;
 }

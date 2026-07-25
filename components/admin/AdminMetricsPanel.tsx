@@ -51,7 +51,7 @@ export function AdminMetricsPanel({ metrics }: AdminMetricsPanelProps) {
                 {row.hint}
               </p>
               <Link
-                href={`/admin/dashboard?tab=crecimiento&plan=${row.key}`}
+                href={`/admin/dashboard?tab=tiendas&plan=${row.key}`}
                 className="mt-3 inline-block text-xs font-medium text-teal-700 hover:underline dark:text-teal-300"
               >
                 Ver usuarios →
@@ -70,7 +70,7 @@ export function AdminMetricsPanel({ metrics }: AdminMetricsPanelProps) {
           promoción.
         </p>
         <Link
-          href="/admin/dashboard?tab=crecimiento&plan=FREE&minProducts=9"
+          href="/admin/dashboard?tab=tiendas&plan=FREE&minProducts=9"
           className="mt-3 inline-flex text-sm font-semibold text-teal-700 hover:underline dark:text-teal-300"
         >
           Gratis con 9+ productos →

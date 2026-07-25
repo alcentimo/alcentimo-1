@@ -60,6 +60,9 @@ interface AdminGrowthPanelProps {
   initialAuditLog: GrowthAuditEntry[];
   initialPlanFilter?: "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE" | "all";
   initialMinProducts?: number;
+  initialSubTab?: GrowthSubTab;
+  /** Limita pestañas visibles dentro del módulo de crecimiento. */
+  mode?: "full" | "usuarios" | "promociones";
 }
 
 export function AdminGrowthPanel({
@@ -69,8 +72,10 @@ export function AdminGrowthPanel({
   initialAuditLog,
   initialPlanFilter = "all",
   initialMinProducts,
+  initialSubTab = "usuarios",
+  mode = "full",
 }: AdminGrowthPanelProps) {
-  const [subTab, setSubTab] = useState<GrowthSubTab>("usuarios");
+  const [subTab, setSubTab] = useState<GrowthSubTab>(initialSubTab);
   const [users, setUsers] = useState(initialUsers);
   const [coupons, setCoupons] = useState(initialCoupons);
   const [campaigns, setCampaigns] = useState(initialCampaigns);
@@ -294,17 +299,26 @@ export function AdminGrowthPanel({
         ? "Monto fijo (USD)"
         : "Días de Pro";
 
-  return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap gap-2">
-        {(
-          [
+  const growthTabs =
+    mode === "usuarios"
+      ? ([["usuarios", "Usuarios"]] as const)
+      : mode === "promociones"
+        ? ([
+            ["cupones", "Cupones"],
+            ["campanas", "Campañas"],
+            ["historial", "Historial"],
+          ] as const)
+        : ([
             ["usuarios", "Usuarios"],
             ["cupones", "Cupones"],
             ["campanas", "Campañas"],
             ["historial", "Historial"],
-          ] as const
-        ).map(([id, label]) => (
+          ] as const);
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-2">
+        {growthTabs.map(([id, label]) => (
           <button
             key={id}
             type="button"

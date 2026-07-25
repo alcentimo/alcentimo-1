@@ -3,6 +3,13 @@
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { ManualPaymentsPanel } from "@/components/admin/ManualPaymentsPanel";
+import {
+  AdminDashboardShell,
+  resolveAdminDashboardTab,
+  type AdminDashboardTab,
+} from "@/components/admin/AdminDashboardShell";
+import { AdminStoresPanel, type AdminStoresSubTab } from "@/components/admin/AdminStoresPanel";
+import { AdminPlansHubPanel } from "@/components/admin/AdminPlansHubPanel";
 import { SupportMessagesPanel } from "@/components/dashboard/SupportMessagesPanel";
 import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
 import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
@@ -17,16 +24,17 @@ import type { SubscriptionPagoMovilDetails } from "@/src/config/subscription-pag
 import type { PlanSettingsMap } from "@/lib/plans/plan-settings";
 import type { PlatformSettings } from "@/lib/platform/platform-settings";
 import type { AdminStoreDomainRow } from "@/lib/admin/custom-domain-actions";
-import { cn } from "@/lib/cn";
 
-const AdminMetricsPanel = dynamic(
+export type { AdminDashboardTab };
+
+const AdminOverviewPanel = dynamic(
   () =>
-    import("@/components/admin/AdminMetricsPanel").then((m) => ({
-      default: m.AdminMetricsPanel,
+    import("@/components/admin/AdminOverviewPanel").then((m) => ({
+      default: m.AdminOverviewPanel,
     })),
   {
     loading: () => (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando métricas…</p>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando resumen…</p>
     ),
   },
 );
@@ -39,7 +47,7 @@ const AdminGrowthPanel = dynamic(
   {
     loading: () => (
       <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        Cargando módulo de crecimiento…
+        Cargando tiendas y usuarios…
       </p>
     ),
   },
@@ -117,83 +125,12 @@ const AdminStoreLocationsPanel = dynamic(
   },
 );
 
-export type AdminDashboardTab =
-  | "pagos"
-  | "soporte"
-  | "metricas"
-  | "configuracion"
-  | "plataforma"
-  | "planes"
-  | "crecimiento"
-  | "dominios"
-  | "sucursales";
-
-const TABS: Array<{
-  id: AdminDashboardTab;
-  label: string;
-  description: string;
-  showBadge?: boolean;
-}> = [
-  {
-    id: "pagos",
-    label: "Pagos Pendientes",
-    description: "Confirma comprobantes y activa el plan del dueño.",
-    showBadge: true,
-  },
-  {
-    id: "soporte",
-    label: "Mensajes de Soporte",
-    description: "Bandeja de mensajes y sugerencias de usuarios.",
-    showBadge: true,
-  },
-  {
-    id: "metricas",
-    label: "Métricas",
-    description: "Usuarios registrados y distribución por plan.",
-  },
-  {
-    id: "configuracion",
-    label: "Configuración",
-    description: "Logo global de la plataforma y datos de Pago Móvil para suscripciones.",
-  },
-  {
-    id: "plataforma",
-    label: "Plataforma",
-    description: "Logo principal, nombre y datos globales de Alcentimo.",
-  },
-  {
-    id: "planes",
-    label: "Configuración de Planes",
-    description: "Precios mensuales/anuales y límites de productos por plan.",
-  },
-  {
-    id: "dominios",
-    label: "Dominios",
-    description: "Asigna y verifica dominios personalizados de tiendas.",
-  },
-  {
-    id: "sucursales",
-    label: "Sucursales",
-    description: "Autoriza sedes extras Enterprise por tienda/dueño.",
-  },
-  {
-    id: "crecimiento",
-    label: "Crecimiento",
-    description:
-      "Usuarios, otorgar Pro, cupones, campañas y envío de promociones.",
-  },
-];
-
-function resolveTab(value: string | null | undefined): AdminDashboardTab {
-  if (value === "soporte") return "soporte";
-  if (value === "metricas") return "metricas";
-  if (value === "configuracion") return "configuracion";
-  if (value === "plataforma") return "plataforma";
-  if (value === "planes") return "planes";
-  if (value === "crecimiento") return "crecimiento";
-  if (value === "dominios") return "dominios";
-  if (value === "sucursales") return "sucursales";
-  return "pagos";
+function resolveStoresSubTab(
+  legacyTab: string | null | undefined,
+): AdminStoresSubTab {
+  if (legacyTab === "dominios") return "dominios";
+  if (legacyTab === "sucursales") return "sucursales";
+  return "usuarios";
 }
 
 interface AdminDashboardTabsProps {
@@ -215,7 +152,16 @@ interface AdminDashboardTabsProps {
   growthError?: string | null;
   storeDomains?: AdminStoreDomainRow[];
   storeDomainsError?: string | null;
-  initialTab?: AdminDashboardTab;
+  initialTab?: AdminDashboardTab | string;
+  legacyTabParam?: string | null;
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+      {message}
+    </p>
+  );
 }
 
 export function AdminDashboardTabs({
@@ -237,10 +183,13 @@ export function AdminDashboardTabs({
   growthError = null,
   storeDomains = [],
   storeDomainsError = null,
-  initialTab = "pagos",
+  initialTab = "resumen",
+  legacyTabParam = null,
 }: AdminDashboardTabsProps) {
   const [activeTab, setActiveTab] = useState<AdminDashboardTab>(() =>
-    resolveTab(initialTab),
+    resolveAdminDashboardTab(
+      typeof initialTab === "string" ? initialTab : initialTab,
+    ),
   );
 
   const pendingPayments = useMemo(
@@ -256,16 +205,16 @@ export function AdminDashboardTabs({
     [messages],
   );
 
-  const counts: Partial<Record<AdminDashboardTab, number>> = {
+  const badgeCounts = {
     pagos: pendingPayments,
     soporte: pendingMessages,
   };
 
   function setTab(tab: AdminDashboardTab) {
     setActiveTab(tab);
-
     const params = new URLSearchParams(window.location.search);
     params.set("tab", tab);
+    params.delete("section");
     const query = params.toString();
     const nextUrl = query
       ? `${window.location.pathname}?${query}`
@@ -273,75 +222,22 @@ export function AdminDashboardTabs({
     window.history.replaceState(null, "", nextUrl);
   }
 
-  const activeMeta = TABS.find((tab) => tab.id === activeTab) ?? TABS[0];
+  const storesInitialSubTab = resolveStoresSubTab(legacyTabParam);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
-        {TABS.map((tab) => {
-          const active = tab.id === activeTab;
-          const badge = tab.showBadge ? counts[tab.id] ?? 0 : 0;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setTab(tab.id)}
-              className={cn(
-                "rounded-xl border px-4 py-2 text-sm font-semibold transition-colors",
-                active
-                  ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900",
-              )}
-            >
-              {tab.label}
-              {badge > 0 ? (
-                <span
-                  className={cn(
-                    "ml-2 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs",
-                    active
-                      ? "bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900"
-                      : "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
-                  )}
-                >
-                  {badge}
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
-
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        {activeMeta.description}
-      </p>
-
-      {activeTab === "pagos" ? (
-        paymentsError ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-            {paymentsError}
-          </p>
-        ) : (
-          <ManualPaymentsPanel initialPayments={payments} />
-        )
-      ) : null}
-
-      {activeTab === "soporte" ? (
-        messagesError ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-            {messagesError}
-          </p>
-        ) : (
-          <SupportMessagesPanel initialMessages={messages} />
-        )
-      ) : null}
-
-      {activeTab === "metricas" ? (
+    <AdminDashboardShell
+      activeTab={activeTab}
+      onTabChange={setTab}
+      badgeCounts={badgeCounts}
+    >
+      {activeTab === "resumen" ? (
         metricsError ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-            {metricsError}
-          </p>
+          <ErrorBanner message={metricsError} />
         ) : metrics ? (
-          <AdminMetricsPanel metrics={metrics} />
+          <AdminOverviewPanel
+            metrics={metrics}
+            pendingMessages={pendingMessages}
+          />
         ) : (
           <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
             No hay métricas disponibles.
@@ -349,49 +245,75 @@ export function AdminDashboardTabs({
         )
       ) : null}
 
-      {activeTab === "configuracion" ? (
-        <div className="space-y-6">
-          <PlatformLogoConfigCard initialSettings={platformSettings} />
-          <PaymentMethodsConfigPanel initialDetails={pagoMovil} />
-        </div>
-      ) : null}
-
-      {activeTab === "plataforma" ? (
-        <PlatformSettingsConfigPanel initialSettings={platformSettings} />
-      ) : null}
-
-      {activeTab === "planes" ? (
-        <PlanSettingsConfigPanel initialSettings={planSettings} />
-      ) : null}
-
-      {activeTab === "dominios" ? (
-        storeDomainsError ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-            {storeDomainsError}
-          </p>
+      {activeTab === "pagos" ? (
+        paymentsError ? (
+          <ErrorBanner message={paymentsError} />
         ) : (
-          <AdminCustomDomainsPanel initialRows={storeDomains} />
+          <ManualPaymentsPanel initialPayments={payments} />
         )
       ) : null}
 
-      {activeTab === "sucursales" ? <AdminStoreLocationsPanel /> : null}
-
-      {activeTab === "crecimiento" ? (
+      {activeTab === "tiendas" ? (
         growthError ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-            {growthError}
-          </p>
+          <ErrorBanner message={growthError} />
         ) : (
-          <AdminGrowthPanel
-            initialUsers={growthUsers}
-            initialCoupons={growthCoupons}
-            initialCampaigns={growthCampaigns}
-            initialAuditLog={growthAuditLog}
-            initialPlanFilter={growthPlanFilter}
-            initialMinProducts={growthMinProducts}
+          <AdminStoresPanel
+            initialSubTab={storesInitialSubTab}
+            usuariosPanel={
+              <AdminGrowthPanel
+                initialUsers={growthUsers}
+                initialCoupons={growthCoupons}
+                initialCampaigns={growthCampaigns}
+                initialAuditLog={growthAuditLog}
+                initialPlanFilter={growthPlanFilter}
+                initialMinProducts={growthMinProducts}
+                mode="usuarios"
+              />
+            }
+            dominiosPanel={
+              storeDomainsError ? (
+                <ErrorBanner message={storeDomainsError} />
+              ) : (
+                <AdminCustomDomainsPanel initialRows={storeDomains} />
+              )
+            }
+            sucursalesPanel={<AdminStoreLocationsPanel />}
+            promocionesPanel={
+              <AdminGrowthPanel
+                initialUsers={growthUsers}
+                initialCoupons={growthCoupons}
+                initialCampaigns={growthCampaigns}
+                initialAuditLog={growthAuditLog}
+                initialSubTab="cupones"
+                mode="promociones"
+              />
+            }
           />
         )
       ) : null}
-    </div>
+
+      {activeTab === "planes" ? (
+        <AdminPlansHubPanel
+          planesPanel={<PlanSettingsConfigPanel initialSettings={planSettings} />}
+          pagosConfigPanel={
+            <PaymentMethodsConfigPanel initialDetails={pagoMovil} />
+          }
+          plataformaPanel={
+            <div className="space-y-6">
+              <PlatformLogoConfigCard initialSettings={platformSettings} />
+              <PlatformSettingsConfigPanel initialSettings={platformSettings} />
+            </div>
+          }
+        />
+      ) : null}
+
+      {activeTab === "soporte" ? (
+        messagesError ? (
+          <ErrorBanner message={messagesError} />
+        ) : (
+          <SupportMessagesPanel initialMessages={messages} />
+        )
+      ) : null}
+    </AdminDashboardShell>
   );
 }

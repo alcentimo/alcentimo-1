@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
+import { ExternalLink } from "lucide-react";
 import type { ManualPaymentStatus } from "@/lib/database.types";
 import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
 import {
@@ -14,8 +15,8 @@ import { cn } from "@/lib/cn";
 
 const STATUS_LABELS: Record<ManualPaymentStatus, string> = {
   pending: "Pendiente",
-  needs_correction: "Corrección",
-  verified: "Confirmado",
+  needs_correction: "Corrección solicitada",
+  verified: "Aprobado",
   rejected: "Rechazado",
 };
 
@@ -33,15 +34,17 @@ const STATUS_CLASS: Record<ManualPaymentStatus, string> = {
 const PLAN_LABELS: Record<string, string> = {
   starter: "Pro",
   premium: "Business",
+  enterprise: "Enterprise",
 };
 
-const FILTERS = [
-  "all",
-  "pending",
-  "needs_correction",
-  "verified",
-  "rejected",
-] as const;
+type PaymentFilter = "all" | "pending" | "verified" | "rejected";
+
+const FILTERS: Array<{ key: PaymentFilter; label: string }> = [
+  { key: "all", label: "Todos" },
+  { key: "pending", label: "Pendientes" },
+  { key: "verified", label: "Aprobados" },
+  { key: "rejected", label: "Rechazados" },
+];
 
 function formatPaymentDate(iso: string): string {
   return new Intl.DateTimeFormat("es-VE", {
@@ -60,6 +63,18 @@ function storeLabel(payment: ManualPaymentWithEmail): string {
     .join(" · ");
 }
 
+function matchesFilter(
+  status: ManualPaymentStatus,
+  filter: PaymentFilter,
+): boolean {
+  if (filter === "all") return true;
+  if (filter === "pending") {
+    return status === "pending" || status === "needs_correction";
+  }
+  if (filter === "verified") return status === "verified";
+  return status === "rejected";
+}
+
 type DialogMode = "correction" | "reject" | null;
 
 interface ManualPaymentsPanelProps {
@@ -70,7 +85,7 @@ export function ManualPaymentsPanel({
   initialPayments,
 }: ManualPaymentsPanelProps) {
   const [payments, setPayments] = useState(initialPayments);
-  const [filter, setFilter] = useState<ManualPaymentStatus | "all">("all");
+  const [filter, setFilter] = useState<PaymentFilter>("pending");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -79,24 +94,20 @@ export function ManualPaymentsPanel({
   const [dialogPaymentId, setDialogPaymentId] = useState<string | null>(null);
   const [dialogReason, setDialogReason] = useState("");
 
-  const filtered = useMemo(() => {
-    if (filter === "all") return payments;
-    return payments.filter((item) => item.status === filter);
-  }, [filter, payments]);
+  const filtered = useMemo(
+    () => payments.filter((item) => matchesFilter(item.status, filter)),
+    [filter, payments],
+  );
 
   const counts = useMemo(() => {
-    return payments.reduce(
-      (acc, item) => {
-        acc[item.status] += 1;
-        return acc;
-      },
-      {
-        pending: 0,
-        needs_correction: 0,
-        verified: 0,
-        rejected: 0,
-      } as Record<ManualPaymentStatus, number>,
-    );
+    return {
+      all: payments.length,
+      pending: payments.filter((item) =>
+        matchesFilter(item.status, "pending"),
+      ).length,
+      verified: payments.filter((item) => item.status === "verified").length,
+      rejected: payments.filter((item) => item.status === "rejected").length,
+    };
   }, [payments]);
 
   function closeDialog() {
@@ -154,7 +165,7 @@ export function ManualPaymentsPanel({
           ? ` Saldo a favor: $${result.creditUsd.toFixed(2)} · A pagar: $${(result.amountDueUsd ?? 0).toFixed(2)}.`
           : "";
       setSuccess(
-        `Pago confirmado: ${storeName} quedó con Plan ${planName} (active).${credit}`,
+        `Pago aprobado: ${storeName} quedó con Plan ${planName} (active).${credit}`,
       );
     });
   }
@@ -183,7 +194,6 @@ export function ManualPaymentsPanel({
                 verified_at: null,
                 permanently_rejected: false,
                 rejected_at: null,
-                // El plan del usuario no cambia; solo el estado del pago.
               }
             : item,
         ),
@@ -191,7 +201,7 @@ export function ManualPaymentsPanel({
       setSuccess(
         `Confirmación revertida: el pago de ${
           payment ? storeLabel(payment) : "la tienda"
-        } volvió a Pendiente. El plan del usuario se mantiene sin cambios.`,
+        } volvió a Pendiente.`,
       );
     });
   }
@@ -247,7 +257,7 @@ export function ManualPaymentsPanel({
       setSuccess(
         dialogMode === "correction"
           ? "Se solicitó corrección. El usuario verá el motivo en su panel."
-          : "Pago anulado permanentemente. Esa referencia queda bloqueada.",
+          : "Pago rechazado permanentemente.",
       );
       closeDialog();
     });
@@ -256,16 +266,14 @@ export function ManualPaymentsPanel({
   const dialogPayment = dialogPaymentId
     ? payments.find((item) => item.id === dialogPaymentId)
     : null;
-  const isDialogBusy = Boolean(dialogPaymentId && updatingId === dialogPaymentId && pending);
+  const isDialogBusy = Boolean(
+    dialogPaymentId && updatingId === dialogPaymentId && pending,
+  );
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {FILTERS.map((key) => {
-          const label =
-            key === "all"
-              ? `Todos (${payments.length})`
-              : `${STATUS_LABELS[key]} (${counts[key]})`;
+      <div className="admin-subnav">
+        {FILTERS.map(({ key, label }) => {
           const active = filter === key;
           return (
             <button
@@ -273,13 +281,12 @@ export function ManualPaymentsPanel({
               type="button"
               onClick={() => setFilter(key)}
               className={cn(
-                "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                active
-                  ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900",
+                "admin-subnav-item",
+                active && "admin-subnav-item-active",
               )}
             >
               {label}
+              <span className="ml-1.5 text-xs opacity-70">({counts[key]})</span>
             </button>
           );
         })}
@@ -304,29 +311,49 @@ export function ManualPaymentsPanel({
             : "No hay pagos en este filtro."}
         </p>
       ) : (
-        <ul className="space-y-4">
+        <ul className="space-y-5">
           {filtered.map((payment) => {
             const isUpdating = updatingId === payment.id && pending;
-            const canConfirm =
+            const canApprove =
               payment.status === "pending" ||
               payment.status === "needs_correction" ||
               payment.status === "rejected";
             const canRequestCorrection =
               payment.status === "pending" ||
               payment.status === "needs_correction";
-            const canRevertConfirmation = payment.status === "verified";
-            const canPermanentlyReject =
+            const canRevert = payment.status === "verified";
+            const canReject =
               payment.status === "pending" ||
               payment.status === "needs_correction" ||
               payment.status === "rejected" ||
               payment.status === "verified";
+
             return (
-              <li
-                key={payment.id}
-                className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0 flex-1 space-y-2">
+              <li key={payment.id} className="admin-payment-card">
+                <div className="admin-payment-card-grid">
+                  <div className="admin-payment-receipt">
+                    <a
+                      href={payment.image_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="admin-payment-receipt-link group"
+                    >
+                      <Image
+                        src={payment.image_url}
+                        alt="Comprobante de pago"
+                        fill
+                        className="object-contain p-2"
+                        sizes="(max-width: 1024px) 100vw, 360px"
+                        unoptimized
+                      />
+                      <span className="admin-payment-receipt-overlay">
+                        <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                        Abrir en tamaño completo
+                      </span>
+                    </a>
+                  </div>
+
+                  <div className="admin-payment-details">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={cn(
@@ -341,115 +368,91 @@ export function ManualPaymentsPanel({
                         {formatPaymentDate(payment.created_at)}
                       </span>
                     </div>
-                    <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+
+                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
                       {storeLabel(payment)}
-                    </p>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                      Plan solicitado:{" "}
-                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {PLAN_LABELS[payment.plan_id] ?? payment.plan_id}
-                      </span>
-                    </p>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                      Dueño: {payment.user_email ?? payment.owner_id}
-                    </p>
+                    </h3>
+
+                    <dl className="admin-payment-meta">
+                      <div>
+                        <dt>Plan solicitado</dt>
+                        <dd>{PLAN_LABELS[payment.plan_id] ?? payment.plan_id}</dd>
+                      </div>
+                      <div>
+                        <dt>Dueño</dt>
+                        <dd>{payment.user_email ?? payment.owner_id}</dd>
+                      </div>
+                      <div>
+                        <dt>Referencia</dt>
+                        <dd className="font-mono">{payment.reference_number}</dd>
+                      </div>
+                      {payment.amount_due_usd != null ? (
+                        <div className="admin-payment-amount">
+                          <dt>Monto a confirmar</dt>
+                          <dd>${Number(payment.amount_due_usd).toFixed(2)} USD</dd>
+                        </div>
+                      ) : null}
+                      {payment.credit_usd != null &&
+                      Number(payment.credit_usd) > 0 ? (
+                        <div>
+                          <dt>Saldo a favor</dt>
+                          <dd>${Number(payment.credit_usd).toFixed(2)} USD</dd>
+                        </div>
+                      ) : null}
+                    </dl>
+
                     {payment.admin_note ? (
                       <p className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
-                        Nota: {payment.admin_note}
+                        Nota admin: {payment.admin_note}
                       </p>
                     ) : null}
-                    {payment.from_plan ||
-                    payment.credit_usd != null ||
-                    payment.amount_due_usd != null ? (
-                      <div className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
-                        {payment.amount_due_usd != null ? (
-                          <p className="font-semibold text-zinc-800 dark:text-zinc-100">
-                            Monto a confirmar: $
-                            {Number(payment.amount_due_usd).toFixed(2)}
-                          </p>
+
+                    {canApprove || canRequestCorrection || canRevert || canReject ? (
+                      <div className="admin-payment-actions">
+                        {canApprove ? (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => handleConfirmPayment(payment.id)}
+                            className="btn-brand px-4 py-2 text-sm disabled:opacity-60"
+                          >
+                            {isUpdating ? "Procesando…" : "Aprobar"}
+                          </button>
                         ) : null}
-                        {payment.credit_usd != null &&
-                        Number(payment.credit_usd) > 0 ? (
-                          <p>
-                            Saldo a favor: $
-                            {Number(payment.credit_usd).toFixed(2)}
-                          </p>
+                        {canRevert ? (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => handleRevertConfirmation(payment.id)}
+                            className="admin-payment-action-secondary"
+                          >
+                            {isUpdating ? "Procesando…" : "Revertir"}
+                          </button>
+                        ) : null}
+                        {canRequestCorrection ? (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => openDialog("correction", payment.id)}
+                            className="admin-payment-action-warning"
+                          >
+                            Solicitar corrección
+                          </button>
+                        ) : null}
+                        {canReject ? (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => openDialog("reject", payment.id)}
+                            className="admin-payment-action-danger"
+                          >
+                            Rechazar
+                          </button>
                         ) : null}
                       </div>
                     ) : null}
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                      Ref:{" "}
-                      <span className="font-mono">{payment.reference_number}</span>
-                    </p>
-                    <a
-                      href={payment.image_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex text-sm font-medium text-teal-700 hover:underline dark:text-teal-300"
-                    >
-                      Ver comprobante
-                    </a>
-                  </div>
-
-                  <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 sm:h-24 sm:w-40 dark:border-zinc-800 dark:bg-zinc-900">
-                    <Image
-                      src={payment.image_url}
-                      alt="Comprobante de pago"
-                      fill
-                      className="object-cover"
-                      sizes="160px"
-                      unoptimized
-                    />
                   </div>
                 </div>
-
-                {canConfirm ||
-                canRequestCorrection ||
-                canRevertConfirmation ||
-                canPermanentlyReject ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {canConfirm ? (
-                      <button
-                        type="button"
-                        disabled={isUpdating}
-                        onClick={() => handleConfirmPayment(payment.id)}
-                        className="btn-brand px-4 py-2 text-sm disabled:opacity-60"
-                      >
-                        {isUpdating ? "Activando plan…" : "Confirmar Pago"}
-                      </button>
-                    ) : null}
-                    {canRevertConfirmation ? (
-                      <button
-                        type="button"
-                        disabled={isUpdating}
-                        onClick={() => handleRevertConfirmation(payment.id)}
-                        className="rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-                      >
-                        {isUpdating ? "Revirtiendo…" : "Revertir confirmación"}
-                      </button>
-                    ) : null}
-                    {canRequestCorrection ? (
-                      <button
-                        type="button"
-                        disabled={isUpdating}
-                        onClick={() => openDialog("correction", payment.id)}
-                        className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 disabled:opacity-60 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300"
-                      >
-                        Solicitar corrección
-                      </button>
-                    ) : null}
-                    {canPermanentlyReject ? (
-                      <button
-                        type="button"
-                        disabled={isUpdating}
-                        onClick={() => openDialog("reject", payment.id)}
-                        className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-60 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
-                      >
-                        Rechazar definitivamente
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
               </li>
             );
           })}
@@ -466,12 +469,12 @@ export function ManualPaymentsPanel({
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
               {dialogMode === "correction"
                 ? "Solicitar corrección"
-                : "Rechazar definitivamente"}
+                : "Rechazar pago"}
             </h3>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
               {dialogMode === "correction"
-                ? "El usuario verá este motivo y podrá volver a subir el comprobante. Su acceso provisional se mantiene. Si luego decides aceptar el pago, usa Confirmar Pago sin esperar al usuario."
-                : "Anula la solicitud de forma permanente y bloquea reenviar la misma referencia. También puedes usar Confirmar Pago si cambias de opinión."}
+                ? "El usuario verá este motivo y podrá volver a subir el comprobante."
+                : "Anula la solicitud de forma permanente y bloquea reenviar la misma referencia."}
             </p>
             <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
               {storeLabel(dialogPayment)} · Ref {dialogPayment.reference_number}
@@ -518,7 +521,7 @@ export function ManualPaymentsPanel({
                   ? "Guardando…"
                   : dialogMode === "correction"
                     ? "Enviar solicitud"
-                    : "Anular permanentemente"}
+                    : "Rechazar definitivamente"}
               </button>
             </div>
           </div>
