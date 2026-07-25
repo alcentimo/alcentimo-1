@@ -13,6 +13,8 @@ interface BrandLogoProps {
   className?: string;
   centered?: boolean;
   theme?: "light" | "dark";
+  /** Estilo de alto contraste para la landing pública. */
+  variant?: "default" | "landing";
   /** Sobrescribe el logo de plataforma (p. ej. vista previa en admin). */
   logoUrl?: string | null;
   /** Sobrescribe el nombre de plataforma. */
@@ -45,10 +47,12 @@ function BrandMark({
   size,
   logoUrl,
   platformName,
+  variant = "default",
 }: {
   size: "sm" | "md" | "lg";
   logoUrl: string | null;
   platformName: string;
+  variant?: "default" | "landing";
 }) {
   const markSize =
     size === "sm"
@@ -71,14 +75,28 @@ function BrandMark({
           alt={`Logo de ${platformName}`}
           width={imageSize.width}
           height={imageSize.height}
-          className="h-full w-auto max-w-full object-contain object-left"
+          priority={variant === "landing"}
+          className={cn(
+            "h-full w-auto max-w-full object-contain object-left",
+            variant === "landing" && "brand-logo-image-landing",
+          )}
           unoptimized={logoUrl.includes("?v=")}
         />
       </span>
     );
   }
 
-  return <span className={cn("brand-mark", markSize)}>a</span>;
+  return (
+    <span
+      className={cn(
+        "brand-mark",
+        markSize,
+        variant === "landing" && "brand-mark-landing",
+      )}
+    >
+      a
+    </span>
+  );
 }
 
 export function BrandLogo({
@@ -89,6 +107,7 @@ export function BrandLogo({
   className = "",
   centered = false,
   theme = "light",
+  variant = "default",
   logoUrl: logoUrlOverride,
   platformName: platformNameOverride,
 }: BrandLogoProps) {
@@ -99,23 +118,38 @@ export function BrandLogo({
       ? platformNameOverride
       : platform.platformName;
 
-  const nameClass =
-    theme === "dark"
-      ? "block truncate text-base font-bold tracking-tight text-zinc-50"
-      : "block truncate text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-50";
+  const isLanding = variant === "landing";
+  const resolvedTheme = isLanding ? "light" : theme;
+
+  const nameClass = cn(
+    "brand-logo-name block truncate font-bold tracking-tight",
+    size === "lg" ? "text-lg sm:text-xl" : "text-base",
+    isLanding
+      ? "text-emerald-950"
+      : resolvedTheme === "dark"
+        ? "text-zinc-50"
+        : "text-zinc-900 dark:text-zinc-50",
+  );
   const subtitleClass =
-    theme === "dark"
+    resolvedTheme === "dark"
       ? "block truncate text-xs font-medium text-zinc-400"
       : "brand-subtitle block truncate";
 
+  const displayName = isLanding
+    ? platformName.trim() || "Alcentimo"
+    : platformName.toLowerCase();
+
   const content = (
     <>
-      <BrandMark size={size} logoUrl={logoUrl} platformName={platformName} />
+      <BrandMark
+        size={size}
+        logoUrl={logoUrl}
+        platformName={platformName}
+        variant={variant}
+      />
       {(showName || subtitle) && (
         <div className="min-w-0">
-          {showName && (
-            <span className={nameClass}>{platformName.toLowerCase()}</span>
-          )}
+          {showName && <span className={nameClass}>{displayName}</span>}
           {subtitle && <span className={subtitleClass}>{subtitle}</span>}
         </div>
       )}
@@ -123,7 +157,8 @@ export function BrandLogo({
   );
 
   const baseClass = cn(
-    "flex min-w-0 items-center gap-2.5",
+    "brand-logo flex min-w-0 items-center gap-2.5",
+    isLanding && "brand-logo-landing",
     centered && "justify-center",
     className,
   );

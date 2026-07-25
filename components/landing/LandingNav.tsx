@@ -26,14 +26,14 @@ export function LandingNav() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all safe-area-inset ${
+      className={`landing-header fixed inset-x-0 top-0 z-50 transition-all safe-area-inset ${
         scrolled
-          ? "border-b border-zinc-200/70 bg-white/90 shadow-[0_1px_2px_rgba(0,0,0,0.04)] backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-950/90"
-          : "border-b border-transparent bg-[#FAFAF9]/90 backdrop-blur-sm dark:bg-zinc-950/80"
+          ? "border-b border-zinc-200/80 bg-white/95 shadow-[0_1px_2px_rgba(0,0,0,0.04)] backdrop-blur-md"
+          : "border-b border-transparent bg-[#FAFAF9]/95 backdrop-blur-sm"
       }`}
     >
       <div className="page-container flex h-14 items-center justify-between gap-4 lg:h-16">
-        <BrandLogo href="/" size="lg" />
+        <BrandLogo href="/" size="lg" variant="landing" className="landing-header-brand" />
 
         <nav
           className="hidden items-center gap-0.5 md:flex"
@@ -61,7 +61,7 @@ export function LandingNav() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="touch-target rounded-lg text-zinc-700 md:hidden dark:text-zinc-300"
+          className="touch-target rounded-lg text-zinc-700 md:hidden"
           aria-expanded={open}
           aria-label={open ? "Cerrar menú" : "Abrir menú"}
         >
@@ -70,7 +70,7 @@ export function LandingNav() {
       </div>
 
       {open && (
-        <div className="border-t border-zinc-200/70 bg-white px-4 py-4 md:hidden dark:border-zinc-800/70 dark:bg-zinc-950">
+        <div className="border-t border-zinc-200/70 bg-white px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-0.5" aria-label="Menú móvil">
             {navLinks.map((link) => (
               <a

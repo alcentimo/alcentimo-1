@@ -440,7 +440,25 @@ body {
 }
 
 .landing-nav-link {
-  @apply inline-flex items-center px-2.5 py-2 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100;
+  @apply inline-flex items-center px-2.5 py-2 text-sm font-medium text-zinc-600 transition-colors hover:text-emerald-950;
+}
+
+.landing-header {
+  color-scheme: light;
+}
+
+.landing-header-brand .brand-logo-name {
+  @apply font-extrabold text-emerald-950;
+}
+
+.brand-mark-landing {
+  @apply bg-emerald-700 text-white shadow-[0_1px_3px_rgba(4,120,87,0.35)];
+}
+
+.brand-logo-image-landing {
+  opacity: 1;
+  filter: contrast(1.08) saturate(1.05);
+  image-rendering: -webkit-optimize-contrast;
 }
 
 .landing-dashboard-mockup {
