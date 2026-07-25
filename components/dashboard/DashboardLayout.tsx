@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -79,8 +77,13 @@ function DashboardShell({
       if (event.key === "Escape") setSidebarOpen(false);
     }
 
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [sidebarOpen]);
 
   async function handleLogout() {
@@ -119,14 +122,6 @@ function DashboardShell({
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="dashboard-header flex h-14 shrink-0 items-center gap-2 px-3 sm:gap-3 sm:px-4 lg:px-6">
           <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(true)}
-              className="touch-target shrink-0 rounded-xl text-zinc-700 lg:hidden dark:text-zinc-300"
-              aria-label={locale?.t("nav.openMenu") ?? "Abrir menú"}
-            >
-              <Menu className="h-5 w-5" />
-            </button>
             <BrandLogo
               href="/dashboard/catalogo"
               size="md"
@@ -157,11 +152,13 @@ function DashboardShell({
           <DashboardViewKeepAlive pathname={pathname}>{children}</DashboardViewKeepAlive>
         </main>
 
-        <DashboardMobileBottomNav
-          pathname={pathname}
-          storeRole={storeRole}
-          onOpenMenu={() => setSidebarOpen(true)}
-        />
+        {!sidebarOpen ? (
+          <DashboardMobileBottomNav
+            pathname={pathname}
+            storeRole={storeRole}
+            onOpenMenu={() => setSidebarOpen(true)}
+          />
+        ) : null}
       </div>
     </div>
   );

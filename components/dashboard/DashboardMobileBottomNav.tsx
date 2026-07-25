@@ -63,6 +63,7 @@ export function DashboardMobileBottomNav({
     (pathname.startsWith("/dashboard/analiticas") ||
       pathname.startsWith("/dashboard/asistente") ||
       pathname.startsWith("/dashboard/equipo") ||
+      pathname.startsWith("/dashboard/cuenta") ||
       pathname.startsWith("/dashboard/tasas") ||
       pathname.startsWith("/dashboard/planes") ||
       pathname.startsWith("/dashboard/upgrade") ||
@@ -70,11 +71,12 @@ export function DashboardMobileBottomNav({
       pathname.startsWith("/dashboard/soporte") ||
       pathname.startsWith("/dashboard/referidos") ||
       pathname.startsWith("/dashboard/ventas") ||
+      pathname.startsWith("/activar") ||
       pathname.startsWith("/admin"));
 
   return (
     <nav className="bottom-nav" aria-label="Navegación principal móvil">
-      <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1.5">
+      <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1">
         {items.map((item) => (
           <BottomNavLink
             key={item.href}
@@ -92,6 +94,7 @@ export function DashboardMobileBottomNav({
           )}
           onClick={onOpenMenu}
           aria-label="Abrir menú completo"
+          aria-haspopup="dialog"
         >
           <Menu className="h-5 w-5 shrink-0" aria-hidden="true" />
           <span className="max-w-full truncate px-0.5 text-[10px] leading-tight">Más</span>

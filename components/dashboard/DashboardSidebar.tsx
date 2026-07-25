@@ -212,6 +212,11 @@ export function DashboardSidebar({
         )}
         aria-label="Navegación principal"
       >
+        {mobileOpen && drawerExpanded ? (
+          <p className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Tienda
+          </p>
+        ) : null}
         {navItems.map((item) => (
           <SidebarNavLink
             key={item.href}
@@ -227,21 +232,30 @@ export function DashboardSidebar({
 
       <div
         className={cn(
-          "border-t border-zinc-200 dark:border-zinc-800",
-          drawerExpanded ? "space-y-3 px-0 py-4" : "space-y-2 px-2 py-3",
+          "shrink-0 border-t border-zinc-200 dark:border-zinc-800",
+          drawerExpanded
+            ? "space-y-2 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            : "space-y-2 px-2 py-3",
         )}
       >
-        <div className={cn(drawerExpanded ? "px-3" : "px-0")}>
-          <DashboardAccountMenu
-            userEmail={userEmail}
-            planName={planName}
-            expanded={drawerExpanded}
-            showOwnerBillingLinks={showOwnerBillingLinks}
-            canUpgradeToBusiness={canUpgradeToBusiness}
-            onLogout={onLogout}
-            onNavigate={onCloseMobile}
-          />
+        {mobileOpen && drawerExpanded ? (
+          <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Cuenta personal
+          </p>
+        ) : null}
 
+        <DashboardAccountMenu
+          userEmail={userEmail}
+          planName={planName}
+          expanded={drawerExpanded}
+          inlinePanel={mobileOpen}
+          showOwnerBillingLinks={showOwnerBillingLinks}
+          canUpgradeToBusiness={canUpgradeToBusiness}
+          onLogout={onLogout}
+          onNavigate={onCloseMobile}
+        />
+
+        <div className={cn(!drawerExpanded && "px-0")}>
           <button
             type="button"
             onClick={() => {
@@ -249,7 +263,7 @@ export function DashboardSidebar({
               setSupportOpen(true);
               onCloseMobile();
             }}
-            className={cn(navLinkClass(false, !drawerExpanded), "mt-2")}
+            className={navLinkClass(false, !drawerExpanded)}
             title={drawerExpanded ? undefined : t("nav.support")}
           >
             <LifeBuoy className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />

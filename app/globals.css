@@ -856,15 +856,7 @@ body {
   @apply max-w-[min(100%,14rem)] sm:max-w-none;
 }
 
-.dashboard-main {
-  padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
-}
-
-@media (min-width: 1024px) {
-  .dashboard-main {
-    padding-bottom: inherit;
-  }
-}
+/* Bottom nav va en el flujo del layout (no fixed overlay); el padding del main lo define Tailwind. */
 
 .inventory-actions-group {
   @apply inline-flex items-center justify-end gap-0.5;
@@ -4193,11 +4185,11 @@ body {
 }
 
 .bottom-nav {
-  @apply fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200/80 bg-white/95 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.04)] backdrop-blur-md lg:hidden dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:shadow-[0_-4px_16px_rgba(0,0,0,0.2)];
+  @apply relative z-20 shrink-0 border-t border-zinc-200/80 bg-white/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.04)] backdrop-blur-md lg:hidden dark:border-zinc-800/80 dark:bg-zinc-950/95 dark:shadow-[0_-4px_16px_rgba(0,0,0,0.2)];
 }
 
 .bottom-nav-item {
-  @apply flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 px-2 text-xs font-medium transition-colors;
+  @apply flex min-h-14 flex-1 touch-manipulation flex-col items-center justify-center gap-0.5 px-2 text-xs font-medium transition-colors active:scale-[0.98];
 }
 
 .bottom-nav-item-active {

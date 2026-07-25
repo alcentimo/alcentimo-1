@@ -7,9 +7,17 @@ interface DropdownMenuProps {
   trigger: ReactNode;
   children: ReactNode | ((close: () => void) => ReactNode);
   align?: "start" | "end";
+  className?: string;
+  menuClassName?: string;
 }
 
-export function DropdownMenu({ trigger, children, align = "end" }: DropdownMenuProps) {
+export function DropdownMenu({
+  trigger,
+  children,
+  align = "end",
+  className,
+  menuClassName,
+}: DropdownMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -32,13 +40,16 @@ export function DropdownMenu({ trigger, children, align = "end" }: DropdownMenuP
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative inline-flex">
-      <div onClick={() => setOpen((value) => !value)}>{trigger}</div>
+    <div ref={rootRef} className={cn("relative inline-flex", className)}>
+      <div className="w-full" onClick={() => setOpen((value) => !value)}>
+        {trigger}
+      </div>
       {open && (
         <div
           className={cn(
             "absolute top-full z-30 mt-1 min-w-[10rem] rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950",
             align === "end" ? "right-0" : "left-0",
+            menuClassName,
           )}
           role="menu"
         >
