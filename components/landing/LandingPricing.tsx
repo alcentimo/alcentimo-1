@@ -7,7 +7,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import {
-  FREE_SUBDOMAIN_FEATURE,
   isCustomDomainFeature,
   planIncludesCustomDomain,
   PRICING_DOMAIN_DISCLAIMER,
@@ -116,20 +115,18 @@ export function LandingPricing({
                       </li>
                       {tier.features.map((feature) => {
                         const isDomainFeature = isCustomDomainFeature(feature);
-                        const isSubdomainFeature = feature === FREE_SUBDOMAIN_FEATURE;
-                        const isHighlighted = isDomainFeature || isSubdomainFeature;
                         return (
                           <li
                             key={feature}
                             className={`flex items-start gap-2.5 text-sm leading-relaxed ${
-                              isHighlighted
+                              isDomainFeature
                                 ? "font-medium text-violet-800 dark:text-violet-200"
                                 : "text-zinc-600 dark:text-zinc-400"
                             }`}
                           >
                             <Check
                               className={`mt-0.5 h-4 w-4 shrink-0 ${
-                                isHighlighted
+                                isDomainFeature
                                   ? "text-violet-600 dark:text-violet-400"
                                   : "text-emerald-600 dark:text-emerald-400"
                               }`}
