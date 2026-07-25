@@ -12,12 +12,10 @@ import {
   Settings2,
   Tag,
   Truck,
-  Users,
 } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
 import { DomainsTab } from "@/components/dashboard/settings/DomainsTab";
 import { LocationsTab } from "@/components/dashboard/settings/LocationsTab";
-import { TeamTab } from "@/components/dashboard/settings/TeamTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
 import { MessageTemplatesTab } from "@/components/dashboard/settings/MessageTemplatesTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
@@ -36,7 +34,6 @@ import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab
 import type { PlanId } from "@/src/config/plans";
 import type { StoreLocation } from "@/lib/locations/types";
 import type { LocationLimitSummary } from "@/components/dashboard/settings/LocationsTab";
-import type { StoreTeamSnapshot } from "@/lib/team/types";
 import { cn } from "@/lib/cn";
 
 type SettingsTabId =
@@ -49,8 +46,7 @@ type SettingsTabId =
   | "design"
   | "messages"
   | "domains"
-  | "branches"
-  | "team";
+  | "branches";
 
 const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
   "general",
@@ -63,7 +59,6 @@ const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
   "messages",
   "domains",
   "branches",
-  "team",
 ]);
 
 function resolveInitialTab(tab: string | undefined): SettingsTabId {
@@ -94,7 +89,6 @@ const SETTINGS_NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { id: "shipping", label: "Envíos", icon: Truck },
       { id: "payments", label: "Pagos", icon: CreditCard },
       { id: "branches", label: "Sucursales", icon: MapPin },
-      { id: "team", label: "Equipo", icon: Users },
     ],
   },
   {
@@ -131,7 +125,6 @@ interface SettingsPanelProps {
   planId?: PlanId;
   initialLocations?: StoreLocation[];
   locationLimit?: LocationLimitSummary | null;
-  initialTeam?: StoreTeamSnapshot | null;
   initialDomain?: string | null;
   initialDomainMode?: "connect" | "purchase" | null;
 }
@@ -147,7 +140,6 @@ export function SettingsPanel({
   planId,
   initialLocations = [],
   locationLimit = null,
-  initialTeam = null,
   initialDomain = null,
   initialDomainMode = null,
 }: SettingsPanelProps) {
@@ -198,14 +190,6 @@ export function SettingsPanel({
             initialLocations={initialLocations}
             locationLimit={locationLimit}
           />
-        );
-      case "team":
-        return initialTeam ? (
-          <TeamTab initialTeam={initialTeam} />
-        ) : (
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
-            Crea tu tienda para gestionar el equipo.
-          </div>
         );
       case "domains":
         return (

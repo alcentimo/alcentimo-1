@@ -3,6 +3,7 @@ export type DashboardPrefetchRoute =
   | "catalogo"
   | "pedidos"
   | "clientes"
+  | "equipo"
   | "analiticas"
   | "ajustes";
 
@@ -10,6 +11,7 @@ const ROUTE_PREFIXES: Array<{ prefix: string; route: DashboardPrefetchRoute }> =
   { prefix: "/dashboard/catalogo", route: "catalogo" },
   { prefix: "/dashboard/pedidos", route: "pedidos" },
   { prefix: "/dashboard/clientes", route: "clientes" },
+  { prefix: "/dashboard/equipo", route: "equipo" },
   { prefix: "/dashboard/analiticas", route: "analiticas" },
   { prefix: "/dashboard/ajustes", route: "ajustes" },
 ];
@@ -36,6 +38,7 @@ export function isDashboardPrefetchRoute(
     value === "catalogo" ||
     value === "pedidos" ||
     value === "clientes" ||
+    value === "equipo" ||
     value === "analiticas" ||
     value === "ajustes"
   );

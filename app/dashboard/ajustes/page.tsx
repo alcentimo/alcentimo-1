@@ -17,7 +17,6 @@ import {
   getEffectivePlanIdForLimits,
   resolveProTrialStatus,
 } from "@/lib/plans/trial";
-import { getStoreTeamSnapshot } from "@/lib/team/get-store-team";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +26,11 @@ export default async function AjustesPage({
   searchParams: Promise<{ tab?: string; domain?: string; mode?: string }>;
 }) {
   const { tab, domain, mode } = await searchParams;
+
+  if (tab === "team") {
+    redirect("/dashboard/equipo");
+  }
+
   const supabase = await createClient();
   const session = await getDashboardSession();
 
@@ -42,7 +46,6 @@ export default async function AjustesPage({
   let products: { id: string; name: string; categoryName: string | null; thumbUrl: string | null }[] =
     [];
   let locations: Awaited<ReturnType<typeof getStoreLocations>> = [];
-  let initialTeam: Awaited<ReturnType<typeof getStoreTeamSnapshot>> | null = null;
   let locationLimit: {
     maxAllowed: number;
     includedLocations: number;
@@ -64,7 +67,7 @@ export default async function AjustesPage({
   } | null = null;
 
   if (store) {
-    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations, planSettings, teamSnapshot] =
+    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations, planSettings] =
       await Promise.all([
       getStoreSettingsConfig(store.id),
       getStoreCoupons(store.id),
@@ -74,17 +77,12 @@ export default async function AjustesPage({
       getCatalogPreviewSettings(store),
       getStoreLocations(store.id).catch(() => []),
       fetchPlanSettings().catch(() => null),
-      getStoreTeamSnapshot({
-        store,
-        currentUserId: authUser.id,
-      }).catch(() => null),
     ]);
 
     settingsConfig = config;
     coupons = couponRows;
     promotions = promotionRows;
     locations = storeLocations;
-    initialTeam = teamSnapshot;
     products = inventory.products.map((product) => ({
       id: product.product_id,
       name: product.product_name,
@@ -156,7 +154,6 @@ export default async function AjustesPage({
         planId={session.authUser.planId}
         initialLocations={locations}
         locationLimit={locationLimit}
-        initialTeam={initialTeam}
         initialDomain={domain?.trim() || null}
         initialDomainMode={
           mode === "connect" || mode === "purchase" ? mode : null

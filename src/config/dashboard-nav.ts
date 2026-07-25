@@ -4,6 +4,7 @@ import {
   ClipboardList,
   Settings2,
   Store,
+  UserCog,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -44,6 +45,13 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     icon: Users,
     match: (pathname) => pathname.startsWith("/dashboard/clientes"),
     ownerOnly: true,
+  },
+  {
+    href: "/dashboard/equipo",
+    label: "Equipo",
+    description: "Invita encargados y vendedores a tu panel",
+    icon: UserCog,
+    match: (pathname) => pathname.startsWith("/dashboard/equipo"),
   },
   {
     href: "/dashboard/analiticas",

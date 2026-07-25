@@ -12,6 +12,7 @@ import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { getStoreCustomers } from "@/lib/customers/get-store-customers";
+import { getStoreTeamSnapshot } from "@/lib/team/get-store-team";
 import { getStoreAnalyticsPanel } from "@/lib/analytics/get-store-analytics";
 import { getStoreCoupons } from "@/lib/coupons/actions";
 import { getStorePromotions } from "@/lib/promotions/actions";
@@ -62,6 +63,14 @@ export async function loadDashboardRoutePrefetchData(
     case "clientes": {
       if (!store || !isStoreOwner(store, authUser.id)) break;
       await getStoreCustomers(store.id);
+      break;
+    }
+    case "equipo": {
+      if (!store) break;
+      await getStoreTeamSnapshot({
+        store,
+        currentUserId: authUser.id,
+      }).catch(() => null);
       break;
     }
     case "analiticas": {

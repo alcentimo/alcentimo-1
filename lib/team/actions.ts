@@ -31,7 +31,7 @@ import type {
 } from "@/lib/team/types";
 
 const INVITATION_TTL_DAYS = 7;
-const TEAM_SETTINGS_PATH = "/dashboard/ajustes?tab=team";
+const TEAM_SETTINGS_PATH = "/dashboard/equipo";
 
 export interface TeamActionResult {
   error?: string;
