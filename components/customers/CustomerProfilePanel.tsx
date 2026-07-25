@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { sendPasswordResetEmailAction } from "@/lib/auth/auth-email-actions";
 import { saveCustomerProfile } from "@/lib/customers/profile-actions";
 import { buildCustomerWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
-import { getPasswordResetRedirectUrl } from "@/lib/site-url";
 
 interface CustomerProfilePanelProps {
   storeSlug: string;
@@ -97,16 +97,12 @@ export function CustomerProfilePanel({
     setError(null);
     setPasswordPending(true);
 
-    const supabase = createClient();
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      contactEmail,
-      { redirectTo: getPasswordResetRedirectUrl() },
-    );
+    const result = await sendPasswordResetEmailAction({ email: contactEmail });
 
     setPasswordPending(false);
 
-    if (resetError) {
-      setError(resetError.message);
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
 

@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
-import { createClient } from "@/lib/supabase/client";
-import { getPasswordResetRedirectUrl } from "@/lib/site-url";
+import { sendPasswordResetEmailAction } from "@/lib/auth/auth-email-actions";
 
 export function ForgotPasswordPanel() {
   const [email, setEmail] = useState("");
@@ -17,25 +16,12 @@ export function ForgotPasswordPanel() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
-    const redirectTo = getPasswordResetRedirectUrl();
-
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      email,
-      { redirectTo },
-    );
+    const result = await sendPasswordResetEmailAction({ email });
 
     setLoading(false);
 
-    if (resetError) {
-      const message = resetError.message;
-      if (message.toLowerCase().includes("rate limit")) {
-        setError(
-          "Límite de envío de correos alcanzado. Intenta de nuevo más tarde.",
-        );
-        return;
-      }
-      setError(formatAuthError(message));
+    if (!result.ok) {
+      setError(formatAuthError(result.error));
       return;
     }
 

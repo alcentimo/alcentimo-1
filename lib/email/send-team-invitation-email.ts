@@ -1,6 +1,6 @@
+import { ALCENTIMO_FROM } from "@/lib/email/constants";
+import { escapeHtml } from "@/lib/email/escape-html";
 import { getResendApiKey } from "@/lib/env/server";
-
-const TEAM_INVITATION_FROM = "no-reply@alcentimo.com";
 
 export interface SendTeamInvitationEmailInput {
   to: string;
@@ -9,14 +9,6 @@ export interface SendTeamInvitationEmailInput {
   inviteUrl: string;
   inviterEmail?: string | null;
   expiresInDays: number;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 function buildTeamInvitationHtml(input: SendTeamInvitationEmailInput): string {
@@ -71,7 +63,7 @@ export async function sendTeamInvitationEmail(
     const subject = `Invitación al equipo de ${input.storeName}`;
 
     const { error } = await resend.emails.send({
-      from: `Alcentimo <${TEAM_INVITATION_FROM}>`,
+      from: ALCENTIMO_FROM,
       to: input.to,
       subject,
       html: buildTeamInvitationHtml(input),

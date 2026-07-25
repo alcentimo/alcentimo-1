@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
+import { signUpWithConfirmationEmailAction } from "@/lib/auth/auth-email-actions";
 import { devSignUpAndSignIn } from "@/lib/auth/dev-signup";
 import {
   isInvitationNextPath,
@@ -112,17 +113,26 @@ export function AuthPanel() {
       return;
     }
 
-    const supabase = createClient();
-    const emailRedirectTo = getAuthCallbackUrl(postAuthPath);
+    if (mode === "signup") {
+      const signupResult = await signUpWithConfirmationEmailAction({
+        email,
+        password,
+        nextPath: nextParam,
+      });
+      setLoading(false);
 
-    const result =
-      mode === "login"
-        ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({
-            email,
-            password,
-            options: { emailRedirectTo },
-          });
+      if (!signupResult.ok) {
+        setError(formatAuthError(signupResult.error));
+        return;
+      }
+
+      setSignupConfirmationSent(true);
+      return;
+    }
+
+    const supabase = createClient();
+
+    const result = await supabase.auth.signInWithPassword({ email, password });
 
     setLoading(false);
 
@@ -130,16 +140,11 @@ export function AuthPanel() {
       const message = result.error.message;
       if (message.toLowerCase().includes("rate limit")) {
         setError(
-          "Límite de envío de correos alcanzado. En desarrollo, desactiva «Confirm email» en Supabase (Authentication → Providers → Email) o habilita NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION=true en .env.local.",
+          "Límite de envío de correos alcanzado. Intenta de nuevo más tarde.",
         );
         return;
       }
       setError(formatAuthError(message));
-      return;
-    }
-
-    if (mode === "signup" && result.data.user && !result.data.session) {
-      setSignupConfirmationSent(true);
       return;
     }
 

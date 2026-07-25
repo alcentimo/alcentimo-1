@@ -11,8 +11,11 @@ declare namespace NodeJS {
     /** API de importación POS / ventas externas — solo servidor */
     API_SECRET_KEY?: string;
 
-    /** Resend — envío de correos transaccionales (invitaciones de equipo) */
+    /** Resend — envío de correos transaccionales (auth, invitaciones de equipo) */
     RESEND_API_KEY?: string;
+
+    /** Secreto opcional para el webhook Send Email de Supabase (/api/auth/send-email) */
+    SEND_EMAIL_HOOK_SECRET?: string;
 
     /** Inyectadas automáticamente por Vercel */
     VERCEL?: "1";
