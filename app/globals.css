@@ -451,14 +451,38 @@ body {
   @apply font-extrabold text-emerald-950;
 }
 
-.brand-mark-landing {
-  @apply bg-emerald-700 text-white shadow-[0_1px_3px_rgba(4,120,87,0.35)];
+.brand-isotype {
+  @apply block aspect-square h-auto w-auto shrink-0;
 }
 
-.brand-logo-image-landing {
-  opacity: 1;
-  filter: contrast(1.08) saturate(1.05);
-  image-rendering: -webkit-optimize-contrast;
+.brand-isotype-sm {
+  height: 2rem;
+  width: 2rem;
+}
+
+.brand-isotype-md {
+  height: 2.25rem;
+  width: 2.25rem;
+}
+
+.brand-isotype-lg {
+  height: 2.5rem;
+  width: 2.5rem;
+}
+
+@media (min-width: 640px) {
+  .brand-isotype-lg {
+    height: 2.75rem;
+    width: 2.75rem;
+  }
+}
+
+.brand-logo-wordmark {
+  @apply min-h-0 self-center;
+}
+
+.brand-mark-landing {
+  @apply bg-emerald-700 text-white shadow-[0_1px_3px_rgba(4,120,87,0.35)];
 }
 
 .landing-dashboard-mockup {

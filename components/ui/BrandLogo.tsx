@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { BrandIsotype } from "@/components/ui/BrandIsotype";
 import { usePlatformSettings } from "@/components/providers/PlatformSettingsProvider";
 import { cn } from "@/lib/cn";
 
@@ -43,6 +44,11 @@ function brandMarkImageSize(size: "sm" | "md" | "lg") {
   };
 }
 
+function isVectorLogoUrl(logoUrl: string): boolean {
+  const normalized = logoUrl.split("?")[0]?.toLowerCase() ?? "";
+  return normalized.endsWith(".svg");
+}
+
 function BrandMark({
   size,
   logoUrl,
@@ -54,47 +60,30 @@ function BrandMark({
   platformName: string;
   variant?: "default" | "landing";
 }) {
-  const markSize =
-    size === "sm"
-      ? "brand-mark-sm"
-      : size === "lg"
-        ? "brand-mark-lg"
-        : "brand-mark-md";
-  const imageSize = brandMarkImageSize(size);
+  const useSvgIsotype =
+    variant === "landing" || !logoUrl || (logoUrl ? isVectorLogoUrl(logoUrl) : false);
 
-  if (logoUrl) {
-    return (
-      <span
-        className={cn(
-          "relative flex shrink-0 items-center justify-center overflow-hidden",
-          imageSize.container,
-        )}
-      >
-        <Image
-          src={logoUrl}
-          alt={`Logo de ${platformName}`}
-          width={imageSize.width}
-          height={imageSize.height}
-          priority={variant === "landing"}
-          className={cn(
-            "h-full w-auto max-w-full object-contain object-left",
-            variant === "landing" && "brand-logo-image-landing",
-          )}
-          unoptimized={logoUrl.includes("?v=")}
-        />
-      </span>
-    );
+  if (useSvgIsotype) {
+    return <BrandIsotype size={size} variant={variant} />;
   }
+
+  const imageSize = brandMarkImageSize(size);
 
   return (
     <span
       className={cn(
-        "brand-mark",
-        markSize,
-        variant === "landing" && "brand-mark-landing",
+        "relative flex shrink-0 items-center justify-center overflow-hidden",
+        imageSize.container,
       )}
     >
-      a
+      <Image
+        src={logoUrl}
+        alt={`Logo de ${platformName}`}
+        width={imageSize.width}
+        height={imageSize.height}
+        className="h-full w-auto max-w-full object-contain object-left"
+        unoptimized={logoUrl.includes("?v=")}
+      />
     </span>
   );
 }
@@ -122,7 +111,7 @@ export function BrandLogo({
   const resolvedTheme = isLanding ? "light" : theme;
 
   const nameClass = cn(
-    "brand-logo-name block truncate font-bold tracking-tight",
+    "brand-logo-name truncate font-bold tracking-tight leading-none",
     size === "lg" ? "text-lg sm:text-xl" : "text-base",
     isLanding
       ? "text-emerald-950"
@@ -132,8 +121,8 @@ export function BrandLogo({
   );
   const subtitleClass =
     resolvedTheme === "dark"
-      ? "block truncate text-xs font-medium text-zinc-400"
-      : "brand-subtitle block truncate";
+      ? "truncate text-xs font-medium leading-tight text-zinc-400"
+      : "brand-subtitle truncate leading-tight";
 
   const displayName = isLanding
     ? platformName.trim() || "Alcentimo"
@@ -148,16 +137,16 @@ export function BrandLogo({
         variant={variant}
       />
       {(showName || subtitle) && (
-        <div className="min-w-0">
+        <span className="brand-logo-wordmark flex min-w-0 flex-col justify-center gap-0.5">
           {showName && <span className={nameClass}>{displayName}</span>}
           {subtitle && <span className={subtitleClass}>{subtitle}</span>}
-        </div>
+        </span>
       )}
     </>
   );
 
   const baseClass = cn(
-    "brand-logo flex min-w-0 items-center gap-2.5",
+    "brand-logo inline-flex min-w-0 items-center gap-2.5",
     isLanding && "brand-logo-landing",
     centered && "justify-center",
     className,
