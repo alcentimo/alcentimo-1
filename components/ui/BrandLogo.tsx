@@ -35,9 +35,9 @@ function brandMarkImageSize(size: "sm" | "md" | "lg") {
   }
   if (size === "lg") {
     return {
-      container: "h-10 w-auto max-w-[9rem] md:h-12 md:max-w-[14rem]",
+      container: "h-10 w-auto max-w-[14rem]",
       width: 224,
-      height: 48,
+      height: 40,
     };
   }
   return {
@@ -52,14 +52,9 @@ function isVectorLogoUrl(logoUrl: string): boolean {
   return normalized.endsWith(".svg");
 }
 
-/** Usa la marca vectorial nativa en cabeceras cuando no hay SVG custom subido. */
-function shouldUseBuiltInSvgBrand(
-  logoUrl: string | null,
-  variant: "default" | "landing",
-): boolean {
-  if (!logoUrl) return true;
-  if (isVectorLogoUrl(logoUrl)) return false;
-  return variant === "landing";
+/** Marca vectorial predeterminada solo cuando no hay logo global en BD. */
+function shouldUseBuiltInSvgBrand(logoUrl: string | null): boolean {
+  return !logoUrl;
 }
 
 function BrandSvgMark({
@@ -125,7 +120,7 @@ function BrandMark({
   variant?: "default" | "landing";
   responsive?: boolean;
 }) {
-  if (shouldUseBuiltInSvgBrand(logoUrl, variant)) {
+  if (shouldUseBuiltInSvgBrand(logoUrl)) {
     return (
       <BrandSvgMark
         size={size}
@@ -138,76 +133,35 @@ function BrandMark({
 
   const resolvedLogoUrl = logoUrl!;
   const imageSize = brandMarkImageSize(size);
-  const mobileImageSize =
-    size === "lg"
-      ? { container: "h-10 w-auto max-w-[9rem]", width: 160, height: 40 }
-      : brandMarkImageSize("sm");
-
-  function LogoImage({
-    containerClass,
-    width,
-    height,
-  }: {
-    containerClass: string;
-    width: number;
-    height: number;
-  }) {
-    const isSvg = isVectorLogoUrl(resolvedLogoUrl);
-
-    return (
-      <span
-        className={cn(
-          "brand-logo-mark-wrap relative flex shrink-0 items-center justify-center self-center overflow-visible",
-          containerClass,
-        )}
-      >
-        {isSvg ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={resolvedLogoUrl}
-            alt={`Logo de ${platformName}`}
-            width={width}
-            height={height}
-            className="brand-logo-svg-img block h-full w-auto max-h-full max-w-full object-contain object-center"
-            decoding="async"
-          />
-        ) : (
-          <Image
-            src={resolvedLogoUrl}
-            alt={`Logo de ${platformName}`}
-            width={width}
-            height={height}
-            className="block h-full w-auto max-h-full max-w-full object-contain object-center"
-            unoptimized={resolvedLogoUrl.includes("?v=")}
-          />
-        )}
-      </span>
-    );
-  }
-
-  if (responsive) {
-    return (
-      <>
-        <LogoImage
-          containerClass={cn(mobileImageSize.container, "md:hidden")}
-          width={mobileImageSize.width}
-          height={mobileImageSize.height}
-        />
-        <LogoImage
-          containerClass={cn(imageSize.container, "hidden md:flex")}
-          width={imageSize.width}
-          height={imageSize.height}
-        />
-      </>
-    );
-  }
 
   return (
-    <LogoImage
-      containerClass={imageSize.container}
-      width={imageSize.width}
-      height={imageSize.height}
-    />
+    <span
+      className={cn(
+        "brand-logo-mark-wrap brand-logo-dynamic relative flex shrink-0 items-center justify-center self-center overflow-visible",
+        imageSize.container,
+      )}
+    >
+      {isVectorLogoUrl(resolvedLogoUrl) ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={resolvedLogoUrl}
+          alt={`Logo de ${platformName}`}
+          width={imageSize.width}
+          height={imageSize.height}
+          className="brand-logo-svg-img block h-full w-auto max-h-full max-w-full object-contain object-center"
+          decoding="async"
+        />
+      ) : (
+        <Image
+          src={resolvedLogoUrl}
+          alt={`Logo de ${platformName}`}
+          width={imageSize.width}
+          height={imageSize.height}
+          className="block h-full w-auto max-h-full max-w-full object-contain object-center"
+          unoptimized={resolvedLogoUrl.includes("?v=")}
+        />
+      )}
+    </span>
   );
 }
 
@@ -233,7 +187,7 @@ export function BrandLogo({
 
   const isLanding = variant === "landing";
   const resolvedTheme = isLanding ? "light" : theme;
-  const useResponsiveSvg = responsive && shouldUseBuiltInSvgBrand(logoUrl, variant);
+  const useResponsiveSvg = responsive && !logoUrl;
 
   const nameClass = cn(
     "brand-logo-name truncate font-bold tracking-tight leading-none",

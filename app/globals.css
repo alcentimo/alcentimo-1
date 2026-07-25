@@ -465,6 +465,18 @@ body {
   @apply flex shrink-0 items-center justify-center self-center;
 }
 
+.brand-logo-dynamic {
+  height: 2.5rem;
+  width: auto;
+  max-width: 14rem;
+}
+
+.landing-header-brand.brand-logo-dynamic,
+.landing-header-brand .brand-logo-dynamic {
+  height: 2.5rem;
+  width: auto;
+}
+
 .brand-logo-mark-wrap-isotype {
   height: 2.5rem;
   width: 2.5rem;
