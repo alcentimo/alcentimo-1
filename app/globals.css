@@ -1514,7 +1514,7 @@ body {
 }
 
 .product-detail-add-btn {
-  @apply flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60;
+  @apply flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-teal-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
 }
 
 .product-detail-add-btn-in-cart {
@@ -1584,7 +1584,7 @@ body {
   font-size: var(--pc-btn-font-size);
   background-color: var(--pc-btn-desktop-bg);
   color: var(--pc-btn-desktop-fg);
-  @apply pointer-events-auto inline-flex w-full items-center justify-center font-semibold shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98];
+  @apply pointer-events-auto inline-flex w-full touch-manipulation items-center justify-center font-semibold shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98];
 }
 
 .store-add-btn-mobile {
@@ -1596,7 +1596,7 @@ body {
   border-color: var(--pc-btn-mobile-border);
   background-color: var(--pc-btn-mobile-bg);
   color: var(--pc-btn-mobile-fg);
-  @apply inline-flex h-full w-full items-center justify-center border font-semibold shadow-sm transition-colors hover:opacity-90 active:scale-[0.98];
+  @apply inline-flex h-full w-full touch-manipulation items-center justify-center border font-semibold shadow-sm transition-colors hover:opacity-90 active:scale-[0.98];
 }
 
 .store-add-btn-in-cart {
@@ -2452,7 +2452,7 @@ body {
 }
 
 .inventory-stock-chip {
-  @apply inline-flex min-h-9 items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-600 transition-colors hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-800;
+  @apply inline-flex min-h-9 touch-manipulation items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-600 transition-colors hover:border-zinc-300 hover:bg-zinc-50 active:scale-[0.98] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-800;
 }
 
 .inventory-stock-chip-active {
@@ -6769,7 +6769,31 @@ body {
 }
 
 .txn-qty-btn {
-  @apply inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800;
+  @apply inline-flex h-9 w-9 touch-manipulation items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50 active:scale-95 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 sm:h-8 sm:w-8;
+}
+
+.store-add-btn-just-added {
+  animation: store-add-pulse 0.42s ease-out;
+}
+
+@keyframes store-add-pulse {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.inventory-stock-adjust-btn:not(:disabled):active {
+  background-color: rgb(240 253 250);
+}
+
+.dark .inventory-stock-adjust-btn:not(:disabled):active {
+  background-color: rgb(19 78 74 / 0.35);
 }
 
 .txn-remove-btn {

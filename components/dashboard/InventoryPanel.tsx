@@ -289,6 +289,9 @@ const InventoryActionsMenu = memo(function InventoryActionsMenu({
   );
 });
 
+const stockAdjustBtnClass =
+  "inventory-stock-adjust-btn inline-flex h-9 w-9 touch-manipulation items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900 sm:h-7 sm:w-7";
+
 const InventoryStockControls = memo(function InventoryStockControls({
   productName,
   productId,
@@ -313,14 +316,13 @@ const InventoryStockControls = memo(function InventoryStockControls({
     stock_quantity: stockQuantity,
   });
   const critical = isCriticalStock({ stock_quantity: stockQuantity });
-  const quickAdjustDisabled = hasVariants || adjustingStock;
   const containerClass =
     layout === "spread"
       ? "flex flex-col gap-2"
       : "flex flex-col gap-2";
 
   return (
-    <div className={containerClass}>
+    <div className={containerClass} aria-busy={adjustingStock || undefined}>
       <div
         className={
           layout === "spread"
@@ -338,8 +340,8 @@ const InventoryStockControls = memo(function InventoryStockControls({
             <button
               type="button"
               onClick={() => onStockAdjust(productId, -1)}
-              disabled={quickAdjustDisabled || availableStock <= 0}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              disabled={hasVariants || availableStock <= 0}
+              className={stockAdjustBtnClass}
               aria-label={`Restar stock de ${productName}`}
             >
               <Minus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -347,13 +349,19 @@ const InventoryStockControls = memo(function InventoryStockControls({
           )}
           <div className="flex min-w-[2.75rem] flex-col items-center">
             <span
-              className={`text-sm font-semibold tabular-nums ${
-                out
-                  ? "text-zinc-400"
-                  : critical
-                    ? "text-orange-600 dark:text-orange-400"
-                    : "text-zinc-900 dark:text-zinc-50"
-              }`}
+              className={cn(
+                "text-sm font-semibold tabular-nums transition-colors",
+                adjustingStock && "text-teal-600 dark:text-teal-400",
+                !adjustingStock && out && "text-zinc-400",
+                !adjustingStock &&
+                  critical &&
+                  !out &&
+                  "text-orange-600 dark:text-orange-400",
+                !adjustingStock &&
+                  !out &&
+                  !critical &&
+                  "text-zinc-900 dark:text-zinc-50",
+              )}
             >
               {stockQuantity}
             </span>
@@ -363,8 +371,8 @@ const InventoryStockControls = memo(function InventoryStockControls({
             <button
               type="button"
               onClick={() => onStockAdjust(productId, 1)}
-              disabled={quickAdjustDisabled}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              disabled={hasVariants}
+              className={stockAdjustBtnClass}
               aria-label={`Sumar stock de ${productName}`}
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -613,7 +621,11 @@ export function InventoryPanel({
   const [editingProductId, setEditingProductId] = useState<string | undefined>();
   const [deleteTarget, setDeleteTarget] = useState<CatalogListItem | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [adjustingProductId, setAdjustingProductId] = useState<string | null>(null);
+  const [adjustingProductIds, setAdjustingProductIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const pendingStockDeltasRef = useRef<Map<string, number>>(new Map());
+  const stockAdjustInFlightRef = useRef<Set<string>>(new Set());
   const [refreshing, startRefresh] = useTransition();
   const [deleting, startDelete] = useTransition();
   const [exporting, startExport] = useTransition();
@@ -621,6 +633,17 @@ export function InventoryPanel({
   const [exportingCsv, startExportCsv] = useTransition();
   const [exportError, setExportError] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+
+  const markStockAdjusting = useCallback((productId: string, active: boolean) => {
+    setAdjustingProductIds((prev) => {
+      const has = prev.has(productId);
+      if (active === has) return prev;
+      const next = new Set(prev);
+      if (active) next.add(productId);
+      else next.delete(productId);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     setLiveProductFormConfig(productFormConfig);
@@ -833,33 +856,95 @@ export function InventoryPanel({
     }
   }, [productById]);
 
-  const handleStockAdjust = useCallback((productId: string, delta: number) => {
-    setAdjustingProductId(productId);
-    startRefresh(async () => {
-      const result = await adjustProductStock(productId, delta);
-      if (result.error) {
-        setAdjustingProductId(null);
-        return;
-      }
+  const handleStockAdjust = useCallback(
+    (productId: string, delta: number) => {
+      const product = productById.get(productId);
+      if (!product || hasMultipleVariants(product)) return;
 
-      if (result.stock != null) {
-        setProducts((prev) =>
-          prev.map((item) =>
-            item.product_id === productId
-              ? {
-                  ...item,
-                  available_stock: result.stock!,
-                  stock_quantity: result.stock!,
-                }
-              : item,
-          ),
-        );
-      } else {
-        await loadInventoryPage({ page, pageSize, stockFilter, searchQuery });
-      }
-      setAdjustingProductId(null);
-    });
-  }, [loadInventoryPage, page, pageSize, searchQuery, stockFilter]);
+      const currentStock = getProductStockQuantity(product);
+      if (delta < 0 && currentStock <= 0) return;
+
+      // Feedback inmediato: el número cambia al clic; el servidor confirma después.
+      setProducts((prev) =>
+        prev.map((item) => {
+          if (item.product_id !== productId) return item;
+          const next = Math.max(0, getProductStockQuantity(item) + delta);
+          return {
+            ...item,
+            available_stock: next,
+            stock_quantity: next,
+          };
+        }),
+      );
+
+      const queued =
+        (pendingStockDeltasRef.current.get(productId) ?? 0) + delta;
+      pendingStockDeltasRef.current.set(productId, queued);
+      markStockAdjusting(productId, true);
+
+      if (stockAdjustInFlightRef.current.has(productId)) return;
+
+      void (async () => {
+        stockAdjustInFlightRef.current.add(productId);
+        try {
+          while (pendingStockDeltasRef.current.has(productId)) {
+            const batchDelta = pendingStockDeltasRef.current.get(productId) ?? 0;
+            pendingStockDeltasRef.current.delete(productId);
+            if (batchDelta === 0) continue;
+
+            const result = await adjustProductStock(productId, batchDelta);
+            if (result.error) {
+              pendingStockDeltasRef.current.delete(productId);
+              await loadInventoryPage({
+                page,
+                pageSize,
+                stockFilter,
+                searchQuery,
+              });
+              break;
+            }
+
+            if (result.stock != null) {
+              setProducts((prev) =>
+                prev.map((item) =>
+                  item.product_id === productId
+                    ? {
+                        ...item,
+                        available_stock: result.stock!,
+                        stock_quantity: result.stock!,
+                      }
+                    : item,
+                ),
+              );
+            } else {
+              pendingStockDeltasRef.current.delete(productId);
+              await loadInventoryPage({
+                page,
+                pageSize,
+                stockFilter,
+                searchQuery,
+              });
+              break;
+            }
+          }
+        } finally {
+          stockAdjustInFlightRef.current.delete(productId);
+          if (!pendingStockDeltasRef.current.has(productId)) {
+            markStockAdjusting(productId, false);
+          }
+        }
+      })();
+    },
+    [
+      loadInventoryPage,
+      markStockAdjusting,
+      page,
+      pageSize,
+      productById,
+      searchQuery,
+      stockFilter,
+    ],
+  );
 
   const applyProductOrder = useCallback(
     async (nextIds: string[]) => {
@@ -1020,7 +1105,7 @@ export function InventoryPanel({
     }
 
     return filtered.map((product) => {
-      const isAdjusting = adjustingProductId === product.product_id;
+      const isAdjusting = adjustingProductIds.has(product.product_id);
       return (
         <InventoryMobileCard
           key={product.product_id}
@@ -1035,7 +1120,7 @@ export function InventoryPanel({
     });
   }, [
     filtered,
-    adjustingProductId,
+    adjustingProductIds,
     emptyMessage,
     openEdit,
     handleDeleteRequest,
@@ -1420,7 +1505,7 @@ export function InventoryPanel({
                       onEdit={openEdit}
                       onDelete={handleDeleteRequest}
                       onStockAdjust={handleStockAdjust}
-                      adjustingStock={adjustingProductId === product.product_id}
+                      adjustingStock={adjustingProductIds.has(product.product_id)}
                       onPositionCommit={handlePositionCommit}
                       onDropOnRow={handleDropOnRow}
                       showPcBuilderSlot={pcBuilderEnabled}

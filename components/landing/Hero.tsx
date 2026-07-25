@@ -36,7 +36,8 @@ export function Hero() {
             <div className="mt-10">
               <Link
                 href="/dashboard/productos/nuevo"
-                className="btn-brand inline-flex gap-2 px-7 py-3 text-base shadow-lg shadow-emerald-500/20"
+                prefetch={true}
+                className="btn-brand inline-flex gap-2 px-7 py-3 text-base shadow-lg shadow-emerald-500/20 touch-manipulation"
               >
                 Comenzar gratis
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />

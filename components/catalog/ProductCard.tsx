@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Plus } from "lucide-react";
 import { CatalogProductMediaFallback } from "@/components/catalog/CatalogProductMediaFallback";
 import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
@@ -147,6 +147,14 @@ export const ProductCard = memo(function ProductCard({
   const [selectedModifiers, setSelectedModifiers] = useState<
     CartModifierSelection[]
   >([]);
+  const [justAdded, setJustAdded] = useState(false);
+  const justAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (justAddedTimerRef.current) clearTimeout(justAddedTimerRef.current);
+    };
+  }, []);
 
   const publicCategoryLabel = resolvePublicCategoryLabel(
     product.category_slug,
@@ -263,6 +271,9 @@ export const ProductCard = memo(function ProductCard({
   function handleAdd() {
     if (!canAddMore || !selectedVariant) return;
     onAddToCart?.(product, selectedVariant, selectedModifiers);
+    setJustAdded(true);
+    if (justAddedTimerRef.current) clearTimeout(justAddedTimerRef.current);
+    justAddedTimerRef.current = setTimeout(() => setJustAdded(false), 420);
   }
 
   function handleOpenDetail() {
@@ -284,9 +295,11 @@ export const ProductCard = memo(function ProductCard({
         disabled={inCart && !canAddMore}
         className={cn(
           className,
+          "touch-manipulation",
           inCart && "store-add-btn-in-cart",
           inCart && canAddMore && "store-add-btn-in-cart-active",
           inCart && !canAddMore && "store-add-btn-in-cart-max",
+          justAdded && "store-add-btn-just-added",
         )}
         aria-label={
           inCart
@@ -294,7 +307,7 @@ export const ProductCard = memo(function ProductCard({
             : addButtonLabel
         }
       >
-        {inCart ? (
+        {inCart || justAdded ? (
           <Check className="h-4 w-4" aria-hidden="true" />
         ) : (
           <Plus className="h-4 w-4" aria-hidden="true" />

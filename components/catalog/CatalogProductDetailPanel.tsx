@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Loader2, Plus, X } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
@@ -123,6 +123,14 @@ export function CatalogProductDetailPanel({
   const [selectedModifiers, setSelectedModifiers] = useState<
     CartModifierSelection[]
   >([]);
+  const [justAdded, setJustAdded] = useState(false);
+  const justAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (justAddedTimerRef.current) clearTimeout(justAddedTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -244,6 +252,9 @@ export function CatalogProductDetailPanel({
   function handleAdd() {
     if (!canAddMore || !selectedVariant) return;
     onAddToCart?.(product, selectedVariant, selectedModifiers);
+    setJustAdded(true);
+    if (justAddedTimerRef.current) clearTimeout(justAddedTimerRef.current);
+    justAddedTimerRef.current = setTimeout(() => setJustAdded(false), 420);
   }
 
   return (
@@ -403,11 +414,12 @@ export function CatalogProductDetailPanel({
               onClick={handleAdd}
               disabled={!canAddMore && inCart}
               className={cn(
-                "product-detail-add-btn",
+                "product-detail-add-btn touch-manipulation",
                 inCart && canAddMore && "product-detail-add-btn-in-cart",
+                justAdded && "store-add-btn-just-added",
               )}
             >
-              {inCart ? (
+              {inCart || justAdded ? (
                 <Check className="h-4 w-4" aria-hidden="true" />
               ) : (
                 <Plus className="h-4 w-4" aria-hidden="true" />

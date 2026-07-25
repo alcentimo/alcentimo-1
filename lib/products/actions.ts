@@ -1177,6 +1177,18 @@ export async function adjustProductStock(
     return { error: "Ajuste de stock no válido." };
   }
 
+  // Producto de la tienda + variante default en una sola pasada (sin re-auth).
+  const { data: product, error: productError } = await supabase
+    .from("products")
+    .select("id")
+    .eq("id", productId)
+    .eq("store_id", store.id)
+    .eq("is_deleted", false)
+    .maybeSingle();
+
+  if (productError) return { error: productError.message };
+  if (!product) return { error: "Producto no encontrado." };
+
   const { data: variant, error: variantError } = await supabase
     .from("product_variants")
     .select("id, stock_quantity")
@@ -1187,18 +1199,19 @@ export async function adjustProductStock(
   if (variantError) return { error: variantError.message };
   if (!variant) return { error: "Variante del producto no encontrada." };
 
-  const access = await assertStoreProductVariant(
-    supabase,
-    store.id,
-    productId,
-    variant.id as string,
-  );
-  if ("error" in access) return { error: access.error };
-
   const current = Number(variant.stock_quantity ?? 0);
   const nextStock = Math.max(0, Math.floor(current + delta));
 
-  return updateProductStock(productId, variant.id as string, nextStock);
+  const locationSync = await syncDefaultLocationStockFromVariant(
+    supabase,
+    store.id,
+    variant.id as string,
+    nextStock,
+  );
+  if (locationSync.error) return { error: locationSync.error };
+
+  revalidateInventoryPaths(store.slug);
+  return { success: true, stock: nextStock };
 }
 
 export async function updateProductPriceUsd(

@@ -17,7 +17,8 @@ export function LandingCta() {
             </p>
             <Link
               href="/dashboard/productos/nuevo"
-              className="btn-brand mt-8 inline-flex gap-2 px-6 shadow-lg shadow-emerald-500/15"
+              prefetch={true}
+              className="btn-brand mt-8 inline-flex gap-2 px-6 shadow-lg shadow-emerald-500/15 touch-manipulation"
             >
               Crear mi tienda gratis
               <ArrowRight className="h-4 w-4" aria-hidden="true" />

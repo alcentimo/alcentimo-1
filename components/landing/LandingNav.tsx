@@ -54,12 +54,17 @@ export function LandingNav() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Link href="/dashboard/login" className="landing-nav-link">
+          <Link
+            href="/dashboard/login"
+            prefetch={true}
+            className="landing-nav-link"
+          >
             Iniciar sesión
           </Link>
           <Link
             href="/dashboard/productos/nuevo"
-            className="btn-brand ml-1 gap-2 px-4"
+            prefetch={true}
+            className="btn-brand ml-1 gap-2 px-4 touch-manipulation"
           >
             Comenzar gratis
           </Link>
@@ -68,7 +73,7 @@ export function LandingNav() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="touch-target rounded-lg text-zinc-700 md:hidden"
+          className="touch-target touch-manipulation rounded-lg text-zinc-700 active:scale-95 md:hidden"
           aria-expanded={open}
           aria-label={open ? "Cerrar menú" : "Abrir menú"}
         >
@@ -92,15 +97,17 @@ export function LandingNav() {
             <hr className="my-2 border-zinc-200/70 dark:border-zinc-800/70" />
             <Link
               href="/dashboard/login"
+              prefetch={true}
               onClick={() => setOpen(false)}
-              className="landing-nav-link justify-start px-2 py-3 text-base"
+              className="landing-nav-link touch-manipulation justify-start px-2 py-3 text-base"
             >
               Iniciar sesión
             </Link>
             <Link
               href="/dashboard/productos/nuevo"
+              prefetch={true}
               onClick={() => setOpen(false)}
-              className="btn-brand mt-2 gap-2"
+              className="btn-brand mt-2 gap-2 touch-manipulation"
             >
               Comenzar gratis
             </Link>

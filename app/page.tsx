@@ -10,7 +10,8 @@ import { LandingNav } from "@/components/landing/LandingNav";
 import { LandingPricing } from "@/components/landing/LandingPricing";
 import { fetchPlanPricingTiers } from "@/lib/plans/get-plan-settings";
 
-export const dynamic = "force-dynamic";
+/** Precios de planes cambian poco; cachear acelera TTFB de la landing. */
+export const revalidate = 300;
 
 export default async function Home() {
   const pricingTiers = await fetchPlanPricingTiers();

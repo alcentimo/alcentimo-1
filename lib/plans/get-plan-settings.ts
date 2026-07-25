@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { getPublicServerClient } from "@/lib/supabase/public-server";
 import {
   buildPlanPricingTiers,
   DEFAULT_PLAN_SETTINGS,
@@ -20,10 +20,11 @@ function cloneDefaults(): PlanSettingsMap {
 /**
  * Lee public.plan_settings. Si falla o falta alguna fila, completa con defaults.
  * Cacheado por request (React cache). Solo servidor.
+ * Usa cliente público (sin cookies) para no forzar render dinámico en la landing.
  */
 export const fetchPlanSettings = cache(async (): Promise<PlanSettingsMap> => {
   try {
-    const supabase = await createClient();
+    const supabase = getPublicServerClient();
     const { data, error } = await supabase
       .from("plan_settings")
       .select(
