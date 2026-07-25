@@ -14,6 +14,7 @@ interface CatalogAppShellProps {
   storeName: string;
   storeLogoUrl: string | null;
   storeRubro?: string | null;
+  enablePcBuilder?: boolean;
   assistantEnabled?: boolean;
   children: ReactNode;
 }
@@ -23,11 +24,12 @@ export function CatalogAppShell({
   storeName,
   storeLogoUrl,
   storeRubro = null,
+  enablePcBuilder = false,
   assistantEnabled = false,
   children,
 }: CatalogAppShellProps) {
   const { guestBanner } = usePromotionContext();
-  const pcBuilderEnabled = storeHasPCBuilder(storeRubro);
+  const pcBuilderEnabled = storeHasPCBuilder(storeRubro, enablePcBuilder);
 
   return (
     <>

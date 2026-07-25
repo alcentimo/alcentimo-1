@@ -1,9 +1,20 @@
-import type { CatalogListItem } from "@/lib/database.types";
+import type { CatalogListItem, Store } from "@/lib/database.types";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 
-/** PC Builder disponible solo para tiendas con rubro Tecnología y Electrónica. */
-export function storeHasPCBuilder(rubro: string | null | undefined): boolean {
-  return storeUsesRubroProductModule(rubro, "tecnologia");
+/** PC Builder disponible solo para tiendas tech con el módulo activado. */
+export function storeHasPCBuilder(
+  rubro: string | null | undefined,
+  enablePcBuilder: boolean | null | undefined = false,
+): boolean {
+  if (!storeUsesRubroProductModule(rubro, "tecnologia")) return false;
+  return enablePcBuilder === true;
+}
+
+export function storeHasPCBuilderFromStore(
+  store: Pick<Store, "rubro_tienda" | "enable_pc_builder"> | null | undefined,
+): boolean {
+  if (!store) return false;
+  return storeHasPCBuilder(store.rubro_tienda, store.enable_pc_builder);
 }
 
 export const PC_BUILDER_SLOT_ORDER = [

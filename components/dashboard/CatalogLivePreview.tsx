@@ -12,7 +12,7 @@ import {
   getCatalogRubroClass,
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
-import { storeHasPCBuilder } from "@/lib/rubros/modules/tecnologia/pc-builder";
+import { storeHasPCBuilderFromStore } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import { cn } from "@/lib/cn";
 
 interface CatalogLivePreviewProps {
@@ -101,7 +101,7 @@ export function CatalogLivePreview({
           <div className="catalog-live-preview-tab-bar" aria-hidden="true">
             <CatalogTabBar
               storeSlug={store.slug}
-              pcBuilderEnabled={storeHasPCBuilder(store.rubro_tienda)}
+              pcBuilderEnabled={storeHasPCBuilderFromStore(store)}
             />
           </div>
         </div>

@@ -53,7 +53,6 @@ import {
 } from "@/lib/rubros/modules/alimentos";
 import {
   getPrimaryCategorySlugForPCBuilderSlot,
-  storeHasPCBuilder,
   type PCBuilderSlotId,
 } from "@/lib/rubros/modules/tecnologia/pc-builder";
 
@@ -157,7 +156,7 @@ export function ProductForm({
     productFormConfig.rubroTienda,
     "tecnologia",
   );
-  const pcBuilderEnabled = storeHasPCBuilder(productFormConfig.rubroTienda);
+  const pcBuilderEnabled = productFormConfig.enablePcBuilder;
   const isColeccionables = storeUsesRubroProductModule(
     productFormConfig.rubroTienda,
     "coleccionables",

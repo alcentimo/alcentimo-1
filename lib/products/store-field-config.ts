@@ -2,13 +2,12 @@ import { unstable_noStore as noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
   getRubroLabel,
+  normalizeStoreRubro,
   type ProductCategoryOption,
   type StoreRubro,
 } from "@/src/config/categories";
-import {
-  getStoreRubroTienda,
-  mergeStoreProductCategories,
-} from "@/lib/products/rubro-categories";
+import { mergeStoreProductCategories } from "@/lib/products/rubro-categories";
+import { storeHasPCBuilder } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 
 export interface StoreProductFormConfig {
@@ -16,6 +15,7 @@ export interface StoreProductFormConfig {
   rubroLabel: string;
   productCategories: ProductCategoryOption[];
   wholesaleEnabled: boolean;
+  enablePcBuilder: boolean;
 }
 
 export async function getStoreProductFormConfig(
@@ -23,7 +23,18 @@ export async function getStoreProductFormConfig(
 ): Promise<StoreProductFormConfig> {
   noStore();
   const supabase = await createClient();
-  const rubroTienda = await getStoreRubroTienda(supabase, storeId);
+
+  const { data: storeRow, error: storeError } = await supabase
+    .from("stores")
+    .select("rubro_tienda, enable_pc_builder")
+    .eq("id", storeId)
+    .maybeSingle();
+
+  if (storeError) {
+    throw new Error(storeError.message);
+  }
+
+  const rubroTienda = normalizeStoreRubro(storeRow?.rubro_tienda as string | null);
 
   const { data: storeCategories, error } = await supabase
     .from("categories")
@@ -47,5 +58,9 @@ export async function getStoreProductFormConfig(
     rubroLabel: getRubroLabel(rubroTienda),
     productCategories: mergeStoreProductCategories(rubroTienda, storeCategoryRows),
     wholesaleEnabled: storeSettings.catalogCurrency.wholesaleEnabled,
+    enablePcBuilder: storeHasPCBuilder(
+      rubroTienda,
+      storeRow?.enable_pc_builder as boolean | null | undefined,
+    ),
   };
 }

@@ -19,7 +19,9 @@ import { isValidStoreSlug } from "@/lib/stores/slug";
 import { getPublicSiteHost } from "@/lib/site-url";
 import { STORE_RUBRO_OPTIONS, normalizeStoreRubro, type StoreRubro } from "@/src/config/categories";
 import { InterfacePreferencesSettingsSection } from "@/components/dashboard/settings/InterfacePreferencesSettingsSection";
+import { SettingsOptionCard } from "@/components/dashboard/settings/SettingsOptionCard";
 import { AlertDialog } from "@/components/ui/alert-dialog";
+import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 
 const RUBRO_CHANGE_CONFIRM_TITLE = "¿Estás seguro de cambiar el rubro?";
 const RUBRO_CHANGE_CONFIRM_DESCRIPTION =
@@ -35,6 +37,7 @@ export interface GeneralTabStore {
   logo_url: string | null;
   description: string | null;
   rubro_tienda: string;
+  enable_pc_builder?: boolean;
   custom_domain?: string | null;
   custom_domain_verified?: boolean;
 }
@@ -57,6 +60,12 @@ export function GeneralTab({ store }: GeneralTabProps) {
   const [savedRubro, setSavedRubro] = useState<StoreRubro>(() =>
     normalizeStoreRubro(store.rubro_tienda),
   );
+  const [enablePcBuilder, setEnablePcBuilder] = useState(
+    () => store.enable_pc_builder ?? false,
+  );
+  const [savedEnablePcBuilder, setSavedEnablePcBuilder] = useState(
+    () => store.enable_pc_builder ?? false,
+  );
   const [slugStatus, setSlugStatus] = useState<SlugStatus>("available");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +80,18 @@ export function GeneralTab({ store }: GeneralTabProps) {
     setLogoUrl(store.logo_url);
     setRubroTienda(normalizeStoreRubro(store.rubro_tienda));
     setSavedRubro(normalizeStoreRubro(store.rubro_tienda));
-  }, [store.name, store.description, store.slug, store.logo_url, store.rubro_tienda]);
+    setEnablePcBuilder(store.enable_pc_builder ?? false);
+    setSavedEnablePcBuilder(store.enable_pc_builder ?? false);
+  }, [
+    store.name,
+    store.description,
+    store.slug,
+    store.logo_url,
+    store.rubro_tienda,
+    store.enable_pc_builder,
+  ]);
+
+  const isTecnologia = storeUsesRubroProductModule(rubroTienda, "tecnologia");
 
   const siteHost = useMemo(() => getPublicSiteHost(), []);
   const slugPreview = slugify(storeName) || store.slug;
@@ -127,6 +147,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
         logoUrl,
         description,
         rubroTienda,
+        enablePcBuilder: isTecnologia ? enablePcBuilder : false,
       });
       setSaving(false);
       setRubroConfirmOpen(false);
@@ -138,6 +159,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
         setSavedSlug(store.slug);
         setLogoUrl(store.logo_url);
         setRubroTienda(savedRubro);
+        setEnablePcBuilder(savedEnablePcBuilder);
         return;
       }
 
@@ -147,6 +169,9 @@ export function GeneralTab({ store }: GeneralTabProps) {
       setSavedSlug(slugPreview);
       setSavedRubro(persistedRubro);
       setRubroTienda(persistedRubro);
+      const nextEnablePcBuilder = isTecnologia ? enablePcBuilder : false;
+      setEnablePcBuilder(nextEnablePcBuilder);
+      setSavedEnablePcBuilder(nextEnablePcBuilder);
       const rubroChanged = persistedRubro !== previousRubro;
       setSuccessMessage(
         rubroChanged
@@ -327,6 +352,26 @@ export function GeneralTab({ store }: GeneralTabProps) {
           </p>
         </div>
       </SettingsSection>
+
+      {isTecnologia ? (
+        <SettingsSection
+          title="Arma tu PC"
+          description="Muestra la pestaña de cotización de PC en tu catálogo público para clientes."
+          variant="payments"
+        >
+          <SettingsOptionCard
+            id="enable-pc-builder"
+            label="Activar Arma tu PC"
+            description="Los compradores podrán elegir componentes con stock real y enviar la cotización por WhatsApp. Clasifica tus productos con el slot de PC Builder en inventario."
+            checked={enablePcBuilder}
+            onChange={(checked) => {
+              setEnablePcBuilder(checked);
+              setSuccessMessage(null);
+            }}
+            disabled={saving}
+          />
+        </SettingsSection>
+      ) : null}
 
       <InterfacePreferencesSettingsSection />
       </SettingsTabShell>

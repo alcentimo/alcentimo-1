@@ -16,7 +16,7 @@ export type CatalogTabId =
 
 interface CatalogTabBarProps {
   storeSlug: string;
-  /** Activo automáticamente cuando el rubro de la tienda es tecnología. */
+  /** Activo cuando la tienda es tecnología y tiene habilitado Arma tu PC. */
   pcBuilderEnabled?: boolean;
 }
 

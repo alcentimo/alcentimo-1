@@ -18,7 +18,7 @@ async function PCBuilderContent({ storeSlug }: { storeSlug: string }) {
 
   const { store, purchaseInfo, catalogCurrency } = pageData;
 
-  if (!storeHasPCBuilder(store.rubro_tienda)) {
+  if (!storeHasPCBuilder(store.rubro_tienda, store.enable_pc_builder)) {
     notFound();
   }
 

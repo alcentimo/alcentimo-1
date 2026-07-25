@@ -12,6 +12,7 @@ import { uploadStoreAssetImage, uploadStoreLogoImage, removeStoreLogoAssets } fr
 import { isValidStoreSlug } from "@/lib/stores/slug";
 import { slugify } from "@/lib/slugify";
 import { isValidStoreRubro, normalizeStoreRubro } from "@/src/config/categories";
+import { storeHasPCBuilder } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import {
   getFirstPaymentValidationError,
   validatePaymentsSettings,
@@ -367,6 +368,7 @@ export interface GeneralStoreSettingsInput {
   logoUrl: string | null;
   description?: string;
   rubroTienda: string;
+  enablePcBuilder?: boolean;
 }
 
 export async function saveGeneralStoreSettings(
@@ -409,6 +411,8 @@ export async function saveGeneralStoreSettings(
   }
 
   const previousSlug = store.slug;
+  const normalizedRubro = normalizeStoreRubro(rubroTienda);
+  const enablePcBuilder = storeHasPCBuilder(normalizedRubro, input.enablePcBuilder);
 
   const { error: storeError } = await supabase
     .from("stores")
@@ -417,6 +421,7 @@ export async function saveGeneralStoreSettings(
       slug,
       logo_url: logoUrl,
       rubro_tienda: rubroTienda,
+      enable_pc_builder: enablePcBuilder,
       ...(description !== undefined ? { description: description || null } : {}),
     })
     .eq("id", store.id);

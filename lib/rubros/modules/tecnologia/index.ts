@@ -29,6 +29,7 @@ export {
   parsePCBuilderSlotFromMetadata,
   resolvePCBuilderSlot,
   storeHasPCBuilder,
+  storeHasPCBuilderFromStore,
   type PCBuilderSelection,
   type PCBuilderSlotId,
 } from "@/lib/rubros/modules/tecnologia/pc-builder";

@@ -139,6 +139,7 @@ export interface Store {
   pwa_icon_512_url: string | null;
   country: string | null;
   rubro_tienda: string;
+  enable_pc_builder: boolean;
   custom_domain: string | null;
   custom_domain_verified: boolean;
   custom_domain_verified_at: string | null;

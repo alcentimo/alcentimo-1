@@ -73,6 +73,7 @@ import {
   reorderProductIds,
 } from "@/components/dashboard/InventoryProductOrderCell";
 import { CatalogEmptyOnboardingBanner } from "@/components/onboarding/CatalogEmptyOnboardingBanner";
+import { PCBuilderInventoryBanner } from "@/components/dashboard/PCBuilderInventoryBanner";
 import {
   isCatalogEmptyGuideDismissed,
 } from "@/lib/onboarding/client-storage";
@@ -86,6 +87,22 @@ import { sanitizeInventorySearch } from "@/lib/inventory/search";
 import { InventoryListSkeleton } from "@/components/dashboard/InventoryListSkeleton";
 import { DashboardProductThumb } from "@/components/dashboard/DashboardProductThumb";
 import { cn } from "@/lib/cn";
+import {
+  getPCBuilderSlotDefinition,
+  resolvePCBuilderSlot,
+  storeHasPCBuilderFromStore,
+} from "@/lib/rubros/modules/tecnologia/pc-builder";
+
+function InventoryPcBuilderSlotLabel({ product }: { product: CatalogListItem }) {
+  const slotId = resolvePCBuilderSlot(product);
+  if (!slotId) return null;
+
+  return (
+    <span className="mt-0.5 inline-flex rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-800 dark:bg-sky-950/50 dark:text-sky-200">
+      PC: {getPCBuilderSlotDefinition(slotId).label}
+    </span>
+  );
+}
 
 function getInventoryPageOffset(page: number, pageSize: number): number {
   const safePage = Math.max(1, Math.floor(page) || 1);
@@ -371,6 +388,7 @@ const InventoryRow = memo(function InventoryRow({
   onStockAdjust,
   onPositionCommit,
   onDropOnRow,
+  showPcBuilderSlot = false,
 }: {
   product: CatalogListItem;
   position: number;
@@ -383,6 +401,7 @@ const InventoryRow = memo(function InventoryRow({
   onStockAdjust: (productId: string, delta: number) => void;
   onPositionCommit: (productId: string, nextPosition: number) => void;
   onDropOnRow: (draggedProductId: string, targetProductId: string) => void;
+  showPcBuilderSlot?: boolean;
 }) {
   const stockQuantity = getProductStockQuantity(product);
   const out = isOutOfStock({
@@ -432,6 +451,9 @@ const InventoryRow = memo(function InventoryRow({
               {product.category_name}
             </p>
           ) : null}
+          {showPcBuilderSlot ? (
+            <InventoryPcBuilderSlotLabel product={product} />
+          ) : null}
         </div>
       </td>
       <td className="inventory-td">
@@ -470,12 +492,14 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
   onDelete,
   onStockAdjust,
   adjustingStock,
+  showPcBuilderSlot = false,
 }: {
   product: CatalogListItem;
   onEdit: (productId: string) => void;
   onDelete: (productId: string) => void;
   onStockAdjust: (productId: string, delta: number) => void;
   adjustingStock: boolean;
+  showPcBuilderSlot?: boolean;
 }) {
   const stockQuantity = getProductStockQuantity(product);
   const out = isOutOfStock({
@@ -505,6 +529,9 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
                 <p className="mt-0.5 truncate text-[11px] text-zinc-500 dark:text-zinc-400">
                   {product.category_name}
                 </p>
+              ) : null}
+              {showPcBuilderSlot ? (
+                <InventoryPcBuilderSlotLabel product={product} />
               ) : null}
             </div>
             <InventoryActionsMenu
@@ -622,6 +649,7 @@ export function InventoryPanel({
   const hasActiveQuery = Boolean(searchQuery) || stockFilter !== "all";
   const reorderEnabled =
     stockFilter === "all" && !searchQuery && totalCount > 0 && totalCount <= pageSize;
+  const pcBuilderEnabled = storeHasPCBuilderFromStore(store);
 
   const filtered = products;
 
@@ -1001,6 +1029,7 @@ export function InventoryPanel({
           onDelete={handleDeleteRequest}
           onStockAdjust={handleStockAdjust}
           adjustingStock={isAdjusting}
+          showPcBuilderSlot={pcBuilderEnabled}
         />
       );
     });
@@ -1011,6 +1040,7 @@ export function InventoryPanel({
     openEdit,
     handleDeleteRequest,
     handleStockAdjust,
+    pcBuilderEnabled,
   ]);
 
   const showEmptyCatalogCta = products.length === 0 && !hasActiveQuery && !filterLoading;
@@ -1058,6 +1088,8 @@ export function InventoryPanel({
           </div>
         </div>
       )}
+
+      {pcBuilderEnabled ? <PCBuilderInventoryBanner /> : null}
 
       <div className="inventory-catalog-header">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1391,6 +1423,7 @@ export function InventoryPanel({
                       adjustingStock={adjustingProductId === product.product_id}
                       onPositionCommit={handlePositionCommit}
                       onDropOnRow={handleDropOnRow}
+                      showPcBuilderSlot={pcBuilderEnabled}
                     />
                   ))
                 )}

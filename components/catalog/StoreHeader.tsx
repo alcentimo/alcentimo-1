@@ -6,7 +6,7 @@ import { Cpu, ShoppingBag } from "lucide-react";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import type { Store } from "@/lib/database.types";
 import type { LocationHoursSettings } from "@/lib/store-settings/types";
-import { storeHasPCBuilder } from "@/lib/rubros/modules/tecnologia/pc-builder";
+import { storeHasPCBuilderFromStore } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import { getStoreCatalogUrl } from "@/lib/stores";
 
 interface StoreHeaderProps {
@@ -44,7 +44,7 @@ export function StoreHeader({
   locationHours,
   onCartClick,
 }: StoreHeaderProps) {
-  const pcBuilderEnabled = storeHasPCBuilder(store.rubro_tienda);
+  const pcBuilderEnabled = storeHasPCBuilderFromStore(store);
   const catalogUrl = getStoreCatalogUrl(store.slug);
 
   return (

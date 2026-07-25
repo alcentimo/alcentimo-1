@@ -142,6 +142,7 @@ export default async function TransactionalCatalogLayout({
             storeName={store?.name ?? ""}
             storeLogoUrl={storeLogoUrl}
             storeRubro={store?.rubro_tienda}
+            enablePcBuilder={store?.enable_pc_builder}
             assistantEnabled={assistantEnabled}
           >
             {children}
