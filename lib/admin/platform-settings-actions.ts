@@ -25,9 +25,11 @@ function revalidatePlatformBranding() {
   revalidatePath("/", "layout");
   revalidatePath("/manifest.json");
   revalidatePath("/admin/dashboard");
+  revalidatePath("/dashboard", "layout");
   revalidatePath("/dashboard/login");
   revalidatePath("/register");
   revalidatePath("/activar");
+  revalidatePath("/onboarding");
 }
 
 async function requirePlatformAdmin() {

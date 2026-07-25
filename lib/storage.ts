@@ -267,9 +267,9 @@ export interface UploadPlatformLogoResult {
   error?: string;
 }
 
-function getPlatformLogoStoragePaths() {
+function getPlatformLogoStoragePaths(logoExtension: "webp" | "svg" = "webp") {
   return {
-    logo: "brand/logo.webp",
+    logo: logoExtension === "svg" ? "brand/logo.svg" : "brand/logo.webp",
     icon192: "brand/pwa/icon-192x192.png",
     icon512: "brand/pwa/icon-512x512.png",
   };
@@ -289,12 +289,13 @@ export async function uploadPlatformLogoImage(
     return { error: processed.error };
   }
 
-  const { logoWebp, icon192, icon512 } = processed.assets;
-  const paths = getPlatformLogoStoragePaths();
+  const { logoBuffer, logoContentType, logoExtension, icon192, icon512 } =
+    processed.assets;
+  const paths = getPlatformLogoStoragePaths(logoExtension);
   const version = Date.now();
 
   const uploads = [
-    { path: paths.logo, body: logoWebp, contentType: "image/webp" },
+    { path: paths.logo, body: logoBuffer, contentType: logoContentType },
     { path: paths.icon192, body: icon192, contentType: "image/png" },
     { path: paths.icon512, body: icon512, contentType: "image/png" },
   ] as const;
@@ -312,6 +313,10 @@ export async function uploadPlatformLogoImage(
       return { error: uploadError.message };
     }
   }
+
+  const alternateLogoPath =
+    logoExtension === "svg" ? "brand/logo.webp" : "brand/logo.svg";
+  await supabase.storage.from(PLATFORM_ASSETS_BUCKET).remove([alternateLogoPath]);
 
   const { data: logoData } = supabase.storage
     .from(PLATFORM_ASSETS_BUCKET)
@@ -331,8 +336,12 @@ export async function uploadPlatformLogoImage(
 }
 
 export async function removePlatformLogoAsset(supabase: SupabaseClient): Promise<void> {
-  const paths = Object.values(getPlatformLogoStoragePaths());
-  await supabase.storage.from(PLATFORM_ASSETS_BUCKET).remove(paths);
+  const paths = [
+    ...Object.values(getPlatformLogoStoragePaths("webp")),
+    ...Object.values(getPlatformLogoStoragePaths("svg")),
+  ];
+  const uniquePaths = [...new Set(paths)];
+  await supabase.storage.from(PLATFORM_ASSETS_BUCKET).remove(uniquePaths);
 }
 
 export function buildOptimizationMessage(

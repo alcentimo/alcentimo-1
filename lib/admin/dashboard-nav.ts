@@ -26,6 +26,18 @@ export function resolveAdminDashboardTab(
   return LEGACY_TAB_MAP[value] ?? "resumen";
 }
 
+export type AdminPlansSubTab = "planes" | "pagos-config" | "plataforma";
+
+export function resolveAdminPlansSubTab(
+  value: string | null | undefined,
+): AdminPlansSubTab {
+  if (value === "pagos-config" || value === "pagos") return "pagos-config";
+  if (value === "plataforma" || value === "marca" || value === "brand") {
+    return "plataforma";
+  }
+  return "planes";
+}
+
 export type AdminStoresSubTab =
   | "usuarios"
   | "dominios"

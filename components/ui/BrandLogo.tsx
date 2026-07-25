@@ -65,50 +65,65 @@ function BrandMark({
   variant?: "default" | "landing";
   responsive?: boolean;
 }) {
-  const useSvgIsotype =
-    variant === "landing" || !logoUrl || isVectorLogoUrl(logoUrl);
+  if (logoUrl) {
+    const resolvedLogoUrl = logoUrl;
+    const imageSize = brandMarkImageSize(size);
+    const compactSize =
+      size === "lg" ? brandMarkImageSize("sm") : brandMarkImageSize("sm");
 
-  if (useSvgIsotype) {
+    function LogoImage({ containerClass }: { containerClass: string }) {
+      return (
+        <span
+          className={cn(
+            "relative flex shrink-0 items-center justify-center overflow-hidden",
+            containerClass,
+          )}
+        >
+          <Image
+            src={resolvedLogoUrl}
+            alt={`Logo de ${platformName}`}
+            width={imageSize.width}
+            height={imageSize.height}
+            className="h-full w-auto max-w-full object-contain object-left"
+            unoptimized={
+              resolvedLogoUrl.includes("?v=") || isVectorLogoUrl(resolvedLogoUrl)
+            }
+          />
+        </span>
+      );
+    }
+
     if (responsive) {
       return (
         <>
-          <BrandIsotype
-            size={size}
-            variant={variant}
-            className="brand-logo-responsive-mark md:hidden"
-          />
-          <BrandLogoFull
-            size={size}
-            variant={variant}
-            platformName={platformName}
-            className="brand-logo-responsive-full hidden md:block"
-          />
+          <LogoImage containerClass={cn(compactSize.container, "md:hidden")} />
+          <LogoImage containerClass={cn(imageSize.container, "hidden md:block")} />
         </>
       );
     }
 
-    return <BrandIsotype size={size} variant={variant} />;
+    return <LogoImage containerClass={imageSize.container} />;
   }
 
-  const imageSize = brandMarkImageSize(size);
+  if (responsive) {
+    return (
+      <>
+        <BrandIsotype
+          size={size}
+          variant={variant}
+          className="brand-logo-responsive-mark md:hidden"
+        />
+        <BrandLogoFull
+          size={size}
+          variant={variant}
+          platformName={platformName}
+          className="brand-logo-responsive-full hidden md:block"
+        />
+      </>
+    );
+  }
 
-  return (
-    <span
-      className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden",
-        imageSize.container,
-      )}
-    >
-      <Image
-        src={logoUrl}
-        alt={`Logo de ${platformName}`}
-        width={imageSize.width}
-        height={imageSize.height}
-        className="h-full w-auto max-w-full object-contain object-left"
-        unoptimized={logoUrl.includes("?v=")}
-      />
-    </span>
-  );
+  return <BrandIsotype size={size} variant={variant} />;
 }
 
 export function BrandLogo({
@@ -133,8 +148,7 @@ export function BrandLogo({
 
   const isLanding = variant === "landing";
   const resolvedTheme = isLanding ? "light" : theme;
-  const useResponsiveSvg =
-    responsive && (variant === "landing" || !logoUrl || isVectorLogoUrl(logoUrl ?? ""));
+  const useResponsiveSvg = responsive && !logoUrl;
 
   const nameClass = cn(
     "brand-logo-name truncate font-bold tracking-tight leading-none",

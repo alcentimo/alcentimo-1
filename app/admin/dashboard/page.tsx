@@ -76,6 +76,7 @@ export default async function AdminDashboardPage({
 }: {
   searchParams: Promise<{
     tab?: string | string[];
+    section?: string | string[];
     plan?: string | string[];
     minProducts?: string | string[];
   }>;
@@ -95,6 +96,7 @@ export default async function AdminDashboardPage({
 
   const params = await searchParams;
   const legacyTabParam = resolveLegacyTabParam(params.tab);
+  const initialPlansSubTab = resolveLegacyTabParam(params.section);
   const initialTab = resolveInitialTab(params.tab);
   const growthPlanFilter = resolvePlanFilter(params.plan);
   const growthMinProducts = resolveMinProducts(params.minProducts);
@@ -247,6 +249,7 @@ export default async function AdminDashboardPage({
           storeDomainsError={storeDomainsError}
           initialTab={initialTab}
           legacyTabParam={legacyTabParam}
+          initialPlansSubTab={initialPlansSubTab}
         />
       </Suspense>
     </div>

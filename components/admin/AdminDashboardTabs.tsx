@@ -22,6 +22,7 @@ import type { PlatformSettings } from "@/lib/platform/platform-settings";
 import type { AdminStoreDomainRow } from "@/lib/admin/custom-domain-actions";
 import {
   resolveAdminDashboardTab,
+  resolveAdminPlansSubTab,
   resolveAdminStoresSubTab,
   type AdminDashboardTab,
 } from "@/lib/admin/dashboard-nav";
@@ -50,18 +51,6 @@ const AdminGrowthPanel = dynamic(
       <p className="text-sm text-zinc-500 dark:text-zinc-400">
         Cargando tiendas y usuarios…
       </p>
-    ),
-  },
-);
-
-const PlatformLogoConfigCard = dynamic(
-  () =>
-    import("@/components/admin/PlatformLogoConfigCard").then((m) => ({
-      default: m.PlatformLogoConfigCard,
-    })),
-  {
-    loading: () => (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando configuración…</p>
     ),
   },
 );
@@ -147,6 +136,7 @@ interface AdminDashboardTabsProps {
   storeDomainsError?: string | null;
   initialTab?: AdminDashboardTab | string;
   legacyTabParam?: string | null;
+  initialPlansSubTab?: string | null;
 }
 
 function ErrorBanner({ message }: { message: string }) {
@@ -178,6 +168,7 @@ export function AdminDashboardTabs({
   storeDomainsError = null,
   initialTab = "resumen",
   legacyTabParam = null,
+  initialPlansSubTab = null,
 }: AdminDashboardTabsProps) {
   const [activeTab, setActiveTab] = useState<AdminDashboardTab>(() =>
     resolveAdminDashboardTab(
@@ -216,6 +207,9 @@ export function AdminDashboardTabs({
   }
 
   const storesInitialSubTab = resolveAdminStoresSubTab(legacyTabParam);
+  const plansInitialSubTab = resolveAdminPlansSubTab(
+    initialPlansSubTab ?? legacyTabParam,
+  );
 
   return (
     <AdminDashboardShell
@@ -287,15 +281,13 @@ export function AdminDashboardTabs({
 
       {activeTab === "planes" ? (
         <AdminPlansHubPanel
+          initialSubTab={plansInitialSubTab}
           planesPanel={<PlanSettingsConfigPanel initialSettings={planSettings} />}
           pagosConfigPanel={
             <PaymentMethodsConfigPanel initialDetails={pagoMovil} />
           }
           plataformaPanel={
-            <div className="space-y-6">
-              <PlatformLogoConfigCard initialSettings={platformSettings} />
-              <PlatformSettingsConfigPanel initialSettings={platformSettings} />
-            </div>
+            <PlatformSettingsConfigPanel initialSettings={platformSettings} />
           }
         />
       ) : null}
