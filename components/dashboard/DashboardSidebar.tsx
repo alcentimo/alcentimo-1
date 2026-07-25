@@ -3,18 +3,15 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  ArrowUpRight,
   LayoutDashboard,
   LifeBuoy,
-  LogOut,
   PanelLeftClose,
   PanelLeftOpen,
-  Rocket,
   X,
 } from "lucide-react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { SupportModal } from "@/components/dashboard/SupportModal";
-import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
+import { DashboardAccountMenu } from "@/components/dashboard/account/DashboardAccountMenu";
 import {
   getDashboardNavItems,
   isDashboardNavItemActive,
@@ -234,81 +231,16 @@ export function DashboardSidebar({
           drawerExpanded ? "space-y-3 px-0 py-4" : "space-y-2 px-2 py-3",
         )}
       >
-        <div className={cn(drawerExpanded ? "space-y-1 px-3" : "space-y-1")}>
-          {drawerExpanded && planName && (
-            <p className="truncate px-1 text-xs font-medium text-teal-700 dark:text-teal-400">
-              {planName}
-            </p>
-          )}
-          {drawerExpanded && userEmail && (
-            <p className="truncate px-1 text-xs text-zinc-500 dark:text-zinc-400">
-              {userEmail}
-            </p>
-          )}
-
-          {showOwnerBillingLinks ? (
-            <Link
-              href="/activar"
-              prefetch={true}
-              className={navLinkClass(pathname === "/activar", !drawerExpanded)}
-              onClick={onCloseMobile}
-              onMouseEnter={() => prefetchRoute("/activar")}
-              onFocus={() => prefetchRoute("/activar")}
-              onTouchStart={() => prefetchRoute("/activar")}
-              title={drawerExpanded ? undefined : "Activar cuenta"}
-            >
-              <Rocket className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-              {drawerExpanded && <span>Activar cuenta</span>}
-            </Link>
-          ) : null}
-
-          {showOwnerBillingLinks && canUpgradeToBusiness ? (
-            <Link
-              href="/dashboard/upgrade"
-              prefetch={true}
-              className={navLinkClass(
-                pathname.startsWith("/dashboard/upgrade"),
-                !drawerExpanded,
-              )}
-              onClick={onCloseMobile}
-              onMouseEnter={() => prefetchRoute("/dashboard/upgrade")}
-              onFocus={() => prefetchRoute("/dashboard/upgrade")}
-              onTouchStart={() => prefetchRoute("/dashboard/upgrade")}
-              title={drawerExpanded ? undefined : "Upgrade a Business"}
-              aria-current={
-                pathname.startsWith("/dashboard/upgrade") ? "page" : undefined
-              }
-            >
-              <ArrowUpRight
-                className="h-4 w-4 shrink-0"
-                strokeWidth={1.75}
-                aria-hidden="true"
-              />
-              {drawerExpanded && <span>Upgrade a Business</span>}
-            </Link>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={onLogout}
-            className={navLinkClass(false, !drawerExpanded)}
-            title={drawerExpanded ? undefined : t("nav.logout")}
-          >
-            <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-            {drawerExpanded && <span>{t("nav.logout")}</span>}
-          </button>
-
-          {drawerExpanded && showOwnerBillingLinks ? (
-            <p className="px-1 pt-1 text-center text-[11px] text-zinc-400 dark:text-zinc-500">
-              <Link
-                href={DASHBOARD_PLANS_HREF}
-                className="hover:text-zinc-600 dark:hover:text-zinc-300"
-                onClick={onCloseMobile}
-              >
-                Planes
-              </Link>
-            </p>
-          ) : null}
+        <div className={cn(drawerExpanded ? "px-3" : "px-0")}>
+          <DashboardAccountMenu
+            userEmail={userEmail}
+            planName={planName}
+            expanded={drawerExpanded}
+            showOwnerBillingLinks={showOwnerBillingLinks}
+            canUpgradeToBusiness={canUpgradeToBusiness}
+            onLogout={onLogout}
+            onNavigate={onCloseMobile}
+          />
 
           <button
             type="button"
@@ -317,21 +249,20 @@ export function DashboardSidebar({
               setSupportOpen(true);
               onCloseMobile();
             }}
-            className={navLinkClass(false, !drawerExpanded)}
+            className={cn(navLinkClass(false, !drawerExpanded), "mt-2")}
             title={drawerExpanded ? undefined : t("nav.support")}
           >
             <LifeBuoy className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
             {drawerExpanded && <span>{t("nav.support")}</span>}
           </button>
 
-          {/* Solo admins de soporte (allowlist); equivalente a role admin en esta app. */}
           {isSupportAdmin ? (
             <Link
               href="/admin/dashboard"
               prefetch={true}
-              className={navLinkClass(
-                pathname.startsWith("/admin"),
-                !drawerExpanded,
+              className={cn(
+                navLinkClass(pathname.startsWith("/admin"), !drawerExpanded),
+                "mt-1",
               )}
               onClick={onCloseMobile}
               onMouseEnter={() => prefetchRoute("/admin/dashboard")}

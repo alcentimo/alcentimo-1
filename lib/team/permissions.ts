@@ -53,6 +53,7 @@ const DASHBOARD_ROUTE_ACCESS: Array<{
   { prefix: "/dashboard/pago", roles: ["owner"] },
   { prefix: "/activar", roles: ["owner"] },
   { prefix: "/dashboard/equipo", roles: ["owner"] },
+  { prefix: "/dashboard/cuenta", roles: ["owner", "admin", "staff"] },
   { prefix: "/dashboard/analiticas", roles: ["owner"] },
   { prefix: "/dashboard/asistente", roles: ["owner"] },
   { prefix: "/dashboard/tasas", roles: ["owner"] },
