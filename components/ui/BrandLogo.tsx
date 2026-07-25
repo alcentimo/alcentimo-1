@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { BrandIsotype } from "@/components/ui/BrandIsotype";
 import { BrandLogoFull } from "@/components/ui/BrandLogoFull";
@@ -35,9 +34,10 @@ function brandMarkImageSize(size: "sm" | "md" | "lg") {
   }
   if (size === "lg") {
     return {
-      container: "h-10 w-auto max-w-[14rem]",
-      width: 224,
-      height: 40,
+      container:
+        "brand-logo-header-public h-10 w-auto max-w-[16rem] md:h-11 md:max-w-[18rem]",
+      width: 360,
+      height: 44,
     };
   }
   return {
@@ -141,26 +141,19 @@ function BrandMark({
         imageSize.container,
       )}
     >
-      {isVectorLogoUrl(resolvedLogoUrl) ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={resolvedLogoUrl}
-          alt={`Logo de ${platformName}`}
-          width={imageSize.width}
-          height={imageSize.height}
-          className="brand-logo-svg-img block h-full w-auto max-h-full max-w-full object-contain object-center"
-          decoding="async"
-        />
-      ) : (
-        <Image
-          src={resolvedLogoUrl}
-          alt={`Logo de ${platformName}`}
-          width={imageSize.width}
-          height={imageSize.height}
-          className="block h-full w-auto max-h-full max-w-full object-contain object-center"
-          unoptimized={resolvedLogoUrl.includes("?v=")}
-        />
-      )}
+      {/* img nativo evita recompresión y mantiene nitidez en Retina */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={resolvedLogoUrl}
+        alt={`Logo de ${platformName}`}
+        width={imageSize.width}
+        height={imageSize.height}
+        className={cn(
+          "brand-logo-dynamic-img block h-full w-auto max-h-full object-contain object-center",
+          isVectorLogoUrl(resolvedLogoUrl) && "brand-logo-svg-img",
+        )}
+        decoding="async"
+      />
     </span>
   );
 }

@@ -1,14 +1,9 @@
 import sharp from "sharp";
-import {
-  compressProductImage,
-  type ImageOptimizationResult,
-} from "@/lib/image-compress";
 
 export interface ProcessedPlatformLogoAssets {
   logoBuffer: Buffer;
   logoContentType: "image/webp" | "image/svg+xml";
   logoExtension: "webp" | "svg";
-  optimization?: ImageOptimizationResult;
   icon192: Buffer;
   icon512: Buffer;
 }
@@ -49,6 +44,26 @@ async function buildPwaIcons(input: Buffer): Promise<
   }
 }
 
+async function compressPlatformLogoRaster(input: Buffer): Promise<
+  | { ok: true; buffer: Buffer }
+  | { ok: false; error: string }
+> {
+  try {
+    const buffer = await sharp(input, { animated: false })
+      .rotate()
+      .resize(640, 160, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .webp({ quality: 92, alphaQuality: 100 })
+      .toBuffer();
+
+    return { ok: true, buffer };
+  } catch {
+    return { ok: false, error: "No se pudo procesar la imagen. Prueba con otro archivo." };
+  }
+}
+
 export async function processPlatformLogoFile(
   file: File,
 ): Promise<
@@ -81,9 +96,13 @@ export async function processPlatformLogoFile(
     };
   }
 
-  let optimization: ImageOptimizationResult;
+  let logoBuffer: Buffer;
   try {
-    optimization = await compressProductImage(input);
+    const compressed = await compressPlatformLogoRaster(input);
+    if (!compressed.ok) {
+      return compressed;
+    }
+    logoBuffer = compressed.buffer;
   } catch {
     return { ok: false, error: "No se pudo procesar la imagen. Prueba con otro archivo." };
   }
@@ -91,10 +110,9 @@ export async function processPlatformLogoFile(
   return {
     ok: true,
     assets: {
-      logoBuffer: optimization.buffer,
+      logoBuffer,
       logoContentType: "image/webp",
       logoExtension: "webp",
-      optimization,
       icon192: icons.icon192,
       icon512: icons.icon512,
     },
