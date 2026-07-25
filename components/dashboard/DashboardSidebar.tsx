@@ -232,14 +232,14 @@ export function DashboardSidebar({
 
       <div
         className={cn(
-          "shrink-0 border-t border-zinc-200 dark:border-zinc-800",
+          "shrink-0 space-y-1 border-t border-zinc-200 dark:border-zinc-800",
           drawerExpanded
-            ? "flex max-h-[min(55vh,24rem)] flex-col gap-2 overflow-y-auto overscroll-contain px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-            : "space-y-2 px-2 py-3",
+            ? "px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            : "px-2 py-3",
         )}
       >
-        {mobileOpen && drawerExpanded ? (
-          <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+        {drawerExpanded ? (
+          <p className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
             Cuenta personal
           </p>
         ) : null}
@@ -248,6 +248,7 @@ export function DashboardSidebar({
           userEmail={userEmail}
           planName={planName}
           expanded={drawerExpanded}
+          navLinkClass={navLinkClass}
           showOwnerBillingLinks={showOwnerBillingLinks}
           canUpgradeToBusiness={canUpgradeToBusiness}
           onLogout={onLogout}
