@@ -12,7 +12,6 @@ import { CatalogLivePreview } from "@/components/dashboard/CatalogLivePreview";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { CatalogDesignSettings } from "@/lib/store-settings/types";
 import {
-  CATALOG_SALE_MODE_PRESETS,
   CATALOG_THEME_PRESETS,
 } from "@/lib/store-settings/catalog-theme-presets";
 import { normalizeStoreRubro } from "@/src/config/categories";
@@ -42,7 +41,6 @@ export function DesignCatalogInlinePreview({
   );
 
   const themeLabel = CATALOG_THEME_PRESETS[resolvedDesign.theme].label;
-  const saleLabel = CATALOG_SALE_MODE_PRESETS[resolvedDesign.saleMode].label;
 
   const referenceCatalog = useMemo(
     () => getReferenceCatalogForStore(store, exchangeRate),
@@ -59,7 +57,6 @@ export function DesignCatalogInlinePreview({
 
   const previewStageKey = [
     resolvedDesign.theme,
-    resolvedDesign.saleMode,
     resolvedDesign.visibility.showStock,
     resolvedDesign.visibility.showDescription,
     resolvedDesign.visibility.showPrices,
@@ -70,7 +67,7 @@ export function DesignCatalogInlinePreview({
       <div className="design-studio-preview-meta">
         <p className="design-studio-preview-eyebrow">Vista previa inteligente</p>
         <p className="design-studio-preview-caption">
-          {themeLabel} · {saleLabel} · {referenceCatalog.rubroLabel}
+          {themeLabel} · {referenceCatalog.rubroLabel}
         </p>
         <p className="mt-1 text-xs leading-relaxed text-zinc-500">
           Mockup estático según el rubro configurado en Identidad. Tus productos

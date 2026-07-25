@@ -23,8 +23,6 @@ import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { DesignCatalogInlinePreview } from "@/components/dashboard/settings/DesignCatalogInlinePreview";
 import { saveCatalogDesignSettings } from "@/lib/settings/actions";
 import {
-  CATALOG_SALE_MODE_IDS,
-  CATALOG_SALE_MODE_PRESETS,
   CATALOG_THEME_PRESETS,
   getCatalogThemeIdsForRubro,
 } from "@/lib/store-settings/catalog-theme-presets";
@@ -32,7 +30,6 @@ import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-pa
 import type { Store } from "@/lib/database.types";
 import type {
   CatalogDesignSettings,
-  CatalogSaleMode,
   CatalogThemeId,
   CatalogVisibilitySettings,
 } from "@/lib/store-settings/types";
@@ -57,11 +54,10 @@ interface DesignTabProps {
 
 type SavingField =
   | CatalogThemeId
-  | CatalogSaleMode
   | keyof CatalogVisibilitySettings
   | null;
 
-type AccordionSection = "theme" | "sale" | "visibility";
+type AccordionSection = "theme" | "visibility";
 
 interface DesignAccordionProps {
   title: string;
@@ -236,11 +232,6 @@ export function DesignTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intencional
   }, [storeRubro]);
 
-  function setSaleMode(saleMode: CatalogSaleMode) {
-    if (saleMode === design.saleMode) return;
-    updateDesign({ saleMode }, saleMode);
-  }
-
   function setVisibility(
     key: keyof CatalogVisibilitySettings,
     value: boolean,
@@ -257,7 +248,6 @@ export function DesignTab({
   }
 
   const themeSummary = CATALOG_THEME_PRESETS[design.theme]?.label ?? "Tema";
-  const saleSummary = CATALOG_SALE_MODE_PRESETS[design.saleMode].label;
   const visibilitySummary =
     [
       design.visibility.showStock && "Stock",
@@ -330,29 +320,6 @@ export function DesignTab({
                       accent={preset.previewAccent}
                       disabled={isSaving && savingField === themeId}
                       onClick={() => setTheme(themeId)}
-                    />
-                  );
-                })}
-              </div>
-            </DesignAccordion>
-
-            <DesignAccordion
-              title="Modo de venta"
-              summary={saleSummary}
-              open={openSection === "sale"}
-              onToggle={() => toggleSection("sale")}
-            >
-              <div className="space-y-1">
-                {CATALOG_SALE_MODE_IDS.map((modeId) => {
-                  const preset = CATALOG_SALE_MODE_PRESETS[modeId];
-                  return (
-                    <DesignOption
-                      key={modeId}
-                      label={preset.label}
-                      description={preset.description}
-                      selected={design.saleMode === modeId}
-                      disabled={isSaving && savingField === modeId}
-                      onClick={() => setSaleMode(modeId)}
                     />
                   );
                 })}
