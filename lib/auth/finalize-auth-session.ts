@@ -1,11 +1,9 @@
-"use server";
-
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
 import { ensureCustomerProfileAfterAuth } from "@/lib/customers/ensure-customer-profile";
 import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
-import { createClient } from "@/lib/supabase/server";
+import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
 
 function resolveAuthRedirectTarget(next: string, siteUrl: string): string {
@@ -18,27 +16,21 @@ function resolveAuthRedirectTarget(next: string, siteUrl: string): string {
   return `${siteUrl}${safeNext}`;
 }
 
-export type CompleteGoogleAuthResult =
-  | { redirectTo: string }
-  | { error: string };
-
-/**
- * Post-proceso tras signInWithIdToken (perfil, cliente tienda, redirección).
- * Equivalente a app/auth/callback/route.ts sin exchangeCodeForSession.
- */
-export async function completeGoogleAuthAction(input: {
-  nextPath?: string | null;
-  storeSlug?: string | null;
-  orderId?: string | null;
-}): Promise<CompleteGoogleAuthResult> {
-  const supabase = await createClient();
+export async function finalizeAuthSessionRedirect(
+  supabase: SupabaseServerClient,
+  input: {
+    nextPath?: string | null;
+    storeSlug?: string | null;
+    orderId?: string | null;
+  },
+): Promise<string> {
   const {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return { error: "No se pudo verificar la sesión de Google." };
+    throw new Error("No se pudo verificar la sesión.");
   }
 
   try {
@@ -87,7 +79,7 @@ export async function completeGoogleAuthAction(input: {
       if (input.orderId?.trim()) {
         completeUrl.searchParams.set("orderId", input.orderId.trim());
       }
-      return { redirectTo: completeUrl.toString() };
+      return completeUrl.toString();
     }
   } else {
     try {
@@ -102,5 +94,5 @@ export async function completeGoogleAuthAction(input: {
     }
   }
 
-  return { redirectTo: safeNext };
+  return safeNext;
 }

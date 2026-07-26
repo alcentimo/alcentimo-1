@@ -1,19 +1,7 @@
 import { NextResponse } from "next/server";
+import { finalizeAuthSessionRedirect } from "@/lib/auth/finalize-auth-session";
 import { createClient } from "@/lib/supabase/server";
-import { ensureUserProfile } from "@/lib/auth/ensure-profile";
-import { ensureCustomerProfileAfterAuth } from "@/lib/customers/ensure-customer-profile";
-import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
-import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
 import { getSiteUrl } from "@/lib/site-url";
-
-function resolveAuthRedirectTarget(next: string, siteUrl: string): string {
-  if (next.startsWith("http://") || next.startsWith("https://")) {
-    return next;
-  }
-
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding";
-  return `${siteUrl}${safeNext}`;
-}
 
 export async function GET(request: Request) {
   const siteUrl = getSiteUrl();
@@ -39,66 +27,15 @@ export async function GET(request: Request) {
   }
 
   try {
-    await ensureUserProfile(supabase);
+    const redirectTo = await finalizeAuthSessionRedirect(supabase, {
+      nextPath: next,
+      storeSlug,
+      orderId,
+    });
+    return NextResponse.redirect(redirectTo);
   } catch {
-    // El trigger handle_new_user_profile suele crear el perfil; no bloquear el login.
+    return NextResponse.redirect(
+      `${siteUrl}/dashboard/login?error=${encodeURIComponent("No se pudo verificar la sesión.")}`,
+    );
   }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    const safeNext = resolveAuthRedirectTarget(next, siteUrl);
-    const normalizedStoreSlug = storeSlug?.trim().toLowerCase() || null;
-
-    if (normalizedStoreSlug) {
-      const metadataPhone =
-        typeof user.user_metadata?.phone === "string"
-          ? user.user_metadata.phone
-          : "";
-
-      if (isValidCustomerPhone(metadataPhone)) {
-        try {
-          await ensureCustomerProfileAfterAuth(
-            supabase,
-            user,
-            safeNext,
-            normalizedStoreSlug,
-          );
-          if (orderId?.trim()) {
-            await linkGuestOrdersToCustomer({
-              storeSlug: normalizedStoreSlug,
-              userId: user.id,
-              phone: metadataPhone,
-              orderId: orderId.trim(),
-            });
-          }
-        } catch {
-          // No bloquear login si falla el vínculo cliente; /register puede reintentar.
-        }
-      } else {
-        const completeUrl = new URL(`${siteUrl}/register`);
-        completeUrl.searchParams.set("store", normalizedStoreSlug);
-        completeUrl.searchParams.set("next", safeNext);
-        completeUrl.searchParams.set("complete", "phone");
-        if (orderId?.trim()) {
-          completeUrl.searchParams.set("orderId", orderId.trim());
-        }
-        return NextResponse.redirect(completeUrl.toString());
-      }
-    } else {
-      try {
-        await ensureCustomerProfileAfterAuth(supabase, user, safeNext, storeSlug);
-      } catch {
-        // No bloquear login si falla el vínculo cliente; /register puede reintentar.
-      }
-    }
-
-    return NextResponse.redirect(safeNext);
-  }
-
-  const safeNext = resolveAuthRedirectTarget(next, siteUrl);
-
-  return NextResponse.redirect(safeNext);
 }

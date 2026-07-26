@@ -58,5 +58,13 @@ export function formatAuthError(message: string): string {
     return "El registro está deshabilitado temporalmente. Intenta más tarde.";
   }
 
+  if (lower.includes("nonce") && lower.includes("mismatch")) {
+    return "Error de verificación con Google. Intenta de nuevo o contacta soporte.";
+  }
+
+  if (lower.includes("unexpected response was received from the server")) {
+    return "Error al procesar la sesión con Google. Intenta de nuevo.";
+  }
+
   return message;
 }

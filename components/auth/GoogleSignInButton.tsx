@@ -3,11 +3,10 @@
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { completeGoogleAuthAction } from "@/lib/auth/complete-google-auth-action";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
+import { exchangeGoogleIdTokenForSession } from "@/lib/auth/google-session-api";
 import { getGoogleClientId } from "@/lib/auth/google-client-id";
 import { generateGoogleNoncePair } from "@/lib/auth/google-nonce";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/cn";
 
 function GoogleIcon() {
@@ -79,24 +78,15 @@ export function GoogleSignInButton({
     setLocalError(null);
 
     try {
-      const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithIdToken({
-        provider: "google",
+      const result = await exchangeGoogleIdTokenForSession({
         token,
         nonce: noncePair[0],
-      });
-
-      if (signInError) {
-        throw new Error(signInError.message);
-      }
-
-      const result = await completeGoogleAuthAction({
         nextPath: postAuthPath,
         storeSlug,
         orderId,
       });
 
-      if ("error" in result) {
+      if (!result.ok) {
         throw new Error(result.error);
       }
 
