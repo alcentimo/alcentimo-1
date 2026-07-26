@@ -2,6 +2,7 @@ import {
   createOpenRouterChatCompletion,
   OpenRouterChatError,
 } from "@/lib/ai/openrouter-client";
+import { AI_MAX_TOKENS } from "@/lib/ai/token-limits";
 import type {
   GenerateOrderWhatsAppMessageInput,
   GenerateOrderWhatsAppMessageResult,
@@ -19,7 +20,7 @@ export type {
   OrderWhatsAppMessageIntent,
 } from "@/lib/ai/order-message-types";
 
-const MAX_MESSAGE_LENGTH = 900;
+const MAX_MESSAGE_LENGTH = 500;
 
 function truncateMessage(value: string): string {
   const trimmed = value.trim();
@@ -27,73 +28,45 @@ function truncateMessage(value: string): string {
   return trimmed.slice(0, MAX_MESSAGE_LENGTH).trimEnd();
 }
 
-function intentInstruction(input: GenerateOrderWhatsAppMessageInput): string {
-  if (input.intent === "status_update" && input.newEstado) {
-    const label = ORDER_ESTADO_LABELS[input.newEstado];
-    return [
-      `Objetivo: avisar al cliente que su pedido cambió a estado "${label}".`,
-      "Explica el cambio con claridad y tranquilidad.",
-      statusDetail(input.newEstado),
-    ].join(" ");
-  }
-
-  const label = ORDER_ESTADO_LABELS[input.currentEstado];
-  return [
-    `Objetivo: contactar al cliente sobre su pedido (estado actual: ${label}).`,
-    "Mensaje amigable y profesional para WhatsApp.",
-  ].join(" ");
-}
-
-function statusDetail(estado: OrderEstado): string {
+function estadoHint(estado: OrderEstado): string {
   switch (estado) {
     case "pendiente":
-      return "Confirma que recibiste el pedido y que lo procesarás pronto.";
+      return "confirmar recepción";
     case "en_preparacion":
-      return "Indica que el pedido ya está en preparación.";
+      return "en preparación";
     case "entregado":
-      return "Confirma la entrega y agradece la compra.";
+      return "entregado, agradecer";
     case "enviado":
-      return "Indica que el pedido ya va en camino.";
+      return "en camino";
     case "verificando":
-      return "Indica que estás verificando el pago.";
+      return "verificando pago";
     case "cancelado":
-      return "Informa la cancelación con respeto y ofrece ayuda si tiene dudas.";
+      return "cancelado";
     default:
-      return "";
+      return ORDER_ESTADO_LABELS[estado];
   }
 }
 
 function buildSystemPrompt(): string {
   return [
-    "Eres un experto en comunicación comercial por WhatsApp para comerciantes latinoamericanos.",
-    "Redactas mensajes cortos, naturales y listos para enviar al cliente sobre pedidos.",
-    'Responde ÚNICAMENTE con JSON válido (sin markdown): { "message": string }',
-    "Reglas estrictas:",
-    "- Español neutro latinoamericano. Sin emojis.",
-    "- Máximo 550 caracteres. Párrafos cortos, fáciles de leer en móvil.",
-    "- Incluye nombre del cliente, referencia del pedido, productos y total cuando sea natural.",
-    "- NO inventes fechas de entrega, descuentos ni datos no proporcionados.",
-    "- Firma brevemente con el nombre de la tienda al final.",
-    "- Un solo mensaje coherente, sin viñetas ni encabezados.",
-  ].join("\n");
+    'Mensajes WhatsApp sobre pedidos en español LATAM. JSON: { "message": string }',
+    "Sin emojis. Máx 400 chars. Incluye cliente, ref, productos y total si cabe. Firma con tienda.",
+  ].join(" ");
 }
 
 function buildUserPrompt(input: GenerateOrderWhatsAppMessageInput): string {
-  const estadoContext =
+  const estado =
     input.intent === "status_update" && input.newEstado
-      ? `Nuevo estado: ${ORDER_ESTADO_LABELS[input.newEstado]}.`
-      : `Estado actual: ${ORDER_ESTADO_LABELS[input.currentEstado]}.`;
+      ? `nuevo:${ORDER_ESTADO_LABELS[input.newEstado]} (${estadoHint(input.newEstado)})`
+      : `estado:${ORDER_ESTADO_LABELS[input.currentEstado]}`;
 
   return [
-    `Tienda: ${input.storeName.trim() || "mi tienda"}.`,
-    `Cliente: ${input.customerName.trim() || "cliente"}.`,
-    `Referencia del pedido: ${input.orderReference}.`,
-    `Total: ${formatUsd(input.totalUsd)}.`,
-    estadoContext,
-    "Productos:",
-    input.productsSummary.trim() || "Sin detalle de productos.",
-    intentInstruction(input),
-  ].join("\n");
+    `Tienda:${input.storeName.trim() || "tienda"}`,
+    `Cliente:${input.customerName.trim() || "cliente"}`,
+    `Ref:${input.orderReference} Total:${formatUsd(input.totalUsd)}`,
+    estado,
+    `Items:${input.productsSummary.trim() || "sin detalle"}`,
+  ].join(" | ");
 }
 
 function parseModelJson(content: string): GenerateOrderWhatsAppMessageResult {
@@ -123,8 +96,8 @@ export async function generateOrderWhatsAppMessage(
 ): Promise<GenerateOrderWhatsAppMessageResult> {
   try {
     const content = await createOpenRouterChatCompletion({
-      temperature: 0.6,
-      max_tokens: 400,
+      temperature: 0.55,
+      max_tokens: AI_MAX_TOKENS.whatsappMessage,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: buildSystemPrompt() },

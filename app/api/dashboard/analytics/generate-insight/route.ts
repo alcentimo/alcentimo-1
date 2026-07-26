@@ -4,7 +4,7 @@ import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import { generateAnalyticsInsight } from "@/lib/ai/generate-analytics-insight";
 import { getStoreAnalyticsPanel } from "@/lib/analytics/get-store-analytics";
 import {
-  formatMetricChangeDescription,
+  formatMetricChangeCompact,
   summarizeBusiestDays,
   summarizeTopProduct,
 } from "@/lib/analytics/summarize-sales-trend";
@@ -56,26 +56,23 @@ export async function POST(request: Request) {
       analytics;
 
     const conversionDescription = trafficMetrics.trackingEnabled
-      ? `Tasa de conversión del catálogo: ${trafficMetrics.conversionRatePct.value.toFixed(1)}%. ${formatMetricChangeDescription(trafficMetrics.conversionRatePct, "percent")}`
-      : "Tráfico del catálogo aún sin datos suficientes.";
+      ? `Conv ${trafficMetrics.conversionRatePct.value.toFixed(1)}% (${formatMetricChangeCompact(trafficMetrics.conversionRatePct)})`
+      : "Sin datos tráfico";
 
     const result = await generateAnalyticsInsight({
       storeName: auth.store.name,
       periodLabel: analytics.dateRange.label,
       periodSalesUsd: financialKpis.periodSalesUsd.value,
-      salesChangeDescription: formatMetricChangeDescription(
+      salesChangeDescription: formatMetricChangeCompact(
         financialKpis.periodSalesUsd,
-        "currency",
       ),
       transactionCount: Math.round(financialKpis.transactionCount.value),
-      transactionsChangeDescription: formatMetricChangeDescription(
+      transactionsChangeDescription: formatMetricChangeCompact(
         financialKpis.transactionCount,
-        "count",
       ),
       averageOrderValueUsd: financialKpis.averageOrderValueUsd.value,
-      averageTicketChangeDescription: formatMetricChangeDescription(
+      averageTicketChangeDescription: formatMetricChangeCompact(
         financialKpis.averageOrderValueUsd,
-        "currency",
       ),
       busiestDaysDescription: summarizeBusiestDays(salesTrend),
       topProductDescription: summarizeTopProduct(topProductsByRevenue),

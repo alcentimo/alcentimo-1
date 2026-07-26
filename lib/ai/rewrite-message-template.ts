@@ -2,6 +2,7 @@ import {
   createOpenRouterChatCompletion,
   OpenRouterChatError,
 } from "@/lib/ai/openrouter-client";
+import { AI_MAX_TOKENS } from "@/lib/ai/token-limits";
 import type {
   MessageTemplateTone,
   RewriteMessageTemplateInput,
@@ -19,7 +20,7 @@ export type {
   RewriteMessageTemplateResult,
 } from "@/lib/ai/message-template-tone-types";
 
-const MAX_TEMPLATE_LENGTH = 1200;
+const MAX_TEMPLATE_LENGTH = 900;
 
 function truncateTemplate(value: string): string {
   const trimmed = value.trim();
@@ -27,48 +28,37 @@ function truncateTemplate(value: string): string {
   return trimmed.slice(0, MAX_TEMPLATE_LENGTH).trimEnd();
 }
 
-function toneInstruction(tone: MessageTemplateTone): string {
+function toneLabel(tone: MessageTemplateTone): string {
   switch (tone) {
     case "amigable":
-      return "Tono amigable y cercano, claro para WhatsApp, sin ser informal en exceso.";
+      return "amigable";
     case "profesional":
-      return "Tono profesional y confiable, cortés y preciso, apto para negocios.";
+      return "profesional";
     case "cercano":
-      return "Tono cercano y humano, como un comerciante que conoce a su cliente.";
+      return "cercano";
     default:
-      return "Tono profesional y claro.";
+      return "profesional";
   }
 }
 
 function buildSystemPrompt(): string {
   const tokens = MESSAGE_TEMPLATE_PLACEHOLDERS.join(", ");
   return [
-    "Eres un experto en comunicación comercial por WhatsApp para comerciantes latinoamericanos.",
-    "Reescribes plantillas de mensajes de pedidos manteniendo la funcionalidad del sistema.",
-    "Responde ÚNICAMENTE con JSON válido (sin markdown): { \"template\": string }",
-    "Reglas estrictas:",
-    `- Conserva EXACTAMENTE estos marcadores sin traducir ni renombrar: ${tokens}.`,
-    "- No elimines ni dupliques marcadores. No uses llaves simples ni otros formatos.",
-    "- Español neutro latinoamericano. Sin emojis. Máximo 900 caracteres.",
-    "- Mantén saltos de línea útiles para leer en WhatsApp.",
-    "- No inventes datos de pedido; solo redacta el texto alrededor de los marcadores.",
-  ].join("\n");
+    `Reescribe plantillas WhatsApp. JSON: { "template": string }`,
+    `Conserva marcadores exactos: ${tokens}. Español LATAM, sin emojis, máx 800 chars.`,
+  ].join(" ");
 }
 
 function buildUserPrompt(input: RewriteMessageTemplateInput): string {
   const required = MESSAGE_TEMPLATE_REQUIRED_PLACEHOLDERS[input.templateKey];
   return [
-    `Tipo de mensaje: ${input.templateLabel}.`,
-    `Tono deseado: ${toneInstruction(input.tone)}`,
-    input.storeName?.trim()
-      ? `Nombre de la tienda (contexto): ${input.storeName.trim()}.`
-      : null,
-    `Marcadores obligatorios en la respuesta: ${required.join(", ")}.`,
-    "Plantilla actual:",
+    `Tipo:${input.templateLabel} Tono:${toneLabel(input.tone)}`,
+    input.storeName?.trim() ? `Tienda:${input.storeName.trim()}` : null,
+    `Obligatorios:${required.join(",")}`,
     input.template.trim(),
   ]
     .filter(Boolean)
-    .join("\n");
+    .join(" | ");
 }
 
 function parseModelJson(content: string): RewriteMessageTemplateResult {
@@ -102,8 +92,8 @@ export async function rewriteMessageTemplate(
 
   try {
     const content = await createOpenRouterChatCompletion({
-      temperature: 0.55,
-      max_tokens: 500,
+      temperature: 0.5,
+      max_tokens: AI_MAX_TOKENS.messageTemplate,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: buildSystemPrompt() },

@@ -23,9 +23,9 @@ import { getStoreOrders } from "@/lib/orders/get-store-orders";
 import { getStoreSales } from "@/lib/sales/get-store-sales";
 import { createClient } from "@/lib/supabase/server";
 
-const MAX_ALERT_ITEMS = 15;
-const MAX_RECENT_ITEMS = 10;
-const MAX_CUSTOMERS = 12;
+const MAX_ALERT_ITEMS = 8;
+const MAX_RECENT_ITEMS = 5;
+const MAX_CUSTOMERS = 5;
 const ANALYTICS_FETCH_LIMIT = 2000;
 const SLOW_MOVING_MIN_STOCK = 3;
 const EXCESS_STOCK_MIN = 10;

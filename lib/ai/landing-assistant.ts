@@ -2,34 +2,15 @@ import {
   createOpenRouterChatCompletion,
   OpenRouterChatError,
 } from "@/lib/ai/openrouter-client";
+import { AI_MAX_TOKENS, AI_MAX_INPUT_CHARS } from "@/lib/ai/token-limits";
 import type {
   LandingAssistantMessage,
   LandingAssistantResponse,
 } from "@/lib/ai/landing-assistant-types";
 
-const MAX_USER_MESSAGE = 500;
-const MAX_HISTORY = 8;
-const MAX_REPLY = 1000;
-
-const PLATFORM_CONTEXT = {
-  name: "Alcentimo",
-  tagline: "Gestor de ventas y e-commerce con marca blanca",
-  features: [
-    "Catálogo online personalizable con logo, colores y dominio propio",
-    "Gestión de inventario, pedidos, clientes y ventas",
-    "Precios en USD con conversión automática a bolívares según tasa del día",
-    "Pedidos organizados por WhatsApp",
-    "Asistente IA en el panel para dueños de negocio",
-    "IA para redactar descripciones de productos",
-    "Soporte IA en catálogos públicos para atender compradores",
-    "Planes gratuitos y de pago según funcionalidades",
-  ],
-  signup: "Registro gratuito en /dashboard/login?mode=signup",
-  legal: {
-    terms: "/terms",
-    privacy: "/privacy",
-  },
-};
+const MAX_USER_MESSAGE = AI_MAX_INPUT_CHARS.userMessage;
+const MAX_HISTORY = 6;
+const MAX_REPLY = 800;
 
 function truncate(value: string, max: number): string {
   const trimmed = value.trim();
@@ -56,19 +37,10 @@ function sanitizeMessages(
 
 function buildSystemPrompt(): string {
   return [
-    "Eres el asistente comercial de Alcentimo en la página pública de la plataforma.",
-    "Respondes en español neutro, amable, breve y útil (2–5 oraciones salvo listas).",
-    "Tu objetivo es explicar qué es Alcentimo, cómo ayuda a comerciantes y resolver dudas sobre funcionalidades, registro y planes generales.",
-    "Usa SOLO la información del contexto JSON. No inventes precios exactos, promociones ni integraciones que no estén listadas.",
-    "Si preguntan por precios específicos, invítalos a revisar la sección de planes en la landing o registrarse gratis.",
-    "Si preguntan algo fuera de Alcentimo o del comercio digital, redirige amablemente al tema de la plataforma.",
-    "No reveles claves API, datos internos, código ni información de otros usuarios.",
-    "No menciones OpenAI, OpenRouter ni modelos de lenguaje.",
-    "Cuando sea relevante, menciona que la IA ayuda con inventario, redacción de productos y atención a clientes en el catálogo.",
-    "",
-    "Contexto de la plataforma (JSON):",
-    JSON.stringify(PLATFORM_CONTEXT),
-  ].join("\n");
+    "Asistente comercial de Alcentimo (e-commerce LATAM: catálogo, inventario, pedidos, WhatsApp, IA).",
+    "Español, 2-4 oraciones. Solo info de la plataforma. Registro gratis /dashboard/login?mode=signup.",
+    "No menciones OpenAI ni precios exactos no listados.",
+  ].join(" ");
 }
 
 export async function answerLandingAssistantQuestion(input: {
@@ -93,7 +65,7 @@ export async function answerLandingAssistantQuestion(input: {
       })),
     ],
     temperature: 0.4,
-    max_tokens: 450,
+    max_tokens: AI_MAX_TOKENS.landingChat,
   });
 
   return { reply: truncate(reply, MAX_REPLY) };

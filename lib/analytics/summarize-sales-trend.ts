@@ -1,6 +1,16 @@
 import type { DailySalesPoint, MetricComparison } from "@/lib/analytics/types";
 import { formatUsd } from "@/lib/format";
 
+export function formatMetricChangeCompact(metric: MetricComparison): string {
+  const { value, previousValue, changePct } = metric;
+
+  if (previousValue <= 0 && value <= 0) return "sin actividad";
+  if (previousValue <= 0 && value > 0) return "nuevo vs periodo ant.";
+  if (changePct == null) return "mejor vs ant.";
+  const sign = changePct >= 0 ? "+" : "";
+  return `${sign}${changePct.toFixed(0)}% vs ant.`;
+}
+
 export function formatMetricChangeDescription(
   metric: MetricComparison,
   unit: "currency" | "count" | "percent",
@@ -33,27 +43,19 @@ export function formatMetricChangeDescription(
 
 export function summarizeBusiestDays(salesTrend: DailySalesPoint[]): string {
   const withSales = salesTrend.filter((day) => day.amountUsd > 0);
-  if (withSales.length === 0) {
-    return "No hubo días con ventas en este periodo.";
-  }
+  if (withSales.length === 0) return "Sin ventas";
 
   const sorted = [...withSales].sort((a, b) => b.amountUsd - a.amountUsd);
-  const top = sorted.slice(0, 2);
-
-  if (top.length === 1) {
-    return `El día con más movimiento fue ${top[0].label} (${formatUsd(top[0].amountUsd)}).`;
-  }
-
-  return `Los días con más movimiento fueron ${top[0].label} (${formatUsd(top[0].amountUsd)}) y ${top[1].label} (${formatUsd(top[1].amountUsd)}).`;
+  const top = sorted[0];
+  return `Pico:${top.label} ${formatUsd(top.amountUsd)}`;
 }
 
 export function summarizeTopProduct(
   products: { name: string; unitsSold: number; revenueUsd: number }[],
 ): string {
   const top = products[0];
-  if (!top || top.unitsSold <= 0) {
-    return "Aún no hay un producto estrella claro en el periodo.";
-  }
+  if (!top || top.unitsSold <= 0) return "Sin top producto";
 
-  return `Producto destacado: ${top.name} (${top.unitsSold} unidad${top.unitsSold !== 1 ? "es" : ""}, ${formatUsd(top.revenueUsd)}).`;
+  const name = top.name.length > 30 ? `${top.name.slice(0, 28)}…` : top.name;
+  return `Top:${name} ${top.unitsSold}u ${formatUsd(top.revenueUsd)}`;
 }

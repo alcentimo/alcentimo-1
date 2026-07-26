@@ -2,6 +2,7 @@ import {
   createOpenRouterChatCompletion,
   OpenRouterChatError,
 } from "@/lib/ai/openrouter-client";
+import { AI_MAX_TOKENS } from "@/lib/ai/token-limits";
 import type {
   OnboardingSampleProductDraft,
   OnboardingSampleProductsResult,
@@ -20,35 +21,16 @@ function buildWelcomeFallback(input: OnboardingWelcomeInput): string {
 }
 
 function buildWelcomeSystemPrompt(): string {
-  return [
-    "Eres el asistente de bienvenida de Alcentimo, plataforma de catálogos digitales para comerciantes en Venezuela.",
-    "Saluda al comerciante en español neutro, tono cálido y profesional (SaaS enterprise).",
-    "Menciona el nombre de la tienda y su rubro.",
-    "En 2-3 frases cortas, explica qué puede hacer ahora: publicar productos, configurar pagos/envíos y compartir su enlace.",
-    "No uses emojis. No menciones IA ni OpenAI. Máximo 320 caracteres.",
-    "Responde solo con el texto del saludo, sin comillas ni markdown.",
-  ].join("\n");
+  return "Saludo onboarding Alcentimo en español, cálido, sin emojis. 2-3 frases: tienda, rubro, cargar productos y compartir catálogo. Máx 280 chars. Solo texto.";
 }
 
 function buildSampleProductsSystemPrompt(rubroLabel: string, categories: string[]): string {
   return [
-    "Eres un consultor de catálogo para comerciantes latinoamericanos.",
-    `Genera exactamente ${SAMPLE_PRODUCT_COUNT} productos de EJEMPLO para una tienda de rubro: ${rubroLabel}.`,
-    "Los productos deben ser realistas para ese rubro en Venezuela, con precios USD razonables (números, sin símbolos).",
-    "Usa SOLO categorías de esta lista permitida:",
-    categories.join(", "),
-    "Responde ÚNICAMENTE con JSON válido (sin markdown) con esta forma exacta:",
-    '{ "intro": string, "products": [{ "nombre": string, "descripcion": string, "precio": number, "stock": number, "categoria": string }] }',
-    "Reglas:",
-    `- products: exactamente ${SAMPLE_PRODUCT_COUNT} ítems.`,
-    "- nombre: máximo 80 caracteres, comercial y claro.",
-    "- descripcion: 1-2 frases, máximo 180 caracteres.",
-    "- precio: número entre 1 y 500.",
-    "- stock: entero entre 3 y 50.",
-    "- categoria: debe coincidir exactamente con una categoría permitida.",
-    "- intro: una frase breve explicando que son ejemplos editables.",
-    "No inventes marcas registradas famosas. No incluyas URLs de imágenes.",
-  ].join("\n");
+    `Genera ${SAMPLE_PRODUCT_COUNT} productos ejemplo para tienda ${rubroLabel}.`,
+    `Categorías: ${categories.join(", ")}.`,
+    'JSON: { "intro", "products":[{ "nombre","descripcion","precio","stock","categoria" }] }',
+    "precio 1-500 USD, stock 3-50, sin marcas famosas.",
+  ].join(" ");
 }
 
 function parseSampleProductsJson(
@@ -278,17 +260,17 @@ export async function generateOnboardingWelcomeMessage(
   try {
     const content = await createOpenRouterChatCompletion({
       temperature: 0.7,
-      max_tokens: 220,
+      max_tokens: AI_MAX_TOKENS.onboardingWelcome,
       messages: [
         { role: "system", content: buildWelcomeSystemPrompt() },
         {
           role: "user",
-          content: `Tienda: "${input.storeName}". Rubro: "${input.rubroLabel}".`,
+          content: `Tienda:${input.storeName} Rubro:${input.rubroLabel}`,
         },
       ],
     });
 
-    return content.slice(0, 400);
+    return content.slice(0, 320);
   } catch (error) {
     if (error instanceof OpenRouterChatError) {
       return buildWelcomeFallback(input);
@@ -310,7 +292,7 @@ export async function generateOnboardingSampleProducts(
   try {
     const content = await createOpenRouterChatCompletion({
       temperature: 0.55,
-      max_tokens: 900,
+      max_tokens: AI_MAX_TOKENS.onboardingProducts,
       response_format: { type: "json_object" },
       messages: [
         {
@@ -319,7 +301,7 @@ export async function generateOnboardingSampleProducts(
         },
         {
           role: "user",
-          content: `Genera productos de ejemplo para una tienda de ${rubroLabel}.`,
+          content: `Rubro:${rubroLabel}`,
         },
       ],
     });

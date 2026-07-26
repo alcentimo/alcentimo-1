@@ -22,8 +22,8 @@ import type {
 } from "@/lib/ai/storefront-assistant-types";
 import { getPublicStoreBySlug } from "@/lib/stores";
 
-const MAX_PRODUCTS = 100;
-const MAX_SEARCH_PRODUCTS = 40;
+const MAX_PRODUCTS = 25;
+const MAX_SEARCH_PRODUCTS = 15;
 
 function extractSearchQueryFromMessages(
   messages: StorefrontAssistantMessage[] | undefined,
@@ -165,8 +165,8 @@ function mapProductToAssistantContext(
     category: product.category_name,
     priceUsd: product.price_usd,
     availableStock,
-    shortDescription: product.short_description,
-    variants,
+    shortDescription: product.short_description?.slice(0, 80) ?? null,
+    variants: variants.slice(0, 5),
   };
 }
 

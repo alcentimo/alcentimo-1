@@ -2,6 +2,7 @@ import {
   createOpenRouterChatCompletion,
   OpenRouterChatError,
 } from "@/lib/ai/openrouter-client";
+import { AI_MAX_TOKENS, AI_MAX_INPUT_CHARS } from "@/lib/ai/token-limits";
 import type { OnboardingSampleProductDraft } from "@/lib/ai/onboarding-assistant-types";
 import { generateOnboardingSampleProducts } from "@/lib/ai/onboarding-assistant";
 import type { LandingInstantStoreResult } from "@/lib/ai/landing-instant-store-types";
@@ -16,7 +17,7 @@ import {
 } from "@/src/config/categories";
 
 const SAMPLE_PRODUCT_COUNT = 3;
-const MAX_HINT_LENGTH = 120;
+const MAX_HINT_LENGTH = AI_MAX_INPUT_CHARS.businessHint;
 
 function truncateHint(value: string): string {
   return value.trim().slice(0, MAX_HINT_LENGTH);
@@ -64,25 +65,14 @@ function inferStoreNameFromHint(hint: string): string {
 }
 
 function buildInstantStoreSystemPrompt(): string {
-  const rubroList = STORE_RUBRO_OPTIONS.map(
-    (option) => `${option.value} (${option.label})`,
-  ).join(", ");
+  const rubroList = STORE_RUBRO_OPTIONS.map((option) => option.value).join(", ");
 
   return [
-    "Eres un consultor de e-commerce para comerciantes en Venezuela.",
-    "A partir de una descripción breve del negocio, genera un borrador de tienda digital.",
-    `Rubros permitidos (campo rubro): ${rubroList}.`,
-    "Responde ÚNICAMENTE con JSON válido (sin markdown) con esta forma exacta:",
-    '{ "storeName": string, "rubro": string, "intro": string, "products": [{ "nombre": string, "descripcion": string, "precio": number, "stock": number, "categoria": string }] }',
-    "Reglas:",
-    "- storeName: nombre comercial atractivo (2-4 palabras), adaptado al negocio.",
-    `- products: exactamente ${SAMPLE_PRODUCT_COUNT} productos ficticios pero realistas.`,
-    "- precio: número USD entre 1 y 500, sin símbolos.",
-    "- stock: entero entre 3 y 50.",
-    "- categoria: debe existir en las categorías del rubro elegido.",
-    "- intro: una frase breve invitando a crear la tienda.",
-    "No uses marcas registradas famosas. No incluyas URLs.",
-  ].join("\n");
+    "Genera borrador tienda digital Venezuela.",
+    `Rubros:${rubroList}`,
+    'JSON: { "storeName","rubro","intro","products":[{ "nombre","descripcion","precio","stock","categoria" }] }',
+    `${SAMPLE_PRODUCT_COUNT} productos, precio 1-500, stock 3-50, sin marcas famosas.`,
+  ].join(" ");
 }
 
 function parseInstantStoreJson(
@@ -194,14 +184,14 @@ export async function generateLandingInstantStore(
 
   try {
     const content = await createOpenRouterChatCompletion({
-      temperature: 0.65,
-      max_tokens: 900,
+      temperature: 0.6,
+      max_tokens: AI_MAX_TOKENS.instantStore,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: buildInstantStoreSystemPrompt() },
         {
           role: "user",
-          content: `Negocio del comerciante: "${hint}". Genera nombre de tienda, rubro y ${SAMPLE_PRODUCT_COUNT} productos de ejemplo.`,
+          content: `Negocio:${hint}`,
         },
       ],
     });

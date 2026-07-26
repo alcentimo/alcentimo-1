@@ -2,6 +2,7 @@ import {
   createOpenRouterChatCompletion,
   OpenRouterChatError,
 } from "@/lib/ai/openrouter-client";
+import { AI_MAX_TOKENS } from "@/lib/ai/token-limits";
 import type {
   CustomerMessageGoal,
   GenerateCustomerWhatsAppMessageInput,
@@ -15,7 +16,7 @@ export type {
   GenerateCustomerWhatsAppMessageResult,
 } from "@/lib/ai/customer-message-types";
 
-const MAX_MESSAGE_LENGTH = 900;
+const MAX_MESSAGE_LENGTH = 500;
 
 function truncateMessage(value: string): string {
   const trimmed = value.trim();
@@ -23,74 +24,33 @@ function truncateMessage(value: string): string {
   return trimmed.slice(0, MAX_MESSAGE_LENGTH).trimEnd();
 }
 
-function goalInstruction(goal: CustomerMessageGoal): string {
-  if (goal === "reactivacion") {
-    return [
-      "Objetivo: reactivar al cliente.",
-      "Saludo cordial, menciona que hace tiempo que no compra (si aplica) o invítalo a volver.",
-      "Puedes ofrecer un incentivo suave (descuento, novedades, productos destacados) sin inventar porcentajes concretos.",
-      "No presiones; tono amable y personal.",
-    ].join(" ");
-  }
-
-  return [
-    "Objetivo: agradecer y fidelizar.",
-    "Reconoce su confianza y compras previas.",
-    "Refuerza la relación con un mensaje cálido y profesional.",
-    "Puedes mencionar que valoras clientes como él/ella.",
-  ].join(" ");
+function goalLabel(goal: CustomerMessageGoal): string {
+  return goal === "reactivacion" ? "reactivar cliente inactivo" : "agradecer cliente frecuente";
 }
 
-function formatLastOrderContext(input: GenerateCustomerWhatsAppMessageInput): string {
-  if (!input.lastOrderAt) {
-    return "Última compra: nunca ha comprado (solo registrado).";
-  }
-
-  const formatted = new Intl.DateTimeFormat("es", {
-    dateStyle: "long",
-    timeStyle: undefined,
-  }).format(new Date(input.lastOrderAt));
-
-  if (input.daysSinceLastOrder == null) {
-    return `Última compra: ${formatted}.`;
-  }
-
+function lastOrderLabel(input: GenerateCustomerWhatsAppMessageInput): string {
+  if (!input.lastOrderAt) return "sin compras";
+  if (input.daysSinceLastOrder == null) return "con historial";
   const days = Math.max(0, Math.round(input.daysSinceLastOrder));
-  if (days === 0) {
-    return `Última compra: hoy (${formatted}).`;
-  }
-  if (days === 1) {
-    return `Última compra: ayer (${formatted}).`;
-  }
-
-  return `Última compra: hace ${days} días (${formatted}).`;
+  if (days === 0) return "compró hoy";
+  if (days === 1) return "compró ayer";
+  return `última compra hace ${days}d`;
 }
 
 function buildSystemPrompt(): string {
   return [
-    "Eres un experto en comunicación comercial por WhatsApp para comerciantes latinoamericanos.",
-    "Redactas mensajes cortos, naturales y listos para enviar al cliente.",
-    'Responde ÚNICAMENTE con JSON válido (sin markdown): { "message": string }',
-    "Reglas estrictas:",
-    "- Español neutro latinoamericano. Sin emojis.",
-    "- Máximo 600 caracteres. Párrafos cortos, fáciles de leer en móvil.",
-    "- Usa el nombre del cliente de forma natural.",
-    "- Puedes mencionar datos reales del historial (pedidos, total gastado, última compra).",
-    "- NO inventes descuentos, fechas, productos ni promociones específicas no indicadas.",
-    "- Firma de forma breve con el nombre de la tienda al final.",
-    "- Un solo mensaje coherente, sin viñetas ni encabezados.",
-  ].join("\n");
+    'Redacta mensajes WhatsApp comerciales en español LATAM. JSON: { "message": string }',
+    "Sin emojis. Máx 400 chars. Un párrafo. Firma con nombre tienda. No inventes promos.",
+  ].join(" ");
 }
 
 function buildUserPrompt(input: GenerateCustomerWhatsAppMessageInput): string {
   return [
-    `Tienda: ${input.storeName.trim() || "mi tienda"}.`,
-    `Cliente: ${input.customerName.trim() || "cliente"}.`,
-    `Pedidos realizados: ${input.orderCount}.`,
-    `Total gastado: ${formatUsd(input.totalSpentUsd)}.`,
-    formatLastOrderContext(input),
-    goalInstruction(input.goal),
-  ].join("\n");
+    `Tienda:${input.storeName.trim() || "tienda"}`,
+    `Cliente:${input.customerName.trim() || "cliente"}`,
+    `Pedidos:${input.orderCount} Total:${formatUsd(input.totalSpentUsd)} ${lastOrderLabel(input)}`,
+    `Objetivo:${goalLabel(input.goal)}`,
+  ].join(" | ");
 }
 
 function parseModelJson(content: string): GenerateCustomerWhatsAppMessageResult {
@@ -120,8 +80,8 @@ export async function generateCustomerWhatsAppMessage(
 ): Promise<GenerateCustomerWhatsAppMessageResult> {
   try {
     const content = await createOpenRouterChatCompletion({
-      temperature: 0.65,
-      max_tokens: 350,
+      temperature: 0.6,
+      max_tokens: AI_MAX_TOKENS.whatsappMessage,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: buildSystemPrompt() },

@@ -1,5 +1,6 @@
-import { formatUsd } from "@/lib/format";
 import type { CatalogOrder } from "@/lib/orders/types";
+import { AI_MAX_INPUT_CHARS } from "@/lib/ai/token-limits";
+import { formatUsd } from "@/lib/format";
 import {
   resolveMessageTemplateKey,
   type OrderMessageTemplateKey,
@@ -16,8 +17,21 @@ function formatProductSummary(order: CatalogOrder): string {
     .join("\n");
 }
 
-export function formatOrderProductSummary(order: CatalogOrder): string {
-  return formatProductSummary(order);
+export function formatOrderProductSummary(
+  order: CatalogOrder,
+  maxItems = AI_MAX_INPUT_CHARS.orderProducts,
+): string {
+  const items = order.items.slice(0, maxItems).map((item) => {
+    const variant =
+      item.variant_name !== "Estándar" ? ` ${item.variant_name}` : "";
+    return `${item.quantity}x ${item.product_name}${variant} (${formatUsd(item.line_total_usd)})`;
+  });
+
+  if (order.items.length > maxItems) {
+    items.push(`+${order.items.length - maxItems} más`);
+  }
+
+  return items.join("; ");
 }
 
 export function renderMessageTemplate(
