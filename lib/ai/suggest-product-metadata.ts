@@ -133,7 +133,7 @@ export async function suggestProductMetadata(
     ? resolveProductFieldLabels(input.storeRubro, ruleSlug)
     : input.fieldLabels ?? [];
 
-  const rulesConfident = rules.confidence >= 3;
+  const rulesConfident = rules.confidence >= 2;
 
   if (rulesConfident && ruleSlug) {
     return {
