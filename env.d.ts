@@ -14,6 +14,9 @@ declare namespace NodeJS {
     /** Resend — envío de correos transaccionales (auth, invitaciones de equipo) */
     RESEND_API_KEY?: string;
 
+    /** Google Identity Services — mismo Client ID que en Supabase → Google provider */
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID?: string;
+
     /** Secreto opcional para el webhook Send Email de Supabase (/api/auth/send-email) */
     SEND_EMAIL_HOOK_SECRET?: string;
 

@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { getAdminManifestPath } from "@/lib/pwa/build-admin-manifest";
 import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { PlatformSettingsProvider } from "@/components/providers/PlatformSettingsProvider";
+import { GoogleOAuthProvider } from "@/components/providers/GoogleOAuthProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -78,7 +79,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full flex flex-col font-sans">
         <PlatformSettingsProvider settings={platformSettings}>
-          {children}
+          <GoogleOAuthProvider>{children}</GoogleOAuthProvider>
         </PlatformSettingsProvider>
       </body>
     </html>

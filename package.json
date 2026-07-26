@@ -17,6 +17,7 @@
     "deploy:supabase:production": "node scripts/deploy-supabase-production.mjs"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.5",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.1",
     "browser-image-compression": "^2.0.2",
