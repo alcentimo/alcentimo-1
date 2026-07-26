@@ -9,6 +9,10 @@ import {
   sendPasswordResetEmail,
   sendSignupConfirmationEmail,
 } from "@/lib/email/send-auth-email";
+import {
+  PENDING_CONFIRMATION_RESENT_MESSAGE,
+  type AuthEmailActionResult,
+} from "@/lib/auth/auth-email-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { User } from "@supabase/supabase-js";
@@ -19,13 +23,6 @@ import { getSiteUrl } from "@/lib/site-url";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
 
 const RESET_PASSWORD_NEXT = "/dashboard/restablecer-contrasena";
-
-export const PENDING_CONFIRMATION_RESENT_MESSAGE =
-  "Ya registramos una cuenta con este correo pero aún falta verificarla. Te hemos enviado un nuevo enlace de activación.";
-
-export type AuthEmailActionResult =
-  | { ok: true; resentPendingConfirmation?: boolean; notice?: string }
-  | { ok: false; error: string };
 
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
