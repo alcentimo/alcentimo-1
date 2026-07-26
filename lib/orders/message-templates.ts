@@ -48,11 +48,11 @@ export function getMessageTemplatePreviewValues(storeName?: string) {
 export function defaultMessageTemplates(): MessageTemplatesSettings {
   return {
     nuevo:
-      "Hola {{cliente}}, gracias por tu pedido en {{tienda}}.\n\n{{productos}}\n\nTotal: {{total}}\nReferencia: {{referencia}}\n\nEstamos revisando tu pago y te confirmaremos pronto.",
+      "Hola {{cliente}}, recibimos tu pedido en {{tienda}}.\n\n{{productos}}\n\nTotal: {{total}}\nReferencia: {{referencia}}\n\nEstamos verificando tu pago y te confirmaremos a la brevedad.",
     confirmado:
-      "Hola {{cliente}}, tu pedido en {{tienda}} fue confirmado y está en preparación.\n\n{{productos}}\n\nTotal: {{total}}",
+      "Hola {{cliente}}, confirmamos tu pedido en {{tienda}}. Ya lo estamos preparando.\n\n{{productos}}\n\nTotal: {{total}}",
     enviado:
-      "Hola {{cliente}}, ¡buenas noticias! Tu pedido de {{tienda}} ya fue enviado.\n\n{{productos}}\n\nTotal: {{total}}\n\nGracias por tu compra.",
+      "Hola {{cliente}}, tu pedido de {{tienda}} ya fue enviado.\n\n{{productos}}\n\nTotal: {{total}}\n\nGracias por tu compra.",
   };
 }
 

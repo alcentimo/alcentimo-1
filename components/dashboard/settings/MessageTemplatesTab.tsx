@@ -7,12 +7,17 @@ import {
   SettingsTabShell,
 } from "@/components/dashboard/settings/SettingsLayout";
 import { MessageTemplatePreview } from "@/components/dashboard/settings/MessageTemplatePreview";
+import { MessageTemplateToneAiButton } from "@/components/dashboard/settings/MessageTemplateToneAiButton";
 import { saveMessageTemplatesSettings } from "@/lib/settings/actions";
 import {
-  MESSAGE_TEMPLATE_PLACEHOLDERS,
   ORDER_MESSAGE_TEMPLATE_KEYS,
   ORDER_MESSAGE_TEMPLATE_LABELS,
 } from "@/lib/orders/message-templates";
+import {
+  getMessageTemplateAutoFieldsHint,
+  toFriendlyMessageTemplate,
+  toStorageMessageTemplate,
+} from "@/lib/orders/message-template-editor";
 import type { MessageTemplatesSettings } from "@/lib/store-settings/types";
 
 interface MessageTemplatesTabProps {
@@ -51,7 +56,7 @@ export function MessageTemplatesTab({
       saving={saving}
       onSave={handleSave}
       saveLabel="Guardar plantillas"
-      saveHint="Usa variables como {{cliente}} o {{productos}}. La vista previa se actualiza mientras editas."
+      saveHint="Edita el texto del mensaje. Los datos del pedido se completan solos al enviar."
     >
       {successMessage ? (
         <p
@@ -64,44 +69,56 @@ export function MessageTemplatesTab({
 
       <SettingsSection
         title="Plantillas de mensajes"
-        description="Mensajes automáticos de WhatsApp según el estado del pedido. El equipo puede editarlos antes de enviar."
+        description="Mensajes de WhatsApp según el estado del pedido. Redáctalos en lenguaje natural; el sistema inserta nombre, productos y total automáticamente."
         variant="payments"
       >
-        <p className="mb-4 text-xs text-zinc-500 dark:text-zinc-400">
-          Variables disponibles:{" "}
-          {MESSAGE_TEMPLATE_PLACEHOLDERS.map((token) => (
-            <code
-              key={token}
-              className="mx-0.5 rounded bg-zinc-100 px-1 py-0.5 text-[11px] dark:bg-zinc-900"
-            >
-              {token}
-            </code>
-          ))}
-        </p>
-
         <div className="space-y-5">
           {ORDER_MESSAGE_TEMPLATE_KEYS.map((key) => (
             <div key={key} className="general-settings-card">
-              <Label htmlFor={`template-${key}`} className="payment-field-label">
-                {ORDER_MESSAGE_TEMPLATE_LABELS[key]}
-              </Label>
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <Label htmlFor={`template-${key}`} className="payment-field-label">
+                    {ORDER_MESSAGE_TEMPLATE_LABELS[key]}
+                  </Label>
+                  <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                    {getMessageTemplateAutoFieldsHint(key)}
+                  </p>
+                </div>
+              </div>
 
-              <div className="mt-3 grid gap-4 lg:grid-cols-2 lg:gap-5">
+              <div className="mt-3">
+                <MessageTemplateToneAiButton
+                  templateKey={key}
+                  template={templates[key]}
+                  disabled={saving}
+                  onRewritten={(nextTemplate) => {
+                    setTemplates((prev) => ({ ...prev, [key]: nextTemplate }));
+                    setSuccessMessage(null);
+                  }}
+                />
+              </div>
+
+              <div className="mt-4 grid gap-4 lg:grid-cols-2 lg:gap-5">
                 <div>
                   <textarea
                     id={`template-${key}`}
-                    value={templates[key]}
+                    value={toFriendlyMessageTemplate(templates[key])}
                     onChange={(event) => {
                       setTemplates((prev) => ({
                         ...prev,
-                        [key]: event.target.value,
+                        [key]: toStorageMessageTemplate(event.target.value),
                       }));
                       setSuccessMessage(null);
                     }}
                     rows={8}
-                    className="payment-field-input min-h-[8rem] w-full resize-y font-mono text-sm leading-relaxed"
+                    className="payment-field-input min-h-[8rem] w-full resize-y text-sm leading-relaxed"
                     aria-describedby={`template-preview-${key}`}
+                    placeholder="Escribe el mensaje que recibirá tu cliente..."
                   />
+                  <p className="mt-1.5 text-[10px] text-zinc-400 dark:text-zinc-500">
+                    Los recuadros como [Nombre del cliente] se reemplazan solos con
+                    los datos reales del pedido.
+                  </p>
                 </div>
 
                 <div id={`template-preview-${key}`}>
