@@ -46,6 +46,8 @@ import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtFi
 import { ProductWholesaleField } from "@/components/dashboard/ProductWholesaleField";
 import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
 import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
+import { ProductTitleAutoDetectHint } from "@/components/dashboard/ProductTitleAutoDetectHint";
+import { useProductTitleAutoDetect } from "@/components/dashboard/useProductTitleAutoDetect";
 import {
   emptyFoodModifiers,
   serializeFoodModifiersJson,
@@ -173,6 +175,22 @@ export function ProductCatalogForm({
 
   useStationerySaleVariants(isPapeleria, extraFields, variants, setVariants);
 
+  const isBusy = pending || galleryBusy;
+
+  const { detecting: autoDetecting, hint: autoDetectHint, handleCategoryManualChange } =
+    useProductTitleAutoDetect({
+      title: productName,
+      rubro: productFormConfig.rubroTienda,
+      categories: productFormConfig.productCategories,
+      categorySlug,
+      setCategorySlug,
+      extraFields,
+      setExtraFields,
+      applyCategory: showCategorySelector,
+      initialTitle: initialData?.name,
+      enabled: !isBusy,
+    });
+
   const managesVariants = storeRubroManagesProductVariants(productFormConfig.rubroTienda);
   const wholesaleEnabled = productFormConfig.wholesaleEnabled;
 
@@ -254,7 +272,6 @@ export function ProductCatalogForm({
     formAction(formData);
   }
 
-  const isBusy = pending || galleryBusy;
   const hasGallery = galleryValue.items.length > 0;
   const displayError = localError ?? state.error;
   const submitDisabled = isBusy || (mode === "create" && !hasGallery);
@@ -302,7 +319,7 @@ export function ProductCatalogForm({
           categories={productFormConfig.productCategories}
           categorySlug={categorySlug}
           customCategoryName={customCategoryName}
-          onCategorySlugChange={setCategorySlug}
+          onCategorySlugChange={handleCategoryManualChange}
           onCustomCategoryNameChange={setCustomCategoryName}
           labelClassName="payment-field-label"
           selectClassName="payment-field-input"
@@ -322,6 +339,7 @@ export function ProductCatalogForm({
         disabled={isBusy}
         variant="compact"
       />
+      <ProductTitleAutoDetectHint detecting={autoDetecting} hint={autoDetectHint} />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>

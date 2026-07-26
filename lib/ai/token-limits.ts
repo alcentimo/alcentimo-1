@@ -12,6 +12,8 @@ export const AI_MAX_TOKENS = {
   onboardingWelcome: 100,
   /** JSON con 3 productos de ejemplo */
   onboardingProducts: 480,
+  /** Categoría + specs inferidos del título */
+  productMetadata: 280,
   /** JSON tienda instantánea landing */
   instantStore: 520,
   /** Chat landing comercial */

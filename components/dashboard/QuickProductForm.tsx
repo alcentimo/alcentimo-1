@@ -53,6 +53,8 @@ import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtFi
 import { ProductWholesaleField } from "@/components/dashboard/ProductWholesaleField";
 import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
 import { ProductFormAiStarter } from "@/components/dashboard/ProductFormAiStarter";
+import { ProductTitleAutoDetectHint } from "@/components/dashboard/ProductTitleAutoDetectHint";
+import { useProductTitleAutoDetect } from "@/components/dashboard/useProductTitleAutoDetect";
 import { validateProductPublishInput } from "@/lib/products/validate-publish-form";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -179,6 +181,21 @@ function QuickProductFormSession({
   const stationeryUnifiedStock = areStationerySaleVariants(variants);
 
   useStationerySaleVariants(isPapeleria, extraFields, variants, setVariants);
+
+  const isBusy = pending || galleryBusy;
+
+  const { detecting: autoDetecting, hint: autoDetectHint, handleCategoryManualChange } =
+    useProductTitleAutoDetect({
+      title: productName,
+      rubro: productFormConfig.rubroTienda,
+      categories: productFormConfig.productCategories,
+      categorySlug,
+      setCategorySlug,
+      extraFields,
+      setExtraFields,
+      applyCategory: showCategorySelector,
+      enabled: !isBusy,
+    });
 
   const namePlaceholder = isAlimentos
     ? "Ej: Arepa reina pepiada"
@@ -312,7 +329,6 @@ function QuickProductFormSession({
     formAction(formData);
   }
 
-  const isBusy = pending || galleryBusy;
   const hasGallery = galleryValue.items.length > 0;
   const displayError = localError ?? state.error;
   const submitDisabled = isBusy || !hasGallery;
@@ -354,6 +370,7 @@ function QuickProductFormSession({
         variant="compact"
         namePlaceholder={namePlaceholder}
       />
+      <ProductTitleAutoDetectHint detecting={autoDetecting} hint={autoDetectHint} />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
@@ -447,7 +464,7 @@ function QuickProductFormSession({
           categories={productFormConfig.productCategories}
           categorySlug={categorySlug}
           customCategoryName={customCategoryName}
-          onCategorySlugChange={setCategorySlug}
+          onCategorySlugChange={handleCategoryManualChange}
           onCustomCategoryNameChange={setCustomCategoryName}
           labelClassName="payment-field-label"
           selectClassName="payment-field-input"

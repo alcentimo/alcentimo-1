@@ -46,6 +46,8 @@ import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtFi
 import { ProductWholesaleField } from "@/components/dashboard/ProductWholesaleField";
 import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
 import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
+import { ProductTitleAutoDetectHint } from "@/components/dashboard/ProductTitleAutoDetectHint";
+import { useProductTitleAutoDetect } from "@/components/dashboard/useProductTitleAutoDetect";
 import {
   emptyFoodModifiers,
   serializeFoodModifiersJson,
@@ -174,6 +176,22 @@ export function ProductForm({
 
   useStationerySaleVariants(isPapeleria, extraFields, variants, setVariants);
 
+  const isBusy = pending || galleryBusy;
+
+  const { detecting: autoDetecting, hint: autoDetectHint, handleCategoryManualChange } =
+    useProductTitleAutoDetect({
+      title: productName,
+      rubro: productFormConfig.rubroTienda,
+      categories: productFormConfig.productCategories,
+      categorySlug,
+      setCategorySlug,
+      extraFields,
+      setExtraFields,
+      applyCategory: showCategorySelector,
+      initialTitle: initialData?.name,
+      enabled: !isBusy,
+    });
+
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
     if (
@@ -243,7 +261,6 @@ export function ProductForm({
     formAction(formData);
   }
 
-  const isBusy = pending || galleryBusy;
   const hasGallery = galleryValue.items.length > 0;
   const displayError = localError ?? state.error;
   const requiresNewImage = mode === "create";
@@ -347,7 +364,7 @@ export function ProductForm({
           categories={productFormConfig.productCategories}
           categorySlug={categorySlug}
           customCategoryName={customCategoryName}
-          onCategorySlugChange={setCategorySlug}
+          onCategorySlugChange={handleCategoryManualChange}
           onCustomCategoryNameChange={setCustomCategoryName}
         />
       ) : null}
@@ -365,6 +382,7 @@ export function ProductForm({
         disabled={isBusy}
         variant="default"
       />
+      <ProductTitleAutoDetectHint detecting={autoDetecting} hint={autoDetectHint} />
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div>

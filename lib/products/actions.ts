@@ -25,13 +25,12 @@ import {
   getStoreRubroTienda,
   resolveProductCategoryId,
 } from "@/lib/products/rubro-categories";
+import { resolveProductFieldLabels } from "@/lib/products/resolve-product-field-labels";
 import {
-  getExtraFieldsForProductCategory,
   getProductCategoriesForRubro,
   normalizeStoreRubro,
 } from "@/src/config/categories";
 import {
-  filterExtraFieldsForActiveModule,
   storeRubroManagesProductVariants,
   storeUsesRubroProductModule,
 } from "@/lib/rubros/registry";
@@ -39,16 +38,12 @@ import {
   parseFoodModifiersFromMetadata,
   type FoodModifiersConfig,
 } from "@/lib/rubros/modules/alimentos";
-import { getTechSpecLabels } from "@/lib/rubros/modules/tecnologia/config";
 import {
   applyPCBuilderSlotToMetadata,
   parsePCBuilderSlotFromMetadata,
   type PCBuilderSlotId,
 } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
-import { getCollectibleFieldLabels } from "@/lib/rubros/modules/coleccionables/config";
-import { getBeautyFieldLabels } from "@/lib/rubros/modules/salud-belleza/config";
-import { getStationeryFieldLabels } from "@/lib/rubros/modules/papeleria-libreria-oficina/config";
 import {
   STATIONERY_FIELD_UNITS_PER_PACK,
   STATIONERY_METADATA_KEY,
@@ -98,33 +93,6 @@ async function applyStationeryUnifiedStock(
     defaultVariantId,
     formData,
     stockQuantity,
-  );
-}
-
-function resolveProductFieldLabels(
-  rubro: string,
-  categorySlug: string,
-): string[] {
-  if (storeUsesRubroProductModule(rubro, "tecnologia")) {
-    return getTechSpecLabels(categorySlug);
-  }
-  if (storeUsesRubroProductModule(rubro, "coleccionables")) {
-    return getCollectibleFieldLabels();
-  }
-  if (storeUsesRubroProductModule(rubro, "salud-belleza")) {
-    return getBeautyFieldLabels();
-  }
-  if (storeUsesRubroProductModule(rubro, "papeleria-libreria-oficina")) {
-    const labels = getStationeryFieldLabels(categorySlug);
-    if (!labels.includes(STATIONERY_FIELD_UNITS_PER_PACK)) {
-      labels.push(STATIONERY_FIELD_UNITS_PER_PACK);
-    }
-    return labels;
-  }
-  const normalized = normalizeStoreRubro(rubro);
-  return filterExtraFieldsForActiveModule(
-    normalized,
-    getExtraFieldsForProductCategory(normalized, categorySlug),
   );
 }
 
