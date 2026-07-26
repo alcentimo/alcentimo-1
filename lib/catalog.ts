@@ -5,6 +5,7 @@ import { CATALOG_LIST_SELECT, PUBLIC_CATALOG_LIST_SELECT } from "@/lib/inventory
 import { buildInventorySearchOrFilter } from "@/lib/inventory/search";
 import { roundExchangeRate } from "@/lib/format";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
+import { sortCatalogProducts } from "@/lib/catalog/catalog-browse";
 import { parseCatalogGalleryImages } from "@/lib/products/product-gallery-types";
 
 export interface CatalogPageData {
@@ -38,6 +39,90 @@ export function applyPublicCatalogProductOrder<
     .order("stock_list_rank", { ascending: true })
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
+}
+
+/** Fallback cuando `stock_list_rank` aún no existe en la vista (pre-migración). */
+export function applyLegacyCatalogProductOrder<
+  Q extends {
+    order: (
+      column: string,
+      options?: { ascending?: boolean },
+    ) => Q;
+  },
+>(query: Q): Q {
+  return query
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+}
+
+function isCatalogSchemaCompatibilityError(message: string): boolean {
+  return /column|does not exist|Could not find|stock_list_rank/i.test(message);
+}
+
+type CatalogProductsQueryMode = "ranked" | "legacy";
+
+interface CatalogProductsQueryOptions {
+  storeSlug: string;
+  select: string;
+  paginated: boolean;
+  offset: number;
+  limit: number;
+  categorySlug?: string;
+  productIds?: string[];
+  searchOr: string | null;
+  mode: CatalogProductsQueryMode;
+}
+
+function buildCatalogProductsQuery(
+  supabase: ReturnType<typeof getSupabaseAnonClient>,
+  options: CatalogProductsQueryOptions,
+) {
+  const {
+    storeSlug,
+    select,
+    paginated,
+    offset,
+    limit,
+    categorySlug,
+    productIds,
+    searchOr,
+    mode,
+  } = options;
+
+  const baseQuery = supabase
+    .from("catalog_list_view")
+    .select(select, paginated ? { count: "exact" } : undefined)
+    .eq("store_slug", storeSlug);
+
+  let query =
+    mode === "ranked"
+      ? applyPublicCatalogProductOrder(baseQuery)
+      : applyLegacyCatalogProductOrder(baseQuery);
+
+  if (categorySlug) {
+    query = query.eq("category_slug", categorySlug);
+  }
+
+  if (productIds?.length) {
+    query = query.in("product_id", productIds);
+  }
+
+  if (searchOr) {
+    query = query.or(searchOr);
+  }
+
+  if (paginated) {
+    query = query.range(offset, offset + limit - 1);
+  }
+
+  return query;
+}
+
+async function runCatalogProductsQuery(
+  options: CatalogProductsQueryOptions,
+) {
+  const supabase = getSupabaseAnonClient();
+  return buildCatalogProductsQuery(supabase, options);
 }
 
 function toNumber(value: number | string | null | undefined): number | null {
@@ -114,67 +199,52 @@ export async function getCatalogProducts(
     productIds,
   } = options;
   const normalizedSlug = storeSlug.trim().toLowerCase();
-  const supabase = getSupabaseAnonClient();
   const paginated = limit != null && productIds == null;
+  const searchOr = buildInventorySearchOrFilter(search ?? "") || null;
 
-  let query = applyPublicCatalogProductOrder(
-    supabase
-      .from("catalog_list_view")
-      .select(PUBLIC_CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
-      .eq("store_slug", normalizedSlug),
-  );
+  const baseQueryOptions: Omit<CatalogProductsQueryOptions, "select" | "mode"> =
+    {
+      storeSlug: normalizedSlug,
+      paginated,
+      offset,
+      limit,
+      categorySlug,
+      productIds,
+      searchOr,
+    };
 
-  if (categorySlug) {
-    query = query.eq("category_slug", categorySlug);
-  }
+  let queryMode: CatalogProductsQueryMode = "ranked";
+  let selectColumns = PUBLIC_CATALOG_LIST_SELECT;
+  const exchangeRatePromise = getCurrentExchangeRate();
 
-  if (productIds?.length) {
-    query = query.in("product_id", productIds);
-  }
+  let productsResult = await runCatalogProductsQuery({
+    ...baseQueryOptions,
+    select: selectColumns,
+    mode: queryMode,
+  });
 
-  const searchOr = buildInventorySearchOrFilter(search ?? "");
-  if (searchOr) {
-    query = query.or(searchOr);
-  }
-
-  if (paginated) {
-    query = query.range(offset, offset + limit - 1);
-  }
-
-  let [productsResult, exchangeRate] = await Promise.all([
-    query,
-    getCurrentExchangeRate(),
-  ]);
+  const exchangeRate = await exchangeRatePromise;
 
   if (productsResult.error) {
-    const missingColumn =
-      /column|does not exist|Could not find/i.test(productsResult.error.message);
+    if (isCatalogSchemaCompatibilityError(productsResult.error.message)) {
+      queryMode = "legacy";
+      productsResult = await runCatalogProductsQuery({
+        ...baseQueryOptions,
+        select: selectColumns,
+        mode: queryMode,
+      });
+    }
 
-    if (missingColumn) {
-      let fallbackQuery = applyPublicCatalogProductOrder(
-        supabase
-          .from("catalog_list_view")
-          .select(CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
-          .eq("store_slug", normalizedSlug),
-      );
-
-      if (categorySlug) {
-        fallbackQuery = fallbackQuery.eq("category_slug", categorySlug);
-      }
-
-      if (productIds?.length) {
-        fallbackQuery = fallbackQuery.in("product_id", productIds);
-      }
-
-      if (searchOr) {
-        fallbackQuery = fallbackQuery.or(searchOr);
-      }
-
-      if (paginated) {
-        fallbackQuery = fallbackQuery.range(offset, offset + limit - 1);
-      }
-
-      productsResult = await fallbackQuery;
+    if (
+      productsResult.error &&
+      isCatalogSchemaCompatibilityError(productsResult.error.message)
+    ) {
+      selectColumns = CATALOG_LIST_SELECT;
+      productsResult = await runCatalogProductsQuery({
+        ...baseQueryOptions,
+        select: selectColumns,
+        mode: queryMode,
+      });
     }
 
     if (productsResult.error) {
@@ -182,9 +252,14 @@ export async function getCatalogProducts(
     }
   }
 
-  const products = (productsResult.data ?? []).map((row) =>
+  let products = (productsResult.data ?? []).map((row) =>
     normalizeCatalogItem(row as unknown as CatalogListItem),
   );
+
+  if (queryMode === "legacy") {
+    products = sortCatalogProducts(products, "featured");
+  }
+
   const totalCount = paginated
     ? (productsResult.count ?? products.length)
     : products.length;
