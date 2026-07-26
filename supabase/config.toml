@@ -6,6 +6,20 @@ project_id = "pboxqwrogkwxkrjvbsqo"
 [auth.email]
 otp_expiry = 86400
 
+# Google OAuth («Continuar con Google»). La app usa signInWithOAuth → /auth/callback (PKCE).
+# Producción: Client ID + Secret en Supabase Dashboard → Authentication → Sign In / Providers → Google.
+# Local (supabase start): exporta las vars en .env y cambia enabled a true.
+# Google Cloud → OAuth consent screen: nombre «Alcéntimo», dominio alcentimo.com.
+# Google Cloud → Credentials → redirect URI obligatoria:
+#   https://pboxqwrogkwxkrjvbsqo.supabase.co/auth/v1/callback  (producción)
+#   http://127.0.0.1:54321/auth/v1/callback                    (local CLI)
+# JavaScript origins: https://alcentimo.com y http://localhost:3000
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
+skip_nonce_check = false
+
 # Manual / pruebas: GET/POST con ?slot=midnight|morning|retry y Bearer CRON_SECRET
 [functions.sync-bcv]
 verify_jwt = false
