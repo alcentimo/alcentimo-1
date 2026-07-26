@@ -11,6 +11,7 @@ import {
   getActiveSubscriptionCampaign,
 } from "@/lib/plans/subscription-promo";
 import { isCouponWindowOpen, normalizePromoCode } from "@/lib/admin/growth-discount";
+import { assertPlansCouponRedemptionAllowed } from "@/lib/platform/plans-coupon-access";
 import { manualPaymentPlanToDbPlan } from "@/lib/plans/plan-activation";
 import type { ManualPaymentPlanId } from "@/lib/database.types";
 
@@ -29,6 +30,9 @@ export async function validateSubscriptionCouponCode(input: {
   planId: ManualPaymentPlanId;
   listAmountUsd: number;
 }): Promise<ValidateCouponResult> {
+  const access = await assertPlansCouponRedemptionAllowed();
+  if (access.error) return { error: access.error };
+
   const supabase = await createClient();
   const auth = await requireAuthUser(supabase);
   if (!auth.ok) return { error: auth.error };
@@ -81,6 +85,9 @@ export async function validateSubscriptionCouponCode(input: {
 export async function redeemSubscriptionCouponCode(
   code: string,
 ): Promise<{ error?: string; success?: boolean; days?: number }> {
+  const access = await assertPlansCouponRedemptionAllowed();
+  if (access.error) return { error: access.error };
+
   const supabase = await createClient();
   const auth = await requireAuthUser(supabase);
   if (!auth.ok) return { error: auth.error };
@@ -116,6 +123,11 @@ export async function previewCheckoutDiscount(input: {
   listAmountUsd: number;
   couponCode?: string | null;
 }): Promise<ValidateCouponResult> {
+  if (input.couponCode?.trim()) {
+    const access = await assertPlansCouponRedemptionAllowed();
+    if (access.error) return { error: access.error };
+  }
+
   const planDbRaw = manualPaymentPlanToDbPlan(input.planId);
   const planDb = planDbRaw === "BUSINESS" ? "BUSINESS" : "PRO";
   const campaign = await getActiveSubscriptionCampaign(planDb);

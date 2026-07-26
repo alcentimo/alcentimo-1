@@ -27,6 +27,7 @@ import { BrandLogo } from "@/components/ui/BrandLogo";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
+import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { buildPlanPricingTiers } from "@/lib/plans/plan-settings";
 import { getOpenPromoOffersForUser } from "@/lib/plans/subscription-promo";
 
@@ -85,13 +86,14 @@ export default async function ActivarPage() {
     );
   }
 
-  const [productLimitStatus, exchangeRateRow, permanentRejection, pagoMovil, planSettings] =
+  const [productLimitStatus, exchangeRateRow, permanentRejection, pagoMovil, planSettings, platformSettings] =
     await Promise.all([
       store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
       getCurrentExchangeRate(),
       getLatestPermanentRejection(authUser.id),
       fetchSubscriptionPagoMovilDetails(),
       fetchPlanSettings(),
+      fetchPlatformSettings(),
     ]);
   const pricingTiers = buildPlanPricingTiers(planSettings);
   const freeProductLimit = planSettings.FREE.productLimit ?? 10;
@@ -185,6 +187,7 @@ export default async function ActivarPage() {
           }
           pagoMovil={pagoMovil}
           pricingTiers={pricingTiers}
+          showCouponField={platformSettings.plansCouponBoxEnabled}
         />
       </PageContainer>
     </main>

@@ -32,6 +32,7 @@ import {
   resolveAmountWithPromo,
 } from "@/lib/plans/subscription-promo";
 import { isCouponWindowOpen } from "@/lib/admin/growth-discount";
+import { assertPlansCouponRedemptionAllowed } from "@/lib/platform/plans-coupon-access";
 import type { PlanId } from "@/src/config/plans";
 
 export type ManualPaymentActionResult = {
@@ -156,6 +157,11 @@ export async function submitManualPayment(
   const coupon = couponCodeRaw
     ? await findSubscriptionCouponByCode(couponCodeRaw)
     : null;
+
+  if (couponCodeRaw) {
+    const access = await assertPlansCouponRedemptionAllowed();
+    if (access.error) return { error: access.error };
+  }
 
   if (couponCodeRaw) {
     if (!coupon || !coupon.is_active || !isCouponWindowOpen(coupon)) {

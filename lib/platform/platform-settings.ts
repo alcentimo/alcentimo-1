@@ -7,6 +7,8 @@ export interface PlatformSettings {
   pwaIcon192Url: string | null;
   pwaIcon512Url: string | null;
   supportEmail: string | null;
+  /** Muestra u oculta el cajón «¿Tienes un cupón?» en /dashboard/planes. */
+  plansCouponBoxEnabled: boolean;
 }
 
 export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
@@ -16,6 +18,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   pwaIcon192Url: null,
   pwaIcon512Url: null,
   supportEmail: null,
+  plansCouponBoxEnabled: true,
 };
 
 export interface PlatformSettingsRow {
@@ -26,6 +29,7 @@ export interface PlatformSettingsRow {
   pwa_icon_192_url: string | null;
   pwa_icon_512_url: string | null;
   support_email: string | null;
+  plans_coupon_box_enabled: boolean;
   updated_at: string;
   updated_by: string | null;
 }
@@ -42,5 +46,6 @@ export function parsePlatformSettingsRow(
     pwaIcon192Url: row.pwa_icon_192_url?.trim() || null,
     pwaIcon512Url: row.pwa_icon_512_url?.trim() || null,
     supportEmail: row.support_email?.trim() || null,
+    plansCouponBoxEnabled: row.plans_coupon_box_enabled ?? true,
   };
 }

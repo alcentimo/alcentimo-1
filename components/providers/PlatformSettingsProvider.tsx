@@ -30,6 +30,9 @@ export function PlatformSettingsProvider({
       pwaIcon192Url: settings.pwaIcon192Url,
       pwaIcon512Url: settings.pwaIcon512Url,
       supportEmail: settings.supportEmail,
+      plansCouponBoxEnabled:
+        settings.plansCouponBoxEnabled ??
+        DEFAULT_PLATFORM_SETTINGS.plansCouponBoxEnabled,
     }),
     [settings],
   );

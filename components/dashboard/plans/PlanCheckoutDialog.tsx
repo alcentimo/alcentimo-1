@@ -52,6 +52,7 @@ interface PlanCheckoutDialogProps {
   currentBillingPeriod?: BillingPeriod | null;
   pagoMovil?: SubscriptionPagoMovilDetails;
   pricingTiers?: PlanPricingTier[];
+  showCouponField?: boolean;
 }
 
 export function PlanCheckoutDialog({
@@ -65,6 +66,7 @@ export function PlanCheckoutDialog({
   currentBillingPeriod = "monthly",
   pagoMovil: pagoMovilProp,
   pricingTiers = PLAN_PRICING_TIERS,
+  showCouponField = true,
 }: PlanCheckoutDialogProps) {
   const [step, setStep] = useState<CheckoutStep>("domain");
   const [domainSelection, setDomainSelection] = useState<PlanDomainSelection | null>(
@@ -315,21 +317,23 @@ export function PlanCheckoutDialog({
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor="payment-coupon" className="payment-field-label">
-                        Cupón de descuento (opcional)
-                      </Label>
-                      <Input
-                        id="payment-coupon"
-                        name="couponCode"
-                        value={couponCode}
-                        onChange={(event) => setCouponCode(event.target.value)}
-                        placeholder="Ej. NAVIDAD2026"
-                        autoComplete="off"
-                        disabled={submitting}
-                        className="payment-field-input mt-1.5"
-                      />
-                    </div>
+                    {showCouponField ? (
+                      <div>
+                        <Label htmlFor="payment-coupon" className="payment-field-label">
+                          Cupón de descuento (opcional)
+                        </Label>
+                        <Input
+                          id="payment-coupon"
+                          name="couponCode"
+                          value={couponCode}
+                          onChange={(event) => setCouponCode(event.target.value)}
+                          placeholder="Ej. NAVIDAD2026"
+                          autoComplete="off"
+                          disabled={submitting}
+                          className="payment-field-input mt-1.5"
+                        />
+                      </div>
+                    ) : null}
 
                     <div>
                       <Label htmlFor="payment-proof" className="payment-field-label">

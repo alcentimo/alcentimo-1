@@ -27,6 +27,7 @@ function revalidatePlatformBranding() {
   revalidatePath("/admin/dashboard");
   revalidatePath("/dashboard", "layout");
   revalidatePath("/dashboard/login");
+  revalidatePath("/dashboard/planes");
   revalidatePath("/register");
   revalidatePath("/activar");
   revalidatePath("/onboarding");
@@ -89,7 +90,9 @@ export async function updatePlatformSettings(
 
   const { data: existing, error: readError } = await admin
     .from("platform_settings")
-    .select("logo_url, pwa_icon_192_url, pwa_icon_512_url")
+    .select(
+      "logo_url, pwa_icon_192_url, pwa_icon_512_url, plans_coupon_box_enabled",
+    )
     .eq("id", PLATFORM_SETTINGS_ID)
     .maybeSingle();
 
@@ -106,6 +109,7 @@ export async function updatePlatformSettings(
       logo_url: existing?.logo_url ?? null,
       pwa_icon_192_url: existing?.pwa_icon_192_url ?? null,
       pwa_icon_512_url: existing?.pwa_icon_512_url ?? null,
+      plans_coupon_box_enabled: existing?.plans_coupon_box_enabled ?? true,
       updated_at: now,
       updated_by: auth.user.id,
     },
@@ -127,7 +131,85 @@ export async function updatePlatformSettings(
       pwaIcon192Url: existing?.pwa_icon_192_url ?? null,
       pwaIcon512Url: existing?.pwa_icon_512_url ?? null,
       supportEmail,
+      plansCouponBoxEnabled: existing?.plans_coupon_box_enabled ?? true,
     },
+  };
+}
+
+export async function updatePlansCouponBoxEnabled(
+  enabled: boolean,
+): Promise<UpdatePlatformSettingsResult> {
+  const auth = await requirePlatformAdmin();
+  if ("error" in auth) return auth;
+
+  const admin = createAdminClient();
+  const now = new Date().toISOString();
+
+  const { data: existing, error: readError } = await admin
+    .from("platform_settings")
+    .select(
+      "platform_name, tagline, support_email, logo_url, pwa_icon_192_url, pwa_icon_512_url, plans_coupon_box_enabled",
+    )
+    .eq("id", PLATFORM_SETTINGS_ID)
+    .maybeSingle();
+
+  if (readError) {
+    return { error: readError.message };
+  }
+
+  const parsed = parsePlatformSettingsRow(
+    existing
+      ? {
+          id: PLATFORM_SETTINGS_ID,
+          platform_name: existing.platform_name,
+          tagline: existing.tagline,
+          logo_url: existing.logo_url,
+          pwa_icon_192_url: existing.pwa_icon_192_url,
+          pwa_icon_512_url: existing.pwa_icon_512_url,
+          support_email: existing.support_email,
+          plans_coupon_box_enabled: enabled,
+          updated_at: now,
+          updated_by: auth.user.id,
+        }
+      : {
+          id: PLATFORM_SETTINGS_ID,
+          platform_name: DEFAULT_PLATFORM_SETTINGS.platformName,
+          tagline: DEFAULT_PLATFORM_SETTINGS.tagline,
+          logo_url: null,
+          pwa_icon_192_url: null,
+          pwa_icon_512_url: null,
+          support_email: null,
+          plans_coupon_box_enabled: enabled,
+          updated_at: now,
+          updated_by: auth.user.id,
+        },
+  );
+
+  const { error } = await admin.from("platform_settings").upsert(
+    {
+      id: PLATFORM_SETTINGS_ID,
+      platform_name: parsed.platformName,
+      tagline: parsed.tagline,
+      support_email: parsed.supportEmail,
+      logo_url: parsed.logoUrl,
+      pwa_icon_192_url: parsed.pwaIcon192Url,
+      pwa_icon_512_url: parsed.pwaIcon512Url,
+      plans_coupon_box_enabled: enabled,
+      updated_at: now,
+      updated_by: auth.user.id,
+    },
+    { onConflict: "id" },
+  );
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePlatformBranding();
+
+  return {
+    success: true,
+    settings: parsed,
   };
 }
 
@@ -151,7 +233,7 @@ export async function uploadPlatformLogo(
   const now = new Date().toISOString();
   const { data: existing, error: readError } = await admin
     .from("platform_settings")
-    .select("platform_name, tagline, support_email")
+    .select("platform_name, tagline, support_email, plans_coupon_box_enabled")
     .eq("id", PLATFORM_SETTINGS_ID)
     .maybeSingle();
 
@@ -169,6 +251,7 @@ export async function uploadPlatformLogo(
           pwa_icon_192_url: upload.pwaIcon192Url ?? null,
           pwa_icon_512_url: upload.pwaIcon512Url ?? null,
           support_email: existing.support_email,
+          plans_coupon_box_enabled: existing.plans_coupon_box_enabled ?? true,
           updated_at: now,
           updated_by: auth.user.id,
         }
@@ -184,6 +267,7 @@ export async function uploadPlatformLogo(
       logo_url: upload.url,
       pwa_icon_192_url: upload.pwaIcon192Url ?? null,
       pwa_icon_512_url: upload.pwaIcon512Url ?? null,
+      plans_coupon_box_enabled: parsed.plansCouponBoxEnabled,
       updated_at: now,
       updated_by: auth.user.id,
     },
@@ -217,7 +301,7 @@ export async function clearPlatformLogo(): Promise<UpdatePlatformSettingsResult>
   const now = new Date().toISOString();
   const { data: existing, error: readError } = await admin
     .from("platform_settings")
-    .select("platform_name, tagline, support_email")
+    .select("platform_name, tagline, support_email, plans_coupon_box_enabled")
     .eq("id", PLATFORM_SETTINGS_ID)
     .maybeSingle();
 
@@ -235,6 +319,7 @@ export async function clearPlatformLogo(): Promise<UpdatePlatformSettingsResult>
           pwa_icon_192_url: null,
           pwa_icon_512_url: null,
           support_email: existing.support_email,
+          plans_coupon_box_enabled: existing.plans_coupon_box_enabled ?? true,
           updated_at: now,
           updated_by: auth.user.id,
         }
@@ -250,6 +335,7 @@ export async function clearPlatformLogo(): Promise<UpdatePlatformSettingsResult>
       logo_url: null,
       pwa_icon_192_url: null,
       pwa_icon_512_url: null,
+      plans_coupon_box_enabled: parsed.plansCouponBoxEnabled,
       updated_at: now,
       updated_by: auth.user.id,
     },

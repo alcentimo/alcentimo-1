@@ -19,6 +19,7 @@ import {
 import { PageContainer } from "@/components/ui/PageContainer";
 import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
+import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { buildPlanPricingTiers } from "@/lib/plans/plan-settings";
 import { getOpenPromoOffersForUser } from "@/lib/plans/subscription-promo";
 
@@ -43,6 +44,7 @@ export default async function PlanesPage() {
     pagoMovil,
     planSettings,
     promoOffers,
+    platformSettings,
   ] = await Promise.all([
       store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
       getCurrentExchangeRate(),
@@ -51,6 +53,7 @@ export default async function PlanesPage() {
       fetchSubscriptionPagoMovilDetails(),
       fetchPlanSettings(),
       getOpenPromoOffersForUser(authUser.id),
+      fetchPlatformSettings(),
     ]);
   const exchangeRate = exchangeRateRow?.rate ?? null;
   const pricingTiers = buildPlanPricingTiers(planSettings);
@@ -84,9 +87,11 @@ export default async function PlanesPage() {
         </div>
       ) : null}
 
-      <div className="mb-8 max-w-2xl">
-        <SubscriptionCouponRedeemCard />
-      </div>
+      {platformSettings.plansCouponBoxEnabled ? (
+        <div className="mb-8 max-w-2xl">
+          <SubscriptionCouponRedeemCard />
+        </div>
+      ) : null}
 
       {store && showProTrialBanner ? (
         <div className="mb-8 max-w-3xl">
@@ -117,6 +122,7 @@ export default async function PlanesPage() {
         }
         pagoMovil={pagoMovil}
         pricingTiers={pricingTiers}
+        showCouponField={platformSettings.plansCouponBoxEnabled}
       />
     </PageContainer>
   );

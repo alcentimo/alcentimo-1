@@ -290,6 +290,7 @@ export function AdminDashboardTabs({
           <AdminCouponsPanel
             initialCoupons={growthCoupons}
             initialCampaigns={growthCampaigns}
+            initialPlansCouponBoxEnabled={platformSettings.plansCouponBoxEnabled}
           />
         )
       ) : null}

@@ -33,6 +33,8 @@ interface PlansPanelProps {
   currentBillingPeriod?: BillingPeriod | null;
   pagoMovil?: SubscriptionPagoMovilDetails;
   pricingTiers?: PlanPricingTier[];
+  /** Oculta el campo de cupón en el checkout cuando el admin lo desactiva. */
+  showCouponField?: boolean;
   /** Vista limpia de activación: sin bloques auxiliares encima de las tarjetas. */
   variant?: "default" | "activation";
 }
@@ -137,6 +139,7 @@ export function PlansPanel({
   currentBillingPeriod = "monthly",
   pagoMovil,
   pricingTiers = PLAN_PRICING_TIERS,
+  showCouponField = true,
   variant = "default",
 }: PlansPanelProps) {
   const isActivation = variant === "activation";
@@ -325,6 +328,7 @@ export function PlansPanel({
         currentBillingPeriod={currentBillingPeriod}
         pagoMovil={pagoMovil}
         pricingTiers={pricingTiers}
+        showCouponField={showCouponField}
       />
     </div>
   );
