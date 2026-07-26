@@ -22,6 +22,7 @@ import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
 import { InventoryListSkeleton } from "@/components/dashboard/InventoryListSkeleton";
 import { BcvRateStripWithSync } from "@/components/dashboard/BcvRateStripWithSync";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import { CatalogPublicLinkMenu } from "@/components/dashboard/CatalogPublicLinkMenu";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
@@ -120,6 +121,13 @@ export default async function CatalogoPage({
       <DashboardPageHeader
         title="Catálogo"
         description={`Gestiona lo que vendes: productos, fotos, precios y stock de ${store.name}.`}
+        actions={
+          <CatalogPublicLinkMenu
+            storeSlug={store.slug}
+            customDomain={store.custom_domain}
+            customDomainVerified={Boolean(store.custom_domain_verified)}
+          />
+        }
       />
 
       <BcvRateStripWithSync

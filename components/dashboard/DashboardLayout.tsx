@@ -8,7 +8,6 @@ import { BrandLogo } from "@/components/ui/BrandLogo";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
 import { DashboardPreferenceControls } from "@/components/dashboard/DashboardPreferenceControls";
-import { PublicCatalogQuickLink } from "@/components/dashboard/PublicCatalogQuickLink";
 import { DashboardViewKeepAlive } from "@/components/dashboard/DashboardViewKeepAlive";
 import { DashboardRouteVisitTracker } from "@/components/dashboard/DashboardRouteVisitTracker";
 import { AccountSettingsSheet } from "@/components/dashboard/account/AccountSettingsSheet";
@@ -19,9 +18,6 @@ import { isDashboardStoreOwner } from "@/lib/team/permissions";
 interface DashboardLayoutProps {
   children: React.ReactNode;
   storeName: string | null;
-  storeSlug: string | null;
-  customDomain?: string | null;
-  customDomainVerified?: boolean;
   userEmail: string | null;
   planName?: string | null;
   exchangeRate?: number | null;
@@ -45,9 +41,6 @@ function isStandaloneAuthPath(pathname: string): boolean {
 function DashboardShell({
   children,
   storeName,
-  storeSlug,
-  customDomain = null,
-  customDomainVerified = false,
   exchangeRate = null,
   exchangeRateUpdatedAt = null,
   exchangeRateStale = false,
@@ -184,12 +177,6 @@ function DashboardShell({
               rate={exchangeRate}
               updatedAt={exchangeRateUpdatedAt}
               stale={exchangeRateStale}
-            />
-            <PublicCatalogQuickLink
-              storeSlug={storeSlug}
-              customDomain={customDomain}
-              customDomainVerified={customDomainVerified}
-              variant="header"
             />
           </div>
         </header>

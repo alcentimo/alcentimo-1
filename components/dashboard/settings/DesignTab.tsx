@@ -21,6 +21,7 @@ import { SettingsTabShell } from "@/components/dashboard/settings/SettingsLayout
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { DesignCatalogInlinePreview } from "@/components/dashboard/settings/DesignCatalogInlinePreview";
+import { StorePublicLinkBar } from "@/components/dashboard/settings/StorePublicLinkBar";
 import { saveCatalogDesignSettings } from "@/lib/settings/actions";
 import {
   CATALOG_THEME_PRESETS,
@@ -50,6 +51,11 @@ interface DesignTabProps {
   initialDesign: CatalogDesignSettings;
   storeRubro?: string | null;
   preview?: DesignTabPreviewContext | null;
+  catalogLink?: {
+    slug: string;
+    customDomain?: string | null;
+    customDomainVerified?: boolean;
+  } | null;
 }
 
 type SavingField =
@@ -169,6 +175,7 @@ export function DesignTab({
   initialDesign,
   storeRubro: storeRubroProp = null,
   preview = null,
+  catalogLink = null,
 }: DesignTabProps) {
   const [design, setDesign] = useState(initialDesign);
   const [error, setError] = useState<string | null>(null);
@@ -278,6 +285,16 @@ export function DesignTab({
 
   return (
     <SettingsTabShell error={error} hideSaveBar>
+      {catalogLink ? (
+        <div className="mb-5 overflow-hidden rounded-xl border border-zinc-200/70 dark:border-zinc-800/70">
+          <StorePublicLinkBar
+            slug={catalogLink.slug}
+            customDomain={catalogLink.customDomain}
+            customDomainVerified={catalogLink.customDomainVerified}
+            className="border-b-0"
+          />
+        </div>
+      ) : null}
       <div className="design-studio">
         <aside className="design-studio-sidebar">
           <div className="design-studio-sidebar-header">

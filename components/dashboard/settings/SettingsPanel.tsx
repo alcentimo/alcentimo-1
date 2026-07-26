@@ -213,6 +213,15 @@ export function SettingsPanel({
             )}
             storeRubro={store?.rubro_tienda ?? "ropa-moda"}
             preview={designPreview}
+            catalogLink={
+              store
+                ? {
+                    slug: store.slug,
+                    customDomain: store.custom_domain ?? null,
+                    customDomainVerified: Boolean(store.custom_domain_verified),
+                  }
+                : null
+            }
           />
         );
       case "promotions":
