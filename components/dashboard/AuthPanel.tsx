@@ -135,11 +135,22 @@ export function AuthPanel() {
       setLoading(false);
 
       if (!signupResult.ok) {
-        setError(formatAuthError(signupResult.error));
+        // No traducir avisos/errores propios del flujo de reenvío de activación.
+        setError(
+          signupResult.error.startsWith("Ya existe") ||
+            signupResult.error.startsWith("No pudimos reenviar")
+            ? signupResult.error
+            : formatAuthError(signupResult.error),
+        );
         return;
       }
 
-      setSignupNotice(signupResult.notice ?? null);
+      setSignupNotice(
+        signupResult.notice ??
+          (signupResult.resentPendingConfirmation
+            ? "Ya registramos una cuenta con este correo pero aún falta verificarla. Te hemos enviado un nuevo enlace de activación."
+            : null),
+      );
       setSignupConfirmationSent(true);
       return;
     }

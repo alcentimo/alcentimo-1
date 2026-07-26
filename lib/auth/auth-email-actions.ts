@@ -1,6 +1,6 @@
 "use server";
 
-import type { EmailOtpType } from "@supabase/supabase-js";
+import type { AuthError, EmailOtpType, User } from "@supabase/supabase-js";
 import { buildAuthConfirmUrl } from "@/lib/email/build-auth-action-url";
 import { buildAccountVerificationPageUrl } from "@/lib/email/build-account-verification-url";
 import {
@@ -15,13 +15,15 @@ import {
 } from "@/lib/auth/auth-email-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import type { User } from "@supabase/supabase-js";
 import { getPasswordResetRedirectUrl } from "@/lib/site-url";
 import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
 import { getSiteUrl } from "@/lib/site-url";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
 
 const RESET_PASSWORD_NEXT = "/dashboard/restablecer-contrasena";
+
+const EXISTING_CONFIRMED_ACCOUNT_ERROR =
+  "Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.";
 
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
@@ -38,9 +40,6 @@ function mapSignupError(message: string): string {
   }
   return message;
 }
-
-const EXISTING_CONFIRMED_ACCOUNT_ERROR =
-  "Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.";
 
 function buildRedirectUrl(nextPath: string): string {
   const siteUrl = getSiteUrl().replace(/\/$/, "");
@@ -69,42 +68,85 @@ function isEmailConfirmed(user: User): boolean {
 }
 
 /**
- * Busca un usuario por email vía Admin API (filtro directo + fallback paginado).
+ * Detecta el rechazo de Supabase Auth por correo ya registrado
+ * (mensaje o código), independientemente del lookup admin.
+ */
+function isAlreadyRegisteredAuthError(
+  error: Pick<AuthError, "message" | "code" | "status"> | { message: string },
+): boolean {
+  const message = error.message.toLowerCase();
+  const code =
+    "code" in error && typeof error.code === "string"
+      ? error.code.toLowerCase()
+      : "";
+
+  if (
+    code.includes("email_exists") ||
+    code.includes("user_already_exists") ||
+    code.includes("already_exists")
+  ) {
+    return true;
+  }
+
+  return (
+    (message.includes("already") &&
+      (message.includes("registered") ||
+        message.includes("exists") ||
+        message.includes("duplicate"))) ||
+    message.includes("user already exists") ||
+    message.includes("email address is already")
+  );
+}
+
+function pendingResentSuccess(): AuthEmailActionResult {
+  return {
+    ok: true,
+    resentPendingConfirmation: true,
+    notice: PENDING_CONFIRMATION_RESENT_MESSAGE,
+  };
+}
+
+/**
+ * Busca usuario por email con Admin API.
+ * El filtro `?email=` de GoTrue no siempre filtra; por eso hay fallback paginado.
  */
 async function findUserByEmail(email: string): Promise<User | null> {
   const normalized = normalizeEmail(email);
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()?.replace(/\/$/, "");
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()?.replace(/\/$/, "");
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
-  if (url && serviceRoleKey) {
-    const endpoint = new URL(`${url}/auth/v1/admin/users`);
-    endpoint.searchParams.set("page", "1");
-    endpoint.searchParams.set("per_page", "50");
-    endpoint.searchParams.set("email", normalized);
+  if (baseUrl && serviceRoleKey) {
+    for (const [param, value] of [
+      ["email", normalized],
+      ["filter", normalized],
+    ] as const) {
+      try {
+        const endpoint = new URL(`${baseUrl}/auth/v1/admin/users`);
+        endpoint.searchParams.set("page", "1");
+        endpoint.searchParams.set("per_page", "200");
+        endpoint.searchParams.set(param, value);
 
-    try {
-      const response = await fetch(endpoint.toString(), {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${serviceRoleKey}`,
-          apikey: serviceRoleKey,
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      });
+        const response = await fetch(endpoint.toString(), {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${serviceRoleKey}`,
+            apikey: serviceRoleKey,
+            "Content-Type": "application/json",
+          },
+          cache: "no-store",
+        });
 
-      if (response.ok) {
-        const payload = (await response.json()) as
-          | { users?: User[] }
-          | User[];
+        if (!response.ok) continue;
+
+        const payload = (await response.json()) as { users?: User[] } | User[];
         const users = Array.isArray(payload) ? payload : (payload.users ?? []);
         const match = users.find(
           (user) => normalizeEmail(user.email ?? "") === normalized,
         );
         if (match) return match;
+      } catch (error) {
+        console.warn(`[findUserByEmail] filter ${param} failed`, error);
       }
-    } catch (error) {
-      console.warn("[findUserByEmail] admin email filter failed", error);
     }
   }
 
@@ -118,7 +160,8 @@ async function findUserByEmail(email: string): Promise<User | null> {
     });
 
     if (error) {
-      throw error;
+      console.error("[findUserByEmail] listUsers failed", error.message);
+      break;
     }
 
     const match = data.users.find(
@@ -183,6 +226,7 @@ async function deliverSignupConfirmationEmail(input: {
     next: input.postAuthPath,
   });
 
+  // Siempre plantilla de confirmación de cuenta (nunca recovery).
   return sendAuthEmailForType({
     type: "signup",
     email: input.email,
@@ -192,7 +236,11 @@ async function deliverSignupConfirmationEmail(input: {
   });
 }
 
-async function generatePendingConfirmationLink(input: {
+/**
+ * Genera token de activación para un email que YA existe.
+ * `signup`/`invite` suelen fallar si el usuario existe; `magiclink` sí funciona.
+ */
+async function generateActivationLinkForExistingEmail(input: {
   email: string;
   password: string;
   redirectTo: string;
@@ -200,112 +248,135 @@ async function generatePendingConfirmationLink(input: {
   tokenHash: string;
   emailOtp: string | null;
   otpType: EmailOtpType;
-} | { error: string }> {
-  const redirectTo = input.redirectTo;
+} | null> {
+  const attempts: Array<{
+    type: "signup" | "invite" | "magiclink";
+    password?: string;
+  }> = [
+    { type: "magiclink" },
+    { type: "invite" },
+    { type: "signup", password: input.password },
+  ];
 
-  // 1) Intentar enlace de signup (algunos entornos lo regeneran si aún no confirmó).
-  {
+  for (const attempt of attempts) {
     const { data, error } = await generateAuthLink({
-      type: "signup",
+      type: attempt.type,
       email: input.email,
-      password: input.password,
-      redirectTo,
+      password: attempt.password,
+      redirectTo: input.redirectTo,
     });
-    if (!error) {
-      const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
-      if (tokenHash) {
-        return { tokenHash, emailOtp, otpType: "signup" };
-      }
-    }
+
+    if (error) continue;
+
+    const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
+    if (!tokenHash) continue;
+
+    return {
+      tokenHash,
+      emailOtp,
+      otpType: attempt.type === "signup" ? "signup" : attempt.type,
+    };
   }
 
-  // 2) Invite: genera token de activación para cuenta existente pendiente.
-  {
-    const { data, error } = await generateAuthLink({
-      type: "invite",
-      email: input.email,
-      redirectTo,
-    });
-    if (!error) {
-      const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
-      if (tokenHash) {
-        return { tokenHash, emailOtp, otpType: "invite" };
-      }
-    }
-  }
-
-  // 3) Magic link como último recurso (sigue enviándose con plantilla de confirmación).
-  {
-    const { data, error } = await generateAuthLink({
-      type: "magiclink",
-      email: input.email,
-      redirectTo,
-    });
-    if (!error) {
-      const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
-      if (tokenHash) {
-        return { tokenHash, emailOtp, otpType: "magiclink" };
-      }
-    }
-    if (error) {
-      return { error: mapSignupError(error.message) };
-    }
-  }
-
-  return { error: "No se pudo generar el enlace de confirmación." };
+  return null;
 }
 
-async function resendConfirmationForPendingUser(input: {
+/**
+ * Reenvía activación para cuenta existente no confirmada (o cuando Auth
+ * ya reportó "already registered" y no pudimos leer email_confirmed_at).
+ */
+async function resendActivationForExistingEmail(input: {
   email: string;
   password: string;
   postAuthPath: string;
-  existingUser: User;
+  existingUser?: User | null;
 }): Promise<AuthEmailActionResult> {
-  if (isEmailConfirmed(input.existingUser)) {
+  const admin = createAdminClient();
+  const user = input.existingUser ?? (await findUserByEmail(input.email));
+
+  // Único caso de bloqueo duro: confirmado de forma verificable.
+  if (user && isEmailConfirmed(user)) {
     return {
       ok: false,
       error: EXISTING_CONFIRMED_ACCOUNT_ERROR,
     };
   }
 
-  const admin = createAdminClient();
-
-  const { error: updateError } = await admin.auth.admin.updateUserById(
-    input.existingUser.id,
-    { password: input.password },
-  );
-
-  if (updateError) {
-    return { ok: false, error: mapSignupError(updateError.message) };
+  if (user) {
+    const { error: updateError } = await admin.auth.admin.updateUserById(
+      user.id,
+      { password: input.password },
+    );
+    if (updateError) {
+      console.warn(
+        "[resendActivationForExistingEmail] password update failed",
+        updateError.message,
+      );
+    }
   }
 
-  const link = await generatePendingConfirmationLink({
+  const redirectTo = buildRedirectUrl(input.postAuthPath);
+
+  // 1) Preferido: generateLink + nuestro correo custom (enlace + OTP).
+  const link = await generateActivationLinkForExistingEmail({
     email: input.email,
     password: input.password,
-    redirectTo: buildRedirectUrl(input.postAuthPath),
+    redirectTo,
   });
 
-  if ("error" in link) {
-    return { ok: false, error: link.error };
+  if (link) {
+    const emailResult = await deliverSignupConfirmationEmail({
+      email: input.email,
+      postAuthPath: input.postAuthPath,
+      tokenHash: link.tokenHash,
+      emailOtp: link.emailOtp,
+      otpType: link.otpType,
+    });
+
+    if (emailResult.ok) {
+      return pendingResentSuccess();
+    }
+
+    console.error(
+      "[resendActivationForExistingEmail] custom email failed",
+      emailResult.ok === false ? emailResult.error : "unknown",
+    );
   }
 
-  // Siempre plantilla de confirmación de cuenta (nunca recuperación de contraseña).
-  const emailResult = await deliverSignupConfirmationEmail({
-    email: input.email,
-    postAuthPath: input.postAuthPath,
-    tokenHash: link.tokenHash,
-    emailOtp: link.emailOtp,
-    otpType: link.otpType === "magiclink" ? "magiclink" : link.otpType,
-  });
+  // 2) Fallback: Auth.resend(signup) — dispara Send Email Hook / SMTP de Supabase.
+  try {
+    const supabase = await createClient();
+    const { error: resendError } = await supabase.auth.resend({
+      type: "signup",
+      email: input.email,
+      options: { emailRedirectTo: redirectTo },
+    });
 
-  if (!emailResult.ok) {
-    return emailResult;
+    if (!resendError) {
+      return pendingResentSuccess();
+    }
+
+    console.error(
+      "[resendActivationForExistingEmail] auth.resend failed",
+      resendError.message,
+    );
+  } catch (error) {
+    console.error("[resendActivationForExistingEmail] auth.resend threw", error);
+  }
+
+  // Si Auth dijo que el correo existe pero no está confirmado (o no lo
+  // pudimos leer) y falló el reenvío, no devolver el error crudo de duplicado.
+  if (!user || !isEmailConfirmed(user)) {
+    return {
+      ok: false,
+      error:
+        "No pudimos reenviar el correo de activación ahora. Espera un minuto e inténtalo de nuevo, o revisa tu bandeja/spam.",
+    };
   }
 
   return {
-    ok: true,
-    resentPendingConfirmation: true,
-    notice: PENDING_CONFIRMATION_RESENT_MESSAGE,
+    ok: false,
+    error: EXISTING_CONFIRMED_ACCOUNT_ERROR,
   };
 }
 
@@ -376,22 +447,21 @@ export async function signUpWithConfirmationEmailAction(input: {
   }
 
   const postAuthPath = resolvePostAuthPath(input.nextPath);
+  const redirectTo = buildRedirectUrl(postAuthPath);
 
   try {
-    // 1) Verificar primero si el correo ya existe en Supabase Auth.
+    // 1) Lookup admin (best-effort). Si está confirmado → bloquear.
     const existingUser = await findUserByEmail(email);
 
-    if (existingUser) {
-      // Solo bloquear si la cuenta ya fue confirmada.
-      if (isEmailConfirmed(existingUser)) {
-        return {
-          ok: false,
-          error: EXISTING_CONFIRMED_ACCOUNT_ERROR,
-        };
-      }
+    if (existingUser && isEmailConfirmed(existingUser)) {
+      return {
+        ok: false,
+        error: EXISTING_CONFIRMED_ACCOUNT_ERROR,
+      };
+    }
 
-      // Pendiente de verificación: reenviar activación (enlace + OTP).
-      return resendConfirmationForPendingUser({
+    if (existingUser && !isEmailConfirmed(existingUser)) {
+      return resendActivationForExistingEmail({
         email,
         password: input.password,
         postAuthPath,
@@ -399,32 +469,25 @@ export async function signUpWithConfirmationEmailAction(input: {
       });
     }
 
-    // 2) Usuario nuevo: crear enlace de confirmación de signup.
+    // 2) Usuario no encontrado en lookup → intentar alta con generateLink(signup).
     const { data, error } = await generateAuthLink({
       type: "signup",
       email,
       password: input.password,
-      redirectTo: buildRedirectUrl(postAuthPath),
+      redirectTo,
     });
 
-    if (error) {
-      // Carrera: el usuario pudo crearse entre la consulta y generateLink.
-      const racedUser = await findUserByEmail(email);
-      if (racedUser) {
-        if (isEmailConfirmed(racedUser)) {
-          return {
-            ok: false,
-            error: EXISTING_CONFIRMED_ACCOUNT_ERROR,
-          };
-        }
-        return resendConfirmationForPendingUser({
-          email,
-          password: input.password,
-          postAuthPath,
-          existingUser: racedUser,
-        });
-      }
+    // 3) Punto de bloqueo real: Auth rechaza por duplicado aunque el lookup fallara.
+    if (error && isAlreadyRegisteredAuthError(error)) {
+      return resendActivationForExistingEmail({
+        email,
+        password: input.password,
+        postAuthPath,
+        existingUser: await findUserByEmail(email),
+      });
+    }
 
+    if (error) {
       return { ok: false, error: mapSignupError(error.message) };
     }
 
