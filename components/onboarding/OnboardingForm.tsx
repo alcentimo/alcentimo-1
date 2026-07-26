@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { ExternalLink, Rocket, Store } from "lucide-react";
+import { useActionState, useEffect, useState } from "react";
+import { ExternalLink, Rocket, Sparkles, Store } from "lucide-react";
 import {
   completeOnboarding,
   type OnboardingFormState,
@@ -16,6 +16,10 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  readLandingInstantStoreDraft,
+  clearLandingInstantStoreDraft,
+} from "@/lib/landing/preview-draft-storage";
 
 const initialState: OnboardingFormState = {};
 
@@ -27,14 +31,45 @@ export function OnboardingForm() {
   const [storeName, setStoreName] = useState("");
   const [rubroTienda, setRubroTienda] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [landingProductsJson, setLandingProductsJson] = useState("");
+  const [landingDraftIntro, setLandingDraftIntro] = useState<string | null>(null);
+
+  useEffect(() => {
+    const draft = readLandingInstantStoreDraft();
+    if (!draft) return;
+
+    setStoreName((current) => current || draft.storeName);
+    setRubroTienda((current) => current || draft.rubro);
+    setLandingProductsJson(JSON.stringify(draft.products));
+    setLandingDraftIntro(draft.intro);
+  }, []);
 
   const slugPreview = slugify(storeName) || "mi-tienda";
   const catalogUrl = getStoreCatalogPublicUrl(slugPreview);
   const normalizedWhatsApp = normalizeWhatsAppPhone(whatsapp);
 
   return (
-    <form action={formAction} className="card-panel mx-auto w-full max-w-md space-y-6">
+    <form
+      action={formAction}
+      onSubmit={() => {
+        if (landingProductsJson) {
+          clearLandingInstantStoreDraft();
+        }
+      }}
+      className="card-panel mx-auto w-full max-w-md space-y-6"
+    >
       <input type="hidden" name="country" value={DEFAULT_STORE_COUNTRY} />
+      <input type="hidden" name="landing_products_json" value={landingProductsJson} />
+
+      {landingDraftIntro ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2.5 text-sm text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100">
+          <p className="inline-flex items-center gap-1.5 font-medium">
+            <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Borrador de tu landing listo
+          </p>
+          <p className="mt-1 text-xs leading-relaxed opacity-90">{landingDraftIntro}</p>
+        </div>
+      ) : null}
 
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300">

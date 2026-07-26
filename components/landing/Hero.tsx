@@ -1,7 +1,4 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { HeroCompositeMockup } from "@/components/landing/HeroCompositeMockup";
+import { HeroInstantStoreExperience } from "@/components/landing/HeroInstantStoreExperience";
 
 export function Hero() {
   return (
@@ -16,43 +13,7 @@ export function Hero() {
       />
 
       <div className="page-container relative pb-20 sm:pb-24 lg:pb-28">
-        <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-12 xl:gap-16">
-          <div className="max-w-xl lg:max-w-none">
-            <Badge variant="success" className="landing-hero-badge">
-              🚀 El software todo en uno para digitalizar tu negocio
-            </Badge>
-
-            <h1 className="landing-hero-title text-balance">
-              Tu gestor de ventas y e-commerce con{" "}
-              <span className="landing-hero-accent">marca blanca</span>.
-            </h1>
-
-            <p className="landing-hero-lead">
-              Controla tu inventario, sincroniza tasas de cambio en tiempo real y
-              lanza tu catálogo online con tu propio dominio y logo. Recibe pedidos
-              organizados directamente en WhatsApp, sin depender de intermediarios.
-            </p>
-
-            <div className="mt-10">
-              <Link
-                href="/dashboard/productos/nuevo"
-                prefetch={true}
-                className="btn-brand inline-flex gap-2 px-7 py-3 text-base shadow-lg shadow-emerald-500/20 touch-manipulation"
-              >
-                Comenzar gratis
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            </div>
-
-            <p className="mt-5 text-sm text-zinc-500 dark:text-zinc-500">
-              Sin tarjeta de crédito · Configura tu tienda en minutos
-            </p>
-          </div>
-
-          <div className="w-full lg:justify-self-end">
-            <HeroCompositeMockup />
-          </div>
-        </div>
+        <HeroInstantStoreExperience />
       </div>
     </section>
   );

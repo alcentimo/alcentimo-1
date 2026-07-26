@@ -21,6 +21,9 @@ import {
   mergeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import { scheduleStoreSubdomainProvision } from "@/lib/domains/provision-store-subdomain";
+import type { OnboardingSampleProductDraft } from "@/lib/ai/onboarding-assistant-types";
+import { sampleProductsToImportRows } from "@/lib/onboarding/sample-product-import";
+import { importProductsBulk } from "@/lib/products/import-actions";
 
 export type OnboardingFormState = {
   error?: string;
@@ -47,6 +50,53 @@ async function resolveUniqueStoreSlug(
   return uniqueSlug(baseName, crypto.randomUUID());
 }
 
+async function parseLandingProductsJson(
+  raw: string,
+): Promise<OnboardingSampleProductDraft[] | null> {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+
+    const products: OnboardingSampleProductDraft[] = [];
+    for (const item of parsed) {
+      if (typeof item !== "object" || item === null) continue;
+      const row = item as Record<string, unknown>;
+      const nombre = typeof row.nombre === "string" ? row.nombre.trim() : "";
+      const descripcion =
+        typeof row.descripcion === "string" ? row.descripcion.trim() : "";
+      const precio =
+        typeof row.precio === "number"
+          ? row.precio
+          : Number.parseFloat(String(row.precio ?? ""));
+      const stock =
+        typeof row.stock === "number"
+          ? row.stock
+          : Number.parseInt(String(row.stock ?? ""), 10);
+      const categoria =
+        typeof row.categoria === "string" ? row.categoria.trim() : "General";
+
+      if (!nombre || !Number.isFinite(precio) || precio <= 0 || !Number.isFinite(stock)) {
+        continue;
+      }
+
+      products.push({
+        nombre: nombre.slice(0, 80),
+        descripcion: descripcion.slice(0, 180),
+        precio,
+        stock,
+        categoria,
+      });
+    }
+
+    return products.length > 0 ? products.slice(0, 3) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function completeOnboarding(
   _prev: OnboardingFormState,
   formData: FormData,
@@ -66,6 +116,7 @@ export async function completeOnboarding(
   const country = String(formData.get("country") ?? "").trim();
   const rubroRaw = String(formData.get("rubro_tienda") ?? "").trim().toLowerCase();
   const whatsapp = String(formData.get("whatsapp") ?? "").trim();
+  const landingProductsJson = String(formData.get("landing_products_json") ?? "");
 
   if (!name) {
     return { error: "El nombre de la tienda es obligatorio." };
@@ -138,6 +189,11 @@ export async function completeOnboarding(
 
   if (settingsError) {
     return { error: settingsError.message };
+  }
+
+  const landingProducts = await parseLandingProductsJson(landingProductsJson);
+  if (landingProducts?.length) {
+    await importProductsBulk(sampleProductsToImportRows(landingProducts));
   }
 
   revalidatePath("/dashboard");

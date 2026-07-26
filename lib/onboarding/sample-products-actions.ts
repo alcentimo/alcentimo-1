@@ -6,6 +6,7 @@ import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import { generateOnboardingSampleProducts } from "@/lib/ai/onboarding-assistant";
 import { assertCanCreateProduct } from "@/lib/plans/product-limit";
 import { importProductsBulk } from "@/lib/products/import-actions";
+import { sampleProductsToImportRows } from "@/lib/onboarding/sample-product-import";
 import type { ValidatedImportRow } from "@/lib/products/import-schema";
 import { normalizeStoreRubro, type StoreRubro } from "@/src/config/categories";
 
@@ -24,15 +25,7 @@ export type CreateSampleProductsResult =
 function toImportRows(
   products: Awaited<ReturnType<typeof generateOnboardingSampleProducts>>["products"],
 ): ValidatedImportRow[] {
-  return products.map((product, index) => ({
-    rowNumber: index + 2,
-    nombre: product.nombre,
-    descripcion: product.descripcion,
-    precio: product.precio,
-    stock: product.stock,
-    url_imagen: null,
-    categoria: product.categoria,
-  }));
+  return sampleProductsToImportRows(products);
 }
 
 export async function createOnboardingSampleProducts(): Promise<CreateSampleProductsResult> {

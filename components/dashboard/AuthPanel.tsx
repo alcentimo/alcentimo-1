@@ -43,11 +43,12 @@ function GoogleIcon() {
 export function AuthPanel() {
   const searchParams = useSearchParams();
   const nextParam = searchParams.get("next");
+  const modeParam = searchParams.get("mode");
   const postAuthPath = resolvePostAuthPath(nextParam);
   const isInvitationFlow = isInvitationNextPath(nextParam);
 
   const [mode, setMode] = useState<"login" | "signup">(
-    isInvitationFlow ? "signup" : "login",
+    isInvitationFlow || modeParam === "signup" ? "signup" : "login",
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
