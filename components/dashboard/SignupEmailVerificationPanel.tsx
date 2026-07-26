@@ -55,7 +55,14 @@ export function SignupEmailVerificationPanel({
         Confirma tu cuenta
       </h2>
 
-      <div className="alert-success mt-4 text-base text-emerald-800 sm:text-sm dark:text-emerald-200">
+      <div
+        className={
+          notice
+            ? "mt-4 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5 text-sm text-sky-950 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-100"
+            : "alert-success mt-4 text-base text-emerald-800 sm:text-sm dark:text-emerald-200"
+        }
+        role="status"
+      >
         {notice ? (
           notice
         ) : (

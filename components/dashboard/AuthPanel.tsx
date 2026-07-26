@@ -5,6 +5,11 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { signUpWithConfirmationEmailAction } from "@/lib/auth/auth-email-actions";
+import {
+  PENDING_CONFIRMATION_RESENT_MESSAGE,
+  isPendingActivationNotice,
+  parseAuthEmailActionResult,
+} from "@/lib/auth/auth-email-types";
 import { devSignUpAndSignIn } from "@/lib/auth/dev-signup";
 import {
   isInvitationNextPath,
@@ -17,6 +22,15 @@ import { SignupEmailVerificationPanel } from "@/components/dashboard/SignupEmail
 
 const devSkipEmailConfirmation =
   process.env.NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION === "true";
+
+function isAlreadyRegisteredMessage(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    (lower.includes("already") &&
+      (lower.includes("registered") || lower.includes("exists"))) ||
+    lower.includes("ya existe una cuenta")
+  );
+}
 
 function GoogleIcon() {
   return (
@@ -55,6 +69,7 @@ export function AuthPanel() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [signupConfirmationSent, setSignupConfirmationSent] = useState(false);
@@ -64,10 +79,19 @@ export function AuthPanel() {
   function switchMode(nextMode: "login" | "signup") {
     setMode(nextMode);
     setError(null);
+    setSuccessNotice(null);
     setSignupConfirmationSent(false);
     setSignupNotice(null);
     setConfirmPassword("");
     setAcceptedLegalTerms(false);
+  }
+
+  function showPendingActivationNotice(notice?: string | null) {
+    const message = notice?.trim() || PENDING_CONFIRMATION_RESENT_MESSAGE;
+    setError(null);
+    setSuccessNotice(message);
+    setSignupNotice(message);
+    setSignupConfirmationSent(true);
   }
 
   async function handleGoogleAuth() {
@@ -96,6 +120,7 @@ export function AuthPanel() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setSuccessNotice(null);
 
     if (mode === "signup") {
       if (!acceptedLegalTerms) {
@@ -127,31 +152,58 @@ export function AuthPanel() {
     }
 
     if (mode === "signup") {
-      const signupResult = await signUpWithConfirmationEmailAction({
-        email,
-        password,
-        nextPath: nextParam,
-      });
-      setLoading(false);
+      try {
+        const rawResult = await signUpWithConfirmationEmailAction({
+          email,
+          password,
+          nextPath: nextParam,
+        });
+        const signupResult = parseAuthEmailActionResult(rawResult);
+        setLoading(false);
 
-      if (!signupResult.ok) {
-        // No traducir avisos/errores propios del flujo de reenvío de activación.
+        // Éxito o reenvío de activación → aviso verde/azul, nunca alerta roja.
+        if (signupResult.ok) {
+          if (
+            signupResult.resentPendingConfirmation ||
+            (signupResult.notice &&
+              isPendingActivationNotice(signupResult.notice))
+          ) {
+            showPendingActivationNotice(signupResult.notice);
+            return;
+          }
+
+          setSignupNotice(signupResult.notice ?? null);
+          setSignupConfirmationSent(true);
+          return;
+        }
+
+        // Defensivo: el backend a veces puede devolver el aviso en `error`.
+        if (isPendingActivationNotice(signupResult.error)) {
+          showPendingActivationNotice(signupResult.error);
+          return;
+        }
+
+        // Cuenta ya confirmada u otro error real → rojo.
         setError(
           signupResult.error.startsWith("Ya existe") ||
             signupResult.error.startsWith("No pudimos reenviar")
             ? signupResult.error
             : formatAuthError(signupResult.error),
         );
-        return;
-      }
+      } catch (caught) {
+        setLoading(false);
+        const message =
+          caught instanceof Error ? caught.message : String(caught ?? "");
 
-      setSignupNotice(
-        signupResult.notice ??
-          (signupResult.resentPendingConfirmation
-            ? "Ya registramos una cuenta con este correo pero aún falta verificarla. Te hemos enviado un nuevo enlace de activación."
-            : null),
-      );
-      setSignupConfirmationSent(true);
+        // Si la Server Action lanza el duplicado en vez de devolver { ok },
+        // mostrar el flujo de activación pendiente (no bloquear en rojo).
+        if (isAlreadyRegisteredMessage(message)) {
+          showPendingActivationNotice(PENDING_CONFIRMATION_RESENT_MESSAGE);
+          return;
+        }
+
+        setError(formatAuthError(message || "No se pudo completar el registro."));
+      }
       return;
     }
 
@@ -317,7 +369,16 @@ export function AuthPanel() {
           </label>
         )}
 
-        {error && <p className="alert-error">{error}</p>}
+        {successNotice ? (
+          <p
+            className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-100"
+            role="status"
+          >
+            {successNotice}
+          </p>
+        ) : null}
+
+        {error ? <p className="alert-error">{error}</p> : null}
 
         <button
           type="submit"
