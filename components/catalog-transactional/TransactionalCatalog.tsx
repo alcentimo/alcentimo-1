@@ -5,12 +5,11 @@ import Image from "next/image";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
-import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
-import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
 import {
-  filterCatalogCategoriesForRubro,
-  resolvePublicCatalogCategories,
+  resolveStorefrontCatalogCategories,
+  type CatalogCategoryOption,
 } from "@/lib/catalog/extract-categories";
+import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
 import {
   getCatalogDesignClasses,
   getCatalogProductGridClassName,
@@ -71,13 +70,12 @@ function resolveCategoryOptions(
   products: CatalogListItem[],
   storeRubro: string | null | undefined,
 ): CatalogCategoryOption[] {
-  // Si el servidor ya envió categorías filtradas por rubro, no reexpandir
-  // desde la página actual de productos (reintroduciría presets ajenos).
-  if (storeCategories.length > 0) {
-    return filterCatalogCategoriesForRubro(storeCategories, storeRubro);
-  }
-
-  return resolvePublicCatalogCategories(storeCategories, products, storeRubro);
+  return resolveStorefrontCatalogCategories(
+    storeCategories,
+    storeCategories,
+    storeRubro,
+    products,
+  );
 }
 
 export function TransactionalCatalog({

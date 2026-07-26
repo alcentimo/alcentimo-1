@@ -11,6 +11,7 @@ import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import {
   isValidStoreRubro,
   normalizeStoreRubro,
+  resolveImportCategoryForRubro,
 } from "@/src/config/categories";
 import {
   DEFAULT_STORE_COUNTRY,
@@ -52,6 +53,7 @@ async function resolveUniqueStoreSlug(
 
 async function parseLandingProductsJson(
   raw: string,
+  rubro: ReturnType<typeof normalizeStoreRubro>,
 ): Promise<OnboardingSampleProductDraft[] | null> {
   const trimmed = raw.trim();
   if (!trimmed) return null;
@@ -75,8 +77,12 @@ async function parseLandingProductsJson(
         typeof row.stock === "number"
           ? row.stock
           : Number.parseInt(String(row.stock ?? ""), 10);
-      const categoria =
+      const categoriaRaw =
         typeof row.categoria === "string" ? row.categoria.trim() : "General";
+      const categoria = resolveImportCategoryForRubro(
+        rubro,
+        categoriaRaw,
+      ).label;
 
       if (!nombre || !Number.isFinite(precio) || precio <= 0 || !Number.isFinite(stock)) {
         continue;
@@ -191,7 +197,10 @@ export async function completeOnboarding(
     return { error: settingsError.message };
   }
 
-  const landingProducts = await parseLandingProductsJson(landingProductsJson);
+  const landingProducts = await parseLandingProductsJson(
+    landingProductsJson,
+    rubroTienda,
+  );
   if (landingProducts?.length) {
     await importProductsBulk(sampleProductsToImportRows(landingProducts));
   }

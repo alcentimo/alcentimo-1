@@ -5,8 +5,7 @@ import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types"
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
 import {
-  filterCatalogCategoriesForRubro,
-  resolvePublicCatalogCategories,
+  resolveStorefrontCatalogCategories,
   type CatalogCategoryOption,
 } from "@/lib/catalog/extract-categories";
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
@@ -111,19 +110,16 @@ function CatalogCategoriesViewInner({
     [products, getAvailableStock],
   );
 
-  const categoryOptions = useMemo(() => {
-    if (storeCategories.length > 0) {
-      return filterCatalogCategoriesForRubro(
+  const categoryOptions = useMemo(
+    () =>
+      resolveStorefrontCatalogCategories(
+        storeCategories,
         storeCategories,
         store.rubro_tienda,
-      );
-    }
-    return resolvePublicCatalogCategories(
-      storeCategories,
-      catalogProducts,
-      store.rubro_tienda,
-    );
-  }, [storeCategories, catalogProducts, store.rubro_tienda]);
+        catalogProducts,
+      ),
+    [storeCategories, catalogProducts, store.rubro_tienda],
+  );
 
   const browseServerPagination = useMemo(
     () =>

@@ -1,3 +1,5 @@
+import { slugify } from "@/lib/slugify";
+
 /**
  * Rubro de tienda y categorías sugeridas por giro del negocio.
  * Rubros oficiales operativos (módulos de producto activos).
@@ -184,14 +186,118 @@ export function getOtherRubroExclusivePresetSlugs(rubro: StoreRubro): Set<string
   return exclusive;
 }
 
+const GENERIC_CATEGORY_NAMES = new Set([
+  "general",
+  "otros",
+  "varios",
+  "sin categoria",
+  "sin categoría",
+  "uncategorized",
+  "default",
+  "demo",
+  "prueba",
+  "test",
+]);
+
+/** Slugs de preset definidos en cualquier rubro oficial. */
+export function getAllRubroPresetSlugs(): Set<string> {
+  const slugs = new Set<string>();
+  for (const config of STORE_RUBRO_CONFIGS) {
+    for (const category of config.categorias) {
+      slugs.add(category.slug);
+    }
+  }
+  return slugs;
+}
+
+function normalizeCategoryToken(value: string | null | undefined): string {
+  return value?.trim().toLowerCase() ?? "";
+}
+
+function isGenericCategoryToken(value: string): boolean {
+  return GENERIC_CATEGORY_NAMES.has(value);
+}
+
 /** ¿La categoría es válida para mostrar en el catálogo público de este rubro? */
 export function isCategoryVisibleForRubro(
   categorySlug: string | null | undefined,
   rubro: StoreRubro,
 ): boolean {
-  const slug = categorySlug?.trim().toLowerCase() ?? "";
-  if (!slug) return false;
+  const slug = normalizeCategoryToken(categorySlug);
+  if (!slug || isGenericCategoryToken(slug)) return false;
   return !getOtherRubroExclusivePresetSlugs(rubro).has(slug);
+}
+
+/**
+ * ¿La categoría encaja con el rubro actual?
+ * Presets del rubro actual sí; presets de otros rubros no; custom solo si no replica otro preset.
+ */
+export function isCategoryAlignedWithRubro(
+  categorySlug: string | null | undefined,
+  categoryName: string | null | undefined,
+  rubro: StoreRubro,
+): boolean {
+  const slug = normalizeCategoryToken(categorySlug);
+  const name = normalizeCategoryToken(categoryName);
+  if (!slug) return false;
+  if (isGenericCategoryToken(slug) || isGenericCategoryToken(name)) return false;
+  if (!isCategoryVisibleForRubro(slug, rubro)) return false;
+
+  const currentPresets = getProductCategoriesForRubro(rubro);
+  if (currentPresets.some((preset) => preset.slug === slug)) return true;
+
+  for (const config of STORE_RUBRO_CONFIGS) {
+    if (config.rubro === rubro) continue;
+    for (const preset of config.categorias) {
+      if (preset.slug === slug) return false;
+      if (name && preset.label.toLowerCase() === name) return false;
+    }
+  }
+
+  return true;
+}
+
+/** Resuelve nombre de categoría de importación al preset del rubro o a custom válido. */
+export function resolveImportCategoryForRubro(
+  rubro: StoreRubro,
+  rawName: string,
+): { slug: string; label: string; isCustom: boolean } {
+  const trimmed = rawName.trim();
+  const normalized = normalizeCategoryToken(trimmed);
+  const currentPresets = getProductCategoriesForRubro(rubro);
+  const fallback = currentPresets[0] ?? {
+    slug: "general",
+    label: "General",
+    campos: [],
+  };
+
+  if (!normalized || isGenericCategoryToken(normalized)) {
+    return { slug: fallback.slug, label: fallback.label, isCustom: false };
+  }
+
+  for (const preset of currentPresets) {
+    if (
+      preset.slug === normalized ||
+      preset.label.toLowerCase() === normalized
+    ) {
+      return { slug: preset.slug, label: preset.label, isCustom: false };
+    }
+  }
+
+  for (const config of STORE_RUBRO_CONFIGS) {
+    if (config.rubro === rubro) continue;
+    for (const preset of config.categorias) {
+      if (
+        preset.slug === normalized ||
+        preset.label.toLowerCase() === normalized
+      ) {
+        return { slug: fallback.slug, label: fallback.label, isCustom: false };
+      }
+    }
+  }
+
+  const customSlug = slugify(trimmed) || normalized;
+  return { slug: customSlug, label: trimmed, isCustom: true };
 }
 
 /**
@@ -206,7 +312,7 @@ export function resolvePublicCategoryLabel(
   const slug = categorySlug?.trim().toLowerCase() ?? "";
   const name = categoryName?.trim() ?? "";
   if (!slug || !name) return null;
-  if (!isCategoryVisibleForRubro(slug, rubro)) return null;
+  if (!isCategoryAlignedWithRubro(slug, name, rubro)) return null;
 
   const preset = findProductCategoryOption(rubro, slug);
   return preset?.label ?? name;

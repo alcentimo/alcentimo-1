@@ -26,6 +26,7 @@ import {
   type ValidatedImportRow,
 } from "@/lib/products/import-schema";
 import { validateProductImportSheet } from "@/lib/products/import-validation";
+import { normalizeStoreRubro } from "@/src/config/categories";
 
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
@@ -121,6 +122,7 @@ export async function importProductsBulk(
   }
 
   const { store } = auth;
+  const storeRubro = normalizeStoreRubro(store.rubro_tienda);
 
   if (!Array.isArray(rows) || rows.length === 0) {
     return {
@@ -227,6 +229,7 @@ export async function importProductsBulk(
       store.id,
       row.categoria,
       categoryCache,
+      storeRubro,
     );
     if (categoryResolved.error || !categoryResolved.categoryId) {
       errors.push(

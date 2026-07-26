@@ -1,7 +1,7 @@
 import type { CatalogListItem } from "@/lib/database.types";
 import {
-  getOtherRubroExclusivePresetSlugs,
   getProductCategoriesForRubro,
+  isCategoryAlignedWithRubro,
   normalizeStoreRubro,
   type StoreRubro,
 } from "@/src/config/categories";
@@ -35,7 +35,6 @@ export function filterCatalogCategoriesForRubro(
   rubroInput: StoreRubro | string | null | undefined,
 ): CatalogCategoryOption[] {
   const rubro = normalizeStoreRubro(rubroInput);
-  const blocked = getOtherRubroExclusivePresetSlugs(rubro);
   const officialLabelBySlug = new Map(
     getProductCategoriesForRubro(rubro).map((category) => [
       category.slug,
@@ -44,7 +43,9 @@ export function filterCatalogCategoriesForRubro(
   );
 
   return categories
-    .filter((category) => !blocked.has(category.slug.trim().toLowerCase()))
+    .filter((category) =>
+      isCategoryAlignedWithRubro(category.slug, category.name, rubro),
+    )
     .map((category) => {
       const slug = category.slug.trim().toLowerCase();
       return {
@@ -53,21 +54,6 @@ export function filterCatalogCategoriesForRubro(
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name, "es"));
-}
-
-/** Solo categorías con al menos un producto activo en el catálogo. */
-export function resolvePublicCatalogCategories(
-  storeCategories: CatalogCategoryOption[],
-  products: CatalogListItem[],
-  rubro?: StoreRubro | string | null,
-): CatalogCategoryOption[] {
-  const merged = mergeStoreCategoriesWithProductSlugs(
-    storeCategories,
-    extractCatalogCategories(products),
-  );
-
-  if (rubro == null) return merged;
-  return filterCatalogCategoriesForRubro(merged, rubro);
 }
 
 /** Une nombres de la tienda con categorías que tienen productos. */
@@ -85,4 +71,43 @@ export function mergeStoreCategoriesWithProductSlugs(
     slug: category.slug,
     name: nameBySlug.get(category.slug) ?? category.name,
   }));
+}
+
+/**
+ * Categorías visibles en el catálogo público:
+ * solo las que tienen productos activos y encajan con el rubro de la tienda.
+ */
+export function resolveStorefrontCatalogCategories(
+  storeCategories: CatalogCategoryOption[],
+  categoriesWithProducts: CatalogCategoryOption[],
+  rubroInput: StoreRubro | string | null | undefined,
+  products: CatalogListItem[] = [],
+): CatalogCategoryOption[] {
+  const rubro = normalizeStoreRubro(rubroInput);
+
+  const withProducts =
+    categoriesWithProducts.length > 0
+      ? categoriesWithProducts
+      : extractCatalogCategories(products);
+
+  const merged = mergeStoreCategoriesWithProductSlugs(
+    storeCategories,
+    withProducts,
+  );
+
+  return filterCatalogCategoriesForRubro(merged, rubro);
+}
+
+/** @deprecated Usar resolveStorefrontCatalogCategories */
+export function resolvePublicCatalogCategories(
+  storeCategories: CatalogCategoryOption[],
+  products: CatalogListItem[],
+  rubro?: StoreRubro | string | null,
+): CatalogCategoryOption[] {
+  return resolveStorefrontCatalogCategories(
+    storeCategories,
+    extractCatalogCategories(products),
+    rubro,
+    products,
+  );
 }

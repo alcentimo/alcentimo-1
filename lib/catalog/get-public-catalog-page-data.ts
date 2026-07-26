@@ -10,8 +10,7 @@ import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
 import {
-  mergeStoreCategoriesWithProductSlugs,
-  filterCatalogCategoriesForRubro,
+  resolveStorefrontCatalogCategories,
   type CatalogCategoryOption,
 } from "@/lib/catalog/extract-categories";
 import {
@@ -94,6 +93,8 @@ export async function getPublicCatalogPageData(
   const store = await fetchActiveStoreBySlug(storeSlug);
   if (!store) return null;
 
+  const rubro = normalizeStoreRubro(store.rubro_tienda);
+
   const [
     settingsConfig,
     storeCategories,
@@ -103,18 +104,14 @@ export async function getPublicCatalogPageData(
   ] = await Promise.all([
     fetchStoreSettingsConfig(store.id),
     getPublicStoreCategories(store.id),
-    getPublicStoreCategorySlugsWithProducts(store.slug),
+    getPublicStoreCategorySlugsWithProducts(store.slug, rubro),
     getPublicStoreLocations(store.id).catch(() => []),
     getVariantLocationStocksForStore(store.id).catch(() => []),
   ]);
 
-  const rubro = normalizeStoreRubro(store.rubro_tienda);
-
-  const visibleStoreCategories = filterCatalogCategoriesForRubro(
-    mergeStoreCategoriesWithProductSlugs(
-      storeCategories,
-      categoriesWithProducts,
-    ),
+  const visibleStoreCategories = resolveStorefrontCatalogCategories(
+    storeCategories,
+    categoriesWithProducts,
     rubro,
   );
 

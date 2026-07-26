@@ -1,4 +1,5 @@
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
+import { isCategoryAlignedWithRubro, normalizeStoreRubro } from "@/src/config/categories";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
 
 /** Categorías activas configuradas para la tienda (público). */
@@ -29,9 +30,11 @@ export async function getPublicStoreCategories(
 /** Slugs de categorías que tienen al menos un producto activo en el catálogo público. */
 export async function getPublicStoreCategorySlugsWithProducts(
   storeSlug: string,
+  rubroInput?: string | null,
 ): Promise<CatalogCategoryOption[]> {
   const client = getPublicServerClient();
   const normalizedSlug = storeSlug.trim().toLowerCase();
+  const rubro = normalizeStoreRubro(rubroInput);
 
   const { data, error } = await client
     .from("catalog_list_view")
@@ -49,6 +52,7 @@ export async function getPublicStoreCategorySlugsWithProducts(
     const slug = row.category_slug as string | null;
     const name = row.category_name as string | null;
     if (!slug || !name) continue;
+    if (!isCategoryAlignedWithRubro(slug, name, rubro)) continue;
     map.set(slug, { slug, name });
   }
 

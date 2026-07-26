@@ -4,6 +4,11 @@ import {
   normalizeImportCategoryName,
   normalizeProductNameKey,
 } from "@/lib/products/import-sanitize";
+import {
+  normalizeStoreRubro,
+  resolveImportCategoryForRubro,
+  type StoreRubro,
+} from "@/src/config/categories";
 
 export function categorySlugFromImportName(normalizedName: string): string {
   return slugify(normalizedName) || normalizedName.replace(/\s+/g, "-");
@@ -51,8 +56,11 @@ export async function resolveOrCreateImportCategory(
   storeId: string,
   categoria: string,
   cache: ImportCategoryCache,
+  rubroInput?: StoreRubro | string | null,
 ): Promise<{ categoryId?: string; error?: string }> {
-  const normalizedName = normalizeImportCategoryName(categoria);
+  const rubro = normalizeStoreRubro(rubroInput ?? null);
+  const resolved = resolveImportCategoryForRubro(rubro, categoria);
+  const normalizedName = normalizeImportCategoryName(resolved.label);
   if (!normalizedName) {
     return { error: "categoria es obligatoria" };
   }
@@ -62,7 +70,7 @@ export async function resolveOrCreateImportCategory(
     return { categoryId: cachedByName };
   }
 
-  const slug = categorySlugFromImportName(normalizedName);
+  const slug = resolved.slug || categorySlugFromImportName(normalizedName);
   const cachedBySlug = cache.get(slug);
   if (cachedBySlug) {
     cache.set(normalizedName, cachedBySlug);
@@ -109,7 +117,7 @@ export async function resolveOrCreateImportCategory(
     .from("categories")
     .insert({
       store_id: storeId,
-      name: normalizedName,
+      name: resolved.label,
       slug,
     })
     .select("id, slug")
