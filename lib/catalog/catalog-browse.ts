@@ -27,6 +27,16 @@ export function normalizeCatalogSearchText(value: string): string {
   return value.trim().toLowerCase();
 }
 
+/** Con stock disponible primero; agotados al final (estándar del catálogo público). */
+export function compareCatalogStockAvailability(
+  a: CatalogListItem,
+  b: CatalogListItem,
+): number {
+  const rank = (product: CatalogListItem) =>
+    product.available_stock > 0 ? 0 : 1;
+  return rank(a) - rank(b);
+}
+
 export function matchesCatalogSearch(
   product: CatalogListItem,
   query: string,
@@ -74,25 +84,39 @@ export function sortCatalogProducts(
 
   switch (sortKey) {
     case "newest":
-      return sorted.sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      );
+      return sorted.sort((a, b) => {
+        const stockOrder = compareCatalogStockAvailability(a, b);
+        if (stockOrder !== 0) return stockOrder;
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      });
     case "price_asc":
-      return sorted.sort(
-        (a, b) => (a.price_usd ?? Number.MAX_SAFE_INTEGER) - (b.price_usd ?? Number.MAX_SAFE_INTEGER),
-      );
+      return sorted.sort((a, b) => {
+        const stockOrder = compareCatalogStockAvailability(a, b);
+        if (stockOrder !== 0) return stockOrder;
+        return (
+          (a.price_usd ?? Number.MAX_SAFE_INTEGER) -
+          (b.price_usd ?? Number.MAX_SAFE_INTEGER)
+        );
+      });
     case "price_desc":
-      return sorted.sort(
-        (a, b) => (b.price_usd ?? 0) - (a.price_usd ?? 0),
-      );
+      return sorted.sort((a, b) => {
+        const stockOrder = compareCatalogStockAvailability(a, b);
+        if (stockOrder !== 0) return stockOrder;
+        return (b.price_usd ?? 0) - (a.price_usd ?? 0);
+      });
     case "name_asc":
-      return sorted.sort((a, b) =>
-        a.product_name.localeCompare(b.product_name, "es"),
-      );
+      return sorted.sort((a, b) => {
+        const stockOrder = compareCatalogStockAvailability(a, b);
+        if (stockOrder !== 0) return stockOrder;
+        return a.product_name.localeCompare(b.product_name, "es");
+      });
     case "featured":
     default:
       return sorted.sort((a, b) => {
+        const stockOrder = compareCatalogStockAvailability(a, b);
+        if (stockOrder !== 0) return stockOrder;
         if (a.sort_order !== b.sort_order) {
           return a.sort_order - b.sort_order;
         }

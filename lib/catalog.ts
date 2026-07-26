@@ -25,6 +25,21 @@ export interface GetCatalogOptions {
   productIds?: string[];
 }
 
+/** Orden estándar del catálogo público: con stock primero, agotados al final. */
+export function applyPublicCatalogProductOrder<
+  Q extends {
+    order: (
+      column: string,
+      options?: { ascending?: boolean },
+    ) => Q;
+  },
+>(query: Q): Q {
+  return query
+    .order("stock_list_rank", { ascending: true })
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+}
+
 function toNumber(value: number | string | null | undefined): number | null {
   if (value == null) return null;
   const parsed = typeof value === "string" ? parseFloat(value) : value;
@@ -102,12 +117,12 @@ export async function getCatalogProducts(
   const supabase = getSupabaseAnonClient();
   const paginated = limit != null && productIds == null;
 
-  let query = supabase
-    .from("catalog_list_view")
-    .select(PUBLIC_CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
-    .eq("store_slug", normalizedSlug)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: false });
+  let query = applyPublicCatalogProductOrder(
+    supabase
+      .from("catalog_list_view")
+      .select(PUBLIC_CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
+      .eq("store_slug", normalizedSlug),
+  );
 
   if (categorySlug) {
     query = query.eq("category_slug", categorySlug);
@@ -136,12 +151,12 @@ export async function getCatalogProducts(
       /column|does not exist|Could not find/i.test(productsResult.error.message);
 
     if (missingColumn) {
-      let fallbackQuery = supabase
-        .from("catalog_list_view")
-        .select(CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
-        .eq("store_slug", normalizedSlug)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false });
+      let fallbackQuery = applyPublicCatalogProductOrder(
+        supabase
+          .from("catalog_list_view")
+          .select(CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
+          .eq("store_slug", normalizedSlug),
+      );
 
       if (categorySlug) {
         fallbackQuery = fallbackQuery.eq("category_slug", categorySlug);
