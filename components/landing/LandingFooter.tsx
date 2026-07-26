@@ -34,8 +34,11 @@ export function LandingFooter() {
             <a href="#precios" className="link-brand">
               Precios
             </a>
+            <Link href="/terms" className="link-brand">
+              Términos y Condiciones
+            </Link>
             <Link href="/privacy" className="link-brand">
-              Privacidad
+              Política de Privacidad
             </Link>
           </nav>
         </div>

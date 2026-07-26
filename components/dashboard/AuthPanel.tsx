@@ -57,12 +57,14 @@ export function AuthPanel() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [signupConfirmationSent, setSignupConfirmationSent] = useState(false);
+  const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false);
 
   function switchMode(nextMode: "login" | "signup") {
     setMode(nextMode);
     setError(null);
     setSignupConfirmationSent(false);
     setConfirmPassword("");
+    setAcceptedLegalTerms(false);
   }
 
   async function handleGoogleAuth() {
@@ -93,6 +95,13 @@ export function AuthPanel() {
     setError(null);
 
     if (mode === "signup") {
+      if (!acceptedLegalTerms) {
+        setError(
+          "Debes aceptar los Términos y Condiciones y la Política de Privacidad.",
+        );
+        return;
+      }
+
       if (password !== confirmPassword) {
         setError("Las contraseñas no coinciden.");
         return;
@@ -275,9 +284,45 @@ export function AuthPanel() {
           </div>
         )}
 
+        {mode === "signup" && (
+          <label className="flex items-start gap-2.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+            <input
+              id="accept_legal_terms"
+              type="checkbox"
+              checked={acceptedLegalTerms}
+              onChange={(event) => setAcceptedLegalTerms(event.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-zinc-600"
+            />
+            <span>
+              Acepto los{" "}
+              <Link
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-brand"
+              >
+                Términos y Condiciones
+              </Link>{" "}
+              y la{" "}
+              <Link
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-brand"
+              >
+                Política de Privacidad
+              </Link>
+            </span>
+          </label>
+        )}
+
         {error && <p className="alert-error">{error}</p>}
 
-        <button type="submit" disabled={isBusy} className="btn-primary">
+        <button
+          type="submit"
+          disabled={isBusy || (mode === "signup" && !acceptedLegalTerms)}
+          className="btn-primary"
+        >
           {loading ? "Procesando…" : mode === "login" ? "Entrar" : "Registrarme"}
         </button>
       </form>

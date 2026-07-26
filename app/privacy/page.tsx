@@ -40,7 +40,7 @@ export default function PrivacyPage() {
         <PageContainer narrow as="div" className="py-10 sm:py-14 lg:py-16">
           <header className="page-header">
             <p className="section-label">Legal</p>
-            <h1 className="page-header-title">Política de privacidad</h1>
+            <h1 className="page-header-title">Política de Privacidad</h1>
             <p className="page-header-desc">
               Última actualización: {LAST_UPDATED}
             </p>
@@ -55,7 +55,8 @@ export default function PrivacyPage() {
                 a nuestra aplicación SaaS de gestión comercial.
               </p>
               <p>
-                Alcentimo permite a comerciantes administrar inventario, atender
+                Alcentimo permite a comerciantes administrar inventario, lanzar catálogos
+                online con marca blanca (logo, colores y dominio propio), atender
                 mensajes de clientes y publicar contenido en redes sociales
                 conectadas (por ejemplo, Facebook y Messenger), entre otras
                 funciones. Al utilizar el servicio, aceptas las prácticas descritas
