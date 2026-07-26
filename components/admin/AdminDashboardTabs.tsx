@@ -41,6 +41,20 @@ const AdminOverviewPanel = dynamic(
   },
 );
 
+const AdminCouponsPanel = dynamic(
+  () =>
+    import("@/components/admin/AdminCouponsPanel").then((m) => ({
+      default: m.AdminCouponsPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Cargando cupones y ofertas…
+      </p>
+    ),
+  },
+);
+
 const AdminGrowthPanel = dynamic(
   () =>
     import("@/components/admin/AdminGrowthPanel").then((m) => ({
@@ -265,16 +279,17 @@ export function AdminDashboardTabs({
               )
             }
             sucursalesPanel={<AdminStoreLocationsPanel />}
-            promocionesPanel={
-              <AdminGrowthPanel
-                initialUsers={growthUsers}
-                initialCoupons={growthCoupons}
-                initialCampaigns={growthCampaigns}
-                initialAuditLog={growthAuditLog}
-                initialSubTab="cupones"
-                mode="promociones"
-              />
-            }
+          />
+        )
+      ) : null}
+
+      {activeTab === "cupones" ? (
+        growthError ? (
+          <ErrorBanner message={growthError} />
+        ) : (
+          <AdminCouponsPanel
+            initialCoupons={growthCoupons}
+            initialCampaigns={growthCampaigns}
           />
         )
       ) : null}

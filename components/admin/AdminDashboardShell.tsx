@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Settings2,
   Store,
+  Tag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { AdminDashboardTab } from "@/lib/admin/dashboard-nav";
@@ -42,6 +43,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Tiendas y usuarios",
     description: "Listado de tiendas, dominios y sucursales.",
     icon: Store,
+  },
+  {
+    id: "cupones",
+    label: "Cupones y Ofertas",
+    description: "Códigos promocionales y ofertas temporales del SaaS.",
+    icon: Tag,
   },
   {
     id: "planes",

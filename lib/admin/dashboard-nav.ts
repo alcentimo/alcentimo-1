@@ -2,6 +2,7 @@ export type AdminDashboardTab =
   | "resumen"
   | "pagos"
   | "tiendas"
+  | "cupones"
   | "planes"
   | "soporte";
 
@@ -9,6 +10,8 @@ const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
   resumen: "resumen",
   pagos: "pagos",
   tiendas: "tiendas",
+  cupones: "cupones",
+  promociones: "cupones",
   planes: "planes",
   soporte: "soporte",
   metricas: "resumen",
@@ -38,11 +41,7 @@ export function resolveAdminPlansSubTab(
   return "planes";
 }
 
-export type AdminStoresSubTab =
-  | "usuarios"
-  | "dominios"
-  | "sucursales"
-  | "promociones";
+export type AdminStoresSubTab = "usuarios" | "dominios" | "sucursales";
 
 export function resolveAdminStoresSubTab(
   legacyTab: string | null | undefined,
