@@ -134,6 +134,7 @@ const OrderRow = memo(function OrderRow({
           <OrderStatusWhatsAppPrompt
             order={order}
             storeName={storeName}
+            messageTemplates={messageTemplates}
             newEstado={pendingStatusNotifyEstado}
             onDismiss={onDismissStatusNotify}
             className="mt-2"
@@ -230,6 +231,7 @@ const OrderMobileCard = memo(function OrderMobileCard({
             <OrderStatusWhatsAppPrompt
               order={order}
               storeName={storeName}
+              messageTemplates={messageTemplates}
               newEstado={pendingStatusNotifyEstado}
               onDismiss={onDismissStatusNotify}
               className="mt-2"

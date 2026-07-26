@@ -28,7 +28,7 @@ export function OrderWhatsAppButton({
 
   const hasPhone = Boolean(normalizeWhatsAppPhone(String(order.customer_phone ?? "")));
 
-  const initialMessage = useMemo(
+  const fallbackMessage = useMemo(
     () => renderOrderWhatsAppMessage(order, messageTemplates, storeName),
     [order, messageTemplates, storeName],
   );
@@ -57,6 +57,7 @@ export function OrderWhatsAppButton({
           className,
         )}
         aria-label={`WhatsApp con ${order.customer_name}`}
+        title="WhatsApp con mensaje generado por IA"
       >
         <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         {!compact && "WhatsApp"}
@@ -66,7 +67,8 @@ export function OrderWhatsAppButton({
         open={open}
         customerName={order.customer_name}
         customerPhone={order.customer_phone}
-        initialMessage={initialMessage}
+        fallbackMessage={fallbackMessage}
+        orderId={order.id}
         onClose={() => setOpen(false)}
       />
     </>

@@ -116,6 +116,7 @@ export function OrderDetailSlideOver({
               <OrderStatusWhatsAppPrompt
                 order={order}
                 storeName={storeName}
+                messageTemplates={messageTemplates}
                 newEstado={pendingStatusNotifyEstado}
                 onDismiss={onDismissStatusNotify}
                 className="mt-3"

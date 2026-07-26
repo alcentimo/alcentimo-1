@@ -1,14 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MessageCircle, X } from "lucide-react";
+import { Loader2, MessageCircle, Sparkles, X } from "lucide-react";
+import type { OrderEstado } from "@/lib/orders/order-status";
 import { buildCustomerWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
+import { useOrderAiWhatsAppMessage } from "@/components/dashboard/orders/useOrderAiWhatsAppMessage";
+import { cn } from "@/lib/cn";
 
 interface OrderWhatsAppComposerProps {
   open: boolean;
   customerName: string;
   customerPhone: string | null;
-  initialMessage: string;
+  fallbackMessage: string;
+  orderId: string;
+  newEstado?: OrderEstado;
   onClose: () => void;
 }
 
@@ -16,14 +21,27 @@ export function OrderWhatsAppComposer({
   open,
   customerName,
   customerPhone,
-  initialMessage,
+  fallbackMessage,
+  orderId,
+  newEstado,
   onClose,
 }: OrderWhatsAppComposerProps) {
-  const [message, setMessage] = useState(initialMessage);
+  const [message, setMessage] = useState(fallbackMessage);
+
+  const { message: aiMessage, loading, error, regenerate } = useOrderAiWhatsAppMessage({
+    orderId,
+    newEstado,
+    enabled: open,
+  });
 
   useEffect(() => {
-    if (open) setMessage(initialMessage);
-  }, [open, initialMessage]);
+    if (!open) return;
+    setMessage(fallbackMessage);
+  }, [open, fallbackMessage]);
+
+  useEffect(() => {
+    if (aiMessage) setMessage(aiMessage);
+  }, [aiMessage]);
 
   useEffect(() => {
     if (!open) return;
@@ -62,8 +80,9 @@ export function OrderWhatsAppComposer({
       >
         <header className="orders-wa-composer-header">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              WhatsApp
+            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              <Sparkles className="h-3.5 w-3.5 text-violet-600" aria-hidden="true" />
+              WhatsApp con IA
             </p>
             <h2
               id="wa-composer-title"
@@ -83,16 +102,49 @@ export function OrderWhatsAppComposer({
         </header>
 
         <div className="orders-wa-composer-body">
-          <label htmlFor="wa-composer-message" className="orders-slideover-label">
-            Edita el mensaje antes de enviar
-          </label>
-          <textarea
-            id="wa-composer-message"
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            rows={10}
-            className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm leading-relaxed text-zinc-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-          />
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <label htmlFor="wa-composer-message" className="orders-slideover-label">
+              Mensaje generado — puedes editarlo antes de enviar
+            </label>
+            <button
+              type="button"
+              onClick={() => void regenerate()}
+              disabled={loading}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-violet-700 transition hover:text-violet-800 disabled:opacity-50 dark:text-violet-400"
+            >
+              {loading ? (
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+              ) : (
+                <Sparkles className="h-3 w-3" aria-hidden="true" />
+              )}
+              Regenerar
+            </button>
+          </div>
+
+          <div className="relative">
+            <textarea
+              id="wa-composer-message"
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              rows={10}
+              disabled={loading && !message}
+              className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm leading-relaxed text-zinc-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            />
+            {loading ? (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-white/60 dark:bg-zinc-950/60">
+                <Loader2
+                  className="h-5 w-5 animate-spin text-emerald-600"
+                  aria-hidden="true"
+                />
+              </div>
+            ) : null}
+          </div>
+
+          {error ? (
+            <p className="mt-2 text-xs text-amber-700 dark:text-amber-400" role="alert">
+              {error}. Se muestra un mensaje de respaldo que puedes editar.
+            </p>
+          ) : null}
         </div>
 
         <footer className="orders-wa-composer-footer">
@@ -102,7 +154,10 @@ export function OrderWhatsAppComposer({
               target="_blank"
               rel="noopener noreferrer"
               onClick={onClose}
-              className="btn-brand inline-flex min-h-11 w-full items-center justify-center gap-2"
+              className={cn(
+                "btn-brand inline-flex min-h-11 w-full items-center justify-center gap-2",
+                loading && !message && "pointer-events-none opacity-50",
+              )}
             >
               <MessageCircle className="h-4 w-4" aria-hidden="true" />
               Enviar por WhatsApp

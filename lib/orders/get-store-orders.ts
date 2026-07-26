@@ -125,3 +125,27 @@ export async function getStoreOrdersList(
   const { orders } = await getStoreOrders(storeId, { limit, offset: 0 });
   return orders;
 }
+
+export async function getStoreOrderById(
+  storeId: string,
+  orderId: string,
+): Promise<CatalogOrder | null> {
+  const normalizedOrderId = orderId.trim();
+  if (!normalizedOrderId) return null;
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, shipping_method, shipping_branch_code, shipping_branch_name, shipping_branch_address, delivery_address, store_locations(name)",
+    )
+    .eq("store_id", storeId)
+    .eq("id", normalizedOrderId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+
+  return mapOrderRows([data as Record<string, unknown>])[0] ?? null;
+}

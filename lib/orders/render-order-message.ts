@@ -16,6 +16,10 @@ function formatProductSummary(order: CatalogOrder): string {
     .join("\n");
 }
 
+export function formatOrderProductSummary(order: CatalogOrder): string {
+  return formatProductSummary(order);
+}
+
 export function renderMessageTemplate(
   template: string,
   values: Record<string, string>,

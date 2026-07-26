@@ -17,6 +17,7 @@ import { DashboardProductThumb } from "@/components/dashboard/DashboardProductTh
 import { DashboardKpiCard } from "@/components/dashboard/DashboardKpiCard";
 import { DashboardEmptyMetric } from "@/components/dashboard/DashboardEmptyMetric";
 import { AnalyticsDateRangePicker } from "@/components/dashboard/analytics/AnalyticsDateRangePicker";
+import { AnalyticsAiInsightBlock } from "@/components/dashboard/analytics/AnalyticsAiInsightBlock";
 import { AnalyticsTrendBadge } from "@/components/dashboard/analytics/AnalyticsTrendBadge";
 
 interface AnalyticsPanelProps {
@@ -328,6 +329,8 @@ export function AnalyticsPanel({ analytics }: AnalyticsPanelProps) {
   return (
     <div className="space-y-6">
       <AnalyticsDateRangePicker dateRange={dateRange} />
+
+      <AnalyticsAiInsightBlock dateRange={dateRange} />
 
       <div className="dashboard-kpi-grid dashboard-kpi-grid-4">
         <KpiWithTrend
