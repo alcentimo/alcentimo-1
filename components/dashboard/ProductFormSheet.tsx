@@ -36,7 +36,10 @@ interface ProductFormSheetProps {
   productFormConfig: StoreProductFormConfig;
   mode: "create" | "edit";
   productId?: string;
+  catalogEmpty?: boolean;
+  rubroLabel?: string;
   onSaved: (result?: PublishedProductResult) => void;
+  onSamplesCreated?: () => void;
   onLimitHit?: () => void;
 }
 
@@ -48,7 +51,10 @@ export function ProductFormSheet({
   productFormConfig,
   mode,
   productId,
+  catalogEmpty = false,
+  rubroLabel,
   onSaved,
+  onSamplesCreated,
   onLimitHit,
 }: ProductFormSheetProps) {
   const [editData, setEditData] = useState<ProductEditData | null>(null);
@@ -145,6 +151,9 @@ export function ProductFormSheet({
             store={store}
             exchangeRate={exchangeRate}
             productFormConfig={liveFormConfig}
+            catalogEmpty={catalogEmpty}
+            rubroLabel={rubroLabel ?? liveFormConfig.rubroLabel}
+            onSamplesCreated={onSamplesCreated}
             onComplete={handleCreateComplete}
             onRefresh={onSaved}
             onCancel={() => onOpenChange(false)}

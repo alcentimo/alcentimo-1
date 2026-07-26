@@ -66,10 +66,6 @@ export function OnboardingExperience({
     };
   }, []);
 
-  const handleSampleProductsCreated = useCallback(() => {
-    router.refresh();
-  }, [router]);
-
   const showChecklist = checklistVisible;
 
   return (
@@ -92,12 +88,9 @@ export function OnboardingExperience({
       {showChecklist ? (
         <OnboardingChecklist
           storeId={storeId}
-          storeName={storeName}
-          rubroLabel={rubroLabel}
           setupStatus={setupStatus}
           onOpenCreateProduct={onOpenCreateProduct}
           onOpenImport={onOpenImport}
-          onSampleProductsCreated={handleSampleProductsCreated}
         />
       ) : null}
     </>

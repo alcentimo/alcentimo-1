@@ -30,14 +30,6 @@ export function dismissOnboardingChecklist(storeId: string): void {
   writeFlag(buildKey(storeId, "checklist-dismissed"));
 }
 
-export function isCatalogEmptyGuideDismissed(storeId: string): boolean {
-  return readFlag(buildKey(storeId, "empty-guide-dismissed"));
-}
-
-export function dismissCatalogEmptyGuide(storeId: string): void {
-  writeFlag(buildKey(storeId, "empty-guide-dismissed"));
-}
-
 export function isShareLinkStepCompleted(storeId: string): boolean {
   return readFlag(buildKey(storeId, "share-completed"));
 }

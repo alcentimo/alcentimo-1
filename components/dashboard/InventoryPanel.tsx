@@ -72,11 +72,7 @@ import {
   InventoryProductOrderCell,
   reorderProductIds,
 } from "@/components/dashboard/InventoryProductOrderCell";
-import { CatalogEmptyOnboardingBanner } from "@/components/onboarding/CatalogEmptyOnboardingBanner";
 import { PCBuilderInventoryBanner } from "@/components/dashboard/PCBuilderInventoryBanner";
-import {
-  isCatalogEmptyGuideDismissed,
-} from "@/lib/onboarding/client-storage";
 import { isProductOnSale } from "@/lib/catalog/pricing";
 import {
   INVENTORY_PAGE_SIZE,
@@ -612,9 +608,6 @@ export function InventoryPanel({
   const [trialDialogOpen, setTrialDialogOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [importSheetOpen, setImportSheetOpen] = useState(false);
-  const [emptyGuideVisible, setEmptyGuideVisible] = useState(
-    () => !isCatalogEmptyGuideDismissed(store.id),
-  );
   const [liveProductFormConfig, setLiveProductFormConfig] =
     useState(productFormConfig);
   const [sheetMode, setSheetMode] = useState<"create" | "edit">("create");
@@ -686,7 +679,7 @@ export function InventoryPanel({
     if (stockFilter === "out") {
       return "No hay productos agotados.";
     }
-    return "No hay productos en el catálogo.";
+    return "Sin productos.";
   }, [searchQuery, stockFilter]);
 
   const productById = useMemo(() => {
@@ -1099,6 +1092,7 @@ export function InventoryPanel({
 
   const inventoryList = useMemo(() => {
     if (filtered.length === 0) {
+      if (!hasActiveQuery) return null;
       return (
         <p className="py-10 text-center text-xs text-zinc-500">{emptyMessage}</p>
       );
@@ -1122,13 +1116,14 @@ export function InventoryPanel({
     filtered,
     adjustingProductIds,
     emptyMessage,
+    hasActiveQuery,
     openEdit,
     handleDeleteRequest,
     handleStockAdjust,
     pcBuilderEnabled,
   ]);
 
-  const showEmptyCatalogCta = products.length === 0 && !hasActiveQuery && !filterLoading;
+  const catalogEmpty = products.length === 0 && !hasActiveQuery;
 
   return (
     <>
@@ -1422,35 +1417,6 @@ export function InventoryPanel({
         <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950">
           <InventoryListSkeleton rows={5} showReorderColumn={false} />
         </div>
-      ) : showEmptyCatalogCta ? (
-        <div className="space-y-4">
-          {emptyGuideVisible && rubroLabel ? (
-            <CatalogEmptyOnboardingBanner
-              storeId={store.id}
-              storeName={store.name}
-              rubroLabel={rubroLabel}
-              onOpenCreate={openCreate}
-              onOpenImport={() => setImportSheetOpen(true)}
-              onSampleProductsCreated={() => {
-                onSampleProductsCreated?.();
-                refreshProducts();
-              }}
-              onDismiss={() => setEmptyGuideVisible(false)}
-            />
-          ) : null}
-          <div className="card-panel flex flex-col items-center border-dashed py-12 text-center">
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-              Sin productos en el catálogo
-            </h2>
-            <p className="mt-1.5 max-w-sm text-xs text-zinc-500">
-              Crea tu primer producto para empezar a vender.
-            </p>
-            <Button onClick={openCreate} className="btn-brand inventory-primary-cta mt-6">
-              <Plus className="h-5 w-5" aria-hidden="true" />
-              Nuevo producto
-            </Button>
-          </div>
-        </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950">
           <div className="inventory-mobile-list" aria-label="Lista de productos">
@@ -1488,9 +1454,12 @@ export function InventoryPanel({
                   <tr>
                     <td
                       colSpan={reorderEnabled ? 6 : 5}
-                      className="inventory-td inventory-td-dense py-10 text-center text-xs text-zinc-500"
+                      className={cn(
+                        "inventory-td inventory-td-dense text-center text-xs text-zinc-400 dark:text-zinc-500",
+                        catalogEmpty ? "py-16" : "py-10",
+                      )}
                     >
-                      {emptyMessage}
+                      {hasActiveQuery ? emptyMessage : null}
                     </td>
                   </tr>
                 ) : (
@@ -1569,7 +1538,14 @@ export function InventoryPanel({
         productFormConfig={liveProductFormConfig}
         mode={sheetMode}
         productId={editingProductId}
+        catalogEmpty={catalogEmpty && sheetMode === "create"}
+        rubroLabel={rubroLabel}
         onSaved={handleProductSaved}
+        onSamplesCreated={() => {
+          onSampleProductsCreated?.();
+          refreshProducts();
+          setSheetOpen(false);
+        }}
         onLimitHit={() => {
           setSheetOpen(false);
           setTrialDialogOpen(true);

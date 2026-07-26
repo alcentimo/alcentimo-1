@@ -7,14 +7,11 @@ import {
   ChevronUp,
   Circle,
   Copy,
-  Loader2,
   Share2,
-  Sparkles,
   X,
 } from "lucide-react";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { createOnboardingSampleProducts } from "@/lib/onboarding/sample-products-actions";
 import {
   dismissOnboardingChecklist,
   isShareLinkStepCompleted,
@@ -25,12 +22,9 @@ import { cn } from "@/lib/cn";
 
 interface OnboardingChecklistProps {
   storeId: string;
-  storeName: string;
-  rubroLabel: string;
   setupStatus: OnboardingSetupStatus;
   onOpenCreateProduct: () => void;
   onOpenImport: () => void;
-  onSampleProductsCreated: () => void;
 }
 
 type ChecklistStepId = "products" | "payments" | "share";
@@ -44,19 +38,13 @@ interface ChecklistStep {
 
 export function OnboardingChecklist({
   storeId,
-  storeName,
-  rubroLabel,
   setupStatus,
   onOpenCreateProduct,
   onOpenImport,
-  onSampleProductsCreated,
 }: OnboardingChecklistProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
-  const [sampleError, setSampleError] = useState<string | null>(null);
-  const [sampleSuccess, setSampleSuccess] = useState<string | null>(null);
   const [shareDone, setShareDone] = useState(() => isShareLinkStepCompleted(storeId));
-  const [creatingSamples, startCreateSamples] = useTransition();
 
   const catalogUrl = useMemo(() => {
     if (typeof window === "undefined") return setupStatus.catalogPath;
@@ -68,7 +56,7 @@ export function OnboardingChecklist({
       {
         id: "products",
         title: "Crear productos",
-        description: "Publica tu catálogo con productos reales o de ejemplo.",
+        description: "Publica tu catálogo con productos reales o importados.",
         done: setupStatus.hasProducts,
       },
       {
@@ -107,24 +95,6 @@ export function OnboardingChecklist({
     }
   }, [catalogUrl, storeId]);
 
-  const handleCreateSamples = useCallback(() => {
-    setSampleError(null);
-    setSampleSuccess(null);
-    startCreateSamples(async () => {
-      const result = await createOnboardingSampleProducts();
-      if (!result.ok) {
-        setSampleError(result.error);
-        return;
-      }
-      setSampleSuccess(
-        result.created === 1
-          ? "Se agregó 1 producto de ejemplo."
-          : `Se agregaron ${result.created} productos de ejemplo.`,
-      );
-      onSampleProductsCreated();
-    });
-  }, [onSampleProductsCreated]);
-
   if (allDone) return null;
 
   return (
@@ -136,14 +106,18 @@ export function OnboardingChecklist({
       aria-label="Primeros pasos de configuración"
     >
       <div className="onboarding-checklist-header">
-        <div className="min-w-0">
+        <button
+          type="button"
+          className="onboarding-checklist-summary"
+          onClick={() => setCollapsed((value) => !value)}
+          aria-expanded={!collapsed}
+        >
           <p className="onboarding-checklist-eyebrow">Configuración inicial</p>
-          <h2 className="onboarding-checklist-title">{storeName}</h2>
           <p className="onboarding-checklist-progress">
-            {completedCount} de {steps.length} pasos completados
+            {completedCount}/{steps.length} pasos
           </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
+        </button>
+        <div className="flex shrink-0 items-center gap-0.5">
           <button
             type="button"
             className="onboarding-checklist-icon-btn"
@@ -151,9 +125,9 @@ export function OnboardingChecklist({
             aria-label={collapsed ? "Expandir checklist" : "Minimizar checklist"}
           >
             {collapsed ? (
-              <ChevronUp className="h-4 w-4" />
+              <ChevronUp className="h-3.5 w-3.5" />
             ) : (
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-3.5 w-3.5" />
             )}
           </button>
           <button
@@ -162,7 +136,7 @@ export function OnboardingChecklist({
             onClick={handleDismiss}
             aria-label="Ocultar checklist"
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -180,9 +154,9 @@ export function OnboardingChecklist({
               >
                 <span className="onboarding-checklist-step-icon" aria-hidden="true">
                   {step.done ? (
-                    <CheckCircle2 className="h-4 w-4" />
+                    <CheckCircle2 className="h-3.5 w-3.5" />
                   ) : (
-                    <Circle className="h-4 w-4" />
+                    <Circle className="h-3.5 w-3.5" />
                   )}
                 </span>
                 <div className="min-w-0">
@@ -194,7 +168,7 @@ export function OnboardingChecklist({
                       <Button
                         type="button"
                         size="sm"
-                        className="btn-brand h-8"
+                        className="btn-brand h-7 text-[11px]"
                         onClick={onOpenCreateProduct}
                       >
                         Crear producto
@@ -203,25 +177,10 @@ export function OnboardingChecklist({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="h-8"
+                        className="h-7 text-[11px]"
                         onClick={onOpenImport}
                       >
                         Importar Excel
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-8 gap-1.5"
-                        disabled={creatingSamples}
-                        onClick={handleCreateSamples}
-                      >
-                        {creatingSamples ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Sparkles className="h-3.5 w-3.5" />
-                        )}
-                        Ejemplos IA ({rubroLabel})
                       </Button>
                     </div>
                   ) : null}
@@ -249,15 +208,15 @@ export function OnboardingChecklist({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="h-8 gap-1.5"
+                        className="h-7 gap-1.5 text-[11px]"
                         onClick={() => void handleCopyLink()}
                       >
                         {shareCopied ? (
-                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <CheckCircle2 className="h-3 w-3" />
                         ) : (
-                          <Copy className="h-3.5 w-3.5" />
+                          <Copy className="h-3 w-3" />
                         )}
-                        {shareCopied ? "Enlace copiado" : "Copiar enlace"}
+                        {shareCopied ? "Copiado" : "Copiar enlace"}
                       </Button>
                       <a
                         href={setupStatus.catalogPath}
@@ -269,7 +228,7 @@ export function OnboardingChecklist({
                           setShareDone(true);
                         }}
                       >
-                        <Share2 className="h-3.5 w-3.5" />
+                        <Share2 className="h-3 w-3" />
                         Ver catálogo
                       </a>
                     </div>
@@ -278,17 +237,6 @@ export function OnboardingChecklist({
               </li>
             ))}
           </ol>
-
-          {sampleError ? (
-            <p className="onboarding-checklist-feedback onboarding-checklist-feedback-error">
-              {sampleError}
-            </p>
-          ) : null}
-          {sampleSuccess ? (
-            <p className="onboarding-checklist-feedback onboarding-checklist-feedback-success">
-              {sampleSuccess}
-            </p>
-          ) : null}
         </div>
       ) : null}
     </aside>
