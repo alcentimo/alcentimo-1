@@ -847,6 +847,9 @@ export async function updateProduct(
       wholesaleParsed.wholesalePriceUsd ?? null;
     priceUpdatePayload.wholesale_min_qty =
       wholesaleParsed.wholesaleMinQty ?? null;
+  } else {
+    priceUpdatePayload.wholesale_price_usd = null;
+    priceUpdatePayload.wholesale_min_qty = null;
   }
 
   const priceUpdate = await supabase

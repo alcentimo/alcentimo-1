@@ -215,6 +215,15 @@ export function CartProvider({
   }, [storeSlug, bootstrapCustomerSession]);
 
   useEffect(() => {
+    if (!hydrated || syncPausedRef.current) return;
+    setItems((current) =>
+      current.map((item) =>
+        refreshCartItemPricing(item, item.quantity, wholesaleEnabled),
+      ),
+    );
+  }, [wholesaleEnabled, hydrated]);
+
+  useEffect(() => {
     if (!hydrated || syncPausedRef.current || persistMode !== "guest") return;
     writeStoredCart(storeSlug, items);
   }, [storeSlug, items, hydrated, persistMode]);
