@@ -1,17 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import type { AnalyticsDateRange } from "@/lib/analytics/types";
+import {
+  getAnalyticsInsightPeriodKey,
+  readCachedAnalyticsInsight,
+  writeCachedAnalyticsInsight,
+} from "@/lib/analytics/ai-insight-cache";
 
 interface AnalyticsAiInsightBlockProps {
   dateRange: AnalyticsDateRange;
 }
 
 export function AnalyticsAiInsightBlock({ dateRange }: AnalyticsAiInsightBlockProps) {
+  const periodKey = useMemo(
+    () => getAnalyticsInsightPeriodKey(dateRange),
+    [dateRange.from, dateRange.preset, dateRange.to],
+  );
+
   const [insight, setInsight] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setError(null);
+    setLoading(false);
+    setInsight(readCachedAnalyticsInsight(periodKey));
+    setHydrated(true);
+  }, [periodKey]);
 
   const loadInsight = useCallback(async () => {
     setLoading(true);
@@ -42,9 +60,10 @@ export function AnalyticsAiInsightBlock({ dateRange }: AnalyticsAiInsightBlockPr
         throw new Error("La IA no devolvió un análisis válido.");
       }
 
-      setInsight(payload.insight.trim());
+      const text = payload.insight.trim();
+      writeCachedAnalyticsInsight(periodKey, text);
+      setInsight(text);
     } catch (loadError) {
-      setInsight(null);
       setError(
         loadError instanceof Error
           ? loadError.message
@@ -53,11 +72,9 @@ export function AnalyticsAiInsightBlock({ dateRange }: AnalyticsAiInsightBlockPr
     } finally {
       setLoading(false);
     }
-  }, [dateRange.from, dateRange.preset, dateRange.to]);
+  }, [dateRange.from, dateRange.preset, dateRange.to, periodKey]);
 
-  useEffect(() => {
-    void loadInsight();
-  }, [loadInsight]);
+  const showEmpty = hydrated && !loading && !error && !insight;
 
   return (
     <section className="analytics-ai-insight" aria-live="polite">
@@ -99,6 +116,11 @@ export function AnalyticsAiInsightBlock({ dateRange }: AnalyticsAiInsightBlockPr
         </p>
       ) : insight ? (
         <p className="analytics-ai-insight-text">{insight}</p>
+      ) : showEmpty ? (
+        <p className="analytics-ai-insight-empty">
+          Pulsa «Actualizar» para generar un análisis con IA de este periodo. El
+          resultado se guardará hoy y se mostrará al instante al volver.
+        </p>
       ) : null}
     </section>
   );
