@@ -6,6 +6,8 @@ import {
 
 export interface AuthEmailTemplateInput {
   actionUrl: string;
+  verificationCode?: string;
+  manualVerificationUrl?: string;
 }
 
 function renderAuthEmail(
@@ -23,12 +25,17 @@ export function buildSignupConfirmationEmail(input: AuthEmailTemplateInput) {
     title: "Confirma tu cuenta",
     paragraphs: [
       "Gracias por registrarte en Alcentimo.",
-      "Para activar tu cuenta y acceder al panel de administración, confirma tu correo con el botón de abajo.",
+      "Para activar tu cuenta y continuar con la configuración de tu tienda, confirma tu correo con el botón de abajo.",
+      input.manualVerificationUrl
+        ? `También puedes introducir el código de 6 dígitos en: ${input.manualVerificationUrl}`
+        : "También puedes introducir el código de 6 dígitos en la pantalla de verificación de Alcentimo.",
     ],
     actionLabel: "Confirmar mi cuenta",
     actionUrl: input.actionUrl,
+    verificationCode: input.verificationCode,
+    verificationCodeHint: "Código para confirmar tu cuenta:",
     footerNote:
-      "Este enlace expira por seguridad. Si caduca, vuelve a registrarte o solicita un nuevo correo de confirmación.",
+      "Este enlace y el código expiran por seguridad. Si caducan, vuelve a registrarte o solicita un nuevo correo de confirmación.",
   });
 }
 
@@ -42,8 +49,10 @@ export function buildPasswordResetEmail(input: AuthEmailTemplateInput) {
     ],
     actionLabel: "Crear nueva contraseña",
     actionUrl: input.actionUrl,
+    verificationCode: input.verificationCode,
+    verificationCodeHint: "Código para restablecer tu contraseña:",
     footerNote:
-      "El enlace expira después de un tiempo por seguridad. Si no solicitaste este cambio, ignora este correo.",
+      "El enlace y el código expiran después de un tiempo por seguridad. Si no solicitaste este cambio, ignora este correo.",
   });
 }
 

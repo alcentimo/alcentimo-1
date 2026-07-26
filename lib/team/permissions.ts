@@ -122,6 +122,7 @@ export const DASHBOARD_AUTH_PUBLIC_PATHS = new Set([
   "/dashboard/recuperar-contrasena",
   "/dashboard/restablecer-contrasena",
   "/dashboard/restablecer-contrasena/exito",
+  "/dashboard/verificar-cuenta",
 ]);
 
 export function isDashboardPublicAuthPath(pathname: string): boolean {

@@ -2,6 +2,7 @@
 
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { buildAuthConfirmUrl } from "@/lib/email/build-auth-action-url";
+import { buildAccountVerificationPageUrl } from "@/lib/email/build-account-verification-url";
 import {
   sendEmailChangeConfirmationEmail,
   sendMagicLinkEmail,
@@ -9,9 +10,11 @@ import {
   sendSignupConfirmationEmail,
 } from "@/lib/email/send-auth-email";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { getPasswordResetRedirectUrl } from "@/lib/site-url";
 import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
 import { getSiteUrl } from "@/lib/site-url";
+import { formatAuthError } from "@/lib/auth/format-auth-error";
 
 const RESET_PASSWORD_NEXT = "/dashboard/restablecer-contrasena";
 
@@ -45,11 +48,19 @@ function buildRedirectUrl(nextPath: string): string {
   return `${siteUrl}${safeNext}`;
 }
 
-function extractTokenHash(properties: {
-  hashed_token?: string | null;
-} | null | undefined): string | null {
-  const tokenHash = properties?.hashed_token?.trim();
-  return tokenHash || null;
+function extractLinkProperties(
+  properties: {
+    hashed_token?: string | null;
+    email_otp?: string | null;
+  } | null | undefined,
+): { tokenHash: string | null; emailOtp: string | null } {
+  const tokenHash = properties?.hashed_token?.trim() || null;
+  const emailOtp = properties?.email_otp?.trim() || null;
+  return { tokenHash, emailOtp };
+}
+
+function isValidVerificationCode(value: string): boolean {
+  return /^\d{6}$/.test(value.trim());
 }
 
 async function generateAuthLink(input: {
@@ -80,6 +91,8 @@ async function sendAuthEmailForType(input: {
   type: EmailOtpType;
   email: string;
   actionUrl: string;
+  verificationCode?: string | null;
+  manualVerificationUrl?: string;
 }): Promise<AuthEmailActionResult> {
   let result: Awaited<ReturnType<typeof sendSignupConfirmationEmail>>;
 
@@ -89,12 +102,15 @@ async function sendAuthEmailForType(input: {
       result = await sendSignupConfirmationEmail({
         to: input.email,
         actionUrl: input.actionUrl,
+        verificationCode: input.verificationCode ?? undefined,
+        manualVerificationUrl: input.manualVerificationUrl,
       });
       break;
     case "recovery":
       result = await sendPasswordResetEmail({
         to: input.email,
         actionUrl: input.actionUrl,
+        verificationCode: input.verificationCode ?? undefined,
       });
       break;
     case "magiclink":
@@ -151,7 +167,7 @@ export async function signUpWithConfirmationEmailAction(input: {
       return { ok: false, error: mapSignupError(error.message) };
     }
 
-    const tokenHash = extractTokenHash(data?.properties);
+    const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
     if (!tokenHash) {
       return { ok: false, error: "No se pudo generar el enlace de confirmación." };
     }
@@ -162,10 +178,17 @@ export async function signUpWithConfirmationEmailAction(input: {
       next: postAuthPath,
     });
 
+    const manualVerificationUrl = buildAccountVerificationPageUrl({
+      email,
+      next: postAuthPath,
+    });
+
     return sendAuthEmailForType({
       type: "signup",
       email,
       actionUrl,
+      verificationCode: emailOtp,
+      manualVerificationUrl,
     });
   } catch (error) {
     console.error("[signUpWithConfirmationEmailAction]", error);
@@ -207,7 +230,7 @@ export async function sendPasswordResetEmailAction(input: {
       return { ok: false, error: error.message };
     }
 
-    const tokenHash = extractTokenHash(data?.properties);
+    const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
     if (!tokenHash) {
       return { ok: true };
     }
@@ -221,6 +244,7 @@ export async function sendPasswordResetEmailAction(input: {
     const emailResult = await sendPasswordResetEmail({
       to: email,
       actionUrl,
+      verificationCode: emailOtp ?? undefined,
     });
 
     if (!emailResult.ok) {
@@ -270,7 +294,7 @@ export async function sendMagicLinkEmailAction(input: {
       return { ok: false, error: error.message };
     }
 
-    const tokenHash = extractTokenHash(data?.properties);
+    const { tokenHash } = extractLinkProperties(data?.properties);
     if (!tokenHash) {
       return { ok: true };
     }
@@ -294,6 +318,46 @@ export async function sendMagicLinkEmailAction(input: {
         error instanceof Error
           ? error.message
           : "No se pudo enviar el enlace de acceso.",
+    };
+  }
+}
+
+export async function verifySignupOtpAction(input: {
+  email: string;
+  token: string;
+}): Promise<AuthEmailActionResult> {
+  const email = normalizeEmail(input.email);
+  const token = input.token.trim();
+
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Ingresa un correo válido." };
+  }
+
+  if (!isValidVerificationCode(token)) {
+    return { ok: false, error: "Introduce el código de 6 dígitos del correo." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: "signup",
+    });
+
+    if (error) {
+      return { ok: false, error: formatAuthError(error.message) };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    console.error("[verifySignupOtpAction]", error);
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "No se pudo verificar el código.",
     };
   }
 }

@@ -1,15 +1,16 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import {
+  resolveAuthConfirmErrorPath,
+  resolveAuthConfirmNext,
+} from "@/lib/auth/resolve-auth-confirm-next";
 import { requireSupabasePublicEnv } from "@/lib/supabase/config";
 import { getSiteUrl } from "@/lib/site-url";
 
-const RESET_PASSWORD_PATH = "/dashboard/restablecer-contrasena";
-
 /**
- * Confirma enlaces de email (recuperación, signup) en el servidor.
+ * Confirma enlaces de email (registro, recuperación, magic link) en el servidor.
  * verifyOtp(token_hash) no requiere PKCE verifier — ideal para links desde el correo.
- * exchangeCodeForSession(code) usa cookies del request donde se guardó el verifier.
  */
 export async function GET(request: NextRequest) {
   const siteUrl = getSiteUrl();
@@ -18,10 +19,10 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? RESET_PASSWORD_PATH;
+  const nextParam = searchParams.get("next");
 
-  const safeNext =
-    next.startsWith("/") && !next.startsWith("//") ? next : RESET_PASSWORD_PATH;
+  const safeNext = resolveAuthConfirmNext(type, nextParam);
+  const errorPath = resolveAuthConfirmErrorPath(type);
 
   let supabaseResponse = NextResponse.redirect(`${siteUrl}${safeNext}`);
 
@@ -50,9 +51,12 @@ export async function GET(request: NextRequest) {
       return supabaseResponse;
     }
 
-    return NextResponse.redirect(
-      `${siteUrl}/dashboard/recuperar-contrasena?error=${encodeURIComponent(error.message)}`,
-    );
+    const verifyUrl = new URL(`${siteUrl}${errorPath}`);
+    verifyUrl.searchParams.set("error", error.message);
+    if (type === "signup" || type === "invite") {
+      verifyUrl.searchParams.set("next", safeNext);
+    }
+    return NextResponse.redirect(verifyUrl.toString());
   }
 
   if (code) {
@@ -67,12 +71,18 @@ export async function GET(request: NextRequest) {
         ? " Abre el enlace en el mismo navegador donde solicitaste la recuperación, o solicita un nuevo enlace."
         : "";
 
-    return NextResponse.redirect(
-      `${siteUrl}/dashboard/recuperar-contrasena?error=${encodeURIComponent(error.message + pkceHint)}`,
+    const verifyUrl = new URL(`${siteUrl}${errorPath}`);
+    verifyUrl.searchParams.set(
+      "error",
+      `${error.message}${pkceHint}`.trim(),
     );
+    if (type === "signup" || type === "invite") {
+      verifyUrl.searchParams.set("next", safeNext);
+    }
+    return NextResponse.redirect(verifyUrl.toString());
   }
 
-  return NextResponse.redirect(
-    `${siteUrl}/dashboard/recuperar-contrasena?error=${encodeURIComponent("Enlace de confirmación inválido.")}`,
-  );
+  const verifyUrl = new URL(`${siteUrl}${errorPath}`);
+  verifyUrl.searchParams.set("error", "Enlace de confirmación inválido.");
+  return NextResponse.redirect(verifyUrl.toString());
 }

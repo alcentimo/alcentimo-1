@@ -13,6 +13,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { getAuthCallbackUrl } from "@/lib/site-url";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { SignupEmailVerificationPanel } from "@/components/dashboard/SignupEmailVerificationPanel";
 
 const devSkipEmailConfirmation =
   process.env.NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION === "true";
@@ -163,27 +164,12 @@ export function AuthPanel() {
 
   if (signupConfirmationSent) {
     return (
-      <div className="card-panel mx-auto w-full max-w-md">
-        <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
-          Revisa tu correo
-        </h2>
-        <div className="alert-success mt-4 text-base text-emerald-800 sm:text-sm dark:text-emerald-200">
-          ¡Casi listo! Hemos enviado un enlace de confirmación a tu correo. Por
-          favor, revísalo para activar tu cuenta.
-        </div>
-        <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
-          {isInvitationFlow
-            ? "Cuando confirmes tu cuenta, volverás automáticamente al enlace de invitación para unirte al equipo."
-            : "Cuando confirmes tu cuenta, podrás iniciar sesión y configurar tu tienda."}
-        </p>
-        <button
-          type="button"
-          onClick={() => switchMode("login")}
-          className="btn-primary mt-6 w-full"
-        >
-          Ir a iniciar sesión
-        </button>
-      </div>
+      <SignupEmailVerificationPanel
+        email={email}
+        nextPath={postAuthPath}
+        isInvitationFlow={isInvitationFlow}
+        onBackToLogin={() => switchMode("login")}
+      />
     );
   }
 

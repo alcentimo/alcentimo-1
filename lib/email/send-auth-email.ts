@@ -21,11 +21,17 @@ async function sendAuthTemplateEmail(
 export async function sendSignupConfirmationEmail(input: {
   to: string;
   actionUrl: string;
+  verificationCode?: string;
+  manualVerificationUrl?: string;
 }): Promise<SendEmailResult> {
   return sendAuthTemplateEmail(
     input.to,
     AUTH_EMAIL_SUBJECTS.signup,
-    { actionUrl: input.actionUrl },
+    {
+      actionUrl: input.actionUrl,
+      verificationCode: input.verificationCode,
+      manualVerificationUrl: input.manualVerificationUrl,
+    },
     buildSignupConfirmationEmail,
   );
 }
@@ -33,11 +39,15 @@ export async function sendSignupConfirmationEmail(input: {
 export async function sendPasswordResetEmail(input: {
   to: string;
   actionUrl: string;
+  verificationCode?: string;
 }): Promise<SendEmailResult> {
   return sendAuthTemplateEmail(
     input.to,
     AUTH_EMAIL_SUBJECTS.recovery,
-    { actionUrl: input.actionUrl },
+    {
+      actionUrl: input.actionUrl,
+      verificationCode: input.verificationCode,
+    },
     buildPasswordResetEmail,
   );
 }

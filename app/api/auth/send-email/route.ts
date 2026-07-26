@@ -1,12 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { buildAuthConfirmUrl } from "@/lib/email/build-auth-action-url";
+import { buildAccountVerificationPageUrl } from "@/lib/email/build-account-verification-url";
 import {
   sendEmailChangeConfirmationEmail,
   sendMagicLinkEmail,
   sendPasswordResetEmail,
   sendSignupConfirmationEmail,
 } from "@/lib/email/send-auth-email";
+import { resolveAuthConfirmNext } from "@/lib/auth/resolve-auth-confirm-next";
 
 const RESET_PASSWORD_NEXT = "/dashboard/restablecer-contrasena";
 
@@ -97,10 +99,10 @@ export async function POST(request: NextRequest) {
   }
 
   const otpType = mapHookType(actionType);
-  const nextPath =
-    otpType === "recovery"
-      ? RESET_PASSWORD_NEXT
-      : resolveNextPath(payload.email_data.redirect_to);
+  const nextPath = resolveAuthConfirmNext(
+    otpType,
+    resolveNextPath(payload.email_data.redirect_to),
+  );
 
   const actionUrl = buildAuthConfirmUrl({
     tokenHash,
@@ -108,13 +110,26 @@ export async function POST(request: NextRequest) {
     next: nextPath,
   });
 
+  const verificationCode = payload.email_data.token?.trim() || undefined;
+  const manualVerificationUrl =
+    actionType === "signup" || actionType === "invite"
+      ? buildAccountVerificationPageUrl({
+          email,
+          next: nextPath,
+        })
+      : undefined;
+
   let result:
     | Awaited<ReturnType<typeof sendSignupConfirmationEmail>>
     | Awaited<ReturnType<typeof sendPasswordResetEmail>>;
 
   switch (actionType) {
     case "recovery":
-      result = await sendPasswordResetEmail({ to: email, actionUrl });
+      result = await sendPasswordResetEmail({
+        to: email,
+        actionUrl,
+        verificationCode,
+      });
       break;
     case "magiclink":
       result = await sendMagicLinkEmail({ to: email, actionUrl });
@@ -125,7 +140,12 @@ export async function POST(request: NextRequest) {
     case "invite":
     case "signup":
     default:
-      result = await sendSignupConfirmationEmail({ to: email, actionUrl });
+      result = await sendSignupConfirmationEmail({
+        to: email,
+        actionUrl,
+        verificationCode,
+        manualVerificationUrl,
+      });
       break;
   }
 

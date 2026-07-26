@@ -26,7 +26,13 @@ export function RecoveryUrlRedirect() {
     if (hasQueryAuth) {
       const params = new URLSearchParams(search);
       if (!params.has("next")) {
-        params.set("next", "/dashboard/restablecer-contrasena");
+        const type = params.get("type");
+        params.set(
+          "next",
+          type === "recovery"
+            ? "/dashboard/restablecer-contrasena"
+            : "/onboarding",
+        );
       }
       window.location.replace(`/auth/confirm?${params.toString()}`);
       return;

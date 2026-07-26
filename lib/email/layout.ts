@@ -7,6 +7,8 @@ export interface TransactionalEmailContent {
   paragraphs: string[];
   actionLabel: string;
   actionUrl: string;
+  verificationCode?: string;
+  verificationCodeHint?: string;
   footerNote?: string;
 }
 
@@ -25,6 +27,12 @@ export function buildTransactionalEmailHtml(
     .join("");
   const footerNote = input.footerNote
     ? `<p style="margin:24px 0 0;font-size:12px;color:#71717a;line-height:1.5;">${escapeHtml(input.footerNote)}</p>`
+    : "";
+  const verificationBlock = input.verificationCode
+    ? `<div style="margin:0 0 24px;padding:16px 20px;background:#f4f4f5;border-radius:10px;text-align:center;">
+        <p style="margin:0 0 8px;font-size:12px;color:#71717a;">${escapeHtml(input.verificationCodeHint ?? "O introduce este código de verificación:")}</p>
+        <p style="margin:0;font-size:30px;font-weight:700;letter-spacing:0.28em;color:#18181b;font-family:Consolas,Monaco,monospace;">${escapeHtml(input.verificationCode)}</p>
+      </div>`
     : "";
 
   return `
@@ -55,6 +63,7 @@ export function buildTransactionalEmailHtml(
                         ${actionLabel}
                       </a>
                     </p>
+                    ${verificationBlock}
                     <p style="margin:0 0 8px;font-size:12px;color:#71717a;">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
                     <p style="margin:0 0 24px;font-size:12px;word-break:break-all;">
                       <a href="${actionUrl}" style="color:${ALCENTIMO_BRAND_COLOR};text-decoration:none;">${actionUrl}</a>
@@ -89,6 +98,9 @@ export function buildTransactionalEmailText(
     ),
     "",
     `${input.actionLabel}: ${input.actionUrl}`,
+    input.verificationCode
+      ? `${input.verificationCodeHint ?? "Código de verificación:"} ${input.verificationCode}`
+      : null,
     input.footerNote ?? null,
     "",
     "Si no solicitaste esta acción, puedes ignorar este correo.",
