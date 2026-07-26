@@ -11,6 +11,8 @@ import {
 } from "@/lib/email/send-auth-email";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import type { User } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPasswordResetRedirectUrl } from "@/lib/site-url";
 import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
 import { getSiteUrl } from "@/lib/site-url";
@@ -18,8 +20,11 @@ import { formatAuthError } from "@/lib/auth/format-auth-error";
 
 const RESET_PASSWORD_NEXT = "/dashboard/restablecer-contrasena";
 
+export const PENDING_CONFIRMATION_RESENT_MESSAGE =
+  "Ya registramos una cuenta con este correo pero aún falta verificarla. Te hemos enviado un nuevo enlace de activación.";
+
 export type AuthEmailActionResult =
-  | { ok: true }
+  | { ok: true; resentPendingConfirmation?: boolean; notice?: string }
   | { ok: false; error: string };
 
 function normalizeEmail(value: string): string {
@@ -32,13 +37,20 @@ function isValidEmail(value: string): boolean {
 
 function mapSignupError(message: string): string {
   const lower = message.toLowerCase();
-  if (lower.includes("already") || lower.includes("registered")) {
-    return "Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.";
-  }
   if (lower.includes("password")) {
     return "La contraseña debe tener al menos 6 caracteres.";
   }
   return message;
+}
+
+function isAlreadyRegisteredError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("already") &&
+    (lower.includes("registered") ||
+      lower.includes("exists") ||
+      lower.includes("duplicate"))
+  );
 }
 
 function buildRedirectUrl(nextPath: string): string {
@@ -63,8 +75,37 @@ function isValidVerificationCode(value: string): boolean {
   return /^\d{6}$/.test(value.trim());
 }
 
+async function findUserByEmail(
+  admin: SupabaseClient,
+  email: string,
+): Promise<User | null> {
+  const normalized = normalizeEmail(email);
+  let page = 1;
+
+  while (page <= 10) {
+    const { data, error } = await admin.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    const match = data.users.find(
+      (user) => normalizeEmail(user.email ?? "") === normalized,
+    );
+    if (match) return match;
+
+    if (data.users.length < 200) break;
+    page += 1;
+  }
+
+  return null;
+}
+
 async function generateAuthLink(input: {
-  type: "signup" | "recovery" | "magiclink";
+  type: "signup" | "recovery" | "magiclink" | "invite";
   email: string;
   password?: string;
   redirectTo?: string;
@@ -80,11 +121,113 @@ async function generateAuthLink(input: {
     });
   }
 
+  if (input.type === "invite") {
+    return admin.auth.admin.generateLink({
+      type: "invite",
+      email: input.email,
+      options: input.redirectTo ? { redirectTo: input.redirectTo } : undefined,
+    });
+  }
+
   return admin.auth.admin.generateLink({
     type: input.type,
     email: input.email,
     options: input.redirectTo ? { redirectTo: input.redirectTo } : undefined,
   });
+}
+
+async function deliverSignupConfirmationEmail(input: {
+  email: string;
+  postAuthPath: string;
+  tokenHash: string;
+  emailOtp: string | null;
+  otpType: EmailOtpType;
+}): Promise<AuthEmailActionResult> {
+  const actionUrl = buildAuthConfirmUrl({
+    tokenHash: input.tokenHash,
+    type: input.otpType,
+    next: input.postAuthPath,
+  });
+
+  const manualVerificationUrl = buildAccountVerificationPageUrl({
+    email: input.email,
+    next: input.postAuthPath,
+  });
+
+  return sendAuthEmailForType({
+    type: "signup",
+    email: input.email,
+    actionUrl,
+    verificationCode: input.emailOtp,
+    manualVerificationUrl,
+  });
+}
+
+async function resendConfirmationForPendingUser(input: {
+  email: string;
+  password: string;
+  postAuthPath: string;
+}): Promise<AuthEmailActionResult> {
+  const admin = createAdminClient();
+  const existingUser = await findUserByEmail(admin, input.email);
+
+  if (!existingUser) {
+    return {
+      ok: false,
+      error:
+        "Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.",
+    };
+  }
+
+  if (existingUser.email_confirmed_at) {
+    return {
+      ok: false,
+      error:
+        "Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.",
+    };
+  }
+
+  const { error: updateError } = await admin.auth.admin.updateUserById(
+    existingUser.id,
+    { password: input.password },
+  );
+
+  if (updateError) {
+    return { ok: false, error: mapSignupError(updateError.message) };
+  }
+
+  const { data, error } = await generateAuthLink({
+    type: "invite",
+    email: input.email,
+    redirectTo: buildRedirectUrl(input.postAuthPath),
+  });
+
+  if (error) {
+    return { ok: false, error: mapSignupError(error.message) };
+  }
+
+  const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
+  if (!tokenHash) {
+    return { ok: false, error: "No se pudo generar el enlace de confirmación." };
+  }
+
+  const emailResult = await deliverSignupConfirmationEmail({
+    email: input.email,
+    postAuthPath: input.postAuthPath,
+    tokenHash,
+    emailOtp,
+    otpType: "invite",
+  });
+
+  if (!emailResult.ok) {
+    return emailResult;
+  }
+
+  return {
+    ok: true,
+    resentPendingConfirmation: true,
+    notice: PENDING_CONFIRMATION_RESENT_MESSAGE,
+  };
 }
 
 async function sendAuthEmailForType(input: {
@@ -164,6 +307,14 @@ export async function signUpWithConfirmationEmailAction(input: {
     });
 
     if (error) {
+      if (isAlreadyRegisteredError(error.message)) {
+        return resendConfirmationForPendingUser({
+          email,
+          password: input.password,
+          postAuthPath,
+        });
+      }
+
       return { ok: false, error: mapSignupError(error.message) };
     }
 
@@ -172,23 +323,12 @@ export async function signUpWithConfirmationEmailAction(input: {
       return { ok: false, error: "No se pudo generar el enlace de confirmación." };
     }
 
-    const actionUrl = buildAuthConfirmUrl({
+    return deliverSignupConfirmationEmail({
+      email,
+      postAuthPath,
       tokenHash,
-      type: "signup",
-      next: postAuthPath,
-    });
-
-    const manualVerificationUrl = buildAccountVerificationPageUrl({
-      email,
-      next: postAuthPath,
-    });
-
-    return sendAuthEmailForType({
-      type: "signup",
-      email,
-      actionUrl,
-      verificationCode: emailOtp,
-      manualVerificationUrl,
+      emailOtp,
+      otpType: "signup",
     });
   } catch (error) {
     console.error("[signUpWithConfirmationEmailAction]", error);
@@ -339,17 +479,27 @@ export async function verifySignupOtpAction(input: {
 
   try {
     const supabase = await createClient();
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: "signup",
-    });
+    const otpTypes: EmailOtpType[] = ["signup", "invite"];
+    let lastError: Error | null = null;
 
-    if (error) {
-      return { ok: false, error: formatAuthError(error.message) };
+    for (const type of otpTypes) {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type,
+      });
+
+      if (!error) {
+        return { ok: true };
+      }
+
+      lastError = error;
     }
 
-    return { ok: true };
+    return {
+      ok: false,
+      error: formatAuthError(lastError?.message ?? "No se pudo verificar el código."),
+    };
   } catch (error) {
     console.error("[verifySignupOtpAction]", error);
     return {

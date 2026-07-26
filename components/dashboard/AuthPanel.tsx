@@ -58,12 +58,14 @@ export function AuthPanel() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [signupConfirmationSent, setSignupConfirmationSent] = useState(false);
+  const [signupNotice, setSignupNotice] = useState<string | null>(null);
   const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false);
 
   function switchMode(nextMode: "login" | "signup") {
     setMode(nextMode);
     setError(null);
     setSignupConfirmationSent(false);
+    setSignupNotice(null);
     setConfirmPassword("");
     setAcceptedLegalTerms(false);
   }
@@ -137,6 +139,7 @@ export function AuthPanel() {
         return;
       }
 
+      setSignupNotice(signupResult.notice ?? null);
       setSignupConfirmationSent(true);
       return;
     }
@@ -167,6 +170,7 @@ export function AuthPanel() {
       <SignupEmailVerificationPanel
         email={email}
         nextPath={postAuthPath}
+        notice={signupNotice}
         isInvitationFlow={isInvitationFlow}
         onBackToLogin={() => switchMode("login")}
       />

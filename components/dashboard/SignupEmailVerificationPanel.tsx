@@ -9,6 +9,7 @@ import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
 interface SignupEmailVerificationPanelProps {
   email: string;
   nextPath?: string | null;
+  notice?: string | null;
   initialError?: string | null;
   isInvitationFlow?: boolean;
   onBackToLogin?: () => void;
@@ -17,6 +18,7 @@ interface SignupEmailVerificationPanelProps {
 export function SignupEmailVerificationPanel({
   email,
   nextPath,
+  notice = null,
   initialError = null,
   isInvitationFlow = false,
   onBackToLogin,
@@ -54,9 +56,22 @@ export function SignupEmailVerificationPanel({
       </h2>
 
       <div className="alert-success mt-4 text-base text-emerald-800 sm:text-sm dark:text-emerald-200">
-        Enviamos un correo a <strong>{email}</strong> con un enlace de confirmación
-        y un código de 6 dígitos.
+        {notice ? (
+          notice
+        ) : (
+          <>
+            Enviamos un correo a <strong>{email}</strong> con un enlace de confirmación
+            y un código de 6 dígitos.
+          </>
+        )}
       </div>
+
+      {notice ? (
+        <p className="mt-3 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+          Revisa <strong>{email}</strong> y usa el enlace o el código de 6 dígitos para
+          activar tu cuenta.
+        </p>
+      ) : null}
 
       <p className="mt-4 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
         {isInvitationFlow

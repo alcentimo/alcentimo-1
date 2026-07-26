@@ -157,16 +157,16 @@ export async function middleware(request: NextRequest) {
     pathname !== AUTH_CONFIRM_PATH
   ) {
     const isRecovery =
-      authType === "recovery" ||
-      Boolean(tokenHash) ||
-      pathname === RESET_PASSWORD_PATH ||
-      pathname === "/";
+      authType === "recovery" || pathname === RESET_PASSWORD_PATH;
 
-    if (isRecovery) {
+    if (tokenHash || isRecovery) {
       const confirmUrl = request.nextUrl.clone();
       confirmUrl.pathname = AUTH_CONFIRM_PATH;
       if (!confirmUrl.searchParams.has("next")) {
-        confirmUrl.searchParams.set("next", RESET_PASSWORD_PATH);
+        confirmUrl.searchParams.set(
+          "next",
+          isRecovery ? RESET_PASSWORD_PATH : ONBOARDING_PATH,
+        );
       }
       return NextResponse.redirect(confirmUrl);
     }
