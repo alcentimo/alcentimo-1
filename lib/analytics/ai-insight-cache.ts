@@ -1,6 +1,9 @@
 import type { AnalyticsDateRange } from "@/lib/analytics/types";
 
 const CACHE_PREFIX = "alcentimo:analytics-ai-insight:";
+const COOLDOWN_PREFIX = "alcentimo:analytics-ai-insight-cooldown:";
+
+export const ANALYTICS_INSIGHT_COOLDOWN_MS = 60_000;
 
 export interface CachedAnalyticsInsight {
   insight: string;
@@ -37,6 +40,45 @@ export function readCachedAnalyticsInsight(periodKey: string): string | null {
   } catch {
     return null;
   }
+}
+
+function cooldownStorageKey(periodKey: string): string {
+  return `${COOLDOWN_PREFIX}${periodKey}`;
+}
+
+export function readAnalyticsInsightCooldownUntil(
+  periodKey: string,
+): number | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(cooldownStorageKey(periodKey));
+    if (!raw) return null;
+
+    const until = Number.parseInt(raw, 10);
+    if (!Number.isFinite(until) || until <= Date.now()) {
+      localStorage.removeItem(cooldownStorageKey(periodKey));
+      return null;
+    }
+
+    return until;
+  } catch {
+    return null;
+  }
+}
+
+export function writeAnalyticsInsightCooldown(periodKey: string): number {
+  const until = Date.now() + ANALYTICS_INSIGHT_COOLDOWN_MS;
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(cooldownStorageKey(periodKey), String(until));
+    } catch {
+      // Ignore storage failures.
+    }
+  }
+
+  return until;
 }
 
 export function writeCachedAnalyticsInsight(

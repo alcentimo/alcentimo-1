@@ -5,7 +5,9 @@ import { Loader2, Sparkles } from "lucide-react";
 import type { AnalyticsDateRange } from "@/lib/analytics/types";
 import {
   getAnalyticsInsightPeriodKey,
+  readAnalyticsInsightCooldownUntil,
   readCachedAnalyticsInsight,
+  writeAnalyticsInsightCooldown,
   writeCachedAnalyticsInsight,
 } from "@/lib/analytics/ai-insight-cache";
 
@@ -23,15 +25,39 @@ export function AnalyticsAiInsightBlock({ dateRange }: AnalyticsAiInsightBlockPr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
+
+  const isCoolingDown = cooldownUntil != null && cooldownUntil > Date.now();
 
   useEffect(() => {
     setError(null);
     setLoading(false);
     setInsight(readCachedAnalyticsInsight(periodKey));
+    setCooldownUntil(readAnalyticsInsightCooldownUntil(periodKey));
     setHydrated(true);
   }, [periodKey]);
 
+  useEffect(() => {
+    if (!isCoolingDown || cooldownUntil == null) return;
+
+    const remainingMs = cooldownUntil - Date.now();
+    if (remainingMs <= 0) {
+      setCooldownUntil(null);
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setCooldownUntil(readAnalyticsInsightCooldownUntil(periodKey));
+    }, remainingMs);
+
+    return () => window.clearTimeout(timerId);
+  }, [cooldownUntil, isCoolingDown, periodKey]);
+
   const loadInsight = useCallback(async () => {
+    if (loading || (cooldownUntil != null && cooldownUntil > Date.now())) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -63,6 +89,7 @@ export function AnalyticsAiInsightBlock({ dateRange }: AnalyticsAiInsightBlockPr
       const text = payload.insight.trim();
       writeCachedAnalyticsInsight(periodKey, text);
       setInsight(text);
+      setCooldownUntil(writeAnalyticsInsightCooldown(periodKey));
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -72,9 +99,10 @@ export function AnalyticsAiInsightBlock({ dateRange }: AnalyticsAiInsightBlockPr
     } finally {
       setLoading(false);
     }
-  }, [dateRange.from, dateRange.preset, dateRange.to, periodKey]);
+  }, [cooldownUntil, dateRange.from, dateRange.preset, dateRange.to, loading, periodKey]);
 
   const showEmpty = hydrated && !loading && !error && !insight;
+  const refreshDisabled = loading || isCoolingDown;
 
   return (
     <section className="analytics-ai-insight" aria-live="polite">
@@ -93,15 +121,20 @@ export function AnalyticsAiInsightBlock({ dateRange }: AnalyticsAiInsightBlockPr
         <button
           type="button"
           onClick={() => void loadInsight()}
-          disabled={loading}
+          disabled={refreshDisabled}
           className="analytics-ai-insight-refresh"
+          aria-disabled={refreshDisabled}
         >
           {loading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
           ) : (
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
           )}
-          Actualizar
+          {loading
+            ? "Generando…"
+            : isCoolingDown
+              ? "Actualizado recientemente"
+              : "Actualizar"}
         </button>
       </div>
 

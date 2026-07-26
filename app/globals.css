@@ -7539,6 +7539,10 @@ body {
   @apply text-sm leading-relaxed text-zinc-500 dark:text-zinc-400;
 }
 
+.analytics-ai-insight-refresh:disabled {
+  @apply cursor-not-allowed opacity-60;
+}
+
 .analytics-kpi-card {
   @apply flex min-h-[7.25rem] w-full flex-col rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
 }
