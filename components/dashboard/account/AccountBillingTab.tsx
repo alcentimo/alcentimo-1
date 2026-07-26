@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, CreditCard, Rocket } from "lucide-react";
+import { ArrowUpRight, CreditCard } from "lucide-react";
 import {
   SettingsSection,
   SettingsTabShell,
@@ -78,8 +78,8 @@ export function AccountBillingTab({
       </SettingsSection>
 
       <SettingsSection
-        title="Facturación y activación"
-        description="Gestiona pagos, activación y cambios de plan."
+        title="Facturación"
+        description="Gestiona pagos y cambios de plan."
         variant="payments"
       >
         <div className="grid gap-3">
@@ -88,13 +88,6 @@ export function AccountBillingTab({
             title="Planes y facturación"
             description="Compara planes, revisa pagos y administra tu suscripción."
             icon={CreditCard}
-            onNavigate={onNavigate}
-          />
-          <BillingLinkCard
-            href="/activar"
-            title="Activar cuenta"
-            description="Completa la activación de tu tienda y desbloquea funciones de pago."
-            icon={Rocket}
             onNavigate={onNavigate}
           />
           {canUpgradeToBusiness ? (
