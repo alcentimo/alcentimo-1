@@ -11,6 +11,7 @@ import {
   type MerchantCustomerOrderRow,
 } from "@/lib/customers/merchant-customer-actions";
 import { CustomerWhatsAppButton } from "@/components/dashboard/customers/CustomerWhatsAppButton";
+import { CustomerAiMessageButton } from "@/components/dashboard/customers/CustomerAiMessageButton";
 import { cn } from "@/lib/cn";
 
 interface CustomerDetailSlideOverProps {
@@ -150,7 +151,11 @@ export function CustomerDetailSlideOver({
         </header>
 
         <div className="orders-slideover-body">
-          <div className="customers-slideover-actions">
+          <div className="customers-slideover-actions flex flex-wrap gap-2">
+            <CustomerAiMessageButton
+              customer={customer}
+              storeName={storeName}
+            />
             <CustomerWhatsAppButton
               customerName={customer.displayName}
               phone={customer.phone}

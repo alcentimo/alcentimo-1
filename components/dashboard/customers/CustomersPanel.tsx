@@ -13,6 +13,7 @@ import {
   type CustomerSegment,
 } from "@/lib/customers/customer-segments";
 import { CustomerWhatsAppButton } from "@/components/dashboard/customers/CustomerWhatsAppButton";
+import { CustomerAiMessageButton } from "@/components/dashboard/customers/CustomerAiMessageButton";
 import { CustomerDetailSlideOver } from "@/components/dashboard/customers/CustomerDetailSlideOver";
 import { cn } from "@/lib/cn";
 
@@ -102,10 +103,15 @@ function CustomerTableRow({
       </td>
       <td className="customers-table-cell customers-table-cell-action">
         <div
-          className="inline-flex"
+          className="inline-flex flex-wrap justify-end gap-1.5"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
+          <CustomerAiMessageButton
+            customer={customer}
+            storeName={storeName}
+            compact
+          />
           <CustomerWhatsAppButton
             customerName={customer.displayName}
             phone={customer.phone}
@@ -151,9 +157,15 @@ function CustomerMobileCard({
           </p>
         </div>
         <div
+          className="flex shrink-0 flex-col items-end gap-1.5"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
+          <CustomerAiMessageButton
+            customer={customer}
+            storeName={storeName}
+            compact
+          />
           <CustomerWhatsAppButton
             customerName={customer.displayName}
             phone={customer.phone}
@@ -365,7 +377,7 @@ export function CustomersPanel({ customers, storeName }: CustomersPanelProps) {
                     </th>
                     <th scope="col">Última compra</th>
                     <th scope="col" className="customers-table-th-action">
-                      Contacto
+                      Acciones
                     </th>
                   </tr>
                 </thead>

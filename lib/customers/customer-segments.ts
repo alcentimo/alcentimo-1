@@ -1,3 +1,4 @@
+import type { CustomerMessageGoal } from "@/lib/ai/customer-message-types";
 import type { StoreCustomerSummary } from "@/lib/customers/store-customer-stats";
 
 export type CustomerSegment = "all" | "vip" | "inactive";
@@ -17,6 +18,32 @@ const MS_PER_DAY = 86_400_000;
 
 export function isVipCustomer(customer: StoreCustomerSummary): boolean {
   return customer.orderCount > VIP_MIN_ORDERS;
+}
+
+export function suggestCustomerMessageGoal(
+  customer: StoreCustomerSummary,
+  referenceDate = new Date(),
+): CustomerMessageGoal {
+  if (isInactiveCustomer(customer, referenceDate) || customer.orderCount === 0) {
+    return "reactivacion";
+  }
+
+  if (isVipCustomer(customer) || customer.orderCount >= 2) {
+    return "agradecimiento";
+  }
+
+  return "agradecimiento";
+}
+
+export function computeDaysSinceLastOrder(
+  lastOrderAt: string | null,
+  referenceDate = new Date(),
+): number | null {
+  if (!lastOrderAt) return null;
+
+  const lastOrderMs = new Date(lastOrderAt).getTime();
+  const diffMs = referenceDate.getTime() - lastOrderMs;
+  return Math.max(0, diffMs / MS_PER_DAY);
 }
 
 export function isInactiveCustomer(

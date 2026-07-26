@@ -62,4 +62,51 @@ function sortCustomersByRecentPurchase(
   });
 }
 
+export async function getStoreCustomerByUserId(
+  storeId: string,
+  customerUserId: string,
+): Promise<StoreCustomerSummary | null> {
+  const normalizedUserId = customerUserId.trim();
+  if (!normalizedUserId) return null;
+
+  const supabase = await createClient();
+
+  const [profileResult, ordersResult] = await Promise.all([
+    supabase
+      .from("customer_profiles")
+      .select("id, user_id, display_name, phone, created_at")
+      .eq("store_id", storeId)
+      .eq("user_id", normalizedUserId)
+      .maybeSingle(),
+    supabase
+      .from("orders")
+      .select("customer_user_id, total_usd, created_at")
+      .eq("store_id", storeId)
+      .eq("customer_user_id", normalizedUserId),
+  ]);
+
+  if (profileResult.error || !profileResult.data) {
+    return null;
+  }
+
+  if (ordersResult.error) {
+    throw new Error(ordersResult.error.message);
+  }
+
+  const statsByUser = aggregateCustomerOrderStats(ordersResult.data ?? []);
+  const stats = statsByUser.get(normalizedUserId);
+  const profile = profileResult.data;
+
+  return {
+    id: profile.id,
+    userId: profile.user_id,
+    displayName: profile.display_name,
+    phone: profile.phone,
+    registeredAt: profile.created_at,
+    orderCount: stats?.orderCount ?? 0,
+    totalSpentUsd: stats?.totalSpentUsd ?? 0,
+    lastOrderAt: stats?.lastOrderAt ?? null,
+  };
+}
+
 export type { StoreCustomerSummary };
