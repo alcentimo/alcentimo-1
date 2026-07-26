@@ -119,8 +119,9 @@ export function useProductTitleAutoDetect({
     }));
 
     const instant = detectProductFromTitle(trimmed, rubro, categoryCandidates);
-    if (instant.confidence >= 2) {
+    if (instant.confidence >= 2 && instant.categorySlug) {
       applyDetection(instant.categorySlug, instant.categoryLabel, instant.extraFields);
+      lastProcessedTitleRef.current = trimmed;
     }
 
     abortRef.current?.abort();

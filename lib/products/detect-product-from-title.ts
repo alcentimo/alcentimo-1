@@ -49,6 +49,24 @@ const CATEGORY_KEYWORDS: Partial<Record<StoreRubro, Record<string, string[]>>> =
       "ultrabook",
       "thinkpad",
       "vivobook",
+      "ideapad",
+      "legion",
+      "lenovo",
+      "dell",
+      "hp",
+      "asus",
+      "acer",
+      "msi",
+      "surface",
+      "chromebook",
+      "computadora",
+      "computador",
+      "ordenador",
+      "pc",
+      "desktop",
+      "all in one",
+      "imac",
+      "mac mini",
     ],
     tablets: ["tablet", "ipad", "tab s", "galaxy tab"],
     audio: [
@@ -138,6 +156,26 @@ function normalizeText(value: string): string {
     .toLowerCase();
 }
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Evita falsos positivos con tokens cortos (p. ej. «pc» dentro de otras palabras). */
+function titleIncludesKeyword(normalizedTitle: string, keyword: string): boolean {
+  const kw = normalizeText(keyword);
+  if (!kw) return false;
+
+  if (kw.includes(" ")) {
+    return normalizedTitle.includes(kw);
+  }
+
+  if (kw.length <= 4) {
+    return new RegExp(`\\b${escapeRegex(kw)}\\b`, "i").test(normalizedTitle);
+  }
+
+  return normalizedTitle.includes(kw);
+}
+
 function scoreCategoryFromTitle(
   title: string,
   categories: ProductCategoryCandidate[],
@@ -149,19 +187,19 @@ function scoreCategoryFromTitle(
   for (const category of categories) {
     let score = 0;
     const labelNorm = normalizeText(category.label);
-    if (labelNorm.length >= 3 && normalizedTitle.includes(labelNorm)) {
+    if (labelNorm.length >= 3 && titleIncludesKeyword(normalizedTitle, labelNorm)) {
       score += 4;
     }
     const slugPhrase = category.slug.replace(/-/g, " ");
-    if (slugPhrase.length >= 3 && normalizedTitle.includes(slugPhrase)) {
+    if (slugPhrase.length >= 3 && titleIncludesKeyword(normalizedTitle, slugPhrase)) {
       score += 3;
     }
 
     const keywords = keywordMap[category.slug] ?? [];
     for (const keyword of keywords) {
       const kw = normalizeText(keyword);
-      if (kw.length >= 2 && normalizedTitle.includes(kw)) {
-        score += kw.length >= 6 ? 3 : 2;
+      if (titleIncludesKeyword(normalizedTitle, kw)) {
+        score += kw.length >= 6 || kw.includes(" ") ? 3 : 2;
       }
     }
 
@@ -291,10 +329,9 @@ export function detectProductFromTitle(
   const normalizedRubro = normalizeStoreRubro(rubro);
   const keywordMap = CATEGORY_KEYWORDS[normalizedRubro] ?? {};
   const match = scoreCategoryFromTitle(trimmed, categories, keywordMap);
-  const fallback = categories[0] ?? null;
 
-  const categorySlug = match?.slug ?? fallback?.slug ?? null;
-  const categoryLabel = match?.label ?? fallback?.label ?? null;
+  const categorySlug = match?.slug ?? null;
+  const categoryLabel = match?.label ?? null;
   const confidence = match?.score ?? 0;
 
   const fieldLabels = categorySlug

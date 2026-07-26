@@ -145,11 +145,11 @@ export async function suggestProductMetadata(
   }
 
   if (!process.env.OPENAI_API_KEY?.trim()) {
-    if (!ruleSlug) {
+    if (!ruleSlug || rules.confidence < 2) {
       return {
         categorySlug: null,
         categoryLabel: null,
-        extraFields: {},
+        extraFields: pickExtraFieldValues(rules.extraFields, ruleLabels),
         source: "rules",
       };
     }
