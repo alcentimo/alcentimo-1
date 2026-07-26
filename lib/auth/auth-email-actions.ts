@@ -16,7 +16,6 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { User } from "@supabase/supabase-js";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPasswordResetRedirectUrl } from "@/lib/site-url";
 import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
 import { getSiteUrl } from "@/lib/site-url";
@@ -40,15 +39,8 @@ function mapSignupError(message: string): string {
   return message;
 }
 
-function isAlreadyRegisteredError(message: string): boolean {
-  const lower = message.toLowerCase();
-  return (
-    lower.includes("already") &&
-    (lower.includes("registered") ||
-      lower.includes("exists") ||
-      lower.includes("duplicate"))
-  );
-}
+const EXISTING_CONFIRMED_ACCOUNT_ERROR =
+  "Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.";
 
 function buildRedirectUrl(nextPath: string): string {
   const siteUrl = getSiteUrl().replace(/\/$/, "");
@@ -72,14 +64,54 @@ function isValidVerificationCode(value: string): boolean {
   return /^\d{6}$/.test(value.trim());
 }
 
-async function findUserByEmail(
-  admin: SupabaseClient,
-  email: string,
-): Promise<User | null> {
+function isEmailConfirmed(user: User): boolean {
+  return Boolean(user.email_confirmed_at);
+}
+
+/**
+ * Busca un usuario por email vía Admin API (filtro directo + fallback paginado).
+ */
+async function findUserByEmail(email: string): Promise<User | null> {
   const normalized = normalizeEmail(email);
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()?.replace(/\/$/, "");
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+  if (url && serviceRoleKey) {
+    const endpoint = new URL(`${url}/auth/v1/admin/users`);
+    endpoint.searchParams.set("page", "1");
+    endpoint.searchParams.set("per_page", "50");
+    endpoint.searchParams.set("email", normalized);
+
+    try {
+      const response = await fetch(endpoint.toString(), {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`,
+          apikey: serviceRoleKey,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      });
+
+      if (response.ok) {
+        const payload = (await response.json()) as
+          | { users?: User[] }
+          | User[];
+        const users = Array.isArray(payload) ? payload : (payload.users ?? []);
+        const match = users.find(
+          (user) => normalizeEmail(user.email ?? "") === normalized,
+        );
+        if (match) return match;
+      }
+    } catch (error) {
+      console.warn("[findUserByEmail] admin email filter failed", error);
+    }
+  }
+
+  const admin = createAdminClient();
   let page = 1;
 
-  while (page <= 10) {
+  while (page <= 50) {
     const { data, error } = await admin.auth.admin.listUsers({
       page,
       perPage: 200,
@@ -160,32 +192,86 @@ async function deliverSignupConfirmationEmail(input: {
   });
 }
 
+async function generatePendingConfirmationLink(input: {
+  email: string;
+  password: string;
+  redirectTo: string;
+}): Promise<{
+  tokenHash: string;
+  emailOtp: string | null;
+  otpType: EmailOtpType;
+} | { error: string }> {
+  const redirectTo = input.redirectTo;
+
+  // 1) Intentar enlace de signup (algunos entornos lo regeneran si aún no confirmó).
+  {
+    const { data, error } = await generateAuthLink({
+      type: "signup",
+      email: input.email,
+      password: input.password,
+      redirectTo,
+    });
+    if (!error) {
+      const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
+      if (tokenHash) {
+        return { tokenHash, emailOtp, otpType: "signup" };
+      }
+    }
+  }
+
+  // 2) Invite: genera token de activación para cuenta existente pendiente.
+  {
+    const { data, error } = await generateAuthLink({
+      type: "invite",
+      email: input.email,
+      redirectTo,
+    });
+    if (!error) {
+      const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
+      if (tokenHash) {
+        return { tokenHash, emailOtp, otpType: "invite" };
+      }
+    }
+  }
+
+  // 3) Magic link como último recurso (sigue enviándose con plantilla de confirmación).
+  {
+    const { data, error } = await generateAuthLink({
+      type: "magiclink",
+      email: input.email,
+      redirectTo,
+    });
+    if (!error) {
+      const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
+      if (tokenHash) {
+        return { tokenHash, emailOtp, otpType: "magiclink" };
+      }
+    }
+    if (error) {
+      return { error: mapSignupError(error.message) };
+    }
+  }
+
+  return { error: "No se pudo generar el enlace de confirmación." };
+}
+
 async function resendConfirmationForPendingUser(input: {
   email: string;
   password: string;
   postAuthPath: string;
+  existingUser: User;
 }): Promise<AuthEmailActionResult> {
+  if (isEmailConfirmed(input.existingUser)) {
+    return {
+      ok: false,
+      error: EXISTING_CONFIRMED_ACCOUNT_ERROR,
+    };
+  }
+
   const admin = createAdminClient();
-  const existingUser = await findUserByEmail(admin, input.email);
-
-  if (!existingUser) {
-    return {
-      ok: false,
-      error:
-        "Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.",
-    };
-  }
-
-  if (existingUser.email_confirmed_at) {
-    return {
-      ok: false,
-      error:
-        "Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.",
-    };
-  }
 
   const { error: updateError } = await admin.auth.admin.updateUserById(
-    existingUser.id,
+    input.existingUser.id,
     { password: input.password },
   );
 
@@ -193,27 +279,23 @@ async function resendConfirmationForPendingUser(input: {
     return { ok: false, error: mapSignupError(updateError.message) };
   }
 
-  const { data, error } = await generateAuthLink({
-    type: "invite",
+  const link = await generatePendingConfirmationLink({
     email: input.email,
+    password: input.password,
     redirectTo: buildRedirectUrl(input.postAuthPath),
   });
 
-  if (error) {
-    return { ok: false, error: mapSignupError(error.message) };
+  if ("error" in link) {
+    return { ok: false, error: link.error };
   }
 
-  const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
-  if (!tokenHash) {
-    return { ok: false, error: "No se pudo generar el enlace de confirmación." };
-  }
-
+  // Siempre plantilla de confirmación de cuenta (nunca recuperación de contraseña).
   const emailResult = await deliverSignupConfirmationEmail({
     email: input.email,
     postAuthPath: input.postAuthPath,
-    tokenHash,
-    emailOtp,
-    otpType: "invite",
+    tokenHash: link.tokenHash,
+    emailOtp: link.emailOtp,
+    otpType: link.otpType === "magiclink" ? "magiclink" : link.otpType,
   });
 
   if (!emailResult.ok) {
@@ -296,6 +378,28 @@ export async function signUpWithConfirmationEmailAction(input: {
   const postAuthPath = resolvePostAuthPath(input.nextPath);
 
   try {
+    // 1) Verificar primero si el correo ya existe en Supabase Auth.
+    const existingUser = await findUserByEmail(email);
+
+    if (existingUser) {
+      // Solo bloquear si la cuenta ya fue confirmada.
+      if (isEmailConfirmed(existingUser)) {
+        return {
+          ok: false,
+          error: EXISTING_CONFIRMED_ACCOUNT_ERROR,
+        };
+      }
+
+      // Pendiente de verificación: reenviar activación (enlace + OTP).
+      return resendConfirmationForPendingUser({
+        email,
+        password: input.password,
+        postAuthPath,
+        existingUser,
+      });
+    }
+
+    // 2) Usuario nuevo: crear enlace de confirmación de signup.
     const { data, error } = await generateAuthLink({
       type: "signup",
       email,
@@ -304,11 +408,20 @@ export async function signUpWithConfirmationEmailAction(input: {
     });
 
     if (error) {
-      if (isAlreadyRegisteredError(error.message)) {
+      // Carrera: el usuario pudo crearse entre la consulta y generateLink.
+      const racedUser = await findUserByEmail(email);
+      if (racedUser) {
+        if (isEmailConfirmed(racedUser)) {
+          return {
+            ok: false,
+            error: EXISTING_CONFIRMED_ACCOUNT_ERROR,
+          };
+        }
         return resendConfirmationForPendingUser({
           email,
           password: input.password,
           postAuthPath,
+          existingUser: racedUser,
         });
       }
 
@@ -476,7 +589,7 @@ export async function verifySignupOtpAction(input: {
 
   try {
     const supabase = await createClient();
-    const otpTypes: EmailOtpType[] = ["signup", "invite"];
+    const otpTypes: EmailOtpType[] = ["signup", "invite", "magiclink", "email"];
     let lastError: Error | null = null;
 
     for (const type of otpTypes) {
