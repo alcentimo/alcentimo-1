@@ -9,7 +9,7 @@ const steps = [
     icon: Package,
     title: "Configuras tu inventario",
     description:
-      "Sube productos, fotos y precios en USD. Alcentimo muestra el equivalente en bolívares automáticamente.",
+      "Sube productos, fotos y precios en USD. La IA te ayuda a redactar descripciones mientras Alcentimo muestra el equivalente en bolívares.",
   },
   {
     step: 2,

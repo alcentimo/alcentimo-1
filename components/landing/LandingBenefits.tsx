@@ -23,7 +23,7 @@ const benefits = [
     icon: ShieldCheck,
     title: "Control sin complicaciones",
     description:
-      "Inventario, pedidos y clientes en un solo lugar. Sin planillas, sin apps extra, sin curva de aprendizaje larga.",
+      "Inventario, pedidos y clientes en un solo lugar, con IA para detectar faltantes y responder dudas en tu catálogo.",
   },
 ] as const;
 

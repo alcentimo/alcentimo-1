@@ -177,6 +177,133 @@ body {
   @apply bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent dark:from-emerald-400 dark:to-emerald-300;
 }
 
+.landing-hero-ai-pill {
+  @apply mb-6 inline-flex items-center rounded-full border border-emerald-200/80 bg-white/90 px-4 py-2 text-xs font-semibold tracking-tight text-emerald-800 shadow-sm shadow-emerald-500/10 backdrop-blur-sm dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-200;
+}
+
+.landing-hero-highlights {
+  @apply mt-6 space-y-2.5;
+}
+
+.landing-hero-highlight {
+  @apply flex items-start gap-2.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400;
+}
+
+.landing-hero-highlight-icon {
+  @apply mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400;
+}
+
+.landing-assistant-fab {
+  @apply fixed z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 ring-2 ring-white/80 transition hover:bg-emerald-700 active:scale-95 dark:ring-zinc-900/80;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+.landing-assistant-fab-hidden {
+  @apply pointer-events-none opacity-0;
+}
+
+.landing-assistant-overlay {
+  @apply fixed inset-0 z-50 flex items-end justify-end p-0 sm:items-end sm:p-4;
+}
+
+.landing-assistant-backdrop {
+  @apply absolute inset-0 bg-zinc-950/35 backdrop-blur-[1px];
+}
+
+.landing-assistant-panel {
+  @apply relative z-10 flex h-[min(32rem,calc(100dvh-2rem))] w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-emerald-200/60 bg-white shadow-2xl dark:border-emerald-900/40 dark:bg-zinc-950 sm:h-[min(34rem,calc(100dvh-3rem))] sm:rounded-2xl;
+  animation: landing-assistant-slide-up 0.24s ease-out;
+}
+
+@keyframes landing-assistant-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0.6;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.landing-assistant-header {
+  @apply flex items-start justify-between gap-3 border-b border-emerald-200/60 bg-gradient-to-b from-emerald-50/80 to-white px-4 py-4 dark:border-emerald-900/40 dark:from-emerald-950/30 dark:to-zinc-950;
+}
+
+.landing-assistant-header-main {
+  @apply flex min-w-0 items-center gap-3;
+}
+
+.landing-assistant-icon {
+  @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300;
+}
+
+.landing-assistant-title {
+  @apply text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+}
+
+.landing-assistant-badge {
+  @apply mt-1 inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300;
+}
+
+.landing-assistant-close {
+  @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-900 dark:hover:text-zinc-200;
+}
+
+.landing-assistant-messages {
+  @apply flex-1 space-y-3 overflow-y-auto px-4 py-4;
+}
+
+.landing-assistant-bubble-row {
+  @apply flex;
+}
+
+.landing-assistant-bubble-row-user {
+  @apply justify-end;
+}
+
+.landing-assistant-bubble {
+  @apply max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed;
+}
+
+.landing-assistant-bubble-user {
+  @apply rounded-br-md bg-emerald-600 text-white;
+}
+
+.landing-assistant-bubble-assistant {
+  @apply rounded-bl-md border border-zinc-200/80 bg-zinc-50 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100;
+}
+
+.landing-assistant-typing {
+  @apply inline-flex items-center gap-2 text-zinc-500 dark:text-zinc-400;
+}
+
+.landing-assistant-error {
+  @apply mx-4 mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300;
+}
+
+.landing-assistant-quick-prompts {
+  @apply flex gap-2 overflow-x-auto px-4 pb-2;
+}
+
+.landing-assistant-quick-prompt {
+  @apply shrink-0 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:border-emerald-300 hover:text-emerald-800 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-emerald-800 dark:hover:text-emerald-300;
+}
+
+.landing-assistant-input-row {
+  @apply flex items-end gap-2 border-t border-zinc-200/80 px-4 py-3 dark:border-zinc-800;
+}
+
+.landing-assistant-input {
+  @apply max-h-28 min-h-10 flex-1 resize-none rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50;
+}
+
+.landing-assistant-send-btn {
+  @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50;
+}
+
 .landing-instant-builder-label {
   @apply mb-2 block text-sm font-semibold text-zinc-800 dark:text-zinc-100;
 }

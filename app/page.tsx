@@ -8,6 +8,7 @@ import { LandingCta } from "@/components/landing/LandingCta";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { LandingPricing } from "@/components/landing/LandingPricing";
+import { LandingAssistantChat } from "@/components/landing/LandingAssistantChat";
 import { fetchPlanPricingTiers } from "@/lib/plans/get-plan-settings";
 
 /** Precios de planes cambian poco; cachear acelera TTFB de la landing. */
@@ -33,6 +34,7 @@ export default async function Home() {
       </main>
 
       <LandingFooter />
+      <LandingAssistantChat />
     </>
   );
 }

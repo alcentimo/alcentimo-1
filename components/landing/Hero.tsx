@@ -1,4 +1,14 @@
-import { HeroInstantStoreExperience } from "@/components/landing/HeroInstantStoreExperience";
+import Link from "next/link";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { HeroCompositeMockup } from "@/components/landing/HeroCompositeMockup";
+
+const SIGNUP_HREF = "/dashboard/login?mode=signup&next=/onboarding";
+
+const heroHighlights = [
+  "IA que te ayuda a controlar inventario y anticipar faltantes.",
+  "Redacta descripciones de productos en segundos, listas para publicar.",
+  "Atiende dudas de clientes en tu catálogo con asistencia inteligente.",
+] as const;
 
 export function Hero() {
   return (
@@ -13,7 +23,55 @@ export function Hero() {
       />
 
       <div className="page-container relative pb-20 sm:pb-24 lg:pb-28">
-        <HeroInstantStoreExperience />
+        <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+          <div className="max-w-xl lg:max-w-none">
+            <p className="landing-hero-ai-pill">
+              ✨ Automatiza tu negocio con Inteligencia Artificial
+            </p>
+
+            <h1 className="landing-hero-title text-balance">
+              Tu gestor de ventas y e-commerce con{" "}
+              <span className="landing-hero-accent">marca blanca</span>.
+            </h1>
+
+            <p className="landing-hero-lead">
+              Controla tu inventario, sincroniza tasas de cambio en tiempo real y
+              lanza tu catálogo online con tu propio dominio y logo. Recibe pedidos
+              organizados directamente en WhatsApp, sin depender de intermediarios.
+            </p>
+
+            <ul className="landing-hero-highlights">
+              {heroHighlights.map((item) => (
+                <li key={item} className="landing-hero-highlight">
+                  <Sparkles
+                    className="landing-hero-highlight-icon"
+                    aria-hidden="true"
+                  />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-10">
+              <Link
+                href={SIGNUP_HREF}
+                prefetch={true}
+                className="btn-brand inline-flex gap-2 px-7 py-3 text-base shadow-lg shadow-emerald-500/20 touch-manipulation"
+              >
+                Comenzar gratis
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+
+            <p className="mt-5 text-sm text-zinc-500 dark:text-zinc-500">
+              Sin tarjeta de crédito · Configura tu tienda en minutos
+            </p>
+          </div>
+
+          <div className="w-full lg:justify-self-end">
+            <HeroCompositeMockup />
+          </div>
+        </div>
       </div>
     </section>
   );
