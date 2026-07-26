@@ -1,5 +1,11 @@
 project_id = "pboxqwrogkwxkrjvbsqo"
 
+# Auth (GoTrue): vigencia de enlaces y códigos OTP por correo (confirmación, recovery, magic link).
+# Producción: replicar en Supabase Dashboard → Authentication → Sign In / Providers → Email
+# → «Email OTP expiration» = 86400 (24 h). No vive en migraciones SQL; puede resetearse al sincronizar.
+[auth.email]
+otp_expiry = 86400
+
 # Manual / pruebas: GET/POST con ?slot=midnight|morning|retry y Bearer CRON_SECRET
 [functions.sync-bcv]
 verify_jwt = false
