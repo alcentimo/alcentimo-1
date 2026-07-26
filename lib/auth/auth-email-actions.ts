@@ -433,6 +433,100 @@ async function sendAuthEmailForType(input: {
   return { ok: true };
 }
 
+type ClearUnconfirmedSignupStatus =
+  | "cleared"
+  | "not_found"
+  | "already_confirmed"
+  | "blocked_has_store"
+  | "invalid_email";
+
+interface ClearUnconfirmedSignupResult {
+  status: ClearUnconfirmedSignupStatus;
+  user_id: string | null;
+}
+
+/**
+ * RPC SECURITY DEFINER: elimina el auth.users huérfano si
+ * email_confirmed_at IS NULL (y no es dueño de tienda).
+ */
+async function clearUnconfirmedSignupViaRpc(
+  email: string,
+): Promise<ClearUnconfirmedSignupResult> {
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("clear_unconfirmed_signup", {
+    p_email: email,
+  });
+
+  if (error) {
+    console.error("[clearUnconfirmedSignupViaRpc]", error.message);
+    throw error;
+  }
+
+  const payload = (data ?? {}) as Partial<ClearUnconfirmedSignupResult>;
+  const status = payload.status;
+
+  if (
+    status === "cleared" ||
+    status === "not_found" ||
+    status === "already_confirmed" ||
+    status === "blocked_has_store" ||
+    status === "invalid_email"
+  ) {
+    return {
+      status,
+      user_id: typeof payload.user_id === "string" ? payload.user_id : null,
+    };
+  }
+
+  return { status: "not_found", user_id: null };
+}
+
+async function createFreshSignupConfirmation(input: {
+  email: string;
+  password: string;
+  postAuthPath: string;
+  redirectTo: string;
+  wasResent: boolean;
+}): Promise<AuthEmailActionResult> {
+  const { data, error } = await generateAuthLink({
+    type: "signup",
+    email: input.email,
+    password: input.password,
+    redirectTo: input.redirectTo,
+  });
+
+  if (error) {
+    return { ok: false, error: mapSignupError(error.message) };
+  }
+
+  const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
+  if (!tokenHash) {
+    return { ok: false, error: "No se pudo generar el enlace de confirmación." };
+  }
+
+  const delivered = await deliverSignupConfirmationEmail({
+    email: input.email,
+    postAuthPath: input.postAuthPath,
+    tokenHash,
+    emailOtp,
+    otpType: "signup",
+  });
+
+  if (!delivered.ok) {
+    return delivered;
+  }
+
+  if (input.wasResent) {
+    return {
+      ok: true,
+      resentPendingConfirmation: true,
+      notice: PENDING_CONFIRMATION_RESENT_MESSAGE,
+    };
+  }
+
+  return { ok: true };
+}
+
 export async function signUpWithConfirmationEmailAction(input: {
   email: string;
   password: string;
@@ -450,35 +544,37 @@ export async function signUpWithConfirmationEmailAction(input: {
   const redirectTo = buildRedirectUrl(postAuthPath);
 
   try {
-    // 1) Lookup admin (best-effort). Si está confirmado → bloquear.
-    const existingUser = await findUserByEmail(email);
-
-    if (existingUser && isEmailConfirmed(existingUser)) {
-      return {
-        ok: false,
-        error: EXISTING_CONFIRMED_ACCOUNT_ERROR,
-      };
+    // 1) RPC: si hay cuenta sin confirmar, borrar el registro huérfano.
+    let clearResult: ClearUnconfirmedSignupResult;
+    try {
+      clearResult = await clearUnconfirmedSignupViaRpc(email);
+    } catch {
+      // Si la migración aún no está aplicada, caer al flujo anterior.
+      clearResult = { status: "not_found", user_id: null };
+      const existingUser = await findUserByEmail(email);
+      if (existingUser && isEmailConfirmed(existingUser)) {
+        return { ok: false, error: EXISTING_CONFIRMED_ACCOUNT_ERROR };
+      }
+      if (existingUser && !isEmailConfirmed(existingUser)) {
+        return resendActivationForExistingEmail({
+          email,
+          password: input.password,
+          postAuthPath,
+          existingUser,
+        });
+      }
     }
 
-    if (existingUser && !isEmailConfirmed(existingUser)) {
-      return resendActivationForExistingEmail({
-        email,
-        password: input.password,
-        postAuthPath,
-        existingUser,
-      });
+    if (clearResult.status === "already_confirmed") {
+      return { ok: false, error: EXISTING_CONFIRMED_ACCOUNT_ERROR };
     }
 
-    // 2) Usuario no encontrado en lookup → intentar alta con generateLink(signup).
-    const { data, error } = await generateAuthLink({
-      type: "signup",
-      email,
-      password: input.password,
-      redirectTo,
-    });
+    if (clearResult.status === "invalid_email") {
+      return { ok: false, error: "Ingresa un correo válido." };
+    }
 
-    // 3) Punto de bloqueo real: Auth rechaza por duplicado aunque el lookup fallara.
-    if (error && isAlreadyRegisteredAuthError(error)) {
+    // Tiene tienda pero email sin confirmar: no borramos; reenviamos activación.
+    if (clearResult.status === "blocked_has_store") {
       return resendActivationForExistingEmail({
         email,
         password: input.password,
@@ -487,22 +583,49 @@ export async function signUpWithConfirmationEmailAction(input: {
       });
     }
 
-    if (error) {
-      return { ok: false, error: mapSignupError(error.message) };
-    }
+    const wasResent = clearResult.status === "cleared";
 
-    const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
-    if (!tokenHash) {
-      return { ok: false, error: "No se pudo generar el enlace de confirmación." };
-    }
-
-    return deliverSignupConfirmationEmail({
+    // 2) Alta limpia (usuario nuevo o huérfano recién eliminado).
+    let signupResult = await createFreshSignupConfirmation({
       email,
+      password: input.password,
       postAuthPath,
-      tokenHash,
-      emailOtp,
-      otpType: "signup",
+      redirectTo,
+      wasResent,
     });
+
+    // 3) Si Auth aún reporta duplicado, limpiar otra vez y reintentar una vez.
+    if (
+      !signupResult.ok &&
+      isAlreadyRegisteredAuthError({ message: signupResult.error })
+    ) {
+      const retryClear = await clearUnconfirmedSignupViaRpc(email).catch(
+        () => null,
+      );
+
+      if (retryClear?.status === "already_confirmed") {
+        return { ok: false, error: EXISTING_CONFIRMED_ACCOUNT_ERROR };
+      }
+
+      if (retryClear?.status === "cleared" || retryClear?.status === "not_found") {
+        signupResult = await createFreshSignupConfirmation({
+          email,
+          password: input.password,
+          postAuthPath,
+          redirectTo,
+          wasResent: true,
+        });
+      } else {
+        return resendActivationForExistingEmail({
+          email,
+          password: input.password,
+          postAuthPath,
+          existingUser: await findUserByEmail(email),
+        });
+      }
+    }
+
+    return signupResult;
   } catch (error) {
     console.error("[signUpWithConfirmationEmailAction]", error);
     return {

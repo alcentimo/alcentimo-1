@@ -1144,6 +1144,18 @@ export interface Database {
       };
     };
     Functions: {
+      clear_unconfirmed_signup: {
+        Args: { p_email: string };
+        Returns: {
+          status:
+            | "cleared"
+            | "not_found"
+            | "already_confirmed"
+            | "blocked_has_store"
+            | "invalid_email";
+          user_id: string | null;
+        };
+      };
       is_member_of_store: {
         Args: { target_store_id: string };
         Returns: boolean;
