@@ -55,6 +55,7 @@ import {
   getPrimaryCategorySlugForPCBuilderSlot,
   type PCBuilderSlotId,
 } from "@/lib/rubros/modules/tecnologia/pc-builder";
+import { validateProductPublishInput } from "@/lib/products/validate-publish-form";
 
 interface ProductFormProps {
   store: Store;
@@ -116,9 +117,6 @@ export function ProductForm({
     removedDbIds: [],
   });
   const [galleryBusy, setGalleryBusy] = useState(false);
-  const [galleryReady, setGalleryReady] = useState(
-    mode === "edit" && (initialData?.images.length ?? 0) > 0,
-  );
   const [localError, setLocalError] = useState<string | null>(null);
   const [productName, setProductName] = useState(initialData?.name ?? "");
   const [shortDescription, setShortDescription] = useState(
@@ -193,8 +191,19 @@ export function ProductForm({
     e.preventDefault();
     setLocalError(null);
 
-    if (galleryValue.items.length === 0) {
-      setLocalError("Agrega al menos una foto del producto.");
+    const validationError = validateProductPublishInput({
+      name: productName,
+      priceUsd,
+      galleryItemCount: galleryValue.items.length,
+      galleryBusy,
+      showCategorySelector,
+      categorySlug,
+      customCategoryName,
+      wholesalePriceUsd,
+      wholesaleMinQty,
+    });
+    if (validationError) {
+      setLocalError(validationError);
       return;
     }
 
@@ -235,10 +244,10 @@ export function ProductForm({
   }
 
   const isBusy = pending || galleryBusy;
+  const hasGallery = galleryValue.items.length > 0;
   const displayError = localError ?? state.error;
   const requiresNewImage = mode === "create";
-  const submitDisabled =
-    isBusy || (requiresNewImage && !galleryReady);
+  const submitDisabled = isBusy || (requiresNewImage && !hasGallery);
 
   if (state.success) {
     return (
@@ -290,6 +299,7 @@ export function ProductForm({
       />
       <form
         onSubmit={handleSubmit}
+        noValidate
         encType="multipart/form-data"
         className="space-y-5"
       >
@@ -562,16 +572,21 @@ export function ProductForm({
         initialImages={initialData?.images ?? []}
         disabled={pending}
         onBusyChange={setGalleryBusy}
-        onReadyChange={setGalleryReady}
         onChange={setGalleryValue}
         onError={(message) => {
           setLocalError(message);
         }}
       />
 
-      {requiresNewImage && !galleryReady && !galleryBusy && (
+      {requiresNewImage && !hasGallery && !galleryBusy && (
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Sube al menos una foto del producto para habilitar la publicación.
+        </p>
+      )}
+
+      {galleryBusy && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Procesando fotos… podrás publicar en un momento.
         </p>
       )}
 

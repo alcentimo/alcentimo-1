@@ -149,6 +149,15 @@ export function ProductGalleryField({
   itemsRef.current = items;
   removedDbIdsRef.current = removedDbIds;
 
+  useEffect(() => {
+    if (initialImages.length === 0) return;
+    const mapped = mapInitialImages(initialImages);
+    onChange({ items: mapped, removedDbIds: [] });
+    onReadyChange?.(mapped.length > 0);
+    // Solo al montar: sincroniza galería existente (edición) con el estado del formulario padre.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const isBusy = processingCount > 0 || disabled;
   const canAddMore = items.length < MAX_GALLERY_IMAGES;
   const pickerDisabled = isBusy || !canAddMore;

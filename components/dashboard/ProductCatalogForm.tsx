@@ -56,6 +56,7 @@ import {
   type PCBuilderSlotId,
 } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import type { VariantFormInput } from "@/lib/products/variants";
+import { validateProductPublishInput } from "@/lib/products/validate-publish-form";
 
 interface ProductCatalogFormProps {
   store: Store;
@@ -102,9 +103,6 @@ export function ProductCatalogForm({
     removedDbIds: [],
   });
   const [galleryBusy, setGalleryBusy] = useState(false);
-  const [galleryReady, setGalleryReady] = useState(
-    mode === "edit" && (initialData?.images.length ?? 0) > 0,
-  );
   const [localError, setLocalError] = useState<string | null>(null);
   const [productName, setProductName] = useState(initialData?.name ?? "");
   const [shortDescription, setShortDescription] = useState(
@@ -199,8 +197,19 @@ export function ProductCatalogForm({
     e.preventDefault();
     setLocalError(null);
 
-    if (galleryValue.items.length === 0) {
-      setLocalError("Agrega al menos una foto del producto.");
+    const validationError = validateProductPublishInput({
+      name: productName,
+      priceUsd,
+      galleryItemCount: galleryValue.items.length,
+      galleryBusy,
+      showCategorySelector,
+      categorySlug,
+      customCategoryName,
+      wholesalePriceUsd,
+      wholesaleMinQty,
+    });
+    if (validationError) {
+      setLocalError(validationError);
       return;
     }
 
@@ -246,8 +255,9 @@ export function ProductCatalogForm({
   }
 
   const isBusy = pending || galleryBusy;
+  const hasGallery = galleryValue.items.length > 0;
   const displayError = localError ?? state.error;
-  const submitDisabled = isBusy || (mode === "create" && !galleryReady);
+  const submitDisabled = isBusy || (mode === "create" && !hasGallery);
 
   return (
     <>
@@ -256,7 +266,7 @@ export function ProductCatalogForm({
         hasImage={galleryValue.items.some((item) => item.file) || galleryValue.removedDbIds.length > 0}
         mode={mode}
       />
-      <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate encType="multipart/form-data" className="space-y-4">
       <input type="hidden" name="store_id" value={store.id} readOnly />
       <input type="hidden" name="product_category_slug" value={categorySlug} readOnly />
       {mode === "edit" && initialData && (
@@ -279,7 +289,6 @@ export function ProductCatalogForm({
         initialImages={initialData?.images ?? []}
         disabled={pending}
         onBusyChange={setGalleryBusy}
-        onReadyChange={setGalleryReady}
         onChange={setGalleryValue}
         onError={(message) => {
           setLocalError(message);
@@ -522,6 +531,18 @@ export function ProductCatalogForm({
           Se marcará en rojo cuando queden pocas unidades (ej. menos de 3).
         </p>
       </div>
+
+      {mode === "create" && !hasGallery && !galleryBusy && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Sube al menos una foto para habilitar la publicación.
+        </p>
+      )}
+
+      {galleryBusy && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Procesando fotos… podrás publicar en un momento.
+        </p>
+      )}
 
       {displayError && (
         <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">

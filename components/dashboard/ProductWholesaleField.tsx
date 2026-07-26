@@ -97,7 +97,7 @@ export function ProductWholesaleField({
             id={`${idPrefix}-min-qty`}
             name="wholesale_min_qty"
             type="number"
-            min={2}
+            min={0}
             step={1}
             placeholder="Ej: 6"
             value={wholesaleMinQty}

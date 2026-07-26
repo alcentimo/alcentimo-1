@@ -53,6 +53,7 @@ import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtFi
 import { ProductWholesaleField } from "@/components/dashboard/ProductWholesaleField";
 import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
 import { ProductFormAiStarter } from "@/components/dashboard/ProductFormAiStarter";
+import { validateProductPublishInput } from "@/lib/products/validate-publish-form";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
@@ -126,7 +127,6 @@ function QuickProductFormSession({
     removedDbIds: [],
   });
   const [galleryBusy, setGalleryBusy] = useState(false);
-  const [galleryReady, setGalleryReady] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [productName, setProductName] = useState("");
   const [shortDescription, setShortDescription] = useState("");
@@ -240,7 +240,6 @@ function QuickProductFormSession({
     setPcBuilderSlot("");
     setAdvancedOpen(false);
     setGalleryValue({ items: [], removedDbIds: [] });
-    setGalleryReady(false);
     setLocalError(null);
     setExtraFields({});
   }
@@ -249,17 +248,23 @@ function QuickProductFormSession({
     e.preventDefault();
     setLocalError(null);
 
+    const validationError = validateProductPublishInput({
+      name: productName,
+      priceUsd,
+      galleryItemCount: galleryValue.items.length,
+      galleryBusy,
+      showCategorySelector,
+      categorySlug,
+      customCategoryName,
+      wholesalePriceUsd,
+      wholesaleMinQty,
+    });
+    if (validationError) {
+      setLocalError(validationError);
+      return;
+    }
+
     const usd = parseFloat(priceUsd);
-    if (!Number.isFinite(usd) || usd <= 0) {
-      setLocalError("Ingresa un precio válido en dólares.");
-      return;
-    }
-
-    if (galleryValue.items.length === 0) {
-      setLocalError("Agrega al menos una foto del producto.");
-      return;
-    }
-
     const form = e.currentTarget;
     const formData = new FormData(form);
     submittedNameRef.current = String(formData.get("name") ?? "").trim();
@@ -308,8 +313,9 @@ function QuickProductFormSession({
   }
 
   const isBusy = pending || galleryBusy;
+  const hasGallery = galleryValue.items.length > 0;
   const displayError = localError ?? state.error;
-  const submitDisabled = isBusy || !galleryReady;
+  const submitDisabled = isBusy || !hasGallery;
 
   return (
     <>
@@ -320,6 +326,7 @@ function QuickProductFormSession({
       />
       <form
         onSubmit={handleSubmit}
+        noValidate
         encType="multipart/form-data"
         className="space-y-4"
       >
@@ -420,7 +427,6 @@ function QuickProductFormSession({
         layout="compact"
         disabled={pending}
         onBusyChange={setGalleryBusy}
-        onReadyChange={setGalleryReady}
         onChange={setGalleryValue}
         onError={(message) => {
           setLocalError(message);
@@ -616,9 +622,15 @@ function QuickProductFormSession({
         )}
       </div>
 
-      {!galleryReady && !galleryBusy && (
+      {!hasGallery && !galleryBusy && (
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Sube al menos una foto para habilitar la publicación.
+        </p>
+      )}
+
+      {galleryBusy && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Procesando fotos… podrás publicar en un momento.
         </p>
       )}
 
