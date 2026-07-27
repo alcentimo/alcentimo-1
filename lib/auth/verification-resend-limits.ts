@@ -3,6 +3,7 @@ import {
   VERIFICATION_RESEND_BLOCK_SECONDS,
   VERIFICATION_RESEND_COOLDOWN_SECONDS,
   VERIFICATION_RESEND_MAX_CONSECUTIVE,
+  type AuthEmailResendFlow,
 } from "@/lib/auth/verification-resend-ui";
 
 export {
@@ -10,7 +11,10 @@ export {
   VERIFICATION_RESEND_COOLDOWN_SECONDS,
   VERIFICATION_RESEND_MAX_CONSECUTIVE,
 } from "@/lib/auth/verification-resend-ui";
-export { formatCountdownClock } from "@/lib/auth/verification-resend-ui";
+export {
+  formatCountdownClock,
+  type AuthEmailResendFlow,
+} from "@/lib/auth/verification-resend-ui";
 
 export interface VerificationResendStatus {
   canResend: boolean;
@@ -22,6 +26,7 @@ export interface VerificationResendStatus {
 
 interface ResendLimitRow {
   email: string;
+  flow: AuthEmailResendFlow;
   resend_count: number;
   last_resend_at: string | null;
   blocked_until: string | null;
@@ -38,12 +43,16 @@ function secondsUntil(isoDate: string | null | undefined, fromMs: number): numbe
   return Math.max(0, Math.ceil((target - fromMs) / 1000));
 }
 
-async function fetchLimitRow(email: string): Promise<ResendLimitRow | null> {
+async function fetchLimitRow(
+  email: string,
+  flow: AuthEmailResendFlow,
+): Promise<ResendLimitRow | null> {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("auth_verification_resend_limits")
-    .select("email, resend_count, last_resend_at, blocked_until")
+    .select("email, flow, resend_count, last_resend_at, blocked_until")
     .eq("email", email)
+    .eq("flow", flow)
     .maybeSingle();
 
   if (error) {
@@ -56,6 +65,7 @@ async function fetchLimitRow(email: string): Promise<ResendLimitRow | null> {
 
 async function upsertLimitRow(
   email: string,
+  flow: AuthEmailResendFlow,
   patch: Partial<
     Pick<ResendLimitRow, "resend_count" | "last_resend_at" | "blocked_until">
   >,
@@ -66,12 +76,13 @@ async function upsertLimitRow(
   const { error } = await admin.from("auth_verification_resend_limits").upsert(
     {
       email,
+      flow,
       resend_count: patch.resend_count ?? 0,
       last_resend_at: patch.last_resend_at ?? null,
       blocked_until: patch.blocked_until ?? null,
       updated_at: now,
     },
-    { onConflict: "email" },
+    { onConflict: "email,flow" },
   );
 
   if (error) {
@@ -130,17 +141,18 @@ function buildStatusFromRow(
 
 export async function getVerificationResendStatus(
   email: string,
+  flow: AuthEmailResendFlow = "signup",
 ): Promise<VerificationResendStatus> {
   const normalized = normalizeEmail(email);
   if (!normalized) {
     return buildStatusFromRow(null);
   }
 
-  const row = await fetchLimitRow(normalized);
+  const row = await fetchLimitRow(normalized, flow);
   const nowMs = Date.now();
 
   if (row?.blocked_until && secondsUntil(row.blocked_until, nowMs) === 0) {
-    await upsertLimitRow(normalized, {
+    await upsertLimitRow(normalized, flow, {
       resend_count: 0,
       last_resend_at: row.last_resend_at,
       blocked_until: null,
@@ -158,14 +170,15 @@ export async function getVerificationResendStatus(
 /** Marca envío inicial del correo (registro o reactivación) sin consumir un reenvío manual. */
 export async function recordInitialVerificationEmailSent(
   email: string,
+  flow: AuthEmailResendFlow = "signup",
 ): Promise<void> {
   const normalized = normalizeEmail(email);
   if (!normalized) return;
 
-  const row = await fetchLimitRow(normalized);
+  const row = await fetchLimitRow(normalized, flow);
   const nowIso = new Date().toISOString();
 
-  await upsertLimitRow(normalized, {
+  await upsertLimitRow(normalized, flow, {
     resend_count: row?.resend_count ?? 0,
     last_resend_at: nowIso,
     blocked_until:
@@ -197,8 +210,9 @@ export function formatResendWaitMessage(seconds: number): string {
 
 export async function assertVerificationResendAllowed(
   email: string,
+  flow: AuthEmailResendFlow = "signup",
 ): Promise<VerificationResendGateResult> {
-  const status = await getVerificationResendStatus(email);
+  const status = await getVerificationResendStatus(email, flow);
 
   if (status.blockedSeconds > 0) {
     return {
@@ -235,12 +249,14 @@ export async function assertVerificationResendAllowed(
 
 export async function recordVerificationResendSuccess(
   email: string,
+  flow: AuthEmailResendFlow = "signup",
 ): Promise<VerificationResendStatus> {
   const normalized = normalizeEmail(email);
   const now = new Date();
   const nowIso = now.toISOString();
-  const row = (await fetchLimitRow(normalized)) ?? {
+  const row = (await fetchLimitRow(normalized, flow)) ?? {
     email: normalized,
+    flow,
     resend_count: 0,
     last_resend_at: null,
     blocked_until: null,
@@ -249,7 +265,7 @@ export async function recordVerificationResendSuccess(
   const nextCount = row.resend_count + 1;
   const hitLimit = nextCount >= VERIFICATION_RESEND_MAX_CONSECUTIVE;
 
-  await upsertLimitRow(normalized, {
+  await upsertLimitRow(normalized, flow, {
     resend_count: hitLimit ? 0 : nextCount,
     last_resend_at: nowIso,
     blocked_until: hitLimit
@@ -278,7 +294,10 @@ export async function recordVerificationResendSuccess(
   };
 }
 
-export async function clearVerificationResendLimits(email: string): Promise<void> {
+export async function clearVerificationResendLimits(
+  email: string,
+  flow: AuthEmailResendFlow = "signup",
+): Promise<void> {
   const normalized = normalizeEmail(email);
   if (!normalized) return;
 
@@ -286,7 +305,8 @@ export async function clearVerificationResendLimits(email: string): Promise<void
   const { error } = await admin
     .from("auth_verification_resend_limits")
     .delete()
-    .eq("email", normalized);
+    .eq("email", normalized)
+    .eq("flow", flow);
 
   if (error) {
     console.error("[verification-resend-limits] clear", error.message);

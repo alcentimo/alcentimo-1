@@ -742,6 +742,18 @@ export async function sendPasswordResetEmailAction(input: {
     return { ok: false, error: "Ingresa un correo válido." };
   }
 
+  const sendResult = await sendPasswordResetEmailOnly(email);
+  if (!sendResult.ok) {
+    return sendResult;
+  }
+
+  await recordInitialVerificationEmailSent(email, "recovery");
+  return { ok: true };
+}
+
+async function sendPasswordResetEmailOnly(
+  email: string,
+): Promise<AuthEmailActionResult> {
   try {
     const redirectTo = getPasswordResetRedirectUrl();
     const { data, error } = await generateAuthLink({
@@ -785,7 +797,7 @@ export async function sendPasswordResetEmailAction(input: {
 
     return { ok: true };
   } catch (error) {
-    console.error("[sendPasswordResetEmailAction]", error);
+    console.error("[sendPasswordResetEmailOnly]", error);
     return {
       ok: false,
       error:
@@ -794,6 +806,115 @@ export async function sendPasswordResetEmailAction(input: {
           : "No se pudo enviar el correo de recuperación.",
     };
   }
+}
+
+export async function getPasswordRecoveryResendStatusAction(input: {
+  email: string;
+}): Promise<VerificationResendStatusResult> {
+  const email = normalizeEmail(input.email);
+  if (!isValidEmail(email)) {
+    return {
+      ok: true,
+      cooldownSeconds: 0,
+      blockedSeconds: 0,
+      resendsRemaining: 0,
+      canResend: false,
+    };
+  }
+
+  const status = await getVerificationResendStatus(email, "recovery");
+  return {
+    ok: true,
+    cooldownSeconds: status.cooldownSeconds,
+    blockedSeconds: status.blockedSeconds,
+    resendsRemaining: status.resendsRemaining,
+    canResend: status.canResend,
+  };
+}
+
+export async function resendPasswordResetEmailAction(input: {
+  email: string;
+}): Promise<VerificationResendActionResult> {
+  const email = normalizeEmail(input.email);
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Ingresa un correo válido." };
+  }
+
+  const gate = await assertVerificationResendAllowed(email, "recovery");
+  if (!gate.allowed) {
+    return {
+      ok: false,
+      error: gate.message,
+      cooldownSeconds:
+        gate.reason === "cooldown" ? gate.secondsRemaining : undefined,
+      blockedSeconds:
+        gate.reason === "blocked" || gate.reason === "limit"
+          ? gate.secondsRemaining
+          : undefined,
+      resendsRemaining: 0,
+    };
+  }
+
+  const sendResult = await sendPasswordResetEmailOnly(email);
+  if (!sendResult.ok) {
+    return {
+      ok: false,
+      error: sendResult.error,
+      resendsRemaining: gate.resendsRemaining,
+    };
+  }
+
+  const limitStatus = await recordVerificationResendSuccess(email, "recovery");
+
+  return {
+    ok: true,
+    notice: `Te enviamos un nuevo enlace de recuperación a ${email}. Revisa tu bandeja y la carpeta de spam.`,
+    cooldownSeconds:
+      limitStatus.cooldownSeconds || VERIFICATION_RESEND_COOLDOWN_SECONDS,
+    blockedSeconds: limitStatus.blockedSeconds,
+    resendsRemaining: limitStatus.resendsRemaining,
+  };
+}
+
+export async function correctPasswordRecoveryEmailAction(input: {
+  previousEmail: string;
+  newEmail: string;
+}): Promise<
+  | {
+      ok: true;
+      email: string;
+      notice: string;
+    }
+  | { ok: false; error: string }
+> {
+  const previousEmail = normalizeEmail(input.previousEmail);
+  const newEmail = normalizeEmail(input.newEmail);
+
+  if (!isValidEmail(previousEmail) || !isValidEmail(newEmail)) {
+    return { ok: false, error: "Ingresa un correo válido." };
+  }
+
+  if (previousEmail === newEmail) {
+    return {
+      ok: false,
+      error: "El nuevo correo debe ser diferente al actual.",
+    };
+  }
+
+  await clearVerificationResendLimits(previousEmail, "recovery");
+
+  const sendResult = await sendPasswordResetEmailOnly(newEmail);
+  if (!sendResult.ok) {
+    return { ok: false, error: sendResult.error };
+  }
+
+  await recordInitialVerificationEmailSent(newEmail, "recovery");
+
+  return {
+    ok: true,
+    email: newEmail,
+    notice: `Actualizamos el destino a ${newEmail} y enviamos un nuevo enlace de recuperación.`,
+  };
 }
 
 export async function sendMagicLinkEmailAction(input: {

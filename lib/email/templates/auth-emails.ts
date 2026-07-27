@@ -25,18 +25,16 @@ export function buildSignupConfirmationEmail(input: AuthEmailTemplateInput) {
     title: "Confirma tu cuenta",
     paragraphs: [
       "Gracias por registrarte en Alcentimo.",
-      "Para activar tu cuenta y continuar con la configuración de tu tienda, confirma tu correo con el botón de abajo. El enlace es válido durante 24 horas.",
+      "Para activar tu cuenta y continuar con la configuración de tu tienda, confirma tu correo con el botón de abajo o con el código de 6 dígitos.",
       input.manualVerificationUrl
-        ? `También puedes introducir el código de 6 dígitos (válido 24 horas) en: ${input.manualVerificationUrl}`
-        : "También puedes introducir el código de 6 dígitos (válido 24 horas) en la pantalla de verificación de Alcentimo.",
+        ? `Puedes introducir el código en: ${input.manualVerificationUrl}`
+        : "También puedes introducir el código en la pantalla de verificación de Alcentimo.",
     ],
     actionLabel: "Confirmar mi cuenta",
     actionUrl: input.actionUrl,
     verificationCode: input.verificationCode,
-    verificationCodeHint:
-      "Código de 6 dígitos (válido 24 horas) para confirmar tu cuenta:",
-    footerNote:
-      "Este enlace y el código expiran por seguridad en 24 horas.",
+    verificationCodeHint: "Código de 6 dígitos para confirmar tu cuenta:",
+    footerNote: "Este enlace y el código expiran por seguridad en 24 horas.",
   });
 }
 
@@ -46,14 +44,13 @@ export function buildPasswordResetEmail(input: AuthEmailTemplateInput) {
     title: "Restablece tu contraseña",
     paragraphs: [
       "Recibimos una solicitud para cambiar la contraseña de tu cuenta.",
-      "Si fuiste tú, usa el botón de abajo para crear una nueva contraseña.",
+      "Si fuiste tú, usa el botón de abajo o el código de 6 dígitos para crear una nueva contraseña.",
     ],
     actionLabel: "Crear nueva contraseña",
     actionUrl: input.actionUrl,
     verificationCode: input.verificationCode,
-    verificationCodeHint: "Código para restablecer tu contraseña:",
-    footerNote:
-      "El enlace y el código expiran después de un tiempo por seguridad. Si no solicitaste este cambio, ignora este correo.",
+    verificationCodeHint: "Código de 6 dígitos para restablecer tu contraseña:",
+    footerNote: "Este enlace y el código expiran por seguridad en 24 horas.",
   });
 }
 

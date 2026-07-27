@@ -4,7 +4,14 @@ import { AuthPageShell } from "@/components/auth/AuthPageShell";
 
 export const dynamic = "force-dynamic";
 
-export default function RecoverPasswordPage() {
+export default async function RecoverPasswordPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ email?: string }>;
+}) {
+  const params = await searchParams;
+  const initialEmail = params.email?.trim() ?? "";
+
   return (
     <AuthPageShell
       title="Recupera el acceso"
@@ -18,7 +25,7 @@ export default function RecoverPasswordPage() {
         </p>
       }
     >
-      <ForgotPasswordPanel />
+      <ForgotPasswordPanel initialEmail={initialEmail} />
     </AuthPageShell>
   );
 }

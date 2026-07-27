@@ -169,7 +169,7 @@ function VerificationPanelBody({
             }}
             className="link-brand text-sm font-medium"
           >
-            ¿Te equivocaste? Corregir correo
+            ¿Escribiste mal tu correo? Modificar
           </button>
         ) : null}
       </div>
