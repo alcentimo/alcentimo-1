@@ -688,21 +688,33 @@ body {
 }
 
 .landing-header-brand {
-  @apply items-center self-center;
+  @apply shrink-0 items-center justify-start bg-transparent p-0 shadow-none ring-0;
 }
 
-.landing-header .landing-header-brand .brand-logo-header-public,
-.landing-header .landing-header-brand .brand-logo-dynamic,
-.landing-header .landing-header-brand .brand-logo-mark-img-full-lg {
-  height: 3.5rem;
+.landing-header-logo-img {
+  height: 2.25rem;
   width: auto;
-  min-width: 0;
-  max-width: min(80vw, 20rem);
+  max-width: min(58vw, 10.5rem);
 }
 
-.landing-header .landing-header-brand .brand-logo-mark-img-isotype-lg {
-  height: 3.5rem;
-  width: 3.5rem;
+.landing-footer-logo-img {
+  height: 2rem;
+  width: auto;
+  max-width: 9.5rem;
+}
+
+@media (min-width: 768px) {
+  .landing-header-logo-img {
+    height: 2.75rem;
+    max-width: 14rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-header-logo-img {
+    height: 3rem;
+    max-width: 15rem;
+  }
 }
 
 .landing-header-brand .brand-logo-name {
@@ -802,6 +814,24 @@ body {
 
 .brand-logo-responsive {
   @apply items-center self-center;
+}
+
+.brand-logo-mark-responsive-mobile {
+  display: inline-flex;
+}
+
+.brand-logo-mark-responsive-desktop {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .brand-logo-mark-responsive-mobile {
+    display: none !important;
+  }
+
+  .brand-logo-mark-responsive-desktop {
+    display: inline-flex !important;
+  }
 }
 
 .brand-logo-header-mobile {

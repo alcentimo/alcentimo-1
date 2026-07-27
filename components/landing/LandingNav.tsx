@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
-import { BrandLogo } from "@/components/ui/BrandLogo";
+import { LandingHeaderLogo } from "@/components/landing/LandingHeaderLogo";
 import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 
 const navLinks = [
@@ -34,14 +34,7 @@ export function LandingNav() {
       }`}
     >
       <div className="page-container flex min-h-[4.5rem] items-center justify-between gap-4 py-2.5 md:min-h-20 md:py-3 lg:min-h-[5.25rem] lg:py-3.5">
-        <BrandLogo
-          href="/"
-          size="lg"
-          variant="landing"
-          responsive
-          showName={false}
-          className="landing-header-brand"
-        />
+        <LandingHeaderLogo size="header" />
 
         <nav
           className="hidden items-center gap-0.5 md:flex"

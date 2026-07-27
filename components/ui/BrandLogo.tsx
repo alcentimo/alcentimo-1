@@ -105,14 +105,18 @@ function BrandBuiltInMark({
         <BrandImageMark
           src={BRAND_ISOTYPE_PATH}
           alt={alt}
-          wrapClassName={cn(isotypeSizeClass(size), "md:hidden", markClassName)}
+          wrapClassName={cn(
+            isotypeSizeClass(size),
+            "brand-logo-mark-responsive-mobile",
+            markClassName,
+          )}
         />
         <BrandImageMark
           src={BRAND_LOGO_FULL_PATH}
           alt={alt}
           wrapClassName={cn(
             fullSizeClass(size),
-            "hidden md:flex",
+            "brand-logo-mark-responsive-desktop",
             fullClassName,
           )}
         />
