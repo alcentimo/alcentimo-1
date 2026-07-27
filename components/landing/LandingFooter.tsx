@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 
 export function LandingFooter() {
   return (
@@ -25,7 +26,7 @@ export function LandingFooter() {
             className="flex flex-wrap gap-x-8 gap-y-3 text-sm"
             aria-label="Enlaces del pie de página"
           >
-            <Link href="/dashboard/productos/nuevo" className="link-brand">
+            <Link href={MERCHANT_SIGNUP_HREF} className="link-brand">
               Comenzar gratis
             </Link>
             <Link href="/dashboard/login" className="link-brand">

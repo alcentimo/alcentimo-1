@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 
 const navLinks = [
   { href: "#experiencia", label: "Producto" },
@@ -62,7 +63,7 @@ export function LandingNav() {
             Iniciar sesión
           </Link>
           <Link
-            href="/dashboard/productos/nuevo"
+            href={MERCHANT_SIGNUP_HREF}
             prefetch={true}
             className="btn-brand ml-1 gap-2 px-4 touch-manipulation"
           >
@@ -104,7 +105,7 @@ export function LandingNav() {
               Iniciar sesión
             </Link>
             <Link
-              href="/dashboard/productos/nuevo"
+              href={MERCHANT_SIGNUP_HREF}
               prefetch={true}
               onClick={() => setOpen(false)}
               className="btn-brand mt-2 gap-2 touch-manipulation"

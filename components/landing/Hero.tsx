@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { HeroCompositeMockup } from "@/components/landing/HeroCompositeMockup";
-
-const SIGNUP_HREF = "/dashboard/login?mode=signup&next=/onboarding";
+import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 
 const heroHighlights = [
   "IA que te ayuda a controlar inventario y anticipar faltantes.",
@@ -54,7 +53,7 @@ export function Hero() {
 
             <div className="mt-10">
               <Link
-                href={SIGNUP_HREF}
+                href={MERCHANT_SIGNUP_HREF}
                 prefetch={true}
                 className="btn-brand inline-flex gap-2 px-7 py-3 text-base shadow-lg shadow-emerald-500/20 touch-manipulation"
               >

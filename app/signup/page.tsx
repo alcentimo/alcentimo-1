@@ -1,0 +1,59 @@
+import Link from "next/link";
+import { Suspense } from "react";
+import { AuthPanel } from "@/components/dashboard/AuthPanel";
+import { AuthPageShell } from "@/components/auth/AuthPageShell";
+
+export const dynamic = "force-dynamic";
+
+export default function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="card-panel mx-auto w-full max-w-md animate-pulse p-8">
+          Cargando…
+        </div>
+      }
+    >
+      <SignupPageContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function SignupPageContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+  const isInvitationFlow = Boolean(next?.includes("/dashboard/invitacion"));
+  const loginHref = next?.trim()
+    ? `/dashboard/login?next=${encodeURIComponent(next.trim())}`
+    : "/dashboard/login";
+
+  return (
+    <AuthPageShell
+      title={isInvitationFlow ? "Únete al equipo" : "Crea tu cuenta"}
+      description={
+        isInvitationFlow
+          ? "Regístrate o inicia sesión para aceptar tu invitación."
+          : "Regístrate gratis y configura tu catálogo en minutos."
+      }
+      footer={
+        isInvitationFlow ? null : (
+          <p className="text-center text-sm text-zinc-500">
+            ¿Ya tienes cuenta?{" "}
+            <Link href={loginHref} className="link-brand">
+              Inicia sesión
+            </Link>
+          </p>
+        )
+      }
+    >
+      <AuthPanel defaultMode="signup" />
+    </AuthPageShell>
+  );
+}

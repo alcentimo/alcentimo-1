@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 
 export function LandingCta() {
   return (
@@ -16,7 +17,7 @@ export function LandingCta() {
               compran. En minutos puedes estar recibiendo pedidos organizados.
             </p>
             <Link
-              href="/dashboard/productos/nuevo"
+              href={MERCHANT_SIGNUP_HREF}
               prefetch={true}
               className="btn-brand mt-8 inline-flex gap-2 px-6 shadow-lg shadow-emerald-500/15 touch-manipulation"
             >

@@ -12,7 +12,7 @@ import {
   type LandingInstantStoreDraft,
 } from "@/lib/landing/preview-draft-storage";
 
-const SIGNUP_HREF = "/dashboard/login?mode=signup&next=/onboarding";
+import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 
 export function HeroInstantStoreExperience() {
   const [businessHint, setBusinessHint] = useState("");
@@ -137,7 +137,7 @@ export function HeroInstantStoreExperience() {
 
         <div className="mt-8">
           <Link
-            href={SIGNUP_HREF}
+            href={MERCHANT_SIGNUP_HREF}
             prefetch={true}
             className="btn-brand inline-flex gap-2 px-7 py-3 text-base shadow-lg shadow-emerald-500/20 touch-manipulation"
           >
@@ -153,7 +153,7 @@ export function HeroInstantStoreExperience() {
 
       <div className="w-full lg:justify-self-end">
         {preview ? (
-          <HeroInstantStorePreview preview={preview} signupHref={SIGNUP_HREF} />
+          <HeroInstantStorePreview preview={preview} signupHref={MERCHANT_SIGNUP_HREF} />
         ) : (
           <HeroCompositeMockup />
         )}

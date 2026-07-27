@@ -24,7 +24,7 @@ import { SignupEmailVerificationPanel } from "@/components/dashboard/SignupEmail
 const devSkipEmailConfirmation =
   process.env.NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION === "true";
 
-export function AuthPanel() {
+export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } = {}) {
   const searchParams = useSearchParams();
   const nextParam = searchParams.get("next");
   const modeParam = searchParams.get("mode");
@@ -32,7 +32,9 @@ export function AuthPanel() {
   const isInvitationFlow = isInvitationNextPath(nextParam);
 
   const [mode, setMode] = useState<"login" | "signup">(
-    isInvitationFlow || modeParam === "signup" ? "signup" : "login",
+    isInvitationFlow || modeParam === "signup" || defaultMode === "signup"
+      ? "signup"
+      : "login",
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

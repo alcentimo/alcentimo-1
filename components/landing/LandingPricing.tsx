@@ -13,6 +13,7 @@ import {
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
 import { PLAN_PRICING_TIERS } from "@/src/config/plan-pricing-ui";
+import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 
 function formatLandingPrice(tier: PlanPricingTier): {
   price: string;
@@ -59,7 +60,7 @@ export function LandingPricing({
             const { price, period } = formatLandingPrice(tier);
             const ctaHref =
               tier.planId === "free"
-                ? "/dashboard/productos/nuevo"
+                ? MERCHANT_SIGNUP_HREF
                 : "/dashboard/planes";
 
             return (
