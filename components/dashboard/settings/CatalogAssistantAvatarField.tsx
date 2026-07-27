@@ -1,15 +1,15 @@
 "use client";
 
-import Image from "next/image";
-import { Store } from "lucide-react";
+import { Store, Sparkles } from "lucide-react";
 import {
-  getAssistantAvatarCategoriesForRubro,
+  getAssistantAvatarGalleryForRubro,
   getAssistantAvatarPreset,
-  getAssistantAvatarPresetsByCategory,
+  getDefaultPresetForRubro,
 } from "@/lib/store-settings/assistant-avatar-presets";
 import { normalizeAssistantAvatarSettings } from "@/lib/store-settings/assistant-avatar";
 import type { CatalogAssistantAvatarSettings } from "@/lib/store-settings/types";
 import { CatalogAssistantAvatarUpload } from "@/components/dashboard/settings/CatalogAssistantAvatarUpload";
+import { AnimatedAssistantAvatar } from "@/components/shared/AnimatedAssistantAvatar";
 import { cn } from "@/lib/cn";
 
 interface CatalogAssistantAvatarFieldProps {
@@ -34,8 +34,8 @@ const MODE_OPTIONS: Array<{
   },
   {
     mode: "preset",
-    label: "Galería de personajes",
-    description: "Elige un avatar predefinido según el estilo de tu rubro.",
+    label: "Personajes de tu rubro",
+    description: "Avatares animados pensados para el giro de tu tienda.",
   },
   {
     mode: "custom",
@@ -52,7 +52,7 @@ export function CatalogAssistantAvatarField({
   disabled = false,
 }: CatalogAssistantAvatarFieldProps) {
   const settings = normalizeAssistantAvatarSettings(value);
-  const categories = getAssistantAvatarCategoriesForRubro(storeRubro);
+  const gallery = getAssistantAvatarGalleryForRubro(storeRubro);
   const selectedPreset = settings.presetId
     ? getAssistantAvatarPreset(settings.presetId)
     : undefined;
@@ -67,14 +67,10 @@ export function CatalogAssistantAvatarField({
 
     if (mode === "preset") {
       const fallbackPreset =
-        selectedPreset ??
-        getAssistantAvatarPresetsByCategory(
-          categories.find((category) => category.id !== "general")?.id ??
-            "general",
-        )[0];
+        selectedPreset ?? getDefaultPresetForRubro(storeRubro);
       onChange({
         mode: "preset",
-        presetId: fallbackPreset?.id,
+        presetId: fallbackPreset.id,
       });
       return;
     }
@@ -98,11 +94,62 @@ export function CatalogAssistantAvatarField({
     onChange({ mode: "custom", customImageUrl });
   }
 
+  function renderPresetGrid(
+    presets: typeof gallery.generalPresets,
+    sectionLabel: string,
+  ) {
+    if (presets.length === 0) return null;
+
+    return (
+      <section className="design-assistant-avatar-section">
+        <div className="design-assistant-avatar-section-header">
+          <Sparkles className="h-3.5 w-3.5 text-teal-500" aria-hidden="true" />
+          <h4 className="design-assistant-avatar-section-title">{sectionLabel}</h4>
+        </div>
+        <div className="design-assistant-avatar-grid">
+          {presets.map((preset) => {
+            const selected = settings.presetId === preset.id;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                disabled={disabled}
+                onClick={() => setPreset(preset.id)}
+                className={cn(
+                  "design-assistant-avatar-option",
+                  selected && "design-assistant-avatar-option-selected",
+                )}
+                aria-pressed={selected}
+                title={preset.label}
+              >
+                <AnimatedAssistantAvatar
+                  imageUrl={preset.imagePath}
+                  label={preset.label}
+                  size="md"
+                  animation={preset.animation}
+                  animated
+                  className="design-assistant-avatar-option-avatar"
+                />
+                <span className="design-assistant-avatar-option-label">
+                  {preset.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <div className="design-assistant-avatar-field space-y-4">
       <p className="text-xs leading-relaxed text-zinc-500">
-        Personaliza el avatar del widget flotante de IA y del chat público de tu
-        catálogo.
+        Detectamos tu rubro{" "}
+        <span className="font-medium text-zinc-700 dark:text-zinc-200">
+          {gallery.rubroLabel}
+        </span>{" "}
+        y mostramos personajes relevantes con micro-animaciones suaves en el
+        widget y el chat.
       </p>
 
       <div className="space-y-1">
@@ -138,12 +185,10 @@ export function CatalogAssistantAvatarField({
             )}
           >
             {storeLogoUrl ? (
-              <Image
-                src={storeLogoUrl}
-                alt=""
-                fill
-                sizes="64px"
-                className="object-cover"
+              <AnimatedAssistantAvatar
+                imageUrl={storeLogoUrl}
+                label="Logo"
+                size="lg"
               />
             ) : (
               <Store className="h-6 w-6 text-zinc-400" aria-hidden="true" />
@@ -163,51 +208,14 @@ export function CatalogAssistantAvatarField({
       ) : null}
 
       {settings.mode === "preset" ? (
-        <div className="space-y-4">
-          {categories.map((category) => {
-            const presets = getAssistantAvatarPresetsByCategory(category.id);
-            if (presets.length === 0) return null;
-
-            return (
-              <section key={category.id} className="space-y-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  {category.label}
-                </h4>
-                <div className="design-assistant-avatar-grid">
-                  {presets.map((preset) => {
-                    const selected = settings.presetId === preset.id;
-                    return (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => setPreset(preset.id)}
-                        className={cn(
-                          "design-assistant-avatar-option",
-                          selected && "design-assistant-avatar-option-selected",
-                        )}
-                        aria-pressed={selected}
-                        title={preset.label}
-                      >
-                        <span className="design-assistant-avatar-option-image">
-                          <Image
-                            src={preset.imagePath}
-                            alt=""
-                            fill
-                            sizes="56px"
-                            className="object-cover"
-                          />
-                        </span>
-                        <span className="design-assistant-avatar-option-label">
-                          {preset.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
+        <div className="design-assistant-avatar-gallery space-y-5">
+          {gallery.rubro !== "general"
+            ? renderPresetGrid(
+                gallery.rubroPresets,
+                `Personajes de ${gallery.rubroLabel}`,
+              )
+            : null}
+          {renderPresetGrid(gallery.generalPresets, "Personajes generales")}
         </div>
       ) : null}
 

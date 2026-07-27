@@ -14,6 +14,8 @@ interface CatalogAppShellProps {
   storeName: string;
   storeLogoUrl: string | null;
   supportAvatarUrl?: string | null;
+  supportAvatarAnimation?: import("@/lib/store-settings/assistant-avatar-presets").AssistantAvatarAnimationKind | null;
+  supportAvatarAnimated?: boolean;
   supportMerchantName?: string | null;
   storeRubro?: string | null;
   enablePcBuilder?: boolean;
@@ -27,6 +29,8 @@ export function CatalogAppShell({
   storeName,
   storeLogoUrl,
   supportAvatarUrl = null,
+  supportAvatarAnimation = null,
+  supportAvatarAnimated = false,
   supportMerchantName = null,
   storeRubro = null,
   enablePcBuilder = false,
@@ -52,6 +56,8 @@ export function CatalogAppShell({
           storeSlug={storeSlug}
           storeName={storeName}
           avatarUrl={supportAvatarUrl}
+          avatarAnimation={supportAvatarAnimation}
+          avatarAnimated={supportAvatarAnimated}
           merchantName={supportMerchantName}
           whatsappPhone={whatsappPhone}
         />

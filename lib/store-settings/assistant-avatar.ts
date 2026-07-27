@@ -1,4 +1,7 @@
-import { getAssistantAvatarPreset } from "@/lib/store-settings/assistant-avatar-presets";
+import {
+  getAssistantAvatarPreset,
+  resolveAssistantAvatarPresetId,
+} from "@/lib/store-settings/assistant-avatar-presets";
 import type { CatalogAssistantAvatarSettings } from "@/lib/store-settings/types";
 
 export function defaultAssistantAvatarSettings(): CatalogAssistantAvatarSettings {
@@ -34,8 +37,9 @@ export function normalizeAssistantAvatarSettings(
   if (mode === "preset") {
     const presetId =
       typeof record.presetId === "string" ? record.presetId.trim() : "";
-    if (presetId && getAssistantAvatarPreset(presetId)) {
-      return { mode, presetId };
+    const resolvedId = resolveAssistantAvatarPresetId(presetId);
+    if (resolvedId && getAssistantAvatarPreset(resolvedId)) {
+      return { mode, presetId: resolvedId };
     }
     return defaults;
   }

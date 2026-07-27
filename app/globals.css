@@ -6467,32 +6467,48 @@ body {
   @apply space-y-3;
 }
 
+.design-assistant-avatar-gallery {
+  @apply rounded-2xl border border-zinc-200/80 bg-gradient-to-b from-zinc-50/90 to-white p-3 dark:border-zinc-800 dark:from-zinc-900/50 dark:to-zinc-950;
+}
+
+.design-assistant-avatar-section {
+  @apply space-y-2.5;
+}
+
+.design-assistant-avatar-section-header {
+  @apply flex items-center gap-1.5;
+}
+
+.design-assistant-avatar-section-title {
+  @apply text-xs font-semibold uppercase tracking-wide text-zinc-500;
+}
+
 .design-assistant-avatar-preview-card {
   @apply flex items-center gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/80 p-3 dark:border-zinc-800 dark:bg-zinc-900/40;
 }
 
 .design-assistant-avatar-preview-circle {
-  @apply relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950;
+  @apply relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950;
 }
 
 .design-assistant-avatar-preview-circle-empty {
-  @apply flex items-center justify-center bg-zinc-100 dark:bg-zinc-900;
+  @apply bg-zinc-100 dark:bg-zinc-900;
 }
 
 .design-assistant-avatar-grid {
-  @apply grid grid-cols-2 gap-2 sm:grid-cols-3;
+  @apply grid grid-cols-2 gap-2.5 sm:grid-cols-3;
 }
 
 .design-assistant-avatar-option {
-  @apply flex flex-col items-center gap-1.5 rounded-xl border border-zinc-200/80 bg-white p-2 text-left transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700;
+  @apply flex flex-col items-center gap-2 rounded-2xl border border-zinc-200/80 bg-white p-2.5 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-teal-700;
 }
 
 .design-assistant-avatar-option-selected {
-  @apply border-teal-500 ring-2 ring-teal-500/20 dark:border-teal-400;
+  @apply border-teal-500 bg-teal-50/40 ring-2 ring-teal-500/25 dark:border-teal-400 dark:bg-teal-950/20;
 }
 
-.design-assistant-avatar-option-image {
-  @apply relative h-14 w-14 overflow-hidden rounded-full;
+.design-assistant-avatar-option-avatar {
+  @apply shadow-md;
 }
 
 .design-assistant-avatar-option-label {
@@ -6505,6 +6521,160 @@ body {
 
 .design-assistant-avatar-upload-preview-empty {
   @apply flex items-center justify-center border-dashed bg-zinc-50 dark:bg-zinc-900/50;
+}
+
+/* Animated assistant avatar shell */
+.assistant-avatar-shell {
+  @apply relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full;
+}
+
+.assistant-avatar-shell-animated {
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+.assistant-avatar-xs {
+  @apply h-7 w-7;
+}
+
+.assistant-avatar-sm {
+  @apply h-8 w-8;
+}
+
+.assistant-avatar-md {
+  @apply h-14 w-14;
+}
+
+.assistant-avatar-lg {
+  @apply h-16 w-16;
+}
+
+.assistant-avatar-image {
+  @apply h-full w-full object-cover;
+}
+
+.assistant-avatar-fallback {
+  @apply flex h-full w-full items-center justify-center text-sm font-semibold;
+  background-color: color-mix(in srgb, var(--txn-primary, #0d9488) 16%, white);
+  color: var(--txn-primary, #0d9488);
+}
+
+.assistant-avatar-shine {
+  @apply pointer-events-none absolute inset-0;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 65%
+  );
+  transform: translateX(-120%);
+  animation: assistant-avatar-shine 4.5s ease-in-out infinite;
+}
+
+.assistant-avatar-glow-ring {
+  @apply pointer-events-none absolute inset-0 rounded-full;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  animation: assistant-avatar-glow 3.2s ease-in-out infinite;
+}
+
+.assistant-avatar-animate-float {
+  animation: assistant-avatar-float 3.6s ease-in-out infinite;
+}
+
+.assistant-avatar-animate-wave {
+  animation: assistant-avatar-wave 2.8s ease-in-out infinite;
+}
+
+.assistant-avatar-animate-glow {
+  animation: assistant-avatar-pulse-scale 2.6s ease-in-out infinite;
+}
+
+.assistant-avatar-animate-pulse {
+  animation: assistant-avatar-pulse-scale 2.2s ease-in-out infinite;
+}
+
+.assistant-avatar-animate-bob {
+  animation: assistant-avatar-bob 3s ease-in-out infinite;
+}
+
+@keyframes assistant-avatar-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes assistant-avatar-wave {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-4deg);
+  }
+  75% {
+    transform: rotate(4deg);
+  }
+}
+
+@keyframes assistant-avatar-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  35% {
+    transform: translateY(-3px) rotate(-2deg);
+  }
+  70% {
+    transform: translateY(-1px) rotate(2deg);
+  }
+}
+
+@keyframes assistant-avatar-pulse-scale {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+@keyframes assistant-avatar-shine {
+  0%,
+  72%,
+  100% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  78% {
+    opacity: 1;
+  }
+  88% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+@keyframes assistant-avatar-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-avatar-shell-animated,
+  .assistant-avatar-shine,
+  .assistant-avatar-glow-ring {
+    animation: none !important;
+  }
 }
 
 .design-studio-main {
@@ -6916,7 +7086,9 @@ body {
 
 .catalog-chat-avatar {
   @apply relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-white dark:ring-zinc-900;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--txn-primary, #0d9488) 25%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--txn-primary, #0d9488) 25%, transparent),
+    0 8px 20px color-mix(in srgb, var(--txn-primary, #0d9488) 18%, transparent);
 }
 
 .catalog-chat-avatar-sm {

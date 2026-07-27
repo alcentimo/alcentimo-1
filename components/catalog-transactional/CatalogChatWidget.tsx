@@ -13,6 +13,8 @@ interface CatalogChatWidgetProps {
   storeSlug: string;
   storeName: string;
   avatarUrl?: string | null;
+  avatarAnimation?: import("@/lib/store-settings/assistant-avatar-presets").AssistantAvatarAnimationKind | null;
+  avatarAnimated?: boolean;
   merchantName?: string | null;
   whatsappPhone?: string | null;
 }
@@ -43,6 +45,8 @@ export function CatalogChatWidget({
   storeSlug,
   storeName,
   avatarUrl = null,
+  avatarAnimation = null,
+  avatarAnimated = false,
   merchantName = null,
   whatsappPhone = null,
 }: CatalogChatWidgetProps) {
@@ -176,6 +180,8 @@ export function CatalogChatWidget({
           imageUrl={avatarUrl}
           label={avatarLabel}
           size="sm"
+          animation={avatarAnimation}
+          animated={avatarAnimated}
           className="catalog-chat-fab-avatar"
         />
       </button>
@@ -199,6 +205,8 @@ export function CatalogChatWidget({
                   imageUrl={avatarUrl}
                   label={avatarLabel}
                   size="md"
+                  animation={avatarAnimation}
+                  animated={avatarAnimated}
                 />
                 <div className="min-w-0">
                   <h2 className="catalog-chat-title">{supportTitle}</h2>
@@ -236,6 +244,8 @@ export function CatalogChatWidget({
                       imageUrl={avatarUrl}
                       label={avatarLabel}
                       size="sm"
+                      animation={avatarAnimation}
+                      animated={avatarAnimated}
                       className="catalog-chat-bubble-avatar"
                     />
                   ) : null}
@@ -257,6 +267,8 @@ export function CatalogChatWidget({
                     imageUrl={avatarUrl}
                     label={avatarLabel}
                     size="sm"
+                    animation={avatarAnimation}
+                    animated={avatarAnimated}
                     className="catalog-chat-bubble-avatar"
                   />
                   <div className="catalog-chat-bubble catalog-chat-bubble-assistant catalog-chat-typing">
