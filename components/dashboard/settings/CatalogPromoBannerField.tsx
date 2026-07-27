@@ -217,11 +217,18 @@ export function CatalogPromoBannerField({
             type="button"
             disabled={!canAddSlide}
             onClick={addSlide}
-            className="design-promo-banner-add inline-flex items-center gap-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 disabled:opacity-60 dark:text-zinc-300 dark:hover:text-zinc-100"
+            className="design-promo-banner-add inline-flex items-center gap-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-60 dark:text-zinc-300 dark:hover:text-zinc-100"
           >
             <Plus className="h-3.5 w-3.5" aria-hidden="true" />
             Añadir imagen al carrusel
           </button>
+
+          {!canAddSlide ? (
+            <p className="px-2 text-xs leading-relaxed text-zinc-500">
+              Límite alcanzado: máximo {MAX_PROMO_BANNER_SLIDES} imágenes por
+              carrusel.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>

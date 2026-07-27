@@ -12,7 +12,10 @@ import {
   getActivePromoBannerSlides,
   resolvePromoBannerSettings,
 } from "@/lib/store-settings/promo-banner";
-import type { CatalogPromoBannerSettings } from "@/lib/store-settings/types";
+import type {
+  CatalogPromoBannerSettings,
+  CatalogPromoBannerSlide,
+} from "@/lib/store-settings/types";
 import { cn } from "@/lib/cn";
 
 interface CatalogPromoBannerCarouselProps {
@@ -21,7 +24,7 @@ interface CatalogPromoBannerCarouselProps {
   className?: string;
 }
 
-const AUTO_ADVANCE_MS = 6500;
+const AUTO_ADVANCE_MS = 6000;
 const AUTO_RESUME_MS = 8000;
 
 function resolveSlideImageUrls(slide: {
@@ -32,6 +35,43 @@ function resolveSlideImageUrls(slide: {
     mobile: slide.mobileImageUrl,
     desktop: slide.desktopImageUrl?.trim() || slide.mobileImageUrl,
   };
+}
+
+function PromoBannerSlideMedia({
+  slide,
+  alt,
+  isActive,
+  isFirst,
+}: {
+  slide: CatalogPromoBannerSlide;
+  alt: string;
+  isActive: boolean;
+  isFirst: boolean;
+}) {
+  const imageUrls = resolveSlideImageUrls(slide);
+
+  return (
+    <div className="txn-promo-banner-media">
+      <Image
+        src={imageUrls.desktop}
+        alt={alt}
+        fill
+        priority={isFirst && isActive}
+        loading={isFirst && isActive ? "eager" : "lazy"}
+        sizes="(max-width: 767px) 0px, 1152px"
+        className="txn-promo-banner-image txn-promo-banner-image-desktop"
+      />
+      <Image
+        src={imageUrls.mobile}
+        alt={alt}
+        fill
+        priority={isFirst && isActive}
+        loading={isFirst && isActive ? "eager" : "lazy"}
+        sizes="100vw"
+        className="txn-promo-banner-image txn-promo-banner-image-mobile"
+      />
+    </div>
+  );
 }
 
 export function CatalogPromoBannerCarousel({
@@ -46,31 +86,31 @@ export function CatalogPromoBannerCarousel({
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hasMultiple = slides.length > 1;
+  const slideCount = slides.length;
+  const hasMultiple = slideCount > 1;
 
   const goTo = useCallback(
     (index: number) => {
-      if (slides.length === 0) return;
-      const wrapped =
-        ((index % slides.length) + slides.length) % slides.length;
+      if (slideCount === 0) return;
+      const wrapped = ((index % slideCount) + slideCount) % slideCount;
       setActiveIndex(wrapped);
     },
-    [slides.length],
+    [slideCount],
   );
 
   const goPrev = useCallback(() => {
     setActiveIndex((current) =>
-      slides.length === 0
+      slideCount === 0
         ? current
-        : ((current - 1 + slides.length) % slides.length),
+        : ((current - 1 + slideCount) % slideCount),
     );
-  }, [slides.length]);
+  }, [slideCount]);
 
   const goNext = useCallback(() => {
     setActiveIndex((current) =>
-      slides.length === 0 ? current : (current + 1) % slides.length,
+      slideCount === 0 ? current : (current + 1) % slideCount,
     );
-  }, [slides.length]);
+  }, [slideCount]);
 
   const pauseAutoAdvance = useCallback(() => {
     setIsPaused(true);
@@ -84,19 +124,23 @@ export function CatalogPromoBannerCarousel({
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [slides.length, settings.enabled]);
+  }, [slideCount, settings.enabled]);
 
   useEffect(() => {
-    if (!hasMultiple || isPaused) return;
+    if (activeIndex >= slideCount && slideCount > 0) {
+      setActiveIndex(0);
+    }
+  }, [activeIndex, slideCount]);
+
+  useEffect(() => {
+    if (slideCount < 2 || isPaused) return;
 
     const timer = window.setInterval(() => {
-      setActiveIndex((current) =>
-        slides.length === 0 ? current : (current + 1) % slides.length,
-      );
+      setActiveIndex((current) => (current + 1) % slideCount);
     }, AUTO_ADVANCE_MS);
 
     return () => window.clearInterval(timer);
-  }, [hasMultiple, isPaused, slides.length]);
+  }, [isPaused, slideCount]);
 
   useEffect(() => {
     return () => {
@@ -106,15 +150,9 @@ export function CatalogPromoBannerCarousel({
     };
   }, []);
 
-  if (slides.length === 0) {
+  if (slideCount === 0) {
     return null;
   }
-
-  const activeSlide = slides[activeIndex] ?? slides[0];
-  const imageUrls = resolveSlideImageUrls(activeSlide);
-  const alt =
-    activeSlide.alt?.trim() ||
-    `Promoción ${activeIndex + 1} de ${storeName}`;
 
   function handleTouchStart(event: React.TouchEvent) {
     touchStartX.current = event.touches[0]?.clientX ?? null;
@@ -135,29 +173,6 @@ export function CatalogPromoBannerCarousel({
     if (delta > 0) goPrev();
     else goNext();
   }
-
-  const slideContent = (
-    <div className="txn-promo-banner-media">
-      <Image
-        src={imageUrls.desktop}
-        alt={alt}
-        fill
-        priority={activeIndex === 0}
-        loading={activeIndex === 0 ? "eager" : "lazy"}
-        sizes="(max-width: 767px) 0px, 1152px"
-        className="txn-promo-banner-image txn-promo-banner-image-desktop"
-      />
-      <Image
-        src={imageUrls.mobile}
-        alt={alt}
-        fill
-        priority={activeIndex === 0}
-        loading={activeIndex === 0 ? "eager" : "lazy"}
-        sizes="100vw"
-        className="txn-promo-banner-image txn-promo-banner-image-mobile"
-      />
-    </div>
-  );
 
   return (
     <section
@@ -186,24 +201,55 @@ export function CatalogPromoBannerCarousel({
       onTouchEnd={handleTouchEnd}
     >
       <div className="txn-promo-banner-viewport">
-        {activeSlide.linkUrl ? (
-          activeSlide.linkUrl.startsWith("/") ? (
-            <Link href={activeSlide.linkUrl} className="txn-promo-banner-link">
-              {slideContent}
-            </Link>
-          ) : (
-            <a
-              href={activeSlide.linkUrl}
-              className="txn-promo-banner-link"
-              rel="noopener noreferrer"
-              target="_blank"
+        {slides.map((slide, index) => {
+          const isActive = index === activeIndex;
+          const alt =
+            slide.alt?.trim() ||
+            `Promoción ${index + 1} de ${storeName}`;
+          const slideInner = (
+            <PromoBannerSlideMedia
+              slide={slide}
+              alt={alt}
+              isActive={isActive}
+              isFirst={index === 0}
+            />
+          );
+
+          return (
+            <div
+              key={slide.id}
+              className={cn(
+                "txn-promo-banner-slide",
+                isActive && "txn-promo-banner-slide-active",
+              )}
+              aria-hidden={!isActive}
             >
-              {slideContent}
-            </a>
-          )
-        ) : (
-          slideContent
-        )}
+              {slide.linkUrl ? (
+                slide.linkUrl.startsWith("/") ? (
+                  <Link
+                    href={slide.linkUrl}
+                    className="txn-promo-banner-link"
+                    tabIndex={isActive ? 0 : -1}
+                  >
+                    {slideInner}
+                  </Link>
+                ) : (
+                  <a
+                    href={slide.linkUrl}
+                    className="txn-promo-banner-link"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    tabIndex={isActive ? 0 : -1}
+                  >
+                    {slideInner}
+                  </a>
+                )
+              ) : (
+                slideInner
+              )}
+            </div>
+          );
+        })}
 
         {hasMultiple ? (
           <>
@@ -233,7 +279,7 @@ export function CatalogPromoBannerCarousel({
             <div
               className="txn-promo-banner-dots"
               role="tablist"
-              aria-label="Promociones"
+              aria-label={`${slideCount} promociones`}
             >
               {slides.map((slide, index) => (
                 <button
@@ -241,7 +287,7 @@ export function CatalogPromoBannerCarousel({
                   type="button"
                   role="tab"
                   aria-selected={index === activeIndex}
-                  aria-label={`Ver promoción ${index + 1}`}
+                  aria-label={`Ver promoción ${index + 1} de ${slideCount}`}
                   className={cn(
                     "txn-promo-banner-dot",
                     index === activeIndex && "txn-promo-banner-dot-active",

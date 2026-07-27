@@ -5002,6 +5002,16 @@ body {
   max-height: var(--txn-promo-banner-height-mobile, 150px);
 }
 
+.txn-promo-banner-slide {
+  @apply absolute inset-0 opacity-0 transition-opacity duration-500 ease-in-out;
+  pointer-events: none;
+}
+
+.txn-promo-banner-slide-active {
+  @apply z-[1] opacity-100;
+  pointer-events: auto;
+}
+
 @media (min-width: 768px) {
   .txn-promo-banner-viewport {
     height: var(--txn-promo-banner-height-desktop, 250px);

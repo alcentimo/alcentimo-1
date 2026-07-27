@@ -3,7 +3,7 @@ import type {
   CatalogPromoBannerSlide,
 } from "@/lib/store-settings/types";
 
-export const MAX_PROMO_BANNER_SLIDES = 6;
+export const MAX_PROMO_BANNER_SLIDES = 5;
 
 export function defaultPromoBannerSettings(): CatalogPromoBannerSettings {
   return {
