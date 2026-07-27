@@ -1,20 +1,18 @@
 "use client";
 
-import { Loader2, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 interface ProductTitleAutoDetectHintProps {
-  detecting?: boolean;
   hint?: string | null;
   className?: string;
 }
 
 export function ProductTitleAutoDetectHint({
-  detecting = false,
   hint,
   className,
 }: ProductTitleAutoDetectHintProps) {
-  if (!detecting && !hint) return null;
+  if (!hint) return null;
 
   return (
     <p
@@ -25,12 +23,8 @@ export function ProductTitleAutoDetectHint({
       role="status"
       aria-live="polite"
     >
-      {detecting ? (
-        <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden="true" />
-      ) : (
-        <Sparkles className="h-3 w-3 shrink-0 opacity-80" aria-hidden="true" />
-      )}
-      {detecting ? "Analizando título…" : hint}
+      <Sparkles className="h-3 w-3 shrink-0 opacity-80" aria-hidden="true" />
+      {hint}
     </p>
   );
 }

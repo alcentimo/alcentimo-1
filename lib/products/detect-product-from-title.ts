@@ -9,6 +9,10 @@ import {
   STATIONERY_COLOR_OPTIONS,
 } from "@/lib/rubros/modules/papeleria-libreria-oficina/config";
 import { COLLECTIBLE_EDITION_OPTIONS } from "@/lib/rubros/modules/coleccionables/config";
+import {
+  TECH_CATEGORY_KEYWORDS,
+  TECH_CATEGORY_PRIORITY,
+} from "@/lib/products/tech-category-keywords";
 
 export interface ProductCategoryCandidate {
   slug: string;
@@ -25,82 +29,7 @@ export interface DetectProductFromTitleResult {
 
 /** Palabras clave por rubro → slug de categoría sugerida. */
 const CATEGORY_KEYWORDS: Partial<Record<StoreRubro, Record<string, string[]>>> = {
-  tecnologia: {
-    celulares: [
-      "iphone",
-      "samsung galaxy",
-      "smartphone",
-      "celular",
-      "móvil",
-      "movil",
-      "android",
-      "redmi",
-      "xiaomi",
-      "honor",
-      "motorola",
-      "poco",
-    ],
-    laptops: [
-      "laptop",
-      "notebook",
-      "macbook",
-      "portátil",
-      "portatil",
-      "ultrabook",
-      "thinkpad",
-      "vivobook",
-      "ideapad",
-      "legion",
-      "lenovo",
-      "dell",
-      "hp",
-      "asus",
-      "acer",
-      "msi",
-      "surface",
-      "chromebook",
-      "computadora",
-      "computador",
-      "ordenador",
-      "pc",
-      "desktop",
-      "all in one",
-      "imac",
-      "mac mini",
-    ],
-    tablets: ["tablet", "ipad", "tab s", "galaxy tab"],
-    audio: [
-      "audífono",
-      "audifono",
-      "auricular",
-      "headphone",
-      "earbud",
-      "airpods",
-      "parlante",
-      "speaker",
-      "bocina",
-      "soundbar",
-    ],
-    accesorios: [
-      "cargador",
-      "cable usb",
-      "funda",
-      "case",
-      "protector",
-      "mouse",
-      "teclado",
-      "keyboard",
-      "webcam",
-    ],
-    repuestos: ["repuesto", "pantalla lcd", "batería", "bateria", "flex", "pin de carga"],
-    procesadores: ["procesador", "cpu", "ryzen", "core i3", "core i5", "core i7", "core i9"],
-    "tarjetas-madre": ["tarjeta madre", "motherboard", "placa madre", "mainboard"],
-    "memorias-ram": ["memoria ram", "ram ddr", "ddr4", "ddr5", "sodimm"],
-    "almacenamiento-pc": ["ssd", "nvme", "disco duro", "hdd", "m.2"],
-    "tarjetas-graficas": ["tarjeta gráfica", "tarjeta grafica", "gpu", "rtx", "gtx", "radeon"],
-    "fuentes-poder": ["fuente de poder", "psu", "power supply"],
-    gabinetes: ["gabinete", "case pc", "tower"],
-  },
+  tecnologia: TECH_CATEGORY_KEYWORDS,
   "ropa-moda": {
     camisas: ["camisa", "camiseta", "polo", "blusa", "t-shirt", "tshirt"],
     pantalones: ["pantalón", "pantalon", "jean", "jogger", "short", "bermuda"],
@@ -176,10 +105,15 @@ function titleIncludesKeyword(normalizedTitle: string, keyword: string): boolean
   return normalizedTitle.includes(kw);
 }
 
+function categoryPriority(slug: string, priorityMap?: Record<string, number>): number {
+  return priorityMap?.[slug] ?? 50;
+}
+
 function scoreCategoryFromTitle(
   title: string,
   categories: ProductCategoryCandidate[],
   keywordMap: Record<string, string[]>,
+  priorityMap?: Record<string, number>,
 ): { slug: string; label: string; score: number } | null {
   const normalizedTitle = normalizeText(title);
   let best: { slug: string; label: string; score: number } | null = null;
@@ -203,7 +137,14 @@ function scoreCategoryFromTitle(
       }
     }
 
-    if (!best || score > best.score) {
+    if (
+      !best ||
+      score > best.score ||
+      (score === best.score &&
+        score > 0 &&
+        categoryPriority(category.slug, priorityMap) <
+          categoryPriority(best.slug, priorityMap))
+    ) {
       best = { slug: category.slug, label: category.label, score };
     }
   }
@@ -292,6 +233,26 @@ function extractSpecsFromTitle(
     setIfEmpty("Condición", "Nuevo / Sellado de fábrica");
   }
 
+  const vramMatch = title.match(/\b(\d+)\s*gb\s*vram\b/i);
+  if (vramMatch) {
+    setIfEmpty("VRAM", `${vramMatch[1]} GB`);
+  }
+
+  const wattMatch = title.match(/\b(\d{3,4})\s*w(?:att?s?)?\b/i);
+  if (wattMatch) {
+    setIfEmpty("Potencia", `${wattMatch[1]}W`);
+  }
+
+  const socketMatch = title.match(/\b(am4|am5|lga\s*1700|lga\s*1200)\b/i);
+  if (socketMatch) {
+    setIfEmpty("Socket", socketMatch[1].replace(/\s+/g, " ").toUpperCase());
+  }
+
+  if (/\bnvme\b/i.test(title)) {
+    setIfEmpty("Interfaz", "NVMe");
+    setIfEmpty("Tipo", "NVMe SSD");
+  }
+
   return specs;
 }
 
@@ -328,7 +289,14 @@ export function detectProductFromTitle(
 
   const normalizedRubro = normalizeStoreRubro(rubro);
   const keywordMap = CATEGORY_KEYWORDS[normalizedRubro] ?? {};
-  const match = scoreCategoryFromTitle(trimmed, categories, keywordMap);
+  const priorityMap =
+    normalizedRubro === "tecnologia" ? TECH_CATEGORY_PRIORITY : undefined;
+  const match = scoreCategoryFromTitle(
+    trimmed,
+    categories,
+    keywordMap,
+    priorityMap,
+  );
 
   const categorySlug = match?.slug ?? null;
   const categoryLabel = match?.label ?? null;

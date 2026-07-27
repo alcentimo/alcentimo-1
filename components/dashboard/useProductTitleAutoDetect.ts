@@ -10,9 +10,8 @@ import { pickExtraFieldValues, type ProductExtraFieldsMap } from "@/lib/products
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import type { ProductCategoryOption } from "@/src/config/categories";
 
-const FETCH_TIMEOUT_MS = 8_000;
-/** Confianza mínima de reglas locales para aplicar sin llamar a la API. */
-const RULES_ONLY_CONFIDENCE = 2;
+/** Confianza mínima para aplicar categoría/specs (solo diccionario local). */
+const MIN_RULES_CONFIDENCE = 2;
 
 interface UseProductTitleAutoDetectOptions {
   title: string;
@@ -22,15 +21,16 @@ interface UseProductTitleAutoDetectOptions {
   setCategorySlug: (slug: string) => void;
   extraFields: ProductExtraFieldsMap;
   setExtraFields: React.Dispatch<React.SetStateAction<ProductExtraFieldsMap>>;
-  /** Si false, no cambia la categoría (rubros que ocultan el selector). */
   applyCategory?: boolean;
-  /** Si el título coincide con el inicial (edición), no autodetectar hasta que cambie. */
   initialTitle?: string;
   enabled?: boolean;
   debounceMs?: number;
   minLength?: number;
 }
 
+/**
+ * Autodetección 100 % local (sin IA ni fetch). Instantánea tras el debounce.
+ */
 export function useProductTitleAutoDetect({
   title,
   rubro,
@@ -41,16 +41,13 @@ export function useProductTitleAutoDetect({
   applyCategory = true,
   initialTitle,
   enabled = true,
-  debounceMs = 800,
-  minLength = 4,
+  debounceMs = 350,
+  minLength = 3,
 }: UseProductTitleAutoDetectOptions) {
   const debouncedTitle = useDebouncedValue(title, debounceMs);
-  const [detecting, setDetecting] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const categoryLockedRef = useRef(false);
   const lastProcessedTitleRef = useRef<string | null>(null);
-  const requestSeqRef = useRef(0);
-  const abortRef = useRef<AbortController | null>(null);
   const initialTitleRef = useRef(initialTitle?.trim() ?? "");
   const categorySlugRef = useRef(categorySlug);
   const applyCategoryRef = useRef(applyCategory);
@@ -82,11 +79,11 @@ export function useProductTitleAutoDetect({
         );
       }
 
-      if (detectedLabel) {
+      if (detectedLabel && detectedSlug) {
         setHint(
           applyCategoryRef.current
-            ? `Categoría sugerida: ${detectedLabel}`
-            : `Datos sugeridos según «${detectedLabel}»`,
+            ? `Categoría detectada: ${detectedLabel}`
+            : `Datos detectados según «${detectedLabel}»`,
         );
       } else if (!detectedSlug) {
         setHint(null);
@@ -94,9 +91,6 @@ export function useProductTitleAutoDetect({
     },
     [rubro, setCategorySlug, setExtraFields],
   );
-
-  const applyDetectionRef = useRef(applyDetection);
-  applyDetectionRef.current = applyDetection;
 
   const handleCategoryManualChange = useCallback(
     (slug: string) => {
@@ -108,27 +102,16 @@ export function useProductTitleAutoDetect({
   );
 
   useEffect(() => {
-    if (!enabled) {
-      setDetecting(false);
-      return;
-    }
+    if (!enabled) return;
 
     const trimmed = debouncedTitle.trim();
     if (trimmed.length < minLength) {
       setHint(null);
-      setDetecting(false);
       return;
     }
 
-    if (trimmed === initialTitleRef.current) {
-      setDetecting(false);
-      return;
-    }
-
-    if (trimmed === lastProcessedTitleRef.current) {
-      setDetecting(false);
-      return;
-    }
+    if (trimmed === initialTitleRef.current) return;
+    if (trimmed === lastProcessedTitleRef.current) return;
 
     categoryLockedRef.current = false;
 
@@ -137,105 +120,25 @@ export function useProductTitleAutoDetect({
       label: item.label,
     }));
 
-    const instant = detectProductFromTitle(trimmed, rubro, categoryCandidates);
+    const result = detectProductFromTitle(trimmed, rubro, categoryCandidates);
 
-    if (instant.confidence >= RULES_ONLY_CONFIDENCE && instant.categorySlug) {
-      applyDetectionRef.current(
-        instant.categorySlug,
-        instant.categoryLabel,
-        instant.extraFields,
-      );
+    if (result.confidence >= MIN_RULES_CONFIDENCE && result.categorySlug) {
+      applyDetection(result.categorySlug, result.categoryLabel, result.extraFields);
       lastProcessedTitleRef.current = trimmed;
-      setDetecting(false);
       return;
     }
 
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    const requestId = ++requestSeqRef.current;
-    const timeoutId = window.setTimeout(
-      () => controller.abort(),
-      FETCH_TIMEOUT_MS,
-    );
-
-    async function fetchSuggestions() {
-      setDetecting(true);
-      try {
-        const response = await fetch("/api/dashboard/products/suggest-metadata", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            draftTitle: trimmed,
-            storeRubro: rubro,
-            categories: categoryCandidates,
-          }),
-        });
-
-        if (requestId !== requestSeqRef.current) return;
-
-        if (!response.ok) {
-          if (instant.categorySlug) {
-            applyDetectionRef.current(
-              instant.categorySlug,
-              instant.categoryLabel,
-              instant.extraFields,
-            );
-          }
-          return;
-        }
-
-        const payload = (await response.json()) as {
-          categorySlug?: string | null;
-          categoryLabel?: string | null;
-          extraFields?: ProductExtraFieldsMap;
-          error?: string;
-        };
-
-        if (payload.error) return;
-
-        const slug = payload.categorySlug ?? instant.categorySlug;
-        const label = payload.categoryLabel ?? instant.categoryLabel;
-
-        applyDetectionRef.current(slug, label, payload.extraFields ?? instant.extraFields);
-        lastProcessedTitleRef.current = trimmed;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        if (requestId !== requestSeqRef.current) return;
-        if (instant.categorySlug) {
-          applyDetectionRef.current(
-            instant.categorySlug,
-            instant.categoryLabel,
-            instant.extraFields,
-          );
-          lastProcessedTitleRef.current = trimmed;
-        }
-      } finally {
-        window.clearTimeout(timeoutId);
-        if (requestId === requestSeqRef.current) {
-          setDetecting(false);
-        }
-      }
+    if (Object.keys(result.extraFields).length > 0) {
+      applyDetection(null, null, result.extraFields);
+      lastProcessedTitleRef.current = trimmed;
+      return;
     }
 
-    void fetchSuggestions();
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      controller.abort();
-    };
-  }, [
-    debouncedTitle,
-    enabled,
-    minLength,
-    rubro,
-    categoriesKey,
-  ]);
+    setHint(null);
+    lastProcessedTitleRef.current = trimmed;
+  }, [debouncedTitle, enabled, minLength, rubro, categoriesKey, applyDetection]);
 
   return {
-    detecting,
     hint,
     handleCategoryManualChange,
   };

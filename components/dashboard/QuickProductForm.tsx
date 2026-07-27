@@ -184,7 +184,7 @@ function QuickProductFormSession({
 
   const isBusy = pending || galleryBusy;
 
-  const { detecting: autoDetecting, hint: autoDetectHint, handleCategoryManualChange } =
+  const { hint: autoDetectHint, handleCategoryManualChange } =
     useProductTitleAutoDetect({
       title: productName,
       rubro: productFormConfig.rubroTienda,
@@ -370,7 +370,7 @@ function QuickProductFormSession({
         variant="compact"
         namePlaceholder={namePlaceholder}
       />
-      <ProductTitleAutoDetectHint detecting={autoDetecting} hint={autoDetectHint} />
+      <ProductTitleAutoDetectHint hint={autoDetectHint} />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
