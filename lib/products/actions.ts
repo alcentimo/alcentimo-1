@@ -6,6 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore, requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { getUserStore } from "@/lib/stores";
 import { slugify, uniqueSlug } from "@/lib/slugify";
+import {
+  STORE_SLUG_UNAVAILABLE_MESSAGE,
+  validateStoreSlugCandidate,
+} from "@/lib/stores/slug-availability";
 import { scheduleStoreSubdomainProvision } from "@/lib/domains/provision-store-subdomain";
 import { parseVariantFormInputs, parseVariantsJson } from "@/lib/products/variants";
 import { syncProductVariants } from "@/lib/products/sync-variants";
@@ -914,10 +918,26 @@ export async function createStore(
 
   const name = String(formData.get("name") ?? "").trim();
   const slugInput = String(formData.get("slug") ?? "").trim();
-  const slug = slugify(slugInput || name);
 
   if (!name) return { error: "El nombre de la tienda es obligatorio." };
-  if (!slug) return { error: "El slug no es válido." };
+
+  const slugValidation = validateStoreSlugCandidate(slugInput || name);
+  if (!slugValidation.ok) return { error: slugValidation.error };
+  const slug = slugValidation.slug;
+
+  const { data: existingStore, error: slugLookupError } = await supabase
+    .from("stores")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (slugLookupError) {
+    return { error: slugLookupError.message };
+  }
+
+  if (existingStore) {
+    return { error: STORE_SLUG_UNAVAILABLE_MESSAGE };
+  }
 
   const { data: store, error } = await supabase.from("stores").insert({
     owner_id: auth.authUser.id,
@@ -927,7 +947,7 @@ export async function createStore(
 
   if (error) {
     if (error.code === "23505") {
-      return { error: "Ese slug ya está en uso. Elige otro." };
+      return { error: STORE_SLUG_UNAVAILABLE_MESSAGE };
     }
     return { error: error.message };
   }

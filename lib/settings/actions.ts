@@ -13,8 +13,10 @@ import { sanitizeAssistantAvatarForStorage } from "@/lib/store-settings/assistan
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { uploadCatalogBannerAssetImage, uploadStoreAssetImage, uploadStoreLogoImage, removeStoreLogoAssets } from "@/lib/storage";
 import type { BannerImageVariant } from "@/lib/banner-image";
-import { isValidStoreSlug } from "@/lib/stores/slug";
-import { slugify } from "@/lib/slugify";
+import {
+  STORE_SLUG_UNAVAILABLE_MESSAGE,
+  validateStoreSlugCandidate,
+} from "@/lib/stores/slug-availability";
 import { isValidStoreRubro, normalizeStoreRubro } from "@/src/config/categories";
 import { storeHasPCBuilder } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import {
@@ -350,19 +352,15 @@ export async function checkStoreSlugAvailability(
     return { available: false, error: auth.error };
   }
 
-  const trimmed = slug.trim();
-  if (!trimmed) {
-    return { available: false, error: "El enlace no puede estar vacío." };
-  }
-
-  if (!isValidStoreSlug(trimmed)) {
-    return { available: false, error: "El enlace solo puede usar letras minúsculas, números y guiones." };
+  const validation = validateStoreSlugCandidate(slug);
+  if (!validation.ok) {
+    return { available: false, error: validation.error };
   }
 
   const { data, error } = await supabase
     .from("stores")
     .select("id")
-    .eq("slug", trimmed)
+    .eq("slug", validation.slug)
     .maybeSingle();
 
   if (error) {
@@ -373,7 +371,7 @@ export async function checkStoreSlugAvailability(
     return { available: true };
   }
 
-  return { available: false };
+  return { available: false, error: STORE_SLUG_UNAVAILABLE_MESSAGE };
 }
 
 export async function uploadStoreLogo(
@@ -476,7 +474,7 @@ export async function saveGeneralStoreSettings(
 
   const { store } = auth;
   const name = input.name.trim();
-  const slug = slugify(input.slug.trim() || name);
+  const slugValidation = validateStoreSlugCandidate(input.slug.trim() || name);
   const logoUrl = input.logoUrl?.trim() || null;
   const description =
     typeof input.description === "string" ? input.description.trim() : undefined;
@@ -485,9 +483,11 @@ export async function saveGeneralStoreSettings(
     return { error: "El nombre de la tienda es obligatorio." };
   }
 
-  if (!slug || !isValidStoreSlug(slug)) {
-    return { error: "El enlace de la tienda no es válido." };
+  if (!slugValidation.ok) {
+    return { error: slugValidation.error };
   }
+
+  const slug = slugValidation.slug;
 
   const rubroTienda = input.rubroTienda.trim().toLowerCase();
   if (!isValidStoreRubro(rubroTienda)) {
@@ -497,9 +497,7 @@ export async function saveGeneralStoreSettings(
   const availability = await checkStoreSlugAvailability(slug);
   if (!availability.available) {
     return {
-      error:
-        availability.error ??
-        "Este enlace ya está registrado por otro negocio.",
+      error: availability.error ?? STORE_SLUG_UNAVAILABLE_MESSAGE,
     };
   }
 
@@ -521,7 +519,7 @@ export async function saveGeneralStoreSettings(
 
   if (storeError) {
     if (storeError.code === "23505") {
-      return { error: "Este enlace ya está registrado por otro negocio." };
+      return { error: STORE_SLUG_UNAVAILABLE_MESSAGE };
     }
     return { error: storeError.message };
   }

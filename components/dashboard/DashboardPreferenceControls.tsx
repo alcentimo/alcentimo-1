@@ -36,7 +36,7 @@ export function DashboardPreferenceControls({
         <button
           type="button"
           onClick={() => setTheme(isDark ? "light" : "dark")}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+          className="touch-target inline-flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
           aria-label={
             isDark ? t("prefs.theme.toggleToLight") : t("prefs.theme.toggleToDark")
           }

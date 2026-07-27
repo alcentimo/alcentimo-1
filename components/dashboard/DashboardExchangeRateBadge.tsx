@@ -97,16 +97,16 @@ export function DashboardExchangeRateBadge({
       }
     >
       <span
-        className={`hidden font-medium sm:inline ${stale ? "text-amber-950 dark:text-amber-100" : "text-zinc-700 dark:text-zinc-300"}`}
+        className={`font-medium ${stale ? "text-amber-950 dark:text-amber-100" : "text-zinc-700 dark:text-zinc-300"}`}
       >
         {stale ? "Tasa desactualizada" : "BCV"}
       </span>
       <span
-        className={`hidden sm:inline ${
+        className={
           stale
             ? "text-amber-700/60 dark:text-amber-300/60"
             : "text-zinc-300 dark:text-zinc-600"
-        }`}
+        }
         aria-hidden="true"
       >
         ·

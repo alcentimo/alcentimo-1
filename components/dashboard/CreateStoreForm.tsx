@@ -2,11 +2,13 @@
 
 import { useActionState } from "react";
 import { createStore, type StoreFormState } from "@/lib/products/actions";
+import { getPublicSiteHost } from "@/lib/site-url";
 
 const initialState: StoreFormState = {};
 
 export function CreateStoreForm() {
   const [state, formAction, pending] = useActionState(createStore, initialState);
+  const siteHost = getPublicSiteHost();
 
   if (state.success) {
     return (
@@ -33,10 +35,10 @@ export function CreateStoreForm() {
 
       <div>
         <label htmlFor="store_slug" className="label-field">
-          URL de tu catálogo
+          Enlace del catálogo
         </label>
         <div className="input-prefix-group">
-          <span className="input-prefix-label">/tienda/</span>
+          <span className="input-prefix-label">{siteHost}/c/</span>
           <input
             id="store_slug"
             name="slug"
@@ -50,7 +52,11 @@ export function CreateStoreForm() {
         </p>
       </div>
 
-      {state.error && <p className="alert-error">{state.error}</p>}
+      {state.error && (
+        <p className="alert-error" role="alert">
+          {state.error}
+        </p>
+      )}
 
       <button type="submit" disabled={pending} className="btn-primary">
         {pending ? "Creando…" : "Crear mi tienda"}

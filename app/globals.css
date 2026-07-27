@@ -1096,7 +1096,7 @@ body {
 }
 
 .dashboard-header-actions {
-  @apply max-w-[min(100%,14rem)] sm:max-w-none;
+  @apply min-w-0;
 }
 
 .inventory-actions-group {
@@ -2889,6 +2889,26 @@ body {
 
 .settings-slug-preview {
   @apply break-all rounded-xl border border-zinc-200/80 bg-zinc-50 px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900/50;
+}
+
+.settings-slug-editor {
+  @apply flex min-w-0 items-stretch overflow-hidden rounded-xl border border-zinc-200/80 bg-zinc-50 text-sm dark:border-zinc-800 dark:bg-zinc-900/50;
+}
+
+.settings-slug-editor--taken {
+  @apply border-red-300 bg-red-50/70 dark:border-red-900 dark:bg-red-950/20;
+}
+
+.settings-slug-editor--available {
+  @apply border-emerald-300 dark:border-emerald-900;
+}
+
+.settings-slug-editor-prefix {
+  @apply flex shrink-0 items-center border-r border-zinc-200/80 px-3 py-2 text-zinc-400 dark:border-zinc-800;
+}
+
+.settings-slug-editor-input {
+  @apply min-w-0 flex-1 rounded-none border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0;
 }
 
 .settings-secondary-nav {

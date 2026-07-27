@@ -15,11 +15,13 @@ import {
 } from "@/lib/settings/actions";
 import { slugify } from "@/lib/slugify";
 import { isValidStoreSlug } from "@/lib/stores/slug";
+import { STORE_SLUG_UNAVAILABLE_MESSAGE } from "@/lib/stores/slug-availability";
 import { getPublicSiteHost } from "@/lib/site-url";
 import { STORE_RUBRO_OPTIONS, normalizeStoreRubro, type StoreRubro } from "@/src/config/categories";
 import { InterfacePreferencesSettingsSection } from "@/components/dashboard/settings/InterfacePreferencesSettingsSection";
 import { SettingsOptionCard } from "@/components/dashboard/settings/SettingsOptionCard";
 import { AlertDialog } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/cn";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 
 const RUBRO_CHANGE_CONFIRM_TITLE = "¿Estás seguro de cambiar el rubro?";
@@ -52,6 +54,10 @@ export function GeneralTab({ store }: GeneralTabProps) {
   const [storeName, setStoreName] = useState(store.name);
   const [description, setDescription] = useState(store.description ?? "");
   const [savedSlug, setSavedSlug] = useState(store.slug);
+  const [catalogSlug, setCatalogSlug] = useState(store.slug);
+  const [slugAutoSync, setSlugAutoSync] = useState(
+    () => slugify(store.name) === store.slug,
+  );
   const [rubroTienda, setRubroTienda] = useState<StoreRubro>(() =>
     normalizeStoreRubro(store.rubro_tienda),
   );
@@ -75,6 +81,8 @@ export function GeneralTab({ store }: GeneralTabProps) {
     setStoreName(store.name);
     setDescription(store.description ?? "");
     setSavedSlug(store.slug);
+    setCatalogSlug(store.slug);
+    setSlugAutoSync(slugify(store.name) === store.slug);
     setRubroTienda(normalizeStoreRubro(store.rubro_tienda));
     setSavedRubro(normalizeStoreRubro(store.rubro_tienda));
     setEnablePcBuilder(store.enable_pc_builder ?? false);
@@ -90,20 +98,25 @@ export function GeneralTab({ store }: GeneralTabProps) {
   const isTecnologia = storeUsesRubroProductModule(rubroTienda, "tecnologia");
 
   const siteHost = useMemo(() => getPublicSiteHost(), []);
-  const slugPreview = slugify(storeName) || store.slug;
 
   const canSave =
     storeName.trim().length > 0 &&
     rubroTienda.trim().length > 0 &&
-    isValidStoreSlug(slugPreview) &&
+    isValidStoreSlug(catalogSlug) &&
     slugStatus === "available" &&
     !saving;
 
   useEffect(() => {
-    const trimmedName = storeName.trim();
-    const nextSlug = slugify(storeName);
+    if (slugAutoSync) {
+      const nextSlug = slugify(storeName);
+      setCatalogSlug(nextSlug || savedSlug);
+    }
+  }, [storeName, slugAutoSync, savedSlug]);
 
-    if (!trimmedName || !nextSlug) {
+  useEffect(() => {
+    const nextSlug = catalogSlug.trim();
+
+    if (!nextSlug) {
       setSlugStatus("idle");
       return;
     }
@@ -127,7 +140,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
     }, 400);
 
     return () => window.clearTimeout(timer);
-  }, [storeName, savedSlug]);
+  }, [catalogSlug, savedSlug]);
 
   function persistGeneralSettings() {
     setError(null);
@@ -139,7 +152,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
     startTransition(async () => {
       const result = await saveGeneralStoreSettings({
         name: storeName.trim(),
-        slug: slugPreview,
+        slug: catalogSlug,
         logoUrl: null,
         description,
         rubroTienda,
@@ -153,6 +166,8 @@ export function GeneralTab({ store }: GeneralTabProps) {
         setStoreName(store.name);
         setDescription(store.description ?? "");
         setSavedSlug(store.slug);
+        setCatalogSlug(store.slug);
+        setSlugAutoSync(slugify(store.name) === store.slug);
         setRubroTienda(savedRubro);
         setEnablePcBuilder(savedEnablePcBuilder);
         return;
@@ -161,7 +176,8 @@ export function GeneralTab({ store }: GeneralTabProps) {
       const persistedRubro = normalizeStoreRubro(
         result.rubroTienda ?? rubroTienda,
       );
-      setSavedSlug(slugPreview);
+      setSavedSlug(catalogSlug);
+      setSlugAutoSync(slugify(storeName.trim()) === catalogSlug);
       setSavedRubro(persistedRubro);
       setRubroTienda(persistedRubro);
       const nextEnablePcBuilder = isTecnologia ? enablePcBuilder : false;
@@ -207,8 +223,10 @@ export function GeneralTab({ store }: GeneralTabProps) {
           canSave
             ? "Los cambios se aplican de inmediato en tu catálogo público."
             : slugStatus === "taken"
-              ? "Elige otro nombre: ese enlace ya está en uso."
-              : undefined
+              ? "Corrige el enlace del catálogo antes de guardar."
+              : slugStatus === "checking"
+                ? "Verificando disponibilidad del enlace…"
+                : undefined
         }
       >
       {successMessage ? (
@@ -265,40 +283,85 @@ export function GeneralTab({ store }: GeneralTabProps) {
           </div>
 
           <div className="settings-identity-card settings-identity-card--slug">
-            <Label htmlFor="store-slug-preview" className="payment-field-label">
+            <Label htmlFor="store-catalog-slug" className="payment-field-label">
               Enlace del catálogo
             </Label>
             <p className="mt-1 text-[11px] text-zinc-400">
-              Se genera automáticamente a partir del nombre comercial.
+              URL pública de tu tienda. Se valida en tiempo real contra otros comercios.
             </p>
+
+            {slugStatus === "taken" ? (
+              <p
+                className="settings-error-banner mt-3 text-xs"
+                role="alert"
+              >
+                {STORE_SLUG_UNAVAILABLE_MESSAGE}
+              </p>
+            ) : null}
+
             <div
-              id="store-slug-preview"
-              className="settings-slug-preview mt-3"
-              aria-readonly="true"
+              className={cn(
+                "settings-slug-editor mt-3",
+                slugStatus === "taken" && "settings-slug-editor--taken",
+                slugStatus === "available" &&
+                  catalogSlug !== savedSlug &&
+                  "settings-slug-editor--available",
+              )}
             >
-              <span className="text-zinc-400">{siteHost}/c/</span>
-              <span className="font-medium text-zinc-800 dark:text-zinc-100">
-                {slugPreview}
-              </span>
+              <span className="settings-slug-editor-prefix">{siteHost}/c/</span>
+              <Input
+                id="store-catalog-slug"
+                value={catalogSlug}
+                maxLength={80}
+                aria-invalid={slugStatus === "taken" || slugStatus === "invalid"}
+                aria-describedby="store-catalog-slug-status"
+                onChange={(e) => {
+                  const nextValue = slugify(e.target.value);
+                  setCatalogSlug(nextValue);
+                  setSlugAutoSync(false);
+                  setSuccessMessage(null);
+                }}
+                placeholder="nombre-tienda"
+                className="settings-slug-editor-input"
+              />
             </div>
 
-            {slugStatus === "checking" && (
-              <p className="mt-2 text-[11px] text-zinc-400">Verificando enlace…</p>
-            )}
-            {slugStatus === "available" && storeName.trim() && (
-              <p className="mt-2 text-[11px] text-green-600 dark:text-green-500">
-                Enlace disponible
+            <p id="store-catalog-slug-status" className="mt-2 text-[11px]">
+              {slugStatus === "checking" && (
+                <span className="text-zinc-400">Verificando enlace…</span>
+              )}
+              {slugStatus === "available" && catalogSlug && (
+                <span className="text-green-600 dark:text-green-500">
+                  Enlace disponible
+                </span>
+              )}
+              {slugStatus === "taken" && (
+                <span className="text-red-600 dark:text-red-400">
+                  Enlace no disponible
+                </span>
+              )}
+              {slugStatus === "invalid" && catalogSlug && (
+                <span className="text-red-600 dark:text-red-400">
+                  Usa solo letras minúsculas, números y guiones.
+                </span>
+              )}
+            </p>
+
+            {slugAutoSync ? (
+              <p className="mt-1 text-[11px] text-zinc-400">
+                Se actualiza automáticamente desde el nombre comercial. Edítalo para personalizarlo.
               </p>
-            )}
-            {slugStatus === "taken" && (
-              <p className="mt-2 text-[11px] text-red-600 dark:text-red-400">
-                Este enlace ya está registrado por otro negocio
-              </p>
-            )}
-            {slugStatus === "invalid" && storeName.trim() && (
-              <p className="mt-2 text-[11px] text-red-600 dark:text-red-400">
-                El nombre genera un enlace no válido. Usa letras y números.
-              </p>
+            ) : (
+              <button
+                type="button"
+                className="mt-1 text-[11px] font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                onClick={() => {
+                  setSlugAutoSync(true);
+                  setCatalogSlug(slugify(storeName) || savedSlug);
+                }}
+              >
+                Volver a sincronizar con el nombre comercial
+              </button>
             )}
           </div>
         </div>

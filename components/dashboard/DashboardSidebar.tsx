@@ -17,6 +17,7 @@ import {
   isDashboardNavItemActive,
   type DashboardNavItem,
 } from "@/src/config/dashboard-nav";
+import { DashboardQuickUtilities } from "@/components/dashboard/DashboardQuickUtilities";
 import { cn } from "@/lib/cn";
 import { useLocale } from "@/components/providers/UiPreferencesProvider";
 import { useDashboardRoutePrefetch } from "@/components/dashboard/use-dashboard-route-prefetch";
@@ -35,6 +36,9 @@ interface DashboardSidebarProps {
   accountSettingsActive?: boolean;
   isSupportAdmin?: boolean;
   storeRole?: DashboardStoreRole | null;
+  exchangeRate?: number | null;
+  exchangeRateUpdatedAt?: string | null;
+  exchangeRateStale?: boolean;
 }
 
 function navLinkClass(active: boolean, collapsed: boolean) {
@@ -103,6 +107,9 @@ export function DashboardSidebar({
   accountSettingsActive = false,
   isSupportAdmin = false,
   storeRole = null,
+  exchangeRate = null,
+  exchangeRateUpdatedAt = null,
+  exchangeRateStale = false,
 }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
@@ -192,6 +199,20 @@ export function DashboardSidebar({
           </button>
         </div>
       </div>
+
+      {mobileOpen && drawerExpanded ? (
+        <div className="border-b border-zinc-200 px-3 py-3 lg:hidden dark:border-zinc-800">
+          <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            Accesos rápidos
+          </p>
+          <DashboardQuickUtilities
+            exchangeRate={exchangeRate}
+            exchangeRateUpdatedAt={exchangeRateUpdatedAt}
+            exchangeRateStale={exchangeRateStale}
+            className="justify-between"
+          />
+        </div>
+      ) : null}
 
       <nav
         className={cn(

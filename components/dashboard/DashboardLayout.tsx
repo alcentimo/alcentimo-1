@@ -5,8 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Menu } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
-import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
-import { DashboardPreferenceControls } from "@/components/dashboard/DashboardPreferenceControls";
+import { DashboardQuickUtilities } from "@/components/dashboard/DashboardQuickUtilities";
 import { DashboardViewKeepAlive } from "@/components/dashboard/DashboardViewKeepAlive";
 import { DashboardRouteVisitTracker } from "@/components/dashboard/DashboardRouteVisitTracker";
 import { AccountSettingsSheet } from "@/components/dashboard/account/AccountSettingsSheet";
@@ -148,6 +147,9 @@ function DashboardShell({
         accountSettingsActive={accountSheetOpen || Boolean(accountQueryParam)}
         isSupportAdmin={isSupportAdmin}
         storeRole={storeRole}
+        exchangeRate={exchangeRate}
+        exchangeRateUpdatedAt={exchangeRateUpdatedAt}
+        exchangeRateStale={exchangeRateStale}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -162,12 +164,11 @@ function DashboardShell({
               <Menu className="h-5 w-5" />
             </button>
           </div>
-          <div className="dashboard-header-actions flex shrink-0 items-center gap-1 sm:gap-2">
-            <DashboardPreferenceControls variant="compact" className="hidden sm:flex" />
-            <DashboardExchangeRateBadge
-              rate={exchangeRate}
-              updatedAt={exchangeRateUpdatedAt}
-              stale={exchangeRateStale}
+          <div className="dashboard-header-actions flex shrink-0 items-center">
+            <DashboardQuickUtilities
+              exchangeRate={exchangeRate}
+              exchangeRateUpdatedAt={exchangeRateUpdatedAt}
+              exchangeRateStale={exchangeRateStale}
             />
           </div>
         </header>
