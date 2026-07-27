@@ -19,6 +19,58 @@ function isSafeBannerLink(value: string): boolean {
   return trimmed.startsWith("https://");
 }
 
+function normalizeDraftSlide(raw: unknown): CatalogPromoBannerSlide | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const slide = raw as Record<string, unknown>;
+  const mobileImageUrl =
+    typeof slide.mobileImageUrl === "string" ? slide.mobileImageUrl.trim() : "";
+  const desktopImageUrl =
+    typeof slide.desktopImageUrl === "string"
+      ? slide.desktopImageUrl.trim()
+      : "";
+  const alt =
+    typeof slide.alt === "string" ? slide.alt.trim().slice(0, 120) : undefined;
+  const linkUrl =
+    typeof slide.linkUrl === "string" && isSafeBannerLink(slide.linkUrl)
+      ? slide.linkUrl.trim()
+      : undefined;
+  const id =
+    typeof slide.id === "string" && slide.id.trim()
+      ? slide.id.trim()
+      : createPromoBannerSlideId();
+
+  return {
+    id,
+    mobileImageUrl,
+    ...(desktopImageUrl ? { desktopImageUrl } : {}),
+    ...(alt ? { alt } : {}),
+    ...(linkUrl ? { linkUrl } : {}),
+  };
+}
+
+/** Conserva slides en edición aunque aún no tengan imagen (UI de administración). */
+export function normalizePromoBannerDraft(
+  raw: unknown,
+): CatalogPromoBannerSettings {
+  if (!raw || typeof raw !== "object") {
+    return defaultPromoBannerSettings();
+  }
+
+  const value = raw as Record<string, unknown>;
+  const slides = Array.isArray(value.slides)
+    ? value.slides
+        .map(normalizeDraftSlide)
+        .filter((slide): slide is CatalogPromoBannerSlide => slide !== null)
+        .slice(0, MAX_PROMO_BANNER_SLIDES)
+    : [];
+
+  return {
+    enabled: value.enabled === true,
+    slides,
+  };
+}
+
 function normalizeSlide(raw: unknown): CatalogPromoBannerSlide | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -85,6 +137,12 @@ export function getActivePromoBannerSlides(
 }
 
 export function resolvePromoBannerSettings(
+  settings?: CatalogPromoBannerSettings | null,
+): CatalogPromoBannerSettings {
+  return normalizePromoBannerSettings(settings ?? defaultPromoBannerSettings());
+}
+
+export function sanitizePromoBannerForStorage(
   settings?: CatalogPromoBannerSettings | null,
 ): CatalogPromoBannerSettings {
   return normalizePromoBannerSettings(settings ?? defaultPromoBannerSettings());

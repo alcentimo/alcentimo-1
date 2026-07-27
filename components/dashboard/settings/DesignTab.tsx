@@ -42,7 +42,7 @@ import type {
 } from "@/lib/store-settings/types";
 import {
   defaultPromoBannerSettings,
-  resolvePromoBannerSettings,
+  normalizePromoBannerDraft,
 } from "@/lib/store-settings/promo-banner";
 import { cn } from "@/lib/cn";
 import {
@@ -218,12 +218,14 @@ export function DesignTab({
       setSavingField(field);
 
       startSave(async () => {
-        const result = await saveCatalogDesignSettings(nextDesign);
-        setSavingField(null);
-
-        if (result.error) {
-          setError(result.error);
-          setDesign(initialDesign);
+        try {
+          const result = await saveCatalogDesignSettings(nextDesign);
+          if (result.error) {
+            setError(result.error);
+            setDesign(initialDesign);
+          }
+        } finally {
+          setSavingField(null);
         }
       });
     },
@@ -299,13 +301,19 @@ export function DesignTab({
     }, 400);
   }
 
-  function setPromoBanner(next: CatalogPromoBannerSettings) {
+  function setPromoBanner(
+    next: CatalogPromoBannerSettings,
+    shouldSave = true,
+  ) {
+    const draft = normalizePromoBannerDraft(next);
     const nextDesign: CatalogDesignSettings = {
       ...design,
-      promoBanner: resolvePromoBannerSettings(next),
+      promoBanner: draft,
     };
     setDesign(nextDesign);
-    schedulePromoBannerSave(nextDesign);
+    if (shouldSave) {
+      schedulePromoBannerSave(nextDesign);
+    }
   }
 
   function resetPrimaryColor() {
@@ -338,12 +346,17 @@ export function DesignTab({
   const brandColorSummary = design.primaryColor
     ? design.primaryColor.toUpperCase()
     : `Rubro ${rubroPalette.label}`;
-  const promoBannerSettings = resolvePromoBannerSettings(
+  const promoBannerSettings = normalizePromoBannerDraft(
     design.promoBanner ?? defaultPromoBannerSettings(),
   );
+  const savedSlideCount = promoBannerSettings.slides.filter((slide) =>
+    slide.mobileImageUrl.startsWith("http"),
+  ).length;
   const promoBannerSummary = promoBannerSettings.enabled
     ? promoBannerSettings.slides.length > 0
-      ? `${promoBannerSettings.slides.length} imagen(es)`
+      ? savedSlideCount > 0
+        ? `${savedSlideCount} imagen(es)`
+        : `${promoBannerSettings.slides.length} borrador(es)`
       : "Activado · sin imágenes"
     : "Desactivado";
   const visibilitySummary =
@@ -458,7 +471,6 @@ export function DesignTab({
             >
               <CatalogPromoBannerField
                 value={design.promoBanner}
-                disabled={isSaving && savingField === "promoBanner"}
                 onChange={setPromoBanner}
               />
             </DesignAccordion>

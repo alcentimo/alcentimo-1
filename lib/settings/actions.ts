@@ -8,7 +8,7 @@ import {
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import { normalizeHex6 } from "@/lib/store-settings/color-contrast";
-import { normalizePromoBannerSettings } from "@/lib/store-settings/promo-banner";
+import { sanitizePromoBannerForStorage } from "@/lib/store-settings/promo-banner";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { uploadStoreAssetImage, uploadStoreLogoImage, removeStoreLogoAssets } from "@/lib/storage";
 import { isValidStoreSlug } from "@/lib/stores/slug";
@@ -90,7 +90,7 @@ export async function saveCatalogDesignSettings(
     theme: normalized.catalogDesign.theme,
     saleMode: normalized.catalogDesign.saleMode,
     visibility: normalized.catalogDesign.visibility,
-    promoBanner: normalizePromoBannerSettings(
+    promoBanner: sanitizePromoBannerForStorage(
       design.promoBanner ?? normalized.catalogDesign.promoBanner,
     ),
   };

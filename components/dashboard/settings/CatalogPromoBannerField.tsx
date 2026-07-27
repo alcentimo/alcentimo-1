@@ -7,7 +7,7 @@ import {
   MAX_PROMO_BANNER_SLIDES,
   createPromoBannerSlideId,
   defaultPromoBannerSettings,
-  resolvePromoBannerSettings,
+  normalizePromoBannerDraft,
 } from "@/lib/store-settings/promo-banner";
 import type {
   CatalogPromoBannerSettings,
@@ -16,58 +16,68 @@ import type {
 
 interface CatalogPromoBannerFieldProps {
   value?: CatalogPromoBannerSettings;
-  disabled?: boolean;
-  onChange: (next: CatalogPromoBannerSettings) => void;
+  onChange: (next: CatalogPromoBannerSettings, shouldSave?: boolean) => void;
 }
 
 export function CatalogPromoBannerField({
   value,
-  disabled = false,
   onChange,
 }: CatalogPromoBannerFieldProps) {
-  const promoBanner = resolvePromoBannerSettings(value ?? defaultPromoBannerSettings());
+  const promoBanner = normalizePromoBannerDraft(
+    value ?? defaultPromoBannerSettings(),
+  );
   const canAddSlide = promoBanner.slides.length < MAX_PROMO_BANNER_SLIDES;
 
-  function update(next: CatalogPromoBannerSettings) {
-    onChange(resolvePromoBannerSettings(next));
+  function emit(next: CatalogPromoBannerSettings, shouldSave = true) {
+    onChange(normalizePromoBannerDraft(next), shouldSave);
   }
 
   function setEnabled(enabled: boolean) {
-    update({ ...promoBanner, enabled });
+    emit({ ...promoBanner, enabled }, true);
   }
 
   function updateSlide(
     slideId: string,
     patch: Partial<CatalogPromoBannerSlide>,
+    shouldSave = true,
   ) {
-    update({
-      ...promoBanner,
-      slides: promoBanner.slides.map((slide) =>
-        slide.id === slideId ? { ...slide, ...patch } : slide,
-      ),
-    });
+    emit(
+      {
+        ...promoBanner,
+        slides: promoBanner.slides.map((slide) =>
+          slide.id === slideId ? { ...slide, ...patch } : slide,
+        ),
+      },
+      shouldSave,
+    );
   }
 
   function removeSlide(slideId: string) {
-    update({
-      ...promoBanner,
-      slides: promoBanner.slides.filter((slide) => slide.id !== slideId),
-    });
+    emit(
+      {
+        ...promoBanner,
+        slides: promoBanner.slides.filter((slide) => slide.id !== slideId),
+      },
+      true,
+    );
   }
 
   function addSlide() {
     if (!canAddSlide) return;
 
-    update({
-      ...promoBanner,
-      slides: [
-        ...promoBanner.slides,
-        {
-          id: createPromoBannerSlideId(),
-          mobileImageUrl: "",
-        },
-      ],
-    });
+    emit(
+      {
+        ...promoBanner,
+        slides: [
+          ...promoBanner.slides,
+          {
+            id: createPromoBannerSlideId(),
+            mobileImageUrl: "",
+          },
+        ],
+      },
+      false,
+    );
   }
 
   return (
@@ -86,7 +96,6 @@ export function CatalogPromoBannerField({
           label="Activar banner promocional"
           checked={promoBanner.enabled}
           onChange={setEnabled}
-          disabled={disabled}
         />
       </div>
 
@@ -99,7 +108,8 @@ export function CatalogPromoBannerField({
 
           {promoBanner.slides.length === 0 ? (
             <p className="px-2 text-xs text-zinc-500">
-              Aún no hay imágenes en el carrusel.
+              Aún no hay imágenes en el carrusel. Usa el botón de abajo para
+              añadir la primera.
             </p>
           ) : null}
 
@@ -111,9 +121,8 @@ export function CatalogPromoBannerField({
                 </p>
                 <button
                   type="button"
-                  disabled={disabled}
                   onClick={() => removeSlide(slide.id)}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-60 dark:text-red-400"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 dark:text-red-400"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   Eliminar
@@ -126,9 +135,8 @@ export function CatalogPromoBannerField({
                 hint="Recomendado 800×320 px. Se recorta sin deformarse."
                 value={slide.mobileImageUrl}
                 required
-                disabled={disabled}
                 onChange={(mobileImageUrl) =>
-                  updateSlide(slide.id, { mobileImageUrl })
+                  updateSlide(slide.id, { mobileImageUrl }, true)
                 }
               />
 
@@ -137,11 +145,14 @@ export function CatalogPromoBannerField({
                 label="Escritorio"
                 hint="Si no subes una, se usa la imagen móvil."
                 value={slide.desktopImageUrl ?? ""}
-                disabled={disabled}
                 onChange={(desktopImageUrl) =>
-                  updateSlide(slide.id, {
-                    desktopImageUrl: desktopImageUrl || undefined,
-                  })
+                  updateSlide(
+                    slide.id,
+                    {
+                      desktopImageUrl: desktopImageUrl || undefined,
+                    },
+                    true,
+                  )
                 }
               />
 
@@ -157,11 +168,14 @@ export function CatalogPromoBannerField({
                     id={`promo-banner-alt-${slide.id}`}
                     type="text"
                     value={slide.alt ?? ""}
-                    disabled={disabled}
                     onChange={(event) =>
-                      updateSlide(slide.id, {
-                        alt: event.target.value || undefined,
-                      })
+                      updateSlide(
+                        slide.id,
+                        {
+                          alt: event.target.value || undefined,
+                        },
+                        true,
+                      )
                     }
                     className="input-field mt-1 py-2 text-sm"
                     placeholder={`Promoción ${index + 1}`}
@@ -180,11 +194,14 @@ export function CatalogPromoBannerField({
                     id={`promo-banner-link-${slide.id}`}
                     type="url"
                     value={slide.linkUrl ?? ""}
-                    disabled={disabled}
                     onChange={(event) =>
-                      updateSlide(slide.id, {
-                        linkUrl: event.target.value || undefined,
-                      })
+                      updateSlide(
+                        slide.id,
+                        {
+                          linkUrl: event.target.value || undefined,
+                        },
+                        true,
+                      )
                     }
                     className="input-field mt-1 py-2 text-sm"
                     placeholder="https://… o /categorias"
@@ -196,7 +213,7 @@ export function CatalogPromoBannerField({
 
           <button
             type="button"
-            disabled={disabled || !canAddSlide}
+            disabled={!canAddSlide}
             onClick={addSlide}
             className="design-promo-banner-add inline-flex items-center gap-2 text-xs font-medium text-zinc-700 hover:text-zinc-900 disabled:opacity-60 dark:text-zinc-300 dark:hover:text-zinc-100"
           >
