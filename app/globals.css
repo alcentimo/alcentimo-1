@@ -6428,15 +6428,77 @@ body {
 }
 
 .design-promo-banner-panel {
-  @apply space-y-3 px-1;
-}
-
-.design-promo-banner-slides {
   @apply space-y-3;
 }
 
-.design-promo-banner-slide {
-  @apply space-y-3 rounded-lg border border-zinc-200/80 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-900/30;
+.design-promo-banner-slides {
+  @apply space-y-2.5;
+}
+
+.design-promo-banner-empty {
+  @apply flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-zinc-200/80 bg-zinc-50/40 px-3 py-2.5 dark:border-zinc-800 dark:bg-zinc-900/20;
+}
+
+.design-promo-banner-tabs {
+  @apply flex gap-1.5 overflow-x-auto overscroll-contain pb-0.5;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(161 161 170 / 0.55) transparent;
+}
+
+.design-promo-banner-tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.design-promo-banner-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.design-promo-banner-tabs::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: rgb(161 161 170 / 0.45);
+}
+
+.design-promo-banner-tab {
+  @apply inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200/80 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 transition hover:border-teal-300 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300;
+}
+
+.design-promo-banner-tab-active {
+  @apply border-teal-500 bg-teal-50 text-teal-800 ring-1 ring-teal-500/20 dark:border-teal-400 dark:bg-teal-950/30 dark:text-teal-200;
+}
+
+.design-promo-banner-tab-thumb {
+  @apply relative h-6 w-10 shrink-0 overflow-hidden rounded border border-zinc-200/80 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900;
+}
+
+.design-promo-banner-tab-add {
+  @apply border-dashed text-zinc-500 hover:text-zinc-700 disabled:cursor-not-allowed disabled:opacity-60 dark:text-zinc-400 dark:hover:text-zinc-200;
+}
+
+.design-promo-banner-editor {
+  @apply max-h-[320px] space-y-3 overflow-y-auto overscroll-contain rounded-lg border border-zinc-200/80 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-900/30;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(161 161 170 / 0.55) transparent;
+}
+
+.design-promo-banner-editor::-webkit-scrollbar {
+  width: 6px;
+}
+
+.design-promo-banner-editor::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.design-promo-banner-editor::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: rgb(161 161 170 / 0.45);
+}
+
+.dark .design-promo-banner-editor {
+  scrollbar-color: rgb(82 82 91 / 0.65) transparent;
+}
+
+.dark .design-promo-banner-editor::-webkit-scrollbar-thumb {
+  background-color: rgb(82 82 91 / 0.65);
 }
 
 .design-promo-banner-slide-header {
@@ -6444,11 +6506,11 @@ body {
 }
 
 .design-promo-banner-slide-fields {
-  @apply grid gap-3 sm:grid-cols-2;
+  @apply grid gap-2 sm:grid-cols-2;
 }
 
 .design-promo-banner-add {
-  @apply px-2 py-2;
+  @apply text-xs font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100;
 }
 
 .design-banner-upload {
