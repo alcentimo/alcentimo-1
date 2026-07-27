@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import { AuthPanel } from "@/components/dashboard/AuthPanel";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
@@ -38,16 +37,6 @@ async function DashboardLoginPageContent({
         isInvitationFlow
           ? "Inicia sesión o crea una cuenta para aceptar tu invitación."
           : "Inicia sesión para publicar productos y compartir tu catálogo."
-      }
-      footer={
-        isInvitationFlow ? null : (
-          <p className="text-center text-sm text-zinc-500">
-            ¿No tienes cuenta?{" "}
-            <Link href="/#precios" className="link-brand">
-              Conoce los planes
-            </Link>
-          </p>
-        )
       }
     >
       <AuthPanel />
