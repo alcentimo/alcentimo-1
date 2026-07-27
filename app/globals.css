@@ -4716,8 +4716,8 @@ body {
 
 .txn-catalog-root {
   @apply min-h-dvh w-full bg-neutral-50 text-neutral-900 antialiased;
-  --txn-primary: #0d9488;
-  --txn-primary-hover: #0f766e;
+  --txn-primary: #059669;
+  --txn-primary-hover: #047857;
   --txn-primary-fg: #ffffff;
   --txn-primary-muted: color-mix(in srgb, var(--txn-primary) 12%, white);
   --txn-primary-muted-fg: var(--txn-primary);
@@ -4725,8 +4725,100 @@ body {
   --txn-primary-ring: color-mix(in srgb, var(--txn-primary) 18%, white);
   --txn-accent: #ea580c;
   --txn-accent-fg: #ffffff;
+  --brand-primary: var(--txn-primary);
+  --brand-primary-hover: var(--txn-primary-hover);
+  --brand-primary-fg: var(--txn-primary-fg);
+  --brand-primary-muted: var(--txn-primary-muted);
+  --brand-primary-muted-fg: var(--txn-primary-muted-fg);
+  --brand-primary-border: var(--txn-primary-border);
+  --brand-primary-ring: var(--txn-primary-ring);
   background-color: var(--txn-page-bg, #fafafa);
   color: var(--txn-page-fg, #171717);
+}
+
+/* Whitelabel: botones, enlaces y acentos compartidos (solo color, sin layout). */
+.txn-catalog-root .btn-primary {
+  background-color: var(--brand-primary, var(--txn-primary));
+  color: var(--brand-primary-fg, var(--txn-primary-fg));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--brand-primary, var(--txn-primary)) 18%, transparent);
+}
+
+.txn-catalog-root .btn-primary:hover:not(:disabled) {
+  background-color: var(--brand-primary-hover, var(--txn-primary-hover));
+}
+
+.txn-catalog-root .link-brand {
+  color: var(--brand-primary-muted-fg, var(--txn-primary-muted-fg));
+}
+
+.txn-catalog-root .link-brand:hover {
+  color: var(--brand-primary-hover, var(--txn-primary-hover));
+}
+
+.txn-catalog-root [class*="text-emerald-"],
+.txn-catalog-root [class*="text-teal-7"],
+.txn-catalog-root [class*="text-teal-6"] {
+  color: var(--brand-primary-muted-fg, var(--txn-primary-muted-fg));
+}
+
+.txn-catalog-root .bg-emerald-50,
+.txn-catalog-root .bg-emerald-50\/80,
+.txn-catalog-root .bg-emerald-100,
+.txn-catalog-root .bg-teal-50,
+.txn-catalog-root .bg-teal-600 {
+  background-color: var(--brand-primary-muted, var(--txn-primary-muted));
+}
+
+.txn-catalog-root .border-emerald-200,
+.txn-catalog-root .border-emerald-200\/80,
+.txn-catalog-root .border-teal-200,
+.txn-catalog-root .border-teal-200\/70,
+.txn-catalog-root .border-teal-200\/80 {
+  border-color: var(--brand-primary-border, var(--txn-primary-border));
+}
+
+.txn-catalog-root .bg-teal-600,
+.txn-catalog-root .txn-store-status-open .txn-store-status-dot,
+.txn-catalog-root .bg-emerald-500 {
+  background-color: var(--brand-primary, var(--txn-primary));
+}
+
+.txn-catalog-root .ring-teal-100 {
+  --tw-ring-color: var(--brand-primary-ring, var(--txn-primary-ring));
+}
+
+.txn-catalog-root .txn-store-status-open {
+  border-color: var(--brand-primary-border, var(--txn-primary-border));
+  background-color: var(--brand-primary-muted, var(--txn-primary-muted));
+  color: var(--brand-primary-muted-fg, var(--txn-primary-muted-fg));
+}
+
+.txn-catalog-root .txn-checkout-success-icon {
+  background-color: var(--brand-primary-muted, var(--txn-primary-muted));
+}
+
+.txn-catalog-root .install-pwa-banner {
+  border-color: var(--brand-primary-border, var(--txn-primary-border));
+  background-color: color-mix(in srgb, var(--brand-primary-muted, var(--txn-primary-muted)) 95%, white);
+  color: var(--txn-page-fg, #171717);
+}
+
+.txn-catalog-root .install-pwa-banner-logo {
+  border-color: var(--brand-primary-border, var(--txn-primary-border));
+}
+
+.txn-catalog-root .install-pwa-banner-logo-fallback {
+  background-color: var(--brand-primary, var(--txn-primary));
+  color: var(--brand-primary-fg, var(--txn-primary-fg));
+}
+
+.txn-catalog-root .install-pwa-banner-action {
+  background-color: var(--brand-primary, var(--txn-primary));
+  color: var(--brand-primary-fg, var(--txn-primary-fg));
+}
+
+.txn-catalog-root .install-pwa-banner-action:hover {
+  background-color: var(--brand-primary-hover, var(--txn-primary-hover));
 }
 
 /* Fondos de página para temas de moda (fallback si el inline style no cargó). */

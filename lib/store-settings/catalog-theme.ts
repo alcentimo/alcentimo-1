@@ -167,7 +167,9 @@ export function resolveCatalogDesign(
       : null;
 
   let primaryColor: string;
-  if (fashionPalette) {
+  if (legacyColor) {
+    primaryColor = legacyColor;
+  } else if (fashionPalette) {
     primaryColor =
       design?.theme != null
         ? preset.primaryColor
@@ -204,9 +206,8 @@ export function getCatalogThemeStyle(
   const palette = getRubroPalette(storeRubro);
   const fashionPalette = usesFashionThemePalette(storeRubro, resolved.theme);
 
-  const accentPrimary = fashionPalette
-    ? normalizeHex6(resolved.primaryColor) ?? palette.primary
-    : palette.primary;
+  const accentPrimary =
+    normalizeHex6(resolved.primaryColor) ?? palette.primary;
 
   const accent = fashionPalette
     ? normalizeHex6(preset.accentColor ?? preset.previewAccent) ?? palette.accent

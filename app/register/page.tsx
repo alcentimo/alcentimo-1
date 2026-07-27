@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import { StoreWhitelabelRoot } from "@/components/catalog/StoreWhitelabelRoot";
 import { CustomerRegisterPanel } from "@/components/customers/CustomerRegisterPanel";
+import { getPublicCatalogThemeContext } from "@/lib/catalog/get-public-catalog-theme";
 import {
   buildCustomerAccountPath,
   buildCustomerRegisterPath,
@@ -86,6 +88,8 @@ export default async function CustomerRegisterPage({
   const store = await getPublicStoreBySlug(storeSlug);
   if (!store) notFound();
 
+  const themeContext = await getPublicCatalogThemeContext(store.slug);
+
   const nextPath = resolveNextPath(store.slug, params.next);
   const needsPhoneCompletion = params.complete === "phone";
 
@@ -116,35 +120,37 @@ export default async function CustomerRegisterPage({
   }
 
   return (
-    <AuthPageShell
-      sectionLabel="Cuenta de cliente"
-      title={
-        needsPhoneCompletion
-          ? "Confirma tu WhatsApp"
-          : "Regístrate y compra más rápido"
-      }
-      description={
-        needsPhoneCompletion
-          ? `Activa tu cuenta en ${store.name} con tu número de contacto.`
-          : `Sin contraseñas: Google o solo nombre + WhatsApp en ${store.name}.`
-      }
-      footer={
-        <p className="text-center text-sm text-zinc-500">
-          ¿Vendes productos?{" "}
-          <Link href="/dashboard/login" className="link-brand">
-            Accede al panel del negocio
-          </Link>
-        </p>
-      }
-    >
-      <CustomerRegisterPanel
-        storeSlug={store.slug}
-        storeName={store.name}
-        nextPath={nextPath}
-        needsPhoneCompletion={needsPhoneCompletion}
-        suggestedDisplayName={suggestedDisplayName}
-        orderId={params.orderId?.trim() || null}
-      />
-    </AuthPageShell>
+    <StoreWhitelabelRoot themeContext={themeContext}>
+      <AuthPageShell
+        sectionLabel="Cuenta de cliente"
+        title={
+          needsPhoneCompletion
+            ? "Confirma tu WhatsApp"
+            : "Regístrate y compra más rápido"
+        }
+        description={
+          needsPhoneCompletion
+            ? `Activa tu cuenta en ${store.name} con tu número de contacto.`
+            : `Sin contraseñas: Google o solo nombre + WhatsApp en ${store.name}.`
+        }
+        footer={
+          <p className="text-center text-sm text-zinc-500">
+            ¿Vendes productos?{" "}
+            <Link href="/dashboard/login" className="link-brand">
+              Accede al panel del negocio
+            </Link>
+          </p>
+        }
+      >
+        <CustomerRegisterPanel
+          storeSlug={store.slug}
+          storeName={store.name}
+          nextPath={nextPath}
+          needsPhoneCompletion={needsPhoneCompletion}
+          suggestedDisplayName={suggestedDisplayName}
+          orderId={params.orderId?.trim() || null}
+        />
+      </AuthPageShell>
+    </StoreWhitelabelRoot>
   );
 }

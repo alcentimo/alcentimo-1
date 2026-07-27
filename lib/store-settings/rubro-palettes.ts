@@ -121,6 +121,13 @@ export function buildCatalogAccentCssVars(input: {
     "--txn-primary-ring": primaryRing,
     "--txn-accent": accent,
     "--txn-accent-fg": accentFg,
+    "--brand-primary": primary,
+    "--brand-primary-hover": primaryHover,
+    "--brand-primary-fg": primaryFg,
+    "--brand-primary-muted": primaryMuted,
+    "--brand-primary-muted-fg": primaryMutedFg,
+    "--brand-primary-border": primaryBorder,
+    "--brand-primary-ring": primaryRing,
   };
 
   if (includeButtonVars) {

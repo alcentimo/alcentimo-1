@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { CartProvider } from "@/components/catalog-transactional/CartProvider";
 import { PromotionProvider } from "@/components/catalog-transactional/PromotionProvider";
+import { StoreWhitelabelRoot } from "@/components/catalog/StoreWhitelabelRoot";
+import { getPublicCatalogThemeContext } from "@/lib/catalog/get-public-catalog-theme";
 import { getCartAuthContext } from "@/lib/customers/get-cart-auth-context";
 import { getCatalogPromotionContext } from "@/lib/promotions/get-catalog-promotion";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
@@ -22,16 +24,19 @@ export default async function TiendaLayout({ children, params }: TiendaLayoutPro
     : null;
   const wholesaleEnabled =
     storeSettings?.catalogCurrency.wholesaleEnabled ?? false;
+  const themeContext = await getPublicCatalogThemeContext(slug);
 
   return (
-    <CartProvider
-      storeSlug={slug}
-      storeId={cartAuth.storeId}
-      userId={cartAuth.userId}
-      isCustomer={cartAuth.isCustomer}
-      wholesaleEnabled={wholesaleEnabled}
-    >
-      <PromotionProvider value={promotionContext}>{children}</PromotionProvider>
-    </CartProvider>
+    <StoreWhitelabelRoot themeContext={themeContext}>
+      <CartProvider
+        storeSlug={slug}
+        storeId={cartAuth.storeId}
+        userId={cartAuth.userId}
+        isCustomer={cartAuth.isCustomer}
+        wholesaleEnabled={wholesaleEnabled}
+      >
+        <PromotionProvider value={promotionContext}>{children}</PromotionProvider>
+      </CartProvider>
+    </StoreWhitelabelRoot>
   );
 }
