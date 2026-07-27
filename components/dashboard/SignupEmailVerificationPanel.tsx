@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { verifySignupOtpAction } from "@/lib/auth/auth-email-actions";
 import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
+import { VERIFICATION_RESEND_MAX_CONSECUTIVE } from "@/lib/auth/verification-resend-ui";
+import { useVerificationResend } from "@/components/dashboard/useVerificationResend";
 
 interface SignupEmailVerificationPanelProps {
   email: string;
@@ -29,6 +32,18 @@ export function SignupEmailVerificationPanel({
 
   const postAuthPath = resolvePostAuthPath(nextPath);
 
+  const {
+    canResend,
+    resending,
+    resendNotice,
+    resendError,
+    resendsRemaining,
+    blockedSeconds,
+    cooldownSeconds,
+    countdownLabel,
+    resend,
+  } = useVerificationResend({ email, nextPath });
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
@@ -49,6 +64,10 @@ export function SignupEmailVerificationPanel({
     window.location.href = postAuthPath;
   }
 
+  const displayNotice = resendNotice ?? notice;
+  const isBlocked = blockedSeconds > 0;
+  const isCooldown = cooldownSeconds > 0 && !isBlocked;
+
   return (
     <div className="card-panel mx-auto w-full max-w-md">
       <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
@@ -57,14 +76,14 @@ export function SignupEmailVerificationPanel({
 
       <div
         className={
-          notice
+          displayNotice
             ? "mt-4 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5 text-sm text-sky-950 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-100"
             : "alert-success mt-4 text-base text-emerald-800 sm:text-sm dark:text-emerald-200"
         }
         role="status"
       >
-        {notice ? (
-          notice
+        {displayNotice ? (
+          displayNotice
         ) : (
           <>
             Enviamos un correo a <strong>{email}</strong> con un enlace de confirmación
@@ -73,7 +92,7 @@ export function SignupEmailVerificationPanel({
         )}
       </div>
 
-      {notice ? (
+      {displayNotice ? (
         <p className="mt-3 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
           Revisa <strong>{email}</strong> y usa el enlace o el código de 6 dígitos para
           activar tu cuenta.
@@ -114,6 +133,57 @@ export function SignupEmailVerificationPanel({
             Introduce los 6 dígitos que aparecen en el correo de confirmación.
           </p>
         </div>
+
+        <div className="space-y-2 text-center text-sm">
+          {isBlocked ? (
+            <p
+              className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100"
+              role="alert"
+            >
+              Has alcanzado el límite de {VERIFICATION_RESEND_MAX_CONSECUTIVE} reenvíos.
+              Podrás solicitar otro correo en{" "}
+              <strong className="tabular-nums">{countdownLabel}</strong>.
+            </p>
+          ) : isCooldown ? (
+            <p className="text-zinc-500 dark:text-zinc-400">
+              Podrás reenviar el correo en{" "}
+              <strong className="tabular-nums text-zinc-700 dark:text-zinc-200">
+                {countdownLabel}
+              </strong>
+            </p>
+          ) : (
+            <p className="text-zinc-500 dark:text-zinc-400">
+              ¿No recibiste el código?{" "}
+              <button
+                type="button"
+                onClick={() => void resend()}
+                disabled={!canResend}
+                className="link-brand font-medium disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {resending ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                    Reenviando…
+                  </span>
+                ) : (
+                  "Reenviar correo"
+                )}
+              </button>
+            </p>
+          )}
+
+          {!isBlocked && resendsRemaining < VERIFICATION_RESEND_MAX_CONSECUTIVE ? (
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Reenvíos restantes: {resendsRemaining} de {VERIFICATION_RESEND_MAX_CONSECUTIVE}
+            </p>
+          ) : null}
+        </div>
+
+        {resendError ? (
+          <p className="alert-error" role="alert">
+            {resendError}
+          </p>
+        ) : null}
 
         {error ? <p className="alert-error">{error}</p> : null}
 

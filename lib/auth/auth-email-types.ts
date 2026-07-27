@@ -8,6 +8,30 @@ export type AuthEmailActionResult =
   | { ok: true; resentPendingConfirmation?: boolean; notice?: string }
   | { ok: false; error: string };
 
+export type VerificationResendStatusResult = {
+  ok: true;
+  cooldownSeconds: number;
+  blockedSeconds: number;
+  resendsRemaining: number;
+  canResend: boolean;
+};
+
+export type VerificationResendActionResult =
+  | {
+      ok: true;
+      notice: string;
+      cooldownSeconds: number;
+      blockedSeconds: number;
+      resendsRemaining: number;
+    }
+  | {
+      ok: false;
+      error: string;
+      cooldownSeconds?: number;
+      blockedSeconds?: number;
+      resendsRemaining?: number;
+    };
+
 /** Normaliza la respuesta de la Server Action (incluye formas parciales tras serialización). */
 export function parseAuthEmailActionResult(raw: unknown): AuthEmailActionResult {
   if (!raw || typeof raw !== "object") {

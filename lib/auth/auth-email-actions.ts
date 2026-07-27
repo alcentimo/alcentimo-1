@@ -13,6 +13,8 @@ import {
   PENDING_CONFIRMATION_RESENT_MESSAGE,
   EXISTING_CONFIRMED_ACCOUNT_MESSAGE,
   type AuthEmailActionResult,
+  type VerificationResendActionResult,
+  type VerificationResendStatusResult,
 } from "@/lib/auth/auth-email-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -20,6 +22,12 @@ import { getPasswordResetRedirectUrl } from "@/lib/site-url";
 import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
 import { getSiteUrl } from "@/lib/site-url";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
+import {
+  assertVerificationResendAllowed,
+  getVerificationResendStatus,
+  recordVerificationResendSuccess,
+  VERIFICATION_RESEND_COOLDOWN_SECONDS,
+} from "@/lib/auth/verification-resend-limits";
 
 const RESET_PASSWORD_NEXT = "/dashboard/restablecer-contrasena";
 
@@ -377,6 +385,87 @@ async function resendActivationForExistingEmail(input: {
   return {
     ok: false,
     error: EXISTING_CONFIRMED_ACCOUNT_ERROR,
+  };
+}
+
+/**
+ * Reenvía código/enlace de verificación sin contraseña (pantalla Confirma tu cuenta).
+ */
+async function resendVerificationEmailOnly(input: {
+  email: string;
+  postAuthPath: string;
+}): Promise<AuthEmailActionResult> {
+  const user = await findUserByEmail(input.email);
+
+  if (user && isEmailConfirmed(user)) {
+    return {
+      ok: false,
+      error: EXISTING_CONFIRMED_ACCOUNT_ERROR,
+    };
+  }
+
+  if (!user) {
+    return {
+      ok: false,
+      error:
+        "No encontramos una cuenta pendiente de verificación con ese correo.",
+    };
+  }
+
+  const redirectTo = buildRedirectUrl(input.postAuthPath);
+
+  const link = await generateActivationLinkForExistingEmail({
+    email: input.email,
+    password: "",
+    redirectTo,
+  });
+
+  if (link) {
+    const emailResult = await deliverSignupConfirmationEmail({
+      email: input.email,
+      postAuthPath: input.postAuthPath,
+      tokenHash: link.tokenHash,
+      emailOtp: link.emailOtp,
+      otpType: link.otpType,
+    });
+
+    if (emailResult.ok) {
+      return {
+        ok: true,
+        notice: PENDING_CONFIRMATION_RESENT_MESSAGE,
+      };
+    }
+
+    console.error(
+      "[resendVerificationEmailOnly] custom email failed",
+      emailResult.ok === false ? emailResult.error : "unknown",
+    );
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error: resendError } = await supabase.auth.resend({
+      type: "signup",
+      email: input.email,
+      options: { emailRedirectTo: redirectTo },
+    });
+
+    if (!resendError) {
+      return {
+        ok: true,
+        notice: PENDING_CONFIRMATION_RESENT_MESSAGE,
+      };
+    }
+
+    console.error("[resendVerificationEmailOnly] auth.resend failed", resendError.message);
+  } catch (error) {
+    console.error("[resendVerificationEmailOnly] auth.resend threw", error);
+  }
+
+  return {
+    ok: false,
+    error:
+      "No pudimos reenviar el correo ahora. Espera un momento e inténtalo de nuevo.",
   };
 }
 
@@ -756,6 +845,79 @@ export async function sendMagicLinkEmailAction(input: {
           : "No se pudo enviar el enlace de acceso.",
     };
   }
+}
+
+export async function getSignupVerificationResendStatusAction(input: {
+  email: string;
+}): Promise<VerificationResendStatusResult> {
+  const email = normalizeEmail(input.email);
+  if (!isValidEmail(email)) {
+    return {
+      ok: true,
+      cooldownSeconds: 0,
+      blockedSeconds: 0,
+      resendsRemaining: 0,
+      canResend: false,
+    };
+  }
+
+  const status = await getVerificationResendStatus(email);
+  return {
+    ok: true,
+    cooldownSeconds: status.cooldownSeconds,
+    blockedSeconds: status.blockedSeconds,
+    resendsRemaining: status.resendsRemaining,
+    canResend: status.canResend,
+  };
+}
+
+export async function resendSignupVerificationCodeAction(input: {
+  email: string;
+  nextPath?: string | null;
+}): Promise<VerificationResendActionResult> {
+  const email = normalizeEmail(input.email);
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Ingresa un correo válido." };
+  }
+
+  const gate = await assertVerificationResendAllowed(email);
+  if (!gate.allowed) {
+    return {
+      ok: false,
+      error: gate.message,
+      cooldownSeconds:
+        gate.reason === "cooldown" ? gate.secondsRemaining : undefined,
+      blockedSeconds:
+        gate.reason === "blocked" || gate.reason === "limit"
+          ? gate.secondsRemaining
+          : undefined,
+      resendsRemaining: 0,
+    };
+  }
+
+  const postAuthPath = resolvePostAuthPath(input.nextPath);
+  const sendResult = await resendVerificationEmailOnly({
+    email,
+    postAuthPath,
+  });
+
+  if (!sendResult.ok) {
+    return {
+      ok: false,
+      error: sendResult.error,
+      resendsRemaining: gate.resendsRemaining,
+    };
+  }
+
+  const limitStatus = await recordVerificationResendSuccess(email);
+
+  return {
+    ok: true,
+    notice: `Te enviamos un nuevo código de 6 dígitos a ${email}. Revisa tu bandeja y la carpeta de spam.`,
+    cooldownSeconds: limitStatus.cooldownSeconds || VERIFICATION_RESEND_COOLDOWN_SECONDS,
+    blockedSeconds: limitStatus.blockedSeconds,
+    resendsRemaining: limitStatus.resendsRemaining,
+  };
 }
 
 export async function verifySignupOtpAction(input: {
