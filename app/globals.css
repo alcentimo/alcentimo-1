@@ -6468,11 +6468,11 @@ body {
 }
 
 .design-assistant-avatar-gallery {
-  @apply rounded-2xl border border-zinc-200/80 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950;
+  @apply rounded-xl border border-zinc-200/80 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950;
 }
 
 .design-assistant-mode-card {
-  @apply flex items-start gap-3 rounded-2xl border border-zinc-200/80 bg-white p-3 text-left shadow-sm transition hover:border-teal-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-teal-700;
+  @apply flex items-start gap-2.5 rounded-xl border border-zinc-200/80 bg-white p-2.5 text-left shadow-sm transition hover:border-teal-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-teal-700;
 }
 
 .design-assistant-mode-card-selected {
@@ -6480,7 +6480,7 @@ body {
 }
 
 .design-assistant-mode-icon {
-  @apply mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300;
+  @apply mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300;
 }
 
 .design-assistant-avatar-section-header {
@@ -6491,12 +6491,39 @@ body {
   @apply text-xs font-semibold uppercase tracking-wide text-zinc-500;
 }
 
+.design-assistant-avatar-scroll {
+  @apply mt-2 max-h-[280px] overflow-y-auto overscroll-contain pr-0.5;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(161 161 170 / 0.55) transparent;
+}
+
+.design-assistant-avatar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.design-assistant-avatar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.design-assistant-avatar-scroll::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: rgb(161 161 170 / 0.45);
+}
+
+.dark .design-assistant-avatar-scroll {
+  scrollbar-color: rgb(82 82 91 / 0.65) transparent;
+}
+
+.dark .design-assistant-avatar-scroll::-webkit-scrollbar-thumb {
+  background-color: rgb(82 82 91 / 0.65);
+}
+
 .design-assistant-avatar-grid {
-  @apply mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3;
+  @apply grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5;
 }
 
 .design-assistant-avatar-option {
-  @apply flex flex-col items-stretch gap-2 rounded-2xl border border-zinc-200/80 bg-white p-2.5 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-teal-700;
+  @apply flex min-w-0 flex-col items-stretch gap-1 rounded-xl border border-zinc-200/80 bg-white p-1.5 text-left shadow-sm transition duration-200 hover:border-teal-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-teal-700;
 }
 
 .design-assistant-avatar-option-selected {
@@ -6504,15 +6531,15 @@ body {
 }
 
 .design-assistant-avatar-option-stage {
-  @apply relative flex h-32 w-full items-end justify-center overflow-visible bg-transparent px-1 pb-0 pt-2;
+  @apply relative flex h-20 w-full items-end justify-center overflow-visible bg-transparent px-0.5 pb-0 pt-1;
 }
 
 .design-assistant-avatar-option-avatar {
-  @apply h-[6.75rem] w-full max-w-[6.25rem];
+  @apply h-16 w-full max-w-[4.25rem];
 }
 
 .design-assistant-avatar-option-label {
-  @apply line-clamp-2 px-1 pb-1 text-center text-[11px] font-semibold leading-snug text-zinc-700 dark:text-zinc-200;
+  @apply line-clamp-1 px-0.5 pb-0.5 text-center text-[10px] font-semibold leading-tight text-zinc-700 dark:text-zinc-200;
 }
 
 .design-assistant-avatar-upload-preview {

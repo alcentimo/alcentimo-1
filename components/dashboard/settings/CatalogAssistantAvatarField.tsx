@@ -110,7 +110,7 @@ export function CatalogAssistantAvatarField({
   }
 
   return (
-    <div className="design-assistant-avatar-field space-y-4">
+    <div className="design-assistant-avatar-field space-y-3">
       <p className="text-xs leading-relaxed text-zinc-500">
         Rubro detectado:{" "}
         <span className="font-medium text-zinc-700 dark:text-zinc-200">
@@ -158,38 +158,40 @@ export function CatalogAssistantAvatarField({
               Personajes de {gallery.rubroLabel}
             </h4>
           </div>
-          <div className="design-assistant-avatar-grid">
-            {gallery.rubroPresets.map((preset) => {
-              const selected = settings.presetId === preset.id;
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => setPreset(preset.id)}
-                  className={cn(
-                    "design-assistant-avatar-option",
-                    selected && "design-assistant-avatar-option-selected",
-                  )}
-                  aria-pressed={selected}
-                  title={preset.label}
-                >
-                  <span className="design-assistant-avatar-option-stage">
-                    <AnimatedAssistantAvatar
-                      imageUrl={preset.imagePath}
-                      label={preset.label}
-                      variant="character"
-                      animation={preset.animation}
-                      animated
-                      className="design-assistant-avatar-option-avatar"
-                    />
-                  </span>
-                  <span className="design-assistant-avatar-option-label">
-                    {preset.label}
-                  </span>
-                </button>
-              );
-            })}
+          <div className="design-assistant-avatar-scroll">
+            <div className="design-assistant-avatar-grid">
+              {gallery.rubroPresets.map((preset) => {
+                const selected = settings.presetId === preset.id;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => setPreset(preset.id)}
+                    className={cn(
+                      "design-assistant-avatar-option",
+                      selected && "design-assistant-avatar-option-selected",
+                    )}
+                    aria-pressed={selected}
+                    title={preset.label}
+                  >
+                    <span className="design-assistant-avatar-option-stage">
+                      <AnimatedAssistantAvatar
+                        imageUrl={preset.imagePath}
+                        label={preset.label}
+                        variant="character"
+                        animation={preset.animation}
+                        animated
+                        className="design-assistant-avatar-option-avatar"
+                      />
+                    </span>
+                    <span className="design-assistant-avatar-option-label">
+                      {preset.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </section>
       ) : null}
