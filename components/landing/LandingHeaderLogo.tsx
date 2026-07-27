@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { BRAND_LOGO_FULL_PATH } from "@/lib/brand/assets";
+import {
+  BRAND_LOGO_FULL_2X_PATH,
+  BRAND_LOGO_FULL_HEIGHT,
+  BRAND_LOGO_FULL_PATH,
+  BRAND_LOGO_FULL_WIDTH,
+} from "@/lib/brand/assets";
 import { cn } from "@/lib/cn";
 
 interface LandingHeaderLogoProps {
@@ -13,7 +18,7 @@ const logoImgClass = {
   footer: "h-7 w-auto md:h-8",
 } as const;
 
-/** Logo horizontal de la landing — altura fija, ancho automático (proporción nativa). */
+/** Logo horizontal de la landing — PNG HD con srcSet 2x y renderizado nítido. */
 export function LandingHeaderLogo({
   href = "/",
   size = "header",
@@ -22,13 +27,17 @@ export function LandingHeaderLogo({
   const image = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={BRAND_LOGO_FULL_PATH}
+      src={BRAND_LOGO_FULL_2X_PATH}
+      srcSet={`${BRAND_LOGO_FULL_PATH} 1x, ${BRAND_LOGO_FULL_2X_PATH} 2x`}
+      width={BRAND_LOGO_FULL_WIDTH}
+      height={BRAND_LOGO_FULL_HEIGHT}
       alt="Alcentimo"
       className={cn(
-        "block max-w-none shrink-0 border-0 bg-transparent object-contain object-left shadow-none outline-none",
+        "brand-logo-sharp block max-w-none shrink-0 border-0 bg-transparent object-contain object-left shadow-none outline-none",
         logoImgClass[size],
       )}
       decoding="async"
+      fetchPriority="high"
     />
   );
 

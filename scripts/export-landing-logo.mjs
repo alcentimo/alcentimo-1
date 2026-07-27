@@ -130,13 +130,17 @@ async function buildTransparentLogoBuffer(sourcePath, bounds, scale = 1) {
 
   let pipeline = sharp(rgba, {
     raw: { width, height, channels: 4 },
-  }).png({ compressionLevel: 6, adaptiveFiltering: false });
+  }).png({ compressionLevel: 9, adaptiveFiltering: true });
 
   if (scale !== 1) {
-    pipeline = pipeline.resize(Math.round(width * scale), Math.round(height * scale), {
-      fit: "fill",
-      kernel: sharp.kernel.lanczos3,
-    });
+    pipeline = pipeline
+      .resize(Math.round(width * scale), Math.round(height * scale), {
+        fit: "fill",
+        kernel: sharp.kernel.lanczos3,
+      })
+      .sharpen({ sigma: 0.8, m1: 0.5, m2: 0.3 });
+  } else {
+    pipeline = pipeline.sharpen({ sigma: 0.5, m1: 0.5, m2: 0.2 });
   }
 
   return pipeline.toBuffer();
