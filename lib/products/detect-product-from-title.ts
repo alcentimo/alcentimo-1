@@ -1,18 +1,17 @@
-import type { StoreRubro } from "@/src/config/categories";
 import { normalizeStoreRubro } from "@/src/config/categories";
 import { resolveProductFieldLabels } from "@/lib/products/resolve-product-field-labels";
 import type { ProductExtraFieldsMap } from "@/lib/products/extra-fields";
-import { TECH_SPEC_PRESETS } from "@/lib/rubros/modules/tecnologia/config";
 import { BEAUTY_VOLUME_PRESETS, BEAUTY_TONE_PRESETS } from "@/lib/rubros/modules/salud-belleza/config";
 import {
   STATIONERY_FORMAT_OPTIONS,
   STATIONERY_COLOR_OPTIONS,
 } from "@/lib/rubros/modules/papeleria-libreria-oficina/config";
 import { COLLECTIBLE_EDITION_OPTIONS } from "@/lib/rubros/modules/coleccionables/config";
+import { TECH_SPEC_PRESETS } from "@/lib/rubros/modules/tecnologia/config";
 import {
-  TECH_CATEGORY_KEYWORDS,
-  TECH_CATEGORY_PRIORITY,
-} from "@/lib/products/tech-category-keywords";
+  getRubroCategoryKeywords,
+  getRubroCategoryPriority,
+} from "@/lib/products/rubro-category-keywords";
 
 export interface ProductCategoryCandidate {
   slug: string;
@@ -26,57 +25,6 @@ export interface DetectProductFromTitleResult {
   extraFields: ProductExtraFieldsMap;
   source: "rules" | "none";
 }
-
-/** Palabras clave por rubro → slug de categoría sugerida. */
-const CATEGORY_KEYWORDS: Partial<Record<StoreRubro, Record<string, string[]>>> = {
-  tecnologia: TECH_CATEGORY_KEYWORDS,
-  "ropa-moda": {
-    camisas: ["camisa", "camiseta", "polo", "blusa", "t-shirt", "tshirt"],
-    pantalones: ["pantalón", "pantalon", "jean", "jogger", "short", "bermuda"],
-    calzado: ["calzado", "zapato", "bota", "sandalia", "sneaker", "tenis"],
-    zapatos: ["zapato", "mocasín", "mocasin", "oxford"],
-    botas: ["bota", "botín", "botin"],
-    sandalias: ["sandalia", "chancleta"],
-    deportivos: ["deportivo", "running", "training", "air max"],
-    accesorios: ["cinturón", "cinturon", "gorra", "bufanda", "cartera", "bolso"],
-  },
-  alimentos: {
-    entradas: ["entrada", "aperitivo", "ensalada", "sopa"],
-    "platos-principales": [
-      "plato principal",
-      "arepa",
-      "pasta",
-      "hamburguesa",
-      "pollo",
-      "carne",
-      "pizza",
-      "bowl",
-    ],
-    bebidas: ["bebida", "jugo", "refresco", "café", "cafe", "té", "te", "smoothie"],
-    postres: ["postre", "torta", "helado", "brownie", "dulce", "pastel"],
-  },
-  coleccionables: {
-    comics: ["cómic", "comic", "manga", "graphic novel"],
-    figuras: ["figura", "funko", "action figure", "statue", "nendoroid"],
-    cartas: ["carta", "tcg", "pokémon", "pokemon", "yugioh", "magic the gathering"],
-    merch: ["merch", "poster", "playera", "sudadera", "pin"],
-  },
-  "salud-belleza": {
-    "cuidado-personal": ["sérum", "serum", "crema", "hidratante", "protector solar", "spf"],
-    maquillaje: ["labial", "rubor", "base", "mascara", "máscara", "delineador", "sombras"],
-    fragancias: ["perfume", "fragancia", "colonia", "eau de"],
-    suplementos: ["suplemento", "vitamina", "proteína", "proteina", "omega", "colágeno"],
-    cabello: ["shampoo", "champú", "acondicionador", "tinte", "tratamiento capilar"],
-  },
-  "papeleria-libreria-oficina": {
-    cuadernos: ["cuaderno", "libreta", "agenda"],
-    "utiles-escolares": ["lápiz", "lapiz", "bolígrafo", "boligrafo", "marcador", "regla", "goma"],
-    papeleria: ["papel", "cartulina", "sobre", "folder", "archivador"],
-    "material-oficina": ["grapa", "perforadora", "clips", "cinta adhesiva", "calculadora"],
-    impresion: ["tinta", "toner", "cartucho", "resma"],
-    libros: ["libro", "novela", "manual", "texto escolar"],
-  },
-};
 
 function normalizeText(value: string): string {
   return value
@@ -185,6 +133,16 @@ function extractScreen(title: string): string | null {
   return `${match[1]}"`;
 }
 
+function extractBeautyVolume(title: string): string | null {
+  const match = title.match(/\b(\d+)\s*(ml|g|gr|gramos?)\b/i);
+  if (!match) return null;
+  const unit = match[2].toLowerCase().startsWith("g") ? "g" : "ml";
+  const value = `${match[1]} ${unit}`;
+  return BEAUTY_VOLUME_PRESETS.includes(value as (typeof BEAUTY_VOLUME_PRESETS)[number])
+    ? value
+    : value;
+}
+
 function extractSpecsFromTitle(
   title: string,
   fieldLabels: string[],
@@ -205,7 +163,10 @@ function extractSpecsFromTitle(
     pickPresetValue(title, TECH_SPEC_PRESETS.Color) ??
       pickPresetValue(title, STATIONERY_COLOR_OPTIONS),
   );
-  setIfEmpty("Presentación", pickPresetValue(title, BEAUTY_VOLUME_PRESETS));
+  setIfEmpty(
+    "Presentación",
+    extractBeautyVolume(title) ?? pickPresetValue(title, BEAUTY_VOLUME_PRESETS),
+  );
   setIfEmpty("Tono", pickPresetValue(title, BEAUTY_TONE_PRESETS));
   setIfEmpty("Formato / Tamaño", pickPresetValue(title, STATIONERY_FORMAT_OPTIONS));
   setIfEmpty(
@@ -288,9 +249,8 @@ export function detectProductFromTitle(
   }
 
   const normalizedRubro = normalizeStoreRubro(rubro);
-  const keywordMap = CATEGORY_KEYWORDS[normalizedRubro] ?? {};
-  const priorityMap =
-    normalizedRubro === "tecnologia" ? TECH_CATEGORY_PRIORITY : undefined;
+  const keywordMap = getRubroCategoryKeywords(normalizedRubro);
+  const priorityMap = getRubroCategoryPriority(normalizedRubro);
   const match = scoreCategoryFromTitle(
     trimmed,
     categories,
