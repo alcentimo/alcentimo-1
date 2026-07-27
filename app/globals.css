@@ -693,17 +693,15 @@ body {
 
 .landing-header .landing-header-brand .brand-logo-header-public,
 .landing-header .landing-header-brand .brand-logo-dynamic,
-.landing-header .landing-header-brand .brand-logo-mark-wrap-isotype,
-.landing-header .landing-header-brand .brand-logo-mark-wrap-full {
+.landing-header .landing-header-brand .brand-logo-mark-img-full-lg {
   height: 3.5rem;
   width: auto;
   min-width: 0;
   max-width: min(80vw, 20rem);
 }
 
-.landing-header .landing-header-brand .brand-logo-mark-wrap-isotype,
-.landing-header .landing-header-brand .brand-logo-responsive-mark,
-.landing-header .landing-header-brand .brand-isotype-lg {
+.landing-header .landing-header-brand .brand-logo-mark-img-isotype-lg {
+  height: 3.5rem;
   width: 3.5rem;
 }
 
@@ -711,14 +709,17 @@ body {
   @apply font-extrabold text-emerald-950;
 }
 
-.brand-isotype {
-  @apply block aspect-square h-auto w-auto shrink-0 self-center;
-  shape-rendering: geometricPrecision;
-  text-rendering: geometricPrecision;
+.brand-logo-mark-wrap {
+  @apply flex shrink-0 items-center justify-center self-center bg-transparent p-0 shadow-none ring-0;
 }
 
-.brand-logo-mark-wrap {
-  @apply flex shrink-0 items-center justify-center self-center;
+.brand-logo-mark-img {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: center;
 }
 
 .brand-logo-dynamic {
@@ -744,14 +745,33 @@ body {
   max-width: min(72vw, 16rem);
 }
 
-.brand-logo-mark-wrap-isotype {
+.brand-logo-mark-img-isotype-sm,
+.brand-logo-mark-img-isotype-md {
+  height: 2rem;
+  width: 2rem;
+}
+
+.brand-logo-mark-img-isotype-lg {
   height: 2.5rem;
   width: 2.5rem;
 }
 
-.brand-logo-mark-wrap-full {
-  height: 2.5rem;
+.brand-logo-mark-img-full-sm {
+  height: 2rem;
   width: auto;
+  max-width: 9rem;
+}
+
+.brand-logo-mark-img-full-md {
+  height: 2rem;
+  width: auto;
+  max-width: 10.5rem;
+}
+
+.brand-logo-mark-img-full-lg {
+  height: 3.5rem;
+  width: auto;
+  max-width: min(80vw, 20rem);
 }
 
 @media (min-width: 768px) {
@@ -760,15 +780,13 @@ body {
     max-width: 18rem;
   }
 
-  .brand-logo-mark-wrap-full {
-    height: 2.75rem;
+  .brand-logo-mark-img-full-md {
+    height: 2.25rem;
   }
 
   .landing-header .landing-header-brand .brand-logo-header-public,
   .landing-header .landing-header-brand .brand-logo-dynamic,
-  .landing-header .landing-header-brand .brand-logo-mark-wrap-full,
-  .landing-header .landing-header-brand .brand-logo-full,
-  .landing-header .landing-header-brand .brand-logo-full-lg {
+  .landing-header .landing-header-brand .brand-logo-mark-img-full-lg {
     height: 4rem;
     max-width: 24rem;
   }
@@ -776,28 +794,6 @@ body {
 
 .brand-logo-svg-img {
   image-rendering: auto;
-  shape-rendering: geometricPrecision;
-}
-
-.brand-logo-full {
-  @apply block h-auto w-auto max-w-none self-center;
-  shape-rendering: geometricPrecision;
-  text-rendering: geometricPrecision;
-}
-
-.brand-isotype-sm {
-  height: 2.5rem;
-  width: 2.5rem;
-}
-
-.brand-isotype-md {
-  height: 2.75rem;
-  width: 2.75rem;
-}
-
-.brand-isotype-lg {
-  height: 2.5rem;
-  width: 2.5rem;
 }
 
 .brand-logo-wordmark {
@@ -806,11 +802,6 @@ body {
 
 .brand-logo-responsive {
   @apply items-center self-center;
-}
-
-.brand-logo-responsive-mark {
-  height: 2.5rem;
-  width: 2.5rem;
 }
 
 .brand-logo-header-mobile {
@@ -825,11 +816,10 @@ body {
   @apply truncate;
 }
 
-.brand-logo-header-mobile .brand-logo-responsive-mark,
-.brand-logo-header-mobile .brand-isotype-sm,
-.brand-logo-header-mobile .brand-isotype-md {
-  height: 2.5rem;
-  width: 2.5rem;
+.brand-logo-header-mobile .brand-logo-mark-img-isotype-sm,
+.brand-logo-header-mobile .brand-logo-mark-img-isotype-md {
+  height: 2rem;
+  width: 2rem;
 }
 
 .dashboard-sidebar-brand.brand-logo {
@@ -840,16 +830,16 @@ body {
   @apply bg-transparent p-0 shadow-none ring-0;
 }
 
-.dashboard-sidebar-brand .brand-logo-mark-wrap-isotype {
+.dashboard-sidebar-brand .brand-logo-mark-img-isotype-sm,
+.dashboard-sidebar-brand .brand-logo-mark-img-isotype-md {
   height: 2rem;
   width: 2rem;
 }
 
-.dashboard-sidebar-brand .brand-isotype,
-.dashboard-sidebar-brand .brand-isotype-sm,
-.dashboard-sidebar-brand .brand-isotype-md {
+.dashboard-sidebar-brand .brand-logo-mark-img-full-md {
   height: 2rem;
-  width: 2rem;
+  width: auto;
+  max-width: 9.5rem;
 }
 
 .dashboard-sidebar-brand .brand-logo-wordmark {
@@ -858,21 +848,6 @@ body {
 
 .dashboard-sidebar-brand .brand-subtitle {
   @apply text-xs font-medium leading-tight text-zinc-500 dark:text-zinc-400;
-}
-
-.brand-logo-full-sm {
-  height: 2.5rem;
-  width: auto;
-}
-
-.brand-logo-full-md {
-  height: 2.75rem;
-  width: auto;
-}
-
-.brand-logo-full-lg {
-  height: 2.75rem;
-  width: auto;
 }
 
 .brand-mark-landing {

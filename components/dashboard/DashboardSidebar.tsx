@@ -172,7 +172,7 @@ export function DashboardSidebar({
           href="/dashboard/catalogo"
           subtitle={drawerExpanded ? storeName ?? "Panel" : undefined}
           showName={false}
-          responsive={false}
+          mark={drawerExpanded ? "full" : "isotype"}
           preferBuiltInMark
           size="md"
           className={cn(

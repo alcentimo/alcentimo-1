@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { BrandIsotype } from "@/components/ui/BrandIsotype";
-import { BrandLogoFull } from "@/components/ui/BrandLogoFull";
 import { usePlatformSettings } from "@/components/providers/PlatformSettingsProvider";
+import { BRAND_ISOTYPE_PATH, BRAND_LOGO_FULL_PATH } from "@/lib/brand/assets";
 import { cn } from "@/lib/cn";
+
+export type BrandMarkMode = "isotype" | "full" | "responsive";
 
 interface BrandLogoProps {
   href?: string;
@@ -14,39 +15,25 @@ interface BrandLogoProps {
   className?: string;
   centered?: boolean;
   theme?: "light" | "dark";
-  /** Estilo de alto contraste para la landing pública. */
   variant?: "default" | "landing";
-  /** Móvil: solo isotipo. Desktop (md+): logo horizontal completo. */
+  /** Móvil: isotipo. Desktop (md+): logo completo. */
   responsive?: boolean;
-  /** Sobrescribe el logo de plataforma (p. ej. vista previa en admin). */
+  /** Isotipo, logo completo o ambos según viewport. */
+  mark?: BrandMarkMode;
   logoUrl?: string | null;
-  /** Sobrescribe el nombre de plataforma. */
   platformName?: string;
-  /** Fuerza el isotipo SVG integrado (p. ej. barra lateral sin caja blanca). */
+  /** Usa los PNG oficiales aunque haya logo de plataforma en BD. */
   preferBuiltInMark?: boolean;
 }
 
 function brandMarkImageSize(size: "sm" | "md" | "lg") {
   if (size === "sm") {
-    return {
-      container: "h-10 w-auto max-w-[9rem]",
-      width: 144,
-      height: 40,
-    };
+    return { width: 144, height: 40 };
   }
   if (size === "lg") {
-    return {
-      container:
-        "brand-logo-header-public h-14 w-auto max-w-[min(80vw,20rem)] md:h-16 md:max-w-[24rem]",
-      width: 512,
-      height: 64,
-    };
+    return { width: 512, height: 64 };
   }
-  return {
-    container: "h-11 w-auto max-w-[11rem]",
-    width: 176,
-    height: 44,
-  };
+  return { width: 176, height: 44 };
 }
 
 function isVectorLogoUrl(logoUrl: string): boolean {
@@ -54,58 +41,102 @@ function isVectorLogoUrl(logoUrl: string): boolean {
   return normalized.endsWith(".svg");
 }
 
-/** Marca vectorial predeterminada solo cuando no hay logo global en BD. */
-function shouldUseBuiltInSvgBrand(logoUrl: string | null): boolean {
-  return !logoUrl;
+function isotypeSizeClass(size: "sm" | "md" | "lg") {
+  if (size === "lg") return "brand-logo-mark-img-isotype-lg";
+  if (size === "sm") return "brand-logo-mark-img-isotype-sm";
+  return "brand-logo-mark-img-isotype-md";
 }
 
-function BrandSvgMark({
+function fullSizeClass(size: "sm" | "md" | "lg") {
+  if (size === "lg") return "brand-logo-mark-img-full-lg";
+  if (size === "sm") return "brand-logo-mark-img-full-sm";
+  return "brand-logo-mark-img-full-md";
+}
+
+function BrandImageMark({
+  src,
+  alt,
+  wrapClassName,
+  imgClassName,
+}: {
+  src: string;
+  alt: string;
+  wrapClassName?: string;
+  imgClassName?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "brand-logo-mark-wrap flex shrink-0 items-center justify-center self-center bg-transparent p-0 shadow-none ring-0",
+        wrapClassName,
+      )}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        className={cn(
+          "brand-logo-mark-img block h-full w-auto max-w-full object-contain object-center",
+          imgClassName,
+        )}
+        decoding="async"
+      />
+    </span>
+  );
+}
+
+function BrandBuiltInMark({
   size,
-  variant,
+  mark,
   platformName,
-  responsive,
   markClassName,
   fullClassName,
 }: {
   size: "sm" | "md" | "lg";
-  variant: "default" | "landing";
+  mark: BrandMarkMode;
   platformName: string;
-  responsive: boolean;
   markClassName?: string;
   fullClassName?: string;
 }) {
-  if (responsive) {
+  const alt = platformName.trim() || "Alcentimo";
+
+  if (mark === "responsive") {
     return (
       <>
-        <span
-          className={cn(
-            "brand-logo-mark-wrap brand-logo-mark-wrap-isotype md:hidden",
-            markClassName,
-          )}
-        >
-          <BrandIsotype size={size} variant={variant} className="brand-logo-responsive-mark" />
-        </span>
-        <span
-          className={cn(
-            "brand-logo-mark-wrap brand-logo-mark-wrap-full hidden md:flex",
+        <BrandImageMark
+          src={BRAND_ISOTYPE_PATH}
+          alt={alt}
+          wrapClassName={cn(isotypeSizeClass(size), "md:hidden", markClassName)}
+        />
+        <BrandImageMark
+          src={BRAND_LOGO_FULL_PATH}
+          alt={alt}
+          wrapClassName={cn(
+            fullSizeClass(size),
+            "hidden md:flex",
             fullClassName,
           )}
-        >
-          <BrandLogoFull
-            size={size}
-            variant={variant}
-            platformName={platformName}
-            className="brand-logo-responsive-full"
-          />
-        </span>
+        />
       </>
     );
   }
 
+  if (mark === "full") {
+    return (
+      <BrandImageMark
+        src={BRAND_LOGO_FULL_PATH}
+        alt={alt}
+        wrapClassName={cn(fullSizeClass(size), fullClassName)}
+      />
+    );
+  }
+
   return (
-    <span className={cn("brand-logo-mark-wrap brand-logo-mark-wrap-isotype", markClassName)}>
-      <BrandIsotype size={size} variant={variant} />
-    </span>
+    <BrandImageMark
+      src={BRAND_ISOTYPE_PATH}
+      alt={alt}
+      wrapClassName={cn(isotypeSizeClass(size), markClassName)}
+    />
   );
 }
 
@@ -113,48 +144,43 @@ function BrandMark({
   size,
   logoUrl,
   platformName,
-  variant = "default",
-  responsive = false,
+  mark,
   preferBuiltInMark = false,
 }: {
   size: "sm" | "md" | "lg";
   logoUrl: string | null;
   platformName: string;
-  variant?: "default" | "landing";
-  responsive?: boolean;
+  mark: BrandMarkMode;
   preferBuiltInMark?: boolean;
 }) {
-  if (preferBuiltInMark || shouldUseBuiltInSvgBrand(logoUrl)) {
+  if (preferBuiltInMark || !logoUrl) {
     return (
-      <BrandSvgMark
-        size={size}
-        variant={variant}
-        platformName={platformName}
-        responsive={responsive}
-      />
+      <BrandBuiltInMark size={size} mark={mark} platformName={platformName} />
     );
   }
 
-  const resolvedLogoUrl = logoUrl!;
   const imageSize = brandMarkImageSize(size);
 
   return (
     <span
       className={cn(
-        "brand-logo-mark-wrap brand-logo-dynamic relative flex shrink-0 items-center justify-center self-center overflow-visible",
-        imageSize.container,
+        "brand-logo-mark-wrap brand-logo-dynamic relative flex shrink-0 items-center justify-center self-center overflow-visible bg-transparent p-0 shadow-none ring-0",
+        size === "lg"
+          ? "brand-logo-header-public h-14 w-auto max-w-[min(80vw,20rem)] md:h-16 md:max-w-[24rem]"
+          : size === "sm"
+            ? "h-10 w-auto max-w-[9rem]"
+            : "h-11 w-auto max-w-[11rem]",
       )}
     >
-      {/* img nativo evita recompresión y mantiene nitidez en Retina */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={resolvedLogoUrl}
+        src={logoUrl}
         alt={`Logo de ${platformName}`}
         width={imageSize.width}
         height={imageSize.height}
         className={cn(
           "brand-logo-dynamic-img block h-full w-auto max-h-full object-contain object-center",
-          isVectorLogoUrl(resolvedLogoUrl) && "brand-logo-svg-img",
+          isVectorLogoUrl(logoUrl) && "brand-logo-svg-img",
         )}
         decoding="async"
       />
@@ -172,6 +198,7 @@ export function BrandLogo({
   theme = "light",
   variant = "default",
   responsive = false,
+  mark: markProp,
   logoUrl: logoUrlOverride,
   platformName: platformNameOverride,
   preferBuiltInMark = false,
@@ -183,9 +210,11 @@ export function BrandLogo({
       ? platformNameOverride
       : platform.platformName;
 
+  const mark: BrandMarkMode = markProp ?? (responsive ? "responsive" : "isotype");
   const isLanding = variant === "landing";
   const resolvedTheme = isLanding ? "light" : theme;
-  const useResponsiveSvg = responsive && !logoUrl;
+  const usesBuiltInResponsive =
+    (preferBuiltInMark || !logoUrl) && mark === "responsive";
 
   const nameClass = cn(
     "brand-logo-name truncate font-bold tracking-tight leading-none",
@@ -205,7 +234,7 @@ export function BrandLogo({
     ? platformName.trim() || "Alcentimo"
     : platformName.toLowerCase();
 
-  const showWordmarkText = showName && !useResponsiveSvg;
+  const showWordmarkText = showName && !usesBuiltInResponsive;
 
   const content = (
     <>
@@ -213,8 +242,7 @@ export function BrandLogo({
         size={size}
         logoUrl={logoUrl}
         platformName={platformName}
-        variant={variant}
-        responsive={responsive}
+        mark={mark}
         preferBuiltInMark={preferBuiltInMark}
       />
       {(showWordmarkText || subtitle) && (
@@ -228,7 +256,7 @@ export function BrandLogo({
 
   const baseClass = cn(
     "brand-logo inline-flex min-w-0 items-center gap-2.5 self-center",
-    responsive && "brand-logo-responsive",
+    mark === "responsive" && "brand-logo-responsive",
     isLanding && "brand-logo-landing",
     centered && "justify-center",
     className,

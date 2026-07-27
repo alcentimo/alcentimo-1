@@ -1,9 +1,9 @@
 import sharp from "sharp";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const publicDir = path.join(process.cwd(), "public");
-const isotypeSvgPath = path.join(publicDir, "brand-isotype-favicon.svg");
+const isotypePath = path.join(publicDir, "brand/isotipo-alcentimo.png");
 
 const OUTPUTS = [
   { file: "favicon-16x16.png", size: 16 },
@@ -15,20 +15,20 @@ const OUTPUTS = [
   { file: "icon-512x512.png", size: 512 },
 ];
 
-/** Isotipo cuadrado 1:1 — rellena todo el canvas sin márgenes blancos. */
 async function renderIsotypePng(size) {
-  const svg = await readFile(isotypeSvgPath);
-  const density = Math.max(96, Math.ceil((size / 40) * 96));
-
-  return sharp(svg, { density })
-    .resize(size, size, { fit: "fill" })
+  return sharp(isotypePath)
+    .trim()
+    .resize(size, size, {
+      fit: "contain",
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
     .png({ compressionLevel: 9, adaptiveFiltering: true })
     .toBuffer();
 }
 
 await mkdir(publicDir, { recursive: true });
 
-console.log("Generating favicons from public/brand-isotype-favicon.svg …");
+console.log("Generating favicons from public/brand/isotipo-alcentimo.png …");
 
 for (const { file, size } of OUTPUTS) {
   const buffer = await renderIsotypePng(size);
