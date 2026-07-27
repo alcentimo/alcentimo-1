@@ -39,14 +39,12 @@ export async function sendSignupConfirmationEmail(input: {
 export async function sendPasswordResetEmail(input: {
   to: string;
   actionUrl: string;
-  verificationCode?: string;
 }): Promise<SendEmailResult> {
   return sendAuthTemplateEmail(
     input.to,
     AUTH_EMAIL_SUBJECTS.recovery,
     {
       actionUrl: input.actionUrl,
-      verificationCode: input.verificationCode,
     },
     buildPasswordResetEmail,
   );

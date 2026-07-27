@@ -497,7 +497,6 @@ async function sendAuthEmailForType(input: {
       result = await sendPasswordResetEmail({
         to: input.email,
         actionUrl: input.actionUrl,
-        verificationCode: input.verificationCode ?? undefined,
       });
       break;
     case "magiclink":
@@ -774,7 +773,7 @@ async function sendPasswordResetEmailOnly(
       return { ok: false, error: error.message };
     }
 
-    const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
+    const { tokenHash } = extractLinkProperties(data?.properties);
     if (!tokenHash) {
       return { ok: true };
     }
@@ -788,7 +787,6 @@ async function sendPasswordResetEmailOnly(
     const emailResult = await sendPasswordResetEmail({
       to: email,
       actionUrl,
-      verificationCode: emailOtp ?? undefined,
     });
 
     if (!emailResult.ok) {

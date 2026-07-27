@@ -171,8 +171,7 @@ function PasswordRecoverySentBody({
       ) : null}
 
       <p className="mt-4 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-        Revisa también la carpeta de spam. El enlace y el código expiran por seguridad
-        en 24 horas.
+        Revisa también la carpeta de spam. El enlace expira por seguridad en 24 horas.
       </p>
 
       <div className="mt-4 space-y-2 text-center text-sm">

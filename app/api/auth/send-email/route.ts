@@ -128,7 +128,6 @@ export async function POST(request: NextRequest) {
       result = await sendPasswordResetEmail({
         to: email,
         actionUrl,
-        verificationCode,
       });
       break;
     case "magiclink":

@@ -44,13 +44,11 @@ export function buildPasswordResetEmail(input: AuthEmailTemplateInput) {
     title: "Restablece tu contraseña",
     paragraphs: [
       "Recibimos una solicitud para cambiar la contraseña de tu cuenta.",
-      "Si fuiste tú, usa el botón de abajo o el código de 6 dígitos para crear una nueva contraseña.",
+      "Si fuiste tú, usa el botón de abajo para crear una nueva contraseña.",
     ],
     actionLabel: "Crear nueva contraseña",
     actionUrl: input.actionUrl,
-    verificationCode: input.verificationCode,
-    verificationCodeHint: "Código de 6 dígitos para restablecer tu contraseña:",
-    footerNote: "Este enlace y el código expiran por seguridad en 24 horas.",
+    footerNote: "Este enlace expira por seguridad en 24 horas.",
   });
 }
 
