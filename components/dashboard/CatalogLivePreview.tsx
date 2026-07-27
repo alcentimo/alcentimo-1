@@ -13,6 +13,7 @@ import {
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
 import { storeHasPCBuilderFromStore } from "@/lib/rubros/modules/tecnologia/pc-builder";
+import { CatalogStoreBrandingProvider } from "@/components/catalog/CatalogStoreBrandingContext";
 import { cn } from "@/lib/cn";
 
 interface CatalogLivePreviewProps {
@@ -85,6 +86,15 @@ export function CatalogLivePreview({
           )}
           style={themeStyle}
         >
+          <CatalogStoreBrandingProvider
+            logoUrl={
+              store.pwa_icon_192_url ??
+              store.pwa_icon_512_url ??
+              store.logo_url ??
+              null
+            }
+            storeName={store.name}
+          >
           <div className="catalog-live-preview-scroll">
             <TransactionalCatalog
               store={store}
@@ -104,6 +114,7 @@ export function CatalogLivePreview({
               pcBuilderEnabled={storeHasPCBuilderFromStore(store)}
             />
           </div>
+        </CatalogStoreBrandingProvider>
         </div>
       </CartProvider>
     </PromotionProvider>

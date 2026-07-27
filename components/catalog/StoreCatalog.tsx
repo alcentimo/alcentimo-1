@@ -23,6 +23,7 @@ import {
 import {
   CatalogFulfillmentProvider,
 } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
+import { CatalogStoreBrandingProvider } from "@/components/catalog/CatalogStoreBrandingContext";
 import { CustomerPromoBanner } from "@/components/catalog-transactional/CustomerPromoBanner";
 import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
 
@@ -46,19 +47,29 @@ export function StoreCatalog({
   locationStocks = [],
 }: StoreCatalogProps) {
   return (
-    <CatalogFulfillmentProvider
-      storeSlug={store.slug}
-      locations={locations}
-      locationStocks={locationStocks}
+    <CatalogStoreBrandingProvider
+      logoUrl={
+        store.pwa_icon_192_url ??
+        store.pwa_icon_512_url ??
+        store.logo_url ??
+        null
+      }
+      storeName={store.name}
     >
-      <StoreCatalogInner
-        store={store}
-        products={products}
-        exchangeRate={exchangeRate}
-        purchaseInfo={purchaseInfo}
-        catalogCurrency={catalogCurrency}
-      />
-    </CatalogFulfillmentProvider>
+      <CatalogFulfillmentProvider
+        storeSlug={store.slug}
+        locations={locations}
+        locationStocks={locationStocks}
+      >
+        <StoreCatalogInner
+          store={store}
+          products={products}
+          exchangeRate={exchangeRate}
+          purchaseInfo={purchaseInfo}
+          catalogCurrency={catalogCurrency}
+        />
+      </CatalogFulfillmentProvider>
+    </CatalogStoreBrandingProvider>
   );
 }
 

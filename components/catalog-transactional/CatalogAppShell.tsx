@@ -1,5 +1,6 @@
 "use client";
 
+import { CatalogStoreBrandingProvider } from "@/components/catalog/CatalogStoreBrandingContext";
 import type { ReactNode } from "react";
 import { CatalogTabBar } from "@/components/catalog-transactional/CatalogTabBar";
 import { CatalogChatWidget } from "@/components/catalog-transactional/CatalogChatWidget";
@@ -42,7 +43,7 @@ export function CatalogAppShell({
   const pcBuilderEnabled = storeHasPCBuilder(storeRubro, enablePcBuilder);
 
   return (
-    <>
+    <CatalogStoreBrandingProvider logoUrl={storeLogoUrl} storeName={storeName}>
       <PwaServiceWorkerRegister storeSlug={storeSlug} />
       <InstallPwaBanner
         storeSlug={storeSlug}
@@ -63,6 +64,6 @@ export function CatalogAppShell({
         />
       ) : null}
       <CatalogTabBar storeSlug={storeSlug} pcBuilderEnabled={pcBuilderEnabled} />
-    </>
+    </CatalogStoreBrandingProvider>
   );
 }
