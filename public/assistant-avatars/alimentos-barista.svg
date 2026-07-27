@@ -7,10 +7,24 @@
       <stop offset="100%" stop-color="#cbd5e1" stop-opacity="0.35"/>
     </linearGradient>
   </defs><ellipse cx="64" cy="138" rx="34" ry="6" fill="url(#floor)"/><g filter="url(#charShadow)">
-    <ellipse cx="64" cy="38" rx="15" ry="17" fill="#fcd9b6"/>
-    <rect x="46" y="56" width="36" height="30" rx="8" fill="#78350f"/>
-    <rect x="52" y="48" width="24" height="12" rx="4" fill="#1e293b"/>
-    <rect x="78" y="60" width="16" height="10" rx="3" fill="#d4d4d8"/>
-    <rect x="50" y="86" width="12" height="24" rx="4" fill="#451a03"/>
-    <rect x="66" y="86" width="12" height="24" rx="4" fill="#451a03"/>
+    <ellipse cx="64" cy="40" rx="15" ry="16" fill="#fcd9b6"/>
+    <rect x="48" y="32" width="32" height="10" rx="5" fill="#78350f"/>
+    <rect x="52" y="28" width="24" height="6" rx="3" fill="#451a03"/>
+    <ellipse cx="58" cy="40" rx="3" ry="3.5" fill="#ffffff"/>
+    <ellipse cx="70" cy="40" rx="3" ry="3.5" fill="#ffffff"/>
+    <circle cx="58" cy="41" r="1.8" fill="#1e293b"/>
+    <circle cx="70" cy="41" r="1.8" fill="#1e293b"/>
+    <path d="M58 48 Q64 52 70 48" fill="none" stroke="#e11d48" stroke-width="2" stroke-linecap="round"/>
+    <rect x="46" y="56" width="36" height="32" rx="8" fill="#292524"/>
+    <rect x="50" y="60" width="28" height="8" rx="2" fill="#fafaf9"/>
+    <rect x="34" y="62" width="12" height="22" rx="4" fill="#292524"/>
+    <rect x="82" y="62" width="12" height="22" rx="4" fill="#292524"/>
+    <rect x="86" y="66" width="14" height="16" rx="3" fill="#fafaf9" stroke="#d6d3d1" stroke-width="1.5"/>
+    <path d="M88 70 Q92 74 88 78 Q84 74 88 70" fill="none" stroke="#78350f" stroke-width="1.5"/>
+    <path d="M90 72 Q94 76 90 80" fill="none" stroke="#78350f" stroke-width="1.5"/>
+    <ellipse cx="90" cy="84" rx="8" ry="3" fill="#e7e5e4"/>
+    <rect x="50" y="88" width="12" height="24" rx="4" fill="#44403c"/>
+    <rect x="66" y="88" width="12" height="24" rx="4" fill="#44403c"/>
+    <rect x="46" y="108" width="16" height="6" rx="3" fill="#1e293b"/>
+    <rect x="66" y="108" width="16" height="6" rx="3" fill="#1e293b"/>
   </g></svg>

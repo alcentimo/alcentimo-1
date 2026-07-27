@@ -236,18 +236,53 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "animation": "pulse"
   },
   {
+    "id": "alimentos-toro",
+    "label": "Toro Emblema",
+    "rubro": "alimentos",
+    "imagePath": "/assistant-avatars/alimentos-toro.svg",
+    "animation": "pulse"
+  },
+  {
+    "id": "alimentos-vaca",
+    "label": "Vaca Amigable",
+    "rubro": "alimentos",
+    "imagePath": "/assistant-avatars/alimentos-vaca.svg",
+    "animation": "bob"
+  },
+  {
+    "id": "alimentos-cabra",
+    "label": "Cabra Campestre",
+    "rubro": "alimentos",
+    "imagePath": "/assistant-avatars/alimentos-cabra.svg",
+    "animation": "wave"
+  },
+  {
+    "id": "alimentos-burger",
+    "label": "Burger Premium",
+    "rubro": "alimentos",
+    "imagePath": "/assistant-avatars/alimentos-burger.svg",
+    "animation": "float"
+  },
+  {
+    "id": "alimentos-helado",
+    "label": "Cono Kawaii",
+    "rubro": "alimentos",
+    "imagePath": "/assistant-avatars/alimentos-helado.svg",
+    "animation": "glow"
+  },
+  {
+    "id": "alimentos-pizza",
+    "label": "Pizza Animada",
+    "rubro": "alimentos",
+    "imagePath": "/assistant-avatars/alimentos-pizza.svg",
+    "animation": "bob"
+  },
+  {
     "id": "alimentos-chef",
     "label": "Chef Maestro",
     "rubro": "alimentos",
     "imagePath": "/assistant-avatars/alimentos-chef.svg",
     "animation": "wave"
-  },
-  {
-    "id": "alimentos-baker",
-    "label": "Panadero Artesanal",
-    "rubro": "alimentos",
-    "imagePath": "/assistant-avatars/alimentos-baker.svg",
-    "animation": "bob"
   },
   {
     "id": "alimentos-barista",
@@ -257,53 +292,18 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "animation": "glow"
   },
   {
-    "id": "alimentos-farm",
-    "label": "Granja Viva",
+    "id": "alimentos-uvas",
+    "label": "Racimo Premium",
     "rubro": "alimentos",
-    "imagePath": "/assistant-avatars/alimentos-farm.svg",
-    "animation": "pulse"
-  },
-  {
-    "id": "alimentos-sushi",
-    "label": "Sushi Master",
-    "rubro": "alimentos",
-    "imagePath": "/assistant-avatars/alimentos-sushi.svg",
+    "imagePath": "/assistant-avatars/alimentos-uvas.svg",
     "animation": "float"
   },
   {
-    "id": "alimentos-sweet",
-    "label": "Dulce Tentación",
+    "id": "alimentos-palta",
+    "label": "Palta Sonriente",
     "rubro": "alimentos",
-    "imagePath": "/assistant-avatars/alimentos-sweet.svg",
-    "animation": "glow"
-  },
-  {
-    "id": "alimentos-grill",
-    "label": "Grill Expert",
-    "rubro": "alimentos",
-    "imagePath": "/assistant-avatars/alimentos-grill.svg",
-    "animation": "bob"
-  },
-  {
-    "id": "alimentos-harvest",
-    "label": "Cosecha Dorada",
-    "rubro": "alimentos",
-    "imagePath": "/assistant-avatars/alimentos-harvest.svg",
+    "imagePath": "/assistant-avatars/alimentos-palta.svg",
     "animation": "pulse"
-  },
-  {
-    "id": "alimentos-spice",
-    "label": "Chef Especias",
-    "rubro": "alimentos",
-    "imagePath": "/assistant-avatars/alimentos-spice.svg",
-    "animation": "wave"
-  },
-  {
-    "id": "alimentos-fresh",
-    "label": "Frescura Natural",
-    "rubro": "alimentos",
-    "imagePath": "/assistant-avatars/alimentos-fresh.svg",
-    "animation": "float"
   },
   {
     "id": "salud-belleza-spa",
