@@ -8,7 +8,7 @@ interface LandingHeaderLogoProps {
   className?: string;
 }
 
-/** Logo único de la landing — solo PNG completo, sin isotipo duplicado. */
+/** Logo único de la landing — PNG recortado, sin contenedor ni fondo. */
 export function LandingHeaderLogo({
   href = "/",
   size = "header",
@@ -22,28 +22,17 @@ export function LandingHeaderLogo({
     <img
       src={BRAND_LOGO_FULL_PATH}
       alt="Alcentimo"
-      className={cn(imgClass, "block bg-transparent object-contain object-left")}
+      className={imgClass}
       decoding="async"
     />
   );
 
   if (!href) {
-    return (
-      <span className={cn("landing-header-brand inline-flex shrink-0 items-center", className)}>
-        {image}
-      </span>
-    );
+    return <span className={cn("inline-flex shrink-0 items-center", className)}>{image}</span>;
   }
 
   return (
-    <Link
-      href={href}
-      className={cn(
-        "landing-header-brand inline-flex shrink-0 items-center bg-transparent p-0 shadow-none ring-0",
-        className,
-      )}
-      aria-label="Alcentimo"
-    >
+    <Link href={href} className={cn("inline-flex shrink-0 items-center", className)} aria-label="Alcentimo">
       {image}
     </Link>
   );
