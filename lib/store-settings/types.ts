@@ -152,12 +152,27 @@ export interface CatalogVisibilitySettings {
   showPrices: boolean;
 }
 
+export interface CatalogPromoBannerSlide {
+  id: string;
+  mobileImageUrl: string;
+  desktopImageUrl?: string;
+  alt?: string;
+  linkUrl?: string;
+}
+
+export interface CatalogPromoBannerSettings {
+  enabled: boolean;
+  slides: CatalogPromoBannerSlide[];
+}
+
 export interface CatalogDesignSettings {
   theme: CatalogThemeId;
   saleMode: CatalogSaleMode;
   visibility: CatalogVisibilitySettings;
   /** Color principal de marca elegido por la tienda (hex #rrggbb). */
   primaryColor?: string;
+  /** Carrusel promocional opcional en la parte superior del catálogo. */
+  promoBanner?: CatalogPromoBannerSettings;
   /** Derivado del tema al renderizar; opcional en almacenamiento legacy. */
   layout?: CatalogLayoutMode;
 }

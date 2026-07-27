@@ -31,6 +31,7 @@ import {
   useCatalogFulfillment,
 } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
+import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { cn } from "@/lib/cn";
 
@@ -232,6 +233,11 @@ function CatalogCategoriesPageContent({
         </div>
         <CatalogLocationPicker />
       </header>
+
+      <CatalogPromoBannerCarousel
+        promoBanner={catalogDesign.promoBanner}
+        storeName={store.name}
+      />
 
       {catalogProducts.length > 0 ? (
         <CatalogBrowseToolbar

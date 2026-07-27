@@ -34,6 +34,7 @@ import {
   useCatalogFulfillment,
 } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
+import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { groupProductsByFoodMenu } from "@/lib/rubros/modules/alimentos";
@@ -373,6 +374,11 @@ function TransactionalCatalogContent({
           </div>
         </div>
       </header>
+
+      <CatalogPromoBannerCarousel
+        promoBanner={catalogDesign.promoBanner}
+        storeName={store.name}
+      />
 
       {!previewMode ? <CatalogLocationPicker /> : null}
 

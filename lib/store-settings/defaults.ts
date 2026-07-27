@@ -13,6 +13,10 @@ import {
   normalizePickupPoints,
 } from "@/lib/store-settings/delivery-zones";
 import { normalizeHex6 } from "@/lib/store-settings/color-contrast";
+import {
+  defaultPromoBannerSettings,
+  normalizePromoBannerSettings,
+} from "@/lib/store-settings/promo-banner";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "mrw",
@@ -161,6 +165,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
         showDescription: true,
         showPrices: true,
       },
+      promoBanner: defaultPromoBannerSettings(),
     },
     catalogCurrency: {
       showOfficialRate: true,
@@ -371,6 +376,9 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
       ...(designRaw.layout === "list" || designRaw.layout === "grid"
         ? { layout: designRaw.layout }
         : {}),
+      promoBanner: normalizePromoBannerSettings(
+        designRaw.promoBanner ?? defaults.catalogDesign.promoBanner,
+      ),
     },
     catalogCurrency: {
       showOfficialRate:

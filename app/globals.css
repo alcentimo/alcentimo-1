@@ -4992,6 +4992,64 @@ body {
   @apply flex items-center justify-between gap-3 px-4 py-2.5 sm:px-6 sm:py-3;
 }
 
+.txn-promo-banner {
+  @apply px-4 pt-2 sm:px-6 sm:pt-3;
+}
+
+.txn-promo-banner-viewport {
+  @apply relative mx-auto w-full max-w-6xl overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900;
+  max-height: 10.5rem;
+}
+
+@media (min-width: 768px) {
+  .txn-promo-banner-viewport {
+    max-height: 15rem;
+  }
+}
+
+.txn-promo-banner-link {
+  @apply block h-full w-full;
+}
+
+.txn-promo-banner-picture {
+  @apply block h-full w-full;
+}
+
+.txn-promo-banner-image {
+  @apply block h-full w-full object-cover object-center;
+  max-height: 10.5rem;
+}
+
+@media (min-width: 768px) {
+  .txn-promo-banner-image {
+    max-height: 15rem;
+  }
+}
+
+.txn-promo-banner-nav {
+  @apply absolute top-1/2 z-10 flex h-11 w-11 min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white shadow-sm backdrop-blur-sm transition hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70;
+}
+
+.txn-promo-banner-nav-prev {
+  @apply left-2 sm:left-3;
+}
+
+.txn-promo-banner-nav-next {
+  @apply right-2 sm:right-3;
+}
+
+.txn-promo-banner-dots {
+  @apply absolute bottom-2.5 left-1/2 z-10 flex -translate-x-1/2 gap-2 rounded-full bg-black/25 px-2 py-1 backdrop-blur-sm;
+}
+
+.txn-promo-banner-dot {
+  @apply h-2.5 w-2.5 min-h-[10px] min-w-[10px] rounded-full bg-white/55 transition hover:bg-white/80;
+}
+
+.txn-promo-banner-dot-active {
+  @apply scale-110 bg-white;
+}
+
 .txn-catalog-brand {
   @apply flex min-w-0 items-center gap-3;
 }
@@ -6354,6 +6412,42 @@ body {
 
 .design-brand-color-reset {
   @apply text-xs text-zinc-500 underline-offset-2 transition hover:text-zinc-700 hover:underline dark:hover:text-zinc-300;
+}
+
+.design-promo-banner-panel {
+  @apply space-y-3 px-1;
+}
+
+.design-promo-banner-slides {
+  @apply space-y-3;
+}
+
+.design-promo-banner-slide {
+  @apply space-y-3 rounded-lg border border-zinc-200/80 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-900/30;
+}
+
+.design-promo-banner-slide-header {
+  @apply flex items-center justify-between gap-3;
+}
+
+.design-promo-banner-slide-fields {
+  @apply grid gap-3 sm:grid-cols-2;
+}
+
+.design-promo-banner-add {
+  @apply px-2 py-2;
+}
+
+.design-banner-upload {
+  @apply space-y-1;
+}
+
+.design-banner-upload-preview {
+  @apply relative h-16 w-28 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950;
+}
+
+.design-banner-upload-preview-empty {
+  @apply flex items-center justify-center border-dashed bg-zinc-50 dark:bg-zinc-900/50;
 }
 
 .design-studio-main {

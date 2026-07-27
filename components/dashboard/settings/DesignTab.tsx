@@ -19,6 +19,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { CatalogPrimaryColorField } from "@/components/dashboard/settings/CatalogPrimaryColorField";
+import { CatalogPromoBannerField } from "@/components/dashboard/settings/CatalogPromoBannerField";
 import { SettingsTabShell } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
@@ -35,9 +36,14 @@ import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-pa
 import type { Store } from "@/lib/database.types";
 import type {
   CatalogDesignSettings,
+  CatalogPromoBannerSettings,
   CatalogThemeId,
   CatalogVisibilitySettings,
 } from "@/lib/store-settings/types";
+import {
+  defaultPromoBannerSettings,
+  resolvePromoBannerSettings,
+} from "@/lib/store-settings/promo-banner";
 import { cn } from "@/lib/cn";
 import {
   DEFAULT_STORE_RUBRO,
@@ -66,9 +72,10 @@ type SavingField =
   | CatalogThemeId
   | keyof CatalogVisibilitySettings
   | "primaryColor"
+  | "promoBanner"
   | null;
 
-type AccordionSection = "theme" | "brandColor" | "visibility";
+type AccordionSection = "theme" | "brandColor" | "promoBanner" | "visibility";
 
 interface DesignAccordionProps {
   title: string;
@@ -189,6 +196,7 @@ export function DesignTab({
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [isSaving, startSave] = useTransition();
   const colorSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const promoBannerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const storeRubro = normalizeStoreRubro(
     storeRubroProp ?? preview?.store.rubro_tienda ?? DEFAULT_STORE_RUBRO,
@@ -232,6 +240,7 @@ export function DesignTab({
       visibility: patch.visibility
         ? { ...design.visibility, ...patch.visibility }
         : design.visibility,
+      promoBanner: patch.promoBanner ?? design.promoBanner,
     };
     setDesign(nextDesign);
     persist(nextDesign, field);
@@ -280,6 +289,25 @@ export function DesignTab({
     schedulePrimaryColorSave(nextDesign);
   }
 
+  function schedulePromoBannerSave(nextDesign: CatalogDesignSettings) {
+    if (promoBannerSaveTimerRef.current) {
+      clearTimeout(promoBannerSaveTimerRef.current);
+    }
+
+    promoBannerSaveTimerRef.current = setTimeout(() => {
+      persist(nextDesign, "promoBanner");
+    }, 400);
+  }
+
+  function setPromoBanner(next: CatalogPromoBannerSettings) {
+    const nextDesign: CatalogDesignSettings = {
+      ...design,
+      promoBanner: resolvePromoBannerSettings(next),
+    };
+    setDesign(nextDesign);
+    schedulePromoBannerSave(nextDesign);
+  }
+
   function resetPrimaryColor() {
     if (colorSaveTimerRef.current) {
       clearTimeout(colorSaveTimerRef.current);
@@ -296,6 +324,9 @@ export function DesignTab({
       if (colorSaveTimerRef.current) {
         clearTimeout(colorSaveTimerRef.current);
       }
+      if (promoBannerSaveTimerRef.current) {
+        clearTimeout(promoBannerSaveTimerRef.current);
+      }
     };
   }, []);
 
@@ -307,6 +338,14 @@ export function DesignTab({
   const brandColorSummary = design.primaryColor
     ? design.primaryColor.toUpperCase()
     : `Rubro ${rubroPalette.label}`;
+  const promoBannerSettings = resolvePromoBannerSettings(
+    design.promoBanner ?? defaultPromoBannerSettings(),
+  );
+  const promoBannerSummary = promoBannerSettings.enabled
+    ? promoBannerSettings.slides.length > 0
+      ? `${promoBannerSettings.slides.length} imagen(es)`
+      : "Activado · sin imágenes"
+    : "Desactivado";
   const visibilitySummary =
     [
       design.visibility.showStock && "Stock",
@@ -408,6 +447,19 @@ export function DesignTab({
                 disabled={isSaving && savingField === "primaryColor"}
                 onPick={setPrimaryColor}
                 onReset={resetPrimaryColor}
+              />
+            </DesignAccordion>
+
+            <DesignAccordion
+              title="Banner promocional"
+              summary={promoBannerSummary}
+              open={openSection === "promoBanner"}
+              onToggle={() => toggleSection("promoBanner")}
+            >
+              <CatalogPromoBannerField
+                value={design.promoBanner}
+                disabled={isSaving && savingField === "promoBanner"}
+                onChange={setPromoBanner}
               />
             </DesignAccordion>
 

@@ -14,6 +14,7 @@ import {
   getRubroPalette,
 } from "@/lib/store-settings/rubro-palettes";
 import { normalizeHex6 } from "@/lib/store-settings/color-contrast";
+import { normalizePromoBannerSettings } from "@/lib/store-settings/promo-banner";
 import type {
   CatalogDesignSettings,
   CatalogLayoutMode,
@@ -189,6 +190,7 @@ export function resolveCatalogDesign(
     visibility,
     primaryColor,
     layout,
+    promoBanner: normalizePromoBannerSettings(design?.promoBanner),
   };
 }
 

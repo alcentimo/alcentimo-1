@@ -8,6 +8,7 @@ import {
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import { normalizeHex6 } from "@/lib/store-settings/color-contrast";
+import { normalizePromoBannerSettings } from "@/lib/store-settings/promo-banner";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { uploadStoreAssetImage, uploadStoreLogoImage, removeStoreLogoAssets } from "@/lib/storage";
 import { isValidStoreSlug } from "@/lib/stores/slug";
@@ -89,6 +90,9 @@ export async function saveCatalogDesignSettings(
     theme: normalized.catalogDesign.theme,
     saleMode: normalized.catalogDesign.saleMode,
     visibility: normalized.catalogDesign.visibility,
+    promoBanner: normalizePromoBannerSettings(
+      design.promoBanner ?? normalized.catalogDesign.promoBanner,
+    ),
   };
 
   const customColor = design.primaryColor?.trim();
@@ -279,6 +283,24 @@ export async function uploadPaymentQrImage(
   }
 
   return uploadStoreAssetImage(supabase, auth.store.id, file, "payment-qr");
+}
+
+export async function uploadCatalogBannerImage(
+  formData: FormData,
+): Promise<{ url?: string; error?: string }> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+
+  if (!auth.ok) {
+    return { error: auth.error };
+  }
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Selecciona una imagen para el banner." };
+  }
+
+  return uploadStoreAssetImage(supabase, auth.store.id, file, "catalog-banners");
 }
 
 export type SlugAvailabilityResult = {
