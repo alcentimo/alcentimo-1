@@ -10,7 +10,6 @@ import {
   PanelLeftOpen,
   X,
 } from "lucide-react";
-import { BrandLogo } from "@/components/ui/BrandLogo";
 import { SupportModal } from "@/components/dashboard/SupportModal";
 import { DashboardAccountMenu } from "@/components/dashboard/account/DashboardAccountMenu";
 import {
@@ -168,17 +167,7 @@ export function DashboardSidebar({
           drawerExpanded ? "justify-between gap-2 px-4 py-3" : "justify-center px-2 py-3",
         )}
       >
-        <BrandLogo
-          href="/dashboard/catalogo"
-          subtitle={drawerExpanded ? storeName ?? "Panel" : undefined}
-          showName={false}
-          mark={drawerExpanded ? "full" : "isotype"}
-          size="md"
-          className={cn(
-            "dashboard-sidebar-brand min-w-0",
-            drawerExpanded ? "" : "justify-center",
-          )}
-        />
+        <div className="min-w-0 flex-1" aria-hidden="true" />
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"

@@ -4,7 +4,6 @@ import { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Menu } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { BrandLogo } from "@/components/ui/BrandLogo";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
 import { DashboardPreferenceControls } from "@/components/dashboard/DashboardPreferenceControls";
@@ -162,14 +161,6 @@ function DashboardShell({
             >
               <Menu className="h-5 w-5" />
             </button>
-            <BrandLogo
-              href="/dashboard/catalogo"
-              size="md"
-              responsive
-              showName={false}
-              subtitle={storeName ?? undefined}
-              className="brand-logo-header-mobile min-w-0 lg:hidden"
-            />
           </div>
           <div className="dashboard-header-actions flex shrink-0 items-center gap-1 sm:gap-2">
             <DashboardPreferenceControls variant="compact" className="hidden sm:flex" />

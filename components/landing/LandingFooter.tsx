@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { LandingHeaderLogo } from "@/components/landing/LandingHeaderLogo";
 import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 
 export function LandingFooter() {
@@ -8,8 +7,7 @@ export function LandingFooter() {
       <div className="page-container py-10 sm:py-12">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <LandingHeaderLogo size="footer" />
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+            <p className="max-w-xs text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
               La forma más simple de tener tu catálogo online, recibir pedidos
               por WhatsApp y mantener tus precios al día.
             </p>

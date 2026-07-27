@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const publicDir = path.join(process.cwd(), "public");
-const isotypePath = path.join(publicDir, "brand/isotipo-alcentimo.png");
+const sourcePath = path.join(publicDir, "icon-512x512.png");
 
 const OUTPUTS = [
   { file: "favicon-16x16.png", size: 16 },
@@ -15,8 +15,8 @@ const OUTPUTS = [
   { file: "icon-512x512.png", size: 512 },
 ];
 
-async function renderIsotypePng(size) {
-  return sharp(isotypePath)
+async function renderIconPng(size) {
+  return sharp(sourcePath)
     .trim()
     .resize(size, size, {
       fit: "contain",
@@ -28,15 +28,15 @@ async function renderIsotypePng(size) {
 
 await mkdir(publicDir, { recursive: true });
 
-console.log("Generating favicons from public/brand/isotipo-alcentimo.png …");
+console.log("Generating favicons from public/icon-512x512.png …");
 
 for (const { file, size } of OUTPUTS) {
-  const buffer = await renderIsotypePng(size);
+  const buffer = await renderIconPng(size);
   await writeFile(path.join(publicDir, file), buffer);
   console.log(`  wrote public/${file}`);
 }
 
-const favicon32 = await renderIsotypePng(32);
+const favicon32 = await renderIconPng(32);
 await writeFile(path.join(publicDir, "favicon.ico"), favicon32);
 console.log("  wrote public/favicon.ico (32px)");
 

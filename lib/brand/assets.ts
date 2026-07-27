@@ -1,15 +1,4 @@
-/** Rutas públicas de la marca Alcentimo (PNG con fondo transparente). */
-const BRAND_ASSET_VERSION = "20260727h";
-
-export const BRAND_ISOTYPE_PATH = `/brand/isotipo-alcentimo.png?v=${BRAND_ASSET_VERSION}`;
-export const BRAND_LOGO_FULL_PATH = `/brand/logo-completo-alcentimo.png?v=${BRAND_ASSET_VERSION}`;
-export const BRAND_LOGO_FULL_2X_PATH = `/brand/logo-completo-alcentimo@2x.png?v=${BRAND_ASSET_VERSION}`;
-
-/** Dimensiones nativas del logo completo recortado (1x). */
-export const BRAND_LOGO_FULL_WIDTH = 744;
-export const BRAND_LOGO_FULL_HEIGHT = 116;
-
-/** Iconos PWA/favicon generados desde el isotipo oficial. */
+/** Rutas públicas de iconos PWA/favicon (sin logo de marca por ahora). */
 export const BRAND_FAVICON_ICO_PATH = "/favicon.ico";
 export const BRAND_FAVICON_16_PATH = "/favicon-16x16.png";
 export const BRAND_FAVICON_32_PATH = "/favicon-32x32.png";

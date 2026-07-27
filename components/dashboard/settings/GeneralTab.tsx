@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { StoreLogoField } from "@/components/dashboard/settings/StoreLogoField";
 import {
   SettingsSection,
   SettingsTabShell,
@@ -53,7 +52,6 @@ export function GeneralTab({ store }: GeneralTabProps) {
   const [storeName, setStoreName] = useState(store.name);
   const [description, setDescription] = useState(store.description ?? "");
   const [savedSlug, setSavedSlug] = useState(store.slug);
-  const [logoUrl, setLogoUrl] = useState<string | null>(store.logo_url);
   const [rubroTienda, setRubroTienda] = useState<StoreRubro>(() =>
     normalizeStoreRubro(store.rubro_tienda),
   );
@@ -77,7 +75,6 @@ export function GeneralTab({ store }: GeneralTabProps) {
     setStoreName(store.name);
     setDescription(store.description ?? "");
     setSavedSlug(store.slug);
-    setLogoUrl(store.logo_url);
     setRubroTienda(normalizeStoreRubro(store.rubro_tienda));
     setSavedRubro(normalizeStoreRubro(store.rubro_tienda));
     setEnablePcBuilder(store.enable_pc_builder ?? false);
@@ -86,7 +83,6 @@ export function GeneralTab({ store }: GeneralTabProps) {
     store.name,
     store.description,
     store.slug,
-    store.logo_url,
     store.rubro_tienda,
     store.enable_pc_builder,
   ]);
@@ -144,7 +140,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
       const result = await saveGeneralStoreSettings({
         name: storeName.trim(),
         slug: slugPreview,
-        logoUrl,
+        logoUrl: null,
         description,
         rubroTienda,
         enablePcBuilder: isTecnologia ? enablePcBuilder : false,
@@ -157,7 +153,6 @@ export function GeneralTab({ store }: GeneralTabProps) {
         setStoreName(store.name);
         setDescription(store.description ?? "");
         setSavedSlug(store.slug);
-        setLogoUrl(store.logo_url);
         setRubroTienda(savedRubro);
         setEnablePcBuilder(savedEnablePcBuilder);
         return;
@@ -227,21 +222,10 @@ export function GeneralTab({ store }: GeneralTabProps) {
 
       <SettingsSection
         title="Identidad de marca"
-        description="Logo, nombre comercial y descripción que ven tus clientes en el catálogo."
+        description="Nombre comercial y descripción que ven tus clientes en el catálogo."
         variant="payments"
       >
         <div className="settings-identity-grid">
-          <div className="settings-identity-card settings-identity-card--logo">
-            <StoreLogoField
-              storeName={storeName}
-              value={logoUrl}
-              onChange={(url) => {
-                setLogoUrl(url);
-                setSuccessMessage(null);
-              }}
-            />
-          </div>
-
           <div className="settings-identity-card settings-identity-card--fields">
             <Label htmlFor="store-name" className="payment-field-label">
               Nombre comercial

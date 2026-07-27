@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { BrandLogo } from "@/components/ui/BrandLogo";
 
 interface AdminChromeProps {
   email: string | null;
@@ -12,16 +11,13 @@ export function AdminChrome({ email, children }: AdminChromeProps) {
     <div className="min-h-dvh bg-zinc-50 dark:bg-zinc-950">
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-7">
-          <div className="flex min-w-0 items-center gap-3">
-            <BrandLogo href="/admin/dashboard" size="sm" showName={false} />
-            <div className="min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-                Administración
-              </p>
-              <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                Panel Admin
-              </p>
-            </div>
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+              Administración
+            </p>
+            <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+              Panel Admin
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 text-sm">
             {email ? (
