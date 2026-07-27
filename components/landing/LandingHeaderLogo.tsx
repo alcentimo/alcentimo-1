@@ -1,10 +1,5 @@
 import Link from "next/link";
-import {
-  BRAND_LOGO_FULL_2X_PATH,
-  BRAND_LOGO_FULL_HEIGHT,
-  BRAND_LOGO_FULL_PATH,
-  BRAND_LOGO_FULL_WIDTH,
-} from "@/lib/brand/assets";
+import { BRAND_LOGO_FULL_PATH } from "@/lib/brand/assets";
 import { cn } from "@/lib/cn";
 
 interface LandingHeaderLogoProps {
@@ -13,26 +8,27 @@ interface LandingHeaderLogoProps {
   className?: string;
 }
 
-/** Logo único de la landing — PNG nativo, sin filtros ni contenedor. */
+const logoImgClass = {
+  header: "h-8 w-auto md:h-9",
+  footer: "h-7 w-auto md:h-8",
+} as const;
+
+/** Logo horizontal de la landing — altura fija, ancho automático (proporción nativa). */
 export function LandingHeaderLogo({
   href = "/",
   size = "header",
   className,
 }: LandingHeaderLogoProps) {
-  const imgClass =
-    size === "footer" ? "landing-footer-logo-img" : "landing-header-logo-img";
-
   const image = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={BRAND_LOGO_FULL_PATH}
-      srcSet={`${BRAND_LOGO_FULL_PATH} 1x, ${BRAND_LOGO_FULL_2X_PATH} 2x`}
-      width={BRAND_LOGO_FULL_WIDTH}
-      height={BRAND_LOGO_FULL_HEIGHT}
       alt="Alcentimo"
-      className={imgClass}
+      className={cn(
+        "block max-w-none shrink-0 border-0 bg-transparent object-contain object-left shadow-none outline-none",
+        logoImgClass[size],
+      )}
       decoding="async"
-      fetchPriority="high"
     />
   );
 
@@ -47,7 +43,10 @@ export function LandingHeaderLogo({
   return (
     <Link
       href={href}
-      className={cn("landing-header-logo-link inline-flex shrink-0 items-center", className)}
+      className={cn(
+        "inline-flex shrink-0 items-center border-0 bg-transparent shadow-none outline-none",
+        className,
+      )}
       aria-label="Alcentimo"
     >
       {image}
