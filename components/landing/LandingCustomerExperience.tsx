@@ -1,4 +1,4 @@
-import { Package, UserPlus, Users } from "lucide-react";
+import { Package, ShoppingBag, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/cn";
@@ -13,10 +13,10 @@ const steps = [
   },
   {
     step: 2,
-    icon: UserPlus,
-    title: "Tu cliente se registra y crea su cuenta",
+    icon: ShoppingBag,
+    title: "Tu cliente navega y compra con facilidad",
     description:
-      "Comparte el enlace de tu tienda. Tus clientes navegan el catálogo, se registran y compran con sus datos guardados.",
+      "Los dueños de tienda pueden incentivar el registro de sus compradores o permitirles realizar pedidos de forma rápida y flexible sin fricciones.",
   },
   {
     step: 3,
