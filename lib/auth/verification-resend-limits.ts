@@ -277,3 +277,18 @@ export async function recordVerificationResendSuccess(
     resendCount: nextCount,
   };
 }
+
+export async function clearVerificationResendLimits(email: string): Promise<void> {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return;
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("auth_verification_resend_limits")
+    .delete()
+    .eq("email", normalized);
+
+  if (error) {
+    console.error("[verification-resend-limits] clear", error.message);
+  }
+}

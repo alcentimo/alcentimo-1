@@ -1,13 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
-import { verifySignupOtpAction } from "@/lib/auth/auth-email-actions";
+import {
+  correctSignupEmailAction,
+  verifySignupOtpAction,
+} from "@/lib/auth/auth-email-actions";
 import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
 import { VERIFICATION_RESEND_MAX_CONSECUTIVE } from "@/lib/auth/verification-resend-ui";
 import { useVerificationResend } from "@/components/dashboard/useVerificationResend";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 interface SignupEmailVerificationPanelProps {
   email: string;
@@ -18,9 +23,16 @@ interface SignupEmailVerificationPanelProps {
   onBackToLogin?: () => void;
   /** Pantalla mostrada justo después del registro (correo inicial recién enviado). */
   freshSignup?: boolean;
+  /** Contraseña del registro en la misma sesión (evita pedirla de nuevo). */
+  signupPassword?: string;
 }
 
-export function SignupEmailVerificationPanel({
+interface VerificationPanelBodyProps extends SignupEmailVerificationPanelProps {
+  sessionKey: number;
+  onEmailCorrected?: (newEmail: string, notice: string) => void;
+}
+
+function VerificationPanelBody({
   email,
   nextPath,
   notice = null,
@@ -28,10 +40,21 @@ export function SignupEmailVerificationPanel({
   isInvitationFlow = false,
   onBackToLogin,
   freshSignup = false,
-}: SignupEmailVerificationPanelProps) {
+  signupPassword = "",
+  sessionKey,
+  onEmailCorrected,
+}: VerificationPanelBodyProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(initialError);
   const [loading, setLoading] = useState(false);
+  const [panelNotice, setPanelNotice] = useState<string | null>(notice);
+  const [showEmailCorrection, setShowEmailCorrection] = useState(false);
+  const [correctedEmail, setCorrectedEmail] = useState("");
+  const [correctionPassword, setCorrectionPassword] = useState("");
+  const [correctionError, setCorrectionError] = useState<string | null>(null);
+  const [correctingEmail, setCorrectingEmail] = useState(false);
 
   const postAuthPath = resolvePostAuthPath(nextPath);
 
@@ -67,16 +90,53 @@ export function SignupEmailVerificationPanel({
     window.location.href = postAuthPath;
   }
 
-  const displayNotice = resendNotice ?? notice;
+  async function handleCorrectEmail(event: React.FormEvent) {
+    event.preventDefault();
+    setCorrectionError(null);
+
+    const password = signupPassword.trim() || correctionPassword.trim();
+    if (!password) {
+      setCorrectionError("Ingresa tu contraseña para confirmar el cambio.");
+      return;
+    }
+
+    setCorrectingEmail(true);
+
+    const result = await correctSignupEmailAction({
+      currentEmail: email,
+      newEmail: correctedEmail,
+      password,
+      nextPath,
+    });
+
+    setCorrectingEmail(false);
+
+    if (!result.ok) {
+      setCorrectionError(result.error);
+      return;
+    }
+
+    setShowEmailCorrection(false);
+    setCorrectionPassword("");
+    setCorrectedEmail("");
+    setCode("");
+    onEmailCorrected?.(result.email, result.notice);
+
+    if (pathname.startsWith("/dashboard/verificar-cuenta")) {
+      const params = new URLSearchParams({ email: result.email });
+      if (nextPath?.trim()) {
+        params.set("next", nextPath.trim());
+      }
+      router.replace(`/dashboard/verificar-cuenta?${params.toString()}`);
+    }
+  }
+
+  const displayNotice = resendNotice ?? panelNotice;
   const isBlocked = blockedSeconds > 0;
   const isCooldown = cooldownSeconds > 0 && !isBlocked;
 
   return (
-    <div className="card-panel mx-auto w-full max-w-md">
-      <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
-        Confirma tu cuenta
-      </h2>
-
+    <>
       <div
         className={
           displayNotice
@@ -95,6 +155,99 @@ export function SignupEmailVerificationPanel({
         )}
       </div>
 
+      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <span>
+          Correo actual: <strong className="text-zinc-700 dark:text-zinc-200">{email}</strong>
+        </span>
+        {!showEmailCorrection ? (
+          <button
+            type="button"
+            onClick={() => {
+              setShowEmailCorrection(true);
+              setCorrectedEmail("");
+              setCorrectionError(null);
+            }}
+            className="link-brand text-sm font-medium"
+          >
+            ¿Te equivocaste? Corregir correo
+          </button>
+        ) : null}
+      </div>
+
+      {showEmailCorrection ? (
+        <form
+          onSubmit={handleCorrectEmail}
+          className="mt-4 space-y-3 rounded-xl border border-zinc-200/80 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/40"
+        >
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">
+            Escribe el correo correcto. Actualizaremos tu cuenta y enviaremos un
+            nuevo código de verificación.
+          </p>
+          <div>
+            <label htmlFor={`corrected-email-${sessionKey}`} className="label-field">
+              Nuevo correo
+            </label>
+            <input
+              id={`corrected-email-${sessionKey}`}
+              type="email"
+              required
+              autoComplete="email"
+              value={correctedEmail}
+              onChange={(event) => setCorrectedEmail(event.target.value)}
+              className="input-field"
+              placeholder="tu@correo.com"
+            />
+          </div>
+          {!signupPassword ? (
+            <div>
+              <label htmlFor={`correction-password-${sessionKey}`} className="label-field">
+                Contraseña de tu cuenta
+              </label>
+              <PasswordInput
+                id={`correction-password-${sessionKey}`}
+                required
+                minLength={6}
+                autoComplete="current-password"
+                value={correctionPassword}
+                onChange={(event) => setCorrectionPassword(event.target.value)}
+              />
+            </div>
+          ) : null}
+          {correctionError ? (
+            <p className="alert-error" role="alert">
+              {correctionError}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="submit"
+              disabled={correctingEmail}
+              className="btn-primary"
+            >
+              {correctingEmail ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  Actualizando…
+                </>
+              ) : (
+                "Guardar y reenviar código"
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowEmailCorrection(false);
+                setCorrectionError(null);
+              }}
+              disabled={correctingEmail}
+              className="btn-secondary"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      ) : null}
+
       {displayNotice ? (
         <p className="mt-3 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
           Revisa <strong>{email}</strong> y usa el enlace o el código de 6 dígitos para
@@ -110,11 +263,11 @@ export function SignupEmailVerificationPanel({
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5">
         <div>
-          <label htmlFor="signup_verification_code" className="label-field">
+          <label htmlFor={`signup_verification_code_${sessionKey}`} className="label-field">
             Código de verificación
           </label>
           <input
-            id="signup_verification_code"
+            id={`signup_verification_code_${sessionKey}`}
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
@@ -127,12 +280,8 @@ export function SignupEmailVerificationPanel({
             }
             className="input-field text-center text-lg tracking-[0.35em] font-semibold"
             placeholder="000000"
-            aria-describedby="signup_verification_code_help"
           />
-          <p
-            id="signup_verification_code_help"
-            className="mt-2 text-xs text-zinc-500 dark:text-zinc-400"
-          >
+          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
             Introduce los 6 dígitos que aparecen en el correo de confirmación.
           </p>
         </div>
@@ -190,7 +339,11 @@ export function SignupEmailVerificationPanel({
 
         {error ? <p className="alert-error">{error}</p> : null}
 
-        <button type="submit" disabled={loading || code.length !== 6} className="btn-primary w-full">
+        <button
+          type="submit"
+          disabled={loading || code.length !== 6}
+          className="btn-primary w-full"
+        >
           {loading ? "Verificando…" : "Confirmar cuenta"}
         </button>
       </form>
@@ -211,6 +364,36 @@ export function SignupEmailVerificationPanel({
           <span className="link-brand">Volver a iniciar sesión</span>
         </Link>
       )}
+    </>
+  );
+}
+
+export function SignupEmailVerificationPanel(props: SignupEmailVerificationPanelProps) {
+  const [activeEmail, setActiveEmail] = useState(props.email);
+  const [sessionKey, setSessionKey] = useState(0);
+  const [freshAfterCorrection, setFreshAfterCorrection] = useState(false);
+  const [correctionNotice, setCorrectionNotice] = useState<string | null>(null);
+
+  return (
+    <div className="card-panel mx-auto w-full max-w-md">
+      <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
+        Confirma tu cuenta
+      </h2>
+
+      <VerificationPanelBody
+        key={`${activeEmail}-${sessionKey}`}
+        {...props}
+        email={activeEmail}
+        notice={correctionNotice ?? props.notice}
+        freshSignup={props.freshSignup || freshAfterCorrection}
+        sessionKey={sessionKey}
+        onEmailCorrected={(newEmail, notice) => {
+          setActiveEmail(newEmail);
+          setCorrectionNotice(notice);
+          setFreshAfterCorrection(true);
+          setSessionKey((value) => value + 1);
+        }}
+      />
     </div>
   );
 }

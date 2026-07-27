@@ -206,6 +206,7 @@ export function AuthPanel() {
         notice={signupNotice}
         isInvitationFlow={isInvitationFlow}
         freshSignup
+        signupPassword={password}
         onBackToLogin={() => switchMode("login")}
       />
     );

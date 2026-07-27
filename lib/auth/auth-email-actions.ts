@@ -15,6 +15,7 @@ import {
   type AuthEmailActionResult,
   type VerificationResendActionResult,
   type VerificationResendStatusResult,
+  type CorrectSignupEmailResult,
 } from "@/lib/auth/auth-email-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -24,6 +25,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
 import {
   assertVerificationResendAllowed,
+  clearVerificationResendLimits,
   getVerificationResendStatus,
   recordInitialVerificationEmailSent,
   recordVerificationResendSuccess,
@@ -920,6 +922,141 @@ export async function resendSignupVerificationCodeAction(input: {
     ok: true,
     notice: `Te enviamos un nuevo código de 6 dígitos a ${email}. Revisa tu bandeja y la carpeta de spam.`,
     cooldownSeconds: limitStatus.cooldownSeconds || VERIFICATION_RESEND_COOLDOWN_SECONDS,
+    blockedSeconds: limitStatus.blockedSeconds,
+    resendsRemaining: limitStatus.resendsRemaining,
+  };
+}
+
+async function verifySignupPassword(
+  email: string,
+  password: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!password || password.length < 6) {
+    return { ok: false, error: "Ingresa tu contraseña para confirmar el cambio." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (!error) {
+    await supabase.auth.signOut();
+    return { ok: true };
+  }
+
+  const message = error.message.toLowerCase();
+  if (
+    message.includes("email not confirmed") ||
+    message.includes("email address not confirmed")
+  ) {
+    await supabase.auth.signOut();
+    return { ok: true };
+  }
+
+  if (
+    message.includes("invalid login credentials") ||
+    message.includes("invalid credentials")
+  ) {
+    return { ok: false, error: "La contraseña no coincide con esta cuenta." };
+  }
+
+  return { ok: false, error: formatAuthError(error.message) };
+}
+
+export async function correctSignupEmailAction(input: {
+  currentEmail: string;
+  newEmail: string;
+  password: string;
+  nextPath?: string | null;
+}): Promise<CorrectSignupEmailResult> {
+  const currentEmail = normalizeEmail(input.currentEmail);
+  const newEmail = normalizeEmail(input.newEmail);
+
+  if (!isValidEmail(currentEmail) || !isValidEmail(newEmail)) {
+    return { ok: false, error: "Ingresa un correo válido." };
+  }
+
+  if (currentEmail === newEmail) {
+    return {
+      ok: false,
+      error: "El nuevo correo debe ser diferente al actual.",
+    };
+  }
+
+  const passwordCheck = await verifySignupPassword(currentEmail, input.password);
+  if (!passwordCheck.ok) {
+    return { ok: false, error: passwordCheck.error };
+  }
+
+  const user = await findUserByEmail(currentEmail);
+  if (!user) {
+    return {
+      ok: false,
+      error: "No encontramos una cuenta pendiente con ese correo.",
+    };
+  }
+
+  if (isEmailConfirmed(user)) {
+    return {
+      ok: false,
+      error: EXISTING_CONFIRMED_ACCOUNT_ERROR,
+    };
+  }
+
+  const newEmailUser = await findUserByEmail(newEmail);
+  if (newEmailUser && newEmailUser.id !== user.id) {
+    if (isEmailConfirmed(newEmailUser)) {
+      return {
+        ok: false,
+        error: "Ya existe una cuenta confirmada con ese correo.",
+      };
+    }
+    return {
+      ok: false,
+      error:
+        "Ese correo ya está en uso en otra cuenta pendiente. Inicia sesión o usa otro correo.",
+    };
+  }
+
+  const admin = createAdminClient();
+  const { error: updateError } = await admin.auth.admin.updateUserById(user.id, {
+    email: newEmail,
+    email_confirm: false,
+  });
+
+  if (updateError) {
+    if (isAlreadyRegisteredAuthError(updateError)) {
+      return {
+        ok: false,
+        error: "Ya existe una cuenta con ese correo.",
+      };
+    }
+    return {
+      ok: false,
+      error: formatAuthError(updateError.message),
+    };
+  }
+
+  await clearVerificationResendLimits(currentEmail);
+
+  const postAuthPath = resolvePostAuthPath(input.nextPath);
+  const sendResult = await resendVerificationEmailOnly({
+    email: newEmail,
+    postAuthPath,
+  });
+
+  if (!sendResult.ok) {
+    return { ok: false, error: sendResult.error };
+  }
+
+  await recordInitialVerificationEmailSent(newEmail);
+  const limitStatus = await getVerificationResendStatus(newEmail);
+
+  return {
+    ok: true,
+    email: newEmail,
+    notice: `Actualizamos tu correo a ${newEmail} y enviamos un nuevo código de verificación.`,
+    cooldownSeconds:
+      limitStatus.cooldownSeconds || VERIFICATION_RESEND_COOLDOWN_SECONDS,
     blockedSeconds: limitStatus.blockedSeconds,
     resendsRemaining: limitStatus.resendsRemaining,
   };

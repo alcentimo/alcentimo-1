@@ -32,6 +32,17 @@ export type VerificationResendActionResult =
       resendsRemaining?: number;
     };
 
+export type CorrectSignupEmailResult =
+  | {
+      ok: true;
+      email: string;
+      notice: string;
+      cooldownSeconds: number;
+      blockedSeconds: number;
+      resendsRemaining: number;
+    }
+  | { ok: false; error: string };
+
 /** Normaliza la respuesta de la Server Action (incluye formas parciales tras serialización). */
 export function parseAuthEmailActionResult(raw: unknown): AuthEmailActionResult {
   if (!raw || typeof raw !== "object") {
