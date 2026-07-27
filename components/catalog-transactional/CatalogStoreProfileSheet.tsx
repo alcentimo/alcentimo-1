@@ -5,7 +5,6 @@ import Link from "next/link";
 import { MessageCircle, ShoppingBag, UserRound } from "lucide-react";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
-import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import { getStoreCatalogBasePath, getStoreCustomerAccountPath } from "@/lib/store-host";
 import type { LocationHoursSettings } from "@/lib/store-settings/types";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
@@ -71,7 +70,6 @@ export function CatalogStoreProfileSheet({
     : null;
 
   const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
-  const registerPath = buildCustomerRegisterPath(storeSlug, accountPath);
 
   return open ? (
     <div className="txn-cart-overlay" role="presentation">
@@ -163,13 +161,16 @@ export function CatalogStoreProfileSheet({
               </p>
             )}
             {!isCustomer ? (
-              <Link
-                href={registerPath}
+              <button
+                type="button"
                 className="catalog-profile-link-btn catalog-profile-link-btn-secondary"
-                onClick={onClose}
+                onClick={() => {
+                  onClose();
+                  shellNav.openRegister();
+                }}
               >
                 Crear cuenta de cliente
-              </Link>
+              </button>
             ) : null}
           </div>
         </div>

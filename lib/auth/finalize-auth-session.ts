@@ -1,7 +1,7 @@
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
 import { sanitizeAuthReturnUrl } from "@/lib/auth/validate-auth-return-url";
-import { resolveCustomerNextDestination } from "@/lib/customers/middleware-access";
+import { resolveCustomerNextDestination, buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import { ensureCustomerProfileAfterAuth } from "@/lib/customers/ensure-customer-profile";
 import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
@@ -92,14 +92,12 @@ export async function finalizeAuthSessionRedirect(
         isStoreSubdomainCatalogEnabled()
           ? getStoreCatalogOrigin(normalizedStoreSlug)
           : siteUrl;
-      const completeUrl = new URL(`${registerOrigin}/register`);
-      completeUrl.searchParams.set("store", normalizedStoreSlug);
-      completeUrl.searchParams.set("next", safeNext);
-      completeUrl.searchParams.set("complete", "phone");
+      let completePath = buildCustomerRegisterPath(normalizedStoreSlug, safeNext);
+      completePath += `${completePath.includes("?") ? "&" : "?"}complete=phone`;
       if (input.orderId?.trim()) {
-        completeUrl.searchParams.set("orderId", input.orderId.trim());
+        completePath += `&orderId=${encodeURIComponent(input.orderId.trim())}`;
       }
-      return completeUrl.toString();
+      return `${registerOrigin}${completePath}`;
     }
   } else {
     try {

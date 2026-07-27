@@ -9,6 +9,7 @@ import { formatUsd } from "@/lib/format";
 import {
   getStoreCustomerAccountPath,
 } from "@/lib/store-host";
+import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 
 interface CheckoutSuccessScreenProps {
   storeSlug: string;
@@ -34,6 +35,8 @@ export function CheckoutSuccessScreen({
   const [savedAccount, setSavedAccount] = useState(false);
 
   const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
+  const registerBase = buildCustomerRegisterPath(storeSlug, accountPath);
+  const fullRegisterPath = `${registerBase}${registerBase.includes("?") ? "&" : "?"}orderId=${encodeURIComponent(orderId)}`;
 
   return (
     <div className="txn-checkout-success">
@@ -112,7 +115,7 @@ export function CheckoutSuccessScreen({
 
       {wasGuest && !savedAccount ? (
         <Link
-          href={`/register?store=${encodeURIComponent(storeSlug)}&next=${encodeURIComponent(accountPath)}&orderId=${encodeURIComponent(orderId)}`}
+          href={fullRegisterPath}
           className="mt-3 text-xs text-zinc-500 underline hover:text-zinc-800 dark:hover:text-zinc-200"
         >
           Crear cuenta con más opciones

@@ -20,9 +20,12 @@ interface CatalogCartController {
 
 interface CatalogShellNavigationContextValue {
   profileOpen: boolean;
+  registerOpen: boolean;
   cartActive: boolean;
   openProfile: () => void;
   closeProfile: () => void;
+  openRegister: () => void;
+  closeRegister: () => void;
   openCart: () => void;
   closeCart: () => void;
   setCartActive: (active: boolean) => void;
@@ -44,6 +47,7 @@ export function CatalogShellNavigationProvider({
   const router = useRouter();
   const cartControllerRef = useRef<CatalogCartController | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
   const [cartActive, setCartActive] = useState(false);
 
   const registerCartController = useCallback(
@@ -58,6 +62,7 @@ export function CatalogShellNavigationProvider({
       cartControllerRef.current.open();
       setCartActive(true);
       setProfileOpen(false);
+      setRegisterOpen(false);
       return;
     }
 
@@ -74,6 +79,7 @@ export function CatalogShellNavigationProvider({
   const openProfile = useCallback(() => {
     cartControllerRef.current?.close();
     setProfileOpen(true);
+    setRegisterOpen(false);
     setCartActive(false);
   }, []);
 
@@ -81,12 +87,26 @@ export function CatalogShellNavigationProvider({
     setProfileOpen(false);
   }, []);
 
+  const openRegister = useCallback(() => {
+    cartControllerRef.current?.close();
+    setProfileOpen(false);
+    setRegisterOpen(true);
+    setCartActive(false);
+  }, []);
+
+  const closeRegister = useCallback(() => {
+    setRegisterOpen(false);
+  }, []);
+
   const value = useMemo<CatalogShellNavigationContextValue>(
     () => ({
       profileOpen,
+      registerOpen,
       cartActive,
       openProfile,
       closeProfile,
+      openRegister,
+      closeRegister,
       openCart,
       closeCart,
       setCartActive,
@@ -94,9 +114,12 @@ export function CatalogShellNavigationProvider({
     }),
     [
       profileOpen,
+      registerOpen,
       cartActive,
       openProfile,
       closeProfile,
+      openRegister,
+      closeRegister,
       openCart,
       closeCart,
       registerCartController,

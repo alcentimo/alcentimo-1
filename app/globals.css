@@ -7161,6 +7161,22 @@ body {
   @apply text-sm font-medium text-zinc-600 transition hover:text-zinc-900;
 }
 
+.catalog-register-sheet .catalog-register-body {
+  @apply px-0 py-0;
+}
+
+.catalog-register-panel {
+  @apply w-full px-6 pb-6;
+}
+
+.catalog-register-panel .label-field {
+  @apply text-sm;
+}
+
+.catalog-register-panel .input-field {
+  @apply text-base;
+}
+
 .catalog-cart-fab {
   @apply fixed z-30 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition active:scale-95;
   right: max(1rem, env(safe-area-inset-right, 0px));

@@ -16,6 +16,8 @@ interface CustomerRegisterPanelProps {
   needsPhoneCompletion?: boolean;
   suggestedDisplayName?: string | null;
   orderId?: string | null;
+  variant?: "default" | "catalog";
+  onCancel?: () => void;
 }
 
 export function CustomerRegisterPanel({
@@ -25,6 +27,8 @@ export function CustomerRegisterPanel({
   needsPhoneCompletion = false,
   suggestedDisplayName = null,
   orderId = null,
+  variant = "default",
+  onCancel,
 }: CustomerRegisterPanelProps) {
   const [displayName, setDisplayName] = useState(suggestedDisplayName ?? "");
   const [phone, setPhone] = useState("");
@@ -81,10 +85,12 @@ export function CustomerRegisterPanel({
 
   const isBusy = loading;
   const catalogUrl = getStoreCatalogBasePath(storeSlug);
+  const isCatalog = variant === "catalog";
+  const shellClass = isCatalog ? "catalog-register-panel" : "card-panel mx-auto w-full max-w-md";
 
   if (needsPhoneCompletion) {
     return (
-      <div className="card-panel mx-auto w-full max-w-md">
+      <div className={shellClass}>
         <p className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
           {storeName}
         </p>
@@ -141,16 +147,22 @@ export function CustomerRegisterPanel({
         </form>
 
         <p className="mt-4 text-center text-sm text-zinc-500">
-          <Link href={catalogUrl} className="link-brand">
-            ← Volver al catálogo
-          </Link>
+          {onCancel ? (
+            <button type="button" onClick={onCancel} className="link-brand">
+              ← Volver al catálogo
+            </button>
+          ) : (
+            <Link href={catalogUrl} className="link-brand">
+              ← Volver al catálogo
+            </Link>
+          )}
         </p>
       </div>
     );
   }
 
   return (
-    <div className="card-panel mx-auto w-full max-w-md">
+    <div className={shellClass}>
       <p className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
         {storeName}
       </p>
@@ -242,9 +254,15 @@ export function CustomerRegisterPanel({
       </p>
 
       <p className="mt-4 text-center text-sm text-zinc-500">
-        <Link href={catalogUrl} className="link-brand">
-          ← Volver al catálogo
-        </Link>
+        {onCancel ? (
+          <button type="button" onClick={onCancel} className="link-brand">
+            ← Volver al catálogo
+          </button>
+        ) : (
+          <Link href={catalogUrl} className="link-brand">
+            ← Volver al catálogo
+          </Link>
+        )}
       </p>
     </div>
   );

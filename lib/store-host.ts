@@ -173,6 +173,7 @@ const SUBDOMAIN_CATALOG_PUBLIC_PATHS = new Set([
   "/categorias",
   "/cuenta",
   "/perfil",
+  "/registro",
   "/manifest.json",
   "/sw.js",
 ]);
@@ -184,7 +185,8 @@ function isSubdomainCatalogPublicPath(pathname: string): boolean {
     pathname.startsWith("/armar-pc/") ||
     pathname.startsWith("/categorias/") ||
     pathname.startsWith("/cuenta/") ||
-    pathname.startsWith("/perfil/")
+    pathname.startsWith("/perfil/") ||
+    pathname.startsWith("/registro")
   );
 }
 

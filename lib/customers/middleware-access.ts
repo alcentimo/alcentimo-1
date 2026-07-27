@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  getStoreCatalogBasePath,
   getStoreCatalogPublicUrl,
   getStoreCustomerAccountPath,
   isStoreSubdomainCatalogEnabled,
@@ -170,9 +171,13 @@ export function buildCustomerRegisterPath(
   storeSlug: string,
   nextPath?: string,
 ): string {
-  const params = new URLSearchParams({ store: storeSlug });
+  const slug = storeSlug.trim().toLowerCase();
+  const params = new URLSearchParams();
   if (nextPath) params.set("next", nextPath);
-  return `/register?${params.toString()}`;
+  const query = params.toString();
+  const basePath = `${getStoreCatalogBasePath(slug)}/registro`.replace("//", "/");
+
+  return query ? `${basePath}?${query}` : basePath;
 }
 
 /** Destino post-registro: URL absoluta en subdominio o ruta relativa legacy. */

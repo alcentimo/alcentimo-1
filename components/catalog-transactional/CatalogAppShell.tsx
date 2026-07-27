@@ -3,6 +3,7 @@
 import { CatalogStoreBrandingProvider } from "@/components/catalog/CatalogStoreBrandingContext";
 import type { ReactNode } from "react";
 import { CatalogShellNavigationProvider } from "@/components/catalog-transactional/CatalogShellNavigation";
+import { CatalogCustomerRegisterSheet } from "@/components/catalog-transactional/CatalogCustomerRegisterSheet";
 import { CatalogStoreProfileSheet } from "@/components/catalog-transactional/CatalogStoreProfileSheet";
 import { CatalogTabBar } from "@/components/catalog-transactional/CatalogTabBar";
 import { CatalogChatWidget } from "@/components/catalog-transactional/CatalogChatWidget";
@@ -81,6 +82,10 @@ export function CatalogAppShell({
           whatsappPhone={whatsappPhone}
           locationHours={locationHours}
           isCustomer={isCustomer}
+        />
+        <CatalogCustomerRegisterSheet
+          storeSlug={storeSlug}
+          storeName={storeName}
         />
         <CatalogTabBar storeSlug={storeSlug} pcBuilderEnabled={pcBuilderEnabled} />
       </CatalogStoreBrandingProvider>

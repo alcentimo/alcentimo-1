@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { hasSupabasePublicEnv, requireSupabasePublicEnv } from "@/lib/supabase/config";
 import {
   buildCustomerAccountPath,
+  buildCustomerRegisterPath,
   getPrimaryCustomerStore,
   parseCustomerAccountPath,
   resolveActiveStoreBySlug,
@@ -242,12 +243,9 @@ export async function middleware(request: NextRequest) {
     const { storeSlug } = customerAccountPath;
 
     if (!authenticatedUser) {
-      const registerUrl = request.nextUrl.clone();
-      registerUrl.pathname = REGISTER_PATH;
-      registerUrl.search = "";
-      registerUrl.searchParams.set("store", storeSlug);
-      registerUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(registerUrl);
+      return NextResponse.redirect(
+        new URL(buildCustomerRegisterPath(storeSlug, pathname), request.url),
+      );
     }
 
     const store = await resolveActiveStoreBySlug(supabase, storeSlug);
@@ -269,12 +267,9 @@ export async function middleware(request: NextRequest) {
     );
 
     if (!isCustomer) {
-      const registerUrl = request.nextUrl.clone();
-      registerUrl.pathname = REGISTER_PATH;
-      registerUrl.search = "";
-      registerUrl.searchParams.set("store", storeSlug);
-      registerUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(registerUrl);
+      return NextResponse.redirect(
+        new URL(buildCustomerRegisterPath(storeSlug, pathname), request.url),
+      );
     }
 
     return applySubdomainCatalogRewrite(

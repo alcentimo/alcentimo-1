@@ -88,10 +88,19 @@ export default async function CustomerRegisterPage({
   const store = await getPublicStoreBySlug(storeSlug);
   if (!store) notFound();
 
-  const themeContext = await getPublicCatalogThemeContext(store.slug);
-
   const nextPath = resolveNextPath(store.slug, params.next);
   const needsPhoneCompletion = params.complete === "phone";
+  const orderId = params.orderId?.trim() || null;
+
+  if (!needsPhoneCompletion) {
+    let catalogRegisterPath = buildCustomerRegisterPath(store.slug, nextPath);
+    if (orderId) {
+      catalogRegisterPath += `${catalogRegisterPath.includes("?") ? "&" : "?"}orderId=${encodeURIComponent(orderId)}`;
+    }
+    redirect(catalogRegisterPath);
+  }
+
+  const themeContext = await getPublicCatalogThemeContext(store.slug);
 
   const supabase = await createClient();
   const {
@@ -148,7 +157,7 @@ export default async function CustomerRegisterPage({
           nextPath={nextPath}
           needsPhoneCompletion={needsPhoneCompletion}
           suggestedDisplayName={suggestedDisplayName}
-          orderId={params.orderId?.trim() || null}
+          orderId={orderId}
         />
       </AuthPageShell>
     </StoreWhitelabelRoot>
