@@ -307,15 +307,22 @@ export function CheckoutPanel({
 
   const orderLines = useMemo<SubmitOrderLineInput[]>(
     () =>
-      items.map((item) => ({
-        productId: item.product.product_id,
-        variantId: item.variantId,
-        productName: item.product.product_name,
-        variantName: item.variantName,
-        quantity: item.quantity,
-        unitPriceUsd: item.unitPriceUsd,
-        wholesaleApplied: item.wholesaleApplied,
-      })),
+      items
+        .map((item) => ({
+          productId: item.product.product_id,
+          variantId: item.variantId || item.product.default_variant_id,
+          productName: item.product.product_name,
+          variantName: item.variantName,
+          quantity: Math.max(1, Math.floor(item.quantity)),
+          unitPriceUsd: item.unitPriceUsd,
+          wholesaleApplied: item.wholesaleApplied,
+        }))
+        .filter(
+          (line) =>
+            line.productId.trim().length > 0 &&
+            line.variantId.trim().length > 0 &&
+            line.quantity > 0,
+        ),
     [items],
   );
 
@@ -447,6 +454,11 @@ export function CheckoutPanel({
       markInvalidFieldsTouched(step2Validation.errors);
       setError(summarizeCheckoutValidation(step2Validation));
       scrollToFirstCheckoutError(step2Validation.firstErrorField);
+      return;
+    }
+
+    if (orderLines.length === 0) {
+      setError("Tu carrito no tiene productos válidos. Vuelve al catálogo e intenta de nuevo.");
       return;
     }
 

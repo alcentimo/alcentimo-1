@@ -97,9 +97,31 @@ export async function submitTransactionalOrder(
     if (!Array.isArray(parsed) || parsed.length === 0) {
       return { error: "El carrito está vacío." };
     }
-    lines = parsed;
+    lines = parsed.map((line) => ({
+      productId: String(line.productId ?? "").trim(),
+      variantId: String(line.variantId ?? "").trim(),
+      productName: String(line.productName ?? "Producto").trim(),
+      variantName: String(line.variantName ?? "Estándar").trim(),
+      quantity: Math.max(0, Math.floor(Number(line.quantity ?? 0))),
+      unitPriceUsd: Number(line.unitPriceUsd ?? 0),
+      wholesaleApplied: Boolean(line.wholesaleApplied),
+    }));
   } catch {
     return { error: "Pedido inválido." };
+  }
+
+  for (const line of lines) {
+    if (!line.productId) {
+      return {
+        error:
+          "Un producto del carrito ya no está disponible. Actualiza el carrito e intenta de nuevo.",
+      };
+    }
+    if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
+      return {
+        error: `La cantidad de "${line.productName}" no es válida.`,
+      };
+    }
   }
 
   const store = await getStoreBySlug(storeSlug);

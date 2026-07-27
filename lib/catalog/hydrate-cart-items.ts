@@ -26,9 +26,14 @@ export async function hydrateCartLines(
     const product = productMap.get(line.productId);
     if (!product) continue;
 
-    const variant = getCatalogVariantOptions(product, exchangeRateValue).find(
-      (option) => option.id === line.variantId,
-    );
+    const variantOptions = getCatalogVariantOptions(product, exchangeRateValue);
+    const variant =
+      variantOptions.find((option) => option.id === line.variantId) ??
+      variantOptions.find(
+        (option) => option.id === product.default_variant_id,
+      ) ??
+      variantOptions[0];
+
     if (!variant || variant.availableStock <= 0) continue;
 
     const quantity = Math.min(
