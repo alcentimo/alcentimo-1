@@ -165,16 +165,20 @@ export function DashboardSidebar({
       <div
         className={cn(
           "flex items-center border-b border-zinc-200 dark:border-zinc-800",
-          drawerExpanded ? "justify-between gap-2 px-4 py-4" : "justify-center px-2 py-4",
+          drawerExpanded ? "justify-between gap-2 px-4 py-3" : "justify-center px-2 py-3",
         )}
       >
         <BrandLogo
           href="/dashboard/catalogo"
           subtitle={drawerExpanded ? storeName ?? "Panel" : undefined}
           showName={false}
-          responsive={drawerExpanded}
-          size={drawerExpanded ? "md" : "sm"}
-          className={drawerExpanded ? "" : "justify-center"}
+          responsive={false}
+          preferBuiltInMark
+          size="md"
+          className={cn(
+            "dashboard-sidebar-brand min-w-0",
+            drawerExpanded ? "" : "justify-center",
+          )}
         />
         <div className="flex shrink-0 items-center gap-1">
           <button

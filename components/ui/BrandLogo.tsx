@@ -22,6 +22,8 @@ interface BrandLogoProps {
   logoUrl?: string | null;
   /** Sobrescribe el nombre de plataforma. */
   platformName?: string;
+  /** Fuerza el isotipo SVG integrado (p. ej. barra lateral sin caja blanca). */
+  preferBuiltInMark?: boolean;
 }
 
 function brandMarkImageSize(size: "sm" | "md" | "lg") {
@@ -113,14 +115,16 @@ function BrandMark({
   platformName,
   variant = "default",
   responsive = false,
+  preferBuiltInMark = false,
 }: {
   size: "sm" | "md" | "lg";
   logoUrl: string | null;
   platformName: string;
   variant?: "default" | "landing";
   responsive?: boolean;
+  preferBuiltInMark?: boolean;
 }) {
-  if (shouldUseBuiltInSvgBrand(logoUrl)) {
+  if (preferBuiltInMark || shouldUseBuiltInSvgBrand(logoUrl)) {
     return (
       <BrandSvgMark
         size={size}
@@ -170,6 +174,7 @@ export function BrandLogo({
   responsive = false,
   logoUrl: logoUrlOverride,
   platformName: platformNameOverride,
+  preferBuiltInMark = false,
 }: BrandLogoProps) {
   const platform = usePlatformSettings();
   const logoUrl = logoUrlOverride !== undefined ? logoUrlOverride : platform.logoUrl;
@@ -210,6 +215,7 @@ export function BrandLogo({
         platformName={platformName}
         variant={variant}
         responsive={responsive}
+        preferBuiltInMark={preferBuiltInMark}
       />
       {(showWordmarkText || subtitle) && (
         <span className="brand-logo-wordmark flex min-w-0 flex-col justify-center gap-0.5">
