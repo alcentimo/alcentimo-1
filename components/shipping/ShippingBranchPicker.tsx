@@ -29,7 +29,7 @@ export function ShippingBranchPicker({
     () => getCarrierBranchById(value),
     [value],
   );
-  const carrierLabel = getShippingMethod(carrier).label;
+  const carrierLabel = getShippingMethod(carrier)?.label ?? carrier;
 
   const results = useMemo(
     () => searchCarrierBranches(carrier, query),

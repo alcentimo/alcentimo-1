@@ -31,6 +31,13 @@ function resolveCopy(
   estimatedTime?: string,
 ): Pick<ShippingMethodDefinition, "label" | "description" | "estimatedTime"> {
   const method = getShippingMethod(carrierKey);
+  if (!method) {
+    return {
+      label: carrierKey,
+      description: description ?? "",
+      estimatedTime,
+    };
+  }
   return {
     label: method.label,
     description: description ?? method.description,

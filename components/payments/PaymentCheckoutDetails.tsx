@@ -24,6 +24,7 @@ export function PaymentCheckoutDetails({
   fields,
 }: PaymentCheckoutDetailsProps) {
   const meta = getPaymentMethod(methodKey);
+  if (!meta) return null;
   const qrUrl = fields.qrImageUrl?.trim();
 
   const visibleFields = meta.fields.filter(

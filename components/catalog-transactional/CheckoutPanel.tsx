@@ -15,6 +15,7 @@ import { CatalogLocationPicker } from "@/components/catalog-transactional/Catalo
 import { CheckoutSuccessScreen } from "@/components/catalog-transactional/CheckoutSuccessScreen";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { cartItemKey } from "@/lib/catalog/cart-types";
+import { buildSubmitOrderLinesFromCartItems } from "@/lib/catalog/cart-lines";
 import { formatUsd, formatExchangeRate } from "@/lib/format";
 import { WholesalePriceBadge } from "@/components/catalog/WholesalePriceBadge";
 import { formatCountryCurrency } from "@/lib/country-config";
@@ -156,23 +157,40 @@ export function CheckoutPanel({
     customerSession?.phone,
   ]);
 
+  const shippingOptions = useMemo(
+    () => purchaseInfo.shipping ?? [],
+    [purchaseInfo.shipping],
+  );
+  const paymentOptions = useMemo(
+    () => purchaseInfo.payments ?? [],
+    [purchaseInfo.payments],
+  );
+  const deliveryZones = useMemo(
+    () => purchaseInfo.deliveryZones ?? [],
+    [purchaseInfo.deliveryZones],
+  );
+  const pickupPoints = useMemo(
+    () => purchaseInfo.pickupPoints ?? [],
+    [purchaseInfo.pickupPoints],
+  );
+
   useEffect(() => {
-    if (purchaseInfo.shipping.length === 1) {
-      setSelectedShipping(purchaseInfo.shipping[0].key);
+    if (shippingOptions.length === 1) {
+      setSelectedShipping(shippingOptions[0].key);
     }
-    setSelectedPayment(pickDefaultPaymentKey(purchaseInfo.payments));
-  }, [purchaseInfo.payments, purchaseInfo.shipping]);
+    setSelectedPayment(pickDefaultPaymentKey(paymentOptions));
+  }, [paymentOptions, shippingOptions]);
 
   const isNationalCarrierSelected = isNationalCarrierKey(selectedShipping);
   const isLocalDeliverySelected = selectedShipping === "delivery";
   const isPickupSelected = selectedShipping === "pickup";
   const deliveryZonesForCheckout = useMemo(
     () =>
-      purchaseInfo.deliveryZones.filter((zone) => zone.meetingPoints.length > 0),
-    [purchaseInfo.deliveryZones],
+      deliveryZones.filter((zone) => (zone.meetingPoints?.length ?? 0) > 0),
+    [deliveryZones],
   );
   const hasDeliveryZones = deliveryZonesForCheckout.length > 0;
-  const hasPickupPoints = purchaseInfo.pickupPoints.length > 0;
+  const hasPickupPoints = pickupPoints.length > 0;
 
   useEffect(() => {
     if (!isNationalCarrierSelected) {
@@ -194,17 +212,17 @@ export function CheckoutPanel({
   }, [isPickupSelected]);
 
   useEffect(() => {
-    if (selectedShipping || purchaseInfo.shipping.length === 0) return;
+    if (selectedShipping || shippingOptions.length === 0) return;
 
     if (fulfillmentMode === "pickup") {
-      const pickup = purchaseInfo.shipping.find((method) => method.key === "pickup");
+      const pickup = shippingOptions.find((method) => method.key === "pickup");
       if (pickup) setSelectedShipping("pickup");
       return;
     }
 
-    const delivery = purchaseInfo.shipping.find((method) => method.key === "delivery");
+    const delivery = shippingOptions.find((method) => method.key === "delivery");
     if (delivery) setSelectedShipping("delivery");
-  }, [fulfillmentMode, purchaseInfo.shipping, selectedShipping]);
+  }, [fulfillmentMode, shippingOptions, selectedShipping]);
 
   useEffect(() => {
     let cancelled = false;
@@ -232,7 +250,7 @@ export function CheckoutPanel({
         const preferredMethod = context.preferredShippingMethod;
         if (
           preferredMethod &&
-          purchaseInfo.shipping.some((option) => option.key === preferredMethod)
+          shippingOptions.some((option) => option.key === preferredMethod)
         ) {
           setSelectedShipping(preferredMethod);
           if (
@@ -242,10 +260,10 @@ export function CheckoutPanel({
             setShippingBranchCode(context.preferredShippingBranchCode);
           }
         } else if (fulfillmentMode === "pickup") {
-          const pickup = purchaseInfo.shipping.find((method) => method.key === "pickup");
+          const pickup = shippingOptions.find((method) => method.key === "pickup");
           if (pickup) setSelectedShipping("pickup");
         } else if (fulfillmentMode === "delivery") {
-          const delivery = purchaseInfo.shipping.find(
+          const delivery = shippingOptions.find(
             (method) => method.key === "delivery",
           );
           if (delivery) setSelectedShipping("delivery");
@@ -256,7 +274,7 @@ export function CheckoutPanel({
     return () => {
       cancelled = true;
     };
-  }, [storeSlug, fulfillmentMode, purchaseInfo.shipping]);
+  }, [storeSlug, fulfillmentMode, shippingOptions]);
 
   useEffect(() => {
     if (!customerProfile || !autoApply) return;
@@ -318,36 +336,20 @@ export function CheckoutPanel({
   const selectedPaymentDetails = useMemo(() => {
     if (!selectedPayment) return null;
     return (
-      purchaseInfo.payments.find((payment) => payment.key === selectedPayment) ??
+      paymentOptions.find((payment) => payment.key === selectedPayment) ??
       null
     );
-  }, [purchaseInfo.payments, selectedPayment]);
+  }, [paymentOptions, selectedPayment]);
 
   const shippingLabel =
-    purchaseInfo.shipping.find((option) => option.key === selectedShipping)
+    shippingOptions.find((option) => option.key === selectedShipping)
       ?.label ?? "";
   const paymentLabel =
-    purchaseInfo.payments.find((payment) => payment.key === selectedPayment)
+    paymentOptions.find((payment) => payment.key === selectedPayment)
       ?.label ?? "";
 
   const orderLines = useMemo<SubmitOrderLineInput[]>(
-    () =>
-      items
-        .map((item) => ({
-          productId: item.product.product_id,
-          variantId: item.variantId || item.product.default_variant_id,
-          productName: item.product.product_name,
-          variantName: item.variantName,
-          quantity: Math.max(1, Math.floor(item.quantity)),
-          unitPriceUsd: item.unitPriceUsd,
-          wholesaleApplied: item.wholesaleApplied,
-        }))
-        .filter(
-          (line) =>
-            line.productId.trim().length > 0 &&
-            line.variantId.trim().length > 0 &&
-            line.quantity > 0,
-        ),
+    () => buildSubmitOrderLinesFromCartItems(items),
     [items],
   );
 
@@ -355,7 +357,7 @@ export function CheckoutPanel({
     () =>
       validateCheckoutStep1({
         itemsCount: items.length,
-        shippingOptionsCount: purchaseInfo.shipping.length,
+        shippingOptionsCount: shippingOptions.length,
         selectedShipping,
         isNationalCarrierSelected,
         shippingBranchCode,
@@ -370,7 +372,7 @@ export function CheckoutPanel({
       }),
     [
       items.length,
-      purchaseInfo.shipping.length,
+      shippingOptions.length,
       selectedShipping,
       isNationalCarrierSelected,
       shippingBranchCode,
@@ -394,7 +396,7 @@ export function CheckoutPanel({
         customerPhone,
         shippingOptionsCount: purchaseInfo.shipping.length,
         selectedShipping,
-        paymentsCount: purchaseInfo.payments.length,
+        paymentsCount: paymentOptions.length,
         selectedPayment,
         hasProofFile: Boolean(proofFile),
       }),
@@ -405,7 +407,7 @@ export function CheckoutPanel({
       customerPhone,
       purchaseInfo.shipping.length,
       selectedShipping,
-      purchaseInfo.payments.length,
+      paymentOptions.length,
       selectedPayment,
       proofFile,
     ],
@@ -491,7 +493,7 @@ export function CheckoutPanel({
       return;
     }
 
-    if (purchaseInfo.payments.length > 0 && !selectedPayment) {
+    if (paymentOptions.length > 0 && !selectedPayment) {
       return;
     }
 
@@ -770,7 +772,7 @@ export function CheckoutPanel({
                   })}
                 </ul>
 
-                {purchaseInfo.shipping.length > 0 && (
+                {shippingOptions.length > 0 && (
                   <CheckoutFieldGroup
                     field="shipping"
                     showError={shouldShowFieldError(
@@ -785,7 +787,7 @@ export function CheckoutPanel({
                         Opciones de envío
                       </p>
                       <div className="txn-checkout-method-grid">
-                        {purchaseInfo.shipping.map((option) => (
+                        {shippingOptions.map((option) => (
                           <ShippingMethodCard
                             key={option.key}
                             carrierKey={option.key}
@@ -928,7 +930,7 @@ export function CheckoutPanel({
                     className="txn-checkout-form"
                   >
                     <PickupPointPicker
-                      points={purchaseInfo.pickupPoints}
+                      points={pickupPoints}
                       selectedPointId={pickupPointId}
                       notes={fulfillmentNotes}
                       onPointChange={(pointId) => {
@@ -996,7 +998,7 @@ export function CheckoutPanel({
             ) : (
               <>
                 <div className="txn-checkout-options">
-                  {purchaseInfo.payments.length > 0 && (
+                  {paymentOptions.length > 0 && (
                     <CheckoutFieldGroup
                       field="payment"
                       showError={shouldShowFieldError(
@@ -1008,7 +1010,7 @@ export function CheckoutPanel({
                     >
                       <p className="txn-checkout-section-title">Método de pago</p>
                       <div className="txn-checkout-method-grid">
-                        {purchaseInfo.payments.map((payment) => (
+                        {paymentOptions.map((payment) => (
                           <PaymentMethodCard
                             key={payment.key}
                             methodKey={payment.key as PaymentMethodKey}

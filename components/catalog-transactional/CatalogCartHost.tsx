@@ -7,6 +7,7 @@ import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { CartSummaryPanel } from "@/components/catalog-transactional/CartSummaryPanel";
 import { CheckoutPanel } from "@/components/catalog-transactional/CheckoutPanel";
+import { CheckoutErrorBoundary } from "@/components/catalog-transactional/CheckoutErrorBoundary";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 
 interface CatalogCartHostProps {
@@ -92,18 +93,23 @@ export function CatalogCartHost({
               onCheckout={() => setPanelView("checkout")}
             />
           ) : (
-            <CheckoutPanel
-              storeSlug={store.slug}
-              storeName={store.name}
-              purchaseInfo={purchaseInfo}
-              whatsappConfigured={whatsappConfigured}
-              exchangeRate={exchangeRate}
-              showOfficialRate={showOfficialRate}
-              showBsConversion={showBsConversion}
+            <CheckoutErrorBoundary
               onClose={closePanel}
-              fulfillmentMode={mode}
-              locationId={orderLocationId}
-            />
+              onRetry={() => setPanelView("checkout")}
+            >
+              <CheckoutPanel
+                storeSlug={store.slug}
+                storeName={store.name}
+                purchaseInfo={purchaseInfo}
+                whatsappConfigured={whatsappConfigured}
+                exchangeRate={exchangeRate}
+                showOfficialRate={showOfficialRate}
+                showBsConversion={showBsConversion}
+                onClose={closePanel}
+                fulfillmentMode={mode}
+                locationId={orderLocationId}
+              />
+            </CheckoutErrorBoundary>
           )}
         </div>
       ) : null}

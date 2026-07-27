@@ -32,6 +32,8 @@ export function PaymentMethodCard({
   muted = false,
 }: PaymentMethodCardProps) {
   const method = getPaymentMethod(methodKey);
+  const paymentLabel = method?.label ?? methodKey;
+  const paymentDescription = method?.description ?? description ?? "";
   const isInteractive = selectable && !disabled;
   const isSettings = variant === "settings";
 
@@ -69,7 +71,7 @@ export function PaymentMethodCard({
               : "truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50"
           }
         >
-          {method.label}
+          {paymentLabel}
         </p>
         <p
           className={
@@ -81,7 +83,7 @@ export function PaymentMethodCard({
               : "mt-0.5 line-clamp-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400"
           }
         >
-          {description ?? method.description}
+          {description ?? paymentDescription}
         </p>
       </div>
       {action && <div className="shrink-0 self-center">{action}</div>}

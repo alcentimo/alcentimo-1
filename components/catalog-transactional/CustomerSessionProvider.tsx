@@ -110,13 +110,17 @@ export function CustomerSessionProvider({
   ]);
 
   const refreshSession = useCallback(async () => {
-    const context = await loadCustomerCheckoutContext(storeSlug);
-    persistSession({
-      isCustomer: context.isCustomer,
-      userId: context.userId,
-      displayName: context.displayName,
-      phone: context.phone,
-    });
+    try {
+      const context = await loadCustomerCheckoutContext(storeSlug);
+      persistSession({
+        isCustomer: context.isCustomer,
+        userId: context.userId,
+        displayName: context.displayName,
+        phone: context.phone,
+      });
+    } catch (error) {
+      console.error("[CustomerSessionProvider] refreshSession failed", error);
+    }
   }, [persistSession, storeSlug]);
 
   useEffect(() => {
