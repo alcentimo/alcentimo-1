@@ -14,7 +14,7 @@ interface LandingHeaderLogoProps {
 }
 
 const logoImgClass = {
-  header: "h-8 w-auto md:h-9",
+  header: "h-10 w-auto md:h-11",
   footer: "h-7 w-auto md:h-8",
 } as const;
 
@@ -43,7 +43,7 @@ export function LandingHeaderLogo({
 
   if (!href) {
     return (
-      <span className={cn("inline-flex shrink-0 items-center", className)}>
+      <span className={cn("inline-flex max-w-none shrink-0 items-center", className)}>
         {image}
       </span>
     );
@@ -53,7 +53,7 @@ export function LandingHeaderLogo({
     <Link
       href={href}
       className={cn(
-        "inline-flex shrink-0 items-center border-0 bg-transparent shadow-none outline-none",
+        "inline-flex max-w-none shrink-0 items-center border-0 bg-transparent shadow-none outline-none",
         className,
       )}
       aria-label="Alcentimo"
