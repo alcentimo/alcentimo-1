@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
   type ReactNode,
@@ -17,6 +18,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { CatalogPrimaryColorField } from "@/components/dashboard/settings/CatalogPrimaryColorField";
 import { SettingsTabShell } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
@@ -27,6 +29,8 @@ import {
   CATALOG_THEME_PRESETS,
   getCatalogThemeIdsForRubro,
 } from "@/lib/store-settings/catalog-theme-presets";
+import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
+import { getRubroPalette } from "@/lib/store-settings/rubro-palettes";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { Store } from "@/lib/database.types";
 import type {
@@ -61,9 +65,10 @@ interface DesignTabProps {
 type SavingField =
   | CatalogThemeId
   | keyof CatalogVisibilitySettings
+  | "primaryColor"
   | null;
 
-type AccordionSection = "theme" | "visibility";
+type AccordionSection = "theme" | "brandColor" | "visibility";
 
 interface DesignAccordionProps {
   title: string;
@@ -183,9 +188,15 @@ export function DesignTab({
   const [openSection, setOpenSection] = useState<AccordionSection>("theme");
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [isSaving, startSave] = useTransition();
+  const colorSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const storeRubro = normalizeStoreRubro(
     storeRubroProp ?? preview?.store.rubro_tienda ?? DEFAULT_STORE_RUBRO,
+  );
+  const rubroPalette = useMemo(() => getRubroPalette(storeRubro), [storeRubro]);
+  const resolvedDesign = useMemo(
+    () => resolveCatalogDesign(design, storeRubro),
+    [design, storeRubro],
   );
   const isFashionStore = storeRubro === "ropa-moda";
   const availableThemeIds = useMemo(
@@ -250,11 +261,52 @@ export function DesignTab({
     );
   }
 
+  function schedulePrimaryColorSave(nextDesign: CatalogDesignSettings) {
+    if (colorSaveTimerRef.current) {
+      clearTimeout(colorSaveTimerRef.current);
+    }
+
+    colorSaveTimerRef.current = setTimeout(() => {
+      persist(nextDesign, "primaryColor");
+    }, 400);
+  }
+
+  function setPrimaryColor(hex: string) {
+    const nextDesign: CatalogDesignSettings = {
+      ...design,
+      primaryColor: hex,
+    };
+    setDesign(nextDesign);
+    schedulePrimaryColorSave(nextDesign);
+  }
+
+  function resetPrimaryColor() {
+    if (colorSaveTimerRef.current) {
+      clearTimeout(colorSaveTimerRef.current);
+    }
+
+    const nextDesign = { ...design };
+    delete nextDesign.primaryColor;
+    setDesign(nextDesign);
+    persist(nextDesign, "primaryColor");
+  }
+
+  useEffect(() => {
+    return () => {
+      if (colorSaveTimerRef.current) {
+        clearTimeout(colorSaveTimerRef.current);
+      }
+    };
+  }, []);
+
   function toggleSection(section: AccordionSection) {
     setOpenSection(section);
   }
 
   const themeSummary = CATALOG_THEME_PRESETS[design.theme]?.label ?? "Tema";
+  const brandColorSummary = design.primaryColor
+    ? design.primaryColor.toUpperCase()
+    : `Rubro ${rubroPalette.label}`;
   const visibilitySummary =
     [
       design.visibility.showStock && "Stock",
@@ -341,6 +393,22 @@ export function DesignTab({
                   );
                 })}
               </div>
+            </DesignAccordion>
+
+            <DesignAccordion
+              title="Color de marca"
+              summary={brandColorSummary}
+              open={openSection === "brandColor"}
+              onToggle={() => toggleSection("brandColor")}
+            >
+              <CatalogPrimaryColorField
+                color={design.primaryColor}
+                effectiveColor={resolvedDesign.primaryColor}
+                rubroLabel={rubroPalette.label}
+                disabled={isSaving && savingField === "primaryColor"}
+                onPick={setPrimaryColor}
+                onReset={resetPrimaryColor}
+              />
             </DesignAccordion>
 
             <DesignAccordion

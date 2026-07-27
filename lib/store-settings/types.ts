@@ -156,7 +156,7 @@ export interface CatalogDesignSettings {
   theme: CatalogThemeId;
   saleMode: CatalogSaleMode;
   visibility: CatalogVisibilitySettings;
-  /** Derivado del tema al renderizar; opcional en almacenamiento legacy. */
+  /** Color principal de marca elegido por la tienda (hex #rrggbb). */
   primaryColor?: string;
   /** Derivado del tema al renderizar; opcional en almacenamiento legacy. */
   layout?: CatalogLayoutMode;

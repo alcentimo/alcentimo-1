@@ -12,6 +12,7 @@ import {
   normalizeDeliveryZones,
   normalizePickupPoints,
 } from "@/lib/store-settings/delivery-zones";
+import { normalizeHex6 } from "@/lib/store-settings/color-contrast";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "mrw",
@@ -362,7 +363,10 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
             : defaults.catalogDesign.visibility.showPrices,
       },
       ...(typeof designRaw.primaryColor === "string"
-        ? { primaryColor: designRaw.primaryColor }
+        ? (() => {
+            const hex = normalizeHex6(designRaw.primaryColor);
+            return hex ? { primaryColor: hex } : {};
+          })()
         : {}),
       ...(designRaw.layout === "list" || designRaw.layout === "grid"
         ? { layout: designRaw.layout }

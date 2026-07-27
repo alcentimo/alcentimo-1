@@ -27,7 +27,6 @@ import type { CouponProductOption } from "@/components/dashboard/settings/Coupon
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { Store } from "@/lib/database.types";
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
-import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { Coupon } from "@/lib/coupons/types";
 import type { Promotion } from "@/lib/promotions/types";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
@@ -207,10 +206,7 @@ export function SettingsPanel({
       case "design":
         return (
           <DesignTab
-            initialDesign={resolveCatalogDesign(
-              initialConfig.catalogDesign,
-              store?.rubro_tienda ?? "ropa-moda",
-            )}
+            initialDesign={initialConfig.catalogDesign}
             storeRubro={store?.rubro_tienda ?? "ropa-moda"}
             preview={designPreview}
             catalogLink={

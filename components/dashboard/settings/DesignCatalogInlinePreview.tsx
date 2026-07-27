@@ -57,6 +57,7 @@ export function DesignCatalogInlinePreview({
 
   const previewStageKey = [
     resolvedDesign.theme,
+    resolvedDesign.primaryColor,
     resolvedDesign.visibility.showStock,
     resolvedDesign.visibility.showDescription,
     resolvedDesign.visibility.showPrices,

@@ -7,6 +7,7 @@ import {
   mergeStoreSettingsConfig,
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
+import { normalizeHex6 } from "@/lib/store-settings/color-contrast";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { uploadStoreAssetImage, uploadStoreLogoImage, removeStoreLogoAssets } from "@/lib/storage";
 import { isValidStoreSlug } from "@/lib/stores/slug";
@@ -76,14 +77,52 @@ async function persistSettingsPatch(
 export async function saveCatalogDesignSettings(
   design: CatalogDesignSettings,
 ): Promise<SettingsActionResult> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+
+  if (!auth.ok) {
+    return { error: auth.error };
+  }
+
   const normalized = normalizeStoreSettingsConfig({ catalogDesign: design });
-  return persistSettingsPatch({
-    catalogDesign: {
-      theme: normalized.catalogDesign.theme,
-      saleMode: normalized.catalogDesign.saleMode,
-      visibility: normalized.catalogDesign.visibility,
+  const catalogDesign: CatalogDesignSettings = {
+    theme: normalized.catalogDesign.theme,
+    saleMode: normalized.catalogDesign.saleMode,
+    visibility: normalized.catalogDesign.visibility,
+  };
+
+  const customColor = design.primaryColor?.trim();
+  if (customColor) {
+    const hex = normalizeHex6(customColor);
+    if (hex) {
+      catalogDesign.primaryColor = hex;
+    }
+  }
+
+  const current = await getStoreSettingsConfig(auth.store.id);
+  const merged: StoreSettingsConfig = {
+    ...current,
+    catalogDesign,
+  };
+
+  const { error } = await supabase.from("store_settings").upsert(
+    {
+      store_id: auth.store.id,
+      config: merged,
     },
-  });
+    { onConflict: "store_id" },
+  );
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard/catalogo");
+  revalidatePath("/dashboard/ajustes");
+  revalidatePath("/dashboard/pedidos");
+  revalidatePublicStorePaths(auth.store.slug);
+
+  return { success: true };
 }
 
 export async function saveCatalogCurrencySettings(
