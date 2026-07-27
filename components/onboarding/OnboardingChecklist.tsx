@@ -61,9 +61,9 @@ export function OnboardingChecklist({
       },
       {
         id: "payments",
-        title: "Configurar pagos y envíos",
-        description: "Define cómo te pagan y cómo entregas los pedidos.",
-        done: setupStatus.paymentsOrShippingConfigured,
+        title: "Configurar métodos de pago",
+        description: "Activa al menos un método para que tus clientes puedan pagarte.",
+        done: setupStatus.hasPaymentsConfigured,
       },
       {
         id: "share",
@@ -72,7 +72,7 @@ export function OnboardingChecklist({
         done: shareDone,
       },
     ],
-    [setupStatus.hasProducts, setupStatus.paymentsOrShippingConfigured, shareDone],
+    [setupStatus.hasProducts, setupStatus.hasPaymentsConfigured, shareDone],
   );
 
   const completedCount = steps.filter((step) => step.done).length;

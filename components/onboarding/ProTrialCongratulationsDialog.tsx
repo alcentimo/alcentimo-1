@@ -1,0 +1,91 @@
+"use client";
+
+import { Gift, Sparkles, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { formatProTrialEndsAt } from "@/lib/plans/trial";
+
+interface ProTrialCongratulationsDialogProps {
+  open: boolean;
+  endsAt: string | null;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function ProTrialCongratulationsDialog({
+  open,
+  endsAt,
+  onOpenChange,
+}: ProTrialCongratulationsDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="onboarding-welcome-dialog max-w-lg overflow-hidden p-0"
+        onClose={() => onOpenChange(false)}
+      >
+        <div className="onboarding-welcome-hero px-6 pb-5 pt-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="onboarding-welcome-icon" aria-hidden="true">
+                <Gift className="h-5 w-5" />
+              </span>
+              <div>
+                <DialogHeader className="space-y-1 text-left">
+                  <DialogTitle className="text-lg text-zinc-900 dark:text-zinc-50">
+                    ¡Felicidades! Desbloqueaste Plan Pro
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-zinc-500">
+                    30 días gratis activados automáticamente
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-white/70 hover:text-zinc-800 dark:hover:bg-zinc-900/60 dark:hover:text-zinc-200"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4 px-6 pb-6">
+          <div className="onboarding-welcome-message">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              Prueba Pro activa
+            </div>
+            <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+              Completaste la configuración inicial de tu tienda. Ya tienes 30 días
+              gratis del Plan Pro con hasta 250 productos publicados
+              {endsAt ? (
+                <>
+                  {" "}
+                  hasta el <strong>{formatProTrialEndsAt(endsAt)}</strong>
+                </>
+              ) : null}
+              .
+            </p>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              className="btn-brand"
+              onClick={() => onOpenChange(false)}
+            >
+              Continuar
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

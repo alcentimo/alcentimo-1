@@ -8,6 +8,13 @@ export interface OnboardingSetupStatus {
   catalogPath: string;
 }
 
+/** Requisitos para desbloquear la prueba Pro de 30 días. */
+export function isProTrialSetupComplete(
+  status: Pick<OnboardingSetupStatus, "hasProducts" | "hasPaymentsConfigured">,
+): boolean {
+  return status.hasProducts && status.hasPaymentsConfigured;
+}
+
 export function getOnboardingSetupStatus(
   productCount: number,
   settings: StoreSettingsConfig,

@@ -223,7 +223,7 @@ export function getProductLimitErrorMessage(
         : getPlanById("starter").productLimit;
     const trialLabel =
       trialLimit == null ? "productos ilimitados" : `${trialLimit} productos`;
-    return `¡Has alcanzado tu límite! Activa una prueba gratuita de un mes del plan Pro (${trialLabel})`;
+    return `Completa tu catálogo y configura métodos de pago para activar 30 días gratis del Plan Pro (${trialLabel})`;
   }
 
   if (isUnlimitedProductLimit(check.productLimit)) {

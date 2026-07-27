@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AiWelcomeDialog } from "@/components/onboarding/AiWelcomeDialog";
 import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
+import { ProTrialActivationWatcher } from "@/components/onboarding/ProTrialActivationWatcher";
 import {
   isOnboardingChecklistDismissed,
 } from "@/lib/onboarding/client-storage";
@@ -15,6 +16,8 @@ interface OnboardingExperienceProps {
   rubroLabel: string;
   setupStatus: OnboardingSetupStatus;
   showWelcomeFromUrl: boolean;
+  trialEligible: boolean;
+  trialActive: boolean;
   onOpenCreateProduct: () => void;
   onOpenImport: () => void;
 }
@@ -25,6 +28,8 @@ export function OnboardingExperience({
   rubroLabel,
   setupStatus,
   showWelcomeFromUrl,
+  trialEligible,
+  trialActive,
   onOpenCreateProduct,
   onOpenImport,
 }: OnboardingExperienceProps) {
@@ -70,6 +75,14 @@ export function OnboardingExperience({
 
   return (
     <>
+      <Suspense fallback={null}>
+        <ProTrialActivationWatcher
+          trialEligible={trialEligible}
+          trialActive={trialActive}
+          setupStatus={setupStatus}
+        />
+      </Suspense>
+
       <AiWelcomeDialog
         open={welcomeOpen}
         storeId={storeId}

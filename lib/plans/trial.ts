@@ -87,7 +87,7 @@ export function hasUnusedProTrial(
 }
 
 export const PRO_TRIAL_AT_LIMIT_MESSAGE =
-  "¡Has alcanzado tu límite! Activa una prueba gratuita de un mes del plan Pro (250 productos)";
+  "¡Has alcanzado tu límite! Completa tu catálogo y configura métodos de pago para activar 30 días gratis del Plan Pro (250 productos)";
 
 /** Prioriza ofrecer la prueba Pro al llegar al límite de productos del plan Gratis. */
 export function shouldPromoteProTrialAtLimit(

@@ -2,7 +2,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
-import { resolveProTrialStatus, shouldShowProTrialBanner } from "@/lib/plans/trial";
+import {
+  resolveProTrialStatus,
+  shouldShowProTrialBanner,
+} from "@/lib/plans/trial";
+import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
+import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import {
   getLatestPermanentRejection,
@@ -45,6 +50,7 @@ export default async function PlanesPage() {
     planSettings,
     promoOffers,
     platformSettings,
+    storeSettings,
   ] = await Promise.all([
       store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
       getCurrentExchangeRate(),
@@ -54,9 +60,18 @@ export default async function PlanesPage() {
       fetchPlanSettings(),
       getOpenPromoOffersForUser(authUser.id),
       fetchPlatformSettings(),
+      store ? getStoreSettingsConfig(store.id) : Promise.resolve(null),
     ]);
   const exchangeRate = exchangeRateRow?.rate ?? null;
   const pricingTiers = buildPlanPricingTiers(planSettings);
+  const trialSetupStatus =
+    store && storeSettings
+      ? getOnboardingSetupStatus(
+          productLimitContext?.currentCount ?? 0,
+          storeSettings,
+          store.slug,
+        )
+      : { hasProducts: false, hasPaymentsConfigured: false };
 
   return (
     <PageContainer as="div" className="mx-auto max-w-6xl py-6 sm:py-8">
@@ -97,10 +112,10 @@ export default async function PlanesPage() {
         <div className="mb-8 max-w-3xl">
           <ProTrialBanner
             showBanner
-            currentCount={productLimitContext?.currentCount ?? 0}
             trialEligible={trial.eligible}
             trialActive={trial.active}
             trialEndsAt={trial.endsAt}
+            setupStatus={trialSetupStatus}
           />
         </div>
       ) : null}

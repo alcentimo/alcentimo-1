@@ -6,16 +6,37 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { getUserStore } from "@/lib/stores";
 import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
-import { isProTrialClaimCodeValid } from "@/lib/plans/trial-unlock";
+import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
+import { getStoreProductCount } from "@/lib/plans/product-limit";
+import {
+  getOnboardingSetupStatus,
+  isProTrialSetupComplete,
+} from "@/lib/onboarding/setup-status";
+import { isProTrialUnlockReady } from "@/lib/plans/trial-unlock";
 
 export type StartProTrialResult =
   | { ok: true; endsAt: string }
+  | { ok: false; error: string };
+
+export type TryActivateProTrialResult =
+  | { ok: true; activated: true; endsAt: string }
+  | {
+      ok: true;
+      activated: false;
+      reason:
+        | "not_eligible"
+        | "already_active"
+        | "already_used"
+        | "setup_incomplete"
+        | "no_store";
+    }
   | { ok: false; error: string };
 
 function revalidateTrialPaths() {
   revalidatePath("/activar");
   revalidatePath("/dashboard/planes");
   revalidatePath("/dashboard/catalogo");
+  revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard", "layout");
 }
 
@@ -48,7 +69,6 @@ async function activateProTrialViaRpc(
   return { ok: true, endsAt };
 }
 
-/** Respaldo con service role si el RPC no está disponible. */
 async function activateProTrialViaAdmin(
   userId: string,
 ): Promise<StartProTrialResult> {
@@ -84,72 +104,10 @@ async function activateProTrialViaAdmin(
   return { ok: true, endsAt: data.pro_trial_ends_at };
 }
 
-export async function startProTrial(
-  claimCode: string,
+async function performProTrialActivation(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
 ): Promise<StartProTrialResult> {
-  const supabase = await createClient();
-  const auth = await requireAuthUser(supabase);
-
-  if (!auth.ok) {
-    return { ok: false, error: auth.error };
-  }
-
-  const userId = auth.authUser.id;
-
-  if (!isProTrialClaimCodeValid(claimCode)) {
-    return {
-      ok: false,
-      error: "Escribe ALCENTIMO para reclamar tu premio.",
-    };
-  }
-
-  const store = await getUserStore(supabase, userId);
-  if (!store) {
-    return {
-      ok: false,
-      error: "Necesitas una tienda para activar la prueba Pro.",
-    };
-  }
-
-  const admin = createAdminClient();
-  const { data: profile, error: profileError } = await admin
-    .from("profiles")
-    .select("plan, subscription_status, pro_trial_started_at")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (profileError || !profile) {
-    return {
-      ok: false,
-      error: profileError?.message ?? "No se encontró tu perfil.",
-    };
-  }
-
-  if (!isEligiblePlanForProTrial(profile)) {
-    const plan = (profile.plan ?? "FREE").toString().toUpperCase();
-    const status = profile.subscription_status ?? "none";
-
-    if (status !== "none") {
-      return {
-        ok: false,
-        error: "La prueba gratuita requiere una cuenta sin suscripción activa.",
-      };
-    }
-
-    if (plan !== "FREE") {
-      return {
-        ok: false,
-        error:
-          "La prueba gratuita solo aplica al plan Gratis. Tu plan actual no es elegible.",
-      };
-    }
-
-    return {
-      ok: false,
-      error: "Ya usaste tu mes de prueba Pro.",
-    };
-  }
-
   let activation = await activateProTrialViaRpc(supabase, userId);
 
   if (
@@ -165,6 +123,136 @@ export async function startProTrial(
   }
 
   revalidateTrialPaths();
-
   return activation;
+}
+
+async function getTrialSetupForUser(userId: string) {
+  const supabase = await createClient();
+  const store = await getUserStore(supabase, userId);
+  if (!store) {
+    return {
+      store: null,
+      setupStatus: null,
+      setupComplete: false,
+    };
+  }
+
+  const [productCount, settings] = await Promise.all([
+    getStoreProductCount(store.id),
+    getStoreSettingsConfig(store.id),
+  ]);
+
+  const setupStatus = getOnboardingSetupStatus(
+    productCount,
+    settings,
+    store.slug,
+  );
+
+  return {
+    store,
+    setupStatus,
+    setupComplete: isProTrialSetupComplete(setupStatus),
+  };
+}
+
+export async function tryActivateProTrialOnSetupComplete(): Promise<TryActivateProTrialResult> {
+  const supabase = await createClient();
+  const auth = await requireAuthUser(supabase);
+
+  if (!auth.ok) {
+    return { ok: false, error: auth.error };
+  }
+
+  const userId = auth.authUser.id;
+  const { store, setupComplete } = await getTrialSetupForUser(userId);
+
+  if (!store) {
+    return { ok: true, activated: false, reason: "no_store" };
+  }
+
+  const admin = createAdminClient();
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .select("plan, subscription_status, pro_trial_started_at, pro_trial_ends_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (profileError || !profile) {
+    return {
+      ok: false,
+      error: profileError?.message ?? "No se encontró tu perfil.",
+    };
+  }
+
+  const now = Date.now();
+  const endsMs = profile.pro_trial_ends_at
+    ? new Date(profile.pro_trial_ends_at).getTime()
+    : null;
+  const trialActive =
+    profile.pro_trial_started_at != null &&
+    endsMs != null &&
+    endsMs > now;
+
+  if (trialActive) {
+    return { ok: true, activated: false, reason: "already_active" };
+  }
+
+  if (profile.pro_trial_started_at != null) {
+    return { ok: true, activated: false, reason: "already_used" };
+  }
+
+  if (!isEligiblePlanForProTrial(profile)) {
+    return { ok: true, activated: false, reason: "not_eligible" };
+  }
+
+  if (!setupComplete) {
+    return { ok: true, activated: false, reason: "setup_incomplete" };
+  }
+
+  const activation = await performProTrialActivation(supabase, userId);
+  if (!activation.ok) {
+    return { ok: false, error: activation.error };
+  }
+
+  return { ok: true, activated: true, endsAt: activation.endsAt };
+}
+
+export async function startProTrial(_claimCode?: string): Promise<StartProTrialResult> {
+  const result = await tryActivateProTrialOnSetupComplete();
+
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  if (result.activated) {
+    return { ok: true, endsAt: result.endsAt };
+  }
+
+  if (result.reason === "setup_incomplete") {
+    return {
+      ok: false,
+      error:
+        "Publica al menos un producto y configura tus métodos de pago para activar la prueba Pro.",
+    };
+  }
+
+  if (result.reason === "already_active") {
+    return { ok: false, error: "Ya tienes la prueba Pro activa." };
+  }
+
+  if (result.reason === "already_used") {
+    return { ok: false, error: "Ya usaste tu mes de prueba Pro." };
+  }
+
+  if (result.reason === "not_eligible") {
+    return {
+      ok: false,
+      error: "Tu plan actual no es elegible para la prueba Pro.",
+    };
+  }
+
+  return {
+    ok: false,
+    error: "Necesitas una tienda para activar la prueba Pro.",
+  };
 }

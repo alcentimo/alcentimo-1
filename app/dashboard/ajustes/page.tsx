@@ -18,6 +18,9 @@ import {
   getEffectivePlanIdForLimits,
   resolveProTrialStatus,
 } from "@/lib/plans/trial";
+import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
+import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
+import { AjustesProTrialActivation } from "@/components/dashboard/settings/AjustesProTrialActivation";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +72,13 @@ export default async function AjustesPage({
     baseSettings: Awaited<ReturnType<typeof getCatalogPreviewSettings>>;
   } | null = null;
 
+  let trialSetupStatus = {
+    hasProducts: false,
+    hasPaymentsConfigured: false,
+  };
+  let trialEligible = false;
+  let trialActive = false;
+
   if (store) {
     const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations, planSettings] =
       await Promise.all([
@@ -86,6 +96,14 @@ export default async function AjustesPage({
     coupons = couponRows;
     promotions = promotionRows;
     locations = storeLocations;
+    trialSetupStatus = getOnboardingSetupStatus(
+      inventory.totalCount,
+      config,
+      store.slug,
+    );
+    const trial = resolveProTrialStatus(authUser.profile, authUser.planId);
+    trialEligible = isEligiblePlanForProTrial(authUser.profile);
+    trialActive = trial.active;
     products = inventory.products.map((product) => ({
       id: product.product_id,
       name: product.product_name,
@@ -99,7 +117,6 @@ export default async function AjustesPage({
       baseSettings: previewSettings,
     };
 
-    const trial = resolveProTrialStatus(authUser.profile, authUser.planId);
     const effectivePlanId = getEffectivePlanIdForLimits(authUser.planId, trial);
     const limit = resolveLocationLimit({
       planId: effectivePlanId,
@@ -132,6 +149,14 @@ export default async function AjustesPage({
             : "Marca, envíos, pagos y presencia en línea."
         }
       />
+
+      {store ? (
+        <AjustesProTrialActivation
+          trialEligible={trialEligible}
+          trialActive={trialActive}
+          setupStatus={trialSetupStatus}
+        />
+      ) : null}
 
       <SettingsPanel
         store={

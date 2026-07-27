@@ -104,6 +104,8 @@ export function CatalogPanel({
           rubroLabel={rubroLabel}
           setupStatus={setupStatus}
           showWelcomeFromUrl={showWelcomeFromUrl}
+          trialEligible={productLimitContext?.trial.eligible ?? false}
+          trialActive={productLimitContext?.trial.active ?? false}
           onOpenCreateProduct={handleOpenCreate}
           onOpenImport={handleOpenImport}
         />
@@ -130,6 +132,7 @@ export function CatalogPanel({
         productLimitContext={productLimitContext}
         rubroLabel={rubroLabel}
         onSampleProductsCreated={handleSampleProductsCreated}
+        setupStatus={setupStatus}
       />
     </>
   );

@@ -7,11 +7,11 @@ import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
 import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
 import {
-  hasUnusedProTrial,
   resolveProTrialStatus,
   shouldShowProTrialOnActivar,
 } from "@/lib/plans/trial";
-import { isProTrialUnlockReady } from "@/lib/plans/trial-unlock";
+import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
+import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import {
   getLatestPermanentRejection,
   getUserPaymentReview,
@@ -86,7 +86,7 @@ export default async function ActivarPage() {
     );
   }
 
-  const [productLimitStatus, exchangeRateRow, permanentRejection, pagoMovil, planSettings, platformSettings] =
+  const [productLimitStatus, exchangeRateRow, permanentRejection, pagoMovil, planSettings, platformSettings, storeSettings] =
     await Promise.all([
       store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
       getCurrentExchangeRate(),
@@ -94,6 +94,7 @@ export default async function ActivarPage() {
       fetchSubscriptionPagoMovilDetails(),
       fetchPlanSettings(),
       fetchPlatformSettings(),
+      store ? getStoreSettingsConfig(store.id) : Promise.resolve(null),
     ]);
   const pricingTiers = buildPlanPricingTiers(planSettings);
   const freeProductLimit = planSettings.FREE.productLimit ?? 10;
@@ -101,14 +102,12 @@ export default async function ActivarPage() {
 
   const trial = resolveProTrialStatus(authUser.profile);
   const trialEligible = isEligiblePlanForProTrial(authUser.profile);
-  const hasUnusedTrial = hasUnusedProTrial(authUser.profile);
   const showProTrialSection = shouldShowProTrialOnActivar(authUser.profile);
   const currentCount = productLimitStatus?.currentCount ?? 0;
   const atProductLimit = productLimitStatus?.hasReachedLimit ?? false;
-  const forceClaimUnlocked =
-    trialEligible &&
-    hasUnusedTrial &&
-    (atProductLimit || isProTrialUnlockReady(currentCount, freeProductLimit));
+  const trialSetupStatus = store && storeSettings
+    ? getOnboardingSetupStatus(currentCount, storeSettings, store.slug)
+    : { hasProducts: false, hasPaymentsConfigured: false };
 
   const proLimitLabel =
     proProductLimit == null ? "productos ilimitados" : `${proProductLimit} productos`;
@@ -137,9 +136,9 @@ export default async function ActivarPage() {
           <h1 className="page-header-title">Activa tu cuenta</h1>
           <p className="page-header-desc">
             {showProTrialSection && !trial.active
-              ? atProductLimit || forceClaimUnlocked
-                ? `Has alcanzado el límite de ${freeProductLimit} productos. Reclama tu mes de prueba Pro (${proLimitLabel}) con ALCENTIMO o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
-                : `Completa ${freeProductLimit} productos para desbloquear tu mes de prueba Pro (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
+              ? atProductLimit
+                ? `Has alcanzado el límite de ${freeProductLimit} productos. Completa tu catálogo y configura métodos de pago para activar 30 días gratis del Plan Pro (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
+                : `Publica productos y configura métodos de pago para desbloquear 30 días gratis del Plan Pro (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
               : `Elige el plan que mejor se adapte a tu negocio${store ? ` · ${store.name}` : ""}.`}
           </p>
         </header>
@@ -148,11 +147,10 @@ export default async function ActivarPage() {
           <div className="mb-10 max-w-3xl">
             <ProTrialBanner
               showBanner
-              currentCount={currentCount}
               trialEligible={trialEligible}
               trialActive={trial.active}
               trialEndsAt={trial.endsAt}
-              forceClaimUnlocked={forceClaimUnlocked}
+              setupStatus={trialSetupStatus}
             />
           </div>
         ) : null}

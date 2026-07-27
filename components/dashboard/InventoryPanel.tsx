@@ -47,6 +47,7 @@ import { InventoryPagination } from "@/components/dashboard/InventoryPagination"
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { fetchStoreProductFormConfig } from "@/lib/products/fetch-store-product-form-config";
 import type { StoreProductLimitContext } from "@/lib/plans/product-limit";
+import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import { shouldShowProductLimitBanner } from "@/src/config/plans";
 import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
 import { TrialLimitDialog } from "@/components/dashboard/plans/TrialLimitDialog";
@@ -180,6 +181,7 @@ interface InventoryPanelProps {
   productLimitContext?: StoreProductLimitContext | null;
   rubroLabel?: string;
   onSampleProductsCreated?: () => void;
+  setupStatus?: Pick<OnboardingSetupStatus, "hasProducts" | "hasPaymentsConfigured">;
 }
 
 const StockBadge = memo(function StockBadge({
@@ -590,6 +592,7 @@ export function InventoryPanel({
   productLimitContext = null,
   rubroLabel = "",
   onSampleProductsCreated,
+  setupStatus,
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
   const [totalCount, setTotalCount] = useState(
@@ -1556,6 +1559,7 @@ export function InventoryPanel({
         open={trialDialogOpen}
         onOpenChange={setTrialDialogOpen}
         trialEligible={productLimitContext?.trial.eligible ?? false}
+        setupStatus={setupStatus}
       />
 
       <CatalogPreviewDrawer

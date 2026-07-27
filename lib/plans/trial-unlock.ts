@@ -1,37 +1,43 @@
-import { PLANS } from "@/src/config/plans";
-
-/** Código que el usuario debe escribir para reclamar la prueba Pro. */
-export const PRO_TRIAL_UNLOCK_CODE = "ALCENTIMO";
-
-/** Productos mínimos en catálogo para desbloquear la prueba (plan Gratis). */
-export const PRO_TRIAL_UNLOCK_PRODUCT_COUNT = PLANS.free.productLimit as number;
-
-export function normalizeTrialClaimCode(input: string): string {
-  return input.trim().toUpperCase();
-}
-
-export function isProTrialClaimCodeValid(input: string): boolean {
-  return normalizeTrialClaimCode(input) === PRO_TRIAL_UNLOCK_CODE;
-}
+import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
+import { isProTrialSetupComplete } from "@/lib/onboarding/setup-status";
 
 export function isProTrialUnlockReady(
-  currentCount: number,
-  unlockTarget = PRO_TRIAL_UNLOCK_PRODUCT_COUNT,
+  setup: Pick<OnboardingSetupStatus, "hasProducts" | "hasPaymentsConfigured">,
 ): boolean {
-  return currentCount >= unlockTarget;
+  return isProTrialSetupComplete(setup);
 }
 
-export function getProTrialProgressPercent(
-  currentCount: number,
-  unlockTarget = PRO_TRIAL_UNLOCK_PRODUCT_COUNT,
+export function getProTrialSetupProgressPercent(
+  setup: Pick<OnboardingSetupStatus, "hasProducts" | "hasPaymentsConfigured">,
 ): number {
-  if (unlockTarget <= 0) return 100;
-  return Math.min(100, Math.round((currentCount / unlockTarget) * 100));
+  let completed = 0;
+  if (setup.hasProducts) completed += 1;
+  if (setup.hasPaymentsConfigured) completed += 1;
+  return Math.round((completed / 2) * 100);
 }
 
-export function getProTrialProductsRemaining(
-  currentCount: number,
-  unlockTarget = PRO_TRIAL_UNLOCK_PRODUCT_COUNT,
-): number {
-  return Math.max(0, unlockTarget - currentCount);
+export function getProTrialSetupRemainingSteps(
+  setup: Pick<OnboardingSetupStatus, "hasProducts" | "hasPaymentsConfigured">,
+): string[] {
+  const remaining: string[] = [];
+  if (!setup.hasProducts) {
+    remaining.push("publicar al menos un producto en tu catálogo");
+  }
+  if (!setup.hasPaymentsConfigured) {
+    remaining.push("configurar tus métodos de pago");
+  }
+  return remaining;
+}
+
+export function formatProTrialSetupRemainingMessage(
+  setup: Pick<OnboardingSetupStatus, "hasProducts" | "hasPaymentsConfigured">,
+): string {
+  const remaining = getProTrialSetupRemainingSteps(setup);
+  if (remaining.length === 0) {
+    return "";
+  }
+  if (remaining.length === 1) {
+    return `Completa este paso para desbloquear 30 días gratis del Plan Pro: ${remaining[0]}.`;
+  }
+  return `Completa estos pasos para desbloquear 30 días gratis del Plan Pro: ${remaining[0]} y ${remaining[1]}.`;
 }
