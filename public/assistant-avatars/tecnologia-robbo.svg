@@ -7,21 +7,21 @@
       <stop offset="100%" stop-color="#cbd5e1" stop-opacity="0.35"/>
     </linearGradient>
   </defs><ellipse cx="64" cy="138" rx="34" ry="6" fill="url(#floor)"/><g filter="url(#charShadow)">
-    <rect x="46" y="28" width="36" height="28" rx="10" fill="#64748b"/>
+    <rect x="46" y="28" width="36" height="28" rx="10" fill="#2563eb"/>
     <rect x="52" y="36" width="10" height="10" rx="3" fill="#eff6ff"/>
     <rect x="66" y="36" width="10" height="10" rx="3" fill="#eff6ff"/>
     <circle cx="57" cy="41" r="2.5" fill="#1e293b"/>
     <circle cx="71" cy="41" r="2.5" fill="#1e293b"/>
-    <rect x="58" y="52" width="12" height="5" rx="2" fill="#94a3b8"/>
-    <rect x="58" y="18" width="12" height="12" rx="4" fill="#94a3b8"/>
-    <rect x="42" y="58" width="44" height="36" rx="12" fill="#334155"/>
-    <circle cx="64" cy="74" r="8" fill="#94a3b8"/>
-    <rect x="28" y="62" width="12" height="28" rx="6" fill="#64748b"/>
-    <rect x="88" y="62" width="12" height="28" rx="6" fill="#64748b"/>
-    <rect x="24" y="86" width="16" height="10" rx="5" fill="#94a3b8"/>
-    <rect x="88" y="86" width="16" height="10" rx="5" fill="#94a3b8"/>
-    <rect x="50" y="94" width="12" height="28" rx="6" fill="#64748b"/>
-    <rect x="66" y="94" width="12" height="28" rx="6" fill="#64748b"/>
+    <rect x="58" y="52" width="12" height="5" rx="2" fill="#93c5fd"/>
+    <rect x="58" y="18" width="12" height="12" rx="4" fill="#93c5fd"/>
+    <rect x="42" y="58" width="44" height="36" rx="12" fill="#1e3a8a"/>
+    <circle cx="64" cy="74" r="8" fill="#93c5fd"/>
+    <rect x="28" y="62" width="12" height="28" rx="6" fill="#2563eb"/>
+    <rect x="88" y="62" width="12" height="28" rx="6" fill="#2563eb"/>
+    <rect x="24" y="86" width="16" height="10" rx="5" fill="#93c5fd"/>
+    <rect x="88" y="86" width="16" height="10" rx="5" fill="#93c5fd"/>
+    <rect x="50" y="94" width="12" height="28" rx="6" fill="#2563eb"/>
+    <rect x="66" y="94" width="12" height="28" rx="6" fill="#2563eb"/>
     <rect x="46" y="118" width="16" height="8" rx="4" fill="#1e293b"/>
     <rect x="66" y="118" width="16" height="8" rx="4" fill="#1e293b"/>
   </g></svg>

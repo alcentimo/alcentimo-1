@@ -5,7 +5,7 @@ import type { StoreRubro } from "@/src/config/categories";
 
 export type AssistantAvatarAnimationKind = ["float","wave","glow","pulse","bob"][number];
 
-export type AssistantAvatarRubro = StoreRubro | "general";
+export type AssistantAvatarRubro = StoreRubro;
 
 export interface AssistantAvatarPresetManifestEntry {
   id: string;
@@ -16,7 +16,6 @@ export interface AssistantAvatarPresetManifestEntry {
 }
 
 export const ASSISTANT_AVATAR_RUBRO_LABELS: Record<AssistantAvatarRubro, string> = {
-  "general": "General / neutro",
   "tecnologia": "Tecnología y Electrónica",
   "coleccionables": "Coleccionables y Cómics",
   "ropa-moda": "Ropa, Calzado y Moda",
@@ -27,144 +26,74 @@ export const ASSISTANT_AVATAR_RUBRO_LABELS: Record<AssistantAvatarRubro, string>
 
 export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntry[] = [
   {
-    "id": "general-orbit",
-    "label": "Orbita amigable",
-    "rubro": "general",
-    "imagePath": "/assistant-avatars/general-orbit.svg",
-    "animation": "float"
-  },
-  {
-    "id": "general-spark",
-    "label": "Chispa inteligente",
-    "rubro": "general",
-    "imagePath": "/assistant-avatars/general-spark.svg",
-    "animation": "glow"
-  },
-  {
-    "id": "general-wave",
-    "label": "Asistente clásico",
-    "rubro": "general",
-    "imagePath": "/assistant-avatars/general-wave.svg",
-    "animation": "wave"
-  },
-  {
-    "id": "general-beacon",
-    "label": "Farol guía",
-    "rubro": "general",
-    "imagePath": "/assistant-avatars/general-beacon.svg",
-    "animation": "pulse"
-  },
-  {
-    "id": "general-compass",
-    "label": "Brújula experta",
-    "rubro": "general",
-    "imagePath": "/assistant-avatars/general-compass.svg",
+    "id": "tecnologia-robbo",
+    "label": "Robbo el Robot",
+    "rubro": "tecnologia",
+    "imagePath": "/assistant-avatars/tecnologia-robbo.svg",
     "animation": "bob"
   },
   {
-    "id": "general-halo",
-    "label": "Aura confiable",
-    "rubro": "general",
-    "imagePath": "/assistant-avatars/general-halo.svg",
-    "animation": "glow"
-  },
-  {
-    "id": "general-prism",
-    "label": "Prisma creativo",
-    "rubro": "general",
-    "imagePath": "/assistant-avatars/general-prism.svg",
-    "animation": "float"
-  },
-  {
-    "id": "general-echo",
-    "label": "Eco amable",
-    "rubro": "general",
-    "imagePath": "/assistant-avatars/general-echo.svg",
-    "animation": "pulse"
-  },
-  {
-    "id": "general-guide",
-    "label": "Guía experta",
-    "rubro": "general",
-    "imagePath": "/assistant-avatars/general-guide.svg",
+    "id": "tecnologia-cctv",
+    "label": "Cámara Vigilante",
+    "rubro": "tecnologia",
+    "imagePath": "/assistant-avatars/tecnologia-cctv.svg",
     "animation": "wave"
   },
   {
-    "id": "general-pulse",
-    "label": "Pulso activo",
-    "rubro": "general",
-    "imagePath": "/assistant-avatars/general-pulse.svg",
-    "animation": "bob"
-  },
-  {
-    "id": "tecnologia-bot",
-    "label": "Bot Nova",
+    "id": "tecnologia-nerd",
+    "label": "Nerd Techie",
     "rubro": "tecnologia",
-    "imagePath": "/assistant-avatars/tecnologia-bot.svg",
+    "imagePath": "/assistant-avatars/tecnologia-nerd.svg",
     "animation": "float"
-  },
-  {
-    "id": "tecnologia-chip",
-    "label": "Chip Cuántico",
-    "rubro": "tecnologia",
-    "imagePath": "/assistant-avatars/tecnologia-chip.svg",
-    "animation": "glow"
   },
   {
     "id": "tecnologia-drone",
-    "label": "Drone Scout",
+    "label": "Dron Amigo",
     "rubro": "tecnologia",
     "imagePath": "/assistant-avatars/tecnologia-drone.svg",
     "animation": "bob"
   },
   {
-    "id": "tecnologia-headset",
-    "label": "Headset Pro",
+    "id": "tecnologia-chipster",
+    "label": "Chipster",
     "rubro": "tecnologia",
-    "imagePath": "/assistant-avatars/tecnologia-headset.svg",
-    "animation": "wave"
-  },
-  {
-    "id": "tecnologia-rocket",
-    "label": "Rocket Launch",
-    "rubro": "tecnologia",
-    "imagePath": "/assistant-avatars/tecnologia-rocket.svg",
-    "animation": "pulse"
-  },
-  {
-    "id": "tecnologia-circuit",
-    "label": "Circuit Mind",
-    "rubro": "tecnologia",
-    "imagePath": "/assistant-avatars/tecnologia-circuit.svg",
+    "imagePath": "/assistant-avatars/tecnologia-chipster.svg",
     "animation": "glow"
   },
   {
-    "id": "tecnologia-pixel",
-    "label": "Pixel Buddy",
+    "id": "tecnologia-laptop-guru",
+    "label": "Gurú Laptop",
     "rubro": "tecnologia",
-    "imagePath": "/assistant-avatars/tecnologia-pixel.svg",
+    "imagePath": "/assistant-avatars/tecnologia-laptop-guru.svg",
+    "animation": "pulse"
+  },
+  {
+    "id": "tecnologia-vr-buddy",
+    "label": "VR Buddy",
+    "rubro": "tecnologia",
+    "imagePath": "/assistant-avatars/tecnologia-vr-buddy.svg",
     "animation": "float"
   },
   {
-    "id": "tecnologia-server",
-    "label": "Server Core",
+    "id": "tecnologia-console-pal",
+    "label": "Control Gamer",
     "rubro": "tecnologia",
-    "imagePath": "/assistant-avatars/tecnologia-server.svg",
-    "animation": "pulse"
-  },
-  {
-    "id": "tecnologia-hologram",
-    "label": "Holo Guide",
-    "rubro": "tecnologia",
-    "imagePath": "/assistant-avatars/tecnologia-hologram.svg",
-    "animation": "glow"
-  },
-  {
-    "id": "tecnologia-android",
-    "label": "Android Ace",
-    "rubro": "tecnologia",
-    "imagePath": "/assistant-avatars/tecnologia-android.svg",
+    "imagePath": "/assistant-avatars/tecnologia-console-pal.svg",
     "animation": "wave"
+  },
+  {
+    "id": "tecnologia-satellite",
+    "label": "Satélite Soli",
+    "rubro": "tecnologia",
+    "imagePath": "/assistant-avatars/tecnologia-satellite.svg",
+    "animation": "bob"
+  },
+  {
+    "id": "tecnologia-wire-bot",
+    "label": "Bot Cableado",
+    "rubro": "tecnologia",
+    "imagePath": "/assistant-avatars/tecnologia-wire-bot.svg",
+    "animation": "pulse"
   },
   {
     "id": "coleccionables-neo",
@@ -314,13 +243,6 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "animation": "wave"
   },
   {
-    "id": "alimentos-fresh",
-    "label": "Frescura Natural",
-    "rubro": "alimentos",
-    "imagePath": "/assistant-avatars/alimentos-fresh.svg",
-    "animation": "float"
-  },
-  {
     "id": "alimentos-baker",
     "label": "Panadero Artesanal",
     "rubro": "alimentos",
@@ -342,18 +264,11 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "animation": "pulse"
   },
   {
-    "id": "alimentos-spice",
-    "label": "Especias del Chef",
-    "rubro": "alimentos",
-    "imagePath": "/assistant-avatars/alimentos-spice.svg",
-    "animation": "float"
-  },
-  {
     "id": "alimentos-sushi",
     "label": "Sushi Master",
     "rubro": "alimentos",
     "imagePath": "/assistant-avatars/alimentos-sushi.svg",
-    "animation": "wave"
+    "animation": "float"
   },
   {
     "id": "alimentos-sweet",
@@ -377,18 +292,18 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "animation": "pulse"
   },
   {
-    "id": "salud-belleza-leaf",
-    "label": "Bienestar Natural",
-    "rubro": "salud-belleza",
-    "imagePath": "/assistant-avatars/salud-belleza-leaf.svg",
-    "animation": "float"
+    "id": "alimentos-spice",
+    "label": "Chef Especias",
+    "rubro": "alimentos",
+    "imagePath": "/assistant-avatars/alimentos-spice.svg",
+    "animation": "wave"
   },
   {
-    "id": "salud-belleza-glow",
-    "label": "Glow Beauty",
-    "rubro": "salud-belleza",
-    "imagePath": "/assistant-avatars/salud-belleza-glow.svg",
-    "animation": "glow"
+    "id": "alimentos-fresh",
+    "label": "Frescura Natural",
+    "rubro": "alimentos",
+    "imagePath": "/assistant-avatars/alimentos-fresh.svg",
+    "animation": "float"
   },
   {
     "id": "salud-belleza-spa",
@@ -405,13 +320,6 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "animation": "pulse"
   },
   {
-    "id": "salud-belleza-zen",
-    "label": "Zen Balance",
-    "rubro": "salud-belleza",
-    "imagePath": "/assistant-avatars/salud-belleza-zen.svg",
-    "animation": "float"
-  },
-  {
     "id": "salud-belleza-bloom",
     "label": "Bloom Care",
     "rubro": "salud-belleza",
@@ -419,32 +327,53 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "animation": "wave"
   },
   {
-    "id": "salud-belleza-radiance",
-    "label": "Radiance Pro",
-    "rubro": "salud-belleza",
-    "imagePath": "/assistant-avatars/salud-belleza-radiance.svg",
-    "animation": "glow"
-  },
-  {
     "id": "salud-belleza-care",
     "label": "Care Expert",
     "rubro": "salud-belleza",
     "imagePath": "/assistant-avatars/salud-belleza-care.svg",
-    "animation": "bob"
+    "animation": "float"
   },
   {
     "id": "salud-belleza-mint",
     "label": "Mint Fresh",
     "rubro": "salud-belleza",
     "imagePath": "/assistant-avatars/salud-belleza-mint.svg",
-    "animation": "pulse"
+    "animation": "bob"
   },
   {
     "id": "salud-belleza-pearl",
     "label": "Pearl Elegance",
     "rubro": "salud-belleza",
     "imagePath": "/assistant-avatars/salud-belleza-pearl.svg",
+    "animation": "glow"
+  },
+  {
+    "id": "salud-belleza-leaf",
+    "label": "Bienestar Natural",
+    "rubro": "salud-belleza",
+    "imagePath": "/assistant-avatars/salud-belleza-leaf.svg",
     "animation": "float"
+  },
+  {
+    "id": "salud-belleza-glow",
+    "label": "Glow Beauty",
+    "rubro": "salud-belleza",
+    "imagePath": "/assistant-avatars/salud-belleza-glow.svg",
+    "animation": "glow"
+  },
+  {
+    "id": "salud-belleza-zen",
+    "label": "Zen Balance",
+    "rubro": "salud-belleza",
+    "imagePath": "/assistant-avatars/salud-belleza-zen.svg",
+    "animation": "pulse"
+  },
+  {
+    "id": "salud-belleza-radiance",
+    "label": "Radiance Pro",
+    "rubro": "salud-belleza",
+    "imagePath": "/assistant-avatars/salud-belleza-radiance.svg",
+    "animation": "wave"
   },
   {
     "id": "papeleria-libreria-oficina-pen",
@@ -452,13 +381,6 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "rubro": "papeleria-libreria-oficina",
     "imagePath": "/assistant-avatars/papeleria-libreria-oficina-pen.svg",
     "animation": "wave"
-  },
-  {
-    "id": "papeleria-libreria-oficina-note",
-    "label": "Notas Útiles",
-    "rubro": "papeleria-libreria-oficina",
-    "imagePath": "/assistant-avatars/papeleria-libreria-oficina-note.svg",
-    "animation": "float"
   },
   {
     "id": "papeleria-libreria-oficina-book",
@@ -482,18 +404,11 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "animation": "glow"
   },
   {
-    "id": "papeleria-libreria-oficina-stamp",
-    "label": "Stamp Official",
-    "rubro": "papeleria-libreria-oficina",
-    "imagePath": "/assistant-avatars/papeleria-libreria-oficina-stamp.svg",
-    "animation": "float"
-  },
-  {
     "id": "papeleria-libreria-oficina-archive",
     "label": "Archive Keeper",
     "rubro": "papeleria-libreria-oficina",
     "imagePath": "/assistant-avatars/papeleria-libreria-oficina-archive.svg",
-    "animation": "bob"
+    "animation": "float"
   },
   {
     "id": "papeleria-libreria-oficina-pencil",
@@ -507,7 +422,7 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "label": "Folder Master",
     "rubro": "papeleria-libreria-oficina",
     "imagePath": "/assistant-avatars/papeleria-libreria-oficina-folder.svg",
-    "animation": "pulse"
+    "animation": "bob"
   },
   {
     "id": "papeleria-libreria-oficina-ink",
@@ -515,5 +430,19 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "rubro": "papeleria-libreria-oficina",
     "imagePath": "/assistant-avatars/papeleria-libreria-oficina-ink.svg",
     "animation": "glow"
+  },
+  {
+    "id": "papeleria-libreria-oficina-note",
+    "label": "Notas Útiles",
+    "rubro": "papeleria-libreria-oficina",
+    "imagePath": "/assistant-avatars/papeleria-libreria-oficina-note.svg",
+    "animation": "float"
+  },
+  {
+    "id": "papeleria-libreria-oficina-stamp",
+    "label": "Stamp Official",
+    "rubro": "papeleria-libreria-oficina",
+    "imagePath": "/assistant-avatars/papeleria-libreria-oficina-stamp.svg",
+    "animation": "pulse"
   }
 ];

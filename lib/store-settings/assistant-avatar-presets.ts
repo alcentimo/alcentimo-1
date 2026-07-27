@@ -19,24 +19,21 @@ const PRESET_BY_ID = new Map(
   ASSISTANT_AVATAR_PRESETS.map((preset) => [preset.id, preset]),
 );
 
-/** Mapeo de ids legacy (v1) a ids actuales por rubro. */
+/** Mapeo de ids legacy a ids actuales por rubro. */
 const LEGACY_PRESET_ID_MAP: Record<string, string> = {
-  "general-orbit": "general-orbit",
-  "general-spark": "general-spark",
-  "general-wave": "general-wave",
-  "tech-bot": "tecnologia-bot",
-  "tech-chip": "tecnologia-chip",
+  "tech-bot": "tecnologia-robbo",
+  "tech-chip": "tecnologia-chipster",
+  "tecnologia-bot": "tecnologia-robbo",
+  "tecnologia-chip": "tecnologia-chipster",
+  "tecnologia-drone": "tecnologia-drone",
+  "tecnologia-headset": "tecnologia-vr-buddy",
+  "tecnologia-android": "tecnologia-robbo",
   "anime-neo": "coleccionables-neo",
-  "anime-sakura": "coleccionables-sakura",
   "fashion-chic": "ropa-moda-chic",
-  "fashion-glam": "ropa-moda-glam",
   "food-chef": "alimentos-chef",
-  "food-fresh": "alimentos-fresh",
   "wellness-leaf": "salud-belleza-leaf",
-  "wellness-glow": "salud-belleza-glow",
   "office-pen": "papeleria-libreria-oficina-pen",
-  "office-note": "papeleria-libreria-oficina-note",
-  "collectibles-star": "coleccionables-star",
+  "collectibles-star": "coleccionables-hero",
   "collectibles-mask": "coleccionables-mask",
 };
 
@@ -58,20 +55,12 @@ export function getAssistantAvatarPreset(
   return resolvedId ? PRESET_BY_ID.get(resolvedId) : undefined;
 }
 
-function normalizeRubro(
-  storeRubro: string | null | undefined,
-): AssistantAvatarRubro | StoreRubro {
-  const rubro = normalizeStoreRubro(storeRubro ?? undefined);
-  if (rubro in ASSISTANT_AVATAR_RUBRO_LABELS) {
-    return rubro as StoreRubro;
-  }
-  return "general";
+function normalizeRubro(storeRubro: string | null | undefined): StoreRubro {
+  return normalizeStoreRubro(storeRubro ?? undefined);
 }
 
-export function getAssistantAvatarRubroLabel(
-  rubro: AssistantAvatarRubro,
-): string {
-  return ASSISTANT_AVATAR_RUBRO_LABELS[rubro] ?? ASSISTANT_AVATAR_RUBRO_LABELS.general;
+export function getAssistantAvatarRubroLabel(rubro: StoreRubro): string {
+  return ASSISTANT_AVATAR_RUBRO_LABELS[rubro];
 }
 
 export function getAssistantAvatarPresetsForRubro(
@@ -81,18 +70,13 @@ export function getAssistantAvatarPresetsForRubro(
   return ASSISTANT_AVATAR_PRESETS.filter((preset) => preset.rubro === rubro);
 }
 
-export function getGeneralAssistantAvatarPresets(): AssistantAvatarPreset[] {
-  return ASSISTANT_AVATAR_PRESETS.filter((preset) => preset.rubro === "general");
-}
-
 export interface AssistantAvatarGallerySections {
-  rubro: AssistantAvatarRubro | StoreRubro;
+  rubro: StoreRubro;
   rubroLabel: string;
-  generalPresets: AssistantAvatarPreset[];
   rubroPresets: AssistantAvatarPreset[];
 }
 
-/** Galería filtrada: solo general + rubro principal de la tienda. */
+/** Galería estricta: solo personajes del rubro activo de la tienda. */
 export function getAssistantAvatarGalleryForRubro(
   storeRubro: string | null | undefined,
 ): AssistantAvatarGallerySections {
@@ -101,17 +85,12 @@ export function getAssistantAvatarGalleryForRubro(
   return {
     rubro,
     rubroLabel: getAssistantAvatarRubroLabel(rubro),
-    generalPresets: getGeneralAssistantAvatarPresets(),
-    rubroPresets:
-      rubro === "general"
-        ? []
-        : getAssistantAvatarPresetsForRubro(rubro),
+    rubroPresets: getAssistantAvatarPresetsForRubro(rubro),
   };
 }
 
 export function getDefaultPresetForRubro(
   storeRubro: string | null | undefined,
-): AssistantAvatarPreset {
-  const gallery = getAssistantAvatarGalleryForRubro(storeRubro);
-  return gallery.rubroPresets[0] ?? gallery.generalPresets[0];
+): AssistantAvatarPreset | undefined {
+  return getAssistantAvatarPresetsForRubro(storeRubro)[0];
 }

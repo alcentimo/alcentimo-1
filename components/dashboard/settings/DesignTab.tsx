@@ -47,7 +47,10 @@ import {
   normalizePromoBannerDraft,
 } from "@/lib/store-settings/promo-banner";
 import { normalizeAssistantAvatarSettings } from "@/lib/store-settings/assistant-avatar";
-import { getAssistantAvatarPreset } from "@/lib/store-settings/assistant-avatar-presets";
+import {
+  getAssistantAvatarPreset,
+  getDefaultPresetForRubro,
+} from "@/lib/store-settings/assistant-avatar-presets";
 import { cn } from "@/lib/cn";
 import {
   DEFAULT_STORE_RUBRO,
@@ -398,17 +401,12 @@ export function DesignTab({
     design.assistantAvatar,
   );
   const assistantAvatarSummary =
-    assistantAvatarSettings.mode === "store-logo"
-      ? "Logo clásico"
-      : assistantAvatarSettings.mode === "custom"
-        ? "Personalizado"
-        : getAssistantAvatarPreset(assistantAvatarSettings.presetId ?? "")
-            ?.label ?? "Personaje";
-  const storeLogoUrl =
-    preview?.store.logo_url ??
-    preview?.store.pwa_icon_192_url ??
-    preview?.store.pwa_icon_512_url ??
-    null;
+    assistantAvatarSettings.mode === "custom"
+      ? "Personalizado"
+      : getAssistantAvatarPreset(assistantAvatarSettings.presetId ?? "")
+          ?.label ??
+        getDefaultPresetForRubro(storeRubro)?.label ??
+        "Personaje";
   const visibilitySummary =
     [
       design.visibility.showStock && "Stock",
@@ -534,7 +532,6 @@ export function DesignTab({
               <CatalogAssistantAvatarField
                 value={design.assistantAvatar}
                 storeRubro={storeRubro}
-                storeLogoUrl={storeLogoUrl}
                 disabled={isSaving && savingField === "assistantAvatar"}
                 onChange={setAssistantAvatar}
               />

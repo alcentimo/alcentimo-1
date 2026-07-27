@@ -8,8 +8,6 @@ const MANIFEST_PATH = path.join(
   "assistant-avatar-manifest.ts",
 );
 
-/** @typedef {'float' | 'wave' | 'glow' | 'pulse' | 'bob'} AnimationKind */
-
 const ANIMATIONS = /** @type {const} */ ([
   "float",
   "wave",
@@ -19,7 +17,6 @@ const ANIMATIONS = /** @type {const} */ ([
 ]);
 
 const RUBRO_LABELS = {
-  general: "General / neutro",
   tecnologia: "Tecnología y Electrónica",
   coleccionables: "Coleccionables y Cómics",
   "ropa-moda": "Ropa, Calzado y Moda",
@@ -28,194 +25,617 @@ const RUBRO_LABELS = {
   "papeleria-libreria-oficina": "Papelería, Librería y Oficina",
 };
 
-/** @type {Record<string, Array<{ slug: string; label: string; animation: AnimationKind; bg: [string, string]; accent: string; light: string; motif: string }>>} */
+/** Personajes tecnología — cuerpos completos, sin círculos planos. */
+const TECNOLOGIA = [
+  { slug: "robbo", label: "Robbo el Robot", animation: "bob", draw: drawRobbo },
+  { slug: "cctv", label: "Cámara Vigilante", animation: "wave", draw: drawCctv },
+  { slug: "nerd", label: "Nerd Techie", animation: "float", draw: drawNerd },
+  { slug: "drone", label: "Dron Amigo", animation: "bob", draw: drawDrone },
+  { slug: "chipster", label: "Chipster", animation: "glow", draw: drawChipster },
+  { slug: "laptop-guru", label: "Gurú Laptop", animation: "pulse", draw: drawLaptopGuru },
+  { slug: "vr-buddy", label: "VR Buddy", animation: "float", draw: drawVrBuddy },
+  { slug: "console-pal", label: "Control Gamer", animation: "wave", draw: drawConsolePal },
+  { slug: "satellite", label: "Satélite Soli", animation: "bob", draw: drawSatellite },
+  { slug: "wire-bot", label: "Bot Cableado", animation: "pulse", draw: drawWireBot },
+];
+
+const COLECCIONABLES = [
+  { slug: "neo", label: "Neo Anime", animation: "float", draw: (c) => drawPerson(c, "#fbcfe8", "#ec4899") },
+  { slug: "sakura", label: "Sakura Kawaii", animation: "glow", draw: (c) => drawPerson(c, "#fce7f3", "#f472b6", "sakura") },
+  { slug: "hero", label: "Héroe Manga", animation: "wave", draw: (c) => drawHero(c) },
+  { slug: "ninja", label: "Ninja Shadow", animation: "bob", draw: (c) => drawNinja(c) },
+  { slug: "wizard", label: "Mago Arcano", animation: "glow", draw: (c) => drawWizard(c) },
+  { slug: "mecha", label: "Mecha Pilot", animation: "pulse", draw: (c) => drawMecha(c) },
+  { slug: "chibi", label: "Chibi Star", animation: "float", draw: (c) => drawChibi(c) },
+  { slug: "dragon", label: "Dragon Keeper", animation: "bob", draw: (c) => drawDragon(c) },
+  { slug: "comic", label: "Comic Boom", animation: "wave", draw: (c) => drawComic(c) },
+  { slug: "mask", label: "Máscara Heroica", animation: "pulse", draw: (c) => drawMask(c) },
+];
+
+const ROPA_MODA = [
+  { slug: "chic", label: "Estilista Chic", animation: "float", draw: (c) => drawStylist(c, "#fbbf24", "#171717") },
+  { slug: "glam", label: "Glam Boutique", animation: "glow", draw: (c) => drawStylist(c, "#fbcfe8", "#be185d") },
+  { slug: "runway", label: "Runway Star", animation: "wave", draw: (c) => drawRunway(c) },
+  { slug: "vintage", label: "Vintage Soul", animation: "bob", draw: (c) => drawVintage(c) },
+  { slug: "street", label: "Street Trend", animation: "pulse", draw: (c) => drawStreet(c) },
+  { slug: "minimal", label: "Minimal Lux", animation: "float", draw: (c) => drawMinimal(c) },
+  { slug: "luxe", label: "Luxe Maison", animation: "glow", draw: (c) => drawLuxe(c) },
+  { slug: "boutique", label: "Boutique Pro", animation: "wave", draw: (c) => drawBoutique(c) },
+  { slug: "stylist", label: "Stylist Pro", animation: "bob", draw: (c) => drawStylist(c, "#f9a8d4", "#db2777") },
+  { slug: "trend", label: "Trend Setter", animation: "pulse", draw: (c) => drawTrend(c) },
+];
+
+const ALIMENTOS = [
+  { slug: "chef", label: "Chef Maestro", animation: "wave", draw: drawChef },
+  { slug: "baker", label: "Panadero Artesanal", animation: "bob", draw: drawBaker },
+  { slug: "barista", label: "Barista Pro", animation: "glow", draw: drawBarista },
+  { slug: "farm", label: "Granja Viva", animation: "pulse", draw: drawFarm },
+  { slug: "sushi", label: "Sushi Master", animation: "float", draw: drawSushi },
+  { slug: "sweet", label: "Dulce Tentación", animation: "glow", draw: drawSweet },
+  { slug: "grill", label: "Grill Expert", animation: "bob", draw: drawGrill },
+  { slug: "harvest", label: "Cosecha Dorada", animation: "pulse", draw: drawHarvest },
+  { slug: "spice", label: "Chef Especias", animation: "wave", draw: drawSpice },
+  { slug: "fresh", label: "Frescura Natural", animation: "float", draw: drawFresh },
+];
+
+const SALUD_BELLEZA = [
+  { slug: "spa", label: "Spa Serenity", animation: "bob", draw: drawSpa },
+  { slug: "serum", label: "Serum Lab", animation: "pulse", draw: drawSerum },
+  { slug: "bloom", label: "Bloom Care", animation: "wave", draw: drawBloom },
+  { slug: "care", label: "Care Expert", animation: "float", draw: drawCare },
+  { slug: "mint", label: "Mint Fresh", animation: "bob", draw: drawMint },
+  { slug: "pearl", label: "Pearl Elegance", animation: "glow", draw: drawPearl },
+  { slug: "leaf", label: "Bienestar Natural", animation: "float", draw: drawLeaf },
+  { slug: "glow", label: "Glow Beauty", animation: "glow", draw: drawGlowBeauty },
+  { slug: "zen", label: "Zen Balance", animation: "pulse", draw: drawZen },
+  { slug: "radiance", label: "Radiance Pro", animation: "wave", draw: drawRadiance },
+];
+
+const PAPELERIA = [
+  { slug: "pen", label: "Asistente de Oficina", animation: "wave", draw: drawPenPal },
+  { slug: "book", label: "Book Expert", animation: "bob", draw: drawBookworm },
+  { slug: "desk", label: "Desk Pro", animation: "pulse", draw: drawDeskPal },
+  { slug: "planner", label: "Planner Ace", animation: "glow", draw: drawPlanner },
+  { slug: "archive", label: "Archive Keeper", animation: "float", draw: drawArchive },
+  { slug: "pencil", label: "Pencil Sketch", animation: "wave", draw: drawPencilPal },
+  { slug: "folder", label: "Folder Master", animation: "bob", draw: drawFolderPal },
+  { slug: "ink", label: "Ink Studio", animation: "glow", draw: drawInkPal },
+  { slug: "note", label: "Notas Útiles", animation: "float", draw: drawNotePal },
+  { slug: "stamp", label: "Stamp Official", animation: "pulse", draw: drawStampPal },
+];
+
 const CATALOG = {
-  general: [
-    { slug: "orbit", label: "Orbita amigable", animation: "float", bg: ["#6366f1", "#4338ca"], accent: "#c7d2fe", light: "#eef2ff", motif: "orbit" },
-    { slug: "spark", label: "Chispa inteligente", animation: "glow", bg: ["#0d9488", "#0f766e"], accent: "#99f6e4", light: "#ecfdf5", motif: "spark" },
-    { slug: "wave", label: "Asistente clásico", animation: "wave", bg: ["#64748b", "#334155"], accent: "#e2e8f0", light: "#f8fafc", motif: "wave" },
-    { slug: "beacon", label: "Farol guía", animation: "pulse", bg: ["#f59e0b", "#d97706"], accent: "#fde68a", light: "#fffbeb", motif: "beacon" },
-    { slug: "compass", label: "Brújula experta", animation: "bob", bg: ["#0284c7", "#0369a1"], accent: "#bae6fd", light: "#f0f9ff", motif: "compass" },
-    { slug: "halo", label: "Aura confiable", animation: "glow", bg: ["#7c3aed", "#6d28d9"], accent: "#ddd6fe", light: "#f5f3ff", motif: "halo" },
-    { slug: "prism", label: "Prisma creativo", animation: "float", bg: ["#db2777", "#be185d"], accent: "#fbcfe8", light: "#fdf2f8", motif: "prism" },
-    { slug: "echo", label: "Eco amable", animation: "pulse", bg: ["#059669", "#047857"], accent: "#a7f3d0", light: "#ecfdf5", motif: "echo" },
-    { slug: "guide", label: "Guía experta", animation: "wave", bg: ["#4f46e5", "#3730a3"], accent: "#c7d2fe", light: "#eef2ff", motif: "guide" },
-    { slug: "pulse", label: "Pulso activo", animation: "bob", bg: ["#0891b2", "#0e7490"], accent: "#a5f3fc", light: "#ecfeff", motif: "pulse" },
-  ],
-  tecnologia: [
-    { slug: "bot", label: "Bot Nova", animation: "float", bg: ["#2563eb", "#1e3a8a"], accent: "#93c5fd", light: "#eff6ff", motif: "bot" },
-    { slug: "chip", label: "Chip Cuántico", animation: "glow", bg: ["#0891b2", "#155e75"], accent: "#67e8f9", light: "#ecfeff", motif: "chip" },
-    { slug: "drone", label: "Drone Scout", animation: "bob", bg: ["#475569", "#1e293b"], accent: "#cbd5e1", light: "#f8fafc", motif: "drone" },
-    { slug: "headset", label: "Headset Pro", animation: "wave", bg: ["#7c3aed", "#5b21b6"], accent: "#c4b5fd", light: "#f5f3ff", motif: "headset" },
-    { slug: "rocket", label: "Rocket Launch", animation: "pulse", bg: ["#dc2626", "#991b1b"], accent: "#fca5a5", light: "#fef2f2", motif: "rocket" },
-    { slug: "circuit", label: "Circuit Mind", animation: "glow", bg: ["#059669", "#065f46"], accent: "#6ee7b7", light: "#ecfdf5", motif: "circuit" },
-    { slug: "pixel", label: "Pixel Buddy", animation: "float", bg: ["#db2777", "#9d174d"], accent: "#f9a8d4", light: "#fdf2f8", motif: "pixel" },
-    { slug: "server", label: "Server Core", animation: "pulse", bg: ["#334155", "#0f172a"], accent: "#94a3b8", light: "#f1f5f9", motif: "server" },
-    { slug: "hologram", label: "Holo Guide", animation: "glow", bg: ["#06b6d4", "#0e7490"], accent: "#a5f3fc", light: "#ecfeff", motif: "hologram" },
-    { slug: "android", label: "Android Ace", animation: "wave", bg: ["#16a34a", "#166534"], accent: "#86efac", light: "#f0fdf4", motif: "android" },
-  ],
-  coleccionables: [
-    { slug: "neo", label: "Neo Anime", animation: "float", bg: ["#ec4899", "#be185d"], accent: "#fbcfe8", light: "#fdf2f8", motif: "anime" },
-    { slug: "sakura", label: "Sakura Kawaii", animation: "glow", bg: ["#f472b6", "#db2777"], accent: "#fce7f3", light: "#fdf2f8", motif: "sakura" },
-    { slug: "hero", label: "Héroe Manga", animation: "wave", bg: ["#ef4444", "#b91c1c"], accent: "#fecaca", light: "#fef2f2", motif: "hero" },
-    { slug: "ninja", label: "Ninja Shadow", animation: "bob", bg: ["#1e293b", "#020617"], accent: "#64748b", light: "#e2e8f0", motif: "ninja" },
-    { slug: "wizard", label: "Mago Arcano", animation: "glow", bg: ["#7c3aed", "#4c1d95"], accent: "#ddd6fe", light: "#f5f3ff", motif: "wizard" },
-    { slug: "mecha", label: "Mecha Pilot", animation: "pulse", bg: ["#2563eb", "#1d4ed8"], accent: "#93c5fd", light: "#eff6ff", motif: "mecha" },
-    { slug: "chibi", label: "Chibi Star", animation: "float", bg: ["#f59e0b", "#d97706"], accent: "#fde68a", light: "#fffbeb", motif: "chibi" },
-    { slug: "dragon", label: "Dragon Keeper", animation: "bob", bg: ["#059669", "#047857"], accent: "#6ee7b7", light: "#ecfdf5", motif: "dragon" },
-    { slug: "comic", label: "Comic Boom", animation: "wave", bg: ["#eab308", "#ca8a04"], accent: "#fef08a", light: "#fefce8", motif: "comic" },
-    { slug: "mask", label: "Máscara Heroica", animation: "pulse", bg: ["#4338ca", "#312e81"], accent: "#a5b4fc", light: "#eef2ff", motif: "mask" },
-  ],
-  "ropa-moda": [
-    { slug: "chic", label: "Estilista Chic", animation: "float", bg: ["#171717", "#404040"], accent: "#fbbf24", light: "#fef3c7", motif: "fashion" },
-    { slug: "glam", label: "Glam Boutique", animation: "glow", bg: ["#be185d", "#831843"], accent: "#fbcfe8", light: "#fdf2f8", motif: "glam" },
-    { slug: "runway", label: "Runway Star", animation: "wave", bg: ["#111827", "#030712"], accent: "#f472b6", light: "#fdf2f8", motif: "runway" },
-    { slug: "vintage", label: "Vintage Soul", animation: "bob", bg: ["#92400e", "#78350f"], accent: "#fcd34d", light: "#fffbeb", motif: "vintage" },
-    { slug: "street", label: "Street Trend", animation: "pulse", bg: ["#0891b2", "#0e7490"], accent: "#67e8f9", light: "#ecfeff", motif: "street" },
-    { slug: "minimal", label: "Minimal Lux", animation: "float", bg: ["#64748b", "#475569"], accent: "#f8fafc", light: "#ffffff", motif: "minimal" },
-    { slug: "luxe", label: "Luxe Maison", animation: "glow", bg: ["#7c2d12", "#431407"], accent: "#fdba74", light: "#fff7ed", motif: "luxe" },
-    { slug: "boutique", label: "Boutique Pro", animation: "wave", bg: ["#9333ea", "#6b21a8"], accent: "#e9d5ff", light: "#faf5ff", motif: "boutique" },
-    { slug: "stylist", label: "Stylist Pro", animation: "bob", bg: ["#db2777", "#9d174d"], accent: "#f9a8d4", light: "#fdf2f8", motif: "stylist" },
-    { slug: "trend", label: "Trend Setter", animation: "pulse", bg: ["#0ea5e9", "#0369a1"], accent: "#bae6fd", light: "#f0f9ff", motif: "trend" },
-  ],
-  alimentos: [
-    { slug: "chef", label: "Chef Maestro", animation: "wave", bg: ["#ea580c", "#9a3412"], accent: "#fed7aa", light: "#fff7ed", motif: "chef" },
-    { slug: "fresh", label: "Frescura Natural", animation: "float", bg: ["#16a34a", "#166534"], accent: "#bbf7d0", light: "#f0fdf4", motif: "fresh" },
-    { slug: "baker", label: "Panadero Artesanal", animation: "bob", bg: ["#d97706", "#92400e"], accent: "#fde68a", light: "#fffbeb", motif: "baker" },
-    { slug: "barista", label: "Barista Pro", animation: "glow", bg: ["#78350f", "#451a03"], accent: "#fdba74", light: "#fff7ed", motif: "barista" },
-    { slug: "farm", label: "Granja Viva", animation: "pulse", bg: ["#65a30d", "#3f6212"], accent: "#d9f99d", light: "#f7fee7", motif: "farm" },
-    { slug: "spice", label: "Especias del Chef", animation: "float", bg: ["#dc2626", "#991b1b"], accent: "#fca5a5", light: "#fef2f2", motif: "spice" },
-    { slug: "sushi", label: "Sushi Master", animation: "wave", bg: ["#0f766e", "#134e4a"], accent: "#99f6e4", light: "#ecfdf5", motif: "sushi" },
-    { slug: "sweet", label: "Dulce Tentación", animation: "glow", bg: ["#ec4899", "#be185d"], accent: "#fbcfe8", light: "#fdf2f8", motif: "sweet" },
-    { slug: "grill", label: "Grill Expert", animation: "bob", bg: ["#b45309", "#78350f"], accent: "#fcd34d", light: "#fffbeb", motif: "grill" },
-    { slug: "harvest", label: "Cosecha Dorada", animation: "pulse", bg: ["#ca8a04", "#854d0e"], accent: "#fef08a", light: "#fefce8", motif: "harvest" },
-  ],
-  "salud-belleza": [
-    { slug: "leaf", label: "Bienestar Natural", animation: "float", bg: ["#059669", "#047857"], accent: "#a7f3d0", light: "#ecfdf5", motif: "leaf" },
-    { slug: "glow", label: "Glow Beauty", animation: "glow", bg: ["#7c3aed", "#6d28d9"], accent: "#ddd6fe", light: "#f5f3ff", motif: "glowFace" },
-    { slug: "spa", label: "Spa Serenity", animation: "bob", bg: ["#14b8a6", "#0f766e"], accent: "#99f6e4", light: "#ecfdf5", motif: "spa" },
-    { slug: "serum", label: "Serum Lab", animation: "pulse", bg: ["#2563eb", "#1d4ed8"], accent: "#93c5fd", light: "#eff6ff", motif: "serum" },
-    { slug: "zen", label: "Zen Balance", animation: "float", bg: ["#64748b", "#334155"], accent: "#e2e8f0", light: "#f8fafc", motif: "zen" },
-    { slug: "bloom", label: "Bloom Care", animation: "wave", bg: ["#ec4899", "#be185d"], accent: "#fbcfe8", light: "#fdf2f8", motif: "bloom" },
-    { slug: "radiance", label: "Radiance Pro", animation: "glow", bg: ["#f59e0b", "#d97706"], accent: "#fde68a", light: "#fffbeb", motif: "radiance" },
-    { slug: "care", label: "Care Expert", animation: "bob", bg: ["#0891b2", "#155e75"], accent: "#a5f3fc", light: "#ecfeff", motif: "care" },
-    { slug: "mint", label: "Mint Fresh", animation: "pulse", bg: ["#10b981", "#059669"], accent: "#6ee7b7", light: "#ecfdf5", motif: "mint" },
-    { slug: "pearl", label: "Pearl Elegance", animation: "float", bg: ["#fda4af", "#fb7185"], accent: "#ffe4e6", light: "#fff1f2", motif: "pearl" },
-  ],
-  "papeleria-libreria-oficina": [
-    { slug: "pen", label: "Asistente de Oficina", animation: "wave", bg: ["#1e40af", "#1e3a8a"], accent: "#bfdbfe", light: "#eff6ff", motif: "pen" },
-    { slug: "note", label: "Notas Útiles", animation: "float", bg: ["#ca8a04", "#a16207"], accent: "#fef08a", light: "#fefce8", motif: "note" },
-    { slug: "book", label: "Book Expert", animation: "bob", bg: ["#7c2d12", "#431407"], accent: "#fdba74", light: "#fff7ed", motif: "book" },
-    { slug: "desk", label: "Desk Pro", animation: "pulse", bg: ["#475569", "#1e293b"], accent: "#cbd5e1", light: "#f8fafc", motif: "desk" },
-    { slug: "planner", label: "Planner Ace", animation: "glow", bg: ["#059669", "#047857"], accent: "#6ee7b7", light: "#ecfdf5", motif: "planner" },
-    { slug: "stamp", label: "Stamp Official", animation: "float", bg: ["#dc2626", "#991b1b"], accent: "#fca5a5", light: "#fef2f2", motif: "stamp" },
-    { slug: "archive", label: "Archive Keeper", animation: "bob", bg: ["#6366f1", "#4338ca"], accent: "#c7d2fe", light: "#eef2ff", motif: "archive" },
-    { slug: "pencil", label: "Pencil Sketch", animation: "wave", bg: ["#eab308", "#ca8a04"], accent: "#fef08a", light: "#fefce8", motif: "pencil" },
-    { slug: "folder", label: "Folder Master", animation: "pulse", bg: ["#0284c7", "#0369a1"], accent: "#bae6fd", light: "#f0f9ff", motif: "folder" },
-    { slug: "ink", label: "Ink Studio", animation: "glow", bg: ["#312e81", "#1e1b4b"], accent: "#a5b4fc", light: "#eef2ff", motif: "ink" },
-  ],
+  tecnologia: TECNOLOGIA,
+  coleccionables: COLECCIONABLES,
+  "ropa-moda": ROPA_MODA,
+  alimentos: ALIMENTOS,
+  "salud-belleza": SALUD_BELLEZA,
+  "papeleria-libreria-oficina": PAPELERIA,
 };
 
-function sphere(bg, light) {
+const COLORS = {
+  primary: "#2563eb",
+  primaryDark: "#1e3a8a",
+  accent: "#93c5fd",
+  light: "#eff6ff",
+  skin: "#fcd9b6",
+  skinShadow: "#e8b88a",
+  dark: "#1e293b",
+  white: "#ffffff",
+};
+
+function defs() {
+  return `<defs>
+    <filter id="charShadow" x="-15%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#0f172a" flood-opacity="0.22"/>
+    </filter>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e2e8f0" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#cbd5e1" stop-opacity="0.35"/>
+    </linearGradient>
+  </defs>`;
+}
+
+function wrapCharacter(content) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 148" role="img" aria-hidden="true">${defs()}<ellipse cx="64" cy="138" rx="34" ry="6" fill="url(#floor)"/><g filter="url(#charShadow)">${content}</g></svg>`;
+}
+
+function drawRobbo(c) {
   return `
-    <defs>
-      <radialGradient id="sphere" cx="35%" cy="28%" r="68%">
-        <stop offset="0%" stop-color="${light}"/>
-        <stop offset="45%" stop-color="${bg[0]}"/>
-        <stop offset="100%" stop-color="${bg[1]}"/>
-      </radialGradient>
-      <filter id="depth" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.28"/>
-      </filter>
-      <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
-        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-      </linearGradient>
-    </defs>
-    <circle cx="64" cy="64" r="58" fill="url(#sphere)" filter="url(#depth)"/>
-    <ellipse cx="48" cy="42" rx="22" ry="14" fill="url(#shine)" opacity="0.75"/>
+    <rect x="46" y="28" width="36" height="28" rx="10" fill="${c.primary}"/>
+    <rect x="52" y="36" width="10" height="10" rx="3" fill="${c.light}"/>
+    <rect x="66" y="36" width="10" height="10" rx="3" fill="${c.light}"/>
+    <circle cx="57" cy="41" r="2.5" fill="${c.dark}"/>
+    <circle cx="71" cy="41" r="2.5" fill="${c.dark}"/>
+    <rect x="58" y="52" width="12" height="5" rx="2" fill="${c.accent}"/>
+    <rect x="58" y="18" width="12" height="12" rx="4" fill="${c.accent}"/>
+    <rect x="42" y="58" width="44" height="36" rx="12" fill="${c.primaryDark}"/>
+    <circle cx="64" cy="74" r="8" fill="${c.accent}"/>
+    <rect x="28" y="62" width="12" height="28" rx="6" fill="${c.primary}"/>
+    <rect x="88" y="62" width="12" height="28" rx="6" fill="${c.primary}"/>
+    <rect x="24" y="86" width="16" height="10" rx="5" fill="${c.accent}"/>
+    <rect x="88" y="86" width="16" height="10" rx="5" fill="${c.accent}"/>
+    <rect x="50" y="94" width="12" height="28" rx="6" fill="${c.primary}"/>
+    <rect x="66" y="94" width="12" height="28" rx="6" fill="${c.primary}"/>
+    <rect x="46" y="118" width="16" height="8" rx="4" fill="${c.dark}"/>
+    <rect x="66" y="118" width="16" height="8" rx="4" fill="${c.dark}"/>
   `;
 }
 
-function motif(type, accent, light) {
-  const shapes = {
-    orbit: `<circle cx="64" cy="64" r="34" fill="none" stroke="${accent}" stroke-width="3.5" opacity="0.7"/><circle cx="64" cy="64" r="22" fill="${accent}" opacity="0.22"/><circle cx="64" cy="30" r="7" fill="${light}"/><ellipse cx="64" cy="74" rx="18" ry="13" fill="${accent}" opacity="0.35"/>`,
-    spark: `<path d="M64 22 L70 52 L100 52 L74 70 L82 100 L64 82 L46 100 L54 70 L28 52 L58 52 Z" fill="${accent}"/><circle cx="64" cy="64" r="12" fill="${light}" opacity="0.35"/>`,
-    wave: `<circle cx="48" cy="54" r="8" fill="${light}"/><circle cx="80" cy="54" r="8" fill="${light}"/><path d="M34 78 Q50 60 64 78 T94 78" fill="none" stroke="${accent}" stroke-width="5" stroke-linecap="round"/><path d="M52 88 Q64 96 76 88" fill="none" stroke="${light}" stroke-width="4" stroke-linecap="round"/>`,
-    beacon: `<rect x="56" y="34" width="16" height="34" rx="8" fill="${light}"/><path d="M48 68 H80 L74 92 H54 Z" fill="${accent}"/><circle cx="64" cy="46" r="8" fill="${accent}"/>`,
-    compass: `<circle cx="64" cy="64" r="24" fill="${accent}" opacity="0.35"/><path d="M64 40 L72 72 L64 64 L56 72 Z" fill="${light}"/><circle cx="64" cy="64" r="5" fill="${light}"/>`,
-    halo: `<circle cx="64" cy="64" r="28" fill="${accent}" opacity="0.25"/><circle cx="64" cy="64" r="18" fill="${light}" opacity="0.9"/><circle cx="64" cy="64" r="8" fill="${accent}"/>`,
-    prism: `<path d="M64 34 L86 78 H42 Z" fill="${accent}"/><path d="M64 34 L74 78 H54 Z" fill="${light}" opacity="0.55"/>`,
-    echo: `<circle cx="64" cy="64" r="10" fill="${light}"/><circle cx="64" cy="64" r="18" fill="none" stroke="${accent}" stroke-width="3" opacity="0.8"/><circle cx="64" cy="64" r="28" fill="none" stroke="${accent}" stroke-width="2" opacity="0.45"/>`,
-    guide: `<path d="M64 36 L78 88 H50 Z" fill="${accent}"/><circle cx="64" cy="50" r="10" fill="${light}"/>`,
-    pulse: `<circle cx="64" cy="64" r="14" fill="${light}"/><path d="M40 64 H52 L58 48 L70 80 L76 64 H88" fill="none" stroke="${accent}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`,
-    bot: `<rect x="38" y="44" width="52" height="42" rx="14" fill="${accent}" opacity="0.45"/><rect x="46" y="52" width="12" height="12" rx="3" fill="${light}"/><rect x="70" y="52" width="12" height="12" rx="3" fill="${light}"/><rect x="52" y="74" width="24" height="6" rx="3" fill="${light}"/><rect x="58" y="32" width="12" height="14" rx="4" fill="${accent}"/>`,
-    chip: `<rect x="42" y="42" width="44" height="44" rx="8" fill="${accent}" opacity="0.4"/><rect x="54" y="54" width="20" height="20" rx="4" fill="${light}"/><path d="M64 42 V34 M64 94 V86 M42 64 H34 M94 64 H86" stroke="${accent}" stroke-width="3" stroke-linecap="round"/>`,
-    drone: `<ellipse cx="64" cy="68" rx="24" ry="10" fill="${accent}"/><circle cx="64" cy="58" r="12" fill="${light}"/><path d="M34 58 H48 M80 58 H94 M34 74 H48 M80 74 H94" stroke="${accent}" stroke-width="4" stroke-linecap="round"/>`,
-    headset: `<path d="M38 62 C38 46 48 38 64 38 C80 38 90 46 90 62 V74 H38 Z" fill="${accent}" opacity="0.45"/><rect x="34" y="58" width="12" height="20" rx="6" fill="${light}"/><rect x="82" y="58" width="12" height="20" rx="6" fill="${light}"/>`,
-    rocket: `<path d="M64 30 C72 46 76 62 64 92 C52 62 56 46 64 30Z" fill="${accent}"/><circle cx="64" cy="56" r="8" fill="${light}"/><path d="M52 78 L48 92 M76 78 L80 92" stroke="${accent}" stroke-width="4" stroke-linecap="round"/>`,
-    circuit: `<path d="M40 64 H56 L64 48 L72 64 H88 M64 48 V34 M64 80 V94" fill="none" stroke="${accent}" stroke-width="4" stroke-linecap="round"/><circle cx="40" cy="64" r="5" fill="${light}"/><circle cx="88" cy="64" r="5" fill="${light}"/>`,
-    pixel: `<rect x="44" y="44" width="16" height="16" fill="${light}"/><rect x="68" y="44" width="16" height="16" fill="${light}"/><rect x="52" y="68" width="24" height="12" fill="${accent}"/>`,
-    server: `<rect x="42" y="38" width="44" height="52" rx="8" fill="${accent}" opacity="0.45"/><rect x="50" y="48" width="28" height="8" rx="2" fill="${light}"/><rect x="50" y="62" width="28" height="8" rx="2" fill="${light}"/><circle cx="72" cy="52" r="2" fill="${accent}"/><circle cx="72" cy="66" r="2" fill="${accent}"/>`,
-    hologram: `<polygon points="64,34 88,78 40,78" fill="${accent}" opacity="0.35"/><polygon points="64,42 80,74 48,74" fill="${light}" opacity="0.75"/>`,
-    android: `<rect x="44" y="42" width="40" height="46" rx="18" fill="${accent}" opacity="0.45"/><circle cx="56" cy="58" r="4" fill="${light}"/><circle cx="72" cy="58" r="4" fill="${light}"/><path d="M58 74 Q64 80 70 74" fill="none" stroke="${light}" stroke-width="3" stroke-linecap="round"/>`,
-    anime: `<ellipse cx="64" cy="66" rx="24" ry="26" fill="${accent}" opacity="0.35"/><ellipse cx="54" cy="62" rx="7" ry="9" fill="${light}"/><ellipse cx="74" cy="62" rx="7" ry="9" fill="${light}"/><circle cx="54" cy="64" r="3" fill="#1e293b"/><circle cx="74" cy="64" r="3" fill="#1e293b"/>`,
-    sakura: `<circle cx="64" cy="64" r="10" fill="${light}"/><circle cx="64" cy="38" r="9" fill="${accent}"/><circle cx="84" cy="52" r="9" fill="${accent}"/><circle cx="78" cy="78" r="9" fill="${accent}"/><circle cx="50" cy="78" r="9" fill="${accent}"/><circle cx="44" cy="52" r="9" fill="${accent}"/>`,
-    hero: `<path d="M64 34 L82 52 L74 92 H54 L46 52 Z" fill="${accent}"/><circle cx="64" cy="48" r="9" fill="${light}"/>`,
-    ninja: `<rect x="40" y="48" width="48" height="28" rx="14" fill="${accent}"/><rect x="48" y="56" width="10" height="4" fill="${light}"/><rect x="70" y="56" width="10" height="4" fill="${light}"/>`,
-    wizard: `<path d="M48 72 Q64 34 80 72 Z" fill="${accent}"/><rect x="50" y="72" width="28" height="16" rx="4" fill="${light}"/><circle cx="64" cy="64" r="6" fill="${light}"/>`,
-    mecha: `<rect x="46" y="44" width="36" height="34" rx="6" fill="${accent}"/><rect x="40" y="52" width="10" height="18" rx="3" fill="${light}"/><rect x="78" y="52" width="10" height="18" rx="3" fill="${light}"/><rect x="54" y="78" width="8" height="12" fill="${light}"/><rect x="66" y="78" width="8" height="12" fill="${light}"/>`,
-    chibi: `<circle cx="64" cy="58" r="20" fill="${accent}"/><ellipse cx="64" cy="84" rx="18" ry="12" fill="${light}"/><circle cx="56" cy="56" r="3" fill="#1e293b"/><circle cx="72" cy="56" r="3" fill="#1e293b"/>`,
-    dragon: `<path d="M44 72 Q64 38 84 72 Q64 88 44 72Z" fill="${accent}"/><circle cx="56" cy="62" r="4" fill="${light}"/><path d="M72 58 L84 48" stroke="${light}" stroke-width="4" stroke-linecap="round"/>`,
-    comic: `<path d="M36 44 H92 V84 H36 Z" fill="${light}"/><path d="M44 56 H84 M44 68 H76" stroke="${accent}" stroke-width="4" stroke-linecap="round"/><circle cx="78" cy="48" r="8" fill="${accent}"/>`,
-    mask: `<path d="M38 58 C38 42 48 34 64 34 C80 34 90 42 90 58 C90 74 80 92 64 92 C48 92 38 74 38 58Z" fill="${accent}" opacity="0.45"/><ellipse cx="52" cy="58" rx="7" ry="9" fill="${light}"/><ellipse cx="76" cy="58" rx="7" ry="9" fill="${light}"/>`,
-    fashion: `<path d="M64 32 L82 50 L74 94 H54 L46 50 Z" fill="${accent}"/><circle cx="64" cy="44" r="9" fill="${light}"/>`,
-    glam: `<ellipse cx="64" cy="60" rx="22" ry="26" fill="${accent}" opacity="0.55"/><path d="M42 46 Q64 22 86 46" fill="none" stroke="${light}" stroke-width="5" stroke-linecap="round"/>`,
-    runway: `<path d="M52 92 L64 36 L76 92 Z" fill="${accent}"/><ellipse cx="64" cy="44" rx="10" ry="8" fill="${light}"/>`,
-    vintage: `<circle cx="64" cy="58" r="18" fill="${accent}"/><rect x="48" y="76" width="32" height="14" rx="4" fill="${light}"/><path d="M48 48 Q64 34 80 48" fill="none" stroke="${light}" stroke-width="4"/>`,
-    street: `<rect x="46" y="48" width="36" height="34" rx="10" fill="${accent}"/><path d="M52 58 H76 M52 68 H70" stroke="${light}" stroke-width="4" stroke-linecap="round"/>`,
-    minimal: `<circle cx="64" cy="58" r="16" fill="${light}"/><rect x="52" y="76" width="24" height="10" rx="5" fill="${accent}"/>`,
-    luxe: `<path d="M48 78 Q64 36 80 78 Z" fill="${accent}"/><rect x="54" y="78" width="20" height="10" fill="${light}"/>`,
-    boutique: `<rect x="44" y="44" width="40" height="40" rx="12" fill="${accent}"/><path d="M52 58 H76 M52 68 H72" stroke="${light}" stroke-width="3" stroke-linecap="round"/>`,
-    stylist: `<circle cx="64" cy="54" r="14" fill="${light}"/><path d="M48 78 Q64 66 80 78" fill="${accent}"/>`,
-    trend: `<path d="M40 72 L56 48 L64 64 L72 44 L88 72 Z" fill="${accent}"/><circle cx="64" cy="54" r="8" fill="${light}"/>`,
-    chef: `<ellipse cx="64" cy="88" rx="26" ry="8" fill="${accent}" opacity="0.35"/><path d="M46 72 Q64 40 82 72 L82 88 H46 Z" fill="${light}"/><ellipse cx="64" cy="48" rx="20" ry="14" fill="${accent}"/>`,
-    fresh: `<circle cx="64" cy="64" r="24" fill="${accent}" opacity="0.35"/><path d="M64 38 C72 48 78 58 64 90 C50 58 56 48 64 38Z" fill="${accent}"/>`,
-    baker: `<ellipse cx="64" cy="72" rx="22" ry="14" fill="${accent}"/><path d="M42 58 Q64 38 86 58" fill="${light}"/>`,
-    barista: `<rect x="48" y="52" width="32" height="28" rx="6" fill="${accent}"/><path d="M80 58 H90 V68 H80" fill="none" stroke="${light}" stroke-width="4"/>`,
-    farm: `<circle cx="64" cy="64" r="20" fill="${accent}"/><path d="M64 44 Q58 30 48 34" fill="none" stroke="${light}" stroke-width="4" stroke-linecap="round"/>`,
-    spice: `<circle cx="64" cy="64" r="18" fill="${accent}"/><path d="M64 46 V34 M52 52 L44 44 M76 52 L84 44" stroke="${light}" stroke-width="3" stroke-linecap="round"/>`,
-    sushi: `<ellipse cx="64" cy="68" rx="24" ry="12" fill="${accent}"/><circle cx="64" cy="54" r="12" fill="${light}"/>`,
-    sweet: `<circle cx="64" cy="64" r="20" fill="${accent}"/><path d="M48 72 Q64 84 80 72" fill="${light}"/>`,
-    grill: `<rect x="42" y="56" width="44" height="22" rx="6" fill="${accent}"/><path d="M48 56 V44 H80 V56" fill="none" stroke="${light}" stroke-width="4"/>`,
-    harvest: `<path d="M64 36 L84 72 H44 Z" fill="${accent}"/><circle cx="64" cy="58" r="8" fill="${light}"/>`,
-    leaf: `<path d="M64 92 C40 72 40 48 64 36 C88 48 88 72 64 92Z" fill="${accent}"/><path d="M64 92 V48" stroke="${light}" stroke-width="3" stroke-linecap="round"/>`,
-    glowFace: `<circle cx="64" cy="64" r="24" fill="${accent}" opacity="0.35"/><circle cx="64" cy="64" r="14" fill="${light}"/><path d="M64 24 V34 M64 94 V84 M24 64 H34 M94 64 H84" stroke="${accent}" stroke-width="3" stroke-linecap="round"/>`,
-    spa: `<path d="M40 72 Q64 40 88 72" fill="none" stroke="${accent}" stroke-width="6" stroke-linecap="round"/><circle cx="64" cy="54" r="10" fill="${light}"/>`,
-    serum: `<rect x="56" y="38" width="16" height="44" rx="8" fill="${light}"/><rect x="58" y="52" width="12" height="16" rx="4" fill="${accent}"/>`,
-    zen: `<circle cx="64" cy="64" r="20" fill="${accent}" opacity="0.35"/><path d="M48 64 H80 M64 48 V80" stroke="${light}" stroke-width="4" stroke-linecap="round"/>`,
-    bloom: `<circle cx="64" cy="64" r="12" fill="${light}"/><circle cx="64" cy="42" r="8" fill="${accent}"/><circle cx="82" cy="58" r="8" fill="${accent}"/><circle cx="46" cy="58" r="8" fill="${accent}"/>`,
-    radiance: `<circle cx="64" cy="64" r="18" fill="${light}"/><path d="M64 34 L68 54 L88 54 L72 66 L78 86 L64 74 L50 86 L56 66 L40 54 L60 54 Z" fill="${accent}" opacity="0.75"/>`,
-    care: `<path d="M64 88 C48 72 48 52 64 40 C80 52 80 72 64 88Z" fill="${accent}"/><circle cx="64" cy="58" r="8" fill="${light}"/>`,
-    mint: `<circle cx="64" cy="64" r="22" fill="${accent}"/><path d="M64 42 Q72 52 64 86 C56 52 56 42 64 42Z" fill="${light}"/>`,
-    pearl: `<circle cx="64" cy="64" r="18" fill="${light}"/><circle cx="64" cy="64" r="10" fill="${accent}" opacity="0.65"/>`,
-    pen: `<rect x="50" y="36" width="24" height="54" rx="6" fill="${light}" transform="rotate(16 64 64)"/><path d="M60 86 L68 40" stroke="${accent}" stroke-width="4" stroke-linecap="round" transform="rotate(16 64 64)"/>`,
-    note: `<rect x="40" y="36" width="48" height="56" rx="6" fill="${light}"/><path d="M50 54 H78 M50 66 H74 M50 78 H64" stroke="${accent}" stroke-width="4" stroke-linecap="round"/>`,
-    book: `<rect x="44" y="40" width="40" height="48" rx="4" fill="${accent}"/><path d="M64 40 V88" stroke="${light}" stroke-width="3"/><path d="M52 52 H60 M68 52 H76" stroke="${light}" stroke-width="3" stroke-linecap="round"/>`,
-    desk: `<rect x="36" y="58" width="56" height="18" rx="4" fill="${accent}"/><rect x="48" y="44" width="32" height="18" rx="3" fill="${light}"/>`,
-    planner: `<rect x="42" y="38" width="44" height="52" rx="6" fill="${light}"/><path d="M50 54 H78 M50 66 H74 M50 78 H68" stroke="${accent}" stroke-width="3" stroke-linecap="round"/>`,
-    stamp: `<rect x="44" y="44" width="40" height="40" rx="8" fill="${accent}"/><path d="M52 58 H76 M52 68 H72" stroke="${light}" stroke-width="4" stroke-linecap="round"/>`,
-    archive: `<rect x="40" y="42" width="48" height="44" rx="6" fill="${accent}"/><path d="M48 54 H80 M48 66 H76" stroke="${light}" stroke-width="3" stroke-linecap="round"/>`,
-    pencil: `<path d="M48 84 L72 40" stroke="${accent}" stroke-width="8" stroke-linecap="round"/><circle cx="76" cy="36" r="6" fill="${light}"/>`,
-    folder: `<path d="M36 48 H56 L64 56 H92 V84 H36 Z" fill="${accent}"/><rect x="44" y="62" width="36" height="8" rx="2" fill="${light}"/>`,
-    ink: `<ellipse cx="64" cy="72" rx="18" ry="10" fill="${accent}"/><rect x="58" y="40" width="12" height="28" rx="4" fill="${light}"/>`,
-  };
+function drawCctv(c) {
+  return `
+    <ellipse cx="64" cy="52" rx="30" ry="22" fill="${c.dark}"/>
+    <ellipse cx="64" cy="50" rx="22" ry="16" fill="#334155"/>
+    <circle cx="64" cy="50" r="12" fill="${c.primary}"/>
+    <circle cx="64" cy="50" r="7" fill="${c.light}"/>
+    <circle cx="64" cy="50" r="4" fill="${c.primaryDark}"/>
+    <rect x="58" y="68" width="12" height="8" rx="3" fill="${c.dark}"/>
+    <path d="M52 76 L52 108" stroke="${c.dark}" stroke-width="5" stroke-linecap="round"/>
+    <path d="M76 76 L76 108" stroke="${c.dark}" stroke-width="5" stroke-linecap="round"/>
+    <ellipse cx="52" cy="112" rx="10" ry="5" fill="${c.primaryDark}"/>
+    <ellipse cx="76" cy="112" rx="10" ry="5" fill="${c.primaryDark}"/>
+    <circle cx="48" cy="44" r="3" fill="#ef4444"/>
+    <path d="M38 58 L28 48 M90 58 L100 48" stroke="${c.accent}" stroke-width="3" stroke-linecap="round"/>
+  `;
+}
 
-  return shapes[type] ?? shapes.orbit;
+function drawNerd(c) {
+  return `
+    <ellipse cx="64" cy="42" rx="22" ry="24" fill="${c.skin}"/>
+    <path d="M38 44 Q64 18 90 44" fill="${c.dark}"/>
+    <rect x="42" y="40" width="18" height="12" rx="4" fill="none" stroke="${c.dark}" stroke-width="3"/>
+    <rect x="68" y="40" width="18" height="12" rx="4" fill="none" stroke="${c.dark}" stroke-width="3"/>
+    <path d="M60 46 H68" stroke="${c.dark}" stroke-width="2"/>
+    <circle cx="51" cy="46" r="4" fill="${c.white}"/>
+    <circle cx="77" cy="46" r="4" fill="${c.white}"/>
+    <circle cx="51" cy="46" r="2" fill="${c.dark}"/>
+    <circle cx="77" cy="46" r="2" fill="${c.dark}"/>
+    <path d="M56 58 Q64 64 72 58" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round"/>
+    <rect x="44" y="66" width="40" height="34" rx="10" fill="${c.primary}"/>
+    <path d="M44 76 H84" stroke="${c.primaryDark}" stroke-width="2"/>
+    <rect x="54" y="72" width="20" height="4" rx="1" fill="${c.accent}"/>
+    <rect x="36" y="70" width="10" height="24" rx="4" fill="${c.primary}"/>
+    <rect x="82" y="70" width="10" height="24" rx="4" fill="${c.primary}"/>
+    <rect x="48" y="100" width="14" height="26" rx="5" fill="#1e3a8a"/>
+    <rect x="66" y="100" width="14" height="26" rx="5" fill="#1e3a8a"/>
+    <rect x="44" y="122" width="18" height="8" rx="4" fill="${c.dark}"/>
+    <rect x="66" y="122" width="18" height="8" rx="4" fill="${c.dark}"/>
+  `;
+}
+
+function drawDrone(c) {
+  return `
+    <ellipse cx="64" cy="72" rx="26" ry="14" fill="${c.primaryDark}"/>
+    <ellipse cx="64" cy="68" rx="18" ry="10" fill="${c.primary}"/>
+    <circle cx="58" cy="66" r="3" fill="${c.light}"/>
+    <circle cx="70" cy="66" r="3" fill="${c.light}"/>
+    <path d="M60 74 Q64 78 68 74" fill="none" stroke="${c.light}" stroke-width="2" stroke-linecap="round"/>
+    <line x1="38" y1="58" x2="52" y2="66" stroke="${c.dark}" stroke-width="3" stroke-linecap="round"/>
+    <line x1="90" y1="58" x2="76" y2="66" stroke="${c.dark}" stroke-width="3" stroke-linecap="round"/>
+    <line x1="38" y1="82" x2="52" y2="74" stroke="${c.dark}" stroke-width="3" stroke-linecap="round"/>
+    <line x1="90" y1="82" x2="76" y2="74" stroke="${c.dark}" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="32" cy="56" rx="12" ry="3" fill="${c.accent}" opacity="0.8"/>
+    <ellipse cx="96" cy="56" rx="12" ry="3" fill="${c.accent}" opacity="0.8"/>
+    <ellipse cx="32" cy="84" rx="12" ry="3" fill="${c.accent}" opacity="0.8"/>
+    <ellipse cx="96" cy="84" rx="12" ry="3" fill="${c.accent}" opacity="0.8"/>
+    <path d="M58 86 L50 108 M70 86 L78 108" stroke="${c.primary}" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="50" cy="110" r="5" fill="${c.accent}"/>
+    <circle cx="78" cy="110" r="5" fill="${c.accent}"/>
+  `;
+}
+
+function drawChipster(c) {
+  return `
+    <rect x="44" y="48" width="40" height="40" rx="8" fill="${c.primary}"/>
+    <rect x="52" y="56" width="24" height="24" rx="4" fill="${c.light}"/>
+    <path d="M64 48 V36 M64 88 V100 M44 68 H32 M84 68 H96 M48 52 L40 44 M80 52 L88 44 M48 84 L40 92 M80 84 L88 92" stroke="${c.accent}" stroke-width="3" stroke-linecap="round"/>
+    <rect x="22" y="58" width="14" height="8" rx="4" fill="${c.primaryDark}"/>
+    <rect x="92" y="58" width="14" height="8" rx="4" fill="${c.primaryDark}"/>
+    <rect x="24" y="72" width="10" height="22" rx="4" fill="${c.primary}"/>
+    <rect x="94" y="72" width="10" height="22" rx="4" fill="${c.primary}"/>
+    <rect x="50" y="88" width="10" height="24" rx="4" fill="${c.primaryDark}"/>
+    <rect x="68" y="88" width="10" height="24" rx="4" fill="${c.primaryDark}"/>
+    <circle cx="56" cy="40" r="4" fill="${c.accent}"/>
+    <circle cx="72" cy="40" r="4" fill="${c.accent}"/>
+    <path d="M58 44 Q64 48 70 44" fill="none" stroke="${c.dark}" stroke-width="2"/>
+  `;
+}
+
+function drawLaptopGuru(c) {
+  return `
+    <ellipse cx="64" cy="38" rx="18" ry="20" fill="${c.skin}"/>
+    <rect x="48" y="34" width="14" height="8" rx="3" fill="none" stroke="${c.dark}" stroke-width="2"/>
+    <rect x="66" y="34" width="14" height="8" rx="3" fill="none" stroke="${c.dark}" stroke-width="2"/>
+    <rect x="46" y="58" width="36" height="32" rx="8" fill="#059669"/>
+    <rect x="30" y="88" width="68" height="8" rx="3" fill="${c.dark}"/>
+    <rect x="34" y="78" width="60" height="14" rx="4" fill="#334155"/>
+    <rect x="38" y="80" width="52" height="10" rx="2" fill="${c.primary}"/>
+    <rect x="52" y="58" width="24" height="4" rx="1" fill="${c.accent}"/>
+    <rect x="40" y="62" width="12" height="22" rx="4" fill="#059669"/>
+    <rect x="76" y="62" width="12" height="22" rx="4" fill="#059669"/>
+    <rect x="48" y="96" width="12" height="22" rx="4" fill="#1e3a8a"/>
+    <rect x="68" y="96" width="12" height="22" rx="4" fill="#1e3a8a"/>
+  `;
+}
+
+function drawVrBuddy(c) {
+  return `
+    <ellipse cx="64" cy="44" rx="20" ry="22" fill="${c.skin}"/>
+    <rect x="40" y="36" width="48" height="18" rx="9" fill="${c.dark}"/>
+    <rect x="46" y="40" width="14" height="10" rx="3" fill="${c.primary}"/>
+    <rect x="68" y="40" width="14" height="10" rx="3" fill="#a855f7"/>
+    <rect x="46" y="66" width="36" height="30" rx="10" fill="#7c3aed"/>
+    <rect x="34" y="70" width="10" height="22" rx="4" fill="#7c3aed"/>
+    <rect x="84" y="70" width="10" height="22" rx="4" fill="#7c3aed"/>
+    <rect x="50" y="96" width="12" height="24" rx="5" fill="${c.dark}"/>
+    <rect x="66" y="96" width="12" height="24" rx="5" fill="${c.dark}"/>
+    <path d="M64 28 L64 34" stroke="${c.accent}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="64" cy="26" r="3" fill="${c.accent}"/>
+  `;
+}
+
+function drawConsolePal(c) {
+  return `
+    <rect x="28" y="56" width="72" height="44" rx="16" fill="${c.dark}"/>
+    <rect x="36" y="64" width="24" height="12" rx="4" fill="#64748b"/>
+    <circle cx="78" cy="68" r="6" fill="#ef4444"/>
+    <circle cx="92" cy="68" r="6" fill="#22c55e"/>
+    <circle cx="78" cy="84" r="6" fill="#eab308"/>
+    <circle cx="92" cy="84" r="6" fill="#3b82f6"/>
+    <ellipse cx="64" cy="42" rx="16" ry="14" fill="${c.primary}"/>
+    <circle cx="58" cy="40" r="3" fill="${c.light}"/>
+    <circle cx="70" cy="40" r="3" fill="${c.light}"/>
+    <path d="M60 48 Q64 52 68 48" fill="none" stroke="${c.light}" stroke-width="2"/>
+    <rect x="48" y="100" width="10" height="18" rx="4" fill="${c.primaryDark}"/>
+    <rect x="70" y="100" width="10" height="18" rx="4" fill="${c.primaryDark}"/>
+  `;
+}
+
+function drawSatellite(c) {
+  return `
+    <rect x="54" y="48" width="20" height="28" rx="6" fill="${c.primary}"/>
+    <circle cx="64" cy="58" r="6" fill="${c.light}"/>
+    <rect x="20" y="58" width="28" height="10" rx="3" fill="${c.accent}"/>
+    <rect x="80" y="58" width="28" height="10" rx="3" fill="${c.accent}"/>
+    <path d="M48 58 H54 M74 58 H80" stroke="${c.primaryDark}" stroke-width="3"/>
+    <rect x="58" y="76" width="12" height="8" rx="3" fill="${c.primaryDark}"/>
+    <path d="M58 84 L50 108 M70 84 L78 108" stroke="${c.primary}" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="50" cy="110" rx="8" ry="4" fill="${c.accent}"/>
+    <ellipse cx="78" cy="110" rx="8" ry="4" fill="${c.accent}"/>
+    <path d="M64 36 L64 48" stroke="${c.dark}" stroke-width="3"/>
+    <circle cx="64" cy="34" r="4" fill="#ef4444"/>
+    <path d="M64 24 L68 32 H60 Z" fill="${c.accent}"/>
+  `;
+}
+
+function drawWireBot(c) {
+  return `
+    <circle cx="64" cy="36" r="16" fill="${c.primary}"/>
+    <circle cx="58" cy="34" r="3" fill="${c.light}"/>
+    <circle cx="70" cy="34" r="3" fill="${c.light}"/>
+    <path d="M48 52 Q36 64 40 80" fill="none" stroke="${c.accent}" stroke-width="3" stroke-linecap="round"/>
+    <path d="M80 52 Q92 64 88 80" fill="none" stroke="${c.accent}" stroke-width="3" stroke-linecap="round"/>
+    <rect x="48" y="52" width="32" height="28" rx="8" fill="${c.primaryDark}"/>
+    <path d="M52 60 H76 M52 68 H72" stroke="${c.accent}" stroke-width="2" stroke-linecap="round"/>
+    <path d="M52 88 L44 108 M76 88 L84 108" stroke="${c.accent}" stroke-width="3" stroke-linecap="round"/>
+    <path d="M58 80 L50 96 M70 80 L78 96" stroke="${c.primary}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="44" cy="110" r="5" fill="${c.primaryDark}"/>
+    <circle cx="84" cy="110" r="5" fill="${c.primaryDark}"/>
+  `;
+}
+
+// --- Other rubros: personajes con cuerpo (sin círculo de fondo) ---
+
+function drawPerson(c, accent, body, variant) {
+  if (variant === "sakura") {
+    return `${drawPerson(c, accent, body, "")}<circle cx="64" cy="22" r="6" fill="${accent}"/><circle cx="78" cy="30" r="5" fill="${accent}"/><circle cx="50" cy="30" r="5" fill="${accent}"/>`;
+  }
+  return `
+    <ellipse cx="64" cy="40" rx="18" ry="20" fill="${c.skin}"/>
+    <ellipse cx="58" cy="38" rx="4" ry="5" fill="${c.white}"/>
+    <ellipse cx="70" cy="38" rx="4" ry="5" fill="${c.white}"/>
+    <circle cx="58" cy="39" r="2" fill="${c.dark}"/>
+    <circle cx="70" cy="39" r="2" fill="${c.dark}"/>
+    <path d="M58 48 Q64 52 70 48" fill="none" stroke="#e11d48" stroke-width="2" stroke-linecap="round"/>
+    <rect x="46" y="60" width="36" height="34" rx="10" fill="${body}"/>
+    <rect x="38" y="66" width="10" height="24" rx="4" fill="${body}"/>
+    <rect x="80" y="66" width="10" height="24" rx="4" fill="${body}"/>
+    <rect x="50" y="94" width="12" height="26" rx="5" fill="${c.dark}"/>
+    <rect x="66" y="94" width="12" height="26" rx="5" fill="${c.dark}"/>
+  `;
+}
+
+function drawHero(c) {
+  return `
+    <path d="M64 24 L74 44 H88 L78 58 L82 78 L64 68 L46 78 L50 58 L40 44 H54 Z" fill="#ef4444"/>
+    <ellipse cx="64" cy="44" rx="12" ry="13" fill="${c.skin}"/>
+    <rect x="48" y="68" width="32" height="28" rx="8" fill="#2563eb"/>
+    <rect x="44" y="96" width="12" height="22" rx="4" fill="#1e3a8a"/>
+    <rect x="72" y="96" width="12" height="22" rx="4" fill="#1e3a8a"/>
+  `;
+}
+
+function drawNinja(c) {
+  return `
+    <ellipse cx="64" cy="40" rx="18" ry="19" fill="${c.dark}"/>
+    <rect x="48" y="36" width="10" height="4" fill="${c.white}"/>
+    <rect x="66" y="36" width="10" height="4" fill="${c.white}"/>
+    <rect x="46" y="60" width="36" height="32" rx="8" fill="#0f172a"/>
+    <path d="M36 68 L46 72 M92 68 L82 72" stroke="${c.dark}" stroke-width="4" stroke-linecap="round"/>
+    <rect x="50" y="92" width="12" height="24" rx="4" fill="${c.dark}"/>
+    <rect x="66" y="92" width="12" height="24" rx="4" fill="${c.dark}"/>
+  `;
+}
+
+function drawWizard(c) {
+  return `
+    <path d="M48 44 Q64 16 80 44 L76 52 H52 Z" fill="#7c3aed"/>
+    <ellipse cx="64" cy="48" rx="14" ry="15" fill="${c.skin}"/>
+    <rect x="48" y="62" width="32" height="30" rx="8" fill="#4c1d95"/>
+    <rect x="30" y="70" width="36" height="6" rx="2" fill="#a78bfa" transform="rotate(-24 48 73)"/>
+    <rect x="50" y="92" width="12" height="24" rx="4" fill="#312e81"/>
+    <rect x="66" y="92" width="12" height="24" rx="4" fill="#312e81"/>
+  `;
+}
+
+function drawMecha(c) {
+  return drawRobbo({ ...c, primary: "#64748b", primaryDark: "#334155", accent: "#94a3b8" });
+}
+
+function drawChibi(c) {
+  return `
+    <ellipse cx="64" cy="52" rx="24" ry="26" fill="#f59e0b"/>
+    <circle cx="56" cy="48" r="3" fill="${c.dark}"/>
+    <circle cx="72" cy="48" r="3" fill="${c.dark}"/>
+    <ellipse cx="64" cy="86" rx="20" ry="16" fill="#fcd34d"/>
+    <rect x="48" y="98" width="12" height="18" rx="4" fill="#d97706"/>
+    <rect x="68" y="98" width="12" height="18" rx="4" fill="#d97706"/>
+  `;
+}
+
+function drawDragon(c) {
+  return `
+    <path d="M40 72 Q64 28 88 72 Q64 96 40 72Z" fill="#059669"/>
+    <circle cx="56" cy="60" r="4" fill="${c.white}"/>
+    <circle cx="58" cy="60" r="2" fill="${c.dark}"/>
+    <path d="M72 52 L92 38" stroke="#059669" stroke-width="5" stroke-linecap="round"/>
+    <path d="M48 88 L40 108 M80 88 L88 108" stroke="#047857" stroke-width="4" stroke-linecap="round"/>
+  `;
+}
+
+function drawComic(c) {
+  return `
+    <rect x="36" y="32" width="56" height="72" rx="6" fill="${c.white}" stroke="${c.dark}" stroke-width="3"/>
+    <path d="M44 52 H84 M44 64 H76 M44 76 H68" stroke="${c.dark}" stroke-width="3" stroke-linecap="round"/>
+    <path d="M88 28 L96 20" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+    <text x="92" y="24" font-size="12" font-weight="bold" fill="#ef4444">!</text>
+    <rect x="48" y="104" width="12" height="16" rx="3" fill="${c.dark}"/>
+    <rect x="68" y="104" width="12" height="16" rx="3" fill="${c.dark}"/>
+  `;
+}
+
+function drawMask(c) {
+  return `
+    <ellipse cx="64" cy="40" rx="18" ry="19" fill="#4338ca"/>
+    <rect x="48" y="36" width="10" height="4" fill="${c.white}"/>
+    <rect x="66" y="36" width="10" height="4" fill="${c.white}"/>
+    <rect x="46" y="60" width="36" height="32" rx="8" fill="#312e81"/>
+    <rect x="50" y="92" width="12" height="24" rx="4" fill="${c.dark}"/>
+    <rect x="66" y="92" width="12" height="24" rx="4" fill="${c.dark}"/>
+  `;
+}
+
+function drawStylist(c, accent, body) {
+  return drawPerson(c, accent, body);
+}
+
+function drawRunway(c) {
+  return `
+    <ellipse cx="64" cy="36" rx="14" ry="16" fill="${c.skin}"/>
+    <path d="M52 52 L64 28 L76 52 L72 108 H56 Z" fill="#111827"/>
+    <path d="M56 52 H72" stroke="#f472b6" stroke-width="3"/>
+    <rect x="54" y="108" width="8" height="14" rx="2" fill="${c.dark}"/>
+    <rect x="66" y="108" width="8" height="14" rx="2" fill="${c.dark}"/>
+  `;
+}
+
+function drawVintage(c) {
+  return drawPerson(c, "#fcd34d", "#92400e");
+}
+
+function drawStreet(c) {
+  return drawPerson(c, "#67e8f9", "#0891b2");
+}
+
+function drawMinimal(c) {
+  return drawPerson(c, "#f8fafc", "#64748b");
+}
+
+function drawLuxe(c) {
+  return drawRunway(c);
+}
+
+function drawBoutique(c) {
+  return drawStylist(c, "#e9d5ff", "#9333ea");
+}
+
+function drawTrend(c) {
+  return drawPerson(c, "#bae6fd", "#0ea5e9");
+}
+
+function drawChef(c) {
+  return `
+    <ellipse cx="64" cy="40" rx="16" ry="18" fill="${c.skin}"/>
+    <path d="M48 32 Q64 12 80 32 L78 38 H50 Z" fill="${c.white}"/>
+    <rect x="46" y="58" width="36" height="32" fill="${c.white}" stroke="#ea580c" stroke-width="2" rx="8"/>
+    <rect x="38" y="66" width="10" height="22" rx="4" fill="${c.white}"/>
+    <rect x="80" y="66" width="10" height="22" rx="4" fill="${c.white}"/>
+    <rect x="50" y="90" width="12" height="26" rx="4" fill="${c.dark}"/>
+    <rect x="66" y="90" width="12" height="26" rx="4" fill="${c.dark}"/>
+  `;
+}
+
+function drawBaker(c) {
+  return drawChef(c);
+}
+
+function drawBarista(c) {
+  return `
+    <ellipse cx="64" cy="38" rx="15" ry="17" fill="${c.skin}"/>
+    <rect x="46" y="56" width="36" height="30" rx="8" fill="#78350f"/>
+    <rect x="52" y="48" width="24" height="12" rx="4" fill="${c.dark}"/>
+    <rect x="78" y="60" width="16" height="10" rx="3" fill="#d4d4d8"/>
+    <rect x="50" y="86" width="12" height="24" rx="4" fill="#451a03"/>
+    <rect x="66" y="86" width="12" height="24" rx="4" fill="#451a03"/>
+  `;
+}
+
+function drawFarm(c) {
+  return drawPerson(c, "#bbf7d0", "#16a34a");
+}
+
+function drawSushi(c) {
+  return `
+    <ellipse cx="64" cy="72" rx="28" ry="14" fill="#ef4444"/>
+    <circle cx="64" cy="58" r="14" fill="${c.white}"/>
+    <circle cx="60" cy="56" r="2" fill="${c.dark}"/>
+    <circle cx="68" cy="56" r="2" fill="${c.dark}"/>
+    <rect x="52" y="86" width="10" height="20" rx="4" fill="${c.dark}"/>
+    <rect x="66" y="86" width="10" height="20" rx="4" fill="${c.dark}"/>
+  `;
+}
+
+function drawSweet(c) {
+  return drawChibi({ ...c, skin: c.skin });
+}
+
+function drawGrill(c) {
+  return drawChef(c);
+}
+
+function drawHarvest(c) {
+  return drawFarm(c);
+}
+
+function drawSpice(c) {
+  return drawChef(c);
+}
+
+function drawFresh(c) {
+  return drawFarm(c);
+}
+
+function drawSpa(c) {
+  return drawPerson(c, "#99f6e4", "#14b8a6");
+}
+
+function drawSerum(c) {
+  return `
+    <rect x="54" y="32" width="20" height="50" rx="8" fill="${c.white}" stroke="#2563eb" stroke-width="2"/>
+    <rect x="58" y="48" width="12" height="20" rx="4" fill="#93c5fd"/>
+    <rect x="50" y="82" width="12" height="24" rx="4" fill="#14b8a6"/>
+    <rect x="66" y="82" width="12" height="24" rx="4" fill="#14b8a6"/>
+  `;
+}
+
+function drawBloom(c) {
+  return drawPerson(c, "#fbcfe8", "#ec4899");
+}
+
+function drawCare(c) {
+  return drawSpa(c);
+}
+
+function drawMint(c) {
+  return drawPerson(c, "#6ee7b7", "#10b981");
+}
+
+function drawPearl(c) {
+  return drawPerson(c, "#ffe4e6", "#fda4af");
+}
+
+function drawLeaf(c) {
+  return drawPerson(c, "#a7f3d0", "#059669");
+}
+
+function drawGlowBeauty(c) {
+  return drawPerson(c, "#ddd6fe", "#7c3aed");
+}
+
+function drawZen(c) {
+  return drawPerson(c, "#e2e8f0", "#64748b");
+}
+
+function drawRadiance(c) {
+  return drawPerson(c, "#fde68a", "#f59e0b");
+}
+
+function drawPenPal(c) {
+  return drawPerson(c, "#bfdbfe", "#1e40af");
+}
+
+function drawBookworm(c) {
+  return `
+    <ellipse cx="64" cy="38" rx="15" ry="17" fill="${c.skin}"/>
+    <rect x="44" y="56" width="18" height="26" rx="3" fill="#7c2d12"/>
+    <rect x="66" y="56" width="18" height="26" rx="3" fill="#92400e"/>
+    <path d="M62 56 V82" stroke="${c.white}" stroke-width="2"/>
+    <rect x="50" y="86" width="12" height="24" rx="4" fill="#431407"/>
+    <rect x="66" y="86" width="12" height="24" rx="4" fill="#431407"/>
+  `;
+}
+
+function drawDeskPal(c) {
+  return `
+    <rect x="32" y="72" width="64" height="14" rx="4" fill="#475569"/>
+    <rect x="44" y="52" width="40" height="24" rx="3" fill="#334155"/>
+    <rect x="48" y="56" width="32" height="16" rx="2" fill="${c.primary}"/>
+    <ellipse cx="64" cy="38" rx="12" ry="14" fill="${c.skin}"/>
+    <rect x="50" y="86" width="10" height="20" rx="3" fill="${c.dark}"/>
+    <rect x="68" y="86" width="10" height="20" rx="3" fill="${c.dark}"/>
+  `;
+}
+
+function drawPlanner(c) {
+  return drawBookworm(c);
+}
+
+function drawArchive(c) {
+  return drawBookworm(c);
+}
+
+function drawPencilPal(c) {
+  return `
+    <path d="M48 108 L72 40" stroke="#eab308" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="74" cy="36" r="7" fill="#fca5a5"/>
+    <ellipse cx="64" cy="88" rx="14" ry="16" fill="${c.skin}"/>
+  `;
+}
+
+function drawFolderPal(c) {
+  return `
+    <path d="M36 52 H56 L64 60 H92 V96 H36 Z" fill="#0284c7"/>
+    <ellipse cx="64" cy="44" rx="12" ry="13" fill="${c.skin}"/>
+    <rect x="50" y="96" width="10" height="18" rx="3" fill="${c.dark}"/>
+    <rect x="68" y="96" width="10" height="18" rx="3" fill="${c.dark}"/>
+  `;
+}
+
+function drawInkPal(c) {
+  return drawPenPal(c);
+}
+
+function drawNotePal(c) {
+  return drawPlanner(c);
+}
+
+function drawStampPal(c) {
+  return drawFolderPal(c);
 }
 
 function buildSvg(entry) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-hidden="true">${sphere(entry.bg, entry.light)}${motif(entry.motif, entry.accent, entry.light)}</svg>`;
+  const content = entry.draw(COLORS);
+  return wrapCharacter(content);
 }
 
 function cleanOutputDir() {
@@ -232,7 +652,6 @@ function cleanOutputDir() {
 
 cleanOutputDir();
 
-/** @type {Array<{ id: string; label: string; rubro: string; imagePath: string; animation: string }>} */
 const presets = [];
 
 for (const [rubro, entries] of Object.entries(CATALOG)) {
@@ -250,9 +669,29 @@ for (const [rubro, entries] of Object.entries(CATALOG)) {
   }
 }
 
-const manifestSource = `/* eslint-disable */\n// Generated by scripts/generate-assistant-avatars.mjs — do not edit manually.\n\nimport type { StoreRubro } from "@/src/config/categories";\n\nexport type AssistantAvatarAnimationKind = ${JSON.stringify(ANIMATIONS)}[number];\n\nexport type AssistantAvatarRubro = StoreRubro | "general";\n\nexport interface AssistantAvatarPresetManifestEntry {\n  id: string;\n  label: string;\n  rubro: AssistantAvatarRubro;\n  imagePath: string;\n  animation: AssistantAvatarAnimationKind;\n}\n\nexport const ASSISTANT_AVATAR_RUBRO_LABELS: Record<AssistantAvatarRubro, string> = ${JSON.stringify(RUBRO_LABELS, null, 2)} as Record<AssistantAvatarRubro, string>;\n\nexport const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntry[] = ${JSON.stringify(presets, null, 2)};\n`;
+const manifestSource = `/* eslint-disable */
+// Generated by scripts/generate-assistant-avatars.mjs — do not edit manually.
+
+import type { StoreRubro } from "@/src/config/categories";
+
+export type AssistantAvatarAnimationKind = ${JSON.stringify(ANIMATIONS)}[number];
+
+export type AssistantAvatarRubro = StoreRubro;
+
+export interface AssistantAvatarPresetManifestEntry {
+  id: string;
+  label: string;
+  rubro: AssistantAvatarRubro;
+  imagePath: string;
+  animation: AssistantAvatarAnimationKind;
+}
+
+export const ASSISTANT_AVATAR_RUBRO_LABELS: Record<AssistantAvatarRubro, string> = ${JSON.stringify(RUBRO_LABELS, null, 2)} as Record<AssistantAvatarRubro, string>;
+
+export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntry[] = ${JSON.stringify(presets, null, 2)};
+`;
 
 fs.mkdirSync(path.dirname(MANIFEST_PATH), { recursive: true });
 fs.writeFileSync(MANIFEST_PATH, manifestSource);
 
-console.log(`Created ${presets.length} assistant avatars and manifest.`);
+console.log(`Created ${presets.length} character avatars (no general rubro).`);

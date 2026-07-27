@@ -25,10 +25,13 @@ export function CatalogChatAvatar({
     <AnimatedAssistantAvatar
       imageUrl={imageUrl}
       label={label}
+      variant={animated ? "character" : "round"}
       animation={animation}
       animated={animated}
       className={cn("catalog-chat-avatar", `catalog-chat-avatar-${size}`, className)}
-      imageClassName="catalog-chat-avatar-image"
+      imageClassName={
+        animated ? "assistant-avatar-character-image" : "catalog-chat-avatar-image"
+      }
     />
   );
 }
