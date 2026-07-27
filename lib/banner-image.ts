@@ -2,8 +2,11 @@
 
 export type BannerImageVariant = "mobile" | "desktop";
 
-export const BANNER_DISPLAY_HEIGHT_MOBILE_PX = 150;
+export const BANNER_DISPLAY_HEIGHT_MOBILE_PX = 168;
 export const BANNER_DISPLAY_HEIGHT_DESKTOP_PX = 250;
+
+/** Proporción panorámica estándar del banner en catálogo (2.5:1). */
+export const BANNER_DISPLAY_ASPECT_RATIO = 2.5;
 
 export const BANNER_MOBILE_MAX_WIDTH = 960;
 export const BANNER_MOBILE_MAX_HEIGHT = 384;

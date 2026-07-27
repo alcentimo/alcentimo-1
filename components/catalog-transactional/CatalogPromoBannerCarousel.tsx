@@ -25,7 +25,6 @@ interface CatalogPromoBannerCarouselProps {
 }
 
 const AUTO_ADVANCE_MS = 6000;
-const AUTO_RESUME_MS = 8000;
 
 function resolveSlideImageUrls(slide: {
   mobileImageUrl: string;
@@ -83,11 +82,24 @@ export function CatalogPromoBannerCarousel({
   const slides = getActivePromoBannerSlides(settings);
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [autoAdvanceEpoch, setAutoAdvanceEpoch] = useState(0);
   const touchStartX = useRef<number | null>(null);
-  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<number | null>(null);
+
   const slideCount = slides.length;
   const hasMultiple = slideCount > 1;
+
+  const clearAutoAdvance = useCallback(() => {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  const restartAutoAdvance = useCallback(() => {
+    setAutoAdvanceEpoch((epoch) => epoch + 1);
+  }, []);
 
   const goTo = useCallback(
     (index: number) => {
@@ -112,19 +124,18 @@ export function CatalogPromoBannerCarousel({
     );
   }, [slideCount]);
 
-  const pauseAutoAdvance = useCallback(() => {
-    setIsPaused(true);
-    if (resumeTimerRef.current) {
-      clearTimeout(resumeTimerRef.current);
-    }
-    resumeTimerRef.current = setTimeout(() => {
-      setIsPaused(false);
-    }, AUTO_RESUME_MS);
-  }, []);
+  const handleManualNavigation = useCallback(
+    (navigate: () => void) => {
+      navigate();
+      restartAutoAdvance();
+    },
+    [restartAutoAdvance],
+  );
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [slideCount, settings.enabled]);
+    restartAutoAdvance();
+  }, [slideCount, settings.enabled, restartAutoAdvance]);
 
   useEffect(() => {
     if (activeIndex >= slideCount && slideCount > 0) {
@@ -133,22 +144,20 @@ export function CatalogPromoBannerCarousel({
   }, [activeIndex, slideCount]);
 
   useEffect(() => {
-    if (slideCount < 2 || isPaused) return;
+    clearAutoAdvance();
 
-    const timer = window.setInterval(() => {
+    if (slideCount < 2 || isHovered) {
+      return clearAutoAdvance;
+    }
+
+    intervalRef.current = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % slideCount);
     }, AUTO_ADVANCE_MS);
 
-    return () => window.clearInterval(timer);
-  }, [isPaused, slideCount]);
+    return clearAutoAdvance;
+  }, [autoAdvanceEpoch, clearAutoAdvance, isHovered, slideCount]);
 
-  useEffect(() => {
-    return () => {
-      if (resumeTimerRef.current) {
-        clearTimeout(resumeTimerRef.current);
-      }
-    };
-  }, []);
+  useEffect(() => clearAutoAdvance, [clearAutoAdvance]);
 
   if (slideCount === 0) {
     return null;
@@ -169,9 +178,8 @@ export function CatalogPromoBannerCarousel({
 
     if (Math.abs(delta) < 44) return;
 
-    pauseAutoAdvance();
-    if (delta > 0) goPrev();
-    else goNext();
+    if (delta > 0) handleManualNavigation(goPrev);
+    else handleManualNavigation(goNext);
   }
 
   return (
@@ -184,19 +192,8 @@ export function CatalogPromoBannerCarousel({
       aria-label="Promociones destacadas"
       aria-roledescription="carrusel"
       aria-live="polite"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => {
-        if (resumeTimerRef.current) {
-          clearTimeout(resumeTimerRef.current);
-        }
-        setIsPaused(false);
-      }}
-      onFocusCapture={() => setIsPaused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-          setIsPaused(false);
-        }
-      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -257,10 +254,7 @@ export function CatalogPromoBannerCarousel({
               type="button"
               className="txn-promo-banner-nav txn-promo-banner-nav-prev"
               aria-label="Promoción anterior"
-              onClick={() => {
-                pauseAutoAdvance();
-                goPrev();
-              }}
+              onClick={() => handleManualNavigation(goPrev)}
             >
               <ChevronLeft className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -268,10 +262,7 @@ export function CatalogPromoBannerCarousel({
               type="button"
               className="txn-promo-banner-nav txn-promo-banner-nav-next"
               aria-label="Promoción siguiente"
-              onClick={() => {
-                pauseAutoAdvance();
-                goNext();
-              }}
+              onClick={() => handleManualNavigation(goNext)}
             >
               <ChevronRight className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -292,10 +283,9 @@ export function CatalogPromoBannerCarousel({
                     "txn-promo-banner-dot",
                     index === activeIndex && "txn-promo-banner-dot-active",
                   )}
-                  onClick={() => {
-                    pauseAutoAdvance();
-                    goTo(index);
-                  }}
+                  onClick={() =>
+                    handleManualNavigation(() => goTo(index))
+                  }
                 />
               ))}
             </div>

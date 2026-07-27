@@ -4998,8 +4998,9 @@ body {
 
 .txn-promo-banner-viewport {
   @apply relative mx-auto w-full max-w-6xl overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900;
-  height: var(--txn-promo-banner-height-mobile, 150px);
-  max-height: var(--txn-promo-banner-height-mobile, 150px);
+  aspect-ratio: 2.5 / 1;
+  width: 100%;
+  max-height: var(--txn-promo-banner-height-mobile, 168px);
 }
 
 .txn-promo-banner-slide {
@@ -5014,17 +5015,16 @@ body {
 
 @media (min-width: 768px) {
   .txn-promo-banner-viewport {
-    height: var(--txn-promo-banner-height-desktop, 250px);
     max-height: var(--txn-promo-banner-height-desktop, 250px);
   }
 }
 
 .txn-promo-banner-link {
-  @apply relative block h-full w-full;
+  @apply relative block h-full w-full overflow-hidden;
 }
 
 .txn-promo-banner-media {
-  @apply relative block h-full w-full;
+  @apply relative block h-full w-full overflow-hidden;
 }
 
 .txn-promo-banner-image {
