@@ -103,7 +103,7 @@ export function buildTransactionalEmailText(
       : null,
     input.footerNote ?? null,
     "",
-    "Si no solicitaste esta acción, puedes ignorar este correo.",
+    "Este mensaje fue enviado por Alcentimo. Si no solicitaste esta acción, puedes ignorar este correo.",
   ]
     .filter(Boolean)
     .join("\n");

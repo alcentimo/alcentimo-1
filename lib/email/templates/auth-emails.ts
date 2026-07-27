@@ -25,17 +25,18 @@ export function buildSignupConfirmationEmail(input: AuthEmailTemplateInput) {
     title: "Confirma tu cuenta",
     paragraphs: [
       "Gracias por registrarte en Alcentimo.",
-      "Para activar tu cuenta y continuar con la configuración de tu tienda, confirma tu correo con el botón de abajo.",
+      "Para activar tu cuenta y continuar con la configuración de tu tienda, confirma tu correo con el botón de abajo. El enlace es válido durante 24 horas.",
       input.manualVerificationUrl
-        ? `También puedes introducir el código de 6 dígitos en: ${input.manualVerificationUrl}`
-        : "También puedes introducir el código de 6 dígitos en la pantalla de verificación de Alcentimo.",
+        ? `También puedes introducir el código de 6 dígitos (válido 24 horas) en: ${input.manualVerificationUrl}`
+        : "También puedes introducir el código de 6 dígitos (válido 24 horas) en la pantalla de verificación de Alcentimo.",
     ],
     actionLabel: "Confirmar mi cuenta",
     actionUrl: input.actionUrl,
     verificationCode: input.verificationCode,
-    verificationCodeHint: "Código para confirmar tu cuenta:",
+    verificationCodeHint:
+      "Código de 6 dígitos (válido 24 horas) para confirmar tu cuenta:",
     footerNote:
-      "Este enlace y el código expiran por seguridad. Si caducan, vuelve a registrarte o solicita un nuevo correo de confirmación.",
+      "Este enlace y el código expiran por seguridad en 24 horas.",
   });
 }
 
