@@ -58,6 +58,47 @@ export function normalizeAssistantAvatarSettings(
   return { mode: "store-logo" };
 }
 
+/** Normalización permisiva para el panel admin (permite custom sin URL aún). */
+export function normalizeAssistantAvatarDraft(
+  raw: unknown,
+): CatalogAssistantAvatarSettings {
+  const defaults = defaultAssistantAvatarSettings();
+
+  if (typeof raw !== "object" || raw === null) {
+    return defaults;
+  }
+
+  const record = raw as Record<string, unknown>;
+  const mode =
+    record.mode === "store-logo" ||
+    record.mode === "preset" ||
+    record.mode === "custom"
+      ? record.mode
+      : defaults.mode;
+
+  if (mode === "preset") {
+    const presetId =
+      typeof record.presetId === "string" ? record.presetId.trim() : "";
+    const resolvedId = resolveAssistantAvatarPresetId(presetId);
+    if (resolvedId) {
+      return { mode, presetId: resolvedId };
+    }
+    return defaults;
+  }
+
+  if (mode === "custom") {
+    const customImageUrl =
+      typeof record.customImageUrl === "string"
+        ? record.customImageUrl.trim()
+        : "";
+    return customImageUrl
+      ? { mode, customImageUrl }
+      : { mode: "custom" };
+  }
+
+  return { mode: "store-logo" };
+}
+
 export function sanitizeAssistantAvatarForStorage(
   raw: CatalogAssistantAvatarSettings | undefined,
 ): CatalogAssistantAvatarSettings {

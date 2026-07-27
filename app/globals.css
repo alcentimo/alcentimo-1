@@ -6516,7 +6516,7 @@ body {
 }
 
 .design-assistant-avatar-upload-preview {
-  @apply relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950;
+  @apply relative h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-full border border-zinc-200 bg-white transition hover:border-teal-400 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-teal-600;
 }
 
 .design-assistant-avatar-upload-preview-empty {

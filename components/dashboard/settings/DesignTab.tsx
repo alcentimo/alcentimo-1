@@ -46,7 +46,7 @@ import {
   defaultPromoBannerSettings,
   normalizePromoBannerDraft,
 } from "@/lib/store-settings/promo-banner";
-import { normalizeAssistantAvatarSettings } from "@/lib/store-settings/assistant-avatar";
+import { normalizeAssistantAvatarDraft } from "@/lib/store-settings/assistant-avatar";
 import {
   getAssistantAvatarPreset,
   getDefaultPresetForRubro,
@@ -342,10 +342,10 @@ export function DesignTab({
   }
 
   function setAssistantAvatar(next: CatalogAssistantAvatarSettings) {
-    const normalized = normalizeAssistantAvatarSettings(next);
+    const draft = normalizeAssistantAvatarDraft(next);
     const nextDesign: CatalogDesignSettings = {
       ...design,
-      assistantAvatar: normalized,
+      assistantAvatar: draft,
     };
     setDesign(nextDesign);
     scheduleAssistantAvatarSave(nextDesign);
@@ -397,7 +397,7 @@ export function DesignTab({
         : `${promoBannerSettings.slides.length} borrador(es)`
       : "Activado · sin imágenes"
     : "Desactivado";
-  const assistantAvatarSettings = normalizeAssistantAvatarSettings(
+  const assistantAvatarSettings = normalizeAssistantAvatarDraft(
     design.assistantAvatar,
   );
   const assistantAvatarSummary =

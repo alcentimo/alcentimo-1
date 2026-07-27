@@ -1,11 +1,22 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { Check, ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { uploadCatalogAssistantAvatarImage } from "@/lib/settings/actions";
 import { compressImageForUpload } from "@/lib/client-image-compress";
 import { cn } from "@/lib/cn";
+
+export interface CatalogAssistantAvatarUploadHandle {
+  openFilePicker: () => void;
+}
 
 interface CatalogAssistantAvatarUploadProps {
   id: string;
@@ -14,12 +25,13 @@ interface CatalogAssistantAvatarUploadProps {
   disabled?: boolean;
 }
 
-export function CatalogAssistantAvatarUpload({
-  id,
-  value,
-  onChange,
-  disabled = false,
-}: CatalogAssistantAvatarUploadProps) {
+export const CatalogAssistantAvatarUpload = forwardRef<
+  CatalogAssistantAvatarUploadHandle,
+  CatalogAssistantAvatarUploadProps
+>(function CatalogAssistantAvatarUpload(
+  { id, value, onChange, disabled = false },
+  ref,
+) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -29,6 +41,13 @@ export function CatalogAssistantAvatarUpload({
 
   const isBusy = compressing || pending;
   const displayUrl = previewUrl ?? (value || null);
+
+  useImperativeHandle(ref, () => ({
+    openFilePicker: () => {
+      if (disabled || isBusy) return;
+      inputRef.current?.click();
+    },
+  }));
 
   useEffect(() => {
     return () => {
@@ -122,11 +141,15 @@ export function CatalogAssistantAvatarUpload({
       ) : null}
 
       <div className="mt-2 flex items-start gap-2.5">
-        <div
+        <button
+          type="button"
+          disabled={disabled || isBusy}
+          onClick={() => inputRef.current?.click()}
           className={cn(
             "design-assistant-avatar-upload-preview",
             !displayUrl && "design-assistant-avatar-upload-preview-empty",
           )}
+          aria-label={displayUrl ? "Cambiar avatar personalizado" : "Subir avatar personalizado"}
         >
           {displayUrl ? (
             <Image
@@ -145,7 +168,7 @@ export function CatalogAssistantAvatarUpload({
               <Loader2 className="h-5 w-5 animate-spin text-teal-600" aria-hidden="true" />
             </div>
           ) : null}
-        </div>
+        </button>
 
         <div className="flex min-w-0 flex-col gap-1.5">
           <input
@@ -188,4 +211,4 @@ export function CatalogAssistantAvatarUpload({
       </div>
     </div>
   );
-}
+});

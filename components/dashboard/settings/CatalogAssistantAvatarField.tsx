@@ -1,14 +1,18 @@
 "use client";
 
+import { useRef } from "react";
 import { Upload, Sparkles } from "lucide-react";
 import {
   getAssistantAvatarGalleryForRubro,
   getAssistantAvatarPreset,
   getDefaultPresetForRubro,
 } from "@/lib/store-settings/assistant-avatar-presets";
-import { normalizeAssistantAvatarSettings } from "@/lib/store-settings/assistant-avatar";
+import { normalizeAssistantAvatarDraft } from "@/lib/store-settings/assistant-avatar";
 import type { CatalogAssistantAvatarSettings } from "@/lib/store-settings/types";
-import { CatalogAssistantAvatarUpload } from "@/components/dashboard/settings/CatalogAssistantAvatarUpload";
+import {
+  CatalogAssistantAvatarUpload,
+  type CatalogAssistantAvatarUploadHandle,
+} from "@/components/dashboard/settings/CatalogAssistantAvatarUpload";
 import { AnimatedAssistantAvatar } from "@/components/shared/AnimatedAssistantAvatar";
 import { cn } from "@/lib/cn";
 
@@ -19,10 +23,10 @@ interface CatalogAssistantAvatarFieldProps {
   disabled?: boolean;
 }
 
-type AvatarMode = CatalogAssistantAvatarSettings["mode"];
+type UiAvatarMode = "preset" | "custom";
 
 const MODE_OPTIONS: Array<{
-  mode: AvatarMode;
+  mode: UiAvatarMode;
   label: string;
   description: string;
 }> = [
@@ -34,9 +38,14 @@ const MODE_OPTIONS: Array<{
   {
     mode: "custom",
     label: "Tu foto personalizada",
-    description: "Sube una imagen propia para el widget y el chat.",
+    description: "Toca para elegir una imagen desde tu dispositivo.",
   },
 ];
+
+function resolveUiMode(settings: CatalogAssistantAvatarSettings): UiAvatarMode {
+  if (settings.mode === "custom") return "custom";
+  return "preset";
+}
 
 export function CatalogAssistantAvatarField({
   value,
@@ -44,30 +53,47 @@ export function CatalogAssistantAvatarField({
   onChange,
   disabled = false,
 }: CatalogAssistantAvatarFieldProps) {
-  const settings = normalizeAssistantAvatarSettings(value);
+  const uploadRef = useRef<CatalogAssistantAvatarUploadHandle>(null);
+  const settings = normalizeAssistantAvatarDraft(value);
+  const uiMode = resolveUiMode(settings);
   const gallery = getAssistantAvatarGalleryForRubro(storeRubro);
   const selectedPreset = settings.presetId
     ? getAssistantAvatarPreset(settings.presetId)
     : undefined;
 
-  function setMode(mode: AvatarMode) {
-    if (mode === settings.mode) return;
+  function openCustomUploadPicker() {
+    window.requestAnimationFrame(() => {
+      uploadRef.current?.openFilePicker();
+    });
+  }
 
-    if (mode === "preset") {
-      const fallbackPreset =
-        selectedPreset ?? getDefaultPresetForRubro(storeRubro);
-      if (!fallbackPreset) return;
-      onChange({
-        mode: "preset",
-        presetId: fallbackPreset.id,
-      });
-      return;
-    }
+  function selectPresetMode() {
+    if (uiMode === "preset") return;
 
+    const fallbackPreset =
+      selectedPreset ?? getDefaultPresetForRubro(storeRubro);
+    if (!fallbackPreset) return;
+
+    onChange({
+      mode: "preset",
+      presetId: fallbackPreset.id,
+    });
+  }
+
+  function selectCustomMode() {
     onChange({
       mode: "custom",
       customImageUrl: settings.customImageUrl,
     });
+    openCustomUploadPicker();
+  }
+
+  function handleModeSelect(mode: UiAvatarMode) {
+    if (mode === "custom") {
+      selectCustomMode();
+      return;
+    }
+    selectPresetMode();
   }
 
   function setPreset(presetId: string) {
@@ -76,10 +102,7 @@ export function CatalogAssistantAvatarField({
 
   function setCustomImageUrl(customImageUrl: string) {
     if (!customImageUrl.trim()) {
-      const fallback = getDefaultPresetForRubro(storeRubro);
-      if (fallback) {
-        onChange({ mode: "preset", presetId: fallback.id });
-      }
+      onChange({ mode: "custom" });
       return;
     }
 
@@ -102,10 +125,10 @@ export function CatalogAssistantAvatarField({
             key={option.mode}
             type="button"
             disabled={disabled}
-            onClick={() => setMode(option.mode)}
+            onClick={() => handleModeSelect(option.mode)}
             className={cn(
               "design-assistant-mode-card",
-              settings.mode === option.mode && "design-assistant-mode-card-selected",
+              uiMode === option.mode && "design-assistant-mode-card-selected",
             )}
           >
             <span className="design-assistant-mode-icon" aria-hidden="true">
@@ -127,7 +150,7 @@ export function CatalogAssistantAvatarField({
         ))}
       </div>
 
-      {settings.mode === "preset" ? (
+      {uiMode === "preset" ? (
         <section className="design-assistant-avatar-gallery">
           <div className="design-assistant-avatar-section-header">
             <Sparkles className="h-3.5 w-3.5 text-teal-500" aria-hidden="true" />
@@ -171,14 +194,15 @@ export function CatalogAssistantAvatarField({
         </section>
       ) : null}
 
-      {settings.mode === "custom" ? (
+      <div className={cn(uiMode !== "custom" && "hidden")} aria-hidden={uiMode !== "custom"}>
         <CatalogAssistantAvatarUpload
+          ref={uploadRef}
           id="catalog-assistant-avatar-upload"
           value={settings.customImageUrl ?? ""}
           onChange={setCustomImageUrl}
           disabled={disabled}
         />
-      ) : null}
+      </div>
     </div>
   );
 }
