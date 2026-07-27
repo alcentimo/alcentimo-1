@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { MessageCircle, ShoppingBag, UserRound } from "lucide-react";
+import { LogOut, MessageCircle, ShoppingBag, UserRound } from "lucide-react";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { getStoreCatalogBasePath, getStoreCustomerAccountPath } from "@/lib/store-host";
 import type { LocationHoursSettings } from "@/lib/store-settings/types";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
+import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
 
 interface CatalogStoreProfileSheetProps {
   storeSlug: string;
@@ -16,7 +17,6 @@ interface CatalogStoreProfileSheetProps {
   storeDescription?: string | null;
   whatsappPhone?: string | null;
   locationHours?: LocationHoursSettings | null;
-  isCustomer?: boolean;
 }
 
 function StoreAvatar({
@@ -54,13 +54,17 @@ export function CatalogStoreProfileSheet({
   storeDescription = null,
   whatsappPhone = null,
   locationHours = null,
-  isCustomer = false,
 }: CatalogStoreProfileSheetProps) {
   const shellNav = useCatalogShellNavigationOptional();
+  const customerSession = useCustomerSessionOptional();
   const open = shellNav?.profileOpen ?? false;
   const onClose = () => shellNav?.closeProfile();
 
   if (!shellNav) return null;
+
+  const isCustomer = customerSession?.isCustomer ?? false;
+  const displayName = customerSession?.displayName?.trim() ?? "";
+  const phone = customerSession?.phone?.trim() ?? "";
 
   const whatsappUrl = whatsappPhone?.trim()
     ? buildWhatsAppOrderUrl(
@@ -70,6 +74,12 @@ export function CatalogStoreProfileSheet({
     : null;
 
   const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
+
+  async function handleSignOut() {
+    if (!customerSession) return;
+    await customerSession.signOut();
+    onClose();
+  }
 
   return open ? (
     <div className="txn-cart-overlay" role="presentation">
@@ -145,22 +155,47 @@ export function CatalogStoreProfileSheet({
             <h3 className="catalog-profile-label">
               <UserRound className="inline h-4 w-4" aria-hidden="true" /> Tu cuenta
             </h3>
-            {isCustomer ? (
-              <Link
-                href={accountPath}
-                className="catalog-profile-link-btn"
-                onClick={onClose}
-              >
-                <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden="true" />
-                Ver mis compras
-              </Link>
+
+            {isCustomer && displayName ? (
+              <div className="catalog-profile-customer-card">
+                <p className="catalog-profile-customer-name">{displayName}</p>
+                {phone ? (
+                  <p className="catalog-profile-customer-phone">{phone}</p>
+                ) : null}
+                <p className="catalog-profile-customer-hint">
+                  Sesión activa en {storeName}
+                </p>
+              </div>
             ) : (
               <p className="catalog-profile-text">
                 Regístrate para guardar tus datos y ver el historial de pedidos en{" "}
                 {storeName}.
               </p>
             )}
-            {!isCustomer ? (
+
+            {isCustomer ? (
+              <>
+                <Link
+                  href={accountPath}
+                  className="catalog-profile-link-btn"
+                  onClick={onClose}
+                >
+                  <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  Ver mis compras
+                </Link>
+                <button
+                  type="button"
+                  className="catalog-profile-link-btn catalog-profile-link-btn-secondary"
+                  onClick={() => void handleSignOut()}
+                  disabled={customerSession?.signOutPending}
+                >
+                  <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {customerSession?.signOutPending
+                    ? "Cerrando sesión…"
+                    : "Cerrar sesión"}
+                </button>
+              </>
+            ) : (
               <button
                 type="button"
                 className="catalog-profile-link-btn catalog-profile-link-btn-secondary"
@@ -171,7 +206,7 @@ export function CatalogStoreProfileSheet({
               >
                 Crear cuenta de cliente
               </button>
-            ) : null}
+            )}
           </div>
         </div>
 

@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { CartProvider } from "@/components/catalog-transactional/CartProvider";
 import { CatalogAppShell } from "@/components/catalog-transactional/CatalogAppShell";
+import { CustomerSessionProvider } from "@/components/catalog-transactional/CustomerSessionProvider";
 import { PromotionProvider } from "@/components/catalog-transactional/PromotionProvider";
 import { getCartAuthContext } from "@/lib/customers/get-cart-auth-context";
+import { getCustomerCheckoutContext } from "@/lib/customers/get-customer-checkout-context";
 import { getCatalogPromotionContext } from "@/lib/promotions/get-catalog-promotion";
 import { recordCatalogVisit } from "@/lib/analytics/track-catalog-visit";
 import { CatalogPwaHeadLinks } from "@/components/catalog-transactional/CatalogPwaHeadLinks";
@@ -96,10 +98,11 @@ export default async function TransactionalCatalogLayout({
 }: TransactionalCatalogLayoutProps) {
   const { store_slug: storeSlug } = await params;
   const cartAuth = await getCartAuthContext(storeSlug);
+  const customerSession = await getCustomerCheckoutContext(storeSlug);
   const store = await getPublicStoreBySlug(storeSlug);
   const promotionContext = await getCatalogPromotionContext(
     storeSlug,
-    cartAuth.isCustomer,
+    customerSession.isCustomer,
   );
 
   if (cartAuth.storeId) {
@@ -149,14 +152,22 @@ export default async function TransactionalCatalogLayout({
         wholesaleEnabled={wholesaleEnabled}
       >
         <PromotionProvider value={promotionContext}>
-          <CatalogAppShell
+          <CustomerSessionProvider
             storeSlug={storeSlug}
-            storeName={store?.name ?? ""}
-            storeLogoUrl={storeLogoUrl}
-            storeDescription={store?.description ?? null}
-            locationHours={storeSettings?.locationHours ?? null}
-            isCustomer={cartAuth.isCustomer}
-            storeRubro={store?.rubro_tienda}
+            initial={{
+              isCustomer: customerSession.isCustomer,
+              userId: customerSession.userId,
+              displayName: customerSession.displayName,
+              phone: customerSession.phone,
+            }}
+          >
+            <CatalogAppShell
+              storeSlug={storeSlug}
+              storeName={store?.name ?? ""}
+              storeLogoUrl={storeLogoUrl}
+              storeDescription={store?.description ?? null}
+              locationHours={storeSettings?.locationHours ?? null}
+              storeRubro={store?.rubro_tienda}
             enablePcBuilder={store?.enable_pc_builder}
             assistantEnabled={assistantEnabled}
             whatsappPhone={whatsappPhone}
@@ -167,6 +178,7 @@ export default async function TransactionalCatalogLayout({
           >
             {children}
           </CatalogAppShell>
+          </CustomerSessionProvider>
         </PromotionProvider>
       </CartProvider>
     </div>

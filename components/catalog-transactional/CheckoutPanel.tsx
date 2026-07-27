@@ -27,6 +27,7 @@ import type { PaymentMethodKey, ShippingCarrierKey } from "@/lib/store-settings/
 import { isNationalCarrierKey } from "@/src/config/shipping-methods";
 import { formatCarrierBranchAddress, getCarrierBranchById } from "@/lib/shipping/carrier-branches";
 import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
+import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
 import {
   redeemCustomerPromotionCode,
   validateCustomerPromotionCode,
@@ -93,6 +94,7 @@ export function CheckoutPanel({
   const { items, subtotalUsd, updateQuantity, removeItem, clearCart } =
     useCart();
   const { autoApply } = usePromotionContext();
+  const customerSession = useCustomerSessionOptional();
   const { mode: fulfillmentModeFromContext, multiLocation } = useCatalogFulfillment();
   const activeFulfillmentMode = fulfillmentMode ?? fulfillmentModeFromContext;
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(1);
@@ -130,6 +132,29 @@ export function CheckoutPanel({
   const [validationAttemptedStep, setValidationAttemptedStep] = useState<
     0 | 1 | 2
   >(0);
+
+  useEffect(() => {
+    if (
+      !customerSession?.isCustomer ||
+      !customerSession.displayName ||
+      !customerSession.phone
+    ) {
+      return;
+    }
+
+    setCustomerName(customerSession.displayName);
+    setCustomerPhone(customerSession.phone);
+    setCustomerProfile((current) =>
+      current ?? {
+        displayName: customerSession.displayName!,
+        phone: customerSession.phone!,
+      },
+    );
+  }, [
+    customerSession?.isCustomer,
+    customerSession?.displayName,
+    customerSession?.phone,
+  ]);
 
   useEffect(() => {
     if (purchaseInfo.shipping.length === 1) {

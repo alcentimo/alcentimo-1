@@ -7153,6 +7153,22 @@ body {
   @apply rounded-xl border border-zinc-200 bg-zinc-50 p-4;
 }
 
+.catalog-profile-customer-card {
+  @apply mb-3 rounded-xl border border-emerald-200/80 bg-emerald-50/70 px-4 py-3;
+}
+
+.catalog-profile-customer-name {
+  @apply text-sm font-semibold text-zinc-900;
+}
+
+.catalog-profile-customer-phone {
+  @apply mt-0.5 text-sm text-zinc-600;
+}
+
+.catalog-profile-customer-hint {
+  @apply mt-2 text-xs text-zinc-500;
+}
+
 .catalog-profile-footer {
   @apply border-t border-zinc-200 px-6 py-4 text-center;
 }

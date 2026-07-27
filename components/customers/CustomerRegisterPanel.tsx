@@ -18,6 +18,12 @@ interface CustomerRegisterPanelProps {
   orderId?: string | null;
   variant?: "default" | "catalog";
   onCancel?: () => void;
+  redirectOnSuccess?: boolean;
+  onRegistered?: (profile: {
+    displayName: string;
+    phone: string;
+    userId?: string | null;
+  }) => void;
 }
 
 export function CustomerRegisterPanel({
@@ -29,6 +35,8 @@ export function CustomerRegisterPanel({
   orderId = null,
   variant = "default",
   onCancel,
+  redirectOnSuccess = true,
+  onRegistered,
 }: CustomerRegisterPanelProps) {
   const [displayName, setDisplayName] = useState(suggestedDisplayName ?? "");
   const [phone, setPhone] = useState("");
@@ -57,7 +65,14 @@ export function CustomerRegisterPanel({
       return;
     }
 
-    window.location.href = result.redirectTo;
+    onRegistered?.({
+      displayName: displayName.trim(),
+      phone: phone.trim(),
+    });
+
+    if (redirectOnSuccess) {
+      window.location.href = result.redirectTo;
+    }
   }
 
   async function handlePhoneCompletion(e: React.FormEvent) {
@@ -80,7 +95,14 @@ export function CustomerRegisterPanel({
       return;
     }
 
-    window.location.href = result.redirectTo;
+    onRegistered?.({
+      displayName: (displayName.trim() || suggestedDisplayName || "").trim(),
+      phone: phone.trim(),
+    });
+
+    if (redirectOnSuccess) {
+      window.location.href = result.redirectTo;
+    }
   }
 
   const isBusy = loading;

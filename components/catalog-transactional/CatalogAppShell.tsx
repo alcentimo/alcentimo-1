@@ -20,7 +20,6 @@ interface CatalogAppShellProps {
   storeLogoUrl: string | null;
   storeDescription?: string | null;
   locationHours?: LocationHoursSettings | null;
-  isCustomer?: boolean;
   supportAvatarUrl?: string | null;
   supportAvatarAnimation?: import("@/lib/store-settings/assistant-avatar-presets").AssistantAvatarAnimationKind | null;
   supportAvatarAnimated?: boolean;
@@ -38,7 +37,6 @@ export function CatalogAppShell({
   storeLogoUrl,
   storeDescription = null,
   locationHours = null,
-  isCustomer = false,
   supportAvatarUrl = null,
   supportAvatarAnimation = null,
   supportAvatarAnimated = false,
@@ -81,7 +79,6 @@ export function CatalogAppShell({
           storeDescription={storeDescription}
           whatsappPhone={whatsappPhone}
           locationHours={locationHours}
-          isCustomer={isCustomer}
         />
         <CatalogCustomerRegisterSheet
           storeSlug={storeSlug}

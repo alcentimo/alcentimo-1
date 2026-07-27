@@ -3,6 +3,7 @@
 import { CustomerRegisterPanel } from "@/components/customers/CustomerRegisterPanel";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
+import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
 
 interface CatalogCustomerRegisterSheetProps {
   storeSlug: string;
@@ -16,6 +17,7 @@ export function CatalogCustomerRegisterSheet({
   orderId = null,
 }: CatalogCustomerRegisterSheetProps) {
   const shellNav = useCatalogShellNavigationOptional();
+  const customerSession = useCustomerSessionOptional();
   const open = shellNav?.registerOpen ?? false;
   const onClose = () => shellNav?.closeRegister();
 
@@ -62,6 +64,13 @@ export function CatalogCustomerRegisterSheet({
             orderId={orderId}
             variant="catalog"
             onCancel={onClose}
+            redirectOnSuccess={false}
+            onRegistered={(profile) => {
+              customerSession?.setSessionFromRegistration(profile);
+              void customerSession?.refreshSession();
+              onClose();
+              shellNav.openProfile();
+            }}
           />
         </div>
       </aside>
