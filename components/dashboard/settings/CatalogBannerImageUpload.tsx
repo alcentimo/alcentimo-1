@@ -4,7 +4,9 @@ import Image from "next/image";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Check, ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { uploadCatalogBannerImage } from "@/lib/settings/actions";
-import { compressImageForUpload } from "@/lib/client-image-compress";
+import { compressBannerImageForUpload } from "@/lib/client-image-compress";
+import type { BannerImageVariant } from "@/lib/banner-image";
+import { BANNER_OPTIMIZE_HINT } from "@/lib/banner-image";
 import { cn } from "@/lib/cn";
 
 interface CatalogBannerImageUploadProps {
@@ -12,6 +14,7 @@ interface CatalogBannerImageUploadProps {
   label: string;
   hint?: string;
   value: string;
+  variant: BannerImageVariant;
   onChange: (url: string) => void;
   disabled?: boolean;
   required?: boolean;
@@ -22,6 +25,7 @@ export function CatalogBannerImageUpload({
   label,
   hint,
   value,
+  variant,
   onChange,
   disabled = false,
   required = false,
@@ -57,7 +61,7 @@ export function CatalogBannerImageUpload({
 
     let optimizedFile = file;
     try {
-      const { file: compressed } = await compressImageForUpload(file);
+      const { file: compressed } = await compressBannerImageForUpload(file, variant);
       optimizedFile = compressed;
     } catch (err) {
       setError(
@@ -76,6 +80,7 @@ export function CatalogBannerImageUpload({
 
     const formData = new FormData();
     formData.set("file", optimizedFile);
+    formData.set("variant", variant);
 
     startTransition(async () => {
       const result = await uploadCatalogBannerImage(formData);
@@ -120,7 +125,11 @@ export function CatalogBannerImageUpload({
           </label>
           {hint ? (
             <p className="mt-0.5 text-xs leading-snug text-zinc-500">{hint}</p>
-          ) : null}
+          ) : (
+            <p className="mt-0.5 text-xs leading-snug text-zinc-500">
+              {BANNER_OPTIMIZE_HINT}
+            </p>
+          )}
         </div>
       </div>
 

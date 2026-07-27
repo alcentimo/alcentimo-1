@@ -1,9 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  compressBannerImage,
   compressProductImage,
   formatFileSize,
   type ImageOptimizationResult,
 } from "@/lib/image-compress";
+import {
+  BANNER_MAX_OUTPUT_BYTES,
+  BANNER_WEBP_QUALITY,
+  getBannerMaxDimensions,
+  type BannerImageVariant,
+} from "@/lib/banner-image";
 import {
   PRODUCT_IMAGE_MAX_DIMENSION,
   PRODUCT_IMAGE_MAX_INPUT_BYTES,
@@ -134,6 +141,94 @@ export async function uploadProductImage(
 export interface UploadStoreAssetResult {
   url?: string;
   error?: string;
+}
+
+function isClientOptimizedBannerImage(file: File): boolean {
+  return (
+    file.type === "image/webp" &&
+    file.size > 0 &&
+    file.size <= BANNER_MAX_OUTPUT_BYTES
+  );
+}
+
+async function resolveBannerImageOptimization(
+  inputBuffer: Buffer,
+  file: File,
+  variant: BannerImageVariant,
+): Promise<ImageOptimizationResult> {
+  if (!isClientOptimizedBannerImage(file)) {
+    return compressBannerImage(inputBuffer, variant);
+  }
+
+  const sharp = (await import("sharp")).default;
+  const meta = await sharp(inputBuffer, { animated: false }).metadata();
+  const width = meta.width ?? 0;
+  const height = meta.height ?? 0;
+  const { maxWidth, maxHeight } = getBannerMaxDimensions(variant);
+
+  if (width <= maxWidth && height <= maxHeight) {
+    return {
+      buffer: inputBuffer,
+      width,
+      height,
+      originalSize: inputBuffer.length,
+      compressedSize: inputBuffer.length,
+      quality: Math.round(BANNER_WEBP_QUALITY * 100),
+      format: "webp",
+    };
+  }
+
+  return compressBannerImage(inputBuffer, variant);
+}
+
+/** Sube banners promocionales optimizados al bucket store-assets. */
+export async function uploadCatalogBannerAssetImage(
+  supabase: SupabaseClient,
+  storeId: string,
+  file: File,
+  variant: BannerImageVariant,
+): Promise<UploadStoreAssetResult> {
+  if (!ALLOWED_TYPES.has(file.type)) {
+    return { error: "Formato no permitido. Usa JPG, PNG, WebP o GIF." };
+  }
+
+  if (file.size > MAX_INPUT_SIZE) {
+    return {
+      error: `La imagen supera el límite de ${formatFileSize(MAX_INPUT_SIZE)}.`,
+    };
+  }
+
+  const inputBuffer = Buffer.from(await file.arrayBuffer());
+
+  let optimization: ImageOptimizationResult;
+  try {
+    optimization = await resolveBannerImageOptimization(
+      inputBuffer,
+      file,
+      variant,
+    );
+  } catch {
+    return { error: "No se pudo procesar la imagen. Prueba con otro archivo." };
+  }
+
+  const safeFolder = "catalog-banners";
+  const path = `${storeId}/${safeFolder}/${variant}-${crypto.randomUUID()}.webp`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(STORE_ASSETS_BUCKET)
+    .upload(path, optimization.buffer, {
+      cacheControl: "31536000",
+      upsert: false,
+      contentType: "image/webp",
+    });
+
+  if (uploadError) {
+    return { error: uploadError.message };
+  }
+
+  const { data } = supabase.storage.from(STORE_ASSETS_BUCKET).getPublicUrl(path);
+
+  return { url: data.publicUrl };
 }
 
 /** Sube imágenes de configuración (QR Pago Móvil, etc.) al bucket store-assets. */

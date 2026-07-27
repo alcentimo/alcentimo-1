@@ -132,7 +132,8 @@ export function CatalogPromoBannerField({
               <CatalogBannerImageUpload
                 id={`promo-banner-mobile-${slide.id}`}
                 label="Móvil"
-                hint="Recomendado 800×320 px. Se recorta sin deformarse."
+                variant="mobile"
+                hint="Recomendado 960×384 px. Se recorta sin deformarse."
                 value={slide.mobileImageUrl}
                 required
                 onChange={(mobileImageUrl) =>
@@ -143,7 +144,8 @@ export function CatalogPromoBannerField({
               <CatalogBannerImageUpload
                 id={`promo-banner-desktop-${slide.id}`}
                 label="Escritorio"
-                hint="Si no subes una, se usa la imagen móvil."
+                variant="desktop"
+                hint="Recomendado 1600×400 px. Si no subes una, se usa la imagen móvil."
                 value={slide.desktopImageUrl ?? ""}
                 onChange={(desktopImageUrl) =>
                   updateSlide(

@@ -10,7 +10,8 @@ import {
 import { normalizeHex6 } from "@/lib/store-settings/color-contrast";
 import { sanitizePromoBannerForStorage } from "@/lib/store-settings/promo-banner";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
-import { uploadStoreAssetImage, uploadStoreLogoImage, removeStoreLogoAssets } from "@/lib/storage";
+import { uploadCatalogBannerAssetImage, uploadStoreAssetImage, uploadStoreLogoImage, removeStoreLogoAssets } from "@/lib/storage";
+import type { BannerImageVariant } from "@/lib/banner-image";
 import { isValidStoreSlug } from "@/lib/stores/slug";
 import { slugify } from "@/lib/slugify";
 import { isValidStoreRubro, normalizeStoreRubro } from "@/src/config/categories";
@@ -300,7 +301,16 @@ export async function uploadCatalogBannerImage(
     return { error: "Selecciona una imagen para el banner." };
   }
 
-  return uploadStoreAssetImage(supabase, auth.store.id, file, "catalog-banners");
+  const variantRaw = formData.get("variant");
+  const variant: BannerImageVariant =
+    variantRaw === "desktop" ? "desktop" : "mobile";
+
+  return uploadCatalogBannerAssetImage(
+    supabase,
+    auth.store.id,
+    file,
+    variant,
+  );
 }
 
 export type SlugAvailabilityResult = {

@@ -1,8 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  BANNER_DISPLAY_HEIGHT_DESKTOP_PX,
+  BANNER_DISPLAY_HEIGHT_MOBILE_PX,
+} from "@/lib/banner-image";
 import {
   getActivePromoBannerSlides,
   resolvePromoBannerSettings,
@@ -16,7 +21,8 @@ interface CatalogPromoBannerCarouselProps {
   className?: string;
 }
 
-const AUTO_ADVANCE_MS = 6000;
+const AUTO_ADVANCE_MS = 6500;
+const AUTO_RESUME_MS = 8000;
 
 function resolveSlideImageUrls(slide: {
   mobileImageUrl: string;
@@ -39,6 +45,7 @@ export function CatalogPromoBannerCarousel({
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasMultiple = slides.length > 1;
 
   const goTo = useCallback(
@@ -51,8 +58,29 @@ export function CatalogPromoBannerCarousel({
     [slides.length],
   );
 
-  const goPrev = useCallback(() => goTo(activeIndex - 1), [activeIndex, goTo]);
-  const goNext = useCallback(() => goTo(activeIndex + 1), [activeIndex, goTo]);
+  const goPrev = useCallback(() => {
+    setActiveIndex((current) =>
+      slides.length === 0
+        ? current
+        : ((current - 1 + slides.length) % slides.length),
+    );
+  }, [slides.length]);
+
+  const goNext = useCallback(() => {
+    setActiveIndex((current) =>
+      slides.length === 0 ? current : (current + 1) % slides.length,
+    );
+  }, [slides.length]);
+
+  const pauseAutoAdvance = useCallback(() => {
+    setIsPaused(true);
+    if (resumeTimerRef.current) {
+      clearTimeout(resumeTimerRef.current);
+    }
+    resumeTimerRef.current = setTimeout(() => {
+      setIsPaused(false);
+    }, AUTO_RESUME_MS);
+  }, []);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -62,11 +90,21 @@ export function CatalogPromoBannerCarousel({
     if (!hasMultiple || isPaused) return;
 
     const timer = window.setInterval(() => {
-      goTo(activeIndex + 1);
+      setActiveIndex((current) =>
+        slides.length === 0 ? current : (current + 1) % slides.length,
+      );
     }, AUTO_ADVANCE_MS);
 
     return () => window.clearInterval(timer);
-  }, [activeIndex, goTo, hasMultiple, isPaused]);
+  }, [hasMultiple, isPaused, slides.length]);
+
+  useEffect(() => {
+    return () => {
+      if (resumeTimerRef.current) {
+        clearTimeout(resumeTimerRef.current);
+      }
+    };
+  }, []);
 
   if (slides.length === 0) {
     return null;
@@ -92,33 +130,58 @@ export function CatalogPromoBannerCarousel({
     touchStartX.current = null;
 
     if (Math.abs(delta) < 44) return;
-    setIsPaused(true);
+
+    pauseAutoAdvance();
     if (delta > 0) goPrev();
     else goNext();
   }
 
   const slideContent = (
-    <picture className="txn-promo-banner-picture">
-      <source media="(min-width: 768px)" srcSet={imageUrls.desktop} />
-      <img
+    <div className="txn-promo-banner-media">
+      <Image
+        src={imageUrls.desktop}
+        alt={alt}
+        fill
+        priority={activeIndex === 0}
+        loading={activeIndex === 0 ? "eager" : "lazy"}
+        sizes="(max-width: 767px) 0px, 1152px"
+        className="txn-promo-banner-image txn-promo-banner-image-desktop"
+      />
+      <Image
         src={imageUrls.mobile}
         alt={alt}
+        fill
+        priority={activeIndex === 0}
         loading={activeIndex === 0 ? "eager" : "lazy"}
-        decoding="async"
-        className="txn-promo-banner-image"
+        sizes="100vw"
+        className="txn-promo-banner-image txn-promo-banner-image-mobile"
       />
-    </picture>
+    </div>
   );
 
   return (
     <section
       className={cn("txn-promo-banner", className)}
+      style={{
+        ["--txn-promo-banner-height-mobile" as string]: `${BANNER_DISPLAY_HEIGHT_MOBILE_PX}px`,
+        ["--txn-promo-banner-height-desktop" as string]: `${BANNER_DISPLAY_HEIGHT_DESKTOP_PX}px`,
+      }}
       aria-label="Promociones destacadas"
       aria-roledescription="carrusel"
+      aria-live="polite"
       onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      onMouseLeave={() => {
+        if (resumeTimerRef.current) {
+          clearTimeout(resumeTimerRef.current);
+        }
+        setIsPaused(false);
+      }}
       onFocusCapture={() => setIsPaused(true)}
-      onBlurCapture={() => setIsPaused(false)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setIsPaused(false);
+        }
+      }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -148,7 +211,10 @@ export function CatalogPromoBannerCarousel({
               type="button"
               className="txn-promo-banner-nav txn-promo-banner-nav-prev"
               aria-label="Promoción anterior"
-              onClick={goPrev}
+              onClick={() => {
+                pauseAutoAdvance();
+                goPrev();
+              }}
             >
               <ChevronLeft className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -156,7 +222,10 @@ export function CatalogPromoBannerCarousel({
               type="button"
               className="txn-promo-banner-nav txn-promo-banner-nav-next"
               aria-label="Promoción siguiente"
-              onClick={goNext}
+              onClick={() => {
+                pauseAutoAdvance();
+                goNext();
+              }}
             >
               <ChevronRight className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -178,7 +247,7 @@ export function CatalogPromoBannerCarousel({
                     index === activeIndex && "txn-promo-banner-dot-active",
                   )}
                   onClick={() => {
-                    setIsPaused(true);
+                    pauseAutoAdvance();
                     goTo(index);
                   }}
                 />

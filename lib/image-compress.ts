@@ -1,5 +1,11 @@
 import sharp from "sharp";
 import {
+  BANNER_MAX_OUTPUT_BYTES,
+  BANNER_WEBP_QUALITY,
+  getBannerMaxDimensions,
+  type BannerImageVariant,
+} from "@/lib/banner-image";
+import {
   PRODUCT_IMAGE_MAX_DIMENSION,
   PRODUCT_IMAGE_MAX_OUTPUT_BYTES,
   PRODUCT_IMAGE_WEBP_QUALITY,
@@ -87,6 +93,78 @@ export async function compressProductImage(
   }
 
   if (best.buffer.length > PRODUCT_IMAGE_MAX_OUTPUT_BYTES) {
+    throw new Error("IMAGE_TOO_LARGE");
+  }
+
+  return {
+    buffer: best.buffer,
+    width: best.width,
+    height: best.height,
+    originalSize,
+    compressedSize: best.buffer.length,
+    quality,
+    format: "webp",
+  };
+}
+
+async function encodeBannerWebp(
+  input: Buffer,
+  maxWidth: number,
+  maxHeight: number,
+  quality: number,
+): Promise<{ buffer: Buffer; width: number; height: number }> {
+  const buffer = await sharp(input, { animated: false })
+    .rotate()
+    .resize({
+      width: maxWidth,
+      height: maxHeight,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .webp({ quality, effort: 4 })
+    .toBuffer();
+
+  const meta = await sharp(buffer).metadata();
+
+  return {
+    buffer,
+    width: meta.width ?? maxWidth,
+    height: meta.height ?? maxHeight,
+  };
+}
+
+/**
+ * Optimiza banners promocionales: recorte proporcional, WebP y ≤100 KB.
+ */
+export async function compressBannerImage(
+  input: Buffer | ArrayBuffer,
+  variant: BannerImageVariant,
+): Promise<ImageOptimizationResult> {
+  const source = toBuffer(input);
+  const originalSize = source.length;
+  const { maxWidth, maxHeight } = getBannerMaxDimensions(variant);
+
+  let quality = Math.round(BANNER_WEBP_QUALITY * 100);
+  const minQuality = 68;
+  let width = maxWidth;
+  let height = maxHeight;
+  let best = await encodeBannerWebp(source, width, height, quality);
+
+  while (best.buffer.length > BANNER_MAX_OUTPUT_BYTES && width > 640) {
+    width = Math.max(640, width - 80);
+    height = Math.max(
+      variant === "desktop" ? 160 : 120,
+      Math.round(height * 0.9),
+    );
+    best = await encodeBannerWebp(source, width, height, quality);
+  }
+
+  while (best.buffer.length > BANNER_MAX_OUTPUT_BYTES && quality > minQuality) {
+    quality -= 5;
+    best = await encodeBannerWebp(source, width, height, quality);
+  }
+
+  if (best.buffer.length > BANNER_MAX_OUTPUT_BYTES) {
     throw new Error("IMAGE_TOO_LARGE");
   }
 

@@ -4998,32 +4998,35 @@ body {
 
 .txn-promo-banner-viewport {
   @apply relative mx-auto w-full max-w-6xl overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900;
-  max-height: 10.5rem;
+  height: var(--txn-promo-banner-height-mobile, 150px);
+  max-height: var(--txn-promo-banner-height-mobile, 150px);
 }
 
 @media (min-width: 768px) {
   .txn-promo-banner-viewport {
-    max-height: 15rem;
+    height: var(--txn-promo-banner-height-desktop, 250px);
+    max-height: var(--txn-promo-banner-height-desktop, 250px);
   }
 }
 
 .txn-promo-banner-link {
-  @apply block h-full w-full;
+  @apply relative block h-full w-full;
 }
 
-.txn-promo-banner-picture {
-  @apply block h-full w-full;
+.txn-promo-banner-media {
+  @apply relative block h-full w-full;
 }
 
 .txn-promo-banner-image {
-  @apply block h-full w-full object-cover object-center;
-  max-height: 10.5rem;
+  @apply object-cover object-center;
 }
 
-@media (min-width: 768px) {
-  .txn-promo-banner-image {
-    max-height: 15rem;
-  }
+.txn-promo-banner-image-desktop {
+  @apply hidden md:block;
+}
+
+.txn-promo-banner-image-mobile {
+  @apply block md:hidden;
 }
 
 .txn-promo-banner-nav {
