@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { BRAND_LOGO_FULL_PATH } from "@/lib/brand/assets";
+import {
+  BRAND_LOGO_FULL_2X_PATH,
+  BRAND_LOGO_FULL_HEIGHT,
+  BRAND_LOGO_FULL_PATH,
+  BRAND_LOGO_FULL_WIDTH,
+} from "@/lib/brand/assets";
 import { cn } from "@/lib/cn";
 
 interface LandingHeaderLogoProps {
@@ -8,7 +13,7 @@ interface LandingHeaderLogoProps {
   className?: string;
 }
 
-/** Logo único de la landing — PNG recortado, sin contenedor ni fondo. */
+/** Logo único de la landing — PNG nativo, sin filtros ni contenedor. */
 export function LandingHeaderLogo({
   href = "/",
   size = "header",
@@ -21,18 +26,30 @@ export function LandingHeaderLogo({
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={BRAND_LOGO_FULL_PATH}
+      srcSet={`${BRAND_LOGO_FULL_PATH} 1x, ${BRAND_LOGO_FULL_2X_PATH} 2x`}
+      width={BRAND_LOGO_FULL_WIDTH}
+      height={BRAND_LOGO_FULL_HEIGHT}
       alt="Alcentimo"
       className={imgClass}
       decoding="async"
+      fetchPriority="high"
     />
   );
 
   if (!href) {
-    return <span className={cn("inline-flex shrink-0 items-center", className)}>{image}</span>;
+    return (
+      <span className={cn("inline-flex shrink-0 items-center", className)}>
+        {image}
+      </span>
+    );
   }
 
   return (
-    <Link href={href} className={cn("inline-flex shrink-0 items-center", className)} aria-label="Alcentimo">
+    <Link
+      href={href}
+      className={cn("landing-header-logo-link inline-flex shrink-0 items-center", className)}
+      aria-label="Alcentimo"
+    >
       {image}
     </Link>
   );
