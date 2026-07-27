@@ -6,6 +6,7 @@ import {
   BRAND_FAVICON_16_PATH,
   BRAND_FAVICON_32_PATH,
   BRAND_FAVICON_ICO_PATH,
+  BRAND_FAVICON_PNG_PATH,
   BRAND_PWA_ICON_192_PATH,
   BRAND_PWA_ICON_512_PATH,
 } from "@/lib/brand/assets";
@@ -40,6 +41,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     icons: {
       icon: [
+        { url: BRAND_FAVICON_PNG_PATH, sizes: "32x32", type: "image/png" },
         { url: BRAND_FAVICON_ICO_PATH, sizes: "48x48" },
         { url: BRAND_FAVICON_16_PATH, sizes: "16x16", type: "image/png" },
         { url: BRAND_FAVICON_32_PATH, sizes: "32x32", type: "image/png" },
@@ -53,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
           type: "image/png",
         },
       ],
-      shortcut: BRAND_FAVICON_ICO_PATH,
+      shortcut: BRAND_FAVICON_PNG_PATH,
     },
   };
 }
@@ -79,6 +81,9 @@ export default async function RootLayout({
     <html lang="es" suppressHydrationWarning className={`${geistSans.variable} h-full antialiased`}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
+        <link rel="icon" type="image/png" href={BRAND_FAVICON_PNG_PATH} sizes="32x32" />
+        <link rel="icon" type="image/png" href={BRAND_FAVICON_32_PATH} sizes="32x32" />
+        <link rel="apple-touch-icon" href={BRAND_APPLE_TOUCH_ICON_PATH} sizes="180x180" />
       </head>
       <body className="min-h-full flex flex-col font-sans">
         <PlatformSettingsProvider settings={platformSettings}>

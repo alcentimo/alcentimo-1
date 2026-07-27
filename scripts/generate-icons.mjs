@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const publicDir = path.join(process.cwd(), "public");
-const sourcePath = path.join(publicDir, "icon-512x512.png");
+const sourcePath = path.join(publicDir, "isotipo-alcentimo.png");
 
 const OUTPUTS = [
   { file: "favicon-16x16.png", size: 16 },
@@ -17,7 +17,6 @@ const OUTPUTS = [
 
 async function renderIconPng(size) {
   return sharp(sourcePath)
-    .trim()
     .resize(size, size, {
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
@@ -28,7 +27,7 @@ async function renderIconPng(size) {
 
 await mkdir(publicDir, { recursive: true });
 
-console.log("Generating favicons from public/icon-512x512.png …");
+console.log("Generating favicons from public/isotipo-alcentimo.png …");
 
 for (const { file, size } of OUTPUTS) {
   const buffer = await renderIconPng(size);
