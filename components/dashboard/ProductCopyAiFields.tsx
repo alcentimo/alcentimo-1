@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
-import type { ImproveProductCopyFocus } from "@/lib/ai/product-copy-types";
 
 interface ProductCopyAiFieldsProps {
   idPrefix: string;
@@ -26,49 +25,6 @@ interface ProductCopyAiFieldsProps {
   showShortDescription?: boolean;
 }
 
-function FieldLabelRow({
-  htmlFor,
-  label,
-  required,
-  onImprove,
-  improving,
-  disabled,
-  labelClassName,
-}: {
-  htmlFor: string;
-  label: string;
-  required?: boolean;
-  onImprove: () => void;
-  improving: boolean;
-  disabled?: boolean;
-  labelClassName: string;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-2">
-      <Label htmlFor={htmlFor} className={labelClassName}>
-        {label}
-        {required ? <span className="text-red-500"> *</span> : null}
-      </Label>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        disabled={disabled || improving}
-        onClick={onImprove}
-        className="product-ai-improve-btn h-7 shrink-0 gap-1 px-2 text-xs"
-        aria-label={`Mejorar ${label.toLowerCase()} con IA`}
-      >
-        {improving ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-        ) : (
-          <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-        )}
-        Mejorar con IA
-      </Button>
-    </div>
-  );
-}
-
 export function ProductCopyAiFields({
   idPrefix,
   name,
@@ -85,8 +41,7 @@ export function ProductCopyAiFields({
   showShortDescription = true,
 }: ProductCopyAiFieldsProps) {
   const [aiError, setAiError] = useState<string | null>(null);
-  const [improvingFocus, setImprovingFocus] =
-    useState<ImproveProductCopyFocus | null>(null);
+  const [improving, setImproving] = useState(false);
 
   const isCompact = variant === "compact";
   const labelClassName = isCompact ? "payment-field-label" : "label-field";
@@ -98,73 +53,103 @@ export function ProductCopyAiFields({
     "min-h-[8rem] resize-y leading-relaxed",
   );
 
-  const runImprove = useCallback(
-    async (focus: ImproveProductCopyFocus) => {
-      setAiError(null);
-      setImprovingFocus(focus);
+  const canImprove =
+    name.trim().length >= 2 ||
+    description.trim().length >= 2 ||
+    shortDescription.trim().length >= 2;
 
-      try {
-        const response = await fetch("/api/dashboard/products/improve-copy", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            draftTitle: name,
-            draftDescription: description || shortDescription,
-            storeRubro,
-            categoryLabel,
-            focus,
-          }),
-        });
+  const runImproveAll = useCallback(async () => {
+    if (!canImprove) {
+      setAiError(
+        "Escribe al menos un título o descripción básica antes de mejorar con IA.",
+      );
+      return;
+    }
 
-        const payload = (await response.json()) as {
-          error?: string;
-          title?: string;
-          shortDescription?: string;
-          description?: string;
-        };
+    setAiError(null);
+    setImproving(true);
 
-        if (!response.ok) {
-          throw new Error(payload.error ?? "No se pudo mejorar el texto.");
-        }
+    try {
+      const response = await fetch("/api/dashboard/products/improve-copy", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          draftTitle: name,
+          draftDescription: description || shortDescription,
+          storeRubro,
+          categoryLabel,
+          focus: "all",
+        }),
+      });
 
-        if (payload.title) onNameChange(payload.title);
-        if (payload.shortDescription) {
-          onShortDescriptionChange(payload.shortDescription);
-        }
-        if (payload.description) onDescriptionChange(payload.description);
-      } catch (error) {
-        setAiError(
-          error instanceof Error ? error.message : "Error al mejorar con IA.",
-        );
-      } finally {
-        setImprovingFocus(null);
+      const payload = (await response.json()) as {
+        error?: string;
+        title?: string;
+        shortDescription?: string;
+        description?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "No se pudo mejorar el texto.");
       }
-    },
-    [
-      name,
-      description,
-      shortDescription,
-      storeRubro,
-      categoryLabel,
-      onNameChange,
-      onShortDescriptionChange,
-      onDescriptionChange,
-    ],
-  );
+
+      if (payload.title) onNameChange(payload.title);
+      if (payload.shortDescription) {
+        onShortDescriptionChange(payload.shortDescription);
+      }
+      if (payload.description) onDescriptionChange(payload.description);
+    } catch (error) {
+      setAiError(
+        error instanceof Error ? error.message : "Error al mejorar con IA.",
+      );
+    } finally {
+      setImproving(false);
+    }
+  }, [
+    canImprove,
+    name,
+    description,
+    shortDescription,
+    storeRubro,
+    categoryLabel,
+    onNameChange,
+    onShortDescriptionChange,
+    onDescriptionChange,
+  ]);
 
   return (
     <div className="space-y-4">
+      <div className="space-y-1.5">
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={disabled || improving || !canImprove}
+            onClick={() => void runImproveAll()}
+            className="product-ai-improve-btn h-8 shrink-0 gap-1.5 px-2.5 text-xs"
+            aria-label="Mejorar textos del producto con IA"
+          >
+            {improving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            )}
+            Mejorar con IA
+          </Button>
+        </div>
+        <p className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
+          Optimiza nombre, descripción corta y descripción completa de una sola
+          vez. Escribe un borrador breve antes de pulsar.
+        </p>
+      </div>
+
       <div>
-        <FieldLabelRow
-          htmlFor={`${idPrefix}-name`}
-          label={isCompact ? "Nombre" : "Nombre del producto"}
-          required
-          onImprove={() => void runImprove("title")}
-          improving={improvingFocus === "title"}
-          disabled={disabled}
-          labelClassName={labelClassName}
-        />
+        <Label htmlFor={`${idPrefix}-name`} className={labelClassName}>
+          {isCompact ? "Nombre" : "Nombre del producto"}
+          <span className="text-red-500"> *</span>
+        </Label>
         <Input
           id={`${idPrefix}-name`}
           name="name"
@@ -179,14 +164,9 @@ export function ProductCopyAiFields({
       </div>
 
       <div>
-        <FieldLabelRow
-          htmlFor={`${idPrefix}-description`}
-          label="Descripción"
-          onImprove={() => void runImprove("description")}
-          improving={improvingFocus === "description"}
-          disabled={disabled}
-          labelClassName={labelClassName}
-        />
+        <Label htmlFor={`${idPrefix}-description`} className={labelClassName}>
+          Descripción
+        </Label>
         <Textarea
           id={`${idPrefix}-description`}
           name="description"
@@ -194,13 +174,10 @@ export function ProductCopyAiFields({
           rows={5}
           value={description}
           onChange={(event) => onDescriptionChange(event.target.value)}
-          placeholder="Describe el producto. Puedes escribir algo breve y pulsar «Mejorar con IA»."
+          placeholder="Beneficios, materiales, uso… La IA puede ampliarlo con viñetas."
           disabled={disabled}
           className={textareaClassName}
         />
-        <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
-          La IA puede añadir viñetas de beneficios listas para vender.
-        </p>
       </div>
 
       {showShortDescription ? (
