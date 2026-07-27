@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
@@ -21,7 +21,11 @@ import {
   useCatalogProductDetail,
 } from "@/components/catalog/CatalogProductDetailHost";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
-import { CatalogCartHost } from "@/components/catalog-transactional/CatalogCartHost";
+import { CatalogCartHost, type CartPanelView } from "@/components/catalog-transactional/CatalogCartHost";
+import {
+  useCatalogShellNavigationOptional,
+  useRegisterCatalogCartController,
+} from "@/components/catalog-transactional/CatalogShellNavigation";
 import { CatalogBrowseToolbar } from "@/components/catalog-transactional/CatalogBrowseToolbar";
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
 import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
@@ -213,6 +217,26 @@ function CatalogCategoriesPageContent({
   addItem,
 }: CatalogCategoriesPageContentProps) {
   const { openProduct } = useCatalogProductDetail();
+  const shellNav = useCatalogShellNavigationOptional();
+  const [cartPanelView, setCartPanelView] = useState<CartPanelView>("closed");
+
+  const openCartSummary = useCallback(() => {
+    setCartPanelView("summary");
+  }, []);
+
+  const closeCart = useCallback(() => {
+    setCartPanelView("closed");
+  }, []);
+
+  useRegisterCatalogCartController(openCartSummary, closeCart);
+
+  useEffect(() => {
+    shellNav?.setCartActive(cartPanelView !== "closed");
+  }, [cartPanelView, shellNav]);
+
+  const handleCartPanelViewChange = useCallback((view: CartPanelView) => {
+    setCartPanelView(view);
+  }, []);
 
   return (
     <div
@@ -324,6 +348,8 @@ function CatalogCategoriesPageContent({
         exchangeRate={liveExchangeRate}
         showOfficialRate={catalogCurrency.showOfficialRate}
         showBsConversion={catalogCurrency.showBsConversion}
+        panelView={cartPanelView}
+        onPanelViewChange={handleCartPanelViewChange}
       />
     </div>
   );

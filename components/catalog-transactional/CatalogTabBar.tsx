@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import type { MouseEvent } from "react";
 import { Cpu, Home, LayoutGrid, ShoppingBag, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
+import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 
 export type CatalogTabId =
   | "inicio"
@@ -20,20 +22,26 @@ interface CatalogTabBarProps {
   pcBuilderEnabled?: boolean;
 }
 
-type CatalogTabSegment = "" | "armar-pc" | "categorias" | "cuenta" | "perfil";
+type CatalogTabSegment = "" | "armar-pc" | "categorias";
 
 interface CatalogTabDefinition {
   id: CatalogTabId;
   label: string;
-  segment: CatalogTabSegment;
+  segment?: CatalogTabSegment;
   icon: LucideIcon;
+  action?: "cart" | "profile";
 }
 
 const BASE_TABS: CatalogTabDefinition[] = [
   { id: "inicio", label: "Inicio", segment: "", icon: Home },
-  { id: "categorias", label: "Categorías", segment: "categorias", icon: LayoutGrid },
-  { id: "compras", label: "Compras", segment: "cuenta", icon: ShoppingBag },
-  { id: "perfil", label: "Perfil", segment: "perfil", icon: User },
+  {
+    id: "categorias",
+    label: "Categorías",
+    segment: "categorias",
+    icon: LayoutGrid,
+  },
+  { id: "compras", label: "Compras", icon: ShoppingBag, action: "cart" },
+  { id: "perfil", label: "Perfil", icon: User, action: "profile" },
 ];
 
 const PC_BUILDER_TAB: CatalogTabDefinition = {
@@ -46,18 +54,19 @@ const PC_BUILDER_TAB: CatalogTabDefinition = {
 function buildTabs(pcBuilderEnabled: boolean): CatalogTabDefinition[] {
   if (!pcBuilderEnabled) return BASE_TABS;
 
-  return [
-    BASE_TABS[0],
-    PC_BUILDER_TAB,
-    ...BASE_TABS.slice(1),
-  ];
+  return [BASE_TABS[0], PC_BUILDER_TAB, ...BASE_TABS.slice(1)];
 }
 
 function resolveActiveTab(
   pathname: string,
   storeSlug: string,
   pcBuilderEnabled: boolean,
+  cartActive: boolean,
+  profileOpen: boolean,
 ): CatalogTabId {
+  if (cartActive) return "compras";
+  if (profileOpen) return "perfil";
+
   const base = getStoreCatalogBasePath(storeSlug);
 
   if (pathname === base || pathname === `${base}/`) {
@@ -69,18 +78,22 @@ function resolveActiveTab(
   }
 
   if (pathname.startsWith(`${base}/categorias`)) return "categorias";
-  if (pathname.startsWith(`${base}/cuenta`)) return "compras";
-  if (pathname.startsWith(`${base}/perfil`)) return "perfil";
 
   if (base === "/") {
     if (pathname === "/" || pathname === "") return "inicio";
     if (pcBuilderEnabled && pathname.startsWith("/armar-pc")) return "armar-pc";
     if (pathname.startsWith("/categorias")) return "categorias";
-    if (pathname.startsWith("/cuenta")) return "compras";
-    if (pathname.startsWith("/perfil")) return "perfil";
   }
 
   return "inicio";
+}
+
+function buildTabHref(
+  base: string,
+  segment: CatalogTabSegment | undefined,
+): string {
+  if (!segment) return base;
+  return `${base}/${segment}`.replace("//", "/");
 }
 
 export function CatalogTabBar({
@@ -88,9 +101,29 @@ export function CatalogTabBar({
   pcBuilderEnabled = false,
 }: CatalogTabBarProps) {
   const pathname = usePathname();
-  const activeTab = resolveActiveTab(pathname, storeSlug, pcBuilderEnabled);
+  const router = useRouter();
+  const shellNav = useCatalogShellNavigationOptional();
+  const cartActive = shellNav?.cartActive ?? false;
+  const profileOpen = shellNav?.profileOpen ?? false;
+  const activeTab = resolveActiveTab(
+    pathname,
+    storeSlug,
+    pcBuilderEnabled,
+    cartActive,
+    profileOpen,
+  );
   const base = getStoreCatalogBasePath(storeSlug);
   const tabs = buildTabs(pcBuilderEnabled);
+
+  function handleInicioClick(event: MouseEvent<HTMLAnchorElement>) {
+    const href = buildTabHref(base, "");
+    if (pathname === href || pathname === `${href}/`) {
+      event.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      shellNav?.closeProfile();
+      shellNav?.closeCart();
+    }
+  }
 
   return (
     <nav
@@ -103,15 +136,71 @@ export function CatalogTabBar({
           pcBuilderEnabled && "catalog-tab-bar-inner--pc-builder",
         )}
       >
-        {tabs.map(({ id, label, segment, icon: Icon }) => {
-          const href = segment ? `${base}/${segment}`.replace("//", "/") : base;
+        {tabs.map(({ id, label, segment, icon: Icon, action }) => {
           const isActive = activeTab === id;
+
+          if (action === "cart") {
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => {
+                  if (shellNav) {
+                    shellNav.openCart();
+                    return;
+                  }
+                  router.push(buildTabHref(base, undefined) + "?carrito=1");
+                }}
+                className={cn(
+                  "catalog-tab-item",
+                  isActive && "catalog-tab-item-active",
+                )}
+                aria-current={isActive ? "page" : undefined}
+                aria-label="Abrir carrito de compras"
+              >
+                <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <span>{label}</span>
+              </button>
+            );
+          }
+
+          if (action === "profile") {
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => shellNav?.openProfile()}
+                className={cn(
+                  "catalog-tab-item",
+                  isActive && "catalog-tab-item-active",
+                )}
+                aria-current={isActive ? "page" : undefined}
+                aria-label="Ver información de la tienda"
+              >
+                <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <span>{label}</span>
+              </button>
+            );
+          }
+
+          const href = buildTabHref(base, segment);
 
           return (
             <Link
               key={id}
               href={href}
-              className={cn("catalog-tab-item", isActive && "catalog-tab-item-active")}
+              onClick={
+                id === "inicio"
+                  ? handleInicioClick
+                  : () => {
+                      shellNav?.closeProfile();
+                      shellNav?.closeCart();
+                    }
+              }
+              className={cn(
+                "catalog-tab-item",
+                isActive && "catalog-tab-item-active",
+              )}
               aria-current={isActive ? "page" : undefined}
             >
               <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />

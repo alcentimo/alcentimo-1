@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
@@ -24,7 +24,11 @@ import {
 import { CatalogUploadCtaCard } from "@/components/catalog/CatalogUploadCtaCard";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
-import { CatalogCartHost } from "@/components/catalog-transactional/CatalogCartHost";
+import { CatalogCartHost, type CartPanelView } from "@/components/catalog-transactional/CatalogCartHost";
+import {
+  useCatalogShellNavigationOptional,
+  useRegisterCatalogCartController,
+} from "@/components/catalog-transactional/CatalogShellNavigation";
 import { CatalogBrowseToolbar } from "@/components/catalog-transactional/CatalogBrowseToolbar";
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
 import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
@@ -49,6 +53,7 @@ interface TransactionalCatalogProps {
   catalogDesign: CatalogDesignSettings;
   catalogCurrency: CatalogCurrencySettings;
   openCheckoutInitially?: boolean;
+  openCartInitially?: boolean;
   previewMode?: boolean;
   referenceMode?: boolean;
   showReferenceCta?: boolean;
@@ -88,6 +93,7 @@ export function TransactionalCatalog({
   catalogDesign,
   catalogCurrency,
   openCheckoutInitially = false,
+  openCartInitially = false,
   previewMode = false,
   referenceMode = false,
   showReferenceCta = false,
@@ -111,6 +117,7 @@ export function TransactionalCatalog({
         catalogDesign={catalogDesign}
         catalogCurrency={catalogCurrency}
         openCheckoutInitially={openCheckoutInitially}
+        openCartInitially={openCartInitially}
         previewMode={previewMode}
         referenceMode={referenceMode}
         showReferenceCta={showReferenceCta}
@@ -130,6 +137,7 @@ function TransactionalCatalogInner({
   catalogDesign,
   catalogCurrency,
   openCheckoutInitially = false,
+  openCartInitially = false,
   previewMode = false,
   referenceMode = false,
   showReferenceCta = false,
@@ -158,6 +166,7 @@ function TransactionalCatalogInner({
         catalogDesign={catalogDesign}
         catalogCurrency={catalogCurrency}
         openCheckoutInitially={openCheckoutInitially}
+        openCartInitially={openCartInitially}
         previewMode={previewMode}
         referenceMode={referenceMode}
         showReferenceCta={showReferenceCta}
@@ -182,6 +191,7 @@ function TransactionalCatalogContent({
   catalogDesign,
   catalogCurrency,
   openCheckoutInitially = false,
+  openCartInitially = false,
   previewMode = false,
   referenceMode = false,
   showReferenceCta = false,
@@ -201,6 +211,40 @@ function TransactionalCatalogContent({
 }) {
   const { openProduct } = useCatalogProductDetail();
   const { getAvailableStock } = useCatalogFulfillment();
+  const shellNav = useCatalogShellNavigationOptional();
+  const [cartPanelView, setCartPanelView] = useState<CartPanelView>(() => {
+    if (openCheckoutInitially) return "checkout";
+    if (openCartInitially) return "summary";
+    return "closed";
+  });
+
+  const openCartSummary = useCallback(() => {
+    setCartPanelView("summary");
+  }, []);
+
+  const closeCart = useCallback(() => {
+    setCartPanelView("closed");
+  }, []);
+
+  useRegisterCatalogCartController(openCartSummary, closeCart);
+
+  useEffect(() => {
+    if (openCheckoutInitially) {
+      setCartPanelView("checkout");
+      return;
+    }
+    if (openCartInitially) {
+      setCartPanelView("summary");
+    }
+  }, [openCheckoutInitially, openCartInitially]);
+
+  useEffect(() => {
+    shellNav?.setCartActive(cartPanelView !== "closed");
+  }, [cartPanelView, shellNav]);
+
+  const handleCartPanelViewChange = useCallback((view: CartPanelView) => {
+    setCartPanelView(view);
+  }, []);
   const isFoodMenu = storeUsesRubroProductModule(store.rubro_tienda, "alimentos");
   const isTechCatalog = storeUsesRubroProductModule(
     store.rubro_tienda,
@@ -501,7 +545,8 @@ function TransactionalCatalogContent({
           exchangeRate={liveExchangeRate}
           showOfficialRate={showOfficialRate}
           showBsConversion={showBsConversion}
-          openInitially={openCheckoutInitially}
+          panelView={cartPanelView}
+          onPanelViewChange={handleCartPanelViewChange}
         />
       ) : null}
     </div>
