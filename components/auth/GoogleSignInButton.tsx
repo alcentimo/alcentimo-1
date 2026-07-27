@@ -3,10 +3,12 @@
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { buildCentralizedGoogleAuthUrl } from "@/lib/auth/build-centralized-google-auth-url";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { exchangeGoogleIdTokenForSession } from "@/lib/auth/google-session-api";
 import { getGoogleClientId } from "@/lib/auth/google-client-id";
 import { generateGoogleNoncePair } from "@/lib/auth/google-nonce";
+import { shouldUseCentralizedGoogleAuth } from "@/lib/auth/google-oauth-origin";
 import { cn } from "@/lib/cn";
 
 function GoogleIcon() {
@@ -40,6 +42,8 @@ export interface GoogleSignInButtonProps {
   className?: string;
   /** Clases del botón visible (capa decorativa). */
   buttonClassName?: string;
+  /** Ejecutar GIS en el origen actual (página centralizada en alcentimo.com). */
+  skipCentralizedRedirect?: boolean;
   onError?: (message: string) => void;
 }
 
@@ -50,20 +54,30 @@ export function GoogleSignInButton({
   disabled = false,
   className,
   buttonClassName,
+  skipCentralizedRedirect = false,
   onError,
 }: GoogleSignInButtonProps) {
   const clientId = getGoogleClientId();
   const [noncePair, setNoncePair] = useState<[string, string] | null>(null);
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [useCentralizedAuth, setUseCentralizedAuth] = useState(false);
 
   const refreshNonce = useCallback(async () => {
     setNoncePair(await generateGoogleNoncePair());
   }, []);
 
   useEffect(() => {
-    void refreshNonce();
-  }, [refreshNonce]);
+    if (!skipCentralizedRedirect) {
+      setUseCentralizedAuth(shouldUseCentralizedGoogleAuth());
+    }
+  }, [skipCentralizedRedirect]);
+
+  useEffect(() => {
+    if (!useCentralizedAuth) {
+      void refreshNonce();
+    }
+  }, [refreshNonce, useCentralizedAuth]);
 
   async function handleSuccess(credentialResponse: CredentialResponse) {
     const token = credentialResponse.credential?.trim();
@@ -109,6 +123,22 @@ export function GoogleSignInButton({
     void refreshNonce();
   }
 
+  function handleCentralizedRedirect() {
+    if (disabled || busy) return;
+
+    setBusy(true);
+    setLocalError(null);
+
+    window.location.assign(
+      buildCentralizedGoogleAuthUrl({
+        postAuthPath,
+        storeSlug,
+        orderId,
+        returnOrigin: window.location.origin,
+      }),
+    );
+  }
+
   if (!clientId) {
     return (
       <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
@@ -119,7 +149,44 @@ export function GoogleSignInButton({
     );
   }
 
-  const isDisabled = disabled || busy || !noncePair;
+  const isDisabled = disabled || busy || (!useCentralizedAuth && !noncePair);
+
+  if (useCentralizedAuth) {
+    return (
+      <div className={cn("space-y-2", className)}>
+        <button
+          type="button"
+          disabled={isDisabled}
+          onClick={handleCentralizedRedirect}
+          className={cn(
+            "inline-flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-50 disabled:pointer-events-none disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800",
+            buttonClassName,
+          )}
+        >
+          {busy ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+              Redirigiendo a Google…
+            </>
+          ) : (
+            <>
+              <GoogleIcon />
+              Continuar con Google
+            </>
+          )}
+        </button>
+
+        {localError ? (
+          <p
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400"
+            role="alert"
+          >
+            {localError}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className={cn("space-y-2", className)}>

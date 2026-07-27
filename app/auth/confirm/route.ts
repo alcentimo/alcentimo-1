@@ -6,6 +6,7 @@ import {
   resolveAuthConfirmNext,
 } from "@/lib/auth/resolve-auth-confirm-next";
 import { requireSupabasePublicEnv } from "@/lib/supabase/config";
+import { getSupabaseCookieOptions } from "@/lib/supabase/cookie-options";
 import { getSiteUrl } from "@/lib/site-url";
 
 /**
@@ -29,6 +30,7 @@ export async function GET(request: NextRequest) {
   const { url, anonKey } = requireSupabasePublicEnv();
 
   const supabase = createServerClient(url, anonKey, {
+    cookieOptions: getSupabaseCookieOptions(),
     cookies: {
       getAll() {
         return request.cookies.getAll();

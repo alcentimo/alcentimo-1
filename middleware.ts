@@ -25,7 +25,10 @@ import {
 } from "@/lib/team/permissions";
 import { getMerchantStoreRole } from "@/lib/team/store-context";
 import { applySafeInternalNextRedirect } from "@/lib/auth/post-auth-redirect";
+import { shouldRedirectGoogleAuthToApex } from "@/lib/auth/google-oauth-origin";
 import { getCatalogVisitorCookieName } from "@/lib/analytics/track-catalog-visit";
+import { getSiteUrl } from "@/lib/site-url";
+import { getSupabaseCookieOptions } from "@/lib/supabase/cookie-options";
 import {
   getStoreCatalogPublicUrl,
   isStoreSubdomainCatalogEnabled,
@@ -46,6 +49,7 @@ const ONBOARDING_PATH = "/onboarding";
 const ACTIVAR_PATH = "/activar";
 const AUTH_CONFIRM_PATH = "/auth/confirm";
 const AUTH_CALLBACK_PATH = "/auth/callback";
+const CENTRALIZED_GOOGLE_AUTH_PATH = "/auth/google";
 
 function applySubdomainCatalogRewrite(
   request: NextRequest,
@@ -82,6 +86,15 @@ export async function middleware(request: NextRequest) {
   const storeSlugFromHost = parseStoreSlugFromHost(requestHost);
   let effectiveStoreSlug = storeSlugFromHost;
 
+  if (
+    pathname === CENTRALIZED_GOOGLE_AUTH_PATH &&
+    shouldRedirectGoogleAuthToApex(requestHost)
+  ) {
+    const redirectTarget = new URL(`${getSiteUrl()}${CENTRALIZED_GOOGLE_AUTH_PATH}`);
+    redirectTarget.search = request.nextUrl.search;
+    return NextResponse.redirect(redirectTarget);
+  }
+
   if (!storeSlugFromHost && isStoreSubdomainCatalogEnabled()) {
     const legacyCatalog = pathname.match(/^\/c\/([^/]+)(\/.*)?$/);
     if (legacyCatalog?.[1]) {
@@ -109,6 +122,7 @@ export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: getSupabaseCookieOptions(),
     cookies: {
       getAll() {
         return request.cookies.getAll();

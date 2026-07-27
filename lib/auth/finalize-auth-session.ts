@@ -1,14 +1,29 @@
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
+import { sanitizeAuthReturnUrl } from "@/lib/auth/validate-auth-return-url";
+import { resolveCustomerNextDestination } from "@/lib/customers/middleware-access";
 import { ensureCustomerProfileAfterAuth } from "@/lib/customers/ensure-customer-profile";
 import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
+import {
+  getStoreCatalogOrigin,
+  isStoreSubdomainCatalogEnabled,
+} from "@/lib/store-host";
 
-function resolveAuthRedirectTarget(next: string, siteUrl: string): string {
+function resolveAuthRedirectTarget(
+  next: string,
+  siteUrl: string,
+  storeSlug?: string | null,
+): string {
   if (next.startsWith("http://") || next.startsWith("https://")) {
-    return next;
+    return sanitizeAuthReturnUrl(next, storeSlug, "/onboarding");
+  }
+
+  const normalizedStoreSlug = storeSlug?.trim().toLowerCase();
+  if (normalizedStoreSlug) {
+    return resolveCustomerNextDestination(normalizedStoreSlug, next);
   }
 
   const safeNext =
@@ -40,11 +55,12 @@ export async function finalizeAuthSessionRedirect(
   }
 
   const siteUrl = getSiteUrl();
+  const normalizedStoreSlug = input.storeSlug?.trim().toLowerCase() || null;
   const safeNext = resolveAuthRedirectTarget(
     resolvePostAuthPath(input.nextPath),
     siteUrl,
+    normalizedStoreSlug,
   );
-  const normalizedStoreSlug = input.storeSlug?.trim().toLowerCase() || null;
 
   if (normalizedStoreSlug) {
     const metadataPhone =
@@ -72,7 +88,11 @@ export async function finalizeAuthSessionRedirect(
         // No bloquear login si falla el vínculo cliente.
       }
     } else {
-      const completeUrl = new URL(`${siteUrl}/register`);
+      const registerOrigin =
+        isStoreSubdomainCatalogEnabled()
+          ? getStoreCatalogOrigin(normalizedStoreSlug)
+          : siteUrl;
+      const completeUrl = new URL(`${registerOrigin}/register`);
       completeUrl.searchParams.set("store", normalizedStoreSlug);
       completeUrl.searchParams.set("next", safeNext);
       completeUrl.searchParams.set("complete", "phone");

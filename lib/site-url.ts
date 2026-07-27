@@ -41,6 +41,34 @@ export function getApexSiteHost(): string {
   return getPublicSiteHost().replace(/^www\./, "");
 }
 
+/** URL del dominio principal (apex), nunca un subdominio de tienda. */
+export function getApexSiteUrl(): string {
+  const fromEnv = siteUrlFromEnv();
+  if (fromEnv) return fromEnv;
+
+  if (typeof window !== "undefined") {
+    const { protocol, hostname, port } = window.location;
+    const portSuffix = port ? `:${port}` : "";
+    const apexHost = getApexSiteHost();
+
+    if (hostname.endsWith(".localhost")) {
+      return `${protocol}//localhost${portSuffix}`;
+    }
+
+    if (hostname === apexHost || hostname === `www.${apexHost}`) {
+      return normalizeSiteUrl(window.location.origin);
+    }
+
+    if (hostname.endsWith(`.${apexHost}`)) {
+      return `${protocol}//${apexHost}${portSuffix}`;
+    }
+
+    return normalizeSiteUrl(window.location.origin);
+  }
+
+  return DEFAULT_SITE_URL;
+}
+
 /** Callback OAuth/email: p. ej. https://alcentimo.com/auth/callback?next=...&store=mi-tienda */
 export function getAuthCallbackUrl(
   next = "/onboarding",
