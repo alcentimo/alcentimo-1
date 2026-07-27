@@ -25,6 +25,7 @@ import { formatAuthError } from "@/lib/auth/format-auth-error";
 import {
   assertVerificationResendAllowed,
   getVerificationResendStatus,
+  recordInitialVerificationEmailSent,
   recordVerificationResendSuccess,
   VERIFICATION_RESEND_COOLDOWN_SECONDS,
 } from "@/lib/auth/verification-resend-limits";
@@ -342,6 +343,7 @@ async function resendActivationForExistingEmail(input: {
     });
 
     if (emailResult.ok) {
+      await recordInitialVerificationEmailSent(input.email);
       return pendingResentSuccess();
     }
 
@@ -361,6 +363,7 @@ async function resendActivationForExistingEmail(input: {
     });
 
     if (!resendError) {
+      await recordInitialVerificationEmailSent(input.email);
       return pendingResentSuccess();
     }
 
@@ -604,6 +607,8 @@ async function createFreshSignupConfirmation(input: {
   if (!delivered.ok) {
     return delivered;
   }
+
+  await recordInitialVerificationEmailSent(input.email);
 
   if (input.wasResent) {
     return {

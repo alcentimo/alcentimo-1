@@ -205,6 +205,7 @@ export function AuthPanel() {
         nextPath={postAuthPath}
         notice={signupNotice}
         isInvitationFlow={isInvitationFlow}
+        freshSignup
         onBackToLogin={() => switchMode("login")}
       />
     );

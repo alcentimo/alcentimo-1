@@ -155,6 +155,27 @@ export async function getVerificationResendStatus(
   return buildStatusFromRow(row, nowMs);
 }
 
+/** Marca envío inicial del correo (registro o reactivación) sin consumir un reenvío manual. */
+export async function recordInitialVerificationEmailSent(
+  email: string,
+): Promise<void> {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return;
+
+  const row = await fetchLimitRow(normalized);
+  const nowIso = new Date().toISOString();
+
+  await upsertLimitRow(normalized, {
+    resend_count: row?.resend_count ?? 0,
+    last_resend_at: nowIso,
+    blocked_until:
+      row?.blocked_until &&
+      secondsUntil(row.blocked_until, Date.now()) > 0
+        ? row.blocked_until
+        : null,
+  });
+}
+
 export type VerificationResendGateResult =
   | { allowed: true; resendsRemaining: number }
   | {

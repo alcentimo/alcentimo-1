@@ -7,19 +7,25 @@ import {
 } from "@/lib/auth/auth-email-actions";
 import {
   formatCountdownClock,
+  VERIFICATION_RESEND_COOLDOWN_SECONDS,
   VERIFICATION_RESEND_MAX_CONSECUTIVE,
 } from "@/lib/auth/verification-resend-ui";
 
 interface UseVerificationResendOptions {
   email: string;
   nextPath?: string | null;
+  /** Tras registro inicial: iniciar cooldown de inmediato en pantalla. */
+  freshSignup?: boolean;
 }
 
 export function useVerificationResend({
   email,
   nextPath,
+  freshSignup = false,
 }: UseVerificationResendOptions) {
-  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [cooldownSeconds, setCooldownSeconds] = useState(() =>
+    freshSignup ? VERIFICATION_RESEND_COOLDOWN_SECONDS : 0,
+  );
   const [blockedSeconds, setBlockedSeconds] = useState(0);
   const [resendsRemaining, setResendsRemaining] = useState(
     VERIFICATION_RESEND_MAX_CONSECUTIVE,
@@ -31,7 +37,9 @@ export function useVerificationResend({
 
   const syncFromServer = useCallback(async () => {
     const status = await getSignupVerificationResendStatusAction({ email });
-    setCooldownSeconds(status.cooldownSeconds);
+    setCooldownSeconds((current) =>
+      Math.max(current, status.cooldownSeconds),
+    );
     setBlockedSeconds(status.blockedSeconds);
     setResendsRemaining(status.resendsRemaining);
     setStatusLoaded(true);

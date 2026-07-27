@@ -16,6 +16,8 @@ interface SignupEmailVerificationPanelProps {
   initialError?: string | null;
   isInvitationFlow?: boolean;
   onBackToLogin?: () => void;
+  /** Pantalla mostrada justo después del registro (correo inicial recién enviado). */
+  freshSignup?: boolean;
 }
 
 export function SignupEmailVerificationPanel({
@@ -25,6 +27,7 @@ export function SignupEmailVerificationPanel({
   initialError = null,
   isInvitationFlow = false,
   onBackToLogin,
+  freshSignup = false,
 }: SignupEmailVerificationPanelProps) {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(initialError);
@@ -42,7 +45,7 @@ export function SignupEmailVerificationPanel({
     cooldownSeconds,
     countdownLabel,
     resend,
-  } = useVerificationResend({ email, nextPath });
+  } = useVerificationResend({ email, nextPath, freshSignup });
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
