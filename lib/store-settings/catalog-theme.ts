@@ -15,6 +15,10 @@ import {
 } from "@/lib/store-settings/rubro-palettes";
 import { normalizeHex6 } from "@/lib/store-settings/color-contrast";
 import { normalizePromoBannerSettings } from "@/lib/store-settings/promo-banner";
+import {
+  defaultAssistantAvatarSettings,
+  normalizeAssistantAvatarSettings,
+} from "@/lib/store-settings/assistant-avatar";
 import type {
   CatalogDesignSettings,
   CatalogLayoutMode,
@@ -191,6 +195,9 @@ export function resolveCatalogDesign(
     primaryColor,
     layout,
     promoBanner: normalizePromoBannerSettings(design?.promoBanner),
+    assistantAvatar: normalizeAssistantAvatarSettings(
+      design?.assistantAvatar ?? defaultAssistantAvatarSettings(),
+    ),
   };
 }
 

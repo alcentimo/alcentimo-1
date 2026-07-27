@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sheet";
 import { CatalogPrimaryColorField } from "@/components/dashboard/settings/CatalogPrimaryColorField";
 import { CatalogPromoBannerField } from "@/components/dashboard/settings/CatalogPromoBannerField";
+import { CatalogAssistantAvatarField } from "@/components/dashboard/settings/CatalogAssistantAvatarField";
 import { SettingsTabShell } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
@@ -35,6 +36,7 @@ import { getRubroPalette } from "@/lib/store-settings/rubro-palettes";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { Store } from "@/lib/database.types";
 import type {
+  CatalogAssistantAvatarSettings,
   CatalogDesignSettings,
   CatalogPromoBannerSettings,
   CatalogThemeId,
@@ -44,6 +46,8 @@ import {
   defaultPromoBannerSettings,
   normalizePromoBannerDraft,
 } from "@/lib/store-settings/promo-banner";
+import { normalizeAssistantAvatarSettings } from "@/lib/store-settings/assistant-avatar";
+import { getAssistantAvatarPreset } from "@/lib/store-settings/assistant-avatar-presets";
 import { cn } from "@/lib/cn";
 import {
   DEFAULT_STORE_RUBRO,
@@ -73,9 +77,15 @@ type SavingField =
   | keyof CatalogVisibilitySettings
   | "primaryColor"
   | "promoBanner"
+  | "assistantAvatar"
   | null;
 
-type AccordionSection = "theme" | "brandColor" | "promoBanner" | "visibility";
+type AccordionSection =
+  | "theme"
+  | "brandColor"
+  | "promoBanner"
+  | "assistantAvatar"
+  | "visibility";
 
 interface DesignAccordionProps {
   title: string;
@@ -197,6 +207,7 @@ export function DesignTab({
   const [isSaving, startSave] = useTransition();
   const colorSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const promoBannerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const assistantAvatarSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const storeRubro = normalizeStoreRubro(
     storeRubroProp ?? preview?.store.rubro_tienda ?? DEFAULT_STORE_RUBRO,
@@ -243,6 +254,7 @@ export function DesignTab({
         ? { ...design.visibility, ...patch.visibility }
         : design.visibility,
       promoBanner: patch.promoBanner ?? design.promoBanner,
+      assistantAvatar: patch.assistantAvatar ?? design.assistantAvatar,
     };
     setDesign(nextDesign);
     persist(nextDesign, field);
@@ -316,6 +328,26 @@ export function DesignTab({
     }
   }
 
+  function scheduleAssistantAvatarSave(nextDesign: CatalogDesignSettings) {
+    if (assistantAvatarSaveTimerRef.current) {
+      clearTimeout(assistantAvatarSaveTimerRef.current);
+    }
+
+    assistantAvatarSaveTimerRef.current = setTimeout(() => {
+      persist(nextDesign, "assistantAvatar");
+    }, 400);
+  }
+
+  function setAssistantAvatar(next: CatalogAssistantAvatarSettings) {
+    const normalized = normalizeAssistantAvatarSettings(next);
+    const nextDesign: CatalogDesignSettings = {
+      ...design,
+      assistantAvatar: normalized,
+    };
+    setDesign(nextDesign);
+    scheduleAssistantAvatarSave(nextDesign);
+  }
+
   function resetPrimaryColor() {
     if (colorSaveTimerRef.current) {
       clearTimeout(colorSaveTimerRef.current);
@@ -334,6 +366,9 @@ export function DesignTab({
       }
       if (promoBannerSaveTimerRef.current) {
         clearTimeout(promoBannerSaveTimerRef.current);
+      }
+      if (assistantAvatarSaveTimerRef.current) {
+        clearTimeout(assistantAvatarSaveTimerRef.current);
       }
     };
   }, []);
@@ -359,6 +394,21 @@ export function DesignTab({
         : `${promoBannerSettings.slides.length} borrador(es)`
       : "Activado · sin imágenes"
     : "Desactivado";
+  const assistantAvatarSettings = normalizeAssistantAvatarSettings(
+    design.assistantAvatar,
+  );
+  const assistantAvatarSummary =
+    assistantAvatarSettings.mode === "store-logo"
+      ? "Logo clásico"
+      : assistantAvatarSettings.mode === "custom"
+        ? "Personalizado"
+        : getAssistantAvatarPreset(assistantAvatarSettings.presetId ?? "")
+            ?.label ?? "Personaje";
+  const storeLogoUrl =
+    preview?.store.logo_url ??
+    preview?.store.pwa_icon_192_url ??
+    preview?.store.pwa_icon_512_url ??
+    null;
   const visibilitySummary =
     [
       design.visibility.showStock && "Stock",
@@ -472,6 +522,21 @@ export function DesignTab({
               <CatalogPromoBannerField
                 value={design.promoBanner}
                 onChange={setPromoBanner}
+              />
+            </DesignAccordion>
+
+            <DesignAccordion
+              title="Avatar del Asistente de IA"
+              summary={assistantAvatarSummary}
+              open={openSection === "assistantAvatar"}
+              onToggle={() => toggleSection("assistantAvatar")}
+            >
+              <CatalogAssistantAvatarField
+                value={design.assistantAvatar}
+                storeRubro={storeRubro}
+                storeLogoUrl={storeLogoUrl}
+                disabled={isSaving && savingField === "assistantAvatar"}
+                onChange={setAssistantAvatar}
               />
             </DesignAccordion>
 

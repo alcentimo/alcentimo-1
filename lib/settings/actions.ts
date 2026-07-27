@@ -9,6 +9,7 @@ import {
 } from "@/lib/store-settings/defaults";
 import { normalizeHex6 } from "@/lib/store-settings/color-contrast";
 import { sanitizePromoBannerForStorage } from "@/lib/store-settings/promo-banner";
+import { sanitizeAssistantAvatarForStorage } from "@/lib/store-settings/assistant-avatar";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { uploadCatalogBannerAssetImage, uploadStoreAssetImage, uploadStoreLogoImage, removeStoreLogoAssets } from "@/lib/storage";
 import type { BannerImageVariant } from "@/lib/banner-image";
@@ -93,6 +94,9 @@ export async function saveCatalogDesignSettings(
     visibility: normalized.catalogDesign.visibility,
     promoBanner: sanitizePromoBannerForStorage(
       design.promoBanner ?? normalized.catalogDesign.promoBanner,
+    ),
+    assistantAvatar: sanitizeAssistantAvatarForStorage(
+      design.assistantAvatar ?? normalized.catalogDesign.assistantAvatar,
     ),
   };
 
@@ -311,6 +315,24 @@ export async function uploadCatalogBannerImage(
     file,
     variant,
   );
+}
+
+export async function uploadCatalogAssistantAvatarImage(
+  formData: FormData,
+): Promise<{ url?: string; error?: string }> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+
+  if (!auth.ok) {
+    return { error: auth.error };
+  }
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Selecciona una imagen para el avatar." };
+  }
+
+  return uploadStoreAssetImage(supabase, auth.store.id, file, "assistant-avatar");
 }
 
 export type SlugAvailabilityResult = {

@@ -165,6 +165,17 @@ export interface CatalogPromoBannerSettings {
   slides: CatalogPromoBannerSlide[];
 }
 
+/** Modo del avatar del asistente de IA en el catálogo público. */
+export type CatalogAssistantAvatarMode = "store-logo" | "preset" | "custom";
+
+export interface CatalogAssistantAvatarSettings {
+  mode: CatalogAssistantAvatarMode;
+  /** Id de avatar predefinido cuando mode === "preset". */
+  presetId?: string;
+  /** URL de imagen personalizada cuando mode === "custom". */
+  customImageUrl?: string;
+}
+
 export interface CatalogDesignSettings {
   theme: CatalogThemeId;
   saleMode: CatalogSaleMode;
@@ -173,6 +184,8 @@ export interface CatalogDesignSettings {
   primaryColor?: string;
   /** Carrusel promocional opcional en la parte superior del catálogo. */
   promoBanner?: CatalogPromoBannerSettings;
+  /** Avatar del asistente de IA en el widget flotante y chat del catálogo. */
+  assistantAvatar?: CatalogAssistantAvatarSettings;
   /** Derivado del tema al renderizar; opcional en almacenamiento legacy. */
   layout?: CatalogLayoutMode;
 }

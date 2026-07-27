@@ -19,6 +19,7 @@ import { getPublicStoreBySlug } from "@/lib/stores";
 import { getOpenAiApiKey } from "@/lib/env/server";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { getStorefrontSupportBranding } from "@/lib/catalog/get-storefront-support-branding";
+import { resolveStorefrontAssistantAvatarUrl } from "@/lib/catalog/resolve-storefront-assistant-avatar";
 
 interface TransactionalCatalogLayoutProps {
   children: ReactNode;
@@ -120,6 +121,12 @@ export default async function TransactionalCatalogLayout({
   const supportBranding = store
     ? await getStorefrontSupportBranding(store)
     : null;
+  const storeLogoFallback =
+    supportBranding?.avatarUrl ?? storeLogoUrl;
+  const assistantAvatarUrl = resolveStorefrontAssistantAvatarUrl(
+    storeSettings?.catalogDesign.assistantAvatar,
+    storeLogoFallback,
+  );
 
   return (
     <div
@@ -150,7 +157,7 @@ export default async function TransactionalCatalogLayout({
             enablePcBuilder={store?.enable_pc_builder}
             assistantEnabled={assistantEnabled}
             whatsappPhone={whatsappPhone}
-            supportAvatarUrl={supportBranding?.avatarUrl ?? storeLogoUrl}
+            supportAvatarUrl={assistantAvatarUrl}
             supportMerchantName={supportBranding?.merchantName ?? null}
           >
             {children}

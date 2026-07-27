@@ -17,6 +17,10 @@ import {
   defaultPromoBannerSettings,
   normalizePromoBannerSettings,
 } from "@/lib/store-settings/promo-banner";
+import {
+  defaultAssistantAvatarSettings,
+  normalizeAssistantAvatarSettings,
+} from "@/lib/store-settings/assistant-avatar";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "mrw",
@@ -166,6 +170,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
         showPrices: true,
       },
       promoBanner: defaultPromoBannerSettings(),
+      assistantAvatar: defaultAssistantAvatarSettings(),
     },
     catalogCurrency: {
       showOfficialRate: true,
@@ -378,6 +383,9 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
         : {}),
       promoBanner: normalizePromoBannerSettings(
         designRaw.promoBanner ?? defaults.catalogDesign.promoBanner,
+      ),
+      assistantAvatar: normalizeAssistantAvatarSettings(
+        designRaw.assistantAvatar ?? defaults.catalogDesign.assistantAvatar,
       ),
     },
     catalogCurrency: {
