@@ -17,7 +17,7 @@ export interface AssistantAvatarPresetManifestEntry {
 
 export const ASSISTANT_AVATAR_RUBRO_LABELS: Record<AssistantAvatarRubro, string> = {
   "tecnologia": "Tecnología y Electrónica",
-  "coleccionables": "Coleccionables y Cómics",
+  "coleccionables": "Cómics y Anime",
   "ropa-moda": "Ropa, Calzado y Moda",
   "alimentos": "Alimentos y Bebidas",
   "salud-belleza": "Salud, Belleza y Cuidado",
@@ -96,25 +96,11 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "animation": "pulse"
   },
   {
-    "id": "coleccionables-neo",
-    "label": "Neo Anime",
+    "id": "coleccionables-saiyan",
+    "label": "Guerrero Saiyan",
     "rubro": "coleccionables",
-    "imagePath": "/assistant-avatars/coleccionables-neo.svg",
-    "animation": "float"
-  },
-  {
-    "id": "coleccionables-sakura",
-    "label": "Sakura Kawaii",
-    "rubro": "coleccionables",
-    "imagePath": "/assistant-avatars/coleccionables-sakura.svg",
-    "animation": "glow"
-  },
-  {
-    "id": "coleccionables-hero",
-    "label": "Héroe Manga",
-    "rubro": "coleccionables",
-    "imagePath": "/assistant-avatars/coleccionables-hero.svg",
-    "animation": "wave"
+    "imagePath": "/assistant-avatars/coleccionables-saiyan.svg",
+    "animation": "pulse"
   },
   {
     "id": "coleccionables-ninja",
@@ -124,32 +110,39 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "animation": "bob"
   },
   {
-    "id": "coleccionables-wizard",
-    "label": "Mago Arcano",
+    "id": "coleccionables-pirate",
+    "label": "Capitán Aventura",
     "rubro": "coleccionables",
-    "imagePath": "/assistant-avatars/coleccionables-wizard.svg",
-    "animation": "glow"
+    "imagePath": "/assistant-avatars/coleccionables-pirate.svg",
+    "animation": "wave"
+  },
+  {
+    "id": "coleccionables-hero",
+    "label": "Súper Héroe",
+    "rubro": "coleccionables",
+    "imagePath": "/assistant-avatars/coleccionables-hero.svg",
+    "animation": "float"
   },
   {
     "id": "coleccionables-mecha",
     "label": "Mecha Pilot",
     "rubro": "coleccionables",
     "imagePath": "/assistant-avatars/coleccionables-mecha.svg",
-    "animation": "pulse"
+    "animation": "bob"
   },
   {
     "id": "coleccionables-chibi",
-    "label": "Chibi Star",
+    "label": "Chibi Kawaii",
     "rubro": "coleccionables",
     "imagePath": "/assistant-avatars/coleccionables-chibi.svg",
     "animation": "float"
   },
   {
     "id": "coleccionables-dragon",
-    "label": "Dragon Keeper",
+    "label": "Dragón Legendario",
     "rubro": "coleccionables",
     "imagePath": "/assistant-avatars/coleccionables-dragon.svg",
-    "animation": "bob"
+    "animation": "pulse"
   },
   {
     "id": "coleccionables-comic",
@@ -159,11 +152,18 @@ export const ASSISTANT_AVATAR_PRESET_MANIFEST: AssistantAvatarPresetManifestEntr
     "animation": "wave"
   },
   {
-    "id": "coleccionables-mask",
-    "label": "Máscara Heroica",
+    "id": "coleccionables-helmet",
+    "label": "Casco Heroico",
     "rubro": "coleccionables",
-    "imagePath": "/assistant-avatars/coleccionables-mask.svg",
-    "animation": "pulse"
+    "imagePath": "/assistant-avatars/coleccionables-helmet.svg",
+    "animation": "glow"
+  },
+  {
+    "id": "coleccionables-wizard",
+    "label": "Mago Arcano",
+    "rubro": "coleccionables",
+    "imagePath": "/assistant-avatars/coleccionables-wizard.svg",
+    "animation": "glow"
   },
   {
     "id": "ropa-moda-chic",

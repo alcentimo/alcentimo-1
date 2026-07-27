@@ -28,7 +28,10 @@ const LEGACY_PRESET_ID_MAP: Record<string, string> = {
   "tecnologia-drone": "tecnologia-drone",
   "tecnologia-headset": "tecnologia-vr-buddy",
   "tecnologia-android": "tecnologia-robbo",
-  "anime-neo": "coleccionables-neo",
+  "anime-neo": "coleccionables-saiyan",
+  "coleccionables-neo": "coleccionables-saiyan",
+  "coleccionables-sakura": "coleccionables-chibi",
+  "coleccionables-mask": "coleccionables-helmet",
   "fashion-chic": "ropa-moda-chic",
   "food-chef": "alimentos-chef",
   "alimentos-baker": "alimentos-chef",
@@ -42,7 +45,7 @@ const LEGACY_PRESET_ID_MAP: Record<string, string> = {
   "wellness-leaf": "salud-belleza-leaf",
   "office-pen": "papeleria-libreria-oficina-pen",
   "collectibles-star": "coleccionables-hero",
-  "collectibles-mask": "coleccionables-mask",
+  "collectibles-mask": "coleccionables-helmet",
 };
 
 export function resolveAssistantAvatarPresetId(

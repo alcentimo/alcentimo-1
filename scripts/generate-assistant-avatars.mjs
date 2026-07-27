@@ -18,7 +18,7 @@ const ANIMATIONS = /** @type {const} */ ([
 
 const RUBRO_LABELS = {
   tecnologia: "Tecnología y Electrónica",
-  coleccionables: "Coleccionables y Cómics",
+  coleccionables: "Cómics y Anime",
   "ropa-moda": "Ropa, Calzado y Moda",
   alimentos: "Alimentos y Bebidas",
   "salud-belleza": "Salud, Belleza y Cuidado",
@@ -40,16 +40,16 @@ const TECNOLOGIA = [
 ];
 
 const COLECCIONABLES = [
-  { slug: "neo", label: "Neo Anime", animation: "float", draw: (c) => drawPerson(c, "#fbcfe8", "#ec4899") },
-  { slug: "sakura", label: "Sakura Kawaii", animation: "glow", draw: (c) => drawPerson(c, "#fce7f3", "#f472b6", "sakura") },
-  { slug: "hero", label: "Héroe Manga", animation: "wave", draw: (c) => drawHero(c) },
-  { slug: "ninja", label: "Ninja Shadow", animation: "bob", draw: (c) => drawNinja(c) },
-  { slug: "wizard", label: "Mago Arcano", animation: "glow", draw: (c) => drawWizard(c) },
-  { slug: "mecha", label: "Mecha Pilot", animation: "pulse", draw: (c) => drawMecha(c) },
-  { slug: "chibi", label: "Chibi Star", animation: "float", draw: (c) => drawChibi(c) },
-  { slug: "dragon", label: "Dragon Keeper", animation: "bob", draw: (c) => drawDragon(c) },
-  { slug: "comic", label: "Comic Boom", animation: "wave", draw: (c) => drawComic(c) },
-  { slug: "mask", label: "Máscara Heroica", animation: "pulse", draw: (c) => drawMask(c) },
+  { slug: "saiyan", label: "Guerrero Saiyan", animation: "pulse", draw: drawSaiyan },
+  { slug: "ninja", label: "Ninja Shadow", animation: "bob", draw: drawNinja },
+  { slug: "pirate", label: "Capitán Aventura", animation: "wave", draw: drawPirate },
+  { slug: "hero", label: "Súper Héroe", animation: "float", draw: drawComicHero },
+  { slug: "mecha", label: "Mecha Pilot", animation: "bob", draw: drawMecha },
+  { slug: "chibi", label: "Chibi Kawaii", animation: "float", draw: drawChibi },
+  { slug: "dragon", label: "Dragón Legendario", animation: "pulse", draw: drawDragon },
+  { slug: "comic", label: "Comic Boom", animation: "wave", draw: drawComic },
+  { slug: "helmet", label: "Casco Heroico", animation: "glow", draw: drawHeroHelmet },
+  { slug: "wizard", label: "Mago Arcano", animation: "glow", draw: drawWizard },
 ];
 
 const ROPA_MODA = [
@@ -333,83 +333,214 @@ function drawPerson(c, accent, body, variant) {
   `;
 }
 
-function drawHero(c) {
+function drawSaiyan(c) {
   return `
-    <path d="M64 24 L74 44 H88 L78 58 L82 78 L64 68 L46 78 L50 58 L40 44 H54 Z" fill="#ef4444"/>
-    <ellipse cx="64" cy="44" rx="12" ry="13" fill="${c.skin}"/>
-    <rect x="48" y="68" width="32" height="28" rx="8" fill="#2563eb"/>
-    <rect x="44" y="96" width="12" height="22" rx="4" fill="#1e3a8a"/>
-    <rect x="72" y="96" width="12" height="22" rx="4" fill="#1e3a8a"/>
+    <path d="M38 36 L44 18 L52 30 L64 12 L76 30 L84 18 L90 36 L82 28 L64 22 L46 28 Z" fill="#facc15"/>
+    <path d="M42 34 L64 26 L86 34 L64 30 Z" fill="#fde047"/>
+    <ellipse cx="64" cy="44" rx="16" ry="17" fill="${c.skin}"/>
+    <ellipse cx="58" cy="42" rx="3.5" ry="4" fill="${c.white}"/>
+    <ellipse cx="70" cy="42" rx="3.5" ry="4" fill="${c.white}"/>
+    <circle cx="58" cy="43" r="2" fill="#1e293b"/>
+    <circle cx="70" cy="43" r="2" fill="#1e293b"/>
+    <path d="M56 50 Q64 54 72 50" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round"/>
+    <rect x="44" y="62" width="40" height="34" rx="8" fill="#ea580c"/>
+    <path d="M44 72 H84" stroke="#c2410c" stroke-width="2"/>
+    <rect x="54" y="66" width="20" height="6" rx="2" fill="#2563eb"/>
+    <rect x="36" y="68" width="10" height="24" rx="4" fill="#ea580c"/>
+    <rect x="82" y="68" width="10" height="24" rx="4" fill="#ea580c"/>
+    <rect x="48" y="96" width="14" height="24" rx="5" fill="#1e3a8a"/>
+    <rect x="66" y="96" width="14" height="24" rx="5" fill="#1e3a8a"/>
+    <path d="M28 58 Q20 48 24 38" fill="none" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+    <path d="M100 58 Q108 48 104 38" fill="none" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+    <ellipse cx="64" cy="108" rx="20" ry="6" fill="#fbbf24" opacity="0.25"/>
   `;
 }
 
 function drawNinja(c) {
   return `
-    <ellipse cx="64" cy="40" rx="18" ry="19" fill="${c.dark}"/>
-    <rect x="48" y="36" width="10" height="4" fill="${c.white}"/>
-    <rect x="66" y="36" width="10" height="4" fill="${c.white}"/>
-    <rect x="46" y="60" width="36" height="32" rx="8" fill="#0f172a"/>
-    <path d="M36 68 L46 72 M92 68 L82 72" stroke="${c.dark}" stroke-width="4" stroke-linecap="round"/>
-    <rect x="50" y="92" width="12" height="24" rx="4" fill="${c.dark}"/>
-    <rect x="66" y="92" width="12" height="24" rx="4" fill="${c.dark}"/>
+    <ellipse cx="64" cy="38" rx="15" ry="16" fill="#1e293b"/>
+    <rect x="48" y="34" width="32" height="10" rx="4" fill="#0f172a"/>
+    <rect x="50" y="36" width="10" height="4" rx="1" fill="${c.white}"/>
+    <rect x="68" y="36" width="10" height="4" rx="1" fill="${c.white}"/>
+    <rect x="44" y="28" width="40" height="6" rx="2" fill="#dc2626"/>
+    <circle cx="64" cy="31" r="4" fill="#f8fafc"/>
+    <rect x="46" y="54" width="36" height="32" rx="8" fill="#0f172a"/>
+    <path d="M46 62 H82" stroke="#334155" stroke-width="2"/>
+    <rect x="34" y="60" width="12" height="8" rx="2" fill="#64748b"/>
+    <rect x="82" y="60" width="12" height="8" rx="2" fill="#64748b"/>
+    <path d="M28 68 L38 64" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+    <path d="M100 68 L90 64" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="26" cy="70" r="4" fill="#64748b"/>
+    <circle cx="102" cy="70" r="4" fill="#64748b"/>
+    <rect x="50" y="86" width="12" height="26" rx="4" fill="#1e293b"/>
+    <rect x="66" y="86" width="12" height="26" rx="4" fill="#1e293b"/>
+    <path d="M88 48 L108 38 L106 44 L90 52 Z" fill="#475569"/>
+    <rect x="104" y="34" width="4" height="12" rx="1" fill="#334155"/>
   `;
 }
 
-function drawWizard(c) {
+function drawPirate(c) {
   return `
-    <path d="M48 44 Q64 16 80 44 L76 52 H52 Z" fill="#7c3aed"/>
-    <ellipse cx="64" cy="48" rx="14" ry="15" fill="${c.skin}"/>
-    <rect x="48" y="62" width="32" height="30" rx="8" fill="#4c1d95"/>
-    <rect x="30" y="70" width="36" height="6" rx="2" fill="#a78bfa" transform="rotate(-24 48 73)"/>
-    <rect x="50" y="92" width="12" height="24" rx="4" fill="#312e81"/>
-    <rect x="66" y="92" width="12" height="24" rx="4" fill="#312e81"/>
+    <ellipse cx="64" cy="34" rx="28" ry="8" fill="#fbbf24"/>
+    <ellipse cx="64" cy="32" rx="24" ry="6" fill="#fcd34d"/>
+    <rect x="40" y="32" width="48" height="4" rx="2" fill="#d97706"/>
+    <ellipse cx="64" cy="46" rx="14" ry="15" fill="${c.skin}"/>
+    <path d="M52 44 Q64 38 76 44" fill="none" stroke="#1e293b" stroke-width="2"/>
+    <ellipse cx="58" cy="46" rx="3" ry="3.5" fill="${c.white}"/>
+    <ellipse cx="70" cy="46" rx="3" ry="3.5" fill="${c.white}"/>
+    <circle cx="58" cy="47" r="1.8" fill="${c.dark}"/>
+    <circle cx="70" cy="47" r="1.8" fill="${c.dark}"/>
+    <path d="M58 54 Q64 58 70 54" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round"/>
+    <path d="M74 48 Q82 44 84 52" fill="none" stroke="${c.skin}" stroke-width="3" stroke-linecap="round"/>
+    <rect x="46" y="62" width="36" height="30" rx="8" fill="#dc2626"/>
+    <rect x="50" y="66" width="28" height="6" rx="2" fill="#991b1b"/>
+    <rect x="38" y="66" width="10" height="22" rx="4" fill="${c.skin}"/>
+    <rect x="80" y="66" width="10" height="22" rx="4" fill="${c.skin}"/>
+    <rect x="50" y="92" width="12" height="24" rx="4" fill="#1e293b"/>
+    <rect x="66" y="92" width="12" height="24" rx="4" fill="#1e293b"/>
+    <path d="M84 72 L104 82 L100 86 L82 76 Z" fill="#64748b"/>
+    <rect x="102" y="78" width="6" height="4" rx="1" fill="#475569"/>
+  `;
+}
+
+function drawComicHero(c) {
+  return `
+    <path d="M64 18 L72 38 L94 36 L78 52 L84 74 L64 62 L44 74 L50 52 L34 36 L56 38 Z" fill="#dc2626"/>
+    <path d="M64 24 L68 38 L80 36 L70 48 L74 62 L64 54 L54 62 L58 48 L48 36 L60 38 Z" fill="#ef4444"/>
+    <ellipse cx="64" cy="42" rx="13" ry="14" fill="${c.skin}"/>
+    <path d="M52 38 Q64 32 76 38 L74 44 Q64 40 54 44 Z" fill="#1e3a8a"/>
+    <ellipse cx="58" cy="42" rx="3" ry="3.5" fill="${c.white}"/>
+    <ellipse cx="70" cy="42" rx="3" ry="3.5" fill="${c.white}"/>
+    <circle cx="58" cy="43" r="1.8" fill="${c.dark}"/>
+    <circle cx="70" cy="43" r="1.8" fill="${c.dark}"/>
+    <path d="M58 50 Q64 54 70 50" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round"/>
+    <rect x="48" y="56" width="32" height="32" rx="8" fill="#2563eb"/>
+    <path d="M58 64 L64 72 L70 64 L64 76 Z" fill="#fbbf24"/>
+    <rect x="40" y="60" width="10" height="24" rx="4" fill="#2563eb"/>
+    <rect x="78" y="60" width="10" height="24" rx="4" fill="#2563eb"/>
+    <rect x="50" y="88" width="12" height="26" rx="4" fill="#dc2626"/>
+    <rect x="66" y="88" width="12" height="26" rx="4" fill="#dc2626"/>
+    <rect x="46" y="110" width="16" height="6" rx="3" fill="${c.dark}"/>
+    <rect x="66" y="110" width="16" height="6" rx="3" fill="${c.dark}"/>
   `;
 }
 
 function drawMecha(c) {
-  return drawRobbo({ ...c, primary: "#64748b", primaryDark: "#334155", accent: "#94a3b8" });
+  return `
+    <path d="M48 28 Q64 18 80 28 L78 40 Q64 34 50 40 Z" fill="#64748b"/>
+    <rect x="46" y="38" width="36" height="22" rx="8" fill="#475569"/>
+    <rect x="52" y="44" width="10" height="8" rx="2" fill="#22d3ee"/>
+    <rect x="66" y="44" width="10" height="8" rx="2" fill="#22d3ee"/>
+    <rect x="54" y="46" width="6" height="4" rx="1" fill="#0e7490"/>
+    <rect x="68" y="46" width="6" height="4" rx="1" fill="#0e7490"/>
+    <rect x="58" y="56" width="12" height="4" rx="2" fill="#334155"/>
+    <rect x="42" y="60" width="44" height="36" rx="10" fill="#64748b"/>
+    <rect x="48" y="66" width="32" height="8" rx="2" fill="#94a3b8"/>
+    <circle cx="64" cy="82" r="6" fill="#22d3ee"/>
+    <rect x="28" y="64" width="14" height="28" rx="6" fill="#475569"/>
+    <rect x="86" y="64" width="14" height="28" rx="6" fill="#475569"/>
+    <rect x="22" y="88" width="18" height="12" rx="5" fill="#334155"/>
+    <rect x="88" y="88" width="18" height="12" rx="5" fill="#334155"/>
+    <rect x="50" y="96" width="12" height="24" rx="5" fill="#475569"/>
+    <rect x="66" y="96" width="12" height="24" rx="5" fill="#475569"/>
+    <rect x="46" y="116" width="16" height="8" rx="4" fill="#1e293b"/>
+    <rect x="66" y="116" width="16" height="8" rx="4" fill="#1e293b"/>
+    <path d="M64 28 L64 22" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="64" cy="20" r="3" fill="#ef4444"/>
+  `;
 }
 
 function drawChibi(c) {
   return `
-    <ellipse cx="64" cy="52" rx="24" ry="26" fill="#f59e0b"/>
-    <circle cx="56" cy="48" r="3" fill="${c.dark}"/>
-    <circle cx="72" cy="48" r="3" fill="${c.dark}"/>
-    <ellipse cx="64" cy="86" rx="20" ry="16" fill="#fcd34d"/>
-    <rect x="48" y="98" width="12" height="18" rx="4" fill="#d97706"/>
-    <rect x="68" y="98" width="12" height="18" rx="4" fill="#d97706"/>
+    <ellipse cx="64" cy="50" rx="26" ry="28" fill="#fbcfe8"/>
+    <ellipse cx="54" cy="46" rx="8" ry="9" fill="${c.white}"/>
+    <ellipse cx="74" cy="46" rx="8" ry="9" fill="${c.white}"/>
+    <circle cx="54" cy="48" r="4" fill="#1e293b"/>
+    <circle cx="74" cy="48" r="4" fill="#1e293b"/>
+    <circle cx="56" cy="46" r="2" fill="${c.white}"/>
+    <circle cx="76" cy="46" r="2" fill="${c.white}"/>
+    <path d="M56 62 Q64 70 72 62" fill="none" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="64" cy="88" rx="18" ry="14" fill="#f472b6"/>
+    <rect x="50" y="98" width="10" height="16" rx="4" fill="#ec4899"/>
+    <rect x="68" y="98" width="10" height="16" rx="4" fill="#ec4899"/>
+    <path d="M38 52 L28 44 M90 52 L100 44" stroke="#f472b6" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="26" cy="42" r="4" fill="#fbcfe8"/>
+    <circle cx="102" cy="42" r="4" fill="#fbcfe8"/>
+    <path d="M58 28 L64 18 L70 28" fill="#f472b6"/>
+    <circle cx="64" cy="16" r="3" fill="#fde68a"/>
   `;
 }
 
 function drawDragon(c) {
   return `
-    <path d="M40 72 Q64 28 88 72 Q64 96 40 72Z" fill="#059669"/>
-    <circle cx="56" cy="60" r="4" fill="${c.white}"/>
-    <circle cx="58" cy="60" r="2" fill="${c.dark}"/>
-    <path d="M72 52 L92 38" stroke="#059669" stroke-width="5" stroke-linecap="round"/>
-    <path d="M48 88 L40 108 M80 88 L88 108" stroke="#047857" stroke-width="4" stroke-linecap="round"/>
+    <path d="M32 68 Q40 32 64 24 Q88 32 96 68 Q88 88 64 96 Q40 88 32 68 Z" fill="#059669"/>
+    <path d="M38 66 Q44 38 64 32 Q84 38 90 66 Q84 82 64 88 Q44 82 38 66 Z" fill="#10b981"/>
+    <ellipse cx="52" cy="56" rx="6" ry="7" fill="${c.white}"/>
+    <ellipse cx="76" cy="56" rx="6" ry="7" fill="${c.white}"/>
+    <circle cx="52" cy="58" r="3" fill="${c.dark}"/>
+    <circle cx="76" cy="58" r="3" fill="${c.dark}"/>
+    <path d="M58 68 Q64 74 70 68" fill="none" stroke="#047857" stroke-width="2" stroke-linecap="round"/>
+    <path d="M48 48 Q40 40 36 32" stroke="#047857" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M80 48 Q88 40 92 32" stroke="#047857" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M96 60 Q108 52 112 44" stroke="#059669" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <path d="M28 64 Q18 56 14 48" stroke="#059669" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <path d="M64 96 L58 112 M64 96 L70 112" stroke="#047857" stroke-width="4" stroke-linecap="round"/>
+    <path d="M64 32 Q64 18 64 12" stroke="#059669" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="64" cy="10" rx="4" ry="3" fill="#fde68a"/>
   `;
 }
 
 function drawComic(c) {
   return `
-    <rect x="36" y="32" width="56" height="72" rx="6" fill="${c.white}" stroke="${c.dark}" stroke-width="3"/>
-    <path d="M44 52 H84 M44 64 H76 M44 76 H68" stroke="${c.dark}" stroke-width="3" stroke-linecap="round"/>
-    <path d="M88 28 L96 20" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
-    <text x="92" y="24" font-size="12" font-weight="bold" fill="#ef4444">!</text>
-    <rect x="48" y="104" width="12" height="16" rx="3" fill="${c.dark}"/>
-    <rect x="68" y="104" width="12" height="16" rx="3" fill="${c.dark}"/>
+    <path d="M36 32 L92 32 Q96 32 96 36 V96 Q96 100 92 100 H36 Q32 100 32 96 V36 Q32 32 36 32 Z" fill="${c.white}" stroke="${c.dark}" stroke-width="3"/>
+    <path d="M40 36 H88 V92 H40 Z" fill="#fef08a"/>
+    <path d="M44 48 H80 M44 60 H72 M44 72 H64" stroke="${c.dark}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M88 24 L104 12 L108 28 L96 36 Z" fill="#ef4444"/>
+    <text x="92" y="26" font-size="11" font-weight="bold" fill="#fef08a" font-family="Arial,sans-serif">POW</text>
+    <rect x="48" y="104" width="10" height="14" rx="3" fill="${c.dark}"/>
+    <rect x="70" y="104" width="10" height="14" rx="3" fill="${c.dark}"/>
+    <circle cx="72" cy="52" r="8" fill="#2563eb"/>
+    <path d="M68 52 H76 M72 48 V56" stroke="${c.white}" stroke-width="2" stroke-linecap="round"/>
   `;
 }
 
-function drawMask(c) {
+function drawHeroHelmet(c) {
   return `
-    <ellipse cx="64" cy="40" rx="18" ry="19" fill="#4338ca"/>
-    <rect x="48" y="36" width="10" height="4" fill="${c.white}"/>
-    <rect x="66" y="36" width="10" height="4" fill="${c.white}"/>
-    <rect x="46" y="60" width="36" height="32" rx="8" fill="#312e81"/>
-    <rect x="50" y="92" width="12" height="24" rx="4" fill="${c.dark}"/>
-    <rect x="66" y="92" width="12" height="24" rx="4" fill="${c.dark}"/>
+    <path d="M36 52 Q36 28 64 22 Q92 28 92 52 Q92 72 84 82 Q64 96 44 82 Q36 72 36 52 Z" fill="#dc2626"/>
+    <path d="M40 52 Q40 32 64 28 Q88 32 88 52 Q88 68 82 76 Q64 88 46 76 Q40 68 40 52 Z" fill="#ef4444"/>
+    <path d="M48 52 Q48 38 64 34 Q80 38 80 52 Q80 62 76 68 Q64 78 52 68 Q48 62 48 52 Z" fill="#1e3a8a"/>
+    <path d="M52 52 Q52 42 64 40 Q76 42 76 52 Q76 58 72 62 Q64 68 56 62 Q52 58 52 52 Z" fill="#2563eb"/>
+    <rect x="52" y="48" width="10" height="8" rx="2" fill="#93c5fd"/>
+    <rect x="66" y="48" width="10" height="8" rx="2" fill="#93c5fd"/>
+    <path d="M58 48 L64 42 L70 48" fill="#334155"/>
+    <path d="M44 58 Q64 66 84 58" fill="none" stroke="#991b1b" stroke-width="3"/>
+    <path d="M64 22 L64 14" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+    <path d="M58 14 L64 8 L70 14" fill="#fbbf24"/>
+    <path d="M28 60 L20 68 M100 60 L108 68" stroke="#dc2626" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="18" cy="70" rx="5" ry="3" fill="#991b1b"/>
+    <ellipse cx="110" cy="70" rx="5" ry="3" fill="#991b1b"/>
+    <path d="M52 78 Q64 86 76 78 L74 92 Q64 100 54 92 Z" fill="#334155"/>
+  `;
+}
+
+function drawWizard(c) {
+  return `
+    <path d="M44 48 Q64 8 84 48 L80 56 H48 Z" fill="#7c3aed"/>
+    <path d="M50 48 Q64 20 78 48" fill="none" stroke="#a78bfa" stroke-width="2"/>
+    <circle cx="64" cy="18" r="4" fill="#fde68a"/>
+    <ellipse cx="64" cy="52" rx="14" ry="15" fill="${c.skin}"/>
+    <ellipse cx="58" cy="50" rx="3" ry="3.5" fill="${c.white}"/>
+    <ellipse cx="70" cy="50" rx="3" ry="3.5" fill="${c.white}"/>
+    <circle cx="58" cy="51" r="1.8" fill="${c.dark}"/>
+    <circle cx="70" cy="51" r="1.8" fill="${c.dark}"/>
+    <path d="M58 58 Q64 62 70 58" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round"/>
+    <rect x="48" y="66" width="32" height="32" rx="8" fill="#4c1d95"/>
+    <path d="M48 74 H80" stroke="#6d28d9" stroke-width="2"/>
+    <rect x="24" y="72" width="36" height="6" rx="2" fill="#a78bfa" transform="rotate(-20 42 75)"/>
+    <circle cx="20" cy="68" r="6" fill="#fde68a"/>
+    <rect x="50" y="98" width="12" height="22" rx="4" fill="#312e81"/>
+    <rect x="66" y="98" width="12" height="22" rx="4" fill="#312e81"/>
+    <path d="M18 68 L18 48" stroke="#78350f" stroke-width="4" stroke-linecap="round"/>
   `;
 }
 
