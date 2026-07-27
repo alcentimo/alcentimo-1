@@ -209,6 +209,10 @@ export function ProductForm({
     e.preventDefault();
     setLocalError(null);
 
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const requiresStock = !hasCustomVariants || stationeryUnifiedStock;
+
     const validationError = validateProductPublishInput({
       name: productName,
       priceUsd,
@@ -219,14 +223,16 @@ export function ProductForm({
       customCategoryName,
       wholesalePriceUsd,
       wholesaleMinQty,
+      requiresStock,
+      stockQuantity: requiresStock
+        ? String(formData.get("stock_quantity") ?? "").trim()
+        : undefined,
     });
     if (validationError) {
       setLocalError(validationError);
       return;
     }
 
-    const form = e.currentTarget;
-    const formData = new FormData(form);
     formData.set("product_category_slug", categorySlug);
     formData.set(
       "custom_category_name",
@@ -452,6 +458,23 @@ export function ProductForm({
         />
       ) : null}
 
+      {!hasCustomVariants || stationeryUnifiedStock ? (
+        <>
+          {stationeryUnifiedStock ? (
+            <StationeryStockHint
+              extraFields={extraFields}
+              stockQuantity={initialData?.stockQuantity ?? 0}
+            />
+          ) : null}
+          <LocationStockFields
+            inputId="product-stock"
+            defaultStock={initialData?.stockQuantity}
+          />
+        </>
+      ) : (
+        <LocationStockFields hidden />
+      )}
+
       {!isRopaModa &&
       !isAlimentos &&
       !isTecnologia &&
@@ -541,19 +564,14 @@ export function ProductForm({
         />
       ) : null}
 
-      {!hasCustomVariants || stationeryUnifiedStock ? (
-        <>
-          {stationeryUnifiedStock ? (
-            <StationeryStockHint
-              extraFields={extraFields}
-              stockQuantity={initialData?.stockQuantity ?? 0}
-            />
-          ) : null}
-          <LocationStockFields defaultStock={initialData?.stockQuantity ?? 0} />
-        </>
-      ) : (
-        <LocationStockFields hidden />
-      )}
+      {!isRopaModa && !isAlimentos && !isSaludBelleza ? (
+        <RubroVariantsSection
+          rubro={productFormConfig.rubroTienda}
+          variants={variants}
+          onChange={setVariants}
+          disabled={isBusy}
+        />
+      ) : null}
 
       <div>
         <label htmlFor="low_stock_threshold" className="label-field">
@@ -572,15 +590,6 @@ export function ProductForm({
           El producto se marcará en rojo en el dashboard cuando el stock sea igual o menor a este valor.
         </p>
       </div>
-
-      {!isRopaModa && !isAlimentos && !isSaludBelleza ? (
-        <RubroVariantsSection
-          rubro={productFormConfig.rubroTienda}
-          variants={variants}
-          onChange={setVariants}
-          disabled={isBusy}
-        />
-      ) : null}
 
       <ProductGalleryField
         key={initialData?.productId ?? "create"}

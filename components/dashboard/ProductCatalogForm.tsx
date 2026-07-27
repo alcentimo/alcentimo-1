@@ -215,6 +215,12 @@ export function ProductCatalogForm({
     e.preventDefault();
     setLocalError(null);
 
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const requiresStock =
+      !((isAlimentos || isSaludBelleza || isRopaModa) && hasCustomVariants) ||
+      stationeryUnifiedStock;
+
     const validationError = validateProductPublishInput({
       name: productName,
       priceUsd,
@@ -225,14 +231,16 @@ export function ProductCatalogForm({
       customCategoryName,
       wholesalePriceUsd,
       wholesaleMinQty,
+      requiresStock,
+      stockQuantity: requiresStock
+        ? String(formData.get("stock_quantity") ?? "").trim()
+        : undefined,
     });
     if (validationError) {
       setLocalError(validationError);
       return;
     }
 
-    const form = e.currentTarget;
-    const formData = new FormData(form);
     formData.set("product_category_slug", categorySlug);
     formData.set(
       "custom_category_name",
@@ -256,9 +264,6 @@ export function ProductCatalogForm({
         "food_modifiers_json",
         serializeFoodModifiersJson(foodModifiers),
       );
-    }
-    if ((isAlimentos || isSaludBelleza) && hasCustomVariants && !stationeryUnifiedStock) {
-      formData.set("stock_quantity", "0");
     }
 
     const { json, files } = buildProductImagesFormPayload(galleryValue);
@@ -403,6 +408,25 @@ export function ProductCatalogForm({
         />
       ) : null}
 
+      {!((isAlimentos || isSaludBelleza || isRopaModa) && hasCustomVariants) ||
+      stationeryUnifiedStock ? (
+        <>
+          {stationeryUnifiedStock ? (
+            <StationeryStockHint
+              extraFields={extraFields}
+              stockQuantity={initialData?.stockQuantity ?? 0}
+            />
+          ) : null}
+          <LocationStockFields
+            inputId="catalog-stock"
+            defaultStock={initialData?.stockQuantity}
+            initialByLocation={initialLocationStocks}
+          />
+        </>
+      ) : (
+        <LocationStockFields hidden />
+      )}
+
       {!isRopaModa &&
       !isAlimentos &&
       !isTecnologia &&
@@ -513,24 +537,6 @@ export function ProductCatalogForm({
           />
         </>
       ) : null}
-
-      {!((isAlimentos || isSaludBelleza || isRopaModa) && hasCustomVariants) ||
-      stationeryUnifiedStock ? (
-        <>
-          {stationeryUnifiedStock ? (
-            <StationeryStockHint
-              extraFields={extraFields}
-              stockQuantity={initialData?.stockQuantity ?? 0}
-            />
-          ) : null}
-          <LocationStockFields
-            defaultStock={initialData?.stockQuantity ?? 0}
-            initialByLocation={initialLocationStocks}
-          />
-        </>
-      ) : (
-        <LocationStockFields hidden />
-      )}
 
       <div>
         <Label htmlFor="catalog-low-stock" className="payment-field-label">

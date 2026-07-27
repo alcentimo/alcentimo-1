@@ -55,6 +55,7 @@ import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields"
 import { ProductFormAiStarter } from "@/components/dashboard/ProductFormAiStarter";
 import { ProductTitleAutoDetectHint } from "@/components/dashboard/ProductTitleAutoDetectHint";
 import { useProductTitleAutoDetect } from "@/components/dashboard/useProductTitleAutoDetect";
+import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
 import { validateProductPublishInput } from "@/lib/products/validate-publish-form";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -265,6 +266,10 @@ function QuickProductFormSession({
     e.preventDefault();
     setLocalError(null);
 
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const requiresStock = !hasCustomVariants || stationeryUnifiedStock;
+
     const validationError = validateProductPublishInput({
       name: productName,
       priceUsd,
@@ -275,6 +280,10 @@ function QuickProductFormSession({
       customCategoryName,
       wholesalePriceUsd,
       wholesaleMinQty,
+      requiresStock,
+      stockQuantity: requiresStock
+        ? String(formData.get("stock_quantity") ?? "").trim()
+        : undefined,
     });
     if (validationError) {
       setLocalError(validationError);
@@ -282,8 +291,6 @@ function QuickProductFormSession({
     }
 
     const usd = parseFloat(priceUsd);
-    const form = e.currentTarget;
-    const formData = new FormData(form);
     submittedNameRef.current = String(formData.get("name") ?? "").trim();
     formData.set("price_usd", usd.toFixed(4));
     formData.set("product_category_slug", categorySlug);
@@ -303,15 +310,6 @@ function QuickProductFormSession({
         "food_modifiers_json",
         serializeFoodModifiersJson(foodModifiers),
       );
-    }
-
-    if (!hasCustomVariants) {
-      const stockValue = advancedOpen
-        ? String(formData.get("stock_quantity") ?? "0")
-        : "0";
-      formData.set("stock_quantity", stockValue);
-    } else {
-      formData.set("stock_quantity", "0");
     }
 
     if (!advancedOpen) {
@@ -437,6 +435,17 @@ function QuickProductFormSession({
           idPrefix="quick-wholesale"
         />
       ) : null}
+
+      {!hasCustomVariants || stationeryUnifiedStock ? (
+        <>
+          {stationeryUnifiedStock ? (
+            <StationeryStockHint extraFields={extraFields} stockQuantity={0} />
+          ) : null}
+          <LocationStockFields inputId="quick-stock" />
+        </>
+      ) : (
+        <LocationStockFields hidden />
+      )}
 
       <ProductGalleryField
         id="quick-image"
@@ -586,32 +595,6 @@ function QuickProductFormSession({
 
         {advancedOpen && (
           <div className="space-y-4 border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-800">
-            {(!hasCustomVariants || stationeryUnifiedStock) && (
-              <>
-                {stationeryUnifiedStock ? (
-                  <StationeryStockHint extraFields={extraFields} stockQuantity={0} />
-                ) : null}
-                <div>
-                  <Label htmlFor="quick-stock" className="payment-field-label">
-                    Cantidad en stock
-                  </Label>
-                  <Input
-                    id="quick-stock"
-                    name="stock_quantity"
-                    type="number"
-                    min={0}
-                    step={1}
-                    defaultValue={0}
-                    className="payment-field-input mt-1.5"
-                  />
-                </div>
-              </>
-            )}
-
-            {hasCustomVariants && !stationeryUnifiedStock && (
-              <input type="hidden" name="stock_quantity" value="0" readOnly />
-            )}
-
             <div>
               <Label htmlFor="quick-low-stock" className="payment-field-label">
                 Umbral de alerta de stock

@@ -7,18 +7,20 @@ import { listStoreLocationsAction } from "@/lib/locations/actions";
 import type { StoreLocation } from "@/lib/locations/types";
 
 interface LocationStockFieldsProps {
-  /** Stock inicial total (fallback 1 sede). */
+  /** Stock inicial al editar; omitir en alta para no prellenar con 0. */
   defaultStock?: number;
   /** Stocks previos por sede al editar. */
   initialByLocation?: Record<string, number>;
   /** Si hay variantes custom, ocultamos el editor de stock simple. */
   hidden?: boolean;
+  inputId?: string;
 }
 
 export function LocationStockFields({
-  defaultStock = 0,
+  defaultStock,
   initialByLocation = {},
   hidden = false,
+  inputId = "product-stock",
 }: LocationStockFieldsProps) {
   const [locations, setLocations] = useState<StoreLocation[]>([]);
   const [stocks, setStocks] = useState<Record<string, string>>({});
@@ -36,10 +38,13 @@ export function LocationStockFields({
         const fromInitial = initialByLocation[loc.id];
         if (fromInitial != null) {
           next[loc.id] = String(fromInitial);
-        } else if (rows.length === 1 || loc.is_default) {
+        } else if (
+          defaultStock != null &&
+          (rows.length === 1 || loc.is_default)
+        ) {
           next[loc.id] = String(defaultStock);
         } else {
-          next[loc.id] = "0";
+          next[loc.id] = "";
         }
       }
       setStocks(next);
@@ -72,6 +77,13 @@ export function LocationStockFields({
     [locations, stocks],
   );
 
+  const allStockInputsEmpty = useMemo(
+    () =>
+      locations.length > 0 &&
+      locations.every((loc) => !(stocks[loc.id] ?? "").trim()),
+    [locations, stocks],
+  );
+
   if (hidden) {
     return (
       <>
@@ -88,12 +100,14 @@ export function LocationStockFields({
           Cantidad en stock <span className="text-red-500">*</span>
         </Label>
         <Input
+          id={inputId}
           type="number"
           name="stock_quantity"
           required
           min={0}
           step={1}
-          defaultValue={defaultStock}
+          defaultValue={defaultStock != null ? defaultStock : undefined}
+          placeholder="Ej: 10"
           className="payment-field-input mt-1.5"
         />
       </div>
@@ -104,17 +118,24 @@ export function LocationStockFields({
     const locationId = locations[0]?.id;
     return (
       <div>
-        <Label htmlFor="catalog-stock" className="payment-field-label">
+        <Label htmlFor={inputId} className="payment-field-label">
           Cantidad en stock <span className="text-red-500">*</span>
         </Label>
         <Input
-          id="catalog-stock"
+          id={inputId}
           name="stock_quantity"
           type="number"
           required
           min={0}
           step={1}
-          value={locationId ? (stocks[locationId] ?? "0") : String(defaultStock)}
+          placeholder="Ej: 10"
+          value={
+            locationId
+              ? (stocks[locationId] ?? "")
+              : defaultStock != null
+                ? String(defaultStock)
+                : ""
+          }
           onChange={(e) => {
             if (!locationId) return;
             setStocks((prev) => ({ ...prev, [locationId]: e.target.value }));
@@ -169,7 +190,8 @@ export function LocationStockFields({
                     min={0}
                     step={1}
                     required
-                    value={stocks[loc.id] ?? "0"}
+                    placeholder="0"
+                    value={stocks[loc.id] ?? ""}
                     onChange={(e) =>
                       setStocks((prev) => ({
                         ...prev,
@@ -184,7 +206,12 @@ export function LocationStockFields({
           </tbody>
         </table>
       </div>
-      <input type="hidden" name="stock_quantity" value={String(totalStock)} readOnly />
+      <input
+        type="hidden"
+        name="stock_quantity"
+        value={allStockInputsEmpty ? "" : String(totalStock)}
+        readOnly
+      />
       <input type="hidden" name="location_stocks_json" value={payload} readOnly />
     </div>
   );

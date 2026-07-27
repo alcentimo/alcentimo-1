@@ -10,6 +10,9 @@ export interface ValidateProductPublishInput {
   customCategoryName?: string;
   wholesalePriceUsd?: string;
   wholesaleMinQty?: string;
+  /** Si el producto usa stock global (sin variantes por talla/sabor). */
+  requiresStock?: boolean;
+  stockQuantity?: string;
 }
 
 /** Validación cliente antes de publicar; devuelve mensaje de error o null si OK. */
@@ -32,6 +35,17 @@ export function validateProductPublishInput(
 
   if (input.galleryItemCount <= 0) {
     return "Agrega al menos una foto del producto.";
+  }
+
+  if (input.requiresStock) {
+    const stockRaw = (input.stockQuantity ?? "").trim();
+    if (!stockRaw) {
+      return "Ingresa la cantidad en stock disponible.";
+    }
+    const stock = parseInt(stockRaw, 10);
+    if (!Number.isFinite(stock) || stock < 0) {
+      return "Ingresa un stock válido (0 o más unidades).";
+    }
   }
 
   if (

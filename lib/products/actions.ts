@@ -96,6 +96,27 @@ async function applyStationeryUnifiedStock(
   );
 }
 
+function parseStockQuantityFromForm(
+  formData: FormData,
+  requiresStock: boolean,
+): { stockQuantity: number } | { error: string } {
+  if (!requiresStock) {
+    return { stockQuantity: 0 };
+  }
+
+  const stockRaw = String(formData.get("stock_quantity") ?? "").trim();
+  if (!stockRaw) {
+    return { error: "Ingresa la cantidad en stock disponible." };
+  }
+
+  const stockQuantity = parseInt(stockRaw, 10);
+  if (!Number.isFinite(stockQuantity) || stockQuantity < 0) {
+    return { error: "Ingresa un stock válido (0 o más)." };
+  }
+
+  return { stockQuantity };
+}
+
 function parseCompareAtUsdFromForm(
   formData: FormData,
   priceUsd: number,
@@ -300,7 +321,6 @@ export async function createProduct(
   ).trim();
   const description = String(formData.get("description") ?? "").trim();
   const priceUsd = parseFloat(String(formData.get("price_usd") ?? ""));
-  const stockQuantity = parseInt(String(formData.get("stock_quantity") ?? "0"), 10);
   const lowStockThreshold = parseInt(
     String(formData.get("low_stock_threshold") ?? "5"),
     10,
@@ -315,6 +335,12 @@ export async function createProduct(
   const customVariants = parsedVariants.variants;
   const hasCustomVariants = customVariants.length > 0;
   const stationeryUnifiedStock = areStationerySaleVariants(customVariants);
+  const stockParsed = parseStockQuantityFromForm(
+    formData,
+    !hasCustomVariants || stationeryUnifiedStock,
+  );
+  if ("error" in stockParsed) return { error: stockParsed.error };
+  const stockQuantity = stockParsed.stockQuantity;
 
   if (!name) return { error: "El nombre es obligatorio." };
   if (!Number.isFinite(priceUsd) || priceUsd < 0) {
@@ -329,11 +355,6 @@ export async function createProduct(
     priceUsd,
   );
   if (wholesaleParsed.error) return { error: wholesaleParsed.error };
-  if (!hasCustomVariants || stationeryUnifiedStock) {
-    if (!Number.isFinite(stockQuantity) || stockQuantity < 0) {
-      return { error: "Ingresa un stock válido (0 o más)." };
-    }
-  }
   if (!Number.isFinite(lowStockThreshold) || lowStockThreshold < 0) {
     return { error: "Ingresa un umbral de alerta válido (0 o más)." };
   }
@@ -661,7 +682,6 @@ export async function updateProduct(
   const shortDescription = String(formData.get("short_description") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const priceUsd = parseFloat(String(formData.get("price_usd") ?? ""));
-  const stockQuantity = parseInt(String(formData.get("stock_quantity") ?? "0"), 10);
   const lowStockThreshold = parseInt(
     String(formData.get("low_stock_threshold") ?? "5"),
     10,
@@ -687,6 +707,12 @@ export async function updateProduct(
   const customVariants = parsedVariants.variants;
   const hasCustomVariants = customVariants.length > 0;
   const stationeryUnifiedStock = areStationerySaleVariants(customVariants);
+  const stockParsed = parseStockQuantityFromForm(
+    formData,
+    !hasCustomVariants || stationeryUnifiedStock,
+  );
+  if ("error" in stockParsed) return { error: stockParsed.error };
+  const stockQuantity = stockParsed.stockQuantity;
 
   if (!name) return { error: "El nombre es obligatorio." };
   if (!Number.isFinite(priceUsd) || priceUsd < 0) {
@@ -701,12 +727,6 @@ export async function updateProduct(
     priceUsd,
   );
   if (wholesaleParsed.error) return { error: wholesaleParsed.error };
-  if (
-    (!hasCustomVariants || stationeryUnifiedStock) &&
-    (!Number.isFinite(stockQuantity) || stockQuantity < 0)
-  ) {
-    return { error: "Ingresa un stock válido (0 o más)." };
-  }
   if (!Number.isFinite(lowStockThreshold) || lowStockThreshold < 0) {
     return { error: "Ingresa un umbral de alerta válido (0 o más)." };
   }
