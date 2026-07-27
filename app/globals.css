@@ -7797,13 +7797,39 @@ body {
   @apply rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm font-normal outline-none transition dark:border-zinc-700 dark:bg-zinc-900;
 }
 
-.txn-catalog-root .txn-input:focus {
-  border-color: var(--txn-primary);
-  box-shadow: 0 0 0 2px var(--txn-primary-ring);
+.txn-input--invalid {
+  @apply border-red-400 bg-red-50/40 text-red-950 dark:border-red-700 dark:bg-red-950/20 dark:text-red-100;
+}
+
+.txn-input--invalid:focus {
+  border-color: rgb(248 113 113);
+  box-shadow: 0 0 0 2px rgb(254 202 202 / 0.9);
 }
 
 .txn-file-input {
   @apply text-sm font-normal text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium dark:text-zinc-300 dark:file:bg-zinc-800;
+}
+
+.txn-file-input--invalid {
+  @apply rounded-xl border border-red-400 bg-red-50/40 px-2 py-2 dark:border-red-700 dark:bg-red-950/20;
+}
+
+.checkout-field-group {
+  @apply space-y-1.5;
+}
+
+.checkout-field-group--invalid .shipping-branch-picker,
+.checkout-field-group--invalid .txn-checkout-method-grid {
+  @apply rounded-xl ring-2 ring-red-300/80 dark:ring-red-800/80;
+}
+
+.txn-field-error {
+  @apply text-xs font-medium leading-snug text-red-600 dark:text-red-400;
+}
+
+.txn-catalog-root .txn-input:focus {
+  border-color: var(--txn-primary);
+  box-shadow: 0 0 0 2px var(--txn-primary-ring);
 }
 
 .txn-checkout-error {
@@ -7814,6 +7840,20 @@ body {
   background-color: var(--txn-primary, #0d9488);
   color: var(--txn-primary-fg, #ffffff);
   @apply w-full rounded-xl px-4 py-3 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.txn-submit-btn--blocked {
+  background-color: rgb(161 161 170);
+  color: rgb(250 250 250);
+  @apply cursor-not-allowed shadow-none;
+}
+
+.txn-submit-btn--blocked:hover {
+  background-color: rgb(161 161 170);
+}
+
+.txn-checkout-blocked-hint {
+  @apply text-center text-xs font-medium text-red-600 dark:text-red-400;
 }
 
 .txn-submit-btn:not(:disabled):hover {

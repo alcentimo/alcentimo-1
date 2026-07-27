@@ -37,6 +37,18 @@ import {
   getStoreCustomerAccountPath,
 } from "@/lib/store-host";
 import type { CatalogFulfillmentMode } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
+import {
+  CheckoutFieldGroup,
+  checkoutFileInputClass,
+  checkoutInputClass,
+} from "@/components/catalog-transactional/CheckoutFieldFeedback";
+import {
+  summarizeCheckoutValidation,
+  validateCheckoutStep1,
+  validateCheckoutStep2,
+  type CheckoutFieldKey,
+} from "@/lib/catalog/checkout-validation";
+import { cn } from "@/lib/cn";
 
 interface CheckoutPanelProps {
   storeSlug: string;
@@ -112,6 +124,12 @@ export function CheckoutPanel({
   const [promotionPending, startPromotionTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [touchedFields, setTouchedFields] = useState<
+    Partial<Record<CheckoutFieldKey, boolean>>
+  >({});
+  const [validationAttemptedStep, setValidationAttemptedStep] = useState<
+    0 | 1 | 2
+  >(0);
 
   useEffect(() => {
     if (purchaseInfo.shipping.length === 1) {
@@ -301,68 +319,150 @@ export function CheckoutPanel({
     [items],
   );
 
-  const deliveryStepValid =
-    !isLocalDeliverySelected ||
-    (hasDeliveryZones
-      ? Boolean(deliveryZoneId && meetingPointId)
-      : deliveryAddress.trim().length >= 8);
+  const step1Validation = useMemo(
+    () =>
+      validateCheckoutStep1({
+        itemsCount: items.length,
+        shippingOptionsCount: purchaseInfo.shipping.length,
+        selectedShipping,
+        isNationalCarrierSelected,
+        shippingBranchCode,
+        isLocalDeliverySelected,
+        hasDeliveryZones,
+        deliveryZoneId,
+        meetingPointId,
+        deliveryAddress,
+        isPickupSelected,
+        hasPickupPoints,
+        pickupPointId,
+      }),
+    [
+      items.length,
+      purchaseInfo.shipping.length,
+      selectedShipping,
+      isNationalCarrierSelected,
+      shippingBranchCode,
+      isLocalDeliverySelected,
+      hasDeliveryZones,
+      deliveryZoneId,
+      meetingPointId,
+      deliveryAddress,
+      isPickupSelected,
+      hasPickupPoints,
+      pickupPointId,
+    ],
+  );
 
-  const pickupStepValid =
-    !isPickupSelected || !hasPickupPoints || Boolean(pickupPointId);
+  const step2Validation = useMemo(
+    () =>
+      validateCheckoutStep2({
+        itemsCount: items.length,
+        hasCustomerProfile: Boolean(customerProfile),
+        customerName,
+        customerPhone,
+        shippingOptionsCount: purchaseInfo.shipping.length,
+        selectedShipping,
+        paymentsCount: purchaseInfo.payments.length,
+        selectedPayment,
+        hasProofFile: Boolean(proofFile),
+      }),
+    [
+      items.length,
+      customerProfile,
+      customerName,
+      customerPhone,
+      purchaseInfo.shipping.length,
+      selectedShipping,
+      purchaseInfo.payments.length,
+      selectedPayment,
+      proofFile,
+    ],
+  );
 
-  const canProceedStep1 =
-    items.length > 0 &&
-    (purchaseInfo.shipping.length === 0 || Boolean(selectedShipping)) &&
-    deliveryStepValid &&
-    pickupStepValid &&
-    (!isNationalCarrierSelected || Boolean(shippingBranchCode));
+  const activeValidation =
+    checkoutStep === 1 ? step1Validation : step2Validation;
+  const canProceedCurrentStep = activeValidation.isValid;
 
-  const hasCustomerData = customerProfile
-    ? true
-    : customerName.trim().length >= 2 && customerPhone.trim().length >= 10;
+  function touchField(field: CheckoutFieldKey) {
+    setTouchedFields((prev) =>
+      prev[field] ? prev : { ...prev, [field]: true },
+    );
+  }
 
-  const canSubmitStep2 =
-    items.length > 0 &&
-    hasCustomerData &&
-    Boolean(proofFile) &&
-    (purchaseInfo.shipping.length === 0 || Boolean(selectedShipping)) &&
-    (purchaseInfo.payments.length === 0 || Boolean(selectedPayment)) &&
-    !pending;
+  function shouldShowFieldError(
+    field: CheckoutFieldKey,
+    message?: string,
+  ): message is string {
+    if (!message) return false;
+    return (
+      Boolean(touchedFields[field]) ||
+      validationAttemptedStep >= checkoutStep
+    );
+  }
+
+  function markInvalidFieldsTouched(
+    errors: Partial<Record<CheckoutFieldKey, string>>,
+  ) {
+    setTouchedFields((prev) => {
+      const next = { ...prev };
+      for (const key of Object.keys(errors) as CheckoutFieldKey[]) {
+        next[key] = true;
+      }
+      return next;
+    });
+  }
+
+  function scrollToFirstCheckoutError(field: CheckoutFieldKey | null) {
+    if (!field || typeof document === "undefined") return;
+    window.requestAnimationFrame(() => {
+      const target = document.querySelector(
+        `[data-checkout-field="${field}"]`,
+      );
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
+
+
+  const canProceedStep1 = step1Validation.isValid;
+  const canSubmitStep2 = step2Validation.isValid && !pending;
 
   function handleFooterAction() {
     setError(null);
 
     if (checkoutStep === 1) {
       if (!canProceedStep1) {
-        if (isLocalDeliverySelected && hasDeliveryZones && (!deliveryZoneId || !meetingPointId)) {
-          setError("Selecciona la zona y el punto de encuentro.");
-        } else if (isLocalDeliverySelected && !hasDeliveryZones && deliveryAddress.trim().length < 8) {
-          setError("Indica tu dirección de entrega (mínimo 8 caracteres).");
-        } else if (isPickupSelected && hasPickupPoints && !pickupPointId) {
-          setError("Selecciona el punto de retiro.");
-        } else if (isNationalCarrierSelected && !shippingBranchCode) {
-          setError("Selecciona la sucursal de destino de la agencia.");
-        } else {
-          setError("Selecciona un método de envío para continuar.");
-        }
+        setValidationAttemptedStep(1);
+        markInvalidFieldsTouched(step1Validation.errors);
+        setError(summarizeCheckoutValidation(step1Validation));
+        scrollToFirstCheckoutError(step1Validation.firstErrorField);
         return;
       }
+      setValidationAttemptedStep(0);
       setCheckoutStep(2);
       return;
     }
 
+    if (!canSubmitStep2) {
+      setValidationAttemptedStep(2);
+      markInvalidFieldsTouched(step2Validation.errors);
+      setError(summarizeCheckoutValidation(step2Validation));
+      scrollToFirstCheckoutError(step2Validation.firstErrorField);
+      return;
+    }
+
     if (!proofFile) {
-      setError("Adjunta el comprobante de pago.");
       return;
     }
 
     if (purchaseInfo.payments.length > 0 && !selectedPayment) {
-      setError("Selecciona un método de pago.");
       return;
     }
 
+    const hasCustomerData = customerProfile
+      ? true
+      : customerName.trim().length >= 2 && customerPhone.trim().length >= 10;
+
     if (!hasCustomerData) {
-      setError("Indica tu nombre y teléfono para continuar.");
       return;
     }
 
@@ -634,7 +734,15 @@ export function CheckoutPanel({
                 </ul>
 
                 {purchaseInfo.shipping.length > 0 && (
-                  <div className="txn-checkout-options">
+                  <CheckoutFieldGroup
+                    field="shipping"
+                    showError={shouldShowFieldError(
+                      "shipping",
+                      step1Validation.errors.shipping,
+                    )}
+                    error={step1Validation.errors.shipping}
+                    className="txn-checkout-options"
+                  >
                     <div className="txn-checkout-section">
                       <p className="txn-checkout-section-title">
                         Opciones de envío
@@ -649,41 +757,90 @@ export function CheckoutPanel({
                             estimatedTime={option.estimatedTime}
                             selectable
                             selected={selectedShipping === option.key}
-                            onSelect={() => setSelectedShipping(option.key)}
+                            onSelect={() => {
+                              touchField("shipping");
+                              setSelectedShipping(option.key);
+                            }}
                           />
                         ))}
                       </div>
                     </div>
-                  </div>
+                  </CheckoutFieldGroup>
                 )}
 
                 {isNationalCarrierSelected ? (
-                  <div className="txn-checkout-form">
+                  <CheckoutFieldGroup
+                    field="shippingBranch"
+                    showError={shouldShowFieldError(
+                      "shippingBranch",
+                      step1Validation.errors.shippingBranch,
+                    )}
+                    error={step1Validation.errors.shippingBranch}
+                    className="txn-checkout-form"
+                  >
                     <ShippingBranchPicker
                       carrier={selectedShipping as ShippingCarrierKey}
                       value={shippingBranchCode}
-                      onChange={(branch) => setShippingBranchCode(branch?.id ?? null)}
+                      onChange={(branch) => {
+                        touchField("shippingBranch");
+                        setShippingBranchCode(branch?.id ?? null);
+                      }}
                     />
                     <p className="text-[11px] text-zinc-500">
                       Usaremos esta sucursal para coordinar el envío de este pedido.
                     </p>
-                  </div>
+                  </CheckoutFieldGroup>
                 ) : null}
 
                 {isLocalDeliverySelected ? (
                   <div className="txn-checkout-form">
                     {hasDeliveryZones ? (
-                      <DeliveryZonePicker
-                        zones={deliveryZonesForCheckout}
-                        selectedZoneId={deliveryZoneId}
-                        selectedPointId={meetingPointId}
-                        notes={fulfillmentNotes}
-                        onZoneChange={setDeliveryZoneId}
-                        onPointChange={setMeetingPointId}
-                        onNotesChange={setFulfillmentNotes}
-                      />
+                      <CheckoutFieldGroup
+                        field={
+                          step1Validation.errors.meetingPoint
+                            ? "meetingPoint"
+                            : "deliveryZone"
+                        }
+                        showError={
+                          shouldShowFieldError(
+                            "deliveryZone",
+                            step1Validation.errors.deliveryZone,
+                          ) ||
+                          shouldShowFieldError(
+                            "meetingPoint",
+                            step1Validation.errors.meetingPoint,
+                          )
+                        }
+                        error={
+                          step1Validation.errors.deliveryZone ??
+                          step1Validation.errors.meetingPoint
+                        }
+                      >
+                        <DeliveryZonePicker
+                          zones={deliveryZonesForCheckout}
+                          selectedZoneId={deliveryZoneId}
+                          selectedPointId={meetingPointId}
+                          notes={fulfillmentNotes}
+                          onZoneChange={(zoneId) => {
+                            touchField("deliveryZone");
+                            setDeliveryZoneId(zoneId);
+                          }}
+                          onPointChange={(pointId) => {
+                            touchField("meetingPoint");
+                            setMeetingPointId(pointId);
+                          }}
+                          onNotesChange={setFulfillmentNotes}
+                        />
+                      </CheckoutFieldGroup>
                     ) : (
-                      <>
+                      <CheckoutFieldGroup
+                        field="deliveryAddress"
+                        showError={shouldShowFieldError(
+                          "deliveryAddress",
+                          step1Validation.errors.deliveryAddress,
+                        )}
+                        error={step1Validation.errors.deliveryAddress}
+                      >
                         <label className="txn-field">
                           <span>Dirección de entrega</span>
                           <textarea
@@ -691,32 +848,62 @@ export function CheckoutPanel({
                             minLength={8}
                             rows={3}
                             value={deliveryAddress}
-                            onChange={(event) => setDeliveryAddress(event.target.value)}
+                            onChange={(event) => {
+                              touchField("deliveryAddress");
+                              setDeliveryAddress(event.target.value);
+                            }}
+                            onBlur={() => touchField("deliveryAddress")}
                             placeholder="Calle, edificio, referencia…"
-                            className="txn-input min-h-[5rem] resize-y"
+                            aria-invalid={shouldShowFieldError(
+                              "deliveryAddress",
+                              step1Validation.errors.deliveryAddress,
+                            )}
+                            aria-describedby={
+                              step1Validation.errors.deliveryAddress
+                                ? "checkout-error-deliveryAddress"
+                                : undefined
+                            }
+                            className={checkoutInputClass(
+                              shouldShowFieldError(
+                                "deliveryAddress",
+                                step1Validation.errors.deliveryAddress,
+                              ),
+                              "min-h-[5rem] resize-y",
+                            )}
                           />
                         </label>
                         <p className="text-[11px] text-zinc-500">
                           La usaremos para entregar este pedido.
                         </p>
-                      </>
+                      </CheckoutFieldGroup>
                     )}
                   </div>
                 ) : null}
 
                 {isPickupSelected && hasPickupPoints ? (
-                  <div className="txn-checkout-form">
+                  <CheckoutFieldGroup
+                    field="pickupPoint"
+                    showError={shouldShowFieldError(
+                      "pickupPoint",
+                      step1Validation.errors.pickupPoint,
+                    )}
+                    error={step1Validation.errors.pickupPoint}
+                    className="txn-checkout-form"
+                  >
                     <PickupPointPicker
                       points={purchaseInfo.pickupPoints}
                       selectedPointId={pickupPointId}
                       notes={fulfillmentNotes}
-                      onPointChange={setPickupPointId}
+                      onPointChange={(pointId) => {
+                        touchField("pickupPoint");
+                        setPickupPointId(pointId);
+                      }}
                       onNotesChange={setFulfillmentNotes}
                     />
                     <p className="text-[11px] text-zinc-500">
                       Coordinaremos el horario de retiro por WhatsApp.
                     </p>
-                  </div>
+                  </CheckoutFieldGroup>
                 ) : null}
 
                 {(customerProfile || autoApply) && (
@@ -773,7 +960,15 @@ export function CheckoutPanel({
               <>
                 <div className="txn-checkout-options">
                   {purchaseInfo.payments.length > 0 && (
-                    <div className="txn-checkout-section">
+                    <CheckoutFieldGroup
+                      field="payment"
+                      showError={shouldShowFieldError(
+                        "payment",
+                        step2Validation.errors.payment,
+                      )}
+                      error={step2Validation.errors.payment}
+                      className="txn-checkout-section"
+                    >
                       <p className="txn-checkout-section-title">Método de pago</p>
                       <div className="txn-checkout-method-grid">
                         {purchaseInfo.payments.map((payment) => (
@@ -782,7 +977,10 @@ export function CheckoutPanel({
                             methodKey={payment.key as PaymentMethodKey}
                             selectable
                             selected={selectedPayment === payment.key}
-                            onSelect={() => setSelectedPayment(payment.key)}
+                            onSelect={() => {
+                              touchField("payment");
+                              setSelectedPayment(payment.key);
+                            }}
                           />
                         ))}
                       </div>
@@ -792,7 +990,7 @@ export function CheckoutPanel({
                           fields={selectedPaymentDetails.fields}
                         />
                       )}
-                    </div>
+                    </CheckoutFieldGroup>
                   )}
                 </div>
 
@@ -823,50 +1021,129 @@ export function CheckoutPanel({
                       Compra sin registro: solo nombre y teléfono para coordinar tu
                       pedido. Crear una cuenta es opcional al finalizar.
                     </p>
-                    <label className="txn-field">
-                      <span>Nombre</span>
-                      <input
-                        type="text"
-                        required
-                        minLength={2}
-                        value={customerName}
-                        onChange={(event) => setCustomerName(event.target.value)}
-                        placeholder="Tu nombre completo"
-                        className="txn-input"
-                      />
-                    </label>
+                    <CheckoutFieldGroup
+                      field="customerName"
+                      showError={shouldShowFieldError(
+                        "customerName",
+                        step2Validation.errors.customerName,
+                      )}
+                      error={step2Validation.errors.customerName}
+                    >
+                      <label className="txn-field">
+                        <span>Nombre</span>
+                        <input
+                          type="text"
+                          required
+                          minLength={2}
+                          value={customerName}
+                          onChange={(event) => {
+                            touchField("customerName");
+                            setCustomerName(event.target.value);
+                          }}
+                          onBlur={() => touchField("customerName")}
+                          placeholder="Tu nombre completo"
+                          aria-invalid={shouldShowFieldError(
+                            "customerName",
+                            step2Validation.errors.customerName,
+                          )}
+                          aria-describedby={
+                            step2Validation.errors.customerName
+                              ? "checkout-error-customerName"
+                              : undefined
+                          }
+                          className={checkoutInputClass(
+                            shouldShowFieldError(
+                              "customerName",
+                              step2Validation.errors.customerName,
+                            ),
+                          )}
+                        />
+                      </label>
+                    </CheckoutFieldGroup>
 
-                    <label className="txn-field">
-                      <span>Teléfono / WhatsApp</span>
-                      <input
-                        type="tel"
-                        required
-                        inputMode="tel"
-                        autoComplete="tel"
-                        minLength={10}
-                        value={customerPhone}
-                        onChange={(event) => setCustomerPhone(event.target.value)}
-                        placeholder="Ej: 0414-1234567"
-                        className="txn-input"
-                      />
-                    </label>
+                    <CheckoutFieldGroup
+                      field="customerPhone"
+                      showError={shouldShowFieldError(
+                        "customerPhone",
+                        step2Validation.errors.customerPhone,
+                      )}
+                      error={step2Validation.errors.customerPhone}
+                      className="mt-3"
+                    >
+                      <label className="txn-field">
+                        <span>Teléfono / WhatsApp</span>
+                        <input
+                          type="tel"
+                          required
+                          inputMode="tel"
+                          autoComplete="tel"
+                          minLength={10}
+                          value={customerPhone}
+                          onChange={(event) => {
+                            touchField("customerPhone");
+                            setCustomerPhone(event.target.value);
+                          }}
+                          onBlur={() => touchField("customerPhone")}
+                          placeholder="Ej: 0414-1234567"
+                          aria-invalid={shouldShowFieldError(
+                            "customerPhone",
+                            step2Validation.errors.customerPhone,
+                          )}
+                          aria-describedby={
+                            step2Validation.errors.customerPhone
+                              ? "checkout-error-customerPhone"
+                              : undefined
+                          }
+                          className={checkoutInputClass(
+                            shouldShowFieldError(
+                              "customerPhone",
+                              step2Validation.errors.customerPhone,
+                            ),
+                          )}
+                        />
+                      </label>
+                    </CheckoutFieldGroup>
                   </div>
                 )}
 
-                <div className="txn-checkout-form">
+                <CheckoutFieldGroup
+                  field="proofFile"
+                  showError={shouldShowFieldError(
+                    "proofFile",
+                    step2Validation.errors.proofFile,
+                  )}
+                  error={step2Validation.errors.proofFile}
+                  className="txn-checkout-form"
+                >
                   <label className="txn-field">
                     <span>Comprobante de pago</span>
                     <input
                       type="file"
                       required
                       accept="image/jpeg,image/png,image/webp,image/gif"
-                      onChange={(event) =>
-                        setProofFile(event.target.files?.[0] ?? null)
+                      onChange={(event) => {
+                        touchField("proofFile");
+                        setProofFile(event.target.files?.[0] ?? null);
+                      }}
+                      onBlur={() => touchField("proofFile")}
+                      aria-invalid={shouldShowFieldError(
+                        "proofFile",
+                        step2Validation.errors.proofFile,
+                      )}
+                      aria-describedby={
+                        step2Validation.errors.proofFile
+                          ? "checkout-error-proofFile"
+                          : undefined
                       }
-                      className="txn-file-input"
+                      className={checkoutFileInputClass(
+                        shouldShowFieldError(
+                          "proofFile",
+                          step2Validation.errors.proofFile,
+                        ),
+                      )}
                     />
                   </label>
-                </div>
+                </CheckoutFieldGroup>
               </>
             )}
           </div>
@@ -877,6 +1154,7 @@ export function CheckoutPanel({
                 type="button"
                 onClick={() => {
                   setError(null);
+                  setValidationAttemptedStep(0);
                   setCheckoutStep(1);
                 }}
                 className="checkout-footer-back"
@@ -928,11 +1206,25 @@ export function CheckoutPanel({
             <button
               type="button"
               onClick={handleFooterAction}
-              disabled={checkoutStep === 1 ? !canProceedStep1 : !canSubmitStep2}
-              className="txn-submit-btn"
+              disabled={pending}
+              className={cn(
+                "txn-submit-btn",
+                !canProceedCurrentStep &&
+                  !pending &&
+                  "txn-submit-btn--blocked",
+              )}
+              aria-disabled={!canProceedCurrentStep || pending}
             >
               {submitButtonLabel}
             </button>
+
+            {!canProceedCurrentStep && !pending ? (
+              <p className="txn-checkout-blocked-hint" role="status">
+                {checkoutStep === 2
+                  ? "Completa nombre, teléfono, método de pago y comprobante para confirmar."
+                  : "Completa el envío y los campos obligatorios para continuar."}
+              </p>
+            ) : null}
 
             {checkoutStep === 2 && (
               <p className="txn-checkout-hint">
