@@ -6,8 +6,9 @@ const publicDir = path.join(process.cwd(), "public");
 const brandDir = path.join(publicDir, "brand");
 
 const SOURCE_CANDIDATES = [
+  path.join(process.cwd(), "assets", "logo-completo-alcentimo-source.png"),
+  "C:/Users/Admin/.cursor/projects/c-Users-Admin-Desktop-alcentimo-1/assets/c__Users_Admin_AppData_Roaming_Cursor_User_workspaceStorage_empty-window_images_logo_completo-f94a35aa-6037-40b9-a047-5adf445a9188.png",
   path.join(process.cwd(), "assets", "logo-completo-alcentimo.png"),
-  "C:/Users/Admin/.cursor/projects/c-Users-Admin-Desktop-alcentimo-1/assets/c__Users_Admin_AppData_Roaming_Cursor_User_workspaceStorage_empty-window_images_logo_completo-fc7fe0f7-2d75-4343-9749-578a07dc6454.png",
   path.join(brandDir, "logo-completo-alcentimo.png"),
 ];
 
@@ -130,17 +131,13 @@ async function buildTransparentLogoBuffer(sourcePath, bounds, scale = 1) {
 
   let pipeline = sharp(rgba, {
     raw: { width, height, channels: 4 },
-  }).png({ compressionLevel: 9, adaptiveFiltering: true });
+  }).png({ compressionLevel: 0, adaptiveFiltering: false });
 
   if (scale !== 1) {
-    pipeline = pipeline
-      .resize(Math.round(width * scale), Math.round(height * scale), {
-        fit: "fill",
-        kernel: sharp.kernel.lanczos3,
-      })
-      .sharpen({ sigma: 0.8, m1: 0.5, m2: 0.3 });
-  } else {
-    pipeline = pipeline.sharpen({ sigma: 0.5, m1: 0.5, m2: 0.2 });
+    pipeline = pipeline.resize(Math.round(width * scale), Math.round(height * scale), {
+      fit: "fill",
+      kernel: sharp.kernel.lanczos3,
+    });
   }
 
   return pipeline.toBuffer();
@@ -163,12 +160,11 @@ await writeFile(outputPath, png1x);
 await writeFile(output2xPath, png2x);
 
 const meta = await sharp(outputPath).metadata();
-console.log(`  wrote ${path.relative(process.cwd(), outputPath)} (${meta.width}x${meta.height}, alpha=${meta.hasAlpha})`);
-console.log(`  wrote ${path.relative(process.cwd(), output2xPath)} (${(meta.width ?? 0) * 2}x${(meta.height ?? 0) * 2})`);
+const meta2x = await sharp(output2xPath).metadata();
 
 await writeFile(
   path.join(brandDir, "logo-completo-alcentimo.meta.json"),
-  JSON.stringify({ width: meta.width, height: meta.height }),
+  JSON.stringify({ width: meta.width, height: meta.height, width2x: meta2x.width, height2x: meta2x.height }),
 );
 
 console.log("Landing logo export complete.");

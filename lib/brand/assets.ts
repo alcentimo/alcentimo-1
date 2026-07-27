@@ -1,5 +1,5 @@
 /** Rutas públicas de la marca Alcentimo (PNG con fondo transparente). */
-const BRAND_ASSET_VERSION = "20260727g";
+const BRAND_ASSET_VERSION = "20260727h";
 
 export const BRAND_ISOTYPE_PATH = `/brand/isotipo-alcentimo.png?v=${BRAND_ASSET_VERSION}`;
 export const BRAND_LOGO_FULL_PATH = `/brand/logo-completo-alcentimo.png?v=${BRAND_ASSET_VERSION}`;

@@ -18,7 +18,7 @@ const logoImgClass = {
   footer: "h-7 w-auto md:h-8",
 } as const;
 
-/** Logo horizontal de la landing — PNG HD con srcSet 2x y renderizado nítido. */
+/** Logo horizontal de la landing — PNG fuente recortado, máxima resolución. */
 export function LandingHeaderLogo({
   href = "/",
   size = "header",
@@ -27,7 +27,7 @@ export function LandingHeaderLogo({
   const image = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={BRAND_LOGO_FULL_2X_PATH}
+      src={BRAND_LOGO_FULL_PATH}
       srcSet={`${BRAND_LOGO_FULL_PATH} 1x, ${BRAND_LOGO_FULL_2X_PATH} 2x`}
       width={BRAND_LOGO_FULL_WIDTH}
       height={BRAND_LOGO_FULL_HEIGHT}
@@ -36,7 +36,7 @@ export function LandingHeaderLogo({
         "brand-logo-sharp block max-w-none shrink-0 border-0 bg-transparent object-contain object-left shadow-none outline-none",
         logoImgClass[size],
       )}
-      decoding="async"
+      decoding="sync"
       fetchPriority="high"
     />
   );
