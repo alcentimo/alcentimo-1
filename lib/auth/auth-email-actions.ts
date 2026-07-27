@@ -11,6 +11,7 @@ import {
 } from "@/lib/email/send-auth-email";
 import {
   PENDING_CONFIRMATION_RESENT_MESSAGE,
+  EXISTING_CONFIRMED_ACCOUNT_MESSAGE,
   type AuthEmailActionResult,
 } from "@/lib/auth/auth-email-types";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -22,8 +23,7 @@ import { formatAuthError } from "@/lib/auth/format-auth-error";
 
 const RESET_PASSWORD_NEXT = "/dashboard/restablecer-contrasena";
 
-const EXISTING_CONFIRMED_ACCOUNT_ERROR =
-  "Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.";
+const EXISTING_CONFIRMED_ACCOUNT_ERROR = EXISTING_CONFIRMED_ACCOUNT_MESSAGE;
 
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();

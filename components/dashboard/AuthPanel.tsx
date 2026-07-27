@@ -8,6 +8,7 @@ import { signUpWithConfirmationEmailAction } from "@/lib/auth/auth-email-actions
 import {
   PENDING_CONFIRMATION_RESENT_MESSAGE,
   isPendingActivationNotice,
+  isExistingConfirmedAccountError,
   parseAuthEmailActionResult,
 } from "@/lib/auth/auth-email-types";
 import { devSignUpAndSignIn } from "@/lib/auth/dev-signup";
@@ -22,15 +23,6 @@ import { SignupEmailVerificationPanel } from "@/components/dashboard/SignupEmail
 
 const devSkipEmailConfirmation =
   process.env.NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION === "true";
-
-function isAlreadyRegisteredMessage(message: string): boolean {
-  const lower = message.toLowerCase();
-  return (
-    (lower.includes("already") &&
-      (lower.includes("registered") || lower.includes("exists"))) ||
-    lower.includes("ya existe una cuenta")
-  );
-}
 
 export function AuthPanel() {
   const searchParams = useSearchParams();
@@ -51,6 +43,7 @@ export function AuthPanel() {
   const [signupConfirmationSent, setSignupConfirmationSent] = useState(false);
   const [signupNotice, setSignupNotice] = useState<string | null>(null);
   const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false);
+  const [existingAccountNotice, setExistingAccountNotice] = useState(false);
 
   function switchMode(nextMode: "login" | "signup") {
     setMode(nextMode);
@@ -60,6 +53,19 @@ export function AuthPanel() {
     setSignupNotice(null);
     setConfirmPassword("");
     setAcceptedLegalTerms(false);
+    if (nextMode === "signup") {
+      setExistingAccountNotice(false);
+    }
+  }
+
+  function goToLoginForExistingAccount() {
+    setError(null);
+    setSuccessNotice(null);
+    setExistingAccountNotice(true);
+    setMode("login");
+    window.requestAnimationFrame(() => {
+      document.getElementById("password")?.focus();
+    });
   }
 
   function showPendingActivationNotice(notice?: string | null) {
@@ -96,6 +102,10 @@ export function AuthPanel() {
       setLoading(false);
 
       if (!devResult.ok) {
+        if (isExistingConfirmedAccountError(devResult.error)) {
+          goToLoginForExistingAccount();
+          return;
+        }
         setError(formatAuthError(devResult.error));
         return;
       }
@@ -136,10 +146,14 @@ export function AuthPanel() {
           return;
         }
 
-        // Cuenta ya confirmada u otro error real → rojo.
+        // Cuenta ya confirmada → login con aviso claro.
+        if (isExistingConfirmedAccountError(signupResult.error)) {
+          goToLoginForExistingAccount();
+          return;
+        }
+
         setError(
-          signupResult.error.startsWith("Ya existe") ||
-            signupResult.error.startsWith("No pudimos reenviar")
+          signupResult.error.startsWith("No pudimos reenviar")
             ? signupResult.error
             : formatAuthError(signupResult.error),
         );
@@ -148,10 +162,13 @@ export function AuthPanel() {
         const message =
           caught instanceof Error ? caught.message : String(caught ?? "");
 
-        // Si la Server Action lanza el duplicado en vez de devolver { ok },
-        // mostrar el flujo de activación pendiente (no bloquear en rojo).
-        if (isAlreadyRegisteredMessage(message)) {
-          showPendingActivationNotice(PENDING_CONFIRMATION_RESENT_MESSAGE);
+        if (isExistingConfirmedAccountError(message)) {
+          goToLoginForExistingAccount();
+          return;
+        }
+
+        if (isPendingActivationNotice(message)) {
+          showPendingActivationNotice(message);
           return;
         }
 
@@ -246,7 +263,10 @@ export function AuthPanel() {
             required
             autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setExistingAccountNotice(false);
+            }}
             className="input-field"
           />
         </div>
@@ -319,6 +339,23 @@ export function AuthPanel() {
             </span>
           </label>
         )}
+
+        {existingAccountNotice && mode === "login" ? (
+          <div
+            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100"
+            role="alert"
+          >
+            Este correo ya está registrado.{" "}
+            <button
+              type="button"
+              className="link-brand font-semibold underline"
+              onClick={() => document.getElementById("password")?.focus()}
+            >
+              Haz clic aquí para iniciar sesión
+            </button>
+            .
+          </div>
+        ) : null}
 
         {successNotice ? (
           <p

@@ -1,6 +1,9 @@
 export const PENDING_CONFIRMATION_RESENT_MESSAGE =
   "Ya registramos una cuenta con este correo pero aún falta verificarla. Te hemos enviado un nuevo enlace de activación.";
 
+export const EXISTING_CONFIRMED_ACCOUNT_MESSAGE =
+  "Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.";
+
 export type AuthEmailActionResult =
   | { ok: true; resentPendingConfirmation?: boolean; notice?: string }
   | { ok: false; error: string };
@@ -50,5 +53,24 @@ export function isPendingActivationNotice(message: string): boolean {
     lower.includes("aún falta verificar") ||
     lower.includes("nuevo enlace de activación") ||
     lower.includes("te hemos enviado un nuevo enlace")
+  );
+}
+
+/** Cuenta ya confirmada (no confundir con activación pendiente). */
+export function isExistingConfirmedAccountError(message: string): boolean {
+  if (isPendingActivationNotice(message)) return false;
+
+  const lower = message.toLowerCase().trim();
+  return (
+    lower.includes("ya existe una cuenta") ||
+    lower.includes("inicia sesión o recupera") ||
+    lower.includes("intentar iniciar sesión") ||
+    (lower.includes("already") &&
+      (lower.includes("registered") ||
+        lower.includes("exists") ||
+        lower.includes("been registered"))) ||
+    lower.includes("user already exists") ||
+    lower.includes("email address is already") ||
+    lower.includes("email_exists")
   );
 }
