@@ -173,7 +173,6 @@ export function DashboardSidebar({
           subtitle={drawerExpanded ? storeName ?? "Panel" : undefined}
           showName={false}
           mark={drawerExpanded ? "full" : "isotype"}
-          preferBuiltInMark
           size="md"
           className={cn(
             "dashboard-sidebar-brand min-w-0",

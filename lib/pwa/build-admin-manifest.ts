@@ -1,4 +1,8 @@
 import { PWA_ADMIN_IDENTITY_VERSION } from "@/lib/pwa/constants";
+import {
+  BRAND_PWA_ICON_192_PATH,
+  BRAND_PWA_ICON_512_PATH,
+} from "@/lib/brand/assets";
 import type { PlatformSettings } from "@/lib/platform/platform-settings";
 import type { WebAppManifest } from "@/lib/pwa/types";
 import { getSiteUrl } from "@/lib/site-url";
@@ -7,31 +11,14 @@ function normalizeOrigin(origin: string): string {
   return origin.replace(/\/$/, "");
 }
 
-function resolvePlatformIconUrl(
-  base: string,
-  customUrl: string | null | undefined,
-  fallbackPath: string,
-): string {
-  if (customUrl?.trim()) return customUrl.trim();
-  return `${base}${fallbackPath}`;
-}
-
 /** PWA del dueño: panel Alcentimo (scope /, start en dashboard). */
 export function buildAdminWebManifest(
   origin?: string,
-  platformSettings?: Pick<PlatformSettings, "platformName" | "tagline" | "pwaIcon192Url" | "pwaIcon512Url">,
+  platformSettings?: Pick<PlatformSettings, "platformName" | "tagline">,
 ): WebAppManifest {
   const base = normalizeOrigin(origin ?? getSiteUrl());
-  const icon192 = resolvePlatformIconUrl(
-    base,
-    platformSettings?.pwaIcon192Url,
-    "/icon-192x192.png",
-  );
-  const icon512 = resolvePlatformIconUrl(
-    base,
-    platformSettings?.pwaIcon512Url,
-    "/icon-512x512.png",
-  );
+  const icon192 = `${base}${BRAND_PWA_ICON_192_PATH}`;
+  const icon512 = `${base}${BRAND_PWA_ICON_512_PATH}`;
   const appName = platformSettings?.platformName?.trim() || "Alcentimo";
 
   return {

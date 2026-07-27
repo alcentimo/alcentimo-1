@@ -1,6 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { getAdminManifestPath } from "@/lib/pwa/build-admin-manifest";
+import {
+  BRAND_APPLE_TOUCH_ICON_PATH,
+  BRAND_FAVICON_16_PATH,
+  BRAND_FAVICON_32_PATH,
+  BRAND_FAVICON_ICO_PATH,
+  BRAND_PWA_ICON_192_PATH,
+  BRAND_PWA_ICON_512_PATH,
+} from "@/lib/brand/assets";
 import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { PlatformSettingsProvider } from "@/components/providers/PlatformSettingsProvider";
 import { GoogleOAuthProvider } from "@/components/providers/GoogleOAuthProvider";
@@ -12,23 +20,8 @@ const geistSans = Geist({
   display: "swap",
 });
 
-function resolveMetadataIconUrl(
-  customUrl: string | null | undefined,
-  fallbackPath: string,
-): string {
-  return customUrl?.trim() || fallbackPath;
-}
-
 export async function generateMetadata(): Promise<Metadata> {
   const platformSettings = await fetchPlatformSettings();
-  const icon192 = resolveMetadataIconUrl(
-    platformSettings.pwaIcon192Url,
-    "/icon-192x192.png",
-  );
-  const icon512 = resolveMetadataIconUrl(
-    platformSettings.pwaIcon512Url,
-    "/icon-512x512.png",
-  );
 
   return {
     title: `${platformSettings.platformName.toLowerCase()} — Inventario y catálogo digital`,
@@ -47,20 +40,20 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     icons: {
       icon: [
-        { url: "/favicon.ico", sizes: "48x48" },
-        { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-        { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-        { url: icon192, sizes: "192x192", type: "image/png" },
-        { url: icon512, sizes: "512x512", type: "image/png" },
+        { url: BRAND_FAVICON_ICO_PATH, sizes: "48x48" },
+        { url: BRAND_FAVICON_16_PATH, sizes: "16x16", type: "image/png" },
+        { url: BRAND_FAVICON_32_PATH, sizes: "32x32", type: "image/png" },
+        { url: BRAND_PWA_ICON_192_PATH, sizes: "192x192", type: "image/png" },
+        { url: BRAND_PWA_ICON_512_PATH, sizes: "512x512", type: "image/png" },
       ],
       apple: [
         {
-          url: "/apple-touch-icon.png",
+          url: BRAND_APPLE_TOUCH_ICON_PATH,
           sizes: "180x180",
           type: "image/png",
         },
       ],
-      shortcut: "/favicon.ico",
+      shortcut: BRAND_FAVICON_ICO_PATH,
     },
   };
 }

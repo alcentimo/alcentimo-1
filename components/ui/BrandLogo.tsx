@@ -20,10 +20,9 @@ interface BrandLogoProps {
   responsive?: boolean;
   /** Isotipo, logo completo o ambos según viewport. */
   mark?: BrandMarkMode;
+  /** Logo externo solo para vista previa admin; null fuerza el isotipo oficial. */
   logoUrl?: string | null;
   platformName?: string;
-  /** Usa los PNG oficiales aunque haya logo de plataforma en BD. */
-  preferBuiltInMark?: boolean;
 }
 
 function brandMarkImageSize(size: "sm" | "md" | "lg") {
@@ -142,18 +141,16 @@ function BrandBuiltInMark({
 
 function BrandMark({
   size,
-  logoUrl,
+  explicitLogoUrl,
   platformName,
   mark,
-  preferBuiltInMark = false,
 }: {
   size: "sm" | "md" | "lg";
-  logoUrl: string | null;
+  explicitLogoUrl: string | null;
   platformName: string;
   mark: BrandMarkMode;
-  preferBuiltInMark?: boolean;
 }) {
-  if (preferBuiltInMark || !logoUrl) {
+  if (!explicitLogoUrl) {
     return (
       <BrandBuiltInMark size={size} mark={mark} platformName={platformName} />
     );
@@ -174,13 +171,13 @@ function BrandMark({
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={logoUrl}
+        src={explicitLogoUrl}
         alt={`Logo de ${platformName}`}
         width={imageSize.width}
         height={imageSize.height}
         className={cn(
           "brand-logo-dynamic-img block h-full w-auto max-h-full object-contain object-center",
-          isVectorLogoUrl(logoUrl) && "brand-logo-svg-img",
+          isVectorLogoUrl(explicitLogoUrl) && "brand-logo-svg-img",
         )}
         decoding="async"
       />
@@ -201,20 +198,19 @@ export function BrandLogo({
   mark: markProp,
   logoUrl: logoUrlOverride,
   platformName: platformNameOverride,
-  preferBuiltInMark = false,
 }: BrandLogoProps) {
   const platform = usePlatformSettings();
-  const logoUrl = logoUrlOverride !== undefined ? logoUrlOverride : platform.logoUrl;
   const platformName =
     platformNameOverride !== undefined
       ? platformNameOverride
       : platform.platformName;
 
   const mark: BrandMarkMode = markProp ?? (responsive ? "responsive" : "isotype");
+  const explicitLogoUrl =
+    logoUrlOverride !== undefined ? logoUrlOverride?.trim() || null : null;
   const isLanding = variant === "landing";
   const resolvedTheme = isLanding ? "light" : theme;
-  const usesBuiltInResponsive =
-    (preferBuiltInMark || !logoUrl) && mark === "responsive";
+  const usesBuiltInResponsive = !explicitLogoUrl && mark === "responsive";
 
   const nameClass = cn(
     "brand-logo-name truncate font-bold tracking-tight leading-none",
@@ -240,10 +236,9 @@ export function BrandLogo({
     <>
       <BrandMark
         size={size}
-        logoUrl={logoUrl}
+        explicitLogoUrl={explicitLogoUrl}
         platformName={platformName}
         mark={mark}
-        preferBuiltInMark={preferBuiltInMark}
       />
       {(showWordmarkText || subtitle) && (
         <span className="brand-logo-wordmark flex min-w-0 flex-col justify-center gap-0.5">
