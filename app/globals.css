@@ -687,6 +687,11 @@ body {
   color-scheme: light;
 }
 
+.brand-logo-svg {
+  image-rendering: auto;
+  shape-rendering: geometricPrecision;
+}
+
 .landing-header-brand .brand-logo-name {
   @apply font-extrabold text-emerald-950;
 }

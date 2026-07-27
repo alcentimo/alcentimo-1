@@ -1,11 +1,11 @@
 /** Rutas públicas de la marca Alcentimo. */
-const BRAND_ASSET_VERSION = "20260727i";
+const BRAND_ASSET_VERSION = "20260727j";
 
-export const BRAND_LOGO_HD_PATH = `/logo-alcentimo-hd.png?v=${BRAND_ASSET_VERSION}`;
+export const BRAND_LOGO_SVG_PATH = `/logo-completo.svg?v=${BRAND_ASSET_VERSION}`;
 
-/** Dimensiones nativas del logo horizontal recortado. */
-export const BRAND_LOGO_HD_WIDTH = 744;
-export const BRAND_LOGO_HD_HEIGHT = 116;
+/** Proporción nativa del logo horizontal (viewBox). */
+export const BRAND_LOGO_SVG_WIDTH = 744;
+export const BRAND_LOGO_SVG_HEIGHT = 116;
 
 /** Iconos PWA/favicon. */
 export const BRAND_FAVICON_ICO_PATH = "/favicon.ico";
