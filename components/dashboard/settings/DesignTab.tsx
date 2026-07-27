@@ -205,7 +205,7 @@ export function DesignTab({
   const [design, setDesign] = useState(initialDesign);
   const [error, setError] = useState<string | null>(null);
   const [savingField, setSavingField] = useState<SavingField>(null);
-  const [openSection, setOpenSection] = useState<AccordionSection>("theme");
+  const [openSection, setOpenSection] = useState<AccordionSection | null>("theme");
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [isSaving, startSave] = useTransition();
   const colorSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -377,7 +377,7 @@ export function DesignTab({
   }, []);
 
   function toggleSection(section: AccordionSection) {
-    setOpenSection(section);
+    setOpenSection((current) => (current === section ? null : section));
   }
 
   const themeSummary = CATALOG_THEME_PRESETS[design.theme]?.label ?? "Tema";
