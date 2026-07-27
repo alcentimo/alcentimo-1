@@ -1,15 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 148" role="img" aria-hidden="true"><defs>
-    <filter id="charShadow" x="-15%" y="-10%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#0f172a" flood-opacity="0.22"/>
-    </filter>
-    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#e2e8f0" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#cbd5e1" stop-opacity="0.35"/>
-    </linearGradient>
-  </defs><ellipse cx="64" cy="138" rx="34" ry="6" fill="url(#floor)"/><g filter="url(#charShadow)">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 148" role="img" aria-hidden="true">
     <path d="M64 24 L74 44 H88 L78 58 L82 78 L64 68 L46 78 L50 58 L40 44 H54 Z" fill="#ef4444"/>
     <ellipse cx="64" cy="44" rx="12" ry="13" fill="#fcd9b6"/>
     <rect x="48" y="68" width="32" height="28" rx="8" fill="#2563eb"/>
     <rect x="44" y="96" width="12" height="22" rx="4" fill="#1e3a8a"/>
     <rect x="72" y="96" width="12" height="22" rx="4" fill="#1e3a8a"/>
-  </g></svg>
+  </svg>

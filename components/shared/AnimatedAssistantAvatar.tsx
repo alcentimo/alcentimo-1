@@ -64,12 +64,10 @@ export function AnimatedAssistantAvatar({
               imageClassName,
             )}
           />
-          {animated ? (
+      {animated && !isCharacter ? (
             <>
               <span className="assistant-avatar-shine" aria-hidden="true" />
-              {isCharacter ? null : (
-                <span className="assistant-avatar-glow-ring" aria-hidden="true" />
-              )}
+              <span className="assistant-avatar-glow-ring" aria-hidden="true" />
             </>
           ) : null}
         </>

@@ -124,20 +124,8 @@ const COLORS = {
   white: "#ffffff",
 };
 
-function defs() {
-  return `<defs>
-    <filter id="charShadow" x="-15%" y="-10%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#0f172a" flood-opacity="0.22"/>
-    </filter>
-    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#e2e8f0" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#cbd5e1" stop-opacity="0.35"/>
-    </linearGradient>
-  </defs>`;
-}
-
 function wrapCharacter(content) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 148" role="img" aria-hidden="true">${defs()}<ellipse cx="64" cy="138" rx="34" ry="6" fill="url(#floor)"/><g filter="url(#charShadow)">${content}</g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 148" role="img" aria-hidden="true">${content}</svg>`;
 }
 
 function drawRobbo(c) {
@@ -540,7 +528,6 @@ function drawCabra(c) {
 
 function drawBurger(c) {
   return `
-    <ellipse cx="64" cy="108" rx="22" ry="4" fill="#cbd5e1" opacity="0.5"/>
     <ellipse cx="64" cy="88" rx="30" ry="8" fill="#d97706"/>
     <path d="M34 88 Q64 82 94 88" fill="none" stroke="#b45309" stroke-width="2"/>
     <rect x="36" y="78" width="56" height="6" rx="2" fill="#22c55e"/>

@@ -21,16 +21,21 @@ export function CatalogChatAvatar({
   animation = null,
   animated = false,
 }: CatalogChatAvatarProps) {
+  const isPresetAvatar = Boolean(imageUrl?.includes("/assistant-avatars/"));
+  const useCharacterVariant = animated || isPresetAvatar;
+
   return (
     <AnimatedAssistantAvatar
       imageUrl={imageUrl}
       label={label}
-      variant={animated ? "character" : "round"}
+      variant={useCharacterVariant ? "character" : "round"}
       animation={animation}
-      animated={animated}
+      animated={animated || isPresetAvatar}
       className={cn("catalog-chat-avatar", `catalog-chat-avatar-${size}`, className)}
       imageClassName={
-        animated ? "assistant-avatar-character-image" : "catalog-chat-avatar-image"
+        useCharacterVariant
+          ? "assistant-avatar-character-image"
+          : "catalog-chat-avatar-image"
       }
     />
   );
