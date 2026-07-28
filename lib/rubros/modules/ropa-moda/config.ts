@@ -13,6 +13,18 @@ export const ROPA_MODA_SIZE_PRESETS = [
 ] as const;
 
 /**
+ * Tallas numéricas de pantalones y jeans (cintura).
+ * Misma matriz talla × color que ropa y calzado.
+ */
+export const ROPA_MODA_PANTS_SIZE_PRESETS = [
+  "28",
+  "30",
+  "32",
+  "34",
+  "36",
+] as const;
+
+/**
  * Tallas de calzado EUR (numéricas).
  * Compatibles con la misma matriz talla × color que la ropa.
  */
@@ -43,9 +55,10 @@ export const ROPA_MODA_SHOE_SIZE_US_PRESETS = [
   "US 12",
 ] as const;
 
-/** Todos los presets de talla (ropa + calzado) para chips y validación. */
+/** Todos los presets de talla (ropa + pantalones + calzado) para chips y validación. */
 export const ROPA_MODA_ALL_SIZE_PRESETS = [
   ...ROPA_MODA_SIZE_PRESETS,
+  ...ROPA_MODA_PANTS_SIZE_PRESETS,
   ...ROPA_MODA_SHOE_SIZE_EUR_PRESETS,
   ...ROPA_MODA_SHOE_SIZE_US_PRESETS,
 ] as const;
