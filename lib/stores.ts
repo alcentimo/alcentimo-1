@@ -76,8 +76,9 @@ export async function getUserStore(
   return store;
 }
 
+/** URL del catálogo público (subdominio en prod o /c/slug en local). */
 export function getStoreCatalogUrl(slug: string): string {
-  return `/tienda/${slug}`;
+  return getTransactionalCatalogUrl(slug);
 }
 
 export function getTransactionalCatalogUrl(slug: string): string {

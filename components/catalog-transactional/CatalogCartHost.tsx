@@ -86,12 +86,17 @@ export function CatalogCartHost({
             onClick={closePanel}
           />
           {panelView === "summary" ? (
-            <CartSummaryPanel
-              storeName={store.name}
-              whatsappPhone={purchaseInfo.whatsappPhone}
+            <CheckoutErrorBoundary
               onClose={closePanel}
-              onCheckout={() => setPanelView("checkout")}
-            />
+              onRetry={() => setPanelView("summary")}
+            >
+              <CartSummaryPanel
+                storeName={store.name}
+                whatsappPhone={purchaseInfo.whatsappPhone}
+                onClose={closePanel}
+                onCheckout={() => setPanelView("checkout")}
+              />
+            </CheckoutErrorBoundary>
           ) : (
             <CheckoutErrorBoundary
               onClose={closePanel}

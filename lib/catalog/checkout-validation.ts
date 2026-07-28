@@ -129,7 +129,8 @@ export function validateCheckoutStep2(
     if (input.customerName.trim().length < 2) {
       errors.customerName = "Indica tu nombre (mínimo 2 caracteres).";
     }
-    if (input.customerPhone.trim().length < 10) {
+    const phoneDigits = input.customerPhone.replace(/\D/g, "").length;
+    if (phoneDigits < 10) {
       errors.customerPhone =
         "Indica un teléfono o WhatsApp válido (mínimo 10 dígitos).";
     }

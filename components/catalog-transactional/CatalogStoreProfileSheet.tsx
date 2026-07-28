@@ -74,6 +74,7 @@ export function CatalogStoreProfileSheet({
     : null;
 
   const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
+  const profilePath = getStoreCustomerAccountPath(storeSlug, "perfil");
 
   async function handleSignOut() {
     if (!customerSession) return;
@@ -182,6 +183,14 @@ export function CatalogStoreProfileSheet({
                 >
                   <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden="true" />
                   Ver mis compras
+                </Link>
+                <Link
+                  href={profilePath}
+                  className="catalog-profile-link-btn catalog-profile-link-btn-secondary"
+                  onClick={onClose}
+                >
+                  <UserRound className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  Mi perfil
                 </Link>
                 <button
                   type="button"

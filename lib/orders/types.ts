@@ -48,4 +48,6 @@ export interface SubmitOrderLineInput {
   quantity: number;
   unitPriceUsd: number;
   wholesaleApplied?: boolean;
+  /** Extra de modificadores (alimentos, etc.); el servidor lo suma al precio. */
+  modifiersExtraUsd?: number;
 }

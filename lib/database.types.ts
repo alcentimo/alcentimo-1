@@ -105,6 +105,14 @@ export interface CatalogVisit {
   last_seen_at: string;
 }
 
+export type CartModifierSelectionJson = Array<{
+  groupId: string;
+  groupName: string;
+  optionId: string;
+  optionName: string;
+  priceExtraUsd: number;
+}>;
+
 export interface CustomerCartItem {
   id: string;
   user_id: string;
@@ -112,6 +120,8 @@ export interface CustomerCartItem {
   product_id: string;
   variant_id: string;
   quantity: number;
+  modifiers_json?: CartModifierSelectionJson;
+  line_key?: string;
   created_at: string;
   updated_at: string;
 }

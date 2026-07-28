@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore, requireAuthUser } from "@/lib/auth/require-dashboard-auth";
-import { getUserStore } from "@/lib/stores";
+import { getStoreCatalogUrl, getUserStore } from "@/lib/stores";
 import { slugify, uniqueSlug } from "@/lib/slugify";
 import {
   STORE_SLUG_UNAVAILABLE_MESSAGE,
@@ -891,7 +891,7 @@ export async function updateProduct(
       revalidateInventoryPaths(store.slug);
       return {
         success: true,
-        catalogUrl: `/tienda/${store.slug}`,
+        catalogUrl: getStoreCatalogUrl(store.slug),
         productId,
         imageOptimizedMessage:
           imageResult.uploadedCount > 1
@@ -905,7 +905,7 @@ export async function updateProduct(
 
   revalidateInventoryPaths(store.slug);
   revalidatePath(`/dashboard/productos/${productId}/editar`);
-  return { success: true, catalogUrl: `/tienda/${store.slug}`, productId };
+  return { success: true, catalogUrl: getStoreCatalogUrl(store.slug), productId };
 }
 
 export async function createStore(

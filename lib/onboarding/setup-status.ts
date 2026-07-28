@@ -1,4 +1,5 @@
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
+import { getTransactionalCatalogUrl } from "@/lib/stores";
 
 export interface OnboardingSetupStatus {
   hasProducts: boolean;
@@ -35,6 +36,6 @@ export function getOnboardingSetupStatus(
     hasPaymentsConfigured,
     hasShippingConfigured,
     paymentsOrShippingConfigured: hasPaymentsConfigured || hasShippingConfigured,
-    catalogPath: `/tienda/${storeSlug}`,
+    catalogPath: getTransactionalCatalogUrl(storeSlug),
   };
 }

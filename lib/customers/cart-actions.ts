@@ -1,6 +1,7 @@
 "use server";
 
-import type { CartItem } from "@/lib/catalog/cart-types";
+import type { CartItem, CartModifierSelection } from "@/lib/catalog/cart-types";
+import { cartItemKey } from "@/lib/catalog/cart-types";
 import type { CartLineInput } from "@/lib/catalog/cart-lines";
 import { mergeCartLines } from "@/lib/catalog/cart-lines";
 import { hydrateCartLines } from "@/lib/catalog/hydrate-cart-items";
@@ -14,6 +15,28 @@ export type CustomerCartActionResult =
 interface CartAccessContext {
   userId: string;
   storeId: string;
+}
+
+function sanitizeModifiers(
+  value: unknown,
+): CartModifierSelection[] | undefined {
+  if (!Array.isArray(value) || value.length === 0) return undefined;
+  const rows: CartModifierSelection[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== "object") continue;
+    const row = entry as Partial<CartModifierSelection>;
+    const groupId = String(row.groupId ?? "").trim();
+    const optionId = String(row.optionId ?? "").trim();
+    if (!groupId || !optionId) continue;
+    rows.push({
+      groupId,
+      groupName: String(row.groupName ?? "").trim() || "Extra",
+      optionId,
+      optionName: String(row.optionName ?? "").trim() || "Opción",
+      priceExtraUsd: Math.max(0, Number(row.priceExtraUsd) || 0),
+    });
+  }
+  return rows.length > 0 ? rows : undefined;
 }
 
 async function resolveCartAccess(
@@ -56,18 +79,34 @@ async function fetchStoredCartLines(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("customer_cart_items")
-    .select("product_id, variant_id, quantity")
+    .select("product_id, variant_id, quantity, modifiers_json, line_key")
     .eq("user_id", userId)
     .eq("store_id", storeId);
 
   if (error) {
-    throw new Error(error.message);
+    // Fallback si la migración 083 aún no está aplicada.
+    const legacy = await supabase
+      .from("customer_cart_items")
+      .select("product_id, variant_id, quantity")
+      .eq("user_id", userId)
+      .eq("store_id", storeId);
+
+    if (legacy.error) {
+      throw new Error(legacy.error.message);
+    }
+
+    return (legacy.data ?? []).map((row) => ({
+      productId: row.product_id,
+      variantId: row.variant_id,
+      quantity: row.quantity,
+    }));
   }
 
   return (data ?? []).map((row) => ({
     productId: row.product_id,
     variantId: row.variant_id,
     quantity: row.quantity,
+    modifiers: sanitizeModifiers(row.modifiers_json),
   }));
 }
 
@@ -90,7 +129,27 @@ async function persistCartLines(
 
   if (lines.length === 0) return;
 
-  const rows = lines.map((line) => ({
+  const rowsWithModifiers = lines.map((line) => {
+    const modifiers = sanitizeModifiers(line.modifiers) ?? [];
+    return {
+      user_id: userId,
+      store_id: storeId,
+      product_id: line.productId,
+      variant_id: line.variantId,
+      quantity: line.quantity,
+      modifiers_json: modifiers,
+      line_key: cartItemKey(line.productId, line.variantId, modifiers),
+    };
+  });
+
+  const { error: insertError } = await supabase
+    .from("customer_cart_items")
+    .insert(rowsWithModifiers);
+
+  if (!insertError) return;
+
+  // Fallback sin columnas nuevas.
+  const legacyRows = lines.map((line) => ({
     user_id: userId,
     store_id: storeId,
     product_id: line.productId,
@@ -98,13 +157,22 @@ async function persistCartLines(
     quantity: line.quantity,
   }));
 
-  const { error: insertError } = await supabase
+  const { error: legacyInsertError } = await supabase
     .from("customer_cart_items")
-    .insert(rows);
+    .insert(legacyRows);
 
-  if (insertError) {
-    throw new Error(insertError.message);
+  if (legacyInsertError) {
+    throw new Error(insertError.message || legacyInsertError.message);
   }
+}
+
+function toPersistLines(items: CartItem[]): CartLineInput[] {
+  return items.map((item) => ({
+    productId: item.product.product_id,
+    variantId: item.variantId,
+    quantity: item.quantity,
+    modifiers: item.modifiers,
+  }));
 }
 
 /** Carga el carrito del cliente desde Supabase e hidrata precios/stock actuales. */
@@ -121,15 +189,7 @@ export async function getCustomerCart(
     const items = await hydrateCartLines(storeSlug, lines);
 
     if (items.length !== lines.length) {
-      await persistCartLines(
-        access.userId,
-        access.storeId,
-        items.map((item) => ({
-          productId: item.product.product_id,
-          variantId: item.variantId,
-          quantity: item.quantity,
-        })),
-      );
+      await persistCartLines(access.userId, access.storeId, toPersistLines(items));
     }
 
     return { ok: true, items };
@@ -161,16 +221,11 @@ export async function syncCustomerCart(
         productId: line.productId,
         variantId: line.variantId,
         quantity: Math.floor(line.quantity),
+        modifiers: sanitizeModifiers(line.modifiers),
       }));
 
     const items = await hydrateCartLines(storeSlug, sanitized);
-    const persistedLines = items.map((item) => ({
-      productId: item.product.product_id,
-      variantId: item.variantId,
-      quantity: item.quantity,
-    }));
-
-    await persistCartLines(access.userId, access.storeId, persistedLines);
+    await persistCartLines(access.userId, access.storeId, toPersistLines(items));
     return { ok: true, items };
   } catch (error) {
     return {
@@ -197,13 +252,7 @@ export async function mergeGuestCart(
     const serverLines = await fetchStoredCartLines(access.userId, access.storeId);
     const mergedLines = mergeCartLines(serverLines, guestLines);
     const items = await hydrateCartLines(storeSlug, mergedLines);
-    const persistedLines = items.map((item) => ({
-      productId: item.product.product_id,
-      variantId: item.variantId,
-      quantity: item.quantity,
-    }));
-
-    await persistCartLines(access.userId, access.storeId, persistedLines);
+    await persistCartLines(access.userId, access.storeId, toPersistLines(items));
     return { ok: true, items };
   } catch (error) {
     return {
@@ -219,7 +268,7 @@ export async function mergeGuestCart(
 /** Vacía el carrito remoto del cliente autenticado. */
 export async function clearCustomerCart(
   storeSlug: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<CustomerCartActionResult> {
   try {
     const access = await resolveCartAccess(storeSlug);
     if ("error" in access) {
@@ -227,7 +276,7 @@ export async function clearCustomerCart(
     }
 
     await persistCartLines(access.userId, access.storeId, []);
-    return { ok: true };
+    return { ok: true, items: [] };
   } catch (error) {
     return {
       ok: false,

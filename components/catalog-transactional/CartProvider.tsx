@@ -116,7 +116,17 @@ export function CartProvider({
 
   const loadCustomerCartState = useCallback(async () => {
     const guestItems = readStoredCart(storeSlug);
+    const guestHasModifiers = guestItems.some(
+      (item) => (item.modifiers?.length ?? 0) > 0,
+    );
     const guestLines = cartItemsToLines(guestItems);
+
+    // Si el invitado tiene modificadores, conservar el carrito local (la sync remota
+    // aún no los modela de forma fiable) y no fusionar contra filas sin extras.
+    if (guestHasModifiers && guestItems.length > 0) {
+      clearStoredCart(storeSlug);
+      return { items: guestItems, isCustomer: true as const };
+    }
 
     if (guestLines.length > 0) {
       const merged = await mergeGuestCart(storeSlug, guestLines);
@@ -243,6 +253,12 @@ export function CartProvider({
         const result = await syncCustomerCart(storeSlug, cartItemsToLines(items));
         if (result.ok) {
           setItems((current) => {
+            // La sync remota aún puede colapsar modificadores; no pisar el carrito local.
+            const hasModifiers = current.some(
+              (item) => (item.modifiers?.length ?? 0) > 0,
+            );
+            if (hasModifiers) return current;
+
             const currentKeys = new Set(
               current.map((item) =>
                 cartItemKey(
@@ -301,12 +317,22 @@ export function CartProvider({
             ) === key,
         );
 
+        const qtyForVariant = current
+          .filter(
+            (item) =>
+              item.product.product_id === product.product_id &&
+              item.variantId === variant.id,
+          )
+          .reduce((sum, item) => sum + item.quantity, 0);
+        const stockCap = Math.max(
+          0,
+          existing?.availableStock ?? variant.availableStock,
+        );
+        const remainingForVariant = Math.max(0, stockCap - qtyForVariant);
+
         if (existing) {
-          const nextQty = Math.min(
-            existing.quantity + 1,
-            existing.availableStock,
-          );
-          if (nextQty === existing.quantity) return current;
+          if (remainingForVariant <= 0) return current;
+          const nextQty = existing.quantity + 1;
           return current.map((item) =>
             cartItemKey(
               item.product.product_id,
@@ -318,7 +344,7 @@ export function CartProvider({
           );
         }
 
-        if (variant.availableStock <= 0) {
+        if (remainingForVariant <= 0 || variant.availableStock <= 0) {
           return current;
         }
 
@@ -372,10 +398,22 @@ export function CartProvider({
             ) {
               return item;
             }
-            const nextQty = Math.max(
-              0,
-              Math.min(quantity, item.availableStock),
-            );
+
+            const otherQty = current
+              .filter(
+                (row) =>
+                  row.product.product_id === productId &&
+                  row.variantId === variantId &&
+                  cartItemKey(
+                    row.product.product_id,
+                    row.variantId,
+                    row.modifiers,
+                  ) !== key,
+              )
+              .reduce((sum, row) => sum + row.quantity, 0);
+            const stockCap = Math.max(0, item.availableStock);
+            const maxForLine = Math.max(0, stockCap - otherQty);
+            const nextQty = Math.max(0, Math.min(quantity, maxForLine));
             return refreshCartItemPricing(item, nextQty, wholesaleEnabled);
           })
           .filter((item) => item.quantity > 0),

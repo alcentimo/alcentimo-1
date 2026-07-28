@@ -120,12 +120,10 @@ export function CatalogFulfillmentProvider({
       if (!locationId) return fallback;
 
       const key = `${variantId}:${locationId}`;
-      if (!stockIndex.has(key)) return fallback;
+      // Sin fila para esta sede: no inventar stock del listado global.
+      if (!stockIndex.has(key)) return 0;
 
-      const locationStock = stockIndex.get(key) ?? 0;
-      // Evita marcar agotado por desincronización sede vs. variante principal.
-      if (locationStock <= 0 && fallback > 0) return fallback;
-      return locationStock;
+      return stockIndex.get(key) ?? 0;
     },
     [
       activeLocations.length,

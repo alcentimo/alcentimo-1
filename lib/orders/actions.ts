@@ -105,6 +105,10 @@ export async function submitTransactionalOrder(
       quantity: Math.max(0, Math.floor(Number(line.quantity ?? 0))),
       unitPriceUsd: Number(line.unitPriceUsd ?? 0),
       wholesaleApplied: Boolean(line.wholesaleApplied),
+      modifiersExtraUsd: Math.max(
+        0,
+        Math.min(1000, Number(line.modifiersExtraUsd ?? 0) || 0),
+      ),
     }));
   } catch {
     return { error: "Pedido inválido." };

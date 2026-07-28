@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -212,12 +211,10 @@ export function CustomerProfilePanel({
           </a>
         ) : null}
         {contactEmail ? (
-          <Link
-            href={`/dashboard/recuperar-contrasena?email=${encodeURIComponent(contactEmail)}`}
-            className="block text-center text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-          >
-            ¿No recibiste el correo? Recuperar contraseña
-          </Link>
+          <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
+            Si no llega el correo a {contactEmail}, usa el botón de arriba para
+            reenviarlo o escribe por WhatsApp.
+          </p>
         ) : null}
       </div>
 

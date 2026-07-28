@@ -157,7 +157,9 @@ export async function resolveOrderLinesWithPricing(
           variant.name.trim().toLowerCase() ===
             inventoryVariantRow.name.trim().toLowerCase(),
       );
-    const priceExtraUsd = jsonVariant?.price_extra_usd ?? 0;
+    const priceExtraUsd =
+      (jsonVariant?.price_extra_usd ?? 0) +
+      Math.max(0, Number(line.modifiersExtraUsd ?? 0) || 0);
 
     const pricing = resolveUnitPriceUsd({
       retailUsd: defaultPricing.amount_usd,

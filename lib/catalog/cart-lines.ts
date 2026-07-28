@@ -1,5 +1,5 @@
 import type { CartItem } from "@/lib/catalog/cart-types";
-import { cartItemKey } from "@/lib/catalog/cart-types";
+import { cartItemKey, sumModifiersExtraUsd } from "@/lib/catalog/cart-types";
 import { parseVariantsJson } from "@/lib/products/variants";
 import type { SubmitOrderLineInput } from "@/lib/orders/types";
 
@@ -57,6 +57,10 @@ export function buildSubmitOrderLinesFromCartItems(
         : 0;
       const unitPriceRaw = Number(item?.unitPriceUsd);
       const unitPriceUsd = Number.isFinite(unitPriceRaw) ? unitPriceRaw : 0;
+      const modifiersExtraUsd = Math.max(
+        0,
+        Number(sumModifiersExtraUsd(item.modifiers)) || 0,
+      );
 
       return {
         productId,
@@ -67,6 +71,7 @@ export function buildSubmitOrderLinesFromCartItems(
         quantity,
         unitPriceUsd,
         wholesaleApplied: Boolean(item.wholesaleApplied),
+        modifiersExtraUsd,
       };
     })
     .filter((line) => line.productId.length > 0 && line.quantity > 0);
@@ -76,14 +81,18 @@ export interface CartLineInput {
   productId: string;
   variantId: string;
   quantity: number;
+  modifiers?: import("@/lib/catalog/cart-types").CartModifierSelection[];
 }
 
 export function cartItemsToLines(items: CartItem[]): CartLineInput[] {
-  return items.map((item) => ({
-    productId: item.product.product_id,
-    variantId: item.variantId,
-    quantity: item.quantity,
-  }));
+  return items
+    .map((item) => ({
+      productId: asCartId(item.product?.product_id),
+      variantId: asCartId(item.variantId),
+      quantity: Math.max(0, Math.floor(Number(item.quantity) || 0)),
+      modifiers: item.modifiers?.length ? item.modifiers : undefined,
+    }))
+    .filter((line) => line.productId.length > 0 && line.quantity > 0);
 }
 
 export function mergeCartLines(
@@ -94,13 +103,13 @@ export function mergeCartLines(
 
   for (const line of base) {
     if (line.quantity <= 0) continue;
-    const key = cartItemKey(line.productId, line.variantId);
+    const key = cartItemKey(line.productId, line.variantId, line.modifiers);
     map.set(key, { ...line });
   }
 
   for (const line of incoming) {
     if (line.quantity <= 0) continue;
-    const key = cartItemKey(line.productId, line.variantId);
+    const key = cartItemKey(line.productId, line.variantId, line.modifiers);
     const existing = map.get(key);
     if (existing) {
       map.set(key, {

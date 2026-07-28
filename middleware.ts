@@ -96,6 +96,41 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectTarget);
   }
 
+  // Rutas huérfanas en apex (sin tienda en el host).
+  if (!storeSlugFromHost) {
+    if (pathname === "/login") {
+      const target = request.nextUrl.clone();
+      target.pathname = DASHBOARD_LOGIN;
+      return NextResponse.redirect(target);
+    }
+
+    if (
+      pathname === "/cuenta" ||
+      pathname === "/perfil" ||
+      pathname === "/compras" ||
+      pathname === "/registro"
+    ) {
+      const target = request.nextUrl.clone();
+      target.pathname = "/";
+      return NextResponse.redirect(target);
+    }
+
+    const legacyTienda = pathname.match(/^\/tienda\/([^/]+)(\/.*)?$/);
+    if (legacyTienda?.[1]) {
+      const slug = decodeURIComponent(legacyTienda[1]).trim().toLowerCase();
+      const rest = legacyTienda[2] ?? "/";
+      const mappedRest =
+        rest === "/" || rest === ""
+          ? "/"
+          : rest.startsWith("/armar-pc")
+            ? rest
+            : "/";
+      const target = new URL(getStoreCatalogPublicUrl(slug, mappedRest));
+      target.search = request.nextUrl.search;
+      return NextResponse.redirect(target, 301);
+    }
+  }
+
   if (!storeSlugFromHost && isStoreSubdomainCatalogEnabled()) {
     const legacyCatalog = pathname.match(/^\/c\/([^/]+)(\/.*)?$/);
     if (legacyCatalog?.[1]) {
