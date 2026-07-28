@@ -5024,13 +5024,31 @@ body {
 }
 
 .txn-catalog-header {
-  @apply sticky top-0 z-20 backdrop-blur-md;
-  border-bottom: 1px solid var(--txn-header-border);
-  background-color: var(--txn-header-bg);
+  @apply sticky top-0 z-20;
+  background: color-mix(in srgb, var(--txn-page-bg, #fafafa) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .txn-catalog-header-inner {
-  @apply flex items-center justify-between gap-3 px-4 py-2.5 sm:px-6 sm:py-3;
+  @apply px-3 pb-2 pt-3 sm:px-6 sm:pb-2.5 sm:pt-3.5;
+}
+
+.txn-catalog-identity-card {
+  @apply mx-auto w-full max-w-6xl rounded-2xl border px-3.5 py-3 shadow-sm sm:px-5 sm:py-4;
+  border-color: color-mix(
+    in srgb,
+    var(--txn-header-border, #e5e5e5) 90%,
+    transparent
+  );
+  background-color: color-mix(
+    in srgb,
+    var(--txn-header-bg, #ffffff) 96%,
+    transparent
+  );
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 8px 24px -12px rgb(0 0 0 / 0.12);
 }
 
 .txn-promo-banner {
@@ -5128,20 +5146,28 @@ body {
 }
 
 .txn-catalog-brand {
-  @apply flex min-w-0 items-center gap-3;
+  @apply flex min-w-0 items-start gap-3 sm:gap-3.5;
 }
 
 .txn-store-logo {
-  @apply relative h-9 w-9 shrink-0 overflow-hidden rounded-xl border bg-neutral-50;
+  @apply relative mt-0.5 h-11 w-11 shrink-0 overflow-hidden rounded-xl border bg-neutral-50 sm:h-12 sm:w-12;
   border-color: var(--pc-border, #e5e5e5);
   background-color: var(--pc-media-bg, #f5f5f5);
 }
 
 .txn-store-logo-fallback {
-  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-xs font-semibold;
+  @apply mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-xs font-semibold sm:h-12 sm:w-12 sm:text-sm;
   border-color: var(--pc-border, #e5e5e5);
   background-color: var(--pc-media-bg, #f5f5f5);
   color: var(--pc-fg-muted, #737373);
+}
+
+.txn-catalog-identity-copy {
+  @apply min-w-0 flex-1;
+}
+
+.txn-catalog-identity-meta {
+  @apply flex flex-wrap items-center gap-2;
 }
 
 .txn-catalog-eyebrow {
@@ -5151,20 +5177,41 @@ body {
 }
 
 .txn-catalog-title {
-  @apply mt-0.5 text-xl tracking-tight sm:text-2xl;
+  @apply mt-1 text-[1.35rem] leading-tight tracking-tight sm:text-2xl;
   color: var(--txn-page-fg, #171717);
-  font-weight: var(--txn-title-weight, 600);
-  letter-spacing: var(--txn-title-tracking, -0.025em);
+  font-weight: var(--txn-title-weight, 650);
+  letter-spacing: var(--txn-title-tracking, -0.03em);
 }
 
 .txn-catalog-desc {
-  @apply mt-0.5 max-w-2xl text-xs leading-snug sm:text-sm;
-  color: var(--pc-fg-muted, #737373);
+  @apply mt-1.5 max-w-2xl text-[13px] leading-relaxed sm:text-sm;
+  color: var(--pc-fg-muted, #525252);
 }
 
 .txn-catalog-rate {
   @apply mt-1 text-[11px] sm:text-xs;
   color: var(--pc-fg-muted, #737373);
+}
+
+.txn-catalog-rate-badge {
+  @apply mt-2.5 inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] leading-none sm:text-xs;
+  border-color: color-mix(in srgb, var(--txn-primary, #0d9488) 28%, transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--txn-primary, #0d9488) 10%,
+    #ffffff
+  );
+  color: var(--txn-page-fg, #171717);
+}
+
+.txn-catalog-rate-badge-label {
+  @apply font-semibold uppercase tracking-[0.06em];
+  color: var(--txn-primary, #0d9488);
+}
+
+.txn-catalog-rate-badge-value {
+  @apply font-medium tabular-nums;
+  color: var(--pc-fg-muted, #404040);
 }
 
 .txn-store-status {

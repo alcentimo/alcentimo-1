@@ -14,7 +14,6 @@ import {
   getCatalogProductGridClassName,
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
-import { formatExchangeRate } from "@/lib/format";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import {
   CatalogProductDetailHost,
@@ -36,6 +35,7 @@ import {
 } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
 import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
+import { CatalogStoreIdentityHeader } from "@/components/catalog-transactional/CatalogStoreIdentityHeader";
 import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { cn } from "@/lib/cn";
@@ -259,17 +259,16 @@ function CatalogCategoriesPageContent({
       )}
       style={getCatalogThemeStyle(catalogDesign, store.rubro_tienda)}
     >
-      <header className="txn-catalog-header">
-        <div className="txn-catalog-header-inner">
-          <h1 className="txn-catalog-title">{store.name}</h1>
-          {showOfficialRate && exchangeRate ? (
-            <p className="txn-catalog-rate">
-              Tasa BCV: Bs. {formatExchangeRate(exchangeRate.rate)} / USD
-            </p>
-          ) : null}
-        </div>
-        <CatalogLocationPicker />
-      </header>
+      <CatalogStoreIdentityHeader
+        storeName={store.name}
+        storeDescription={store.description}
+        logoUrl={store.logo_url}
+        eyebrow="Categorías"
+        locationHours={purchaseInfo.locationHours}
+        showOfficialRate={showOfficialRate}
+        exchangeRate={exchangeRate?.rate ?? null}
+      />
+      <CatalogLocationPicker />
 
       <CatalogPromoBannerCarousel
         promoBanner={catalogDesign.promoBanner}
