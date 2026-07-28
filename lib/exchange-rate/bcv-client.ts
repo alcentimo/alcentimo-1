@@ -4,6 +4,12 @@ const BCV_API_ENDPOINTS = [
 ] as const;
 
 const FETCH_TIMEOUT_MS = 12_000;
+const FETCH_ATTEMPTS_PER_ENDPOINT = 3;
+const RETRY_BASE_DELAY_MS = 800;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function parseNumericRate(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value) && value > 0) {
@@ -11,8 +17,19 @@ function parseNumericRate(value: unknown): number | null {
   }
 
   if (typeof value === "string") {
-    const normalized = value.trim().replace(/\./g, "").replace(",", ".");
-    const parsed = Number.parseFloat(normalized);
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    // Formato VE/EU: "742,8105" o "1.742,81"
+    if (trimmed.includes(",")) {
+      const normalized = trimmed.replace(/\./g, "").replace(",", ".");
+      const parsed = Number.parseFloat(normalized);
+      if (Number.isFinite(parsed) && parsed > 0) return parsed;
+      return null;
+    }
+
+    // Formato US/API: "742.8105"
+    const parsed = Number.parseFloat(trimmed.replace(/[^\d.-]/g, ""));
     if (Number.isFinite(parsed) && parsed > 0) return parsed;
   }
 
@@ -78,7 +95,10 @@ async function fetchJson(url: string): Promise<unknown> {
   try {
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "AlcentimoBCVSync/1.0",
+      },
       cache: "no-store",
     });
 
@@ -96,31 +116,73 @@ function roundRateTwoDecimals(rate: number): number {
   return Math.round((rate + Number.EPSILON) * 100) / 100;
 }
 
+async function fetchRateFromEndpoint(endpoint: string): Promise<number> {
+  let lastError = "sin detalle";
+
+  for (let attempt = 1; attempt <= FETCH_ATTEMPTS_PER_ENDPOINT; attempt++) {
+    try {
+      console.log(
+        `[bcv-sync] ${JSON.stringify({
+          ts: new Date().toISOString(),
+          phase: "fetch_endpoint",
+          endpoint,
+          attempt,
+        })}`,
+      );
+      const payload = await fetchJson(endpoint);
+      const rate = extractRateFromPayload(payload);
+      if (rate) {
+        const rounded = roundRateTwoDecimals(rate);
+        console.log(
+          `[bcv-sync] ${JSON.stringify({
+            ts: new Date().toISOString(),
+            phase: "fetch_endpoint_ok",
+            endpoint,
+            attempt,
+            rate: rounded,
+            rawRate: rate,
+          })}`,
+        );
+        return rounded;
+      }
+      lastError = "respuesta sin tasa válida";
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "Error desconocido";
+      console.error(
+        `[bcv-sync] ${JSON.stringify({
+          ts: new Date().toISOString(),
+          phase: "fetch_endpoint_error",
+          endpoint,
+          attempt,
+          error: lastError,
+        })}`,
+      );
+    }
+
+    if (attempt < FETCH_ATTEMPTS_PER_ENDPOINT) {
+      await sleep(RETRY_BASE_DELAY_MS * attempt);
+    }
+  }
+
+  throw new Error(`${endpoint}: ${lastError}`);
+}
+
 /** Obtiene la tasa USD/VES publicada por el BCV desde APIs públicas (2 decimales). */
 export async function fetchBcvUsdRate(): Promise<number> {
   const errors: string[] = [];
 
   for (const endpoint of BCV_API_ENDPOINTS) {
     try {
-      console.log(`[bcv-sync] ${JSON.stringify({ ts: new Date().toISOString(), phase: "fetch_endpoint", endpoint })}`);
-      const payload = await fetchJson(endpoint);
-      const rate = extractRateFromPayload(payload);
-      if (rate) {
-        const rounded = roundRateTwoDecimals(rate);
-        console.log(`[bcv-sync] ${JSON.stringify({ ts: new Date().toISOString(), phase: "fetch_endpoint_ok", endpoint, rate: rounded, rawRate: rate })}`);
-        return rounded;
-      }
-      errors.push(`${endpoint}: respuesta sin tasa válida`);
+      return await fetchRateFromEndpoint(endpoint);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error desconocido";
-      errors.push(`${endpoint}: ${message}`);
-      console.error(`[bcv-sync] ${JSON.stringify({ ts: new Date().toISOString(), phase: "fetch_endpoint_error", endpoint, error: message })}`);
+      errors.push(message);
     }
   }
 
   throw new Error(
     errors.length > 0
-      ? `No se pudo obtener la tasa BCV. ${errors.join(" | ")}`
+      ? `No se pudo obtener la tasa BCV tras reintentos. ${errors.join(" | ")}`
       : "No se pudo obtener la tasa BCV.",
   );
 }

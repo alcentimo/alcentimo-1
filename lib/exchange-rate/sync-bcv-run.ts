@@ -3,13 +3,19 @@ import { getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
 import { syncBcvTasaToDatabase } from "@/lib/exchange-rate/sync-bcv-tasa";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 
-export type BcvSyncSlot = "midnight" | "morning" | "retry" | "manual";
+export type BcvSyncSlot =
+  | "midnight"
+  | "morning"
+  | "midday"
+  | "retry"
+  | "afternoon"
+  | "manual"
+  | "autoheal";
 
 export type BcvSyncRunAction =
   | "success"
   | "awaiting_retry"
-  | "alert_created"
-  | "skipped_already_synced";
+  | "alert_created";
 
 export interface BcvSyncRunResult {
   success: boolean;
@@ -23,10 +29,12 @@ export interface BcvSyncRunResult {
 
 const BCV_ALERT_TYPE = "bcv_sync_failure";
 
-const SLOT_SCHEDULE_LABEL: Record<Exclude<BcvSyncSlot, "manual">, string> = {
+const SLOT_SCHEDULE_LABEL: Partial<Record<BcvSyncSlot, string>> = {
   midnight: "01:00 America/Caracas",
   morning: "06:00 America/Caracas",
+  midday: "09:00 America/Caracas",
   retry: "12:00 America/Caracas",
+  afternoon: "14:00 America/Caracas",
 };
 
 async function logSyncAttempt(
@@ -50,22 +58,6 @@ async function logSyncAttempt(
   if (error) {
     logBcvSync("sync_log_insert_failed", { error: error.message }, "error");
   }
-}
-
-async function hasSuccessfulSyncToday(
-  admin: SupabaseClient,
-  syncDate: string,
-): Promise<boolean> {
-  const { data, error } = await admin
-    .from("tasas_cambio_sync_logs")
-    .select("id")
-    .eq("sync_date", syncDate)
-    .eq("status", "success")
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-  return Boolean(data);
 }
 
 async function resolveBcvAlerts(
@@ -102,12 +94,12 @@ async function createBcvFailureAlert(
 
   const detail =
     errorMessage ??
-    "La API BCV no devolvió una tasa válida tras el reintento de las 12:00 (America/Caracas).";
+    "La API BCV no devolvió una tasa válida tras los reintentos del día (America/Caracas).";
 
   const { error } = await admin.from("platform_alerts").insert({
     alert_type: BCV_ALERT_TYPE,
     message:
-      "No se pudo actualizar la tasa BCV hoy. Los precios en bolívares pueden estar desactualizados. Requiere intervención manual.",
+      "No se pudo actualizar la tasa BCV hoy. Los precios en bolívares pueden estar desactualizados. El sistema seguirá reintentando automáticamente.",
     detail,
     sync_date: syncDate,
   });
@@ -117,7 +109,11 @@ async function createBcvFailureAlert(
   }
 }
 
-/** Ejecuta un intento de sincronización (01:00, 06:00 o reintento 12:00 VE). */
+function isFinalRetrySlot(slot: BcvSyncSlot): boolean {
+  return slot === "afternoon" || slot === "retry";
+}
+
+/** Ejecuta un intento de sincronización. Todos los slots consultan la API (sin omitir). */
 export async function runBcvSyncAttempt(
   admin: SupabaseClient,
   slot: BcvSyncSlot,
@@ -125,18 +121,6 @@ export async function runBcvSyncAttempt(
   const syncDate = getVenezuelaSyncDate();
 
   logBcvSync("attempt_start", { slot, syncDate });
-
-  // Solo el reintento de mediodía se omite si ya hubo éxito hoy.
-  // 01:00 y 06:00 siempre consultan la API para refrescar la tasa.
-  if (slot === "retry" && (await hasSuccessfulSyncToday(admin, syncDate))) {
-    logBcvSync("attempt_skipped", { slot, syncDate, reason: "already_synced_today" });
-    return {
-      success: true,
-      action: "skipped_already_synced",
-      slot,
-      syncDate,
-    };
-  }
 
   const result = await syncBcvTasaToDatabase(admin);
 
@@ -151,14 +135,15 @@ export async function runBcvSyncAttempt(
   if (result.success) {
     await resolveBcvAlerts(admin, syncDate);
 
-    if (slot === "midnight" || slot === "morning") {
+    const schedule = SLOT_SCHEDULE_LABEL[slot];
+    if (schedule) {
       logBcvSync("scheduled_sync_confirmed", {
         slot,
         syncDate,
         rate: result.rate,
         updatedAt: result.updatedAt,
-        schedule: SLOT_SCHEDULE_LABEL[slot],
-        message: `Sincronización BCV de las ${SLOT_SCHEDULE_LABEL[slot]} completada con éxito.`,
+        schedule,
+        message: `Sincronización BCV de las ${schedule} completada con éxito.`,
       });
     }
 
@@ -178,7 +163,7 @@ export async function runBcvSyncAttempt(
     };
   }
 
-  if (slot === "midnight" || slot === "morning") {
+  if (!isFinalRetrySlot(slot) && slot !== "manual" && slot !== "autoheal") {
     logBcvSync(
       "attempt_failed_awaiting_retry",
       {
@@ -186,9 +171,7 @@ export async function runBcvSyncAttempt(
         syncDate,
         error: result.error,
         message:
-          slot === "midnight"
-            ? "Falló la sync de las 01:00; el intento de las 06:00 refrescará la tasa."
-            : "Falló la sync de las 06:00; el reintento de las 12:00 intentará de nuevo.",
+          "Falló este intento; las siguientes ventanas del día reintentarán automáticamente.",
       },
       "warn",
     );
@@ -203,7 +186,11 @@ export async function runBcvSyncAttempt(
 
   await createBcvFailureAlert(admin, syncDate, result.error);
 
-  logBcvSync("attempt_failed_alert_created", { slot, syncDate, error: result.error }, "error");
+  logBcvSync(
+    "attempt_failed_alert_created",
+    { slot, syncDate, error: result.error },
+    "error",
+  );
 
   return {
     success: false,
@@ -214,19 +201,22 @@ export async function runBcvSyncAttempt(
   };
 }
 
-/** Sincronización manual desde el dashboard (siempre intenta fetch + upsert). */
+/** Sincronización manual / auto-heal (siempre intenta fetch + upsert). */
 export async function runManualBcvSync(
   admin: SupabaseClient,
+  slot: Extract<BcvSyncSlot, "manual" | "autoheal"> = "manual",
 ): Promise<BcvSyncRunResult> {
   const syncDate = getVenezuelaSyncDate();
 
-  logBcvSync("manual_sync_start", { syncDate });
+  logBcvSync(slot === "autoheal" ? "autoheal_sync_start" : "manual_sync_start", {
+    syncDate,
+  });
 
   const result = await syncBcvTasaToDatabase(admin);
 
   await logSyncAttempt(admin, {
     syncDate,
-    slot: "manual",
+    slot,
     success: result.success,
     rate: result.rate,
     error: result.error,
@@ -234,7 +224,7 @@ export async function runManualBcvSync(
 
   if (result.success) {
     await resolveBcvAlerts(admin, syncDate);
-    logBcvSync("manual_sync_success", {
+    logBcvSync(slot === "autoheal" ? "autoheal_sync_success" : "manual_sync_success", {
       syncDate,
       rate: result.rate,
       updatedAt: result.updatedAt,
@@ -242,19 +232,23 @@ export async function runManualBcvSync(
     return {
       success: true,
       action: "success",
-      slot: "manual",
+      slot,
       syncDate,
       rate: result.rate,
       updatedAt: result.updatedAt,
     };
   }
 
-  logBcvSync("manual_sync_failed", { syncDate, error: result.error }, "error");
+  logBcvSync(
+    slot === "autoheal" ? "autoheal_sync_failed" : "manual_sync_failed",
+    { syncDate, error: result.error },
+    "error",
+  );
 
   return {
     success: false,
     action: "alert_created",
-    slot: "manual",
+    slot,
     syncDate,
     error: result.error,
   };

@@ -3,26 +3,14 @@ import { revalidatePath } from "next/cache";
 import { verifyCronRequest } from "@/lib/cron/verify-cron-request";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 import {
-  runBcvSyncAttempt,
-  type BcvSyncSlot,
-} from "@/lib/exchange-rate/sync-bcv-run";
+  parseBcvSyncSlotFromRequest,
+  scheduleNoteForBcvSlot,
+} from "@/lib/exchange-rate/bcv-sync-slot";
+import { runBcvSyncAttempt } from "@/lib/exchange-rate/sync-bcv-run";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
-
-function parseSyncSlot(request: Request): BcvSyncSlot {
-  const slot = new URL(request.url).searchParams.get("slot");
-  if (slot === "morning") return "morning";
-  if (slot === "retry") return "retry";
-  return "midnight";
-}
-
-function scheduleNoteForSlot(slot: BcvSyncSlot): string {
-  if (slot === "morning") return "06:00 America/Caracas (UTC 10:00)";
-  if (slot === "retry") return "12:00 America/Caracas (UTC 16:00)";
-  return "01:00 America/Caracas (UTC 05:00)";
-}
+export const maxDuration = 60;
 
 async function handleSync(request: Request) {
   const auth = verifyCronRequest(request);
@@ -46,13 +34,13 @@ async function handleSync(request: Request) {
     );
   }
 
-  const slot = parseSyncSlot(request);
+  const slot = parseBcvSyncSlotFromRequest(request);
 
   logBcvSync("cron_start", {
     slot,
     source: auth.source ?? "unknown",
     isVercelCron: request.headers.get("x-vercel-cron") === "1",
-    scheduleNote: scheduleNoteForSlot(slot),
+    scheduleNote: scheduleNoteForBcvSlot(slot),
   });
 
   let admin;

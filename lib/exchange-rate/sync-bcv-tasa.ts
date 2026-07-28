@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchBcvUsdRate } from "@/lib/exchange-rate/bcv-client";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
+import { getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
 import { roundExchangeRate } from "@/lib/format";
 
 export interface SyncBcvTasaResult {
@@ -8,10 +9,6 @@ export interface SyncBcvTasaResult {
   rate?: number;
   updatedAt?: string;
   error?: string;
-}
-
-function todayUtcDate(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 /** Persiste la tasa BCV en tasas_cambio y sincroniza exchange_rate legacy. */
@@ -30,7 +27,7 @@ export async function syncBcvTasaToDatabase(
     }
 
     const updatedAt = new Date().toISOString();
-    const effectiveDate = todayUtcDate();
+    const effectiveDate = getVenezuelaSyncDate();
 
     logBcvSync("db_upsert_start", { effectiveDate, rate });
     const { error: tasaError } = await admin.from("tasas_cambio").upsert(

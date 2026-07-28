@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getActiveBcvSyncAlert } from "@/lib/exchange-rate/get-bcv-sync-alert";
 import { getCurrentExchangeRate } from "@/lib/catalog";
+import { ensureBcvRateFreshForToday } from "@/lib/exchange-rate/ensure-bcv-rate-fresh";
 import { bcvRateAgeHours, isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
@@ -42,13 +43,15 @@ export default async function DashboardRootLayout({
   const storeRole = session.storeRole;
   const canUpgradeToBusiness =
     normalizeDbPlan(authUser.profile?.plan ?? authUser.rawPlan) === "PRO";
-  const [bcvSyncAlert, exchangeRateRow, settingsConfig] = await Promise.all([
+  const [bcvSyncAlert, exchangeRateInitial, settingsConfig] = await Promise.all([
     getActiveBcvSyncAlert(supabase),
     getCurrentExchangeRate(),
     store
       ? getStoreSettingsConfig(store.id)
       : Promise.resolve(defaultStoreSettingsConfig()),
   ]);
+
+  const exchangeRateRow = await ensureBcvRateFreshForToday(exchangeRateInitial);
 
   const exchangeRate = exchangeRateRow?.rate ?? null;
   const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;

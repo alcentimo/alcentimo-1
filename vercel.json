@@ -5,21 +5,13 @@
   "buildCommand": "npm run vercel-build",
   "functions": {
     "app/api/cron/sync-bcv-rate/route.ts": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   },
   "crons": [
     {
-      "path": "/api/cron/sync-bcv-rate?slot=midnight",
-      "schedule": "0 5 * * *"
-    },
-    {
-      "path": "/api/cron/sync-bcv-rate?slot=morning",
-      "schedule": "0 10 * * *"
-    },
-    {
-      "path": "/api/cron/sync-bcv-rate?slot=retry",
-      "schedule": "0 16 * * *"
+      "path": "/api/cron/sync-bcv-rate",
+      "schedule": "0 5,10,13,16,18 * * *"
     }
   ],
   "headers": [

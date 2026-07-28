@@ -2,13 +2,19 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 import { getVenezuelaSyncDate } from "./sync-date.ts";
 import { syncBcvTasaToDatabase } from "./sync-bcv-tasa.ts";
 
-export type BcvSyncSlot = "midnight" | "morning" | "retry";
+export type BcvSyncSlot =
+  | "midnight"
+  | "morning"
+  | "midday"
+  | "retry"
+  | "afternoon"
+  | "manual"
+  | "autoheal";
 
 export type BcvSyncRunAction =
   | "success"
   | "awaiting_retry"
-  | "alert_created"
-  | "skipped_already_synced";
+  | "alert_created";
 
 export interface BcvSyncRunResult {
   success: boolean;
@@ -45,22 +51,6 @@ async function logSyncAttempt(
   }
 }
 
-async function hasSuccessfulSyncToday(
-  admin: SupabaseClient,
-  syncDate: string,
-): Promise<boolean> {
-  const { data, error } = await admin
-    .from("tasas_cambio_sync_logs")
-    .select("id")
-    .eq("sync_date", syncDate)
-    .eq("status", "success")
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-  return Boolean(data);
-}
-
 async function resolveBcvAlerts(
   admin: SupabaseClient,
   syncDate: string,
@@ -94,12 +84,12 @@ async function createBcvFailureAlert(
   if (existing?.id) return;
 
   const detail = errorMessage ??
-    "La API BCV no devolvió una tasa válida tras el reintento de las 12:00.";
+    "La API BCV no devolvió una tasa válida tras los reintentos del día.";
 
   const { error } = await admin.from("platform_alerts").insert({
     alert_type: BCV_ALERT_TYPE,
     message:
-      "No se pudo actualizar la tasa BCV hoy. Los precios en bolívares pueden estar desactualizados. Requiere intervención manual.",
+      "No se pudo actualizar la tasa BCV hoy. Los precios en bolívares pueden estar desactualizados. El sistema seguirá reintentando automáticamente.",
     detail,
     sync_date: syncDate,
   });
@@ -109,21 +99,16 @@ async function createBcvFailureAlert(
   }
 }
 
+function isFinalRetrySlot(slot: BcvSyncSlot): boolean {
+  return slot === "afternoon" || slot === "retry";
+}
+
+/** Todos los slots consultan la API (sin omitir por éxito temprano). */
 export async function runBcvSyncAttempt(
   admin: SupabaseClient,
   slot: BcvSyncSlot,
 ): Promise<BcvSyncRunResult> {
   const syncDate = getVenezuelaSyncDate();
-
-  // Solo el reintento de mediodía se omite si ya hubo éxito hoy.
-  if (slot === "retry" && (await hasSuccessfulSyncToday(admin, syncDate))) {
-    return {
-      success: true,
-      action: "skipped_already_synced",
-      slot,
-      syncDate,
-    };
-  }
 
   const result = await syncBcvTasaToDatabase(admin);
 
@@ -137,22 +122,6 @@ export async function runBcvSyncAttempt(
 
   if (result.success) {
     await resolveBcvAlerts(admin, syncDate);
-    if (slot === "midnight" || slot === "morning") {
-      console.log(
-        JSON.stringify({
-          event: "scheduled_sync_confirmed",
-          slot,
-          syncDate,
-          rate: result.rate,
-          schedule: slot === "midnight"
-            ? "01:00 America/Caracas"
-            : "06:00 America/Caracas",
-          message: `Sincronización BCV de las ${
-            slot === "midnight" ? "01:00" : "06:00"
-          } completada con éxito.`,
-        }),
-      );
-    }
     return {
       success: true,
       action: "success",
@@ -163,7 +132,7 @@ export async function runBcvSyncAttempt(
     };
   }
 
-  if (slot === "midnight" || slot === "morning") {
+  if (!isFinalRetrySlot(slot) && slot !== "manual" && slot !== "autoheal") {
     return {
       success: false,
       action: "awaiting_retry",
