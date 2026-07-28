@@ -5,6 +5,13 @@ import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { CATALOG_SORT_OPTIONS, type CatalogSortKey } from "@/lib/catalog/catalog-browse";
 import { Select } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/cn";
 
 const MAX_VISIBLE_CATEGORY_CHIPS = 4;
@@ -69,6 +76,7 @@ export function CatalogBrowseToolbar({
   showCategoryFilter = true,
 }: CatalogBrowseToolbarProps) {
   const [moreOpen, setMoreOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const showCategories = showCategoryFilter && categories.length > 1;
 
   const { visible: visibleCategories, overflow: overflowCategories } = useMemo(
@@ -86,6 +94,24 @@ export function CatalogBrowseToolbar({
       aria-label="Buscar y filtrar productos"
     >
       <div className="catalog-browse-toolbar-row">
+        <button
+          type="button"
+          className={cn(
+            "catalog-browse-filters-btn",
+            hasActiveFilters && "catalog-browse-filters-btn-active",
+          )}
+          aria-label="Abrir filtros"
+          aria-expanded={filtersOpen}
+          aria-haspopup="dialog"
+          onClick={() => setFiltersOpen(true)}
+        >
+          <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="catalog-browse-filters-btn-label">Filtros</span>
+          {hasActiveFilters ? (
+            <span className="catalog-browse-filters-btn-dot" aria-hidden="true" />
+          ) : null}
+        </button>
+
         <label className="catalog-browse-search" htmlFor="catalog-browse-search">
           <Search className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden="true" />
           <input
@@ -109,28 +135,6 @@ export function CatalogBrowseToolbar({
             </button>
           ) : null}
         </label>
-
-        <div className="catalog-browse-sort">
-          <SlidersHorizontal
-            className="h-4 w-4 shrink-0 text-neutral-400"
-            aria-hidden="true"
-          />
-          <Select
-            id="catalog-browse-sort"
-            value={sortKey}
-            onChange={(event) =>
-              onSortKeyChange(event.target.value as CatalogSortKey)
-            }
-            className="catalog-browse-sort-select"
-            aria-label="Ordenar productos"
-          >
-            {CATALOG_SORT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </div>
       </div>
 
       {showCategories ? (
@@ -232,30 +236,129 @@ export function CatalogBrowseToolbar({
       ) : null}
 
       <div className="catalog-browse-meta">
-        <p className="catalog-browse-count">
-          {hasActiveFilters ? (
-            <>
-              Mostrando <strong>{filteredCount}</strong> de{" "}
-              <strong>{totalCount}</strong> productos
-            </>
-          ) : (
-            <>
-              <strong>{totalCount}</strong> producto
-              {totalCount === 1 ? "" : "s"} disponible
-              {totalCount === 1 ? "" : "s"}
-            </>
-          )}
-        </p>
-        {hasActiveFilters && onClearFilters ? (
-          <button
-            type="button"
-            onClick={onClearFilters}
-            className="catalog-browse-clear"
+        <div className="catalog-browse-meta-left">
+          <p className="catalog-browse-count">
+            {hasActiveFilters ? (
+              <>
+                Mostrando <strong>{filteredCount}</strong> de{" "}
+                <strong>{totalCount}</strong> productos
+              </>
+            ) : (
+              <>
+                <strong>{totalCount}</strong> producto
+                {totalCount === 1 ? "" : "s"} disponible
+                {totalCount === 1 ? "" : "s"}
+              </>
+            )}
+          </p>
+          {hasActiveFilters && onClearFilters ? (
+            <button
+              type="button"
+              onClick={onClearFilters}
+              className="catalog-browse-clear"
+            >
+              Limpiar filtros
+            </button>
+          ) : null}
+        </div>
+
+        <div className="catalog-browse-sort">
+          <Select
+            id="catalog-browse-sort"
+            value={sortKey}
+            onChange={(event) =>
+              onSortKeyChange(event.target.value as CatalogSortKey)
+            }
+            className="catalog-browse-sort-select"
+            aria-label="Ordenar productos"
           >
-            Limpiar filtros
-          </button>
-        ) : null}
+            {CATALOG_SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </div>
       </div>
+
+      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <SheetContent
+          className="catalog-browse-filters-sheet"
+          onClose={() => setFiltersOpen(false)}
+        >
+          <SheetHeader>
+            <SheetTitle>Filtros</SheetTitle>
+            <SheetDescription>
+              Afina el catálogo por categoría
+              {searchQuery.trim() ? " y búsqueda activa" : ""}.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="catalog-browse-filters-body">
+            {showCategories ? (
+              <div className="catalog-browse-filters-section">
+                <p className="catalog-browse-filters-label">Categoría</p>
+                <ul className="catalog-browse-filters-list">
+                  <li>
+                    <button
+                      type="button"
+                      className={cn(
+                        "catalog-browse-filters-option",
+                        categorySlug == null &&
+                          "catalog-browse-filters-option-active",
+                      )}
+                      onClick={() => {
+                        onCategorySlugChange(null);
+                        setFiltersOpen(false);
+                      }}
+                    >
+                      Todas
+                    </button>
+                  </li>
+                  {categories.map((category) => (
+                    <li key={category.slug}>
+                      <button
+                        type="button"
+                        className={cn(
+                          "catalog-browse-filters-option",
+                          categorySlug === category.slug &&
+                            "catalog-browse-filters-option-active",
+                        )}
+                        onClick={() => {
+                          onCategorySlugChange(category.slug);
+                          setFiltersOpen(false);
+                        }}
+                      >
+                        {category.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="catalog-browse-filters-empty">
+                No hay filtros adicionales por ahora. Usa la búsqueda para
+                encontrar productos.
+              </p>
+            )}
+          </div>
+
+          {hasActiveFilters && onClearFilters ? (
+            <div className="catalog-browse-filters-footer">
+              <button
+                type="button"
+                className="btn-secondary w-full"
+                onClick={() => {
+                  onClearFilters();
+                  setFiltersOpen(false);
+                }}
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          ) : null}
+        </SheetContent>
+      </Sheet>
     </section>
   );
 }
