@@ -5031,14 +5031,14 @@ body {
 }
 
 .txn-catalog-header-inner {
-  @apply px-3 pb-2 pt-3 sm:px-6 sm:pb-2.5 sm:pt-3.5;
+  @apply px-3 pb-1.5 pt-2 sm:px-6 sm:pb-2 sm:pt-2.5;
 }
 
 .txn-catalog-identity-card {
-  @apply mx-auto w-full max-w-6xl rounded-2xl border px-3.5 py-3 shadow-sm sm:px-5 sm:py-4;
+  @apply mx-auto w-full max-w-6xl rounded-xl border px-3 py-2 shadow-sm sm:rounded-2xl sm:px-4 sm:py-2.5;
   border-color: color-mix(
     in srgb,
-    var(--txn-header-border, #e5e5e5) 90%,
+    var(--txn-header-border, #e5e5e5) 85%,
     transparent
   );
   background-color: color-mix(
@@ -5047,8 +5047,8 @@ body {
     transparent
   );
   box-shadow:
-    0 1px 2px rgb(0 0 0 / 0.04),
-    0 8px 24px -12px rgb(0 0 0 / 0.12);
+    0 1px 2px rgb(0 0 0 / 0.03),
+    0 4px 14px -8px rgb(0 0 0 / 0.1);
 }
 
 .txn-promo-banner {
@@ -5146,17 +5146,17 @@ body {
 }
 
 .txn-catalog-brand {
-  @apply flex min-w-0 items-start gap-3 sm:gap-3.5;
+  @apply flex min-w-0 items-start gap-2.5 sm:gap-3;
 }
 
 .txn-store-logo {
-  @apply relative mt-0.5 h-11 w-11 shrink-0 overflow-hidden rounded-xl border bg-neutral-50 sm:h-12 sm:w-12;
+  @apply relative mt-0.5 h-9 w-9 shrink-0 overflow-hidden rounded-lg border bg-neutral-50 sm:h-10 sm:w-10 sm:rounded-xl;
   border-color: var(--pc-border, #e5e5e5);
   background-color: var(--pc-media-bg, #f5f5f5);
 }
 
 .txn-store-logo-fallback {
-  @apply mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-xs font-semibold sm:h-12 sm:w-12 sm:text-sm;
+  @apply mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-[10px] font-semibold sm:h-10 sm:w-10 sm:rounded-xl sm:text-xs;
   border-color: var(--pc-border, #e5e5e5);
   background-color: var(--pc-media-bg, #f5f5f5);
   color: var(--pc-fg-muted, #737373);
@@ -5167,7 +5167,7 @@ body {
 }
 
 .txn-catalog-identity-meta {
-  @apply flex flex-wrap items-center gap-2;
+  @apply flex flex-wrap items-center gap-1.5 sm:gap-2;
 }
 
 .txn-catalog-eyebrow {
@@ -5177,15 +5177,20 @@ body {
 }
 
 .txn-catalog-title {
-  @apply mt-1 text-[1.35rem] leading-tight tracking-tight sm:text-2xl;
+  @apply mt-0.5 text-lg leading-tight tracking-tight sm:text-xl;
   color: var(--txn-page-fg, #171717);
   font-weight: var(--txn-title-weight, 650);
   letter-spacing: var(--txn-title-tracking, -0.03em);
 }
 
 .txn-catalog-desc {
-  @apply mt-1.5 max-w-2xl text-[13px] leading-relaxed sm:text-sm;
-  color: var(--pc-fg-muted, #525252);
+  @apply mt-1 max-w-xl text-xs leading-snug sm:text-[13px];
+  color: var(--pc-fg-muted, #737373);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .txn-catalog-rate {
@@ -5194,7 +5199,7 @@ body {
 }
 
 .txn-catalog-rate-badge {
-  @apply mt-2.5 inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] leading-none sm:text-xs;
+  @apply mt-1.5 inline-flex max-w-full flex-wrap items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] leading-none sm:text-[11px];
   border-color: color-mix(in srgb, var(--txn-primary, #0d9488) 28%, transparent);
   background-color: color-mix(
     in srgb,

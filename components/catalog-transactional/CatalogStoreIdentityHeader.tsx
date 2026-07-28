@@ -55,7 +55,7 @@ export function CatalogStoreIdentityHeader({
                   src={logoUrl}
                   alt={`Logo de ${storeName}`}
                   fill
-                  sizes="44px"
+                  sizes="40px"
                   className="object-cover"
                 />
               </div>
@@ -76,7 +76,9 @@ export function CatalogStoreIdentityHeader({
               <h1 className="txn-catalog-title">{storeName}</h1>
 
               {description ? (
-                <p className="txn-catalog-desc">{description}</p>
+                <p className="txn-catalog-desc" title={description}>
+                  {description}
+                </p>
               ) : null}
 
               {showRate ? (
