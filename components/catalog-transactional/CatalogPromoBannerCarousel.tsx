@@ -295,7 +295,7 @@ export function CatalogPromoBannerCarousel({
               aria-label="Promoción anterior"
               onClick={() => handleManualNavigation(goPrev)}
             >
-              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+              <ChevronLeft className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
             </button>
             <button
               type="button"
@@ -303,7 +303,7 @@ export function CatalogPromoBannerCarousel({
               aria-label="Promoción siguiente"
               onClick={() => handleManualNavigation(goNext)}
             >
-              <ChevronRight className="h-5 w-5" aria-hidden="true" />
+              <ChevronRight className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
             </button>
 
             <div

@@ -5081,23 +5081,46 @@ body {
 }
 
 .txn-promo-banner-nav {
-  @apply absolute top-1/2 z-10 flex h-11 w-11 min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white shadow-sm backdrop-blur-sm transition hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70;
+  @apply absolute top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border-0 bg-black/25 text-white/90 shadow-none backdrop-blur-[2px] transition-[opacity,background-color,transform] duration-200 ease-out hover:bg-black/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .txn-promo-banner-nav {
+    @apply flex;
+  }
+
+  .txn-promo-banner-viewport:hover .txn-promo-banner-nav,
+  .txn-promo-banner-viewport:focus-within .txn-promo-banner-nav,
+  .txn-promo-banner-nav:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Tablets/escritorio táctil sin hover: flechas suaves siempre disponibles */
+@media (min-width: 768px) and (hover: none) {
+  .txn-promo-banner-nav {
+    opacity: 0.65;
+    pointer-events: auto;
+  }
 }
 
 .txn-promo-banner-nav-prev {
-  @apply left-2 sm:left-3;
+  @apply left-2.5;
 }
 
 .txn-promo-banner-nav-next {
-  @apply right-2 sm:right-3;
+  @apply right-2.5;
 }
 
 .txn-promo-banner-dots {
-  @apply absolute bottom-2.5 left-1/2 z-10 flex -translate-x-1/2 gap-2 rounded-full bg-black/25 px-2 py-1 backdrop-blur-sm;
+  @apply absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/20 px-1.5 py-1 backdrop-blur-[2px];
 }
 
 .txn-promo-banner-dot {
-  @apply h-2.5 w-2.5 min-h-[10px] min-w-[10px] rounded-full bg-white/55 transition hover:bg-white/80;
+  @apply h-1.5 w-1.5 min-h-[6px] min-w-[6px] rounded-full bg-white/50 transition hover:bg-white/80;
 }
 
 .txn-promo-banner-dot-active {
