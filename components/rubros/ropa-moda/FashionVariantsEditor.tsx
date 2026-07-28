@@ -12,6 +12,8 @@ import {
   createDefaultFashionMatrix,
   fashionMatrixToVariants,
   fashionVariantKey,
+  getDefaultShoeLengthCm,
+  isFashionShoeSize,
   variantsToFashionMatrix,
   type FashionMatrixState,
 } from "@/lib/rubros/modules/ropa-moda";
@@ -62,6 +64,29 @@ function sizeEquals(a: string, b: string): boolean {
 
 function hasSize(sizes: string[], candidate: string): boolean {
   return sizes.some((size) => sizeEquals(size, candidate));
+}
+
+/** Asegura cm sugeridos para tallas de calzado recién añadidas. */
+function withShoeLengthDefaults(
+  next: FashionMatrixState,
+): FashionMatrixState {
+  const sizeLengthCm = { ...(next.sizeLengthCm ?? {}) };
+
+  for (const key of Object.keys(sizeLengthCm)) {
+    const stillActive = next.sizes.some(
+      (size) => sizeEquals(size, key) && isFashionShoeSize(size),
+    );
+    if (!stillActive) delete sizeLengthCm[key];
+  }
+
+  for (const size of next.sizes) {
+    if (!isFashionShoeSize(size)) continue;
+    // Solo sugerir si la talla es nueva (clave ausente); respeta vacío del usuario.
+    if (Object.prototype.hasOwnProperty.call(sizeLengthCm, size)) continue;
+    sizeLengthCm[size] = getDefaultShoeLengthCm(size) ?? "";
+  }
+
+  return { ...next, sizeLengthCm };
 }
 
 function StockInput({
@@ -136,7 +161,13 @@ export function FashionVariantsEditor({
       }
     }
 
-    const normalized = { ...next, stocks, priceExtras, ids };
+    const normalized = withShoeLengthDefaults({
+      ...next,
+      stocks,
+      priceExtras,
+      ids,
+      sizeLengthCm: next.sizeLengthCm ?? {},
+    });
     setMatrix(normalized);
     onChange(fashionMatrixToVariants(normalized));
   }
@@ -190,6 +221,21 @@ export function FashionVariantsEditor({
       stocks: { ...matrix.stocks, [key]: stock },
     });
   }
+
+  function setSizeLengthCm(size: string, cm: string) {
+    commit({
+      ...matrix,
+      sizeLengthCm: {
+        ...(matrix.sizeLengthCm ?? {}),
+        [size]: cm,
+      },
+    });
+  }
+
+  const selectedShoeSizes = useMemo(
+    () => matrix.sizes.filter((size) => isFashionShoeSize(size)),
+    [matrix.sizes],
+  );
 
   const customSizes = useMemo(
     () =>
@@ -262,12 +308,70 @@ export function FashionVariantsEditor({
         {renderSizeGroup("Pantalones / jeans", ROPA_MODA_PANTS_SIZE_PRESETS)}
         {renderSizeGroup("Calzado EUR", ROPA_MODA_SHOE_SIZE_EUR_PRESETS)}
         {renderSizeGroup("Calzado US", ROPA_MODA_SHOE_SIZE_US_PRESETS, customSizes)}
+
+        {selectedShoeSizes.length > 0 ? (
+          <div className="mt-3 rounded-lg border border-teal-200/60 bg-white/80 p-3 dark:border-teal-900/40 dark:bg-zinc-950/50">
+            <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-100">
+              Guía de centímetros (calzado)
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+              Longitud del pie / plantilla interna en cm. Valores orientativos;
+              ajústalos según la marca. Se guarda en cada variante de esa talla.
+            </p>
+            <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+              {selectedShoeSizes.map((size) => {
+                const suggested = getDefaultShoeLengthCm(size);
+                const value =
+                  matrix.sizeLengthCm?.[size] ?? suggested ?? "";
+                return (
+                  <label
+                    key={size}
+                    className="flex flex-col gap-1 rounded-md border border-zinc-200/80 bg-zinc-50/80 px-2.5 py-2 dark:border-zinc-700 dark:bg-zinc-900/40"
+                  >
+                    <span className="truncate text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+                      {size}
+                      {suggested ? (
+                        <span className="font-normal text-zinc-400">
+                          {" "}
+                          · ref. {suggested} cm
+                        </span>
+                      ) : null}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min={1}
+                        max={50}
+                        step={0.1}
+                        value={value}
+                        onChange={(e) => setSizeLengthCm(size, e.target.value)}
+                        disabled={disabled}
+                        aria-label={`Centímetros talla ${size}`}
+                        className="min-h-9 w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm tabular-nums outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600/20 dark:border-zinc-700 dark:bg-zinc-950 sm:min-h-0"
+                      />
+                      <span className="shrink-0 text-[11px] text-zinc-500">
+                        cm
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <p className="mt-2 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+            Al elegir tallas de calzado (EUR / US) podrás indicar la equivalencia
+            en centímetros de cada una.
+          </p>
+        )}
+
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
           <input
             type="text"
             value={customSize}
             onChange={(e) => setCustomSize(e.target.value)}
-            placeholder="Otra talla (ej. 38, US 7.5, XXS)"
+            placeholder="Otra talla (ej. EUR 38.5, US 7.5, XXS)"
             maxLength={20}
             disabled={disabled}
             className="input-field mt-0 min-h-10 flex-1 py-2 text-sm sm:min-h-0"
@@ -334,6 +438,16 @@ export function FashionVariantsEditor({
               >
                 <p className="mb-2 text-xs font-semibold text-zinc-800 dark:text-zinc-100">
                   Talla {size}
+                  {isFashionShoeSize(size) &&
+                  (matrix.sizeLengthCm?.[size] ||
+                    getDefaultShoeLengthCm(size)) ? (
+                    <span className="ml-1 font-normal text-zinc-500">
+                      (
+                      {matrix.sizeLengthCm?.[size] ||
+                        getDefaultShoeLengthCm(size)}{" "}
+                      cm)
+                    </span>
+                  ) : null}
                 </p>
                 <div className="grid grid-cols-2 gap-2.5">
                   {matrix.colors.map((color) => {
@@ -387,6 +501,15 @@ export function FashionVariantsEditor({
                   >
                     <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-3 py-2 font-medium text-zinc-800 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] dark:bg-zinc-950 dark:text-zinc-100 dark:shadow-[2px_0_4px_-2px_rgba(0,0,0,0.35)]">
                       {size}
+                      {isFashionShoeSize(size) &&
+                      (matrix.sizeLengthCm?.[size] ||
+                        getDefaultShoeLengthCm(size)) ? (
+                        <span className="ml-1 text-[10px] font-normal text-zinc-500">
+                          {matrix.sizeLengthCm?.[size] ||
+                            getDefaultShoeLengthCm(size)}{" "}
+                          cm
+                        </span>
+                      ) : null}
                     </td>
                     {matrix.colors.map((color) => {
                       const key = fashionVariantKey(size, color);

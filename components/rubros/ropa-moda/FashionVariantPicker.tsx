@@ -124,11 +124,20 @@ export function FashionVariantPicker({
           onChange={(e) => setTalla(e.target.value)}
           className="store-cart-select store-product-variant-select w-full"
         >
-          {sizes.map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
+          {sizes.map((size) => {
+            const sample = formVariants.find((row) => {
+              const attrs = getFashionAttributes(row);
+              return attrs?.talla === size;
+            });
+            const cm = sample
+              ? getFashionAttributes(sample)?.longitudCm
+              : null;
+            return (
+              <option key={size} value={size}>
+                {cm ? `${size} · ${cm} cm` : size}
+              </option>
+            );
+          })}
         </select>
       </div>
       <div>

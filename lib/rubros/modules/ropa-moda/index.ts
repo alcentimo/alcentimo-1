@@ -9,9 +9,14 @@ export {
   ROPA_MODA_SHOE_SIZE_EUR_PRESETS,
   ROPA_MODA_SHOE_SIZE_US_PRESETS,
   ROPA_MODA_ALL_SIZE_PRESETS,
+  ROPA_MODA_SHOE_SIZE_CM_GUIDE,
   ROPA_MODA_COLOR_PRESETS,
   ROPA_MODA_ATTR_TALLA,
   ROPA_MODA_ATTR_COLOR,
+  ROPA_MODA_ATTR_LONGITUD_CM,
+  isFashionShoeSize,
+  getDefaultShoeLengthCm,
+  normalizeShoeLengthCm,
 } from "@/lib/rubros/modules/ropa-moda/config";
 
 export {
@@ -24,5 +29,6 @@ export {
   createDefaultFashionMatrix,
   variantsToFashionMatrix,
   fashionMatrixToVariants,
+  pruneFashionSizeLengthCm,
   type FashionMatrixState,
 } from "@/lib/rubros/modules/ropa-moda/matrix";
