@@ -3,8 +3,9 @@ import {
   OpenRouterChatError,
 } from "@/lib/ai/openrouter-client";
 import { AI_MAX_INPUT_CHARS, AI_MAX_TOKENS } from "@/lib/ai/token-limits";
+import { STORE_DESCRIPTION_MAX_LENGTH } from "@/lib/stores/description";
 
-const MAX_DESCRIPTION = 500;
+const MAX_DESCRIPTION = STORE_DESCRIPTION_MAX_LENGTH;
 
 export interface GenerateStoreDescriptionInput {
   storeName: string;
@@ -24,9 +25,10 @@ function truncate(value: string, max: number): string {
 
 function buildSystemPrompt(): string {
   return [
-    'Redacta la descripción pública de una tienda en un catálogo digital. JSON: { "description": string }',
-    `Español LATAM, 1-3 frases, máx ${MAX_DESCRIPTION} caracteres. Sin emojis, sin hashtags, sin inventar datos de contacto ni promesas falsas.`,
-    "Tono comercial claro y confiable. Habla de lo que vende o ofrece la marca.",
+    'Redacta la descripción pública de una tienda para la cabecera compacta de un catálogo. JSON: { "description": string }',
+    `Español LATAM, exactamente 1 o 2 oraciones breves y directas, máx ${MAX_DESCRIPTION} caracteres.`,
+    "Sin emojis, sin hashtags, sin inventar datos de contacto ni promesas falsas.",
+    "Tono comercial claro. Di qué vende o ofrece la marca en pocas palabras.",
   ].join(" ");
 }
 
@@ -43,8 +45,11 @@ function buildUserPrompt(input: GenerateStoreDescriptionInput): string {
     parts.push(
       `Borrador:"${truncate(input.draftDescription, AI_MAX_INPUT_CHARS.storeDescriptionDraft)}"`,
     );
+    parts.push("Acorta y mejora el borrador a 1-2 oraciones.");
   } else {
-    parts.push("Sin borrador: genera una descripción nueva a partir del nombre y rubro.");
+    parts.push(
+      "Sin borrador: genera 1-2 oraciones nuevas a partir del nombre y rubro.",
+    );
   }
 
   return parts.join(" | ");
@@ -85,7 +90,7 @@ export async function generateStoreDescription(
 
   try {
     const content = await createOpenRouterChatCompletion({
-      temperature: 0.6,
+      temperature: 0.5,
       max_tokens: AI_MAX_TOKENS.storeDescription,
       response_format: { type: "json_object" },
       messages: [

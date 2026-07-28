@@ -17,6 +17,7 @@ import {
   STORE_SLUG_UNAVAILABLE_MESSAGE,
   validateStoreSlugCandidate,
 } from "@/lib/stores/slug-availability";
+import { STORE_DESCRIPTION_MAX_LENGTH } from "@/lib/stores/description";
 import { isValidStoreRubro, normalizeStoreRubro } from "@/src/config/categories";
 import { storeHasPCBuilder } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import {
@@ -478,7 +479,9 @@ export async function saveGeneralStoreSettings(
   const name = input.name.trim();
   const slugValidation = validateStoreSlugCandidate(input.slug.trim() || name);
   const description =
-    typeof input.description === "string" ? input.description.trim() : undefined;
+    typeof input.description === "string"
+      ? input.description.trim().slice(0, STORE_DESCRIPTION_MAX_LENGTH)
+      : undefined;
 
   if (!name) {
     return { error: "El nombre de la tienda es obligatorio." };

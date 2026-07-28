@@ -25,6 +25,7 @@ import { StoreLogoUploadField } from "@/components/dashboard/settings/StoreLogoU
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/cn";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
+import { STORE_DESCRIPTION_MAX_LENGTH } from "@/lib/stores/description";
 
 const RUBRO_CHANGE_CONFIRM_TITLE = "¿Estás seguro de cambiar el rubro?";
 const RUBRO_CHANGE_CONFIRM_DESCRIPTION =
@@ -55,7 +56,9 @@ export function GeneralTab({ store }: GeneralTabProps) {
   const router = useRouter();
   const [storeName, setStoreName] = useState(store.name);
   const [logoUrl, setLogoUrl] = useState<string | null>(store.logo_url);
-  const [description, setDescription] = useState(store.description ?? "");
+  const [description, setDescription] = useState(
+    () => (store.description ?? "").slice(0, STORE_DESCRIPTION_MAX_LENGTH),
+  );
   const [savedSlug, setSavedSlug] = useState(store.slug);
   const [catalogSlug, setCatalogSlug] = useState(store.slug);
   const [slugAutoSync, setSlugAutoSync] = useState(
@@ -83,7 +86,9 @@ export function GeneralTab({ store }: GeneralTabProps) {
   useEffect(() => {
     setStoreName(store.name);
     setLogoUrl(store.logo_url);
-    setDescription(store.description ?? "");
+    setDescription(
+      (store.description ?? "").slice(0, STORE_DESCRIPTION_MAX_LENGTH),
+    );
     setSavedSlug(store.slug);
     setCatalogSlug(store.slug);
     setSlugAutoSync(slugify(store.name) === store.slug);
@@ -168,7 +173,9 @@ export function GeneralTab({ store }: GeneralTabProps) {
       if (result.error) {
         setError(result.error);
         setStoreName(store.name);
-        setDescription(store.description ?? "");
+        setDescription(
+          (store.description ?? "").slice(0, STORE_DESCRIPTION_MAX_LENGTH),
+        );
         setSavedSlug(store.slug);
         setCatalogSlug(store.slug);
         setSlugAutoSync(slugify(store.name) === store.slug);
@@ -289,7 +296,9 @@ export function GeneralTab({ store }: GeneralTabProps) {
                   draftDescription={description}
                   disabled={saving}
                   onGenerated={(nextDescription) => {
-                    setDescription(nextDescription);
+                    setDescription(
+                      nextDescription.slice(0, STORE_DESCRIPTION_MAX_LENGTH),
+                    );
                     setSuccessMessage(null);
                     setError(null);
                   }}
@@ -297,19 +306,22 @@ export function GeneralTab({ store }: GeneralTabProps) {
               </div>
               <textarea
                 id="store-description"
-                rows={4}
-                maxLength={500}
+                rows={3}
+                maxLength={STORE_DESCRIPTION_MAX_LENGTH}
                 value={description}
                 onChange={(e) => {
-                  setDescription(e.target.value);
+                  setDescription(e.target.value.slice(0, STORE_DESCRIPTION_MAX_LENGTH));
                   setSuccessMessage(null);
                 }}
                 placeholder="Ej: Repuestos y accesorios para vehículos con envío a todo el país."
-                className="input-field payment-field-textarea mt-2 min-h-[6rem] resize-y"
+                className="input-field payment-field-textarea mt-2 min-h-[4.5rem] resize-y"
               />
-              <p className="mt-2 text-[11px] text-zinc-400">
-                Aparece en la portada de tu catálogo público.
-              </p>
+              <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-zinc-400">
+                <p>Aparece en la portada de tu catálogo público (1–2 oraciones).</p>
+                <p className="shrink-0 tabular-nums">
+                  {description.length}/{STORE_DESCRIPTION_MAX_LENGTH}
+                </p>
+              </div>
             </div>
           </div>
 
