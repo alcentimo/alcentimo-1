@@ -1,39 +1,75 @@
 import type { CartItem } from "@/lib/catalog/cart-types";
 import { cartItemKey } from "@/lib/catalog/cart-types";
+import { parseVariantsJson } from "@/lib/products/variants";
 import type { SubmitOrderLineInput } from "@/lib/orders/types";
 
-function normalizeCartLineId(value: string | null | undefined): string {
-  return typeof value === "string" ? value.trim() : "";
+/** Normaliza IDs que vienen del carrito / localStorage (string, número o nulo). */
+function asCartId(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return "";
 }
 
-/** Convierte ítems del carrito en líneas de pedido omitiendo entradas inválidas. */
+function resolveCartProductId(item: CartItem): string {
+  const product = item.product as
+    | (CartItem["product"] & { id?: string })
+    | null
+    | undefined;
+  return asCartId(
+    product?.product_id ?? product?.id ?? (item as { productId?: unknown }).productId,
+  );
+}
+
+/**
+ * Resuelve la variante del catálogo si existe.
+ * Puede quedar vacío: el servidor la mapea al UUID de inventario por producto.
+ */
+function resolveCartVariantId(item: CartItem): string {
+  const fromItem = asCartId(item.variantId);
+  if (fromItem) return fromItem;
+
+  const fromDefault = asCartId(item.product?.default_variant_id);
+  if (fromDefault) return fromDefault;
+
+  const variants = parseVariantsJson(item.product?.product_variants);
+  return asCartId(variants[0]?.id);
+}
+
+/**
+ * Convierte ítems del carrito en líneas de pedido.
+ * Criterio de validez (alineado con el servidor): productId + cantidad > 0.
+ * No exige variantId ni precio: el backend resuelve inventario y valida precios.
+ */
 export function buildSubmitOrderLinesFromCartItems(
   items: CartItem[],
 ): SubmitOrderLineInput[] {
+  if (!Array.isArray(items) || items.length === 0) return [];
+
   return items
     .map((item) => {
-      const productId = normalizeCartLineId(item.product?.product_id);
-      const variantId = normalizeCartLineId(
-        item.variantId || item.product?.default_variant_id,
-      );
-      const quantity = Math.max(1, Math.floor(item.quantity ?? 0));
+      const productId = resolveCartProductId(item);
+      const variantId = resolveCartVariantId(item);
+      const quantityRaw = Number(item?.quantity);
+      const quantity = Number.isFinite(quantityRaw)
+        ? Math.max(1, Math.floor(quantityRaw))
+        : 0;
+      const unitPriceRaw = Number(item?.unitPriceUsd);
+      const unitPriceUsd = Number.isFinite(unitPriceRaw) ? unitPriceRaw : 0;
 
       return {
         productId,
         variantId,
-        productName: item.product?.product_name?.trim() || "Producto",
-        variantName: item.variantName?.trim() || "Estándar",
+        productName:
+          String(item.product?.product_name ?? "").trim() || "Producto",
+        variantName: String(item.variantName ?? "").trim() || "Estándar",
         quantity,
-        unitPriceUsd: item.unitPriceUsd ?? 0,
-        wholesaleApplied: item.wholesaleApplied,
+        unitPriceUsd,
+        wholesaleApplied: Boolean(item.wholesaleApplied),
       };
     })
-    .filter(
-      (line) =>
-        line.productId.length > 0 &&
-        line.variantId.length > 0 &&
-        line.quantity > 0,
-    );
+    .filter((line) => line.productId.length > 0 && line.quantity > 0);
 }
 
 export interface CartLineInput {

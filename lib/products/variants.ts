@@ -141,9 +141,14 @@ export function getCatalogVariantOptions(
     areStationerySaleVariants(variants);
 
   if (variants.length === 0) {
+    const fallbackId =
+      typeof product.default_variant_id === "string" &&
+      product.default_variant_id.trim().length > 0
+        ? product.default_variant_id.trim()
+        : "";
     return [
       {
-        id: product.default_variant_id,
+        id: fallbackId,
         name: "Estándar",
         priceUsd: basePrice,
         priceVes: computeUsdToVes(basePrice, exchangeRate) ?? baseVes,

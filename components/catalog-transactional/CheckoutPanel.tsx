@@ -484,11 +484,6 @@ export function CheckoutPanel({
       return;
     }
 
-    if (orderLines.length === 0) {
-      setError("Tu carrito no tiene productos válidos. Vuelve al catálogo e intenta de nuevo.");
-      return;
-    }
-
     if (!proofFile) {
       return;
     }
@@ -505,6 +500,36 @@ export function CheckoutPanel({
       return;
     }
 
+    let submitLines = orderLines;
+    if (submitLines.length === 0) {
+      if (items.length === 0) {
+        setError("Tu carrito está vacío.");
+        return;
+      }
+      // Fallback por si el builder filtró de más: el servidor resuelve variantes.
+      submitLines = items
+        .map((item) => ({
+          productId: String(item.product?.product_id ?? "").trim(),
+          variantId: String(
+            item.variantId || item.product?.default_variant_id || "",
+          ).trim(),
+          productName:
+            String(item.product?.product_name ?? "").trim() || "Producto",
+          variantName: String(item.variantName ?? "").trim() || "Estándar",
+          quantity: Math.max(1, Math.floor(Number(item.quantity) || 1)),
+          unitPriceUsd: Number(item.unitPriceUsd) || 0,
+          wholesaleApplied: Boolean(item.wholesaleApplied),
+        }))
+        .filter((line) => line.productId.length > 0);
+    }
+
+    if (submitLines.length === 0) {
+      setError(
+        "Tu carrito no tiene productos válidos. Vuelve al catálogo e intenta de nuevo.",
+      );
+      return;
+    }
+
     const formData = new FormData();
     formData.set("storeSlug", storeSlug);
     formData.set(
@@ -515,7 +540,7 @@ export function CheckoutPanel({
       "customerPhone",
       customerProfile?.phone ?? customerPhone.trim(),
     );
-    formData.set("items", JSON.stringify(orderLines));
+    formData.set("items", JSON.stringify(submitLines));
     formData.set("paymentProof", proofFile);
     if (appliedPromotion) {
       formData.set("promotionCode", appliedPromotion.code);
