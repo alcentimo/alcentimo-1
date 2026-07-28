@@ -39,6 +39,26 @@ export function resolveCustomerContactEmail(
   return null;
 }
 
+/**
+ * True si el cliente puede cambiar contraseña (registro/login con email+clave).
+ * Falso para teléfono (email sintético) u OAuth sin identidad email.
+ */
+export function customerCanManagePassword(user: {
+  email?: string | null;
+  identities?: Array<{ provider: string }> | null;
+}): boolean {
+  const email = user.email?.trim();
+  if (!email || isSyntheticCustomerAuthEmail(email)) {
+    return false;
+  }
+
+  if (user.identities && user.identities.length > 0) {
+    return user.identities.some((identity) => identity.provider === "email");
+  }
+
+  return true;
+}
+
 export function validateCustomerRegistrationInput(input: {
   displayName: string;
   phone: string;

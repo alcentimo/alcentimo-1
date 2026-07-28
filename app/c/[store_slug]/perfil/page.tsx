@@ -3,7 +3,7 @@ import { CustomerProfilePanel } from "@/components/customers/CustomerProfilePane
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
-import { resolveCustomerContactEmail } from "@/lib/customers/phone-auth";
+import { resolveCustomerContactEmail, customerCanManagePassword } from "@/lib/customers/phone-auth";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { createClient } from "@/lib/supabase/server";
 
@@ -60,6 +60,7 @@ export default async function CustomerProfilePage({
         storeSlug={store.slug}
         storeName={store.name}
         contactEmail={resolveCustomerContactEmail(user.email, user.user_metadata)}
+        canChangePassword={customerCanManagePassword(user)}
         displayName={profile?.display_name ?? null}
         phone={profile?.phone ?? null}
         deliveryAddress={(profile?.delivery_address as string | null) ?? null}

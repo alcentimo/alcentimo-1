@@ -12,6 +12,8 @@ interface CustomerProfilePanelProps {
   storeSlug: string;
   storeName: string;
   contactEmail: string | null;
+  /** Solo true si el cliente tiene login con contraseña (no teléfono/OAuth). */
+  canChangePassword?: boolean;
   displayName: string | null;
   phone: string | null;
   deliveryAddress: string | null;
@@ -22,6 +24,7 @@ export function CustomerProfilePanel({
   storeSlug,
   storeName,
   contactEmail,
+  canChangePassword = false,
   displayName,
   phone,
   deliveryAddress,
@@ -86,10 +89,8 @@ export function CustomerProfilePanel({
   }
 
   async function handlePasswordReset() {
-    if (!contactEmail) {
-      setError(
-        "Tu cuenta usa teléfono. Contacta a la tienda por WhatsApp para restablecer el acceso.",
-      );
+    if (!canChangePassword || !contactEmail) {
+      setError("Tu cuenta no usa contraseña. No es necesario restablecer el acceso.");
       return;
     }
 
@@ -178,45 +179,38 @@ export function CustomerProfilePanel({
         </button>
       </form>
 
-      <div className="card-panel space-y-3">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-          Seguridad
-        </h2>
-        <button
-          type="button"
-          onClick={() => void handlePasswordReset()}
-          disabled={passwordPending || !contactEmail}
-          className="btn-secondary w-full"
-        >
-          {passwordPending ? "Enviando enlace…" : "Cambiar contraseña"}
-        </button>
-        {!contactEmail ? (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Si iniciaste sesión con teléfono, usa WhatsApp para pedir ayuda con tu
-            acceso.
-          </p>
-        ) : (
+      {canChangePassword && contactEmail ? (
+        <div className="card-panel space-y-3">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            Seguridad
+          </h2>
+          <button
+            type="button"
+            onClick={() => void handlePasswordReset()}
+            disabled={passwordPending}
+            className="btn-secondary w-full"
+          >
+            {passwordPending ? "Enviando enlace…" : "Cambiar contraseña"}
+          </button>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             Te enviaremos un enlace por correo para crear una nueva contraseña.
           </p>
-        )}
-        {whatsappHelpUrl ? (
-          <a
-            href={whatsappHelpUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="customer-profile-whatsapp-link"
-          >
-            Ayuda por WhatsApp
-          </a>
-        ) : null}
-        {contactEmail ? (
+          {whatsappHelpUrl ? (
+            <a
+              href={whatsappHelpUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="customer-profile-whatsapp-link"
+            >
+              Ayuda por WhatsApp
+            </a>
+          ) : null}
           <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
             Si no llega el correo a {contactEmail}, usa el botón de arriba para
             reenviarlo o escribe por WhatsApp.
           </p>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {error ? (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
