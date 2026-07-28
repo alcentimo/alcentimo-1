@@ -9,17 +9,19 @@ export const revalidate = 0;
 
 interface CatalogPageProps {
   params: Promise<{ store_slug: string }>;
-  searchParams: Promise<{ checkout?: string; carrito?: string }>;
+  searchParams: Promise<{ checkout?: string; carrito?: string; product?: string }>;
 }
 
 async function CatalogContent({
   storeSlug,
   openCheckoutInitially,
   openCartInitially,
+  initialProductId,
 }: {
   storeSlug: string;
   openCheckoutInitially: boolean;
   openCartInitially: boolean;
+  initialProductId?: string | null;
 }) {
   const data = await getPublicCatalogPageData(storeSlug);
   if (!data) notFound();
@@ -38,6 +40,7 @@ async function CatalogContent({
       catalogCurrency={catalogCurrency}
       openCheckoutInitially={openCheckoutInitially}
       openCartInitially={openCartInitially}
+      initialProductId={initialProductId}
       locations={locations}
       locationStocks={locationStocks}
       catalogTotalCount={totalCount}
@@ -54,6 +57,7 @@ export default async function TransactionalCatalogPage({
   const query = await searchParams;
   const openCheckoutInitially = query.checkout === "1";
   const openCartInitially = query.carrito === "1";
+  const initialProductId = query.product?.trim() || null;
 
   return (
     <Suspense
@@ -67,6 +71,7 @@ export default async function TransactionalCatalogPage({
         storeSlug={storeSlug}
         openCheckoutInitially={openCheckoutInitially}
         openCartInitially={openCartInitially}
+        initialProductId={initialProductId}
       />
     </Suspense>
   );

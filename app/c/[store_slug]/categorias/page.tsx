@@ -8,15 +8,17 @@ export const revalidate = 0;
 
 interface CatalogCategoriesPageProps {
   params: Promise<{ store_slug: string }>;
-  searchParams: Promise<{ categoria?: string }>;
+  searchParams: Promise<{ categoria?: string; product?: string }>;
 }
 
 async function CategoriesContent({
   storeSlug,
   categorySlug,
+  initialProductId,
 }: {
   storeSlug: string;
   categorySlug?: string;
+  initialProductId?: string | null;
 }) {
   const data = await getPublicCatalogPageData(storeSlug, {
     categoryFilter: true,
@@ -52,6 +54,7 @@ async function CategoriesContent({
       locationStocks={locationStocks}
       catalogTotalCount={totalCount}
       enableServerPagination
+      initialProductId={initialProductId}
     />
   );
 }
@@ -61,11 +64,15 @@ export default async function CatalogCategoriesPage({
   searchParams,
 }: CatalogCategoriesPageProps) {
   const { store_slug: storeSlug } = await params;
-  const { categoria } = await searchParams;
+  const { categoria, product } = await searchParams;
 
   return (
     <Suspense fallback={<div className="txn-catalog-loading">Cargando…</div>}>
-      <CategoriesContent storeSlug={storeSlug} categorySlug={categoria} />
+      <CategoriesContent
+        storeSlug={storeSlug}
+        categorySlug={categoria}
+        initialProductId={product?.trim() || null}
+      />
     </Suspense>
   );
 }

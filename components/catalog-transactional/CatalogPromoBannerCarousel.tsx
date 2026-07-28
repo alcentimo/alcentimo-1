@@ -9,6 +9,7 @@ import {
   BANNER_DISPLAY_HEIGHT_MOBILE_PX,
 } from "@/lib/banner-image";
 import {
+  buildPromoBannerProductHref,
   getActivePromoBannerSlides,
   resolvePromoBannerSettings,
 } from "@/lib/store-settings/promo-banner";
@@ -21,6 +22,9 @@ import { cn } from "@/lib/cn";
 interface CatalogPromoBannerCarouselProps {
   promoBanner?: CatalogPromoBannerSettings | null;
   storeName: string;
+  storeSlug?: string;
+  /** Abre la ficha del producto sin navegar (preferido en el catálogo). */
+  onOpenProduct?: (productId: string) => void;
   className?: string;
 }
 
@@ -76,9 +80,11 @@ function PromoBannerSlideMedia({
 export function CatalogPromoBannerCarousel({
   promoBanner,
   storeName,
+  storeSlug,
+  onOpenProduct,
   className,
 }: CatalogPromoBannerCarouselProps) {
-  const settings = resolvePromoBannerSettings(promoBanner ?? undefined);
+  const settings = resolvePromoBannerSettings(promoBanner ?? undefined, storeSlug);
   const slides = getActivePromoBannerSlides(settings);
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -212,6 +218,61 @@ export function CatalogPromoBannerCarousel({
             />
           );
 
+          const productId = slide.productId?.trim();
+          const productHref =
+            productId && storeSlug
+              ? buildPromoBannerProductHref(storeSlug, productId)
+              : productId
+                ? `/?product=${encodeURIComponent(productId)}`
+                : null;
+          const linkUrl = slide.linkUrl?.trim() || null;
+
+          let slideContent = slideInner;
+
+          if (productId && onOpenProduct) {
+            slideContent = (
+              <button
+                type="button"
+                className="txn-promo-banner-link"
+                tabIndex={isActive ? 0 : -1}
+                aria-label={alt}
+                onClick={() => onOpenProduct(productId)}
+              >
+                {slideInner}
+              </button>
+            );
+          } else if (productHref) {
+            slideContent = (
+              <Link
+                href={productHref}
+                className="txn-promo-banner-link"
+                tabIndex={isActive ? 0 : -1}
+              >
+                {slideInner}
+              </Link>
+            );
+          } else if (linkUrl) {
+            slideContent = linkUrl.startsWith("/") ? (
+              <Link
+                href={linkUrl}
+                className="txn-promo-banner-link"
+                tabIndex={isActive ? 0 : -1}
+              >
+                {slideInner}
+              </Link>
+            ) : (
+              <a
+                href={linkUrl}
+                className="txn-promo-banner-link"
+                rel="noopener noreferrer"
+                target="_blank"
+                tabIndex={isActive ? 0 : -1}
+              >
+                {slideInner}
+              </a>
+            );
+          }
+
           return (
             <div
               key={slide.id}
@@ -221,29 +282,7 @@ export function CatalogPromoBannerCarousel({
               )}
               aria-hidden={!isActive}
             >
-              {slide.linkUrl ? (
-                slide.linkUrl.startsWith("/") ? (
-                  <Link
-                    href={slide.linkUrl}
-                    className="txn-promo-banner-link"
-                    tabIndex={isActive ? 0 : -1}
-                  >
-                    {slideInner}
-                  </Link>
-                ) : (
-                  <a
-                    href={slide.linkUrl}
-                    className="txn-promo-banner-link"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    tabIndex={isActive ? 0 : -1}
-                  >
-                    {slideInner}
-                  </a>
-                )
-              ) : (
-                slideInner
-              )}
+              {slideContent}
             </div>
           );
         })}

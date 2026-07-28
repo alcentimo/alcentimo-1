@@ -39,6 +39,7 @@ import {
 } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
 import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
+import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { groupProductsByFoodMenu } from "@/lib/rubros/modules/alimentos";
@@ -54,6 +55,8 @@ interface TransactionalCatalogProps {
   catalogCurrency: CatalogCurrencySettings;
   openCheckoutInitially?: boolean;
   openCartInitially?: boolean;
+  /** Abre la ficha de producto al cargar (`?product=`). */
+  initialProductId?: string | null;
   previewMode?: boolean;
   referenceMode?: boolean;
   showReferenceCta?: boolean;
@@ -94,6 +97,7 @@ export function TransactionalCatalog({
   catalogCurrency,
   openCheckoutInitially = false,
   openCartInitially = false,
+  initialProductId = null,
   previewMode = false,
   referenceMode = false,
   showReferenceCta = false,
@@ -118,6 +122,7 @@ export function TransactionalCatalog({
         catalogCurrency={catalogCurrency}
         openCheckoutInitially={openCheckoutInitially}
         openCartInitially={openCartInitially}
+        initialProductId={initialProductId}
         previewMode={previewMode}
         referenceMode={referenceMode}
         showReferenceCta={showReferenceCta}
@@ -138,6 +143,7 @@ function TransactionalCatalogInner({
   catalogCurrency,
   openCheckoutInitially = false,
   openCartInitially = false,
+  initialProductId = null,
   previewMode = false,
   referenceMode = false,
   showReferenceCta = false,
@@ -167,6 +173,7 @@ function TransactionalCatalogInner({
         catalogCurrency={catalogCurrency}
         openCheckoutInitially={openCheckoutInitially}
         openCartInitially={openCartInitially}
+        initialProductId={initialProductId}
         previewMode={previewMode}
         referenceMode={referenceMode}
         showReferenceCta={showReferenceCta}
@@ -192,6 +199,7 @@ function TransactionalCatalogContent({
   catalogCurrency,
   openCheckoutInitially = false,
   openCartInitially = false,
+  initialProductId = null,
   previewMode = false,
   referenceMode = false,
   showReferenceCta = false,
@@ -210,6 +218,11 @@ function TransactionalCatalogContent({
   addItem: ReturnType<typeof useCart>["addItem"];
 }) {
   const { openProduct } = useCatalogProductDetail();
+  const openProductById = useOpenCatalogProductById(
+    store.slug,
+    products,
+    previewMode ? null : initialProductId,
+  );
   const { getAvailableStock } = useCatalogFulfillment();
   const shellNav = useCatalogShellNavigationOptional();
   const [cartPanelView, setCartPanelView] = useState<CartPanelView>(() => {
@@ -422,6 +435,8 @@ function TransactionalCatalogContent({
       <CatalogPromoBannerCarousel
         promoBanner={catalogDesign.promoBanner}
         storeName={store.name}
+        storeSlug={store.slug}
+        onOpenProduct={previewMode ? undefined : openProductById}
       />
 
       {!previewMode ? <CatalogLocationPicker /> : null}

@@ -36,6 +36,7 @@ import {
 } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
 import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
+import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { cn } from "@/lib/cn";
 
@@ -52,6 +53,7 @@ interface CatalogCategoriesViewProps {
   locationStocks?: VariantLocationStock[];
   catalogTotalCount?: number;
   enableServerPagination?: boolean;
+  initialProductId?: string | null;
 }
 
 export function CatalogCategoriesView({
@@ -67,6 +69,7 @@ export function CatalogCategoriesView({
   locationStocks = [],
   catalogTotalCount,
   enableServerPagination = false,
+  initialProductId = null,
 }: CatalogCategoriesViewProps) {
   return (
     <CatalogFulfillmentProvider
@@ -85,6 +88,7 @@ export function CatalogCategoriesView({
         catalogCurrency={catalogCurrency}
         catalogTotalCount={catalogTotalCount}
         enableServerPagination={enableServerPagination}
+        initialProductId={initialProductId}
       />
     </CatalogFulfillmentProvider>
   );
@@ -101,6 +105,7 @@ function CatalogCategoriesViewInner({
   catalogCurrency,
   catalogTotalCount,
   enableServerPagination = false,
+  initialProductId = null,
 }: Omit<CatalogCategoriesViewProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion, wholesaleEnabled } = catalogCurrency;
@@ -176,6 +181,7 @@ function CatalogCategoriesViewInner({
         browse={browse}
         gridClassName={gridClassName}
         addItem={addItem}
+        initialProductId={initialProductId}
       />
     </CatalogProductDetailHost>
   );
@@ -197,6 +203,7 @@ interface CatalogCategoriesPageContentProps {
   browse: ReturnType<typeof useCatalogBrowse>;
   gridClassName: string;
   addItem: ReturnType<typeof useCart>["addItem"];
+  initialProductId?: string | null;
 }
 
 function CatalogCategoriesPageContent({
@@ -215,8 +222,14 @@ function CatalogCategoriesPageContent({
   browse,
   gridClassName,
   addItem,
+  initialProductId = null,
 }: CatalogCategoriesPageContentProps) {
   const { openProduct } = useCatalogProductDetail();
+  const openProductById = useOpenCatalogProductById(
+    store.slug,
+    products,
+    initialProductId,
+  );
   const shellNav = useCatalogShellNavigationOptional();
   const [cartPanelView, setCartPanelView] = useState<CartPanelView>("closed");
 
@@ -261,6 +274,8 @@ function CatalogCategoriesPageContent({
       <CatalogPromoBannerCarousel
         promoBanner={catalogDesign.promoBanner}
         storeName={store.name}
+        storeSlug={store.slug}
+        onOpenProduct={openProductById}
       />
 
       {catalogProducts.length > 0 ? (

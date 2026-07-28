@@ -1,9 +1,13 @@
+import { getStoreCatalogBasePath } from "@/lib/store-host";
 import type {
   CatalogPromoBannerSettings,
   CatalogPromoBannerSlide,
 } from "@/lib/store-settings/types";
 
 export const MAX_PROMO_BANNER_SLIDES = 5;
+
+const PRODUCT_ID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function defaultPromoBannerSettings(): CatalogPromoBannerSettings {
   return {
@@ -12,11 +16,31 @@ export function defaultPromoBannerSettings(): CatalogPromoBannerSettings {
   };
 }
 
-function isSafeBannerLink(value: string): boolean {
+export function isValidPromoBannerProductId(value: unknown): value is string {
+  return typeof value === "string" && PRODUCT_ID_RE.test(value.trim());
+}
+
+export function isSafeBannerLink(value: string): boolean {
   const trimmed = value.trim();
   if (!trimmed) return false;
   if (trimmed.startsWith("/") && !trimmed.startsWith("//")) return true;
   return trimmed.startsWith("https://");
+}
+
+/** Ruta relativa del catálogo que abre la ficha de un producto (`?product=`). */
+export function buildPromoBannerProductHref(
+  storeSlug: string,
+  productId: string,
+): string {
+  const base = getStoreCatalogBasePath(storeSlug);
+  const query = `product=${encodeURIComponent(productId.trim())}`;
+  if (base === "/") return `/?${query}`;
+  return `${base}?${query}`;
+}
+
+function normalizeProductId(value: unknown): string | undefined {
+  if (!isValidPromoBannerProductId(value)) return undefined;
+  return value.trim().toLowerCase();
 }
 
 function normalizeDraftSlide(raw: unknown): CatalogPromoBannerSlide | null {
@@ -31,10 +55,11 @@ function normalizeDraftSlide(raw: unknown): CatalogPromoBannerSlide | null {
       : "";
   const alt =
     typeof slide.alt === "string" ? slide.alt.trim().slice(0, 120) : undefined;
+  const productId = normalizeProductId(slide.productId);
+  const rawLink =
+    typeof slide.linkUrl === "string" ? slide.linkUrl.trim() : "";
   const linkUrl =
-    typeof slide.linkUrl === "string" && isSafeBannerLink(slide.linkUrl)
-      ? slide.linkUrl.trim()
-      : undefined;
+    !productId && rawLink && isSafeBannerLink(rawLink) ? rawLink : undefined;
   const id =
     typeof slide.id === "string" && slide.id.trim()
       ? slide.id.trim()
@@ -45,6 +70,7 @@ function normalizeDraftSlide(raw: unknown): CatalogPromoBannerSlide | null {
     mobileImageUrl,
     ...(desktopImageUrl ? { desktopImageUrl } : {}),
     ...(alt ? { alt } : {}),
+    ...(productId ? { productId } : {}),
     ...(linkUrl ? { linkUrl } : {}),
   };
 }
@@ -71,7 +97,10 @@ export function normalizePromoBannerDraft(
   };
 }
 
-function normalizeSlide(raw: unknown): CatalogPromoBannerSlide | null {
+function normalizeSlide(
+  raw: unknown,
+  storeSlug?: string,
+): CatalogPromoBannerSlide | null {
   if (!raw || typeof raw !== "object") return null;
 
   const slide = raw as Record<string, unknown>;
@@ -88,9 +117,17 @@ function normalizeSlide(raw: unknown): CatalogPromoBannerSlide | null {
       : "";
   const alt =
     typeof slide.alt === "string" ? slide.alt.trim().slice(0, 120) : undefined;
-  const linkUrl =
-    typeof slide.linkUrl === "string" && isSafeBannerLink(slide.linkUrl)
-      ? slide.linkUrl.trim()
+  const productId = normalizeProductId(slide.productId);
+  const rawLink =
+    typeof slide.linkUrl === "string" ? slide.linkUrl.trim() : "";
+  const linkUrl = productId
+    ? storeSlug
+      ? buildPromoBannerProductHref(storeSlug, productId)
+      : rawLink && isSafeBannerLink(rawLink)
+        ? rawLink
+        : undefined
+    : rawLink && isSafeBannerLink(rawLink)
+      ? rawLink
       : undefined;
   const id =
     typeof slide.id === "string" && slide.id.trim()
@@ -104,12 +141,14 @@ function normalizeSlide(raw: unknown): CatalogPromoBannerSlide | null {
       ? { desktopImageUrl }
       : {}),
     ...(alt ? { alt } : {}),
+    ...(productId ? { productId } : {}),
     ...(linkUrl ? { linkUrl } : {}),
   };
 }
 
 export function normalizePromoBannerSettings(
   raw: unknown,
+  storeSlug?: string,
 ): CatalogPromoBannerSettings {
   if (!raw || typeof raw !== "object") {
     return defaultPromoBannerSettings();
@@ -118,7 +157,7 @@ export function normalizePromoBannerSettings(
   const value = raw as Record<string, unknown>;
   const slides = Array.isArray(value.slides)
     ? value.slides
-        .map(normalizeSlide)
+        .map((slide) => normalizeSlide(slide, storeSlug))
         .filter((slide): slide is CatalogPromoBannerSlide => slide !== null)
         .slice(0, MAX_PROMO_BANNER_SLIDES)
     : [];
@@ -138,14 +177,22 @@ export function getActivePromoBannerSlides(
 
 export function resolvePromoBannerSettings(
   settings?: CatalogPromoBannerSettings | null,
+  storeSlug?: string,
 ): CatalogPromoBannerSettings {
-  return normalizePromoBannerSettings(settings ?? defaultPromoBannerSettings());
+  return normalizePromoBannerSettings(
+    settings ?? defaultPromoBannerSettings(),
+    storeSlug,
+  );
 }
 
 export function sanitizePromoBannerForStorage(
   settings?: CatalogPromoBannerSettings | null,
+  storeSlug?: string,
 ): CatalogPromoBannerSettings {
-  return normalizePromoBannerSettings(settings ?? defaultPromoBannerSettings());
+  return normalizePromoBannerSettings(
+    settings ?? defaultPromoBannerSettings(),
+    storeSlug,
+  );
 }
 
 export function createPromoBannerSlideId(): string {

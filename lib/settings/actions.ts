@@ -96,6 +96,7 @@ export async function saveCatalogDesignSettings(
     visibility: normalized.catalogDesign.visibility,
     promoBanner: sanitizePromoBannerForStorage(
       design.promoBanner ?? normalized.catalogDesign.promoBanner,
+      auth.store.slug,
     ),
     assistantAvatar: sanitizeAssistantAvatarForStorage(
       design.assistantAvatar ?? normalized.catalogDesign.assistantAvatar,

@@ -157,7 +157,10 @@ export interface CatalogPromoBannerSlide {
   mobileImageUrl: string;
   desktopImageUrl?: string;
   alt?: string;
+  /** Enlace libre (https://… o ruta relativa /…). */
   linkUrl?: string;
+  /** Producto del inventario; al hacer clic abre la ficha en el catálogo. */
+  productId?: string;
 }
 
 export interface CatalogPromoBannerSettings {

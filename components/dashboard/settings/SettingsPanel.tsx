@@ -209,6 +209,7 @@ export function SettingsPanel({
             initialDesign={initialConfig.catalogDesign}
             storeRubro={store?.rubro_tienda ?? "ropa-moda"}
             preview={designPreview}
+            products={products}
             catalogLink={
               store
                 ? {

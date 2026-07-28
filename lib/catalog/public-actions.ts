@@ -50,3 +50,29 @@ export async function fetchPublicCatalogProducts(
     };
   }
 }
+
+/** Obtiene un producto público por id (p. ej. deep-link del banner). */
+export async function fetchPublicCatalogProductById(
+  storeSlug: string,
+  productId: string,
+): Promise<{ product: CatalogListItem | null; error?: string }> {
+  const id = productId.trim();
+  if (!id) return { product: null };
+
+  try {
+    const result = await getCatalogProducts({
+      storeSlug,
+      productIds: [id],
+      limit: 1,
+    });
+    return { product: result.products[0] ?? null };
+  } catch (error) {
+    return {
+      product: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "No se pudo cargar el producto.",
+    };
+  }
+}

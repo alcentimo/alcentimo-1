@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sheet";
 import { CatalogPrimaryColorField } from "@/components/dashboard/settings/CatalogPrimaryColorField";
 import { CatalogPromoBannerField } from "@/components/dashboard/settings/CatalogPromoBannerField";
+import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import { CatalogAssistantAvatarField } from "@/components/dashboard/settings/CatalogAssistantAvatarField";
 import { SettingsTabShell } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
@@ -68,6 +69,7 @@ interface DesignTabProps {
   initialDesign: CatalogDesignSettings;
   storeRubro?: string | null;
   preview?: DesignTabPreviewContext | null;
+  products?: CouponProductOption[];
   catalogLink?: {
     slug: string;
     customDomain?: string | null;
@@ -200,6 +202,7 @@ export function DesignTab({
   initialDesign,
   storeRubro: storeRubroProp = null,
   preview = null,
+  products = [],
   catalogLink = null,
 }: DesignTabProps) {
   const [design, setDesign] = useState(initialDesign);
@@ -520,6 +523,7 @@ export function DesignTab({
               <CatalogPromoBannerField
                 value={design.promoBanner}
                 onChange={setPromoBanner}
+                products={products}
               />
             </DesignAccordion>
 
