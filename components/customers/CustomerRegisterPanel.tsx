@@ -94,7 +94,6 @@ export function CustomerRegisterPanel({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -113,7 +112,6 @@ export function CustomerRegisterPanel({
       phone: authMethod === "phone" ? phone : phone.trim() || null,
       email: authMethod === "email" ? email : email.trim() || null,
       password,
-      confirmPassword,
       orderId,
     });
 
@@ -550,21 +548,6 @@ export function CustomerRegisterPanel({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={`Mínimo ${CUSTOMER_MIN_PASSWORD_LENGTH} caracteres`}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="confirm_password" className="label-field">
-            Confirmar contraseña
-          </label>
-          <PasswordInput
-            id="confirm_password"
-            autoComplete="new-password"
-            required
-            minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Repite la contraseña"
           />
         </div>
 

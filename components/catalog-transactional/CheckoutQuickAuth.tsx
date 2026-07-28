@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { quickRegisterOrSignInCustomerInline } from "@/lib/customers/register-actions";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import {
   CUSTOMER_MIN_PASSWORD_LENGTH,
   type CustomerAuthMethod,
@@ -37,7 +38,6 @@ export function CheckoutQuickAuth({
   const [phone, setPhone] = useState(initialPhone);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -55,7 +55,6 @@ export function CheckoutQuickAuth({
       phone: authMethod === "phone" ? phone : phone.trim() || null,
       email: authMethod === "email" ? email : null,
       password,
-      confirmPassword,
       orderId,
     });
 
@@ -158,28 +157,14 @@ export function CheckoutQuickAuth({
         )}
         <label className="txn-field">
           <span>Contraseña</span>
-          <input
-            type="password"
+          <PasswordInput
             required
             minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
             autoComplete="new-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="txn-input"
+            className="txn-input !mt-0"
             placeholder={`Mínimo ${CUSTOMER_MIN_PASSWORD_LENGTH} caracteres`}
-          />
-        </label>
-        <label className="txn-field">
-          <span>Confirmar contraseña</span>
-          <input
-            type="password"
-            required
-            minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
-            autoComplete="new-password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            className="txn-input"
-            placeholder="Repite la contraseña"
           />
         </label>
         {error ? (
