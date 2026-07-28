@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface StoreDescriptionAiButtonProps {
   storeName: string;
@@ -78,22 +77,26 @@ export function StoreDescriptionAiButton({
 
   return (
     <div>
-      <Button
+      <button
         type="button"
-        variant="ghost"
-        size="sm"
         disabled={disabled || loading || !canGenerate}
         onClick={() => void handleGenerate()}
-        className="h-8 gap-1.5 px-2.5 text-xs"
+        className="product-ai-improve-btn h-8"
         aria-label="Generar descripción con IA"
       >
         {loading ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          <Loader2
+            className="h-3.5 w-3.5 shrink-0 animate-spin text-violet-600 dark:text-violet-400"
+            aria-hidden="true"
+          />
         ) : (
-          <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+          <Sparkles
+            className="h-3.5 w-3.5 shrink-0 text-violet-600 dark:text-violet-400"
+            aria-hidden="true"
+          />
         )}
         Generar descripción con IA
-      </Button>
+      </button>
       {error ? (
         <p className="mt-1.5 text-[11px] text-red-600 dark:text-red-400" role="alert">
           {error}
