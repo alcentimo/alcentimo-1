@@ -390,20 +390,37 @@ export function CustomDomainSection({
             />
             <div className="min-w-0">
               <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                ¿Prefieres que Alcentimo lo configure por ti?
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-                Si no tienes un dominio, regístralo con tu proveedor preferido.
-                Nuestro equipo puede orientarte en la compra, configuración DNS y
-                verificación (el costo del dominio no está incluido en el plan).
+                ¿Aún no tienes un dominio? Adquiérelo de forma segura en nuestros
+                proveedores recomendados:
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
+                <a
+                  href="https://www.namecheap.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  Comprar en Namecheap
+                </a>
+                <a
+                  href="https://www.cloudflare.com/es-es/products/registrar/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  Comprar en Cloudflare
+                </a>
+              </div>
+              <p className="mt-4 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
+                ¿Ya lo compraste o necesitas ayuda con la configuración DNS?
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
                 {managedDomainMailto ? (
                   <a
                     href={managedDomainMailto}
                     className="inline-flex items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
                   >
-                    Solicitar gestión del dominio
+                    Contactar soporte
                   </a>
                 ) : (
                   <button
