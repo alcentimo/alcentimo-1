@@ -9,6 +9,7 @@ import {
   CUSTOMER_PASSWORD_SET_META_KEY,
   customerCanManagePassword,
   validateCustomerPasswordPair,
+  validateCustomerPhoneInput,
 } from "@/lib/customers/phone-auth";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 
@@ -25,12 +26,20 @@ export async function saveCustomerProfile(input: {
 }): Promise<SaveCustomerProfileResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
   const displayName = input.displayName.trim();
-  const phone = input.phone.trim();
   const deliveryAddress = input.deliveryAddress?.trim() ?? "";
   const requirePhone = input.requirePhone !== false;
 
   if (displayName.length < 2) {
     return { ok: false, error: "Indica tu nombre (mínimo 2 caracteres)." };
+  }
+
+  let phone: string | null = null;
+  if (input.phone.trim() || requirePhone) {
+    const phoneValidation = validateCustomerPhoneInput(input.phone);
+    if (!phoneValidation.ok) {
+      return { ok: false, error: phoneValidation.error };
+    }
+    phone = phoneValidation.phone;
   }
 
   const supabase = await createClient();
@@ -44,7 +53,7 @@ export async function saveCustomerProfile(input: {
 
   const result = await ensureCustomerProfile(supabase, user, storeSlug, {
     displayName,
-    phone: phone || null,
+    phone,
     requireDisplayName: true,
     requirePhone,
   });

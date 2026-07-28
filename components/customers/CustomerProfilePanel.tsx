@@ -179,7 +179,7 @@ export function CustomerProfilePanel({
             value={phoneValue}
             onChange={(e) => setPhoneValue(e.target.value)}
             className="input-field"
-            placeholder="04141234567"
+            placeholder="0412… o 412…"
           />
         </div>
 

@@ -249,7 +249,7 @@ export function CustomerRegisterPanel({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="input-field"
-              placeholder="0412 1234567"
+              placeholder="0412… o 412…"
             />
           </div>
 
@@ -339,7 +339,7 @@ export function CustomerRegisterPanel({
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="input-field"
-                placeholder="0412 1234567"
+                placeholder="0412… o 412…"
               />
             </div>
           ) : (
@@ -497,7 +497,7 @@ export function CustomerRegisterPanel({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="input-field"
-              placeholder="0412 1234567"
+              placeholder="0412… o 412…"
             />
           </div>
         ) : (

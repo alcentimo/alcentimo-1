@@ -138,7 +138,7 @@ export function CheckoutQuickAuth({
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
               className="txn-input"
-              placeholder="0412 1234567"
+              placeholder="0412… o 412…"
             />
           </label>
         ) : (

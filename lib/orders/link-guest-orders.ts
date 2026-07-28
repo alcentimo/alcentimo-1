@@ -1,12 +1,12 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { normalizePhoneDigits } from "@/lib/customers/phone-auth";
+import { normalizeCustomerPhone } from "@/lib/customers/phone-auth";
 import { getStoreBySlug } from "@/lib/stores";
 
 function phonesMatch(a: string, b: string): boolean {
-  const digitsA = normalizePhoneDigits(a);
-  const digitsB = normalizePhoneDigits(b);
+  const digitsA = normalizeCustomerPhone(a);
+  const digitsB = normalizeCustomerPhone(b);
   if (digitsA.length < 10 || digitsB.length < 10) return false;
   if (digitsA === digitsB) return true;
   return digitsA.slice(-10) === digitsB.slice(-10);

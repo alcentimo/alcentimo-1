@@ -4,7 +4,10 @@ import {
   resolveActiveStoreBySlug,
 } from "@/lib/customers/middleware-access";
 import { parseStoreSlugFromHost } from "@/lib/store-host";
-import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
+import {
+  isValidCustomerPhone,
+  normalizeCustomerPhone,
+} from "@/lib/customers/phone-auth";
 
 export type EnsureCustomerProfileResult =
   | { ok: true; storeId: string; storeSlug: string }
@@ -72,12 +75,18 @@ function resolvePhone(
   user: Pick<User, "user_metadata">,
 ): string | null {
   const trimmed = explicit?.trim();
-  if (trimmed) return trimmed.slice(0, 40);
+  if (trimmed) {
+    const normalized = normalizeCustomerPhone(trimmed);
+    return normalized ? normalized.slice(0, 40) : null;
+  }
 
   const metadata = user.user_metadata;
   if (metadata && typeof metadata.phone === "string") {
     const fromMeta = metadata.phone.trim();
-    if (fromMeta) return fromMeta.slice(0, 40);
+    if (fromMeta) {
+      const normalized = normalizeCustomerPhone(fromMeta);
+      return normalized ? normalized.slice(0, 40) : null;
+    }
   }
 
   return null;

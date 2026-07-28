@@ -8,8 +8,31 @@ export function normalizePhoneDigits(phone: string): string {
   return phone.replace(/\D/g, "");
 }
 
+/**
+ * Normaliza teléfonos VE a formato local uniforme con cero inicial.
+ * Acepta 0412…, 412…, +58 412… / 58412… y limpia espacios/símbolos.
+ */
+export function normalizeCustomerPhone(phone: string): string {
+  let digits = normalizePhoneDigits(phone);
+
+  // Código de país Venezuela (+58 / 58)
+  if (digits.startsWith("0058") && digits.length >= 14) {
+    digits = digits.slice(4);
+  } else if (digits.startsWith("58") && digits.length >= 12) {
+    digits = digits.slice(2);
+  }
+
+  // Móvil local sin cero: 412… (10 dígitos) → 0412…
+  if (digits.length === 10 && digits.startsWith("4")) {
+    digits = `0${digits}`;
+  }
+
+  return digits;
+}
+
 export function isValidCustomerPhone(phone: string): boolean {
-  const digits = normalizePhoneDigits(phone);
+  const digits = normalizeCustomerPhone(phone);
+  // Tras normalizar: 0412… = 11 dígitos; otros internacionales 10–15
   return digits.length >= 10 && digits.length <= 15;
 }
 
@@ -22,7 +45,7 @@ export function isValidCustomerEmail(email: string): boolean {
 }
 
 export function buildCustomerAuthEmail(phone: string): string {
-  const digits = normalizePhoneDigits(phone);
+  const digits = normalizeCustomerPhone(phone);
   return `${digits}@${CUSTOMER_PHONE_AUTH_EMAIL_DOMAIN}`;
 }
 
@@ -128,16 +151,16 @@ export function validateCustomerEmailInput(email: string):
 export function validateCustomerPhoneInput(phone: string):
   | { ok: true; phone: string }
   | { ok: false; error: string } {
-  const trimmed = phone.trim();
+  const normalized = normalizeCustomerPhone(phone);
 
-  if (!isValidCustomerPhone(trimmed)) {
+  if (!isValidCustomerPhone(normalized)) {
     return {
       ok: false,
-      error: "Indica un teléfono válido (mínimo 10 dígitos).",
+      error: "Indica un teléfono válido (ej. 0412… o 412…).",
     };
   }
 
-  return { ok: true, phone: trimmed.slice(0, 40) };
+  return { ok: true, phone: normalized.slice(0, 40) };
 }
 
 /** Resuelve el email Auth interno (sintético o real) según el método elegido. */
