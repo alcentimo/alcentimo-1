@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut, MessageCircle, ShoppingBag, UserRound } from "lucide-react";
+import { LogIn, LogOut, MessageCircle, ShoppingBag, UserPlus, UserRound } from "lucide-react";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { getStoreCatalogBasePath, getStoreCustomerAccountPath } from "@/lib/store-host";
@@ -169,8 +169,8 @@ export function CatalogStoreProfileSheet({
               </div>
             ) : (
               <p className="catalog-profile-text">
-                Regístrate para guardar tus datos y ver el historial de pedidos en{" "}
-                {storeName}.
+                Crea una cuenta o inicia sesión para guardar tus datos y ver el
+                historial de pedidos en {storeName}.
               </p>
             )}
 
@@ -205,16 +205,30 @@ export function CatalogStoreProfileSheet({
                 </button>
               </>
             ) : (
-              <button
-                type="button"
-                className="catalog-profile-link-btn catalog-profile-link-btn-secondary"
-                onClick={() => {
-                  onClose();
-                  shellNav.openRegister();
-                }}
-              >
-                Crear cuenta de cliente
-              </button>
+              <div className="catalog-profile-auth-actions">
+                <button
+                  type="button"
+                  className="catalog-profile-link-btn catalog-profile-link-btn-primary"
+                  onClick={() => {
+                    onClose();
+                    shellNav.openRegister("register");
+                  }}
+                >
+                  <UserPlus className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  Crear cuenta
+                </button>
+                <button
+                  type="button"
+                  className="catalog-profile-link-btn catalog-profile-link-btn-secondary"
+                  onClick={() => {
+                    onClose();
+                    shellNav.openRegister("login");
+                  }}
+                >
+                  <LogIn className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  Iniciar sesión
+                </button>
+              </div>
             )}
           </div>
         </div>

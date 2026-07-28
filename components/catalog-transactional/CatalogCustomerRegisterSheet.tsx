@@ -19,6 +19,8 @@ export function CatalogCustomerRegisterSheet({
   const shellNav = useCatalogShellNavigationOptional();
   const customerSession = useCustomerSessionOptional();
   const open = shellNav?.registerOpen ?? false;
+  const mode = shellNav?.registerMode ?? "register";
+  const isLogin = mode === "login";
   const onClose = () => shellNav?.closeRegister();
 
   if (!shellNav) return null;
@@ -30,7 +32,7 @@ export function CatalogCustomerRegisterSheet({
       <button
         type="button"
         className="txn-cart-backdrop"
-        aria-label="Cerrar registro"
+        aria-label={isLogin ? "Cerrar inicio de sesión" : "Cerrar registro"}
         onClick={onClose}
       />
       <aside
@@ -40,10 +42,12 @@ export function CatalogCustomerRegisterSheet({
         <header className="txn-checkout-header">
           <div className="min-w-0">
             <h2 id="catalog-register-title" className="txn-checkout-title">
-              Crear cuenta
+              {isLogin ? "Iniciar sesión" : "Crear cuenta"}
             </h2>
             <p className="txn-checkout-subtitle">
-              Regístrate en {storeName} para guardar tus datos y ver tus pedidos.
+              {isLogin
+                ? `Entra a ${storeName} con tu WhatsApp registrado.`
+                : `Regístrate en ${storeName} para guardar tus datos y ver tus pedidos.`}
             </p>
           </div>
           <button
@@ -62,8 +66,10 @@ export function CatalogCustomerRegisterSheet({
             storeName={storeName}
             nextPath={nextPath}
             orderId={orderId}
+            mode={mode}
             variant="catalog"
             onCancel={onClose}
+            onSwitchMode={(nextMode) => shellNav.setRegisterMode(nextMode)}
             redirectOnSuccess={false}
             onRegistered={(profile) => {
               customerSession?.setSessionFromRegistration(profile);

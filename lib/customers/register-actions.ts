@@ -22,7 +22,7 @@ import { markCatalogVisitRegistered } from "@/lib/analytics/track-catalog-visit"
 import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
 
 export type LinkCustomerToStoreResult =
-  | { ok: true; redirectTo: string }
+  | { ok: true; redirectTo: string; displayName?: string; phone?: string }
   | { ok: false; error: string };
 
 function sanitizeNextPath(
@@ -171,7 +171,141 @@ async function finalizeLinkedCustomer(input: {
   return {
     ok: true,
     redirectTo: sanitizeNextPath(input.nextPath, result.storeSlug),
+    displayName: input.displayName,
+    phone: input.phone,
   };
+}
+
+async function establishExistingPasswordlessSession(authEmail: string): Promise<
+  | { ok: true }
+  | { ok: false; error: string; notFound?: boolean }
+> {
+  const admin = createAdminClient();
+  const supabase = await createClient();
+
+  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink(
+    {
+      type: "magiclink",
+      email: authEmail,
+    },
+  );
+
+  const tokenHash = linkData?.properties?.hashed_token;
+  if (linkError || !tokenHash) {
+    const message = (linkError?.message ?? "").toLowerCase();
+    const notFound =
+      message.includes("not found") ||
+      message.includes("no user") ||
+      message.includes("does not exist") ||
+      message.includes("user not found");
+
+    return {
+      ok: false,
+      notFound,
+      error: notFound
+        ? "No encontramos una cuenta con ese WhatsApp. Crea una cuenta nueva."
+        : (linkError?.message ?? "No se pudo iniciar sesión con tu teléfono."),
+    };
+  }
+
+  const { error: otpError } = await supabase.auth.verifyOtp({
+    token_hash: tokenHash,
+    type: "email",
+  });
+
+  if (otpError) {
+    return { ok: false, error: otpError.message };
+  }
+
+  return { ok: true };
+}
+
+/** Acceso de cliente existente solo con WhatsApp (sin crear cuenta nueva). */
+export async function signInCustomerByPhone(input: {
+  storeSlug: string;
+  nextPath?: string | null;
+  phone: string;
+  orderId?: string | null;
+}): Promise<LinkCustomerToStoreResult> {
+  const storeSlug = input.storeSlug.trim().toLowerCase();
+  if (!storeSlug) {
+    return { ok: false, error: "Enlace inválido: falta la tienda." };
+  }
+
+  const phoneValidation = validateCustomerPhoneInput(input.phone);
+  if (!phoneValidation.ok) {
+    return { ok: false, error: phoneValidation.error };
+  }
+
+  try {
+    const authEmail = buildCustomerAuthEmail(phoneValidation.phone);
+    const sessionResult = await establishExistingPasswordlessSession(authEmail);
+
+    if (!sessionResult.ok) {
+      return {
+        ok: false,
+        error: sessionResult.error,
+      };
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { ok: false, error: "No se pudo iniciar sesión." };
+    }
+
+    const metadata = user.user_metadata ?? {};
+    const store = await resolveActiveStoreBySlug(supabase, storeSlug);
+
+    let displayName =
+      (typeof metadata.display_name === "string"
+        ? metadata.display_name.trim()
+        : "") ||
+      (typeof metadata.full_name === "string" ? metadata.full_name.trim() : "");
+
+    if ((!displayName || displayName.length < 2) && store) {
+      const { data: profile } = await supabase
+        .from("customer_profiles")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .eq("store_id", store.id)
+        .maybeSingle();
+
+      displayName = profile?.display_name?.trim() || displayName;
+    }
+
+    if (!displayName || displayName.length < 2) {
+      return {
+        ok: false,
+        error:
+          "Tu cuenta necesita completar el nombre. Usa “Crear cuenta” con el mismo WhatsApp.",
+      };
+    }
+
+    await ensureUserProfile(supabase);
+
+    return finalizeLinkedCustomer({
+      storeSlug,
+      nextPath: input.nextPath,
+      displayName: displayName.slice(0, 120),
+      phone: phoneValidation.phone,
+      contactEmail:
+        typeof metadata.contact_email === "string"
+          ? metadata.contact_email
+          : isSyntheticCustomerAuthEmail(user.email)
+            ? null
+            : user.email,
+      orderId: input.orderId,
+    });
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Error inesperado al iniciar sesión.";
+    return { ok: false, error: message };
+  }
 }
 
 /** Registro o acceso instantáneo con nombre + WhatsApp (sin contraseña). */

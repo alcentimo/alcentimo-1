@@ -7220,8 +7220,16 @@ body {
   @apply inline-flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 active:scale-[0.98];
 }
 
+.catalog-profile-link-btn-primary {
+  @apply mt-2 border-transparent bg-zinc-900 text-white hover:bg-zinc-800;
+}
+
 .catalog-profile-link-btn-secondary {
   @apply mt-2 border-transparent bg-zinc-100 text-zinc-700 hover:bg-zinc-200;
+}
+
+.catalog-profile-auth-actions {
+  @apply mt-1;
 }
 
 .catalog-profile-account {

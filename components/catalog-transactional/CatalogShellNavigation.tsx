@@ -18,14 +18,18 @@ interface CatalogCartController {
   close: () => void;
 }
 
+export type CatalogCustomerAuthMode = "register" | "login";
+
 interface CatalogShellNavigationContextValue {
   profileOpen: boolean;
   registerOpen: boolean;
+  registerMode: CatalogCustomerAuthMode;
   cartActive: boolean;
   openProfile: () => void;
   closeProfile: () => void;
-  openRegister: () => void;
+  openRegister: (mode?: CatalogCustomerAuthMode) => void;
   closeRegister: () => void;
+  setRegisterMode: (mode: CatalogCustomerAuthMode) => void;
   openCart: () => void;
   closeCart: () => void;
   setCartActive: (active: boolean) => void;
@@ -48,6 +52,8 @@ export function CatalogShellNavigationProvider({
   const cartControllerRef = useRef<CatalogCartController | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [registerMode, setRegisterMode] =
+    useState<CatalogCustomerAuthMode>("register");
   const [cartActive, setCartActive] = useState(false);
 
   const registerCartController = useCallback(
@@ -87,26 +93,30 @@ export function CatalogShellNavigationProvider({
     setProfileOpen(false);
   }, []);
 
-  const openRegister = useCallback(() => {
+  const openRegister = useCallback((mode: CatalogCustomerAuthMode = "register") => {
     cartControllerRef.current?.close();
     setProfileOpen(false);
+    setRegisterMode(mode);
     setRegisterOpen(true);
     setCartActive(false);
   }, []);
 
   const closeRegister = useCallback(() => {
     setRegisterOpen(false);
+    setRegisterMode("register");
   }, []);
 
   const value = useMemo<CatalogShellNavigationContextValue>(
     () => ({
       profileOpen,
       registerOpen,
+      registerMode,
       cartActive,
       openProfile,
       closeProfile,
       openRegister,
       closeRegister,
+      setRegisterMode,
       openCart,
       closeCart,
       setCartActive,
@@ -115,6 +125,7 @@ export function CatalogShellNavigationProvider({
     [
       profileOpen,
       registerOpen,
+      registerMode,
       cartActive,
       openProfile,
       closeProfile,
