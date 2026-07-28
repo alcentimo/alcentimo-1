@@ -34,8 +34,13 @@ export type AssertCanCreateProductResult =
       trialEligible: boolean;
     };
 
+/**
+ * Cupo del plan = cantidad de productos activos en `products`.
+ * Una fila = un cupo. Las fotos de `product_images` (galería) no cuentan.
+ */
 export async function getStoreProductCount(storeId: string): Promise<number> {
   const supabase = await createClient();
+  // Solo `products` (sin joins a product_images / variantes).
   const { count, error } = await supabase
     .from("products")
     .select("id", { count: "exact", head: true })
@@ -188,7 +193,10 @@ export async function getStoreProductLimitStatus(
   };
 }
 
-/** Única restricción por plan: crear más productos activos de los permitidos. */
+/**
+ * Única restricción por plan: crear más productos activos de los permitidos.
+ * Contar siempre filas de `products`; nunca `product_images`.
+ */
 export async function assertCanCreateProduct(
   storeId: string,
 ): Promise<AssertCanCreateProductResult> {

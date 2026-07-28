@@ -32,6 +32,7 @@ import type { ProductEditImage } from "@/lib/products/product-gallery-types";
 import { ProductCameraCaptureDialog } from "@/components/dashboard/ProductCameraCaptureDialog";
 import { cn } from "@/lib/cn";
 
+/** Tope de fotos por producto (galería). Independiente del cupo de productos del plan. */
 const MAX_GALLERY_IMAGES = 10;
 const IMAGE_FILE_PATTERN = /\.(jpe?g|png|gif|webp|heic|heif|bmp|avif)$/i;
 

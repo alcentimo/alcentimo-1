@@ -148,30 +148,35 @@ export function getRemainingProductSlots(
   return Math.max(0, (plan.productLimit as number) - currentCount);
 }
 
+/**
+ * `currentCount` debe ser el número de filas en `products` (activas / no borradas).
+ * No usar conteos de `product_images`: la galería no consume cupos del plan.
+ */
 export function buildProductLimitCheck(
   currentCount: number,
   planId: PlanId,
   options?: { productLimit?: number | null },
 ): ProductLimitCheck {
   const plan = getPlanById(planId);
+  const safeCount = Math.max(0, Math.floor(Number(currentCount) || 0));
   const productLimit =
     options && "productLimit" in options
       ? (options.productLimit ?? null)
       : plan.productLimit;
   const hasReachedLimit = isUnlimitedProductLimit(productLimit)
     ? false
-    : currentCount >= (productLimit as number);
+    : safeCount >= (productLimit as number);
 
   return {
     planId: plan.id,
     planName: plan.name,
-    currentCount,
+    currentCount: safeCount,
     productLimit,
     canCreateMore: !hasReachedLimit,
     hasReachedLimit,
     remainingSlots: isUnlimitedProductLimit(productLimit)
       ? null
-      : Math.max(0, (productLimit as number) - currentCount),
+      : Math.max(0, (productLimit as number) - safeCount),
   };
 }
 

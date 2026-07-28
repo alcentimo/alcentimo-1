@@ -55,6 +55,7 @@ export function ProductLimitBanner({
               {productLimit.productLimit}
               {productLimit.remainingSlots != null &&
                 ` · Te quedan ${productLimit.remainingSlots}`}
+              {" · "}Las fotos de la galería no consumen cupos.
             </p>
           )}
         </div>
