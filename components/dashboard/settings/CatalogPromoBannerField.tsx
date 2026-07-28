@@ -92,6 +92,14 @@ export function CatalogPromoBannerField({
     return linkModeBySlide[slide.id] ?? resolveStoredLinkMode(slide);
   }
 
+  function openProductPicker(slideId: string, intent: ProductPickerIntent) {
+    setProductSearch("");
+    // Esperar a que el <select> nativo cierre el foco antes de abrir el modal.
+    window.setTimeout(() => {
+      setProductPicker({ slideId, intent });
+    }, 0);
+  }
+
   function setLinkMode(slideId: string, mode: BannerLinkMode) {
     setLinkModeBySlide((current) => ({ ...current, [slideId]: mode }));
 
@@ -102,14 +110,12 @@ export function CatalogPromoBannerField({
 
     // Mantener productId si ya había uno; abrir buscador para elegir/cambiar.
     updateSlide(slideId, { linkUrl: undefined }, false);
-    setProductSearch("");
-    setProductPicker({ slideId, intent: "link" });
+    openProductPicker(slideId, "link");
   }
 
   function openInventoryImagePicker(slideId: string) {
     setLinkModeBySlide((current) => ({ ...current, [slideId]: "product" }));
-    setProductSearch("");
-    setProductPicker({ slideId, intent: "image-and-link" });
+    openProductPicker(slideId, "image-and-link");
   }
 
   function applyProduct(
@@ -207,8 +213,8 @@ export function CatalogPromoBannerField({
       {promoBanner.enabled ? (
         <div className="design-promo-banner-slides">
           <p className="text-xs leading-relaxed text-zinc-500">
-            Sube imágenes panorámicas o reutiliza la foto de un producto. Puedes
-            abrir la ficha de ese producto al tocar el banner.
+            La imagen se elige con “Cambiar imagen”. El destino define a qué
+            producto redirige el clic en el catálogo.
           </p>
 
           {promoBanner.slides.length === 0 ? (
@@ -258,17 +264,17 @@ export function CatalogPromoBannerField({
                           <select
                             id={`promo-banner-link-mode-${slide.id}`}
                             value={linkMode}
-                            onChange={(event) =>
-                              setLinkMode(
-                                slide.id,
-                                event.target.value as BannerLinkMode,
-                              )
-                            }
+                            onChange={(event) => {
+                              const nextMode = event.target
+                                .value as BannerLinkMode;
+                              event.currentTarget.blur();
+                              setLinkMode(slide.id, nextMode);
+                            }}
                             className="input-field mt-1 py-2 text-sm"
                           >
                             <option value="none">Sin enlace</option>
                             <option value="product">
-                              Producto del inventario
+                              Vincular con un producto
                             </option>
                           </select>
 
@@ -294,7 +300,7 @@ export function CatalogPromoBannerField({
                                       {selectedProduct.name}
                                     </p>
                                     <p className="text-[11px] text-zinc-500">
-                                      Se abrirá su ficha en el catálogo
+                                      El clic del banner abre este producto
                                     </p>
                                   </div>
                                   <button
@@ -308,24 +314,20 @@ export function CatalogPromoBannerField({
                                 </div>
                               ) : (
                                 <p className="text-xs text-zinc-500">
-                                  Elige el producto que se abrirá al tocar el
+                                  Elige a qué producto redirige el clic del
                                   banner.
                                 </p>
                               )}
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setProductSearch("");
-                                  setProductPicker({
-                                    slideId: slide.id,
-                                    intent: "link",
-                                  });
-                                }}
+                                onClick={() =>
+                                  openProductPicker(slide.id, "link")
+                                }
                                 className="btn-brand-outline inline-flex w-full items-center justify-center gap-2 px-3 py-2 text-xs"
                               >
                                 <Search className="h-3.5 w-3.5" aria-hidden="true" />
                                 {selectedProduct
-                                  ? "Cambiar producto"
+                                  ? "Cambiar producto vinculado"
                                   : "Buscar producto…"}
                               </button>
                             </div>
@@ -385,13 +387,13 @@ export function CatalogPromoBannerField({
           <DialogHeader>
             <DialogTitle>
               {productPicker?.intent === "image-and-link"
-                ? "Imagen desde inventario"
-                : "Producto del inventario"}
+                ? "Usar imagen de un producto"
+                : "Vincular con un producto"}
             </DialogTitle>
             <DialogDescription>
               {productPicker?.intent === "image-and-link"
-                ? "Usa la foto del producto en el banner y enlázalo al mismo tiempo."
-                : "Al tocar el banner se abrirá la ficha de este producto."}
+                ? "Elige un producto para usar su foto en el banner y vincular el clic."
+                : "Elige el producto al que redirigirá el clic del banner."}
             </DialogDescription>
           </DialogHeader>
 
