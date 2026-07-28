@@ -4,7 +4,7 @@ export const STORE_LOGO_MAX_SIZE = 2048;
 export const STORE_LOGO_ASPECT_TOLERANCE = 0.01;
 
 export const STORE_LOGO_HELP_TEXT =
-  "Imagen cuadrada (PNG o JPG). Recomendado 512×512 px; se usa también como icono de la PWA del catálogo.";
+  "Imagen cuadrada recomendada (PNG o JPG, ideal 512×512 px). También se usa como icono de la PWA del catálogo.";
 
 export const STORE_LOGO_ACCEPT = "image/png,image/jpeg,image/jpg,image/webp";
 

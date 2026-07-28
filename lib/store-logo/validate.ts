@@ -16,6 +16,9 @@ export function isSquareAspectRatio(
   return Math.abs(ratio - 1) <= tolerance;
 }
 
+export const STORE_LOGO_NON_SQUARE_WARNING =
+  "La imagen no es cuadrada y podría verse recortada en la PWA, se recomienda relación 1:1";
+
 export function validateStoreLogoDimensions(
   width: number,
   height: number,
@@ -24,13 +27,6 @@ export function validateStoreLogoDimensions(
   | { ok: false; error: string } {
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
     return { ok: false, error: "No se pudieron leer las dimensiones de la imagen." };
-  }
-
-  if (!isSquareAspectRatio(width, height)) {
-    return {
-      ok: false,
-      error: "El logo debe ser cuadrado (relación 1:1). Recorta la imagen antes de subirla.",
-    };
   }
 
   const minSide = Math.min(width, height);
@@ -50,14 +46,23 @@ export function validateStoreLogoDimensions(
     };
   }
 
-  if (width !== STORE_LOGO_RECOMMENDED_SIZE || height !== STORE_LOGO_RECOMMENDED_SIZE) {
-    return {
-      ok: true,
-      warning: `Recomendado: ${STORE_LOGO_RECOMMENDED_SIZE}×${STORE_LOGO_RECOMMENDED_SIZE}px. La optimizaremos automáticamente para la PWA.`,
-    };
+  const warnings: string[] = [];
+
+  if (!isSquareAspectRatio(width, height)) {
+    warnings.push(STORE_LOGO_NON_SQUARE_WARNING);
+  } else if (
+    width !== STORE_LOGO_RECOMMENDED_SIZE ||
+    height !== STORE_LOGO_RECOMMENDED_SIZE
+  ) {
+    warnings.push(
+      `Recomendado: ${STORE_LOGO_RECOMMENDED_SIZE}×${STORE_LOGO_RECOMMENDED_SIZE}px. La optimizaremos automáticamente para la PWA.`,
+    );
   }
 
-  return { ok: true };
+  return {
+    ok: true,
+    warning: warnings.length > 0 ? warnings.join(" ") : undefined,
+  };
 }
 
 export function validateStoreLogoMimeType(mimeType: string): string | null {
