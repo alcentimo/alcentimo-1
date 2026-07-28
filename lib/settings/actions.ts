@@ -457,7 +457,8 @@ function revalidatePublicStorePaths(slug: string) {
 export interface GeneralStoreSettingsInput {
   name: string;
   slug: string;
-  logoUrl: string | null;
+  /** Si se omite, no se modifica el logo existente. */
+  logoUrl?: string | null;
   description?: string;
   rubroTienda: string;
   enablePcBuilder?: boolean;
@@ -476,7 +477,6 @@ export async function saveGeneralStoreSettings(
   const { store } = auth;
   const name = input.name.trim();
   const slugValidation = validateStoreSlugCandidate(input.slug.trim() || name);
-  const logoUrl = input.logoUrl?.trim() || null;
   const description =
     typeof input.description === "string" ? input.description.trim() : undefined;
 
@@ -511,9 +511,11 @@ export async function saveGeneralStoreSettings(
     .update({
       name,
       slug,
-      logo_url: logoUrl,
       rubro_tienda: rubroTienda,
       enable_pc_builder: enablePcBuilder,
+      ...(input.logoUrl !== undefined
+        ? { logo_url: input.logoUrl?.trim() || null }
+        : {}),
       ...(description !== undefined ? { description: description || null } : {}),
     })
     .eq("id", store.id);

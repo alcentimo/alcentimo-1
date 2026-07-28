@@ -4,8 +4,15 @@ export const STORE_LOGO_MAX_SIZE = 2048;
 export const STORE_LOGO_ASPECT_TOLERANCE = 0.01;
 
 export const STORE_LOGO_HELP_TEXT =
-  "Sube tu logo en formato PNG transparente de 512x512px para que tu app luzca profesional";
+  "Imagen cuadrada (PNG o JPG). Recomendado 512×512 px; se usa también como icono de la PWA del catálogo.";
 
-export const STORE_LOGO_ACCEPT = "image/png";
+export const STORE_LOGO_ACCEPT = "image/png,image/jpeg,image/jpg,image/webp";
+
+export const STORE_LOGO_ALLOWED_MIME_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+] as const;
 
 export const STORE_LOGO_PWA_SIZES = [192, 512] as const;

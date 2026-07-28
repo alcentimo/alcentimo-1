@@ -21,6 +21,7 @@ import { STORE_RUBRO_OPTIONS, normalizeStoreRubro, type StoreRubro } from "@/src
 import { InterfacePreferencesSettingsSection } from "@/components/dashboard/settings/InterfacePreferencesSettingsSection";
 import { SettingsOptionCard } from "@/components/dashboard/settings/SettingsOptionCard";
 import { StoreDescriptionAiButton } from "@/components/dashboard/settings/StoreDescriptionAiButton";
+import { StoreLogoUploadField } from "@/components/dashboard/settings/StoreLogoUploadField";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/cn";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
@@ -53,6 +54,7 @@ type SlugStatus = "idle" | "checking" | "available" | "taken" | "invalid";
 export function GeneralTab({ store }: GeneralTabProps) {
   const router = useRouter();
   const [storeName, setStoreName] = useState(store.name);
+  const [logoUrl, setLogoUrl] = useState<string | null>(store.logo_url);
   const [description, setDescription] = useState(store.description ?? "");
   const [savedSlug, setSavedSlug] = useState(store.slug);
   const [catalogSlug, setCatalogSlug] = useState(store.slug);
@@ -80,6 +82,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
 
   useEffect(() => {
     setStoreName(store.name);
+    setLogoUrl(store.logo_url);
     setDescription(store.description ?? "");
     setSavedSlug(store.slug);
     setCatalogSlug(store.slug);
@@ -90,6 +93,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
     setSavedEnablePcBuilder(store.enable_pc_builder ?? false);
   }, [
     store.name,
+    store.logo_url,
     store.description,
     store.slug,
     store.rubro_tienda,
@@ -154,7 +158,6 @@ export function GeneralTab({ store }: GeneralTabProps) {
       const result = await saveGeneralStoreSettings({
         name: storeName.trim(),
         slug: catalogSlug,
-        logoUrl: null,
         description,
         rubroTienda,
         enablePcBuilder: isTecnologia ? enablePcBuilder : false,
@@ -241,25 +244,39 @@ export function GeneralTab({ store }: GeneralTabProps) {
 
       <SettingsSection
         title="Identidad de marca"
-        description="Nombre comercial y descripción que ven tus clientes en el catálogo."
+        description="Logo, nombre comercial y descripción que ven tus clientes en el catálogo."
         variant="payments"
       >
         <div className="settings-identity-grid">
           <div className="settings-identity-card settings-identity-card--fields">
-            <Label htmlFor="store-name" className="payment-field-label">
-              Nombre comercial
-            </Label>
-            <Input
-              id="store-name"
-              value={storeName}
-              maxLength={120}
-              onChange={(e) => {
-                setStoreName(e.target.value);
+            <StoreLogoUploadField
+              logoUrl={logoUrl}
+              storeName={storeName}
+              disabled={saving}
+              onLogoChange={(url) => {
+                setLogoUrl(url);
                 setSuccessMessage(null);
+                setError(null);
+                router.refresh();
               }}
-              placeholder="Ej: Repuestos El Sol"
-              className="payment-field-input mt-2"
             />
+
+            <div className="mt-5">
+              <Label htmlFor="store-name" className="payment-field-label">
+                Nombre comercial
+              </Label>
+              <Input
+                id="store-name"
+                value={storeName}
+                maxLength={120}
+                onChange={(e) => {
+                  setStoreName(e.target.value);
+                  setSuccessMessage(null);
+                }}
+                placeholder="Ej: Repuestos El Sol"
+                className="payment-field-input mt-2"
+              />
+            </div>
 
             <div className="mt-5">
               <div className="flex flex-wrap items-center justify-between gap-2">

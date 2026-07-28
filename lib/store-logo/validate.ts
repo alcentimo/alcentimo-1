@@ -1,4 +1,5 @@
 import {
+  STORE_LOGO_ALLOWED_MIME_TYPES,
   STORE_LOGO_ASPECT_TOLERANCE,
   STORE_LOGO_MAX_SIZE,
   STORE_LOGO_MIN_SIZE,
@@ -60,8 +61,11 @@ export function validateStoreLogoDimensions(
 }
 
 export function validateStoreLogoMimeType(mimeType: string): string | null {
-  if (mimeType !== "image/png") {
-    return "Usa formato PNG con fondo transparente.";
+  const normalized = mimeType.trim().toLowerCase();
+  if (
+    !(STORE_LOGO_ALLOWED_MIME_TYPES as readonly string[]).includes(normalized)
+  ) {
+    return "Usa PNG, JPG o WebP (preferible cuadrado, idealmente PNG).";
   }
   return null;
 }

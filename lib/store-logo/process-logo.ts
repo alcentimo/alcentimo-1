@@ -37,7 +37,7 @@ export async function processStoreLogoBuffer(
     width = metadata.width ?? 0;
     height = metadata.height ?? 0;
   } catch {
-    return { ok: false, error: "No se pudo procesar la imagen. Usa un PNG válido." };
+    return { ok: false, error: "No se pudo procesar la imagen. Usa un PNG o JPG válido." };
   }
 
   const validation = validateStoreLogoDimensions(width, height);
