@@ -13,10 +13,12 @@ import {
   resolveCustomerStoreSlugFromNext,
 } from "@/lib/customers/ensure-customer-profile";
 import {
-  buildCustomerAuthEmail,
   CUSTOMER_PASSWORD_SET_META_KEY,
+  type CustomerAuthMethod,
   hasCustomerPasswordSet,
   isSyntheticCustomerAuthEmail,
+  resolveCustomerAuthCredentials,
+  resolveCustomerContactEmail,
   validateCustomerPassword,
   validateCustomerPhoneInput,
   validateCustomerRegistrationInput,
@@ -25,7 +27,13 @@ import { markCatalogVisitRegistered } from "@/lib/analytics/track-catalog-visit"
 import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
 
 export type LinkCustomerToStoreResult =
-  | { ok: true; redirectTo: string; displayName?: string; phone?: string }
+  | {
+      ok: true;
+      redirectTo: string;
+      displayName?: string;
+      phone?: string | null;
+      contactEmail?: string | null;
+    }
   | { ok: false; error: string };
 
 function sanitizeNextPath(
@@ -50,7 +58,7 @@ function isExistingUserError(message: string): boolean {
   );
 }
 
-/** Obtiene el usuario Auth por email sintético sin enviar correo. */
+/** Obtiene el usuario Auth por email sin enviar correo. */
 async function lookupAuthUserByEmail(authEmail: string): Promise<User | null> {
   const admin = createAdminClient();
   const { data, error } = await admin.auth.admin.generateLink({
@@ -84,7 +92,7 @@ async function signInWithCustomerPassword(
     ) {
       return {
         ok: false,
-        error: "Teléfono o contraseña incorrectos.",
+        error: "Datos de acceso o contraseña incorrectos.",
       };
     }
     return { ok: false, error: error.message };
@@ -101,7 +109,8 @@ async function establishPasswordSession(input: {
   authEmail: string;
   password: string;
   displayName: string;
-  phone: string;
+  phone: string | null;
+  contactEmail: string | null;
   allowLegacyPasswordClaim: boolean;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const admin = createAdminClient();
@@ -112,7 +121,8 @@ async function establishPasswordSession(input: {
     email_confirm: true,
     user_metadata: {
       display_name: input.displayName,
-      phone: input.phone,
+      ...(input.phone ? { phone: input.phone } : {}),
+      ...(input.contactEmail ? { contact_email: input.contactEmail } : {}),
       [CUSTOMER_PASSWORD_SET_META_KEY]: true,
     },
   });
@@ -136,7 +146,7 @@ async function establishPasswordSession(input: {
   if (!input.allowLegacyPasswordClaim) {
     return {
       ok: false,
-      error: "Ya tienes una cuenta. Inicia sesión con tu teléfono y contraseña.",
+      error: "Ya tienes una cuenta. Inicia sesión con tu contraseña.",
     };
   }
 
@@ -144,14 +154,14 @@ async function establishPasswordSession(input: {
   if (!existingUser) {
     return {
       ok: false,
-      error: "Ya tienes una cuenta. Inicia sesión con tu teléfono y contraseña.",
+      error: "Ya tienes una cuenta. Inicia sesión con tu contraseña.",
     };
   }
 
   if (hasCustomerPasswordSet(existingUser.user_metadata)) {
     return {
       ok: false,
-      error: "Ya tienes una cuenta. Inicia sesión con tu teléfono y contraseña.",
+      error: "Ya tienes una cuenta. Inicia sesión con tu contraseña.",
     };
   }
 
@@ -166,7 +176,8 @@ async function establishPasswordSession(input: {
           (typeof existingUser.user_metadata?.display_name === "string"
             ? existingUser.user_metadata.display_name
             : undefined),
-        phone: input.phone,
+        ...(input.phone ? { phone: input.phone } : {}),
+        ...(input.contactEmail ? { contact_email: input.contactEmail } : {}),
         [CUSTOMER_PASSWORD_SET_META_KEY]: true,
       },
     },
@@ -183,10 +194,11 @@ async function finalizeLinkedCustomer(input: {
   storeSlug: string;
   nextPath?: string | null;
   displayName: string;
-  phone: string;
+  phone: string | null;
   contactEmail?: string | null;
   orderId?: string | null;
   markPasswordSet?: boolean;
+  requirePhone?: boolean;
 }): Promise<LinkCustomerToStoreResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
   const supabase = await createClient();
@@ -203,9 +215,12 @@ async function finalizeLinkedCustomer(input: {
   const metadata: Record<string, unknown> = {
     ...(user.user_metadata ?? {}),
     display_name: input.displayName,
-    phone: input.phone,
     customer_store_slug: storeSlug,
   };
+
+  if (input.phone) {
+    metadata.phone = input.phone;
+  }
 
   if (input.contactEmail) {
     metadata.contact_email = input.contactEmail;
@@ -223,11 +238,12 @@ async function finalizeLinkedCustomer(input: {
     return { ok: false, error: updateError.message };
   }
 
+  const requirePhone = input.requirePhone ?? Boolean(input.phone);
   const result = await ensureCustomerProfile(supabase, user, storeSlug, {
     displayName: input.displayName,
     phone: input.phone,
     requireDisplayName: true,
-    requirePhone: true,
+    requirePhone,
   });
 
   if (!result.ok) {
@@ -236,15 +252,17 @@ async function finalizeLinkedCustomer(input: {
 
   await markCatalogVisitRegistered(result.storeSlug, user.id);
 
-  try {
-    await linkGuestOrdersToCustomer({
-      storeSlug: result.storeSlug,
-      userId: user.id,
-      phone: input.phone,
-      orderId: input.orderId,
-    });
-  } catch {
-    // No bloquear registro si falla el vínculo de pedidos previos.
+  if (input.phone) {
+    try {
+      await linkGuestOrdersToCustomer({
+        storeSlug: result.storeSlug,
+        userId: user.id,
+        phone: input.phone,
+        orderId: input.orderId,
+      });
+    } catch {
+      // No bloquear registro si falla el vínculo de pedidos previos.
+    }
   }
 
   return {
@@ -252,14 +270,19 @@ async function finalizeLinkedCustomer(input: {
     redirectTo: sanitizeNextPath(input.nextPath, result.storeSlug),
     displayName: input.displayName,
     phone: input.phone,
+    contactEmail:
+      input.contactEmail ??
+      resolveCustomerContactEmail(user.email, metadata),
   };
 }
 
-/** Inicio de sesión con teléfono + contraseña (sin SMS). */
-export async function signInCustomerByPhone(input: {
+/** Inicio de sesión con teléfono o correo + contraseña (sin SMS). */
+export async function signInCustomer(input: {
   storeSlug: string;
   nextPath?: string | null;
-  phone: string;
+  method?: CustomerAuthMethod;
+  phone?: string | null;
+  email?: string | null;
   password: string;
   orderId?: string | null;
 }): Promise<LinkCustomerToStoreResult> {
@@ -268,9 +291,14 @@ export async function signInCustomerByPhone(input: {
     return { ok: false, error: "Enlace inválido: falta la tienda." };
   }
 
-  const phoneValidation = validateCustomerPhoneInput(input.phone);
-  if (!phoneValidation.ok) {
-    return { ok: false, error: phoneValidation.error };
+  const method = input.method ?? (input.email?.trim() ? "email" : "phone");
+  const credentials = resolveCustomerAuthCredentials({
+    method,
+    phone: input.phone,
+    email: input.email,
+  });
+  if (!credentials.ok) {
+    return { ok: false, error: credentials.error };
   }
 
   const passwordValidation = validateCustomerPassword(input.password);
@@ -279,7 +307,7 @@ export async function signInCustomerByPhone(input: {
   }
 
   try {
-    const authEmail = buildCustomerAuthEmail(phoneValidation.phone);
+    const authEmail = credentials.authEmail;
     let sessionResult = await signInWithCustomerPassword(
       authEmail,
       passwordValidation.password,
@@ -290,7 +318,10 @@ export async function signInCustomerByPhone(input: {
       if (!existingUser) {
         return {
           ok: false,
-          error: "No encontramos una cuenta con ese teléfono. Crea una cuenta.",
+          error:
+            method === "email"
+              ? "No encontramos una cuenta con ese correo. Crea una cuenta."
+              : "No encontramos una cuenta con ese teléfono. Crea una cuenta.",
         };
       }
 
@@ -341,24 +372,38 @@ export async function signInCustomerByPhone(input: {
         : "") ||
       (typeof metadata.full_name === "string" ? metadata.full_name.trim() : "");
 
-    if ((!displayName || displayName.length < 2) && store) {
+    let profilePhone: string | null = null;
+    if (store) {
       const { data: profile } = await supabase
         .from("customer_profiles")
-        .select("display_name")
+        .select("display_name, phone")
         .eq("user_id", user.id)
         .eq("store_id", store.id)
         .maybeSingle();
 
-      displayName = profile?.display_name?.trim() || displayName;
+      if ((!displayName || displayName.length < 2) && profile?.display_name) {
+        displayName = profile.display_name.trim();
+      }
+      profilePhone = profile?.phone?.trim() || null;
     }
 
     if (!displayName || displayName.length < 2) {
       return {
         ok: false,
         error:
-          "Tu cuenta necesita completar el nombre. Usa “Crear cuenta” con el mismo teléfono.",
+          "Tu cuenta necesita completar el nombre. Usa “Crear cuenta” de nuevo.",
       };
     }
+
+    const phone =
+      credentials.phone ||
+      profilePhone ||
+      (typeof metadata.phone === "string" ? metadata.phone.trim() : null) ||
+      null;
+
+    const contactEmail =
+      credentials.contactEmail ||
+      resolveCustomerContactEmail(user.email, metadata);
 
     await ensureUserProfile(supabase);
 
@@ -366,15 +411,11 @@ export async function signInCustomerByPhone(input: {
       storeSlug,
       nextPath: input.nextPath,
       displayName: displayName.slice(0, 120),
-      phone: phoneValidation.phone,
-      contactEmail:
-        typeof metadata.contact_email === "string"
-          ? metadata.contact_email
-          : isSyntheticCustomerAuthEmail(user.email)
-            ? null
-            : user.email,
+      phone,
+      contactEmail,
       orderId: input.orderId,
       markPasswordSet: true,
+      requirePhone: false,
     });
   } catch (err) {
     const message =
@@ -383,15 +424,34 @@ export async function signInCustomerByPhone(input: {
   }
 }
 
-/** Registro con nombre + teléfono + contraseña (sin SMS ni acceso automático). */
+/** @deprecated Usa signInCustomer. */
+export async function signInCustomerByPhone(input: {
+  storeSlug: string;
+  nextPath?: string | null;
+  phone: string;
+  password: string;
+  orderId?: string | null;
+}): Promise<LinkCustomerToStoreResult> {
+  return signInCustomer({
+    storeSlug: input.storeSlug,
+    nextPath: input.nextPath,
+    method: "phone",
+    phone: input.phone,
+    password: input.password,
+    orderId: input.orderId,
+  });
+}
+
+/** Registro con nombre + (teléfono o correo) + contraseña. */
 export async function quickRegisterOrSignInCustomer(input: {
   storeSlug: string;
   nextPath?: string | null;
   displayName: string;
-  phone: string;
+  method?: CustomerAuthMethod;
+  phone?: string | null;
+  email?: string | null;
   password: string;
   confirmPassword?: string;
-  email?: string | null;
   orderId?: string | null;
 }): Promise<LinkCustomerToStoreResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
@@ -401,6 +461,7 @@ export async function quickRegisterOrSignInCustomer(input: {
 
   const validation = validateCustomerRegistrationInput({
     displayName: input.displayName,
+    method: input.method ?? "phone",
     phone: input.phone,
     email: input.email,
     password: input.password,
@@ -416,12 +477,12 @@ export async function quickRegisterOrSignInCustomer(input: {
   }
 
   try {
-    const authEmail = buildCustomerAuthEmail(validation.phone);
     const sessionResult = await establishPasswordSession({
-      authEmail,
+      authEmail: validation.authEmail,
       password: validation.password,
       displayName: validation.displayName,
       phone: validation.phone,
+      contactEmail: validation.contactEmail,
       allowLegacyPasswordClaim: true,
     });
 
@@ -440,6 +501,7 @@ export async function quickRegisterOrSignInCustomer(input: {
       contactEmail: validation.contactEmail,
       orderId: input.orderId,
       markPasswordSet: true,
+      requirePhone: validation.method === "phone",
     });
   } catch (err) {
     const message =
@@ -452,7 +514,8 @@ export type InlineCustomerAuthResult =
   | {
       ok: true;
       displayName: string;
-      phone: string;
+      phone: string | null;
+      contactEmail?: string | null;
       deliveryAddress?: string | null;
       preferredShippingMethod?: string | null;
       preferredShippingBranchCode?: string | null;
@@ -463,7 +526,9 @@ export type InlineCustomerAuthResult =
 export async function quickRegisterOrSignInCustomerInline(input: {
   storeSlug: string;
   displayName: string;
-  phone: string;
+  method?: CustomerAuthMethod;
+  phone?: string | null;
+  email?: string | null;
   password: string;
   confirmPassword?: string;
   orderId?: string | null;
@@ -471,7 +536,9 @@ export async function quickRegisterOrSignInCustomerInline(input: {
   const result = await quickRegisterOrSignInCustomer({
     storeSlug: input.storeSlug,
     displayName: input.displayName,
+    method: input.method,
     phone: input.phone,
+    email: input.email,
     password: input.password,
     confirmPassword: input.confirmPassword ?? input.password,
     orderId: input.orderId,
@@ -498,7 +565,8 @@ export async function quickRegisterOrSignInCustomerInline(input: {
     return {
       ok: true,
       displayName: input.displayName.trim(),
-      phone: input.phone.trim(),
+      phone: result.phone ?? null,
+      contactEmail: result.contactEmail ?? null,
     };
   }
 
@@ -514,7 +582,10 @@ export async function quickRegisterOrSignInCustomerInline(input: {
   return {
     ok: true,
     displayName: profile?.display_name?.trim() || input.displayName.trim(),
-    phone: profile?.phone?.trim() || input.phone.trim(),
+    phone: profile?.phone?.trim() || result.phone || null,
+    contactEmail:
+      result.contactEmail ||
+      resolveCustomerContactEmail(user.email, user.user_metadata),
     deliveryAddress: profile?.delivery_address?.trim() || null,
     preferredShippingMethod:
       (profile?.preferred_shipping_method as string | null)?.trim() || null,
@@ -575,6 +646,7 @@ export async function completeCustomerPhone(input: {
           ? null
           : user.email,
     orderId: input.orderId,
+    requirePhone: true,
   });
 }
 

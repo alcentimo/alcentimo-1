@@ -23,6 +23,7 @@ export interface CustomerSessionState {
   userId: string | null;
   displayName: string | null;
   phone: string | null;
+  contactEmail: string | null;
 }
 
 interface CustomerSessionContextValue extends CustomerSessionState {
@@ -31,7 +32,8 @@ interface CustomerSessionContextValue extends CustomerSessionState {
   refreshSession: () => Promise<void>;
   setSessionFromRegistration: (profile: {
     displayName: string;
-    phone: string;
+    phone?: string | null;
+    contactEmail?: string | null;
     userId?: string | null;
   }) => void;
 }
@@ -46,11 +48,25 @@ interface CustomerSessionProviderProps {
   children: ReactNode;
 }
 
+function hasSessionIdentity(state: {
+  displayName: string | null;
+  phone: string | null;
+  contactEmail?: string | null;
+}): boolean {
+  const nameOk = Boolean(state.displayName && state.displayName.trim().length >= 2);
+  const phoneOk = Boolean(state.phone && state.phone.trim().length >= 10);
+  const emailOk = Boolean(
+    state.contactEmail &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.contactEmail.trim()),
+  );
+  return nameOk && (phoneOk || emailOk);
+}
+
 function mergeSessionState(
   server: CustomerSessionState,
   stored: ReturnType<typeof readStoredCustomerSession>,
 ): CustomerSessionState {
-  if (server.isCustomer && server.displayName && server.phone) {
+  if (server.isCustomer && hasSessionIdentity(server)) {
     return server;
   }
 
@@ -60,10 +76,14 @@ function mergeSessionState(
       userId: server.userId ?? stored.userId,
       displayName: server.displayName ?? stored.displayName,
       phone: server.phone ?? stored.phone,
+      contactEmail: server.contactEmail ?? stored.contactEmail,
     };
   }
 
-  return server;
+  return {
+    ...server,
+    contactEmail: server.contactEmail ?? null,
+  };
 }
 
 export function CustomerSessionProvider({
@@ -72,24 +92,22 @@ export function CustomerSessionProvider({
   children,
 }: CustomerSessionProviderProps) {
   const router = useRouter();
-  const [session, setSession] = useState<CustomerSessionState>(initial);
+  const [session, setSession] = useState<CustomerSessionState>({
+    ...initial,
+    contactEmail: initial.contactEmail ?? null,
+  });
   const [signOutPending, setSignOutPending] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   const persistSession = useCallback(
     (next: CustomerSessionState) => {
       setSession(next);
-      if (
-        next.isCustomer &&
-        next.displayName &&
-        next.phone &&
-        next.displayName.length >= 2 &&
-        next.phone.length >= 10
-      ) {
+      if (next.isCustomer && hasSessionIdentity(next)) {
         writeStoredCustomerSession(storeSlug, {
           userId: next.userId,
-          displayName: next.displayName,
+          displayName: next.displayName!,
           phone: next.phone,
+          contactEmail: next.contactEmail,
         });
       }
     },
@@ -106,6 +124,7 @@ export function CustomerSessionProvider({
     initial.userId,
     initial.displayName,
     initial.phone,
+    initial.contactEmail,
     persistSession,
   ]);
 
@@ -117,6 +136,7 @@ export function CustomerSessionProvider({
         userId: context.userId,
         displayName: context.displayName,
         phone: context.phone,
+        contactEmail: context.contactEmail ?? null,
       });
     } catch (error) {
       console.error("[CustomerSessionProvider] refreshSession failed", error);
@@ -137,6 +157,7 @@ export function CustomerSessionProvider({
           userId: null,
           displayName: null,
           phone: null,
+          contactEmail: null,
         });
         return;
       }
@@ -159,14 +180,16 @@ export function CustomerSessionProvider({
   const setSessionFromRegistration = useCallback(
     (profile: {
       displayName: string;
-      phone: string;
+      phone?: string | null;
+      contactEmail?: string | null;
       userId?: string | null;
     }) => {
       persistSession({
         isCustomer: true,
         userId: profile.userId ?? session.userId,
         displayName: profile.displayName.trim(),
-        phone: profile.phone.trim(),
+        phone: profile.phone?.trim() || null,
+        contactEmail: profile.contactEmail?.trim() || null,
       });
       router.refresh();
     },
@@ -188,6 +211,7 @@ export function CustomerSessionProvider({
         userId: null,
         displayName: null,
         phone: null,
+        contactEmail: null,
       });
       router.refresh();
     } finally {

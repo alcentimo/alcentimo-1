@@ -21,11 +21,13 @@ export async function saveCustomerProfile(input: {
   displayName: string;
   phone: string;
   deliveryAddress?: string | null;
+  requirePhone?: boolean;
 }): Promise<SaveCustomerProfileResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
   const displayName = input.displayName.trim();
   const phone = input.phone.trim();
   const deliveryAddress = input.deliveryAddress?.trim() ?? "";
+  const requirePhone = input.requirePhone !== false;
 
   if (displayName.length < 2) {
     return { ok: false, error: "Indica tu nombre (mínimo 2 caracteres)." };
@@ -42,9 +44,9 @@ export async function saveCustomerProfile(input: {
 
   const result = await ensureCustomerProfile(supabase, user, storeSlug, {
     displayName,
-    phone,
+    phone: phone || null,
     requireDisplayName: true,
-    requirePhone: true,
+    requirePhone,
   });
 
   if (!result.ok) {

@@ -1,8 +1,20 @@
 export interface StoredCustomerSession {
   userId: string | null;
   displayName: string;
-  phone: string;
+  phone: string | null;
+  contactEmail: string | null;
   updatedAt: string;
+}
+
+function isValidStoredPhone(phone: string | null | undefined): boolean {
+  return typeof phone === "string" && phone.trim().length >= 10;
+}
+
+function isValidStoredEmail(email: string | null | undefined): boolean {
+  return (
+    typeof email === "string" &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  );
 }
 
 export function customerSessionStorageKey(storeSlug: string): string {
@@ -18,21 +30,33 @@ export function readStoredCustomerSession(
     const raw = window.localStorage.getItem(customerSessionStorageKey(storeSlug));
     if (!raw) return null;
 
-    const parsed = JSON.parse(raw) as StoredCustomerSession;
+    const parsed = JSON.parse(raw) as StoredCustomerSession & { phone?: string };
+    if (!parsed || typeof parsed.displayName !== "string") {
+      return null;
+    }
+
+    const displayName = parsed.displayName.trim();
+    const phone =
+      typeof parsed.phone === "string" && parsed.phone.trim()
+        ? parsed.phone.trim()
+        : null;
+    const contactEmail =
+      typeof parsed.contactEmail === "string" && parsed.contactEmail.trim()
+        ? parsed.contactEmail.trim()
+        : null;
+
     if (
-      !parsed ||
-      typeof parsed.displayName !== "string" ||
-      typeof parsed.phone !== "string" ||
-      parsed.displayName.trim().length < 2 ||
-      parsed.phone.trim().length < 10
+      displayName.length < 2 ||
+      (!isValidStoredPhone(phone) && !isValidStoredEmail(contactEmail))
     ) {
       return null;
     }
 
     return {
       userId: parsed.userId ?? null,
-      displayName: parsed.displayName.trim(),
-      phone: parsed.phone.trim(),
+      displayName,
+      phone,
+      contactEmail,
       updatedAt: parsed.updatedAt ?? new Date(0).toISOString(),
     };
   } catch {
@@ -42,14 +66,18 @@ export function readStoredCustomerSession(
 
 export function writeStoredCustomerSession(
   storeSlug: string,
-  session: Pick<StoredCustomerSession, "userId" | "displayName" | "phone">,
+  session: Pick<
+    StoredCustomerSession,
+    "userId" | "displayName" | "phone" | "contactEmail"
+  >,
 ): void {
   if (typeof window === "undefined") return;
 
   const payload: StoredCustomerSession = {
     userId: session.userId,
     displayName: session.displayName.trim(),
-    phone: session.phone.trim(),
+    phone: session.phone?.trim() || null,
+    contactEmail: session.contactEmail?.trim() || null,
     updatedAt: new Date().toISOString(),
   };
 

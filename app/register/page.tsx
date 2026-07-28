@@ -140,7 +140,7 @@ export default async function CustomerRegisterPage({
         description={
           needsPhoneCompletion
             ? `Activa tu cuenta en ${store.name} con tu número de contacto.`
-            : `Crea tu cuenta en ${store.name} con nombre, teléfono y contraseña.`
+            : `Crea tu cuenta en ${store.name} con teléfono o correo y una contraseña.`
         }
         footer={
           <p className="text-center text-sm text-zinc-500">

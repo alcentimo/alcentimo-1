@@ -46,8 +46,8 @@ export function CatalogCustomerRegisterSheet({
             </h2>
             <p className="txn-checkout-subtitle">
               {isLogin
-                ? `Entra a ${storeName} con tu teléfono y contraseña.`
-                : `Regístrate en ${storeName} con nombre, teléfono y contraseña.`}
+                ? `Entra a ${storeName} con teléfono o correo y tu contraseña.`
+                : `Regístrate en ${storeName} con teléfono o correo y una contraseña.`}
             </p>
           </div>
           <button

@@ -11,11 +11,13 @@ import {
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { buildCustomerWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
+import type { CustomerAuthMethod } from "@/lib/customers/phone-auth";
 
 interface CustomerProfilePanelProps {
   storeSlug: string;
   storeName: string;
   contactEmail: string | null;
+  loginMethod?: CustomerAuthMethod;
   /** True si el cliente tiene login con contraseña (teléfono o email). */
   canChangePassword?: boolean;
   displayName: string | null;
@@ -28,6 +30,7 @@ export function CustomerProfilePanel({
   storeSlug,
   storeName,
   contactEmail,
+  loginMethod = "phone",
   canChangePassword = false,
   displayName,
   phone,
@@ -47,6 +50,16 @@ export function CustomerProfilePanel({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const phoneRequired = loginMethod === "phone";
+  const loginLabel =
+    loginMethod === "email"
+      ? contactEmail
+        ? `Accedes con correo: ${contactEmail}`
+        : "Accedes con tu correo y contraseña."
+      : phone
+        ? `Accedes con teléfono: ${phone}`
+        : "Accedes con tu teléfono y contraseña.";
+
   const whatsappHelpUrl = buildCustomerWhatsAppUrl(
     whatsappPhone,
     undefined,
@@ -64,6 +77,7 @@ export function CustomerProfilePanel({
       displayName: name,
       phone: phoneValue,
       deliveryAddress: addressValue,
+      requirePhone: phoneRequired,
     });
 
     setSavePending(false);
@@ -129,6 +143,8 @@ export function CustomerProfilePanel({
   return (
     <div className="space-y-6">
       <form onSubmit={(e) => void handleSave(e)} className="card-panel space-y-4">
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">{loginLabel}</p>
+
         <div>
           <label htmlFor="customer-name" className="label-field">
             Nombre
@@ -149,12 +165,15 @@ export function CustomerProfilePanel({
 
         <div>
           <label htmlFor="customer-phone" className="label-field">
-            Teléfono
+            Teléfono{" "}
+            {!phoneRequired ? (
+              <span className="font-normal text-zinc-400">(opcional)</span>
+            ) : null}
           </label>
           <input
             id="customer-phone"
             type="tel"
-            required
+            required={phoneRequired}
             inputMode="tel"
             autoComplete="tel"
             value={phoneValue}
@@ -163,6 +182,28 @@ export function CustomerProfilePanel({
             placeholder="04141234567"
           />
         </div>
+
+        {contactEmail && loginMethod === "email" ? (
+          <div>
+            <label htmlFor="customer-email" className="label-field">
+              Correo de acceso
+            </label>
+            <input
+              id="customer-email"
+              type="email"
+              value={contactEmail}
+              disabled
+              className="input-field opacity-80"
+            />
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Este correo es tu usuario de acceso. No se puede cambiar aquí.
+            </p>
+          </div>
+        ) : contactEmail ? (
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Correo de contacto: {contactEmail}
+          </p>
+        ) : null}
 
         <div>
           <label htmlFor="customer-address" className="label-field">
@@ -182,16 +223,6 @@ export function CustomerProfilePanel({
             Se usará para autocompletar tus próximos pedidos a domicilio.
           </p>
         </div>
-
-        {contactEmail ? (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Correo de contacto: {contactEmail}
-          </p>
-        ) : phone ? (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Accedes con tu teléfono y contraseña.
-          </p>
-        ) : null}
 
         <button type="submit" disabled={savePending} className="btn-primary w-full">
           {savePending ? "Guardando…" : "Guardar cambios"}

@@ -117,7 +117,7 @@ export default async function CatalogRegisterPage({
         <p className="catalog-subpage-desc">
           {needsPhoneCompletion
             ? `Activa tu cuenta en ${store.name} con tu número de contacto.`
-            : `Regístrate en ${store.name} con nombre, teléfono y contraseña.`}
+            : `Regístrate en ${store.name} con teléfono o correo y una contraseña.`}
         </p>
       </header>
 

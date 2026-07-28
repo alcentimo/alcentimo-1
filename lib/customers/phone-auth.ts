@@ -2,6 +2,8 @@ export const CUSTOMER_PHONE_AUTH_EMAIL_DOMAIN = "customers.phone.alcentimo.com";
 export const CUSTOMER_MIN_PASSWORD_LENGTH = 8;
 export const CUSTOMER_PASSWORD_SET_META_KEY = "customer_password_set";
 
+export type CustomerAuthMethod = "phone" | "email";
+
 export function normalizePhoneDigits(phone: string): string {
   return phone.replace(/\D/g, "");
 }
@@ -9,6 +11,14 @@ export function normalizePhoneDigits(phone: string): string {
 export function isValidCustomerPhone(phone: string): boolean {
   const digits = normalizePhoneDigits(phone);
   return digits.length >= 10 && digits.length <= 15;
+}
+
+export function normalizeCustomerEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+export function isValidCustomerEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeCustomerEmail(email));
 }
 
 export function buildCustomerAuthEmail(phone: string): string {
@@ -23,6 +33,13 @@ export function isSyntheticCustomerAuthEmail(
   return email
     .toLowerCase()
     .endsWith(`@${CUSTOMER_PHONE_AUTH_EMAIL_DOMAIN}`);
+}
+
+/** Método de acceso según el email Auth del usuario. */
+export function resolveCustomerAuthMethod(
+  authEmail: string | null | undefined,
+): CustomerAuthMethod {
+  return isSyntheticCustomerAuthEmail(authEmail) ? "phone" : "email";
 }
 
 export function resolveCustomerContactEmail(
@@ -95,9 +112,91 @@ export function validateCustomerPasswordPair(
   return validated;
 }
 
+export function validateCustomerEmailInput(email: string):
+  | { ok: true; email: string }
+  | { ok: false; error: string } {
+  const normalized = normalizeCustomerEmail(email);
+  if (!isValidCustomerEmail(normalized)) {
+    return { ok: false, error: "Indica un correo electrónico válido." };
+  }
+  if (isSyntheticCustomerAuthEmail(normalized)) {
+    return { ok: false, error: "Indica un correo electrónico válido." };
+  }
+  return { ok: true, email: normalized.slice(0, 254) };
+}
+
+export function validateCustomerPhoneInput(phone: string):
+  | { ok: true; phone: string }
+  | { ok: false; error: string } {
+  const trimmed = phone.trim();
+
+  if (!isValidCustomerPhone(trimmed)) {
+    return {
+      ok: false,
+      error: "Indica un teléfono válido (mínimo 10 dígitos).",
+    };
+  }
+
+  return { ok: true, phone: trimmed.slice(0, 40) };
+}
+
+/** Resuelve el email Auth interno (sintético o real) según el método elegido. */
+export function resolveCustomerAuthCredentials(input: {
+  method: CustomerAuthMethod;
+  phone?: string | null;
+  email?: string | null;
+}):
+  | {
+      ok: true;
+      method: CustomerAuthMethod;
+      authEmail: string;
+      phone: string | null;
+      contactEmail: string | null;
+    }
+  | { ok: false; error: string } {
+  if (input.method === "phone") {
+    const phoneValidation = validateCustomerPhoneInput(input.phone ?? "");
+    if (!phoneValidation.ok) return phoneValidation;
+
+    let contactEmail: string | null = null;
+    if (input.email?.trim()) {
+      const emailValidation = validateCustomerEmailInput(input.email);
+      if (!emailValidation.ok) return emailValidation;
+      contactEmail = emailValidation.email;
+    }
+
+    return {
+      ok: true,
+      method: "phone",
+      authEmail: buildCustomerAuthEmail(phoneValidation.phone),
+      phone: phoneValidation.phone,
+      contactEmail,
+    };
+  }
+
+  const emailValidation = validateCustomerEmailInput(input.email ?? "");
+  if (!emailValidation.ok) return emailValidation;
+
+  let phone: string | null = null;
+  if (input.phone?.trim()) {
+    const phoneValidation = validateCustomerPhoneInput(input.phone);
+    if (!phoneValidation.ok) return phoneValidation;
+    phone = phoneValidation.phone;
+  }
+
+  return {
+    ok: true,
+    method: "email",
+    authEmail: emailValidation.email,
+    phone,
+    contactEmail: emailValidation.email,
+  };
+}
+
 export function validateCustomerRegistrationInput(input: {
   displayName: string;
-  phone: string;
+  method?: CustomerAuthMethod;
+  phone?: string | null;
   email?: string | null;
   password?: string;
   confirmPassword?: string;
@@ -106,30 +205,27 @@ export function validateCustomerRegistrationInput(input: {
   | {
       ok: true;
       displayName: string;
-      phone: string;
+      method: CustomerAuthMethod;
+      authEmail: string;
+      phone: string | null;
       contactEmail: string | null;
       password: string | null;
     }
   | { ok: false; error: string } {
   const displayName = input.displayName.trim();
-  const phone = input.phone.trim();
-  const contactEmail = input.email?.trim() || null;
+  const method = input.method ?? "phone";
   const requirePassword = input.requirePassword !== false;
 
   if (!displayName || displayName.length < 2) {
     return { ok: false, error: "Indica tu nombre (mínimo 2 caracteres)." };
   }
 
-  if (!isValidCustomerPhone(phone)) {
-    return {
-      ok: false,
-      error: "Indica un teléfono válido (mínimo 10 dígitos).",
-    };
-  }
-
-  if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
-    return { ok: false, error: "El correo indicado no es válido." };
-  }
+  const credentials = resolveCustomerAuthCredentials({
+    method,
+    phone: input.phone,
+    email: input.email,
+  });
+  if (!credentials.ok) return credentials;
 
   let password: string | null = null;
   if (requirePassword) {
@@ -146,23 +242,10 @@ export function validateCustomerRegistrationInput(input: {
   return {
     ok: true,
     displayName: displayName.slice(0, 120),
-    phone: phone.slice(0, 40),
-    contactEmail,
+    method: credentials.method,
+    authEmail: credentials.authEmail,
+    phone: credentials.phone,
+    contactEmail: credentials.contactEmail,
     password,
   };
-}
-
-export function validateCustomerPhoneInput(phone: string):
-  | { ok: true; phone: string }
-  | { ok: false; error: string } {
-  const trimmed = phone.trim();
-
-  if (!isValidCustomerPhone(trimmed)) {
-    return {
-      ok: false,
-      error: "Indica un teléfono válido (mínimo 10 dígitos).",
-    };
-  }
-
-  return { ok: true, phone: trimmed.slice(0, 40) };
 }

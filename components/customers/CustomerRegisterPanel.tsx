@@ -5,13 +5,16 @@ import { useState } from "react";
 import {
   completeCustomerPhone,
   quickRegisterOrSignInCustomer,
-  signInCustomerByPhone,
+  signInCustomer,
 } from "@/lib/customers/register-actions";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
 import type { CatalogCustomerAuthMode } from "@/components/catalog-transactional/CatalogShellNavigation";
-import { CUSTOMER_MIN_PASSWORD_LENGTH } from "@/lib/customers/phone-auth";
+import {
+  CUSTOMER_MIN_PASSWORD_LENGTH,
+  type CustomerAuthMethod,
+} from "@/lib/customers/phone-auth";
 
 interface CustomerRegisterPanelProps {
   storeSlug: string;
@@ -27,9 +30,49 @@ interface CustomerRegisterPanelProps {
   redirectOnSuccess?: boolean;
   onRegistered?: (profile: {
     displayName: string;
-    phone: string;
+    phone?: string | null;
+    contactEmail?: string | null;
     userId?: string | null;
   }) => void;
+}
+
+function AuthMethodToggle({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: CustomerAuthMethod;
+  onChange: (method: CustomerAuthMethod) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="catalog-auth-method-toggle" role="group" aria-label="Método de acceso">
+      <button
+        type="button"
+        disabled={disabled}
+        className={
+          value === "phone"
+            ? "catalog-auth-method-btn catalog-auth-method-btn-active"
+            : "catalog-auth-method-btn"
+        }
+        onClick={() => onChange("phone")}
+      >
+        Teléfono
+      </button>
+      <button
+        type="button"
+        disabled={disabled}
+        className={
+          value === "email"
+            ? "catalog-auth-method-btn catalog-auth-method-btn-active"
+            : "catalog-auth-method-btn"
+        }
+        onClick={() => onChange("email")}
+      >
+        Correo
+      </button>
+    </div>
+  );
 }
 
 export function CustomerRegisterPanel({
@@ -46,6 +89,7 @@ export function CustomerRegisterPanel({
   redirectOnSuccess = true,
   onRegistered,
 }: CustomerRegisterPanelProps) {
+  const [authMethod, setAuthMethod] = useState<CustomerAuthMethod>("phone");
   const [displayName, setDisplayName] = useState(suggestedDisplayName ?? "");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -65,10 +109,11 @@ export function CustomerRegisterPanel({
       storeSlug,
       nextPath,
       displayName,
-      phone,
+      method: authMethod,
+      phone: authMethod === "phone" ? phone : phone.trim() || null,
+      email: authMethod === "email" ? email : email.trim() || null,
       password,
       confirmPassword,
-      email: email.trim() || null,
       orderId,
     });
 
@@ -81,7 +126,8 @@ export function CustomerRegisterPanel({
 
     onRegistered?.({
       displayName: result.displayName?.trim() || displayName.trim(),
-      phone: result.phone?.trim() || phone.trim(),
+      phone: result.phone ?? null,
+      contactEmail: result.contactEmail ?? null,
     });
 
     if (redirectOnSuccess) {
@@ -94,10 +140,12 @@ export function CustomerRegisterPanel({
     setError(null);
     setLoading(true);
 
-    const result = await signInCustomerByPhone({
+    const result = await signInCustomer({
       storeSlug,
       nextPath,
-      phone,
+      method: authMethod,
+      phone: authMethod === "phone" ? phone : null,
+      email: authMethod === "email" ? email : null,
       password,
       orderId,
     });
@@ -111,7 +159,8 @@ export function CustomerRegisterPanel({
 
     onRegistered?.({
       displayName: result.displayName?.trim() || "Cliente",
-      phone: result.phone?.trim() || phone.trim(),
+      phone: result.phone ?? null,
+      contactEmail: result.contactEmail ?? null,
     });
 
     if (redirectOnSuccess) {
@@ -142,6 +191,7 @@ export function CustomerRegisterPanel({
     onRegistered?.({
       displayName: (displayName.trim() || suggestedDisplayName || "").trim(),
       phone: phone.trim(),
+      contactEmail: result.contactEmail ?? null,
     });
 
     if (redirectOnSuccess) {
@@ -239,12 +289,12 @@ export function CustomerRegisterPanel({
               Iniciar sesión
             </h2>
             <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-              Entra con tu teléfono y contraseña.
+              Entra con tu teléfono o correo y tu contraseña.
             </p>
           </>
         ) : (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Entra con tu teléfono y contraseña.
+            Entra con tu teléfono o correo y tu contraseña.
           </p>
         )}
 
@@ -263,27 +313,54 @@ export function CustomerRegisterPanel({
             <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
           </div>
           <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
-            o con teléfono
+            o con contraseña
           </p>
         </div>
 
-        <form onSubmit={handleLoginSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="phone_login" className="label-field">
-              Teléfono
-            </label>
-            <input
-              id="phone_login"
-              type="tel"
-              autoComplete="tel"
-              required
-              minLength={10}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="input-field"
-              placeholder="0412 1234567"
-            />
-          </div>
+        <AuthMethodToggle
+          value={authMethod}
+          disabled={isBusy}
+          onChange={(method) => {
+            setAuthMethod(method);
+            setError(null);
+          }}
+        />
+
+        <form onSubmit={handleLoginSubmit} className="mt-4 space-y-4">
+          {authMethod === "phone" ? (
+            <div>
+              <label htmlFor="phone_login" className="label-field">
+                Teléfono
+              </label>
+              <input
+                id="phone_login"
+                type="tel"
+                autoComplete="tel"
+                required
+                minLength={10}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="input-field"
+                placeholder="0412 1234567"
+              />
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="email_login" className="label-field">
+                Correo electrónico
+              </label>
+              <input
+                id="email_login"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input-field"
+                placeholder="tu@correo.com"
+              />
+            </div>
+          )}
 
           <div>
             <label htmlFor="password_login" className="label-field">
@@ -322,7 +399,7 @@ export function CustomerRegisterPanel({
             </button>
           ) : (
             <span className="font-medium text-zinc-700 dark:text-zinc-300">
-              Regístrate con tu nombre, teléfono y contraseña.
+              Regístrate con teléfono o correo y una contraseña.
             </span>
           )}
         </p>
@@ -353,12 +430,12 @@ export function CustomerRegisterPanel({
             Crea tu cuenta
           </h2>
           <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-            Nombre, teléfono y una contraseña para guardar tus pedidos.
+            Elige teléfono o correo y define tu contraseña.
           </p>
         </>
       ) : (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Nombre, teléfono y una contraseña para guardar tus pedidos.
+          Elige teléfono o correo y define tu contraseña.
         </p>
       )}
 
@@ -377,11 +454,20 @@ export function CustomerRegisterPanel({
           <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
         </div>
         <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
-          o con teléfono
+          o con contraseña
         </p>
       </div>
 
-      <form onSubmit={handleQuickSubmit} className="space-y-4">
+      <AuthMethodToggle
+        value={authMethod}
+        disabled={isBusy}
+        onChange={(method) => {
+          setAuthMethod(method);
+          setError(null);
+        }}
+      />
+
+      <form onSubmit={handleQuickSubmit} className="mt-4 space-y-4">
         <div>
           <label htmlFor="display_name" className="label-field">
             Nombre
@@ -399,22 +485,58 @@ export function CustomerRegisterPanel({
           />
         </div>
 
-        <div>
-          <label htmlFor="phone" className="label-field">
-            Teléfono
-          </label>
-          <input
-            id="phone"
-            type="tel"
-            autoComplete="tel"
-            required
-            minLength={10}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="input-field"
-            placeholder="0412 1234567"
-          />
-        </div>
+        {authMethod === "phone" ? (
+          <div>
+            <label htmlFor="phone" className="label-field">
+              Teléfono
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              autoComplete="tel"
+              required
+              minLength={10}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="input-field"
+              placeholder="0412 1234567"
+            />
+          </div>
+        ) : (
+          <div>
+            <label htmlFor="email" className="label-field">
+              Correo electrónico
+            </label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input-field"
+              placeholder="tu@correo.com"
+            />
+          </div>
+        )}
+
+        {authMethod === "email" ? (
+          <div>
+            <label htmlFor="phone_optional" className="label-field">
+              Teléfono <span className="font-normal text-zinc-400">(opcional)</span>
+            </label>
+            <input
+              id="phone_optional"
+              type="tel"
+              autoComplete="tel"
+              minLength={10}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="input-field"
+              placeholder="Para pedidos por WhatsApp"
+            />
+          </div>
+        ) : null}
 
         <div>
           <label htmlFor="password" className="label-field">
@@ -446,21 +568,6 @@ export function CustomerRegisterPanel({
           />
         </div>
 
-        <div>
-          <label htmlFor="email" className="label-field">
-            Correo <span className="font-normal text-zinc-400">(opcional)</span>
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="input-field"
-            placeholder="solo si quieres recibir novedades"
-          />
-        </div>
-
         {error ? <p className="alert-error">{error}</p> : null}
 
         <button type="submit" disabled={isBusy} className="btn-primary w-full">
@@ -482,7 +589,7 @@ export function CustomerRegisterPanel({
             Iniciar sesión
           </button>
         ) : (
-          <span>Inicia sesión con tu teléfono y contraseña.</span>
+          <span>Inicia sesión con tu teléfono o correo y contraseña.</span>
         )}
       </p>
 

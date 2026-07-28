@@ -65,6 +65,8 @@ export function CatalogStoreProfileSheet({
   const isCustomer = customerSession?.isCustomer ?? false;
   const displayName = customerSession?.displayName?.trim() ?? "";
   const phone = customerSession?.phone?.trim() ?? "";
+  const contactEmail = customerSession?.contactEmail?.trim() ?? "";
+  const accountIdentity = phone || contactEmail;
 
   const whatsappUrl = whatsappPhone?.trim()
     ? buildWhatsAppOrderUrl(
@@ -160,8 +162,8 @@ export function CatalogStoreProfileSheet({
             {isCustomer && displayName ? (
               <div className="catalog-profile-customer-card">
                 <p className="catalog-profile-customer-name">{displayName}</p>
-                {phone ? (
-                  <p className="catalog-profile-customer-phone">{phone}</p>
+                {accountIdentity ? (
+                  <p className="catalog-profile-customer-phone">{accountIdentity}</p>
                 ) : null}
                 <p className="catalog-profile-customer-hint">
                   Sesión activa en {storeName}
@@ -169,8 +171,8 @@ export function CatalogStoreProfileSheet({
               </div>
             ) : (
               <p className="catalog-profile-text">
-                Crea una cuenta o inicia sesión para guardar tus datos y ver el
-                historial de pedidos en {storeName}.
+                Crea una cuenta o inicia sesión con teléfono o correo y
+                contraseña para guardar tus datos en {storeName}.
               </p>
             )}
 

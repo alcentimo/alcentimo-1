@@ -159,6 +159,7 @@ export default async function TransactionalCatalogLayout({
               userId: customerSession.userId,
               displayName: customerSession.displayName,
               phone: customerSession.phone,
+              contactEmail: customerSession.contactEmail,
             }}
           >
             <CatalogAppShell

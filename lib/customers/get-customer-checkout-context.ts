@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { resolveActiveStoreBySlug } from "@/lib/customers/middleware-access";
+import { resolveCustomerContactEmail } from "@/lib/customers/phone-auth";
 
 export interface CustomerCheckoutContext {
   isAuthenticated: boolean;
@@ -8,6 +9,7 @@ export interface CustomerCheckoutContext {
   userId: string | null;
   displayName: string | null;
   phone: string | null;
+  contactEmail: string | null;
   deliveryAddress: string | null;
   preferredShippingMethod: string | null;
   preferredShippingBranchCode: string | null;
@@ -48,6 +50,7 @@ export async function getCustomerCheckoutContext(
       userId: null,
       displayName: null,
       phone: null,
+      contactEmail: null,
       deliveryAddress: null,
       preferredShippingMethod: null,
       preferredShippingBranchCode: null,
@@ -64,6 +67,7 @@ export async function getCustomerCheckoutContext(
       userId: user.id,
       displayName: null,
       phone: null,
+      contactEmail: resolveCustomerContactEmail(user.email, user.user_metadata),
       deliveryAddress: null,
       preferredShippingMethod: null,
       preferredShippingBranchCode: null,
@@ -80,6 +84,7 @@ export async function getCustomerCheckoutContext(
       userId: user.id,
       displayName: null,
       phone: null,
+      contactEmail: resolveCustomerContactEmail(user.email, user.user_metadata),
       deliveryAddress: null,
       preferredShippingMethod: null,
       preferredShippingBranchCode: null,
@@ -94,6 +99,7 @@ export async function getCustomerCheckoutContext(
     userId: user.id,
     displayName: profile.display_name,
     phone: profile.phone,
+    contactEmail: resolveCustomerContactEmail(user.email, user.user_metadata),
     deliveryAddress: (profile.delivery_address as string | null) ?? null,
     preferredShippingMethod:
       (profile.preferred_shipping_method as string | null) ?? null,
