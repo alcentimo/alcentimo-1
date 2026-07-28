@@ -46,8 +46,8 @@ export function CatalogCustomerRegisterSheet({
             </h2>
             <p className="txn-checkout-subtitle">
               {isLogin
-                ? `Entra a ${storeName} con tu WhatsApp registrado.`
-                : `Regístrate en ${storeName} para guardar tus datos y ver tus pedidos.`}
+                ? `Entra a ${storeName} con tu teléfono y contraseña.`
+                : `Regístrate en ${storeName} con nombre, teléfono y contraseña.`}
             </p>
           </div>
           <button

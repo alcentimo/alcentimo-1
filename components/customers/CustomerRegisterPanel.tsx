@@ -8,8 +8,10 @@ import {
   signInCustomerByPhone,
 } from "@/lib/customers/register-actions";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
 import type { CatalogCustomerAuthMode } from "@/components/catalog-transactional/CatalogShellNavigation";
+import { CUSTOMER_MIN_PASSWORD_LENGTH } from "@/lib/customers/phone-auth";
 
 interface CustomerRegisterPanelProps {
   storeSlug: string;
@@ -47,6 +49,8 @@ export function CustomerRegisterPanel({
   const [displayName, setDisplayName] = useState(suggestedDisplayName ?? "");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -62,6 +66,8 @@ export function CustomerRegisterPanel({
       nextPath,
       displayName,
       phone,
+      password,
+      confirmPassword,
       email: email.trim() || null,
       orderId,
     });
@@ -92,6 +98,7 @@ export function CustomerRegisterPanel({
       storeSlug,
       nextPath,
       phone,
+      password,
       orderId,
     });
 
@@ -232,12 +239,12 @@ export function CustomerRegisterPanel({
               Iniciar sesión
             </h2>
             <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-              Usa el mismo WhatsApp con el que te registraste. Sin contraseñas.
+              Entra con tu teléfono y contraseña.
             </p>
           </>
         ) : (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Usa el mismo WhatsApp con el que te registraste. Sin contraseñas.
+            Entra con tu teléfono y contraseña.
           </p>
         )}
 
@@ -256,14 +263,14 @@ export function CustomerRegisterPanel({
             <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
           </div>
           <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
-            o con WhatsApp
+            o con teléfono
           </p>
         </div>
 
         <form onSubmit={handleLoginSubmit} className="space-y-4">
           <div>
             <label htmlFor="phone_login" className="label-field">
-              Teléfono (WhatsApp)
+              Teléfono
             </label>
             <input
               id="phone_login"
@@ -275,6 +282,21 @@ export function CustomerRegisterPanel({
               onChange={(e) => setPhone(e.target.value)}
               className="input-field"
               placeholder="0412 1234567"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password_login" className="label-field">
+              Contraseña
+            </label>
+            <PasswordInput
+              id="password_login"
+              autoComplete="current-password"
+              required
+              minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Tu contraseña"
             />
           </div>
 
@@ -300,7 +322,7 @@ export function CustomerRegisterPanel({
             </button>
           ) : (
             <span className="font-medium text-zinc-700 dark:text-zinc-300">
-              Regístrate con tu nombre y WhatsApp.
+              Regístrate con tu nombre, teléfono y contraseña.
             </span>
           )}
         </p>
@@ -328,15 +350,15 @@ export function CustomerRegisterPanel({
             {storeName}
           </p>
           <h2 className="mt-2 text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
-            Regístrate en segundos
+            Crea tu cuenta
           </h2>
           <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-            Sin contraseñas. Solo tu nombre y WhatsApp para comprar más rápido.
+            Nombre, teléfono y una contraseña para guardar tus pedidos.
           </p>
         </>
       ) : (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Sin contraseñas. Solo tu nombre y WhatsApp para comprar más rápido.
+          Nombre, teléfono y una contraseña para guardar tus pedidos.
         </p>
       )}
 
@@ -355,7 +377,7 @@ export function CustomerRegisterPanel({
           <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
         </div>
         <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
-          o en 5 segundos
+          o con teléfono
         </p>
       </div>
 
@@ -379,7 +401,7 @@ export function CustomerRegisterPanel({
 
         <div>
           <label htmlFor="phone" className="label-field">
-            Teléfono (WhatsApp)
+            Teléfono
           </label>
           <input
             id="phone"
@@ -391,6 +413,36 @@ export function CustomerRegisterPanel({
             onChange={(e) => setPhone(e.target.value)}
             className="input-field"
             placeholder="0412 1234567"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="password" className="label-field">
+            Contraseña
+          </label>
+          <PasswordInput
+            id="password"
+            autoComplete="new-password"
+            required
+            minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={`Mínimo ${CUSTOMER_MIN_PASSWORD_LENGTH} caracteres`}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="confirm_password" className="label-field">
+            Confirmar contraseña
+          </label>
+          <PasswordInput
+            id="confirm_password"
+            autoComplete="new-password"
+            required
+            minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Repite la contraseña"
           />
         </div>
 
@@ -412,7 +464,7 @@ export function CustomerRegisterPanel({
         {error ? <p className="alert-error">{error}</p> : null}
 
         <button type="submit" disabled={isBusy} className="btn-primary w-full">
-          {loading ? "Entrando…" : `Unirme a ${storeName}`}
+          {loading ? "Creando cuenta…" : `Unirme a ${storeName}`}
         </button>
       </form>
 
@@ -430,7 +482,7 @@ export function CustomerRegisterPanel({
             Iniciar sesión
           </button>
         ) : (
-          <span>Usa el mismo WhatsApp y entrarás al instante.</span>
+          <span>Inicia sesión con tu teléfono y contraseña.</span>
         )}
       </p>
 

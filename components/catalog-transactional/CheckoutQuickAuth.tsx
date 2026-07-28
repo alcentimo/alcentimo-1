@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { quickRegisterOrSignInCustomerInline } from "@/lib/customers/register-actions";
+import { CUSTOMER_MIN_PASSWORD_LENGTH } from "@/lib/customers/phone-auth";
 
 interface CheckoutQuickAuthProps {
   storeSlug: string;
@@ -19,7 +20,7 @@ interface CheckoutQuickAuthProps {
   }) => void;
 }
 
-/** Registro / acceso instantáneo sin salir del checkout. */
+/** Registro / acceso con teléfono + contraseña sin salir del checkout. */
 export function CheckoutQuickAuth({
   storeSlug,
   variant = "checkout",
@@ -30,6 +31,8 @@ export function CheckoutQuickAuth({
 }: CheckoutQuickAuthProps) {
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [phone, setPhone] = useState(initialPhone);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -44,6 +47,8 @@ export function CheckoutQuickAuth({
       storeSlug,
       displayName,
       phone,
+      password,
+      confirmPassword,
       orderId,
     });
 
@@ -66,12 +71,12 @@ export function CheckoutQuickAuth({
   return (
     <div className="txn-checkout-quick-auth">
       <p className="txn-checkout-section-title">
-        {isPostPurchase ? "Guardar con WhatsApp" : "Accede en segundos"}
+        {isPostPurchase ? "Guardar mi cuenta" : "Accede en segundos"}
       </p>
       <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
         {isPostPurchase
-          ? "Confirmamos tu nombre y número. La próxima vez autocompletamos todo."
-          : "Usa tu WhatsApp: la próxima vez autocompletamos tus datos y guardamos tu dirección."}
+          ? "Nombre, teléfono y contraseña para guardar tus datos."
+          : "Crea o entra con tu teléfono y contraseña. Sin SMS."}
       </p>
       <form onSubmit={handleSubmit} className="space-y-3">
         <label className="txn-field">
@@ -88,7 +93,7 @@ export function CheckoutQuickAuth({
           />
         </label>
         <label className="txn-field">
-          <span>WhatsApp</span>
+          <span>Teléfono</span>
           <input
             type="tel"
             required
@@ -99,6 +104,32 @@ export function CheckoutQuickAuth({
             onChange={(event) => setPhone(event.target.value)}
             className="txn-input"
             placeholder="0412 1234567"
+          />
+        </label>
+        <label className="txn-field">
+          <span>Contraseña</span>
+          <input
+            type="password"
+            required
+            minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="txn-input"
+            placeholder={`Mínimo ${CUSTOMER_MIN_PASSWORD_LENGTH} caracteres`}
+          />
+        </label>
+        <label className="txn-field">
+          <span>Confirmar contraseña</span>
+          <input
+            type="password"
+            required
+            minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            className="txn-input"
+            placeholder="Repite la contraseña"
           />
         </label>
         {error ? (
@@ -115,7 +146,7 @@ export function CheckoutQuickAuth({
           ) : isPostPurchase ? (
             "Guardar mis datos"
           ) : (
-            "Continuar con mi WhatsApp"
+            "Continuar"
           )}
         </button>
       </form>

@@ -1,6 +1,6 @@
 "use server";
 
-import { randomBytes } from "crypto";
+import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
@@ -14,7 +14,10 @@ import {
 } from "@/lib/customers/ensure-customer-profile";
 import {
   buildCustomerAuthEmail,
+  CUSTOMER_PASSWORD_SET_META_KEY,
+  hasCustomerPasswordSet,
   isSyntheticCustomerAuthEmail,
+  validateCustomerPassword,
   validateCustomerPhoneInput,
   validateCustomerRegistrationInput,
 } from "@/lib/customers/phone-auth";
@@ -47,62 +50,133 @@ function isExistingUserError(message: string): boolean {
   );
 }
 
-async function establishPasswordlessSession(authEmail: string): Promise<
-  | { ok: true }
-  | { ok: false; error: string }
-> {
+/** Obtiene el usuario Auth por email sintético sin enviar correo. */
+async function lookupAuthUserByEmail(authEmail: string): Promise<User | null> {
   const admin = createAdminClient();
-  const supabase = await createClient();
-  const password = randomBytes(32).toString("hex");
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email: authEmail,
+  });
 
-  const { error: createError } = await admin.auth.admin.createUser({
+  if (error || !data.user) {
+    return null;
+  }
+
+  return data.user;
+}
+
+async function signInWithCustomerPassword(
+  authEmail: string,
+  password: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
     email: authEmail,
     password,
+  });
+
+  if (error) {
+    const message = error.message.toLowerCase();
+    if (
+      message.includes("invalid") ||
+      message.includes("credentials") ||
+      message.includes("password")
+    ) {
+      return {
+        ok: false,
+        error: "Teléfono o contraseña incorrectos.",
+      };
+    }
+    return { ok: false, error: error.message };
+  }
+
+  return { ok: true };
+}
+
+/**
+ * Crea cuenta con contraseña o reclama una cuenta legacy sin clave definida.
+ * No inicia sesión mágica ni genera claves aleatorias.
+ */
+async function establishPasswordSession(input: {
+  authEmail: string;
+  password: string;
+  displayName: string;
+  phone: string;
+  allowLegacyPasswordClaim: boolean;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const admin = createAdminClient();
+
+  const { error: createError } = await admin.auth.admin.createUser({
+    email: input.authEmail,
+    password: input.password,
     email_confirm: true,
+    user_metadata: {
+      display_name: input.displayName,
+      phone: input.phone,
+      [CUSTOMER_PASSWORD_SET_META_KEY]: true,
+    },
   });
 
   if (!createError) {
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: authEmail,
-      password,
-    });
-
-    if (signInError) {
-      return { ok: false, error: signInError.message };
-    }
-
-    return { ok: true };
+    return signInWithCustomerPassword(input.authEmail, input.password);
   }
 
   if (!isExistingUserError(createError.message)) {
     return { ok: false, error: createError.message };
   }
 
-  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink(
-    {
-      type: "magiclink",
-      email: authEmail,
-    },
+  const existingSignIn = await signInWithCustomerPassword(
+    input.authEmail,
+    input.password,
   );
+  if (existingSignIn.ok) {
+    return existingSignIn;
+  }
 
-  const tokenHash = linkData?.properties?.hashed_token;
-  if (linkError || !tokenHash) {
+  if (!input.allowLegacyPasswordClaim) {
     return {
       ok: false,
-      error: linkError?.message ?? "No se pudo iniciar sesión con tu teléfono.",
+      error: "Ya tienes una cuenta. Inicia sesión con tu teléfono y contraseña.",
     };
   }
 
-  const { error: otpError } = await supabase.auth.verifyOtp({
-    token_hash: tokenHash,
-    type: "email",
-  });
-
-  if (otpError) {
-    return { ok: false, error: otpError.message };
+  const existingUser = await lookupAuthUserByEmail(input.authEmail);
+  if (!existingUser) {
+    return {
+      ok: false,
+      error: "Ya tienes una cuenta. Inicia sesión con tu teléfono y contraseña.",
+    };
   }
 
-  return { ok: true };
+  if (hasCustomerPasswordSet(existingUser.user_metadata)) {
+    return {
+      ok: false,
+      error: "Ya tienes una cuenta. Inicia sesión con tu teléfono y contraseña.",
+    };
+  }
+
+  const { error: updateError } = await admin.auth.admin.updateUserById(
+    existingUser.id,
+    {
+      password: input.password,
+      user_metadata: {
+        ...(existingUser.user_metadata ?? {}),
+        display_name:
+          input.displayName ||
+          (typeof existingUser.user_metadata?.display_name === "string"
+            ? existingUser.user_metadata.display_name
+            : undefined),
+        phone: input.phone,
+        [CUSTOMER_PASSWORD_SET_META_KEY]: true,
+      },
+    },
+  );
+
+  if (updateError) {
+    return { ok: false, error: updateError.message };
+  }
+
+  return signInWithCustomerPassword(input.authEmail, input.password);
 }
 
 async function finalizeLinkedCustomer(input: {
@@ -112,6 +186,7 @@ async function finalizeLinkedCustomer(input: {
   phone: string;
   contactEmail?: string | null;
   orderId?: string | null;
+  markPasswordSet?: boolean;
 }): Promise<LinkCustomerToStoreResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
   const supabase = await createClient();
@@ -134,6 +209,10 @@ async function finalizeLinkedCustomer(input: {
 
   if (input.contactEmail) {
     metadata.contact_email = input.contactEmail;
+  }
+
+  if (input.markPasswordSet) {
+    metadata[CUSTOMER_PASSWORD_SET_META_KEY] = true;
   }
 
   const { error: updateError } = await admin.auth.admin.updateUserById(user.id, {
@@ -176,55 +255,12 @@ async function finalizeLinkedCustomer(input: {
   };
 }
 
-async function establishExistingPasswordlessSession(authEmail: string): Promise<
-  | { ok: true }
-  | { ok: false; error: string; notFound?: boolean }
-> {
-  const admin = createAdminClient();
-  const supabase = await createClient();
-
-  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink(
-    {
-      type: "magiclink",
-      email: authEmail,
-    },
-  );
-
-  const tokenHash = linkData?.properties?.hashed_token;
-  if (linkError || !tokenHash) {
-    const message = (linkError?.message ?? "").toLowerCase();
-    const notFound =
-      message.includes("not found") ||
-      message.includes("no user") ||
-      message.includes("does not exist") ||
-      message.includes("user not found");
-
-    return {
-      ok: false,
-      notFound,
-      error: notFound
-        ? "No encontramos una cuenta con ese WhatsApp. Crea una cuenta nueva."
-        : (linkError?.message ?? "No se pudo iniciar sesión con tu teléfono."),
-    };
-  }
-
-  const { error: otpError } = await supabase.auth.verifyOtp({
-    token_hash: tokenHash,
-    type: "email",
-  });
-
-  if (otpError) {
-    return { ok: false, error: otpError.message };
-  }
-
-  return { ok: true };
-}
-
-/** Acceso de cliente existente solo con WhatsApp (sin crear cuenta nueva). */
+/** Inicio de sesión con teléfono + contraseña (sin SMS). */
 export async function signInCustomerByPhone(input: {
   storeSlug: string;
   nextPath?: string | null;
   phone: string;
+  password: string;
   orderId?: string | null;
 }): Promise<LinkCustomerToStoreResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
@@ -237,15 +273,53 @@ export async function signInCustomerByPhone(input: {
     return { ok: false, error: phoneValidation.error };
   }
 
+  const passwordValidation = validateCustomerPassword(input.password);
+  if (!passwordValidation.ok) {
+    return { ok: false, error: passwordValidation.error };
+  }
+
   try {
     const authEmail = buildCustomerAuthEmail(phoneValidation.phone);
-    const sessionResult = await establishExistingPasswordlessSession(authEmail);
+    let sessionResult = await signInWithCustomerPassword(
+      authEmail,
+      passwordValidation.password,
+    );
 
     if (!sessionResult.ok) {
-      return {
-        ok: false,
-        error: sessionResult.error,
-      };
+      const existingUser = await lookupAuthUserByEmail(authEmail);
+      if (!existingUser) {
+        return {
+          ok: false,
+          error: "No encontramos una cuenta con ese teléfono. Crea una cuenta.",
+        };
+      }
+
+      if (!hasCustomerPasswordSet(existingUser.user_metadata)) {
+        const admin = createAdminClient();
+        const { error: updateError } = await admin.auth.admin.updateUserById(
+          existingUser.id,
+          {
+            password: passwordValidation.password,
+            user_metadata: {
+              ...(existingUser.user_metadata ?? {}),
+              [CUSTOMER_PASSWORD_SET_META_KEY]: true,
+            },
+          },
+        );
+
+        if (updateError) {
+          return { ok: false, error: updateError.message };
+        }
+
+        sessionResult = await signInWithCustomerPassword(
+          authEmail,
+          passwordValidation.password,
+        );
+      }
+    }
+
+    if (!sessionResult.ok) {
+      return sessionResult;
     }
 
     const supabase = await createClient();
@@ -282,7 +356,7 @@ export async function signInCustomerByPhone(input: {
       return {
         ok: false,
         error:
-          "Tu cuenta necesita completar el nombre. Usa “Crear cuenta” con el mismo WhatsApp.",
+          "Tu cuenta necesita completar el nombre. Usa “Crear cuenta” con el mismo teléfono.",
       };
     }
 
@@ -300,6 +374,7 @@ export async function signInCustomerByPhone(input: {
             ? null
             : user.email,
       orderId: input.orderId,
+      markPasswordSet: true,
     });
   } catch (err) {
     const message =
@@ -308,12 +383,14 @@ export async function signInCustomerByPhone(input: {
   }
 }
 
-/** Registro o acceso instantáneo con nombre + WhatsApp (sin contraseña). */
+/** Registro con nombre + teléfono + contraseña (sin SMS ni acceso automático). */
 export async function quickRegisterOrSignInCustomer(input: {
   storeSlug: string;
   nextPath?: string | null;
   displayName: string;
   phone: string;
+  password: string;
+  confirmPassword?: string;
   email?: string | null;
   orderId?: string | null;
 }): Promise<LinkCustomerToStoreResult> {
@@ -322,14 +399,31 @@ export async function quickRegisterOrSignInCustomer(input: {
     return { ok: false, error: "Enlace de registro inválido: falta la tienda." };
   }
 
-  const validation = validateCustomerRegistrationInput(input);
+  const validation = validateCustomerRegistrationInput({
+    displayName: input.displayName,
+    phone: input.phone,
+    email: input.email,
+    password: input.password,
+    confirmPassword: input.confirmPassword ?? input.password,
+    requirePassword: true,
+  });
   if (!validation.ok) {
     return { ok: false, error: validation.error };
   }
 
+  if (!validation.password) {
+    return { ok: false, error: "Define una contraseña para tu cuenta." };
+  }
+
   try {
     const authEmail = buildCustomerAuthEmail(validation.phone);
-    const sessionResult = await establishPasswordlessSession(authEmail);
+    const sessionResult = await establishPasswordSession({
+      authEmail,
+      password: validation.password,
+      displayName: validation.displayName,
+      phone: validation.phone,
+      allowLegacyPasswordClaim: true,
+    });
 
     if (!sessionResult.ok) {
       return sessionResult;
@@ -345,6 +439,7 @@ export async function quickRegisterOrSignInCustomer(input: {
       phone: validation.phone,
       contactEmail: validation.contactEmail,
       orderId: input.orderId,
+      markPasswordSet: true,
     });
   } catch (err) {
     const message =
@@ -369,12 +464,16 @@ export async function quickRegisterOrSignInCustomerInline(input: {
   storeSlug: string;
   displayName: string;
   phone: string;
+  password: string;
+  confirmPassword?: string;
   orderId?: string | null;
 }): Promise<InlineCustomerAuthResult> {
   const result = await quickRegisterOrSignInCustomer({
     storeSlug: input.storeSlug,
     displayName: input.displayName,
     phone: input.phone,
+    password: input.password,
+    confirmPassword: input.confirmPassword ?? input.password,
     orderId: input.orderId,
   });
 
@@ -391,7 +490,10 @@ export async function quickRegisterOrSignInCustomerInline(input: {
     return { ok: false, error: "No se pudo iniciar sesión." };
   }
 
-  const store = await resolveActiveStoreBySlug(supabase, input.storeSlug.trim().toLowerCase());
+  const store = await resolveActiveStoreBySlug(
+    supabase,
+    input.storeSlug.trim().toLowerCase(),
+  );
   if (!store) {
     return {
       ok: true,

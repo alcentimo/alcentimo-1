@@ -3,8 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { sendPasswordResetEmailAction } from "@/lib/auth/auth-email-actions";
-import { saveCustomerProfile } from "@/lib/customers/profile-actions";
+import {
+  changeCustomerPassword,
+  saveCustomerProfile,
+  CUSTOMER_MIN_PASSWORD_LENGTH,
+} from "@/lib/customers/profile-actions";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { buildCustomerWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
 
@@ -12,7 +16,7 @@ interface CustomerProfilePanelProps {
   storeSlug: string;
   storeName: string;
   contactEmail: string | null;
-  /** Solo true si el cliente tiene login con contraseña (no teléfono/OAuth). */
+  /** True si el cliente tiene login con contraseña (teléfono o email). */
   canChangePassword?: boolean;
   displayName: string | null;
   phone: string | null;
@@ -34,6 +38,9 @@ export function CustomerProfilePanel({
   const [name, setName] = useState(displayName ?? "");
   const [phoneValue, setPhoneValue] = useState(phone ?? "");
   const [addressValue, setAddressValue] = useState(deliveryAddress ?? "");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [savePending, setSavePending] = useState(false);
   const [signOutPending, setSignOutPending] = useState(false);
   const [passwordPending, setPasswordPending] = useState(false);
@@ -43,7 +50,7 @@ export function CustomerProfilePanel({
   const whatsappHelpUrl = buildCustomerWhatsAppUrl(
     whatsappPhone,
     undefined,
-    `Hola, necesito ayuda para cambiar mi contraseña en ${storeName}.`,
+    `Hola, necesito ayuda con mi cuenta en ${storeName}.`,
   );
 
   async function handleSave(e: React.FormEvent) {
@@ -88,16 +95,23 @@ export function CustomerProfilePanel({
     router.refresh();
   }
 
-  async function handlePasswordReset() {
-    if (!canChangePassword || !contactEmail) {
-      setError("Tu cuenta no usa contraseña. No es necesario restablecer el acceso.");
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canChangePassword) {
+      setError("Tu cuenta no usa contraseña.");
       return;
     }
 
     setError(null);
+    setSuccess(null);
     setPasswordPending(true);
 
-    const result = await sendPasswordResetEmailAction({ email: contactEmail });
+    const result = await changeCustomerPassword({
+      storeSlug,
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    });
 
     setPasswordPending(false);
 
@@ -106,9 +120,10 @@ export function CustomerProfilePanel({
       return;
     }
 
-    setSuccess(
-      `Te enviamos un enlace a ${contactEmail} para cambiar tu contraseña.`,
-    );
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setSuccess("Contraseña actualizada correctamente.");
   }
 
   return (
@@ -170,7 +185,11 @@ export function CustomerProfilePanel({
 
         {contactEmail ? (
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Correo de acceso: {contactEmail}
+            Correo de contacto: {contactEmail}
+          </p>
+        ) : phone ? (
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Accedes con tu teléfono y contraseña.
           </p>
         ) : null}
 
@@ -179,22 +198,71 @@ export function CustomerProfilePanel({
         </button>
       </form>
 
-      {canChangePassword && contactEmail ? (
-        <div className="card-panel space-y-3">
+      {canChangePassword ? (
+        <form
+          onSubmit={(e) => void handleChangePassword(e)}
+          className="card-panel space-y-3"
+        >
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
             Seguridad
           </h2>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Cambia tu contraseña usando la actual. Mínimo{" "}
+            {CUSTOMER_MIN_PASSWORD_LENGTH} caracteres.
+          </p>
+
+          <div>
+            <label htmlFor="current-password" className="label-field">
+              Contraseña actual
+            </label>
+            <PasswordInput
+              id="current-password"
+              autoComplete="current-password"
+              required
+              value={currentPassword}
+              disabled={passwordPending}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="new-password" className="label-field">
+              Nueva contraseña
+            </label>
+            <PasswordInput
+              id="new-password"
+              autoComplete="new-password"
+              required
+              minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
+              value={newPassword}
+              disabled={passwordPending}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="confirm-password" className="label-field">
+              Confirmar nueva contraseña
+            </label>
+            <PasswordInput
+              id="confirm-password"
+              autoComplete="new-password"
+              required
+              minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
+              value={confirmPassword}
+              disabled={passwordPending}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </div>
+
           <button
-            type="button"
-            onClick={() => void handlePasswordReset()}
+            type="submit"
             disabled={passwordPending}
             className="btn-secondary w-full"
           >
-            {passwordPending ? "Enviando enlace…" : "Cambiar contraseña"}
+            {passwordPending ? "Actualizando…" : "Cambiar contraseña"}
           </button>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Te enviaremos un enlace por correo para crear una nueva contraseña.
-          </p>
+
           {whatsappHelpUrl ? (
             <a
               href={whatsappHelpUrl}
@@ -205,11 +273,7 @@ export function CustomerProfilePanel({
               Ayuda por WhatsApp
             </a>
           ) : null}
-          <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
-            Si no llega el correo a {contactEmail}, usa el botón de arriba para
-            reenviarlo o escribe por WhatsApp.
-          </p>
-        </div>
+        </form>
       ) : null}
 
       {error ? (
