@@ -26,17 +26,10 @@ import type {
 } from "@/lib/store-settings/types";
 import { cn } from "@/lib/cn";
 
-type BannerLinkMode = "none" | "product";
-type ProductPickerIntent = "link" | "image-and-link";
-
 interface CatalogPromoBannerFieldProps {
   value?: CatalogPromoBannerSettings;
   onChange: (next: CatalogPromoBannerSettings, shouldSave?: boolean) => void;
   products?: CouponProductOption[];
-}
-
-function resolveStoredLinkMode(slide: CatalogPromoBannerSlide): BannerLinkMode {
-  return slide.productId ? "product" : "none";
 }
 
 export function CatalogPromoBannerField({
@@ -49,19 +42,13 @@ export function CatalogPromoBannerField({
   );
   const canAddSlide = promoBanner.slides.length < MAX_PROMO_BANNER_SLIDES;
   const sortedProducts = useMemo(
-    () =>
-      [...products].sort((a, b) => a.name.localeCompare(b.name, "es")),
+    () => [...products].sort((a, b) => a.name.localeCompare(b.name, "es")),
     [products],
   );
 
-  /** Modo de destino en UI (evita que “Producto” se resetee sin productId). */
-  const [linkModeBySlide, setLinkModeBySlide] = useState<
-    Record<string, BannerLinkMode>
-  >({});
-  const [productPicker, setProductPicker] = useState<{
-    slideId: string;
-    intent: ProductPickerIntent;
-  } | null>(null);
+  const [productPickerSlideId, setProductPickerSlideId] = useState<string | null>(
+    null,
+  );
   const [productSearch, setProductSearch] = useState("");
 
   function emit(next: CatalogPromoBannerSettings, shouldSave = true) {
@@ -88,68 +75,50 @@ export function CatalogPromoBannerField({
     );
   }
 
-  function getLinkMode(slide: CatalogPromoBannerSlide): BannerLinkMode {
-    return linkModeBySlide[slide.id] ?? resolveStoredLinkMode(slide);
-  }
-
-  function openProductPicker(slideId: string, intent: ProductPickerIntent) {
-    setProductSearch("");
-    // Esperar a que el <select> nativo cierre el foco antes de abrir el modal.
-    window.setTimeout(() => {
-      setProductPicker({ slideId, intent });
-    }, 0);
-  }
-
-  function setLinkMode(slideId: string, mode: BannerLinkMode) {
-    setLinkModeBySlide((current) => ({ ...current, [slideId]: mode }));
-
-    if (mode === "none") {
-      updateSlide(slideId, { productId: undefined, linkUrl: undefined }, true);
-      return;
-    }
-
-    // Mantener productId si ya había uno; abrir buscador para elegir/cambiar.
-    updateSlide(slideId, { linkUrl: undefined }, false);
-    openProductPicker(slideId, "link");
-  }
-
-  function openInventoryImagePicker(slideId: string) {
-    setLinkModeBySlide((current) => ({ ...current, [slideId]: "product" }));
-    openProductPicker(slideId, "image-and-link");
-  }
-
-  function applyProduct(
-    slideId: string,
-    product: CouponProductOption,
-    intent: ProductPickerIntent,
-  ) {
-    setLinkModeBySlide((current) => ({ ...current, [slideId]: "product" }));
+  /** Galería / cámara: nueva imagen sin enlace a producto. */
+  function handleManualImageChange(slideId: string, mobileImageUrl: string) {
     updateSlide(
       slideId,
       {
-        productId: product.id,
+        mobileImageUrl,
+        productId: undefined,
         linkUrl: undefined,
-        ...(intent === "image-and-link" && product.thumbUrl
-          ? { mobileImageUrl: product.thumbUrl }
-          : {}),
       },
       true,
     );
-    setProductPicker(null);
+  }
+
+  function openInventoryImagePicker(slideId: string) {
+    setProductSearch("");
+    window.setTimeout(() => {
+      setProductPickerSlideId(slideId);
+    }, 0);
+  }
+
+  function applyProductImageAndLink(
+    slideId: string,
+    product: CouponProductOption,
+  ) {
+    if (!product.thumbUrl) return;
+
+    updateSlide(
+      slideId,
+      {
+        mobileImageUrl: product.thumbUrl,
+        productId: product.id,
+        linkUrl: undefined,
+      },
+      true,
+    );
+    setProductPickerSlideId(null);
     setProductSearch("");
   }
 
-  function clearProduct(slideId: string) {
-    setLinkModeBySlide((current) => ({ ...current, [slideId]: "none" }));
+  function clearProductLink(slideId: string) {
     updateSlide(slideId, { productId: undefined, linkUrl: undefined }, true);
   }
 
   function removeSlide(slideId: string) {
-    setLinkModeBySlide((current) => {
-      const next = { ...current };
-      delete next[slideId];
-      return next;
-    });
     emit(
       {
         ...promoBanner,
@@ -187,8 +156,8 @@ export function CatalogPromoBannerField({
     );
   }, [productSearch, sortedProducts]);
 
-  const pickerSlide = productPicker
-    ? promoBanner.slides.find((slide) => slide.id === productPicker.slideId)
+  const pickerSlide = productPickerSlideId
+    ? promoBanner.slides.find((slide) => slide.id === productPickerSlideId)
     : null;
 
   return (
@@ -213,8 +182,8 @@ export function CatalogPromoBannerField({
       {promoBanner.enabled ? (
         <div className="design-promo-banner-slides">
           <p className="text-xs leading-relaxed text-zinc-500">
-            La imagen se elige con “Cambiar imagen”. El destino define a qué
-            producto redirige el clic en el catálogo.
+            Usa “Cambiar imagen” para cargar una foto (sin enlace) o “Usar
+            imagen de un producto” para vincular el clic automáticamente.
           </p>
 
           {promoBanner.slides.length === 0 ? (
@@ -230,8 +199,7 @@ export function CatalogPromoBannerField({
             <>
               <ul className="design-promo-banner-list">
                 {promoBanner.slides.map((slide, index) => {
-                  const linkMode = getLinkMode(slide);
-                  const selectedProduct = sortedProducts.find(
+                  const linkedProduct = sortedProducts.find(
                     (product) => product.id === slide.productId,
                   );
 
@@ -246,7 +214,7 @@ export function CatalogPromoBannerField({
                           value={slide.mobileImageUrl}
                           required
                           onChange={(mobileImageUrl) =>
-                            updateSlide(slide.id, { mobileImageUrl }, true)
+                            handleManualImageChange(slide.id, mobileImageUrl)
                           }
                           onPickFromInventory={() =>
                             openInventoryImagePicker(slide.id)
@@ -254,85 +222,38 @@ export function CatalogPromoBannerField({
                           inventoryOptionLabel="Usar imagen de un producto"
                         />
 
-                        <div className="design-promo-banner-card-link space-y-2">
-                          <label
-                            htmlFor={`promo-banner-link-mode-${slide.id}`}
-                            className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
-                          >
-                            Destino al hacer clic
-                          </label>
-                          <select
-                            id={`promo-banner-link-mode-${slide.id}`}
-                            value={linkMode}
-                            onChange={(event) => {
-                              const nextMode = event.target
-                                .value as BannerLinkMode;
-                              event.currentTarget.blur();
-                              setLinkMode(slide.id, nextMode);
-                            }}
-                            className="input-field mt-1 py-2 text-sm"
-                          >
-                            <option value="none">Sin enlace</option>
-                            <option value="product">
-                              Vincular con un producto
-                            </option>
-                          </select>
-
-                          {linkMode === "product" ? (
-                            <div className="space-y-2">
-                              {selectedProduct ? (
-                                <div className="flex items-center gap-2.5 rounded-xl border border-teal-200 bg-teal-50/70 px-2.5 py-2 dark:border-teal-900/50 dark:bg-teal-950/30">
-                                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800">
-                                    {selectedProduct.thumbUrl ? (
-                                      <Image
-                                        src={selectedProduct.thumbUrl}
-                                        alt=""
-                                        fill
-                                        sizes="40px"
-                                        className="object-cover"
-                                      />
-                                    ) : (
-                                      <Package className="m-auto h-4 w-4 text-zinc-400" />
-                                    )}
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                                      {selectedProduct.name}
-                                    </p>
-                                    <p className="text-[11px] text-zinc-500">
-                                      El clic del banner abre este producto
-                                    </p>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => clearProduct(slide.id)}
-                                    className="rounded-md p-1.5 text-zinc-400 hover:bg-white/80 hover:text-zinc-700 dark:hover:bg-zinc-900"
-                                    aria-label="Quitar producto vinculado"
-                                  >
-                                    <X className="h-4 w-4" aria-hidden="true" />
-                                  </button>
-                                </div>
+                        {linkedProduct ? (
+                          <div className="flex items-center gap-2 rounded-xl border border-teal-200 bg-teal-50/70 px-2.5 py-2 dark:border-teal-900/50 dark:bg-teal-950/30">
+                            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-800">
+                              {linkedProduct.thumbUrl ? (
+                                <Image
+                                  src={linkedProduct.thumbUrl}
+                                  alt=""
+                                  fill
+                                  sizes="32px"
+                                  className="object-cover"
+                                />
                               ) : (
-                                <p className="text-xs text-zinc-500">
-                                  Elige a qué producto redirige el clic del
-                                  banner.
-                                </p>
+                                <Package className="m-auto h-3.5 w-3.5 text-zinc-400" />
                               )}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openProductPicker(slide.id, "link")
-                                }
-                                className="btn-brand-outline inline-flex w-full items-center justify-center gap-2 px-3 py-2 text-xs"
-                              >
-                                <Search className="h-3.5 w-3.5" aria-hidden="true" />
-                                {selectedProduct
-                                  ? "Cambiar producto vinculado"
-                                  : "Buscar producto…"}
-                              </button>
                             </div>
-                          ) : null}
-                        </div>
+                            <p className="min-w-0 flex-1 truncate text-xs text-zinc-600 dark:text-zinc-300">
+                              Clic abre{" "}
+                              <span className="font-medium text-zinc-900 dark:text-zinc-50">
+                                {linkedProduct.name}
+                              </span>
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => clearProductLink(slide.id)}
+                              className="rounded-md p-1 text-zinc-400 hover:bg-white/80 hover:text-zinc-700 dark:hover:bg-zinc-900"
+                              aria-label="Quitar vínculo con el producto"
+                              title="Quitar vínculo (conserva la imagen)"
+                            >
+                              <X className="h-3.5 w-3.5" aria-hidden="true" />
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
 
                       <button
@@ -369,10 +290,10 @@ export function CatalogPromoBannerField({
       ) : null}
 
       <Dialog
-        open={Boolean(productPicker)}
+        open={Boolean(productPickerSlideId)}
         onOpenChange={(open) => {
           if (!open) {
-            setProductPicker(null);
+            setProductPickerSlideId(null);
             setProductSearch("");
           }
         }}
@@ -380,20 +301,15 @@ export function CatalogPromoBannerField({
         <DialogContent
           className="max-w-md"
           onClose={() => {
-            setProductPicker(null);
+            setProductPickerSlideId(null);
             setProductSearch("");
           }}
         >
           <DialogHeader>
-            <DialogTitle>
-              {productPicker?.intent === "image-and-link"
-                ? "Usar imagen de un producto"
-                : "Vincular con un producto"}
-            </DialogTitle>
+            <DialogTitle>Usar imagen de un producto</DialogTitle>
             <DialogDescription>
-              {productPicker?.intent === "image-and-link"
-                ? "Elige un producto para usar su foto en el banner y vincular el clic."
-                : "Elige el producto al que redirigirá el clic del banner."}
+              El banner usará su foto y el clic abrirá ese producto en el
+              catálogo.
             </DialogDescription>
           </DialogHeader>
 
@@ -424,8 +340,7 @@ export function CatalogPromoBannerField({
             ) : (
               filteredProducts.map((product) => {
                 const selected = pickerSlide?.productId === product.id;
-                const missingThumb =
-                  productPicker?.intent === "image-and-link" && !product.thumbUrl;
+                const missingThumb = !product.thumbUrl;
 
                 return (
                   <li key={product.id}>
@@ -433,11 +348,10 @@ export function CatalogPromoBannerField({
                       type="button"
                       disabled={missingThumb}
                       onClick={() => {
-                        if (!productPicker) return;
-                        applyProduct(
-                          productPicker.slideId,
+                        if (!productPickerSlideId || missingThumb) return;
+                        applyProductImageAndLink(
+                          productPickerSlideId,
                           product,
-                          productPicker.intent,
                         );
                       }}
                       className={cn(
@@ -483,7 +397,7 @@ export function CatalogPromoBannerField({
               type="button"
               className="btn-secondary w-full sm:w-auto"
               onClick={() => {
-                setProductPicker(null);
+                setProductPickerSlideId(null);
                 setProductSearch("");
               }}
             >
