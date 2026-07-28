@@ -692,7 +692,7 @@ export function CheckoutPanel({
               <>
                 {multiLocation ? (
                   <div className="mb-4">
-                    <CatalogLocationPicker />
+                    <CatalogLocationPicker showFulfillmentModes />
                   </div>
                 ) : null}
 
