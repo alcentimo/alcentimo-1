@@ -20,6 +20,7 @@ import { getPublicSiteHost } from "@/lib/site-url";
 import { STORE_RUBRO_OPTIONS, normalizeStoreRubro, type StoreRubro } from "@/src/config/categories";
 import { InterfacePreferencesSettingsSection } from "@/components/dashboard/settings/InterfacePreferencesSettingsSection";
 import { SettingsOptionCard } from "@/components/dashboard/settings/SettingsOptionCard";
+import { StoreDescriptionAiButton } from "@/components/dashboard/settings/StoreDescriptionAiButton";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/cn";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
@@ -261,9 +262,22 @@ export function GeneralTab({ store }: GeneralTabProps) {
             />
 
             <div className="mt-5">
-              <Label htmlFor="store-description" className="payment-field-label">
-                Descripción
-              </Label>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label htmlFor="store-description" className="payment-field-label">
+                  Descripción
+                </Label>
+                <StoreDescriptionAiButton
+                  storeName={storeName}
+                  storeRubro={rubroTienda}
+                  draftDescription={description}
+                  disabled={saving}
+                  onGenerated={(nextDescription) => {
+                    setDescription(nextDescription);
+                    setSuccessMessage(null);
+                    setError(null);
+                  }}
+                />
+              </div>
               <textarea
                 id="store-description"
                 rows={4}

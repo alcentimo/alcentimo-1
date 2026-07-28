@@ -8,6 +8,8 @@ export const AI_MAX_TOKENS = {
   messageTemplate: 220,
   /** Título + descripción corta + descripción larga */
   productCopy: 450,
+  /** Descripción de identidad de marca (catálogo) */
+  storeDescription: 220,
   /** Saludo onboarding (2-3 frases) */
   onboardingWelcome: 100,
   /** JSON con 3 productos de ejemplo */
@@ -26,6 +28,8 @@ export const AI_MAX_TOKENS = {
 export const AI_MAX_INPUT_CHARS = {
   draftTitle: 80,
   draftDescription: 400,
+  storeName: 120,
+  storeDescriptionDraft: 500,
   userMessage: 500,
   businessHint: 120,
   orderProducts: 5,
