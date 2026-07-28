@@ -2,11 +2,24 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Check, ImagePlus, Loader2, Trash2 } from "lucide-react";
+import {
+  Camera,
+  Check,
+  ImagePlus,
+  Images,
+  Loader2,
+  Package,
+  Trash2,
+} from "lucide-react";
+import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { uploadCatalogBannerImage } from "@/lib/settings/actions";
 import { compressBannerImageForUpload } from "@/lib/client-image-compress";
 import type { BannerImageVariant } from "@/lib/banner-image";
 import { BANNER_OPTIMIZE_HINT } from "@/lib/banner-image";
+import {
+  PRODUCT_IMAGE_CAMERA_CAPTURE,
+  PRODUCT_IMAGE_FILE_ACCEPT,
+} from "@/lib/product-image-picker";
 import { cn } from "@/lib/cn";
 
 interface CatalogBannerImageUploadProps {
@@ -19,6 +32,9 @@ interface CatalogBannerImageUploadProps {
   disabled?: boolean;
   required?: boolean;
   layout?: "default" | "compact";
+  /** Tercera opción del menú: usar imagen de un producto del inventario. */
+  onPickFromInventory?: () => void;
+  inventoryOptionLabel?: string;
 }
 
 export function CatalogBannerImageUpload({
@@ -31,8 +47,11 @@ export function CatalogBannerImageUpload({
   disabled = false,
   required = false,
   layout = "default",
+  onPickFromInventory,
+  inventoryOptionLabel = "Usar imagen de un producto",
 }: CatalogBannerImageUploadProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -41,6 +60,7 @@ export function CatalogBannerImageUpload({
 
   const isBusy = compressing || pending;
   const displayUrl = previewUrl ?? (value || null);
+  const pickLabel = displayUrl ? "Cambiar imagen" : "Subir imagen";
 
   useEffect(() => {
     return () => {
@@ -107,15 +127,111 @@ export function CatalogBannerImageUpload({
     event.target.value = "";
   }
 
+  function triggerInput(input: HTMLInputElement | null) {
+    if (!input || disabled || isBusy) return;
+    input.value = "";
+    input.click();
+  }
+
   function handleRemove() {
     clearPreview();
     setUploadSuccess(false);
     onChange("");
   }
 
+  const fileInputs = (
+    <>
+      <input
+        ref={galleryInputRef}
+        id={`${id}-gallery`}
+        type="file"
+        accept={PRODUCT_IMAGE_FILE_ACCEPT}
+        className="sr-only"
+        tabIndex={-1}
+        disabled={disabled || isBusy}
+        onChange={handleFileChange}
+      />
+      <input
+        ref={cameraInputRef}
+        id={`${id}-camera`}
+        type="file"
+        accept={PRODUCT_IMAGE_FILE_ACCEPT}
+        capture={PRODUCT_IMAGE_CAMERA_CAPTURE}
+        className="sr-only"
+        tabIndex={-1}
+        disabled={disabled || isBusy}
+        onChange={handleFileChange}
+      />
+    </>
+  );
+
+  const sourceMenu = (close: () => void) => (
+    <>
+      <DropdownMenuItem
+        disabled={disabled || isBusy}
+        onClick={() => {
+          triggerInput(galleryInputRef.current);
+          close();
+        }}
+      >
+        <Images className="h-4 w-4 shrink-0 text-teal-600" aria-hidden="true" />
+        Cargar desde galería
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        disabled={disabled || isBusy}
+        onClick={() => {
+          triggerInput(cameraInputRef.current);
+          close();
+        }}
+      >
+        <Camera className="h-4 w-4 shrink-0 text-teal-600" aria-hidden="true" />
+        Tomar una foto
+      </DropdownMenuItem>
+      {onPickFromInventory ? (
+        <DropdownMenuItem
+          disabled={disabled || isBusy}
+          onClick={() => {
+            onPickFromInventory();
+            close();
+          }}
+        >
+          <Package className="h-4 w-4 shrink-0 text-teal-600" aria-hidden="true" />
+          {inventoryOptionLabel}
+        </DropdownMenuItem>
+      ) : null}
+    </>
+  );
+
+  const pickButton = (
+    <DropdownMenu
+      align="start"
+      className="w-full sm:w-auto"
+      menuClassName="min-w-[15.5rem]"
+      trigger={
+        <button
+          type="button"
+          disabled={disabled || isBusy}
+          className="btn-brand-outline inline-flex items-center gap-2 self-start px-3 py-1.5 text-xs"
+          aria-label={pickLabel}
+          aria-haspopup="menu"
+        >
+          {isBusy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          ) : (
+            <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
+          {pickLabel}
+        </button>
+      }
+    >
+      {sourceMenu}
+    </DropdownMenu>
+  );
+
   if (layout === "compact") {
     return (
       <div className="design-banner-upload-compact">
+        {fileInputs}
         {error ? (
           <p
             className="mb-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400"
@@ -162,28 +278,10 @@ export function CatalogBannerImageUpload({
           </div>
 
           <div className="flex min-w-0 flex-col gap-1.5">
-            <input
-              ref={inputRef}
-              id={id}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              className="sr-only"
-              disabled={disabled || isBusy}
-              onChange={handleFileChange}
-            />
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              disabled={disabled || isBusy}
-              className="btn-brand-outline inline-flex items-center gap-2 self-start px-3 py-1.5 text-xs"
-            >
-              {isBusy ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-              ) : (
-                <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
-              )}
-              {displayUrl ? "Cambiar imagen" : "Subir imagen"}
-            </button>
+            {pickButton}
+            <p className="text-[11px] leading-snug text-zinc-500">
+              Galería, cámara o imagen de un producto.
+            </p>
           </div>
         </div>
       </div>
@@ -192,9 +290,10 @@ export function CatalogBannerImageUpload({
 
   return (
     <div className="design-banner-upload">
+      {fileInputs}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <label htmlFor={id} className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+          <label htmlFor={`${id}-gallery`} className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
             {label}
             {required ? (
               <span className="ml-1 text-xs font-normal text-zinc-400">(requerida)</span>
@@ -255,28 +354,7 @@ export function CatalogBannerImageUpload({
         </div>
 
         <div className="flex min-w-0 flex-col gap-1.5">
-          <input
-            ref={inputRef}
-            id={id}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            className="sr-only"
-            disabled={disabled || isBusy}
-            onChange={handleFileChange}
-          />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={disabled || isBusy}
-            className="btn-brand-outline inline-flex items-center gap-2 self-start px-3 py-1.5 text-xs"
-          >
-            {isBusy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-            ) : (
-              <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
-            )}
-            {displayUrl ? "Cambiar imagen" : "Subir imagen"}
-          </button>
+          {pickButton}
           {displayUrl ? (
             <button
               type="button"
