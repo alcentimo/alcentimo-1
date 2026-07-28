@@ -390,25 +390,17 @@ export function CustomDomainSection({
             />
             <div className="min-w-0">
               <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                ¿Aún no tienes un dominio? Adquiérelo de forma segura en nuestros
-                proveedores recomendados:
+                ¿Aún no tienes un dominio? Adquiérelo de forma segura en nuestro
+                proveedor recomendado:
               </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <a
-                  href="https://www.namecheap.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-                >
-                  Comprar en Namecheap
-                </a>
+              <div className="mt-3">
                 <a
                   href="https://www.cloudflare.com/es-es/products/registrar/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                  className="inline-flex items-center rounded-lg bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
                 >
-                  Comprar en Cloudflare
+                  Comprar en Cloudflare Registrar
                 </a>
               </div>
               <p className="mt-4 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
