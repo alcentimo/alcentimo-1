@@ -6,15 +6,19 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import type { StoreLocation } from "@/lib/locations/types";
 import type { VariantLocationStock } from "@/lib/locations/types";
 import {
+  hasFulfillmentBootstrapped,
+  markFulfillmentBootstrapped,
   readFulfillmentPrefs,
   writeFulfillmentPrefs,
 } from "@/lib/catalog/fulfillment-storage";
+import { resolveNearestStoreLocation } from "@/lib/catalog/resolve-nearest-location";
 
 export type CatalogFulfillmentMode = "delivery" | "pickup";
 
@@ -31,6 +35,13 @@ interface CatalogFulfillmentContextValue {
 
 const CatalogFulfillmentContext =
   createContext<CatalogFulfillmentContextValue | null>(null);
+
+function resolveDefaultLocationId(locations: StoreLocation[]): string | null {
+  const active = locations.filter((loc) => loc.is_active);
+  return (
+    active.find((loc) => loc.is_default)?.id ?? active[0]?.id ?? null
+  );
+}
 
 export function CatalogFulfillmentProvider({
   storeSlug,
@@ -70,10 +81,71 @@ export function CatalogFulfillmentProvider({
   const [selectedLocationId, setSelectedLocationIdState] = useState<string | null>(
     initialLocationId,
   );
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
 
+  // Primera visita: sede guardada → geo (si hay varias) → sede principal; y persistir.
   useEffect(() => {
-    setSelectedLocationIdState(initialLocationId);
-  }, [initialLocationId]);
+    let cancelled = false;
+
+    async function bootstrapLocation() {
+      const stored = readFulfillmentPrefs(storeSlug);
+      const fallbackId = resolveDefaultLocationId(activeLocations);
+
+      if (
+        stored.selectedLocationId &&
+        activeLocations.some((loc) => loc.id === stored.selectedLocationId)
+      ) {
+        setSelectedLocationIdState(stored.selectedLocationId);
+        if (!hasFulfillmentBootstrapped(storeSlug)) {
+          markFulfillmentBootstrapped(storeSlug);
+        }
+        return;
+      }
+
+      // Ya resolvimos antes (p. ej. sin geo): usar principal sin volver a preguntar.
+      if (hasFulfillmentBootstrapped(storeSlug)) {
+        if (fallbackId) {
+          setSelectedLocationIdState(fallbackId);
+          writeFulfillmentPrefs(storeSlug, {
+            mode: stored.mode ?? modeRef.current,
+            selectedLocationId: fallbackId,
+          });
+        }
+        return;
+      }
+
+      // Asignación inmediata a la sede principal mientras intentamos geo.
+      if (fallbackId) {
+        setSelectedLocationIdState(fallbackId);
+      }
+
+      let resolvedId = fallbackId;
+      if (activeLocations.length > 1) {
+        const nearest = await resolveNearestStoreLocation(activeLocations);
+        if (cancelled) return;
+        if (nearest) {
+          resolvedId = nearest.id;
+        }
+      }
+
+      if (cancelled) return;
+
+      if (resolvedId) {
+        setSelectedLocationIdState(resolvedId);
+        writeFulfillmentPrefs(storeSlug, {
+          mode: stored.mode ?? modeRef.current,
+          selectedLocationId: resolvedId,
+        });
+      }
+      markFulfillmentBootstrapped(storeSlug);
+    }
+
+    void bootstrapLocation();
+    return () => {
+      cancelled = true;
+    };
+  }, [storeSlug, activeLocations]);
 
   const setMode = useCallback(
     (nextMode: CatalogFulfillmentMode) => {
@@ -82,6 +154,7 @@ export function CatalogFulfillmentProvider({
         mode: nextMode,
         selectedLocationId: selectedLocationId ?? defaultLocation?.id ?? null,
       });
+      markFulfillmentBootstrapped(storeSlug);
     },
     [defaultLocation?.id, selectedLocationId, storeSlug],
   );
@@ -93,6 +166,7 @@ export function CatalogFulfillmentProvider({
         mode,
         selectedLocationId: id,
       });
+      markFulfillmentBootstrapped(storeSlug);
     },
     [mode, storeSlug],
   );
