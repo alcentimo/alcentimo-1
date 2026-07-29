@@ -8,6 +8,8 @@ import {
   CUSTOMER_MIN_PASSWORD_LENGTH,
   CUSTOMER_PASSWORD_SET_META_KEY,
   customerCanManagePassword,
+  isSyntheticCustomerAuthEmail,
+  validateCustomerEmailInput,
   validateCustomerPasswordPair,
   validateCustomerPhoneInput,
 } from "@/lib/customers/phone-auth";
@@ -21,6 +23,7 @@ export async function saveCustomerProfile(input: {
   storeSlug: string;
   displayName: string;
   phone: string;
+  contactEmail?: string | null;
   deliveryAddress?: string | null;
   requirePhone?: boolean;
 }): Promise<SaveCustomerProfileResult> {
@@ -40,6 +43,16 @@ export async function saveCustomerProfile(input: {
       return { ok: false, error: phoneValidation.error };
     }
     phone = phoneValidation.phone;
+  }
+
+  let contactEmail: string | null = null;
+  const rawContactEmail = input.contactEmail?.trim() ?? "";
+  if (rawContactEmail) {
+    const emailValidation = validateCustomerEmailInput(rawContactEmail);
+    if (!emailValidation.ok) {
+      return { ok: false, error: emailValidation.error };
+    }
+    contactEmail = emailValidation.email;
   }
 
   const supabase = await createClient();
@@ -72,6 +85,30 @@ export async function saveCustomerProfile(input: {
 
   if (addressError) {
     return { ok: false, error: addressError.message };
+  }
+
+  // Correo de contacto opcional: solo metadata (sin cambiar email Auth ni enviar verificación).
+  if (isSyntheticCustomerAuthEmail(user.email) || input.contactEmail !== undefined) {
+    if (isSyntheticCustomerAuthEmail(user.email)) {
+      const admin = createAdminClient();
+      const nextMetadata: Record<string, unknown> = {
+        ...(user.user_metadata ?? {}),
+      };
+
+      if (contactEmail) {
+        nextMetadata.contact_email = contactEmail;
+      } else {
+        delete nextMetadata.contact_email;
+      }
+
+      const { error: metaError } = await admin.auth.admin.updateUserById(user.id, {
+        user_metadata: nextMetadata,
+      });
+
+      if (metaError) {
+        return { ok: false, error: metaError.message };
+      }
+    }
   }
 
   revalidatePath(getStoreCustomerAccountPath(storeSlug, "perfil"));

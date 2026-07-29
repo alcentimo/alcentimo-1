@@ -9,6 +9,7 @@ import { getStoreCatalogBasePath, getStoreCustomerAccountPath } from "@/lib/stor
 import type { LocationHoursSettings } from "@/lib/store-settings/types";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
+import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
 
 interface CatalogStoreProfileSheetProps {
   storeSlug: string;
@@ -57,6 +58,7 @@ export function CatalogStoreProfileSheet({
 }: CatalogStoreProfileSheetProps) {
   const shellNav = useCatalogShellNavigationOptional();
   const customerSession = useCustomerSessionOptional();
+  const { accountsEnabled } = useCustomerAccountMode();
   const open = shellNav?.profileOpen ?? false;
   const onClose = () => shellNav?.closeProfile();
 
@@ -171,8 +173,9 @@ export function CatalogStoreProfileSheet({
               </div>
             ) : (
               <p className="catalog-profile-text">
-                Crea una cuenta o inicia sesión con teléfono o correo y
-                contraseña para guardar tus datos en {storeName}.
+                {accountsEnabled
+                  ? `Puedes comprar como invitado. Si quieres, crea una cuenta con teléfono y contraseña para guardar tus datos en ${storeName}.`
+                  : `Compra como invitado en ${storeName}: solo necesitas tus datos de contacto al pagar.`}
               </p>
             )}
 
@@ -206,7 +209,7 @@ export function CatalogStoreProfileSheet({
                     : "Cerrar sesión"}
                 </button>
               </>
-            ) : (
+            ) : accountsEnabled ? (
               <div className="catalog-profile-auth-actions">
                 <button
                   type="button"
@@ -231,7 +234,7 @@ export function CatalogStoreProfileSheet({
                   Iniciar sesión
                 </button>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 

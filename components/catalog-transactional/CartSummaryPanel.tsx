@@ -9,6 +9,7 @@ import { formatUsd } from "@/lib/format";
 import { WholesalePriceBadge } from "@/components/catalog/WholesalePriceBadge";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
+import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
 
 interface CartSummaryPanelProps {
   storeName: string;
@@ -25,6 +26,7 @@ export function CartSummaryPanel({
 }: CartSummaryPanelProps) {
   const { items, subtotalUsd, updateQuantity, removeItem } = useCart();
   const { mode, selectedLocation } = useCatalogFulfillment();
+  const { accountsEnabled } = useCustomerAccountMode();
 
   function handleWhatsAppInquiry() {
     const phone = whatsappPhone?.trim();
@@ -194,7 +196,9 @@ export function CartSummaryPanel({
             </button>
 
             <p className="txn-checkout-hint text-center">
-              Compra sin registro · Solo pides nombre y teléfono al pagar.
+              {accountsEnabled
+                ? "Compra sin cuenta · Solo nombre y teléfono al pagar. El registro es opcional."
+                : "Compra como invitado · Solo nombre y teléfono al pagar."}
             </p>
 
             {whatsappReady ? (

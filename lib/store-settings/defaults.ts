@@ -182,6 +182,9 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       theme: "system",
       locale: "es",
     },
+    checkout: {
+      accountMode: "hibrido",
+    },
   };
 }
 
@@ -266,6 +269,7 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
   const interfaceRaw = isRecord(raw.interfacePreferences)
     ? raw.interfacePreferences
     : {};
+  const checkoutRaw = isRecord(raw.checkout) ? raw.checkout : {};
 
   const fallbackOpen =
     typeof locationRaw.openTime === "string" && locationRaw.openTime.trim()
@@ -428,6 +432,12 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           ? interfaceRaw.locale
           : defaults.interfacePreferences.locale,
     },
+    checkout: {
+      accountMode:
+        checkoutRaw.accountMode === "libre" || checkoutRaw.accountMode === "hibrido"
+          ? checkoutRaw.accountMode
+          : defaults.checkout.accountMode,
+    },
   };
 }
 
@@ -519,5 +529,8 @@ export function mergeStoreSettingsConfig(
     interfacePreferences: patch.interfacePreferences
       ? { ...base.interfacePreferences, ...patch.interfacePreferences }
       : base.interfacePreferences,
+    checkout: patch.checkout
+      ? { ...base.checkout, ...patch.checkout }
+      : base.checkout,
   };
 }

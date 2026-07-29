@@ -4,10 +4,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { quickRegisterOrSignInCustomerInline } from "@/lib/customers/register-actions";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import {
-  CUSTOMER_MIN_PASSWORD_LENGTH,
-  type CustomerAuthMethod,
-} from "@/lib/customers/phone-auth";
+import { CUSTOMER_MIN_PASSWORD_LENGTH } from "@/lib/customers/phone-auth";
 
 interface CheckoutQuickAuthProps {
   storeSlug: string;
@@ -24,7 +21,7 @@ interface CheckoutQuickAuthProps {
   }) => void;
 }
 
-/** Registro / acceso con teléfono o correo + contraseña sin salir del checkout. */
+/** Registro opcional post-compra: teléfono + contraseña (sin SMS). */
 export function CheckoutQuickAuth({
   storeSlug,
   variant = "checkout",
@@ -33,10 +30,8 @@ export function CheckoutQuickAuth({
   initialPhone = "",
   onAuthenticated,
 }: CheckoutQuickAuthProps) {
-  const [authMethod, setAuthMethod] = useState<CustomerAuthMethod>("phone");
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [phone, setPhone] = useState(initialPhone);
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -51,9 +46,8 @@ export function CheckoutQuickAuth({
     const result = await quickRegisterOrSignInCustomerInline({
       storeSlug,
       displayName,
-      method: authMethod,
-      phone: authMethod === "phone" ? phone : phone.trim() || null,
-      email: authMethod === "email" ? email : null,
+      method: "phone",
+      phone,
       password,
       orderId,
     });
@@ -77,40 +71,13 @@ export function CheckoutQuickAuth({
   return (
     <div className="txn-checkout-quick-auth">
       <p className="txn-checkout-section-title">
-        {isPostPurchase ? "Guardar mi cuenta" : "Accede en segundos"}
+        {isPostPurchase ? "Crear cuenta (opcional)" : "Accede en segundos"}
       </p>
       <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
         {isPostPurchase
-          ? "Teléfono o correo, más una contraseña para guardar tus datos."
-          : "Elige teléfono o correo y tu contraseña. Sin SMS."}
+          ? "Teléfono y una contraseña. Sin SMS ni códigos. Puedes saltarte este paso."
+          : "Teléfono y contraseña. Sin SMS."}
       </p>
-
-      <div className="catalog-auth-method-toggle mb-3" role="group" aria-label="Método de acceso">
-        <button
-          type="button"
-          disabled={pending}
-          className={
-            authMethod === "phone"
-              ? "catalog-auth-method-btn catalog-auth-method-btn-active"
-              : "catalog-auth-method-btn"
-          }
-          onClick={() => setAuthMethod("phone")}
-        >
-          Teléfono
-        </button>
-        <button
-          type="button"
-          disabled={pending}
-          className={
-            authMethod === "email"
-              ? "catalog-auth-method-btn catalog-auth-method-btn-active"
-              : "catalog-auth-method-btn"
-          }
-          onClick={() => setAuthMethod("email")}
-        >
-          Correo
-        </button>
-      </div>
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <label className="txn-field">
@@ -126,35 +93,20 @@ export function CheckoutQuickAuth({
             placeholder="Tu nombre"
           />
         </label>
-        {authMethod === "phone" ? (
-          <label className="txn-field">
-            <span>Teléfono</span>
-            <input
-              type="tel"
-              required
-              minLength={10}
-              autoComplete="tel"
-              inputMode="tel"
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
-              className="txn-input"
-              placeholder="0412… o 412…"
-            />
-          </label>
-        ) : (
-          <label className="txn-field">
-            <span>Correo</span>
-            <input
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="txn-input"
-              placeholder="tu@correo.com"
-            />
-          </label>
-        )}
+        <label className="txn-field">
+          <span>Teléfono</span>
+          <input
+            type="tel"
+            required
+            minLength={10}
+            autoComplete="tel"
+            inputMode="tel"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            className="txn-input"
+            placeholder="0412… o 412…"
+          />
+        </label>
         <label className="txn-field">
           <span>Contraseña</span>
           <PasswordInput
@@ -179,7 +131,7 @@ export function CheckoutQuickAuth({
               {isPostPurchase ? "Guardando…" : "Entrando…"}
             </>
           ) : isPostPurchase ? (
-            "Guardar mis datos"
+            "Crear cuenta y guardar"
           ) : (
             "Continuar"
           )}

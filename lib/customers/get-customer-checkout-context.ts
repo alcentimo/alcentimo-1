@@ -1,7 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { resolveActiveStoreBySlug } from "@/lib/customers/middleware-access";
-import { resolveCustomerContactEmail } from "@/lib/customers/phone-auth";
+import {
+  resolveCustomerContactEmail,
+  validateCustomerPhoneInput,
+} from "@/lib/customers/phone-auth";
 
 export interface CustomerCheckoutContext {
   isAuthenticated: boolean;
@@ -153,16 +156,16 @@ export async function resolveOrderCustomerDetails(
   }
 
   const customerName = guestInput.customerName.trim();
-  const customerPhone = guestInput.customerPhone.trim();
+  const phoneValidation = validateCustomerPhoneInput(guestInput.customerPhone);
 
   if (!customerName || customerName.length < 2) {
     return { ok: false, error: "Indica tu nombre para el pedido." };
   }
 
-  if (!customerPhone || customerPhone.length < 10) {
+  if (!phoneValidation.ok) {
     return {
       ok: false,
-      error: "Indica un teléfono válido (mínimo 10 dígitos).",
+      error: phoneValidation.error,
     };
   }
 
@@ -170,6 +173,6 @@ export async function resolveOrderCustomerDetails(
     ok: true,
     customerUserId: user && profile ? user.id : null,
     customerName,
-    customerPhone,
+    customerPhone: phoneValidation.phone,
   };
 }

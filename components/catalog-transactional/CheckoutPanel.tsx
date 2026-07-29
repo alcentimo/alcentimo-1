@@ -28,6 +28,7 @@ import type { PaymentMethodKey, ShippingCarrierKey } from "@/lib/store-settings/
 import { isNationalCarrierKey } from "@/src/config/shipping-methods";
 import { formatCarrierBranchAddress, getCarrierBranchById } from "@/lib/shipping/carrier-branches";
 import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
+import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
 import {
   redeemCustomerPromotionCode,
@@ -96,6 +97,7 @@ export function CheckoutPanel({
     useCart();
   const { autoApply } = usePromotionContext();
   const customerSession = useCustomerSessionOptional();
+  const { accountsEnabled } = useCustomerAccountMode();
   const { mode: fulfillmentModeFromContext, multiLocation } = useCatalogFulfillment();
   const activeFulfillmentMode = fulfillmentMode ?? fulfillmentModeFromContext;
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(1);
@@ -1082,8 +1084,9 @@ export function CheckoutPanel({
                   <div className="txn-checkout-form">
                     <p className="txn-checkout-section-title">Tus datos de contacto</p>
                     <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-                      Compra sin registro: solo nombre y teléfono para coordinar tu
-                      pedido. Crear una cuenta es opcional al finalizar.
+                      {accountsEnabled
+                        ? "Compra sin cuenta: solo nombre y teléfono para coordinar tu pedido. Crear una cuenta con contraseña es opcional al finalizar."
+                        : "Compra como invitado: solo nombre y teléfono para coordinar tu pedido."}
                     </p>
                     <CheckoutFieldGroup
                       field="customerName"

@@ -40,6 +40,7 @@ export function CustomerProfilePanel({
   const router = useRouter();
   const [name, setName] = useState(displayName ?? "");
   const [phoneValue, setPhoneValue] = useState(phone ?? "");
+  const [emailValue, setEmailValue] = useState(contactEmail ?? "");
   const [addressValue, setAddressValue] = useState(deliveryAddress ?? "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -51,6 +52,7 @@ export function CustomerProfilePanel({
   const [success, setSuccess] = useState<string | null>(null);
 
   const phoneRequired = loginMethod === "phone";
+  const canEditContactEmail = loginMethod === "phone";
   const loginLabel =
     loginMethod === "email"
       ? contactEmail
@@ -76,6 +78,7 @@ export function CustomerProfilePanel({
       storeSlug,
       displayName: name,
       phone: phoneValue,
+      contactEmail: canEditContactEmail ? emailValue : undefined,
       deliveryAddress: addressValue,
       requirePhone: phoneRequired,
     });
@@ -183,7 +186,7 @@ export function CustomerProfilePanel({
           />
         </div>
 
-        {contactEmail && loginMethod === "email" ? (
+        {loginMethod === "email" ? (
           <div>
             <label htmlFor="customer-email" className="label-field">
               Correo de acceso
@@ -191,7 +194,7 @@ export function CustomerProfilePanel({
             <input
               id="customer-email"
               type="email"
-              value={contactEmail}
+              value={contactEmail ?? ""}
               disabled
               className="input-field opacity-80"
             />
@@ -199,11 +202,26 @@ export function CustomerProfilePanel({
               Este correo es tu usuario de acceso. No se puede cambiar aquí.
             </p>
           </div>
-        ) : contactEmail ? (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Correo de contacto: {contactEmail}
-          </p>
-        ) : null}
+        ) : (
+          <div>
+            <label htmlFor="customer-contact-email" className="label-field">
+              Correo electrónico{" "}
+              <span className="font-normal text-zinc-400">(opcional)</span>
+            </label>
+            <input
+              id="customer-contact-email"
+              type="email"
+              autoComplete="email"
+              value={emailValue}
+              onChange={(e) => setEmailValue(e.target.value)}
+              className="input-field"
+              placeholder="tu@correo.com"
+            />
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Opcional, sin verificación. Sirve como respaldo de contacto.
+            </p>
+          </div>
+        )}
 
         <div>
           <label htmlFor="customer-address" className="label-field">

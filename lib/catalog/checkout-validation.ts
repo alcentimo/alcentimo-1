@@ -1,3 +1,5 @@
+import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
+
 export type CheckoutFieldKey =
   | "shipping"
   | "shippingBranch"
@@ -129,10 +131,9 @@ export function validateCheckoutStep2(
     if (input.customerName.trim().length < 2) {
       errors.customerName = "Indica tu nombre (mínimo 2 caracteres).";
     }
-    const phoneDigits = input.customerPhone.replace(/\D/g, "").length;
-    if (phoneDigits < 10) {
+    if (!isValidCustomerPhone(input.customerPhone)) {
       errors.customerPhone =
-        "Indica un teléfono o WhatsApp válido (mínimo 10 dígitos).";
+        "Indica un teléfono o WhatsApp válido (ej. 0412… o 412…).";
     }
   }
 

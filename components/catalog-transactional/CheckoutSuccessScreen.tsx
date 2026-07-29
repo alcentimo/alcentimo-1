@@ -10,6 +10,7 @@ import {
   getStoreCustomerAccountPath,
 } from "@/lib/store-host";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
+import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
 
 interface CheckoutSuccessScreenProps {
   storeSlug: string;
@@ -33,10 +34,12 @@ export function CheckoutSuccessScreen({
   onClose,
 }: CheckoutSuccessScreenProps) {
   const [savedAccount, setSavedAccount] = useState(false);
+  const { accountsEnabled } = useCustomerAccountMode();
 
   const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
   const registerBase = buildCustomerRegisterPath(storeSlug, accountPath);
   const fullRegisterPath = `${registerBase}${registerBase.includes("?") ? "&" : "?"}orderId=${encodeURIComponent(orderId)}`;
+  const offerAccount = wasGuest && !savedAccount && accountsEnabled;
 
   return (
     <div className="txn-checkout-success">
@@ -60,18 +63,22 @@ export function CheckoutSuccessScreen({
         <ol className="txn-checkout-success-steps mt-4 w-full text-left text-xs text-zinc-600 dark:text-zinc-300">
           <li>1. Envía el comprobante por WhatsApp.</li>
           <li>2. Espera la confirmación de la tienda.</li>
-          <li>3. Opcional: guarda tus datos abajo para la próxima compra.</li>
+          {accountsEnabled ? (
+            <li>3. Opcional: guarda tus datos abajo para la próxima compra.</li>
+          ) : (
+            <li>3. Listo: puedes seguir comprando cuando quieras.</li>
+          )}
         </ol>
       ) : null}
 
-      {wasGuest && !savedAccount ? (
+      {offerAccount ? (
         <div className="txn-checkout-success-save mt-6 w-full text-left">
           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            ¿Quieres guardar tus datos? (opcional)
+            ¿Quieres crear una cuenta? (opcional)
           </p>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Sin contraseña: confirma tu WhatsApp y la próxima vez autocompletamos
-            todo. Tu pedido aparecerá en <strong>Mi cuenta</strong>.
+            Tu pedido ya está listo. Si quieres, guarda teléfono y contraseña para
+            la próxima compra — sin SMS. También puedes continuar sin cuenta.
           </p>
 
           <CheckoutQuickAuth
@@ -110,10 +117,10 @@ export function CheckoutSuccessScreen({
       ) : null}
 
       <button type="button" onClick={onClose} className="txn-submit-btn mt-6">
-        {wasGuest && !savedAccount ? "Ahora no, seguir comprando" : "Seguir comprando"}
+        {offerAccount ? "Ahora no, seguir comprando" : "Seguir comprando"}
       </button>
 
-      {wasGuest && !savedAccount ? (
+      {offerAccount ? (
         <Link
           href={fullRegisterPath}
           className="mt-3 text-xs text-zinc-500 underline hover:text-zinc-800 dark:hover:text-zinc-200"

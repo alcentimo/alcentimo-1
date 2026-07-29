@@ -76,6 +76,17 @@ export interface InterfacePreferencesSettings {
   locale: InterfaceLocalePreference;
 }
 
+/** Modo de cuentas de clientes en el catálogo público. */
+export type CustomerAccountMode = "libre" | "hibrido";
+
+export interface CheckoutSettings {
+  /**
+   * libre = compra solo como invitado (sin registro/login).
+   * hibrido = invitado + cuentas opcionales (teléfono/correo + contraseña).
+   */
+  accountMode: CustomerAccountMode;
+}
+
 export interface StoreSettingsConfig {
   shipping: ShippingSettings;
   payments: PaymentsSettings;
@@ -86,6 +97,7 @@ export interface StoreSettingsConfig {
   catalogCurrency: CatalogCurrencySettings;
   messageTemplates: MessageTemplatesSettings;
   interfacePreferences: InterfacePreferencesSettings;
+  checkout: CheckoutSettings;
 }
 
 export const MAX_WHATSAPP_PHONES = 3;

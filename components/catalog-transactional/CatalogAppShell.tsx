@@ -11,8 +11,12 @@ import { CustomerPromoBanner } from "@/components/catalog-transactional/Customer
 import { InstallPwaBanner } from "@/components/catalog-transactional/InstallPwaBanner";
 import { PwaServiceWorkerRegister } from "@/components/catalog-transactional/PwaServiceWorkerRegister";
 import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
+import { CustomerAccountModeProvider } from "@/components/catalog-transactional/CustomerAccountModeContext";
 import { storeHasPCBuilder } from "@/lib/rubros/modules/tecnologia/pc-builder";
-import type { LocationHoursSettings } from "@/lib/store-settings/types";
+import type {
+  CustomerAccountMode,
+  LocationHoursSettings,
+} from "@/lib/store-settings/types";
 
 interface CatalogAppShellProps {
   storeSlug: string;
@@ -28,6 +32,7 @@ interface CatalogAppShellProps {
   enablePcBuilder?: boolean;
   assistantEnabled?: boolean;
   whatsappPhone?: string | null;
+  customerAccountMode?: CustomerAccountMode;
   children: ReactNode;
 }
 
@@ -45,47 +50,55 @@ export function CatalogAppShell({
   enablePcBuilder = false,
   assistantEnabled = false,
   whatsappPhone = null,
+  customerAccountMode = "hibrido",
   children,
 }: CatalogAppShellProps) {
   const { guestBanner } = usePromotionContext();
   const pcBuilderEnabled = storeHasPCBuilder(storeRubro, enablePcBuilder);
+  const accountsEnabled = customerAccountMode === "hibrido";
 
   return (
-    <CatalogShellNavigationProvider storeSlug={storeSlug}>
-      <CatalogStoreBrandingProvider logoUrl={storeLogoUrl} storeName={storeName}>
-        <PwaServiceWorkerRegister storeSlug={storeSlug} />
-        <InstallPwaBanner
-          storeSlug={storeSlug}
-          storeName={storeName}
-          storeLogoUrl={storeLogoUrl}
-        />
-        <CustomerPromoBanner promotion={guestBanner} />
-        <div className="catalog-shell-content">{children}</div>
-        {assistantEnabled ? (
-          <CatalogChatWidget
+    <CustomerAccountModeProvider accountMode={customerAccountMode}>
+      <CatalogShellNavigationProvider storeSlug={storeSlug}>
+        <CatalogStoreBrandingProvider logoUrl={storeLogoUrl} storeName={storeName}>
+          <PwaServiceWorkerRegister storeSlug={storeSlug} />
+          <InstallPwaBanner
             storeSlug={storeSlug}
             storeName={storeName}
-            avatarUrl={supportAvatarUrl}
-            avatarAnimation={supportAvatarAnimation}
-            avatarAnimated={supportAvatarAnimated}
-            merchantName={supportMerchantName}
-            whatsappPhone={whatsappPhone}
+            storeLogoUrl={storeLogoUrl}
           />
-        ) : null}
-        <CatalogStoreProfileSheet
-          storeSlug={storeSlug}
-          storeName={storeName}
-          storeLogoUrl={storeLogoUrl}
-          storeDescription={storeDescription}
-          whatsappPhone={whatsappPhone}
-          locationHours={locationHours}
-        />
-        <CatalogCustomerRegisterSheet
-          storeSlug={storeSlug}
-          storeName={storeName}
-        />
-        <CatalogTabBar storeSlug={storeSlug} pcBuilderEnabled={pcBuilderEnabled} />
-      </CatalogStoreBrandingProvider>
-    </CatalogShellNavigationProvider>
+          {accountsEnabled ? (
+            <CustomerPromoBanner promotion={guestBanner} />
+          ) : null}
+          <div className="catalog-shell-content">{children}</div>
+          {assistantEnabled ? (
+            <CatalogChatWidget
+              storeSlug={storeSlug}
+              storeName={storeName}
+              avatarUrl={supportAvatarUrl}
+              avatarAnimation={supportAvatarAnimation}
+              avatarAnimated={supportAvatarAnimated}
+              merchantName={supportMerchantName}
+              whatsappPhone={whatsappPhone}
+            />
+          ) : null}
+          <CatalogStoreProfileSheet
+            storeSlug={storeSlug}
+            storeName={storeName}
+            storeLogoUrl={storeLogoUrl}
+            storeDescription={storeDescription}
+            whatsappPhone={whatsappPhone}
+            locationHours={locationHours}
+          />
+          {accountsEnabled ? (
+            <CatalogCustomerRegisterSheet
+              storeSlug={storeSlug}
+              storeName={storeName}
+            />
+          ) : null}
+          <CatalogTabBar storeSlug={storeSlug} pcBuilderEnabled={pcBuilderEnabled} />
+        </CatalogStoreBrandingProvider>
+      </CatalogShellNavigationProvider>
+    </CustomerAccountModeProvider>
   );
 }

@@ -29,6 +29,7 @@ import type {
   ContactSettings,
   CatalogCurrencySettings,
   CatalogDesignSettings,
+  CheckoutSettings,
   InterfacePreferencesSettings,
   LocationHoursSettings,
   MessageTemplatesSettings,
@@ -143,6 +144,13 @@ export async function saveCatalogCurrencySettings(
 ): Promise<SettingsActionResult> {
   const normalized = normalizeStoreSettingsConfig({ catalogCurrency });
   return persistSettingsPatch({ catalogCurrency: normalized.catalogCurrency });
+}
+
+export async function saveCheckoutSettings(
+  checkout: CheckoutSettings,
+): Promise<SettingsActionResult> {
+  const normalized = normalizeStoreSettingsConfig({ checkout });
+  return persistSettingsPatch({ checkout: normalized.checkout });
 }
 
 export async function saveInterfacePreferencesSettings(
