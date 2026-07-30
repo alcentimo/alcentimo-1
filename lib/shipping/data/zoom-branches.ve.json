@@ -1,0 +1,2214 @@
+[
+  {
+    "code": "x0002",
+    "name": "Zoom Av Orinoco",
+    "city": "Puerto Ayacucho",
+    "state": "Amazonas",
+    "address": "Av. Orinoco Edif El Rey Piso P.b Local N°02 Zona Centro Ver detalles"
+  },
+  {
+    "code": "x0001",
+    "name": "Zoom Puerto Ayacucho",
+    "city": "Puerto Ayacucho",
+    "state": "Amazonas",
+    "address": "Av. Rio Negro, Centro Comercial Juncosa, Local 2-a. Ver detalles"
+  },
+  {
+    "code": "x0014",
+    "name": "Zoom Anaco",
+    "city": "Anaco",
+    "state": "Anzoátegui",
+    "address": "Calle 5 De Julio, Edf. San Elias Nro 3-23b Pb. P.ref. Una Cuadra De Banesco. Ver detalles"
+  },
+  {
+    "code": "x0015",
+    "name": "Zoom Anaco Center",
+    "city": "Anaco",
+    "state": "Anzoátegui",
+    "address": "Av. Jose Antonio Anzoategui. C.c Anaco Center Piso 1 Local 75-s.a Ver detalles"
+  },
+  {
+    "code": "x0013",
+    "name": "Zoom Pueblo Nuevo Norte",
+    "city": "Anaco",
+    "state": "Anzoátegui",
+    "address": "Calle 18 Norte Local Nro 04 Sector Pueblo Nuevo Norte Ver detalles"
+  },
+  {
+    "code": "x0010",
+    "name": "Zoom Barcelona",
+    "city": "Barcelona",
+    "state": "Anzoátegui",
+    "address": "Av. Intercomunal Jorge Rodriguez, C.c. Brisas Del Neveri, Local 04. P.ref. Frente A La Escuela De Ingenieria Ugma. Ver detalles"
+  },
+  {
+    "code": "x0011",
+    "name": "Zoom Camino Real",
+    "city": "Barcelona",
+    "state": "Anzoátegui",
+    "address": "Av Costanera Con Av Fuerzas Armadas C.c Camino Real Nivel Plaza Pb Local C11, Sector Nueva Barcelona Ver detalles"
+  },
+  {
+    "code": "x0012",
+    "name": "Zoom Venecia",
+    "city": "Barcelona",
+    "state": "Anzoátegui",
+    "address": "Av Nueva Esparta C.c Nascar Nivel Pb Local 06, Sector Venecia Ver detalles"
+  },
+  {
+    "code": "x0009",
+    "name": "Zoom Cantaura Centro",
+    "city": "Cantaura",
+    "state": "Anzoátegui",
+    "address": "Av. Bolivar Cruce Con Calle Arismendi, Sector Centro Cantaura Ver detalles"
+  },
+  {
+    "code": "x0019",
+    "name": "Zoom C.c Alba",
+    "city": "El Tigre",
+    "state": "Anzoátegui",
+    "address": "Av Francisco De Miranda Cc C.c Alba Nivel Baja Local Nro 8 Ver detalles"
+  },
+  {
+    "code": "x0017",
+    "name": "Zoom Calle 20 Sur",
+    "city": "El Tigre",
+    "state": "Anzoátegui",
+    "address": "Calle 20 Sur, Cruce Con 5ta Carrera Bis Ver detalles"
+  },
+  {
+    "code": "x0018",
+    "name": "Zoom El Tigre",
+    "city": "El Tigre",
+    "state": "Anzoátegui",
+    "address": "Av. Fco. De Miranda, Centro Comercial Flamingo, Pb. Locales A-07 Y A-08. P.ref. Al Lado De La Alcaldia. Ver detalles"
+  },
+  {
+    "code": "x0021",
+    "name": "Zoom El Tigrito",
+    "city": "El Tigrito",
+    "state": "Anzoátegui",
+    "address": "Av Fernandez Padilla Cc Deca Nivel N/a Local Local 3 Zona San Jose De Guanipa Ver detalles"
+  },
+  {
+    "code": "x0016",
+    "name": "Zoom Casco Central Lecheria",
+    "city": "Lecherias",
+    "state": "Anzoátegui",
+    "address": "Sector Casco Central Lecherias Carrera 5 Entre Calle 2 Y 3 Centro Empresarial 17-11 Local Pb-1 Ver detalles"
+  },
+  {
+    "code": "x0006",
+    "name": "Zoom Amana",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "Calle Bolivar Cruce Con Calle Maneiro. Centro Comercial Amana Local Pb A-6 Ver detalles"
+  },
+  {
+    "code": "x0008",
+    "name": "Zoom C.c Judibana",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "Av Stadium C.c Judibana Nivel Pb Local,sector Chuparin Ver detalles"
+  },
+  {
+    "code": "x0004",
+    "name": "Zoom Calle Guaraguao",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "Calle Las Flores Con Calle Guaraguao, Centro Comercial Carabel, Planta Baja, Local 2 Ver detalles"
+  },
+  {
+    "code": "x0005",
+    "name": "Zoom Central Madeirense",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "Av Municipal Cc Central Madeirense Nivel Pb Local 17,sector Pueblo Nuevo Ver detalles"
+  },
+  {
+    "code": "x0003",
+    "name": "Zoom Hotel Rasil",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "Av. Paseo Colon Edif. Hotel Rasil Piso, 1 Local Nro 02 Sector, Puerto La Cruz. Ver detalles"
+  },
+  {
+    "code": "x0007",
+    "name": "Zoom Terminal Pasajeros",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "Calle Democracia Cruce Con Calle Juncal, Local Dentro Del Terminal De Pasajeros De Puerto La Cruz Nro Local 71 Pasillo 6. Ver detalles"
+  },
+  {
+    "code": "x0020",
+    "name": "Zoom Puerto Piritu",
+    "city": "Puerto Piritu",
+    "state": "Anzoátegui",
+    "address": "Calle Bolivar Cc Zeghen Inversiones Georgina Nivel Pb Local 06, 08 Y 10,sector Centro Ver detalles"
+  },
+  {
+    "code": "x0022",
+    "name": "Zoom Biruaca",
+    "city": "Biruaca",
+    "state": "Apure",
+    "address": "Av. Las Acacias , Local N°. 2 , Sector Encrucijada De Biruaca Apure. Ver detalles"
+  },
+  {
+    "code": "x0024",
+    "name": "Zoom Avenida Paseo Libertador",
+    "city": "San Fernando",
+    "state": "Apure",
+    "address": "Av Paseo Libertador Edif DoÑa Isabel Piso Sn Local Sn Ver detalles"
+  },
+  {
+    "code": "x0023",
+    "name": "Zoom San Fernando de Apure",
+    "city": "San Fernando",
+    "state": "Apure",
+    "address": "Edificio Lara,planta Baja Calle Bolívar, Cruce Con Calle 24 De Julio. Ver detalles"
+  },
+  {
+    "code": "x0028",
+    "name": "Zoom Amani Calle Comercio",
+    "city": "Cagua",
+    "state": "Aragua",
+    "address": "Calle Comercio Cruce Con Calle Sucre Edif Amani Piso Pb Local 104-70-17,sector Centro Cagua Ver detalles"
+  },
+  {
+    "code": "x0029",
+    "name": "Zoom Cagua",
+    "city": "Cagua",
+    "state": "Aragua",
+    "address": "Sector Centro, Calle Rondon C/c Calle Bermudez Nro 104-03-07, Local L-3. Ver detalles"
+  },
+  {
+    "code": "x0031",
+    "name": "Zoom Colonia Tovar",
+    "city": "Colonia Tovar",
+    "state": "Aragua",
+    "address": "Sector Plan De Moreno, Carretera Principal Plan De Moreno, C.c. Parque Moritz, Nivel 1, Local N1-3. Ver detalles"
+  },
+  {
+    "code": "x0030",
+    "name": "Zoom La Victoria",
+    "city": "La Victoria",
+    "state": "Aragua",
+    "address": "Calle Rivas Davila, C.c. Victoria Center, Primera Etapa, Nivel Planta Baja, Local A-6. Ver detalles"
+  },
+  {
+    "code": "x0044",
+    "name": "Zoom Aragua",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Edificio Torre Sindoni, Entre Las Av. Miranda Y Bolivar Locales Nro Pb-19-a, Pb-19-d, M1-18-d Y M1-18-b Ver detalles"
+  },
+  {
+    "code": "x0045",
+    "name": "Zoom Av. Bermudez Tacita de Plata",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av Bermudez Cruce Con Avenida 10 De Diciembre Edif Del Pinto Piso Local B Ver detalles"
+  },
+  {
+    "code": "x0035",
+    "name": "Zoom Avenida 19 de Abril",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av 19 De Abril,c.c Mercado Ateneo Pasillo F Local F-08 Sector Centro Ver detalles"
+  },
+  {
+    "code": "x0038",
+    "name": "Zoom Avenida Fuerzas Aereas Las Acacias",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av Fuerzas Aereas, Urb Mario BriceÑo Iragorri, Nro 93 Ver detalles"
+  },
+  {
+    "code": "x0040",
+    "name": "Zoom Base Aragua",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av. Las Delicias Cc Y Hotel Paseo Las Delicias, Nivel Pb, Locales 2-pb-22,urb. Base Aragua Maracay Ver detalles"
+  },
+  {
+    "code": "x0043",
+    "name": "Zoom C.c Ipsfa",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av Bolivar Este Cc Los Proceres Nivel Pb Local Pcb-15 Ver detalles"
+  },
+  {
+    "code": "x0046",
+    "name": "Zoom C.c Las Americas",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av Las Delicias, Centro Comercial Las Americas Locales Nros M1-428 Y M1-428a Mezzanina Uno (m1) Ver detalles"
+  },
+  {
+    "code": "x0037",
+    "name": "Zoom C.c Maracay Plaza",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av. Bermudez, Cruce Con Av. Aragua, C.c. Maracay Plaza, Nivel Planta Baja, Local 61-d. Ver detalles"
+  },
+  {
+    "code": "x0047",
+    "name": "Zoom Cdo Myc",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av.anthon Phillips, Zona Industrial San Vicente, Grupo Empresarial San Vicente, Local 2, Al Lado De Empresas Saviran. Ver detalles"
+  },
+  {
+    "code": "x0039",
+    "name": "Zoom El Limon",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Sector El Limon, Av. Universidad,c.c. El Limon, Nivel Pb, Local Nro. 03 Ver detalles"
+  },
+  {
+    "code": "x0036",
+    "name": "Zoom Hiper Jumbo",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av. Fuerzas Aereas C/c Av. Jose Casanova Godoy, Cc H Y Per Jumbo, Nivel Sotano Ver detalles"
+  },
+  {
+    "code": "x0034",
+    "name": "Zoom La Cooperativa",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Zona La Cooperativa Maracay, Av. Ppal. La Cooperativa C/c Calle Urdaneta, Casa Nro. 7, Local Nro. 4. Ver detalles"
+  },
+  {
+    "code": "x0048",
+    "name": "Zoom Los Aviadores",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Calle Oeste Del Parcelamiento Ciudad Libertador, Frente A La Avenida Los Aviadores Centro Comercial Parque Los Aviadores, Parcela 2-a1 Local Comercial L-218, Sector Norte Ver detalles"
+  },
+  {
+    "code": "x0042",
+    "name": "Zoom Maracay Av. Miranda",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av. Miranda Oeste, Cruce Con Calle Campo Elias Nro 165. Ver detalles"
+  },
+  {
+    "code": "x0041",
+    "name": "Zoom Sector San Miguel",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av. Marino Sur, Centro Empresarial Uniaragua, Planta Baja, Local 1. Ver detalles"
+  },
+  {
+    "code": "x0027",
+    "name": "Zoom Santa Cruz de Aragua",
+    "city": "Santa Cruz de Aragua",
+    "state": "Aragua",
+    "address": "Av 02 Casa Parcela B-17-a Y B-17-b Zona Industrial Santa Cruz Ver detalles"
+  },
+  {
+    "code": "x0032",
+    "name": "Zoom Turmero Intercomunal",
+    "city": "Santa Rita - Aragua",
+    "state": "Aragua",
+    "address": "Av Intercomunal Maracay-turmero Cc Intercomunal Center Nivel Local 1-7,sector La Morita Ver detalles"
+  },
+  {
+    "code": "x0025",
+    "name": "Zoom Turmero Centro",
+    "city": "Turmero",
+    "state": "Aragua",
+    "address": "Sector Centro Turmero, Calle Urdaneta Casa Nro. 16 Y Nro. 1. Ver detalles"
+  },
+  {
+    "code": "x0026",
+    "name": "Zoom Turmero Encrucijada",
+    "city": "Turmero",
+    "state": "Aragua",
+    "address": "Carretera Nacional Turmero - Cagua Centro Comercial Paseo Los Laureles Nivel Pb Local 4. Urb. La Encrucijada. Ver detalles"
+  },
+  {
+    "code": "x0033",
+    "name": "Zoom Villa de Cura",
+    "city": "Villa de Cura",
+    "state": "Aragua",
+    "address": "Calle Sucre Con Aduana, C.c. Villa Hermosa, Local 39. Ver detalles"
+  },
+  {
+    "code": "x0050",
+    "name": "Zoom Alto Barinas Norte",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Alto Barinas Norte, Avenida Colombia, Local 80-c, Frente Al Golfito. Ver detalles"
+  },
+  {
+    "code": "x0052",
+    "name": "Zoom Alto Barinas Sur",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Avenida Los Llanos C.c Sion Pb Local 5 Alto Barinas Sur Farmacia Betania C.a (qiaris Farmacia) Ver detalles"
+  },
+  {
+    "code": "x0053",
+    "name": "Zoom Barinas",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Av. Elias Cordero, N° 1- 120. P.ref. Frente A Suelapiel. Ver detalles"
+  },
+  {
+    "code": "x0054",
+    "name": "Zoom Barinas Centro",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Sector Barrio Obrero, Calle Camejo Entre Avenidas Montilla Y Olmedilla, Edificio Los Hermanos. Ver detalles"
+  },
+  {
+    "code": "x0055",
+    "name": "Zoom La Carolina",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Av Andres Varela Local Estadio Agustin Tovar La Carolina Nro A1, Sector La Carolina Ver detalles"
+  },
+  {
+    "code": "x0051",
+    "name": "Zoom Varyná Alto Barinas Sur",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Av. Venezuela Con Calle Justicia Local, Nro. 127 B-3, Urb, Alto Barinas Sur Barinas Ver detalles"
+  },
+  {
+    "code": "x0057",
+    "name": "Zoom Ciudad Bolivia",
+    "city": "Ciudad Bolivia",
+    "state": "Barinas",
+    "address": "Calle 4 Prolongacion 1 Local Don Pancho Nro S/n Sector Vista Hermosa Ii Parte Alta Carretera Via Mijaguas Ver detalles"
+  },
+  {
+    "code": "x0056",
+    "name": "Zoom Santa Barbara",
+    "city": "Santa Barbara de Barinas",
+    "state": "Barinas",
+    "address": "Sector Pueblo Viejo, Carrera 5, Entre Calles 9 Y 10. Ver detalles"
+  },
+  {
+    "code": "x0049",
+    "name": "Zoom Socopo",
+    "city": "Socopo",
+    "state": "Barinas",
+    "address": "Cr 9 Entre Calles 3 Y 4 Cc Galerias Nivel Pb Local Nro 2 Sector Centro Socopo Ver detalles"
+  },
+  {
+    "code": "x0058",
+    "name": "Zoom Av Germania",
+    "city": "Ciudad Bolivar",
+    "state": "Bolívar",
+    "address": "Sector Germania, Av. Germania, C.c. Los Proceres Nivel Pb, Local Anexo Estacionamiento. Ver detalles"
+  },
+  {
+    "code": "x0061",
+    "name": "Zoom Av Republica",
+    "city": "Ciudad Bolivar",
+    "state": "Bolívar",
+    "address": "Av Siegart Con Av. Republica Edif Ivanna Piso P/b. Local Nro 1 Sector Av. Republica Parroquia Catedral Municipio Agostura Del Orinoco Ver detalles"
+  },
+  {
+    "code": "x0062",
+    "name": "Zoom Calle Venezuela",
+    "city": "Ciudad Bolivar",
+    "state": "Bolívar",
+    "address": "Calle Venezuela Local Nro 20 Ver detalles"
+  },
+  {
+    "code": "x0059",
+    "name": "Zoom Ciudad Bolivar",
+    "city": "Ciudad Bolivar",
+    "state": "Bolívar",
+    "address": "Av. Jesus Soto Con Calle Caura, C.c. Tepuy, Local 1 Y 2, Pb. Ver detalles"
+  },
+  {
+    "code": "x0060",
+    "name": "Zoom Hangar Distribuidora",
+    "city": "Ciudad Bolivar",
+    "state": "Bolívar",
+    "address": "Av. Jesus Soto Local Hangar Distribuidora Toms. C.a Nro S/n Ver detalles"
+  },
+  {
+    "code": "x0070",
+    "name": "Zoom El Callao",
+    "city": "El Callao",
+    "state": "Bolívar",
+    "address": "Calle La Paz , Frente Al Parque Infantil Victoria Torrealba Local S/n, Zona El Centro El Callao Bolivar Ver detalles"
+  },
+  {
+    "code": "x0073",
+    "name": "Zoom Guasipati",
+    "city": "Guasipati",
+    "state": "Bolívar",
+    "address": "Calle Merida Cc Clement Nivel 1 Local Nro 5-6, Sector Las Gracias Guasipati Ver detalles"
+  },
+  {
+    "code": "x0066",
+    "name": "Zoom Av Venezuela Centro",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Av Venezuela Con Ciudad Bolivar Edif Centro Residencial Y Empresarial Parque Del Centro Piso Pb Local 5-l2,zona Centro De Puerto Ordaz. Ver detalles"
+  },
+  {
+    "code": "x0069",
+    "name": "Zoom C.c Biblos Center",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Calle Uchire C.c Biblos Center Nivel 54 B Local 54 Ver detalles"
+  },
+  {
+    "code": "x0065",
+    "name": "Zoom Orinokia Mall",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Urb. Alta Vista, Av. Prolongacion, Av. Las Americas, C.c. Orinokia Mall Nivel Plaza, Santo Tome Local Pb-04. Ver detalles"
+  },
+  {
+    "code": "x0067",
+    "name": "Zoom Puerto Ordaz",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Sector Unare, Zona Industrial I, Calle Tunapuy, P.ref. Diagonal Al Tigasco. Ver detalles"
+  },
+  {
+    "code": "x0068",
+    "name": "Zoom Taquilla C.C. Artica",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Centro Comercial Artica, Carrera Guasipati, Locales 5 Y 6. Centro De Puerto Ordaz. Al Lado Del Banco De Venezuela Y Frente A Cosmeticos Genesis. Ver detalles"
+  },
+  {
+    "code": "x0064",
+    "name": "Zoom Torre Caura",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Ctra Tocoma, Con Calle Caura Cc C.c Torre Caura Nivel Sotano Local 4 Sector Alta Vista Ver detalles"
+  },
+  {
+    "code": "x0071",
+    "name": "Zoom San Felix",
+    "city": "San Felix",
+    "state": "Bolívar",
+    "address": "Sector El Roble, Av. Morena Mendoza, Centro Comercial La CariÑosa, Local C. Ver detalles"
+  },
+  {
+    "code": "x0072",
+    "name": "Zoom Tumeremo Calle Bolivar",
+    "city": "Tumeremo",
+    "state": "Bolívar",
+    "address": "Calle Bolivar Con Cruce Troncal 10,edif Arabito Pizza Local S/n Ver detalles"
+  },
+  {
+    "code": "x0063",
+    "name": "Zoom Upata C.c Datil",
+    "city": "Upata",
+    "state": "Bolívar",
+    "address": "Av Bicentenario Diagonal Calle 19 De Abril Cc El Datil Nivel Pb Local S/n Sector Centro Ver detalles"
+  },
+  {
+    "code": "x0078",
+    "name": "Zoom Bejuma",
+    "city": "Bejuma",
+    "state": "Carabobo",
+    "address": "Av Sucre C/c Calle Heres Local Nro Sector Pueblo Nuevo La UniÓn Ver detalles"
+  },
+  {
+    "code": "x0075",
+    "name": "Zoom C.c Central Guacara",
+    "city": "Guacara",
+    "state": "Carabobo",
+    "address": "Carretera Nacional Guacara Los Guayos, Centro Comercial Central Guacara Pb Local 18 Y 20 Ver detalles"
+  },
+  {
+    "code": "x0076",
+    "name": "Zoom C.c Guacara Plaza",
+    "city": "Guacara",
+    "state": "Carabobo",
+    "address": "Calle Piar C.c Guacara Plaza Nivel Pb Local Pb-09 Ver detalles"
+  },
+  {
+    "code": "x0074",
+    "name": "Zoom Los Guayos",
+    "city": "Los Guayos",
+    "state": "Carabobo",
+    "address": "Calle Paez Entre Bruzual Y Negro Primero, Local A-01. Ver detalles"
+  },
+  {
+    "code": "x0077",
+    "name": "Zoom Puerto Cabello",
+    "city": "Puerto Cabello",
+    "state": "Carabobo",
+    "address": "Primera Calle Segrestaa, Edificio Enna, Pb., Local 26 Y 27.p.ref. Diagonal A La Cruz Roja. Ver detalles"
+  },
+  {
+    "code": "x0097",
+    "name": "Zoom Av Lisandro Alvarado",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av Lisandro Alvarado Con Calle Padre Begeretti Cc Torinoco 83-19 Nivel Pb Local 12 Ver detalles"
+  },
+  {
+    "code": "x0083",
+    "name": "Zoom Av Michelena",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av Nro.91 (avenida Michelena) Casa Nro. 90-63 Frente A La Clinica Santa Monica. Ver detalles"
+  },
+  {
+    "code": "x0091",
+    "name": "Zoom Av Montes de Oca Centro",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av 102 Monte De Oca Calle 24 De Junio Y Calle Girardot Nro Civico 96-24 Casa Nro 5-a Ver detalles"
+  },
+  {
+    "code": "x0094",
+    "name": "Zoom Av. Bolivar Norte",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Bolivar Norte, Edf. Don Enrique Pb. P.ref. Frente A La Funeraria La Superior A 100 Mts Del Ateneo De Valencia. Ver detalles"
+  },
+  {
+    "code": "x0089",
+    "name": "Zoom Big Low San Diego",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Boulevard Norte 102 Centro Comercial Boulevard Norte Local Nro. 3 Urb. San Diego. Ver detalles"
+  },
+  {
+    "code": "x0087",
+    "name": "Zoom C.c Aerocentro",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Luis Ernesto Branger Zona Industrial Municipal Sur Conj. Empresarial Entrada F Pb5 Ver detalles"
+  },
+  {
+    "code": "x0092",
+    "name": "Zoom C.c Caribean Plaza",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Sector Camoruco, Calle San Jorge, C.c. Caribbean Plaza, Pb., Local 171, Modulo 8. Ver detalles"
+  },
+  {
+    "code": "x0082",
+    "name": "Zoom C.c Fin de Siglo",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Sector San Diego, Av. Don Julio Centeno, C.c. San Diego (fin De Siglo), Nivel Galeria Nro. 3, Local Nro. 1 Y Nro. 2. Ver detalles"
+  },
+  {
+    "code": "x0081",
+    "name": "Zoom C.c La Galeria",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Calle 137 Cc La Galeria Nave A Nivel Pb Local 1-a6,urb Camoruco Ver detalles"
+  },
+  {
+    "code": "x0095",
+    "name": "Zoom C.c Metropolis",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Autopista Regional Del Centro. Entrada De Valencia, Al Lado De Makro.centro Comercial Metropolis Nivel Cielo, Local A1-300b Ver detalles"
+  },
+  {
+    "code": "x0098",
+    "name": "Zoom C.c Naguanagua",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av Universidad Cc Naguanagua Nivel Pb Local 28 Sector La CampiÑa Ver detalles"
+  },
+  {
+    "code": "x0085",
+    "name": "Zoom C.c Paseo Las Industrias",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av Henry Ford Cc Paseo Las Inductrias Nivel Pb Local 7,zona Industrial Sur Ver detalles"
+  },
+  {
+    "code": "x0088",
+    "name": "Zoom Flor Amarillo",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Sector, Flor Amarillo Valencia, Av. Nro. 107-c, Local C.c. La Fundacion Nro. 1 Ver detalles"
+  },
+  {
+    "code": "x0084",
+    "name": "Zoom La Candelaria Valencia",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Valencia Center Pb, Local Nro 38, Al Frente Del Colegio Republica Del Peru, Detras Del Registro Civil. Ver detalles"
+  },
+  {
+    "code": "x0086",
+    "name": "Zoom La Isabelica",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av 73 Humberto Celli Nro 84-50 Local 17 Centro Comercial Metro Sur Zona Industrial Municipal Norte. Ver detalles"
+  },
+  {
+    "code": "x0090",
+    "name": "Zoom Montalban",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Bolivar Local Nro. 2 Sector Centro Montalban Ver detalles"
+  },
+  {
+    "code": "x0080",
+    "name": "Zoom Naguanagua C.C. Cristal",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av Feo La Cruz C.c Cristal Pb, Local Pba08,urb Las Quintas Ver detalles"
+  },
+  {
+    "code": "x0079",
+    "name": "Zoom Sector Rojas Queipo",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Calle Rojas Queipo,nro 102-25, Local Nro 02,con Andres Eloy Blanco. Ver detalles"
+  },
+  {
+    "code": "x0093",
+    "name": "Zoom Teatro Municipal de Valencia",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Calle Colombia Con Soublette, Centro Comercial Fiera Mosca, Nivel Pb., Local 2. Ver detalles"
+  },
+  {
+    "code": "x0096",
+    "name": "Zoom Valencia",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Este Oeste Con Calle 97, Urbanizacion San Diego, Parque Comercial Industrial Castillito Parcela L-70 Y L-78. Ver detalles"
+  },
+  {
+    "code": "x0099",
+    "name": "Zoom San Carlos",
+    "city": "San Carlos",
+    "state": "Cojedes",
+    "address": "Av. Bolivar Cruce Con Calle Silva, Centro Comercial Colavita, Planta Baja, Locales L1 Y L2. Ver detalles"
+  },
+  {
+    "code": "x0100",
+    "name": "Zoom Tucupita Centro",
+    "city": "Tucupita",
+    "state": "Delta Amacuro",
+    "address": "Calle La Paz Local Nro S/n Sector Centro Tucupita Ver detalles"
+  },
+  {
+    "code": "x0117",
+    "name": "Zoom Altamira",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Avenida Del Avila, Res. Belmont, Pb, Local 01, Altamira Sur. Ver detalles"
+  },
+  {
+    "code": "x0141",
+    "name": "Zoom Av Francisco Solano",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av Francisco Solano Lopez, Entre Calle El Cristo Y Los Manguitos Edif Torre Oasis Piso Pb Local 9, Urb Las Delicias Ver detalles"
+  },
+  {
+    "code": "x0110",
+    "name": "Zoom Av Fuerzas Armadas",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Fuerzas Armadas Norte, Esq. San Jose A San Luis, Edf. Residencia San Jose. Ver detalles"
+  },
+  {
+    "code": "x0129",
+    "name": "Zoom Av Lecuna",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Lecuna Esquina De Miracielos Al Lado De La Estacion Del Metro Teatros. Parroquia Santa Teresa Ver detalles"
+  },
+  {
+    "code": "x0112",
+    "name": "Zoom Av Libertador",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Libertador Con Calle Negrin , C.c. Libertador, Local Nro. 13. Ver detalles"
+  },
+  {
+    "code": "x0133",
+    "name": "Zoom Av Victoria",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Victoria, Edf. Meridional Pb, Entre Calle Cuba Y Av. Centro AmÉrica, Diagonal A La PanaderÍa La Flor Del Greco. Ver detalles"
+  },
+  {
+    "code": "x0118",
+    "name": "Zoom Baruta",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Calle Paez Local Numero 4, Referencia Diagonal A La Avenida Ricaurte,pueblo De Baruta Ver detalles"
+  },
+  {
+    "code": "x0145",
+    "name": "Zoom Bellas Artes",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Avenida Este 2 Entre Sur 25 Y Boulevard Amador BendayÁn, Edificio Amaya, Pb La Candelaria. Caracas. Ver detalles"
+  },
+  {
+    "code": "x0120",
+    "name": "Zoom Bello Monte",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Beethoven, Edif Ibaizabal, Local F, Colinas De Bello Monte. Ver detalles"
+  },
+  {
+    "code": "x0108",
+    "name": "Zoom Boleita",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Zona Boleita Sur Calle Segunda Calle De Boleita Sur Entre Santa Ana Y Av. Principal Local Nro.6. Ver detalles"
+  },
+  {
+    "code": "x0123",
+    "name": "Zoom C.c El Recreo",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Casanova Con Calle El Recreo Centro Comercial El Recreo Nivel C1 Local Lc1-c29/30,urbanizaciÓn Sabana Grande Ver detalles"
+  },
+  {
+    "code": "x0101",
+    "name": "Zoom C.c Galerias El Recreo",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Venezuela, Centro Comercial Galerias El Recreo. Nivel Avenida. Local Av-1c. Ver detalles"
+  },
+  {
+    "code": "x0147",
+    "name": "Zoom C.C. Bello Campo",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Centro Comercial Bello Campo, Entre La Av. Coromoto, JosÉ Felix Sosa Y La Principal De La Urb. Bello Campo, Locales 27, 28 Y 29 Ver detalles"
+  },
+  {
+    "code": "x0148",
+    "name": "Zoom C.C.c.t",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av La Estancia Entre Calle Blohm Y Distribuidor CiempiÉs C.c Ciudad Tamanaco Nivel 1era Etapa Local 43-r2 Urb Chuao Ver detalles"
+  },
+  {
+    "code": "x0107",
+    "name": "Zoom Calle Colombia",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Calle Colombia, Entre Cristo Y Magallanes, Urb. Nueva Caracas- Catia, Edificio S/n, Piso Pb., Local Unico. Ver detalles"
+  },
+  {
+    "code": "x0142",
+    "name": "Zoom Calle Garcilaso",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Calle Garcilaso Edif Perseo Piso Pb Local A, Urb Bello Monte Ver detalles"
+  },
+  {
+    "code": "x0134",
+    "name": "Zoom Cdo Catia",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av.ppal De Altavista, A 50 Metros De La Textileria Ovejita, Galpon Grupo Zoom. Ver detalles"
+  },
+  {
+    "code": "x0130",
+    "name": "Zoom Centro",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Calle Norte 2 Entre Esquina De Santa Capilla A Mijares Edif San Sebastian Piso Pb Local Nro 5 Zona Catedral Ver detalles"
+  },
+  {
+    "code": "x0114",
+    "name": "Zoom Centro Comercial Bello Monte",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Principal De Bello Monte, Entre Av. Leonardo Da Vici Y Av. Lincoln. Ctro. Comercial Bello Monte. P.b. Local Nro. 10. Bello Monte. Ver detalles"
+  },
+  {
+    "code": "x0135",
+    "name": "Zoom Chacaito I",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Tamanaco, Urbanizacion El Rosal, Centro Comercial Arta, Piso 1, Local 1-3. Ver detalles"
+  },
+  {
+    "code": "x0115",
+    "name": "Zoom Chacao, C.a",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Calle Nro 3 Monsenor Juan Grilc Rezman, Qta. Silvia Nro 309, Local Nro 5 Chacao. Ver detalles"
+  },
+  {
+    "code": "x0125",
+    "name": "Zoom Coche",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av Intercomunal Valle Coche C.c Coche Nivel Pb Local 25 Urb Delgado Chalbaud Diagonal Al Supermercado Supremo. Ver detalles"
+  },
+  {
+    "code": "x0143",
+    "name": "Zoom Don Bosco",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av San Juan Bosco Entre 1 Transversal Y Av Fco De Miranda Edif May Flower Piso Pb Local B Ver detalles"
+  },
+  {
+    "code": "x0146",
+    "name": "Zoom El Cementerio",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Ppal Del Cementerio Calle El Degredo Mercapop Pasillo 6 Gran Mayor Local 12, El Cementerio. Ver detalles"
+  },
+  {
+    "code": "x0149",
+    "name": "Zoom El Marques",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Sanz, Entre Av. RÓmulo Gallegos Y Calle NaiguatÁ,c.c. El MarquÉs, Locales 2 - 3 -9 10 Ver detalles"
+  },
+  {
+    "code": "x0152",
+    "name": "Zoom El Valle",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Calle Antigua Calle Real De Los Jardines Del Valle Calle 14 Local Nro 14 Local, Urb El Valle Taller Rani Ver detalles"
+  },
+  {
+    "code": "x0153",
+    "name": "Zoom Forum Ipsfa",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Centro Comercial Los Próceres (ipsfa), Paseo Los Ilustres, Caracas Ver detalles"
+  },
+  {
+    "code": "x0136",
+    "name": "Zoom La California",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av Francisco De Miranda, Residencias MÓnaco Local B, Urb La California Norte Ver detalles"
+  },
+  {
+    "code": "x0105",
+    "name": "Zoom La Candelaria",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av Este 2. Tracabordo A Puente Yanez, Edif. Res. Yanoral, P.b. La Candelaria. Ver detalles"
+  },
+  {
+    "code": "x0116",
+    "name": "Zoom La Florida",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Juan Bautista Arismendi, Entre Calle Pedroza Y Av. Don Bosco. Ver detalles"
+  },
+  {
+    "code": "x0150",
+    "name": "Zoom La Hoyada",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av Fuerzas Armadas Entre Esquinas De Socarras Y CorazÓn De Jesus Edf La Galeria Pb Local 8, La Hoyada Ver detalles"
+  },
+  {
+    "code": "x0106",
+    "name": "Zoom La Tahona",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Avenida La Guairita Calle Reyna, Instituto Universitario Avepane, Urb La Tahona Ver detalles"
+  },
+  {
+    "code": "x0137",
+    "name": "Zoom La Urbina",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Sector Sur, Calle 7, Urb La Urbina, Edificio Grupo Zoom. Ver detalles"
+  },
+  {
+    "code": "x0121",
+    "name": "Zoom Las Mercedes",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Calle Veracruz, Edificio Torreon, P.b, Local 4. Las Mercedes Ver detalles"
+  },
+  {
+    "code": "x0131",
+    "name": "Zoom Las Palmas",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Las Palmas, Edf. Palma Alta, Torre A, Local 4, Pb. Ver detalles"
+  },
+  {
+    "code": "x0111",
+    "name": "Zoom Los Chaguaramos",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Calle Razetti, Urb. Los Chaguaramos, Quinta Centro Profesional Los Chaguaramos Pb. Ver detalles"
+  },
+  {
+    "code": "x0113",
+    "name": "Zoom Los Cortijos",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Francisco De Miranda Edificio Centro Empresarial Don Bosco Piso P.b Local 2. Los Cortijos De Lourdes Ver detalles"
+  },
+  {
+    "code": "x0144",
+    "name": "Zoom Los Dos Caminos",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av Sucre Entre Cuarta Y Quinta Transversal Conjunto Centro Parque Boyaca Local Planta Baja Nro 11,urb Los Dos Caminos Ver detalles"
+  },
+  {
+    "code": "x0132",
+    "name": "Zoom Los Naranjos",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. El Pauji, C.c. Galerias Los Naranjos, Piso 2, Local C2-53. Ver detalles"
+  },
+  {
+    "code": "x0151",
+    "name": "Zoom Los Palos Grandes",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "1ra. Transversal De Los Palos Grandes, Entre 2da. Y 3ra. Avenida, Edificio Green Palace Planta Baja, Local 4. Los Palos Grandes Ver detalles"
+  },
+  {
+    "code": "x0154",
+    "name": "Zoom Los Ruices",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av Francisco De Miranda, Entre Calle C Y Calle Guanchez Cc Los Ruices Nivel Pb Local 11 Urb Los Ruices Ver detalles"
+  },
+  {
+    "code": "x0138",
+    "name": "Zoom Makro La Yaguara",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Intercomunal De Antimano Cruce Con Av. Principal De La Yaguara. Ver detalles"
+  },
+  {
+    "code": "x0103",
+    "name": "Zoom Manzanares",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Principal C.c Manzanares Ii Nivel Mirador Local M104 Ver detalles"
+  },
+  {
+    "code": "x0126",
+    "name": "Zoom Montalban I",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Urb. Montalban I, Av. Nro. 2, Av. Montalban I, C.c. Uslar Nivel Mirador, Local Nro. 03, La Nro. 21. Ver detalles"
+  },
+  {
+    "code": "x0155",
+    "name": "Zoom Montalban Iii",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "C.c. Caracas, Piso 1, Local 01 15 GalerÍas Magic Center (minitiendas) Montalban Iii, Av. Transversal 3-e. Ver detalles"
+  },
+  {
+    "code": "x0122",
+    "name": "Zoom Multicentro Empresarial del Este",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Francisco De Miranda Multicentro Empresarial Del Este, Planta Baja Torre Miranda. Local Pb 04, Al Lado Del Meson De Pita. Ver detalles"
+  },
+  {
+    "code": "x0124",
+    "name": "Zoom Parque Caracas",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Este Nro. 2, Con Calle Sur Nro. 21, C.c. Parque Caracas, Nivel Pb, Local Nro. 36.. Ver detalles"
+  },
+  {
+    "code": "x0139",
+    "name": "Zoom Parque Humboldt",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Centro Comercial Parque Humboldt, Local 10, Urb. Prados Del Este Ver detalles"
+  },
+  {
+    "code": "x0156",
+    "name": "Zoom Plaza Las Americas",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av Raul Leoni Cc Plaza Las Americas Nivel Pb Local 2 Urb El Cafetal Ver detalles"
+  },
+  {
+    "code": "x0102",
+    "name": "Zoom Prados del Este",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Ppal. De Prados Del Este. Ctro. Comercial Galerias Prados Del Este. Nivel Pa. Local 39. Ver detalles"
+  },
+  {
+    "code": "x0128",
+    "name": "Zoom Propatria",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av Simon Bolivar Cc Propatria Nivel 1 Local A9 Urb Propatria Ver detalles"
+  },
+  {
+    "code": "x0127",
+    "name": "Zoom Quinta Crespo",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Baralt Esq El Carmen C.c. Doral Baralt Nivel 1 Local 30. Quinta Crespo. Ver detalles"
+  },
+  {
+    "code": "x0157",
+    "name": "Zoom Sambil La Candelaria",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "44 Av. Este 0, C.c Sambil La Candelaria, Local No. E-04, Nivel SÓtano 1 Ver detalles"
+  },
+  {
+    "code": "x0140",
+    "name": "Zoom San Martin",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. San Martin, Entre La 2da Y 3era Calle Los Molinos, Urb. Los Molinos, Edificio Komplot, Pb. P.ref. Edificio Komplot, Pb. Ver detalles"
+  },
+  {
+    "code": "x0104",
+    "name": "Zoom Santa Fe",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Jose Maria Vargas. Ctro Comercial Santa Fe. Nivel C-3. Local 68, Urb Santa Fe Norte. Ver detalles"
+  },
+  {
+    "code": "x0109",
+    "name": "Zoom Santa Rosalia",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Esq. Muerto A Pelaez, Casa Nro. 116, Zona Parroquia Santa Rosalia. Ver detalles"
+  },
+  {
+    "code": "x0119",
+    "name": "Zoom Torre Exa",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av Libertador Cc Exa Nivel Pb Local 17 Urb El Rosal Ver detalles"
+  },
+  {
+    "code": "x0159",
+    "name": "Zoom Av. Manaure",
+    "city": "Coro",
+    "state": "Falcón",
+    "address": "Av Manaure Con Calle El Sol Cc San Antonio Plaza P.b Local 08 Ver detalles"
+  },
+  {
+    "code": "x0161",
+    "name": "Zoom Coro",
+    "city": "Coro",
+    "state": "Falcón",
+    "address": "Sector Los Tres Platos, Av. Los Medanos Cruce Con Av. Independencia, Edificio Aref, Pb., Local 1. Ver detalles"
+  },
+  {
+    "code": "x0160",
+    "name": "Zoom Ferial Punto Express",
+    "city": "Coro",
+    "state": "Falcón",
+    "address": "Calle Falcon Cc Ferial Nivel Pb Local 01, Zona Centro Santa Ana Ver detalles"
+  },
+  {
+    "code": "x0158",
+    "name": "Zoom Dabajuro",
+    "city": "Dabajuro",
+    "state": "Falcón",
+    "address": "Av Bolivar Local Nro S/n, Sector El Cerro Debajuro Ver detalles"
+  },
+  {
+    "code": "x0162",
+    "name": "Zoom Calle Argentina",
+    "city": "Punto Fijo",
+    "state": "Falcón",
+    "address": "Calle Argentina Esquina Calle Garcés Centro Punto Fijo. Ver detalles"
+  },
+  {
+    "code": "x0163",
+    "name": "Zoom La Pumarosa",
+    "city": "Punto Fijo",
+    "state": "Falcón",
+    "address": "Av. Pumarrosa, Edificio Maria Luisa, Numero 61-16, Local 2, Urbanizacion Santa Fe Ver detalles"
+  },
+  {
+    "code": "x0166",
+    "name": "Zoom Las Margaritas",
+    "city": "Punto Fijo",
+    "state": "Falcón",
+    "address": "Av Coro Con Avenida Dona Emilia Local Comercial Nro 6 Sector DoÑa Emilia Ver detalles"
+  },
+  {
+    "code": "x0164",
+    "name": "Zoom Puerta Maraven",
+    "city": "Punto Fijo",
+    "state": "Falcón",
+    "address": "Urb. Puerta Maraven, Av. Ollarvides, Local Nro. 264. Ver detalles"
+  },
+  {
+    "code": "x0165",
+    "name": "Zoom Punto Fijo",
+    "city": "Punto Fijo",
+    "state": "Falcón",
+    "address": "Sector Centro, Calle Arismendi, Entre Talavera Y Las Palmas, Local 203. Ver detalles"
+  },
+  {
+    "code": "x0167",
+    "name": "Zoom Calabozo",
+    "city": "Calabozo",
+    "state": "Guárico",
+    "address": "Calle 5 Entre Carreras 9 Y 10, Edificio Villavicencio, P.b Locales 5 Y 6. P.ref. A 50 Mts Del Museo De Calabozo. Ver detalles"
+  },
+  {
+    "code": "x0168",
+    "name": "Zoom El Sombrero",
+    "city": "El Sombrero",
+    "state": "Guárico",
+    "address": "Calle Fraternidad Cruce Con Calle Los Estudiantes Local Nro S/n, Sector Frente A La Plaza Bolivar El Sombrero Ver detalles"
+  },
+  {
+    "code": "x0169",
+    "name": "Zoom Pueblo Nuevo",
+    "city": "San Juan de Los Morros",
+    "state": "Guárico",
+    "address": "Sector Pueblo Nuevo, Av. Bolivar Cruce Con 1ro De Mayo Nro. 41-d, Ver detalles"
+  },
+  {
+    "code": "x0170",
+    "name": "Zoom San Juan de Los Morros",
+    "city": "San Juan de Los Morros",
+    "state": "Guárico",
+    "address": "Avenida BolÍvar, Torre Tauro, Planta Baja Ver detalles"
+  },
+  {
+    "code": "x0172",
+    "name": "Zoom Avenida Romulo Gallegos",
+    "city": "Valle de La Pascua",
+    "state": "Guárico",
+    "address": "Av Romulo Gallegos Edif Adriatico Piso Pb Local Nro 03 Sector Centro Ver detalles"
+  },
+  {
+    "code": "x0171",
+    "name": "Zoom Valle de La Pascua",
+    "city": "Valle de La Pascua",
+    "state": "Guárico",
+    "address": "Avenida Las Industrias Cruce Con Calle Los Paramos Centro Comercial La Pascua Center Local Nro 2 Ver detalles"
+  },
+  {
+    "code": "x0282",
+    "name": "Zoom Caraballeda",
+    "city": "Caraballeda",
+    "state": "La Guaira",
+    "address": "Av. La Costanera Con Copacabana, C.c. Margarita, Nivel S/n, Local S/n, Urb. Palmar Este. Ver detalles"
+  },
+  {
+    "code": "x0283",
+    "name": "Zoom Caribe",
+    "city": "Caraballeda",
+    "state": "La Guaira",
+    "address": "Urb. Caribe. Caraballera. Av Boulevard Naiguata, Edf. Residencia, Gran Terraza. Piso Pb. Local Nro. 1-4. Ver detalles"
+  },
+  {
+    "code": "x0279",
+    "name": "Zoom Catia La Mar",
+    "city": "Catia La Mar",
+    "state": "La Guaira",
+    "address": "Av. Atlantida, Calles 5 Y 6, Qta. Hucarimar, Pb. Local 1. Ver detalles"
+  },
+  {
+    "code": "x0280",
+    "name": "Zoom El Consul",
+    "city": "Maiquetia",
+    "state": "La Guaira",
+    "address": "Calle Los Pipotes Entre La Esquina Del Brillante Y Los Pipotes Casa Nro 129 Nivel P.b Ver detalles"
+  },
+  {
+    "code": "x0281",
+    "name": "Zoom Maiquetia",
+    "city": "Maiquetia",
+    "state": "La Guaira",
+    "address": "Av. Soublette, C. C. Litoral, Nivel Comercio 1, Local 12 Ver detalles"
+  },
+  {
+    "code": "x0180",
+    "name": "Zoom Aeropuerto Jacinto Lara",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Av. Vicente Landaeta Gil Con Av. La Salle, Aeropuerto General Jacinto Lara P.b,local A-6 Ver detalles"
+  },
+  {
+    "code": "x0181",
+    "name": "Zoom Barquisimeto",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Carrera 24, Entre Calles 23 Y 24, Nro. 23-69. P.ref. Frente A La Plaza Mora, Diagonal Al Iutirla. Ver detalles"
+  },
+  {
+    "code": "x0177",
+    "name": "Zoom C.c Alfa Este",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Av. Madrid, Urb. El Parque, C.c. Alfa, Nivel P/b, Local 6. Ver detalles"
+  },
+  {
+    "code": "x0175",
+    "name": "Zoom C.c Madetor Este",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Av. Venezuela, Entre Av. Bracamonte Y Av. Los Leones, Centro Comercial Imeca, Piso 1, Local 1-h Y 1-g Ver detalles"
+  },
+  {
+    "code": "x0182",
+    "name": "Zoom C.c Metropolis Brm",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Av. Florencio Jimenez Con Av La Salle Cc Metropoli Nivel Sol Local L-204-205-206 Ver detalles"
+  },
+  {
+    "code": "x0183",
+    "name": "Zoom C.c Parque Real",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Av Lara Con Cruce Avenida Los Leones Cc Parque Real Nivel P-al Local 10,zona Este Ver detalles"
+  },
+  {
+    "code": "x0174",
+    "name": "Zoom Calle 14 Centro-este",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Calle 14 Entre Carreras 18 Y 19 Qta Nelly Local Nro 3 Ver detalles"
+  },
+  {
+    "code": "x0178",
+    "name": "Zoom Carrera 19 Con 34",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Carrera 19 Con Calles 33 Y 34 # 33-68, Barquisimeto Ver detalles"
+  },
+  {
+    "code": "x0173",
+    "name": "Zoom Carrera 25 Calle 41",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Carrera 25, Entre Calle 40 Y 41 Nro 2. Ver detalles"
+  },
+  {
+    "code": "x0179",
+    "name": "Zoom Lara Palace",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Carrera 23, Entre Calles 52 Y 54, Urbanizacion Santa Eduvigis,conjunto Residencial Lara Palace, Nro. 1-06, Ver detalles"
+  },
+  {
+    "code": "x0176",
+    "name": "Zoom Las Industrias",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Av. Las Industrias, Edif. Sede De Industriales Del Estado Lara, Urb. Rafael Caldera Ver detalles"
+  },
+  {
+    "code": "x0185",
+    "name": "Zoom C.c Almarriera",
+    "city": "Cabudare",
+    "state": "Lara",
+    "address": "Av. La Montanita C.c.almarriera Planta Baja Alta. Local L-29. Urb.almarriera. Los Rastrojos.cabudare. Ver detalles"
+  },
+  {
+    "code": "x0187",
+    "name": "Zoom C.c La Estancia",
+    "city": "Cabudare",
+    "state": "Lara",
+    "address": "C.c La Estancia Local 20 Intercomunal,barquisimeto-cabudare Ver detalles"
+  },
+  {
+    "code": "x0186",
+    "name": "Zoom Cabudare",
+    "city": "Cabudare",
+    "state": "Lara",
+    "address": "Avenida Libertador Entre Calles Miguel Bernal Y Juarez, Centro Comercial Libertador, Locales Pb-02 Y Pb-03. Ver detalles"
+  },
+  {
+    "code": "x0188",
+    "name": "Zoom Carora",
+    "city": "Carora",
+    "state": "Lara",
+    "address": "Av Fco De Miranda E/calle Lisbos Y Coromoto Local Tiendas Montana, Sector Fco De Miranda Ver detalles"
+  },
+  {
+    "code": "x0184",
+    "name": "Zoom El Tocuyo",
+    "city": "El Tocuyo",
+    "state": "Lara",
+    "address": "Calle 20 Entre 7 Y 8 Cruce Final Avenida Fraternidad Urb Corpahuaico Ver detalles"
+  },
+  {
+    "code": "x0189",
+    "name": "Zoom Quibor",
+    "city": "Quibor",
+    "state": "Lara",
+    "address": "Av 5 Entre Calles 12 Y 13 Local Nro S/n Ver detalles"
+  },
+  {
+    "code": "x0229",
+    "name": "Zoom Caja Seca",
+    "city": "Caja Seca",
+    "state": "Mérida",
+    "address": "Av Primera Transversal Del Corredor Vial Al Terminal De Pasajeros, Cc Farmacia Sur Del Lago Nivel Pb Local 2, Sector Casco Central Caja Seca Ver detalles"
+  },
+  {
+    "code": "x0216",
+    "name": "Zoom Centro Ejido",
+    "city": "Ejido",
+    "state": "Mérida",
+    "address": "Calle Sucre Frente A La Plaza Bolivar De Ejido Con Av Bolivar C.c Ejido Pb Local 1-c Ver detalles"
+  },
+  {
+    "code": "x0217",
+    "name": "Zoom Ejido Mall",
+    "city": "Ejido",
+    "state": "Mérida",
+    "address": "Calle El Cobre Municipio Campo ElÍas, Parroquia Matriz, Local Pb-b-17/pb-b-18,centro Comercial Ejido Mall, Sector Pozo Hondo. Ver detalles"
+  },
+  {
+    "code": "x0227",
+    "name": "Zoom Centro Vigia",
+    "city": "El Vigia",
+    "state": "Mérida",
+    "address": "Calle 3 Al Lado De La PanaderÍa Giordano, Parroquia Presidente Betancourt,sector Centro MÉrida Ver detalles"
+  },
+  {
+    "code": "x0226",
+    "name": "Zoom El Vigia",
+    "city": "El Vigia",
+    "state": "Mérida",
+    "address": "Av. 3 Nro 3-88, Barrio Panamericano, Entre Av. Bolivar Y Don Pepe Rojas, P.ref. Diagonal Al Distribuidor Carrero Mendez. Ver detalles"
+  },
+  {
+    "code": "x0228",
+    "name": "Zoom Lagunillas",
+    "city": "Lagunillas",
+    "state": "Mérida",
+    "address": "Av 6, Agua De Urao Local Nro S/n Sector Pueblo Viejo Ver detalles"
+  },
+  {
+    "code": "x0220",
+    "name": "Zoom Av Urdaneta",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Av Urdaneta Cc Las Margaritas Nivel Pb Local Pb-9,sector Urdaneta Ver detalles"
+  },
+  {
+    "code": "x0218",
+    "name": "Zoom Centro Merida",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Av 3 Independencia Esquina Calle 21 Laso Cc La Rosalera Nivel 03 Of 01 Sector Centro Merida Ver detalles"
+  },
+  {
+    "code": "x0221",
+    "name": "Zoom Glorias Patrias",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Av. Miranda, Centro Comercial DoÑa Heraclita Local 2. Ver detalles"
+  },
+  {
+    "code": "x0224",
+    "name": "Zoom La Parroquia",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Calle PÁez Casa Nro 2-35 Local A, Sector La Parroquia Ver detalles"
+  },
+  {
+    "code": "x0219",
+    "name": "Zoom Los Proceres",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Av Los PrÓceres Edif Longimar Piso Pb Local 2 Y 3, Sector Aldea Santa Barbara Ver detalles"
+  },
+  {
+    "code": "x0222",
+    "name": "Zoom Mercado Murachi",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Sector Los Sauzales, Av. Las Americas, Centro Comercial Mercado Murachi, Nivel Unico Local 44. Ver detalles"
+  },
+  {
+    "code": "x0223",
+    "name": "Zoom Merida",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Av. Don Tulio Febres Cordero, Edf. Don Miguel, Pb. Local 37-94. Ver detalles"
+  },
+  {
+    "code": "x0230",
+    "name": "Zoom Mucuchies",
+    "city": "Mucuchies",
+    "state": "Mérida",
+    "address": "Av Independencia Esquina Calle Sucre Nro 69, Centro Mucuchies Ver detalles"
+  },
+  {
+    "code": "x0225",
+    "name": "Zoom Tovar",
+    "city": "Tovar",
+    "state": "Mérida",
+    "address": "Av Cristobal Mendoza Edif Echeverria Piso 1 Local 3 Y 4 Ver detalles"
+  },
+  {
+    "code": "x0206",
+    "name": "Zoom La Cascada",
+    "city": "Carrizal",
+    "state": "Miranda",
+    "address": "Carretera Panamericana Km 21, C.c. La Cascada Nivel Planta Baja Local Pb-43,sector Corralito Ver detalles"
+  },
+  {
+    "code": "x0204",
+    "name": "Zoom Charallave Ciudad Concordia",
+    "city": "Charallave",
+    "state": "Miranda",
+    "address": "Av. Tosta Garcia, Centro Comercial Ciudad Concordia, Piso Nro. 1, Locales 8, 9 Y 10. Ver detalles"
+  },
+  {
+    "code": "x0196",
+    "name": "Zoom Cua",
+    "city": "Cua",
+    "state": "Miranda",
+    "address": "Calle Jose Maria CarreÑo Local Minicozzi Nro Pb Sector Casco Central Cua Ver detalles"
+  },
+  {
+    "code": "x0197",
+    "name": "Zoom 27 de Febrero",
+    "city": "Guarenas",
+    "state": "Miranda",
+    "address": "Urb. Nro 27 De Febrero,ctra Nacional, Local Estacionamiento Y Multiservicios Souto Nro. S/n. Ver detalles"
+  },
+  {
+    "code": "x0198",
+    "name": "Zoom C.c Miranda",
+    "city": "Guarenas",
+    "state": "Miranda",
+    "address": "Av. Intercomunal Menca De Leoni, C.c. Miranda, Local 30-22. P.ref. Area De Minitiendas, Parte Alta De Guarenas. Ver detalles"
+  },
+  {
+    "code": "x0199",
+    "name": "Zoom Guarenas",
+    "city": "Guarenas",
+    "state": "Miranda",
+    "address": "Zona Industrial Santa Cruz, Urb. Los Naranjos, P.ref. Pasando Los Bomberos Entrando Por La Levis Al Lado De Pandok. Ver detalles"
+  },
+  {
+    "code": "x0201",
+    "name": "Zoom C.C. Buenaventura Vista Place",
+    "city": "Guatire",
+    "state": "Miranda",
+    "address": "Av. Intercomunal Guarenas-guatire, Centro Comercial Buenaventura Vista Place Nivel Plaza Locales Pl-94 Y Pl-95. Ver detalles"
+  },
+  {
+    "code": "x0202",
+    "name": "Zoom Calle Rivas",
+    "city": "Guatire",
+    "state": "Miranda",
+    "address": "Sector Casco Central Calle Rivas Local Nro 15 Ver detalles"
+  },
+  {
+    "code": "x0200",
+    "name": "Zoom Castillejo",
+    "city": "Guatire",
+    "state": "Miranda",
+    "address": "Av Principal Cc Castillejo Nivel 1 Local 02-14 Urb Castillejo Ver detalles"
+  },
+  {
+    "code": "x0203",
+    "name": "Zoom Higuerote",
+    "city": "Higuerote",
+    "state": "Miranda",
+    "address": "Sector Tocoron Higuerote, Av. Andres Bello Eloy Blanco, C.c. Anjulicar Nivel Pb, Local Nro. 3. Ver detalles"
+  },
+  {
+    "code": "x0192",
+    "name": "Zoom C.c La Hoyada",
+    "city": "Los Teques",
+    "state": "Miranda",
+    "address": "Calle Piar, Cc La Hoyada, Nivel Segunda Planta, Local 328, Municipio Guaicaipuro Ver detalles"
+  },
+  {
+    "code": "x0190",
+    "name": "Zoom Calle Miranda",
+    "city": "Los Teques",
+    "state": "Miranda",
+    "address": "Calle Miranda Con Guaicaipuro Norte, C.c Oriente, Sector Cuatro Esquinas Ver detalles"
+  },
+  {
+    "code": "x0191",
+    "name": "Zoom Los Teques",
+    "city": "Los Teques",
+    "state": "Miranda",
+    "address": "Sector El Tambor, Av. Pedro Ruffo Ferrer, C.c. Los Teques Local A5. P.ref. Frente Al Banco De Venezuela. Ver detalles"
+  },
+  {
+    "code": "x0205",
+    "name": "Zoom Ocumare del Tuy",
+    "city": "Ocumare del Tuy",
+    "state": "Miranda",
+    "address": "Calle Principal La Acequia Cc Residencia La Acequia Nivel Pb Local Nro 7 Ver detalles"
+  },
+  {
+    "code": "x0194",
+    "name": "Zoom Galerias Las Americas",
+    "city": "San Antonio de Los Altos",
+    "state": "Miranda",
+    "address": "Carretera Panamericana, Km 15, Sector Las Minas, Cc GalerÍa Las AmÉricas, Nivel 1, Local N1-40 Ver detalles"
+  },
+  {
+    "code": "x0195",
+    "name": "Zoom San Antonio",
+    "city": "San Antonio de Los Altos",
+    "state": "Miranda",
+    "address": "Carretera Panamericana Km 16 Bajando Por El Distribuidor De La Rosaleda (sentido Caracas) A Mano Derecha 100 Mts Antes Del C.c. La Casona I, Local Zoom. Ver detalles"
+  },
+  {
+    "code": "x0193",
+    "name": "Zoom Santa Teresa del Tuy",
+    "city": "Santa Teresa del Tuy",
+    "state": "Miranda",
+    "address": "Calle Sucre Con Av. Ayacucho, Local C. Nro. 3. Ver detalles"
+  },
+  {
+    "code": "x0208",
+    "name": "Zoom Av Raul Leoni",
+    "city": "Maturin",
+    "state": "Monagas",
+    "address": "Av. Raul Leoni Cruce Con Prolongacion Boyaca, Edf. Nar-oly, Torre A, P. Pb, Local A Sur, Sector Centro. Ver detalles"
+  },
+  {
+    "code": "x0212",
+    "name": "Zoom Casco Central",
+    "city": "Maturin",
+    "state": "Monagas",
+    "address": "Av. Azcue Con Av Rojas Sector Centro, Local Nro. 114 A Dos Cuadras De La Av.bolivar Ver detalles"
+  },
+  {
+    "code": "x0207",
+    "name": "Zoom Elarba I",
+    "city": "Maturin",
+    "state": "Monagas",
+    "address": "Avenida Bolivar, Edificio Elarba, Piso Pb, Local 133, Sector Centro De Maturin Ver detalles"
+  },
+  {
+    "code": "x0211",
+    "name": "Zoom Los Samanes",
+    "city": "Maturin",
+    "state": "Monagas",
+    "address": "Calle Principal, Centro Comercial Los Samanes, Local 1, Planta Baja, Sector Los Samanes. Ver detalles"
+  },
+  {
+    "code": "x0213",
+    "name": "Zoom Maturin",
+    "city": "Maturin",
+    "state": "Monagas",
+    "address": "Av. Bicentenario Edificio Congesa, Local I Y Ii Punto De Referencia: Frente Plaza El Indio Ver detalles"
+  },
+  {
+    "code": "x0210",
+    "name": "Zoom Tipuro",
+    "city": "Maturin",
+    "state": "Monagas",
+    "address": "Av Principal De Tipuro, Centro Comercial Tipuro Norte (sambilito).local Pasillo Miraflores Nro 53, Urb Tipuro Ver detalles"
+  },
+  {
+    "code": "x0209",
+    "name": "Zoom Ugarte Pelayo",
+    "city": "Maturin",
+    "state": "Monagas",
+    "address": "Av. Alirio Ugarte Pelayo, Edificio Vespa, Local 6, Sector Bajo Guarapiche. Ver detalles"
+  },
+  {
+    "code": "x0214",
+    "name": "Zoom Punta de Mata",
+    "city": "Punta de Mata",
+    "state": "Monagas",
+    "address": "Av Bolivar Cc Jupiter Center Nivel Pb Local 10,sector Centro Punta De Mata Ver detalles"
+  },
+  {
+    "code": "x0215",
+    "name": "Zoom Temblador",
+    "city": "Temblador",
+    "state": "Monagas",
+    "address": "Calle Sucre Casa Nro S/n Sector La Plaza Temblador Ver detalles"
+  },
+  {
+    "code": "x0235",
+    "name": "Zoom Juan Griego",
+    "city": "Juan Griego",
+    "state": "Nueva Esparta",
+    "address": "C.c. La Estancia, Local L23, Juan Griego. Ver detalles"
+  },
+  {
+    "code": "x0238",
+    "name": "Zoom C.c La Redoma",
+    "city": "Pampatar",
+    "state": "Nueva Esparta",
+    "address": "Calle Libertad Cc La Redoma Nivel 1 Local 42 Sector Los Robles El Pilar Ver detalles"
+  },
+  {
+    "code": "x0237",
+    "name": "Zoom Los Robles",
+    "city": "Pampatar",
+    "state": "Nueva Esparta",
+    "address": "Av Jovito Villalba C.c. Centro Artesanal Los Robles Nivel P.b Ver detalles"
+  },
+  {
+    "code": "x0236",
+    "name": "Zoom Rattan Plaza",
+    "city": "Pampatar",
+    "state": "Nueva Esparta",
+    "address": "Av Jovito Villalba Cc Rattan Hyperplaza Nivel Mezzanina Local E-43,sector Playa El Angel Ver detalles"
+  },
+  {
+    "code": "x0239",
+    "name": "Zoom Sambil Margarita",
+    "city": "Pampatar",
+    "state": "Nueva Esparta",
+    "address": "Avenida JÓvito Villalba, Sector San Lorenzo, Sambil Margarita, Locales T01a Y T01b, Al Lado De La Salida Playa Guacuco Ver detalles"
+  },
+  {
+    "code": "x0232",
+    "name": "Zoom Av 4 de Mayo",
+    "city": "Porlamar",
+    "state": "Nueva Esparta",
+    "address": "Av Paseo Cultural Ramon Vasquez Brito Cc Boulevard Porlamar Edificio S Nivel 1 Local S-3a Sector 4 De Mayo Ver detalles"
+  },
+  {
+    "code": "x0231",
+    "name": "Zoom Calle Campos",
+    "city": "Porlamar",
+    "state": "Nueva Esparta",
+    "address": "Calle Campos Edificio Juamo Pb Ver detalles"
+  },
+  {
+    "code": "x0233",
+    "name": "Zoom Porlamar",
+    "city": "Porlamar",
+    "state": "Nueva Esparta",
+    "address": "Av. 4 De Mayo, Residencias Panerco, Planta Baja, Local 1. Ver detalles"
+  },
+  {
+    "code": "x0234",
+    "name": "Zoom Porlamar Centro",
+    "city": "Porlamar",
+    "state": "Nueva Esparta",
+    "address": "Calle VelÁsquez Con Calle DÍaz, Centro Comercial Concord, Local #100. Pasillo Central Ver detalles"
+  },
+  {
+    "code": "x0241",
+    "name": "Zoom Acarigua",
+    "city": "Acarigua",
+    "state": "Portuguesa",
+    "address": "Calle 30 Con Av. 35, Centro Comercial PÁez, Planta Baja, Local 02. Ver detalles"
+  },
+  {
+    "code": "x0240",
+    "name": "Zoom C.C. Sol de Curpa",
+    "city": "Acarigua",
+    "state": "Portuguesa",
+    "address": "Av. Libertador, E/ Calles 32 Y 33 C.c. Sol De Curpa Nivel Pb., Local 7 Ver detalles"
+  },
+  {
+    "code": "x0244",
+    "name": "Zoom Corredor Vial Tomas Montilla",
+    "city": "Guanare",
+    "state": "Portuguesa",
+    "address": "Cr 7 Entre Av Unda Y Corredor Vial Tomas Montilla Edif Forum Piso 1 Local 2, Barrio Maturin Ver detalles"
+  },
+  {
+    "code": "x0243",
+    "name": "Zoom Guanare",
+    "city": "Guanare",
+    "state": "Portuguesa",
+    "address": "Av. Simon Bolivar Entre Av. Unda Y Calle 9, Centro Comercial Autocentro, Pb. Local Zoom. Ver detalles"
+  },
+  {
+    "code": "x0242",
+    "name": "Zoom Turen",
+    "city": "Turen",
+    "state": "Portuguesa",
+    "address": "Av. Ricardo Perez Zambrano, Edif. Agosi. Local Nro. 1. Villa Bruzual Ver detalles"
+  },
+  {
+    "code": "x0251",
+    "name": "Zoom Carupano",
+    "city": "Carupano",
+    "state": "Sucre",
+    "address": "Av. Libertador Con Calle Monagas, Edf. Turbo Oriente, P. Pb., Parroquia Santa Catalina, Municipio Bermudez. Ver detalles"
+  },
+  {
+    "code": "x0252",
+    "name": "Zoom Carupano Centro",
+    "city": "Carupano",
+    "state": "Sucre",
+    "address": "Calle Juncal, Cruce Con Calle Bolivar, Local Nro 258,sector Centro Ver detalles"
+  },
+  {
+    "code": "x0247",
+    "name": "Zoom C.c Marina Plaza",
+    "city": "Cumana",
+    "state": "Sucre",
+    "address": "Av.cristobal Colon Perimetal, Sec. El Diqui, C.c. Marina Plaza, Edif. D-3, Local P.b.-4 Ver detalles"
+  },
+  {
+    "code": "x0245",
+    "name": "Zoom C.c San Onofre",
+    "city": "Cumana",
+    "state": "Sucre",
+    "address": "Av Humboldt Cc San Onofre Nivel Pb Local Nro 13, Sector Santa Catalina Ver detalles"
+  },
+  {
+    "code": "x0250",
+    "name": "Zoom Casco Historico",
+    "city": "Cumana",
+    "state": "Sucre",
+    "address": "Calle Sucre C.c Cumana Nivel Único Oficina 8, Sector Casco Historico. Ver detalles"
+  },
+  {
+    "code": "x0249",
+    "name": "Zoom Costo Supermercado",
+    "city": "Cumana",
+    "state": "Sucre",
+    "address": "Av Aristides Rojas Con Calle Bermudez Cc Permagas Nivel Planta Baja Local I Ver detalles"
+  },
+  {
+    "code": "x0248",
+    "name": "Zoom Cumana",
+    "city": "Cumana",
+    "state": "Sucre",
+    "address": "Av Santa Rosa, Edificio Grupo Profesional Santa Rosa Pb Local 2 Cumana Estado Sucre Ver detalles"
+  },
+  {
+    "code": "x0246",
+    "name": "Zoom Santa Rosa",
+    "city": "Cumana",
+    "state": "Sucre",
+    "address": "Sector Santa Rosa, Av. Santa Rosa, C.c. Santa Rosa, Nivel Pb., Local 06, Ver detalles"
+  },
+  {
+    "code": "x0271",
+    "name": "Zoom Colon",
+    "city": "Colon",
+    "state": "Táchira",
+    "address": "Sector Centro Colon Tachira,ctra Nro. 7, Con Calle Nro. 3, Casa Nro. 6-81. Ver detalles"
+  },
+  {
+    "code": "x0257",
+    "name": "Zoom Coloncito",
+    "city": "Coloncito",
+    "state": "Táchira",
+    "address": "Sector Casco Central Coloncito, Cr. Nro. 04, Casa Nro. 3-47. Ver detalles"
+  },
+  {
+    "code": "x0274",
+    "name": "Zoom El Piñal",
+    "city": "El Pinal",
+    "state": "Táchira",
+    "address": "Sector El PiÑal, Calle N°. 1 Entre Carrera N°. 3 Y 4, Casa N°. 3-19. (san Rafael Del Piñal). Ver detalles"
+  },
+  {
+    "code": "x0270",
+    "name": "Zoom La Fria",
+    "city": "La Fria",
+    "state": "Táchira",
+    "address": "Sector Terminal De Pasajeros La Fria, Calle 2 Entre Carreras 18 Y 19, Local Nro. 25 Ver detalles"
+  },
+  {
+    "code": "x0272",
+    "name": "Zoom La Grita C.a",
+    "city": "La Grita",
+    "state": "Táchira",
+    "address": "Calle 2 Entre Carreras 11 Y 12 Casa 11-86 Sector Casco Central Ver detalles"
+  },
+  {
+    "code": "x0276",
+    "name": "Zoom Palmira",
+    "city": "Palmira",
+    "state": "Táchira",
+    "address": "Sector Palmira, Carretera 5, Local Nro. 2. Ver detalles"
+  },
+  {
+    "code": "x0275",
+    "name": "Zoom Rubio",
+    "city": "Rubio",
+    "state": "Táchira",
+    "address": "Calle 14 Entre Av. 8 Y 9, Centro Comercial Dona Ivonne, P.b. Local 6 Y 7 Ver detalles"
+  },
+  {
+    "code": "x0277",
+    "name": "Zoom Av Venezuela",
+    "city": "San Antonio del Tachira",
+    "state": "Táchira",
+    "address": "Av Venezuela Carrera 6 Local Nro 6-02,sector Bolivar Ver detalles"
+  },
+  {
+    "code": "x0278",
+    "name": "Zoom San Antonio",
+    "city": "San Antonio del Tachira",
+    "state": "Táchira",
+    "address": "Calle 9 Entre Carreras 10 Y 11 Número 10-44 Barrio La Popa San Antonio Del Táchira. Ver detalles"
+  },
+  {
+    "code": "x0263",
+    "name": "Zoom 5ta Avenida",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Av. 5ta. Entre Calles Nro. 3 Y 4,edf. A.c., Piso Pb, Local Nro. 8,sector Centro. Ver detalles"
+  },
+  {
+    "code": "x0259",
+    "name": "Zoom Av Ferrero Tamayo",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Av. Ferrero Tamayo, Cruce Av. Las Pilas Centro Comercial Barata, Local P.b-03. Ver detalles"
+  },
+  {
+    "code": "x0258",
+    "name": "Zoom Av Rotaria",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Vda 8 Y 9 Casa Nro 2-24 Sector Prolongacion De La Unidad Vecinal Ver detalles"
+  },
+  {
+    "code": "x0262",
+    "name": "Zoom Barrio El Carmen",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Calle 2 Nro 10-45 Barrio El Carmen La Concordia Ver detalles"
+  },
+  {
+    "code": "x0264",
+    "name": "Zoom Calle 12",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Calle 12, Entre Carrera 4 Y 5ta Avenida Nro 4-35 La Ermita ( Tapon Lacor) San Cristobal Ver detalles"
+  },
+  {
+    "code": "x0265",
+    "name": "Zoom Calle 15",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Calle 15 Con Carrera 22, Edif. Apolo, Local 3, Barrio Obrero. Ver detalles"
+  },
+  {
+    "code": "x0261",
+    "name": "Zoom Carrera 19",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Cr 19 Entre Calle 15 Y 16 Local Nro 15-15, Barrio Obrero Ver detalles"
+  },
+  {
+    "code": "x0266",
+    "name": "Zoom La Concordia",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Av 19 De Abril Nro 9-29 Entre Carreras 9 Y 10 La Concordia. Ver detalles"
+  },
+  {
+    "code": "x0267",
+    "name": "Zoom Multiservicios Barrio Obrero",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Calle 11 Entre Carreras 18 Y 19 Nro 19-59, Calle 11 Entre Carreras 18 Y 19 Nro 19-59. Ver detalles"
+  },
+  {
+    "code": "x0260",
+    "name": "Zoom Paramillo",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Av 4 Edif Minicentro Paramillo Piso 3 Local 1 Etapa,zona Industrial Paramillo Ver detalles"
+  },
+  {
+    "code": "x0268",
+    "name": "Zoom San Cristobal",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Av. Libertador, Edificio El Maracucho Pb. Local A-56. P.ref. Frente Al Hotel Hamburgo. Ver detalles"
+  },
+  {
+    "code": "x0269",
+    "name": "Zoom Santa Teresa",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Calle Principal Cc Casa Grande Nivel Planta Baja Local S/n, Sector Santa Teresa Ver detalles"
+  },
+  {
+    "code": "x0273",
+    "name": "Zoom Ureña",
+    "city": "Urena",
+    "state": "Táchira",
+    "address": "Calle 5, Barrio La Goajira, Carretera 5, Local 01. Ver detalles"
+  },
+  {
+    "code": "x0253",
+    "name": "Zoom Bocono",
+    "city": "Bocono",
+    "state": "Trujillo",
+    "address": "Sector Centro, Av. Carabobo Entre Calle Monsenor Jauregui Y Andres Bello, Casa Nro. 6-22. Ver detalles"
+  },
+  {
+    "code": "x0256",
+    "name": "Zoom Trujillo",
+    "city": "Trujillo",
+    "state": "Trujillo",
+    "address": "Av Bolivar Centro Comercial Solunto, Nivel 1 Local 1, Centro De Trujillo Ver detalles"
+  },
+  {
+    "code": "x0254",
+    "name": "Zoom Valera",
+    "city": "Valera",
+    "state": "Trujillo",
+    "address": "Avenida BolÍvar Edificio Galotta Ii, Urb Las Acacias Al Lado De La Bera Ver detalles"
+  },
+  {
+    "code": "x0255",
+    "name": "Zoom Valera Centro",
+    "city": "Valera",
+    "state": "Trujillo",
+    "address": "Calle 6, Entre Avenidas 10 Y 11 Cc Canaima Nivel P/b Local L-20 Ver detalles"
+  },
+  {
+    "code": "x0286",
+    "name": "Zoom Av 6 C.c Don Antonio",
+    "city": "San Felipe",
+    "state": "Yaracuy",
+    "address": "Av 6 Entre Calle 16 Y Avenida La Patria C.c Don Antonio Nivel P.b Local 5, Sector Centro Ver detalles"
+  },
+  {
+    "code": "x0285",
+    "name": "Zoom San Felipe",
+    "city": "San Felipe",
+    "state": "Yaracuy",
+    "address": "Av. La Patria Con Av. 19 De Abril, Centro Comercial Aracoi, Local C-5. P.ref. Fte. A Oficinas De Caley. Ver detalles"
+  },
+  {
+    "code": "x0284",
+    "name": "Zoom Yaritagua",
+    "city": "Yaritagua",
+    "state": "Yaracuy",
+    "address": "Av. Padre Torres. Calle 19 Entre Carretera 11 Y 12. Ver detalles"
+  },
+  {
+    "code": "x0298",
+    "name": "Zoom Bachaquero",
+    "city": "Bachaquero",
+    "state": "Zulia",
+    "address": "Av Bolivar Cc Bolivar Center Nivel 2 Local 2, Sector El Muro Ver detalles"
+  },
+  {
+    "code": "x0295",
+    "name": "Zoom Cabimas",
+    "city": "Cabimas",
+    "state": "Zulia",
+    "address": "Carretera H Centro Comercial Borjas Local 6 Y 7 Ver detalles"
+  },
+  {
+    "code": "x0296",
+    "name": "Zoom Edificio D Maio",
+    "city": "Cabimas",
+    "state": "Zulia",
+    "address": "Avenida Intercomunal Edificio Hotel D Maio Nivel Planta Baja, Local Nro 1 Sector El Dividive Ver detalles"
+  },
+  {
+    "code": "x0293",
+    "name": "Zoom Av. Alonso de Ojeda",
+    "city": "Ciudad Ojeda",
+    "state": "Zulia",
+    "address": "Av. Alonso De Ojeda, Edif. Tibidabo, P.b. Local 2, Sec. Casco Central, Ciudad Ojeda Ver detalles"
+  },
+  {
+    "code": "x0292",
+    "name": "Zoom Calle Vargas",
+    "city": "Ciudad Ojeda",
+    "state": "Zulia",
+    "address": "Calle Vargas Con Calle Campo Elias Cc Nocciano Nivel Pb Local 2 Sector Casco Central, Ciudad Ojeda Ver detalles"
+  },
+  {
+    "code": "x0294",
+    "name": "Zoom Ciudad Ojeda",
+    "city": "Ciudad Ojeda",
+    "state": "Zulia",
+    "address": "Sector Las Morochas, Av. Intercomunal Calle Cardon, Edificio Ojeda. Pb., Locales 6 Y 7. Ver detalles"
+  },
+  {
+    "code": "x0291",
+    "name": "Zoom El Venado",
+    "city": "El Venado",
+    "state": "Zulia",
+    "address": "Centro Comercial De Dos Plantas Vera Cruz Carretera Lara -zulia Local S/n P.b. Pasillo Principal No. 06,sector Casco Central Ver detalles"
+  },
+  {
+    "code": "x0290",
+    "name": "Zoom La Concepcion",
+    "city": "La Concepcion",
+    "state": "Zulia",
+    "address": "Sector Los Lirios La Concepcion, (los Teques), Av. Principal, Local Nro. S/n. Ver detalles"
+  },
+  {
+    "code": "x0287",
+    "name": "Zoom Machiques",
+    "city": "Machiques",
+    "state": "Zulia",
+    "address": "Av Artes Entre Calle La Marina Y Calle El Carmen Casa Nro S/n, Machiques Ver detalles"
+  },
+  {
+    "code": "x0301",
+    "name": "Zoom 3y San Martin",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Sector Bella Vista, Calle Nro. 74, Con Av. Nro. 3y, Local Candeloro Nro. 5-a. Ver detalles"
+  },
+  {
+    "code": "x0311",
+    "name": "Zoom Av 10 Cecilio Acosta",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av 10 Entre Calles 66 Y 66a Casa Nro 66-48 Local 2 Ver detalles"
+  },
+  {
+    "code": "x0312",
+    "name": "Zoom Av. 4 Bella Vista",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Calle 63a Entre Avs 4 Y 5 Casa 4-20 Nro 2 Y 3 Ver detalles"
+  },
+  {
+    "code": "x0313",
+    "name": "Zoom Av. La Limpia",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av 28 La Limpia Calle 79 Casa Nro 77-60 Ver detalles"
+  },
+  {
+    "code": "x0305",
+    "name": "Zoom C.c Akrai Center",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Calle 86 Pichincha Con Av 4 Bella Vista, Centro Comercial Akrai Center, Locales A-14 Y A-15 Pb. Ver detalles"
+  },
+  {
+    "code": "x0308",
+    "name": "Zoom C.C. Gran Bazar",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av 15 C.c Gran Bazar Primer Piso Local Ml 1480 Sector Santa BÁrbara Ver detalles"
+  },
+  {
+    "code": "x0300",
+    "name": "Zoom C.C. Metrosol",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av 58 Cc Metrosol Nivel Pb Local 19-a Sector Circunvalacion Nro 2 Maracaibo Ver detalles"
+  },
+  {
+    "code": "x0314",
+    "name": "Zoom C.C.galerias La Limpia",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Calle 28, Sector La Limpia C.c. Galerias Mall P.b Local P.b-este 4a Ver detalles"
+  },
+  {
+    "code": "x0310",
+    "name": "Zoom Centro Norte Fuerzas Armadas",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av 15 Y 15 A Entre Calles 19 A Y 20 Cc Norte Nivel Pb Local Pb-17,sector Fuerzas Armadas Ver detalles"
+  },
+  {
+    "code": "x0315",
+    "name": "Zoom Delicias",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av 15 Prolongacion Delicias Cc Luz Y Sol No 60c.58 Nivel No Indica Local 3 Ver detalles"
+  },
+  {
+    "code": "x0309",
+    "name": "Zoom Kilometro 4",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Calle 148 Local No. 115-59 Edificio Tami Via Zona Industrial A 50 Metros Del KilÓmetro 4. Ver detalles"
+  },
+  {
+    "code": "x0306",
+    "name": "Zoom La Chinita",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av. 15, Entre Calles 93 Y 95, Centro Comercial La Chinita, Primer Nivel, Local N° 26. P.ref. Por La Feria De Comida. Ver detalles"
+  },
+  {
+    "code": "x0316",
+    "name": "Zoom La Coromoto Boulevard",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Calle 171 Local Nro 44-73 Sector La Coromoto Ver detalles"
+  },
+  {
+    "code": "x0307",
+    "name": "Zoom Maracaibo",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Avenida 5 De Julio, Calle 77 Con Av. 12. Ver detalles"
+  },
+  {
+    "code": "x0304",
+    "name": "Zoom Plaza de Toros",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Calle 52-a Local Nro 1380000 Urb La Trinidad Sector Plaza De Toro. Ver detalles"
+  },
+  {
+    "code": "x0299",
+    "name": "Zoom Pomona",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Barrio San Trino La Pomona, Calle Nro. 102 Entre Av. Nro. 18 Y Calle Nro. 102a, Local Nro. 18-26. Ver detalles"
+  },
+  {
+    "code": "x0302",
+    "name": "Zoom Santa Rita",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av 8 Entre Callles 66a Y 67 Edif El Globo Piso Pb Local 3,sector Santa Rita Ver detalles"
+  },
+  {
+    "code": "x0303",
+    "name": "Zoom Sierra Maestra",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Calle 13 Cc Oasis Nivel Pb Local L-3 Barrio Sierra Maestra Sierra Maestra Ver detalles"
+  },
+  {
+    "code": "x0297",
+    "name": "Zoom Mene Grande",
+    "city": "Mene Grande",
+    "state": "Zulia",
+    "address": "Mene Grande - La Linea Ver detalles"
+  },
+  {
+    "code": "x0288",
+    "name": "Zoom Santa Barbara del Zulia",
+    "city": "Santa Barbara del Zulia",
+    "state": "Zulia",
+    "address": "Av Bolivar Cc Dorado Nivel P/b Local 02 Ver detalles"
+  },
+  {
+    "code": "x0289",
+    "name": "Zoom La Villa del Rosario",
+    "city": "Villa del Rosario",
+    "state": "Zulia",
+    "address": "Sector Casco Central La Villa Del Rosario, Av. N°. 18 De Octubre, Local N°. 18-13. Ver detalles"
+  }
+]

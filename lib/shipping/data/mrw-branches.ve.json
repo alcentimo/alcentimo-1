@@ -198,14 +198,14 @@
   {
     "code": "x0190",
     "name": "S.sebastian D Los Reyes",
-    "city": "San Sebastián de los Reyes",
+    "city": "San Sebastián de Los Reyes",
     "state": "Aragua",
     "address": "Calle La Pista, Local Nro 03, Sector El Polvero, San Sebastian De Los Reyes Aragua. Ver detalles"
   },
   {
     "code": "05090",
     "name": "San Sebastian de Los Reyes",
-    "city": "San Sebastián de los Reyes",
+    "city": "San Sebastián de Los Reyes",
     "state": "Aragua",
     "address": "CALLE BOLIVAR LOCAL NRO 18-2 SECTOR CENTRO SAN SEBASTIAN DE LOS REYES ARAGUA"
   },
@@ -546,11 +546,25 @@
     "address": "CALLE DALLA COSTA Nº 22, LOCAL 1, EDIF. CIARCIA, FRENTE A LA PLAZA BOLÍVAR, PARROQUIA SAN JOSÉ, MUNICIPIO TUCUPITA, TUCUPITA, EDO. DELTA AMACURO"
   },
   {
+    "code": "x0255",
+    "name": "Boleita",
+    "city": "Boleita",
+    "state": "Distrito Capital",
+    "address": "Av. Las Palmas, Edif. Torre Don Leonardo, Piso Pb, Local 6, Urb. Boleita Sur, Caracas (petare), Zona Postal 1071 Ver detalles"
+  },
+  {
     "code": "01150",
     "name": "Altamira",
     "city": "Caracas",
     "state": "Distrito Capital",
     "address": "AV SAN JUAN BOSCO DE ALTAMIRA CON 1ERA TRANSVERSAL, RES. EXCELSIOR PB LOCAL 2 ALTAMIRA - MIRANDA"
+  },
+  {
+    "code": "x0256",
+    "name": "Andres Bello",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av Andr+s Bello Colegio Nacional De Periodista Pb Local B- 01 Urbanizaciën Los Caobos Caracas Ver detalles"
   },
   {
     "code": "01460",
@@ -721,6 +735,13 @@
     "address": "URB. LA FLORIDA. AV. LOS CHAGUARAMOS.QTA COROLI. CARACAS"
   },
   {
+    "code": "x0257",
+    "name": "La Piramide",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av R-o Paragua Edif Centro Comercial La Piramide Piso Pb Local 6a Urb Prados Del Este, Sector Parque Humboldt, Caracas Ver detalles"
+  },
+  {
     "code": "01100",
     "name": "La Trinidad",
     "city": "Caracas",
@@ -812,6 +833,13 @@
     "address": "CENTRO COMERCIAL PALO VERDE, NIVEL 2, LOCAL 11-2. FRENTE DE FARMACIA NATURISTA, DENTRO DE CENTRO DE COMUNICACIONES MOVILNET CANTV"
   },
   {
+    "code": "x0258",
+    "name": "Pantin",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Calle Pantin, Galpon Mrw. Al Frente De La Policia De Chacao.urbanizaciën Estado Leal. Chacao Ver detalles"
+  },
+  {
     "code": "01080",
     "name": "Plaza Estrella",
     "city": "Caracas",
@@ -873,6 +901,20 @@
     "city": "Caracas",
     "state": "Distrito Capital",
     "address": "AVENIDA ROMULO GALLEGOS ENTRE AVENIDA PRINCIPAL DE SEBUCAN Y AVENIDA SUCRE DE LOS DOS CAMINOS, RESIDENCIAS CARLO LOCAL 2. LOS DOS CAMINOS"
+  },
+  {
+    "code": "x0253",
+    "name": "Montalban",
+    "city": "El Junquito",
+    "state": "Distrito Capital",
+    "address": "Montalban Ii. 2da Transversal Centro Comercial La Villa. Ver detalles"
+  },
+  {
+    "code": "x0254",
+    "name": "La California",
+    "city": "La California",
+    "state": "Distrito Capital",
+    "address": "Av. Fco. De Miranda Con Av. Madrid C.c. Puertas Del Este, Local 5 La California Norte. Ver detalles"
   },
   {
     "code": "11000",
@@ -945,18 +987,18 @@
     "address": "CARRERA 12 ENTRE CALLE 4 Y 5 C.C COROMOTO FRENTE A LA PLAZA BOLÍVAR. CALABOZO"
   },
   {
-    "code": "12000",
-    "name": "San Juan de Los Morros",
-    "city": "San Juan de los Morros",
-    "state": "Guárico",
-    "address": "CALLE EL CARMEN, EDIF. RAGUCEO, LOCAL 02, BAJANDO LA GOBERNACION, DIAGONAL A CANTV"
-  },
-  {
     "code": "x0223",
     "name": "S. Juan de Los Morros",
     "city": "San Juan de Los Morros",
     "state": "Guárico",
     "address": "Calle El Carmen, Edf. Rauseo, Local 2 Bajando Por La Gobernación, Diagonal A La Cantv. Ver detalles"
+  },
+  {
+    "code": "12000",
+    "name": "San Juan de Los Morros",
+    "city": "San Juan de Los Morros",
+    "state": "Guárico",
+    "address": "CALLE EL CARMEN, EDIF. RAGUCEO, LOCAL 02, BAJANDO LA GOBERNACION, DIAGONAL A CANTV"
   },
   {
     "code": "12040",
@@ -968,7 +1010,7 @@
   {
     "code": "12020",
     "name": "Valle de La Pascua",
-    "city": "Valle de la Pascua",
+    "city": "Valle de La Pascua",
     "state": "Guárico",
     "address": "CALLE GONZÁLEZ PADRÓN, CENTRO COMERCIAL STAR CENTER, LOCAL B-10, VALLE DE LA PASCUA, ESTADO GUÁRICO"
   },

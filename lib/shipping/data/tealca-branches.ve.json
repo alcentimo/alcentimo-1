@@ -1,0 +1,1430 @@
+[
+  {
+    "code": "2912",
+    "name": "Anaco",
+    "city": "Anaco",
+    "state": "Anzoátegui",
+    "address": "Av. José Angtonio Anzoátegui, C.C. Anaco Center, Nivel 1, Local 60. Zona Aeropuerto"
+  },
+  {
+    "code": "x0001",
+    "name": "Encomiendas Regar, C.a.",
+    "city": "Anaco",
+    "state": "Anzoátegui",
+    "address": "Av. Bolivar Local Nro 67 (frente Al Hotel Muñiz, Sector Centro Municipio Anaco, Parroquia Anaco Zp. 6003 Estado Anzoátegui Ver detalles"
+  },
+  {
+    "code": "x0002",
+    "name": "Jag Express, C.a",
+    "city": "Barcelona",
+    "state": "Anzoátegui",
+    "address": "Sector Nueva Barcelona Local C Nro. 18 C.c Los Chaguaramos. Av. Fuerza Armadas Parroquia El Carmen Municipio Simón Bolívar Barcelona Anzoátegui Venezuela Zp. 6001 Ver detalles"
+  },
+  {
+    "code": "2901",
+    "name": "El Tigre",
+    "city": "El Tigre",
+    "state": "Anzoátegui",
+    "address": "Tercera Carrera Sur con Tercera Calle, Nº 45. Pueblo Nuevo Sur, Centro El Tigre"
+  },
+  {
+    "code": "x0006",
+    "name": "Tradiser, C.a",
+    "city": "El Tigrito",
+    "state": "Anzoátegui",
+    "address": "Av. Fernández Padilla, Centro Comercial La Orquídea Planta Baja Local 04, Municipio San José De Guanipa (el Tigrito) Ver detalles"
+  },
+  {
+    "code": "x0007",
+    "name": "Venezolana Pg & G, C.a",
+    "city": "Lecheria",
+    "state": "Anzoátegui",
+    "address": "Av. Intercomunal Jorge Rodriguez, C.c. Intannos Cneter, Pb, Local 05. Lecheria-edo. Anzoategui, Municipio Urbaneja Ver detalles"
+  },
+  {
+    "code": "2906",
+    "name": "Lechería",
+    "city": "Lechería",
+    "state": "Anzoátegui",
+    "address": "Av. Intercomunal Jorge Rodríguez, C.C. Intannos Center, P.B., Local N° 5"
+  },
+  {
+    "code": "2907",
+    "name": "Oficina Comercial Barcelona",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "Zona Industrial Barcelona Calle San Antonio Galpón Parcelamiento Concretera Caracas Oriente Municipio Simón Bolivar Parroquia El Carmen Zp 6001 Ver detalles"
+  },
+  {
+    "code": "x0004",
+    "name": "Power Service 100, C.a.",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "Av. Stadium C.c. Cardón Nivel P.b, Local 16 Y 17 Sector Casco Central Puerto La Cruz Estado Anzoátegui. Zona Postal 6023 Ver detalles"
+  },
+  {
+    "code": "2909",
+    "name": "Puerto La Cruz",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "Av. Stadium, C.C. Cardón, P.B., Local 16 y 17. Sector Casco Central"
+  },
+  {
+    "code": "x0005",
+    "name": "Puerto Piritu",
+    "city": "Puerto Piritu",
+    "state": "Anzoátegui",
+    "address": "0 Ver detalles"
+  },
+  {
+    "code": "x0008",
+    "name": "Javi Y Zul, C.a.",
+    "city": "San Fernando de A",
+    "state": "Apure",
+    "address": "Calle 5 Local No. 34 Barrio Los Tamarindos, Coropo - Edo Aragua Ver detalles"
+  },
+  {
+    "code": "5115",
+    "name": "Cagua",
+    "city": "Cagua",
+    "state": "Aragua",
+    "address": "Calle Sucre, C.C. La Pirámide, Local A -30"
+  },
+  {
+    "code": "x0017",
+    "name": "Inversiones Padi 2823, C.a.",
+    "city": "Cagua",
+    "state": "Aragua",
+    "address": "Calle Sucre Cc La Pirámide Local A -30 Cagua Municipio Sucre Parroquia Centro Cagua Zp. 2122 Ver detalles"
+  },
+  {
+    "code": "5117",
+    "name": "La Morita",
+    "city": "La Morita",
+    "state": "Aragua",
+    "address": "Av. Doctor Montoya, Estación de Servicio Casa Gómez, P.B., Local 7-3. Sector La Morita 1"
+  },
+  {
+    "code": "5118",
+    "name": "La Victoria",
+    "city": "La Victoria",
+    "state": "Aragua",
+    "address": "Av. Victoria, C.C. Cilento, Planta Baja, Local N° 9. Zona Centro La Victoria"
+  },
+  {
+    "code": "x0009",
+    "name": "Canfer",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Cubre Las Zonas San Juan De Los Morros, Villa De Cura Y Cagua. Ver detalles"
+  },
+  {
+    "code": "x0010",
+    "name": "Inversiones Estrada Barreto, C.a.",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av. Aragua Entre Bermúdez Y Fuerzas Aéreas Local 194 Urb. Andres Eloy Blanco Frente A La Fundación Mendoza Parroquia José Casanova Godoy Municipio Girardot Maracay Venezuela Zp. 2103 Ver detalles"
+  },
+  {
+    "code": "x0011",
+    "name": "Inversiones Panp 69, C.a.",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av. Sucre Norte, Centro Empresarial Sucre, Pb, Local Nro.4. Maracay Edo. Aragua Ver detalles"
+  },
+  {
+    "code": "5113",
+    "name": "Maracay",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Zona Industrial San Vicente Av. Antón Philli Galpón Nro. 2 Al Lado De Constructora Master Zp 2102 Ver detalles"
+  },
+  {
+    "code": "5114B",
+    "name": "Maracay Oeste",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Calle Ricaurte Oeste Nro 30, Entre Calle Vargas Y Calle Soublette. Maracay, Edo. Aragua Ver detalles"
+  },
+  {
+    "code": "x0014",
+    "name": "Oficina Comercial Maracay",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Av. Bermúdez Con Av. Aragua, Cc Maracay Plaza, Pb, Local 80f, Parroquia José Casanova Godoy, Municipio Girardot, Maracay, Estado Aragua. Ver detalles"
+  },
+  {
+    "code": "x0015",
+    "name": "Rapidezca, C.a.",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Sector La Coromoto, Av. Ramón Narvaez, Local No. 3, Sector La Coromoto, Maracay, Estado Aragua. Ver detalles"
+  },
+  {
+    "code": "x0016",
+    "name": "Record 2017, C.a.",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Urb. Nueva Victoria, Cc Cilento, Local Pb-09, Parroquia Castor Nieves, Municipio José Felix Ribas, La Victoria, Estado Aragua. Ver detalles"
+  },
+  {
+    "code": "x0018",
+    "name": "Javi Y Zul, C.a.",
+    "city": "Santa Rita (mcy)",
+    "state": "Aragua",
+    "address": "Calle 5 Local No. 34 Barrio Los Tamarindos, Coropo -edo Aragua Ver detalles"
+  },
+  {
+    "code": "x0019",
+    "name": "Multiservicios Expresos 2013, C.a",
+    "city": "Turmero",
+    "state": "Aragua",
+    "address": "Av. Doctor Montoya, Cc Estación De Servicios Casa Gómez, Pb, Local 7-3, Sector La Morita 1, Parroquia Turmero, Municipio Santiago Mariño, Turmero, Edo. Aragua. Ver detalles"
+  },
+  {
+    "code": "8005",
+    "name": "Barinas",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Sector Carretera Nacional Troncal 5 Parque Industrial Troncal 5 Galpones 01 Y 07 Parroquia Alto Barinas Ver detalles"
+  },
+  {
+    "code": "x0021",
+    "name": "Continental Delivery Services, C.a.",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Sector Alto Barinas, Av. El Progreso Cruce Con Calle 3, Cc Plaza Premium, Pb, Local 04, Parroquia Alto Barinas, Municipio Barinas, Barinas, Estado Barinas. Ver detalles"
+  },
+  {
+    "code": "x0022",
+    "name": "Hub Cadena Logística",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Av. San Carlos Entre Plaza Y 5 De Julio, Local 5-33a, Urb. El Pilar Barinas, Barinas Ver detalles"
+  },
+  {
+    "code": "x0023",
+    "name": "Pie de Monte Andino",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Cr 8 Casa, Nro Nro.12, Sector El Bucaral, Barinitas Barinas Ver detalles"
+  },
+  {
+    "code": "8007",
+    "name": "Barinitas",
+    "city": "Barinitas",
+    "state": "Barinas",
+    "address": "Av. Intercomunal Rafael Roche, Local Hotel Cacao Suites Nro 01, Sector Villa Nueva Barinitas"
+  },
+  {
+    "code": "3205B",
+    "name": "Alta Vista",
+    "city": "Alta Vista",
+    "state": "Bolívar",
+    "address": "Calle Nekuima con Cuchivero, C.C. Ciudad Alta Vista, Piso 1, Local N° 81. Urb. Alta Vista Norte"
+  },
+  {
+    "code": "x0029",
+    "name": "Tomás Express, C.a",
+    "city": "Ciudad Bolivar",
+    "state": "Bolívar",
+    "address": "Av. Jesus Soto, Sector Aeropuerto Tomás De Heres, Hangar Distribuidora Tom`s, Parroquia Catedral, Municipio Heres, Ciudad Bolívar, Estado Bolívar. Ver detalles"
+  },
+  {
+    "code": "x0026",
+    "name": "Oficina Comercial Puerto Ordaz",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Parcela De Terreno Distinguida Con El Nro. 304-23-14, Parcelamiento Industrial Los Pinos, En Matanzas, Unidad De Desarrollo 304 De Ciudad Guayana, Municipio Caroní Del Estado Bolívar, Parroquia Unare Zp 8050 Ver detalles"
+  },
+  {
+    "code": "3205",
+    "name": "Puerto Ordaz – Castillito",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Calle Santa Rosalía con Calle Las Bonitas, Edif. Padovan, P.B., Sector Castillito"
+  },
+  {
+    "code": "3205C",
+    "name": "Puerto Ordaz – Kiosco Modular",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Calle Caura, Local UD 264 nro. SN, Urb. Alta Vista, Parcela 11, Ciudad Guayana"
+  },
+  {
+    "code": "3209",
+    "name": "Puerto Ordaz – Ventuari",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Av. Atlántico cruce con Av. Norte Sur 4, Estación de Servicio Ventuari"
+  },
+  {
+    "code": "x0027",
+    "name": "Representaciones Zorco, C.a.",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Calle Santa Rosalía Con Calle Las Bonitas, Edif. Padovan, Pb, Parroquia Cachamay, Municipio Caroní, Castillito, Puerto Ordaz, Estado Bolívar. Ver detalles"
+  },
+  {
+    "code": "x0028",
+    "name": "Transportes Y Servicio Ceamso, C.a.",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Av. Atlántico Cruce Con Av. Norte Sur 4, Estación De Servicio Ventuari, Urb. Ventuari, Manzana 13, Local 2, Parroquia Unare, Municipio Caroní, Puerto Ordaz, Estado Bolívar. Ver detalles"
+  },
+  {
+    "code": "x0025",
+    "name": "Kamoy, C.a.",
+    "city": "San Felix",
+    "state": "Bolívar",
+    "address": "Av. Manuel Piar Al Lado De Placa Centro, Edificio Reyfeca, Local 4-b, Municipio Caroní, San Félix, Estado Bolívar. Ver detalles"
+  },
+  {
+    "code": "3208",
+    "name": "San Félix – El Roble",
+    "city": "San Félix",
+    "state": "Bolívar",
+    "address": "Av. Moreno de Mendoza, C.C. La Cariñosa, P.B., Local N° 1. Sector El Roble"
+  },
+  {
+    "code": "x0024",
+    "name": "Inversiones Oriven, C.a.",
+    "city": "Unare",
+    "state": "Bolívar",
+    "address": "Urb. Unare Ii, Av. 1, Sector Ii, Edificio Ipeca, Pb, Local No. 2, Parroquia Unare, Municipio Caroní, Puerto Ordaz, Estado Bolívar. Ver detalles"
+  },
+  {
+    "code": "3207",
+    "name": "Unare",
+    "city": "Unare",
+    "state": "Bolívar",
+    "address": "Av. 1, Edif. Ipeca, P.B., Local N°2. Sector II Unare II"
+  },
+  {
+    "code": "3208B",
+    "name": "Upata",
+    "city": "Upata",
+    "state": "Bolívar",
+    "address": "Centro Comercial Residencial Colonial Park, Calle Upata B cruce con Calle Pao"
+  },
+  {
+    "code": "x0038",
+    "name": "Epg Cargo Services Express C.a",
+    "city": "Guacara",
+    "state": "Carabobo",
+    "address": "Centro Guacara Calle Piar Con Arévalo Gonzalez C.c. Guacara Plaza Pb Local 40 Parroquia Urbana Guacara Municipio Guacara Carabobo Venezuela Zp. 2015 Ver detalles"
+  },
+  {
+    "code": "5214",
+    "name": "Guacara",
+    "city": "Guacara",
+    "state": "Carabobo",
+    "address": "Calle Arévalo González, entre Calle Páez y Calle Carabobo, C.C. Da Vinci, P.B., Local N° 40"
+  },
+  {
+    "code": "5209",
+    "name": "Naguanagua",
+    "city": "Naguanagua",
+    "state": "Carabobo",
+    "address": "Av. 96B, Sector las Quintas, Local 175-55"
+  },
+  {
+    "code": "x0039",
+    "name": "Puerto Cabello",
+    "city": "Puerto Cabello",
+    "state": "Carabobo",
+    "address": "0 Ver detalles Rastree su paquete aquí Introduzca el numero de guia o rastreo que le han suministrado para identificar su paquete. Rastrear Agencias de TEALCA Sucursales cerca de mi ubicación Rastreo de Paquetes Cambiar a otra Compañia 466 Agencias Disponibles 443 Agencias Disponibles 264 Agencias Disponibles 25 Agencias Disponibles 67 Agencias Disponibles 55 Agencias Disponibles 69 Agencias Disponibles 346 Agencias Disponibles 191 Agencias Disponibles 65 Agencias Disponibles 528 Agencias Disponibles 233 Agencias Disponibles 197 Agencias Disponibles 190 Agencias Disponibles 285 Agencias Disponibles 689 Agencias Disponibles"
+  },
+  {
+    "code": "5210",
+    "name": "San Diego",
+    "city": "San Diego",
+    "state": "Carabobo",
+    "address": "Av. Intercomunal Don Julio Centeno, C.C. MetroMarket, 2da etapa, Local R9. Urb. Complejo Los Jarales"
+  },
+  {
+    "code": "5211",
+    "name": "Tocuyito",
+    "city": "Tocuyito",
+    "state": "Carabobo",
+    "address": "Vía de Servicio Valencia – Campo de Carabobo, Local N° 2. Urb. Pocaterra"
+  },
+  {
+    "code": "x0030",
+    "name": "D.l.c Eagle, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. 96b, Sector Las Quintas, Local 175-55, Naguanagua. Municipio Naguanagua, Parroquia Naguanagua Zp.2005 Ver detalles"
+  },
+  {
+    "code": "x0031",
+    "name": "Envios Cárdenas Y Asociados, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Intercomunal Don Julio Centeno C.c Metromarket 2da Etapa Local R9 Urbanización Complejo Los Jarales Municipio San Diego Parroquia Urbana San Diego Zp 2006. Ver detalles"
+  },
+  {
+    "code": "x0032",
+    "name": "Inversiones Jamyr 5, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Henry Ford Zona Industrial Municipal Sur Centro Comercial Paseo Las Industrias Nivel Mezzanina Local M-16 Municipio Valencia Parroquia Rafael Urdaneta Zp 2003 Ver detalles"
+  },
+  {
+    "code": "x0033",
+    "name": "Inversiones Pvs, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Andrés Eloy Blanco, Con Av. Carlos Sanda Cc Beverly Center Pb, Local L 1-24, Urb El Viñedo Ver detalles"
+  },
+  {
+    "code": "x0034",
+    "name": "Inversiones Veracord, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Michelena, C.c Ara Nave A Local 87-a-421, Valencia, Municipio Valencia, Parroquia Rafael Urdaneta, Zp. 2003. Ver detalles"
+  },
+  {
+    "code": "5201",
+    "name": "Oficina Comercial Valencia",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Zona Industrial Castillito, Vía Los Guayitos, Cc La Unión, Galpón No. 3, Parroquia San Diego, Municipio San Diego, Valencia, Estado Carabobo. Ver detalles"
+  },
+  {
+    "code": "x0036",
+    "name": "Universal Ava, C. A.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Vía De Servicio Valencia-campo De Carabobo, Urb. Pocaterra, Local No. 2, Parroquia Tocuyito, Municipio Libertador, Valencia, Estado Carabobo. Ver detalles"
+  },
+  {
+    "code": "5207B",
+    "name": "Valencia – Plaza Candelaria",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Calle Cantaura con Calle Carabobo, C.C. Plaza Candelaria, Local N 5. Frente a la Plaza Candelaria"
+  },
+  {
+    "code": "5207",
+    "name": "Valencia – San Blas",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Calle Negro Primero Nro. 97-31, frente al Distribuidor San Blas"
+  },
+  {
+    "code": "x0037",
+    "name": "Venencomienda, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Calle Negro Primero, No. 97-31, Distribuidor San Blas, Parroquia San Blas, Municipico Valencia, Valencia, Estado Carabobo. Ver detalles"
+  },
+  {
+    "code": "5208",
+    "name": "Valencia Norte – Zona Industrial",
+    "city": "Valencia Norte",
+    "state": "Carabobo",
+    "address": "Av. Michelena, C.C. ARA, Nave “A”, Local 87-A-421"
+  },
+  {
+    "code": "5206",
+    "name": "Valencia Sur",
+    "city": "Valencia Sur",
+    "state": "Carabobo",
+    "address": "Av. Henry Ford, Zona Industrial Municipal Sur, C.C. Paseo Las Industrias, Nivel Mezzanina, Local M-16"
+  },
+  {
+    "code": "x0040",
+    "name": "Acy Express, C.a.",
+    "city": "San Carlos",
+    "state": "Cojedes",
+    "address": "Sector Los Silos, Av. Bolívar, Edificio Zevola, Nro. 20-782, Pb, Local 1, Parroquia San Carlos, Municipio San Carlos, San Carlos, Estado Cojedes. Ver detalles"
+  },
+  {
+    "code": "5402",
+    "name": "San Carlos",
+    "city": "San Carlos",
+    "state": "Cojedes",
+    "address": "Av. Bolívar, Centro Comercial Costa Verde, Nivel P.B., Local 4, Sector Centro San Carlos"
+  },
+  {
+    "code": "5403",
+    "name": "Tinaquillo",
+    "city": "Tinaquillo",
+    "state": "Cojedes",
+    "address": "Calle Principal cruce con Calle Socorro, Local 12-68. Sector Anzoátegui"
+  },
+  {
+    "code": "3300",
+    "name": "Tucupita",
+    "city": "Tucupita",
+    "state": "Delta Amacuro",
+    "address": "Ta Casa Nro 46 Local Uno Sector Centro Tucupita Delta Amacuro Zona Postal 6401 Ver detalles"
+  },
+  {
+    "code": "x0042",
+    "name": "Adaia",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Jose Felix Sosa Edif Distiguido Con La Letra D Urb. Bello Campo Municipio Chacao Miranda Zp 1060 Ver detalles"
+  },
+  {
+    "code": "x0044",
+    "name": "Albarran Villasana",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Cubre Las Zonas De Charallave, Nva Cúa, Santa Lucía, Santa Teresa Y Aeropuerto Caracas Ver detalles"
+  },
+  {
+    "code": "x0043",
+    "name": "Altamira",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. San Juan Bosco Edif. Mayflower Altamira- Caracas Ver detalles"
+  },
+  {
+    "code": "1114",
+    "name": "Boleíta",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Boleíta Sur, Av. Principal entre 4ta y 3ra transversal, Quinta La Campiña"
+  },
+  {
+    "code": "x0045",
+    "name": "C & C Express, C.a",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Zona Industrial La Urbina, Calle 5 Con Calle 10, Centro Empresarial Orinoco, Pb, Local 1, La Urbina, Municipio Sucre, Estado Miranda Ver detalles"
+  },
+  {
+    "code": "x0046",
+    "name": "Cadena Express, C.a",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Urb. Los Chaguaramos, Edif. Llaeco, Torre A, Pb, Local A-3, Ciudad Universitaria Con Calle Codazzi, Parroquia San Pedro, Municipio Libertador, Caracas, Dc. Ver detalles"
+  },
+  {
+    "code": "1125",
+    "name": "Catia",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Calle Maury, Casa La Valenciana Nº P.B., Urb. Catia"
+  },
+  {
+    "code": "1137B",
+    "name": "Ccct",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Centro Comercial Ciudad Tamanaco (CCCT), Nivel C1, Minitiendas Local 47-A-01 Primera Etapa"
+  },
+  {
+    "code": "1126",
+    "name": "Comercial 23 El Paraíso, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Urb. El Paraiso Av. Washington Qta. Nina Local Pb. Parroquia El Paraíso Municipio Libertador Caracas. Dtto. Capital Venezuela Zp. 1020 Ver detalles"
+  },
+  {
+    "code": "x0049",
+    "name": "Corporación Ccfg, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Santa Rosa A Santa Inés Sector San José Edif. Arichuna, Local 1 P.b. Parroquia San Jose Municipio Libertador Caracas. Dtto. Capital Venezuela Zp. 1010 Ver detalles"
+  },
+  {
+    "code": "x0048",
+    "name": "Corporación Elo-one, C.a",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Via Los Guayabitos, Urb. Piedra Azul, Edf. Kinky, Pb, Locales 3 Y 4, Baruta, Municipio Baruta, Estado Miranda Ver detalles"
+  },
+  {
+    "code": "1142",
+    "name": "El Cafetal",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Boulevard Raúl Leoni, C.C. Plaza Las Américas, Nivel Oro, P.B., Local 1-08-B"
+  },
+  {
+    "code": "1128B",
+    "name": "El Cementerio",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Principal del Cementerio con cruce a la Calle El Degredo, Mercado Merposur"
+  },
+  {
+    "code": "1141",
+    "name": "El Junquito",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Carretera Kilometro 11 El Junquito, Local P.B. Nro 47, Urbanización 5 de Julio"
+  },
+  {
+    "code": "1137",
+    "name": "El Rosal",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Libertador, Torre EXA, P.B., Local N° 10, Urb. El Rosal"
+  },
+  {
+    "code": "x0050",
+    "name": "Encomiendas G2n, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Boulevard Raúl Leoni, Cc Plaza Las Américas, Nivel Oro, Pb, Local 1-08-b, Urb. El Cafetal, Parroquia El Cafetal, Municipio Baruta, Estado Miranda. Ver detalles"
+  },
+  {
+    "code": "x0051",
+    "name": "Encomiendas Paula Bell, C.a",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Jose Felix Sosacon, Av Principal De Bello Campo, Edif. Antesol Piso Pb Local Durbanización Bello Campo Caraca (chacao) Miranda Ver detalles"
+  },
+  {
+    "code": "x0052",
+    "name": "Envíos Saga Express, C.a",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Sector Nueva Caracas Qta Mary P.b Calle México Con Panamericana Parroquia Sucre Municipio Libertador Caracas D Capital Venezuela Zp 1030 Ver detalles"
+  },
+  {
+    "code": "1132",
+    "name": "Filas de Mariche",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Carretera Petare, Santa Lucía KM. 9, Sector el Limoncito, Urb. Hacienda La Candelaria"
+  },
+  {
+    "code": "x0053",
+    "name": "Grupo Yta, C.a",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Libertador, Edif Exa Piso Planta Baja, Local 10, Urbanización El Retirocaracas (chacao) Miranda Ver detalles"
+  },
+  {
+    "code": "x0054",
+    "name": "Inversiones Mildasi, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Avenida Fuerzas Armadas Esq. Socorro Edificio Residencias Dorado P.b. Local 2 Parroquia Altagracia Zona Postal 1010 Ver detalles"
+  },
+  {
+    "code": "x0055",
+    "name": "Ipg 2000 Express, C.a",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Sector Prados Del Este Local Av. Rio Paragua. Cc La Pirámide Local 5-c Pb. Prados Del Este Parroquia Baruta Municipio Baruta Gran Caracas Miranda Venezuela Zp. 1080 Ver detalles"
+  },
+  {
+    "code": "1128",
+    "name": "La Candelaria",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Autopista Nte - Sur, Caracas Ver detalles"
+  },
+  {
+    "code": "1107",
+    "name": "La Trinidad",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Vía Los Guayabitos, Edif. Kinky, P.B., Locales 3 y 4, Urb. Piedra Azul"
+  },
+  {
+    "code": "1131",
+    "name": "Los Caobos",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Transversal Colón entre Av. Principal de Maripérez y Montevideo Edif. Tirrenia Pub, Local C. Urb. Los Caobos"
+  },
+  {
+    "code": "1130",
+    "name": "Los Chaguaramos",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Ciudad Universitaria C/C. Codazzi. Edif. Llaeco, Torre A, P.B., Local A1. Urb. Los Chaguaramos"
+  },
+  {
+    "code": "1127",
+    "name": "Los Palos Grandes",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Urb. Los Palos Grandes, 4ta Avenida entre 2da y 3era transversal. Edificio Los Eucaliptos, P.B., Local B"
+  },
+  {
+    "code": "x0057",
+    "name": "Master Service 1345, C.a",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Principal De Boleita Sur, Entre 4ta, Y 3ra. Transversal, Quinta La Campiña, Boleita, Parroquia Leoncio Martinez, Municipio Sucre, Estado Miranda Ver detalles"
+  },
+  {
+    "code": "x0058",
+    "name": "Mendez Y Fuentes C.a",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Los Jabillos, Entre Av. Francisco Solano López Y Calle Las Flores, Galpón Nro. 6, Sabana Grande, Parroquia El Recreo Municipio Libertador Caracas D. Capital Venezuela Zp. 1050 Ver detalles"
+  },
+  {
+    "code": "1114B",
+    "name": "Montecristo",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Primera de Montecristo entre 3ra y 4ta transversal, Quinta Laura, P.B., Urb. Montecristo"
+  },
+  {
+    "code": "1114C",
+    "name": "Oficina Logística La California",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Urb. California Norte, Av. Madrid Con Callejón Bilbao, Galpón Industrial No. 2, Parroquia Leoncio Martínez, Municipio Sucre, Caracas, Distrito Capital Ver detalles"
+  },
+  {
+    "code": "x0060",
+    "name": "Plataforma La Quinta Crespo",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Sur 2 Bis Con Av. Sur 2, Frente Al Cicpc: División De Hurto De Vehículos, Parroquia Santa Teresa, Municipio Libertador. Caracas Ver detalles"
+  },
+  {
+    "code": "1133",
+    "name": "Prados del Este",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Río Paragua. C.C. La Pirámide, P.B., Local 5-C. Sector Prados del Este"
+  },
+  {
+    "code": "1102",
+    "name": "Sabana Grande",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Los Jabillos, entre Av. Francisco Solano López y Calle Las Flores, Galpón N° 6"
+  },
+  {
+    "code": "x0061",
+    "name": "San Bernandino",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Centro Comercial Lord Center, Av. Vollmer Con Av. Urdaneta, Local 31, Pb. Ver detalles"
+  },
+  {
+    "code": "1118",
+    "name": "San Martín",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. José Ángel Lamas, Calle Sevilla. Edif. Indaragua, P.B., Local B2. Urb. San Martín I"
+  },
+  {
+    "code": "x0063",
+    "name": "Servicio de Transporte Adaia",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Jose Felix Sosa, Edificio Antesol, Pb Local 'd', Urb. Bello Campo, Municipio Chacao Ver detalles"
+  },
+  {
+    "code": "x0062",
+    "name": "Speed Cargo 4010, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Urb. Los Palos Grandes Av. Andrés Bello Con 1era Transv. Res. Plaza 1 Semisótano Local Nro.. 4 Parroquia Chacao Gran Caracas Miranda Venezuela Zp. 1060 Ver detalles"
+  },
+  {
+    "code": "x0064",
+    "name": "Tied Express, C.a",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Chuao, Av. La Estancia, C.c.c.t, Nivel P.b Norte, Local 10-22 (bajando Por Las Escaleras De Beco), Municipio Chacao, Caracas, Distrito Capital Ver detalles"
+  },
+  {
+    "code": "x0065",
+    "name": "Tienda Virtual Exportaciones Quinta Crespo",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Sur 2 Bis, Calle 100, Quinta Crespo, Caracas, D.c. Diagonal Al Cicpc Div. De VehÍculos. Ver detalles"
+  },
+  {
+    "code": "x0066",
+    "name": "Ven & Latin , C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Urb. San Martín I Edif. Indaragua Pb. Local B2 Av. José Ángel Lamas, Calle Sevilla Parroquia San Juan Municipio Libertador Caracas. D. Capital Venezuela Zp. 1020 Ver detalles"
+  },
+  {
+    "code": "x0067",
+    "name": "Yepmen Transporte, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Distrito Capital, Caracas, Municipio Libertador, Parroquia El Recreo, Urbanización Los Caobos, Zona Postal 1050, Transversal Colón Entre Avenida Principal. De Maripérez Y Montevideo Edificio Tirrenia Pub, Local C. Ver detalles"
+  },
+  {
+    "code": "7606",
+    "name": "Coro",
+    "city": "Coro",
+    "state": "Falcón",
+    "address": "Calle Dominó con esquina Calle Democracia, Edif. Colina, P.B., Sector Centro"
+  },
+  {
+    "code": "x0068",
+    "name": "Fa Y Jj, C.a.",
+    "city": "Punto Fijo",
+    "state": "Falcón",
+    "address": "Av. Luis Beltrán Prieto Figueroa Entre Calle Los Rosales Y Monagas, Edificio Mirimire, Parroquia Carirubana, Municipio Carirubana, Punto Fijo, Estado Falcón. Ver detalles"
+  },
+  {
+    "code": "7606B",
+    "name": "Punto Fijo",
+    "city": "Punto Fijo",
+    "state": "Falcón",
+    "address": "Calle Zamora, Esquina Calle Paraguay, Edif. Raquel, P.B., Sector Centro"
+  },
+  {
+    "code": "5501",
+    "name": "Calabozo",
+    "city": "Calabozo",
+    "state": "Guárico",
+    "address": "Calle 11 con Carrera 10 y 11, Casa#2, Sector Casco Central"
+  },
+  {
+    "code": "x0070",
+    "name": "Javi Y Zul, C.a.",
+    "city": "Calabozo",
+    "state": "Guárico",
+    "address": "Calle 5 Local No. 34 Barrio Los Tamarindos, Coropo - Edo Aragua Ver detalles"
+  },
+  {
+    "code": "x0069",
+    "name": "Inversiones Transporte World, C.a.",
+    "city": "Valle de La Pascua",
+    "state": "Guárico",
+    "address": "Calle Atarraya Edificio Guirdanella Plata Baja Local No. 1 Sector Centro, Municipio Leonardo Infante Parroquia Valle De La Pascua Zp 2350 Ver detalles"
+  },
+  {
+    "code": "5303",
+    "name": "Valle de La Pascua",
+    "city": "Valle de La Pascua",
+    "state": "Guárico",
+    "address": "Calle Atarraya, Edif. Guirdanella, P.B., Local N° 1, Sector Centro"
+  },
+  {
+    "code": "x0110",
+    "name": "J&j Hermanos Parisca Reyes",
+    "city": "Caribe",
+    "state": "La Guaira",
+    "address": "Av. Boulevard Naiguata Local Yudimar Noro.01 Urb. Tanguarenas Caraballeda Vargas Ver detalles"
+  },
+  {
+    "code": "x0111",
+    "name": "Mm Servicios Integrales, C.a",
+    "city": "La Guaira",
+    "state": "La Guaira",
+    "address": "Urb. José Maria Vargas Calle 4 Local Tealca Sector Pariata Parroquia Maiquetía Municipio Vargas Venezuela Zp. 1161 4 Ver detalles"
+  },
+  {
+    "code": "1234",
+    "name": "Maiquetía",
+    "city": "Maiquetía",
+    "state": "La Guaira",
+    "address": "Calle Los Baños, Centro Empresarial LEANDER, Planta Baja, Local Nro. 16. Sector Maiquetía"
+  },
+  {
+    "code": "7909",
+    "name": "Barquisimeto",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Calle 27 Con Carrera 5, Zona Industrial I Barrio Unión Con Galpón 1. Detrás Del Llenadero De Gas Comunal. Ver detalles"
+  },
+  {
+    "code": "x0073",
+    "name": "Distribuidora de Transporte Alvarado",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Solo Recolecta Ver detalles"
+  },
+  {
+    "code": "x0072",
+    "name": "Distribuidora Matzu 2010, C.a",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Carrera 24, Entre Calles 6 Y Av. Morán, Parroquia Catedral, Municipio Iribarren, Barquisimeto, Estado Lara Ver detalles"
+  },
+  {
+    "code": "x0074",
+    "name": "Infinity Cargo, C.a",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Carrera 21 Entre Calle 14 Y 15, Parroquia Catedral, Municipio Iribarren, Barquisimeto, Estado Lara Ver detalles"
+  },
+  {
+    "code": "x0075",
+    "name": "Oficina Comercial Barquisimeto",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Sector Enelvar Edif. Profesional Barreto Local 1 Y 2 Calle 22 Esq. Carrera 23 Parroquia Catedral Municipio Barquisimeto Lara Venezuela Zp. 3001 Ver detalles"
+  },
+  {
+    "code": "x0076",
+    "name": "R.g 07, C.a",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Barrio Nuevo, Calle 59, Entre Carreras 13 Y 13a, Casa No. 13/69, Parroquia Concepción, Municipio Iribarren, Barquisimeto, Estado Lara Ver detalles"
+  },
+  {
+    "code": "x0077",
+    "name": "Rg 07, C.a.",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Av. Las Industrias, Cc Isaac, Pb, Local No. 3, Parroquia Juan De Villegas, Municipio Iribarren, Barquisimeto, Estado Lara Ver detalles"
+  },
+  {
+    "code": "x0078",
+    "name": "Transporte E Inversiones J.e., C.a.",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Calle Orinoco Transversal 2 Casa # 147 Urb Fundala Ver detalles"
+  },
+  {
+    "code": "x0079",
+    "name": "Wonke Circulaciones",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Urb. El Recreo Res. El Parque. Cubre La Ciudad De Quibor, Tocuyo Y Carora Ver detalles"
+  },
+  {
+    "code": "7914",
+    "name": "Cabudare",
+    "city": "Cabudare",
+    "state": "Lara",
+    "address": "Av. Principal la Mata, Calle San Rafael entre Calles 1 y 2, Local N° 2 y 3"
+  },
+  {
+    "code": "x0081",
+    "name": "Grupo Quincas, C.a",
+    "city": "Cabudare",
+    "state": "Lara",
+    "address": "Calle San Rafael, Con Av. 1, La Mata Ver detalles"
+  },
+  {
+    "code": "7916",
+    "name": "Carora",
+    "city": "Carora",
+    "state": "Lara",
+    "address": "0 Ver detalles"
+  },
+  {
+    "code": "8204C",
+    "name": "Caja Seca",
+    "city": "Caja Seca",
+    "state": "Mérida",
+    "address": "Carretera Panamericana, Local N° 2. Sector Latino"
+  },
+  {
+    "code": "x0091",
+    "name": "Coorporación Bj, C.a.",
+    "city": "El Vigia",
+    "state": "Mérida",
+    "address": "Sector La Inmaculada, Calle No. 9 Entre Av. 11 Y 12, Local 11-22, Parroquia Presidente Páez, Municipio Alberto Adriani, El Vigia, Estado Mérida Ver detalles"
+  },
+  {
+    "code": "8307",
+    "name": "El Vigía",
+    "city": "El Vigía",
+    "state": "Mérida",
+    "address": "Calle9. Casa Nro 19-38, Barrio San Isidro"
+  },
+  {
+    "code": "x0092",
+    "name": "Gleyma Express, C.a.",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Calle 40 Entre La Av. Urdaneta Y Gonzalo Picón Punto De Referencia, Bajando Por El Mercado Periférico, Cruzar A Mano Derecha Ver detalles"
+  },
+  {
+    "code": "x0093",
+    "name": "Oficina Comercial Mérida",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Final De La Av. Don Tulio Febres Cordero (frente A Las Canchas De Tenis), Parroquia Domingo Peña, Municipio Libertador, Mérida, Estado Mérida Ver detalles"
+  },
+  {
+    "code": "8310B",
+    "name": "Mérida",
+    "city": "Mérida",
+    "state": "Mérida",
+    "address": "Calle 40 Humboldt, entre Av. Urdaneta y Gonzalo Picón, Casa N° 3-61. Urb. Universitaria"
+  },
+  {
+    "code": "1501",
+    "name": "Charallave",
+    "city": "Charallave",
+    "state": "Miranda",
+    "address": "Carretera Charallave – Cúa, KM 1, C.C. Industrial Franfil, P.B., Local N° 2"
+  },
+  {
+    "code": "x0083",
+    "name": "Encomiendas Julikar, C.a.",
+    "city": "Charallave",
+    "state": "Miranda",
+    "address": "Carretera Charallave-cua, Km. 1, Cc Industrial Franfil, Pb, Local 2, Parroquia Charallave, Municipio Cristóbal Rojas, Charallave, Estado Miranda Ver detalles"
+  },
+  {
+    "code": "x0082",
+    "name": "Encomiendas Ch Express, C.a.",
+    "city": "Filas de Mariche",
+    "state": "Miranda",
+    "address": "Carretera Petare Santa Lucía, Km. 9, Local No. 3, Pb, Sector El Limoncito, Urb. Hacienda La Candelaria, Parroquia Filas De Mariche, Municipio Sucre, Estado Miranda Ver detalles"
+  },
+  {
+    "code": "1305",
+    "name": "Guarenas",
+    "city": "Guarenas",
+    "state": "Miranda",
+    "address": "Calle Guarenas, C.C. Guarenas Plaza, Nivel 1, Local 10"
+  },
+  {
+    "code": "x0086",
+    "name": "Inversiones Virg Bet,c.a",
+    "city": "Guarenas",
+    "state": "Miranda",
+    "address": "Cubre Zona De Guarenas Y Mampote, Edo. Miranda. Ver detalles"
+  },
+  {
+    "code": "1302",
+    "name": "Guatire",
+    "city": "Guatire",
+    "state": "Miranda",
+    "address": "Calle Ramón Alonzo Blanco, 2do. Boulevard Pueblo de Guatire, Local N° A-1"
+  },
+  {
+    "code": "x0085",
+    "name": "Inversiones Pahies 77, C.a.",
+    "city": "Guatire",
+    "state": "Miranda",
+    "address": "Calle Ramón Alonzo Blanco, 2do. Bolulevard Pueblo De Guatire, Local Nro. A-1. Municipio Zamora Parroquia Guatire. Edo. Miranda Zp 1221. Ver detalles"
+  },
+  {
+    "code": "1405B",
+    "name": "Los Teques",
+    "city": "Los Teques",
+    "state": "Miranda",
+    "address": "Av. Pedro Russo Ferrer, C.C. Vasconia, P.B., Local L-12. Sector El Tambor"
+  },
+  {
+    "code": "x0084",
+    "name": "Envíos Express Los Salias, C.a",
+    "city": "San Antonio de Los A",
+    "state": "Miranda",
+    "address": "Av. Perimetral, Cc Los Castores, Edificio E, Local L-e, San Antonio De Los Altos, Parroquia San Antonio, Municipio Los Salias, Estado Miranda Ver detalles"
+  },
+  {
+    "code": "1405",
+    "name": "San Antonio de Los Altos",
+    "city": "San Antonio de Los Altos",
+    "state": "Miranda",
+    "address": "Av. Perimetral, C.C. Los Castores Edif. E, Local L-E"
+  },
+  {
+    "code": "x0087",
+    "name": "La Diligencia Express, C.a",
+    "city": "Maturin",
+    "state": "Monagas",
+    "address": "Av Alirio Ugarte Pelayo Centro Comercial La Estacion Nivel Pb Local 6 Sector Bajo Guarapiche Maturin Monagas Zona Postal 6201 Ver detalles"
+  },
+  {
+    "code": "x0088",
+    "name": "Oficina Comercial Maturín",
+    "city": "Maturin",
+    "state": "Monagas",
+    "address": "Av. Raul Leoni, Galpón Nro.1, Adyacente A La Escuela Técnica Industrial, Parroquia Las Cocuizas, Municipio Maturín, Maturín, Estado Monagas Ver detalles"
+  },
+  {
+    "code": "x0090",
+    "name": "Servicios de Encomiendas Calexma C.a.",
+    "city": "Maturin",
+    "state": "Monagas",
+    "address": "Av. Miranda Calle 12 Con Carrera 11 Edif Tealca Pb. Centro San Simón, Parroquia Bolívar Municipio Maturín Monagas Venezuela Zp. 6201 Ver detalles"
+  },
+  {
+    "code": "x0089",
+    "name": "Sterling Express, C.a",
+    "city": "Maturin",
+    "state": "Monagas",
+    "address": "Sector Juanico. Centro Comercial Juanico Este. Local N3 Planta Baja, Al Lado Del Farmatodo Ver detalles"
+  },
+  {
+    "code": "3004",
+    "name": "Maturín Centro",
+    "city": "Maturín Centro",
+    "state": "Monagas",
+    "address": "Av. Miranda, Calle 12 con Carrera 11, Edif. Tealca, Planta Baja, Centro San Simón"
+  },
+  {
+    "code": "3005",
+    "name": "Maturín Este",
+    "city": "Maturín Este",
+    "state": "Monagas",
+    "address": "Calle Florida, C.C. Juanico Este, P.B., Local N° 3"
+  },
+  {
+    "code": "2706C",
+    "name": "Cocheima",
+    "city": "Cocheima",
+    "state": "Nueva Esparta",
+    "address": "Local 4, Edificio “D”, Planta Baja, Inversiones Mamá Lencha, Sector Cocheima"
+  },
+  {
+    "code": "2706B",
+    "name": "Juan Griego",
+    "city": "Juan Griego",
+    "state": "Nueva Esparta",
+    "address": "Local Plaza Central, Centro Comercial La Estancia Av 3 De Mayo Local Pc Poblacion Juan Griego Ver detalles"
+  },
+  {
+    "code": "x0094",
+    "name": "Inversiones Aura",
+    "city": "Porlamar",
+    "state": "Nueva Esparta",
+    "address": "Av. 4 De Mayo Cc 4 De Mayo Nivel Pb Local 09 Zona Porlamar Nueva Esparta Zona Postal 6301 Ver detalles"
+  },
+  {
+    "code": "x0095",
+    "name": "Inversiones Aura 2006, C.a",
+    "city": "Porlamar",
+    "state": "Nueva Esparta",
+    "address": "Av. 4 De Mayo Cc 4 De Mayo Nivel Pb Local 09 Zona Porlamar Porlamar Nueva Esparta Zona Postal 6310 Ver detalles"
+  },
+  {
+    "code": "2706",
+    "name": "Porlamar – Los Robles",
+    "city": "Porlamar",
+    "state": "Nueva Esparta",
+    "address": "Av. Jovito Villalva, local estación de servicio Los Robles Nro. 09. Sector Los Robles El Pilar"
+  },
+  {
+    "code": "5401B",
+    "name": "Acarigua",
+    "city": "Acarigua",
+    "state": "Portuguesa",
+    "address": "Calle 30 cruce con Av. 35, C.C. Páez, P.B., Local 15. Sector Centro"
+  },
+  {
+    "code": "x0097",
+    "name": "San Carlos",
+    "city": "Acarigua",
+    "state": "Portuguesa",
+    "address": "Calle 30 Cruce Con Avenida 35, Cc PÁez Nivel Pb, Local 15, Sector Centro Acarigua Edo. Portuguesa Ver detalles"
+  },
+  {
+    "code": "7705",
+    "name": "Guanare",
+    "city": "Guanare",
+    "state": "Portuguesa",
+    "address": "Av. Corredor vial Tómas Montilla con Av. Bolívar, C.C. Giramara, Nivel P.B., Local 13, Barrio Maturín"
+  },
+  {
+    "code": "2803",
+    "name": "Carupano",
+    "city": "Carupano",
+    "state": "Sucre",
+    "address": "0 Ver detalles Rastree su paquete aquí Introduzca el numero de guia o rastreo que le han suministrado para identificar su paquete. Rastrear Agencias de TEALCA Sucursales cerca de mi ubicación Rastreo de Paquetes Cambiar a otra Compañia 466 Agencias Disponibles 443 Agencias Disponibles 264 Agencias Disponibles 25 Agencias Disponibles 67 Agencias Disponibles 55 Agencias Disponibles 69 Agencias Disponibles 346 Agencias Disponibles 191 Agencias Disponibles 65 Agencias Disponibles 528 Agencias Disponibles 233 Agencias Disponibles 197 Agencias Disponibles 190 Agencias Disponibles 285 Agencias Disponibles 689 Agencias Disponibles"
+  },
+  {
+    "code": "x0099",
+    "name": "Encomiendas Sucre, C.a",
+    "city": "Cumana",
+    "state": "Sucre",
+    "address": "Av. Aristides Rojas, (av. Perimetral), C.c. Marigamar, P.b. Local 1, Sector Don Bosco, Parroquia Ayacucho, Municipio Sucre, Cumana, Edo Sucre, Venezuela, Zp. 6101 Ver detalles"
+  },
+  {
+    "code": "2802",
+    "name": "Cumaná",
+    "city": "Cumaná",
+    "state": "Sucre",
+    "address": "Av. Arístides Rojas (Av. Perimetral), C.C. Marigamar, P.B., Local 1. Sector Don Bosco"
+  },
+  {
+    "code": "8111",
+    "name": "Barrio Obrero",
+    "city": "Barrio Obrero",
+    "state": "Táchira",
+    "address": "Carrera 16, esquina Calle 13 de Barrio Obrero N° 12-83"
+  },
+  {
+    "code": "8109C",
+    "name": "Capacho",
+    "city": "Capacho",
+    "state": "Táchira",
+    "address": "Carrera 5 con N° 3-48, Sector Villa Vista"
+  },
+  {
+    "code": "8113",
+    "name": "La Fria",
+    "city": "La Fria",
+    "state": "Táchira",
+    "address": "0 Ver detalles"
+  },
+  {
+    "code": "x0107",
+    "name": "Inversiones Tiffany Yiret, C.a.",
+    "city": "San Antonio del Tach",
+    "state": "Táchira",
+    "address": "Calle 11, Vía Aeropuerto, Edif Charly, Local Oa-156-160, Parroquia Bolívar, Municipio San Antonio Del Táchira, San Antonio Del Táchira, Estado Táchira. Ver detalles"
+  },
+  {
+    "code": "8112B",
+    "name": "San Antonio del Táchira",
+    "city": "San Antonio del Táchira",
+    "state": "Táchira",
+    "address": "Avenida Venezuela, Esquina con Carrera 6, Edificio RA, Piso 1, Local N° 4 y N° 6-02"
+  },
+  {
+    "code": "x0101",
+    "name": "Inversiones Jvs 1117 Rohi, C.a.",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Inal De La Carrera 5 Frente Al Comando De Ingenieros Del Ejército, Local Nro.2 . La Concordia San Cristóbal Estado Táchira Venezuela Zp. 5001 Ver detalles"
+  },
+  {
+    "code": "x0102",
+    "name": "Inversiones Licealka, C.a.",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Calle Los Olivares Local Nro. 03, Sector Los Magallanes. Catia. Ver detalles"
+  },
+  {
+    "code": "x0103",
+    "name": "Multienvíos Express, C.a.",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Carrera 16, Esquina Calle 13 De Barrio Obrero Nro 12-83, San Cristóbal, Edo. Táchira. Ver detalles"
+  },
+  {
+    "code": "8109",
+    "name": "Oficina Comercial San Cristóbal",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Sector Santa Rosa (sitio Denominado La Castra), GalpÓn S/n. San CristÓbal Estado TÁchira Venezuela Zp. 5001 Ver detalles"
+  },
+  {
+    "code": "8112",
+    "name": "Paramillo",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Avenida La Ula Casa N# 2 Urbanizacion Villa Hermosa, Sector Santa Cecilia Ver detalles"
+  },
+  {
+    "code": "x0106",
+    "name": "Transporte Emmanuel Jireth, C.a.",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Sector San Cristobal Local C. Av. Cuatricentenaria Local Nro. H 40 Frente A La Torre Fiat San Cristóbal Parroquia San Sebastián. Ver detalles"
+  },
+  {
+    "code": "8109B",
+    "name": "San Cristóbal – Táriba",
+    "city": "San Cristóbal",
+    "state": "Táchira",
+    "address": "Carrera 4, entre calle 4 y 5, casa Nº 4-51, Ciudad de Táriba"
+  },
+  {
+    "code": "8114",
+    "name": "San Cristóbal Sur – La Concordia",
+    "city": "San Cristóbal Sur",
+    "state": "Táchira",
+    "address": "Final de la Carrera 5, frente al Comando de Ingenieros del Ejército, Local N°2"
+  },
+  {
+    "code": "x0109",
+    "name": "Representaciones Nisi Express, C.a.",
+    "city": "Ureña",
+    "state": "Táchira",
+    "address": "Barrio La Guajira, Calle 5, Casa Nro. 5-13, Edif. Sofi P.b. Local 103 Ureña, Estado Táchira. Ver detalles"
+  },
+  {
+    "code": "8107",
+    "name": "Ureña",
+    "city": "Ureña",
+    "state": "Táchira",
+    "address": "Barrio La Guajira, Calle 5, Casa N° 5-13, Edif. Sofi, P.B., Local 103"
+  },
+  {
+    "code": "x0100",
+    "name": "Pase Express C.a",
+    "city": "Valera",
+    "state": "Trujillo",
+    "address": "Carretera Panamericana, Local Nro. 2, Sector Latino, Parroquia Nueva Bolivia-edo. Mérida. Ver detalles"
+  },
+  {
+    "code": "8204",
+    "name": "Valera",
+    "city": "Valera",
+    "state": "Trujillo",
+    "address": "Av. Bolívar entre Calle 17 y 18. Sector Las Acacias"
+  },
+  {
+    "code": "8204B",
+    "name": "Valera Centro",
+    "city": "Valera Centro",
+    "state": "Trujillo",
+    "address": "Calle 4 con Esquina Av. 12 del Centro de Valera, C.C. Adriático, P.B., Local N° 12 y 6"
+  },
+  {
+    "code": "7802",
+    "name": "San Felipe",
+    "city": "San Felipe",
+    "state": "Yaracuy",
+    "address": "Calle 16 entre avenidas 5 y 6, Local#3, Sector Centro San Felipe"
+  },
+  {
+    "code": "x0112",
+    "name": "Silva Santana Adquisiciones, C.a.",
+    "city": "San Felipe",
+    "state": "Yaracuy",
+    "address": "Sector Punta Brava, Av. La Patria, Entre Av. 8 Y 9, Parroquia San Felipe, Municipio San Felipe, San Felipe, Estado Yaracuy. Ver detalles"
+  },
+  {
+    "code": "8405",
+    "name": "Cabimas",
+    "city": "Cabimas",
+    "state": "Zulia",
+    "address": "Carretera H, C.C. Borjas (Centro 99), P.B., Local N° 16"
+  },
+  {
+    "code": "x0121",
+    "name": "Inversiones Irella, C.a.",
+    "city": "Cabimas",
+    "state": "Zulia",
+    "address": "Carretera H, Cc Borjas (centro 99), Local Pb, Parroquia Carmen Herrera, Municipio Cabimas, Cabimas, Estado Zulia Ver detalles"
+  },
+  {
+    "code": "8406",
+    "name": "Ciudad Ojeda",
+    "city": "Ciudad Ojeda",
+    "state": "Zulia",
+    "address": "Av. Intercomunal, Edif. Comercial Tamare C.A., Local N° 2. Sector Las Morochas"
+  },
+  {
+    "code": "x0123",
+    "name": "Zu Envio, C.a.",
+    "city": "Ciudad Ojeda",
+    "state": "Zulia",
+    "address": "Sector Las Morochas, Av. Intercomunal, Edificio Comercial Tamare, Local 2, Parroquia Alonso De Ojeda, Municipio Lagunillas, Ciudad Ojeda, Estado Zulia Ver detalles"
+  },
+  {
+    "code": "x0113",
+    "name": "Inversiones El Jey Express, C.a.",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Paraiso Calle 78 Dr. Portillo Entre Calles 19 Y 20 Nro. 18-50 Locales 3 Y 4 Al Lado De Sandrita Parroquia Chiquinquirá Municipio Maracaibo Zp 4001 Ver detalles"
+  },
+  {
+    "code": "x0114",
+    "name": "Inversiones Sur Express, C.a.",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Urb. Sierra Maestra, Calle 18 Entre Av. 11 Y 12, Local Nro. 11-80, Parroquia Francisco Ochoa, Municipio San Francisco, Maracaibo, Estado Zulia Ver detalles"
+  },
+  {
+    "code": "8511",
+    "name": "Maracaibo – Dr. Portillo",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Calle 78 Dr. Portillo, entre Av. 18 y 19, Centro Comercial Framel N° 18-50 Locales 3 y 4"
+  },
+  {
+    "code": "x0115",
+    "name": "Oficina Comercial Maracaibo",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av. 24, Con Calle 68, Sector Santa Maria, Parroquia Chiquinquirá, Municipio Maracaibo, Maracaibo, Estado Zulia Ver detalles"
+  },
+  {
+    "code": "x0116",
+    "name": "Oficina Maracaibo",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av 86 Con Calle 13a Diagonal A Loco Lindo Municipio Maracaibo Parroquia Chiquinquirá Zp4001 Ver detalles"
+  },
+  {
+    "code": "x0117",
+    "name": "P&m Distribuciones, C.a",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Barrio San Agustín Li Local C Av. 16 Goajira C/c 46 Casa 46 _ 10 Local 2 Parroquia Idelfonso Vásquez Municipio Maracaibo Zulia Zp. 4005 Ver detalles"
+  },
+  {
+    "code": "x0118",
+    "name": "Venexexpress, C.a.",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Sector Santa Lucia Av. 4 Bella Vista Esq. Calle 79 Local C C.c. Shalon Local 7 Frente A La Iglesia La Consolación Parroquia Santa Lucía Maracaibo Zp. 1214 Ver detalles"
+  },
+  {
+    "code": "x0119",
+    "name": "Venexpress, C.a.",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Las Delicias, Av. 15 Entre Calles 74 Y 75, Parroquia Olegario Villalobos, Municipio Maracaibo, Maracaibo, Estado Zulia Ver detalles"
+  },
+  {
+    "code": "x0120",
+    "name": "Zasa Transporte, C.a.",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av. Circunvalación 2, Cc Divivide, Local G-11, Parroquia Luis Hurtado, Municipio Maracaibo, Maracaibo, Estado Zulia Ver detalles"
+  },
+  {
+    "code": "8502",
+    "name": "Maracaibo Centro",
+    "city": "Maracaibo Centro",
+    "state": "Zulia",
+    "address": "Av. 4 Bella Vista Esq. Calle 79, C.C. Shalon, Local N° 7, frente a Iglesia La Consolación. Sector Santa Lucía"
+  },
+  {
+    "code": "8513B",
+    "name": "Maracaibo Circunvalación 2 Suroeste",
+    "city": "Maracaibo Circunvalación 2 Suroeste",
+    "state": "Zulia",
+    "address": "Circunvalación 2 con Avenida 58, Edif. Mix Aoroa, Local PB N° 10, Sector San Miguel"
+  },
+  {
+    "code": "8513C",
+    "name": "Maracaibo Delicias Norte",
+    "city": "Maracaibo Delicias Norte",
+    "state": "Zulia",
+    "address": "Av. Delicias entre calles 59 y 60B, C.C. El Pilar, Local 5 (al lado de ippluz)"
+  },
+  {
+    "code": "8514",
+    "name": "Maracaibo Norte – Plaza de Toros",
+    "city": "Maracaibo Norte",
+    "state": "Zulia",
+    "address": "Av. 16 Goajira C/C 46, Casa 46_ 10, Local N° 2. Barrio San Agustín"
+  },
+  {
+    "code": "8513",
+    "name": "Maracaibo Oeste – La Limpia",
+    "city": "Maracaibo Oeste",
+    "state": "Zulia",
+    "address": "Calle 79, Centro Comercial y Residencial KOTECH, Nivel PB, Local 4, Sector La Limpia"
+  },
+  {
+    "code": "8509B",
+    "name": "Maracaibo Sur – La Coromoto",
+    "city": "Maracaibo Sur",
+    "state": "Zulia",
+    "address": "Av. 40, C.C. Bistana, Local N° 5. Urb. Coromoto"
+  },
+  {
+    "code": "8509",
+    "name": "Maracaibo Sur – San Francisco",
+    "city": "Maracaibo Sur",
+    "state": "Zulia",
+    "address": "Calle 18 con Avenida 18. Local N° 2. Urb. Sierra Maestra"
+  },
+  {
+    "code": "x0122",
+    "name": "Villa del Rosario",
+    "city": "Villa del Rosario",
+    "state": "Zulia",
+    "address": "0 Ver detalles"
+  }
+]

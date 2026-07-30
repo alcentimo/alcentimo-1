@@ -1,0 +1,387 @@
+[
+  {
+    "code": "barcelona-las-garzas",
+    "name": "Barcelona Las Garzas",
+    "city": "Barcelona",
+    "state": "Anzoátegui",
+    "address": "Sucursal Liberty Express Barcelona Las Garzas, Barcelona, Anzoátegui"
+  },
+  {
+    "code": "el-tigre",
+    "name": "El Tigre",
+    "city": "El Tigre",
+    "state": "Anzoátegui",
+    "address": "Sucursal Liberty Express El Tigre, El Tigre, Anzoátegui"
+  },
+  {
+    "code": "anaco",
+    "name": "Anaco",
+    "city": "Anaco",
+    "state": "Anzoátegui",
+    "address": "Sucursal Liberty Express Anaco, Anaco, Anzoátegui"
+  },
+  {
+    "code": "san-fernando-de-apure",
+    "name": "San Fernando de Apure",
+    "city": "San Fernando de Apure",
+    "state": "Apure",
+    "address": "Sucursal Liberty Express San Fernando de Apure, San Fernando de Apure, Apure"
+  },
+  {
+    "code": "maracay-sur",
+    "name": "Maracay Sur",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Sucursal Liberty Express Maracay Sur, Maracay, Aragua"
+  },
+  {
+    "code": "maracay-las-delicias",
+    "name": "Maracay Las Delicias",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Sucursal Liberty Express Maracay Las Delicias, Maracay, Aragua"
+  },
+  {
+    "code": "cagua",
+    "name": "Cagua",
+    "city": "Cagua",
+    "state": "Aragua",
+    "address": "Sucursal Liberty Express Cagua, Cagua, Aragua"
+  },
+  {
+    "code": "maracay",
+    "name": "Maracay",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Sucursal Liberty Express Maracay, Maracay, Aragua"
+  },
+  {
+    "code": "barinas",
+    "name": "Barinas",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Sucursal Liberty Express Barinas, Barinas, Barinas"
+  },
+  {
+    "code": "ciudad-bolivar",
+    "name": "Ciudad Bolívar",
+    "city": "Ciudad Bolívar",
+    "state": "Bolívar",
+    "address": "Sucursal Liberty Express Ciudad Bolívar, Ciudad Bolívar, Bolívar"
+  },
+  {
+    "code": "puerto-ordaz",
+    "name": "Puerto Ordaz",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Sucursal Liberty Express Puerto Ordaz, Puerto Ordaz, Bolívar"
+  },
+  {
+    "code": "valencia-c-c-metrosur",
+    "name": "Valencia C.C. MetroSur",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Sucursal Liberty Express Valencia C.C. MetroSur, Valencia, Carabobo"
+  },
+  {
+    "code": "valencia-norte",
+    "name": "Valencia Norte",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Sucursal Liberty Express Valencia Norte, Valencia, Carabobo"
+  },
+  {
+    "code": "valencia-centro",
+    "name": "Valencia Centro",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Sucursal Liberty Express Valencia Centro, Valencia, Carabobo"
+  },
+  {
+    "code": "san-carlos",
+    "name": "San Carlos",
+    "city": "San Carlos",
+    "state": "Cojedes",
+    "address": "Sucursal Liberty Express San Carlos, San Carlos, Cojedes"
+  },
+  {
+    "code": "coro",
+    "name": "Coro",
+    "city": "Coro",
+    "state": "Falcón",
+    "address": "Sucursal Liberty Express Coro, Coro, Falcón"
+  },
+  {
+    "code": "punto-fijo",
+    "name": "Punto Fijo",
+    "city": "Punto Fijo",
+    "state": "Falcón",
+    "address": "Sucursal Liberty Express Punto Fijo, Punto Fijo, Falcón"
+  },
+  {
+    "code": "c-c-c-t",
+    "name": "C.C.C.T",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Sucursal Liberty Express C.C.C.T, Caracas, Distrito Capital"
+  },
+  {
+    "code": "altos-mirandinos",
+    "name": "Altos Mirandinos",
+    "city": "Los Teques",
+    "state": "Miranda",
+    "address": "Sucursal Liberty Express Altos Mirandinos, Los Teques, Miranda"
+  },
+  {
+    "code": "guatire",
+    "name": "Guatire",
+    "city": "Guatire",
+    "state": "Miranda",
+    "address": "Sucursal Liberty Express Guatire, Guatire, Miranda"
+  },
+  {
+    "code": "charallave",
+    "name": "Charallave",
+    "city": "Charallave",
+    "state": "Miranda",
+    "address": "Sucursal Liberty Express Charallave, Charallave, Miranda"
+  },
+  {
+    "code": "la-boyera",
+    "name": "La Boyera",
+    "city": "El Hatillo",
+    "state": "Miranda",
+    "address": "Sucursal Liberty Express La Boyera, El Hatillo, Miranda"
+  },
+  {
+    "code": "altamira-plaza",
+    "name": "Altamira Plaza",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Sucursal Liberty Express Altamira Plaza, Caracas, Distrito Capital"
+  },
+  {
+    "code": "panteon",
+    "name": "Panteón",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Sucursal Liberty Express Panteón, Caracas, Distrito Capital"
+  },
+  {
+    "code": "bello-monte",
+    "name": "Bello Monte",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Sucursal Liberty Express Bello Monte, Caracas, Distrito Capital"
+  },
+  {
+    "code": "la-urbina",
+    "name": "La Urbina",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Sucursal Liberty Express La Urbina, Caracas, Distrito Capital"
+  },
+  {
+    "code": "santa-paula",
+    "name": "Santa Paula",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Sucursal Liberty Express Santa Paula, Caracas, Distrito Capital"
+  },
+  {
+    "code": "el-paraiso",
+    "name": "El Paraíso",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Sucursal Liberty Express El Paraíso, Caracas, Distrito Capital"
+  },
+  {
+    "code": "el-rosal",
+    "name": "El Rosal",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Sucursal Liberty Express El Rosal, Caracas, Distrito Capital"
+  },
+  {
+    "code": "el-rosal-vip",
+    "name": "El Rosal VIP",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Sucursal Liberty Express El Rosal VIP, Caracas, Distrito Capital"
+  },
+  {
+    "code": "san-juan-de-los-morros",
+    "name": "San Juan de los Morros",
+    "city": "San Juan de los Morros",
+    "state": "Guárico",
+    "address": "Sucursal Liberty Express San Juan de los Morros, San Juan de los Morros, Guárico"
+  },
+  {
+    "code": "calabozo",
+    "name": "Calabozo",
+    "city": "Calabozo",
+    "state": "Guárico",
+    "address": "Sucursal Liberty Express Calabozo, Calabozo, Guárico"
+  },
+  {
+    "code": "valle-de-la-pascua",
+    "name": "Valle de la Pascua",
+    "city": "Valle de la Pascua",
+    "state": "Guárico",
+    "address": "Sucursal Liberty Express Valle de la Pascua, Valle de la Pascua, Guárico"
+  },
+  {
+    "code": "barquisimeto",
+    "name": "Barquisimeto",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Sucursal Liberty Express Barquisimeto, Barquisimeto, Lara"
+  },
+  {
+    "code": "barquisimeto-oeste",
+    "name": "Barquisimeto Oeste",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Sucursal Liberty Express Barquisimeto Oeste, Barquisimeto, Lara"
+  },
+  {
+    "code": "cabudare",
+    "name": "Cabudare",
+    "city": "Cabudare",
+    "state": "Lara",
+    "address": "Sucursal Liberty Express Cabudare, Cabudare, Lara"
+  },
+  {
+    "code": "maturin",
+    "name": "Maturín",
+    "city": "Maturín",
+    "state": "Monagas",
+    "address": "Sucursal Liberty Express Maturín, Maturín, Monagas"
+  },
+  {
+    "code": "el-vigia",
+    "name": "El Vigía",
+    "city": "El Vigía",
+    "state": "Mérida",
+    "address": "Sucursal Liberty Express El Vigía, El Vigía, Mérida"
+  },
+  {
+    "code": "merida-sur",
+    "name": "Mérida Sur",
+    "city": "Mérida",
+    "state": "Mérida",
+    "address": "Sucursal Liberty Express Mérida Sur, Mérida, Mérida"
+  },
+  {
+    "code": "merida",
+    "name": "Mérida",
+    "city": "Mérida",
+    "state": "Mérida",
+    "address": "Sucursal Liberty Express Mérida, Mérida, Mérida"
+  },
+  {
+    "code": "pampatar-maneiro",
+    "name": "Pampatar (Maneiro)",
+    "city": "Pampatar",
+    "state": "Nueva Esparta",
+    "address": "Sucursal Liberty Express Pampatar (Maneiro), Pampatar, Nueva Esparta"
+  },
+  {
+    "code": "guanare",
+    "name": "Guanare",
+    "city": "Guanare",
+    "state": "Portuguesa",
+    "address": "Sucursal Liberty Express Guanare, Guanare, Portuguesa"
+  },
+  {
+    "code": "acarigua",
+    "name": "Acarigua",
+    "city": "Acarigua",
+    "state": "Portuguesa",
+    "address": "Sucursal Liberty Express Acarigua, Acarigua, Portuguesa"
+  },
+  {
+    "code": "carupano",
+    "name": "Carúpano",
+    "city": "Carúpano",
+    "state": "Sucre",
+    "address": "Sucursal Liberty Express Carúpano, Carúpano, Sucre"
+  },
+  {
+    "code": "cumana",
+    "name": "Cumaná",
+    "city": "Cumaná",
+    "state": "Sucre",
+    "address": "Sucursal Liberty Express Cumaná, Cumaná, Sucre"
+  },
+  {
+    "code": "trujillo",
+    "name": "Trujillo",
+    "city": "Trujillo",
+    "state": "Trujillo",
+    "address": "Sucursal Liberty Express Trujillo, Trujillo, Trujillo"
+  },
+  {
+    "code": "valera",
+    "name": "Valera",
+    "city": "Valera",
+    "state": "Trujillo",
+    "address": "Sucursal Liberty Express Valera, Valera, Trujillo"
+  },
+  {
+    "code": "san-cristobal",
+    "name": "San Cristóbal",
+    "city": "San Cristóbal",
+    "state": "Táchira",
+    "address": "Sucursal Liberty Express San Cristóbal, San Cristóbal, Táchira"
+  },
+  {
+    "code": "san-cristobal-barrio-obrero",
+    "name": "San Cristóbal Barrio Obrero",
+    "city": "San Cristóbal",
+    "state": "Táchira",
+    "address": "Sucursal Liberty Express San Cristóbal Barrio Obrero, San Cristóbal, Táchira"
+  },
+  {
+    "code": "san-antonio-del-tachira",
+    "name": "San Antonio del Táchira",
+    "city": "San Antonio del Táchira",
+    "state": "Táchira",
+    "address": "Sucursal Liberty Express San Antonio del Táchira, San Antonio del Táchira, Táchira"
+  },
+  {
+    "code": "san-felipe",
+    "name": "San Felipe",
+    "city": "San Felipe",
+    "state": "Yaracuy",
+    "address": "Sucursal Liberty Express San Felipe, San Felipe, Yaracuy"
+  },
+  {
+    "code": "maracaibo-zona-industrial",
+    "name": "Maracaibo Zona Industrial",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Sucursal Liberty Express Maracaibo Zona Industrial, Maracaibo, Zulia"
+  },
+  {
+    "code": "maracaibo",
+    "name": "Maracaibo",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Sucursal Liberty Express Maracaibo, Maracaibo, Zulia"
+  },
+  {
+    "code": "maracaibo-norte",
+    "name": "Maracaibo Norte",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Sucursal Liberty Express Maracaibo Norte, Maracaibo, Zulia"
+  },
+  {
+    "code": "cabimas",
+    "name": "Cabimas",
+    "city": "Cabimas",
+    "state": "Zulia",
+    "address": "Sucursal Liberty Express Cabimas, Cabimas, Zulia"
+  }
+]

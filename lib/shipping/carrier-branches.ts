@@ -1,5 +1,9 @@
 import type { ShippingCarrierKey } from "@/lib/store-settings/types";
 import mrwBranchesData from "@/lib/shipping/data/mrw-branches.ve.json";
+import tealcaBranchesData from "@/lib/shipping/data/tealca-branches.ve.json";
+import zoomBranchesData from "@/lib/shipping/data/zoom-branches.ve.json";
+import domesaBranchesData from "@/lib/shipping/data/domesa-branches.ve.json";
+import libertyBranchesData from "@/lib/shipping/data/liberty-express-branches.ve.json";
 
 export interface CarrierBranch {
   id: string;
@@ -8,15 +12,11 @@ export interface CarrierBranch {
   city: string;
   state: string;
   address: string;
-  /** Official agency code when available (MRW). */
+  /** Official agency / office code when available. */
   code?: string;
 }
 
-type BranchSeed = Omit<CarrierBranch, "id" | "carrier" | "code"> & {
-  code?: string;
-};
-
-type MrwBranchRecord = {
+type BranchRecord = {
   code: string;
   name: string;
   city: string;
@@ -24,95 +24,23 @@ type MrwBranchRecord = {
   address: string;
 };
 
-const NATIONAL_CARRIER_KEYS = [
-  "mrw",
-  "tealca",
-  "zoom",
-  "domesa",
-  "libertyExpress",
-] as const satisfies readonly ShippingCarrierKey[];
+type BranchSeed = Omit<CarrierBranch, "id" | "carrier" | "code"> & {
+  code?: string;
+};
 
-/** Thin national sample for carriers without a dedicated catalog yet. */
-const VENEZUELA_BRANCH_SEEDS: BranchSeed[] = [
-  {
-    name: "Centro Caracas",
-    city: "Caracas",
-    state: "Distrito Capital",
-    address: "Av. Urdaneta, Esquina de Altagracia",
-  },
-  {
-    name: "Chacao",
-    city: "Caracas",
-    state: "Miranda",
-    address: "Av. Francisco de Miranda, Centro Comercial Lido",
-  },
-  {
-    name: "Centro Valencia",
-    city: "Valencia",
-    state: "Carabobo",
-    address: "Av. Bolívar Norte, Sector Centro",
-  },
-  {
-    name: "Naguanagua",
-    city: "Valencia",
-    state: "Carabobo",
-    address: "Av. Universidad, CC Naguanagua Plaza",
-  },
-  {
-    name: "Centro Maracaibo",
-    city: "Maracaibo",
-    state: "Zulia",
-    address: "Av. 5 de Julio, Sector Centro",
-  },
-  {
-    name: "Centro Barquisimeto",
-    city: "Barquisimeto",
-    state: "Lara",
-    address: "Carrera 19 con Calle 23, Centro",
-  },
-  {
-    name: "Maracay Centro",
-    city: "Maracay",
-    state: "Aragua",
-    address: "Av. Las Delicias, Sector Centro",
-  },
-  {
-    name: "Puerto Ordaz",
-    city: "Ciudad Guayana",
-    state: "Bolívar",
-    address: "Av. Atlántico, Alta Vista",
-  },
-  {
-    name: "San Cristóbal",
-    city: "San Cristóbal",
-    state: "Táchira",
-    address: "Av. Ferrero Tamayo, Sector La Concordia",
-  },
-  {
-    name: "Mérida Centro",
-    city: "Mérida",
-    state: "Mérida",
-    address: "Av. 3 con Calle 28, Sector Centro",
-  },
-  {
-    name: "Barcelona",
-    city: "Barcelona",
-    state: "Anzoátegui",
-    address: "Av. 5 de Julio, Sector El Viñedo",
-  },
-  {
-    name: "Punto Fijo",
-    city: "Punto Fijo",
-    state: "Falcón",
-    address: "Av. José María García, Centro",
-  },
-  {
-    name: "Cabimas",
-    city: "Cabimas",
-    state: "Zulia",
-    address: "Av. Intercomunal, Sector Ambrosio",
-  },
-];
+const CATALOG_BY_CARRIER: Record<
+  Extract<
+    ShippingCarrierKey,
+    "mrw" | "tealca" | "zoom" | "domesa" | "libertyExpress"
+  >,
+  BranchRecord[]
+> = {
+  mrw: mrwBranchesData as BranchRecord[],
+  tealca: tealcaBranchesData as BranchRecord[],
+  zoom: zoomBranchesData as BranchRecord[],
+  domesa: domesaBranchesData as BranchRecord[],
+  libertyExpress: libertyBranchesData as BranchRecord[],
+};
 
 function slugify(value: string): string {
   return value
@@ -156,28 +84,23 @@ function mapSeed(
   };
 }
 
-const MRW_BRANCHES: CarrierBranch[] = (
-  mrwBranchesData as MrwBranchRecord[]
-).map((row) =>
-  mapSeed("mrw", {
-    code: row.code,
-    name: row.name,
-    city: row.city,
-    state: row.state,
-    address: row.address,
-  }),
-);
+function loadCatalog(carrier: ShippingCarrierKey): CarrierBranch[] {
+  const rows = CATALOG_BY_CARRIER[carrier as keyof typeof CATALOG_BY_CARRIER];
+  if (!rows?.length) return [];
+  return rows.map((row) =>
+    mapSeed(carrier, {
+      code: row.code,
+      name: row.name,
+      city: row.city,
+      state: row.state,
+      address: row.address,
+    }),
+  );
+}
 
-const OTHER_CARRIER_BRANCHES: CarrierBranch[] = NATIONAL_CARRIER_KEYS.filter(
-  (carrier) => carrier !== "mrw",
-).flatMap((carrier) =>
-  VENEZUELA_BRANCH_SEEDS.map((seed) => mapSeed(carrier, seed)),
-);
-
-export const CARRIER_BRANCHES: CarrierBranch[] = [
-  ...MRW_BRANCHES,
-  ...OTHER_CARRIER_BRANCHES,
-];
+export const CARRIER_BRANCHES: CarrierBranch[] = (
+  Object.keys(CATALOG_BY_CARRIER) as Array<keyof typeof CATALOG_BY_CARRIER>
+).flatMap((carrier) => loadCatalog(carrier));
 
 const BRANCHES_BY_ID = new Map(
   CARRIER_BRANCHES.map((branch) => [branch.id, branch]),
@@ -251,10 +174,19 @@ export function getCarrierBranchesByLocation(
     );
 }
 
+function branchSearchHaystack(branch: CarrierBranch): string {
+  return foldSearchText(
+    [branch.name, branch.city, branch.state, branch.address, branch.code ?? ""].join(
+      " ",
+    ),
+  );
+}
+
+/** Ranked national search: exact city/name hits first, then partial matches. */
 export function searchCarrierBranches(
   carrier: ShippingCarrierKey,
   query: string,
-  limit = 40,
+  limit = 60,
   options?: {
     state?: string | null;
     city?: string | null;
@@ -271,23 +203,63 @@ export function searchCarrierBranches(
     return scoped.slice(0, limit);
   }
 
-  return scoped
-    .filter((branch) => {
-      const haystack = foldSearchText(
-        [branch.name, branch.city, branch.state, branch.address, branch.code ?? ""].join(
-          " ",
-        ),
-      );
-      return haystack.includes(normalized);
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+
+  const scored = scoped
+    .map((branch) => {
+      const haystack = branchSearchHaystack(branch);
+      if (!tokens.every((token) => haystack.includes(token))) {
+        return null;
+      }
+
+      let score = 0;
+      const foldedName = foldSearchText(branch.name);
+      const foldedCity = foldSearchText(branch.city);
+      const foldedState = foldSearchText(branch.state);
+      const foldedCode = foldSearchText(branch.code ?? "");
+
+      if (foldedCode && foldedCode === normalized) score += 100;
+      if (foldedCity === normalized) score += 80;
+      if (foldedName === normalized) score += 70;
+      if (foldedCity.startsWith(normalized)) score += 40;
+      if (foldedName.startsWith(normalized)) score += 35;
+      if (foldedState === normalized) score += 25;
+      if (haystack.includes(normalized)) score += 15;
+      score += Math.max(0, 10 - tokens.length);
+
+      return { branch, score };
     })
-    .slice(0, limit);
+    .filter((row): row is { branch: CarrierBranch; score: number } => !!row)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        compareEs(a.branch.city, b.branch.city) ||
+        compareEs(a.branch.name, b.branch.name),
+    );
+
+  return scored.slice(0, limit).map((row) => row.branch);
 }
 
 export function formatCarrierBranchLabel(branch: CarrierBranch): string {
-  const codeSuffix = branch.code ? ` (${branch.code})` : "";
+  const codeSuffix = branch.code && !branch.code.startsWith("x")
+    ? ` (${branch.code})`
+    : "";
   return `${branch.name}${codeSuffix} · ${branch.city}, ${branch.state}`;
 }
 
 export function formatCarrierBranchAddress(branch: CarrierBranch): string {
   return `${branch.address}, ${branch.city}, ${branch.state}`;
+}
+
+export function getCarrierBranchCoverage(carrier: ShippingCarrierKey): {
+  offices: number;
+  states: number;
+  cities: number;
+} {
+  const branches = getCarrierBranches(carrier);
+  return {
+    offices: branches.length,
+    states: new Set(branches.map((b) => b.state)).size,
+    cities: new Set(branches.map((b) => `${b.state}|${b.city}`)).size,
+  };
 }

@@ -1,0 +1,744 @@
+[
+  {
+    "code": "x0001",
+    "name": "Oc 455 Oficina Comercial Puerto La Cruz",
+    "city": "Lecherias",
+    "state": "Anzoátegui",
+    "address": "Avenida Intercomunal, Sector Las Garzas, Calle La Gaviota, Galpones 4a Y 4b. Ver detalles"
+  },
+  {
+    "code": "x0003",
+    "name": "Aa 1058 Cotelca Plus+ C.a.",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "Sector Casco Central, Avenida Paseo Colon, Hotel Rasil, Nivel Pb, Oficina 2. Ver detalles"
+  },
+  {
+    "code": "x0002",
+    "name": "Aa 0646 Rid Soluciones 10 0 1 13, C.a.",
+    "city": "Puerto Piritu",
+    "state": "Anzoátegui",
+    "address": "Av. Fernando De PeÑalver, Local S/n, Nivel Pb, Sector Buenos Aires. Ver detalles"
+  },
+  {
+    "code": "x0010",
+    "name": "Aa 0251 Inversiones Fja Express, C.a.",
+    "city": "Cagua",
+    "state": "Aragua",
+    "address": "Sector Las Vegas, C.c. EstaciÓn De Servicio Las Vegas, Nivel Pb, N°1. Ver detalles"
+  },
+  {
+    "code": "x0011",
+    "name": "Aa 0909 Encomiendas Team Work, C.a.",
+    "city": "Cagua",
+    "state": "Aragua",
+    "address": "C.c. Las Torres, Calle BoyacÁ C/c San Juan, Local 6b, Nivel Pb, Diagonal A La Caja Regional Del Ivss. Ver detalles"
+  },
+  {
+    "code": "x0006",
+    "name": "Aa 0070 Alai Express, C.a.",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Sector San Ignacio, Calle MariÑo Sur, Parroquia AndrÉs Eloy Blanco, Local N°193. Frente A Dhl. Ver detalles"
+  },
+  {
+    "code": "x0004",
+    "name": "Aa 0373 Inversiones Dragonfly 2017, C.a.",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Calle Alas Con Independencia, Local N°32-a, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0007",
+    "name": "Aa 0493 Inversiones Seven Group, C.a.",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Sec. Los Olivos, Av. Casanova Godoy, C.c Unicentro, Piso 1, N° L-1-116. Ver detalles"
+  },
+  {
+    "code": "x0005",
+    "name": "Aa 0720 Inversiones Roalgi, C.a.",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Barrio Independencia Calle C, Local N°11, Parroquia Madre Maria De San Jose, Al Frente Del C.c. El Global. Ver detalles"
+  },
+  {
+    "code": "x0008",
+    "name": "Aa 0937 Envios Carabobo, C.a.",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Sector Centro, Calle Carabobo, Norte C/c Rivas, C.c. Lavieri, Local N°1, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0009",
+    "name": "Aa 1086 Inversiones Fajang, C.a.",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Manzana 25, Local N° 28, Fundacion Mendoza, Av Fuerzas AÉreas, Girardot Jose Casanova Godoy. Ver detalles"
+  },
+  {
+    "code": "x0012",
+    "name": "Aa 0351 Ciudad de Comunicaciones, C.a.",
+    "city": "Turmero",
+    "state": "Aragua",
+    "address": "La Encrucijada, Carretera Nacional, C.c. Paseo, Los Laureles, Local N°4, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0013",
+    "name": "Aa 0845 Distribuidora Ss 35, C.a.",
+    "city": "Victoria",
+    "state": "Aragua",
+    "address": "Avenida Victoria, C.c. Cilento, Local N°7, Nivel Pb, Sector Nueva Victoria. Ver detalles"
+  },
+  {
+    "code": "x0014",
+    "name": "Aa 0860 Soluciones Mdm, C.a.",
+    "city": "Villa de Cura",
+    "state": "Aragua",
+    "address": "Calle Principal, C.c. Villa Hermosa, Local N°14, Nivel Pb, Sector Centro. Ver detalles"
+  },
+  {
+    "code": "x0015",
+    "name": "Aa 0852 Inversiones Pedraza Master, C.a.",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Avenida 4 Entre Calles 14 Y 15, Casa S/n, Nivel Pb, Sector Centro. Ver detalles"
+  },
+  {
+    "code": "x0016",
+    "name": "Aa 1029 Serviexpress Speed, C.a.",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "Avenida 23 De Enero Con Avenida Guiacaipuro, C.c. Forum, Local 1-c, Nivel Pb, Sector La Floresta. Ver detalles"
+  },
+  {
+    "code": "x0017",
+    "name": "Aa 1012 Global Ja Servicios, C.a.",
+    "city": "Barinitas",
+    "state": "Barinas",
+    "address": "Sector Villa Nueva, Av. Intercomunal Rafael Roche, Hotel Cacao Suites, Local 1. Ver detalles"
+  },
+  {
+    "code": "x0018",
+    "name": "Aa 0072 Corporacion Industrial Sierra Nevada, C.a.",
+    "city": "Capitanejo",
+    "state": "Barinas",
+    "address": "Calle Principal, Local S/n, Sector Centro, A 100 Metros De La Estacion Policial. Ver detalles"
+  },
+  {
+    "code": "x0021",
+    "name": "Aa 0732 Unienvios, C.a.",
+    "city": "Ciudad Bolivar",
+    "state": "Bolívar",
+    "address": "Avenida Siegart C/c Avenida Republica, Edif. R.c Taguapire, Local N° 4, Nivel Pb, Sector Negro Primero. Ver detalles"
+  },
+  {
+    "code": "x0020",
+    "name": "Aa 0609 Servicios Generales Orinoco, C.a.",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Av Guayana Con Calle Nekuima, C.c. Ciudad Alta Vista, Nivel 1, Local 42-54. Ver detalles"
+  },
+  {
+    "code": "x0019",
+    "name": "Oc 450 Oficina Comercial Puerto Ordaz",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "Calle Caicara, Manzana N° 10, Local N° 1, Sector Castillito, Frente A La Agencia Del Sur. Ver detalles"
+  },
+  {
+    "code": "x0022",
+    "name": "Aa 0201 Logistica de Envio Express, C.a.",
+    "city": "Los Guayos",
+    "state": "Carabobo",
+    "address": "Av. Los Guayos, Edif. El Roble 94-85, Local N°5, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0026",
+    "name": "Aa 0998 Distribuidora Fyg, C.a.",
+    "city": "Moron",
+    "state": "Carabobo",
+    "address": "Calle 06, Urb. Banco Obrero Nuevo, Parroquia MorÓn, Casa Nro 21, Local 1. Moron. Ver detalles"
+  },
+  {
+    "code": "x0023",
+    "name": "Aa 0076 Vsg Express, C.a.",
+    "city": "Naguanagua",
+    "state": "Carabobo",
+    "address": "Avenida Bolivar De Naguanagua, C/c Calle 23 De Enero, N° Civico 191-219, Local N°3, Nivel Pb, Naguanagua. Ver detalles"
+  },
+  {
+    "code": "x0024",
+    "name": "Aa 0940 Inversiones Rg & Gj, C.a.",
+    "city": "Puerto Cabello",
+    "state": "Carabobo",
+    "address": "Calle Augusto Brandt, C.c. Cumboto, Local N°4, Nivel Pb, Urb Cumboto. Ver detalles"
+  },
+  {
+    "code": "x0025",
+    "name": "Aa 1011 As Tu Aliado, C.a.",
+    "city": "Puerto Cabello",
+    "state": "Carabobo",
+    "address": "C.c. Profesional Plaza, Planta Nivel Galeria Plaza, Nivel P.b, Local 29m-2. Ver detalles"
+  },
+  {
+    "code": "x0027",
+    "name": "Aa 0109 J&p Servi Express, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Intercomunal Valencia, C/c La Entrada De La Urb. Parque Valencia, C.c. Megamercado, Nivel Pb-1, Local 8. Ver detalles"
+  },
+  {
+    "code": "x0028",
+    "name": "Aa 0117 Hq Express, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Intercomunal Don Julio Centeno Con Av. 97, C.c. Big Low Center, Nave 0, Local N°3, Nivel Pb, A 20 Mts De La Entrada De Epa De San Diego. Ver detalles"
+  },
+  {
+    "code": "x0029",
+    "name": "Aa 0177 Inversiones Orocargo, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Calle 186b, Entre Avenida 72-a Y Avenida 65, Casa N°30f-1 Pb, Urb. El Remanso, Paralelo A La Av. Don Julio Centeno, Frente Al Modulo Policial De El Remanso. Ver detalles"
+  },
+  {
+    "code": "x0030",
+    "name": "Aa 0393 Servicios de Mensajeria, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av Henry Ford, C.c. Paseo Las Industrias, Nivel Pb, Local 37, Sector Zona Industrial Sur Ii. Ver detalles"
+  },
+  {
+    "code": "x0032",
+    "name": "Aa 0941 Protones E Iones 1945, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Calle 153, Edificio 100-85, Local A, Nivel Pb, Urb. La Alegria. Ver detalles"
+  },
+  {
+    "code": "x0033",
+    "name": "Aa 1097 Eyleen Express, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Terminal Viejo Valencia, Av. 92 Con Calle 68, C.c. Goajiros Center, Nivel Pb, Local M225 Y M232. Ver detalles"
+  },
+  {
+    "code": "x0034",
+    "name": "Aa 1205 Global Suppliers, C.a.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Urb. Las Chimeneas, C.c. Las Chimeneas, Local N°211. Ver detalles"
+  },
+  {
+    "code": "x0031",
+    "name": "Oc 492 Oficina Comercial Valencia",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. 68, Entre Calles 102 Y 103, Parque Industrial Castillito, Edif. Domesa, Al Lado Del Blindados Panamericanos. Ver detalles"
+  },
+  {
+    "code": "x0036",
+    "name": "Aa 0548 Inversiones Payper, C.a.",
+    "city": "Baruta",
+    "state": "Distrito Capital",
+    "address": "Urb. Parque Humboldt, Av. RÍo Caura, C.c. Centro Empresarial La PirÁmide, Nivel Pb, Local 12. Ver detalles"
+  },
+  {
+    "code": "x0041",
+    "name": "Aa 0385 Brisar Express, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Sur 13, Esq. Pastor A Misericordia, Edif. Grancko, Nivel Pb, Local B, Urb. Parque Carabobo. Ver detalles"
+  },
+  {
+    "code": "x0042",
+    "name": "Aa 0412 Inversiones Mb-33, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Del Avila, Edif. Residencias Belmont, Local 01, Nivel Pb, Urb. Altamira Sur. Ver detalles"
+  },
+  {
+    "code": "x0044",
+    "name": "Aa 0471 Venezolana de Servicios Venaser, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Avenida Libertador, C.c. Sambil, Nivel Acuario, Local Ac-r6-k. Ver detalles"
+  },
+  {
+    "code": "x0045",
+    "name": "Aa 0650 Inversiones Micro Sanil, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Calle Villaflor Y La Av Casanova, C.c Sabana Grande , Local N- 4 1, Nivel Feria. Ver detalles"
+  },
+  {
+    "code": "x0046",
+    "name": "Aa 0683 Inversiones Enjamar, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Simon Bolivar, Urb. Propatria, C.c Propatria, Nivel 4, Local N°1-a. Ver detalles"
+  },
+  {
+    "code": "x0047",
+    "name": "Aa 0706 Servcios Express Victoria 2012, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Presidente Medina Con Calle Minerva, Edif. Excelsior, Local N° B-1, Nivel P.b, Sector Las Acacias. Ver detalles"
+  },
+  {
+    "code": "x0048",
+    "name": "Aa 0767 Compuorden, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Baralt, Entre La Esquina Del Carmen A Bucare, C.c Doral Baralt, Local N°249-250. Ver detalles"
+  },
+  {
+    "code": "x0049",
+    "name": "Aa 0798 Compuorden, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Avenida Lecuna, Conjunto Residencial Parque Central Edificio El Tejar, Nivel Bolivar Cb-19. Ver detalles"
+  },
+  {
+    "code": "x0050",
+    "name": "Aa 0884 Servicios Integrales Ebisu, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Calle La Joya, Edificio Guaica, Local B, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0051",
+    "name": "Aa 0935 Encomiendas Cronos, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Juan Bautista Arismendi, Sector La Florida, Edificio Artxanta, Local N°1, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0052",
+    "name": "Aa 0968 Encomiendas San Martin-plaza, C.a.",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Avenida San Martin, C.c. Los Molinos, Piso 1, Local N°43, Al Lado Del Sumat. Ver detalles"
+  },
+  {
+    "code": "x0043",
+    "name": "Oc 469 Oficina Comercial Caracas",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "Av. Sur 4 Con Calle 100, Esq. Puente Soublette, Edif. Domesa (al Lado Del Cicpc Antigua Ptj), Quinta Crespo. Ver detalles"
+  },
+  {
+    "code": "x0035",
+    "name": "Aa 0104 Inversiones Pdcg, C.a.",
+    "city": "La California",
+    "state": "Distrito Capital",
+    "address": "California Norte, Av. Francisco De Miranda, Edif. Sara, Nivel Pb, Local N-04. Ver detalles"
+  },
+  {
+    "code": "x0039",
+    "name": "Aa 1204 Terminal Privado Centro Oriente Sur (cos), C.a.",
+    "city": "Los Molinos",
+    "state": "Distrito Capital",
+    "address": "Urb. Los Molinos, Calle Callejon Anauco, Terminal Privado Centro Oriente. Ver detalles"
+  },
+  {
+    "code": "x0038",
+    "name": "Aa 1139 Officenet Inversiones, C.a.",
+    "city": "Manzanares",
+    "state": "Distrito Capital",
+    "address": "Av. Final Lomas De Prados Del Este, C.c Manzanares Plaza, Nivel Avenida, Local C3-07. Ver detalles"
+  },
+  {
+    "code": "x0037",
+    "name": "Aa 1121 Servicios Ejecutivos Envilog, C.a.",
+    "city": "Puente Hierro",
+    "state": "Distrito Capital",
+    "address": "Av. Este 18, Entre Esq. De Regeneracion A Guay, Edif. Torre Puente Hierro, Nivel Pb, Local D. Ver detalles"
+  },
+  {
+    "code": "x0040",
+    "name": "Aa 1208 Inversiones Mara 1005, C.a.",
+    "city": "San Martín",
+    "state": "Distrito Capital",
+    "address": "Av. San Martin, C.c. Maracaibo, Nivel Pb, Local 13. Ver detalles"
+  },
+  {
+    "code": "x0054",
+    "name": "Aa 0757 Il Poste, C.a.",
+    "city": "Carirubana",
+    "state": "Falcón",
+    "address": "Avenida Prolongacion Girardot C/c Las Flores, C.c. Ciudad Del Viento, Nivel Pb, Local Pb-33, Urb. Santa Irene, Carirubana. Ver detalles"
+  },
+  {
+    "code": "x0053",
+    "name": "Aa 0734 Inversiones Turaca, C.a.",
+    "city": "Coro",
+    "state": "Falcón",
+    "address": "Calle Zamora, Esquina Calle Colina, C.c. DoÑa Aixa, Local N°3, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0059",
+    "name": "Aa 1060 Inficonex, C.a.",
+    "city": "El Sombrero",
+    "state": "Guárico",
+    "address": "Sector Casco Central, Calle El Triunfo Cruce Con Calle Alegria, Local 3. Ver detalles"
+  },
+  {
+    "code": "x0057",
+    "name": "Aa 1009 Soluciones Mdm, C.a.",
+    "city": "San Juan de Los Morros",
+    "state": "Guárico",
+    "address": "Sector Centro, Av. BolÍvar, C.c. Via Venetto Boulevard, Local Lc-37, Nivel 2. Ver detalles"
+  },
+  {
+    "code": "x0058",
+    "name": "Aa 1026 Plataforma Digital 412, C.a.",
+    "city": "Tucupido",
+    "state": "Guárico",
+    "address": "Sector El Tranquero, Calle Zaraza, Edif. Aveiro, Nivel Pb, Local 09. Ver detalles"
+  },
+  {
+    "code": "x0055",
+    "name": "Aa 0162 Jym Multiservicios, C.a.",
+    "city": "Valle de La Pascua",
+    "state": "Guárico",
+    "address": "Sector Centro, Calle Guasco, Calles Deleite Y Camaleones, Local N°64. Ver detalles"
+  },
+  {
+    "code": "x0056",
+    "name": "Aa 0638 Inversiones Llano Express, C.a.",
+    "city": "Zaraza",
+    "state": "Guárico",
+    "address": "Calle Concordia Entre Calle 9 Y Calle Los Naranjos, Local N°2, Sector El Medano. Ver detalles"
+  },
+  {
+    "code": "x0096",
+    "name": "Aa 0768 Inversiones King Services, C.a.",
+    "city": "Maiquetia",
+    "state": "La Guaira",
+    "address": "Avenida Soublette, C.c Litoral, Local N°3, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0060",
+    "name": "Aa 0198 Envios Zafiro, C.a.",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Calle 20 Con Carrera 21 Y 22, Local 21-103. Ver detalles"
+  },
+  {
+    "code": "x0062",
+    "name": "Aa 0741 Orosol Xxiii, C.a.",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Avenida Los Leones, C.c. Paris, Local N° 1-22, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0063",
+    "name": "Aa 1027 Real Courier, C.a.",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Zona Este, Av. Lara Con Cruce Av. Los Leones, C.c. Parque Real, Local 10, Nivel P-al. Ver detalles"
+  },
+  {
+    "code": "x0064",
+    "name": "Aa 1122 Distribuidora Jc 2023, C.a.",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Sec. Centro, Carrera 17 Con Calle 31, Edif. Curarigua, Piso Pb. Ver detalles"
+  },
+  {
+    "code": "x0065",
+    "name": "Aa 1136 Pack & Box, S.a.",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Calle 15 Entre Av. 20 Y Carrera 21, Edif. Pino, Piso Pb, Oficina 2 - N°14-99. Ver detalles"
+  },
+  {
+    "code": "x0066",
+    "name": "Aa 1142 Envios 2328, C.a.",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Av. Pedro Leon Torres Entre Calles 49 Y 50, C.c Venrol, Nivel Pb, Local B-11. Ver detalles"
+  },
+  {
+    "code": "x0067",
+    "name": "Aa 1200 Conexiones Integrales, C.a.",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Urb. Del Este, Av. Concordia, Diagonal Al C.c. Sambil. Ver detalles"
+  },
+  {
+    "code": "x0061",
+    "name": "Oc 468 Oficina Comercial Barquisimeto",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Calle 29 Entre Carrera 14 Y 15, Ciudad Industrial, Galpon N° 14-57, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0068",
+    "name": "Aa 0329 Inversiones Ordica, C.a.",
+    "city": "Cabudare",
+    "state": "Lara",
+    "address": "Calle Juan De Dios Ponte, C.c. Plaza La Cruz, Nivel Pb, Local Ml 02. Ver detalles"
+  },
+  {
+    "code": "x0069",
+    "name": "Aa 1074 Inversiones Mi Futuro 2015 Cjmp, C.a.",
+    "city": "El Tocuyo",
+    "state": "Lara",
+    "address": "Sector Centro, Av. Fraternidad, Esq. Carrera N°18, C.c Torcaz, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0070",
+    "name": "Aa 0818 Inversiones Mi Futuro 2015 Cjmp, C.a.",
+    "city": "Quibor",
+    "state": "Lara",
+    "address": "Calle 9 Con Avenida 4 Y 5, Local S/n, Nivel Pb, Sector Centro De Quibor. Ver detalles"
+  },
+  {
+    "code": "x0081",
+    "name": "Aa 0613 Audios Sonido Discoin, C.a.",
+    "city": "El Vigia",
+    "state": "Mérida",
+    "address": "Av. 15 Con Calle 4, Edif. Mantilla, Local 3-47, Nivel P.b, Sector El Tamarindo. El Vigia. Ver detalles"
+  },
+  {
+    "code": "x0082",
+    "name": "Aa 1149 Satelicel C.a.",
+    "city": "Lagunillas",
+    "state": "Mérida",
+    "address": "Casco Central Av. Bolivar, C.c. La Calera, Local 6 Frente A La Plaza Bolivar. Ver detalles"
+  },
+  {
+    "code": "x0078",
+    "name": "Aa 0120 Inversiones Manroz, C.a.",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Av. Principal El Campito, Edif. Laura, Local N°8, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0079",
+    "name": "Aa 0126 Corporacion Los Duques 888, C.a.",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Avenida Las Americas, C.c. MurachÍ, Iii Etapa, Oficina Nº5, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0080",
+    "name": "Oc 426 Oficina Comercial Mérida",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Avenida Los Proceres, Zona Empresarial La Nonna, Local 3b. Ver detalles"
+  },
+  {
+    "code": "x0071",
+    "name": "Aa 0084 Tecsend Consulting, C.a.",
+    "city": "Guatire",
+    "state": "Miranda",
+    "address": "Avenida Principal El Ingenio, C.c. Parque Esmeralda, Local Pl-11, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0072",
+    "name": "Aa 0071 Comunicaciones del Paseo Mirandino, C.a.",
+    "city": "Los Teques",
+    "state": "Miranda",
+    "address": "Av. La Hoyada, C.c. Paseo Mirandino, Local N°34, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0073",
+    "name": "Aa 0124 Inversiones Ling Thai, C.a.",
+    "city": "Los Teques",
+    "state": "Miranda",
+    "address": "Carretera Panamericana Km 25, Cruce Con Calle 24 De Junio, C.c. La Redoma, Nivel 2, Local N°15, Nivel Pb, Sector La Mata. Ver detalles"
+  },
+  {
+    "code": "x0074",
+    "name": "Aa 0657 Comunicaciones Delaluz, C.a.",
+    "city": "Los Teques",
+    "state": "Miranda",
+    "address": "Calle Miquillen, Esq. Calle Carabobo, C.c. Luz Electrica, Nivel 1, Local 1-a. Ver detalles"
+  },
+  {
+    "code": "x0076",
+    "name": "Aa 0186 Sends World C.g, C.a.",
+    "city": "San Antonio",
+    "state": "Miranda",
+    "address": "Kilometro 14, C.c. Los Castores, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0075",
+    "name": "Aa 1016 Mundoferta, C.a.",
+    "city": "San Antonio de Los Altos",
+    "state": "Miranda",
+    "address": "Urb. Club De Campo, Carretera Panamericana Km 16, C.c. Club De Campo, Local N°6, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0077",
+    "name": "Oc 446 Oficina Comercial Maturín",
+    "city": "Maturin",
+    "state": "Monagas",
+    "address": "Av. Raul Leoni, Cruce Alirio Ugarte Pelayo, Km. 1, Galpon Gava, Sector Bajo Guarapiche, Parroquia San Simon. Ver detalles"
+  },
+  {
+    "code": "x0084",
+    "name": "Aa 0893 Distribuciones Ramgia, C.a.",
+    "city": "El Valle del Espiritu Santo",
+    "state": "Nueva Esparta",
+    "address": "Avenida Francisco Fajardo, C.c. Eco Center, Local E-1, Sector Conejeros Del Valle. Ver detalles"
+  },
+  {
+    "code": "x0083",
+    "name": "Aa 1207 Enviexpress Mgta, C.a.",
+    "city": "Porlamar",
+    "state": "Nueva Esparta",
+    "address": "Av. 4 De Mayo, Local S/n, Nivel Pb, Sector Genoves. Ver detalles"
+  },
+  {
+    "code": "x0086",
+    "name": "Aa 0819 M2 Encomiendas, C.a.",
+    "city": "Araure",
+    "state": "Portuguesa",
+    "address": "Sector Barrio America, Calle 26 Entre Av 39 Y 40, Local Nro S/n. Ver detalles"
+  },
+  {
+    "code": "x0085",
+    "name": "Aa 0644 Envios Alsott, C.a",
+    "city": "Guanare",
+    "state": "Portuguesa",
+    "address": "Barrio Curazao, Carrera 3 Con Esq. Calle 9, Nivel B, Local N°2. Ver detalles"
+  },
+  {
+    "code": "x0088",
+    "name": "Aa 0730 Reyna Inversiones C.a.",
+    "city": "Casanay",
+    "state": "Sucre",
+    "address": "Parroquia MariÑo, Plaza Bolivar, Calle Colombia, Casa N°2, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0087",
+    "name": "Oc 444 Oficina Comercial Cumaná",
+    "city": "Cumana",
+    "state": "Sucre",
+    "address": "Calle Arismendi Con Av. Toledo, Frente Al Elevado, Antigua redoma Del Indio. Ver detalles"
+  },
+  {
+    "code": "x0095",
+    "name": "Aa 0736 Casa Digital Servicios, C.a.",
+    "city": "Rubio",
+    "state": "Táchira",
+    "address": "Calle 10 Entre Avenidas 9 Y 10, Casa N° 9-51, Nivel Pb, Sector Centro. Ver detalles"
+  },
+  {
+    "code": "x0091",
+    "name": "Aa 1046 Invercamen, C.a.",
+    "city": "San Antonio del Tachira",
+    "state": "Táchira",
+    "address": "Barrio Ocumare, Calle 6, Esq. Con Carrera 3, Edif. Edieleal, Piso 1, Local 1, N°3-01. Ver detalles"
+  },
+  {
+    "code": "x0092",
+    "name": "Aa 0754 Representaciones Caryen, C.a.",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Avenida 19 De Abril, Sector La Bermeja Local N°4, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0093",
+    "name": "Aa 0858 Representaciones Elisdan, C.a.",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Calle 15 Entre Carrera 6 Y 7, Local N° 6-8, Nivel Pb, Sector Centro. Ver detalles"
+  },
+  {
+    "code": "x0094",
+    "name": "Oc 495 Oficina Comercial San Cristóbal",
+    "city": "San Cristobal",
+    "state": "Táchira",
+    "address": "Calle Navay Con Av. Torbes, Zona Industrial Las Lomas, Galpon Domesa, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0090",
+    "name": "Aa 0694 Puerta Puertaxpress, C.a.",
+    "city": "Valera",
+    "state": "Trujillo",
+    "address": "Av. 06 Entre Calles 04 Y 05, Edif. Continental Valera, Local N°05, Nivel Pb, Frente Al Liceo Rafael Rangel. Ver detalles"
+  },
+  {
+    "code": "x0089",
+    "name": "Aa 0914 Date Expreso, C.a.",
+    "city": "Valera",
+    "state": "Trujillo",
+    "address": "Avenida 6, Edificio Concordia, Local N° 4, Nivel Pb, Los Limoncitos Las Acacias. Ver detalles"
+  },
+  {
+    "code": "x0097",
+    "name": "Aa 0064 Encomiendas Amac 1111, C.a.",
+    "city": "San Felipe",
+    "state": "Yaracuy",
+    "address": "Avenida Jose Joaquin Veroes Con Esquina Calle Doce, Edificio Don Pancho, Local N°1, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0098",
+    "name": "Aa 0645 Servicios Integrales Y Telecomunicaciones, C.a.",
+    "city": "Cabimas",
+    "state": "Zulia",
+    "address": "Avenida Principal Las Cabillas, Edificio Barroco, Local N° 2 Pb, Sector Las Cabillas Cabimas Estado Zulia. Ver detalles"
+  },
+  {
+    "code": "x0100",
+    "name": "Aa 1206 Entregas Eagle Express C.a.",
+    "city": "Ciudad Ojeda",
+    "state": "Zulia",
+    "address": "Carretera L, Esq. Callejon 7, C.c. Via Appia, Local 8. Ver detalles"
+  },
+  {
+    "code": "x0099",
+    "name": "Aa 0527 Interconexiones Venezuela, C.a.",
+    "city": "Los Puertos de Altagracia",
+    "state": "Zulia",
+    "address": "Sector Tanque Nuevo, Av. 05 Con Calle 13, C.c. Crazy Fruits, Nivel Pb, Local S/n. Ver detalles"
+  },
+  {
+    "code": "x0103",
+    "name": "Aa 0812 Servientregas Ancar, C.a.",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av. 12, Casa N° 50-105, Local N°2, Urb. Canta Claro. Ver detalles"
+  },
+  {
+    "code": "x0104",
+    "name": "Aa 0960 Servicios Y Suministros Digitales, C.a.",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Avenida 4, Bella Vista Entre Calles 86 A Y 87, Local N°6, Nivel Pb. Ver detalles"
+  },
+  {
+    "code": "x0105",
+    "name": "Aa 1025 Box Mail Internacional , C.a.",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Urb. El Prado, Av. 70 B Local 79-57, Parroquia Raul Leoni. Ver detalles"
+  },
+  {
+    "code": "x0106",
+    "name": "Aa 1034 Servientregas Ancar, C.a.",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Sector La Coromoto, Av. 40, Local 5, N°61-43e. Ver detalles"
+  },
+  {
+    "code": "x0102",
+    "name": "Oc 430 Oficina Comercial Maracaibo",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av. 58 Circunvalacion 2, Entre Calles 1 Y 4, Nivel Pb, Sector El Pescadito, Al Lado De Supermecado Latino. Ver detalles"
+  },
+  {
+    "code": "x0101",
+    "name": "Aa 0778 Inversora Las Ruedas, C.a.",
+    "city": "Villa del Rosario",
+    "state": "Zulia",
+    "address": "Avenida Derecha Entre Calles Gerico Y El Marquez, C.c Don Esteban, Local N°9, Nivel Pb, Sector Casco Central. Ver detalles"
+  }
+]
