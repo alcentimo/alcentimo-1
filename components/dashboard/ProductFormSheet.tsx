@@ -11,6 +11,8 @@ import {
   type PublishedProductResult,
 } from "@/components/dashboard/QuickProductForm";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
+import type { OptimisticProductDraft } from "@/lib/products/optimistic-catalog-item";
+import type { ProductFormState } from "@/lib/products/actions";
 import {
   Sheet,
   SheetBody,
@@ -41,6 +43,11 @@ interface ProductFormSheetProps {
   onSaved: (result?: PublishedProductResult) => void;
   onSamplesCreated?: () => void;
   onLimitHit?: () => void;
+  onOptimisticCreate?: (draft: OptimisticProductDraft) => void;
+  onOptimisticCreateSettled?: (
+    tempId: string,
+    result: ProductFormState,
+  ) => void;
 }
 
 export function ProductFormSheet({
@@ -56,6 +63,8 @@ export function ProductFormSheet({
   onSaved,
   onSamplesCreated,
   onLimitHit,
+  onOptimisticCreate,
+  onOptimisticCreateSettled,
 }: ProductFormSheetProps) {
   const [editData, setEditData] = useState<ProductEditData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -158,6 +167,8 @@ export function ProductFormSheet({
             onRefresh={onSaved}
             onCancel={() => onOpenChange(false)}
             onLimitHit={onLimitHit}
+            onOptimisticCreate={onOptimisticCreate}
+            onOptimisticCreateSettled={onOptimisticCreateSettled}
           />
         </DialogContent>
       </Dialog>

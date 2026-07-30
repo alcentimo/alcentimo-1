@@ -231,6 +231,8 @@ export type ProductFormState = {
   productName?: string;
   imageOptimizedMessage?: string;
   productId?: string;
+  /** URL pública de la miniatura principal tras la subida. */
+  thumbUrl?: string;
   limitHit?: boolean;
   trialEligible?: boolean;
 };
@@ -549,6 +551,8 @@ export async function createProduct(
       catalogUrl: `/c/${store.slug}`,
       productSlug,
       productName: name,
+      productId,
+      thumbUrl: imageResult.primaryThumbUrl,
       imageOptimizedMessage:
         imageResult.uploadedCount > 1
           ? `${imageResult.uploadedCount} imágenes subidas correctamente.`

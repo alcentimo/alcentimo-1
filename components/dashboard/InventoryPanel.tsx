@@ -49,6 +49,15 @@ import { isProTrialUnlockReady } from "@/lib/plans/trial-unlock";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { PublishedProductResult } from "@/components/dashboard/QuickProductForm";
 import {
+  buildOptimisticCatalogItem,
+  isCatalogItemUploading,
+  isOptimisticProductId,
+  type OptimisticProductDraft,
+} from "@/lib/products/optimistic-catalog-item";
+import type { ProductFormState } from "@/lib/products/actions";
+import { getSiteUrl } from "@/lib/site-url";
+import { revokeProductImagePreview } from "@/lib/product-image-picker";
+import {
   InventoryProductOrderCell,
   reorderProductIds,
 } from "@/components/dashboard/InventoryProductOrderCell";
@@ -361,6 +370,7 @@ const InventoryRow = memo(function InventoryRow({
   reorderEnabled,
   reorderPending,
   adjustingStock,
+  uploading,
   onEdit,
   onDelete,
   onStockAdjust,
@@ -374,6 +384,7 @@ const InventoryRow = memo(function InventoryRow({
   reorderEnabled: boolean;
   reorderPending: boolean;
   adjustingStock: boolean;
+  uploading?: boolean;
   onEdit: (productId: string) => void;
   onDelete: (productId: string) => void;
   onStockAdjust: (productId: string, delta: number) => void;
@@ -391,13 +402,14 @@ const InventoryRow = memo(function InventoryRow({
 
   return (
     <tr
-      className={`inventory-row group ${critical ? "inventory-row-low-stock" : ""} ${out ? "inventory-row-out-stock" : ""}`}
+      className={`inventory-row group ${critical ? "inventory-row-low-stock" : ""} ${out ? "inventory-row-out-stock" : ""} ${uploading ? "inventory-row-uploading" : ""}`}
+      aria-busy={uploading || undefined}
       onDragOver={(event) => {
-        if (!reorderEnabled) return;
+        if (!reorderEnabled || uploading) return;
         event.preventDefault();
       }}
       onDrop={(event) => {
-        if (!reorderEnabled) return;
+        if (!reorderEnabled || uploading) return;
         event.preventDefault();
         const draggedProductId = event.dataTransfer.getData("text/plain");
         if (draggedProductId) {
@@ -417,19 +429,31 @@ const InventoryRow = memo(function InventoryRow({
         </td>
       ) : null}
       <td className="inventory-td inventory-td-thumb w-12">
-        <DashboardProductThumb name={product.product_name} thumbUrl={product.thumb_url} />
+        <div className="relative">
+          <DashboardProductThumb name={product.product_name} thumbUrl={product.thumb_url} />
+          {uploading ? (
+            <span className="absolute inset-0 flex items-center justify-center rounded-md bg-white/70 dark:bg-zinc-950/70">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-700 dark:text-teal-300" aria-hidden="true" />
+            </span>
+          ) : null}
+        </div>
       </td>
       <td className="inventory-td">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
             {product.product_name}
           </p>
-          {product.category_name ? (
+          {uploading ? (
+            <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-teal-700 dark:text-teal-300">
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+              Subiendo…
+            </p>
+          ) : product.category_name ? (
             <p className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">
               {product.category_name}
             </p>
           ) : null}
-          {showPcBuilderSlot ? (
+          {!uploading && showPcBuilderSlot ? (
             <InventoryPcBuilderSlotLabel product={product} />
           ) : null}
         </div>
@@ -440,7 +464,7 @@ const InventoryRow = memo(function InventoryRow({
           productId={product.product_id}
           availableStock={product.available_stock}
           stockQuantity={stockQuantity}
-          hasVariants={productHasVariants}
+          hasVariants={productHasVariants || Boolean(uploading)}
           adjustingStock={adjustingStock}
           onStockAdjust={onStockAdjust}
         />
@@ -453,12 +477,16 @@ const InventoryRow = memo(function InventoryRow({
         />
       </td>
       <td className="inventory-td inventory-td-actions">
-        <InventoryActionsMenu
-          productName={product.product_name}
-          productId={product.product_id}
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
+        {!uploading ? (
+          <InventoryActionsMenu
+            productName={product.product_name}
+            productId={product.product_id}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ) : (
+          <span className="sr-only">Subiendo producto</span>
+        )}
       </td>
     </tr>
   );
@@ -470,6 +498,7 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
   onDelete,
   onStockAdjust,
   adjustingStock,
+  uploading,
   showPcBuilderSlot = false,
 }: {
   product: CatalogListItem;
@@ -477,6 +506,7 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
   onDelete: (productId: string) => void;
   onStockAdjust: (productId: string, delta: number) => void;
   adjustingStock: boolean;
+  uploading?: boolean;
   showPcBuilderSlot?: boolean;
 }) {
   const stockQuantity = getProductStockQuantity(product);
@@ -489,7 +519,8 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
 
   return (
     <article
-      className={`inventory-mobile-card ${critical ? "inventory-mobile-card-low" : ""} ${out ? "inventory-mobile-card-out" : ""}`}
+      className={`inventory-mobile-card ${critical ? "inventory-mobile-card-low" : ""} ${out ? "inventory-mobile-card-out" : ""} ${uploading ? "inventory-row-uploading" : ""}`}
+      aria-busy={uploading || undefined}
     >
       <div className="flex items-start gap-3">
         <DashboardProductThumb
@@ -503,21 +534,28 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
               <p className="line-clamp-2 text-sm font-medium text-zinc-900 dark:text-zinc-50">
                 {product.product_name}
               </p>
-              {product.category_name ? (
+              {uploading ? (
+                <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-teal-700 dark:text-teal-300">
+                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                  Subiendo…
+                </p>
+              ) : product.category_name ? (
                 <p className="mt-0.5 truncate text-[11px] text-zinc-500 dark:text-zinc-400">
                   {product.category_name}
                 </p>
               ) : null}
-              {showPcBuilderSlot ? (
+              {!uploading && showPcBuilderSlot ? (
                 <InventoryPcBuilderSlotLabel product={product} />
               ) : null}
             </div>
-            <InventoryActionsMenu
-              productName={product.product_name}
-              productId={product.product_id}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
+            {!uploading ? (
+              <InventoryActionsMenu
+                productName={product.product_name}
+                productId={product.product_id}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            ) : null}
           </div>
           <div className="mt-2">
             <InventoryPriceDisplay
@@ -534,7 +572,7 @@ const InventoryMobileCard = memo(function InventoryMobileCard({
           productId={product.product_id}
           availableStock={product.available_stock}
           stockQuantity={stockQuantity}
-          hasVariants={productHasVariants}
+          hasVariants={productHasVariants || Boolean(uploading)}
           adjustingStock={adjustingStock}
           onStockAdjust={onStockAdjust}
           layout="spread"
@@ -663,8 +701,13 @@ export function InventoryPanel({
         return false;
       }
       setRefreshError(null);
-      setProducts(result.products);
-      setTotalCount(result.totalCount);
+      setProducts((prev) => {
+        const optimistic = prev.filter((item) =>
+          isOptimisticProductId(item.product_id),
+        );
+        setTotalCount(result.totalCount + optimistic.length);
+        return [...optimistic, ...result.products];
+      });
       return true;
     },
     [],
@@ -787,10 +830,82 @@ export function InventoryPanel({
 
   const handleProductSaved = useCallback(
     (result?: PublishedProductResult) => {
-      refreshProducts();
       if (result) {
+        // Create optimista: la fila ya está; el refresh llega en settled.
         setPublishedProduct(result);
+        return;
       }
+      // Edición u otros flujos sin draft optimista.
+      refreshProducts();
+    },
+    [refreshProducts],
+  );
+
+  const handleOptimisticCreate = useCallback(
+    (draft: OptimisticProductDraft) => {
+      const item = buildOptimisticCatalogItem(store, draft);
+      setProducts((prev) => [item, ...prev.filter((p) => p.product_id !== draft.tempId)]);
+      setTotalCount((count) => count + 1);
+      setRefreshError(null);
+    },
+    [store],
+  );
+
+  const handleOptimisticCreateSettled = useCallback(
+    (tempId: string, result: ProductFormState) => {
+      setProducts((prev) => {
+        const current = prev.find((item) => item.product_id === tempId);
+        if (current?.thumb_url?.startsWith("blob:")) {
+          revokeProductImagePreview(current.thumb_url);
+        }
+
+        if (!result.success) {
+          return prev.filter((item) => item.product_id !== tempId);
+        }
+
+        if (result.productId) {
+          return prev.map((item) => {
+            if (item.product_id !== tempId) return item;
+            return {
+              ...item,
+              product_id: result.productId!,
+              product_slug: result.productSlug ?? item.product_slug,
+              product_name: result.productName ?? item.product_name,
+              thumb_url: result.thumbUrl ?? item.thumb_url,
+              metadata: {
+                ...(item.metadata ?? {}),
+                optimisticUploading: false,
+              },
+            };
+          });
+        }
+
+        return prev.filter((item) => item.product_id !== tempId);
+      });
+
+      if (!result.success) {
+        setTotalCount((count) => Math.max(0, count - 1));
+        setRefreshError(
+          result.error ?? "No se pudo publicar el producto. Intenta de nuevo.",
+        );
+        return;
+      }
+
+      if (result.productName) {
+        const catalogUrl = result.catalogUrl
+          ? result.catalogUrl.startsWith("http")
+            ? result.catalogUrl
+            : `${getSiteUrl()}${result.catalogUrl}`
+          : undefined;
+        if (catalogUrl) {
+          setPublishedProduct({
+            productName: result.productName,
+            catalogUrl,
+          });
+        }
+      }
+
+      refreshProducts();
     },
     [refreshProducts],
   );
@@ -1012,6 +1127,7 @@ export function InventoryPanel({
 
     return filtered.map((product) => {
       const isAdjusting = adjustingProductIds.has(product.product_id);
+      const uploading = isCatalogItemUploading(product);
       return (
         <InventoryMobileCard
           key={product.product_id}
@@ -1020,6 +1136,7 @@ export function InventoryPanel({
           onDelete={handleDeleteRequest}
           onStockAdjust={handleStockAdjust}
           adjustingStock={isAdjusting}
+          uploading={uploading}
           showPcBuilderSlot={pcBuilderEnabled}
         />
       );
@@ -1289,12 +1406,13 @@ export function InventoryPanel({
                       product={product}
                       position={index}
                       total={filtered.length}
-                      reorderEnabled={reorderEnabled}
+                      reorderEnabled={reorderEnabled && !isCatalogItemUploading(product)}
                       reorderPending={reorderingProductId === product.product_id}
                       onEdit={openEdit}
                       onDelete={handleDeleteRequest}
                       onStockAdjust={handleStockAdjust}
                       adjustingStock={adjustingProductIds.has(product.product_id)}
+                      uploading={isCatalogItemUploading(product)}
                       onPositionCommit={handlePositionCommit}
                       onDropOnRow={handleDropOnRow}
                       showPcBuilderSlot={pcBuilderEnabled}
@@ -1354,6 +1472,8 @@ export function InventoryPanel({
         catalogEmpty={catalogEmpty && sheetMode === "create"}
         rubroLabel={rubroLabel}
         onSaved={handleProductSaved}
+        onOptimisticCreate={handleOptimisticCreate}
+        onOptimisticCreateSettled={handleOptimisticCreateSettled}
         onSamplesCreated={() => {
           onSampleProductsCreated?.();
           refreshProducts();

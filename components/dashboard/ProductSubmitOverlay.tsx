@@ -18,10 +18,10 @@ export function ProductSubmitOverlay({
   const title =
     mode === "edit"
       ? hasImage
-        ? "Actualizando producto e imagen…"
+        ? "Optimizando y guardando…"
         : "Guardando cambios…"
       : hasImage
-        ? "Publicando producto e imagen…"
+        ? "Optimizando fotos…"
         : "Publicando producto…";
 
   return (

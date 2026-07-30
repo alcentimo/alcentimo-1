@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
 import {
   createProduct,
@@ -45,7 +45,6 @@ import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { VariantFormInput } from "@/lib/products/variants";
 import { formatCountryCurrency } from "@/lib/country-config";
 import { useCountry } from "@/components/providers/CountryProvider";
-import { getSiteUrl } from "@/lib/site-url";
 import { getTransactionalCatalogPublicUrl } from "@/lib/stores";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,8 +58,11 @@ import { LocationStockFields } from "@/components/dashboard/LocationStockFields"
 import { validateProductPublishInput } from "@/lib/products/validate-publish-form";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
-
-const initialState: ProductFormState = {};
+import { ensureClientCompressedImages } from "@/lib/products/ensure-client-compressed-images";
+import {
+  createOptimisticProductId,
+  type OptimisticProductDraft,
+} from "@/lib/products/optimistic-catalog-item";
 
 type SaveIntent = "close" | "another";
 
@@ -80,6 +82,11 @@ interface QuickProductFormProps {
   onRefresh: () => void;
   onCancel?: () => void;
   onLimitHit?: () => void;
+  onOptimisticCreate?: (draft: OptimisticProductDraft) => void;
+  onOptimisticCreateSettled?: (
+    tempId: string,
+    result: ProductFormState,
+  ) => void;
 }
 
 export function QuickProductForm(props: QuickProductFormProps) {
@@ -90,7 +97,6 @@ export function QuickProductForm(props: QuickProductFormProps) {
       key={sessionId}
       {...props}
       onSavedAndAnother={() => {
-        props.onRefresh();
         setSessionId((id) => id + 1);
       }}
     />
@@ -113,9 +119,10 @@ function QuickProductFormSession({
   onCancel,
   onSavedAndAnother,
   onLimitHit,
+  onOptimisticCreate,
+  onOptimisticCreateSettled,
 }: QuickProductFormSessionProps) {
   const { config: countryConfig } = useCountry();
-  const [state, formAction, pending] = useActionState(createProduct, initialState);
   const [priceUsd, setPriceUsd] = useState("");
   const [compareAtUsd, setCompareAtUsd] = useState("");
   const [wholesalePriceUsd, setWholesalePriceUsd] = useState("");
@@ -134,6 +141,7 @@ function QuickProductFormSession({
   const [productName, setProductName] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const saveIntentRef = useRef<SaveIntent>("close");
   const submittedNameRef = useRef("");
 
@@ -183,7 +191,7 @@ function QuickProductFormSession({
 
   useStationerySaleVariants(isPapeleria, extraFields, variants, setVariants);
 
-  const isBusy = pending || galleryBusy;
+  const isBusy = submitting || galleryBusy;
 
   const { hint: autoDetectHint, handleCategoryManualChange } =
     useProductTitleAutoDetect({
@@ -223,31 +231,6 @@ function QuickProductFormSession({
     return usd * exchangeRate;
   }, [priceUsd, exchangeRate, countryConfig.currency.showLocalEquivalent]);
 
-  useEffect(() => {
-    if (!state.success) return;
-
-    if (saveIntentRef.current === "another") {
-      onSavedAndAnother();
-      saveIntentRef.current = "close";
-      return;
-    }
-
-    onRefresh();
-    onComplete({
-      productName: state.productName ?? submittedNameRef.current,
-      catalogUrl: state.catalogUrl
-        ? state.catalogUrl.startsWith("http")
-          ? state.catalogUrl
-          : `${getSiteUrl()}${state.catalogUrl}`
-        : getTransactionalCatalogPublicUrl(store.slug),
-    });
-  }, [state.success, state.catalogUrl, state.productName, onComplete, onRefresh, onSavedAndAnother, store.slug]);
-
-  useEffect(() => {
-    if (!state.limitHit) return;
-    onLimitHit?.();
-  }, [state.limitHit, onLimitHit]);
-
   function resetFormState() {
     setPriceUsd("");
     setCompareAtUsd("");
@@ -260,6 +243,9 @@ function QuickProductFormSession({
     setGalleryValue({ items: [], removedDbIds: [] });
     setLocalError(null);
     setExtraFields({});
+    setProductName("");
+    setShortDescription("");
+    setDescription("");
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -291,6 +277,8 @@ function QuickProductFormSession({
     }
 
     const usd = parseFloat(priceUsd);
+    const stockRaw = String(formData.get("stock_quantity") ?? "").trim();
+    const stockQuantity = Number.parseInt(stockRaw, 10);
     submittedNameRef.current = String(formData.get("name") ?? "").trim();
     formData.set("price_usd", usd.toFixed(4));
     formData.set("product_category_slug", categorySlug);
@@ -320,21 +308,74 @@ function QuickProductFormSession({
     formData.set("product_images_json", json);
     formData.delete("images");
     formData.delete("image");
-    for (const file of files) {
-      formData.append("images", file);
-    }
 
-    formAction(formData);
+    setSubmitting(true);
+
+    try {
+      const compressedFiles = await ensureClientCompressedImages(files);
+      for (const file of compressedFiles) {
+        formData.append("images", file);
+      }
+
+      const tempId = createOptimisticProductId();
+      const thumbPreviewUrl = compressedFiles[0]
+        ? URL.createObjectURL(compressedFiles[0])
+        : null;
+
+      const draft: OptimisticProductDraft = {
+        tempId,
+        productName: submittedNameRef.current,
+        priceUsd: usd,
+        stockQuantity: Number.isFinite(stockQuantity) ? stockQuantity : 0,
+        thumbPreviewUrl,
+        categoryName: categoryLabel || undefined,
+      };
+
+      onOptimisticCreate?.(draft);
+
+      const intent = saveIntentRef.current;
+      if (intent === "another") {
+        resetFormState();
+        onSavedAndAnother();
+        setSubmitting(false);
+      } else {
+        onComplete({
+          productName: draft.productName,
+          catalogUrl: getTransactionalCatalogPublicUrl(store.slug),
+        });
+      }
+
+      void createProduct({}, formData).then((result) => {
+        onOptimisticCreateSettled?.(tempId, result);
+        if (result.limitHit) {
+          onLimitHit?.();
+          return;
+        }
+        if (!result.success && intent === "another") {
+          setLocalError(result.error ?? "No se pudo publicar el producto.");
+        }
+        if (result.success && intent === "another") {
+          onRefresh();
+        }
+      });
+    } catch (error) {
+      setSubmitting(false);
+      setLocalError(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron preparar las fotos. Prueba de nuevo.",
+      );
+    }
   }
 
   const hasGallery = galleryValue.items.length > 0;
-  const displayError = localError ?? state.error;
+  const displayError = localError;
   const submitDisabled = isBusy || !hasGallery;
 
   return (
     <>
       <ProductSubmitOverlay
-        visible={pending}
+        visible={submitting}
         hasImage={galleryValue.items.some((item) => item.file)}
         mode="create"
       />
@@ -451,7 +492,7 @@ function QuickProductFormSession({
         id="quick-image"
         mode="create"
         layout="compact"
-        disabled={pending}
+        disabled={isBusy}
         onBusyChange={setGalleryBusy}
         onChange={setGalleryValue}
         onError={(message) => {
@@ -666,7 +707,7 @@ function QuickProductFormSession({
             saveIntentRef.current = "another";
           }}
         >
-          {pending && saveIntentRef.current === "another" ? (
+          {submitting && saveIntentRef.current === "another" ? (
             <>
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
               Guardando…
@@ -684,7 +725,7 @@ function QuickProductFormSession({
             saveIntentRef.current = "close";
           }}
         >
-          {pending && saveIntentRef.current === "close" ? (
+          {submitting && saveIntentRef.current === "close" ? (
             <>
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
               Publicando…

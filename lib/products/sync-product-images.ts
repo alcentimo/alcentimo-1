@@ -74,15 +74,23 @@ export async function createProductImagesFromFormData(
   productId: string,
   formData: FormData,
   altText: string,
-): Promise<{ error?: string; uploadedCount: number }> {
+): Promise<{ error?: string; uploadedCount: number; primaryThumbUrl?: string }> {
   const files = getImageFilesFromFormData(formData);
   if (files.length === 0) {
     return { error: "Sube al menos una foto del producto.", uploadedCount: 0 };
   }
 
-  for (let index = 0; index < files.length; index++) {
-    const file = files[index]!;
-    const uploaded = await uploadProductImage(supabase, storeId, file);
+  // Subidas en paralelo: el cuello de botella suele ser storage, no el insert.
+  const uploads = await Promise.all(
+    files.map(async (file, index) => {
+      const uploaded = await uploadProductImage(supabase, storeId, file);
+      return { file, uploaded, index };
+    }),
+  );
+
+  let primaryThumbUrl: string | undefined;
+
+  for (const { file, uploaded, index } of uploads) {
     const inserted = await insertUploadedImage(
       supabase,
       productId,
@@ -92,10 +100,15 @@ export async function createProductImagesFromFormData(
       index,
       index === 0,
     );
-    if (inserted.error) return { error: inserted.error, uploadedCount: index };
+    if (inserted.error) {
+      return { error: inserted.error, uploadedCount: index, primaryThumbUrl };
+    }
+    if (index === 0 && uploaded.url) {
+      primaryThumbUrl = uploaded.url;
+    }
   }
 
-  return { uploadedCount: files.length };
+  return { uploadedCount: files.length, primaryThumbUrl };
 }
 
 async function fetchProductImageUrls(
@@ -219,9 +232,14 @@ export async function syncProductImagesFromFormData(
     const hasPrimary =
       payload?.keep.some((item) => item.isPrimary) ?? (existingCount ?? 0) > 0;
 
-    for (let index = 0; index < newFiles.length; index++) {
-      const file = newFiles[index]!;
-      const uploaded = await uploadProductImage(supabase, storeId, file);
+    const uploads = await Promise.all(
+      newFiles.map(async (file, index) => {
+        const uploaded = await uploadProductImage(supabase, storeId, file);
+        return { file, uploaded, index };
+      }),
+    );
+
+    for (const { file, uploaded, index } of uploads) {
       const inserted = await insertUploadedImage(
         supabase,
         productId,

@@ -59,6 +59,7 @@ import {
 } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import type { VariantFormInput } from "@/lib/products/variants";
 import { validateProductPublishInput } from "@/lib/products/validate-publish-form";
+import { ensureClientCompressedImages } from "@/lib/products/ensure-client-compressed-images";
 
 interface ProductCatalogFormProps {
   store: Store;
@@ -270,8 +271,19 @@ export function ProductCatalogForm({
     formData.set("product_images_json", json);
     formData.delete("images");
     formData.delete("image");
-    for (const file of files) {
-      formData.append("images", file);
+
+    try {
+      const compressedFiles = await ensureClientCompressedImages(files);
+      for (const file of compressedFiles) {
+        formData.append("images", file);
+      }
+    } catch (error) {
+      setLocalError(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron optimizar las fotos. Prueba de nuevo.",
+      );
+      return;
     }
 
     formAction(formData);
