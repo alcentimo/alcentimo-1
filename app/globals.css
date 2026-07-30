@@ -2004,9 +2004,14 @@ body {
   color: var(--pc-fg);
 }
 
-/* Selectores Talla/Color: ancho completo y tipografía legible (calzado EUR/US). */
+/* Talla/Color: 2 columnas con chips y swatches compactos. */
 .fashion-variant-picker {
-  @apply grid w-full min-w-0 grid-cols-1 gap-2;
+  @apply grid w-full min-w-0 grid-cols-2 gap-x-2.5 gap-y-1.5;
+  align-items: start;
+}
+
+.fashion-variant-picker--detail {
+  @apply gap-x-3 gap-y-2;
 }
 
 .fashion-variant-field {
@@ -2018,29 +2023,75 @@ body {
 }
 
 .fashion-variant-hint {
-  @apply mt-1 text-[11px] leading-tight text-zinc-500;
+  @apply mt-1 text-[10px] leading-tight text-zinc-500;
 }
 
 .fashion-variant-stock-warn {
-  @apply text-[11px] text-red-600;
+  @apply col-span-2 text-[11px] text-red-600;
+}
+
+.fashion-variant-chips {
+  @apply flex max-h-[4.25rem] flex-wrap gap-1 overflow-y-auto overscroll-contain;
+  scrollbar-width: thin;
+}
+
+.fashion-variant-picker--detail .fashion-variant-chips {
+  @apply max-h-none;
+}
+
+.fashion-variant-chip {
+  @apply inline-flex min-h-7 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold leading-none text-zinc-700 transition hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200;
+}
+
+.fashion-variant-picker--detail .fashion-variant-chip {
+  @apply min-h-8 px-2 text-[11px];
+}
+
+.fashion-variant-chip-active {
+  @apply border-teal-600 bg-teal-600 text-white hover:border-teal-600 dark:border-teal-500 dark:bg-teal-600;
+}
+
+.fashion-variant-chip-unavailable {
+  @apply cursor-not-allowed opacity-40 line-through;
+}
+
+.fashion-variant-swatches {
+  @apply flex flex-wrap items-center gap-1.5;
+}
+
+.fashion-variant-swatch {
+  @apply relative h-6 w-6 shrink-0 rounded-full border border-black/10 shadow-sm transition hover:scale-105 dark:border-white/15;
+}
+
+.fashion-variant-picker--detail .fashion-variant-swatch {
+  @apply h-7 w-7;
+}
+
+.fashion-variant-swatch-active {
+  @apply ring-2 ring-teal-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950;
+}
+
+.fashion-variant-swatch-light {
+  @apply border-zinc-300 dark:border-zinc-600;
+}
+
+.fashion-variant-swatch-unavailable {
+  @apply cursor-not-allowed opacity-35;
+}
+
+.fashion-variant-swatch-unavailable::after {
+  content: "";
+  @apply absolute inset-[-1px] rounded-full;
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 0.5px),
+    rgb(113 113 122) 50%,
+    transparent calc(50% + 0.5px)
+  );
 }
 
 .fashion-variant-select.store-cart-select {
   @apply min-h-10 px-2.5 py-2 text-xs leading-snug sm:min-h-[2.5rem] sm:px-3 sm:text-sm;
-  white-space: nowrap;
-  text-overflow: clip;
-  overflow: visible;
-}
-
-@media (min-width: 28rem) {
-  .product-detail-options .fashion-variant-picker {
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    align-items: start;
-  }
-
-  .product-detail-options .fashion-variant-stock-warn {
-    grid-column: 1 / -1;
-  }
 }
 
 .store-product-category {

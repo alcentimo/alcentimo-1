@@ -5,17 +5,21 @@ import type { CatalogVariantOption } from "@/lib/products/variants";
 import { parseVariantsJson } from "@/lib/products/variants";
 import {
   getFashionAttributes,
+  getFashionColorSwatch,
   looksLikeFashionVariants,
 } from "@/lib/rubros/modules/ropa-moda";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { VariantFormInput } from "@/lib/products/variants";
 import { formatUsd } from "@/lib/format";
+import { cn } from "@/lib/cn";
 
 interface FashionVariantPickerProps {
   product: CatalogListItem;
   variantOptions: CatalogVariantOption[];
   selectedVariantId: string;
   onSelect: (variantId: string) => void;
+  /** `card` = chips compactos en 2 columnas; `detail` = chips un poco más grandes. */
+  density?: "card" | "detail";
 }
 
 function toFormInputs(product: CatalogListItem): VariantFormInput[] {
@@ -28,11 +32,18 @@ function toFormInputs(product: CatalogListItem): VariantFormInput[] {
   }));
 }
 
+function formatSizeChipLabel(size: string): string {
+  const trimmed = size.trim();
+  // En chips compactos, "EUR 40" / "US 9" ya son cortos; no añadir cm.
+  return trimmed;
+}
+
 export function FashionVariantPicker({
   product,
   variantOptions,
   selectedVariantId,
   onSelect,
+  density = "card",
 }: FashionVariantPickerProps) {
   const formVariants = useMemo(() => toFormInputs(product), [product]);
   const isFashion = looksLikeFashionVariants(formVariants);
@@ -87,10 +98,26 @@ export function FashionVariantPicker({
 
   useEffect(() => {
     const match = byKey.get(`${talla}||${color}`);
-    if (match && match.id !== selectedVariantId) {
-      onSelect(match.id);
+    if (match) {
+      if (match.id !== selectedVariantId) onSelect(match.id);
+      return;
     }
-  }, [talla, color, byKey, onSelect, selectedVariantId]);
+
+    // Si la talla nueva no tiene ese color, saltar al primer color disponible.
+    for (const candidate of colors) {
+      const option = byKey.get(`${talla}||${candidate}`);
+      if (option && option.availableStock > 0) {
+        setColor(candidate);
+        return;
+      }
+    }
+    for (const candidate of colors) {
+      if (byKey.has(`${talla}||${candidate}`)) {
+        setColor(candidate);
+        return;
+      }
+    }
+  }, [talla, color, byKey, onSelect, selectedVariantId, colors]);
 
   if (!isFashion || sizes.length === 0 || colors.length === 0) {
     return (
@@ -118,63 +145,121 @@ export function FashionVariantPicker({
 
   const current = byKey.get(`${talla}||${color}`);
   const selectedLengthCm = sizeLengthCm.get(talla) ?? null;
+  const isDetail = density === "detail";
 
   return (
-    <div className="fashion-variant-picker">
+    <div
+      className={cn(
+        "fashion-variant-picker",
+        isDetail
+          ? "fashion-variant-picker--detail"
+          : "fashion-variant-picker--card",
+      )}
+    >
       <div className="fashion-variant-field">
-        <label
-          htmlFor={`talla-${product.product_id}`}
-          className="fashion-variant-label"
-        >
+        <span className="fashion-variant-label" id={`talla-label-${product.product_id}`}>
           Talla
-        </label>
-        <select
-          id={`talla-${product.product_id}`}
-          value={talla}
-          onChange={(e) => setTalla(e.target.value)}
-          className="store-cart-select store-product-variant-select fashion-variant-select w-full"
-          title={
-            selectedLengthCm ? `${talla} · ${selectedLengthCm} cm` : talla
-          }
+        </span>
+        <div
+          className="fashion-variant-chips"
+          role="listbox"
+          aria-labelledby={`talla-label-${product.product_id}`}
         >
           {sizes.map((size) => {
+            const selected = talla === size;
             const cm = sizeLengthCm.get(size);
+            const hasAnyStock = colors.some((candidate) => {
+              const option = byKey.get(`${size}||${candidate}`);
+              return option != null && option.availableStock > 0;
+            });
             return (
-              <option key={size} value={size} title={cm ? `${size} · ${cm} cm` : size}>
-                {size}
-              </option>
+              <button
+                key={size}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                title={cm ? `${size} · ${cm} cm` : size}
+                disabled={!hasAnyStock && !selected}
+                onClick={() => setTalla(size)}
+                className={cn(
+                  "fashion-variant-chip",
+                  selected && "fashion-variant-chip-active",
+                  !hasAnyStock && "fashion-variant-chip-unavailable",
+                )}
+              >
+                {formatSizeChipLabel(size)}
+              </button>
             );
           })}
-        </select>
+        </div>
         {selectedLengthCm ? (
           <p className="fashion-variant-hint">{selectedLengthCm} cm</p>
         ) : null}
       </div>
 
       <div className="fashion-variant-field">
-        <label
-          htmlFor={`color-${product.product_id}`}
-          className="fashion-variant-label"
-        >
+        <span className="fashion-variant-label" id={`color-label-${product.product_id}`}>
           Color
-        </label>
-        <select
-          id={`color-${product.product_id}`}
-          value={color}
-          onChange={(e) => setColor(e.target.value)}
-          className="store-cart-select store-product-variant-select fashion-variant-select w-full"
-          title={color}
+        </span>
+        <div
+          className="fashion-variant-swatches"
+          role="listbox"
+          aria-labelledby={`color-label-${product.product_id}`}
         >
           {colors.map((item) => {
             const option = byKey.get(`${talla}||${item}`);
             const unavailable = option != null && option.availableStock <= 0;
+            const missing = option == null;
+            const selected = color === item;
+            const swatch = getFashionColorSwatch(item);
+            const isLight =
+              swatch != null &&
+              (item.toLowerCase() === "blanco" ||
+                item.toLowerCase() === "beige");
+
+            if (swatch) {
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  aria-label={item}
+                  title={unavailable || missing ? `${item} (agotado)` : item}
+                  disabled={(unavailable || missing) && !selected}
+                  onClick={() => setColor(item)}
+                  className={cn(
+                    "fashion-variant-swatch",
+                    selected && "fashion-variant-swatch-active",
+                    (unavailable || missing) &&
+                      "fashion-variant-swatch-unavailable",
+                    isLight && "fashion-variant-swatch-light",
+                  )}
+                  style={{ backgroundColor: swatch }}
+                />
+              );
+            }
+
             return (
-              <option key={item} value={item} disabled={unavailable}>
-                {unavailable ? `${item} (agotado)` : item}
-              </option>
+              <button
+                key={item}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                title={unavailable || missing ? `${item} (agotado)` : item}
+                disabled={(unavailable || missing) && !selected}
+                onClick={() => setColor(item)}
+                className={cn(
+                  "fashion-variant-chip",
+                  selected && "fashion-variant-chip-active",
+                  (unavailable || missing) && "fashion-variant-chip-unavailable",
+                )}
+              >
+                {item}
+              </button>
             );
           })}
-        </select>
+        </div>
       </div>
 
       {current && current.availableStock <= 0 ? (

@@ -476,6 +476,7 @@ export const ProductCard = memo(function ProductCard({
                 selectedModifiers={selectedModifiers}
                 onModifiersChange={setSelectedModifiers}
                 showVariants={showVariantSelector}
+                density="card"
               />
             ) : (
               <span className="store-product-variant-placeholder" aria-hidden="true" />

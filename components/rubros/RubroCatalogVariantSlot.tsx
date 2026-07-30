@@ -59,6 +59,8 @@ interface RubroCatalogVariantSlotProps {
   selectedModifiers?: CartModifierSelection[];
   onModifiersChange?: (next: CartModifierSelection[]) => void;
   showVariants?: boolean;
+  /** Densidad del picker de moda (tarjetas vs detalle). */
+  density?: "card" | "detail";
 }
 
 function DefaultVariantSelect({
@@ -112,6 +114,7 @@ export function RubroCatalogVariantSlot({
   selectedModifiers = [],
   onModifiersChange,
   showVariants = true,
+  density = "card",
 }: RubroCatalogVariantSlotProps) {
   const moduleId = getActiveProductModuleId(rubro);
   const foodConfig = parseFoodModifiersFromMetadata(product.metadata ?? null);
@@ -129,6 +132,7 @@ export function RubroCatalogVariantSlot({
             variantOptions={variantOptions}
             selectedVariantId={selectedVariantId}
             onSelect={onSelect}
+            density={density}
           />
         ) : moduleId === "alimentos" ? (
           <FoodVariantPicker

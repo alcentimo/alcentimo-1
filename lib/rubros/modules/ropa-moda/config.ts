@@ -114,6 +114,28 @@ export const ROPA_MODA_COLOR_PRESETS = [
   "Rosa",
 ] as const;
 
+/** Colores CSS para swatches del catálogo público. */
+export const ROPA_MODA_COLOR_SWATCHES: Readonly<Record<string, string>> = {
+  Negro: "#171717",
+  Blanco: "#f4f4f5",
+  Gris: "#a1a1aa",
+  Azul: "#2563eb",
+  Rojo: "#dc2626",
+  Beige: "#d6c3a8",
+  Verde: "#16a34a",
+  Rosa: "#ec4899",
+};
+
+export function getFashionColorSwatch(color: string): string | null {
+  const trimmed = color.trim();
+  if (!trimmed) return null;
+  if (ROPA_MODA_COLOR_SWATCHES[trimmed]) return ROPA_MODA_COLOR_SWATCHES[trimmed];
+  const match = Object.entries(ROPA_MODA_COLOR_SWATCHES).find(
+    ([key]) => key.toLowerCase() === trimmed.toLowerCase(),
+  );
+  return match?.[1] ?? null;
+}
+
 export const ROPA_MODA_ATTR_TALLA = "talla";
 export const ROPA_MODA_ATTR_COLOR = "color";
 /** Longitud del pie / plantilla interna en centímetros (calzado). */

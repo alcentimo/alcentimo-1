@@ -395,6 +395,7 @@ export function CatalogProductDetailPanel({
                   selectedModifiers={selectedModifiers}
                   onModifiersChange={setSelectedModifiers}
                   showVariants={showVariantSelector}
+                  density="detail"
                 />
               </div>
             ) : null}
