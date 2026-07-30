@@ -104,114 +104,122 @@ export function ProductImageGallery({
       className={cn(
         "product-image-gallery",
         isDetail && "product-image-gallery-detail",
+        hasMultiple && "product-image-gallery-multi",
         className,
       )}
       onTouchStart={isDetail ? handleTouchStart : undefined}
       onTouchEnd={isDetail ? handleTouchEnd : undefined}
     >
-      <CatalogProductImage
-        src={galleryDisplayUrl(activeImage, mode)}
-        alt={alt}
-        className={imageClassName}
-        loading={loading}
-        sizes={sizes}
-      />
+      <div className="product-image-gallery-stage">
+        <CatalogProductImage
+          src={galleryDisplayUrl(activeImage, mode)}
+          alt={alt}
+          className={imageClassName}
+          loading={loading}
+          sizes={sizes}
+        />
 
-      {hasMultiple ? (
-        <>
-          <span className="product-image-gallery-count" aria-hidden="true">
-            {activeIndex + 1}/{images.length}
-          </span>
+        {hasMultiple ? (
+          <>
+            <span className="product-image-gallery-count" aria-hidden="true">
+              {activeIndex + 1}/{images.length}
+            </span>
 
-          {isDetail ? (
-            <>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  goPrev();
-                }}
-                className="product-image-gallery-nav product-image-gallery-nav-prev"
-                aria-label="Foto anterior"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  goNext();
-                }}
-                className="product-image-gallery-nav product-image-gallery-nav-next"
-                aria-label="Foto siguiente"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-              <div
-                className="product-image-gallery-dots"
-                role="tablist"
-                aria-label="Fotos del producto"
-              >
-                {images.map((image, index) => (
-                  <button
-                    key={image.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={index === activeIndex}
-                    aria-label={`Ver foto ${index + 1}`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      goTo(index);
-                    }}
-                    className={cn(
-                      "product-image-gallery-dot",
-                      index === activeIndex && "product-image-gallery-dot-active",
-                    )}
-                  />
-                ))}
-              </div>
-            </>
-          ) : null}
-
-          <div
-            className={cn(
-              "product-image-gallery-thumbs",
-              isDetail && "product-image-gallery-thumbs-detail",
-            )}
-            role="tablist"
-            aria-label="Miniaturas del producto"
-          >
-            {images.map((image, index) => {
-              const selected = index === activeIndex;
-              return (
+            {isDetail ? (
+              <>
                 <button
-                  key={image.id}
                   type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  aria-label={`Ver foto ${index + 1}`}
                   onClick={(event) => {
                     event.stopPropagation();
-                    goTo(index);
+                    goPrev();
                   }}
-                  className={cn(
-                    "product-image-gallery-thumb",
-                    selected && "product-image-gallery-thumb-active",
-                    isDetail && "product-image-gallery-thumb-lg",
-                  )}
+                  className="product-image-gallery-nav product-image-gallery-nav-prev"
+                  aria-label="Foto anterior"
                 >
-                  <CatalogProductImage
-                    src={image.thumb_url}
-                    alt=""
-                    className="product-image-gallery-thumb-image"
-                    loading="lazy"
-                    sizes="64px"
-                  />
+                  <ChevronLeft className="h-5 w-5" />
                 </button>
-              );
-            })}
-          </div>
-        </>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    goNext();
+                  }}
+                  className="product-image-gallery-nav product-image-gallery-nav-next"
+                  aria-label="Foto siguiente"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+                <div
+                  className="product-image-gallery-dots"
+                  role="tablist"
+                  aria-label="Fotos del producto"
+                >
+                  {images.map((image, index) => (
+                    <button
+                      key={image.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={index === activeIndex}
+                      aria-label={`Ver foto ${index + 1}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        goTo(index);
+                      }}
+                      className={cn(
+                        "product-image-gallery-dot",
+                        index === activeIndex &&
+                          "product-image-gallery-dot-active",
+                      )}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </>
+        ) : null}
+      </div>
+
+      {hasMultiple ? (
+        <div
+          className={cn(
+            "product-image-gallery-thumbs",
+            isDetail && "product-image-gallery-thumbs-detail",
+          )}
+          role="tablist"
+          aria-label="Miniaturas del producto"
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          {images.map((image, index) => {
+            const selected = index === activeIndex;
+            return (
+              <button
+                key={image.id}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                aria-label={`Ver foto ${index + 1}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  goTo(index);
+                }}
+                className={cn(
+                  "product-image-gallery-thumb",
+                  selected && "product-image-gallery-thumb-active",
+                  isDetail && "product-image-gallery-thumb-lg",
+                )}
+              >
+                <CatalogProductImage
+                  src={image.thumb_url}
+                  alt=""
+                  className="product-image-gallery-thumb-image"
+                  loading="lazy"
+                  sizes="64px"
+                />
+              </button>
+            );
+          })}
+        </div>
       ) : null}
     </div>
   );

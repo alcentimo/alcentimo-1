@@ -1540,24 +1540,29 @@ body {
 }
 
 .product-image-gallery {
-  @apply absolute inset-0 h-full w-full;
+  @apply absolute inset-0 flex h-full w-full flex-col;
+}
+
+.product-image-gallery-stage {
+  @apply relative min-h-0 flex-1 overflow-hidden;
 }
 
 .product-image-gallery-count {
   @apply pointer-events-none absolute right-2 top-2 z-10 rounded-full bg-zinc-950/70 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm;
 }
 
+/* Franja debajo de la foto: no flota sobre la imagen principal. */
 .product-image-gallery-thumbs {
-  @apply absolute inset-x-0 bottom-0 z-10 flex gap-1.5 overflow-x-auto bg-gradient-to-t from-zinc-950/80 via-zinc-950/45 to-transparent px-2 pb-2 pt-6;
+  @apply relative z-[2] flex shrink-0 gap-1.5 overflow-x-auto border-t border-zinc-200/80 bg-white/95 px-2 py-1.5 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95;
   scrollbar-width: thin;
 }
 
 .product-image-gallery-thumb {
-  @apply relative h-9 w-9 shrink-0 overflow-hidden rounded-md border border-white/30 opacity-85 transition hover:opacity-100;
+  @apply relative h-8 w-8 shrink-0 overflow-hidden rounded-md border border-zinc-200/90 opacity-90 transition hover:opacity-100 dark:border-zinc-700;
 }
 
 .product-image-gallery-thumb-active {
-  @apply border-white opacity-100 ring-2 ring-teal-400/80;
+  @apply border-teal-500 opacity-100 ring-2 ring-teal-400/70;
 }
 
 .product-image-gallery-thumb-image {
@@ -1565,7 +1570,11 @@ body {
 }
 
 .product-image-gallery-detail {
-  @apply relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-zinc-100;
+  @apply relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900;
+}
+
+.product-image-gallery-detail .product-image-gallery-stage {
+  @apply bg-zinc-100 dark:bg-zinc-900;
 }
 
 .product-image-gallery-detail .product-detail-gallery-image,
@@ -1586,7 +1595,7 @@ body {
 }
 
 .product-image-gallery-dots {
-  @apply absolute inset-x-0 bottom-[5.5rem] z-20 flex justify-center gap-1.5;
+  @apply absolute inset-x-0 bottom-3 z-20 flex justify-center gap-1.5;
 }
 
 .product-image-gallery-dot {
@@ -1598,11 +1607,16 @@ body {
 }
 
 .product-image-gallery-thumbs-detail {
-  @apply from-zinc-950/70 via-zinc-950/35 pt-8;
+  @apply gap-2 px-3 py-2;
 }
 
 .product-image-gallery-thumb-lg {
-  @apply h-14 w-14 rounded-lg;
+  @apply h-12 w-12 rounded-lg;
+}
+
+/* El botón de agregar al carrito no debe tapar la franja de miniaturas. */
+.store-product-media:has(.product-image-gallery-multi) .store-product-action {
+  bottom: 2.75rem;
 }
 
 .store-product-media-openable {
@@ -5419,6 +5433,10 @@ body {
 
 .txn-catalog .store-product-action {
   @apply absolute inset-x-0 bottom-0 hidden translate-y-1 bg-linear-to-t from-white via-white/95 to-transparent px-3 pb-3 pt-8 opacity-0 transition-all duration-200 sm:block;
+}
+
+.txn-catalog .store-product-media:has(.product-image-gallery-multi) .store-product-action {
+  bottom: 2.75rem;
 }
 
 .txn-catalog .store-product-card:hover .store-product-action {
