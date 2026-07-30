@@ -3,9 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { getUserStore } from "@/lib/stores";
-import { getActiveBcvSyncAlert } from "@/lib/exchange-rate/get-bcv-sync-alert";
 import { getCurrentExchangeRate } from "@/lib/catalog";
-import { isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { isStoreOwner } from "@/lib/stores/owner-access";
 import { normalizeDbPlan } from "@/lib/plans/plan-activation";
@@ -15,7 +13,6 @@ import { getStoreMemberRole } from "@/lib/team/access";
 import { withTimeoutFallback } from "@/lib/async/with-timeout-fallback";
 import { buildAccountSnapshot } from "@/lib/account/get-account-snapshot";
 import type { AccountSnapshot } from "@/lib/account/types";
-import type { BcvSyncAlert } from "@/lib/exchange-rate/get-bcv-sync-alert";
 import type { InterfacePreferencesSettings } from "@/lib/store-settings/types";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
 
@@ -30,13 +27,11 @@ export type DashboardShellData =
       planName: string | null;
       exchangeRate: number | null;
       exchangeRateUpdatedAt: string | null;
-      exchangeRateStale: boolean;
       isSupportAdmin: boolean;
       isStoreOwner: boolean;
       storeRole: DashboardStoreRole | null;
       canUpgradeToBusiness: boolean;
       interfacePreferences: InterfacePreferencesSettings;
-      bcvSyncAlert: BcvSyncAlert | null;
       accountSnapshot: AccountSnapshot;
     }
   | { ok: false; error: string };
@@ -56,13 +51,7 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
       ? await getStoreMemberRole(supabase, store.id, authUser.id)
       : null;
 
-    const [bcvSyncAlert, exchangeRateRow, settingsConfig] = await Promise.all([
-      withTimeoutFallback(
-        getActiveBcvSyncAlert(supabase),
-        SHELL_QUERY_TIMEOUT_MS,
-        null,
-        "shell:getActiveBcvSyncAlert",
-      ),
+    const [exchangeRateRow, settingsConfig] = await Promise.all([
       withTimeoutFallback(
         getCurrentExchangeRate(),
         SHELL_QUERY_TIMEOUT_MS,
@@ -91,7 +80,6 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
       planName: authUser.plan.name,
       exchangeRate,
       exchangeRateUpdatedAt,
-      exchangeRateStale: isBcvRateStale(exchangeRateUpdatedAt),
       isSupportAdmin: isSupportAdmin(
         resolveAuthEmail({ email: authUser.email, user_metadata: {} }),
       ),
@@ -100,7 +88,6 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
       canUpgradeToBusiness:
         normalizeDbPlan(authUser.profile?.plan ?? authUser.rawPlan) === "PRO",
       interfacePreferences: settingsConfig.interfacePreferences,
-      bcvSyncAlert,
       accountSnapshot: buildAccountSnapshot({
         authUser,
         store,

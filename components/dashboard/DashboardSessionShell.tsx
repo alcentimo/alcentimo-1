@@ -2,7 +2,6 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { BcvSyncAlertBanner } from "@/components/dashboard/BcvSyncAlertBanner";
 import { CountryProvider } from "@/components/providers/CountryProvider";
 import { UiPreferencesProvider } from "@/components/providers/UiPreferencesProvider";
 import {
@@ -47,16 +46,12 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
           planName={shell?.planName ?? null}
           exchangeRate={shell?.exchangeRate ?? null}
           exchangeRateUpdatedAt={shell?.exchangeRateUpdatedAt ?? null}
-          exchangeRateStale={shell?.exchangeRateStale ?? false}
           isSupportAdmin={shell?.isSupportAdmin ?? false}
           isStoreOwner={shell?.isStoreOwner ?? false}
           storeRole={shell?.storeRole ?? null}
           canUpgradeToBusiness={shell?.canUpgradeToBusiness ?? false}
           accountSnapshot={accountSnapshot}
         >
-          {shell?.bcvSyncAlert ? (
-            <BcvSyncAlertBanner alert={shell.bcvSyncAlert} />
-          ) : null}
           {children}
         </DashboardLayout>
       </CountryProvider>

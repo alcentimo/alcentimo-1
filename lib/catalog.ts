@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { getSupabaseAnonClient } from "@/lib/supabase";
 import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
+import { ensureBcvRateFreshForToday } from "@/lib/exchange-rate/ensure-bcv-rate-fresh";
 import { CATALOG_LIST_SELECT, PUBLIC_CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
 import { buildInventorySearchOrFilter } from "@/lib/inventory/search";
 import { roundExchangeRate } from "@/lib/format";
@@ -161,8 +162,10 @@ export const getCurrentExchangeRate = cache(
   async (): Promise<ExchangeRate | null> => {
     const supabase = getSupabaseAnonClient();
     const tasa = await getLatestUsdTasa(supabase);
+    let current: ExchangeRate | null = null;
+
     if (tasa && tasa.tasa > 0) {
-      return {
+      current = {
         id: `tasas_cambio:${tasa.moneda}`,
         rate: roundExchangeRate(tasa.tasa),
         source: "bcv",
@@ -171,18 +174,21 @@ export const getCurrentExchangeRate = cache(
         store_id: null,
         created_at: tasa.ultima_actualizacion,
       };
+    } else {
+      const { data, error } = await supabase
+        .from("exchange_rate")
+        .select("*")
+        .is("store_id", null)
+        .order("effective_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw new Error(error.message);
+      current = data ? normalizeExchangeRate(data) : null;
     }
 
-    const { data, error } = await supabase
-      .from("exchange_rate")
-      .select("*")
-      .is("store_id", null)
-      .order("effective_date", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) throw new Error(error.message);
-    return data ? normalizeExchangeRate(data) : null;
+    // Si el cron diario aún no escribió la tasa del día VE, intenta autoheal en segundo plano.
+    return ensureBcvRateFreshForToday(current);
   },
 );
 

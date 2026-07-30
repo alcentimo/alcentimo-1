@@ -3,6 +3,7 @@ import { formatExchangeRate } from "@/lib/format";
 interface DashboardExchangeRateBadgeProps {
   rate: number | null;
   updatedAt?: string | null;
+  /** @deprecated Ignorado: la tasa se actualiza sola; no se alerta al comerciante. */
   stale?: boolean;
   variant?: "badge" | "strip" | "compact";
 }
@@ -19,27 +20,21 @@ function formatUpdatedAt(value: string | null | undefined): string | null {
   }).format(date);
 }
 
+/** Indicador transparente de la tasa BCV vigente (actualización automática diaria). */
 export function DashboardExchangeRateBadge({
   rate,
   updatedAt,
-  stale = false,
   variant = "badge",
 }: DashboardExchangeRateBadgeProps) {
   const formattedDate = formatUpdatedAt(updatedAt);
   const rateLabel =
     rate != null ? `Bs. ${formatExchangeRate(rate)}` : "Sin tasa";
-  const syncLabel = stale
-    ? "Actualización automática pendiente"
-    : "Actualizada automáticamente";
+  const syncLabel = "Actualizada automáticamente";
 
   if (variant === "strip") {
     return (
       <div
-        className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border px-4 py-2.5 text-sm shadow-sm ${
-          stale
-            ? "border-amber-200/80 bg-amber-50/70 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-200"
-            : "border-zinc-200/70 bg-white text-zinc-600 shadow-emerald-500/5 dark:border-zinc-800/70 dark:bg-zinc-950/60 dark:text-zinc-400"
-        }`}
+        className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-zinc-200/70 bg-white px-4 py-2.5 text-sm text-zinc-600 shadow-sm shadow-emerald-500/5 dark:border-zinc-800/70 dark:bg-zinc-950/60 dark:text-zinc-400"
         role="status"
         aria-label={`Tasa BCV ${rateLabel}. ${syncLabel}.${
           formattedDate ? ` Última actualización ${formattedDate}.` : ""
@@ -59,22 +54,10 @@ export function DashboardExchangeRateBadge({
             </span>
           ) : null}
         </p>
-        <span
-          className={`inline-flex shrink-0 items-center gap-2 text-xs font-medium ${
-            stale
-              ? "text-amber-800 dark:text-amber-200"
-              : "text-emerald-700 dark:text-emerald-400"
-          }`}
-        >
+        <span className="inline-flex shrink-0 items-center gap-2 text-xs font-medium text-emerald-700 dark:text-emerald-400">
           <span className="relative flex h-2 w-2" aria-hidden="true">
-            {!stale ? (
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-40" />
-            ) : null}
-            <span
-              className={`relative inline-flex h-2 w-2 rounded-full ${
-                stale ? "bg-amber-500" : "bg-emerald-500"
-              }`}
-            />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-40" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
           </span>
           {syncLabel}
         </span>
@@ -85,32 +68,20 @@ export function DashboardExchangeRateBadge({
   if (variant === "compact") {
     return (
       <div
-        className={`flex w-full items-center justify-between gap-2 text-[11px] leading-none ${
-          stale
-            ? "text-amber-800 dark:text-amber-200"
-            : "text-zinc-600 dark:text-zinc-400"
-        }`}
+        className="flex w-full items-center justify-between gap-2 text-[11px] leading-none text-zinc-600 dark:text-zinc-400"
         role="status"
         aria-label={`Tasa BCV ${rateLabel}. ${syncLabel}.${
           formattedDate ? ` Última actualización ${formattedDate}.` : ""
         }`}
         title={
-          stale
-            ? "La tasa lleva más de 24 h sin actualizarse."
-            : formattedDate
-              ? `Actualizada ${formattedDate}`
-              : undefined
+          formattedDate
+            ? `Actualizada automáticamente · ${formattedDate}`
+            : "Tasa BCV actualizada automáticamente"
         }
       >
         <span className="min-w-0 truncate">
-          <span
-            className={`font-semibold ${
-              stale
-                ? "text-amber-950 dark:text-amber-100"
-                : "text-zinc-800 dark:text-zinc-200"
-            }`}
-          >
-            {stale ? "Tasa desactualizada" : "Tasa BCV"}
+          <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+            Tasa BCV
           </span>
           <span className="mx-1.5 text-zinc-300 dark:text-zinc-600" aria-hidden="true">
             ·
@@ -120,9 +91,7 @@ export function DashboardExchangeRateBadge({
           </span>
         </span>
         <span
-          className={`relative flex h-1.5 w-1.5 shrink-0 ${
-            stale ? "bg-amber-500" : "bg-emerald-500"
-          } rounded-full`}
+          className="relative flex h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"
           aria-hidden="true"
         />
       </div>
@@ -131,41 +100,22 @@ export function DashboardExchangeRateBadge({
 
   return (
     <div
-      className={`dashboard-exchange-rate-badge flex shrink-0 items-center gap-2 rounded-[10px] border px-2 py-1 text-[10px] sm:px-3 sm:py-1.5 sm:text-xs ${
-        stale
-          ? "border-amber-200/80 bg-amber-50/90 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
-          : "border-zinc-200/70 bg-white text-zinc-600 shadow-[0_1px_2px_rgba(24,24,27,0.03)] dark:border-zinc-800/70 dark:bg-zinc-900/50 dark:text-zinc-400"
-      }`}
-      aria-label="Tasa del día"
+      className="dashboard-exchange-rate-badge flex shrink-0 items-center gap-2 rounded-[10px] border border-zinc-200/70 bg-white px-2 py-1 text-[10px] text-zinc-600 shadow-[0_1px_2px_rgba(24,24,27,0.03)] sm:px-3 sm:py-1.5 sm:text-xs dark:border-zinc-800/70 dark:bg-zinc-900/50 dark:text-zinc-400"
+      aria-label={`Tasa BCV ${rateLabel}`}
       title={
-        stale
-          ? "La tasa lleva más de 24 h sin actualizarse."
-          : undefined
+        formattedDate
+          ? `Actualizada automáticamente · ${formattedDate}`
+          : "Tasa BCV actualizada automáticamente"
       }
     >
-      <span
-        className={`font-medium ${stale ? "text-amber-950 dark:text-amber-100" : "text-zinc-700 dark:text-zinc-300"}`}
-      >
-        {stale ? "Tasa desactualizada" : "BCV"}
-      </span>
-      <span
-        className={
-          stale
-            ? "text-amber-700/60 dark:text-amber-300/60"
-            : "text-zinc-300 dark:text-zinc-600"
-        }
-        aria-hidden="true"
-      >
+      <span className="font-medium text-zinc-700 dark:text-zinc-300">BCV</span>
+      <span className="text-zinc-300 dark:text-zinc-600" aria-hidden="true">
         ·
       </span>
       <span className="font-mono tabular-nums">
-        {rate != null ? (
-          <>Bs. {formatExchangeRate(rate)}</>
-        ) : (
-          "Sin tasa"
-        )}
+        {rate != null ? <>Bs. {formatExchangeRate(rate)}</> : "Sin tasa"}
       </span>
-      {formattedDate && !stale ? (
+      {formattedDate ? (
         <>
           <span
             className="hidden text-zinc-300 sm:inline dark:text-zinc-600"

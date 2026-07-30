@@ -30,7 +30,6 @@ interface DashboardLayoutProps {
   planName?: string | null;
   exchangeRate?: number | null;
   exchangeRateUpdatedAt?: string | null;
-  exchangeRateStale?: boolean;
   isSupportAdmin?: boolean;
   isStoreOwner?: boolean;
   storeRole?: DashboardStoreRole | null;
@@ -52,7 +51,6 @@ function DashboardShell({
   storeName,
   exchangeRate = null,
   exchangeRateUpdatedAt = null,
-  exchangeRateStale = false,
   isSupportAdmin = false,
   storeRole = null,
   canUpgradeToBusiness = false,
@@ -204,7 +202,6 @@ function DashboardShell({
                 <DashboardQuickUtilities
                   exchangeRate={exchangeRate}
                   exchangeRateUpdatedAt={exchangeRateUpdatedAt}
-                  exchangeRateStale={exchangeRateStale}
                 />
               </div>
             </div>
@@ -214,7 +211,6 @@ function DashboardShell({
             <DashboardExchangeRateBadge
               rate={exchangeRate}
               updatedAt={exchangeRateUpdatedAt}
-              stale={exchangeRateStale}
               variant="compact"
             />
           </div>

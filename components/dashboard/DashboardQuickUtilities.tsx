@@ -5,17 +5,15 @@ import { DashboardPreferenceControls } from "@/components/dashboard/DashboardPre
 interface DashboardQuickUtilitiesProps {
   exchangeRate?: number | null;
   exchangeRateUpdatedAt?: string | null;
-  exchangeRateStale?: boolean;
   /** Si false, solo muestra el control de tema (p. ej. header móvil). */
   showExchangeRate?: boolean;
   className?: string;
 }
 
-/** Tasa BCV y cambio de tema. */
+/** Tasa BCV (automática) y cambio de tema. */
 export function DashboardQuickUtilities({
   exchangeRate = null,
   exchangeRateUpdatedAt = null,
-  exchangeRateStale = false,
   showExchangeRate = true,
   className,
 }: DashboardQuickUtilitiesProps) {
@@ -26,7 +24,6 @@ export function DashboardQuickUtilities({
         <DashboardExchangeRateBadge
           rate={exchangeRate}
           updatedAt={exchangeRateUpdatedAt}
-          stale={exchangeRateStale}
         />
       ) : null}
     </div>
