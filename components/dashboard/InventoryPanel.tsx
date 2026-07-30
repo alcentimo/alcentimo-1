@@ -1161,6 +1161,7 @@ export function InventoryPanel({
         <ProductLimitBanner
           productLimit={productLimitContext}
           trial={productLimitContext.trial}
+          setupStatus={setupStatus}
         />
       ) : null}
 

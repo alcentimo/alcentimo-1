@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import { Sparkles, PackagePlus } from "lucide-react";
 import {
   getProductLimitErrorMessage,
   isNearProductLimit,
@@ -7,18 +7,56 @@ import {
 } from "@/src/config/plans";
 import {
   PRO_TRIAL_AT_LIMIT_MESSAGE,
+  PRO_TRIAL_NEAR_LIMIT_MESSAGE,
   shouldPromoteProTrialAtLimit,
   type ProTrialStatus,
 } from "@/lib/plans/trial";
+import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
+import { isProTrialUnlockReady } from "@/lib/plans/trial-unlock";
 
 interface ProductLimitBannerProps {
   productLimit: ProductLimitCheck;
   trial?: ProTrialStatus;
+  setupStatus?: ProTrialSetupPick;
+}
+
+function resolveTrialCta(setupStatus?: ProTrialSetupPick): {
+  href: string;
+  label: string;
+} {
+  if (!setupStatus) {
+    return { href: "/dashboard/ajustes", label: "Completar requisitos" };
+  }
+
+  if (isProTrialUnlockReady(setupStatus)) {
+    return { href: "/dashboard/catalogo", label: "Reclamar mes gratis" };
+  }
+
+  if (!setupStatus.hasMinProductsForProTrial) {
+    return { href: "/dashboard/catalogo?nuevo=1", label: "Seguir sumando" };
+  }
+
+  if (!setupStatus.hasPaymentsConfigured) {
+    return {
+      href: "/dashboard/ajustes?tab=payments",
+      label: "Configurar pagos",
+    };
+  }
+
+  if (!setupStatus.hasShippingConfigured) {
+    return {
+      href: "/dashboard/ajustes?tab=shipping",
+      label: "Configurar envíos",
+    };
+  }
+
+  return { href: "/dashboard/ajustes", label: "Completar requisitos" };
 }
 
 export function ProductLimitBanner({
   productLimit,
   trial,
+  setupStatus,
 }: ProductLimitBannerProps) {
   const atLimit = productLimit.hasReachedLimit;
   const nearLimit = isNearProductLimit(productLimit);
@@ -27,45 +65,52 @@ export function ProductLimitBanner({
 
   const promoteProTrial = shouldPromoteProTrialAtLimit(trial);
 
-  const message = atLimit
-    ? promoteProTrial
+  const message = promoteProTrial
+    ? atLimit
       ? PRO_TRIAL_AT_LIMIT_MESSAGE
-      : getProductLimitErrorMessage(productLimit, trial)
-    : "Estás cerca de tu límite de productos.";
+      : PRO_TRIAL_NEAR_LIMIT_MESSAGE
+    : atLimit
+      ? getProductLimitErrorMessage(productLimit, trial)
+      : "Estás cerca de tu límite de productos.";
 
-  const ctaHref = promoteProTrial ? "/activar" : "/dashboard/planes";
-  const ctaLabel = promoteProTrial ? "Activar prueba Pro" : "Ver planes";
+  const trialCta = promoteProTrial ? resolveTrialCta(setupStatus) : null;
+  const ctaHref = trialCta?.href ?? "/dashboard/planes";
+  const ctaLabel = trialCta?.label ?? "Ver planes";
+  const Icon = promoteProTrial ? Sparkles : PackagePlus;
 
   return (
     <div
       role="status"
       className={`mb-6 flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
-        atLimit
-          ? "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100"
-          : "border-teal-200 bg-teal-50 text-teal-950 dark:border-teal-900 dark:bg-teal-950/40 dark:text-teal-100"
+        promoteProTrial
+          ? "border-teal-200 bg-teal-50 text-teal-950 dark:border-teal-900 dark:bg-teal-950/40 dark:text-teal-100"
+          : atLimit
+            ? "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100"
+            : "border-teal-200 bg-teal-50 text-teal-950 dark:border-teal-900 dark:bg-teal-950/40 dark:text-teal-100"
       }`}
     >
       <div className="flex items-start gap-3">
-        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+        <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
         <div className="text-sm leading-relaxed">
           <p className="font-medium">{message}</p>
-          {!atLimit && productLimit.productLimit != null && (
+          {!atLimit && productLimit.productLimit != null ? (
             <p className="mt-1 text-xs opacity-90">
               Productos activos: {productLimit.currentCount} /{" "}
               {productLimit.productLimit}
-              {productLimit.remainingSlots != null &&
-                ` · Te quedan ${productLimit.remainingSlots}`}
+              {productLimit.remainingSlots != null
+                ? ` · Te quedan ${productLimit.remainingSlots}`
+                : null}
               {" · "}Las fotos de la galería no consumen cupos.
             </p>
-          )}
+          ) : null}
         </div>
       </div>
       <Link
         href={ctaHref}
         className={`inline-flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-          atLimit
-            ? "bg-amber-700 text-white hover:bg-amber-800 dark:bg-amber-600 dark:hover:bg-amber-500"
-            : "bg-teal-700 text-white hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
+          promoteProTrial || !atLimit
+            ? "bg-teal-700 text-white hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
+            : "bg-amber-700 text-white hover:bg-amber-800 dark:bg-amber-600 dark:hover:bg-amber-500"
         }`}
       >
         {ctaLabel}
