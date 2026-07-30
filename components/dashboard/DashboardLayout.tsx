@@ -165,9 +165,6 @@ function DashboardShell({
         accountSettingsActive={accountSheetOpen || Boolean(accountQueryParam)}
         isSupportAdmin={isSupportAdmin}
         storeRole={storeRole}
-        exchangeRate={exchangeRate}
-        exchangeRateUpdatedAt={exchangeRateUpdatedAt}
-        exchangeRateStale={exchangeRateStale}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -199,7 +196,7 @@ function DashboardShell({
             </Link>
 
             <div className="dashboard-header-actions flex shrink-0 items-center">
-              {/* Móvil: solo tema — la tasa BCV va debajo / en el menú lateral. */}
+              {/* Móvil: tema en header; tasa BCV en la franja inferior. */}
               <div className="lg:hidden">
                 <DashboardQuickUtilities showExchangeRate={false} />
               </div>
