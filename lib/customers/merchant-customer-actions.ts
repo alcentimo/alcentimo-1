@@ -8,11 +8,10 @@ import {
   type CustomerOrderSummary,
 } from "@/lib/customers/get-customer-orders";
 import { isStoreOwner } from "@/lib/stores/owner-access";
-import { isValidOrderEstado, type OrderEstado } from "@/lib/orders/order-status";
+import { normalizeOrderEstado, type OrderEstado } from "@/lib/orders/order-status";
 
 function parseOrderEstado(value: unknown): OrderEstado {
-  const raw = String(value ?? "pendiente");
-  return isValidOrderEstado(raw) ? raw : "pendiente";
+  return normalizeOrderEstado(value);
 }
 
 async function requireStoreOwnerContext() {

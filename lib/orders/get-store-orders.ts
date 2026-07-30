@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import {
-  isValidOrderEstado,
+  normalizeOrderEstado,
   sortOrdersByBusinessRules,
   type OrderEstado,
 } from "@/lib/orders/order-status";
@@ -10,8 +10,7 @@ import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
 export { ORDERS_PAGE_SIZE };
 
 function parseOrderEstado(value: unknown): OrderEstado {
-  const raw = String(value ?? "pendiente");
-  return isValidOrderEstado(raw) ? raw : "pendiente";
+  return normalizeOrderEstado(value);
 }
 
 function parseOrderItems(value: unknown): OrderLineItem[] {
@@ -67,6 +66,7 @@ function mapOrderRows(
       shipping_branch_address:
         (row.shipping_branch_address as string | null) ?? null,
       delivery_address: (row.delivery_address as string | null) ?? null,
+      tracking_number: (row.tracking_number as string | null) ?? null,
     };
   });
 
@@ -92,7 +92,7 @@ export async function getStoreOrders(
   let query = supabase
     .from("orders")
     .select(
-      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, shipping_method, shipping_branch_code, shipping_branch_name, shipping_branch_address, delivery_address, store_locations(name)",
+      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, shipping_method, shipping_branch_code, shipping_branch_name, shipping_branch_address, delivery_address, tracking_number, store_locations(name)",
       { count: "exact" },
     )
     .eq("store_id", storeId);
@@ -138,7 +138,7 @@ export async function getStoreOrderById(
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, shipping_method, shipping_branch_code, shipping_branch_name, shipping_branch_address, delivery_address, store_locations(name)",
+      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, shipping_method, shipping_branch_code, shipping_branch_name, shipping_branch_address, delivery_address, tracking_number, store_locations(name)",
     )
     .eq("store_id", storeId)
     .eq("id", normalizedOrderId)

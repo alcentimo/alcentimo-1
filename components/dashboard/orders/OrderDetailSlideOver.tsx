@@ -109,6 +109,7 @@ export function OrderDetailSlideOver({
               <OrderStatusSelect
                 orderId={order.id}
                 estado={order.estado}
+                trackingNumber={order.tracking_number}
                 onEstadoUpdated={onEstadoUpdated}
               />
             </div>

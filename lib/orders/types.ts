@@ -38,6 +38,8 @@ export interface CatalogOrder {
   shipping_branch_name?: string | null;
   shipping_branch_address?: string | null;
   delivery_address?: string | null;
+  /** Número de guía de encomienda (opcional). */
+  tracking_number?: string | null;
 }
 
 export interface SubmitOrderLineInput {

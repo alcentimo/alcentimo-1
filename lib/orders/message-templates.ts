@@ -48,7 +48,7 @@ export function getMessageTemplatePreviewValues(storeName?: string) {
 export function defaultMessageTemplates(): MessageTemplatesSettings {
   return {
     nuevo:
-      "Hola {{cliente}}, recibimos tu pedido en {{tienda}}.\n\n{{productos}}\n\nTotal: {{total}}\nReferencia: {{referencia}}\n\nEstamos verificando tu pago y te confirmaremos a la brevedad.",
+      "Hola {{cliente}}, recibimos tu pedido en {{tienda}}.\n\n{{productos}}\n\nTotal: {{total}}\nReferencia: {{referencia}}\n\nLo tenemos pendiente y te avisaremos cuando avancemos.",
     confirmado:
       "Hola {{cliente}}, confirmamos tu pedido en {{tienda}}. Ya lo estamos preparando.\n\n{{productos}}\n\nTotal: {{total}}",
     enviado:
@@ -62,10 +62,9 @@ export function resolveMessageTemplateKey(
 ): OrderMessageTemplateKey {
   switch (estado) {
     case "pendiente":
-    case "verificando":
     case "cancelado":
       return "nuevo";
-    case "en_preparacion":
+    case "procesando":
       return "confirmado";
     case "enviado":
     case "entregado":

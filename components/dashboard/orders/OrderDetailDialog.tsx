@@ -92,6 +92,7 @@ export function OrderDetailDialog({
               <OrderStatusSelect
                 orderId={order.id}
                 estado={order.estado}
+                trackingNumber={order.tracking_number}
                 onEstadoUpdated={onEstadoUpdated}
                 className="w-full max-w-xs"
               />

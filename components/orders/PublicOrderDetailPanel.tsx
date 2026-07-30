@@ -46,7 +46,11 @@ export function PublicOrderDetailPanel({ order, store }: PublicOrderDetailPanelP
             Estado actual
           </p>
           <div className="mt-3">
-            <OrderStatusSelect orderId={order.id} estado={order.estado} />
+            <OrderStatusSelect
+              orderId={order.id}
+              estado={order.estado}
+              trackingNumber={order.tracking_number}
+            />
           </div>
           <p className="mt-2 text-xs text-zinc-500">
             Estado: {ORDER_ESTADO_LABELS[order.estado]}

@@ -99,7 +99,10 @@ const OrderRow = memo(function OrderRow({
   onEstadoUpdated: (
     orderId: string,
     estado: OrderEstado,
-    context?: { previousEstado: OrderEstado },
+    context?: {
+      previousEstado: OrderEstado;
+      trackingNumber?: string | null;
+    },
   ) => void;
   pendingStatusNotifyEstado?: OrderEstado;
   onDismissStatusNotify?: () => void;
@@ -128,6 +131,7 @@ const OrderRow = memo(function OrderRow({
         <OrderStatusSelect
           orderId={order.id}
           estado={order.estado}
+          trackingNumber={order.tracking_number}
           onEstadoUpdated={onEstadoUpdated}
         />
         {pendingStatusNotifyEstado && onDismissStatusNotify ? (
@@ -187,7 +191,10 @@ const OrderMobileCard = memo(function OrderMobileCard({
   onEstadoUpdated: (
     orderId: string,
     estado: OrderEstado,
-    context?: { previousEstado: OrderEstado },
+    context?: {
+      previousEstado: OrderEstado;
+      trackingNumber?: string | null;
+    },
   ) => void;
   pendingStatusNotifyEstado?: OrderEstado;
   onDismissStatusNotify?: () => void;
@@ -215,6 +222,7 @@ const OrderMobileCard = memo(function OrderMobileCard({
             <OrderStatusSelect
               orderId={order.id}
               estado={order.estado}
+              trackingNumber={order.tracking_number}
               onEstadoUpdated={onEstadoUpdated}
             />
           </div>
@@ -307,12 +315,23 @@ export function OrdersPanel({
     (
       orderId: string,
       estado: OrderEstado,
-      context?: { previousEstado: OrderEstado },
+      context?: {
+        previousEstado: OrderEstado;
+        trackingNumber?: string | null;
+      },
     ) => {
       setOrders((current) =>
         sortOrdersByBusinessRules(
           current.map((order) =>
-            order.id === orderId ? { ...order, estado } : order,
+            order.id === orderId
+              ? {
+                  ...order,
+                  estado,
+                  ...(context && "trackingNumber" in context
+                    ? { tracking_number: context.trackingNumber ?? null }
+                    : null),
+                }
+              : order,
           ),
         ),
       );

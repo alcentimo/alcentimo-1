@@ -691,8 +691,7 @@ export interface ChannelMessage {
 
 export type OrderEstadoDb =
   | "pendiente"
-  | "verificando"
-  | "en_preparacion"
+  | "procesando"
   | "enviado"
   | "entregado"
   | "cancelado";
@@ -707,6 +706,7 @@ export interface Order {
   total_usd: number;
   payment_proof_url: string | null;
   estado: OrderEstadoDb;
+  tracking_number?: string | null;
   created_at: string;
 }
 

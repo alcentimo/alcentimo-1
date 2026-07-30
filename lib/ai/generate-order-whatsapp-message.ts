@@ -32,14 +32,12 @@ function estadoHint(estado: OrderEstado): string {
   switch (estado) {
     case "pendiente":
       return "confirmar recepción";
-    case "en_preparacion":
-      return "en preparación";
+    case "procesando":
+      return "pago confirmado, armando pedido";
     case "entregado":
       return "entregado, agradecer";
     case "enviado":
       return "en camino";
-    case "verificando":
-      return "verificando pago";
     case "cancelado":
       return "cancelado";
     default:

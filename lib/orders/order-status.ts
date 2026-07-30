@@ -1,7 +1,6 @@
 export const ORDER_ESTADOS = [
   "pendiente",
-  "verificando",
-  "en_preparacion",
+  "procesando",
   "enviado",
   "entregado",
   "cancelado",
@@ -9,21 +8,30 @@ export const ORDER_ESTADOS = [
 
 export type OrderEstado = (typeof ORDER_ESTADOS)[number];
 
+/** Estados legacy que se normalizan a `procesando`. */
+const LEGACY_TO_PROCESANDO = new Set(["verificando", "en_preparacion"]);
+
 export const ORDER_ESTADO_LABELS: Record<OrderEstado, string> = {
   pendiente: "Pendiente",
-  verificando: "Verificando",
-  en_preparacion: "En preparación",
+  procesando: "Procesando",
   enviado: "Enviado",
   entregado: "Entregado",
   cancelado: "Cancelado",
 };
 
+/** Texto corto para el selector (gestión diaria). */
+export const ORDER_ESTADO_HINTS: Record<OrderEstado, string> = {
+  pendiente: "Pedido recién recibido",
+  procesando: "Pago confirmado y armado",
+  enviado: "En camino (guía opcional)",
+  entregado: "Pedido completado",
+  cancelado: "Pedido anulado",
+};
+
 export const ORDER_ESTADO_BADGE_CLASS: Record<OrderEstado, string> = {
   pendiente:
     "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200",
-  verificando:
-    "border-yellow-200 bg-yellow-50 text-yellow-900 dark:border-yellow-900/50 dark:bg-yellow-950/40 dark:text-yellow-200",
-  en_preparacion:
+  procesando:
     "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200",
   enviado:
     "border-violet-200 bg-violet-50 text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-200",
@@ -35,8 +43,7 @@ export const ORDER_ESTADO_BADGE_CLASS: Record<OrderEstado, string> = {
 
 export const ORDER_ESTADO_DOT_CLASS: Record<OrderEstado, string> = {
   pendiente: "bg-amber-500",
-  verificando: "bg-yellow-400",
-  en_preparacion: "bg-blue-500",
+  procesando: "bg-blue-500",
   enviado: "bg-violet-500",
   entregado: "bg-emerald-500",
   cancelado: "bg-zinc-400",
@@ -44,16 +51,20 @@ export const ORDER_ESTADO_DOT_CLASS: Record<OrderEstado, string> = {
 
 export type OrderFilterId = "all" | "today" | "dispatch" | "pending" | "completed";
 
-export function isDispatchPendingEstado(estado: OrderEstado): boolean {
-  return (
-    estado === "pendiente" ||
-    estado === "verificando" ||
-    estado === "en_preparacion"
-  );
-}
-
 export function isValidOrderEstado(value: string): value is OrderEstado {
   return (ORDER_ESTADOS as readonly string[]).includes(value);
+}
+
+/** Normaliza valores de BD (incl. legacy) al set simplificado. */
+export function normalizeOrderEstado(value: unknown): OrderEstado {
+  const raw = String(value ?? "pendiente").trim().toLowerCase();
+  if (LEGACY_TO_PROCESANDO.has(raw)) return "procesando";
+  if (isValidOrderEstado(raw)) return raw;
+  return "pendiente";
+}
+
+export function isDispatchPendingEstado(estado: OrderEstado): boolean {
+  return estado === "pendiente" || estado === "procesando";
 }
 
 export function isPendingOrderEstado(estado: OrderEstado): boolean {
@@ -64,15 +75,15 @@ export function isCompletedOrderEstado(estado: OrderEstado): boolean {
   return estado === "entregado";
 }
 
-/** Pendiente y en preparación (operación en curso) — prioridad en listados. */
+/** Pendiente y procesando — prioridad en listados. */
 export function isPriorityOrderEstado(estado: OrderEstado): boolean {
-  return estado === "pendiente" || estado === "en_preparacion";
+  return estado === "pendiente" || estado === "procesando";
 }
 
-/** ORDER BY lógico: pendiente / en preparación primero; resto por fecha desc. */
-export function sortOrdersByBusinessRules<T extends { estado: OrderEstado; created_at: string }>(
-  orders: T[],
-): T[] {
+/** ORDER BY lógico: pendiente / procesando primero; resto por fecha desc. */
+export function sortOrdersByBusinessRules<
+  T extends { estado: OrderEstado; created_at: string },
+>(orders: T[]): T[] {
   return [...orders].sort((a, b) => {
     const aPriority = isPriorityOrderEstado(a.estado);
     const bPriority = isPriorityOrderEstado(b.estado);
@@ -81,9 +92,7 @@ export function sortOrdersByBusinessRules<T extends { estado: OrderEstado; creat
       return aPriority ? -1 : 1;
     }
 
-    return (
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 }
 

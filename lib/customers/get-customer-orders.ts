@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { isValidOrderEstado, type OrderEstado } from "@/lib/orders/order-status";
+import { normalizeOrderEstado, type OrderEstado } from "@/lib/orders/order-status";
 
 export interface CustomerOrderSummary {
   id: string;
@@ -9,8 +9,7 @@ export interface CustomerOrderSummary {
 }
 
 function parseOrderEstado(value: unknown): OrderEstado {
-  const raw = String(value ?? "pendiente");
-  return isValidOrderEstado(raw) ? raw : "pendiente";
+  return normalizeOrderEstado(value);
 }
 
 /** Pedidos del cliente logueado en una tienda (RLS: orders_customer_select). */

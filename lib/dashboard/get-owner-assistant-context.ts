@@ -133,7 +133,7 @@ function computeSlowMovingAndExcess(
 
 function buildPendingAccounts(orders: CatalogOrder[]): OwnerAssistantPendingAccount[] {
   const pending = orders.filter(
-    (order) => order.estado === "pendiente" || order.estado === "verificando",
+    (order) => order.estado === "pendiente" || order.estado === "procesando",
   );
 
   const byCustomer = new Map<string, OwnerAssistantPendingAccount>();
@@ -229,7 +229,7 @@ export async function getOwnerAssistantContext(input: {
   );
 
   const pendingOrders = ordersResult.orders.filter(
-    (order) => order.estado === "pendiente" || order.estado === "verificando",
+    (order) => order.estado === "pendiente" || order.estado === "procesando",
   );
 
   const ordersAwaitingPayment = pendingOrders

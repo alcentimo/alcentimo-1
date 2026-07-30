@@ -10,10 +10,8 @@ export function formatOrderPublicId(orderId: string): string {
 const STATUS_UPDATE_DETAILS: Record<OrderEstado, string> = {
   pendiente:
     "Recibimos tu pedido y lo tenemos en cola para procesarlo.",
-  verificando:
-    "Estamos verificando tu pago. Te avisaremos en cuanto quede confirmado.",
-  en_preparacion:
-    "Tu pedido ya está en preparación en nuestro almacén.",
+  procesando:
+    "Confirmamos tu pago y ya estamos armando tu pedido.",
   enviado:
     "¡Tu pedido ya va en camino! Pronto deberías recibirlo.",
   entregado:
@@ -27,6 +25,7 @@ export interface OrderStatusWhatsAppMessageInput {
   storeName: string;
   orderId: string;
   newEstado: OrderEstado;
+  trackingNumber?: string | null;
 }
 
 /**
@@ -40,11 +39,19 @@ export function buildOrderStatusUpdateWhatsAppMessage(
   const referencia = formatOrderPublicId(input.orderId);
   const estadoLabel = ORDER_ESTADO_LABELS[input.newEstado];
   const detail = STATUS_UPDATE_DETAILS[input.newEstado];
+  const tracking = input.trackingNumber?.trim();
 
-  return [
+  const lines = [
     `¡Hola ${cliente}! Te saludamos de ${tienda}.`,
     `Te informamos que tu pedido ${referencia} acaba de pasar a estado: ${estadoLabel}.`,
     detail,
-    "Cualquier duda, estamos atentos por aquí.",
-  ].join("\n\n");
+  ];
+
+  if (input.newEstado === "enviado" && tracking) {
+    lines.push(`Número de guía: ${tracking}`);
+  }
+
+  lines.push("Cualquier duda, estamos atentos por aquí.");
+
+  return lines.join("\n\n");
 }

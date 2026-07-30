@@ -23,7 +23,8 @@ export function OrderShippingDetails({
     shippingSummary ||
     order.location_name ||
     order.delivery_address ||
-    order.shipping_branch_address;
+    order.shipping_branch_address ||
+    order.tracking_number;
 
   if (!hasDetails) return null;
 
@@ -55,6 +56,12 @@ export function OrderShippingDetails({
         <p>
           Sucursal tienda:{" "}
           <strong className="font-medium">{order.location_name}</strong>
+        </p>
+      ) : null}
+      {order.tracking_number ? (
+        <p>
+          Guía:{" "}
+          <strong className="font-medium">{order.tracking_number}</strong>
         </p>
       ) : null}
       {isNationalCarrierKey(order.shipping_method) && shippingSummary ? (

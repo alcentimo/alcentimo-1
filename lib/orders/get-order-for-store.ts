@@ -1,10 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isValidOrderEstado, type OrderEstado } from "@/lib/orders/order-status";
+import { normalizeOrderEstado, type OrderEstado } from "@/lib/orders/order-status";
 import type { CatalogOrder, OrderLineItem } from "@/lib/orders/types";
 
 function parseOrderEstado(value: unknown): OrderEstado {
-  const raw = String(value ?? "pendiente");
-  return isValidOrderEstado(raw) ? raw : "pendiente";
+  return normalizeOrderEstado(value);
 }
 
 function parseOrderItems(value: unknown): OrderLineItem[] {
@@ -38,6 +37,7 @@ function mapOrderRow(row: Record<string, unknown>): CatalogOrder {
     payment_proof_url: (row.payment_proof_url as string | null) ?? null,
     estado: parseOrderEstado(row.estado),
     created_at: row.created_at as string,
+    tracking_number: (row.tracking_number as string | null) ?? null,
   };
 }
 
@@ -49,7 +49,7 @@ export async function getOrderForStore(
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at",
+      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at, tracking_number",
     )
     .eq("id", orderId)
     .eq("store_id", storeId)
