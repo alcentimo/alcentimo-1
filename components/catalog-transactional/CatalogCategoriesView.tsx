@@ -6,6 +6,7 @@ import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
 import {
   resolveStorefrontCatalogCategories,
+  extractCatalogCategories,
   type CatalogCategoryOption,
 } from "@/lib/catalog/extract-categories";
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
@@ -121,13 +122,21 @@ function CatalogCategoriesViewInner({
   );
 
   const categoryOptions = useMemo(
-    () =>
-      resolveStorefrontCatalogCategories(
-        storeCategories,
-        storeCategories,
+    () => {
+      if (storeCategories.length > 0) {
+        return resolveStorefrontCatalogCategories(
+          storeCategories,
+          storeCategories,
+          store.rubro_tienda,
+        );
+      }
+      return resolveStorefrontCatalogCategories(
+        [],
+        extractCatalogCategories(catalogProducts),
         store.rubro_tienda,
         catalogProducts,
-      ),
+      );
+    },
     [storeCategories, catalogProducts, store.rubro_tienda],
   );
 

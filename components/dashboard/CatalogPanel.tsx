@@ -29,6 +29,8 @@ interface CatalogPanelProps {
   rubroLabel: string;
   setupStatus: OnboardingSetupStatus;
   showWelcomeFromUrl?: boolean;
+  /** Si true, el listado se pide en el cliente al montar (página sin await de inventario). */
+  loadOnMount?: boolean;
 }
 
 export function CatalogPanel({
@@ -48,9 +50,11 @@ export function CatalogPanel({
   rubroLabel,
   setupStatus,
   showWelcomeFromUrl = false,
+  loadOnMount = false,
 }: CatalogPanelProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const searchParamsKey = searchParams.toString();
   const [autoOpenCreate, setAutoOpenCreate] = useState(
     () => searchParams.get("nuevo") === "1",
   );
@@ -69,7 +73,7 @@ export function CatalogPanel({
   }, [router]);
 
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParamsKey);
     let changed = false;
 
     if (params.get("tab") === "ajustes") {
@@ -93,7 +97,7 @@ export function CatalogPanel({
         scroll: false,
       });
     }
-  }, [searchParams, router]);
+  }, [searchParamsKey, router]);
 
   return (
     <>
@@ -133,6 +137,7 @@ export function CatalogPanel({
         rubroLabel={rubroLabel}
         onSampleProductsCreated={handleSampleProductsCreated}
         setupStatus={setupStatus}
+        loadOnMount={loadOnMount}
       />
     </>
   );

@@ -22,8 +22,15 @@ import { cn } from "@/lib/cn";
 import { useLocale } from "@/components/providers/UiPreferencesProvider";
 import { useDashboardRoutePrefetch } from "@/components/dashboard/use-dashboard-route-prefetch";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
+import {
+  BRAND_FAVICON_32_PATH,
+  BRAND_LOGO_HEIGHT,
+  BRAND_LOGO_PATH,
+  BRAND_LOGO_WIDTH,
+} from "@/lib/brand/assets";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "alcentimo-dashboard-sidebar-collapsed";
+const DASHBOARD_HOME_HREF = "/dashboard/catalogo";
 
 interface DashboardSidebarProps {
   pathname: string;
@@ -171,10 +178,42 @@ export function DashboardSidebar({
       <div
         className={cn(
           "flex items-center border-b border-zinc-200 dark:border-zinc-800",
-          drawerExpanded ? "justify-between gap-2 px-4 py-3" : "justify-center px-2 py-3",
+          drawerExpanded
+            ? "justify-between gap-2 px-4 py-3"
+            : "flex-col gap-2 px-2 py-3",
         )}
       >
-        <div className="min-w-0 flex-1" aria-hidden="true" />
+        <Link
+          href={DASHBOARD_HOME_HREF}
+          className={cn(
+            "dashboard-sidebar-brand inline-flex min-w-0 items-center border-0 bg-transparent shadow-none outline-none",
+            drawerExpanded ? "flex-1" : "justify-center",
+          )}
+          aria-label="Alcentimo"
+          onClick={onCloseMobile}
+        >
+          {drawerExpanded ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={BRAND_LOGO_PATH}
+              width={BRAND_LOGO_WIDTH}
+              height={BRAND_LOGO_HEIGHT}
+              alt="Alcentimo"
+              className="block h-8 w-auto max-w-[9.5rem] shrink-0 border-0 bg-transparent object-contain object-left shadow-none outline-none"
+              decoding="async"
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={BRAND_FAVICON_32_PATH}
+              width={32}
+              height={32}
+              alt="Alcentimo"
+              className="block h-7 w-7 shrink-0 border-0 bg-transparent object-contain shadow-none outline-none"
+              decoding="async"
+            />
+          )}
+        </Link>
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"

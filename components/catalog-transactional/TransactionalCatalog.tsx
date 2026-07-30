@@ -6,6 +6,7 @@ import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
 import {
   resolveStorefrontCatalogCategories,
+  extractCatalogCategories,
   type CatalogCategoryOption,
 } from "@/lib/catalog/extract-categories";
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
@@ -70,9 +71,18 @@ function resolveCategoryOptions(
   products: CatalogListItem[],
   storeRubro: string | null | undefined,
 ): CatalogCategoryOption[] {
+  // Confiar en la lista del servidor (ya filtrada por rubro). No usar la 1ª
+  // página de productos como fuente de chips — reintroduce ropa/muebles huérfanos.
+  if (storeCategories.length > 0) {
+    return resolveStorefrontCatalogCategories(
+      storeCategories,
+      storeCategories,
+      storeRubro,
+    );
+  }
   return resolveStorefrontCatalogCategories(
-    storeCategories,
-    storeCategories,
+    [],
+    extractCatalogCategories(products),
     storeRubro,
     products,
   );

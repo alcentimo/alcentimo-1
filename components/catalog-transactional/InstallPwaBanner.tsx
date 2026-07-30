@@ -17,10 +17,9 @@ interface InstallPwaBannerProps {
   storeLogoUrl: string | null;
 }
 
-const DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
-function getDismissStorageKey(storeSlug: string): string {
-  return `alcentimo_pwa_install_dismiss_${storeSlug}`;
+/** Preferencia de cierre solo para esta pestaña/sesión. */
+function getSessionDismissKey(storeSlug: string): string {
+  return `alcentimo_pwa_install_dismiss_session_${storeSlug}`;
 }
 
 function isCatalogPath(storeSlug: string): boolean {
@@ -45,27 +44,49 @@ function isAppInstalled(): boolean {
   return standalone || iosStandalone;
 }
 
-function isIosDevice(): boolean {
+function isFirefoxBrowser(): boolean {
   if (typeof window === "undefined") return false;
   const ua = window.navigator.userAgent;
-  return (
-    /iPad|iPhone|iPod/.test(ua) ||
-    (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1)
-  );
+  // Firefox / Firefox iOS — sin beforeinstallprompt ni flujo A2HS fiable como Safari.
+  return /firefox\/\d/i.test(ua) || /fxios\/\d/i.test(ua);
 }
 
-function isBannerDismissed(storeSlug: string): boolean {
+/** iPhone/iPad con Safari (Add to Home Screen). */
+function isIosSafariInstallable(): boolean {
   if (typeof window === "undefined") return false;
-
-  const raw = localStorage.getItem(getDismissStorageKey(storeSlug));
-  if (!raw) return false;
-
-  const dismissedAt = Number(raw);
-  if (!Number.isFinite(dismissedAt)) return true;
-
-  return Date.now() - dismissedAt < DISMISS_TTL_MS;
+  const ua = window.navigator.userAgent;
+  const isIos =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
+  if (!isIos) return false;
+  // Excluir Chrome/Firefox/Edge en iOS: el banner nativo no aplica igual.
+  if (/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua)) return false;
+  return /Safari/i.test(ua);
 }
 
+function isSessionDismissed(storeSlug: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return sessionStorage.getItem(getSessionDismissKey(storeSlug)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markSessionDismissed(storeSlug: string): void {
+  try {
+    sessionStorage.setItem(getSessionDismissKey(storeSlug), "1");
+  } catch {
+    // Private mode / blocked storage: igual ocultamos en memoria.
+  }
+}
+
+/**
+ * Banner de instalación PWA solo cuando el navegador puede instalar de verdad:
+ * - Chromium con `beforeinstallprompt`
+ * - iOS Safari (Añadir a pantalla de inicio)
+ * Oculto en Firefox, escritorio sin soporte, o ya instalado.
+ */
 export function InstallPwaBanner({
   storeSlug,
   storeName,
@@ -73,46 +94,68 @@ export function InstallPwaBanner({
 }: InstallPwaBannerProps) {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(() => getDeferredInstallPrompt());
-  const [manualInstallMode, setManualInstallMode] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [visible, setVisible] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [iosMode, setIosMode] = useState(false);
 
   const dismissBanner = useCallback(() => {
-    localStorage.setItem(getDismissStorageKey(storeSlug), String(Date.now()));
+    markSessionDismissed(storeSlug);
     setVisible(false);
   }, [storeSlug]);
 
   useEffect(() => {
     initBeforeInstallPromptCapture();
 
-    if (isAppInstalled() || isBannerDismissed(storeSlug) || !isCatalogPath(storeSlug)) {
+    if (
+      isAppInstalled() ||
+      isSessionDismissed(storeSlug) ||
+      !isCatalogPath(storeSlug) ||
+      isFirefoxBrowser()
+    ) {
+      setVisible(false);
       return;
     }
 
-    const ios = isIosDevice();
-    setIosMode(ios);
-    setVisible(true);
+    const iosSafari = isIosSafariInstallable();
+    if (iosSafari) {
+      setIosMode(true);
+      setVisible(true);
+      setExpanded(true);
+      return;
+    }
+
+    // Chromium u otros: solo mostrar si llega (o ya hay) beforeinstallprompt.
+    const existing = getDeferredInstallPrompt();
+    if (existing) {
+      setDeferredPrompt(existing);
+      setIosMode(false);
+      setVisible(true);
+    }
 
     const unsubscribe = subscribeToInstallPrompt((event) => {
+      if (isSessionDismissed(storeSlug) || isAppInstalled()) {
+        setVisible(false);
+        return;
+      }
       setDeferredPrompt(event);
       if (event) {
-        setManualInstallMode(false);
         setIosMode(false);
+        setVisible(true);
       }
     });
 
-    const manualTimer = window.setTimeout(() => {
-      if (!getDeferredInstallPrompt()) {
-        setManualInstallMode(true);
-        if (ios) setExpanded(true);
+    // Si tras un rato no hay prompt, no mostrar banner inútil (Firefox ya excluido;
+    // desktop Edge/Chrome sin criterios PWA, etc.).
+    const hideTimer = window.setTimeout(() => {
+      if (!getDeferredInstallPrompt() && !isIosSafariInstallable()) {
+        setVisible(false);
       }
-    }, 1200);
+    }, 2500);
 
     return () => {
       unsubscribe();
-      window.clearTimeout(manualTimer);
+      window.clearTimeout(hideTimer);
     };
   }, [storeSlug]);
 
@@ -127,11 +170,13 @@ export function InstallPwaBanner({
         const { outcome } = await promptEvent.userChoice;
 
         if (outcome === "accepted") {
+          markSessionDismissed(storeSlug);
           setVisible(false);
         }
       } catch {
-        setManualInstallMode(true);
-        setExpanded(true);
+        // Si el prompt falla, no insistir con instrucciones genéricas en navegadores
+        // sin soporte: ocultar.
+        setVisible(false);
       } finally {
         setInstalling(false);
         setDeferredPrompt(null);
@@ -139,8 +184,12 @@ export function InstallPwaBanner({
       return;
     }
 
-    setManualInstallMode(true);
-    setExpanded(true);
+    if (iosMode) {
+      setExpanded(true);
+      return;
+    }
+
+    setVisible(false);
   }
 
   const installHint = useMemo(() => {
@@ -152,14 +201,15 @@ export function InstallPwaBanner({
         </>
       );
     }
-    return (
-      <>
-        En Chrome o Edge: menú ⋮ → <strong>Instalar aplicación</strong> (también en PC)
-      </>
-    );
+    return null;
   }, [iosMode]);
 
   if (!visible || isAppInstalled()) {
+    return null;
+  }
+
+  // Defensa extra: sin prompt nativo y sin iOS Safari → no renderizar.
+  if (!deferredPrompt && !iosMode) {
     return null;
   }
 
@@ -168,9 +218,7 @@ export function InstallPwaBanner({
     ? "Instalando…"
     : deferredPrompt
       ? "Instalar aplicación"
-      : iosMode
-        ? "Añadir a inicio"
-        : "Instalar aplicación";
+      : "Añadir a inicio";
 
   return (
     <div
@@ -198,7 +246,9 @@ export function InstallPwaBanner({
         )}
         <div className="min-w-0">
           <p className="install-pwa-banner-title">{displayName}</p>
-          <p className="install-pwa-banner-subtitle">Instala el catálogo en tu dispositivo</p>
+          <p className="install-pwa-banner-subtitle">
+            Instala el catálogo en tu dispositivo
+          </p>
         </div>
       </div>
 
@@ -212,19 +262,21 @@ export function InstallPwaBanner({
         {installLabel}
       </button>
 
-      {expanded && (manualInstallMode || iosMode) && !deferredPrompt ? (
+      {expanded && iosMode && installHint ? (
         <p className="install-pwa-banner-hint">{installHint}</p>
       ) : null}
 
-      <button
-        type="button"
-        onClick={() => setExpanded((value) => !value)}
-        className="install-pwa-banner-toggle"
-        aria-expanded={expanded}
-        aria-label={expanded ? "Ocultar detalles" : "Ver cómo instalar"}
-      >
-        {expanded ? "Menos" : "Cómo"}
-      </button>
+      {iosMode ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="install-pwa-banner-toggle"
+          aria-expanded={expanded}
+          aria-label={expanded ? "Ocultar detalles" : "Ver cómo instalar"}
+        >
+          {expanded ? "Menos" : "Cómo"}
+        </button>
+      ) : null}
 
       <button
         type="button"

@@ -2,11 +2,13 @@ import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { isCategoryAlignedWithRubro, normalizeStoreRubro } from "@/src/config/categories";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
 
-/** Categorías activas configuradas para la tienda (público). */
+/** Categorías activas configuradas para la tienda (público), filtradas por rubro. */
 export async function getPublicStoreCategories(
   storeId: string,
+  rubroInput?: string | null,
 ): Promise<CatalogCategoryOption[]> {
   const client = getPublicServerClient();
+  const rubro = normalizeStoreRubro(rubroInput);
 
   const { data, error } = await client
     .from("categories")
@@ -21,10 +23,14 @@ export async function getPublicStoreCategories(
     );
   }
 
-  return (data ?? []).map((item) => ({
-    slug: item.slug as string,
-    name: item.name as string,
-  }));
+  return (data ?? [])
+    .map((item) => ({
+      slug: item.slug as string,
+      name: item.name as string,
+    }))
+    .filter((category) =>
+      isCategoryAlignedWithRubro(category.slug, category.name, rubro),
+    );
 }
 
 /** Slugs de categorías que tienen al menos un producto activo en el catálogo público. */

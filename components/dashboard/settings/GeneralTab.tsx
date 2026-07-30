@@ -18,7 +18,6 @@ import { isValidStoreSlug } from "@/lib/stores/slug";
 import { STORE_SLUG_UNAVAILABLE_MESSAGE } from "@/lib/stores/slug-availability";
 import { getPublicSiteHost } from "@/lib/site-url";
 import { STORE_RUBRO_OPTIONS, normalizeStoreRubro, type StoreRubro } from "@/src/config/categories";
-import { InterfacePreferencesSettingsSection } from "@/components/dashboard/settings/InterfacePreferencesSettingsSection";
 import { SettingsOptionCard } from "@/components/dashboard/settings/SettingsOptionCard";
 import { StoreDescriptionAiButton } from "@/components/dashboard/settings/StoreDescriptionAiButton";
 import { StoreLogoUploadField } from "@/components/dashboard/settings/StoreLogoUploadField";
@@ -462,8 +461,6 @@ export function GeneralTab({ store }: GeneralTabProps) {
           />
         </SettingsSection>
       ) : null}
-
-      <InterfacePreferencesSettingsSection />
       </SettingsTabShell>
 
       <AlertDialog

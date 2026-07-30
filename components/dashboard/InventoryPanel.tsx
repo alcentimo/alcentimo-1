@@ -81,7 +81,6 @@ import {
   type InventoryPageSize,
 } from "@/lib/inventory/constants";
 import { sanitizeInventorySearch } from "@/lib/inventory/search";
-import { InventoryListSkeleton } from "@/components/dashboard/InventoryListSkeleton";
 import { DashboardProductThumb } from "@/components/dashboard/DashboardProductThumb";
 import { cn } from "@/lib/cn";
 import {
@@ -142,6 +141,8 @@ function syncCatalogQueryUrl(state: {
 
   const query = params.toString();
   const nextUrl = query ? `/dashboard/catalogo?${query}` : "/dashboard/catalogo";
+  const current = `${window.location.pathname}${window.location.search}`;
+  if (current === nextUrl) return;
   window.history.replaceState(null, "", nextUrl);
 }
 
@@ -182,6 +183,8 @@ interface InventoryPanelProps {
   rubroLabel?: string;
   onSampleProductsCreated?: () => void;
   setupStatus?: Pick<OnboardingSetupStatus, "hasProducts" | "hasPaymentsConfigured">;
+  /** Fuerza fetch al montar (cuando el server no hidrató inventario). */
+  loadOnMount?: boolean;
 }
 
 const StockBadge = memo(function StockBadge({
@@ -593,6 +596,7 @@ export function InventoryPanel({
   rubroLabel = "",
   onSampleProductsCreated,
   setupStatus,
+  loadOnMount = false,
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
   const [totalCount, setTotalCount] = useState(
@@ -606,8 +610,8 @@ export function InventoryPanel({
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState<InventoryPageSize>(initialPageSize);
-  const [filterLoading, setFilterLoading] = useState(false);
-  const skipQueryEffectRef = useRef(true);
+  const [filterLoading, setFilterLoading] = useState(loadOnMount);
+  const skipQueryEffectRef = useRef(!loadOnMount);
   const [trialDialogOpen, setTrialDialogOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [importSheetOpen, setImportSheetOpen] = useState(false);
@@ -778,9 +782,29 @@ export function InventoryPanel({
     setFilterLoading(true);
     syncCatalogQueryUrl({ stockFilter, searchQuery, page, pageSize });
 
+    const CLIENT_FETCH_TIMEOUT_MS = 12_000;
+
     void (async () => {
-      await loadInventoryPage({ page, pageSize, stockFilter, searchQuery });
-      if (!cancelled) setFilterLoading(false);
+      try {
+        await Promise.race([
+          loadInventoryPage({ page, pageSize, stockFilter, searchQuery }),
+          new Promise<never>((_, reject) => {
+            window.setTimeout(
+              () => reject(new Error("timeout:loadInventoryPage")),
+              CLIENT_FETCH_TIMEOUT_MS,
+            );
+          }),
+        ]);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("[InventoryPanel] loadInventoryPage", error);
+          setRefreshError(
+            "No se pudo cargar el inventario a tiempo. Revisa tu conexión o recarga.",
+          );
+        }
+      } finally {
+        if (!cancelled) setFilterLoading(false);
+      }
     })();
 
     return () => {
@@ -1126,7 +1150,7 @@ export function InventoryPanel({
     pcBuilderEnabled,
   ]);
 
-  const catalogEmpty = products.length === 0 && !hasActiveQuery;
+  const catalogEmpty = products.length === 0 && !hasActiveQuery && !filterLoading;
 
   return (
     <>
@@ -1416,12 +1440,7 @@ export function InventoryPanel({
         </p>
       )}
 
-      {filterLoading ? (
-        <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-          <InventoryListSkeleton rows={5} showReorderColumn={false} />
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950">
           <div className="inventory-mobile-list" aria-label="Lista de productos">
             {inventoryList}
           </div>
@@ -1462,7 +1481,14 @@ export function InventoryPanel({
                         catalogEmpty ? "py-16" : "py-10",
                       )}
                     >
-                      {hasActiveQuery ? emptyMessage : null}
+                      {filterLoading ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                          Cargando productos…
+                        </span>
+                      ) : hasActiveQuery ? (
+                        emptyMessage
+                      ) : null}
                     </td>
                   </tr>
                 ) : (
@@ -1506,7 +1532,6 @@ export function InventoryPanel({
             />
           ) : null}
         </div>
-      )}
 
       {stockFilter === "all" &&
       !searchQuery &&

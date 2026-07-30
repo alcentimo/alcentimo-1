@@ -76,6 +76,10 @@ export function mergeStoreCategoriesWithProductSlugs(
 /**
  * Categorías visibles en el catálogo público:
  * solo las que tienen productos activos y encajan con el rubro de la tienda.
+ *
+ * Si el servidor ya envió `storeCategories` filtradas y `categoriesWithProducts`
+ * no está vacío, no re-expandimos desde la 1ª página de productos (evita chips
+ * de otros rubros presentes en productos huérfanos).
  */
 export function resolveStorefrontCatalogCategories(
   storeCategories: CatalogCategoryOption[],
@@ -85,17 +89,28 @@ export function resolveStorefrontCatalogCategories(
 ): CatalogCategoryOption[] {
   const rubro = normalizeStoreRubro(rubroInput);
 
-  const withProducts =
-    categoriesWithProducts.length > 0
-      ? categoriesWithProducts
-      : extractCatalogCategories(products);
+  // Lista ya filtrada en servidor: solo revalidar alineación, sin fallback a products.
+  if (storeCategories.length > 0 && categoriesWithProducts === storeCategories) {
+    return filterCatalogCategoriesForRubro(storeCategories, rubro);
+  }
 
-  const merged = mergeStoreCategoriesWithProductSlugs(
-    storeCategories,
-    withProducts,
+  if (storeCategories.length > 0 && categoriesWithProducts.length > 0) {
+    const merged = mergeStoreCategoriesWithProductSlugs(
+      storeCategories,
+      categoriesWithProducts,
+    );
+    return filterCatalogCategoriesForRubro(merged, rubro);
+  }
+
+  if (categoriesWithProducts.length > 0) {
+    return filterCatalogCategoriesForRubro(categoriesWithProducts, rubro);
+  }
+
+  // Último recurso (p. ej. preview sin lista de servidor).
+  return filterCatalogCategoriesForRubro(
+    extractCatalogCategories(products),
+    rubro,
   );
-
-  return filterCatalogCategoriesForRubro(merged, rubro);
 }
 
 /** @deprecated Usar resolveStorefrontCatalogCategories */

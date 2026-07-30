@@ -133,7 +133,54 @@ const LEGACY_RUBRO_ALIASES: Record<string, StoreRubro> = {
   oficina: "papeleria-libreria-oficina",
   "hogar-decoracion": "ropa-moda",
   general: "ropa-moda",
+  // Etiquetas / variantes que a veces llegan en lugar del slug.
+  "ropa-calzado-y-moda": "ropa-moda",
+  "ropa, calzado y moda": "ropa-moda",
+  "alimentos-y-bebidas": "alimentos",
+  "alimentos y bebidas": "alimentos",
+  "tecnologia-y-electronica": "tecnologia",
+  "tecnología y electrónica": "tecnologia",
+  "tecnologia y electronica": "tecnologia",
+  "coleccionables-y-comics": "coleccionables",
+  "coleccionables y cómics": "coleccionables",
+  "coleccionables y comics": "coleccionables",
+  "salud-belleza-y-cuidado-personal": "salud-belleza",
+  "salud, belleza y cuidado personal": "salud-belleza",
+  "papeleria-libreria-y-oficina": "papeleria-libreria-oficina",
+  "papelería, librería y oficina": "papeleria-libreria-oficina",
 };
+
+/**
+ * Presets de rubros retirados del producto. Ya no están en STORE_RUBRO_CONFIGS,
+ * así que sin esta denylist se tratan como “custom” y contaminan cualquier rubro.
+ */
+export const LEGACY_REMOVED_CATEGORY_PRESET_SLUGS = [
+  // hogar-decoracion (retirado → alias ropa-moda)
+  "muebles",
+  "decoracion",
+  "cocina",
+  "textiles",
+  "hogar",
+  "iluminacion",
+  // ferreteria (retirado → alias tecnologia)
+  "herramientas",
+  "fijacion",
+  "electricidad",
+  "plomeria",
+  "pintura",
+  "seguridad-industrial",
+  // joyeria legacy (ahora coleccionables; slugs típicos residuales)
+  "anillos",
+  "collares",
+  "pulseras",
+  "aretes",
+  "relojes",
+  "joyas",
+] as const;
+
+const LEGACY_REMOVED_PRESET_SET = new Set<string>(
+  LEGACY_REMOVED_CATEGORY_PRESET_SLUGS,
+);
 
 const CONFIG_BY_RUBRO = new Map(
   STORE_RUBRO_CONFIGS.map((config) => [config.rubro, config]),
@@ -145,12 +192,40 @@ export function isValidStoreRubro(value: string): value is StoreRubro {
   return RUBRO_SET.has(value.trim().toLowerCase());
 }
 
+function stripDiacritics(value: string): string {
+  return value.normalize("NFD").replace(/\p{M}/gu, "");
+}
+
 export function normalizeStoreRubro(value: string | null | undefined): StoreRubro {
   const trimmed = value?.trim().toLowerCase() ?? "";
+  if (!trimmed) return DEFAULT_STORE_RUBRO;
+
   if (LEGACY_RUBRO_ALIASES[trimmed]) {
     return LEGACY_RUBRO_ALIASES[trimmed];
   }
-  return isValidStoreRubro(trimmed) ? trimmed : DEFAULT_STORE_RUBRO;
+
+  const ascii = stripDiacritics(trimmed);
+  if (LEGACY_RUBRO_ALIASES[ascii]) {
+    return LEGACY_RUBRO_ALIASES[ascii];
+  }
+
+  if (isValidStoreRubro(trimmed)) return trimmed;
+
+  // Match por label oficial (“Tecnología y Electrónica” → tecnologia).
+  for (const option of STORE_RUBRO_OPTIONS) {
+    const label = option.label.toLowerCase();
+    if (label === trimmed || stripDiacritics(label) === ascii) {
+      return option.value;
+    }
+  }
+
+  const slugified = slugify(trimmed);
+  if (slugified && isValidStoreRubro(slugified)) return slugified;
+  if (slugified && LEGACY_RUBRO_ALIASES[slugified]) {
+    return LEGACY_RUBRO_ALIASES[slugified];
+  }
+
+  return DEFAULT_STORE_RUBRO;
 }
 
 export function getRubroLabel(rubro: StoreRubro): string {
@@ -167,6 +242,7 @@ export function getProductCategoriesForRubro(rubro: StoreRubro): ProductCategory
 /**
  * Presets de otros rubros que NO pertenecen al rubro actual.
  * Respeta slugs compartidos (p. ej. "accesorios" en moda y tecnología).
+ * Incluye presets de rubros retirados (muebles, herramientas, anillos…).
  */
 export function getOtherRubroExclusivePresetSlugs(rubro: StoreRubro): Set<string> {
   const currentSlugs = new Set(
@@ -180,6 +256,12 @@ export function getOtherRubroExclusivePresetSlugs(rubro: StoreRubro): Set<string
       if (!currentSlugs.has(category.slug)) {
         exclusive.add(category.slug);
       }
+    }
+  }
+
+  for (const slug of LEGACY_REMOVED_PRESET_SET) {
+    if (!currentSlugs.has(slug)) {
+      exclusive.add(slug);
     }
   }
 
@@ -199,9 +281,9 @@ const GENERIC_CATEGORY_NAMES = new Set([
   "test",
 ]);
 
-/** Slugs de preset definidos en cualquier rubro oficial. */
+/** Slugs de preset definidos en cualquier rubro oficial o retirado. */
 export function getAllRubroPresetSlugs(): Set<string> {
-  const slugs = new Set<string>();
+  const slugs = new Set<string>(LEGACY_REMOVED_PRESET_SET);
   for (const config of STORE_RUBRO_CONFIGS) {
     for (const category of config.categorias) {
       slugs.add(category.slug);
@@ -218,6 +300,10 @@ function isGenericCategoryToken(value: string): boolean {
   return GENERIC_CATEGORY_NAMES.has(value);
 }
 
+function isLegacyRemovedPresetSlug(slug: string): boolean {
+  return LEGACY_REMOVED_PRESET_SET.has(slug);
+}
+
 /** ¿La categoría es válida para mostrar en el catálogo público de este rubro? */
 export function isCategoryVisibleForRubro(
   categorySlug: string | null | undefined,
@@ -225,12 +311,15 @@ export function isCategoryVisibleForRubro(
 ): boolean {
   const slug = normalizeCategoryToken(categorySlug);
   if (!slug || isGenericCategoryToken(slug)) return false;
+  if (isLegacyRemovedPresetSlug(slug)) return false;
   return !getOtherRubroExclusivePresetSlugs(rubro).has(slug);
 }
 
 /**
  * ¿La categoría encaja con el rubro actual?
- * Presets del rubro actual sí; presets de otros rubros no; custom solo si no replica otro preset.
+ * - Presets del rubro actual: sí
+ * - Presets de otros rubros (activos o retirados): no
+ * - Custom: solo si no replica slug/nombre de otro preset histórico
  */
 export function isCategoryAlignedWithRubro(
   categorySlug: string | null | undefined,
@@ -241,6 +330,7 @@ export function isCategoryAlignedWithRubro(
   const name = normalizeCategoryToken(categoryName);
   if (!slug) return false;
   if (isGenericCategoryToken(slug) || isGenericCategoryToken(name)) return false;
+  if (isLegacyRemovedPresetSlug(slug)) return false;
   if (!isCategoryVisibleForRubro(slug, rubro)) return false;
 
   const currentPresets = getProductCategoriesForRubro(rubro);
@@ -251,6 +341,16 @@ export function isCategoryAlignedWithRubro(
     for (const preset of config.categorias) {
       if (preset.slug === slug) return false;
       if (name && preset.label.toLowerCase() === name) return false;
+      if (name && stripDiacritics(preset.label.toLowerCase()) === stripDiacritics(name)) {
+        return false;
+      }
+    }
+  }
+
+  // Custom residual con nombre de preset retirado (p. ej. “Muebles”).
+  for (const removedSlug of LEGACY_REMOVED_PRESET_SET) {
+    if (name === removedSlug || name.replace(/\s+/g, "-") === removedSlug) {
+      return false;
     }
   }
 

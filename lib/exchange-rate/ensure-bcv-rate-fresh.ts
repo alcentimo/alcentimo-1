@@ -7,6 +7,8 @@ import { roundExchangeRate } from "@/lib/format";
 import type { ExchangeRate } from "@/lib/database.types";
 
 const AUTOHEAL_COOLDOWN_MS = 10 * 60 * 1000;
+/** Tope para no congelar el layout del dashboard si la API BCV no responde. */
+const AUTOHEAL_BUDGET_MS = 3_000;
 
 async function wasAutohealAttemptedRecently(
   admin: ReturnType<typeof createAdminClient>,
@@ -55,7 +57,22 @@ export async function ensureBcvRateFreshForToday(
       return currentRate;
     }
 
-    const result = await runManualBcvSync(admin, "autoheal");
+    const result = await Promise.race([
+      runManualBcvSync(admin, "autoheal"),
+      new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), AUTOHEAL_BUDGET_MS);
+      }),
+    ]);
+
+    if (!result) {
+      logBcvSync(
+        "autoheal_budget_exceeded",
+        { syncDate, budgetMs: AUTOHEAL_BUDGET_MS },
+        "warn",
+      );
+      return currentRate;
+    }
+
     if (!result.success || result.rate == null || !result.updatedAt) {
       logBcvSync(
         "autoheal_failed",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { tryActivateProTrialOnSetupComplete } from "@/lib/plans/trial-actions";
 import { isProTrialUnlockReady } from "@/lib/plans/trial-unlock";
@@ -13,6 +13,9 @@ interface ProTrialActivationWatcherProps {
   setupStatus: Pick<OnboardingSetupStatus, "hasProducts" | "hasPaymentsConfigured">;
 }
 
+/** Evita reintentos en bucle si un refresh remonta el watcher. */
+let proTrialActivationAttemptedThisSession = false;
+
 export function ProTrialActivationWatcher({
   trialEligible,
   trialActive,
@@ -22,7 +25,6 @@ export function ProTrialActivationWatcher({
   const searchParams = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [endsAt, setEndsAt] = useState<string | null>(null);
-  const activationAttempted = useRef(false);
 
   const setupReady = isProTrialUnlockReady(setupStatus);
 
@@ -54,27 +56,30 @@ export function ProTrialActivationWatcher({
   }, [searchParams, trialActive, dialogOpen, stripTrialParam]);
 
   useEffect(() => {
-    if (!trialEligible || trialActive || !setupReady || activationAttempted.current) {
+    if (
+      !trialEligible ||
+      trialActive ||
+      !setupReady ||
+      proTrialActivationAttemptedThisSession
+    ) {
       return;
     }
 
-    activationAttempted.current = true;
+    proTrialActivationAttemptedThisSession = true;
 
-    void tryActivateProTrialOnSetupComplete().then((result) => {
-      if (!result.ok) {
-        activationAttempted.current = false;
-        console.error("[ProTrialActivationWatcher]", result.error);
-        return;
-      }
+    // Never reset the session flag: a failing attempt + remount/refresh
+  // must not retry forever and hammer /dashboard/catalogo.
+  void tryActivateProTrialOnSetupComplete().then((result) => {
+    if (!result.ok) {
+      console.error("[ProTrialActivationWatcher]", result.error);
+      return;
+    }
 
-      if (result.activated) {
-        openCelebration(result.endsAt);
-        router.refresh();
-        return;
-      }
-
-      activationAttempted.current = false;
-    });
+    if (result.activated) {
+      openCelebration(result.endsAt);
+      // revalidatePath already runs in the server action; avoid a second refresh loop.
+    }
+  });
   }, [trialEligible, trialActive, setupReady, openCelebration, router]);
 
   return (

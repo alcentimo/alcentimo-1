@@ -103,7 +103,7 @@ export async function getPublicCatalogPageData(
     locationStocks,
   ] = await Promise.all([
     fetchStoreSettingsConfig(store.id),
-    getPublicStoreCategories(store.id),
+    getPublicStoreCategories(store.id, rubro),
     getPublicStoreCategorySlugsWithProducts(store.slug, rubro),
     getPublicStoreLocations(store.id).catch(() => []),
     getVariantLocationStocksForStore(store.id).catch(() => []),
@@ -140,7 +140,7 @@ export async function getPublicCatalogPageData(
   const purchaseInfo = buildPublicPurchaseInfo(settingsConfig);
   const catalogDesign = resolveCatalogDesign(
     settingsConfig.catalogDesign,
-    store.rubro_tienda,
+    rubro,
   );
 
   return {

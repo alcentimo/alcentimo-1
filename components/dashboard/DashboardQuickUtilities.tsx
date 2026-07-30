@@ -18,7 +18,7 @@ export function DashboardQuickUtilities({
 }: DashboardQuickUtilitiesProps) {
   return (
     <div className={cn("flex flex-nowrap items-center gap-1.5 sm:gap-2", className)}>
-      <DashboardPreferenceControls variant="compact" />
+      <DashboardPreferenceControls />
       <DashboardExchangeRateBadge
         rate={exchangeRate}
         updatedAt={exchangeRateUpdatedAt}

@@ -1032,16 +1032,33 @@ export async function fetchInventoryProducts(options?: {
   }
 
   const { getStoreInventory, INVENTORY_PAGE_SIZE } = await import("@/lib/inventory");
-  const { products, totalCount, hasMore, inventoryError } = await getStoreInventory(
-    auth.store.slug,
-    {
+  const { withTimeoutFallback } = await import("@/lib/async/with-timeout-fallback");
+  const { products, totalCount, hasMore, inventoryError } = await withTimeoutFallback(
+    getStoreInventory(auth.store.slug, {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? INVENTORY_PAGE_SIZE,
       stockFilter: options?.stockFilter,
       search: options?.search,
+    }),
+    12_000,
+    {
+      products: [],
+      exchangeRate: null,
+      totalCount: 0,
+      hasMore: false,
+      inventoryError: "timeout",
     },
+    "fetchInventoryProducts",
   );
-  return { products, totalCount, hasMore, error: inventoryError };
+  return {
+    products,
+    totalCount,
+    hasMore,
+    error:
+      inventoryError === "timeout"
+        ? "La carga del inventario tardó demasiado. Intenta de nuevo."
+        : inventoryError,
+  };
 }
 
 export async function reorderProducts(
