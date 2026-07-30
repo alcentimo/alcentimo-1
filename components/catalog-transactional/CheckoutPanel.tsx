@@ -799,177 +799,170 @@ export function CheckoutPanel({
                   })}
                 </ul>
 
-                {shippingOptions.length > 0 && (
-                  <CheckoutFieldGroup
-                    field="shipping"
-                    showError={shouldShowFieldError(
-                      "shipping",
-                      step1Validation.errors.shipping,
-                    )}
-                    error={step1Validation.errors.shipping}
-                    className="txn-checkout-options"
-                  >
-                    <div className="txn-checkout-section">
-                      <p className="txn-checkout-section-title">
-                        Opciones de envío
-                      </p>
-                      <div className="txn-checkout-method-grid">
-                        {shippingOptions.map((option) => (
-                          <ShippingMethodCard
-                            key={option.key}
-                            carrierKey={option.key}
-                            details={option.details}
-                            description={option.description}
-                            estimatedTime={option.estimatedTime}
-                            selectable
-                            selected={selectedShipping === option.key}
-                            onSelect={() => {
-                              touchField("shipping");
-                              setSelectedShipping(option.key);
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </CheckoutFieldGroup>
-                )}
-
-                {isNationalCarrierSelected ? (
-                  <CheckoutFieldGroup
-                    field="shippingBranch"
-                    showError={shouldShowFieldError(
-                      "shippingBranch",
-                      step1Validation.errors.shippingBranch,
-                    )}
-                    error={step1Validation.errors.shippingBranch}
-                    className="txn-checkout-form"
-                  >
-                    <ShippingBranchPicker
-                      carrier={selectedShipping as ShippingCarrierKey}
-                      value={shippingBranchCode}
-                      onChange={(branch) => {
-                        touchField("shippingBranch");
-                        setShippingBranchCode(branch?.id ?? null);
-                      }}
-                    />
-                    <p className="text-[11px] text-zinc-500">
-                      Usaremos esta sucursal para coordinar el envío de este pedido.
-                    </p>
-                  </CheckoutFieldGroup>
-                ) : null}
-
-                {isLocalDeliverySelected ? (
-                  <div className="txn-checkout-form">
-                    {hasDeliveryZones ? (
+                {shippingOptions.length > 0 ||
+                isNationalCarrierSelected ||
+                isLocalDeliverySelected ||
+                (isPickupSelected && hasPickupPoints) ? (
+                  <div className="txn-checkout-options">
+                    {shippingOptions.length > 0 ? (
                       <CheckoutFieldGroup
-                        field={
-                          step1Validation.errors.meetingPoint
-                            ? "meetingPoint"
-                            : "deliveryZone"
-                        }
-                        showError={
-                          shouldShowFieldError(
-                            "deliveryZone",
-                            step1Validation.errors.deliveryZone,
-                          ) ||
-                          shouldShowFieldError(
-                            "meetingPoint",
-                            step1Validation.errors.meetingPoint,
-                          )
-                        }
-                        error={
-                          step1Validation.errors.deliveryZone ??
-                          step1Validation.errors.meetingPoint
-                        }
+                        field="shipping"
+                        showError={shouldShowFieldError(
+                          "shipping",
+                          step1Validation.errors.shipping,
+                        )}
+                        error={step1Validation.errors.shipping}
                       >
-                        <DeliveryZonePicker
-                          zones={deliveryZonesForCheckout}
-                          selectedZoneId={deliveryZoneId}
-                          selectedPointId={meetingPointId}
-                          notes={fulfillmentNotes}
-                          onZoneChange={(zoneId) => {
-                            touchField("deliveryZone");
-                            setDeliveryZoneId(zoneId);
+                        <div className="txn-checkout-section">
+                          <p className="txn-checkout-section-title">
+                            Método de envío
+                          </p>
+                          <div className="txn-checkout-method-grid">
+                            {shippingOptions.map((option) => (
+                              <ShippingMethodCard
+                                key={option.key}
+                                carrierKey={option.key}
+                                details={option.details}
+                                description={option.description}
+                                estimatedTime={option.estimatedTime}
+                                selectable
+                                selected={selectedShipping === option.key}
+                                onSelect={() => {
+                                  touchField("shipping");
+                                  setSelectedShipping(option.key);
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </CheckoutFieldGroup>
+                    ) : null}
+
+                    {isNationalCarrierSelected ? (
+                      <CheckoutFieldGroup
+                        field="shippingBranch"
+                        showError={shouldShowFieldError(
+                          "shippingBranch",
+                          step1Validation.errors.shippingBranch,
+                        )}
+                        error={step1Validation.errors.shippingBranch}
+                      >
+                        <ShippingBranchPicker
+                          carrier={selectedShipping as ShippingCarrierKey}
+                          value={shippingBranchCode}
+                          onChange={(branch) => {
+                            touchField("shippingBranch");
+                            setShippingBranchCode(branch?.id ?? null);
                           }}
+                        />
+                      </CheckoutFieldGroup>
+                    ) : null}
+
+                    {isLocalDeliverySelected ? (
+                      hasDeliveryZones ? (
+                        <CheckoutFieldGroup
+                          field={
+                            step1Validation.errors.meetingPoint
+                              ? "meetingPoint"
+                              : "deliveryZone"
+                          }
+                          showError={
+                            shouldShowFieldError(
+                              "deliveryZone",
+                              step1Validation.errors.deliveryZone,
+                            ) ||
+                            shouldShowFieldError(
+                              "meetingPoint",
+                              step1Validation.errors.meetingPoint,
+                            )
+                          }
+                          error={
+                            step1Validation.errors.deliveryZone ??
+                            step1Validation.errors.meetingPoint
+                          }
+                        >
+                          <DeliveryZonePicker
+                            zones={deliveryZonesForCheckout}
+                            selectedZoneId={deliveryZoneId}
+                            selectedPointId={meetingPointId}
+                            notes={fulfillmentNotes}
+                            onZoneChange={(zoneId) => {
+                              touchField("deliveryZone");
+                              setDeliveryZoneId(zoneId);
+                            }}
+                            onPointChange={(pointId) => {
+                              touchField("meetingPoint");
+                              setMeetingPointId(pointId);
+                            }}
+                            onNotesChange={setFulfillmentNotes}
+                          />
+                        </CheckoutFieldGroup>
+                      ) : (
+                        <CheckoutFieldGroup
+                          field="deliveryAddress"
+                          showError={shouldShowFieldError(
+                            "deliveryAddress",
+                            step1Validation.errors.deliveryAddress,
+                          )}
+                          error={step1Validation.errors.deliveryAddress}
+                        >
+                          <label className="txn-field">
+                            <span>Dirección de entrega</span>
+                            <textarea
+                              required
+                              minLength={8}
+                              rows={3}
+                              value={deliveryAddress}
+                              onChange={(event) => {
+                                touchField("deliveryAddress");
+                                setDeliveryAddress(event.target.value);
+                              }}
+                              onBlur={() => touchField("deliveryAddress")}
+                              placeholder="Calle, edificio, referencia…"
+                              aria-invalid={shouldShowFieldError(
+                                "deliveryAddress",
+                                step1Validation.errors.deliveryAddress,
+                              )}
+                              aria-describedby={
+                                step1Validation.errors.deliveryAddress
+                                  ? "checkout-error-deliveryAddress"
+                                  : undefined
+                              }
+                              className={checkoutInputClass(
+                                shouldShowFieldError(
+                                  "deliveryAddress",
+                                  step1Validation.errors.deliveryAddress,
+                                ),
+                                "min-h-[5rem] resize-y",
+                              )}
+                            />
+                          </label>
+                        </CheckoutFieldGroup>
+                      )
+                    ) : null}
+
+                    {isPickupSelected && hasPickupPoints ? (
+                      <CheckoutFieldGroup
+                        field="pickupPoint"
+                        showError={shouldShowFieldError(
+                          "pickupPoint",
+                          step1Validation.errors.pickupPoint,
+                        )}
+                        error={step1Validation.errors.pickupPoint}
+                      >
+                        <PickupPointPicker
+                          points={pickupPoints}
+                          selectedPointId={pickupPointId}
+                          notes={fulfillmentNotes}
                           onPointChange={(pointId) => {
-                            touchField("meetingPoint");
-                            setMeetingPointId(pointId);
+                            touchField("pickupPoint");
+                            setPickupPointId(pointId);
                           }}
                           onNotesChange={setFulfillmentNotes}
                         />
                       </CheckoutFieldGroup>
-                    ) : (
-                      <CheckoutFieldGroup
-                        field="deliveryAddress"
-                        showError={shouldShowFieldError(
-                          "deliveryAddress",
-                          step1Validation.errors.deliveryAddress,
-                        )}
-                        error={step1Validation.errors.deliveryAddress}
-                      >
-                        <label className="txn-field">
-                          <span>Dirección de entrega</span>
-                          <textarea
-                            required
-                            minLength={8}
-                            rows={3}
-                            value={deliveryAddress}
-                            onChange={(event) => {
-                              touchField("deliveryAddress");
-                              setDeliveryAddress(event.target.value);
-                            }}
-                            onBlur={() => touchField("deliveryAddress")}
-                            placeholder="Calle, edificio, referencia…"
-                            aria-invalid={shouldShowFieldError(
-                              "deliveryAddress",
-                              step1Validation.errors.deliveryAddress,
-                            )}
-                            aria-describedby={
-                              step1Validation.errors.deliveryAddress
-                                ? "checkout-error-deliveryAddress"
-                                : undefined
-                            }
-                            className={checkoutInputClass(
-                              shouldShowFieldError(
-                                "deliveryAddress",
-                                step1Validation.errors.deliveryAddress,
-                              ),
-                              "min-h-[5rem] resize-y",
-                            )}
-                          />
-                        </label>
-                        <p className="text-[11px] text-zinc-500">
-                          La usaremos para entregar este pedido.
-                        </p>
-                      </CheckoutFieldGroup>
-                    )}
+                    ) : null}
                   </div>
-                ) : null}
-
-                {isPickupSelected && hasPickupPoints ? (
-                  <CheckoutFieldGroup
-                    field="pickupPoint"
-                    showError={shouldShowFieldError(
-                      "pickupPoint",
-                      step1Validation.errors.pickupPoint,
-                    )}
-                    error={step1Validation.errors.pickupPoint}
-                    className="txn-checkout-form"
-                  >
-                    <PickupPointPicker
-                      points={pickupPoints}
-                      selectedPointId={pickupPointId}
-                      notes={fulfillmentNotes}
-                      onPointChange={(pointId) => {
-                        touchField("pickupPoint");
-                        setPickupPointId(pointId);
-                      }}
-                      onNotesChange={setFulfillmentNotes}
-                    />
-                    <p className="text-[11px] text-zinc-500">
-                      Coordinaremos el horario de retiro por WhatsApp.
-                    </p>
-                  </CheckoutFieldGroup>
                 ) : null}
 
                 {(customerProfile || autoApply) && (

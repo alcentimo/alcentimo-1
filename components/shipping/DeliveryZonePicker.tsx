@@ -40,16 +40,15 @@ export function DeliveryZonePicker({
   return (
     <div className="shipping-branch-picker">
       <div className="shipping-branch-picker-header">
+        <p className="shipping-branch-picker-eyebrow">Entrega local</p>
         <p className="shipping-branch-picker-title">Zona y punto de encuentro</p>
         <p className="shipping-branch-picker-desc">
           Elige el área y el lugar donde coordinaremos la entrega contigo.
         </p>
       </div>
 
-      <div>
-        <p className="mb-2 text-xs font-medium text-zinc-600 dark:text-zinc-300">
-          Zona
-        </p>
+      <div className="shipping-branch-browse">
+        <p className="shipping-branch-sublabel">Zona</p>
         <ul className="shipping-branch-list" role="listbox" aria-label="Zonas disponibles">
           {zones.map((zone) => {
             const isSelected = selectedZoneId === zone.id;
@@ -69,14 +68,14 @@ export function DeliveryZonePicker({
                   )}
                 >
                   <MapPin
-                    className="mt-0.5 h-4 w-4 shrink-0 text-teal-600"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400"
                     aria-hidden="true"
                   />
                   <span className="min-w-0 flex-1 text-left">
                     <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">
                       {zone.name}
                     </span>
-                    <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
+                    <span className="mt-1 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
                       {zone.meetingPoints.length}{" "}
                       {zone.meetingPoints.length === 1
                         ? "punto disponible"
@@ -94,8 +93,8 @@ export function DeliveryZonePicker({
       </div>
 
       {selectedZone && selectedZone.meetingPoints.length > 0 ? (
-        <div>
-          <p className="mb-2 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+        <div className="shipping-branch-browse">
+          <p className="shipping-branch-sublabel">
             Punto de encuentro · {selectedZone.name}
           </p>
           <ul
@@ -118,7 +117,7 @@ export function DeliveryZonePicker({
                     )}
                   >
                     <MapPin
-                      className="mt-0.5 h-4 w-4 shrink-0 text-teal-600"
+                      className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400"
                       aria-hidden="true"
                     />
                     <span className="min-w-0 flex-1 text-left">
@@ -126,7 +125,7 @@ export function DeliveryZonePicker({
                         {point.label}
                       </span>
                       {point.reference ? (
-                        <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
+                        <span className="mt-1 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
                           {point.reference}
                         </span>
                       ) : null}
@@ -141,19 +140,23 @@ export function DeliveryZonePicker({
           </ul>
         </div>
       ) : selectedZone ? (
-        <p className="text-xs text-amber-700 dark:text-amber-400">
+        <p className="text-sm text-amber-700 dark:text-amber-400">
           Esta zona aún no tiene puntos de encuentro configurados.
         </p>
       ) : null}
 
       {selectedPoint ? (
         <div className="shipping-branch-selected">
+          <MapPin
+            className="mt-0.5 h-4 w-4 shrink-0 text-teal-600"
+            aria-hidden="true"
+          />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
               {selectedZone?.name} · {selectedPoint.label}
             </p>
             {selectedPoint.reference ? (
-              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
                 {selectedPoint.reference}
               </p>
             ) : null}
@@ -171,7 +174,7 @@ export function DeliveryZonePicker({
         </div>
       ) : null}
 
-      <label className="txn-field mt-1">
+      <label className="txn-field">
         <span>Notas adicionales (opcional)</span>
         <textarea
           rows={2}

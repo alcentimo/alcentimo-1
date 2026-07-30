@@ -39,21 +39,26 @@ export function ShippingBranchPicker({
   return (
     <div className="shipping-branch-picker">
       <div className="shipping-branch-picker-header">
+        <p className="shipping-branch-picker-eyebrow">Oficina de retiro</p>
         <p className="shipping-branch-picker-title">
-          Sucursal de destino · {carrierLabel}
+          Sucursal {carrierLabel}
         </p>
         <p className="shipping-branch-picker-desc">
-          Elige la oficina donde retirarás tu paquete.
+          Busca por ciudad o zona y elige la oficina donde retirarás tu paquete.
         </p>
       </div>
 
       {selectedBranch ? (
         <div className="shipping-branch-selected">
+          <MapPin
+            className="mt-0.5 h-4 w-4 shrink-0 text-teal-600"
+            aria-hidden="true"
+          />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
               {formatCarrierBranchLabel(selectedBranch)}
             </p>
-            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
               {formatCarrierBranchAddress(selectedBranch)}
             </p>
           </div>
@@ -66,14 +71,14 @@ export function ShippingBranchPicker({
           </button>
         </div>
       ) : (
-        <>
+        <div className="shipping-branch-browse">
           <label className="shipping-branch-search">
             <Search className="h-4 w-4 shrink-0 text-zinc-400" aria-hidden="true" />
             <input
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar por ciudad, zona u oficina…"
+              placeholder="Ciudad, zona u oficina…"
               className="shipping-branch-search-input"
               autoComplete="off"
             />
@@ -100,14 +105,14 @@ export function ShippingBranchPicker({
                       )}
                     >
                       <MapPin
-                        className="mt-0.5 h-4 w-4 shrink-0 text-teal-600"
+                        className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400"
                         aria-hidden="true"
                       />
                       <span className="min-w-0 flex-1 text-left">
                         <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">
                           {formatCarrierBranchLabel(branch)}
                         </span>
-                        <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
+                        <span className="mt-1 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
                           {branch.address}
                         </span>
                       </span>
@@ -120,7 +125,7 @@ export function ShippingBranchPicker({
               })
             )}
           </ul>
-        </>
+        </div>
       )}
     </div>
   );

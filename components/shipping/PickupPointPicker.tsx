@@ -29,9 +29,10 @@ export function PickupPointPicker({
   return (
     <div className="shipping-branch-picker">
       <div className="shipping-branch-picker-header">
+        <p className="shipping-branch-picker-eyebrow">Retiro</p>
         <p className="shipping-branch-picker-title">Punto de retiro</p>
         <p className="shipping-branch-picker-desc">
-          Elige dónde retirarás tu pedido. No necesitas ir a una tienda física.
+          Elige dónde retirarás tu pedido. Coordinaremos el horario por WhatsApp.
         </p>
       </div>
 
