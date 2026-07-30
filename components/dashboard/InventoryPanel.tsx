@@ -5,18 +5,12 @@ import Image from "next/image";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   Loader2,
-  Download,
-  ChevronDown,
-  FileSpreadsheet,
-  FileText,
   Minus,
   MoreHorizontal,
   Pencil,
   Plus,
   Search,
-  Table,
   Trash2,
-  Upload,
   ExternalLink,
   X,
 } from "lucide-react";
@@ -37,7 +31,6 @@ import { hasMultipleVariants } from "@/lib/products/variants";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { CatalogPdfPreviewDialog } from "@/components/dashboard/CatalogPdfPreviewDialog";
 import {
   CatalogPreviewDrawer,
   CatalogPreviewTrigger,
@@ -52,23 +45,7 @@ import { shouldShowProductLimitBanner } from "@/src/config/plans";
 import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
 import { TrialLimitDialog } from "@/components/dashboard/plans/TrialLimitDialog";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
-import {
-  downloadProductImportTemplateXlsx,
-} from "@/lib/products/import-template-download";
-import {
-  exportProductsToCsv,
-  exportProductsToExcel,
-  exportProductsToPdf,
-  getCatalogPdfSourceData,
-} from "@/lib/products/export-actions";
 import type { PublishedProductResult } from "@/components/dashboard/QuickProductForm";
-import {
-  createPdfPreviewUrl,
-  downloadCsvFile,
-  downloadExcelFile,
-  revokePdfPreviewUrl,
-} from "@/lib/products/download-export";
-import { compressCatalogImagesForPdf } from "@/lib/products/pdf-client-images";
 import {
   InventoryProductOrderCell,
   reorderProductIds,
@@ -154,14 +131,6 @@ const ProductFormSheet = dynamic(
   { ssr: false },
 );
 
-const ProductImportSheet = dynamic(
-  () =>
-    import("@/components/dashboard/ProductImportSheet").then(
-      (mod) => mod.ProductImportSheet,
-    ),
-  { ssr: false },
-);
-
 interface InventoryPanelProps {
   store: Store;
   exchangeRate: number | null;
@@ -173,8 +142,6 @@ interface InventoryPanelProps {
   previewSettings: CatalogPreviewSettings;
   autoOpenCreate?: boolean;
   onAutoOpenCreateHandled?: () => void;
-  autoOpenImport?: boolean;
-  onAutoOpenImportHandled?: () => void;
   initialStockFilter?: CatalogStockFilter;
   initialSearchQuery?: string;
   initialPage?: number;
@@ -586,8 +553,6 @@ export function InventoryPanel({
   previewSettings,
   autoOpenCreate = false,
   onAutoOpenCreateHandled,
-  autoOpenImport = false,
-  onAutoOpenImportHandled,
   initialStockFilter = "all",
   initialSearchQuery = "",
   initialPage = 1,
@@ -614,7 +579,6 @@ export function InventoryPanel({
   const skipQueryEffectRef = useRef(!loadOnMount);
   const [trialDialogOpen, setTrialDialogOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [importSheetOpen, setImportSheetOpen] = useState(false);
   const [liveProductFormConfig, setLiveProductFormConfig] =
     useState(productFormConfig);
   const [sheetMode, setSheetMode] = useState<"create" | "edit">("create");
@@ -628,10 +592,6 @@ export function InventoryPanel({
   const stockAdjustInFlightRef = useRef<Set<string>>(new Set());
   const [refreshing, startRefresh] = useTransition();
   const [deleting, startDelete] = useTransition();
-  const [exporting, startExport] = useTransition();
-  const [exportingPdf, startExportPdf] = useTransition();
-  const [exportingCsv, startExportCsv] = useTransition();
-  const [exportError, setExportError] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState<string | null>(null);
 
   const markStockAdjusting = useCallback((productId: string, active: boolean) => {
@@ -657,10 +617,6 @@ export function InventoryPanel({
       }
     });
   }, []);
-  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
-  const [pdfPreviewBase64, setPdfPreviewBase64] = useState<string | null>(null);
-  const [pdfPreviewFileName, setPdfPreviewFileName] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [publishedProduct, setPublishedProduct] = useState<PublishedProductResult | null>(
     null,
@@ -857,12 +813,6 @@ export function InventoryPanel({
     onAutoOpenCreateHandled?.();
   }, [autoOpenCreate, openCreate, onAutoOpenCreateHandled, productLimitContext?.hasReachedLimit]);
 
-  useEffect(() => {
-    if (!autoOpenImport) return;
-    setImportSheetOpen(true);
-    onAutoOpenImportHandled?.();
-  }, [autoOpenImport, onAutoOpenImportHandled]);
-
   const openEdit = useCallback((productId: string) => {
     setSheetMode("edit");
     setEditingProductId(productId);
@@ -1029,74 +979,6 @@ export function InventoryPanel({
     [applyProductOrder, products, reorderEnabled],
   );
 
-  const handleExportExcel = useCallback(() => {
-    startExport(async () => {
-      setExportError(null);
-      const result = await exportProductsToExcel();
-
-      if (!result.ok || !result.fileBase64 || !result.fileName) {
-        setExportError(result.error ?? "No se pudo exportar el catálogo.");
-        return;
-      }
-
-      downloadExcelFile(result.fileBase64, result.fileName);
-    });
-  }, []);
-
-  const handleExportCsv = useCallback(() => {
-    startExportCsv(async () => {
-      setExportError(null);
-      const result = await exportProductsToCsv();
-
-      if (!result.ok || !result.fileBase64 || !result.fileName) {
-        setExportError(result.error ?? "No se pudo exportar el catálogo en CSV.");
-        return;
-      }
-
-      downloadCsvFile(result.fileBase64, result.fileName);
-    });
-  }, []);
-
-  const handleExportPdf = useCallback(() => {
-    startExportPdf(async () => {
-      setExportError(null);
-
-      const source = await getCatalogPdfSourceData();
-      if (!source.ok || !source.products) {
-        setExportError(source.error ?? "No se pudo cargar el catálogo.");
-        return;
-      }
-
-      const clientImages = await compressCatalogImagesForPdf(source.products);
-      const result = await exportProductsToPdf(clientImages);
-
-      if (!result.ok || !result.fileBase64 || !result.fileName) {
-        setExportError(result.error ?? "No se pudo generar el catálogo en PDF.");
-        return;
-      }
-
-      setPdfPreviewUrl((current) => {
-        revokePdfPreviewUrl(current);
-        return createPdfPreviewUrl(result.fileBase64!);
-      });
-      setPdfPreviewBase64(result.fileBase64);
-      setPdfPreviewFileName(result.fileName);
-      setPdfPreviewOpen(true);
-    });
-  }, []);
-
-  const handlePdfPreviewOpenChange = useCallback((open: boolean) => {
-    setPdfPreviewOpen(open);
-    if (!open) {
-      setPdfPreviewUrl((current) => {
-        revokePdfPreviewUrl(current);
-        return null;
-      });
-      setPdfPreviewBase64(null);
-      setPdfPreviewFileName(null);
-    }
-  }, []);
-
   const handleDeleteConfirm = useCallback(() => {
     if (!deleteTarget) return;
     const targetId = deleteTarget.product_id;
@@ -1199,104 +1081,16 @@ export function InventoryPanel({
       {pcBuilderEnabled ? <PCBuilderInventoryBanner /> : null}
 
       <div className="inventory-catalog-header">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              onClick={openCreate}
-              className="btn-brand inventory-primary-cta inventory-primary-cta-toolbar"
-            >
-              <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
-              Nuevo producto
-            </Button>
-            <CatalogPreviewTrigger onClick={() => setPreviewOpen(true)} />
-          </div>
-
-          <DropdownMenu
-            align="end"
-            trigger={
-              <Button
-                type="button"
-                variant="outline"
-                disabled={exporting || exportingPdf || exportingCsv}
-                aria-label="Más acciones de inventario"
-                className="h-10 shrink-0 gap-2 px-3 text-sm font-semibold sm:px-4"
-              >
-                {exporting || exportingPdf || exportingCsv ? (
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
-                ) : (
-                  <MoreHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
-                )}
-                <span>Más acciones</span>
-                <ChevronDown className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
-              </Button>
-            }
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            onClick={openCreate}
+            className="btn-brand inventory-primary-cta inventory-primary-cta-toolbar"
           >
-            {(close) => (
-              <>
-                <DropdownMenuItem
-                  onClick={() => {
-                    close();
-                    setImportSheetOpen(true);
-                  }}
-                >
-                  <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-                  Importar productos
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={exporting}
-                  onClick={() => {
-                    close();
-                    handleExportExcel();
-                  }}
-                >
-                  {exporting ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden="true" />
-                  )}
-                  Exportar Excel
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={exportingPdf}
-                  onClick={() => {
-                    close();
-                    handleExportPdf();
-                  }}
-                >
-                  {exportingPdf ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-                  )}
-                  Exportar PDF
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={exportingCsv}
-                  onClick={() => {
-                    close();
-                    handleExportCsv();
-                  }}
-                >
-                  {exportingCsv ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Table className="h-3.5 w-3.5" aria-hidden="true" />
-                  )}
-                  Exportar CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    close();
-                    downloadProductImportTemplateXlsx();
-                  }}
-                >
-                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
-                  Descargar plantilla
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenu>
+            <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
+            Nuevo producto
+          </Button>
+          <CatalogPreviewTrigger onClick={() => setPreviewOpen(true)} />
         </div>
       </div>
 
@@ -1434,12 +1228,6 @@ export function InventoryPanel({
         </p>
       ) : null}
 
-      {exportError && (
-        <p className="mb-3 text-xs text-red-600 dark:text-red-400" role="alert">
-          {exportError}
-        </p>
-      )}
-
       <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950">
           <div className="inventory-mobile-list" aria-label="Lista de productos">
             {inventoryList}
@@ -1552,12 +1340,6 @@ export function InventoryPanel({
         </div>
       ) : null}
 
-      <ProductImportSheet
-        open={importSheetOpen}
-        onOpenChange={setImportSheetOpen}
-        onImported={refreshProducts}
-      />
-
       <ProductFormSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
@@ -1595,14 +1377,6 @@ export function InventoryPanel({
         exchangeRate={exchangeRate}
         exchangeRateUpdatedAt={exchangeRateUpdatedAt}
         settings={previewSettings}
-      />
-
-      <CatalogPdfPreviewDialog
-        open={pdfPreviewOpen}
-        onOpenChange={handlePdfPreviewOpenChange}
-        previewUrl={pdfPreviewUrl}
-        fileBase64={pdfPreviewBase64}
-        fileName={pdfPreviewFileName}
       />
 
       <AlertDialog

@@ -19,7 +19,6 @@ interface OnboardingExperienceProps {
   trialEligible: boolean;
   trialActive: boolean;
   onOpenCreateProduct: () => void;
-  onOpenImport: () => void;
 }
 
 export function OnboardingExperience({
@@ -31,7 +30,6 @@ export function OnboardingExperience({
   trialEligible,
   trialActive,
   onOpenCreateProduct,
-  onOpenImport,
 }: OnboardingExperienceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -103,7 +101,6 @@ export function OnboardingExperience({
           storeId={storeId}
           setupStatus={setupStatus}
           onOpenCreateProduct={onOpenCreateProduct}
-          onOpenImport={onOpenImport}
         />
       ) : null}
     </>

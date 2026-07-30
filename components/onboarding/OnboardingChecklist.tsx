@@ -24,7 +24,6 @@ interface OnboardingChecklistProps {
   storeId: string;
   setupStatus: OnboardingSetupStatus;
   onOpenCreateProduct: () => void;
-  onOpenImport: () => void;
 }
 
 type ChecklistStepId = "products" | "payments" | "share";
@@ -40,7 +39,6 @@ export function OnboardingChecklist({
   storeId,
   setupStatus,
   onOpenCreateProduct,
-  onOpenImport,
 }: OnboardingChecklistProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
@@ -56,7 +54,7 @@ export function OnboardingChecklist({
       {
         id: "products",
         title: "Crear productos",
-        description: "Publica tu catálogo con productos reales o importados.",
+        description: "Publica tu catálogo con productos reales.",
         done: setupStatus.hasProducts,
       },
       {
@@ -172,15 +170,6 @@ export function OnboardingChecklist({
                         onClick={onOpenCreateProduct}
                       >
                         Crear producto
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-[11px]"
-                        onClick={onOpenImport}
-                      >
-                        Importar Excel
                       </Button>
                     </div>
                   ) : null}

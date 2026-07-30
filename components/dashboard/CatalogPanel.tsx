@@ -58,14 +58,9 @@ export function CatalogPanel({
   const [autoOpenCreate, setAutoOpenCreate] = useState(
     () => searchParams.get("nuevo") === "1",
   );
-  const [autoOpenImport, setAutoOpenImport] = useState(false);
 
   const handleOpenCreate = useCallback(() => {
     setAutoOpenCreate(true);
-  }, []);
-
-  const handleOpenImport = useCallback(() => {
-    setAutoOpenImport(true);
   }, []);
 
   const handleSampleProductsCreated = useCallback(() => {
@@ -111,7 +106,6 @@ export function CatalogPanel({
           trialEligible={productLimitContext?.trial.eligible ?? false}
           trialActive={productLimitContext?.trial.active ?? false}
           onOpenCreateProduct={handleOpenCreate}
-          onOpenImport={handleOpenImport}
         />
       </Suspense>
 
@@ -127,8 +121,6 @@ export function CatalogPanel({
         previewSettings={previewSettings}
         autoOpenCreate={autoOpenCreate}
         onAutoOpenCreateHandled={() => setAutoOpenCreate(false)}
-        autoOpenImport={autoOpenImport}
-        onAutoOpenImportHandled={() => setAutoOpenImport(false)}
         initialStockFilter={initialStockFilter}
         initialSearchQuery={initialSearchQuery}
         initialPage={initialPage}
