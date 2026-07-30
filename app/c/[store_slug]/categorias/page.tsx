@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { CatalogCategoriesView } from "@/components/catalog-transactional/CatalogCategoriesView";
+import { CatalogProductGridSkeleton } from "@/components/catalog/CatalogProductGridSkeleton";
 import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
 
 export const dynamic = "force-dynamic";
@@ -67,7 +68,13 @@ export default async function CatalogCategoriesPage({
   const { categoria, product } = await searchParams;
 
   return (
-    <Suspense fallback={<div className="txn-catalog-loading">Cargando…</div>}>
+    <Suspense
+      fallback={
+        <div className="txn-catalog-loading">
+          <CatalogProductGridSkeleton count={8} />
+        </div>
+      }
+    >
       <CategoriesContent
         storeSlug={storeSlug}
         categorySlug={categoria}

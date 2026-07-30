@@ -1,34 +1,93 @@
-import { Suspense, use } from "react";
-import { PublicCatalogPageClient } from "@/components/catalog-transactional/PublicCatalogPageClient";
-import { CatalogStoreIdentityHeader } from "@/components/catalog-transactional/CatalogStoreIdentityHeader";
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
+import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
+import { CatalogProductGridSkeleton } from "@/components/catalog/CatalogProductGridSkeleton";
 import { getPublicStoreBySlug } from "@/lib/stores";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 interface CatalogPageProps {
   params: Promise<{ store_slug: string }>;
+  searchParams: Promise<{
+    checkout?: string;
+    carrito?: string;
+    product?: string;
+  }>;
 }
 
-/**
- * Página síncrona: cero awaits de inventario.
- * Toda la data vive en PublicCatalogPageClient (useEffect).
- */
-export default function TransactionalCatalogPage({ params }: CatalogPageProps) {
-  const { store_slug: storeSlug } = use(params);
+async function CatalogContent({
+  storeSlug,
+  openCheckoutInitially,
+  openCartInitially,
+  initialProductId,
+}: {
+  storeSlug: string;
+  openCheckoutInitially: boolean;
+  openCartInitially: boolean;
+  initialProductId?: string | null;
+}) {
+  const data = await getPublicCatalogPageData(storeSlug);
+  if (!data) notFound();
+
+  const {
+    store,
+    products,
+    exchangeRate,
+    purchaseInfo,
+    catalogDesign,
+    catalogCurrency,
+    storeCategories,
+    locations,
+    locationStocks,
+    totalCount,
+  } = data;
+
+  return (
+    <TransactionalCatalog
+      store={store}
+      products={products}
+      storeCategories={storeCategories}
+      exchangeRate={exchangeRate}
+      purchaseInfo={purchaseInfo}
+      catalogDesign={catalogDesign}
+      catalogCurrency={catalogCurrency}
+      openCheckoutInitially={openCheckoutInitially}
+      openCartInitially={openCartInitially}
+      initialProductId={initialProductId}
+      locations={locations}
+      locationStocks={locationStocks}
+      catalogTotalCount={totalCount}
+      enableServerPagination
+    />
+  );
+}
+
+export default async function TransactionalCatalogPage({
+  params,
+  searchParams,
+}: CatalogPageProps) {
+  const { store_slug: storeSlug } = await params;
+  const query = await searchParams;
+  const openCheckoutInitially = query.checkout === "1";
+  const openCartInitially = query.carrito === "1";
+  const initialProductId = query.product?.trim() || null;
 
   return (
     <Suspense
       fallback={
-        <div className="txn-catalog space-y-4 px-1 py-2">
-          <CatalogStoreIdentityHeader
-            storeName={storeSlug.replace(/-/g, " ")}
-            eyebrow="Catálogo"
-          />
-          <p className="py-8 text-center text-sm text-zinc-500">
-            Preparando el catálogo…
-          </p>
+        <div className="txn-catalog-loading">
+          <CatalogProductGridSkeleton count={8} />
         </div>
       }
     >
-      <PublicCatalogPageClient />
+      <CatalogContent
+        storeSlug={storeSlug}
+        openCheckoutInitially={openCheckoutInitially}
+        openCartInitially={openCartInitially}
+        initialProductId={initialProductId}
+      />
     </Suspense>
   );
 }

@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { use } from "react";
-import { PublicCatalogLayoutClient } from "@/components/catalog-transactional/PublicCatalogLayoutClient";
+import { CartProvider } from "@/components/catalog-transactional/CartProvider";
+import { CatalogAppShell } from "@/components/catalog-transactional/CatalogAppShell";
+import { CustomerSessionProvider } from "@/components/catalog-transactional/CustomerSessionProvider";
+import { PromotionProvider } from "@/components/catalog-transactional/PromotionProvider";
+import { getCartAuthContext } from "@/lib/customers/get-cart-auth-context";
+import { getCustomerCheckoutContext } from "@/lib/customers/get-customer-checkout-context";
+import { getCatalogPromotionContext } from "@/lib/promotions/get-catalog-promotion";
+import { recordCatalogVisit } from "@/lib/analytics/track-catalog-visit";
+import { CatalogPwaHeadLinks } from "@/components/catalog-transactional/CatalogPwaHeadLinks";
+import { getPublicCatalogThemeContext } from "@/lib/catalog/get-public-catalog-theme";
+import { cn } from "@/lib/cn";
 import {
   getCatalogCanonicalUrl,
   getStoreCatalogManifestAbsoluteUrl,
@@ -9,6 +18,10 @@ import {
 import { getRequestOrigin } from "@/lib/pwa/get-request-origin";
 import { getStoreManifestTheme } from "@/lib/pwa/get-store-manifest-theme";
 import { getPublicStoreBySlug } from "@/lib/stores";
+import { getOpenAiApiKey } from "@/lib/env/server";
+import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
+import { getStorefrontSupportBranding } from "@/lib/catalog/get-storefront-support-branding";
+import { resolveStorefrontAssistantAvatar } from "@/lib/catalog/resolve-storefront-assistant-avatar";
 
 interface TransactionalCatalogLayoutProps {
   children: ReactNode;
@@ -26,7 +39,10 @@ export async function generateMetadata({
   }
 
   const origin = await getRequestOrigin();
-  const manifestAbsoluteUrl = getStoreCatalogManifestAbsoluteUrl(store.slug, origin);
+  const manifestAbsoluteUrl = getStoreCatalogManifestAbsoluteUrl(
+    store.slug,
+    origin,
+  );
   const canonicalUrl = getCatalogCanonicalUrl(store.slug, origin);
   const storeName = store.name.trim();
   const theme = await getStoreManifestTheme(store);
@@ -79,19 +95,103 @@ export async function generateMetadata({
   };
 }
 
-/**
- * Layout síncrono (sin awaits de carrito/tema/settings).
- * El chrome se hidrata en PublicCatalogLayoutClient.
- */
-export default function TransactionalCatalogLayout({
+export default async function TransactionalCatalogLayout({
   children,
   params,
 }: TransactionalCatalogLayoutProps) {
-  const { store_slug: storeSlug } = use(params);
+  const { store_slug: storeSlug } = await params;
+  const cartAuth = await getCartAuthContext(storeSlug);
+  const customerSession = await getCustomerCheckoutContext(storeSlug);
+  const store = await getPublicStoreBySlug(storeSlug);
+  const promotionContext = await getCatalogPromotionContext(
+    storeSlug,
+    customerSession.isCustomer,
+  );
+
+  if (cartAuth.storeId) {
+    void recordCatalogVisit(storeSlug, cartAuth.storeId, cartAuth.userId);
+  }
+
+  const storeLogoUrl =
+    store?.pwa_icon_192_url ?? store?.pwa_icon_512_url ?? store?.logo_url ?? null;
+  const origin = await getRequestOrigin();
+  const manifestAbsoluteUrl = getStoreCatalogManifestAbsoluteUrl(
+    storeSlug,
+    origin,
+  );
+  const themeContext = await getPublicCatalogThemeContext(storeSlug);
+  const assistantEnabled = Boolean(getOpenAiApiKey());
+  const storeSettings = cartAuth.storeId
+    ? await getPublicStoreSettingsConfig(cartAuth.storeId)
+    : null;
+  const wholesaleEnabled =
+    storeSettings?.catalogCurrency.wholesaleEnabled ?? false;
+  const whatsappPhone = storeSettings?.contact.whatsappPhone?.trim() || null;
+  const supportBranding = store
+    ? await getStorefrontSupportBranding(store)
+    : null;
+  const storeLogoFallback = supportBranding?.avatarUrl ?? storeLogoUrl;
+  const assistantAvatar = resolveStorefrontAssistantAvatar(
+    storeSettings?.catalogDesign.assistantAvatar,
+    storeLogoFallback,
+  );
 
   return (
-    <PublicCatalogLayoutClient storeSlug={storeSlug}>
-      {children}
-    </PublicCatalogLayoutClient>
+    <div
+      className={cn(
+        "txn-catalog-root",
+        themeContext?.rubroClass,
+        themeContext?.designClasses,
+      )}
+      style={themeContext?.style}
+    >
+      <CatalogPwaHeadLinks
+        manifestAbsoluteUrl={manifestAbsoluteUrl}
+        storeSlug={storeSlug}
+      />
+      <CartProvider
+        storeSlug={storeSlug}
+        storeId={cartAuth.storeId}
+        userId={cartAuth.userId}
+        isCustomer={cartAuth.isCustomer}
+        wholesaleEnabled={wholesaleEnabled}
+      >
+        <PromotionProvider value={promotionContext}>
+          <CustomerSessionProvider
+            storeSlug={storeSlug}
+            initial={{
+              isCustomer: customerSession.isCustomer,
+              userId: customerSession.userId,
+              displayName: customerSession.displayName,
+              phone: customerSession.phone,
+              contactEmail: customerSession.contactEmail,
+            }}
+          >
+            <CatalogAppShell
+              storeSlug={storeSlug}
+              storeName={store?.name ?? ""}
+              storeLogoUrl={storeLogoUrl}
+              storeDescription={store?.description ?? null}
+              locationHours={storeSettings?.locationHours ?? null}
+              storeRubro={store?.rubro_tienda}
+              enablePcBuilder={store?.enable_pc_builder}
+              assistantEnabled={assistantEnabled}
+              whatsappPhone={whatsappPhone}
+              supportAvatarUrl={assistantAvatar.url}
+              supportAvatarAnimation={assistantAvatar.animation}
+              supportAvatarAnimated={assistantAvatar.animated}
+              supportMerchantName={supportBranding?.merchantName ?? null}
+              customerAccountMode={
+                storeSettings?.checkout?.accountMode === "libre"
+                  ? "libre"
+                  : "hibrido"
+              }
+            >
+              {children}
+            </CatalogAppShell>
+          </CustomerSessionProvider>
+        </PromotionProvider>
+      </CartProvider>
+    </div>
   );
 }

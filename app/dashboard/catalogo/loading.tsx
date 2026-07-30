@@ -1,4 +1,5 @@
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import { InventoryListSkeleton } from "@/components/dashboard/InventoryListSkeleton";
 
 export default function CatalogoLoading() {
   return (
@@ -7,9 +8,7 @@ export default function CatalogoLoading() {
         title="Catálogo"
         description="Gestiona lo que vendes: productos, fotos, precios y stock."
       />
-      <div className="rounded-xl border border-zinc-200/80 bg-white px-4 py-8 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
-        Preparando el listado de productos…
-      </div>
+      <InventoryListSkeleton rows={5} showReorderColumn={false} />
     </div>
   );
 }
