@@ -160,7 +160,7 @@ export const FASHION_PRODUCT_KIND_OPTIONS: ReadonlyArray<{
   {
     value: "calzado",
     label: "Calzado",
-    description: "Numeraciones EUR / US y colores",
+    description: "Numeración EUR o US y colores",
   },
   {
     value: "ambos",
@@ -233,6 +233,70 @@ export function filterSizesForFashionKind(
     return sizes.filter((size) => isFashionShoeSize(size));
   }
   return [...sizes];
+}
+
+/** Sistema de numeración de calzado dentro del rubro Ropa/Calzado/Moda. */
+export type FashionShoeSizeSystem = "eur" | "us";
+
+export const FASHION_SHOE_SIZE_SYSTEM_OPTIONS: ReadonlyArray<{
+  value: FashionShoeSizeSystem;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "eur",
+    label: "EUR",
+    description: "Numeración europea",
+  },
+  {
+    value: "us",
+    label: "US",
+    description: "Numeración americana",
+  },
+];
+
+const US_SHOE_PRESET_SET = new Set<string>(ROPA_MODA_SHOE_SIZE_US_PRESETS);
+
+/** True si la talla es claramente US. */
+export function isFashionUsShoeSize(size: string): boolean {
+  const trimmed = size.trim();
+  if (!trimmed) return false;
+  if (US_SHOE_PRESET_SET.has(trimmed)) return true;
+  return /^us\s*\d+(\.\d+)?$/i.test(trimmed);
+}
+
+/** True si la talla es de calzado EUR (incluye legacy numérico). */
+export function isFashionEurShoeSize(size: string): boolean {
+  if (!isFashionShoeSize(size)) return false;
+  return !isFashionUsShoeSize(size);
+}
+
+/** Infiere EUR vs US a partir de las tallas de calzado guardadas. */
+export function inferFashionShoeSizeSystem(
+  sizes: readonly string[],
+): FashionShoeSizeSystem {
+  const shoes = sizes.filter((size) => isFashionShoeSize(size));
+  if (shoes.length === 0) return "eur";
+  const usCount = shoes.filter((size) => isFashionUsShoeSize(size)).length;
+  const eurCount = shoes.filter((size) => isFashionEurShoeSize(size)).length;
+  if (usCount > eurCount) return "us";
+  return "eur";
+}
+
+/**
+ * Conserva tallas de ropa y solo el sistema de calzado activo.
+ * Las tallas del otro sistema se ocultan/eliminan al cambiar.
+ */
+export function filterSizesForShoeSystem(
+  sizes: readonly string[],
+  system: FashionShoeSizeSystem,
+): string[] {
+  return sizes.filter((size) => {
+    if (!isFashionShoeSize(size)) return true;
+    return system === "us"
+      ? isFashionUsShoeSize(size)
+      : isFashionEurShoeSize(size);
+  });
 }
 
 /** Cm sugeridos para una talla de calzado, o null si no hay referencia. */

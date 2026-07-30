@@ -20,10 +20,16 @@ export {
   normalizeShoeLengthCm,
   getFashionColorSwatch,
   type FashionProductKind,
+  type FashionShoeSizeSystem,
   FASHION_PRODUCT_KIND_OPTIONS,
+  FASHION_SHOE_SIZE_SYSTEM_OPTIONS,
   isFashionClothingSize,
+  isFashionEurShoeSize,
+  isFashionUsShoeSize,
   inferFashionProductKind,
+  inferFashionShoeSizeSystem,
   filterSizesForFashionKind,
+  filterSizesForShoeSystem,
 } from "@/lib/rubros/modules/ropa-moda/config";
 
 export {

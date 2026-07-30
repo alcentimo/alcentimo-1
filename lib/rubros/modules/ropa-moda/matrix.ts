@@ -7,6 +7,7 @@ import {
   isFashionShoeSize,
   normalizeShoeLengthCm,
   type FashionProductKind,
+  type FashionShoeSizeSystem,
 } from "@/lib/rubros/modules/ropa-moda/config";
 
 export function fashionVariantKey(talla: string, color: string): string {
@@ -70,12 +71,19 @@ export function emptyFashionMatrix(): FashionMatrixState {
 }
 
 const DEFAULT_CLOTHING_SIZES = ["S", "M", "L", "XL"] as const;
-const DEFAULT_SHOE_SIZES = [
+const DEFAULT_SHOE_SIZES_EUR = [
   "EUR 38",
   "EUR 39",
   "EUR 40",
   "EUR 41",
   "EUR 42",
+] as const;
+const DEFAULT_SHOE_SIZES_US = [
+  "US 7",
+  "US 8",
+  "US 9",
+  "US 10",
+  "US 11",
 ] as const;
 const DEFAULT_COLORS = ["Negro", "Blanco"] as const;
 
@@ -111,9 +119,13 @@ function buildMatrix(
 
 export function createDefaultFashionMatrix(
   kind: FashionProductKind = "ropa",
+  shoeSystem: FashionShoeSizeSystem = "eur",
 ): FashionMatrixState {
   if (kind === "calzado") {
-    return buildMatrix(DEFAULT_SHOE_SIZES, DEFAULT_COLORS);
+    return buildMatrix(
+      shoeSystem === "us" ? DEFAULT_SHOE_SIZES_US : DEFAULT_SHOE_SIZES_EUR,
+      DEFAULT_COLORS,
+    );
   }
   return buildMatrix(DEFAULT_CLOTHING_SIZES, DEFAULT_COLORS);
 }
