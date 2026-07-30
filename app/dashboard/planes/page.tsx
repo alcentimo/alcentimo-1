@@ -27,6 +27,10 @@ import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { buildPlanPricingTiers } from "@/lib/plans/plan-settings";
 import { getOpenPromoOffersForUser } from "@/lib/plans/subscription-promo";
+import {
+  isBillingPeriod,
+  resolvePeriodEndsAtFromStart,
+} from "@/lib/plans/proration";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +45,16 @@ export default async function PlanesPage() {
   const { authUser, store } = session;
   const trial = resolveProTrialStatus(authUser.profile);
   const showProTrialBanner = shouldShowProTrialBanner(authUser.profile);
+  const currentBillingPeriod =
+    authUser.profile?.billing_period &&
+    isBillingPeriod(authUser.profile.billing_period)
+      ? authUser.profile.billing_period
+      : "monthly";
+  const subscriptionPeriodEndsAt = resolvePeriodEndsAtFromStart(
+    authUser.profile?.subscription_period_started_at,
+    currentBillingPeriod,
+    authUser.profile?.subscription_period_ends_at,
+  );
   const [
     productLimitContext,
     exchangeRateRow,
@@ -132,12 +146,8 @@ export default async function PlanesPage() {
         subscriptionPeriodStartedAt={
           authUser.profile?.subscription_period_started_at ?? null
         }
-        subscriptionPeriodEndsAt={
-          authUser.profile?.subscription_period_ends_at ?? null
-        }
-        currentBillingPeriod={
-          authUser.profile?.billing_period === "annual" ? "annual" : "monthly"
-        }
+        subscriptionPeriodEndsAt={subscriptionPeriodEndsAt}
+        currentBillingPeriod={currentBillingPeriod}
         pagoMovil={pagoMovil}
         pricingTiers={pricingTiers}
         showCouponField={platformSettings.plansCouponBoxEnabled}

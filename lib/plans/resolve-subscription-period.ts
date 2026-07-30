@@ -34,6 +34,17 @@ export async function resolveCurrentPeriodEndsAt(
       ? profile.billing_period
       : "monthly";
 
+  if (profile?.subscription_period_started_at) {
+    return {
+      periodEndsAt: addBillingPeriod(
+        new Date(profile.subscription_period_started_at),
+        billingPeriod,
+      ).toISOString(),
+      billingPeriod,
+      fromPlan,
+    };
+  }
+
   if (profile?.subscription_period_ends_at) {
     return {
       periodEndsAt: profile.subscription_period_ends_at,

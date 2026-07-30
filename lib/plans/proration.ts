@@ -15,6 +15,7 @@ export type { PlanChargeTable };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+/** Días de referencia para prorrateo de crédito (no para fecha de corte). */
 export const BILLING_PERIOD_DAYS: Record<BillingPeriod, number> = {
   monthly: 30,
   annual: 365,
@@ -91,10 +92,44 @@ export function calculateRemainingDays(
   return Math.ceil(diff / MS_PER_DAY);
 }
 
+/**
+ * Suma un ciclo de facturación en calendario (mes o año exacto).
+ * Ej.: 30 jul → 30 ago (no +30 días → 29 ago).
+ * Si el día no existe en el mes destino (31 ene → feb), se ajusta al último día válido.
+ */
 export function addBillingPeriod(from: Date, billing: BillingPeriod): Date {
   const result = new Date(from.getTime());
-  result.setUTCDate(result.getUTCDate() + BILLING_PERIOD_DAYS[billing]);
+
+  if (billing === "annual") {
+    result.setUTCFullYear(result.getUTCFullYear() + 1);
+    return result;
+  }
+
+  const dayOfMonth = result.getUTCDate();
+  result.setUTCDate(1);
+  result.setUTCMonth(result.getUTCMonth() + 1);
+  const daysInTargetMonth = new Date(
+    Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  result.setUTCDate(Math.min(dayOfMonth, daysInTargetMonth));
   return result;
+}
+
+/** Fin de ciclo a partir del inicio (corrige cortes guardados con +30 días). */
+export function resolvePeriodEndsAtFromStart(
+  startedAt: string | Date | null | undefined,
+  billing: BillingPeriod,
+  fallbackEndsAt?: string | Date | null,
+): string | null {
+  if (startedAt) {
+    const start = new Date(startedAt);
+    if (!Number.isNaN(start.getTime())) {
+      return addBillingPeriod(start, billing).toISOString();
+    }
+  }
+  if (!fallbackEndsAt) return null;
+  const ends = new Date(fallbackEndsAt);
+  return Number.isNaN(ends.getTime()) ? null : ends.toISOString();
 }
 
 /**
