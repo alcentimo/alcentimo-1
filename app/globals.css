@@ -8269,6 +8269,22 @@ body {
   @apply space-y-3;
 }
 
+.shipping-branch-filters {
+  @apply grid gap-3 sm:grid-cols-2;
+}
+
+.shipping-branch-filter {
+  @apply flex min-w-0 flex-col gap-1.5;
+}
+
+.shipping-branch-select {
+  @apply min-h-11 w-full appearance-none rounded-2xl border border-zinc-200/90 bg-zinc-50/80 px-3.5 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-teal-500/60 focus:ring-2 focus:ring-teal-500/20 disabled:cursor-not-allowed disabled:opacity-55 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-100;
+}
+
+.shipping-branch-count {
+  @apply text-xs font-medium text-zinc-500;
+}
+
 .shipping-branch-sublabel {
   @apply text-xs font-medium text-zinc-500;
 }
@@ -8290,7 +8306,7 @@ body {
 }
 
 .shipping-branch-list {
-  @apply max-h-64 space-y-0 overflow-y-auto rounded-2xl border border-zinc-200/70 bg-white dark:border-zinc-800 dark:bg-zinc-950;
+  @apply max-h-[min(22rem,50vh)] space-y-0 overflow-y-auto overscroll-contain rounded-2xl border border-zinc-200/70 bg-white dark:border-zinc-800 dark:bg-zinc-950;
 }
 
 .shipping-branch-option {

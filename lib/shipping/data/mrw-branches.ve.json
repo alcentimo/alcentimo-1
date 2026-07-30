@@ -1,0 +1,1766 @@
+[
+  {
+    "code": "2000",
+    "name": "Puerto Ayacucho",
+    "city": "Puerto Ayacucho",
+    "state": "Amazonas",
+    "address": "AV. PRINCIPAL DE LA URB. ANDRÉS ELOY BLANCO, EDIF. BELLMAR, LOCAL Nº 1"
+  },
+  {
+    "code": "03010",
+    "name": "Anaco",
+    "city": "Anaco",
+    "state": "Anzoátegui",
+    "address": "AV. JOSÉ ANTONIO ANZOÁTEGUI, C.C. ANACO CENTER, LOCAL 79-C, ANACO, EDO. ANZOÁTEGUI"
+  },
+  {
+    "code": "03000",
+    "name": "Barcelona",
+    "city": "Barcelona",
+    "state": "Anzoátegui",
+    "address": "AV. FUERZAS ARMADAS, ESQUINA CALLE EULALIA BUROZ, EDIF. AZGAN, PISO PB, LOCAL 02, SECTOR CENTRO, BARCELONA"
+  },
+  {
+    "code": "03100",
+    "name": "Nueva Barcelona",
+    "city": "Barcelona",
+    "state": "Anzoátegui",
+    "address": "PROLONGACIÓN AV. FUERZAS ARMADAS, C.C. LOS CHAGUARAMOS, LOCAL 4, SECTOR NUEVA BARCELONA, ANZOÁTEGUI"
+  },
+  {
+    "code": "03110",
+    "name": "Clarines",
+    "city": "Clarines",
+    "state": "Anzoátegui",
+    "address": "AV. FERNÁNDEZ PADILLA, MINI C.C. LOS COCOS, C.C. “MTC”, LOCAL 5, PB, CLARINES"
+  },
+  {
+    "code": "03020",
+    "name": "El Tigre",
+    "city": "El Tigre",
+    "state": "Anzoátegui",
+    "address": "AV. FRANCISCO DE MIRANDA CON CALLE 18 SUR, EDIF. LOS GERANIOS Nº 2 Y 3, FRENTE A LA PANADERÍA SIRIA"
+  },
+  {
+    "code": "03130",
+    "name": "El Tigre Centro",
+    "city": "El Tigre",
+    "state": "Anzoátegui",
+    "address": "CARRERA 2 SUR ENTRE CALLES 2 Y 3, EDIF. HANA, PISO 1, LOCAL Nº 1, SECTOR PUEBLO NUEVO SUR, EL TIGRE, ESTADO ANZOÁTEGUI"
+  },
+  {
+    "code": "x0188",
+    "name": "El Tigrito",
+    "city": "El Tigrito",
+    "state": "Anzoátegui",
+    "address": "Centro Comercial Deca, Pb, Local Nro. 2, Av. Fernández Padilla, Municipio San José De Guanipa, Estado Anzoátegui. Ver detalles"
+  },
+  {
+    "code": "03030",
+    "name": "Las Garzas",
+    "city": "Lechería",
+    "state": "Anzoátegui",
+    "address": "AV. JORGE RODRÍGUEZ, LOCAL MRW 1, SECTOR LAS GARZAS, LECHERÍA, ANZOÁTEGUI"
+  },
+  {
+    "code": "03120",
+    "name": "Lechería",
+    "city": "Lechería",
+    "state": "Anzoátegui",
+    "address": "PROLONGACIÓN AV. PRINCIPAL DE LECHERÍA, C.C. LA CONCHA, NIVEL PB, LOCAL 7, AL LADO DE LA BODEGUILLA, LECHERÍA, ESTADO ANZOÁTEGUI"
+  },
+  {
+    "code": "03080",
+    "name": "Pariaguán",
+    "city": "Pariaguán",
+    "state": "Anzoátegui",
+    "address": "CALLE BOLÍVAR CRUCE CON COLOMBIA, SECTOR CENTRO, FRENTE A LA COOPERATIVA DE TRANSPORTE PARIAGUÁN EXPRESS, A POCOS METROS DE FARMACIA CONTINENTAL"
+  },
+  {
+    "code": "03050",
+    "name": "Píritu",
+    "city": "Píritu",
+    "state": "Anzoátegui",
+    "address": "AV. FERNANDO PEÑALVER, QTA. DON CARLO, LOCAL 3, PÍRITU, EDO. ANZOÁTEGUI"
+  },
+  {
+    "code": "x0187",
+    "name": "Pto La Cruz",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "Calle Miranda, Cruce Con Calle Bolivar, Edif. Hotel Senador, Piso Pb, Zona Centro, Puerto La Cruz Ver detalles"
+  },
+  {
+    "code": "03040",
+    "name": "Puerto La Cruz",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "AV. MUNICIPAL, C.C. ESTACIÓN DE SERVICIO SANDOVAL, NIVEL PB, LOCAL Nº 137-A, URB. PUEBLO NUEVO, PUERTO LA CRUZ, ANZOÁTEGUI"
+  },
+  {
+    "code": "03090",
+    "name": "Puerto La Cruz Centro",
+    "city": "Puerto La Cruz",
+    "state": "Anzoátegui",
+    "address": "CALLE RICAURTE, EDIF. D JORGE, PISO PB, LOCAL Nº 1, SECTOR CASCO CENTRAL, PUERTO LA CRUZ, ANZOÁTEGUI"
+  },
+  {
+    "code": "04010",
+    "name": "Guasdualito",
+    "city": "Guasdualito",
+    "state": "Apure",
+    "address": "CALLE CEDEÑO ENTRE CARRERA ARISMENDI Y GENERAL SALÓN CASA NRO S/N SECTOR CENTRO GUASDUALITO APURE"
+  },
+  {
+    "code": "04020",
+    "name": "San Fernando Centro",
+    "city": "San Fernando",
+    "state": "Apure",
+    "address": "AV CARACAS A 50 MTRS DEL PASEO LIBERTADOR, CENTRO EMPRESARIAL GENESIS, PB LOCAL 1, SECTOR CENTRO SAN FERNANDO DE APURE"
+  },
+  {
+    "code": "05120",
+    "name": "La Encrucijada",
+    "city": "La Encrucijada",
+    "state": "Aragua",
+    "address": "AV. PRINCIPAL, C.C. LOS LAURELES, NIVEL P.B, LOCAL 12, SECTOR LA ENCRUCIJADA DE TURMERO. ESTADO ARAGUA"
+  },
+  {
+    "code": "05030",
+    "name": "La Victoria",
+    "city": "La Victoria",
+    "state": "Aragua",
+    "address": "AV. VICTORIA LOCAL #2 PB, FRENTE DEL ESTADIO FRANCISCO DE MIRANDA, LA VICTORIA EDO. ARAGUA"
+  },
+  {
+    "code": "05080",
+    "name": "Las Tejerias",
+    "city": "Las Tejerías",
+    "state": "Aragua",
+    "address": "C. MIRANDA, LOCAL B-44 A 2, CASCO CENTRAL. A DOS CUADRAS DE LA PLAZA BOLIVAR. MUNICIPIO SANTOS MICHELENA; EDO: ARAGUA"
+  },
+  {
+    "code": "x0192",
+    "name": "Los Cedros",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Calle 5 De Julio, Cruce Con Cjn \"в\" Local Nro. 116 Barrio Libertad Maracay Estado Aragua Ver detalles"
+  },
+  {
+    "code": "05040",
+    "name": "Maracay 5 de Julio",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "CALLE 5 DE JULIO, ENTRE PAEZ Y MIRANDA. EDIF SANTIMONE. P.B.B LOCAL 3, ZONA CENTRO, DIAGONAL A IMGEVE, MARACAY ESTADO ARAGUA"
+  },
+  {
+    "code": "05130",
+    "name": "Maracay Base Aragua",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "AV. LAS DELICIAS C.C. HOTEL PASEO LAS DELICIAS II NIVEL PB LOCAL 12 URB BASE ARAGUA MARACAY"
+  },
+  {
+    "code": "05140",
+    "name": "Maracay La Cooperativa",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "AV. PRINCIPAL DE LA COOPERATIVA, ENTRE CALLES GUAICAIPURO Y RAFAEL URDANETA, LOCAL 13-B, Nº 132. DIAGONAL AL AMBULATORIO DEL NORTE"
+  },
+  {
+    "code": "05100",
+    "name": "Maracay La Democracia",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "AV AYACUCHO NORTE NRO 83, BARRIO LA DEMOCRACIA, MARACAY EDO ARAGUA"
+  },
+  {
+    "code": "x0189",
+    "name": "Maracay La Romana",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "Centro Comercial Tiuna, Av. Bolívar Oeste Nro. 198, Sector La Romana, Municipio Girardot, Estado Aragua. Ver detalles"
+  },
+  {
+    "code": "05160",
+    "name": "Maracay Santa Rosa",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "CALLE CARABOBO, Nº 75-A, SECTOR SANTA ROSA. MARACAY, ESTADO ARAGUA"
+  },
+  {
+    "code": "05010",
+    "name": "Maracay Zona Industrial",
+    "city": "Maracay",
+    "state": "Aragua",
+    "address": "AV. ARAGUA CENTRO Nº 58, ENTRE CALLES CLAVELLINAS Y URDANETA, BARRIO BOLIVAR I, MARACAY EDO. ARAGUA"
+  },
+  {
+    "code": "x0190",
+    "name": "S.sebastian D Los Reyes",
+    "city": "San Sebastián de los Reyes",
+    "state": "Aragua",
+    "address": "Calle La Pista, Local Nro 03, Sector El Polvero, San Sebastian De Los Reyes Aragua. Ver detalles"
+  },
+  {
+    "code": "05090",
+    "name": "San Sebastian de Los Reyes",
+    "city": "San Sebastián de los Reyes",
+    "state": "Aragua",
+    "address": "CALLE BOLIVAR LOCAL NRO 18-2 SECTOR CENTRO SAN SEBASTIAN DE LOS REYES ARAGUA"
+  },
+  {
+    "code": "x0191",
+    "name": "Maracay Santa Rita",
+    "city": "Santa Rita",
+    "state": "Aragua",
+    "address": "Av. Generalísimo francisco De Miranda, Entre Prolongación Y Andrés Bello, Calle Andrés Bello, Local Nro. 75, Sector Guaruto, Santa Rita, Estado Aragua . Ver detalles"
+  },
+  {
+    "code": "05060",
+    "name": "Turmero",
+    "city": "Turmero",
+    "state": "Aragua",
+    "address": "CALLE MARIÑO C/C CALLE PEÑALVER C.C MARIÑO PLAZA P.B LOCAL 02, TURMERO EDO. ARAGUA"
+  },
+  {
+    "code": "05110",
+    "name": "Turmero Zona Industrial",
+    "city": "Turmero",
+    "state": "Aragua",
+    "address": "AV INTERCOMUNAL MARACAY TURMERO C.C. COCHE ARAGUA LOCAL NRO 30 Y 82 SECTOR LA MORITA I"
+  },
+  {
+    "code": "05070",
+    "name": "Villa de Cura",
+    "city": "Villa de Cura",
+    "state": "Aragua",
+    "address": "CALLE URDANETA NORTE ENTRE CALLE MIRANDA Y CALLE SUCRE, CASA N° 15, SECTOR CENTRO VILLA DE CURA ARAGUA ZAMORA, ESTADO ARAGUA"
+  },
+  {
+    "code": "06000",
+    "name": "Barinas",
+    "city": "Av Sucre Barinas",
+    "state": "Barinas",
+    "address": "CALLE CEDEÑO C.C. GIAMMA NIVEL PLANTA BAJA LOCAL 6 SECTOR CENTRO. BARINAS, ESTADO BARINAS"
+  },
+  {
+    "code": "06050",
+    "name": "Alto Barinas",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "URB ALTO BARINAS NORTE, AV FRANCIA CON AV PIE DE MONTE Y TACHIRA, LOCAL 135, BARINAS"
+  },
+  {
+    "code": "06060",
+    "name": "Barinas 23 de Enero",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "AV 23 DE ENERO EDIFICIO LA FORTANA LOCAL # 2, A UNA CUADRA DE LA RESIDENCIA DE LA GOBERNACION. BARINAS ESTADO BARINAS"
+  },
+  {
+    "code": "06040",
+    "name": "Barinas Sabaneta",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "CALLE 1, ENTRE BAYON Y OBISPO, C.C. TRICOLOR, NUMERO 2, SECTOR 9 DE DICIEMBRE DE SABANETA"
+  },
+  {
+    "code": "06020",
+    "name": "Barinas Zona Ind.",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "AV. ELIAS CORDERO EDIFICIO REY DE REYES, DIAGONAL AL MECATAZO, ATRÁS DEL TERMINAL DE PASAJEROS. EDO. BARINAS"
+  },
+  {
+    "code": "06051",
+    "name": "Forum",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "AV. 23 DE ENERO CON AV GUAICAIPURO C.C. FORUM LOCAL 52, BARINAS"
+  },
+  {
+    "code": "06030",
+    "name": "Santa Barbara de Barinas",
+    "city": "Barinas",
+    "state": "Barinas",
+    "address": "CALLE 12 ENTRE CARRERAS 0 Y 00 (PUNTO DE REFERENCIA 2 CUADRAS Y MEDIA DE CORPOELEC) SECTOR EL PROGRESO, BARINAS"
+  },
+  {
+    "code": "06010",
+    "name": "Socopo",
+    "city": "Socopó",
+    "state": "Barinas",
+    "address": "CALLE 1, ENTRE CARRERA 6 Y 7, Nº S/N SECTOR BARRIO EL CARMEN. SOCOPO-BARINAS, ZONA POSTAL 5216"
+  },
+  {
+    "code": "x0194",
+    "name": "Caicara del Orinoco",
+    "city": "Caicara del Orinoco",
+    "state": "Bolívar",
+    "address": "Carretera Troncal 19 Local Nro. S/n, Sector San Rafael, Caicara Del Orinoco, Estado Bolívar Ver detalles"
+  },
+  {
+    "code": "x0193",
+    "name": "Cdad Bolivar Zona Ind.",
+    "city": "Ciudad Bolívar",
+    "state": "Bolívar",
+    "address": "Av. Nueva Granada. Edif. Gran Sabana. P.b., Local 1 Ciudad Bolivar. Edo. Boliva. Ver detalles"
+  },
+  {
+    "code": "07000",
+    "name": "Ciudad Bolívar",
+    "city": "Ciudad Bolívar",
+    "state": "Bolívar",
+    "address": "AV. REPÚBLICA, EDIF. FRANCO, PB, LOCALES 1 Y 2, AL LADO DE BANESCO, CIUDAD BOLÍVAR"
+  },
+  {
+    "code": "07080",
+    "name": "Ciudad Bolívar Zona Industrial",
+    "city": "Ciudad Bolívar",
+    "state": "Bolívar",
+    "address": "AV. NUEVA GRANADA, EDIF. GRAN SABANA, PB, LOCAL 1, CIUDAD BOLÍVAR, EDO. BOLÍVAR"
+  },
+  {
+    "code": "07010",
+    "name": "Alta Vista",
+    "city": "Ciudad Guayana",
+    "state": "Bolívar",
+    "address": "AV. PUERTO ORDAZ, C.C. BABILONIA MALL, NIVEL PLANTA BAJA, LOCAL PB-30, SECTOR ALTA VISTA, CIUDAD GUAYANA, BOLÍVAR"
+  },
+  {
+    "code": "07090",
+    "name": "Av. Las Américas",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "AV. BRASIL, URB. VILLA BRASIL, MANZANA 142, LOCAL Nº 2, A 200 MTS DEL ABASTO LA ESPAÑOLA, SECTOR VILLA ANTILLANA, PUERTO ORDAZ"
+  },
+  {
+    "code": "07060",
+    "name": "Unare",
+    "city": "Puerto Ordaz",
+    "state": "Bolívar",
+    "address": "CALLE NEVERÍ, GALPONES ACEROS UNARE, GALPÓN Nº 02, FRENTE AL AEROPUERTO, SECTOR UNARE 1, PUERTO ORDAZ, EDO. BOLÍVAR"
+  },
+  {
+    "code": "07040",
+    "name": "Santa Elena de Uairén",
+    "city": "Santa Elena",
+    "state": "Bolívar",
+    "address": "CALLE IKABARÚ, TRONCAL 10, CASCO CENTRAL, LOCAL S/N, A 100 MTS DEL HOSPITAL ROSARIO VERA ZURITA, SANTA ELENA DE UAIRÉN, EDO. BOLÍVAR"
+  },
+  {
+    "code": "x0213",
+    "name": "Bejuma",
+    "city": "Bejuma",
+    "state": "Carabobo",
+    "address": "Av Carabobo Entre Calles Piar Y Calle Valencia Local Nro S/n Sector Unión Bejuma Carabobo Zona Postal 2040 10.175001772364226, - Ver detalles"
+  },
+  {
+    "code": "x0219",
+    "name": "Bolivar Sur",
+    "city": "Bolivar Sur",
+    "state": "Carabobo",
+    "address": "Calle 73, Nro. Civico 90-27,, Local S/n, Barrio La Isabela, Valencia Estado Carabobo Ver detalles"
+  },
+  {
+    "code": "x0214",
+    "name": "Guacara",
+    "city": "Guacara",
+    "state": "Carabobo",
+    "address": "Calle Piar, Cruce Con Jacinto Lara, C.c San Pedro, Nivel Pb, Local 8, Guacara, Estado Carabobo Ver detalles"
+  },
+  {
+    "code": "x0215",
+    "name": "Los Guayos Zona Ind.",
+    "city": "Los Guayos",
+    "state": "Carabobo",
+    "address": "Los Guayos Calle Negro Primero Cc Las Delicias Local. Valencia -edo Carabobo Ver detalles"
+  },
+  {
+    "code": "x0216",
+    "name": "Moron",
+    "city": "Morón",
+    "state": "Carabobo",
+    "address": "Avda. Yaracuy - Nª 52, Frente Al Banco Banesco, Al Lado Del Banco Bod. Moron Estado Carabobo. Ver detalles"
+  },
+  {
+    "code": "x0217",
+    "name": "Naguanagua",
+    "city": "Naguanagua",
+    "state": "Carabobo",
+    "address": "Av. 96-b, C.c. Crstal, Pb. Local B-06 A Dos Locales Del Banco Bicentenario, Por La Entrada Principal. Naguanagua, Edo. Carabobo Ver detalles"
+  },
+  {
+    "code": "x0218",
+    "name": "Puerto Cabello",
+    "city": "Puerto Cabello",
+    "state": "Carabobo",
+    "address": "Calle Rondon Edificio El Naranjal Local N° 2 Frente Al Templo El Refugio, Al Lado De La Clinica San Agustin. Puerto Cabello Edo. Carabobo Ver detalles"
+  },
+  {
+    "code": "x0195",
+    "name": "Alianza Mall",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Carretera Nacional Guacara, Urb Ciudad Alianza, C.c. Central Guacara, Local 27, Frente Al Supermercado Central Madeirense. Valencia. . Ver detalles"
+  },
+  {
+    "code": "x0196",
+    "name": "Av. Las Ferias",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Las Ferias, Entre Calles Silva Y Rangel, Cc Isora, Local Na-21. Valencia Estado Carabobo.valencia, Estado Carabobo. Ver detalles"
+  },
+  {
+    "code": "x0197",
+    "name": "Flor Amarillo",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Las Industrias, Cruce Con Av. Principal, Urb. Parque Valencia, C.c. Mega Mercado, Pb , Local 8c1.valencia Edo Carabobo. Ver detalles"
+  },
+  {
+    "code": "x0199",
+    "name": "La Esmeralda San Diego",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Intercomunal Don Julio Centeno C.c la esmeralda local 13. Ver detalles"
+  },
+  {
+    "code": "x0198",
+    "name": "La Isabelica",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. 04 Sector 10, Vereda 14, Local 01, Urb. La Isabelica. Valencia - Carabobo. Ver detalles"
+  },
+  {
+    "code": "x0200",
+    "name": "Paraparal",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Centro Comercial Galerías Paraparal, Local B-22 . Av. Principal De Paraparal, Estado Carabobo. Ver detalles"
+  },
+  {
+    "code": "x0201",
+    "name": "San Diego Terrazas de Castillito",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Don Julio Centeno, Calle 103, C.c Prati Nivel Pb, Local L-4 Urb. Terrazas De Castillito. Frente Al Mar De La Ceramica. Ver detalles"
+  },
+  {
+    "code": "x0202",
+    "name": "Valencia Av. Lara",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Lara Con Calle Uslar, Local 87-107. Frente A Molinari Caccia Guerra, Valencia Carabobo. ,17 Ver detalles"
+  },
+  {
+    "code": "x0203",
+    "name": "Valencia Big Low",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Calle 97, C.c. Ciudad Valencia, Pb, Local B4. Urb. Zona Industrial Castillito. Valencia, Estado Carabobo. Ver detalles"
+  },
+  {
+    "code": "x0204",
+    "name": "Valencia Centro",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Miranda Local 118-31 Mrw Diagonal A Damasco, Av. Rojas Queipo, Sector San Jose Valencia-carabobo. Ver detalles"
+  },
+  {
+    "code": "x0205",
+    "name": "Valencia El Parral",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Las 4 Avenidas, C.c. Profesional Ceravica Pb, Local 2, Urb. El Parral - Edo. Carabobo. Ver detalles"
+  },
+  {
+    "code": "x0211",
+    "name": "Valencia El Trigal",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Principal De Mañongo, C.c. Patio Trigal. Nivel Pb Local 208 A Urb Trigal Norte, Valencia Carabobo Zona Postal 2001. Ver detalles"
+  },
+  {
+    "code": "x0206",
+    "name": "Valencia Gobernación",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Calle Paez Entre Montes De Oca Y Carabobo C.c. Papin Pb Local Nro 1, Centro De Valencia ( Cerca Del Capitolio). Edo Carabobo. ,17 Ver detalles"
+  },
+  {
+    "code": "x0207",
+    "name": "Valencia La Candelaria",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Aranzazu, Edificio Vorma, Piso P.b., Local Pb-3, La Candelaria. Valencia Edo. Carabobo. Ver detalles"
+  },
+  {
+    "code": "x0208",
+    "name": "Valencia Norte",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Bolivar Norte, Sector Majay, Local Nº 151-54, , Frente A La Torre Princiapal (banco Bnc). Valencia, Edo. Carabobo. Ver detalles"
+  },
+  {
+    "code": "x0209",
+    "name": "Valencia San Diego",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av. Don Julio Centeno C.c. Metro Plaza P.b Local 33 San Diego Edo. Carabobo. Ver detalles"
+  },
+  {
+    "code": "x0210",
+    "name": "Valencia Sur",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Autopista Valencia - Campo Carabobo. Centro Comercial El Prado, Planta Baja Local B 6. Los Caobos, Valencia-edo.carabobo. Ver detalles"
+  },
+  {
+    "code": "x0212",
+    "name": "Valencia Zona Ind.",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "address": "Av.prolongacion Michelena C.c. Mycra Local 10 Zona Industrial Valencia. Ver detalles"
+  },
+  {
+    "code": "09000",
+    "name": "San Carlos",
+    "city": "San Carlos",
+    "state": "Cojedes",
+    "address": "CALLE SUCRE ENTRE ZAMORA Y LIBERTAD LOCAL #8-33, EDO. COJEDES"
+  },
+  {
+    "code": "09010",
+    "name": "Tinaquillo",
+    "city": "Tinaquillo",
+    "state": "Cojedes",
+    "address": "AV. MADARIAGA ENTRE AV CEDEÑO Y CALLE NEGRO PRIMERO, SECTOR CENTRO. CERCA DEL COLEGIO VALMIRA VILLEGAS"
+  },
+  {
+    "code": "10000",
+    "name": "Tucupita",
+    "city": "Tucupita",
+    "state": "Delta Amacuro",
+    "address": "CALLE DALLA COSTA Nº 22, LOCAL 1, EDIF. CIARCIA, FRENTE A LA PLAZA BOLÍVAR, PARROQUIA SAN JOSÉ, MUNICIPIO TUCUPITA, TUCUPITA, EDO. DELTA AMACURO"
+  },
+  {
+    "code": "01150",
+    "name": "Altamira",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV SAN JUAN BOSCO DE ALTAMIRA CON 1ERA TRANSVERSAL, RES. EXCELSIOR PB LOCAL 2 ALTAMIRA - MIRANDA"
+  },
+  {
+    "code": "01460",
+    "name": "Antimano/ La Yaguara",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "CALLE REAL BOULEVARD DE ANTIMANO, ENTRE LA JEFATURA CIVIL Y LA PLAZA BOLIVAR DE ANTIMANO, LOCAL MRW"
+  },
+  {
+    "code": "01410",
+    "name": "Av. Casanova",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "INICIO AV. CASANOVA ENTRE CALLE SAN ANTONIO Y CALLE EL COLEGIO, C.C. DEL ESTE, N° 21. DIAGONAL AL HOTEL KURSSAL, A MEDIA CUADRA DEL ARABITO DE SABANA GRANDE"
+  },
+  {
+    "code": "01170",
+    "name": "Baruta",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "CALLE NEGRO PRIMERO C/C SUCRE Nº15-04 AL LADO DE EUROSWEATERS-BARUTA"
+  },
+  {
+    "code": "01020",
+    "name": "Bello Monte",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AVENIDA LEONARDO DA VINCI PLAZA LINCOLN, QUINTA MOHEDANO, LOCAL 3 DETRAS DE CIUDAD BANESCO COLINAS DE BELLO MONTE"
+  },
+  {
+    "code": "01090",
+    "name": "Campo Claro",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. FRANCISCO DE MIRANDA CON CALLE GUANCHE. EDIF. VALENCIA I P.B. ENTRE EL BANCO PROVINCIAL Y CORPBANCA. CAMPO CLARO"
+  },
+  {
+    "code": "01450",
+    "name": "Capitolio",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AVENIDA BARALT ESQUINA DE CONDE A PIÑANGO, CASONA Nº 11, PARROQUIA ALTAGRACIA, AL LADO DE LA JEFATURA CATEDRAL"
+  },
+  {
+    "code": "01320",
+    "name": "Caricuao",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "REDOMA DE RUIZ PINEDA, CENTRO COMERCIAL CARICUAO PLAZA, PISO 2, LOCAL 127, PARROQUIA CARICUAO, MUNICIPIO LIBERTADOR, CARACAS DISTRITO CAPITAL"
+  },
+  {
+    "code": "01280",
+    "name": "Catia",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. SUCRE, C.C. OESTE NIVEL 3 LOCAL 038 SECTOR CATIA, CARACAS"
+  },
+  {
+    "code": "01040",
+    "name": "Centro",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. UNIVERSIDAD, ESQ. DE SOCIEDAD A GRADILLAS, EDIF. HUMBOLT P.B. LOCAL 4 MRW"
+  },
+  {
+    "code": "01480",
+    "name": "Chacaito",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. PICHINCHA ENTRE SALIDA DEL METRO Y AV. TAMANACO CC UNICO NIVEL PB LOCAL 5 Y 6 URB EL ROSAL"
+  },
+  {
+    "code": "01050",
+    "name": "Chacao El Muñeco",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "CALLE EL MUÑECO ENTRE AV. FCO. DE MIRANDA Y AV. LIBERTADOR EDIF. GUAN, PB, LOCAL 7. CHACAO"
+  },
+  {
+    "code": "01370",
+    "name": "Chacao Pantin",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "CALLE PANTIN, GALPON MRW. AL FRENTE DE LA POLICIA DE CHACAO.URBANIZACIÓN ESTADO LEAL. CHACAO"
+  },
+  {
+    "code": "01060",
+    "name": "Chuao",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV ERNESTO BLON CC CIUDAD TAMANACO NIVEL PB LOCAL F SECTOR CHUAO CARACAS (CHACAO) MIRANDA"
+  },
+  {
+    "code": "01310",
+    "name": "El Bosque",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "CALLE EL CARMEN ENTRE AV. EL EMPALME Y PPAL. DEL BOSQUE QTA.TORRE LA VEGA.PB LOCAL 5.(½ CUADRA FEDECAMARAS)"
+  },
+  {
+    "code": "01260",
+    "name": "El Cementerio",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV LOS TOTUMOS ENTRE AV LOUIS BRAILLET Y FLORESTA, CASA 20 LOCAL UNICO EL CEMENTERIO"
+  },
+  {
+    "code": "01250",
+    "name": "El Hatillo",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "CALLE MATADERO, CENTRO COMERCIAL PRISCOS, NIVEL PB OF 904-4 URB EL HATILLO CARACAS"
+  },
+  {
+    "code": "01290",
+    "name": "El Junquito",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "C.C. CASA JUNKO PB, LOCAL B5. KILÓMETRO 18 DEL JUNQUITO, ANTIGUA BOMBA"
+  },
+  {
+    "code": "01030",
+    "name": "El Llanito",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. PCPAL DEL LLANITO EN LA FERRETERIA CASATRIGO PUNTO DE REFERENCIA AL FRENTE DEL C.C. EL LLANITO"
+  },
+  {
+    "code": "01070",
+    "name": "El Paraiso",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "ENTRE AV. LAS FUENTES Y AV. WASHINTON, CALLE 1, QUINTA FRANCELIS, PB, LOCAL 1, URBANIZACION EL PARAISO, MUNICIPIO LIBERTADOR, CARACAS"
+  },
+  {
+    "code": "01420",
+    "name": "El Valle",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "INICIO AV. INTERCOMUNAL DEL VALLE, CONJUNTO RESIDENCIAL DON PEDRO, TORRE F, P.B., LOCAL Nº 1, EL VALLE"
+  },
+  {
+    "code": "01510",
+    "name": "Fuerte Tiuna",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. LAS ESCUELAS, CENTRO SIMON BOLIVAR FRENTE AL STADIUM JOSE ANTONIO CASANOVA. FUERTE TIUNA"
+  },
+  {
+    "code": "01400",
+    "name": "La Candelaria",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "PERICO A PUENTE YANEZ EDF. SERRANO PB. LOCAL 3 LA CANDELARIA"
+  },
+  {
+    "code": "01470",
+    "name": "La Castellana",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "CALLE URDANETA CON PRINCIPAL DE LA CASTELLANA, QUINTA AURANA, P.B. A MEDIA CUADRA DEL RESTAURANT LA ESTANCIA. LA CASTELLANA"
+  },
+  {
+    "code": "01330",
+    "name": "La Florida",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "URB. LA FLORIDA. AV. LOS CHAGUARAMOS.QTA COROLI. CARACAS"
+  },
+  {
+    "code": "01100",
+    "name": "La Trinidad",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "CALLE DEL ARENAL, QTA. LAURA NRO 15-14, A DOS CUADRAS DEL FARMATODO DE LA ZONA IND. DE LA TRINIDAD, HACIA LA ZONA RESIDENCIAL, EDO. MIRANDA, CARACAS"
+  },
+  {
+    "code": "01200",
+    "name": "La Urbina",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. PPAL. LA URBINA. EDIF. APULIA. P.B. LOCAL 4, CERCA A LA PANADERÍA TULIPÁN. LA URBINA. EDO. MIRANDA"
+  },
+  {
+    "code": "01190",
+    "name": "Las Acacias",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AVENIDA GENERAL MEDINA ANGARITA, EDIFICIO RESIDENCIAS BETANIA PLANTA BAJA LOCAL MRW, URBANIZACIÓN LAS ACACIAS. (PTO DE REFERENCIA FRENTE A REPUESTOS PAMACA)"
+  },
+  {
+    "code": "01230",
+    "name": "Las Mercedes",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. VERACRUZ. EDIF. MATISCO. P.B. DIAGONAL A CONATEL, URB. LAS MERCEDES, CARACAS MIRANDA. ZONA POSTAL 1060"
+  },
+  {
+    "code": "01380",
+    "name": "Las Minas",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. PPAL.LAS MINASDE BARUTA, C.C. LUNA, FRENTE A LA PARADA DELAS CAMIONETAS AL SILENCIO, A 50 MTS DE LA POLICIA FATIMA"
+  },
+  {
+    "code": "01130",
+    "name": "Lebrun Petare",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "CALLE LOS NARANJOS EDIF LEBRUN PISO PB LOCAL 19, FRENTE AL LICEO MARIANO PICON SALAS. URB LEBRUN CARACAS PETARE MIRANDA"
+  },
+  {
+    "code": "01350",
+    "name": "Lecuna",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "CALLE SUR 3, ESQUINA DE ZAMURO A MISERIA, EDIF. INDUCENTRO LOCAL 1 PB, A 20 MTS DE LA AV. LECUNA. SANTA ROSALIA"
+  },
+  {
+    "code": "01010",
+    "name": "Los Caobos",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. PANAMA CON AV. LIBERTADOR, QTA. SOCA AL LADO DE AUDIVISION, C.A. DETRAS DE RESTAURANT GRAN YEIN, SUBIENDO POR LA TORRE POLAR. URB LOS CAOBOS CARACAS"
+  },
+  {
+    "code": "01110",
+    "name": "Los Chaguaramos",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. EL PARQUE, C.C. LOS CHAGUARAMOS, NIVEL P.B, LOCAL 10, URB. LAS CHAGUARAMOS, CARACAS, DISTRITO CAPITAL"
+  },
+  {
+    "code": "01160",
+    "name": "Los Chorros",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "2DA. AV. MONTECRISTO C/C 5TA. TRANSV. QTA. KOLOSVAR NRO 43 LOCAL MRW"
+  },
+  {
+    "code": "01500",
+    "name": "Los Palos Grandes",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV ANDRES BELLO DE LOS PALOS GRANDES CON 2DA TRANSVERSAL EDIFICIO VISTA HERMOSA PB LOCAL C, CARACAS"
+  },
+  {
+    "code": "01220",
+    "name": "Los Rosales",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. LOS LAURELES CON AV. ROOSEVELT, RES. TIUNA LOCAL E. PB FRENTE A PLAZA TIUNA LOS ROSALES"
+  },
+  {
+    "code": "01132",
+    "name": "Palo Verde",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "CENTRO COMERCIAL PALO VERDE, NIVEL 2, LOCAL 11-2. FRENTE DE FARMACIA NATURISTA, DENTRO DE CENTRO DE COMUNICACIONES MOVILNET CANTV"
+  },
+  {
+    "code": "01080",
+    "name": "Plaza Estrella",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "PLAZA ESTRELLA A SAN FELIPE, RES. DORABEL, PB LOCAL 3. A MEDIA CUADRA DEL PASAJE ANAUCO. SAN BERNARDINO"
+  },
+  {
+    "code": "01031",
+    "name": "Plaza Las Americas",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "CENTRO COMERCIAL PLAZA LAS AMERICAS, NIVEL ORO, LOCAL 107-A, EL CAFETAL"
+  },
+  {
+    "code": "01390",
+    "name": "Quinta Crespo",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV SUR, ESQUINA DE PIEDRAS A PUENTE RESTAURADOR EDIF 126 PISO PB LOCAL 126, DIAGONAL A LABORATORIOS VARGAS, DETRAS DE LA CASA DE SIMON BOLIVAR. URB QUINTA CRESPO - CARACAS"
+  },
+  {
+    "code": "01140",
+    "name": "Sabana Grande",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV ORINOCO ENTRE 2DA CALLE Y CARONI QTA ISMENIA LOCAL PB - CP 1050 - BELLO MONTE NORTE CARACAS VENEZUELA"
+  },
+  {
+    "code": "01340",
+    "name": "San Martin",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. SAN MARTIN CRUCE CON AV. SANTANDER, C.C. MARACAIBO, NIVEL MEZANINA, LOCAL 12, SECTOR SAN MARTIN-CARACAS"
+  },
+  {
+    "code": "01210",
+    "name": "Santa Fe",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "URB. SANTA FE NORTE, AVENIDA JOSE MARIA VARGAS, C.C. SANTA FE, PISO 2 NIVEL ALAMEDA, LOCAL C2-43 AL LADO DE CHURROMANIA, SANTA FE, CARACAS"
+  },
+  {
+    "code": "01300",
+    "name": "Santa Mónica",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. ARTURO MICHELENA C/C AGUSIN CODAZZI, QTA. CEIBA, AL LADO DE LA FARMACIA BAMA, SANTA MONICA, CARACAS"
+  },
+  {
+    "code": "01240",
+    "name": "Santa Sofia",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AV. PPAL. SANTA SOFIA. C.C. STA. SOFIA. LOCAL Z-3. P.B. SANTA SOFIA"
+  },
+  {
+    "code": "01440",
+    "name": "Sebucan",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "address": "AVENIDA ROMULO GALLEGOS ENTRE AVENIDA PRINCIPAL DE SEBUCAN Y AVENIDA SUCRE DE LOS DOS CAMINOS, RESIDENCIAS CARLO LOCAL 2. LOS DOS CAMINOS"
+  },
+  {
+    "code": "11000",
+    "name": "Coro",
+    "city": "Coro",
+    "state": "Falcón",
+    "address": "CALLE ZAMORA. ESQUINA CALLEJON LAS FLORES E ITURBE LOCAL S/N SECTOR CHIMPIRE CORO MCIPIO MIRANDA EDO FALCON SANTA ANA DE CORO"
+  },
+  {
+    "code": "11050",
+    "name": "El Castillo",
+    "city": "Coro",
+    "state": "Falcón",
+    "address": "AVENIDA MANAURE, ESQUINA CON CALLE MONZON. C.C. EL CASTILLO DON LEONCIO, PB, LOCAL Nº 10. CORO"
+  },
+  {
+    "code": "x0221",
+    "name": "Puerta Maraven",
+    "city": "Dabajuro",
+    "state": "Falcón",
+    "address": "Calle San Román Entre Av General Pelayo Y Av. Ollarvides, Diagonal A Rías Altas. Ver detalles"
+  },
+  {
+    "code": "x0220",
+    "name": "Caja de Agua",
+    "city": "Judibana",
+    "state": "Falcón",
+    "address": "Calle Manuelita Sáenz Entre Calle Comercio Y Providencia Sector, Sector Caja De Agua, Diagonal A La Iglesia Los Mormones, Local Nro. 01, Edo. Falcón. Ver detalles"
+  },
+  {
+    "code": "11060",
+    "name": "Punto Fijo Av. Monagas",
+    "city": "Punto Fijo",
+    "state": "Falcón",
+    "address": "CALLE MONAGAS ENTRE GARCES Y ZAMORA EDIF. LUCRISCAR PLANTA BAJA, PUNTO FIJO-EDO. FALCON"
+  },
+  {
+    "code": "11030",
+    "name": "Santa Irene",
+    "city": "Punto Fijo",
+    "state": "Falcón",
+    "address": "AV. RAFAEL GONZALEZ, ESQ. AV. SANTA IRENE, EDIF: MOTORAMA, PISO PB, LOCAL 2, URB. SANTA IRENE, FRENTE DEPOSITOS POLAR, PUNTO FIJO-EDO. FALCON"
+  },
+  {
+    "code": "x0222",
+    "name": "Punto Fijo Centro",
+    "city": "Punto Fijo Centro",
+    "state": "Falcón",
+    "address": "Av Colombia Entre Ayacucho Y Peninsular Cc Don Jose Lay Nivel Pb Local 5b Sector Centro Punto Fijo Falcon. Ver detalles"
+  },
+  {
+    "code": "11020",
+    "name": "Tucacas",
+    "city": "Tucacas",
+    "state": "Falcón",
+    "address": "AV LIBERTADOR DE TUCACAS, DIAGONAL AL HOTEL LA SUERTE, LOCAL NRO #1. EDO. FALCON"
+  },
+  {
+    "code": "12050",
+    "name": "Altagracia de Orituco",
+    "city": "Altagracia de Orituco",
+    "state": "Guárico",
+    "address": "CALLE HURTADO ASCANIO CRUCE CON VUELVAN CARA. EDF. RESIDENCIAS LA PAZ, PB, LOCAL 1 SECTOR LAS BRISAS DEL ESTE ALTAGRACIA DE ORITUCO. EDO. GUÁRICO"
+  },
+  {
+    "code": "12010",
+    "name": "Calabozo",
+    "city": "Calabozo",
+    "state": "Guárico",
+    "address": "CARRERA 12 ENTRE CALLE 4 Y 5 C.C COROMOTO FRENTE A LA PLAZA BOLÍVAR. CALABOZO"
+  },
+  {
+    "code": "12000",
+    "name": "San Juan de Los Morros",
+    "city": "San Juan de los Morros",
+    "state": "Guárico",
+    "address": "CALLE EL CARMEN, EDIF. RAGUCEO, LOCAL 02, BAJANDO LA GOBERNACION, DIAGONAL A CANTV"
+  },
+  {
+    "code": "x0223",
+    "name": "S. Juan de Los Morros",
+    "city": "San Juan de Los Morros",
+    "state": "Guárico",
+    "address": "Calle El Carmen, Edf. Rauseo, Local 2 Bajando Por La Gobernación, Diagonal A La Cantv. Ver detalles"
+  },
+  {
+    "code": "12040",
+    "name": "Tucupido",
+    "city": "Tucupido",
+    "state": "Guárico",
+    "address": "CALLE SALOM NRO 24 DIAGONAL A LA ALCALDIA"
+  },
+  {
+    "code": "12020",
+    "name": "Valle de La Pascua",
+    "city": "Valle de la Pascua",
+    "state": "Guárico",
+    "address": "CALLE GONZÁLEZ PADRÓN, CENTRO COMERCIAL STAR CENTER, LOCAL B-10, VALLE DE LA PASCUA, ESTADO GUÁRICO"
+  },
+  {
+    "code": "12030",
+    "name": "Zaraza",
+    "city": "Zaraza",
+    "state": "Guárico",
+    "address": "CALLE BOLIVAR, ENTRE AYACUCHO Y SUCRE, LOCAL MRW, PB, A 100 MTS DEL SAIME, SECTOR CENTRO, ZARAZA, ESTADO GUÁRICO"
+  },
+  {
+    "code": "x0247",
+    "name": "Catia La Mar",
+    "city": "Catia La Mar",
+    "state": "La Guaira",
+    "address": "Calle 3 Y 8 C.c Profesional La Colina, Nivel Pb-5 Catia La Mar Edo. Vargas. Ver detalles"
+  },
+  {
+    "code": "x0229",
+    "name": "Altagracia",
+    "city": "Altagracia",
+    "state": "Lara",
+    "address": "Carretera 21, Entre Calle 20 Y 21, Local Comercial S/n, Edificio Nro. 20 – 81, Barquisimeto . Ver detalles"
+  },
+  {
+    "code": "13080",
+    "name": "Babilom",
+    "city": "Babilom",
+    "state": "Lara",
+    "address": "CALLE 19 CON AV LIBERTADOR ZONA INDUSTRIAL I C.C LIBERTADOR LOCAL 13-B"
+  },
+  {
+    "code": "13003",
+    "name": "Andres Bello",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "CARRERA 22 CON CALE 22 ANDRES BELLO LOCAL NRO 4 BARQUISIMETO"
+  },
+  {
+    "code": "13031",
+    "name": "Av. Moran",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "CARRERA 21, ENTRE AV. MORAN Y CALLE 9, C.C. PLAZA SEVILLA LOCAL 28 Y 29. BARQUISIMETO"
+  },
+  {
+    "code": "13100",
+    "name": "Av. Venezuela",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "AV. VENEZUELA CON CALLE 22, BARQUISIMETO - EDO. LARA"
+  },
+  {
+    "code": "13000",
+    "name": "Barquisimeto Centro",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "AV. VENEZUELA ENTRE CALLES 39 Y 40. LOCAL 26-62. BARQUISIMETO"
+  },
+  {
+    "code": "x0224",
+    "name": "Barquisimeto Nueva Segovia",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Calle 3 Entre Carrera 1 Y Av Lara, Casa Nro Al-99 Urb Nueva Segovia Barquisimeto Edo Lara Ver detalles"
+  },
+  {
+    "code": "13010",
+    "name": "Barquisimeto Oeste",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "AV. FLORENCIO JIMENEZ, C.C. ARCOIRIS, LOCAL 5, P.B., AUTOPISTA VIA QUIBOR SECTOR OBELISCO, BARQUISIMETO, EDO. LARA"
+  },
+  {
+    "code": "x0225",
+    "name": "Bqmeto Este",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Calle 15, Entre Carreras 20 Y 21, Local No. 5, Diagonal A La Clinica San Francisco. Barquisimeto,estado Lara. Ver detalles"
+  },
+  {
+    "code": "x0226",
+    "name": "Bqmeto Oeste",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Av. Florencio Jimenez, C.c. Arcoiris, Local 5, P.b., Frente Al Decanato De La Ucla, Barquisimeto, Edo. Lara. Ver detalles"
+  },
+  {
+    "code": "x0227",
+    "name": "Bqto Centro",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "Av. Venezuela Entre Calles 39 Y 40, Número 39-55, Sentido Oeste-este. Barquisimeto. Ver detalles"
+  },
+  {
+    "code": "13070",
+    "name": "Bqto. Nueva Segovia",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "CALLE 3 ENTRE CARRERA 1 Y AV LARA, CASA NRO AL-99 URB NUEVA SEGOVIA BARQUISIMETO EDO LARA"
+  },
+  {
+    "code": "13002",
+    "name": "Canaima",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "AV. PEDRO LEON TORRES, ENTRE CALLES 55 Y 55-A, C.C. CANAIMA, LOCAL F-02. ZONA ESTE BARQUISIMETO"
+  },
+  {
+    "code": "13071",
+    "name": "Patarata",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "address": "AV. LIBERTADOR ENTRE AV. ARGEMIRO BRACAMONTE Y AV. LOPEZ CONTRERA, SECTOR PATARATA, CENTRO RECREACIONAL PARQUE JARDIN, LOCAL 1, BARQUISIMETO EDO. LARA"
+  },
+  {
+    "code": "13040",
+    "name": "Cabudare",
+    "city": "Cabudare",
+    "state": "Lara",
+    "address": "AV. SANTA BARBARA, ENTRE CALLES GUILLERMO ALVIZU Y LA CRUZ, C.C. STA. BARBARA, LOCAL 2, DETRAS FERRETERIA TABURE"
+  },
+  {
+    "code": "13020",
+    "name": "Carora",
+    "city": "Carora",
+    "state": "Lara",
+    "address": "AV FCO DE MIRANDA / CLLS 15ª Y 16 CASA NRO 15 SECTOR EGIDIO MONTESINO-CARORA A 50 MTS DE LA PLAZA CHIO ZUBILLAGA"
+  },
+  {
+    "code": "13060",
+    "name": "Valle Lindo",
+    "city": "Duaca",
+    "state": "Lara",
+    "address": "AUTOPISTA VIA DUACA KM 10 SECTOR SABANA GRANDE"
+  },
+  {
+    "code": "13081",
+    "name": "El Recreo",
+    "city": "El Recreo",
+    "state": "Lara",
+    "address": "AV. LIBERTADOR. C.C. EL ROSARIO. LOCAL 5. FRENTE AL IPASME"
+  },
+  {
+    "code": "x0228",
+    "name": "Quibor",
+    "city": "Quíbor",
+    "state": "Lara",
+    "address": "Calle 8 Entre Avenida 8 Y 9 A 200mts Del Supermercado La Palma. Ver detalles"
+  },
+  {
+    "code": "13030",
+    "name": "Barquisimeto Este",
+    "city": "San Francisco",
+    "state": "Lara",
+    "address": "CALLE 15, ENTRE CARRERAS 20 Y 21, LOCAL NO. 5, DIAGONAL A LA CLINICA SAN FRANCISCO. BARQUISIMETO, ESTADO LARA"
+  },
+  {
+    "code": "14012",
+    "name": "Catedral",
+    "city": "Catedral",
+    "state": "Mérida",
+    "address": "AV. 5, ENTRE CALLES 23 Y 24, Nº 23-74, LOCAL PB-2"
+  },
+  {
+    "code": "14040",
+    "name": "Ejido",
+    "city": "Ejido",
+    "state": "Mérida",
+    "address": "AV. FERNÁNDEZ PEÑA, CASA PLANTA BAJA Nº 133-C, A 100 MTS DEL DIARIO FRONTERA, CENTRO EJIDO, MÉRIDA"
+  },
+  {
+    "code": "14020",
+    "name": "El Vigía",
+    "city": "El Vigía",
+    "state": "Mérida",
+    "address": "CALLE 3 CON AV. DON PEPE ROJAS, PROLONGACIÓN 1 AV. 1, BARRIO BOLÍVAR, EL VIGÍA, EDO. MÉRIDA"
+  },
+  {
+    "code": "x0242",
+    "name": "Mda Los Proceres",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Av Los Proceres, Calle La Orquídea , Minicentro Comercial , Don Luis, Local 2b O Mrw Ver detalles"
+  },
+  {
+    "code": "14000",
+    "name": "Mérida Cubo Rojo",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "AV GONZALO PICON CON VIADUCTO MIRANDA, C.C. CUBO ROJO, NIVEL PB, LOCALES 2, 4, 6, 7 Y 8, SECTOR GLORIAS PATRIAS, MÉRIDA"
+  },
+  {
+    "code": "14050",
+    "name": "Mérida Milla",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "AV. 5 CON ESQ. CALLE 15, LOCAL Nº 14-106, SECTOR BELÉN, MUNICIPIO LIBERTADOR, MÉRIDA"
+  },
+  {
+    "code": "x0243",
+    "name": "Merida Paseo de La Feria",
+    "city": "Merida",
+    "state": "Mérida",
+    "address": "Av. Don Tulio Febres Cordero, Con Calle 29, Detrás Del Edf. Administrativo De La Ula, Edf. El Paseo Pb, Local único. Ver detalles"
+  },
+  {
+    "code": "14060",
+    "name": "Mérida Los Próceres",
+    "city": "Mérida",
+    "state": "Mérida",
+    "address": "PROLONGACIÓN AV. LOS PRÓCERES, C.C. DON LUIS, NIVEL 1, LOCAL 2B, DETRÁS DE LA ESTACIÓN DE SERVICIO LA PEDREGOSA, SECTOR LA PEDREGOSA, MÉRIDA"
+  },
+  {
+    "code": "14010",
+    "name": "Mérida Paseo La Feria",
+    "city": "Mérida",
+    "state": "Mérida",
+    "address": "AV. PASEO DE LA FERIA, RESIDENCIA EL PASEO, PB, LOCAL ÚNICO, MÉRIDA"
+  },
+  {
+    "code": "14071",
+    "name": "Santa Elena de Arenales",
+    "city": "Mérida",
+    "state": "Mérida",
+    "address": "CALLE PRINCIPAL, SECTOR CAÑO CHEPA, AL LADO DEL SUPERMERCADO PIPO, DIAGONAL A LA IGLESIA DE SANTA ELENA DE ARENALES, MUNICIPIO OBISPO RAMOS DE LORA, EDO. MÉRIDA"
+  },
+  {
+    "code": "14030",
+    "name": "Tovar",
+    "city": "Tovar",
+    "state": "Mérida",
+    "address": "CARRERA 4TA, C.C. EL LLANO, NIVEL PB, LOCAL 4, SECTOR EL LLANO, TOVAR, EDO. MÉRIDA"
+  },
+  {
+    "code": "14070",
+    "name": "Tucanizón",
+    "city": "Tucani",
+    "state": "Mérida",
+    "address": "CARRETERA PANAMERICANA, SECTOR EL CARMEN, C.C. UNIÓN, LOCAL Nº 3, AL LADO DE LA ESTACIÓN DE SERVICIO EL INDIO, TUCANIZÓN, EDO. MÉRIDA"
+  },
+  {
+    "code": "x0240",
+    "name": "Carrizal",
+    "city": "Carrizal",
+    "state": "Miranda",
+    "address": "Kilómetro 21 De La Carretera Panamericana, Ingresando Por La Urbanización Montaña Alta, Local S-1, Centro Comercial Colinas De Carrizal, Frente Al Centro Comercial La Cascada, Carrizal Estado Miranda Ver detalles"
+  },
+  {
+    "code": "x0230",
+    "name": "Charallave",
+    "city": "Charallave",
+    "state": "Miranda",
+    "address": "Calle 9, Avenida Jose Gregorio Hernandez Con Avenida Bolivar Edf. Los Samanes Nro 03 Sector Casco Central Charallave Miranda. Ver detalles"
+  },
+  {
+    "code": "x0231",
+    "name": "Cua",
+    "city": "Cúa",
+    "state": "Miranda",
+    "address": "Urbanizacion Jardines De Santa Rosa, C. C. El Colonial, Local 26-a, Cúa, Miranda. Ver detalles"
+  },
+  {
+    "code": "x0232",
+    "name": "Guarenas",
+    "city": "Guarenas",
+    "state": "Miranda",
+    "address": "C.c La Candelaria, Nivel Planta Baja, Local 01, Estado Miranda. Ver detalles"
+  },
+  {
+    "code": "x0233",
+    "name": "Guatire",
+    "city": "Guatire",
+    "state": "Miranda",
+    "address": "Guatire, Calle Zamora Numero 47, Local Pb-1, Edificio Quinta Arelis. Ver detalles"
+  },
+  {
+    "code": "x0234",
+    "name": "Higuerote",
+    "city": "Higuerote",
+    "state": "Miranda",
+    "address": "Calle El Río, Cc Martí Plaza, Local 1, Higuerote Edo. Miranda, Ver detalles"
+  },
+  {
+    "code": "x0239",
+    "name": "Los Teques",
+    "city": "Los Teques",
+    "state": "Miranda",
+    "address": "Calle Sucre Norte, Locales Nro. 2 Y 15-1, Sector El Pueblo, Los Teques, Miranda Ver detalles"
+  },
+  {
+    "code": "x0235",
+    "name": "Ocumare del Tuy",
+    "city": "Ocumare del Tuy",
+    "state": "Miranda",
+    "address": "Avenida Miranda Con Calle Toribio Mota, Edif. Televisa, Pb. Frente A La Parada De Parosca.. Ver detalles"
+  },
+  {
+    "code": "x0236",
+    "name": "Rio Chico",
+    "city": "Río Chico",
+    "state": "Miranda",
+    "address": "Calle Comercio, Local Mrw. Al Lado De La Farmacia Las Mercedes, Río Chico- Municipio Páez- Edo. Miranda. Ver detalles"
+  },
+  {
+    "code": "x0237",
+    "name": "San Antonio de Los Altos",
+    "city": "San Antonio de Los Altos",
+    "state": "Miranda",
+    "address": "Carreta Panamericana, Kilometro 16, C.c. La Casona Ii, Piso 1, Local #2-17 Al Lado De Cinex, Ver detalles"
+  },
+  {
+    "code": "x0238",
+    "name": "Sta Teresa del Tuy",
+    "city": "Santa Teresa",
+    "state": "Miranda",
+    "address": "Calle Ayacucho Edif Don Guillermo Piso 1 Of 2 Zona Centro Santa Teresa Del Tuy Miranda. Ver detalles"
+  },
+  {
+    "code": "16010",
+    "name": "Maturín Plaza Ayacucho",
+    "city": "Cantaura",
+    "state": "Monagas",
+    "address": "CALLE CANTAURA ENTRE PIAR Y AZCUE, EDIF. MARINA, PB, FRENTE AL HOTEL TRINIDAD, DETRÁS DE LA PLAZA AYACUCHO, DIAGONAL AL BANCO DEL SUR, MATURÍN, EDO. MONAGAS"
+  },
+  {
+    "code": "16040",
+    "name": "Caripe",
+    "city": "Caripe",
+    "state": "Monagas",
+    "address": "AV. BOLÍVAR, C.C. BOLÍVAR PLAZA, LOCAL 11, CARIPE, EDO. MONAGAS"
+  },
+  {
+    "code": "16080",
+    "name": "Maturín Av. Raúl Leoni",
+    "city": "Maturín",
+    "state": "Monagas",
+    "address": "AV. RAÚL LEONI ENTRE CARRERA 3 (ANTIGUA AV. RIVAS) Y CARRERA 4 (ANTIGUA PROLONGACIÓN CEDEÑO), FRENTE AL POLIDEPORTIVO, MATURÍN, EDO. MONAGAS"
+  },
+  {
+    "code": "16030",
+    "name": "Maturín Centro",
+    "city": "Maturín",
+    "state": "Monagas",
+    "address": "CALLE 14 (ANTIGUA AV. ROJAS) CON CALLE 10 (ANTIGUA BARRETO), EDIF. BRAVO, PISO PB, LOCAL 01, DIAGONAL A CANTV, SECTOR CENTRO, MATURÍN, MONAGAS"
+  },
+  {
+    "code": "16090",
+    "name": "Maturín La Floresta",
+    "city": "Maturín",
+    "state": "Monagas",
+    "address": "CARRERA 1 Nº 4, C.C. LA REDOMA, NIVEL PB, LOCAL 5, SECTOR BRISAS DEL AEROPUERTO, DIAGONAL AL SENIAT, MATURÍN, MONAGAS"
+  },
+  {
+    "code": "x0241",
+    "name": "Maturin Norte",
+    "city": "Maturín",
+    "state": "Monagas",
+    "address": "Av. Ppal Via Viboral, Centro Comercial Las Colinas B, P.b. Local 09 Ver detalles"
+  },
+  {
+    "code": "16100",
+    "name": "Maturín Plaza El Indio",
+    "city": "Maturín",
+    "state": "Monagas",
+    "address": "AV. BICENTENARIO, EDIF. ZAMORA, PB, AL LADO DE LA LÍNEA DE TAXI “LO MEJOR DE LO MEJOR”"
+  },
+  {
+    "code": "16070",
+    "name": "Maturín Zona Industrial",
+    "city": "Maturín",
+    "state": "Monagas",
+    "address": "VÍA PRINCIPAL DE LA CRUZ E, C.C. LAS MACARENAS, PB, LOCAL 01, A 1 KM DE LA ENTRADA DE LA ZONA INDUSTRIAL"
+  },
+  {
+    "code": "16020",
+    "name": "Punta de Mata",
+    "city": "Punta de Mata",
+    "state": "Monagas",
+    "address": "CALLE 5 DE JULIO CON CALLE NUEVA, LOCAL MRW, DETRÁS DEL BANCO CARONÍ"
+  },
+  {
+    "code": "16050",
+    "name": "Temblador",
+    "city": "Temblador",
+    "state": "Monagas",
+    "address": "CALLE BOLÍVAR Nº 70-A, SECTOR LA PLAZA, AL LADO DE LA CARNICERÍA EL BRAHMON, MONAGAS"
+  },
+  {
+    "code": "17020",
+    "name": "Juan Griego",
+    "city": "Juan Griego",
+    "state": "Nueva Esparta",
+    "address": "CALLE GUEVARA Nº 12-B ENTRE CALLES LA MARINA Y MARCANO, DIAGONAL A COMERCIAL JUAN GRIEGO"
+  },
+  {
+    "code": "17021",
+    "name": "El Espinal",
+    "city": "La Encrucijada",
+    "state": "Nueva Esparta",
+    "address": "AV. JUAN BAUTISTA ARISMENDI, SECTOR LA ENCRUCIJADA DEL ESPINAL, VÍA SAN JUAN BAUTISTA, A 100 MTS DE LA REGIONAL"
+  },
+  {
+    "code": "17040",
+    "name": "Jóvito Villalba",
+    "city": "Pampatar",
+    "state": "Nueva Esparta",
+    "address": "AV. JÓVITO VILLALBA, ESTACIÓN DE SERVICIO MANEIRO, Nº 9493, URB. SAN LORENZO, PAMPATAR, ESTADO NUEVA ESPARTA"
+  },
+  {
+    "code": "17050",
+    "name": "Nueva Cádiz",
+    "city": "Porlamar",
+    "state": "Nueva Esparta",
+    "address": "AV. JUAN BAUTISTA ARISMENDI, EDIF. ULTRAMAR, LOCAL 2, SECTOR LOS COCOS, DIAGONAL A CITROËN, PORLAMAR"
+  },
+  {
+    "code": "17060",
+    "name": "Porlamar Centro",
+    "city": "Porlamar",
+    "state": "Nueva Esparta",
+    "address": "CALLE VELÁZQUEZ CON ESQUINA FAJARDO, CASA S/N, SECTOR CENTRO, PORLAMAR, NUEVA ESPARTA"
+  },
+  {
+    "code": "17070",
+    "name": "Villa Rosa",
+    "city": "San Antonio",
+    "state": "Nueva Esparta",
+    "address": "AV. JUAN BAUTISTA ARISMENDI, GALPÓN SEVEN-ART, PB, SECTOR SAN ANTONIO NORTE – VILLA ROSA, EDO. NUEVA ESPARTA"
+  },
+  {
+    "code": "18010",
+    "name": "Acarigua",
+    "city": "Acarigua",
+    "state": "Portuguesa",
+    "address": "CALLE 22. ENTRE AVENIDAS LIBERTADOR Y ALIANZA DIAGONAL A LA PANADERIA TREBOL, ACARIGUA CENTRO. EDO. PORTUGUESA"
+  },
+  {
+    "code": "18000",
+    "name": "Guanare",
+    "city": "Guanare",
+    "state": "Portuguesa",
+    "address": "AV JOSE MARIA VARGAS, C.C. REVICA GALPON NRO 4. SECTOR EL CAMBIO GUANARE PORTUGUESA"
+  },
+  {
+    "code": "18040",
+    "name": "Centro Los Llanos",
+    "city": "Los Llanos",
+    "state": "Portuguesa",
+    "address": "CALLE 31 CON AV 28 C.C LOS LLANOS LOCAL 5 PLANTA BAJA"
+  },
+  {
+    "code": "x0244",
+    "name": "Turen",
+    "city": "Turén",
+    "state": "Portuguesa",
+    "address": "Avenida 6, Entre Calle 8 Y 9, Turén Portuguesa. Ver detalles"
+  },
+  {
+    "code": "19010",
+    "name": "Carúpano",
+    "city": "Carúpano",
+    "state": "Sucre",
+    "address": "AV. UNIVERSITARIA, EDIF. PROSEIN, PISO MEZZANINA, LOCAL B, SECTOR LOS MOLINOS, CARÚPANO, EDO. SUCRE"
+  },
+  {
+    "code": "19000",
+    "name": "Cumaná",
+    "city": "Cumaná",
+    "state": "Sucre",
+    "address": "CALLE MARINO, EDIF. TUNIMIQUIRE, LOCAL Nº 01, CUMANÁ"
+  },
+  {
+    "code": "19020",
+    "name": "Cumaná Urdaneta",
+    "city": "Cumaná",
+    "state": "Sucre",
+    "address": "CALLE 4TA TRANSVERSAL AV. GRAN MARISCAL CON URDANETA, SECTOR SANTA ROSA, EDIF. CEU, PISO PB, LOCAL 02 MRW, CUMANÁ"
+  },
+  {
+    "code": "20080",
+    "name": "Barrio Obrero",
+    "city": "Barrio Obrero",
+    "state": "Táchira",
+    "address": "CARRERA 22, ESQ. PASAJE PIRINEOS, AL LADO DE LA CAPILLA DEL AHORCADO, A 20 METROS DE LA PLAZA LOS MANGOS, BARRIO OBRERO"
+  },
+  {
+    "code": "20120",
+    "name": "San Juan de Colón",
+    "city": "Colón",
+    "state": "Táchira",
+    "address": "CARRERA 5 ESQUINA CALLE 7 Nº 4-79, SAN JUAN DE COLÓN, EDO. TÁCHIRA"
+  },
+  {
+    "code": "20060",
+    "name": "El Piñal",
+    "city": "El Piñal",
+    "state": "Táchira",
+    "address": "CALLE 1, VÍA LA MORITA, ZONA COMERCIAL EL MIRADOR, EL PIÑAL, MUNICIPIO FERNÁNDEZ FEO, EDO. TÁCHIRA"
+  },
+  {
+    "code": "20030",
+    "name": "La Fría",
+    "city": "La Fría",
+    "state": "Táchira",
+    "address": "CARRERA 11 ENTRE CALLES 5 Y 6 Nº 4-49, LA FRÍA, EDO. TÁCHIRA"
+  },
+  {
+    "code": "20040",
+    "name": "La Grita",
+    "city": "La Grita",
+    "state": "Táchira",
+    "address": "AV. FRANCISCO DE CÁCERES CON CALLE 6, DIAGONAL AL COLEGIO STA. ROSA DE LIMA, LA GRITA, EDO. TÁCHIRA"
+  },
+  {
+    "code": "20050",
+    "name": "Rubio",
+    "city": "Rubio",
+    "state": "Táchira",
+    "address": "C.C. VENEZIA FRENTE A LA PLAZA BOLÍVAR DE RUBIO, SECTOR CENTRO, LOCALES 6 Y 7, ESTADO TÁCHIRA"
+  },
+  {
+    "code": "20020",
+    "name": "San Antonio del Táchira",
+    "city": "San Antonio",
+    "state": "Táchira",
+    "address": "AV. VENEZUELA CON CALLE 7, EDIF. REAL, LOCAL Nº 7-09, SECTOR CENTRO, A TRES CUADRAS DE LA ADUANA PRINCIPAL"
+  },
+  {
+    "code": "20070",
+    "name": "Táriba",
+    "city": "San Antonio",
+    "state": "Táchira",
+    "address": "CALLE 8 CON CARRERA 8, CASA Nº 7-87, LOCAL 2, A DOS CUADRAS DEL HOSPITAL SAN ANTONIO, SECTOR TÁRIBA, TÁCHIRA"
+  },
+  {
+    "code": "x0246",
+    "name": "S. Antonio del Tachira",
+    "city": "San Antonio del Tachira",
+    "state": "Táchira",
+    "address": "Av Venezuela Con Calle 7 Edif Real Local N 7-09 Sector Centro, A Tres Cuadras De La Aduana Principal. Ver detalles"
+  },
+  {
+    "code": "20110",
+    "name": "Paramillo",
+    "city": "San Cristóbal",
+    "state": "Táchira",
+    "address": "AV. LOS AGUSTINOS ESQ. CALLE 4, LOCAL Nº 3-70, URB. EL LOBO, SECTOR PARAMILLO, SAN CRISTÓBAL"
+  },
+  {
+    "code": "20000",
+    "name": "San Cristóbal Carrera 20",
+    "city": "San Cristóbal",
+    "state": "Táchira",
+    "address": "BARRIO OBRERO, CALLE 10 CON CARRERA 20 Nº 9-108, LOCAL 6, FRENTE A LICORERÍA 9 CON 19, SAN CRISTÓBAL, ESTADO TÁCHIRA"
+  },
+  {
+    "code": "20100",
+    "name": "San Cristóbal Centro",
+    "city": "San Cristóbal",
+    "state": "Táchira",
+    "address": "7MA AV. ENTRE CALLES 5 Y 6, C.C. PARTENÓN, NIVEL P.B., LOCAL Nº 3, DIAGONAL A LA TORRE UNIÓN, A CUADRA Y MEDIA DE LA PLAZA BOLÍVAR, SECTOR CENTRO, SAN CRISTÓBAL, ESTADO TÁCHIRA"
+  },
+  {
+    "code": "20010",
+    "name": "San Cristóbal Concordia",
+    "city": "San Cristóbal",
+    "state": "Táchira",
+    "address": "CALLE 4 BIS CON CARRERAS 6 Y 7, EDIF. RAMÍREZ, P.B., LOCAL 1, DETRÁS DEL DIARIO LA NACIÓN, LA CONCORDIA, SAN CRISTÓBAL, ESTADO TÁCHIRA"
+  },
+  {
+    "code": "20090",
+    "name": "Ureña",
+    "city": "Ureña",
+    "state": "Táchira",
+    "address": "CALLE 5 CON ESQUINA CARRERA 6, EDIF. SOFI, P.B., LOCALES 103, 104, 105, 106 Y 107, BARRIO LA GUAJIRA, UREÑA, ESTADO TÁCHIRA"
+  },
+  {
+    "code": "21030",
+    "name": "Boconó",
+    "city": "Boconó",
+    "state": "Trujillo",
+    "address": "AV. MIRANDA CON CALLE ANDRÉS BELLO, LOCAL 2, SECTOR CENTRO, BOCONÓ, EDO. TRUJILLO"
+  },
+  {
+    "code": "x0245",
+    "name": "Carache",
+    "city": "Carache",
+    "state": "Trujillo",
+    "address": "Av. Principal Casa S/n Sector Palo Negro, Carache Estado Trujillo Ver detalles"
+  },
+  {
+    "code": "21060",
+    "name": "Sabana de Mendoza",
+    "city": "Sabana de Mendoza",
+    "state": "Trujillo",
+    "address": "AV. LAS FLORES ENTRE CALLES PIAR Y COMERCIO, LOCAL Nº 4, SABANA DE MENDOZA, EDO. TRUJILLO"
+  },
+  {
+    "code": "21000",
+    "name": "Trujillo",
+    "city": "Trujillo",
+    "state": "Trujillo",
+    "address": "CALLE REGULARIZACIÓN, SECTOR CENTRO, C.C. GEMINIS CENTER, PB, LOCAL 3, FRENTE A LA PLAZA BOLÍVAR, TRUJILLO"
+  },
+  {
+    "code": "21010",
+    "name": "Valera",
+    "city": "Valera",
+    "state": "Trujillo",
+    "address": "CALLE 5 ENTRE AV. BOLÍVAR Y 9, EDIF. PROFESIONAL DON PEPE, PB, LOCAL MRW, VALERA, ESTADO TRUJILLO"
+  },
+  {
+    "code": "21050",
+    "name": "Valera Centro",
+    "city": "Valera",
+    "state": "Trujillo",
+    "address": "AV. 12 CON CALLES 8 Y 9, EDIF. BEATRIZ, P.B., LOCAL 01, SECTOR CENTRO, VALERA, EDO. TRUJILLO"
+  },
+  {
+    "code": "21040",
+    "name": "Valera Los Limoncitos",
+    "city": "Valera",
+    "state": "Trujillo",
+    "address": "AV. BOLÍVAR, ESQ. CALLE 22, EDIF. RESIDENCIAS TRINITARIAS II, P.B., LOCAL B, SECTOR LOS LIMONCITOS, FRENTE A MCDONALD'S, VALERA, EDO. TRUJILLO"
+  },
+  {
+    "code": "23010",
+    "name": "Nirgua",
+    "city": "Nirgua",
+    "state": "Yaracuy",
+    "address": "AV. 5 ENTRE CALLES 4 Y 5. EDIF. MURCIA, LOCAL 3. DIAGONAL AL BANCO PROVINCIAL, SECTOR PLAZA SUCRE. NIRGUA"
+  },
+  {
+    "code": "23000",
+    "name": "San Felipe",
+    "city": "San Felipe",
+    "state": "Yaracuy",
+    "address": "2º AV. CON CALLE 16 EDIF. ROSPIER AL LADO LA FARMACIA FARMAVANGUAR"
+  },
+  {
+    "code": "23030",
+    "name": "Yaritagua",
+    "city": "Yaritagua",
+    "state": "Yaracuy",
+    "address": "CALLE 17 ENTRE CARRERAS 7 Y 8 LOCAL S/N SECTOR CENTRO YARITAGUA - YARACUY"
+  },
+  {
+    "code": "x0248",
+    "name": "Cabimas",
+    "city": "Cabimas",
+    "state": "Zulia",
+    "address": "Av Intercomunal, Esquina Cumana Edif Intercumana Local N 02 Pb Cabimas Edo Zulia. Ver detalles"
+  },
+  {
+    "code": "24170",
+    "name": "Ciudad Ojeda Centro",
+    "city": "Ciudad Ojeda",
+    "state": "Zulia",
+    "address": "CALLE FARIA ESQ CALLE LARA C.C TED NIVEL PB LOCAL 03 SECTOR CASCO CENTRAL CIUDAD OJEDA EDO. ZULIA"
+  },
+  {
+    "code": "24250",
+    "name": "Curva de Molina",
+    "city": "Curva de",
+    "state": "Zulia",
+    "address": "CALLE 79 NRO 92-58 FRENTE AL MODULO LIBERTADOR AL LADO DE LA FERRETERIA RAYEN CURVA DE MOLINA"
+  },
+  {
+    "code": "24005",
+    "name": "Los Olivos",
+    "city": "Los Olivos",
+    "state": "Zulia",
+    "address": "AV 28 LA LIMPIA CON AVENIDA 69ª LOCAL 69B-09 SECTOR LOS ACEITUNOS AL LADO DE LA E/S LOS ACEITUNOS"
+  },
+  {
+    "code": "24080",
+    "name": "Machiques",
+    "city": "Machiques",
+    "state": "Zulia",
+    "address": "AV. ARTES ESQ, CALLE PAZ, FRENTE AL BANCO AGRICOLA. MACHIQUES EDO. ZULIA"
+  },
+  {
+    "code": "x0249",
+    "name": "Circunvalacion 2",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Parroquia Cecilio Acosta, Municipio Maracaibo, Av. 58 Circunvalacion N° 2 Edif, Casa Saas Piso: Pb, Local 98e-164 Barrio Entre Calles 98e Y 99, Barrio Andres Eloy Blanco Ver detalles"
+  },
+  {
+    "code": "24062",
+    "name": "Coromoto",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "URBANIZACIÓN COROMOTO, AVENIDA 40 NÚMERO 161-44 LOCAL 3. FRENTE A LA EMISORA ALEGRIA STEREO. MARACAIBO - ZULIA"
+  },
+  {
+    "code": "24130",
+    "name": "La Chinita",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "AV. 12 C/C 93 PADILLA, EDIF. PADILLA, LOCAL Nº 33 SECTOR CASCO CENTRAL. AL LADO DEL CENTRO DE LITERATURA CRISTIANA, MARACAIBO, EDO. ZULIA"
+  },
+  {
+    "code": "24000",
+    "name": "La Limpia",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "AV. 28 EDIF. RODRÍGUEZ Y BARBOZA, PISO PB LOCAL 01, DIAGONAL AL HOTEL MARACAIBO SUIT. SECTOR LA LIMPIA MARACAIBO ESTADO ZULIA"
+  },
+  {
+    "code": "24060",
+    "name": "Manzanillo",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "CALLE 10 LA UNION CON AV. 24. C.C. B & B, P.B. LOCAL 2 SECTOR MANZANILLO. MARACAIBO, EDO. ZULIA"
+  },
+  {
+    "code": "24010",
+    "name": "Maracaibo Indio Mara",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "CALLE 78 DR PORTILLO ENTRE AV. 16 Y 17 Nº 17-35 DIAGONAL AL BANCO PROVINCIAL, SECTOR EL PARAISO"
+  },
+  {
+    "code": "24140",
+    "name": "Maracaibo Irama",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "AV 5 CON CALLE E LOCAL NRO E-71 SECTOR 18 DE OCTUBRE, A POCOS METROS DE FRENOS IRAZUCA. MONTE CLARO MARACAIBO ZULIA"
+  },
+  {
+    "code": "24230",
+    "name": "Maracaibo La Lago",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "AV. 3E ENTRE CALLES 72 Y 73 EDIF ASOCIACION ZULIANA DE CIEGOS PISO PB LOCAL 3, SECTOR LA LAGO MARACAIBO ZULIA ZONA POSTAL 4002"
+  },
+  {
+    "code": "24006",
+    "name": "Maracaibo Norte",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "AV. PAUL MORENO, ANTIGUA FUERZAS ARMADAS CON CALLE 20, EDIF. MILENIUM CASAS SAAS, MARACAIBO EDO-ZULIA"
+  },
+  {
+    "code": "x0250",
+    "name": "Mbo Indio Mara",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Calle 78 Dr Portillo Entre Avenidas 16 Y 17 Local 17-35 Sector Para-so Ver detalles"
+  },
+  {
+    "code": "x0251",
+    "name": "Mbo Irama",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av 5 Con Calle E Local E-71 Sector 18 De Octubre A Pocos Metros De Frenos Irazuca Ver detalles"
+  },
+  {
+    "code": "x0252",
+    "name": "Mbo La Lago",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "address": "Av. 3e Entre Calle 72 Y 73 Edif. Asociación Zuliana De Ciegos, Local 3 Ver detalles"
+  },
+  {
+    "code": "24240",
+    "name": "Caja Seca",
+    "city": "Mérida",
+    "state": "Zulia",
+    "address": "NUEVA BOLIVIA MERIDA, CTRA. PANAMERICANA, SECTOR LA CHERTOZA, C.C STILO, PLANTA BAJA LOCAL 2"
+  },
+  {
+    "code": "24160",
+    "name": "El Venado",
+    "city": "San Antonio",
+    "state": "Zulia",
+    "address": "AV. INDEPENDENCIA, CENTRO COMERCIAL SAN ANTONIO (LOS DUARTES), LOCAL #01, MENE GRANDE; MUNICIPIO BARALT DEL ESTADO ZULIA, CODIGO POSTAL 4015"
+  },
+  {
+    "code": "24150",
+    "name": "Santa Barbara del Zulia",
+    "city": "Santa Barbara",
+    "state": "Zulia",
+    "address": "AV 8 CASA N° 5-127 SECTOR BOLIVAR, SANTA BARBARA ZULIA"
+  },
+  {
+    "code": "24200",
+    "name": "Tia Juana",
+    "city": "Tia Juana",
+    "state": "Zulia",
+    "address": "AVENIDA INTERCOMUNAL DE TIA JUANA, SECTOR EZEQUIEL ZAMORA, LOCAL # 1. FRENTE A PRODATA WIRE - LINE. TIA JUANA"
+  }
+]

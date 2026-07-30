@@ -1,4 +1,5 @@
 import type { ShippingCarrierKey } from "@/lib/store-settings/types";
+import mrwBranchesData from "@/lib/shipping/data/mrw-branches.ve.json";
 
 export interface CarrierBranch {
   id: string;
@@ -7,9 +8,21 @@ export interface CarrierBranch {
   city: string;
   state: string;
   address: string;
+  /** Official agency code when available (MRW). */
+  code?: string;
 }
 
-type BranchSeed = Omit<CarrierBranch, "id" | "carrier">;
+type BranchSeed = Omit<CarrierBranch, "id" | "carrier" | "code"> & {
+  code?: string;
+};
+
+type MrwBranchRecord = {
+  code: string;
+  name: string;
+  city: string;
+  state: string;
+  address: string;
+};
 
 const NATIONAL_CARRIER_KEYS = [
   "mrw",
@@ -19,6 +32,7 @@ const NATIONAL_CARRIER_KEYS = [
   "libertyExpress",
 ] as const satisfies readonly ShippingCarrierKey[];
 
+/** Thin national sample for carriers without a dedicated catalog yet. */
 const VENEZUELA_BRANCH_SEEDS: BranchSeed[] = [
   {
     name: "Centro Caracas",
@@ -31,18 +45,6 @@ const VENEZUELA_BRANCH_SEEDS: BranchSeed[] = [
     city: "Caracas",
     state: "Miranda",
     address: "Av. Francisco de Miranda, Centro Comercial Lido",
-  },
-  {
-    name: "La Candelaria",
-    city: "Caracas",
-    state: "Distrito Capital",
-    address: "Av. México, Edificio Centro Plaza",
-  },
-  {
-    name: "El Marques",
-    city: "Caracas",
-    state: "Miranda",
-    address: "Av. Intercomunal El Marques, CC El Marques",
   },
   {
     name: "Centro Valencia",
@@ -61,12 +63,6 @@ const VENEZUELA_BRANCH_SEEDS: BranchSeed[] = [
     city: "Maracaibo",
     state: "Zulia",
     address: "Av. 5 de Julio, Sector Centro",
-  },
-  {
-    name: "Lago Mall",
-    city: "Maracaibo",
-    state: "Zulia",
-    address: "Av. El Milagro, CC Lago Mall",
   },
   {
     name: "Centro Barquisimeto",
@@ -127,27 +123,81 @@ function slugify(value: string): string {
     .replace(/^-|-$/g, "");
 }
 
-function buildBranchId(carrier: ShippingCarrierKey, seed: BranchSeed): string {
+export function foldSearchText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function buildBranchId(
+  carrier: ShippingCarrierKey,
+  seed: BranchSeed,
+): string {
+  if (seed.code) {
+    return `${carrier}-${seed.code}`;
+  }
   return `${carrier}-${slugify(seed.city)}-${slugify(seed.name)}`;
 }
 
-export const CARRIER_BRANCHES: CarrierBranch[] = NATIONAL_CARRIER_KEYS.flatMap(
-  (carrier) =>
-    VENEZUELA_BRANCH_SEEDS.map((seed) => ({
-      id: buildBranchId(carrier, seed),
-      carrier,
-      ...seed,
-    })),
+function mapSeed(
+  carrier: ShippingCarrierKey,
+  seed: BranchSeed,
+): CarrierBranch {
+  return {
+    id: buildBranchId(carrier, seed),
+    carrier,
+    name: seed.name,
+    city: seed.city,
+    state: seed.state,
+    address: seed.address,
+    ...(seed.code ? { code: seed.code } : {}),
+  };
+}
+
+const MRW_BRANCHES: CarrierBranch[] = (
+  mrwBranchesData as MrwBranchRecord[]
+).map((row) =>
+  mapSeed("mrw", {
+    code: row.code,
+    name: row.name,
+    city: row.city,
+    state: row.state,
+    address: row.address,
+  }),
 );
+
+const OTHER_CARRIER_BRANCHES: CarrierBranch[] = NATIONAL_CARRIER_KEYS.filter(
+  (carrier) => carrier !== "mrw",
+).flatMap((carrier) =>
+  VENEZUELA_BRANCH_SEEDS.map((seed) => mapSeed(carrier, seed)),
+);
+
+export const CARRIER_BRANCHES: CarrierBranch[] = [
+  ...MRW_BRANCHES,
+  ...OTHER_CARRIER_BRANCHES,
+];
 
 const BRANCHES_BY_ID = new Map(
   CARRIER_BRANCHES.map((branch) => [branch.id, branch]),
 );
 
+const BRANCHES_BY_CARRIER = new Map<ShippingCarrierKey, CarrierBranch[]>();
+for (const branch of CARRIER_BRANCHES) {
+  const list = BRANCHES_BY_CARRIER.get(branch.carrier);
+  if (list) list.push(branch);
+  else BRANCHES_BY_CARRIER.set(branch.carrier, [branch]);
+}
+
+function compareEs(a: string, b: string): number {
+  return a.localeCompare(b, "es", { sensitivity: "base" });
+}
+
 export function getCarrierBranches(
   carrier: ShippingCarrierKey,
 ): CarrierBranch[] {
-  return CARRIER_BRANCHES.filter((branch) => branch.carrier === carrier);
+  return BRANCHES_BY_CARRIER.get(carrier) ?? [];
 }
 
 export function getCarrierBranchById(
@@ -157,35 +207,85 @@ export function getCarrierBranchById(
   return BRANCHES_BY_ID.get(branchId.trim()) ?? null;
 }
 
+export function getCarrierStates(carrier: ShippingCarrierKey): string[] {
+  const states = new Set(getCarrierBranches(carrier).map((b) => b.state));
+  return [...states].sort(compareEs);
+}
+
+export function getCarrierCities(
+  carrier: ShippingCarrierKey,
+  state: string,
+): string[] {
+  const foldedState = foldSearchText(state);
+  const cities = new Set(
+    getCarrierBranches(carrier)
+      .filter((b) => foldSearchText(b.state) === foldedState)
+      .map((b) => b.city),
+  );
+  return [...cities].sort(compareEs);
+}
+
+export function getCarrierBranchesByLocation(
+  carrier: ShippingCarrierKey,
+  state: string | null | undefined,
+  city: string | null | undefined,
+): CarrierBranch[] {
+  const foldedState = state ? foldSearchText(state) : "";
+  const foldedCity = city ? foldSearchText(city) : "";
+
+  return getCarrierBranches(carrier)
+    .filter((branch) => {
+      if (foldedState && foldSearchText(branch.state) !== foldedState) {
+        return false;
+      }
+      if (foldedCity && foldSearchText(branch.city) !== foldedCity) {
+        return false;
+      }
+      return true;
+    })
+    .sort(
+      (a, b) =>
+        compareEs(a.city, b.city) ||
+        compareEs(a.name, b.name) ||
+        compareEs(a.address, b.address),
+    );
+}
+
 export function searchCarrierBranches(
   carrier: ShippingCarrierKey,
   query: string,
-  limit = 25,
+  limit = 40,
+  options?: {
+    state?: string | null;
+    city?: string | null;
+  },
 ): CarrierBranch[] {
-  const normalized = query.trim().toLowerCase();
-  const branches = getCarrierBranches(carrier);
+  const scoped = getCarrierBranchesByLocation(
+    carrier,
+    options?.state,
+    options?.city,
+  );
+  const normalized = foldSearchText(query);
 
   if (!normalized) {
-    return branches.slice(0, limit);
+    return scoped.slice(0, limit);
   }
 
-  return branches
+  return scoped
     .filter((branch) => {
-      const haystack = [
-        branch.name,
-        branch.city,
-        branch.state,
-        branch.address,
-      ]
-        .join(" ")
-        .toLowerCase();
+      const haystack = foldSearchText(
+        [branch.name, branch.city, branch.state, branch.address, branch.code ?? ""].join(
+          " ",
+        ),
+      );
       return haystack.includes(normalized);
     })
     .slice(0, limit);
 }
 
 export function formatCarrierBranchLabel(branch: CarrierBranch): string {
-  return `${branch.name} · ${branch.city}, ${branch.state}`;
+  const codeSuffix = branch.code ? ` (${branch.code})` : "";
+  return `${branch.name}${codeSuffix} · ${branch.city}, ${branch.state}`;
 }
 
 export function formatCarrierBranchAddress(branch: CarrierBranch): string {
