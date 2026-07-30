@@ -9,6 +9,7 @@ import {
   MapPin,
   MessageSquare,
   Palette,
+  FolderTree,
   Settings2,
   Tag,
   Truck,
@@ -17,6 +18,7 @@ import {
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
 import { DomainsTab } from "@/components/dashboard/settings/DomainsTab";
 import { LocationsTab } from "@/components/dashboard/settings/LocationsTab";
+import { CategoriesTab } from "@/components/dashboard/settings/CategoriesTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
 import { CustomerAccountsTab } from "@/components/dashboard/settings/CustomerAccountsTab";
 import { MessageTemplatesTab } from "@/components/dashboard/settings/MessageTemplatesTab";
@@ -35,10 +37,13 @@ import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab
 import type { PlanId } from "@/src/config/plans";
 import type { StoreLocation } from "@/lib/locations/types";
 import type { LocationLimitSummary } from "@/components/dashboard/settings/LocationsTab";
+import type { StoreCategoryRow } from "@/lib/categories/types";
+import { getProductCategoriesForRubro, normalizeStoreRubro } from "@/src/config/categories";
 import { cn } from "@/lib/cn";
 
 type SettingsTabId =
   | "general"
+  | "categories"
   | "currency"
   | "location"
   | "shipping"
@@ -52,6 +57,7 @@ type SettingsTabId =
 
 const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
   "general",
+  "categories",
   "currency",
   "location",
   "shipping",
@@ -82,6 +88,7 @@ const SETTINGS_NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Tienda",
     items: [
       { id: "general", label: "Identidad", icon: Settings2 },
+      { id: "categories", label: "Categorías", icon: FolderTree },
       { id: "location", label: "Horarios y contacto", icon: Clock },
       { id: "currency", label: "Moneda", icon: Coins },
     ],
@@ -129,6 +136,7 @@ interface SettingsPanelProps {
   planId?: PlanId;
   initialLocations?: StoreLocation[];
   locationLimit?: LocationLimitSummary | null;
+  initialCategories?: StoreCategoryRow[];
   initialDomain?: string | null;
   initialDomainMode?: "connect" | "purchase" | null;
 }
@@ -144,6 +152,7 @@ export function SettingsPanel({
   planId,
   initialLocations = [],
   locationLimit = null,
+  initialCategories = [],
   initialDomain = null,
   initialDomainMode = null,
 }: SettingsPanelProps) {
@@ -171,6 +180,15 @@ export function SettingsPanel({
                 rubro_tienda: "ropa-moda",
               }
             }
+          />
+        );
+      case "categories":
+        return (
+          <CategoriesTab
+            initialCategories={initialCategories}
+            suggestedNames={getProductCategoriesForRubro(
+              normalizeStoreRubro(store?.rubro_tienda),
+            ).map((category) => category.label)}
           />
         );
       case "currency":

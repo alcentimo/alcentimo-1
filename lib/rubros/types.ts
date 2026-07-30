@@ -88,13 +88,16 @@ export const RUBRO_MODULE_MANAGED_EXTRA_FIELDS: Record<
   ],
 };
 
-/** El rubro define el giro; la categoría de producto se pide cuando aporta (p. ej. PC Builder). */
+/**
+ * El rubro define el giro; la categoría principal la define el dueño.
+ * Solo se oculta si el módulo no aporta valor al selector (ningún caso activo).
+ */
 export const RUBRO_MODULE_HIDES_CATEGORY: Record<RubroProductModuleId, boolean> = {
-  "ropa-moda": true,
-  alimentos: true,
+  "ropa-moda": false,
+  alimentos: false,
   /** Tecnología necesita categoría (celulares vs procesadores) para specs y Arma tu PC. */
   tecnologia: false,
-  coleccionables: true,
-  "salud-belleza": true,
+  coleccionables: false,
+  "salud-belleza": false,
   "papeleria-libreria-oficina": false,
 };

@@ -50,18 +50,18 @@ export function ProductCategorySelector({
         onChange={(event) => onCategorySlugChange(event.target.value)}
         className={cn("mt-1.5", selectClassName ?? "payment-field-input")}
       >
-        {suggested.length > 0 ? (
-          <optgroup label={`Sugeridas · ${rubroLabel}`}>
-            {suggested.map((category) => (
+        {customSaved.length > 0 ? (
+          <optgroup label="Tus categorías">
+            {customSaved.map((category) => (
               <option key={category.slug} value={category.slug}>
                 {category.label}
               </option>
             ))}
           </optgroup>
         ) : null}
-        {customSaved.length > 0 ? (
-          <optgroup label="Tus categorías">
-            {customSaved.map((category) => (
+        {suggested.length > 0 ? (
+          <optgroup label={`Sugeridas · ${rubroLabel}`}>
+            {suggested.map((category) => (
               <option key={category.slug} value={category.slug}>
                 {category.label}
               </option>
@@ -81,7 +81,7 @@ export function ProductCategorySelector({
             name="custom_category_name"
             value={customCategoryName}
             onChange={(event) => onCustomCategoryNameChange(event.target.value)}
-            placeholder="Ej: Accesorios de playa"
+            placeholder="Ej: Damas, Caballeros, Outlet…"
             maxLength={80}
             required
             className={cn("mt-1.5", selectClassName ?? "payment-field-input")}
@@ -90,7 +90,7 @@ export function ProductCategorySelector({
       ) : null}
 
       <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-        Sugerencias según tu rubro ({rubroLabel}). Puedes crear una categoría propia si lo necesitas.
+        Tú defines las categorías principales de tu tienda. También puedes gestionarlas en Ajustes → Categorías.
       </p>
     </div>
   );

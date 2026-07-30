@@ -12,9 +12,10 @@ export async function getPublicStoreCategories(
 
   const { data, error } = await client
     .from("categories")
-    .select("slug, name")
+    .select("slug, name, sort_order")
     .eq("store_id", storeId)
     .eq("is_active", true)
+    .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
 
   if (error) {
@@ -27,6 +28,7 @@ export async function getPublicStoreCategories(
     .map((item) => ({
       slug: item.slug as string,
       name: item.name as string,
+      sortOrder: Number(item.sort_order ?? 0),
     }))
     .filter((category) =>
       isCategoryAlignedWithRubro(category.slug, category.name, rubro),

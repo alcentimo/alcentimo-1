@@ -182,5 +182,6 @@ export function mergeStoreProductCategories(
       isLegacy: true,
     }));
 
-  return [...suggested, ...legacyPresets, ...custom];
+  // Las categorías propias van primero: el dueño define su estructura principal.
+  return [...custom, ...suggested, ...legacyPresets];
 }

@@ -9,6 +9,18 @@ import {
 export interface CatalogCategoryOption {
   slug: string;
   name: string;
+  /** Orden definido por el dueño en Ajustes → Categorías. */
+  sortOrder?: number;
+}
+
+function compareCatalogCategories(
+  a: CatalogCategoryOption,
+  b: CatalogCategoryOption,
+): number {
+  const orderA = a.sortOrder ?? Number.MAX_SAFE_INTEGER;
+  const orderB = b.sortOrder ?? Number.MAX_SAFE_INTEGER;
+  if (orderA !== orderB) return orderA - orderB;
+  return a.name.localeCompare(b.name, "es");
 }
 
 export function extractCatalogCategories(
@@ -24,9 +36,7 @@ export function extractCatalogCategories(
     });
   }
 
-  return Array.from(map.values()).sort((a, b) =>
-    a.name.localeCompare(b.name, "es"),
-  );
+  return Array.from(map.values()).sort(compareCatalogCategories);
 }
 
 /** Filtra y renombra categorías públicas según el rubro de la tienda. */
@@ -51,9 +61,10 @@ export function filterCatalogCategoriesForRubro(
       return {
         slug,
         name: officialLabelBySlug.get(slug) ?? category.name,
+        sortOrder: category.sortOrder,
       };
     })
-    .sort((a, b) => a.name.localeCompare(b.name, "es"));
+    .sort(compareCatalogCategories);
 }
 
 /** Une nombres de la tienda con categorías que tienen productos. */
@@ -63,14 +74,18 @@ export function mergeStoreCategoriesWithProductSlugs(
 ): CatalogCategoryOption[] {
   if (categoriesWithProducts.length === 0) return [];
 
-  const nameBySlug = new Map(
-    storeCategories.map((category) => [category.slug, category.name]),
+  const storeBySlug = new Map(
+    storeCategories.map((category) => [category.slug, category]),
   );
 
-  return categoriesWithProducts.map((category) => ({
-    slug: category.slug,
-    name: nameBySlug.get(category.slug) ?? category.name,
-  }));
+  return categoriesWithProducts.map((category) => {
+    const storeCategory = storeBySlug.get(category.slug);
+    return {
+      slug: category.slug,
+      name: storeCategory?.name ?? category.name,
+      sortOrder: storeCategory?.sortOrder ?? category.sortOrder,
+    };
+  });
 }
 
 /**

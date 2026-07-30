@@ -12,6 +12,7 @@ import { SettingsPanel } from "@/components/dashboard/settings/SettingsPanel";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { requireDashboardRouteAccess } from "@/lib/team/route-guard";
 import { getStoreLocations } from "@/lib/locations/get-store-locations";
+import { getStoreCategoriesForManagement } from "@/lib/categories/get-store-categories";
 import { resolveLocationLimit } from "@/lib/locations/limits";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 import {
@@ -52,6 +53,7 @@ export default async function AjustesPage({
   let products: { id: string; name: string; categoryName: string | null; thumbUrl: string | null }[] =
     [];
   let locations: Awaited<ReturnType<typeof getStoreLocations>> = [];
+  let categories: Awaited<ReturnType<typeof getStoreCategoriesForManagement>> = [];
   let locationLimit: {
     maxAllowed: number;
     includedLocations: number;
@@ -80,7 +82,7 @@ export default async function AjustesPage({
   let trialActive = false;
 
   if (store) {
-    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations, planSettings] =
+    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations, storeCategories, planSettings] =
       await Promise.all([
       getStoreSettingsConfig(store.id),
       getStoreCoupons(store.id),
@@ -89,6 +91,7 @@ export default async function AjustesPage({
       getCurrentExchangeRate(),
       getCatalogPreviewSettings(store),
       getStoreLocations(store.id).catch(() => []),
+      getStoreCategoriesForManagement(supabase, store.id).catch(() => []),
       fetchPlanSettings().catch(() => null),
     ]);
 
@@ -96,6 +99,7 @@ export default async function AjustesPage({
     coupons = couponRows;
     promotions = promotionRows;
     locations = storeLocations;
+    categories = storeCategories;
     trialSetupStatus = getOnboardingSetupStatus(
       inventory.totalCount,
       config,
@@ -182,6 +186,7 @@ export default async function AjustesPage({
         planId={session.authUser.planId}
         initialLocations={locations}
         locationLimit={locationLimit}
+        initialCategories={categories}
         initialDomain={domain?.trim() || null}
         initialDomainMode={
           mode === "connect" || mode === "purchase" ? mode : null

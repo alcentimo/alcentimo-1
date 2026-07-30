@@ -7745,8 +7745,20 @@ body {
   @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-600;
 }
 
+.catalog-browse-category-rail {
+  @apply mt-2.5 space-y-1.5;
+}
+
+.catalog-browse-category-rail-label {
+  @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500;
+}
+
 .catalog-browse-category-chips {
-  @apply mt-2 px-0;
+  @apply mt-0 flex-nowrap gap-2 overflow-x-auto px-0 pb-1 [-ms-overflow-style:none] [scrollbar-width:none];
+}
+
+.catalog-browse-category-chips::-webkit-scrollbar {
+  display: none;
 }
 
 .catalog-browse-meta {

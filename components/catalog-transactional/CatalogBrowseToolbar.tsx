@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/cn";
 
-const MAX_VISIBLE_CATEGORY_CHIPS = 4;
+const MAX_VISIBLE_CATEGORY_CHIPS = 8;
 
 interface CatalogBrowseToolbarProps {
   searchQuery: string;
@@ -77,7 +77,7 @@ export function CatalogBrowseToolbar({
 }: CatalogBrowseToolbarProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const showCategories = showCategoryFilter && categories.length > 1;
+  const showCategories = showCategoryFilter && categories.length > 0;
 
   const { visible: visibleCategories, overflow: overflowCategories } = useMemo(
     () => splitVisibleCategories(categories, categorySlug),
@@ -138,100 +138,103 @@ export function CatalogBrowseToolbar({
       </div>
 
       {showCategories ? (
-        <div
-          className="catalog-category-chips catalog-browse-category-chips"
-          role="tablist"
-          aria-label="Filtrar por categoría"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={categorySlug == null}
-            onClick={() => onCategorySlugChange(null)}
-            className={cn(
-              "catalog-category-chip",
-              categorySlug == null && "catalog-category-chip-active",
-            )}
+        <div className="catalog-browse-category-rail" aria-label="Categorías">
+          <p className="catalog-browse-category-rail-label">Categorías</p>
+          <div
+            className="catalog-category-chips catalog-browse-category-chips"
+            role="tablist"
+            aria-label="Filtrar por categoría"
           >
-            Todas
-          </button>
-
-          {visibleCategories.map((category) => (
             <button
-              key={category.slug}
               type="button"
               role="tab"
-              aria-selected={categorySlug === category.slug}
-              onClick={() => onCategorySlugChange(category.slug)}
+              aria-selected={categorySlug == null}
+              onClick={() => onCategorySlugChange(null)}
               className={cn(
                 "catalog-category-chip",
-                categorySlug === category.slug && "catalog-category-chip-active",
+                categorySlug == null && "catalog-category-chip-active",
               )}
             >
-              {category.name}
+              Todas
             </button>
-          ))}
 
-          {overflowCategories.length > 0 ? (
-            <div className="catalog-category-more">
+            {visibleCategories.map((category) => (
               <button
+                key={category.slug}
                 type="button"
+                role="tab"
+                aria-selected={categorySlug === category.slug}
+                onClick={() => onCategorySlugChange(category.slug)}
                 className={cn(
-                  "catalog-category-chip catalog-category-more-trigger",
-                  activeOverflowCategory && "catalog-category-chip-active",
+                  "catalog-category-chip",
+                  categorySlug === category.slug && "catalog-category-chip-active",
                 )}
-                aria-expanded={moreOpen}
-                aria-haspopup="listbox"
-                onClick={() => setMoreOpen((open) => !open)}
               >
-                {activeOverflowCategory ? activeOverflowCategory.name : "Ver más"}
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 shrink-0 transition-transform",
-                    moreOpen && "rotate-180",
-                  )}
-                  aria-hidden="true"
-                />
+                {category.name}
               </button>
+            ))}
 
-              {moreOpen ? (
-                <>
-                  <button
-                    type="button"
-                    className="catalog-category-more-backdrop"
-                    aria-label="Cerrar categorías"
-                    onClick={() => setMoreOpen(false)}
+            {overflowCategories.length > 0 ? (
+              <div className="catalog-category-more">
+                <button
+                  type="button"
+                  className={cn(
+                    "catalog-category-chip catalog-category-more-trigger",
+                    activeOverflowCategory && "catalog-category-chip-active",
+                  )}
+                  aria-expanded={moreOpen}
+                  aria-haspopup="listbox"
+                  onClick={() => setMoreOpen((open) => !open)}
+                >
+                  {activeOverflowCategory ? activeOverflowCategory.name : "Ver más"}
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 shrink-0 transition-transform",
+                      moreOpen && "rotate-180",
+                    )}
+                    aria-hidden="true"
                   />
-                  <ul
-                    className="catalog-category-more-menu"
-                    role="listbox"
-                    aria-label="Más categorías"
-                  >
-                    {overflowCategories.map((category) => (
-                      <li key={category.slug} role="presentation">
-                        <button
-                          type="button"
-                          role="option"
-                          aria-selected={categorySlug === category.slug}
-                          className={cn(
-                            "catalog-category-more-option",
-                            categorySlug === category.slug &&
-                              "catalog-category-more-option-active",
-                          )}
-                          onClick={() => {
-                            onCategorySlugChange(category.slug);
-                            setMoreOpen(false);
-                          }}
-                        >
-                          {category.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : null}
-            </div>
-          ) : null}
+                </button>
+
+                {moreOpen ? (
+                  <>
+                    <button
+                      type="button"
+                      className="catalog-category-more-backdrop"
+                      aria-label="Cerrar categorías"
+                      onClick={() => setMoreOpen(false)}
+                    />
+                    <ul
+                      className="catalog-category-more-menu"
+                      role="listbox"
+                      aria-label="Más categorías"
+                    >
+                      {overflowCategories.map((category) => (
+                        <li key={category.slug} role="presentation">
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={categorySlug === category.slug}
+                            className={cn(
+                              "catalog-category-more-option",
+                              categorySlug === category.slug &&
+                                "catalog-category-more-option-active",
+                            )}
+                            onClick={() => {
+                              onCategorySlugChange(category.slug);
+                              setMoreOpen(false);
+                            }}
+                          >
+                            {category.name}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : null}
 

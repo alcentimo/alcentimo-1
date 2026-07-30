@@ -38,14 +38,12 @@ export const STORE_RUBRO_CONFIGS: StoreRubroConfig[] = [
   {
     rubro: "ropa-moda",
     label: "Ropa, Calzado y Moda",
+    /** Sugerencias de departamento; el dueño puede crear las suyas (p. ej. otra segmentación). */
     categorias: [
-      { slug: "camisas", label: "Camisas", campos: [] },
-      { slug: "pantalones", label: "Pantalones", campos: [] },
-      { slug: "calzado", label: "Calzado", campos: [] },
-      { slug: "zapatos", label: "Zapatos", campos: [] },
-      { slug: "botas", label: "Botas", campos: [] },
-      { slug: "sandalias", label: "Sandalias", campos: [] },
-      { slug: "deportivos", label: "Deportivos", campos: [] },
+      { slug: "damas", label: "Damas", campos: [] },
+      { slug: "caballeros", label: "Caballeros", campos: [] },
+      { slug: "ninos", label: "Niños", campos: [] },
+      { slug: "unisex", label: "Unisex", campos: [] },
       { slug: "accesorios", label: "Accesorios", campos: [] },
     ],
   },
