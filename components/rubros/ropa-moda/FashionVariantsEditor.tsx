@@ -27,6 +27,10 @@ import {
   type FashionProductKind,
   type FashionShoeSizeSystem,
 } from "@/lib/rubros/modules/ropa-moda";
+import {
+  readPreferredFashionShoeSizeSystem,
+  writePreferredFashionShoeSizeSystem,
+} from "@/lib/rubros/modules/ropa-moda/shoe-system-preference";
 
 interface FashionVariantsEditorProps {
   variants: VariantFormInput[];
@@ -171,6 +175,10 @@ export function FashionVariantsEditor({
     useState<FashionProductKind>(initialKind);
   const [shoeSystem, setShoeSystem] =
     useState<FashionShoeSizeSystem>(initialShoeSystem);
+  /** Estándar habitual al abrir el formulario (localStorage). */
+  const [habitualShoeSystem, setHabitualShoeSystem] =
+    useState<FashionShoeSizeSystem>("eur");
+  const [showShoeSystemNote, setShowShoeSystemNote] = useState(false);
   const [matrix, setMatrix] = useState<FashionMatrixState>(() =>
     resolveInitialMatrix(variants, initialKind, initialShoeSystem),
   );
@@ -220,10 +228,16 @@ export function FashionVariantsEditor({
   useEffect(() => {
     if (didSeedRef.current) return;
     didSeedRef.current = true;
+
+    const preferred = readPreferredFashionShoeSizeSystem("eur");
+    setHabitualShoeSystem(preferred);
+
+    // Producto nuevo: aplicar el último sistema EUR/US que usó el dueño.
     if (variants.length === 0) {
-      commit(createDefaultFashionMatrix(productKind, shoeSystem));
+      setShoeSystem(preferred);
+      commit(createDefaultFashionMatrix(productKind, preferred));
     }
-    // Solo al montar: sincroniza el estado del padre con la matriz por defecto.
+    // Solo al montar.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -265,6 +279,8 @@ export function FashionVariantsEditor({
           : defaults.sizes;
 
     setShoeSystem(nextSystem);
+    writePreferredFashionShoeSizeSystem(nextSystem);
+    setShowShoeSystemNote(nextSystem !== habitualShoeSystem);
     commit({
       ...matrix,
       sizes,
@@ -514,6 +530,16 @@ export function FashionVariantsEditor({
                   );
                 })}
               </div>
+              {showShoeSystemNote ? (
+                <p
+                  role="status"
+                  className="rounded-lg border border-amber-200/90 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100"
+                >
+                  Nota: Para la mejor experiencia de tus clientes, se recomienda
+                  mantener un único estándar de tallas (US o EUR) en toda tu
+                  tienda. ¿Seguro deseas usar este formato para este producto?
+                </p>
+              ) : null}
             </fieldset>
 
             {shoeSystem === "eur"
