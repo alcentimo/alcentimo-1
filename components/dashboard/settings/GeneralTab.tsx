@@ -16,7 +16,9 @@ import {
 import { slugify } from "@/lib/slugify";
 import { isValidStoreSlug } from "@/lib/stores/slug";
 import { STORE_SLUG_UNAVAILABLE_MESSAGE } from "@/lib/stores/slug-availability";
-import { getPublicSiteHost } from "@/lib/site-url";
+import { getPublicSiteHost, getApexSiteHost } from "@/lib/site-url";
+import { isStoreSubdomainCatalogEnabled } from "@/lib/store-host";
+import { CatalogLinkCard } from "@/components/dashboard/settings/CatalogLinkCard";
 import { STORE_RUBRO_OPTIONS, normalizeStoreRubro, type StoreRubro } from "@/src/config/categories";
 import { SettingsOptionCard } from "@/components/dashboard/settings/SettingsOptionCard";
 import { StoreDescriptionAiButton } from "@/components/dashboard/settings/StoreDescriptionAiButton";
@@ -107,6 +109,9 @@ export function GeneralTab({ store }: GeneralTabProps) {
   const isTecnologia = storeUsesRubroProductModule(rubroTienda, "tecnologia");
 
   const siteHost = useMemo(() => getPublicSiteHost(), []);
+  const apexHost = useMemo(() => getApexSiteHost(), []);
+  const subdomainCatalog = useMemo(() => isStoreSubdomainCatalogEnabled(), []);
+  const slugPreview = catalogSlug.trim() || savedSlug;
 
   const canSave =
     storeName.trim().length > 0 &&
@@ -325,86 +330,140 @@ export function GeneralTab({ store }: GeneralTabProps) {
           </div>
 
           <div className="settings-identity-card settings-identity-card--slug">
-            <Label htmlFor="store-catalog-slug" className="payment-field-label">
-              Enlace del catálogo
-            </Label>
-            <p className="mt-1 text-[11px] text-zinc-400">
-              URL pública de tu tienda. Se valida en tiempo real contra otros comercios.
+            <Label className="payment-field-label">Enlace del catálogo</Label>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              Comparte este enlace con tus clientes. Es la dirección oficial de tu
+              tienda en Alcéntimo.
             </p>
 
-            {slugStatus === "taken" ? (
-              <p
-                className="settings-error-banner mt-3 text-xs"
-                role="alert"
-              >
-                {STORE_SLUG_UNAVAILABLE_MESSAGE}
-              </p>
-            ) : null}
-
-            <div
-              className={cn(
-                "settings-slug-editor mt-3",
-                slugStatus === "taken" && "settings-slug-editor--taken",
-                slugStatus === "available" &&
-                  catalogSlug !== savedSlug &&
-                  "settings-slug-editor--available",
-              )}
-            >
-              <span className="settings-slug-editor-prefix">{siteHost}/c/</span>
-              <Input
-                id="store-catalog-slug"
-                value={catalogSlug}
-                maxLength={80}
-                aria-invalid={slugStatus === "taken" || slugStatus === "invalid"}
-                aria-describedby="store-catalog-slug-status"
-                onChange={(e) => {
-                  const nextValue = slugify(e.target.value);
-                  setCatalogSlug(nextValue);
-                  setSlugAutoSync(false);
-                  setSuccessMessage(null);
-                }}
-                placeholder="nombre-tienda"
-                className="settings-slug-editor-input"
+            <div className="mt-4">
+              <CatalogLinkCard
+                slug={slugPreview}
+                customDomain={
+                  catalogSlug.trim() === savedSlug
+                    ? store.custom_domain
+                    : null
+                }
+                customDomainVerified={
+                  catalogSlug.trim() === savedSlug
+                    ? Boolean(store.custom_domain_verified)
+                    : false
+                }
               />
             </div>
 
-            <p id="store-catalog-slug-status" className="mt-2 text-[11px]">
-              {slugStatus === "checking" && (
-                <span className="text-zinc-400">Verificando enlace…</span>
-              )}
-              {slugStatus === "available" && catalogSlug && (
-                <span className="text-green-600 dark:text-green-500">
-                  Enlace disponible
-                </span>
-              )}
-              {slugStatus === "taken" && (
-                <span className="text-red-600 dark:text-red-400">
-                  Enlace no disponible
-                </span>
-              )}
-              {slugStatus === "invalid" && catalogSlug && (
-                <span className="text-red-600 dark:text-red-400">
-                  Usa solo letras minúsculas, números y guiones.
-                </span>
-              )}
-            </p>
-
-            {slugAutoSync ? (
+            <div className="mt-5 border-t border-zinc-200/80 pt-4 dark:border-zinc-800">
+              <Label htmlFor="store-catalog-slug" className="payment-field-label">
+                Nombre en tu enlace
+              </Label>
               <p className="mt-1 text-[11px] text-zinc-400">
-                Se actualiza automáticamente desde el nombre comercial. Edítalo para personalizarlo.
+                Cambia solo esta parte si quieres personalizar la dirección. Se
+                valida en tiempo real.
               </p>
-            ) : (
-              <button
-                type="button"
-                className="mt-1 text-[11px] font-medium text-emerald-700 hover:underline dark:text-emerald-400"
-                onClick={() => {
-                  setSlugAutoSync(true);
-                  setCatalogSlug(slugify(storeName) || savedSlug);
-                }}
+
+              {slugStatus === "taken" ? (
+                <p className="settings-error-banner mt-3 text-xs" role="alert">
+                  {STORE_SLUG_UNAVAILABLE_MESSAGE}
+                </p>
+              ) : null}
+
+              <div
+                className={cn(
+                  "settings-slug-editor mt-3",
+                  slugStatus === "taken" && "settings-slug-editor--taken",
+                  slugStatus === "available" &&
+                    catalogSlug !== savedSlug &&
+                    "settings-slug-editor--available",
+                )}
               >
-                Volver a sincronizar con el nombre comercial
-              </button>
-            )}
+                {subdomainCatalog ? (
+                  <>
+                    <Input
+                      id="store-catalog-slug"
+                      value={catalogSlug}
+                      maxLength={80}
+                      aria-invalid={
+                        slugStatus === "taken" || slugStatus === "invalid"
+                      }
+                      aria-describedby="store-catalog-slug-status"
+                      onChange={(e) => {
+                        const nextValue = slugify(e.target.value);
+                        setCatalogSlug(nextValue);
+                        setSlugAutoSync(false);
+                        setSuccessMessage(null);
+                      }}
+                      placeholder="nombre-tienda"
+                      className="settings-slug-editor-input"
+                    />
+                    <span className="settings-slug-editor-suffix">
+                      .{apexHost}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="settings-slug-editor-prefix">
+                      {siteHost}/c/
+                    </span>
+                    <Input
+                      id="store-catalog-slug"
+                      value={catalogSlug}
+                      maxLength={80}
+                      aria-invalid={
+                        slugStatus === "taken" || slugStatus === "invalid"
+                      }
+                      aria-describedby="store-catalog-slug-status"
+                      onChange={(e) => {
+                        const nextValue = slugify(e.target.value);
+                        setCatalogSlug(nextValue);
+                        setSlugAutoSync(false);
+                        setSuccessMessage(null);
+                      }}
+                      placeholder="nombre-tienda"
+                      className="settings-slug-editor-input"
+                    />
+                  </>
+                )}
+              </div>
+
+              <p id="store-catalog-slug-status" className="mt-2 text-[11px]">
+                {slugStatus === "checking" && (
+                  <span className="text-zinc-400">Verificando enlace…</span>
+                )}
+                {slugStatus === "available" && catalogSlug && (
+                  <span className="text-green-600 dark:text-green-500">
+                    Enlace disponible
+                  </span>
+                )}
+                {slugStatus === "taken" && (
+                  <span className="text-red-600 dark:text-red-400">
+                    Enlace no disponible
+                  </span>
+                )}
+                {slugStatus === "invalid" && catalogSlug && (
+                  <span className="text-red-600 dark:text-red-400">
+                    Usa solo letras minúsculas, números y guiones.
+                  </span>
+                )}
+              </p>
+
+              {slugAutoSync ? (
+                <p className="mt-1 text-[11px] text-zinc-400">
+                  Se actualiza automáticamente desde el nombre comercial. Edítalo
+                  para personalizarlo.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  className="mt-1 text-[11px] font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                  onClick={() => {
+                    setSlugAutoSync(true);
+                    setCatalogSlug(slugify(storeName) || savedSlug);
+                  }}
+                >
+                  Volver a sincronizar con el nombre comercial
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </SettingsSection>
