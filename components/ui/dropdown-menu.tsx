@@ -1,7 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
+
+const MENU_GAP_PX = 4;
+const VIEWPORT_PAD_PX = 8;
 
 interface DropdownMenuProps {
   trigger: ReactNode;
@@ -9,6 +20,54 @@ interface DropdownMenuProps {
   align?: "start" | "end";
   className?: string;
   menuClassName?: string;
+}
+
+type MenuPlacement = {
+  top: number;
+  left: number;
+  minWidth: number;
+  placement: "top" | "bottom";
+};
+
+function computeMenuPlacement(
+  triggerRect: DOMRect,
+  menuWidth: number,
+  menuHeight: number,
+  align: "start" | "end",
+): MenuPlacement {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const spaceBelow = viewportHeight - triggerRect.bottom - VIEWPORT_PAD_PX;
+  const spaceAbove = triggerRect.top - VIEWPORT_PAD_PX;
+
+  const preferBottom = spaceBelow >= menuHeight + MENU_GAP_PX;
+  const preferTop = !preferBottom && spaceAbove >= menuHeight + MENU_GAP_PX;
+  const placement: "top" | "bottom" =
+    preferBottom || (!preferTop && spaceBelow >= spaceAbove) ? "bottom" : "top";
+
+  let top =
+    placement === "bottom"
+      ? triggerRect.bottom + MENU_GAP_PX
+      : triggerRect.top - menuHeight - MENU_GAP_PX;
+
+  top = Math.min(
+    Math.max(top, VIEWPORT_PAD_PX),
+    Math.max(VIEWPORT_PAD_PX, viewportHeight - menuHeight - VIEWPORT_PAD_PX),
+  );
+
+  let left =
+    align === "end" ? triggerRect.right - menuWidth : triggerRect.left;
+  left = Math.min(
+    Math.max(left, VIEWPORT_PAD_PX),
+    Math.max(VIEWPORT_PAD_PX, viewportWidth - menuWidth - VIEWPORT_PAD_PX),
+  );
+
+  return {
+    top,
+    left,
+    minWidth: Math.max(menuWidth, triggerRect.width),
+    placement,
+  };
 }
 
 export function DropdownMenu({
@@ -19,18 +78,68 @@ export function DropdownMenu({
   menuClassName,
 }: DropdownMenuProps) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [coords, setCoords] = useState<MenuPlacement | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setCoords(null);
+      return;
+    }
+
+    function updatePosition() {
+      const triggerEl = triggerRef.current;
+      const menuEl = menuRef.current;
+      if (!triggerEl || !menuEl) return;
+
+      const triggerRect = triggerEl.getBoundingClientRect();
+      const menuRect = menuEl.getBoundingClientRect();
+      setCoords(
+        computeMenuPlacement(
+          triggerRect,
+          Math.max(menuRect.width, 160),
+          menuRect.height,
+          align,
+        ),
+      );
+    }
+
+    updatePosition();
+
+    window.addEventListener("resize", updatePosition);
+    // Capture scroll from nested overflow containers (tabla, main, etc.).
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open, align]);
 
   useEffect(() => {
     if (!open) return;
+
     function handlePointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+      const target = event.target as Node;
+      if (
+        rootRef.current?.contains(target) ||
+        menuRef.current?.contains(target)
+      ) {
+        return;
       }
+      setOpen(false);
     }
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setOpen(false);
     }
+
     document.addEventListener("mousedown", handlePointerDown);
     window.addEventListener("keydown", handleKeyDown);
     return () => {
@@ -39,25 +148,46 @@ export function DropdownMenu({
     };
   }, [open]);
 
+  const menuStyle: CSSProperties | undefined = coords
+    ? {
+        position: "fixed",
+        top: coords.top,
+        left: coords.left,
+        minWidth: coords.minWidth,
+      }
+    : {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        visibility: "hidden",
+      };
+
+  const menu = open ? (
+    <div
+      ref={menuRef}
+      className={cn(
+        "z-[80] min-w-[10rem] rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950",
+        menuClassName,
+      )}
+      style={menuStyle}
+      role="menu"
+    >
+      {typeof children === "function"
+        ? (children as (close: () => void) => ReactNode)(() => setOpen(false))
+        : children}
+    </div>
+  ) : null;
+
   return (
     <div ref={rootRef} className={cn("relative inline-flex", className)}>
-      <div className="w-full" onClick={() => setOpen((value) => !value)}>
+      <div
+        ref={triggerRef}
+        className="w-full"
+        onClick={() => setOpen((value) => !value)}
+      >
         {trigger}
       </div>
-      {open && (
-        <div
-          className={cn(
-            "absolute top-full z-30 mt-1 min-w-[10rem] rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950",
-            align === "end" ? "right-0" : "left-0",
-            menuClassName,
-          )}
-          role="menu"
-        >
-          {typeof children === "function"
-            ? (children as (close: () => void) => ReactNode)(() => setOpen(false))
-            : children}
-        </div>
-      )}
+      {mounted && menu ? createPortal(menu, document.body) : null}
     </div>
   );
 }
