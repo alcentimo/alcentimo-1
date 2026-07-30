@@ -1099,8 +1099,18 @@ body {
   @apply min-h-9;
 }
 
+.dashboard-header-brand-img {
+  /* ~164px a h-8: cabida completa del wordmark Alcéntimo */
+  width: auto;
+  max-width: min(11.5rem, calc(100vw - 7.5rem));
+}
+
 .dashboard-header-actions {
   @apply min-w-0;
+}
+
+.dashboard-header-rate-strip {
+  @apply bg-zinc-50/90 dark:bg-zinc-900/50;
 }
 
 .inventory-actions-group {

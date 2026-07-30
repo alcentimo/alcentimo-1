@@ -7,6 +7,7 @@ import { Menu } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardQuickUtilities } from "@/components/dashboard/DashboardQuickUtilities";
+import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
 import { DashboardViewKeepAlive } from "@/components/dashboard/DashboardViewKeepAlive";
 import { DashboardRouteVisitTracker } from "@/components/dashboard/DashboardRouteVisitTracker";
 import { AccountSettingsSheet } from "@/components/dashboard/account/AccountSettingsSheet";
@@ -170,8 +171,8 @@ function DashboardShell({
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="dashboard-header flex h-14 shrink-0 items-center gap-2 px-3 sm:gap-3 sm:px-4 lg:px-6">
-          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+        <header className="dashboard-header shrink-0">
+          <div className="flex h-14 items-center gap-2.5 px-3 sm:gap-3 sm:px-4 lg:px-6">
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
@@ -180,9 +181,10 @@ function DashboardShell({
             >
               <Menu className="h-5 w-5" />
             </button>
+
             <Link
               href={DASHBOARD_HOME_HREF}
-              className="dashboard-header-brand inline-flex min-w-0 items-center border-0 bg-transparent shadow-none outline-none lg:hidden"
+              className="dashboard-header-brand inline-flex min-w-0 flex-1 items-center border-0 bg-transparent shadow-none outline-none lg:hidden"
               aria-label="Alcentimo"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -191,16 +193,32 @@ function DashboardShell({
                 width={BRAND_LOGO_WIDTH}
                 height={BRAND_LOGO_HEIGHT}
                 alt="Alcentimo"
-                className="block h-7 w-auto max-w-[min(9.5rem,42vw)] shrink-0 border-0 bg-transparent object-contain object-left shadow-none outline-none"
+                className="dashboard-header-brand-img block h-8 w-auto max-w-full shrink-0 border-0 bg-transparent object-contain object-left shadow-none outline-none"
                 decoding="async"
               />
             </Link>
+
+            <div className="dashboard-header-actions flex shrink-0 items-center">
+              {/* Móvil: solo tema — la tasa BCV va debajo / en el menú lateral. */}
+              <div className="lg:hidden">
+                <DashboardQuickUtilities showExchangeRate={false} />
+              </div>
+              <div className="hidden lg:block">
+                <DashboardQuickUtilities
+                  exchangeRate={exchangeRate}
+                  exchangeRateUpdatedAt={exchangeRateUpdatedAt}
+                  exchangeRateStale={exchangeRateStale}
+                />
+              </div>
+            </div>
           </div>
-          <div className="dashboard-header-actions flex shrink-0 items-center">
-            <DashboardQuickUtilities
-              exchangeRate={exchangeRate}
-              exchangeRateUpdatedAt={exchangeRateUpdatedAt}
-              exchangeRateStale={exchangeRateStale}
+
+          <div className="dashboard-header-rate-strip border-t border-zinc-200/70 px-3 py-1.5 lg:hidden dark:border-zinc-800/70">
+            <DashboardExchangeRateBadge
+              rate={exchangeRate}
+              updatedAt={exchangeRateUpdatedAt}
+              stale={exchangeRateStale}
+              variant="compact"
             />
           </div>
         </header>
