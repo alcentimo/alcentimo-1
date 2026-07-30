@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Menu } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -13,6 +14,13 @@ import { useOptionalLocale } from "@/components/providers/UiPreferencesProvider"
 import type { DashboardStoreRole } from "@/lib/team/permissions";
 import { isDashboardStoreOwner } from "@/lib/team/permissions";
 import type { AccountSnapshot } from "@/lib/account/types";
+import {
+  BRAND_LOGO_HEIGHT,
+  BRAND_LOGO_PATH,
+  BRAND_LOGO_WIDTH,
+} from "@/lib/brand/assets";
+
+const DASHBOARD_HOME_HREF = "/dashboard/catalogo";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -172,6 +180,21 @@ function DashboardShell({
             >
               <Menu className="h-5 w-5" />
             </button>
+            <Link
+              href={DASHBOARD_HOME_HREF}
+              className="dashboard-header-brand inline-flex min-w-0 items-center border-0 bg-transparent shadow-none outline-none lg:hidden"
+              aria-label="Alcentimo"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={BRAND_LOGO_PATH}
+                width={BRAND_LOGO_WIDTH}
+                height={BRAND_LOGO_HEIGHT}
+                alt="Alcentimo"
+                className="block h-7 w-auto max-w-[min(9.5rem,42vw)] shrink-0 border-0 bg-transparent object-contain object-left shadow-none outline-none"
+                decoding="async"
+              />
+            </Link>
           </div>
           <div className="dashboard-header-actions flex shrink-0 items-center">
             <DashboardQuickUtilities
