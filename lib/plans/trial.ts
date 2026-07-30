@@ -18,7 +18,7 @@ export interface ProTrialStatus {
 
 export const PRO_TRIAL_DISPLAY_PLAN_NAME = "Plan Pro";
 
-function getCommercialPlanLabel(planId: PlanId): string {
+export function getCommercialPlanLabel(planId: PlanId): string {
   const tier = PLAN_PRICING_TIERS.find((entry) => entry.planId === planId);
   if (tier) {
     return planId === "free" ? "Plan Gratis" : `Plan ${tier.displayName}`;

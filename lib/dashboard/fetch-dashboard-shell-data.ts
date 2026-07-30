@@ -11,7 +11,11 @@ import {
   resolveSubscriptionStatus,
   type SubscriptionStatus,
 } from "@/lib/plans/plan-activation";
-import { resolveProTrialStatus } from "@/lib/plans/trial";
+import {
+  getDisplayPlanForProfile,
+  resolveProTrialStatus,
+} from "@/lib/plans/trial";
+import { getStoreOwnerPlanProfile } from "@/lib/plans/product-limit";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { getStoreMemberRole } from "@/lib/team/access";
@@ -20,6 +24,8 @@ import { buildAccountSnapshot } from "@/lib/account/get-account-snapshot";
 import type { AccountSnapshot } from "@/lib/account/types";
 import type { InterfacePreferencesSettings } from "@/lib/store-settings/types";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
+import type { Profile } from "@/lib/database.types";
+import type { UserWithPlan } from "@/lib/auth/get-user-profile";
 
 const SHELL_QUERY_TIMEOUT_MS = 8_000;
 
@@ -43,6 +49,37 @@ export type DashboardShellData =
     }
   | { ok: false; error: string };
 
+function toOwnerProfile(
+  ownerPlan: NonNullable<Awaited<ReturnType<typeof getStoreOwnerPlanProfile>>>,
+): Profile {
+  return {
+    id: ownerPlan.ownerId,
+    plan: ownerPlan.plan ?? "FREE",
+    subscription_status: ownerPlan.subscription_status,
+    pro_trial_started_at: ownerPlan.pro_trial_started_at,
+    pro_trial_ends_at: ownerPlan.pro_trial_ends_at,
+    billing_period: ownerPlan.billing_period,
+    subscription_period_started_at: ownerPlan.subscription_period_started_at,
+    subscription_period_ends_at: ownerPlan.subscription_period_ends_at,
+    extra_locations_authorized: ownerPlan.extra_locations_authorized ?? 0,
+  };
+}
+
+function withOrganizationPlan(
+  authUser: UserWithPlan,
+  ownerProfile: Profile | null,
+): UserWithPlan {
+  const profile = ownerProfile ?? authUser.profile;
+  const displayPlan = getDisplayPlanForProfile(profile);
+  return {
+    ...authUser,
+    profile,
+    planId: displayPlan.planId,
+    plan: { ...displayPlan.plan, name: displayPlan.planName },
+    rawPlan: profile?.plan ?? authUser.rawPlan ?? "FREE",
+  };
+}
+
 /** Datos del chrome del dashboard; se llama desde el cliente (useEffect). */
 export async function fetchDashboardShellData(): Promise<DashboardShellData> {
   try {
@@ -52,11 +89,24 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
       return { ok: false, error: auth.error };
     }
 
-    const { authUser } = auth;
-    const store = await getUserStore(supabase, authUser.id);
+    const store = await getUserStore(supabase, auth.authUser.id);
     const storeRole = store
-      ? await getStoreMemberRole(supabase, store.id, authUser.id)
+      ? await getStoreMemberRole(supabase, store.id, auth.authUser.id)
       : null;
+
+    const ownerPlan = store
+      ? await withTimeoutFallback(
+          getStoreOwnerPlanProfile(store.id),
+          SHELL_QUERY_TIMEOUT_MS,
+          null,
+          "shell:getStoreOwnerPlanProfile",
+        )
+      : null;
+
+    const organizationProfile = ownerPlan ? toOwnerProfile(ownerPlan) : null;
+    const authUser = withOrganizationPlan(auth.authUser, organizationProfile);
+    const displayPlan = getDisplayPlanForProfile(authUser.profile);
+    const trial = resolveProTrialStatus(authUser.profile, displayPlan.planId);
 
     const [exchangeRateRow, settingsConfig] = await Promise.all([
       withTimeoutFallback(
@@ -78,17 +128,13 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
     const exchangeRate = exchangeRateRow?.rate ?? null;
     const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
     const ownerFlag = store ? isStoreOwner(store, authUser.id) : false;
-    const trial = resolveProTrialStatus(
-      authUser.profile,
-      authUser.planId,
-    );
 
     return {
       ok: true,
       storeName: store?.name ?? null,
       storeCountry: store?.country ?? null,
       userEmail: authUser.email ?? null,
-      planName: authUser.plan.name,
+      planName: displayPlan.planName,
       subscriptionStatus: resolveSubscriptionStatus(
         authUser.profile?.subscription_status,
       ),

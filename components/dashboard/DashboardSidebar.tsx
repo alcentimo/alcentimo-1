@@ -116,7 +116,7 @@ function SidebarPlanStatus({
   trialActive,
   expanded,
 }: {
-  planName: string;
+  planName: string | null;
   subscriptionStatus: SubscriptionStatus | string | null | undefined;
   trialActive: boolean;
   expanded: boolean;
@@ -125,7 +125,10 @@ function SidebarPlanStatus({
   const statusLabel = formatSubscriptionStatusLabel(subscriptionStatus, {
     trialActive,
   });
-  const summary = `${planName} · ${statusLabel}`;
+  const resolvedPlanName = planName?.trim() || null;
+  const summary = resolvedPlanName
+    ? `${resolvedPlanName} — ${statusLabel}`
+    : `Plan — ${statusLabel}`;
 
   const statusBadgeClass =
     status === "provisional"
@@ -144,11 +147,13 @@ function SidebarPlanStatus({
         <span
           className={cn(
             "h-2.5 w-2.5 rounded-full",
-            status === "provisional"
-              ? "bg-amber-500"
-              : trialActive
-                ? "bg-teal-500"
-                : "bg-emerald-500",
+            !resolvedPlanName
+              ? "bg-zinc-300 dark:bg-zinc-600"
+              : status === "provisional"
+                ? "bg-amber-500"
+                : trialActive
+                  ? "bg-teal-500"
+                  : "bg-emerald-500",
           )}
           aria-hidden="true"
         />
@@ -162,16 +167,18 @@ function SidebarPlanStatus({
       aria-label={`Plan actual: ${summary}`}
     >
       <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-        {planName}
+        {resolvedPlanName ?? "Cargando plan…"}
       </p>
-      <span
-        className={cn(
-          "mt-1.5 inline-flex w-fit max-w-full truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-          statusBadgeClass,
-        )}
-      >
-        {statusLabel}
-      </span>
+      {resolvedPlanName ? (
+        <span
+          className={cn(
+            "mt-1.5 inline-flex w-fit max-w-full truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            statusBadgeClass,
+          )}
+        >
+          {statusLabel}
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -237,7 +244,6 @@ export function DashboardSidebar({
   }
 
   const drawerExpanded = mobileOpen || !collapsed;
-  const resolvedPlanName = planName?.trim() || "Plan Gratis";
 
   return (
     <aside
@@ -354,7 +360,7 @@ export function DashboardSidebar({
       >
         <div className={cn(drawerExpanded ? "mb-2" : "mb-1")}>
           <SidebarPlanStatus
-            planName={resolvedPlanName}
+            planName={planName}
             subscriptionStatus={subscriptionStatus}
             trialActive={trialActive}
             expanded={drawerExpanded}
