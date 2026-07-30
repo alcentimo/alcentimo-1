@@ -48,12 +48,44 @@ function revalidateTrialPaths() {
 async function activateProTrialViaRpc(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
+  claimCode: string,
 ): Promise<StartProTrialResult> {
   const { data, error } = await supabase.rpc("start_pro_trial", {
     p_user_id: userId,
+    p_claim_code: claimCode.trim().toUpperCase(),
   });
 
   if (error) {
+    // Firma antigua (solo p_user_id) en entornos sin migración 084.
+    if (
+      error.message.includes("p_claim_code") ||
+      error.message.includes("function") ||
+      error.message.includes("does not exist")
+    ) {
+      const legacy = await supabase.rpc("start_pro_trial", {
+        p_user_id: userId,
+      });
+      if (legacy.error) {
+        return { ok: false, error: legacy.error.message };
+      }
+      const legacyRow = Array.isArray(legacy.data) ? legacy.data[0] : legacy.data;
+      const legacyOk = Boolean(legacyRow?.ok);
+      const legacyEnds =
+        typeof legacyRow?.trial_ends_at === "string"
+          ? legacyRow.trial_ends_at
+          : null;
+      const legacyMsg =
+        typeof legacyRow?.error_message === "string"
+          ? legacyRow.error_message
+          : null;
+      if (!legacyOk || !legacyEnds) {
+        return {
+          ok: false,
+          error: legacyMsg ?? "No se pudo activar la prueba Pro.",
+        };
+      }
+      return { ok: true, endsAt: legacyEnds };
+    }
     return { ok: false, error: error.message };
   }
 
@@ -112,8 +144,9 @@ async function activateProTrialViaAdmin(
 async function performProTrialActivation(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
+  claimCode: string,
 ): Promise<StartProTrialResult> {
-  let activation = await activateProTrialViaRpc(supabase, userId);
+  let activation = await activateProTrialViaRpc(supabase, userId, claimCode);
 
   if (
     !activation.ok &&
@@ -224,7 +257,12 @@ export async function tryActivateProTrialOnSetupComplete(options?: {
     return { ok: true, activated: false, reason: "claim_required" };
   }
 
-  const activation = await performProTrialActivation(supabase, userId);
+  const claimCode = (options?.claimCode ?? "").trim().toUpperCase();
+  const activation = await performProTrialActivation(
+    supabase,
+    userId,
+    claimCode,
+  );
   if (!activation.ok) {
     return { ok: false, error: activation.error };
   }

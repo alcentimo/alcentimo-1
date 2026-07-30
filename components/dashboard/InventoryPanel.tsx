@@ -44,6 +44,8 @@ import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 import { shouldShowProductLimitBanner } from "@/src/config/plans";
 import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
 import { TrialLimitDialog } from "@/components/dashboard/plans/TrialLimitDialog";
+import { ProTrialClaimModal } from "@/components/dashboard/plans/ProTrialClaimModal";
+import { isProTrialUnlockReady } from "@/lib/plans/trial-unlock";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { PublishedProductResult } from "@/components/dashboard/QuickProductForm";
 import {
@@ -578,6 +580,7 @@ export function InventoryPanel({
   const [filterLoading, setFilterLoading] = useState(loadOnMount);
   const skipQueryEffectRef = useRef(!loadOnMount);
   const [trialDialogOpen, setTrialDialogOpen] = useState(false);
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [liveProductFormConfig, setLiveProductFormConfig] =
     useState(productFormConfig);
@@ -1358,7 +1361,16 @@ export function InventoryPanel({
         }}
         onLimitHit={() => {
           setSheetOpen(false);
-          setTrialDialogOpen(true);
+          const eligible = productLimitContext?.trial.eligible ?? false;
+          if (
+            eligible &&
+            setupStatus &&
+            isProTrialUnlockReady(setupStatus)
+          ) {
+            setClaimModalOpen(true);
+          } else {
+            setTrialDialogOpen(true);
+          }
         }}
       />
 
@@ -1367,6 +1379,12 @@ export function InventoryPanel({
         onOpenChange={setTrialDialogOpen}
         trialEligible={productLimitContext?.trial.eligible ?? false}
         setupStatus={setupStatus}
+        onOpenClaimModal={() => setClaimModalOpen(true)}
+      />
+
+      <ProTrialClaimModal
+        open={claimModalOpen}
+        onOpenChange={setClaimModalOpen}
       />
 
       <CatalogPreviewDrawer

@@ -65,7 +65,7 @@ export function ProTrialSetupProgress({ setup }: ProTrialSetupProgressProps) {
       </div>
       {isProTrialUnlockReady(setup) ? (
         <p className="mt-2 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-          Requisitos completados. Escribe ALCENTIMO para reclamar tu mes gratis.
+          Requisitos completados. Escribe ALCENTIMO en el modal para reclamar tu mes gratis.
         </p>
       ) : null}
     </div>

@@ -6,13 +6,29 @@ import { startProTrial } from "@/lib/plans/trial-actions";
 import { PRO_TRIAL_CLAIM_CODE } from "@/lib/plans/trial";
 import { ProTrialCongratulationsDialog } from "@/components/onboarding/ProTrialCongratulationsDialog";
 
-export function ProTrialClaimForm() {
+interface ProTrialClaimFormProps {
+  idPrefix?: string;
+  /** Si false, solo notifica el éxito (p. ej. modal externo). Default true. */
+  showCongratulations?: boolean;
+  onClaimed?: (endsAt: string) => void;
+}
+
+/** Formulario reutilizable para reclamar la prueba Pro escribiendo ALCENTIMO. */
+export function ProTrialClaimForm({
+  idPrefix = "pro-trial-claim",
+  showCongratulations = true,
+  onClaimed,
+}: ProTrialClaimFormProps) {
   const router = useRouter();
   const [claimCode, setClaimCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [endsAt, setEndsAt] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const inputId = `${idPrefix}-code`;
+  const hintId = `${idPrefix}-hint`;
+  const errorId = `${idPrefix}-error`;
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -25,7 +41,10 @@ export function ProTrialClaimForm() {
         return;
       }
       setEndsAt(result.endsAt);
-      setDialogOpen(true);
+      onClaimed?.(result.endsAt);
+      if (showCongratulations) {
+        setDialogOpen(true);
+      }
       router.refresh();
     });
   }
@@ -33,12 +52,12 @@ export function ProTrialClaimForm() {
   return (
     <>
       <form className="pro-trial-claim" onSubmit={handleSubmit}>
-        <label htmlFor="pro-trial-claim-code" className="pro-trial-claim-label">
+        <label htmlFor={inputId} className="pro-trial-claim-label">
           Escribe <strong>{PRO_TRIAL_CLAIM_CODE}</strong> para desbloquear y
           reclamar tu mes gratis del Plan Pro.
         </label>
         <input
-          id="pro-trial-claim-code"
+          id={inputId}
           name="claimCode"
           type="text"
           autoComplete="off"
@@ -53,13 +72,13 @@ export function ProTrialClaimForm() {
           disabled={isPending}
           required
           aria-invalid={error ? true : undefined}
-          aria-describedby={error ? "pro-trial-claim-error" : "pro-trial-claim-hint"}
+          aria-describedby={error ? errorId : hintId}
         />
-        <p id="pro-trial-claim-hint" className="pro-trial-claim-hint">
+        <p id={hintId} className="pro-trial-claim-hint">
           La palabra es obligatoria. No se activa automáticamente.
         </p>
         {error ? (
-          <p id="pro-trial-claim-error" className="pro-trial-claim-error" role="alert">
+          <p id={errorId} className="pro-trial-claim-error" role="alert">
             {error}
           </p>
         ) : null}
@@ -72,11 +91,13 @@ export function ProTrialClaimForm() {
         </button>
       </form>
 
-      <ProTrialCongratulationsDialog
-        open={dialogOpen}
-        endsAt={endsAt}
-        onOpenChange={setDialogOpen}
-      />
+      {showCongratulations ? (
+        <ProTrialCongratulationsDialog
+          open={dialogOpen}
+          endsAt={endsAt}
+          onOpenChange={setDialogOpen}
+        />
+      ) : null}
     </>
   );
 }

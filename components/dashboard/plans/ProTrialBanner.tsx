@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Sparkles, Lock } from "lucide-react";
 import { formatProTrialEndsAt } from "@/lib/plans/trial";
 import {
@@ -10,7 +10,7 @@ import {
 } from "@/lib/plans/trial-unlock";
 import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 import { ProTrialSetupProgress } from "@/components/dashboard/plans/ProTrialSetupProgress";
-import { ProTrialClaimForm } from "@/components/dashboard/plans/ProTrialClaimForm";
+import { ProTrialClaimModal } from "@/components/dashboard/plans/ProTrialClaimModal";
 import { ProTrialActivationWatcher } from "@/components/onboarding/ProTrialActivationWatcher";
 
 interface ProTrialBannerProps {
@@ -19,6 +19,8 @@ interface ProTrialBannerProps {
   trialActive: boolean;
   trialEndsAt: string | null;
   setupStatus: ProTrialSetupPick;
+  /** Abre el modal ALCENTIMO al montar si los requisitos ya están listos. */
+  autoOpenClaimModal?: boolean;
 }
 
 export function ProTrialBanner({
@@ -27,12 +29,21 @@ export function ProTrialBanner({
   trialActive,
   trialEndsAt,
   setupStatus,
+  autoOpenClaimModal = true,
 }: ProTrialBannerProps) {
+  const unlockReady =
+    trialEligible && !trialActive && isProTrialUnlockReady(setupStatus);
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (autoOpenClaimModal && unlockReady) {
+      setClaimModalOpen(true);
+    }
+  }, [autoOpenClaimModal, unlockReady]);
+
   if (!showBanner) {
     return null;
   }
-
-  const unlockReady = isProTrialUnlockReady(setupStatus);
 
   let banner: React.ReactNode = null;
 
@@ -58,14 +69,15 @@ export function ProTrialBanner({
     );
   } else if (trialEligible && !unlockReady) {
     banner = (
-      <section className="pro-trial-banner pro-trial-banner--locked" aria-disabled="true">
+      <section className="pro-trial-banner pro-trial-banner--locked">
         <div className="flex items-start gap-3">
           <Lock className="mt-0.5 h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
-              Prueba Pro — 30 días gratis
+              Prueba gratis disponible — Plan Pro ($8)
             </p>
             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              Tienes 1 mes gratis del Plan Pro.{" "}
               {formatProTrialSetupRemainingMessage(setupStatus)}
             </p>
           </div>
@@ -98,7 +110,7 @@ export function ProTrialBanner({
         </div>
       </section>
     );
-  } else if (trialEligible && unlockReady) {
+  } else if (unlockReady) {
     banner = (
       <section className="pro-trial-banner pro-trial-banner--unlocked">
         <div className="flex items-start gap-3">
@@ -108,20 +120,24 @@ export function ProTrialBanner({
               Requisitos completados
             </p>
             <p className="mt-1 text-sm text-teal-900/80 dark:text-teal-100/80">
-              Confirma escribiendo ALCENTIMO para reclamar tu mes gratis del Plan
-              Pro.
+              Confirma con la palabra ALCENTIMO para reclamar tu mes gratis del
+              Plan Pro.
             </p>
           </div>
         </div>
         <ProTrialSetupProgress setup={setupStatus} />
-        <div className="mt-3">
-          <ProTrialClaimForm />
-        </div>
+        <button
+          type="button"
+          className="pro-trial-banner-cta"
+          onClick={() => setClaimModalOpen(true)}
+        >
+          Reclamar mes gratis
+        </button>
       </section>
     );
   }
 
-  if (!banner) {
+  if (!banner && !unlockReady) {
     return null;
   }
 
@@ -133,6 +149,12 @@ export function ProTrialBanner({
         </Suspense>
       ) : null}
       {banner}
+      {trialEligible && !trialActive ? (
+        <ProTrialClaimModal
+          open={claimModalOpen}
+          onOpenChange={setClaimModalOpen}
+        />
+      ) : null}
     </>
   );
 }

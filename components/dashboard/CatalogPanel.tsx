@@ -11,6 +11,7 @@ import type { CatalogStockFilter } from "@/lib/inventory/stock-status";
 import type { StoreProductLimitContext } from "@/lib/plans/product-limit";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
+import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
 
 interface CatalogPanelProps {
   store: Store;
@@ -94,6 +95,13 @@ export function CatalogPanel({
     }
   }, [searchParamsKey, router]);
 
+  const trial = productLimitContext?.trial ?? null;
+  const trialEligible = trial?.eligible ?? false;
+  const trialActive = trial?.active ?? false;
+  const showTrialBanner =
+    Boolean(productLimitContext) &&
+    (trialActive || trialEligible);
+
   return (
     <>
       <Suspense fallback={null}>
@@ -103,11 +111,21 @@ export function CatalogPanel({
           rubroLabel={rubroLabel}
           setupStatus={setupStatus}
           showWelcomeFromUrl={showWelcomeFromUrl}
-          trialEligible={productLimitContext?.trial.eligible ?? false}
-          trialActive={productLimitContext?.trial.active ?? false}
+          trialEligible={trialEligible}
+          trialActive={trialActive}
           onOpenCreateProduct={handleOpenCreate}
         />
       </Suspense>
+
+      {showTrialBanner ? (
+        <ProTrialBanner
+          showBanner
+          trialEligible={trialEligible}
+          trialActive={trialActive}
+          trialEndsAt={trial?.endsAt ?? null}
+          setupStatus={setupStatus}
+        />
+      ) : null}
 
       <InventoryPanel
         key={`catalog-${productFormConfig.rubroTienda}`}

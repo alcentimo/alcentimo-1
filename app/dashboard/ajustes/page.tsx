@@ -83,6 +83,7 @@ export default async function AjustesPage({
   };
   let trialEligible = false;
   let trialActive = false;
+  let trialEndsAt: string | null = null;
 
   if (store) {
     const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations, storeCategories, planSettings, activeProductCount] =
@@ -112,6 +113,7 @@ export default async function AjustesPage({
     const trial = resolveProTrialStatus(authUser.profile, authUser.planId);
     trialEligible = isEligiblePlanForProTrial(authUser.profile);
     trialActive = trial.active;
+    trialEndsAt = trial.endsAt;
     products = inventory.products.map((product) => ({
       id: product.product_id,
       name: product.product_name,
@@ -162,6 +164,7 @@ export default async function AjustesPage({
         <AjustesProTrialActivation
           trialEligible={trialEligible}
           trialActive={trialActive}
+          trialEndsAt={trialEndsAt}
           setupStatus={trialSetupStatus}
         />
       ) : null}

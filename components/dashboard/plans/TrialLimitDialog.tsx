@@ -14,13 +14,14 @@ import {
   isProTrialUnlockReady,
 } from "@/lib/plans/trial-unlock";
 import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
-import { ProTrialClaimForm } from "@/components/dashboard/plans/ProTrialClaimForm";
 
 interface TrialLimitDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   trialEligible: boolean;
   setupStatus?: ProTrialSetupPick;
+  /** Abre el modal de reclamación ALCENTIMO cuando los requisitos ya están listos. */
+  onOpenClaimModal?: () => void;
 }
 
 export function TrialLimitDialog({
@@ -28,6 +29,7 @@ export function TrialLimitDialog({
   onOpenChange,
   trialEligible,
   setupStatus,
+  onOpenClaimModal,
 }: TrialLimitDialogProps) {
   const router = useRouter();
 
@@ -52,8 +54,8 @@ export function TrialLimitDialog({
               </>
             ) : trialEligible && unlockReady ? (
               <>
-                Requisitos listos. Escribe ALCENTIMO para reclamar tus 30 días
-                gratis del Plan Pro (250 productos).
+                Requisitos listos. Confirma con ALCENTIMO para reclamar tus 30
+                días gratis del Plan Pro (250 productos).
               </>
             ) : trialEligible ? (
               <>
@@ -68,12 +70,6 @@ export function TrialLimitDialog({
             )}
           </DialogDescription>
         </DialogHeader>
-
-        {trialEligible && unlockReady && setupStatus ? (
-          <div className="mt-1">
-            <ProTrialClaimForm />
-          </div>
-        ) : null}
 
         <div className="flex flex-col gap-2 sm:flex-row">
           {setupIncomplete && setupStatus ? (
@@ -106,11 +102,22 @@ export function TrialLimitDialog({
                 </Link>
               ) : null}
             </>
-          ) : !unlockReady ? (
+          ) : trialEligible && unlockReady && onOpenClaimModal ? (
+            <button
+              type="button"
+              className="btn-primary w-full"
+              onClick={() => {
+                handleClose(false);
+                onOpenClaimModal();
+              }}
+            >
+              Reclamar mes gratis
+            </button>
+          ) : (
             <Link href="/activar" className="btn-primary w-full text-center">
               Ver planes
             </Link>
-          ) : null}
+          )}
           <button
             type="button"
             onClick={() => {
