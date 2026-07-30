@@ -1936,7 +1936,7 @@ body {
     minmax(var(--pc-meta-min-h), auto)
     minmax(var(--pc-title-min-h), auto)
     minmax(var(--pc-desc-min-h), auto)
-    var(--pc-variant-min-h)
+    minmax(var(--pc-variant-min-h), auto)
     1fr
     minmax(var(--pc-price-min-h), auto);
 }
@@ -1997,10 +1997,50 @@ body {
 }
 
 .store-product-variant-select {
-  height: var(--pc-variant-min-h);
+  min-height: var(--pc-variant-min-h);
+  height: auto;
   font-size: var(--pc-desc-size);
   border-color: var(--pc-border);
   color: var(--pc-fg);
+}
+
+/* Selectores Talla/Color: ancho completo y tipografía legible (calzado EUR/US). */
+.fashion-variant-picker {
+  @apply grid w-full min-w-0 grid-cols-1 gap-2;
+}
+
+.fashion-variant-field {
+  @apply min-w-0;
+}
+
+.fashion-variant-label {
+  @apply mb-1 block text-[10px] font-medium uppercase tracking-wide text-zinc-500;
+}
+
+.fashion-variant-hint {
+  @apply mt-1 text-[11px] leading-tight text-zinc-500;
+}
+
+.fashion-variant-stock-warn {
+  @apply text-[11px] text-red-600;
+}
+
+.fashion-variant-select.store-cart-select {
+  @apply min-h-10 px-2.5 py-2 text-xs leading-snug sm:min-h-[2.5rem] sm:px-3 sm:text-sm;
+  white-space: nowrap;
+  text-overflow: clip;
+  overflow: visible;
+}
+
+@media (min-width: 28rem) {
+  .product-detail-options .fashion-variant-picker {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .product-detail-options .fashion-variant-stock-warn {
+    grid-column: 1 / -1;
+  }
 }
 
 .store-product-category {
@@ -6225,7 +6265,7 @@ body {
   grid-template-rows:
     minmax(var(--pc-meta-min-h), auto)
     minmax(var(--pc-title-min-h), auto)
-    var(--pc-variant-min-h)
+    minmax(var(--pc-variant-min-h), auto)
     1fr;
 }
 
@@ -6234,7 +6274,7 @@ body {
     minmax(var(--pc-meta-min-h), auto)
     minmax(var(--pc-title-min-h), auto)
     minmax(var(--pc-desc-min-h), auto)
-    var(--pc-variant-min-h)
+    minmax(var(--pc-variant-min-h), auto)
     1fr;
 }
 
@@ -6242,7 +6282,7 @@ body {
   grid-template-rows:
     minmax(var(--pc-meta-min-h), auto)
     minmax(var(--pc-title-min-h), auto)
-    var(--pc-variant-min-h)
+    minmax(var(--pc-variant-min-h), auto)
     1fr;
 }
 

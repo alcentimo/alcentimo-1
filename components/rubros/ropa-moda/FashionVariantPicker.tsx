@@ -37,12 +37,13 @@ export function FashionVariantPicker({
   const formVariants = useMemo(() => toFormInputs(product), [product]);
   const isFashion = looksLikeFashionVariants(formVariants);
 
-  const { sizes, colors, byKey } = useMemo(() => {
+  const { sizes, colors, byKey, sizeLengthCm } = useMemo(() => {
     const sizeList: string[] = [];
     const colorList: string[] = [];
     const sizeSet = new Set<string>();
     const colorSet = new Set<string>();
     const map = new Map<string, CatalogVariantOption>();
+    const cmBySize = new Map<string, string>();
 
     for (const option of variantOptions) {
       const form = formVariants.find((row) => row.id === option.id);
@@ -57,10 +58,18 @@ export function FashionVariantPicker({
         colorSet.add(attrs.color);
         colorList.push(attrs.color);
       }
+      if (attrs.longitudCm && !cmBySize.has(attrs.talla)) {
+        cmBySize.set(attrs.talla, attrs.longitudCm);
+      }
       map.set(`${attrs.talla}||${attrs.color}`, option);
     }
 
-    return { sizes: sizeList, colors: colorList, byKey: map };
+    return {
+      sizes: sizeList,
+      colors: colorList,
+      byKey: map,
+      sizeLengthCm: cmBySize,
+    };
   }, [formVariants, variantOptions]);
 
   const selectedAttrs = useMemo(() => {
@@ -89,7 +98,7 @@ export function FashionVariantPicker({
         id={`variant-${product.product_id}`}
         value={selectedVariantId}
         onChange={(e) => onSelect(e.target.value)}
-        className="store-cart-select store-product-variant-select w-full"
+        className="store-cart-select store-product-variant-select fashion-variant-select w-full"
         aria-label="Variante"
       >
         {variantOptions.map((variant) => (
@@ -108,13 +117,14 @@ export function FashionVariantPicker({
   }
 
   const current = byKey.get(`${talla}||${color}`);
+  const selectedLengthCm = sizeLengthCm.get(talla) ?? null;
 
   return (
-    <div className="grid grid-cols-2 gap-2">
-      <div>
+    <div className="fashion-variant-picker">
+      <div className="fashion-variant-field">
         <label
           htmlFor={`talla-${product.product_id}`}
-          className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-zinc-500"
+          className="fashion-variant-label"
         >
           Talla
         </label>
@@ -122,28 +132,29 @@ export function FashionVariantPicker({
           id={`talla-${product.product_id}`}
           value={talla}
           onChange={(e) => setTalla(e.target.value)}
-          className="store-cart-select store-product-variant-select w-full"
+          className="store-cart-select store-product-variant-select fashion-variant-select w-full"
+          title={
+            selectedLengthCm ? `${talla} · ${selectedLengthCm} cm` : talla
+          }
         >
           {sizes.map((size) => {
-            const sample = formVariants.find((row) => {
-              const attrs = getFashionAttributes(row);
-              return attrs?.talla === size;
-            });
-            const cm = sample
-              ? getFashionAttributes(sample)?.longitudCm
-              : null;
+            const cm = sizeLengthCm.get(size);
             return (
-              <option key={size} value={size}>
-                {cm ? `${size} · ${cm} cm` : size}
+              <option key={size} value={size} title={cm ? `${size} · ${cm} cm` : size}>
+                {size}
               </option>
             );
           })}
         </select>
+        {selectedLengthCm ? (
+          <p className="fashion-variant-hint">{selectedLengthCm} cm</p>
+        ) : null}
       </div>
-      <div>
+
+      <div className="fashion-variant-field">
         <label
           htmlFor={`color-${product.product_id}`}
-          className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-zinc-500"
+          className="fashion-variant-label"
         >
           Color
         </label>
@@ -151,22 +162,23 @@ export function FashionVariantPicker({
           id={`color-${product.product_id}`}
           value={color}
           onChange={(e) => setColor(e.target.value)}
-          className="store-cart-select store-product-variant-select w-full"
+          className="store-cart-select store-product-variant-select fashion-variant-select w-full"
+          title={color}
         >
           {colors.map((item) => {
             const option = byKey.get(`${talla}||${item}`);
             const unavailable = option != null && option.availableStock <= 0;
             return (
               <option key={item} value={item} disabled={unavailable}>
-                {item}
-                {unavailable ? " — Agotado" : ""}
+                {unavailable ? `${item} (agotado)` : item}
               </option>
             );
           })}
         </select>
       </div>
+
       {current && current.availableStock <= 0 ? (
-        <p className="col-span-2 text-[11px] text-red-600">
+        <p className="fashion-variant-stock-warn">
           Esta combinación no tiene stock.
         </p>
       ) : null}
