@@ -129,6 +129,9 @@ export default async function PlanesPage() {
         trialActive={trial.active}
         trialEndsAt={trial.endsAt}
         subscriptionStatus={authUser.profile?.subscription_status ?? "none"}
+        subscriptionPeriodStartedAt={
+          authUser.profile?.subscription_period_started_at ?? null
+        }
         subscriptionPeriodEndsAt={
           authUser.profile?.subscription_period_ends_at ?? null
         }

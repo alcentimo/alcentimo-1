@@ -29,6 +29,7 @@ interface PlansPanelProps {
   trialActive?: boolean;
   trialEndsAt?: string | null;
   subscriptionStatus?: "none" | "provisional" | "active" | string | null;
+  subscriptionPeriodStartedAt?: string | null;
   subscriptionPeriodEndsAt?: string | null;
   currentBillingPeriod?: BillingPeriod | null;
   pagoMovil?: SubscriptionPagoMovilDetails;
@@ -37,6 +38,13 @@ interface PlansPanelProps {
   showCouponField?: boolean;
   /** Vista limpia de activación: sin bloques auxiliares encima de las tarjetas. */
   variant?: "default" | "activation";
+}
+
+function formatSubscriptionDate(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return formatProTrialEndsAt(value);
 }
 
 function isCurrentTier(tierPlanId: PlanId, currentPlanId: PlanId): boolean {
@@ -135,6 +143,7 @@ export function PlansPanel({
   trialActive = false,
   trialEndsAt = null,
   subscriptionStatus = null,
+  subscriptionPeriodStartedAt = null,
   subscriptionPeriodEndsAt = null,
   currentBillingPeriod = "monthly",
   pagoMovil,
@@ -152,6 +161,34 @@ export function PlansPanel({
     return recommended ? formatAnnualSavingsLabel(recommended) : getRecommendedAnnualSavingsLabel();
   })();
 
+  const isPaidActive =
+    subscriptionStatus === "active" && currentPlanId !== "free";
+  const startedAtLabel = formatSubscriptionDate(subscriptionPeriodStartedAt);
+  const endsAtLabel = formatSubscriptionDate(subscriptionPeriodEndsAt);
+  const renewalLabel =
+    currentBillingPeriod === "annual"
+      ? "Próxima renovación anual"
+      : "Próximo corte mensual";
+
+  const statusBadge =
+    subscriptionStatus === "provisional"
+      ? {
+          label: "Provisional",
+          className:
+            "bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
+        }
+      : trialActive
+        ? {
+            label: "Prueba activa",
+            className:
+              "bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300",
+          }
+        : {
+            label: "Activo",
+            className:
+              "bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300",
+          };
+
   function openCheckout(tier: PlanPricingTier) {
     setCheckoutTier(tier);
     setCheckoutOpen(true);
@@ -161,8 +198,8 @@ export function PlansPanel({
     <div className={cn("space-y-10", isActivation && "activar-plans-panel")}>
       {!isActivation ? (
         <section className="rounded-xl border border-neutral-200 bg-white px-5 py-4 dark:border-neutral-800 dark:bg-neutral-950">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-neutral-500 dark:text-neutral-400">Tu plan</p>
               <p className="mt-0.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
                 {currentPlanName}
@@ -193,9 +230,39 @@ export function PlansPanel({
                   Productos ilimitados · Multi-sucursal
                 </p>
               )}
+
+              {isPaidActive && (startedAtLabel || endsAtLabel) ? (
+                <dl className="mt-3 grid gap-2 border-t border-neutral-100 pt-3 text-sm dark:border-neutral-800 sm:grid-cols-2">
+                  {startedAtLabel ? (
+                    <div>
+                      <dt className="text-xs text-neutral-500 dark:text-neutral-400">
+                        Inicio de suscripción
+                      </dt>
+                      <dd className="mt-0.5 font-medium text-neutral-800 dark:text-neutral-100">
+                        {startedAtLabel}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {endsAtLabel ? (
+                    <div>
+                      <dt className="text-xs text-neutral-500 dark:text-neutral-400">
+                        {renewalLabel}
+                      </dt>
+                      <dd className="mt-0.5 font-medium text-neutral-800 dark:text-neutral-100">
+                        {endsAtLabel}
+                      </dd>
+                    </div>
+                  ) : null}
+                </dl>
+              ) : null}
             </div>
-            <span className="inline-flex w-fit items-center rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
-              Activo
+            <span
+              className={cn(
+                "inline-flex w-fit shrink-0 items-center rounded-full px-3 py-1 text-xs font-medium",
+                statusBadge.className,
+              )}
+            >
+              {statusBadge.label}
             </span>
           </div>
         </section>
