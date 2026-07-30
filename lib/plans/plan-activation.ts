@@ -47,7 +47,7 @@ export function formatSubscriptionStatusLabel(
   options?: { trialActive?: boolean },
 ): string {
   const status = resolveSubscriptionStatus(value);
-  if (status === "provisional") return "En verificación";
+  if (status === "provisional") return "En revisión";
   if (options?.trialActive) return "Prueba activa";
   if (status === "active") return "Activo";
   return "Activo";

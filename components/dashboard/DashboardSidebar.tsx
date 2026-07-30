@@ -385,98 +385,96 @@ export function DashboardSidebar({
 
       <div
         className={cn(
-          "shrink-0 space-y-1 border-t border-zinc-200 dark:border-zinc-800",
+          "shrink-0 border-t border-zinc-200 dark:border-zinc-800",
           drawerExpanded
             ? "px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
             : "px-2 py-3",
         )}
       >
-        {drawerExpanded ? (
-          <p className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-            Cuenta personal
-          </p>
-        ) : null}
+        <div className={cn(drawerExpanded ? "mb-2" : "mb-1")}>
+          <SidebarPlanStatus
+            planName={resolvedPlanName}
+            subscriptionStatus={subscriptionStatus}
+            trialActive={trialActive}
+            expanded={drawerExpanded}
+            canOpenPlans={canOpenPlans}
+            plansActive={pathname.startsWith(DASHBOARD_PLANS_HREF)}
+            onNavigate={onCloseMobile}
+            onPrefetch={prefetchRoute}
+          />
+        </div>
 
-        <SidebarPlanStatus
-          planName={resolvedPlanName}
-          subscriptionStatus={subscriptionStatus}
-          trialActive={trialActive}
-          expanded={drawerExpanded}
-          canOpenPlans={canOpenPlans}
-          plansActive={pathname.startsWith(DASHBOARD_PLANS_HREF)}
-          onNavigate={onCloseMobile}
-          onPrefetch={prefetchRoute}
-        />
+        <div className="space-y-1">
+          <DashboardAccountMenu
+            expanded={drawerExpanded}
+            active={accountSettingsActive}
+            navLinkClass={navLinkClass}
+            onOpenAccountSettings={onOpenAccountSettings}
+            onPrefetchAccountSettings={onPrefetchAccountSettings}
+          />
 
-        <DashboardAccountMenu
-          expanded={drawerExpanded}
-          active={accountSettingsActive}
-          navLinkClass={navLinkClass}
-          onOpenAccountSettings={onOpenAccountSettings}
-          onPrefetchAccountSettings={onPrefetchAccountSettings}
-        />
+          {isSupportAdmin ? (
+            <Link
+              href="/admin/dashboard"
+              prefetch={true}
+              className={navLinkClass(
+                pathname.startsWith("/admin"),
+                !drawerExpanded,
+              )}
+              onClick={onCloseMobile}
+              onMouseEnter={() => prefetchRoute("/admin/dashboard")}
+              onFocus={() => prefetchRoute("/admin/dashboard")}
+              onTouchStart={() => prefetchRoute("/admin/dashboard")}
+              title={drawerExpanded ? undefined : "Panel Admin"}
+              aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+            >
+              <LayoutDashboard
+                className="h-4 w-4 shrink-0"
+                strokeWidth={1.75}
+                aria-hidden="true"
+              />
+              {drawerExpanded && <span>Panel Admin</span>}
+            </Link>
+          ) : null}
 
-        {isSupportAdmin ? (
-          <Link
-            href="/admin/dashboard"
-            prefetch={true}
-            className={navLinkClass(
-              pathname.startsWith("/admin"),
-              !drawerExpanded,
-            )}
-            onClick={onCloseMobile}
-            onMouseEnter={() => prefetchRoute("/admin/dashboard")}
-            onFocus={() => prefetchRoute("/admin/dashboard")}
-            onTouchStart={() => prefetchRoute("/admin/dashboard")}
-            title={drawerExpanded ? undefined : "Panel Admin"}
-            aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+          <button
+            type="button"
+            onClick={() => {
+              setSupportKey((key) => key + 1);
+              setSupportOpen(true);
+              onCloseMobile();
+            }}
+            className={navLinkClass(false, !drawerExpanded)}
+            title={drawerExpanded ? undefined : t("nav.support")}
           >
-            <LayoutDashboard
+            <LifeBuoy
               className="h-4 w-4 shrink-0"
               strokeWidth={1.75}
               aria-hidden="true"
             />
-            {drawerExpanded && <span>Panel Admin</span>}
-          </Link>
-        ) : null}
+            {drawerExpanded && <span>{t("nav.support")}</span>}
+          </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            setSupportKey((key) => key + 1);
-            setSupportOpen(true);
-            onCloseMobile();
-          }}
-          className={navLinkClass(false, !drawerExpanded)}
-          title={drawerExpanded ? undefined : t("nav.support")}
-        >
-          <LifeBuoy
-            className="h-4 w-4 shrink-0"
-            strokeWidth={1.75}
-            aria-hidden="true"
-          />
-          {drawerExpanded && <span>{t("nav.support")}</span>}
-        </button>
-
-        <button
-          type="button"
-          className={cn(
-            navLinkClass(false, !drawerExpanded),
-            "touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300",
-          )}
-          onClick={onLogout}
-          title={drawerExpanded ? undefined : "Cerrar sesión"}
-        >
-          <LogOut
+          <button
+            type="button"
             className={cn(
-              "shrink-0",
-              !drawerExpanded ? "h-[18px] w-[18px]" : "h-4 w-4",
+              navLinkClass(false, !drawerExpanded),
+              "touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300",
             )}
-            strokeWidth={1.75}
-            aria-hidden="true"
-          />
-          {drawerExpanded && <span className="truncate">Cerrar sesión</span>}
-        </button>
+            onClick={onLogout}
+            title={drawerExpanded ? undefined : "Cerrar sesión"}
+          >
+            <LogOut
+              className={cn(
+                "shrink-0",
+                !drawerExpanded ? "h-[18px] w-[18px]" : "h-4 w-4",
+              )}
+              strokeWidth={1.75}
+              aria-hidden="true"
+            />
+            {drawerExpanded && <span className="truncate">Cerrar sesión</span>}
+          </button>
+        </div>
       </div>
 
       <SupportModal

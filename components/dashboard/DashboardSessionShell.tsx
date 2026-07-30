@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { CountryProvider } from "@/components/providers/CountryProvider";
 import { UiPreferencesProvider } from "@/components/providers/UiPreferencesProvider";
@@ -13,25 +14,41 @@ import type { AccountSnapshot } from "@/lib/account/types";
 
 const defaultPrefs = defaultStoreSettingsConfig().interfacePreferences;
 
+type ShellOk = Extract<DashboardShellData, { ok: true }>;
+
 /**
  * Chrome del dashboard sin bloqueo SSR: pinta al instante y completa
  * sesión / tasa / preferencias en el cliente.
  */
 export function DashboardSessionShell({ children }: { children: ReactNode }) {
-  const [shell, setShell] = useState<Extract<DashboardShellData, { ok: true }> | null>(
-    null,
-  );
+  const pathname = usePathname();
+  const [shell, setShell] = useState<ShellOk | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const refreshShell = useCallback(() => {
     void fetchDashboardShellData().then((result) => {
-      if (cancelled || !result.ok) return;
+      if (!result.ok) return;
       setShell(result);
     });
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    refreshShell();
+  }, [refreshShell, pathname]);
+
+  useEffect(() => {
+    function onFocus() {
+      refreshShell();
+    }
+    function onVisibility() {
+      if (document.visibilityState === "visible") refreshShell();
+    }
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [refreshShell]);
 
   const accountSnapshot: AccountSnapshot | null = shell?.accountSnapshot ?? null;
 
