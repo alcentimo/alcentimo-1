@@ -21,13 +21,11 @@ import { cn } from "@/lib/cn";
 import { useLocale } from "@/components/providers/UiPreferencesProvider";
 import { useDashboardRoutePrefetch } from "@/components/dashboard/use-dashboard-route-prefetch";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
-import { isDashboardStoreOwner } from "@/lib/team/permissions";
 import {
   formatSubscriptionStatusLabel,
   resolveSubscriptionStatus,
   type SubscriptionStatus,
 } from "@/lib/plans/plan-activation";
-import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
 import {
   BRAND_FAVICON_32_PATH,
   BRAND_LOGO_HEIGHT,
@@ -117,19 +115,11 @@ function SidebarPlanStatus({
   subscriptionStatus,
   trialActive,
   expanded,
-  canOpenPlans,
-  plansActive,
-  onNavigate,
-  onPrefetch,
 }: {
   planName: string;
   subscriptionStatus: SubscriptionStatus | string | null | undefined;
   trialActive: boolean;
   expanded: boolean;
-  canOpenPlans: boolean;
-  plansActive: boolean;
-  onNavigate: () => void;
-  onPrefetch: (href: string) => void;
 }) {
   const status = resolveSubscriptionStatus(subscriptionStatus);
   const statusLabel = formatSubscriptionStatusLabel(subscriptionStatus, {
@@ -137,79 +127,51 @@ function SidebarPlanStatus({
   });
   const summary = `${planName} · ${statusLabel}`;
 
-  const statusTone =
-    status === "provisional"
-      ? "bg-amber-500"
-      : trialActive
-        ? "bg-teal-500"
-        : "bg-emerald-500";
-
   const statusBadgeClass =
     status === "provisional"
-      ? "bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+      ? "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-800/60"
       : trialActive
-        ? "bg-teal-50 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300"
-        : "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300";
+        ? "bg-teal-50 text-teal-800 ring-1 ring-inset ring-teal-200/80 dark:bg-teal-950/50 dark:text-teal-300 dark:ring-teal-800/60"
+        : "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-800/60";
 
-  const body = expanded ? (
-    <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
-      <span className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-        {planName}
-      </span>
-      <span
-        className={cn(
-          "inline-flex w-fit max-w-full truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-          statusBadgeClass,
-        )}
-      >
-        {statusLabel}
-      </span>
-    </span>
-  ) : (
-    <span
-      className={cn("h-2.5 w-2.5 rounded-full", statusTone)}
-      aria-hidden="true"
-    />
-  );
-
-  const sharedClass = cn(
-    "flex w-full items-center rounded-lg transition-colors",
-    expanded
-      ? "gap-2.5 border border-zinc-200/90 bg-zinc-50/80 px-2.5 py-2 dark:border-zinc-800 dark:bg-zinc-900/50"
-      : "h-10 justify-center",
-    canOpenPlans &&
-      "hover:border-zinc-300 hover:bg-zinc-100 dark:hover:border-zinc-700 dark:hover:bg-zinc-900",
-    plansActive &&
-      canOpenPlans &&
-      "border-emerald-600/40 bg-emerald-50/80 dark:border-emerald-500/40 dark:bg-emerald-950/30",
-  );
-
-  if (canOpenPlans) {
+  if (!expanded) {
     return (
-      <Link
-        href={DASHBOARD_PLANS_HREF}
-        prefetch={true}
-        className={sharedClass}
-        onClick={onNavigate}
-        onMouseEnter={() => onPrefetch(DASHBOARD_PLANS_HREF)}
-        onFocus={() => onPrefetch(DASHBOARD_PLANS_HREF)}
-        onTouchStart={() => onPrefetch(DASHBOARD_PLANS_HREF)}
+      <div
+        className="flex h-10 items-center justify-center"
         title={summary}
         aria-label={`Plan actual: ${summary}`}
-        aria-current={plansActive ? "page" : undefined}
       >
-        {body}
-      </Link>
+        <span
+          className={cn(
+            "h-2.5 w-2.5 rounded-full",
+            status === "provisional"
+              ? "bg-amber-500"
+              : trialActive
+                ? "bg-teal-500"
+                : "bg-emerald-500",
+          )}
+          aria-hidden="true"
+        />
+      </div>
     );
   }
 
   return (
     <div
-      className={sharedClass}
-      title={summary}
+      className="rounded-lg border border-zinc-200/90 bg-zinc-50/80 px-2.5 py-2 dark:border-zinc-800 dark:bg-zinc-900/50"
       aria-label={`Plan actual: ${summary}`}
     >
-      {body}
+      <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+        {planName}
+      </p>
+      <span
+        className={cn(
+          "mt-1.5 inline-flex w-fit max-w-full truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+          statusBadgeClass,
+        )}
+      >
+        {statusLabel}
+      </span>
     </div>
   );
 }
@@ -236,7 +198,6 @@ export function DashboardSidebar({
   const navItems = getDashboardNavItems({ storeRole });
   const { t, navLabel } = useLocale();
   const { prefetchRoute } = useDashboardRoutePrefetch();
-  const canOpenPlans = isDashboardStoreOwner(storeRole);
 
   useEffect(() => {
     try {
@@ -397,10 +358,6 @@ export function DashboardSidebar({
             subscriptionStatus={subscriptionStatus}
             trialActive={trialActive}
             expanded={drawerExpanded}
-            canOpenPlans={canOpenPlans}
-            plansActive={pathname.startsWith(DASHBOARD_PLANS_HREF)}
-            onNavigate={onCloseMobile}
-            onPrefetch={prefetchRoute}
           />
         </div>
 
