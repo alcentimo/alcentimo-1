@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
-import { BcvRateStripWithSync } from "@/components/dashboard/BcvRateStripWithSync";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { CatalogPublicLinkMenu } from "@/components/dashboard/CatalogPublicLinkMenu";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,6 @@ import { fetchCatalogPageBootstrap } from "@/lib/catalog/fetch-catalog-page-boot
 import { sanitizeInventorySearch } from "@/lib/inventory/search";
 import { parseInventoryPageSize } from "@/lib/inventory/constants";
 import { parseCatalogStockFilter } from "@/lib/inventory/stock-status";
-import { isBcvRateStale } from "@/lib/exchange-rate/rate-freshness";
 import type { CatalogPageBootstrap } from "@/lib/catalog/fetch-catalog-page-bootstrap";
 
 type ReadyBootstrap = Extract<CatalogPageBootstrap, { ok: true }>;
@@ -72,11 +70,6 @@ export function CatalogoPageClient() {
     };
   }, [router]);
 
-  const exchangeRateStale = useMemo(
-    () => isBcvRateStale(boot?.exchangeRateUpdatedAt ?? null),
-    [boot?.exchangeRateUpdatedAt],
-  );
-
   if (noStore) {
     return (
       <div className="mx-auto max-w-2xl">
@@ -114,12 +107,6 @@ export function CatalogoPageClient() {
             />
           ) : null
         }
-      />
-
-      <BcvRateStripWithSync
-        rate={boot?.exchangeRate ?? null}
-        updatedAt={boot?.exchangeRateUpdatedAt ?? null}
-        stale={Boolean(boot) && exchangeRateStale}
       />
 
       {bootError ? (
