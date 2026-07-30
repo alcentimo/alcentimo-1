@@ -17,6 +17,11 @@ export {
   isFashionShoeSize,
   getDefaultShoeLengthCm,
   normalizeShoeLengthCm,
+  type FashionProductKind,
+  FASHION_PRODUCT_KIND_OPTIONS,
+  isFashionClothingSize,
+  inferFashionProductKind,
+  filterSizesForFashionKind,
 } from "@/lib/rubros/modules/ropa-moda/config";
 
 export {

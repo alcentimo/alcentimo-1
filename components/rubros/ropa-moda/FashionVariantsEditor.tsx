@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { VariantFormInput } from "@/lib/products/variants";
 import {
+  FASHION_PRODUCT_KIND_OPTIONS,
   ROPA_MODA_ALL_SIZE_PRESETS,
   ROPA_MODA_COLOR_PRESETS,
   ROPA_MODA_PANTS_SIZE_PRESETS,
@@ -12,10 +13,13 @@ import {
   createDefaultFashionMatrix,
   fashionMatrixToVariants,
   fashionVariantKey,
+  filterSizesForFashionKind,
   getDefaultShoeLengthCm,
+  inferFashionProductKind,
   isFashionShoeSize,
   variantsToFashionMatrix,
   type FashionMatrixState,
+  type FashionProductKind,
 } from "@/lib/rubros/modules/ropa-moda";
 
 interface FashionVariantsEditorProps {
@@ -53,9 +57,12 @@ function ChipToggle({
   );
 }
 
-function resolveInitialMatrix(variants: VariantFormInput[]): FashionMatrixState {
+function resolveInitialMatrix(
+  variants: VariantFormInput[],
+  kind: FashionProductKind,
+): FashionMatrixState {
   if (variants.length > 0) return variantsToFashionMatrix(variants);
-  return createDefaultFashionMatrix();
+  return createDefaultFashionMatrix(kind);
 }
 
 function sizeEquals(a: string, b: string): boolean {
@@ -123,18 +130,40 @@ function StockInput({
   );
 }
 
+function kindDescription(kind: FashionProductKind): string {
+  if (kind === "calzado") {
+    return "Numeraciones EUR o US y colores. Cada combinación tiene su propio stock.";
+  }
+  if (kind === "ambos") {
+    return "Ropa (S–XL), pantalones/jeans (28–36) y calzado (EUR / US) en la misma matriz.";
+  }
+  return "Tallas de prenda (S–XL), pantalones/jeans (28–36) y colores.";
+}
+
 export function FashionVariantsEditor({
   variants,
   onChange,
   disabled = false,
   required = true,
 }: FashionVariantsEditorProps) {
+  const initialKind = useMemo(() => {
+    if (variants.length === 0) return "ropa" as FashionProductKind;
+    return inferFashionProductKind(
+      variantsToFashionMatrix(variants).sizes,
+    );
+  }, [variants]);
+
+  const [productKind, setProductKind] =
+    useState<FashionProductKind>(initialKind);
   const [matrix, setMatrix] = useState<FashionMatrixState>(() =>
-    resolveInitialMatrix(variants),
+    resolveInitialMatrix(variants, initialKind),
   );
   const [customSize, setCustomSize] = useState("");
   const [customColor, setCustomColor] = useState("");
   const didSeedRef = useRef(false);
+
+  const showClothingSizes = productKind === "ropa" || productKind === "ambos";
+  const showShoeSizes = productKind === "calzado" || productKind === "ambos";
 
   const combinationCount = matrix.sizes.length * matrix.colors.length;
 
@@ -176,11 +205,30 @@ export function FashionVariantsEditor({
     if (didSeedRef.current) return;
     didSeedRef.current = true;
     if (variants.length === 0) {
-      commit(createDefaultFashionMatrix());
+      commit(createDefaultFashionMatrix(productKind));
     }
     // Solo al montar: sincroniza el estado del padre con la matriz por defecto.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function handleProductKindChange(nextKind: FashionProductKind) {
+    if (nextKind === productKind) return;
+
+    const filteredSizes = filterSizesForFashionKind(matrix.sizes, nextKind);
+    const defaults = createDefaultFashionMatrix(nextKind);
+    const sizes =
+      filteredSizes.length > 0 ? filteredSizes : defaults.sizes;
+    const colors =
+      matrix.colors.length > 0 ? matrix.colors : defaults.colors;
+
+    setProductKind(nextKind);
+    commit({
+      ...matrix,
+      sizes,
+      colors,
+      sizeLengthCm: nextKind === "ropa" ? {} : matrix.sizeLengthCm,
+    });
+  }
 
   function toggleSize(size: string) {
     const exists = hasSize(matrix.sizes, size);
@@ -203,6 +251,11 @@ export function FashionVariantsEditor({
   function addCustomSize() {
     const value = customSize.trim();
     if (!value || hasSize(matrix.sizes, value)) return;
+
+    // Evita mezclar tipos de talla fuera del modo "Ambos".
+    if (productKind === "ropa" && isFashionShoeSize(value)) return;
+    if (productKind === "calzado" && !isFashionShoeSize(value)) return;
+
     setCustomSize("");
     commit({ ...matrix, sizes: [...matrix.sizes, value] });
   }
@@ -237,10 +290,23 @@ export function FashionVariantsEditor({
     [matrix.sizes],
   );
 
-  const customSizes = useMemo(
+  const clothingCustomSizes = useMemo(
     () =>
       matrix.sizes.filter(
         (size) =>
+          !isFashionShoeSize(size) &&
+          !(ROPA_MODA_ALL_SIZE_PRESETS as readonly string[]).some((preset) =>
+            sizeEquals(preset, size),
+          ),
+      ),
+    [matrix.sizes],
+  );
+
+  const shoeCustomSizes = useMemo(
+    () =>
+      matrix.sizes.filter(
+        (size) =>
+          isFashionShoeSize(size) &&
           !(ROPA_MODA_ALL_SIZE_PRESETS as readonly string[]).some((preset) =>
             sizeEquals(preset, size),
           ),
@@ -287,6 +353,13 @@ export function FashionVariantsEditor({
     );
   }
 
+  const customSizePlaceholder =
+    productKind === "calzado"
+      ? "Otra talla (ej. EUR 38.5, US 7.5)"
+      : productKind === "ropa"
+        ? "Otra talla (ej. XXS, 3XL)"
+        : "Otra talla (ej. EUR 38.5, US 7.5, XXS)";
+
   return (
     <div className="space-y-4 rounded-xl border border-teal-200/70 bg-teal-50/40 p-3 sm:p-4 dark:border-teal-900/40 dark:bg-teal-950/20">
       <div>
@@ -294,84 +367,137 @@ export function FashionVariantsEditor({
           Tallas y colores {required ? <span className="text-red-500">*</span> : null}
         </p>
         <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Ropa (S–XL), pantalones/jeans (28–36) o calzado (EUR / US). Cada
-          combinación tiene su propio stock en la misma matriz.
+          {kindDescription(productKind)}
           {combinationCount > 0
             ? ` · ${combinationCount} variante${combinationCount === 1 ? "" : "s"}`
             : ""}
         </p>
       </div>
 
+      <fieldset disabled={disabled} className="space-y-2">
+        <legend className="label-field text-xs">Tipo de producto</legend>
+        <div
+          className="grid grid-cols-1 gap-2 sm:grid-cols-3"
+          role="radiogroup"
+          aria-label="Tipo de producto"
+        >
+          {FASHION_PRODUCT_KIND_OPTIONS.map((option) => {
+            const active = productKind === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => handleProductKindChange(option.value)}
+                className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                  active
+                    ? "border-teal-600 bg-teal-600 text-white shadow-sm"
+                    : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                }`}
+              >
+                <span className="block text-sm font-semibold">{option.label}</span>
+                <span
+                  className={`mt-0.5 block text-[11px] leading-snug ${
+                    active ? "text-teal-50/90" : "text-zinc-500 dark:text-zinc-400"
+                  }`}
+                >
+                  {option.description}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+
       <div>
         <p className="label-field text-xs">Tallas</p>
-        {renderSizeGroup("Ropa", ROPA_MODA_SIZE_PRESETS)}
-        {renderSizeGroup("Pantalones / jeans", ROPA_MODA_PANTS_SIZE_PRESETS)}
-        {renderSizeGroup("Calzado EUR", ROPA_MODA_SHOE_SIZE_EUR_PRESETS)}
-        {renderSizeGroup("Calzado US", ROPA_MODA_SHOE_SIZE_US_PRESETS, customSizes)}
+        {showClothingSizes ? (
+          <>
+            {renderSizeGroup(
+              "Ropa",
+              ROPA_MODA_SIZE_PRESETS,
+              clothingCustomSizes,
+            )}
+            {renderSizeGroup("Pantalones / jeans", ROPA_MODA_PANTS_SIZE_PRESETS)}
+          </>
+        ) : null}
+        {showShoeSizes ? (
+          <>
+            {renderSizeGroup("Calzado EUR", ROPA_MODA_SHOE_SIZE_EUR_PRESETS)}
+            {renderSizeGroup(
+              "Calzado US",
+              ROPA_MODA_SHOE_SIZE_US_PRESETS,
+              shoeCustomSizes,
+            )}
+          </>
+        ) : null}
 
-        {selectedShoeSizes.length > 0 ? (
-          <div className="mt-3 rounded-lg border border-teal-200/60 bg-white/80 p-3 dark:border-teal-900/40 dark:bg-zinc-950/50">
-            <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-100">
-              Guía de centímetros (calzado)
-            </p>
-            <p className="mt-1 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-              Longitud del pie / plantilla interna en cm. Valores orientativos;
-              ajústalos según la marca. Se guarda en cada variante de esa talla.
-            </p>
-            <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-              {selectedShoeSizes.map((size) => {
-                const suggested = getDefaultShoeLengthCm(size);
-                const value =
-                  matrix.sizeLengthCm?.[size] ?? suggested ?? "";
-                return (
-                  <label
-                    key={size}
-                    className="flex flex-col gap-1 rounded-md border border-zinc-200/80 bg-zinc-50/80 px-2.5 py-2 dark:border-zinc-700 dark:bg-zinc-900/40"
-                  >
-                    <span className="truncate text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
-                      {size}
-                      {suggested ? (
-                        <span className="font-normal text-zinc-400">
-                          {" "}
-                          · ref. {suggested} cm
-                        </span>
-                      ) : null}
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        min={1}
-                        max={50}
-                        step={0.1}
-                        value={value}
-                        onChange={(e) => setSizeLengthCm(size, e.target.value)}
-                        disabled={disabled}
-                        aria-label={`Centímetros talla ${size}`}
-                        className="min-h-9 w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm tabular-nums outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600/20 dark:border-zinc-700 dark:bg-zinc-950 sm:min-h-0"
-                      />
-                      <span className="shrink-0 text-[11px] text-zinc-500">
-                        cm
+        {showShoeSizes ? (
+          selectedShoeSizes.length > 0 ? (
+            <div className="mt-3 rounded-lg border border-teal-200/60 bg-white/80 p-3 dark:border-teal-900/40 dark:bg-zinc-950/50">
+              <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-100">
+                Guía de centímetros (calzado)
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Longitud del pie / plantilla interna en cm. Valores orientativos;
+                ajústalos según la marca. Se guarda en cada variante de esa talla.
+              </p>
+              <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                {selectedShoeSizes.map((size) => {
+                  const suggested = getDefaultShoeLengthCm(size);
+                  const value =
+                    matrix.sizeLengthCm?.[size] ?? suggested ?? "";
+                  return (
+                    <label
+                      key={size}
+                      className="flex flex-col gap-1 rounded-md border border-zinc-200/80 bg-zinc-50/80 px-2.5 py-2 dark:border-zinc-700 dark:bg-zinc-900/40"
+                    >
+                      <span className="truncate text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+                        {size}
+                        {suggested ? (
+                          <span className="font-normal text-zinc-400">
+                            {" "}
+                            · ref. {suggested} cm
+                          </span>
+                        ) : null}
                       </span>
-                    </div>
-                  </label>
-                );
-              })}
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min={1}
+                          max={50}
+                          step={0.1}
+                          value={value}
+                          onChange={(e) => setSizeLengthCm(size, e.target.value)}
+                          disabled={disabled}
+                          aria-label={`Centímetros talla ${size}`}
+                          className="min-h-9 w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm tabular-nums outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600/20 dark:border-zinc-700 dark:bg-zinc-950 sm:min-h-0"
+                        />
+                        <span className="shrink-0 text-[11px] text-zinc-500">
+                          cm
+                        </span>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ) : (
-          <p className="mt-2 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Al elegir tallas de calzado (EUR / US) podrás indicar la equivalencia
-            en centímetros de cada una.
-          </p>
-        )}
+          ) : (
+            <p className="mt-2 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+              Al elegir tallas de calzado (EUR / US) podrás indicar la equivalencia
+              en centímetros de cada una.
+            </p>
+          )
+        ) : null}
 
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
           <input
             type="text"
             value={customSize}
             onChange={(e) => setCustomSize(e.target.value)}
-            placeholder="Otra talla (ej. EUR 38.5, US 7.5, XXS)"
+            placeholder={customSizePlaceholder}
             maxLength={20}
             disabled={disabled}
             className="input-field mt-0 min-h-10 flex-1 py-2 text-sm sm:min-h-0"
@@ -394,38 +520,38 @@ export function FashionVariantsEditor({
       </div>
 
       <div>
-        <p className="label-field text-xs">Colores</p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {colorPresets.map((color) => (
-            <ChipToggle
-              key={color}
-              label={color}
-              active={matrix.colors.includes(color)}
-              onClick={() => toggleColor(color)}
+          <p className="label-field text-xs">Colores</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {colorPresets.map((color) => (
+              <ChipToggle
+                key={color}
+                label={color}
+                active={matrix.colors.includes(color)}
+                onClick={() => toggleColor(color)}
+                disabled={disabled}
+              />
+            ))}
+          </div>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <input
+              type="text"
+              value={customColor}
+              onChange={(e) => setCustomColor(e.target.value)}
+              placeholder="Color personalizado"
+              maxLength={30}
               disabled={disabled}
+              className="input-field mt-0 min-h-10 flex-1 py-2 text-sm sm:min-h-0"
             />
-          ))}
+            <button
+              type="button"
+              onClick={addCustomColor}
+              disabled={disabled || !customColor.trim()}
+              className="btn-secondary min-h-10 px-3 py-2 text-sm sm:min-h-0"
+            >
+              Añadir
+            </button>
+          </div>
         </div>
-        <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-          <input
-            type="text"
-            value={customColor}
-            onChange={(e) => setCustomColor(e.target.value)}
-            placeholder="Color personalizado"
-            maxLength={30}
-            disabled={disabled}
-            className="input-field mt-0 min-h-10 flex-1 py-2 text-sm sm:min-h-0"
-          />
-          <button
-            type="button"
-            onClick={addCustomColor}
-            disabled={disabled || !customColor.trim()}
-            className="btn-secondary min-h-10 px-3 py-2 text-sm sm:min-h-0"
-          >
-            Añadir
-          </button>
-        </div>
-      </div>
 
       {matrix.sizes.length > 0 && matrix.colors.length > 0 ? (
         <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">

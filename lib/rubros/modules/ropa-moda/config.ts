@@ -119,11 +119,42 @@ export const ROPA_MODA_ATTR_COLOR = "color";
 /** Longitud del pie / plantilla interna en centímetros (calzado). */
 export const ROPA_MODA_ATTR_LONGITUD_CM = "longitud_cm";
 
+/**
+ * Tipo de producto dentro del rubro único "Ropa, Calzado y Moda".
+ * No crea rubros de tienda separados: solo filtra el formulario.
+ */
+export type FashionProductKind = "ropa" | "calzado" | "ambos";
+
+export const FASHION_PRODUCT_KIND_OPTIONS: ReadonlyArray<{
+  value: FashionProductKind;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "ropa",
+    label: "Ropa",
+    description: "Tallas de prenda y colores",
+  },
+  {
+    value: "calzado",
+    label: "Calzado",
+    description: "Numeraciones EUR / US y colores",
+  },
+  {
+    value: "ambos",
+    label: "Ambos",
+    description: "Ropa y calzado en el mismo producto",
+  },
+];
+
 const PANTS_SIZE_SET = new Set<string>(ROPA_MODA_PANTS_SIZE_PRESETS);
 const SHOE_SIZE_SET = new Set<string>([
   ...ROPA_MODA_SHOE_SIZE_EUR_PRESETS,
   ...ROPA_MODA_SHOE_SIZE_US_PRESETS,
 ]);
+const CLOTHING_LETTER_SIZE_SET = new Set<string>(
+  ROPA_MODA_SIZE_PRESETS.map((size) => size.toLowerCase()),
+);
 
 function normalizeSizeKey(size: string): string {
   return size.trim().toLowerCase();
@@ -143,6 +174,43 @@ export function isFashionShoeSize(size: string): boolean {
     return n >= 34 && n <= 50;
   }
   return false;
+}
+
+/** True si la talla es de ropa/pantalones (no calzado). */
+export function isFashionClothingSize(size: string): boolean {
+  const trimmed = size.trim();
+  if (!trimmed) return false;
+  if (isFashionShoeSize(trimmed)) return false;
+  if (CLOTHING_LETTER_SIZE_SET.has(normalizeSizeKey(trimmed))) return true;
+  if (PANTS_SIZE_SET.has(trimmed)) return true;
+  // Tallas personalizadas de prenda (XXS, 3XL, etc.)
+  return true;
+}
+
+/** Infiere el tipo de producto a partir de las tallas ya guardadas. */
+export function inferFashionProductKind(
+  sizes: readonly string[],
+): FashionProductKind {
+  if (sizes.length === 0) return "ropa";
+  const hasShoe = sizes.some((size) => isFashionShoeSize(size));
+  const hasClothing = sizes.some((size) => !isFashionShoeSize(size));
+  if (hasShoe && hasClothing) return "ambos";
+  if (hasShoe) return "calzado";
+  return "ropa";
+}
+
+/** Filtra tallas según el tipo de producto seleccionado. */
+export function filterSizesForFashionKind(
+  sizes: readonly string[],
+  kind: FashionProductKind,
+): string[] {
+  if (kind === "ropa") {
+    return sizes.filter((size) => !isFashionShoeSize(size));
+  }
+  if (kind === "calzado") {
+    return sizes.filter((size) => isFashionShoeSize(size));
+  }
+  return [...sizes];
 }
 
 /** Cm sugeridos para una talla de calzado, o null si no hay referencia. */

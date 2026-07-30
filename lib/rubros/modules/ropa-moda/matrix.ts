@@ -6,6 +6,7 @@ import {
   getDefaultShoeLengthCm,
   isFashionShoeSize,
   normalizeShoeLengthCm,
+  type FashionProductKind,
 } from "@/lib/rubros/modules/ropa-moda/config";
 
 export function fashionVariantKey(talla: string, color: string): string {
@@ -68,13 +69,29 @@ export function emptyFashionMatrix(): FashionMatrixState {
   };
 }
 
-export function createDefaultFashionMatrix(): FashionMatrixState {
-  const sizes = ["S", "M", "L", "XL"];
-  const colors = ["Negro", "Blanco"];
+const DEFAULT_CLOTHING_SIZES = ["S", "M", "L", "XL"] as const;
+const DEFAULT_SHOE_SIZES = [
+  "EUR 38",
+  "EUR 39",
+  "EUR 40",
+  "EUR 41",
+  "EUR 42",
+] as const;
+const DEFAULT_COLORS = ["Negro", "Blanco"] as const;
+
+function buildMatrix(
+  sizes: readonly string[],
+  colors: readonly string[],
+): FashionMatrixState {
   const stocks: Record<string, string> = {};
   const priceExtras: Record<string, string> = {};
+  const sizeLengthCm: Record<string, string> = {};
 
   for (const size of sizes) {
+    if (isFashionShoeSize(size)) {
+      const suggested = getDefaultShoeLengthCm(size);
+      if (suggested) sizeLengthCm[size] = suggested;
+    }
     for (const color of colors) {
       const key = fashionVariantKey(size, color);
       stocks[key] = "0";
@@ -82,7 +99,23 @@ export function createDefaultFashionMatrix(): FashionMatrixState {
     }
   }
 
-  return { sizes, colors, stocks, priceExtras, ids: {}, sizeLengthCm: {} };
+  return {
+    sizes: [...sizes],
+    colors: [...colors],
+    stocks,
+    priceExtras,
+    ids: {},
+    sizeLengthCm,
+  };
+}
+
+export function createDefaultFashionMatrix(
+  kind: FashionProductKind = "ropa",
+): FashionMatrixState {
+  if (kind === "calzado") {
+    return buildMatrix(DEFAULT_SHOE_SIZES, DEFAULT_COLORS);
+  }
+  return buildMatrix(DEFAULT_CLOTHING_SIZES, DEFAULT_COLORS);
 }
 
 function sizeKey(size: string): string {
