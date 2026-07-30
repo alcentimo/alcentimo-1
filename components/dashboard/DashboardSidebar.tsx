@@ -21,6 +21,13 @@ import { cn } from "@/lib/cn";
 import { useLocale } from "@/components/providers/UiPreferencesProvider";
 import { useDashboardRoutePrefetch } from "@/components/dashboard/use-dashboard-route-prefetch";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
+import { isDashboardStoreOwner } from "@/lib/team/permissions";
+import {
+  formatSubscriptionStatusLabel,
+  resolveSubscriptionStatus,
+  type SubscriptionStatus,
+} from "@/lib/plans/plan-activation";
+import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
 import {
   BRAND_FAVICON_32_PATH,
   BRAND_LOGO_HEIGHT,
@@ -34,6 +41,9 @@ const DASHBOARD_HOME_HREF = "/dashboard/catalogo";
 interface DashboardSidebarProps {
   pathname: string;
   storeName: string | null;
+  planName?: string | null;
+  subscriptionStatus?: SubscriptionStatus | string | null;
+  trialActive?: boolean;
   mobileOpen: boolean;
   immersiveHidden: boolean;
   onCloseMobile: () => void;
@@ -48,7 +58,9 @@ interface DashboardSidebarProps {
 function navLinkClass(active: boolean, collapsed: boolean) {
   return cn(
     "group relative flex w-full items-center rounded-lg border-l-[3px] text-sm font-medium transition-colors",
-    collapsed ? "h-10 justify-center border-transparent px-0" : "min-h-10 gap-3 border-transparent px-3 py-2",
+    collapsed
+      ? "h-10 justify-center border-transparent px-0"
+      : "min-h-10 gap-3 border-transparent px-3 py-2",
     active
       ? "border-emerald-600 bg-emerald-50 text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
       : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
@@ -100,9 +112,114 @@ function SidebarNavLink({
   );
 }
 
+function SidebarPlanStatus({
+  planName,
+  subscriptionStatus,
+  trialActive,
+  expanded,
+  canOpenPlans,
+  plansActive,
+  onNavigate,
+  onPrefetch,
+}: {
+  planName: string;
+  subscriptionStatus: SubscriptionStatus | string | null | undefined;
+  trialActive: boolean;
+  expanded: boolean;
+  canOpenPlans: boolean;
+  plansActive: boolean;
+  onNavigate: () => void;
+  onPrefetch: (href: string) => void;
+}) {
+  const status = resolveSubscriptionStatus(subscriptionStatus);
+  const statusLabel = formatSubscriptionStatusLabel(subscriptionStatus, {
+    trialActive,
+  });
+  const summary = `${planName} · ${statusLabel}`;
+
+  const statusTone =
+    status === "provisional"
+      ? "bg-amber-500"
+      : trialActive
+        ? "bg-teal-500"
+        : "bg-emerald-500";
+
+  const statusBadgeClass =
+    status === "provisional"
+      ? "bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+      : trialActive
+        ? "bg-teal-50 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300"
+        : "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300";
+
+  const body = expanded ? (
+    <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
+      <span className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+        {planName}
+      </span>
+      <span
+        className={cn(
+          "inline-flex w-fit max-w-full truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+          statusBadgeClass,
+        )}
+      >
+        {statusLabel}
+      </span>
+    </span>
+  ) : (
+    <span
+      className={cn("h-2.5 w-2.5 rounded-full", statusTone)}
+      aria-hidden="true"
+    />
+  );
+
+  const sharedClass = cn(
+    "flex w-full items-center rounded-lg transition-colors",
+    expanded
+      ? "gap-2.5 border border-zinc-200/90 bg-zinc-50/80 px-2.5 py-2 dark:border-zinc-800 dark:bg-zinc-900/50"
+      : "h-10 justify-center",
+    canOpenPlans &&
+      "hover:border-zinc-300 hover:bg-zinc-100 dark:hover:border-zinc-700 dark:hover:bg-zinc-900",
+    plansActive &&
+      canOpenPlans &&
+      "border-emerald-600/40 bg-emerald-50/80 dark:border-emerald-500/40 dark:bg-emerald-950/30",
+  );
+
+  if (canOpenPlans) {
+    return (
+      <Link
+        href={DASHBOARD_PLANS_HREF}
+        prefetch={true}
+        className={sharedClass}
+        onClick={onNavigate}
+        onMouseEnter={() => onPrefetch(DASHBOARD_PLANS_HREF)}
+        onFocus={() => onPrefetch(DASHBOARD_PLANS_HREF)}
+        onTouchStart={() => onPrefetch(DASHBOARD_PLANS_HREF)}
+        title={summary}
+        aria-label={`Plan actual: ${summary}`}
+        aria-current={plansActive ? "page" : undefined}
+      >
+        {body}
+      </Link>
+    );
+  }
+
+  return (
+    <div
+      className={sharedClass}
+      title={summary}
+      aria-label={`Plan actual: ${summary}`}
+    >
+      {body}
+    </div>
+  );
+}
+
 export function DashboardSidebar({
   pathname,
-  storeName,
+  storeName: _storeName,
+  planName = null,
+  subscriptionStatus = "none",
+  trialActive = false,
   mobileOpen,
   immersiveHidden,
   onCloseMobile,
@@ -119,6 +236,7 @@ export function DashboardSidebar({
   const navItems = getDashboardNavItems({ storeRole });
   const { t, navLabel } = useLocale();
   const { prefetchRoute } = useDashboardRoutePrefetch();
+  const canOpenPlans = isDashboardStoreOwner(storeRole);
 
   useEffect(() => {
     try {
@@ -146,7 +264,10 @@ export function DashboardSidebar({
     setCollapsed((value) => {
       const next = !value;
       try {
-        window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, next ? "1" : "0");
+        window.localStorage.setItem(
+          SIDEBAR_COLLAPSED_STORAGE_KEY,
+          next ? "1" : "0",
+        );
       } catch {
         // ignore storage errors
       }
@@ -155,6 +276,7 @@ export function DashboardSidebar({
   }
 
   const drawerExpanded = mobileOpen || !collapsed;
+  const resolvedPlanName = planName?.trim() || "Plan Gratis";
 
   return (
     <aside
@@ -222,7 +344,9 @@ export function DashboardSidebar({
             type="button"
             onClick={toggleCollapsed}
             className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 lg:inline-flex dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-200"
-            aria-label={collapsed ? "Expandir menú lateral" : "Colapsar menú lateral"}
+            aria-label={
+              collapsed ? "Expandir menú lateral" : "Colapsar menú lateral"
+            }
             title={collapsed ? "Expandir menú" : "Colapsar menú"}
           >
             {collapsed ? (
@@ -273,6 +397,17 @@ export function DashboardSidebar({
           </p>
         ) : null}
 
+        <SidebarPlanStatus
+          planName={resolvedPlanName}
+          subscriptionStatus={subscriptionStatus}
+          trialActive={trialActive}
+          expanded={drawerExpanded}
+          canOpenPlans={canOpenPlans}
+          plansActive={pathname.startsWith(DASHBOARD_PLANS_HREF)}
+          onNavigate={onCloseMobile}
+          onPrefetch={prefetchRoute}
+        />
+
         <DashboardAccountMenu
           expanded={drawerExpanded}
           active={accountSettingsActive}
@@ -285,7 +420,10 @@ export function DashboardSidebar({
           <Link
             href="/admin/dashboard"
             prefetch={true}
-            className={navLinkClass(pathname.startsWith("/admin"), !drawerExpanded)}
+            className={navLinkClass(
+              pathname.startsWith("/admin"),
+              !drawerExpanded,
+            )}
             onClick={onCloseMobile}
             onMouseEnter={() => prefetchRoute("/admin/dashboard")}
             onFocus={() => prefetchRoute("/admin/dashboard")}
@@ -312,7 +450,11 @@ export function DashboardSidebar({
           className={navLinkClass(false, !drawerExpanded)}
           title={drawerExpanded ? undefined : t("nav.support")}
         >
-          <LifeBuoy className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+          <LifeBuoy
+            className="h-4 w-4 shrink-0"
+            strokeWidth={1.75}
+            aria-hidden="true"
+          />
           {drawerExpanded && <span>{t("nav.support")}</span>}
         </button>
 

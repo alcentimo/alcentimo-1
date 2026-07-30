@@ -41,6 +41,18 @@ export function resolveSubscriptionStatus(
   return "none";
 }
 
+/** Etiqueta corta para UI (sidebar, resumen de cuenta). */
+export function formatSubscriptionStatusLabel(
+  value: string | null | undefined,
+  options?: { trialActive?: boolean },
+): string {
+  const status = resolveSubscriptionStatus(value);
+  if (status === "provisional") return "En verificación";
+  if (options?.trialActive) return "Prueba activa";
+  if (status === "active") return "Activo";
+  return "Activo";
+}
+
 /**
  * ¿Puede reclamar la prueba Pro gratis?
  * Solo plan FREE en BD y subscription_status = none. No valida conteo de productos.

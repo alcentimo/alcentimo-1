@@ -15,6 +15,7 @@ import { useOptionalLocale } from "@/components/providers/UiPreferencesProvider"
 import type { DashboardStoreRole } from "@/lib/team/permissions";
 import { isDashboardStoreOwner } from "@/lib/team/permissions";
 import type { AccountSnapshot } from "@/lib/account/types";
+import type { SubscriptionStatus } from "@/lib/plans/plan-activation";
 import {
   BRAND_LOGO_HEIGHT,
   BRAND_LOGO_PATH,
@@ -28,6 +29,8 @@ interface DashboardLayoutProps {
   storeName: string | null;
   userEmail: string | null;
   planName?: string | null;
+  subscriptionStatus?: SubscriptionStatus | null;
+  trialActive?: boolean;
   exchangeRate?: number | null;
   exchangeRateUpdatedAt?: string | null;
   isSupportAdmin?: boolean;
@@ -49,6 +52,9 @@ function isStandaloneAuthPath(pathname: string): boolean {
 function DashboardShell({
   children,
   storeName,
+  planName = null,
+  subscriptionStatus = "none",
+  trialActive = false,
   exchangeRate = null,
   exchangeRateUpdatedAt = null,
   isSupportAdmin = false,
@@ -154,6 +160,9 @@ function DashboardShell({
       <DashboardSidebar
         pathname={pathname}
         storeName={storeName}
+        planName={planName}
+        subscriptionStatus={subscriptionStatus}
+        trialActive={trialActive}
         mobileOpen={sidebarOpen}
         immersiveHidden={false}
         onCloseMobile={closeSidebar}

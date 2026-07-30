@@ -44,6 +44,8 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
           storeName={shell?.storeName ?? null}
           userEmail={shell?.userEmail ?? null}
           planName={shell?.planName ?? null}
+          subscriptionStatus={shell?.subscriptionStatus ?? "none"}
+          trialActive={shell?.trialActive ?? false}
           exchangeRate={shell?.exchangeRate ?? null}
           exchangeRateUpdatedAt={shell?.exchangeRateUpdatedAt ?? null}
           isSupportAdmin={shell?.isSupportAdmin ?? false}

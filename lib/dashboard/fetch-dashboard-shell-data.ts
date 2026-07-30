@@ -6,7 +6,12 @@ import { getUserStore } from "@/lib/stores";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { isStoreOwner } from "@/lib/stores/owner-access";
-import { normalizeDbPlan } from "@/lib/plans/plan-activation";
+import {
+  normalizeDbPlan,
+  resolveSubscriptionStatus,
+  type SubscriptionStatus,
+} from "@/lib/plans/plan-activation";
+import { resolveProTrialStatus } from "@/lib/plans/trial";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { getStoreMemberRole } from "@/lib/team/access";
@@ -25,6 +30,8 @@ export type DashboardShellData =
       storeCountry: string | null;
       userEmail: string | null;
       planName: string | null;
+      subscriptionStatus: SubscriptionStatus;
+      trialActive: boolean;
       exchangeRate: number | null;
       exchangeRateUpdatedAt: string | null;
       isSupportAdmin: boolean;
@@ -71,6 +78,10 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
     const exchangeRate = exchangeRateRow?.rate ?? null;
     const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
     const ownerFlag = store ? isStoreOwner(store, authUser.id) : false;
+    const trial = resolveProTrialStatus(
+      authUser.profile,
+      authUser.planId,
+    );
 
     return {
       ok: true,
@@ -78,6 +89,10 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
       storeCountry: store?.country ?? null,
       userEmail: authUser.email ?? null,
       planName: authUser.plan.name,
+      subscriptionStatus: resolveSubscriptionStatus(
+        authUser.profile?.subscription_status,
+      ),
+      trialActive: trial.active,
       exchangeRate,
       exchangeRateUpdatedAt,
       isSupportAdmin: isSupportAdmin(
