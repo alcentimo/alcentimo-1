@@ -74,11 +74,7 @@ export function OnboardingExperience({
   return (
     <>
       <Suspense fallback={null}>
-        <ProTrialActivationWatcher
-          trialEligible={trialEligible}
-          trialActive={trialActive}
-          setupStatus={setupStatus}
-        />
+        <ProTrialActivationWatcher trialActive={trialActive} />
       </Suspense>
 
       <AiWelcomeDialog

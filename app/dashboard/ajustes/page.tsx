@@ -6,6 +6,7 @@ import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { getStoreCoupons } from "@/lib/coupons/actions";
 import { getStorePromotions } from "@/lib/promotions/actions";
 import { getStoreInventory } from "@/lib/inventory";
+import { getStoreProductCount } from "@/lib/plans/product-limit";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import { SettingsPanel } from "@/components/dashboard/settings/SettingsPanel";
@@ -76,13 +77,15 @@ export default async function AjustesPage({
 
   let trialSetupStatus = {
     hasProducts: false,
+    hasMinProductsForProTrial: false,
     hasPaymentsConfigured: false,
+    hasShippingConfigured: false,
   };
   let trialEligible = false;
   let trialActive = false;
 
   if (store) {
-    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations, storeCategories, planSettings] =
+    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations, storeCategories, planSettings, activeProductCount] =
       await Promise.all([
       getStoreSettingsConfig(store.id),
       getStoreCoupons(store.id),
@@ -93,6 +96,7 @@ export default async function AjustesPage({
       getStoreLocations(store.id).catch(() => []),
       getStoreCategoriesForManagement(supabase, store.id).catch(() => []),
       fetchPlanSettings().catch(() => null),
+      getStoreProductCount(store.id),
     ]);
 
     settingsConfig = config;
@@ -101,7 +105,7 @@ export default async function AjustesPage({
     locations = storeLocations;
     categories = storeCategories;
     trialSetupStatus = getOnboardingSetupStatus(
-      inventory.totalCount,
+      activeProductCount,
       config,
       store.slug,
     );

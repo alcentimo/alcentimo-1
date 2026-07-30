@@ -107,7 +107,12 @@ export default async function ActivarPage() {
   const atProductLimit = productLimitStatus?.hasReachedLimit ?? false;
   const trialSetupStatus = store && storeSettings
     ? getOnboardingSetupStatus(currentCount, storeSettings, store.slug)
-    : { hasProducts: false, hasPaymentsConfigured: false };
+    : {
+        hasProducts: false,
+        hasMinProductsForProTrial: false,
+        hasPaymentsConfigured: false,
+        hasShippingConfigured: false,
+      };
 
   const proLimitLabel =
     proProductLimit == null ? "productos ilimitados" : `${proProductLimit} productos`;
@@ -137,8 +142,8 @@ export default async function ActivarPage() {
           <p className="page-header-desc">
             {showProTrialSection && !trial.active
               ? atProductLimit
-                ? `Has alcanzado el límite de ${freeProductLimit} productos. Completa tu catálogo y configura métodos de pago para activar 30 días gratis del Plan Pro (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
-                : `Publica productos y configura métodos de pago para desbloquear 30 días gratis del Plan Pro (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
+                ? `Has alcanzado el límite de ${freeProductLimit} productos. Configura pagos y envíos, y escribe ALCENTIMO para reclamar 30 días gratis del Plan Pro (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
+                : `Publica al menos ${freeProductLimit} productos activos, configura pagos y envíos, y escribe ALCENTIMO para reclamar 30 días gratis del Plan Pro (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
               : `Elige el plan que mejor se adapte a tu negocio${store ? ` · ${store.name}` : ""}.`}
           </p>
         </header>

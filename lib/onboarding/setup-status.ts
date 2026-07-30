@@ -1,19 +1,33 @@
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
 import { getTransactionalCatalogUrl } from "@/lib/stores";
 
+/** Mínimo de productos activos para reclamar la prueba Pro ($8 / Plan Pro). */
+export const PRO_TRIAL_MIN_ACTIVE_PRODUCTS = 10;
+
 export interface OnboardingSetupStatus {
   hasProducts: boolean;
+  /** ≥ {@link PRO_TRIAL_MIN_ACTIVE_PRODUCTS} productos activos (requisito de prueba Pro). */
+  hasMinProductsForProTrial: boolean;
   hasPaymentsConfigured: boolean;
   hasShippingConfigured: boolean;
   paymentsOrShippingConfigured: boolean;
   catalogPath: string;
 }
 
+export type ProTrialSetupPick = Pick<
+  OnboardingSetupStatus,
+  | "hasMinProductsForProTrial"
+  | "hasPaymentsConfigured"
+  | "hasShippingConfigured"
+>;
+
 /** Requisitos para desbloquear la prueba Pro de 30 días. */
-export function isProTrialSetupComplete(
-  status: Pick<OnboardingSetupStatus, "hasProducts" | "hasPaymentsConfigured">,
-): boolean {
-  return status.hasProducts && status.hasPaymentsConfigured;
+export function isProTrialSetupComplete(status: ProTrialSetupPick): boolean {
+  return (
+    status.hasMinProductsForProTrial &&
+    status.hasPaymentsConfigured &&
+    status.hasShippingConfigured
+  );
 }
 
 export function getOnboardingSetupStatus(
@@ -33,6 +47,7 @@ export function getOnboardingSetupStatus(
 
   return {
     hasProducts: productCount > 0,
+    hasMinProductsForProTrial: productCount >= PRO_TRIAL_MIN_ACTIVE_PRODUCTS,
     hasPaymentsConfigured,
     hasShippingConfigured,
     paymentsOrShippingConfigured: hasPaymentsConfigured || hasShippingConfigured,

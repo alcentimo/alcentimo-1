@@ -126,7 +126,7 @@ export default async function CatalogoPage({
   const rubro = normalizeStoreRubro(store.rubro_tienda as StoreRubro);
   const rubroLabel = getRubroLabel(rubro);
   const setupStatus = getOnboardingSetupStatus(
-    totalCount,
+    productLimitContext?.currentCount ?? totalCount,
     storeSettings,
     store.slug,
   );

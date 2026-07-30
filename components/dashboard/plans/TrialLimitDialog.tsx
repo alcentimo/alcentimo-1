@@ -9,14 +9,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatProTrialSetupRemainingMessage } from "@/lib/plans/trial-unlock";
-import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
+import {
+  formatProTrialSetupRemainingMessage,
+  isProTrialUnlockReady,
+} from "@/lib/plans/trial-unlock";
+import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
+import { ProTrialClaimForm } from "@/components/dashboard/plans/ProTrialClaimForm";
 
 interface TrialLimitDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   trialEligible: boolean;
-  setupStatus?: Pick<OnboardingSetupStatus, "hasProducts" | "hasPaymentsConfigured">;
+  setupStatus?: ProTrialSetupPick;
 }
 
 export function TrialLimitDialog({
@@ -31,10 +35,9 @@ export function TrialLimitDialog({
     onOpenChange(nextOpen);
   }
 
+  const unlockReady = setupStatus ? isProTrialUnlockReady(setupStatus) : false;
   const setupIncomplete =
-    trialEligible &&
-    setupStatus &&
-    (!setupStatus.hasProducts || !setupStatus.hasPaymentsConfigured);
+    trialEligible && setupStatus != null && !unlockReady;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -47,10 +50,15 @@ export function TrialLimitDialog({
                 {formatProTrialSetupRemainingMessage(setupStatus)} Después podrás
                 publicar hasta 250 productos con la prueba Pro.
               </>
+            ) : trialEligible && unlockReady ? (
+              <>
+                Requisitos listos. Escribe ALCENTIMO para reclamar tus 30 días
+                gratis del Plan Pro (250 productos).
+              </>
             ) : trialEligible ? (
               <>
-                Completa la configuración inicial para activar automáticamente tus
-                30 días gratis del Plan Pro (250 productos).
+                Completa la configuración inicial y escribe ALCENTIMO para
+                reclamar tus 30 días gratis del Plan Pro (250 productos).
               </>
             ) : (
               <>
@@ -61,10 +69,16 @@ export function TrialLimitDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {trialEligible && unlockReady && setupStatus ? (
+          <div className="mt-1">
+            <ProTrialClaimForm />
+          </div>
+        ) : null}
+
         <div className="flex flex-col gap-2 sm:flex-row">
-          {setupIncomplete ? (
+          {setupIncomplete && setupStatus ? (
             <>
-              {!setupStatus.hasProducts ? (
+              {!setupStatus.hasMinProductsForProTrial ? (
                 <Link
                   href="/dashboard/catalogo?nuevo=1"
                   className="btn-primary w-full text-center"
@@ -82,12 +96,21 @@ export function TrialLimitDialog({
                   Configurar pagos
                 </Link>
               ) : null}
+              {!setupStatus.hasShippingConfigured ? (
+                <Link
+                  href="/dashboard/ajustes?tab=shipping"
+                  className="btn-primary w-full text-center"
+                  onClick={() => handleClose(false)}
+                >
+                  Configurar envíos
+                </Link>
+              ) : null}
             </>
-          ) : (
+          ) : !unlockReady ? (
             <Link href="/activar" className="btn-primary w-full text-center">
               Ver planes
             </Link>
-          )}
+          ) : null}
           <button
             type="button"
             onClick={() => {

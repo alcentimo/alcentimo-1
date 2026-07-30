@@ -40,7 +40,7 @@ export function ProTrialCongratulationsDialog({
                     ¡Felicidades! Desbloqueaste Plan Pro
                   </DialogTitle>
                   <DialogDescription className="text-xs text-zinc-500">
-                    30 días gratis activados automáticamente
+                    30 días gratis del Plan Pro reclamados
                   </DialogDescription>
                 </DialogHeader>
               </div>
@@ -63,8 +63,8 @@ export function ProTrialCongratulationsDialog({
               Prueba Pro activa
             </div>
             <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-              Completaste la configuración inicial de tu tienda. Ya tienes 30 días
-              gratis del Plan Pro con hasta 250 productos publicados
+              Completaste los requisitos y reclamaste tu mes gratis. Ya tienes 30
+              días del Plan Pro con hasta 250 productos publicados
               {endsAt ? (
                 <>
                   {" "}

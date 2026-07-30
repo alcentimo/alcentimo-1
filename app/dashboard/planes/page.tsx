@@ -85,7 +85,12 @@ export default async function PlanesPage() {
           storeSettings,
           store.slug,
         )
-      : { hasProducts: false, hasPaymentsConfigured: false };
+      : {
+          hasProducts: false,
+          hasMinProductsForProTrial: false,
+          hasPaymentsConfigured: false,
+          hasShippingConfigured: false,
+        };
 
   return (
     <PageContainer as="div" className="mx-auto max-w-6xl py-6 sm:py-8">

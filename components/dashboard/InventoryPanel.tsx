@@ -40,7 +40,7 @@ import { InventoryPagination } from "@/components/dashboard/InventoryPagination"
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { fetchStoreProductFormConfig } from "@/lib/products/fetch-store-product-form-config";
 import type { StoreProductLimitContext } from "@/lib/plans/product-limit";
-import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
+import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 import { shouldShowProductLimitBanner } from "@/src/config/plans";
 import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
 import { TrialLimitDialog } from "@/components/dashboard/plans/TrialLimitDialog";
@@ -149,7 +149,7 @@ interface InventoryPanelProps {
   productLimitContext?: StoreProductLimitContext | null;
   rubroLabel?: string;
   onSampleProductsCreated?: () => void;
-  setupStatus?: Pick<OnboardingSetupStatus, "hasProducts" | "hasPaymentsConfigured">;
+  setupStatus?: ProTrialSetupPick;
   /** Fuerza fetch al montar (cuando el server no hidrató inventario). */
   loadOnMount?: boolean;
 }

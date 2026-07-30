@@ -11,8 +11,12 @@ import { getStoreProductCount } from "@/lib/plans/product-limit";
 import {
   getOnboardingSetupStatus,
   isProTrialSetupComplete,
+  PRO_TRIAL_MIN_ACTIVE_PRODUCTS,
 } from "@/lib/onboarding/setup-status";
-import { isProTrialUnlockReady } from "@/lib/plans/trial-unlock";
+import {
+  isValidProTrialClaimCode,
+  PRO_TRIAL_CLAIM_CODE,
+} from "@/lib/plans/trial";
 
 export type StartProTrialResult =
   | { ok: true; endsAt: string }
@@ -28,6 +32,7 @@ export type TryActivateProTrialResult =
         | "already_active"
         | "already_used"
         | "setup_incomplete"
+        | "claim_required"
         | "no_store";
     }
   | { ok: false; error: string };
@@ -155,7 +160,13 @@ async function getTrialSetupForUser(userId: string) {
   };
 }
 
-export async function tryActivateProTrialOnSetupComplete(): Promise<TryActivateProTrialResult> {
+/**
+ * Activa la prueba Pro solo si el setup está completo y el usuario escribió
+ * la palabra de reclamación ({@link PRO_TRIAL_CLAIM_CODE}).
+ */
+export async function tryActivateProTrialOnSetupComplete(options?: {
+  claimCode?: string;
+}): Promise<TryActivateProTrialResult> {
   const supabase = await createClient();
   const auth = await requireAuthUser(supabase);
 
@@ -209,6 +220,10 @@ export async function tryActivateProTrialOnSetupComplete(): Promise<TryActivateP
     return { ok: true, activated: false, reason: "setup_incomplete" };
   }
 
+  if (!isValidProTrialClaimCode(options?.claimCode ?? "")) {
+    return { ok: true, activated: false, reason: "claim_required" };
+  }
+
   const activation = await performProTrialActivation(supabase, userId);
   if (!activation.ok) {
     return { ok: false, error: activation.error };
@@ -217,8 +232,15 @@ export async function tryActivateProTrialOnSetupComplete(): Promise<TryActivateP
   return { ok: true, activated: true, endsAt: activation.endsAt };
 }
 
-export async function startProTrial(_claimCode?: string): Promise<StartProTrialResult> {
-  const result = await tryActivateProTrialOnSetupComplete();
+export async function startProTrial(claimCode?: string): Promise<StartProTrialResult> {
+  if (!isValidProTrialClaimCode(claimCode ?? "")) {
+    return {
+      ok: false,
+      error: `Escribe ${PRO_TRIAL_CLAIM_CODE} exactamente para reclamar tu mes gratis.`,
+    };
+  }
+
+  const result = await tryActivateProTrialOnSetupComplete({ claimCode });
 
   if (!result.ok) {
     return { ok: false, error: result.error };
@@ -231,8 +253,14 @@ export async function startProTrial(_claimCode?: string): Promise<StartProTrialR
   if (result.reason === "setup_incomplete") {
     return {
       ok: false,
-      error:
-        "Publica al menos un producto y configura tus métodos de pago para activar la prueba Pro.",
+      error: `Publica al menos ${PRO_TRIAL_MIN_ACTIVE_PRODUCTS} productos activos y configura pagos y envíos para reclamar la prueba Pro.`,
+    };
+  }
+
+  if (result.reason === "claim_required") {
+    return {
+      ok: false,
+      error: `Escribe ${PRO_TRIAL_CLAIM_CODE} exactamente para reclamar tu mes gratis.`,
     };
   }
 

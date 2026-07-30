@@ -8,8 +8,9 @@ import {
   formatProTrialSetupRemainingMessage,
   isProTrialUnlockReady,
 } from "@/lib/plans/trial-unlock";
-import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
+import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 import { ProTrialSetupProgress } from "@/components/dashboard/plans/ProTrialSetupProgress";
+import { ProTrialClaimForm } from "@/components/dashboard/plans/ProTrialClaimForm";
 import { ProTrialActivationWatcher } from "@/components/onboarding/ProTrialActivationWatcher";
 
 interface ProTrialBannerProps {
@@ -17,7 +18,7 @@ interface ProTrialBannerProps {
   trialEligible: boolean;
   trialActive: boolean;
   trialEndsAt: string | null;
-  setupStatus: Pick<OnboardingSetupStatus, "hasProducts" | "hasPaymentsConfigured">;
+  setupStatus: ProTrialSetupPick;
 }
 
 export function ProTrialBanner({
@@ -73,7 +74,7 @@ export function ProTrialBanner({
         <ProTrialSetupProgress setup={setupStatus} />
 
         <div className="mt-3 flex flex-wrap gap-3">
-          {!setupStatus.hasProducts ? (
+          {!setupStatus.hasMinProductsForProTrial ? (
             <Link href="/dashboard/catalogo?nuevo=1" className="pro-trial-banner-link">
               Añadir productos
             </Link>
@@ -86,6 +87,14 @@ export function ProTrialBanner({
               Configurar pagos
             </Link>
           ) : null}
+          {!setupStatus.hasShippingConfigured ? (
+            <Link
+              href="/dashboard/ajustes?tab=shipping"
+              className="pro-trial-banner-link"
+            >
+              Configurar envíos
+            </Link>
+          ) : null}
         </div>
       </section>
     );
@@ -96,14 +105,18 @@ export function ProTrialBanner({
           <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-teal-700 dark:text-teal-300" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-teal-950 dark:text-teal-50">
-              Configuración completa
+              Requisitos completados
             </p>
             <p className="mt-1 text-sm text-teal-900/80 dark:text-teal-100/80">
-              Estamos activando tus 30 días gratis del Plan Pro automáticamente.
+              Confirma escribiendo ALCENTIMO para reclamar tu mes gratis del Plan
+              Pro.
             </p>
           </div>
         </div>
         <ProTrialSetupProgress setup={setupStatus} />
+        <div className="mt-3">
+          <ProTrialClaimForm />
+        </div>
       </section>
     );
   }
@@ -114,13 +127,9 @@ export function ProTrialBanner({
 
   return (
     <>
-      {trialEligible && !trialActive ? (
+      {trialEligible || trialActive ? (
         <Suspense fallback={null}>
-          <ProTrialActivationWatcher
-            trialEligible={trialEligible}
-            trialActive={trialActive}
-            setupStatus={setupStatus}
-          />
+          <ProTrialActivationWatcher trialActive={trialActive} />
         </Suspense>
       ) : null}
       {banner}

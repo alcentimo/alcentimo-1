@@ -87,7 +87,14 @@ export function hasUnusedProTrial(
 }
 
 export const PRO_TRIAL_AT_LIMIT_MESSAGE =
-  "¡Has alcanzado tu límite! Completa tu catálogo y configura métodos de pago para activar 30 días gratis del Plan Pro (250 productos)";
+  "¡Has alcanzado tu límite! Completa pagos y envíos, y escribe ALCENTIMO para reclamar 30 días gratis del Plan Pro (250 productos)";
+
+/** Palabra obligatoria para reclamar el mes gratis del Plan Pro. */
+export const PRO_TRIAL_CLAIM_CODE = "ALCENTIMO";
+
+export function isValidProTrialClaimCode(claimCode: string): boolean {
+  return claimCode.trim().toUpperCase() === PRO_TRIAL_CLAIM_CODE;
+}
 
 /** Prioriza ofrecer la prueba Pro al llegar al límite de productos del plan Gratis. */
 export function shouldPromoteProTrialAtLimit(
