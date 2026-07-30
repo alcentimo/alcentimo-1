@@ -40,6 +40,7 @@ interface DashboardSidebarProps {
   onCloseMobile: () => void;
   onLogout: () => void;
   onOpenAccountSettings: () => void;
+  onPrefetchAccountSettings?: () => void;
   accountSettingsActive?: boolean;
   isSupportAdmin?: boolean;
   storeRole?: DashboardStoreRole | null;
@@ -111,6 +112,7 @@ export function DashboardSidebar({
   onCloseMobile,
   onLogout,
   onOpenAccountSettings,
+  onPrefetchAccountSettings,
   accountSettingsActive = false,
   isSupportAdmin = false,
   storeRole = null,
@@ -297,6 +299,7 @@ export function DashboardSidebar({
           active={accountSettingsActive}
           navLinkClass={navLinkClass}
           onOpenAccountSettings={onOpenAccountSettings}
+          onPrefetchAccountSettings={onPrefetchAccountSettings}
         />
 
         {isSupportAdmin ? (

@@ -13,6 +13,8 @@ import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings"
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { getStoreMemberRole } from "@/lib/team/access";
 import { withTimeoutFallback } from "@/lib/async/with-timeout-fallback";
+import { buildAccountSnapshot } from "@/lib/account/get-account-snapshot";
+import type { AccountSnapshot } from "@/lib/account/types";
 import type { BcvSyncAlert } from "@/lib/exchange-rate/get-bcv-sync-alert";
 import type { InterfacePreferencesSettings } from "@/lib/store-settings/types";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
@@ -35,6 +37,7 @@ export type DashboardShellData =
       canUpgradeToBusiness: boolean;
       interfacePreferences: InterfacePreferencesSettings;
       bcvSyncAlert: BcvSyncAlert | null;
+      accountSnapshot: AccountSnapshot;
     }
   | { ok: false; error: string };
 
@@ -78,6 +81,7 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
 
     const exchangeRate = exchangeRateRow?.rate ?? null;
     const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
+    const ownerFlag = store ? isStoreOwner(store, authUser.id) : false;
 
     return {
       ok: true,
@@ -91,12 +95,17 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
       isSupportAdmin: isSupportAdmin(
         resolveAuthEmail({ email: authUser.email, user_metadata: {} }),
       ),
-      isStoreOwner: store ? isStoreOwner(store, authUser.id) : false,
+      isStoreOwner: ownerFlag,
       storeRole,
       canUpgradeToBusiness:
         normalizeDbPlan(authUser.profile?.plan ?? authUser.rawPlan) === "PRO",
       interfacePreferences: settingsConfig.interfacePreferences,
       bcvSyncAlert,
+      accountSnapshot: buildAccountSnapshot({
+        authUser,
+        store,
+        storeRole,
+      }),
     };
   } catch (error) {
     return {

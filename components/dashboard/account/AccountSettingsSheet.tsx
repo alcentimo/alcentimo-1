@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { AccountSettingsPanel } from "@/components/dashboard/account/AccountSettingsPanel";
 import { getAccountSnapshotAction } from "@/lib/account/actions";
@@ -21,6 +21,10 @@ interface AccountSettingsSheetProps {
   showBillingTab?: boolean;
   canUpgradeToBusiness?: boolean;
   onTabChange?: (tab: string) => void;
+  /** Snapshot precargado con el chrome del dashboard (apertura instantánea). */
+  initialAccount?: AccountSnapshot | null;
+  /** Dispara prefetch en segundo plano (p. ej. hover del menú). */
+  prefetchToken?: number;
 }
 
 export function AccountSettingsSheet({
@@ -30,36 +34,67 @@ export function AccountSettingsSheet({
   showBillingTab = false,
   canUpgradeToBusiness = false,
   onTabChange,
+  initialAccount = null,
+  prefetchToken = 0,
 }: AccountSettingsSheetProps) {
-  const [account, setAccount] = useState<AccountSnapshot | null>(null);
+  const [account, setAccount] = useState<AccountSnapshot | null>(
+    initialAccount,
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
+  const accountRef = useRef(account);
+  accountRef.current = account;
+
+  useEffect(() => {
+    if (!initialAccount) return;
+    setAccount((prev) => prev ?? initialAccount);
+  }, [initialAccount]);
+
+  function loadAccount(options?: { background?: boolean }) {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    const background = options?.background ?? false;
+    if (!background && !accountRef.current) {
+      setLoading(true);
+      setError(null);
+    }
+
+    void getAccountSnapshotAction()
+      .then((result) => {
+        if (!result.ok) {
+          if (!accountRef.current) {
+            setError(result.error);
+          }
+          return;
+        }
+        setAccount(result.account);
+        setError(null);
+      })
+      .finally(() => {
+        setLoading(false);
+        inFlightRef.current = false;
+      });
+  }
+
+  useEffect(() => {
+    if (prefetchToken <= 0) return;
+    if (accountRef.current) return;
+    loadAccount({ background: true });
+  }, [prefetchToken]);
 
   useEffect(() => {
     if (!open) {
-      setAccount(null);
       setError(null);
       setLoading(false);
       return;
     }
 
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
+    // Shell o caché: abrir al instante sin spinner.
+    if (accountRef.current) return;
 
-    void getAccountSnapshotAction().then((result) => {
-      if (cancelled) return;
-      setLoading(false);
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      setAccount(result.account);
-    });
-
-    return () => {
-      cancelled = true;
-    };
+    loadAccount({ background: false });
   }, [open]);
 
   return (
@@ -76,20 +111,20 @@ export function AccountSettingsSheet({
         </SheetHeader>
 
         <SheetBody className="flex min-h-0 flex-1 flex-col px-4 pb-6 sm:px-6">
-          {loading ? (
+          {loading && !account ? (
             <div className="flex flex-1 items-center justify-center gap-2 py-16 text-sm text-zinc-500">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               Cargando tu cuenta…
             </div>
           ) : null}
 
-          {error && !loading ? (
+          {error && !account && !loading ? (
             <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
               {error}
             </p>
           ) : null}
 
-          {account && !loading ? (
+          {account ? (
             <AccountSettingsPanel
               account={account}
               initialTab={initialTab}

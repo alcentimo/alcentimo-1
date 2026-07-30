@@ -12,6 +12,7 @@ import { AccountSettingsSheet } from "@/components/dashboard/account/AccountSett
 import { useOptionalLocale } from "@/components/providers/UiPreferencesProvider";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
 import { isDashboardStoreOwner } from "@/lib/team/permissions";
+import type { AccountSnapshot } from "@/lib/account/types";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -25,6 +26,7 @@ interface DashboardLayoutProps {
   isStoreOwner?: boolean;
   storeRole?: DashboardStoreRole | null;
   canUpgradeToBusiness?: boolean;
+  accountSnapshot?: AccountSnapshot | null;
 }
 
 function isStandaloneAuthPath(pathname: string): boolean {
@@ -45,6 +47,7 @@ function DashboardShell({
   isSupportAdmin = false,
   storeRole = null,
   canUpgradeToBusiness = false,
+  accountSnapshot = null,
 }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -52,6 +55,7 @@ function DashboardShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [accountSheetOpen, setAccountSheetOpen] = useState(false);
   const [accountSheetTab, setAccountSheetTab] = useState<string | undefined>();
+  const [accountPrefetchToken, setAccountPrefetchToken] = useState(0);
   const locale = useOptionalLocale();
   const showOwnerBillingLinks = isDashboardStoreOwner(storeRole);
   const accountQueryParam = searchParams.get("account");
@@ -77,6 +81,10 @@ function DashboardShell({
     setAccountSheetOpen(true);
     closeSidebar();
     syncAccountQueryParam(nextTab);
+  }
+
+  function prefetchAccountSettings() {
+    setAccountPrefetchToken((token) => token + 1);
   }
 
   function closeAccountSettings() {
@@ -144,6 +152,7 @@ function DashboardShell({
         onCloseMobile={closeSidebar}
         onLogout={() => void handleLogout()}
         onOpenAccountSettings={() => openAccountSettings()}
+        onPrefetchAccountSettings={prefetchAccountSettings}
         accountSettingsActive={accountSheetOpen || Boolean(accountQueryParam)}
         isSupportAdmin={isSupportAdmin}
         storeRole={storeRole}
@@ -192,6 +201,8 @@ function DashboardShell({
         showBillingTab={showOwnerBillingLinks}
         canUpgradeToBusiness={canUpgradeToBusiness}
         onTabChange={handleAccountTabChange}
+        initialAccount={accountSnapshot}
+        prefetchToken={accountPrefetchToken}
       />
     </div>
   );

@@ -23,6 +23,10 @@ export interface UserWithPlan {
   plan: PlanDefinition;
   /** Valor crudo en BD (p. ej. `FREE`) */
   rawPlan: string;
+  /** Nombre visible desde user_metadata (auth). */
+  displayName: string | null;
+  /** Si el usuario tiene identidad email/contraseña. */
+  hasPasswordLogin: boolean;
 }
 
 export interface DashboardSession {
@@ -152,6 +156,27 @@ export async function getUserPlanId(
   return resolvePlanId(profile?.plan);
 }
 
+function resolveAuthDisplayName(user: {
+  user_metadata?: Record<string, unknown> | null;
+}): string | null {
+  const metadata = user.user_metadata ?? {};
+  const fromDisplay =
+    typeof metadata.display_name === "string" ? metadata.display_name.trim() : "";
+  if (fromDisplay) return fromDisplay;
+  const fromFull =
+    typeof metadata.full_name === "string" ? metadata.full_name.trim() : "";
+  if (fromFull) return fromFull;
+  return null;
+}
+
+function resolveHasPasswordLogin(user: {
+  identities?: Array<{ provider: string }> | null;
+}): boolean {
+  return (
+    user.identities?.some((identity) => identity.provider === "email") ?? false
+  );
+}
+
 /** Usuario autenticado con su plan actual desde `profiles`. */
 export async function getAuthUserWithPlan(
   client: SupabaseServerClient,
@@ -169,5 +194,7 @@ export async function getAuthUserWithPlan(
     planId: displayPlan.planId,
     plan: { ...displayPlan.plan, name: displayPlan.planName },
     rawPlan: profile?.plan ?? "FREE",
+    displayName: resolveAuthDisplayName(user),
+    hasPasswordLogin: resolveHasPasswordLogin(user),
   };
 }

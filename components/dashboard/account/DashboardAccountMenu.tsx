@@ -10,6 +10,7 @@ interface DashboardAccountMenuProps {
   active: boolean;
   navLinkClass: NavLinkClassFn;
   onOpenAccountSettings: () => void;
+  onPrefetchAccountSettings?: () => void;
 }
 
 export function DashboardAccountMenu({
@@ -17,6 +18,7 @@ export function DashboardAccountMenu({
   active,
   navLinkClass,
   onOpenAccountSettings,
+  onPrefetchAccountSettings,
 }: DashboardAccountMenuProps) {
   const collapsed = !expanded;
 
@@ -27,6 +29,9 @@ export function DashboardAccountMenu({
       aria-haspopup="dialog"
       aria-expanded={active}
       onClick={onOpenAccountSettings}
+      onMouseEnter={onPrefetchAccountSettings}
+      onFocus={onPrefetchAccountSettings}
+      onTouchStart={onPrefetchAccountSettings}
       title={collapsed ? "Perfil y cuenta" : undefined}
     >
       <UserRound

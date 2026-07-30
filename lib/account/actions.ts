@@ -18,22 +18,12 @@ export type AccountActionResult =
 export async function getAccountSnapshotAction(): Promise<
   { ok: true; account: AccountSnapshot } | { ok: false; error: string }
 > {
-  const supabase = await createClient();
   const session = await getDashboardSession();
   if (!session) {
     return { ok: false, error: "Debes iniciar sesión." };
   }
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return { ok: false, error: "Debes iniciar sesión." };
-  }
-
-  return { ok: true, account: buildAccountSnapshot(user, session) };
+  return { ok: true, account: buildAccountSnapshot(session) };
 }
 
 export async function updateAccountProfileAction(input: {

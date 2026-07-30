@@ -10,6 +10,7 @@ import {
   type DashboardShellData,
 } from "@/lib/dashboard/fetch-dashboard-shell-data";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
+import type { AccountSnapshot } from "@/lib/account/types";
 
 const defaultPrefs = defaultStoreSettingsConfig().interfacePreferences;
 
@@ -33,6 +34,8 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const accountSnapshot: AccountSnapshot | null = shell?.accountSnapshot ?? null;
+
   return (
     <UiPreferencesProvider
       initialPreferences={shell?.interfacePreferences ?? defaultPrefs}
@@ -49,6 +52,7 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
           isStoreOwner={shell?.isStoreOwner ?? false}
           storeRole={shell?.storeRole ?? null}
           canUpgradeToBusiness={shell?.canUpgradeToBusiness ?? false}
+          accountSnapshot={accountSnapshot}
         >
           {shell?.bcvSyncAlert ? (
             <BcvSyncAlertBanner alert={shell.bcvSyncAlert} />
