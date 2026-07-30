@@ -10,9 +10,20 @@ interface DialogProps {
   onOpenChange: (open: boolean) => void;
   children: ReactNode;
   containerClassName?: string;
+  /**
+   * Si false, no cierra con Escape ni clic en el fondo.
+   * El usuario debe usar un botón o la X explícitos.
+   */
+  dismissible?: boolean;
 }
 
-export function Dialog({ open, onOpenChange, children, containerClassName }: DialogProps) {
+export function Dialog({
+  open,
+  onOpenChange,
+  children,
+  containerClassName,
+  dismissible = true,
+}: DialogProps) {
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;
@@ -23,24 +34,31 @@ export function Dialog({ open, onOpenChange, children, containerClassName }: Dia
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !dismissible) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onOpenChange(false);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onOpenChange]);
+  }, [open, onOpenChange, dismissible]);
 
   if (!open) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
-        aria-label="Cerrar"
-        onClick={() => onOpenChange(false)}
-      />
+      {dismissible ? (
+        <button
+          type="button"
+          className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
+          aria-label="Cerrar"
+          onClick={() => onOpenChange(false)}
+        />
+      ) : (
+        <div
+          className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+          aria-hidden="true"
+        />
+      )}
       <div className={cn("relative z-10 w-full max-w-lg", containerClassName)}>
         {children}
       </div>

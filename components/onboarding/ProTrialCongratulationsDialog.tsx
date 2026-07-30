@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Gift, Sparkles, X } from "lucide-react";
 import {
   Dialog,
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { formatProTrialEndsAt } from "@/lib/plans/trial";
+import { clearProTrialCongrats } from "@/lib/plans/pro-trial-congrats-storage";
 
 interface ProTrialCongratulationsDialogProps {
   open: boolean;
@@ -17,17 +19,30 @@ interface ProTrialCongratulationsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+/**
+ * Modal de felicitaciones fijo: no se cierra solo (ni Escape ni clic fuera).
+ * Solo cierra con X o con el botón de acción.
+ */
 export function ProTrialCongratulationsDialog({
   open,
   endsAt,
   onOpenChange,
 }: ProTrialCongratulationsDialogProps) {
+  const router = useRouter();
+
+  function dismiss() {
+    clearProTrialCongrats();
+    onOpenChange(false);
+  }
+
+  function handleStartSelling() {
+    dismiss();
+    router.push("/dashboard/catalogo");
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="onboarding-welcome-dialog max-w-lg overflow-hidden p-0"
-        onClose={() => onOpenChange(false)}
-      >
+    <Dialog open={open} onOpenChange={() => {}} dismissible={false}>
+      <DialogContent className="onboarding-welcome-dialog relative max-w-lg overflow-hidden p-0">
         <div className="onboarding-welcome-hero px-6 pb-5 pt-6">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -35,7 +50,7 @@ export function ProTrialCongratulationsDialog({
                 <Gift className="h-5 w-5" />
               </span>
               <div>
-                <DialogHeader className="space-y-1 text-left">
+                <DialogHeader className="mb-0 space-y-1 text-left">
                   <DialogTitle className="text-lg text-zinc-900 dark:text-zinc-50">
                     ¡Felicidades! Desbloqueaste Plan Pro
                   </DialogTitle>
@@ -47,7 +62,7 @@ export function ProTrialCongratulationsDialog({
             </div>
             <button
               type="button"
-              onClick={() => onOpenChange(false)}
+              onClick={dismiss}
               className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-white/70 hover:text-zinc-800 dark:hover:bg-zinc-900/60 dark:hover:text-zinc-200"
               aria-label="Cerrar"
             >
@@ -75,13 +90,21 @@ export function ProTrialCongratulationsDialog({
             </p>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button
               type="button"
-              className="btn-brand"
-              onClick={() => onOpenChange(false)}
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={dismiss}
             >
-              Continuar
+              ¡Genial!
+            </Button>
+            <Button
+              type="button"
+              className="btn-brand w-full sm:w-auto"
+              onClick={handleStartSelling}
+            >
+              Empezar a vender
             </Button>
           </div>
         </div>
