@@ -124,6 +124,7 @@ export function CatalogPanel({
           trialActive={trialActive}
           trialEndsAt={trial?.endsAt ?? null}
           setupStatus={setupStatus}
+          compact
         />
       ) : null}
 
