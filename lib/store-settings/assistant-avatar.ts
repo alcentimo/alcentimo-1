@@ -1,7 +1,3 @@
-import {
-  getAssistantAvatarPreset,
-  resolveAssistantAvatarPresetId,
-} from "@/lib/store-settings/assistant-avatar-presets";
 import type { CatalogAssistantAvatarSettings } from "@/lib/store-settings/types";
 
 export function defaultAssistantAvatarSettings(): CatalogAssistantAvatarSettings {
@@ -34,13 +30,8 @@ export function normalizeAssistantAvatarSettings(
       ? record.mode
       : defaults.mode;
 
+  // Presets de personajes eliminados de la UI: migrar a logo de tienda.
   if (mode === "preset") {
-    const presetId =
-      typeof record.presetId === "string" ? record.presetId.trim() : "";
-    const resolvedId = resolveAssistantAvatarPresetId(presetId);
-    if (resolvedId && getAssistantAvatarPreset(resolvedId)) {
-      return { mode, presetId: resolvedId };
-    }
     return defaults;
   }
 
@@ -77,12 +68,6 @@ export function normalizeAssistantAvatarDraft(
       : defaults.mode;
 
   if (mode === "preset") {
-    const presetId =
-      typeof record.presetId === "string" ? record.presetId.trim() : "";
-    const resolvedId = resolveAssistantAvatarPresetId(presetId);
-    if (resolvedId) {
-      return { mode, presetId: resolvedId };
-    }
     return defaults;
   }
 
@@ -103,18 +88,6 @@ export function sanitizeAssistantAvatarForStorage(
   raw: CatalogAssistantAvatarSettings | undefined,
 ): CatalogAssistantAvatarSettings {
   return normalizeAssistantAvatarSettings(raw);
-}
-
-export function resolveAssistantAvatarPresetUrl(
-  settings: CatalogAssistantAvatarSettings | undefined,
-): string | null {
-  const normalized = normalizeAssistantAvatarSettings(settings);
-  if (normalized.mode !== "preset" || !normalized.presetId) {
-    return null;
-  }
-
-  const preset = getAssistantAvatarPreset(normalized.presetId);
-  return preset?.imagePath ?? null;
 }
 
 export function resolveAssistantAvatarCustomUrl(

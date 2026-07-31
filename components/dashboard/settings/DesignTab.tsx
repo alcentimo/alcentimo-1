@@ -48,10 +48,6 @@ import {
   normalizePromoBannerDraft,
 } from "@/lib/store-settings/promo-banner";
 import { normalizeAssistantAvatarDraft } from "@/lib/store-settings/assistant-avatar";
-import {
-  getAssistantAvatarPreset,
-  getDefaultPresetForRubro,
-} from "@/lib/store-settings/assistant-avatar-presets";
 import { cn } from "@/lib/cn";
 import {
   DEFAULT_STORE_RUBRO,
@@ -68,6 +64,7 @@ interface DesignTabPreviewContext {
 interface DesignTabProps {
   initialDesign: CatalogDesignSettings;
   storeRubro?: string | null;
+  storeLogoUrl?: string | null;
   preview?: DesignTabPreviewContext | null;
   products?: CouponProductOption[];
   catalogLink?: {
@@ -201,6 +198,7 @@ function DesignOption({
 export function DesignTab({
   initialDesign,
   storeRubro: storeRubroProp = null,
+  storeLogoUrl = null,
   preview = null,
   products = [],
   catalogLink = null,
@@ -405,11 +403,8 @@ export function DesignTab({
   );
   const assistantAvatarSummary =
     assistantAvatarSettings.mode === "custom"
-      ? "Personalizado"
-      : getAssistantAvatarPreset(assistantAvatarSettings.presetId ?? "")
-          ?.label ??
-        getDefaultPresetForRubro(storeRubro)?.label ??
-        "Personaje";
+      ? "Foto personalizada"
+      : "Logo de la tienda";
   const visibilitySummary =
     [
       design.visibility.showStock && "Stock",
@@ -535,7 +530,7 @@ export function DesignTab({
             >
               <CatalogAssistantAvatarField
                 value={design.assistantAvatar}
-                storeRubro={storeRubro}
+                storeLogoUrl={storeLogoUrl ?? preview?.store.logo_url ?? null}
                 disabled={isSaving && savingField === "assistantAvatar"}
                 onChange={setAssistantAvatar}
               />
