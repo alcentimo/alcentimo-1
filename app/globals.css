@@ -6520,8 +6520,8 @@ body {
 
 @media (min-width: 768px) {
   .design-studio {
-    grid-template-columns: minmax(0, 17.5rem) minmax(0, 1fr);
-    gap: 2rem;
+    grid-template-columns: minmax(16rem, 18.5rem) minmax(0, 1fr);
+    gap: 1.75rem;
     align-items: start;
   }
 }
@@ -6568,8 +6568,15 @@ body {
   }
 
   .design-studio-preview-frame {
-    height: min(52vh, 520px);
-    max-height: min(52vh, 520px);
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    padding: 0.75rem;
+  }
+
+  .design-studio-phone {
+    width: min(100%, 22rem);
+    height: min(68vh, 640px);
   }
 
   .design-studio-preview-empty {
@@ -6601,6 +6608,14 @@ body {
   flex: 1;
   height: auto;
   min-height: 0;
+  max-height: none;
+  padding: 1rem;
+  align-items: center;
+}
+
+.design-studio-preview-sheet-body .design-studio-phone {
+  width: min(100%, 22.5rem);
+  height: min(78dvh, 720px);
   max-height: none;
 }
 
@@ -7012,14 +7027,66 @@ body {
 .design-studio-preview-frame {
   position: relative;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: min(72vh, 720px);
-  max-height: min(72vh, 720px);
+  min-height: min(78vh, 820px);
+  padding: 1.25rem 1rem 1.5rem;
   overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgb(244 244 245 / 0.9), transparent 70%),
+    #f4f4f5;
+}
+
+:is(.dark) .design-studio-preview-frame {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgb(24 24 27 / 0.85), transparent 70%),
+    #09090b;
+}
+
+/* Marco tipo teléfono: proporciones de catálogo real en móvil */
+.design-studio-phone {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 24rem);
+  height: min(74vh, 760px);
+  flex-shrink: 0;
+  border-radius: 1.75rem;
+  border: 1px solid rgb(228 228 231);
+  background: #111;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 18px 40px -18px rgb(0 0 0 / 0.35);
+  padding: 0.55rem;
+}
+
+:is(.dark) .design-studio-phone {
+  border-color: rgb(63 63 70);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.2),
+    0 22px 48px -20px rgb(0 0 0 / 0.65);
+}
+
+.design-studio-phone-bezel {
+  position: relative;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1.25rem;
   background: #fff;
+}
+
+.design-studio-preview-frame .design-preview-rubro-enter,
+.design-studio-preview-frame .design-preview-stage {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  height: 100%;
 }
 
 .design-studio-preview-frame .catalog-live-preview-root,
@@ -7029,17 +7096,10 @@ body {
   min-width: 0;
 }
 
-.design-studio-preview-frame .design-preview-rubro-enter,
-.design-studio-preview-frame .design-preview-stage {
-  display: flex;
-  min-height: 0;
-  flex: 1;
-  flex-direction: column;
-}
-
 .design-studio-preview-frame .catalog-live-preview-root {
   flex: 1;
   min-height: 0;
+  height: 100%;
 }
 
 .design-reference-badge {
@@ -7048,6 +7108,39 @@ body {
 
 .design-studio-preview-frame .catalog-live-preview-root .txn-catalog {
   min-height: auto;
+}
+
+/*
+ * El mockup vive en un viewport ancho del dashboard: sin esto, sm/md/lg
+ * activan grillas de 3–4 columnas y el catálogo se ve amontonado.
+ * Forzamos layout móvil del catálogo real (~2 columnas).
+ */
+.design-studio-phone .txn-catalog-main {
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.design-studio-phone .txn-product-grid,
+.design-studio-phone .txn-product-grid--immersive,
+.design-studio-phone .store-product-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.625rem;
+}
+
+.design-studio-phone .catalog-fulfillment-bar {
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+}
+
+.design-studio-phone .txn-catalog--reference-mode .store-product-desc {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.design-studio-phone .catalog-live-preview-tab-bar .catalog-tab-bar {
+  font-size: 0.7rem;
 }
 
 .design-preview-stage {
@@ -7135,7 +7228,7 @@ body {
 
 @media (min-width: 768px) {
   .design-studio-preview-empty {
-    min-height: min(72vh, 720px);
+    min-height: min(78vh, 820px);
   }
 }
 

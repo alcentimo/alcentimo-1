@@ -80,23 +80,29 @@ export function DesignCatalogInlinePreview({
 
       <div className="design-studio-preview-frame">
         <span className="design-reference-badge">Diseño de Referencia</span>
-        <div
-          key={storeRubro}
-          className={cn(
-            "design-preview-rubro-enter",
-            isPrefetching && "design-preview-rubro-swapping",
-          )}
-          style={{ ["--smart-preview-fade-ms" as string]: `${SMART_PREVIEW_FADE_MS}ms` }}
-        >
-          <div key={previewStageKey} className="design-preview-stage">
-            <CatalogLivePreview
-              store={store}
-              products={referenceCatalog.products}
-              exchangeRate={exchangeRate}
-              exchangeRateUpdatedAt={exchangeRateUpdatedAt}
-              settings={settings}
-              referenceMode
-            />
+        <div className="design-studio-phone" aria-label="Mockup del catálogo en móvil">
+          <div className="design-studio-phone-bezel">
+            <div
+              key={storeRubro}
+              className={cn(
+                "design-preview-rubro-enter",
+                isPrefetching && "design-preview-rubro-swapping",
+              )}
+              style={{
+                ["--smart-preview-fade-ms" as string]: `${SMART_PREVIEW_FADE_MS}ms`,
+              }}
+            >
+              <div key={previewStageKey} className="design-preview-stage">
+                <CatalogLivePreview
+                  store={store}
+                  products={referenceCatalog.products}
+                  exchangeRate={exchangeRate}
+                  exchangeRateUpdatedAt={exchangeRateUpdatedAt}
+                  settings={settings}
+                  referenceMode
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
