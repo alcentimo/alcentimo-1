@@ -6,6 +6,9 @@
   "functions": {
     "app/api/cron/sync-bcv-rate/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/cron/inventory-ai-suggestions/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -28,6 +31,10 @@
     {
       "path": "/api/cron/sync-bcv-rate?slot=afternoon",
       "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/inventory-ai-suggestions",
+      "schedule": "0 12 * * *"
     }
   ],
   "headers": [

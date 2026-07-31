@@ -16,6 +16,8 @@ import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
+import { createClient } from "@/lib/supabase/server";
+import { listPendingInventorySuggestions } from "@/lib/inventory-ai/run-scan";
 import {
   getRubroLabel,
   normalizeStoreRubro,
@@ -91,6 +93,7 @@ export default async function CatalogoPage({
     productLimitContext,
     criticalStockCount,
     storeSettings,
+    inventorySuggestions,
   ] = await Promise.all([
     getStoreInventory(store.slug, {
       limit: pageSize,
@@ -104,6 +107,14 @@ export default async function CatalogoPage({
     getStoreProductLimitContext(store.id),
     getCriticalStockCount(store.slug),
     getStoreSettingsConfig(store.id),
+    (async () => {
+      try {
+        const supabase = await createClient();
+        return await listPendingInventorySuggestions(supabase, store.id);
+      } catch {
+        return [];
+      }
+    })(),
   ]);
 
   let { products, totalCount } = inventory;
@@ -167,6 +178,7 @@ export default async function CatalogoPage({
           rubroLabel={rubroLabel}
           setupStatus={setupStatus}
           showWelcomeFromUrl={showOnboardingSuccess}
+          inventorySuggestions={inventorySuggestions}
         />
       </Suspense>
     </div>

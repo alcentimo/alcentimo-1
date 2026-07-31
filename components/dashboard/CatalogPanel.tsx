@@ -11,6 +11,8 @@ import type { CatalogStockFilter } from "@/lib/inventory/stock-status";
 import type { StoreProductLimitContext } from "@/lib/plans/product-limit";
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
+import type { InventoryAiSuggestionRow } from "@/lib/inventory-ai/types";
+import { InventoryAiSuggestionCards } from "@/components/dashboard/InventoryAiSuggestionCards";
 import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
 
 interface CatalogPanelProps {
@@ -32,6 +34,7 @@ interface CatalogPanelProps {
   showWelcomeFromUrl?: boolean;
   /** Si true, el listado se pide en el cliente al montar (página sin await de inventario). */
   loadOnMount?: boolean;
+  inventorySuggestions?: InventoryAiSuggestionRow[];
 }
 
 export function CatalogPanel({
@@ -52,6 +55,7 @@ export function CatalogPanel({
   setupStatus,
   showWelcomeFromUrl = false,
   loadOnMount = false,
+  inventorySuggestions = [],
 }: CatalogPanelProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -127,6 +131,11 @@ export function CatalogPanel({
           compact
         />
       ) : null}
+
+      <InventoryAiSuggestionCards
+        initialSuggestions={inventorySuggestions}
+        variant="compact"
+      />
 
       <InventoryPanel
         key={`catalog-${productFormConfig.rubroTienda}`}
