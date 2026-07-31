@@ -202,7 +202,16 @@ export interface TasasCambio {
 export interface TasasCambioSyncLog {
   id: string;
   sync_date: string;
-  slot: "midnight" | "morning" | "retry" | "manual";
+  slot:
+    | "midnight"
+    | "morning"
+    | "midday"
+    | "retry"
+    | "afternoon"
+    | "evening"
+    | "late_evening"
+    | "manual"
+    | "autoheal";
   status: "success" | "failure";
   rate: number | null;
   error_message: string | null;

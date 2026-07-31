@@ -1,21 +1,32 @@
 import { getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
 
-const DEFAULT_MAX_AGE_MS = 26 * 60 * 60 * 1000;
-
 /**
- * true si la tasa no corresponde al día operativo de Venezuela
- * (aunque se haya tocado hace pocas horas con la publicación de ayer).
+ * true si la tasa vigente no cubre el día operativo de Venezuela
+ * (p. ej. solo hay tasa de ayer y ya es hoy).
+ *
+ * Eso es esperado si el BCV publica pasada la medianoche: la app sigue
+ * mostrando la última tasa válida (carry-forward) mientras autoheal/cron
+ * intentan obtener la del día.
  */
 export function isBcvRateBehindCalendarDay(
-  updatedAt: string | null | undefined,
+  effectiveDateOrUpdatedAt: string | null | undefined,
   reference = new Date(),
 ): boolean {
-  if (!updatedAt) return true;
+  if (!effectiveDateOrUpdatedAt) return true;
 
-  const parsed = new Date(updatedAt);
-  if (Number.isNaN(parsed.getTime())) return true;
+  // effective_date YYYY-MM-DD o timestamp ISO
+  const rateDay =
+    effectiveDateOrUpdatedAt.length >= 10 &&
+    /^\d{4}-\d{2}-\d{2}/.test(effectiveDateOrUpdatedAt)
+      ? effectiveDateOrUpdatedAt.slice(0, 10)
+      : (() => {
+          const parsed = new Date(effectiveDateOrUpdatedAt);
+          if (Number.isNaN(parsed.getTime())) return null;
+          return getVenezuelaSyncDate(parsed);
+        })();
 
-  const rateDay = getVenezuelaSyncDate(parsed);
+  if (!rateDay) return true;
+
   const today = getVenezuelaSyncDate(reference);
   return rateDay < today;
 }
@@ -46,5 +57,5 @@ export function bcvRateAgeHours(updatedAt: string | null | undefined): number | 
 }
 
 export function bcvRateMaxAgeMs(): number {
-  return DEFAULT_MAX_AGE_MS;
+  return 26 * 60 * 60 * 1000;
 }

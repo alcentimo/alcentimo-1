@@ -12,6 +12,8 @@ export type SyncBcvRateResult = {
   error?: string;
   rate?: number;
   updatedAt?: string;
+  effectiveDate?: string;
+  activatedNow?: boolean;
 };
 
 /** Dispara sincronización BCV desde el dashboard (usuario autenticado). */
@@ -58,5 +60,7 @@ export async function syncBcvRateManually(): Promise<SyncBcvRateResult> {
     success: true,
     rate: result.rate,
     updatedAt: result.updatedAt,
+    effectiveDate: result.effectiveDate,
+    activatedNow: result.activatedNow,
   };
 }

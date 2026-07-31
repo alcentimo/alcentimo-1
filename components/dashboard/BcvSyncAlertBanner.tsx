@@ -15,7 +15,7 @@ export function BcvSyncAlertBanner({ alert }: BcvSyncAlertBannerProps) {
       ) : null}
       <p className="mt-2 text-xs text-amber-800/80 dark:text-amber-300/80">
         Fecha afectada: {alert.syncDate}. La tasa se actualiza sola a las 01:00,
-        06:00, 09:00, 12:00 y 14:00 (hora Venezuela). Revisa{" "}
+        01:00, 06:00, 09:00, 12:00, 14:00, 17:00 y 19:00 (hora Venezuela). Revisa{" "}
         <code className="rounded bg-amber-100/80 px-1 py-0.5 dark:bg-amber-950/60">
           tasas_cambio_sync_logs
         </code>{" "}

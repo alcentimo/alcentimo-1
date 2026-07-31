@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { getSupabaseAnonClient } from "@/lib/supabase";
-import { getLatestUsdTasa } from "@/lib/exchange-rate/get-tasa-cambio";
+import { getDisplayableUsdExchangeRate } from "@/lib/exchange-rate/get-tasa-cambio";
 import { ensureBcvRateFreshForToday } from "@/lib/exchange-rate/ensure-bcv-rate-fresh";
 import { CATALOG_LIST_SELECT, PUBLIC_CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
 import { buildInventorySearchOrFilter } from "@/lib/inventory/search";
@@ -161,33 +161,12 @@ function normalizeExchangeRate(row: ExchangeRate): ExchangeRate {
 export const getCurrentExchangeRate = cache(
   async (): Promise<ExchangeRate | null> => {
     const supabase = getSupabaseAnonClient();
-    const tasa = await getLatestUsdTasa(supabase);
-    let current: ExchangeRate | null = null;
 
-    if (tasa && tasa.tasa > 0) {
-      current = {
-        id: `tasas_cambio:${tasa.moneda}`,
-        rate: roundExchangeRate(tasa.tasa),
-        source: "bcv",
-        effective_date: tasa.ultima_actualizacion.slice(0, 10),
-        notes: "Tasa BCV sincronizada automáticamente",
-        store_id: null,
-        created_at: tasa.ultima_actualizacion,
-      };
-    } else {
-      const { data, error } = await supabase
-        .from("exchange_rate")
-        .select("*")
-        .is("store_id", null)
-        .order("effective_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+    // Carry-forward: última tasa con effective_date <= hoy VE (o espejo tasas_cambio).
+    // Si el BCV aún no publicó hoy, se mantiene la de ayer y la app no se queda sin precio.
+    const current = await getDisplayableUsdExchangeRate(supabase);
 
-      if (error) throw new Error(error.message);
-      current = data ? normalizeExchangeRate(data) : null;
-    }
-
-    // Si el cron diario aún no escribió la tasa del día VE, intenta autoheal en segundo plano.
+    // Si estamos un día atrás, autoheal intenta actualizar sin borrar el carry-forward.
     return ensureBcvRateFreshForToday(current);
   },
 );

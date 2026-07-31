@@ -1,14 +1,14 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
+import { getActiveGlobalExchangeRate } from "@/lib/exchange-rate/get-tasa-cambio";
 import { isBcvRateBehindCalendarDay } from "@/lib/exchange-rate/rate-freshness";
 import { runManualBcvSync } from "@/lib/exchange-rate/sync-bcv-run";
 import { getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
-import { roundExchangeRate } from "@/lib/format";
 import type { ExchangeRate } from "@/lib/database.types";
 
 const AUTOHEAL_COOLDOWN_MS = 10 * 60 * 1000;
-/** Tope para no congelar el layout del dashboard si la API BCV no responde. */
-const AUTOHEAL_BUDGET_MS = 3_000;
+/** Tope para no congelar el layout; cubre 2 endpoints × reintentos cortos. */
+const AUTOHEAL_BUDGET_MS = 12_000;
 
 async function wasAutohealAttemptedRecently(
   admin: ReturnType<typeof createAdminClient>,
@@ -28,22 +28,32 @@ async function wasAutohealAttemptedRecently(
 }
 
 /**
- * Si la tasa no es del día operativo VE, intenta sincronizar automáticamente
- * sin intervención manual del comerciante.
+ * Si la tasa activa es de un día anterior (BCV atrasado / cron fallido),
+ * intenta sincronizar en segundo plano.
+ *
+ * Nunca deja la app sin precio: ante fallo, cooldown o timeout se conserva
+ * la última tasa válida (carry-forward). Tras sync exitosa, relee por
+ * effective_date (no asume que el valor descargado ya esté activo si quedó
+ * programado para mañana).
  */
 export async function ensureBcvRateFreshForToday(
   currentRate: ExchangeRate | null,
 ): Promise<ExchangeRate | null> {
-  const updatedAt = currentRate?.created_at ?? null;
-  if (!isBcvRateBehindCalendarDay(updatedAt)) {
+  const effectiveDate = currentRate?.effective_date ?? null;
+  if (!isBcvRateBehindCalendarDay(effectiveDate)) {
     return currentRate;
   }
+
+  // Carry-forward explícito: seguir mostrando la última tasa mientras se intenta actualizar.
+  const carryForward = currentRate;
 
   logBcvSync(
     "autoheal_triggered",
     {
-      updatedAt,
-      rate: currentRate?.rate ?? null,
+      effectiveDate,
+      updatedAt: carryForward?.created_at ?? null,
+      rate: carryForward?.rate ?? null,
+      carryForward: true,
     },
     "warn",
   );
@@ -53,8 +63,8 @@ export async function ensureBcvRateFreshForToday(
     const syncDate = getVenezuelaSyncDate();
 
     if (await wasAutohealAttemptedRecently(admin, syncDate)) {
-      logBcvSync("autoheal_cooldown", { syncDate });
-      return currentRate;
+      logBcvSync("autoheal_cooldown", { syncDate, carryForward: true });
+      return carryForward;
     }
 
     const result = await Promise.race([
@@ -67,35 +77,40 @@ export async function ensureBcvRateFreshForToday(
     if (!result) {
       logBcvSync(
         "autoheal_budget_exceeded",
-        { syncDate, budgetMs: AUTOHEAL_BUDGET_MS },
+        { syncDate, budgetMs: AUTOHEAL_BUDGET_MS, carryForward: true },
         "warn",
       );
-      return currentRate;
+      return carryForward;
     }
 
-    if (!result.success || result.rate == null || !result.updatedAt) {
+    if (!result.success) {
       logBcvSync(
         "autoheal_failed",
-        { error: result.error ?? "unknown" },
+        { error: result.error ?? "unknown", carryForward: true },
         "error",
       );
-      return currentRate;
+      return carryForward;
     }
 
-    // No reusar getCurrentExchangeRate (cache de request): devolver el upsert fresco.
-    return {
-      id: currentRate?.id ?? `tasas_cambio:USD`,
-      rate: roundExchangeRate(result.rate),
-      source: "bcv",
-      effective_date: result.updatedAt.slice(0, 10),
-      notes: "Tasa BCV sincronizada automáticamente",
-      store_id: null,
-      created_at: result.updatedAt,
-    };
+    const active = await getActiveGlobalExchangeRate(admin);
+    if (active && active.rate > 0) {
+      logBcvSync("autoheal_sync_success", {
+        syncDate,
+        rate: active.rate,
+        effectiveDate: active.effective_date,
+      });
+      return active;
+    }
+
+    return carryForward;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Error en autoheal BCV.";
-    logBcvSync("autoheal_exception", { error: message }, "error");
-    return currentRate;
+    logBcvSync(
+      "autoheal_exception",
+      { error: message, carryForward: true },
+      "error",
+    );
+    return carryForward;
   }
 }

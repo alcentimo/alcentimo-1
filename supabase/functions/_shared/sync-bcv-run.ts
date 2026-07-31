@@ -8,6 +8,8 @@ export type BcvSyncSlot =
   | "midday"
   | "retry"
   | "afternoon"
+  | "evening"
+  | "late_evening"
   | "manual"
   | "autoheal";
 
@@ -100,7 +102,7 @@ async function createBcvFailureAlert(
 }
 
 function isFinalRetrySlot(slot: BcvSyncSlot): boolean {
-  return slot === "afternoon" || slot === "retry";
+  return slot === "late_evening";
 }
 
 /** Todos los slots consultan la API (sin omitir por éxito temprano). */
@@ -110,7 +112,7 @@ export async function runBcvSyncAttempt(
 ): Promise<BcvSyncRunResult> {
   const syncDate = getVenezuelaSyncDate();
 
-  const result = await syncBcvTasaToDatabase(admin);
+  const result = await syncBcvTasaToDatabase(admin, { slot });
 
   await logSyncAttempt(admin, {
     syncDate,

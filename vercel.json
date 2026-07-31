@@ -33,6 +33,14 @@
       "schedule": "0 18 * * *"
     },
     {
+      "path": "/api/cron/sync-bcv-rate?slot=evening",
+      "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/cron/sync-bcv-rate?slot=late_evening",
+      "schedule": "0 23 * * *"
+    },
+    {
       "path": "/api/cron/inventory-ai-suggestions",
       "schedule": "0 12 * * *"
     }

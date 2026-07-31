@@ -9,6 +9,8 @@ export type BcvSyncSlot =
   | "midday"
   | "retry"
   | "afternoon"
+  | "evening"
+  | "late_evening"
   | "manual"
   | "autoheal";
 
@@ -23,6 +25,8 @@ export interface BcvSyncRunResult {
   slot: BcvSyncSlot;
   syncDate: string;
   rate?: number;
+  effectiveDate?: string;
+  activatedNow?: boolean;
   updatedAt?: string;
   error?: string;
 }
@@ -35,6 +39,8 @@ const SLOT_SCHEDULE_LABEL: Partial<Record<BcvSyncSlot, string>> = {
   midday: "09:00 America/Caracas",
   retry: "12:00 America/Caracas",
   afternoon: "14:00 America/Caracas",
+  evening: "17:00 America/Caracas",
+  late_evening: "19:00 America/Caracas",
 };
 
 async function logSyncAttempt(
@@ -109,8 +115,9 @@ async function createBcvFailureAlert(
   }
 }
 
+/** Solo la ventana final del día crea alerta; antes se sigue reintentando. */
 function isFinalRetrySlot(slot: BcvSyncSlot): boolean {
-  return slot === "afternoon" || slot === "retry";
+  return slot === "late_evening";
 }
 
 /** Ejecuta un intento de sincronización. Todos los slots consultan la API (sin omitir). */
@@ -122,7 +129,7 @@ export async function runBcvSyncAttempt(
 
   logBcvSync("attempt_start", { slot, syncDate });
 
-  const result = await syncBcvTasaToDatabase(admin);
+  const result = await syncBcvTasaToDatabase(admin, { slot });
 
   await logSyncAttempt(admin, {
     syncDate,
@@ -159,6 +166,8 @@ export async function runBcvSyncAttempt(
       slot,
       syncDate,
       rate: result.rate,
+      effectiveDate: result.effectiveDate,
+      activatedNow: result.activatedNow,
       updatedAt: result.updatedAt,
     };
   }
@@ -212,7 +221,7 @@ export async function runManualBcvSync(
     syncDate,
   });
 
-  const result = await syncBcvTasaToDatabase(admin);
+  const result = await syncBcvTasaToDatabase(admin, { slot });
 
   await logSyncAttempt(admin, {
     syncDate,
@@ -235,6 +244,8 @@ export async function runManualBcvSync(
       slot,
       syncDate,
       rate: result.rate,
+      effectiveDate: result.effectiveDate,
+      activatedNow: result.activatedNow,
       updatedAt: result.updatedAt,
     };
   }
