@@ -7,7 +7,6 @@ import {
   CreditCard,
   Globe,
   MapPin,
-  MessageSquare,
   Palette,
   FolderTree,
   Settings2,
@@ -21,7 +20,6 @@ import { LocationsTab } from "@/components/dashboard/settings/LocationsTab";
 import { CategoriesTab } from "@/components/dashboard/settings/CategoriesTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
 import { CustomerAccountsTab } from "@/components/dashboard/settings/CustomerAccountsTab";
-import { MessageTemplatesTab } from "@/components/dashboard/settings/MessageTemplatesTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
 import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
@@ -51,7 +49,6 @@ type SettingsTabId =
   | "promotions"
   | "accounts"
   | "design"
-  | "messages"
   | "domains"
   | "branches";
 
@@ -65,7 +62,6 @@ const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
   "promotions",
   "accounts",
   "design",
-  "messages",
   "domains",
   "branches",
 ]);
@@ -113,7 +109,6 @@ const SETTINGS_NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { id: "accounts", label: "Cuentas", icon: Users },
       { id: "promotions", label: "Promociones", icon: Tag },
-      { id: "messages", label: "Mensajes", icon: MessageSquare },
     ],
   },
 ];
@@ -256,13 +251,6 @@ export function SettingsPanel({
         return (
           <CustomerAccountsTab
             initialSettings={initialConfig.checkout ?? { accountMode: "hibrido" }}
-          />
-        );
-      case "messages":
-        return (
-          <MessageTemplatesTab
-            initialSettings={initialConfig.messageTemplates}
-            storeName={store?.name}
           />
         );
       default:
