@@ -140,9 +140,21 @@ export async function saveCatalogDesignSettings(
 }
 
 export async function saveCatalogCurrencySettings(
-  catalogCurrency: CatalogCurrencySettings,
+  catalogCurrency: Partial<CatalogCurrencySettings>,
 ): Promise<SettingsActionResult> {
-  const normalized = normalizeStoreSettingsConfig({ catalogCurrency });
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) {
+    return { error: auth.error };
+  }
+
+  const current = await getStoreSettingsConfig(auth.store.id);
+  const normalized = normalizeStoreSettingsConfig({
+    catalogCurrency: {
+      ...current.catalogCurrency,
+      ...catalogCurrency,
+    },
+  });
   return persistSettingsPatch({ catalogCurrency: normalized.catalogCurrency });
 }
 

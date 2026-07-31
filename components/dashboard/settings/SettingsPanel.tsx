@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  Boxes,
   Clock,
   Coins,
   CreditCard,
@@ -19,6 +20,7 @@ import { DomainsTab } from "@/components/dashboard/settings/DomainsTab";
 import { LocationsTab } from "@/components/dashboard/settings/LocationsTab";
 import { CategoriesTab } from "@/components/dashboard/settings/CategoriesTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
+import { WholesaleTab } from "@/components/dashboard/settings/WholesaleTab";
 import { CustomerAccountsTab } from "@/components/dashboard/settings/CustomerAccountsTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
@@ -43,6 +45,7 @@ type SettingsTabId =
   | "general"
   | "categories"
   | "currency"
+  | "wholesale"
   | "location"
   | "shipping"
   | "payments"
@@ -56,6 +59,7 @@ const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
   "general",
   "categories",
   "currency",
+  "wholesale",
   "location",
   "shipping",
   "payments",
@@ -87,6 +91,7 @@ const SETTINGS_NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { id: "categories", label: "Categorías", icon: FolderTree },
       { id: "location", label: "Horarios y contacto", icon: Clock },
       { id: "currency", label: "Moneda", icon: Coins },
+      { id: "wholesale", label: "Venta al mayor", icon: Boxes },
     ],
   },
   {
@@ -189,6 +194,12 @@ export function SettingsPanel({
       case "currency":
         return (
           <CatalogCurrencyTab initialSettings={initialConfig.catalogCurrency} />
+        );
+      case "wholesale":
+        return (
+          <WholesaleTab
+            initialEnabled={initialConfig.catalogCurrency.wholesaleEnabled}
+          />
         );
       case "location":
         return (

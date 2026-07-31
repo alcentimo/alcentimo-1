@@ -19,33 +19,23 @@ export function CatalogCurrencyTab({ initialSettings }: CatalogCurrencyTabProps)
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  function persist(
-    next: CatalogCurrencySettings,
-    toggleKey: keyof CatalogCurrencySettings,
-    previousValue: boolean,
-  ) {
-    setError(null);
-    setSavingToggle(toggleKey);
-
-    startTransition(async () => {
-      const result = await saveCatalogCurrencySettings(next);
-      setSavingToggle(null);
-
-      if (result.error) {
-        setError(result.error);
-        setSettings((prev) => ({ ...prev, [toggleKey]: previousValue }));
-      }
-    });
-  }
-
   function toggleSetting(
-    key: keyof CatalogCurrencySettings,
+    key: "showOfficialRate" | "showBsConversion",
     checked: boolean,
   ) {
     const previousValue = settings[key];
-    const next = { ...settings, [key]: checked };
-    setSettings(next);
-    persist(next, key, previousValue);
+    setSettings((prev) => ({ ...prev, [key]: checked }));
+    setError(null);
+    setSavingToggle(key);
+
+    startTransition(async () => {
+      const result = await saveCatalogCurrencySettings({ [key]: checked });
+      setSavingToggle(null);
+      if (result.error) {
+        setError(result.error);
+        setSettings((prev) => ({ ...prev, [key]: previousValue }));
+      }
+    });
   }
 
   return (
@@ -74,21 +64,6 @@ export function CatalogCurrencyTab({ initialSettings }: CatalogCurrencyTabProps)
             saving={savingToggle === "showBsConversion"}
           />
         </div>
-      </SettingsSection>
-
-      <SettingsSection
-        title="Venta al mayor"
-        description="Permite ofrecer precios especiales por volumen. Al activarlo, podrás configurar precio mayorista y cantidad mínima (MOQ) en cada producto."
-        variant="payments"
-      >
-        <SettingsOptionCard
-          id="wholesale-enabled"
-          label="Activar venta al mayor en la tienda"
-          description="Los clientes verán el precio mayorista cuando compren la cantidad mínima configurada en cada producto. Si lo desactivas, se usará solo el precio de detal."
-          checked={settings.wholesaleEnabled}
-          onChange={(checked) => toggleSetting("wholesaleEnabled", checked)}
-          saving={savingToggle === "wholesaleEnabled"}
-        />
       </SettingsSection>
     </SettingsTabShell>
   );
