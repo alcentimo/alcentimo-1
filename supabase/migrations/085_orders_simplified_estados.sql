@@ -8,12 +8,13 @@ ALTER TABLE public.orders
 COMMENT ON COLUMN public.orders.tracking_number IS
   'Número de guía de la empresa de encomiendas (opcional, al marcar Enviado).';
 
+-- Quitar el check antes de remapear estados (el constraint viejo no admite "procesando").
+ALTER TABLE public.orders
+  DROP CONSTRAINT IF EXISTS orders_estado_check;
+
 UPDATE public.orders
 SET estado = 'procesando'
 WHERE estado IN ('verificando', 'en_preparacion');
-
-ALTER TABLE public.orders
-  DROP CONSTRAINT IF EXISTS orders_estado_check;
 
 ALTER TABLE public.orders
   ADD CONSTRAINT orders_estado_check
