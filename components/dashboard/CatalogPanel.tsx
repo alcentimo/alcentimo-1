@@ -98,9 +98,9 @@ export function CatalogPanel({
   const trial = productLimitContext?.trial ?? null;
   const trialEligible = trial?.eligible ?? false;
   const trialActive = trial?.active ?? false;
+  // Solo progreso/reclamo: con prueba activa el plan ya se ve en la sidebar.
   const showTrialBanner =
-    Boolean(productLimitContext) &&
-    (trialActive || trialEligible);
+    Boolean(productLimitContext) && trialEligible && !trialActive;
 
   return (
     <>
