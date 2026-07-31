@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { MapPin, Plus, Star, Trash2, Loader2 } from "lucide-react";
+import { Lock, MapPin, Plus, Star, Trash2, Loader2 } from "lucide-react";
 import {
   SettingsSection,
   SettingsTabShell,
@@ -163,13 +163,30 @@ export function LocationsTab({
         }
         variant="payments"
       >
-        {!isEnterprise && limit && limit.maxAllowed <= 1 ? (
-          <div className="mb-4 rounded-lg border border-teal-200/80 bg-teal-50/60 px-3 py-2 text-xs text-teal-900 dark:border-teal-900/40 dark:bg-teal-950/20 dark:text-teal-200">
-            Multi-sucursal está incluido en Enterprise (3 sedes + extras a +$
-            {limit.extraLocationMonthlyUsd}/mes).{" "}
-            <Link href={DASHBOARD_PLANS_HREF} className="font-semibold underline">
-              Ver planes
-            </Link>
+        {!isEnterprise ? (
+          <div className="mb-4 flex items-start gap-3 rounded-lg border border-teal-200/80 bg-teal-50/60 px-3 py-3 text-xs text-teal-900 dark:border-teal-900/40 dark:bg-teal-950/20 dark:text-teal-200">
+            <Lock
+              className="mt-0.5 h-4 w-4 shrink-0 text-teal-700 dark:text-teal-300"
+              aria-hidden="true"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-teal-950 dark:text-teal-50">
+                Multi-sucursal exclusivo de Enterprise
+              </p>
+              <p className="mt-1 leading-relaxed text-teal-900/85 dark:text-teal-100/85">
+                Incluye hasta 3 sedes con stock independiente
+                {limit
+                  ? ` y extras a +$${limit.extraLocationMonthlyUsd}/mes`
+                  : ""}
+                . Tu plan actual permite 1 ubicación.
+              </p>
+              <Link
+                href={DASHBOARD_PLANS_HREF}
+                className="mt-2 inline-flex text-xs font-semibold text-teal-800 underline underline-offset-2 hover:text-teal-950 dark:text-teal-300 dark:hover:text-teal-100"
+              >
+                Actualizar a Enterprise →
+              </Link>
+            </div>
           </div>
         ) : null}
         {isEnterprise && limit && (limit.billableExtraCount ?? 0) > 0 ? (
@@ -199,93 +216,186 @@ export function LocationsTab({
       <SettingsSection
         title="Nueva sucursal"
         description={
-          canAdd
-            ? "Agrega otra sede con su propia dirección y stock."
-            : isEnterprise
-              ? `Has alcanzado el máximo autorizado (${maxAllowed}). Solicita sedes extras a soporte (+$${limit?.extraLocationMonthlyUsd ?? 6}/mes c/u).`
-              : "Actualiza a Enterprise para agregar más sucursales."
+          !isEnterprise
+            ? "Función exclusiva del plan Enterprise: agrega sedes con stock independiente."
+            : canAdd
+              ? "Agrega otra sede con su propia dirección y stock."
+              : `Has alcanzado el máximo autorizado (${maxAllowed}). Solicita sedes extras a soporte (+$${limit?.extraLocationMonthlyUsd ?? 6}/mes c/u).`
         }
         variant="payments"
       >
-        {canAdd && isEnterprise && limit?.nextBranchRequiresExtra ? (
-          <div className="mb-3 rounded-lg border border-amber-200/80 bg-amber-50/60 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
-            La sucursal #{locations.length + 1} es extra: se aplicará un cargo de{" "}
-            <strong>+${limit.nextBranchMonthlyCostUsd ?? limit.extraLocationMonthlyUsd} USD/mes</strong>{" "}
-            por sede adicional en tu plan Enterprise.
-          </div>
-        ) : null}
-        {canAdd ? (
-          <div className="general-settings-card space-y-3">
-            <div>
-              <Label htmlFor="new-location-name" className="payment-field-label">
-                Nombre
-              </Label>
-              <Input
-                id="new-location-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ej: Sede Este"
-                className="payment-field-input mt-1.5"
-                disabled={pending}
-              />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="new-location-city" className="payment-field-label">
-                  Ciudad
-                </Label>
-                <Input
-                  id="new-location-city"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="Caracas"
-                  className="payment-field-input mt-1.5"
-                  disabled={pending}
-                />
+        {!isEnterprise ? (
+          <EnterpriseLockedNewLocationCard
+            extraLocationMonthlyUsd={limit?.extraLocationMonthlyUsd ?? 6}
+          />
+        ) : (
+          <>
+            {canAdd && limit?.nextBranchRequiresExtra ? (
+              <div className="mb-3 rounded-lg border border-amber-200/80 bg-amber-50/60 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
+                La sucursal #{locations.length + 1} es extra: se aplicará un cargo
+                de{" "}
+                <strong>
+                  +$
+                  {limit.nextBranchMonthlyCostUsd ??
+                    limit.extraLocationMonthlyUsd}{" "}
+                  USD/mes
+                </strong>{" "}
+                por sede adicional en tu plan Enterprise.
               </div>
-              <div>
-                <Label htmlFor="new-location-phone" className="payment-field-label">
-                  Teléfono
-                </Label>
-                <Input
-                  id="new-location-phone"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="0412…"
-                  className="payment-field-input mt-1.5"
-                  disabled={pending}
-                />
+            ) : null}
+            {canAdd ? (
+              <div className="general-settings-card space-y-3">
+                <div>
+                  <Label
+                    htmlFor="new-location-name"
+                    className="payment-field-label"
+                  >
+                    Nombre
+                  </Label>
+                  <Input
+                    id="new-location-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ej: Sede Este"
+                    className="payment-field-input mt-1.5"
+                    disabled={pending}
+                  />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label
+                      htmlFor="new-location-city"
+                      className="payment-field-label"
+                    >
+                      Ciudad
+                    </Label>
+                    <Input
+                      id="new-location-city"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="Caracas"
+                      className="payment-field-input mt-1.5"
+                      disabled={pending}
+                    />
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="new-location-phone"
+                      className="payment-field-label"
+                    >
+                      Teléfono
+                    </Label>
+                    <Input
+                      id="new-location-phone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="0412…"
+                      className="payment-field-input mt-1.5"
+                      disabled={pending}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label
+                    htmlFor="new-location-address"
+                    className="payment-field-label"
+                  >
+                    Dirección
+                  </Label>
+                  <Input
+                    id="new-location-address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Calle, referencia…"
+                    className="payment-field-input mt-1.5"
+                    disabled={pending}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={pending || !name.trim()}
+                >
+                  {pending ? (
+                    <Loader2
+                      className="h-4 w-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  Agregar sucursal
+                </Button>
               </div>
-            </div>
-            <div>
-              <Label htmlFor="new-location-address" className="payment-field-label">
-                Dirección
-              </Label>
-              <Input
-                id="new-location-address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Calle, referencia…"
-                className="payment-field-input mt-1.5"
-                disabled={pending}
-              />
-            </div>
-            <Button
-              type="button"
-              onClick={handleCreate}
-              disabled={pending || !name.trim()}
-            >
-              {pending ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <Plus className="h-4 w-4" aria-hidden="true" />
-              )}
-              Agregar sucursal
-            </Button>
-          </div>
-        ) : null}
+            ) : null}
+          </>
+        )}
       </SettingsSection>
     </SettingsTabShell>
+  );
+}
+
+function EnterpriseLockedNewLocationCard({
+  extraLocationMonthlyUsd,
+}: {
+  extraLocationMonthlyUsd: number;
+}) {
+  return (
+    <div
+      className="relative overflow-hidden rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-900/40"
+      role="group"
+      aria-label="Agregar sucursal bloqueado. Exclusivo del plan Enterprise."
+    >
+      <div
+        className="pointer-events-none select-none space-y-3 p-4 opacity-45"
+        aria-hidden="true"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+            Nueva sede
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-md bg-zinc-200/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+            <Lock className="h-3 w-3" />
+            Enterprise
+          </span>
+        </div>
+        <div className="h-9 rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="h-9 rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950" />
+          <div className="h-9 rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950" />
+        </div>
+        <div className="h-9 rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950" />
+        <div className="h-9 w-40 rounded-lg bg-zinc-300 dark:bg-zinc-700" />
+      </div>
+
+      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-white/55 via-white/80 to-white/90 p-4 dark:from-zinc-950/40 dark:via-zinc-950/75 dark:to-zinc-950/90">
+        <div className="max-w-sm text-center">
+          <span className="mx-auto mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
+            <Lock className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <p className="inline-flex items-center gap-1.5 rounded-md border border-teal-200/80 bg-teal-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-200">
+            <Lock className="h-3 w-3" aria-hidden="true" />
+            Exclusivo Enterprise
+          </p>
+          <p className="mt-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            Desbloquea multi-sucursal
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+            Hasta 3 sedes incluidas con stock por ubicación
+            {extraLocationMonthlyUsd > 0
+              ? `, y extras a +$${extraLocationMonthlyUsd}/mes`
+              : ""}
+            .
+          </p>
+          <Link
+            href={DASHBOARD_PLANS_HREF}
+            className="btn-brand mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium"
+          >
+            Actualizar a Enterprise
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
 
