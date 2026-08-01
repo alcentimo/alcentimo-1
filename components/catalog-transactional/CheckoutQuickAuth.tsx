@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { quickRegisterOrSignInCustomerInline } from "@/lib/customers/register-actions";
+import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { CUSTOMER_MIN_PASSWORD_LENGTH } from "@/lib/customers/phone-auth";
 
@@ -55,7 +56,7 @@ export function CheckoutQuickAuth({
     setPending(false);
 
     if (!result.ok) {
-      setError(result.error);
+      setError(formatAuthError(result.error));
       return;
     }
 

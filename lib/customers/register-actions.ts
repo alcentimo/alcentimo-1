@@ -25,6 +25,8 @@ import {
 } from "@/lib/customers/phone-auth";
 import { markCatalogVisitRegistered } from "@/lib/analytics/track-catalog-visit";
 import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
+import { formatAuthError } from "@/lib/auth/format-auth-error";
+import { getAuthCaughtMessage, logAuthEvent } from "@/lib/auth/auth-log";
 
 export type LinkCustomerToStoreResult =
   | {
@@ -77,28 +79,53 @@ async function signInWithCustomerPassword(
   authEmail: string,
   password: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
-    email: authEmail,
-    password,
-  });
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: authEmail,
+      password,
+    });
 
-  if (error) {
-    const message = error.message.toLowerCase();
-    if (
-      message.includes("invalid") ||
-      message.includes("credentials") ||
-      message.includes("password")
-    ) {
+    if (error) {
+      const message = error.message.toLowerCase();
+      logAuthEvent(
+        "customer_signin_failed",
+        { message: error.message, status: error.status ?? null },
+        "warn",
+      );
+      if (
+        message.includes("invalid") ||
+        message.includes("credentials") ||
+        message.includes("password")
+      ) {
+        return {
+          ok: false,
+          error: "Datos de acceso o contraseña incorrectos.",
+        };
+      }
+      return { ok: false, error: formatAuthError(error.message) };
+    }
+
+    if (!data.session) {
+      logAuthEvent("customer_signin_no_session", {}, "warn");
       return {
         ok: false,
-        error: "Datos de acceso o contraseña incorrectos.",
+        error:
+          "El acceso se inició, pero la sesión no quedó lista. Intenta de nuevo.",
       };
     }
-    return { ok: false, error: error.message };
-  }
 
-  return { ok: true };
+    return { ok: true };
+  } catch (caught) {
+    const message = getAuthCaughtMessage(caught);
+    logAuthEvent("customer_signin_exception", { message }, "error");
+    return {
+      ok: false,
+      error: formatAuthError(
+        message || "No se pudo iniciar sesión. Revisa tu conexión e intenta de nuevo.",
+      ),
+    };
+  }
 }
 
 /**
@@ -132,7 +159,12 @@ async function establishPasswordSession(input: {
   }
 
   if (!isExistingUserError(createError.message)) {
-    return { ok: false, error: createError.message };
+    logAuthEvent(
+      "customer_create_user_failed",
+      { message: createError.message },
+      "warn",
+    );
+    return { ok: false, error: formatAuthError(createError.message) };
   }
 
   const existingSignIn = await signInWithCustomerPassword(

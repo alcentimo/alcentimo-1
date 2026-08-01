@@ -7,6 +7,7 @@ import {
   quickRegisterOrSignInCustomer,
   signInCustomer,
 } from "@/lib/customers/register-actions";
+import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
@@ -118,7 +119,7 @@ export function CustomerRegisterPanel({
     setLoading(false);
 
     if (!result.ok) {
-      setError(result.error);
+            setError(formatAuthError(result.error));
       return;
     }
 
@@ -151,7 +152,7 @@ export function CustomerRegisterPanel({
     setLoading(false);
 
     if (!result.ok) {
-      setError(result.error);
+            setError(formatAuthError(result.error));
       return;
     }
 
@@ -182,7 +183,7 @@ export function CustomerRegisterPanel({
     setLoading(false);
 
     if (!result.ok) {
-      setError(result.error);
+            setError(formatAuthError(result.error));
       return;
     }
 
@@ -303,7 +304,7 @@ export function CustomerRegisterPanel({
           disabled={isBusy}
           className="mt-6"
           buttonClassName="rounded-[10px] border-zinc-200/80 py-3.5 font-semibold shadow-[0_1px_2px_rgba(24,24,27,0.04)] hover:bg-zinc-50 dark:hover:bg-zinc-800"
-          onError={(message) => setError(message)}
+          onError={(message) => setError(formatAuthError(message))}
         />
 
         <div className="relative my-6">
@@ -444,7 +445,7 @@ export function CustomerRegisterPanel({
         disabled={isBusy}
         className="mt-6"
         buttonClassName="rounded-[10px] border-zinc-200/80 py-3.5 font-semibold shadow-[0_1px_2px_rgba(24,24,27,0.04)] hover:bg-zinc-50 dark:hover:bg-zinc-800"
-        onError={(message) => setError(message)}
+          onError={(message) => setError(formatAuthError(message))}
       />
 
       <div className="relative my-6">

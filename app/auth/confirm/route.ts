@@ -5,6 +5,7 @@ import {
   resolveAuthConfirmErrorPath,
   resolveAuthConfirmNext,
 } from "@/lib/auth/resolve-auth-confirm-next";
+import { logAuthEvent } from "@/lib/auth/auth-log";
 import { requireSupabasePublicEnv } from "@/lib/supabase/config";
 import { getSupabaseCookieOptions } from "@/lib/supabase/cookie-options";
 import { getSiteUrl } from "@/lib/site-url";
@@ -50,9 +51,15 @@ export async function GET(request: NextRequest) {
     });
 
     if (!error) {
+      logAuthEvent("confirm_otp_success", { type });
       return supabaseResponse;
     }
 
+    logAuthEvent(
+      "confirm_otp_failed",
+      { type, message: error.message },
+      "warn",
+    );
     const verifyUrl = new URL(`${siteUrl}${errorPath}`);
     verifyUrl.searchParams.set("error", error.message);
     if (type === "signup" || type === "invite") {
@@ -65,6 +72,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      logAuthEvent("confirm_code_success", { type });
       return supabaseResponse;
     }
 
@@ -72,6 +80,12 @@ export async function GET(request: NextRequest) {
       error.message.toLowerCase().includes("code verifier")
         ? " Abre el enlace en el mismo navegador donde solicitaste la recuperación, o solicita un nuevo enlace."
         : "";
+
+    logAuthEvent(
+      "confirm_code_failed",
+      { type, message: error.message, pkce: Boolean(pkceHint) },
+      "warn",
+    );
 
     const verifyUrl = new URL(`${siteUrl}${errorPath}`);
     verifyUrl.searchParams.set(
@@ -84,6 +98,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(verifyUrl.toString());
   }
 
+  logAuthEvent("confirm_invalid_link", { type }, "warn");
   const verifyUrl = new URL(`${siteUrl}${errorPath}`);
   verifyUrl.searchParams.set("error", "Enlace de confirmación inválido.");
   return NextResponse.redirect(verifyUrl.toString());

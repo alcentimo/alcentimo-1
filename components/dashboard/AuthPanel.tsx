@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
+import { getAuthCaughtMessage, logAuthEvent } from "@/lib/auth/auth-log";
 import { signUpWithConfirmationEmailAction } from "@/lib/auth/auth-email-actions";
 import {
   PENDING_CONFIRMATION_RESENT_MESSAGE,
@@ -24,10 +25,23 @@ import { SignupEmailVerificationPanel } from "@/components/dashboard/SignupEmail
 const devSkipEmailConfirmation =
   process.env.NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION === "true";
 
+function clearAuthErrorParamsFromUrl() {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("error") && !url.searchParams.has("error_description")) {
+    return;
+  }
+  url.searchParams.delete("error");
+  url.searchParams.delete("error_description");
+  window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
 export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } = {}) {
   const searchParams = useSearchParams();
   const nextParam = searchParams.get("next");
   const modeParam = searchParams.get("mode");
+  const urlError = searchParams.get("error");
+  const urlErrorDescription = searchParams.get("error_description");
   const postAuthPath = resolvePostAuthPath(nextParam);
   const isInvitationFlow = isInvitationNextPath(nextParam);
 
@@ -39,13 +53,28 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => {
+    if (!urlError && !urlErrorDescription) return null;
+    return formatAuthError(urlErrorDescription || urlError);
+  });
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [signupConfirmationSent, setSignupConfirmationSent] = useState(false);
   const [signupNotice, setSignupNotice] = useState<string | null>(null);
   const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false);
   const [existingAccountNotice, setExistingAccountNotice] = useState(false);
+
+  useEffect(() => {
+    if (!urlError && !urlErrorDescription) return;
+    const message = formatAuthError(urlErrorDescription || urlError);
+    setError(message);
+    logAuthEvent(
+      "login_url_error",
+      { code: urlError, description: urlErrorDescription },
+      "warn",
+    );
+    clearAuthErrorParamsFromUrl();
+  }, [urlError, urlErrorDescription]);
 
   function switchMode(nextMode: "login" | "signup") {
     setMode(nextMode);
@@ -78,6 +107,39 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
     setSignupConfirmationSent(true);
   }
 
+  async function ensureBrowserSessionReady(): Promise<boolean> {
+    const supabase = createClient();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (session?.access_token && !sessionError) {
+      return true;
+    }
+
+    // Reintento corto: a veces la cookie SSR aún no está lista en móvil.
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (user && !userError) {
+      return true;
+    }
+
+    logAuthEvent(
+      "signin_session_not_ready",
+      {
+        sessionError: sessionError?.message ?? null,
+        userError: userError?.message ?? null,
+      },
+      "warn",
+    );
+    return false;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -100,19 +162,26 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
     setLoading(true);
 
     if (mode === "signup" && devSkipEmailConfirmation) {
-      const devResult = await devSignUpAndSignIn(email, password);
-      setLoading(false);
+      try {
+        const devResult = await devSignUpAndSignIn(email, password);
+        setLoading(false);
 
-      if (!devResult.ok) {
-        if (isExistingConfirmedAccountError(devResult.error)) {
-          goToLoginForExistingAccount();
+        if (!devResult.ok) {
+          if (isExistingConfirmedAccountError(devResult.error)) {
+            goToLoginForExistingAccount();
+            return;
+          }
+          setError(formatAuthError(devResult.error));
           return;
         }
-        setError(formatAuthError(devResult.error));
-        return;
-      }
 
-      window.location.href = postAuthPath;
+        window.location.assign(postAuthPath);
+      } catch (caught) {
+        setLoading(false);
+        const message = getAuthCaughtMessage(caught);
+        logAuthEvent("dev_signup_exception", { message }, "error");
+        setError(formatAuthError(message || "No se pudo completar el registro."));
+      }
       return;
     }
 
@@ -126,7 +195,6 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
         const signupResult = parseAuthEmailActionResult(rawResult);
         setLoading(false);
 
-        // Éxito o reenvío de activación → aviso verde/azul, nunca alerta roja.
         if (signupResult.ok) {
           if (
             signupResult.resentPendingConfirmation ||
@@ -142,18 +210,17 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
           return;
         }
 
-        // Defensivo: el backend a veces puede devolver el aviso en `error`.
         if (isPendingActivationNotice(signupResult.error)) {
           showPendingActivationNotice(signupResult.error);
           return;
         }
 
-        // Cuenta ya confirmada → login con aviso claro.
         if (isExistingConfirmedAccountError(signupResult.error)) {
           goToLoginForExistingAccount();
           return;
         }
 
+        logAuthEvent("signup_failed", { error: signupResult.error }, "warn");
         setError(
           signupResult.error.startsWith("No pudimos reenviar")
             ? signupResult.error
@@ -161,8 +228,7 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
         );
       } catch (caught) {
         setLoading(false);
-        const message =
-          caught instanceof Error ? caught.message : String(caught ?? "");
+        const message = getAuthCaughtMessage(caught);
 
         if (isExistingConfirmedAccountError(message)) {
           goToLoginForExistingAccount();
@@ -174,30 +240,54 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
           return;
         }
 
+        logAuthEvent("signup_exception", { message }, "error");
         setError(formatAuthError(message || "No se pudo completar el registro."));
       }
       return;
     }
 
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
+      const result = await supabase.auth.signInWithPassword({ email, password });
 
-    const result = await supabase.auth.signInWithPassword({ email, password });
+      if (result.error) {
+        setLoading(false);
+        logAuthEvent(
+          "signin_failed",
+          {
+            message: result.error.message,
+            status: result.error.status ?? null,
+            code: result.error.code ?? null,
+          },
+          "warn",
+        );
+        setError(formatAuthError(result.error.message));
+        return;
+      }
 
-    setLoading(false);
+      const sessionReady = await ensureBrowserSessionReady();
+      setLoading(false);
 
-    if (result.error) {
-      const message = result.error.message;
-      if (message.toLowerCase().includes("rate limit")) {
+      if (!sessionReady) {
         setError(
-          "Límite de envío de correos alcanzado. Intenta de nuevo más tarde.",
+          "El acceso se inició, pero la sesión no quedó lista en este dispositivo. Intenta de nuevo.",
         );
         return;
       }
-      setError(formatAuthError(message));
-      return;
-    }
 
-    window.location.href = postAuthPath;
+      logAuthEvent("signin_success", { hasUser: Boolean(result.data.user) });
+      window.location.assign(postAuthPath);
+    } catch (caught) {
+      setLoading(false);
+      const message = getAuthCaughtMessage(caught);
+      logAuthEvent("signin_exception", { message }, "error");
+      setError(
+        formatAuthError(
+          message ||
+            "No se pudo iniciar sesión. Revisa tu conexión e intenta de nuevo.",
+        ),
+      );
+    }
   }
 
   if (signupConfirmationSent) {
@@ -233,24 +323,28 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
         </p>
       ) : null}
 
-      {devSkipEmailConfirmation && mode === "signup" && (
+      {devSkipEmailConfirmation && mode === "signup" ? (
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
           Modo desarrollo: el registro no envía correo de confirmación.
         </p>
-      )}
+      ) : null}
 
       <GoogleSignInButton
         postAuthPath={postAuthPath}
         disabled={isBusy}
         className="mt-6"
         buttonClassName="rounded-[10px] border-zinc-200/80 py-3.5 font-semibold shadow-[0_1px_2px_rgba(24,24,27,0.04)] hover:bg-zinc-50 dark:hover:bg-zinc-800"
-        onError={(message) => setError(formatAuthError(message))}
+        onError={(message) => {
+          logAuthEvent("google_signin_error", { message }, "warn");
+          setError(formatAuthError(message));
+        }}
       />
 
       <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
-        </div>
+        <div
+          className="absolute inset-x-0 top-1/2 border-t border-zinc-200 dark:border-zinc-700"
+          aria-hidden="true"
+        />
         <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
           o con tu correo
         </p>
@@ -287,16 +381,16 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          {mode === "login" && (
+          {mode === "login" ? (
             <p className="mt-2 text-right">
               <Link href="/dashboard/recuperar-contrasena" className="link-brand text-sm">
                 ¿Olvidaste tu contraseña?
               </Link>
             </p>
-          )}
+          ) : null}
         </div>
 
-        {mode === "signup" && (
+        {mode === "signup" ? (
           <div>
             <label htmlFor="confirm_password" className="label-field">
               Confirmar contraseña
@@ -310,9 +404,9 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </div>
-        )}
+        ) : null}
 
-        {mode === "signup" && (
+        {mode === "signup" ? (
           <label className="flex items-start gap-2.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
             <input
               id="accept_legal_terms"
@@ -342,7 +436,7 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
               </Link>
             </span>
           </label>
-        )}
+        ) : null}
 
         {existingAccountNotice && mode === "login" ? (
           <div

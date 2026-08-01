@@ -17,6 +17,8 @@ export function getSupabaseCookieOptions(): CookieOptions | undefined {
     domain: `.${apexHost}`,
     path: "/",
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // En preview/producción con HTTPS las cookies de sesión deben ir Secure
+    // para no fallar de forma intermitente en móvil (Safari / Chrome).
+    secure: true,
   };
 }
