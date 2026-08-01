@@ -640,15 +640,19 @@ body {
 }
 
 .admin-payment-card-grid {
-  @apply grid gap-0 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)];
+  @apply grid gap-0 lg:grid-cols-[minmax(220px,280px)_minmax(0,1fr)];
 }
 
 .admin-payment-receipt {
-  @apply relative min-h-[280px] border-b border-zinc-200/80 bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-900/60 lg:min-h-[360px] lg:border-b-0 lg:border-r;
+  @apply border-b border-zinc-200/80 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/40 lg:border-b-0 lg:border-r;
 }
 
 .admin-payment-receipt-link {
-  @apply relative block h-full min-h-[280px] lg:min-h-[360px];
+  @apply relative mx-auto block h-48 w-full max-w-full overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-950;
+}
+
+.admin-payment-receipt-link img {
+  @apply object-contain p-2;
 }
 
 .admin-payment-receipt-overlay {

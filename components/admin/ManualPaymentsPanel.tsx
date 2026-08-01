@@ -343,7 +343,7 @@ export function ManualPaymentsPanel({
                         alt="Comprobante de pago"
                         fill
                         className="object-contain p-2"
-                        sizes="(max-width: 1024px) 100vw, 360px"
+                        sizes="280px"
                         unoptimized
                       />
                       <span className="admin-payment-receipt-overlay">
