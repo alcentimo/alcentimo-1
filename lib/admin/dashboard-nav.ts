@@ -4,7 +4,8 @@ export type AdminDashboardTab =
   | "tiendas"
   | "cupones"
   | "planes"
-  | "soporte";
+  | "soporte"
+  | "ia";
 
 const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
   resumen: "resumen",
@@ -14,6 +15,9 @@ const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
   promociones: "cupones",
   planes: "planes",
   soporte: "soporte",
+  ia: "ia",
+  asistente: "ia",
+  "ia-gerencial": "ia",
   metricas: "resumen",
   crecimiento: "tiendas",
   dominios: "tiendas",

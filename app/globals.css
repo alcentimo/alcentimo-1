@@ -576,7 +576,11 @@ body {
 }
 
 .admin-ai-panel {
-  @apply rounded-xl border border-dashed border-violet-300/80 bg-gradient-to-br from-violet-50/80 to-white p-5 dark:border-violet-800/50 dark:from-violet-950/20 dark:to-zinc-950;
+  @apply rounded-xl border border-violet-200/80 bg-gradient-to-br from-violet-50/80 to-white p-5 dark:border-violet-800/50 dark:from-violet-950/20 dark:to-zinc-950;
+}
+
+.admin-ai-panel-full {
+  @apply min-h-[70vh];
 }
 
 .admin-ai-panel-header {
@@ -597,6 +601,38 @@ body {
 
 .admin-ai-panel-input {
   @apply bg-white/80 dark:bg-zinc-900/60;
+}
+
+.admin-ai-messages {
+  @apply mt-4 space-y-3 overflow-y-auto rounded-lg border border-zinc-200/70 bg-white/70 p-3 dark:border-zinc-800 dark:bg-zinc-950/50;
+}
+
+.admin-ai-messages-compact {
+  @apply max-h-72;
+}
+
+.admin-ai-messages-full {
+  @apply max-h-[min(28rem,50vh)] min-h-[18rem];
+}
+
+.admin-ai-bubble {
+  @apply max-w-[95%] rounded-xl px-3 py-2 text-sm leading-relaxed;
+}
+
+.admin-ai-bubble-assistant {
+  @apply mr-auto border border-zinc-200/80 bg-zinc-50 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100;
+}
+
+.admin-ai-bubble-user {
+  @apply ml-auto bg-violet-600 text-white;
+}
+
+.admin-ai-typing {
+  @apply inline-flex items-center gap-2 text-zinc-500 dark:text-zinc-400;
+}
+
+.admin-ai-quick-prompt {
+  @apply rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-left text-xs text-zinc-600 transition hover:border-violet-300 hover:text-violet-700 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-violet-700 dark:hover:text-violet-200;
 }
 
 .admin-payment-card {

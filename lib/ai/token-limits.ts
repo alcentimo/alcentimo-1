@@ -22,6 +22,8 @@ export const AI_MAX_TOKENS = {
   storefrontChat: 250,
   /** Consultor dueño de tienda */
   ownerChat: 450,
+  /** Asistente IA gerencial del panel admin */
+  adminChat: 550,
   /** Sugerencias de inventario estancado (JSON corto) */
   inventorySuggestions: 350,
 } as const;

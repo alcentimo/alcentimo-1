@@ -21,11 +21,13 @@ const PLAN_ROWS: Array<{
 interface AdminOverviewPanelProps {
   metrics: AdminPlanMetrics;
   pendingMessages: number;
+  assistantEnabled?: boolean;
 }
 
 export function AdminOverviewPanel({
   metrics,
   pendingMessages,
+  assistantEnabled = false,
 }: AdminOverviewPanelProps) {
   const alerts = [
     metrics.pendingPayments > 0
@@ -148,7 +150,10 @@ export function AdminOverviewPanel({
         </section>
       </div>
 
-      <AdminAiAssistantPanel />
+      <AdminAiAssistantPanel
+        assistantEnabled={assistantEnabled}
+        variant="compact"
+      />
     </div>
   );
 }

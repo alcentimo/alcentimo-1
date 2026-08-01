@@ -22,6 +22,7 @@ import {
   listSubscriptionCampaigns,
   listSubscriptionCoupons,
 } from "@/lib/admin/subscription-promo-actions";
+import { getOpenAiApiKey } from "@/lib/env/server";
 
 export const dynamic = "force-dynamic";
 
@@ -247,6 +248,7 @@ export default async function AdminDashboardPage({
           growthError={growthError}
           storeDomains={storeDomains}
           storeDomainsError={storeDomainsError}
+          assistantEnabled={Boolean(getOpenAiApiKey())}
           initialTab={initialTab}
           legacyTabParam={legacyTabParam}
           initialPlansSubTab={initialPlansSubTab}

@@ -6,6 +6,7 @@ import { ManualPaymentsPanel } from "@/components/admin/ManualPaymentsPanel";
 import { AdminDashboardShell } from "@/components/admin/AdminDashboardShell";
 import { AdminStoresPanel } from "@/components/admin/AdminStoresPanel";
 import { AdminPlansHubPanel } from "@/components/admin/AdminPlansHubPanel";
+import { AdminAiAssistantPanel } from "@/components/admin/AdminAiAssistantPanel";
 import { SupportMessagesPanel } from "@/components/dashboard/SupportMessagesPanel";
 import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
 import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
@@ -148,6 +149,7 @@ interface AdminDashboardTabsProps {
   growthError?: string | null;
   storeDomains?: AdminStoreDomainRow[];
   storeDomainsError?: string | null;
+  assistantEnabled?: boolean;
   initialTab?: AdminDashboardTab | string;
   legacyTabParam?: string | null;
   initialPlansSubTab?: string | null;
@@ -180,6 +182,7 @@ export function AdminDashboardTabs({
   growthError = null,
   storeDomains = [],
   storeDomainsError = null,
+  assistantEnabled = false,
   initialTab = "resumen",
   legacyTabParam = null,
   initialPlansSubTab = null,
@@ -238,6 +241,7 @@ export function AdminDashboardTabs({
           <AdminOverviewPanel
             metrics={metrics}
             pendingMessages={pendingMessages}
+            assistantEnabled={assistantEnabled}
           />
         ) : (
           <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
@@ -314,6 +318,13 @@ export function AdminDashboardTabs({
         ) : (
           <SupportMessagesPanel initialMessages={messages} />
         )
+      ) : null}
+
+      {activeTab === "ia" ? (
+        <AdminAiAssistantPanel
+          assistantEnabled={assistantEnabled}
+          variant="full"
+        />
       ) : null}
     </AdminDashboardShell>
   );

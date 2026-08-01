@@ -63,6 +63,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     icon: MessageSquare,
     showBadge: true,
   },
+  {
+    id: "ia",
+    label: "IA gerencial",
+    description: "Consultas en lenguaje natural sobre el SaaS.",
+    icon: Bot,
+  },
 ];
 
 interface AdminDashboardShellProps {
@@ -114,10 +120,6 @@ export function AdminDashboardShell({
           <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
             <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" />
             Gestión centralizada
-          </div>
-          <div className="mt-2 flex items-center gap-2 text-xs text-violet-700 dark:text-violet-300">
-            <Bot className="h-3.5 w-3.5" aria-hidden="true" />
-            IA gerencial — próximamente
           </div>
         </div>
       </aside>
