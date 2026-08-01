@@ -19,6 +19,11 @@ export interface PaymentMethodDefinition {
   label: string;
   description: string;
   fields: PaymentMethodFieldDefinition[];
+  /**
+   * Si true, el checkout exige comprobante de pago.
+   * Efectivo / punto de venta / contra entrega no lo requieren.
+   */
+  requiresPaymentProof?: boolean;
 }
 
 export interface PaymentMethodGroupDefinition {
@@ -33,6 +38,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     key: "pagoMovil",
     label: "Pago Móvil",
     description: "Cobra en bolívares vía Pago Móvil bancario.",
+    requiresPaymentProof: true,
     fields: [
       { key: "bank", label: "Banco", placeholder: "Selecciona un banco", type: "bank-select" },
       {
@@ -60,6 +66,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     key: "transferencia",
     label: "Transferencia bancaria",
     description: "Transferencia directa a cuenta nacional.",
+    requiresPaymentProof: true,
     fields: [
       { key: "bank", label: "Banco", placeholder: "Selecciona un banco", type: "bank-select" },
       {
@@ -79,6 +86,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     key: "zelle",
     label: "Zelle",
     description: "Recibe pagos en USD por Zelle.",
+    requiresPaymentProof: true,
     fields: [
       {
         key: "email",
@@ -93,12 +101,14 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     key: "efectivoUsd",
     label: "Efectivo USD",
     description: "Acepta dólares en efectivo al entregar.",
+    requiresPaymentProof: false,
     fields: [],
   },
   {
     key: "puntoVenta",
     label: "Punto de venta",
     description: "Tarjeta débito/crédito en tu local.",
+    requiresPaymentProof: false,
     fields: [
       {
         key: "note",
@@ -113,6 +123,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     key: "paypal",
     label: "PayPal",
     description: "Recibe pagos internacionales con PayPal.",
+    requiresPaymentProof: true,
     fields: [
       {
         key: "email",
@@ -127,6 +138,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     key: "binance",
     label: "Binance Pay",
     description: "Cobra con Binance Pay ID o Pay ID.",
+    requiresPaymentProof: true,
     fields: [
       {
         key: "payId",
@@ -148,6 +160,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     key: "crypto",
     label: "Criptomonedas",
     description: "Acepta pagos en cripto (BTC, USDT, etc.).",
+    requiresPaymentProof: true,
     fields: [
       {
         key: "walletAddress",
@@ -168,6 +181,7 @@ export const PAYMENT_METHODS: PaymentMethodDefinition[] = [
     key: "cashea",
     label: "Cashea",
     description: "Permite compras con financiamiento Cashea.",
+    requiresPaymentProof: false,
     fields: [
       {
         key: "merchantId",
@@ -211,4 +225,13 @@ export const PAYMENT_METHOD_BY_KEY: Record<
 
 export function getPaymentMethod(key: PaymentMethodKey): PaymentMethodDefinition {
   return PAYMENT_METHOD_BY_KEY[key];
+}
+
+/** true si el método de pago del checkout exige adjuntar comprobante. */
+export function paymentMethodRequiresProof(
+  key: string | null | undefined,
+): boolean {
+  if (!key) return false;
+  const method = PAYMENT_METHOD_BY_KEY[key as PaymentMethodKey];
+  return method?.requiresPaymentProof === true;
 }

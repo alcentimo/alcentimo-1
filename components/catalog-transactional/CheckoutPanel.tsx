@@ -26,6 +26,7 @@ import type { SubmitOrderLineInput } from "@/lib/orders/types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { PaymentMethodKey, ShippingCarrierKey } from "@/lib/store-settings/types";
 import { isNationalCarrierKey } from "@/src/config/shipping-methods";
+import { paymentMethodRequiresProof } from "@/src/config/payment-methods";
 import { formatCarrierBranchAddress, getCarrierBranchById } from "@/lib/shipping/carrier-branches";
 import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
 import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
@@ -389,6 +390,8 @@ export function CheckoutPanel({
     ],
   );
 
+  const requiresProofFile = paymentMethodRequiresProof(selectedPayment);
+
   const step2Validation = useMemo(
     () =>
       validateCheckoutStep2({
@@ -401,6 +404,7 @@ export function CheckoutPanel({
         paymentsCount: paymentOptions.length,
         selectedPayment,
         hasProofFile: Boolean(proofFile),
+        requiresProofFile,
       }),
     [
       items.length,
@@ -412,6 +416,7 @@ export function CheckoutPanel({
       paymentOptions.length,
       selectedPayment,
       proofFile,
+      requiresProofFile,
     ],
   );
 
@@ -486,7 +491,7 @@ export function CheckoutPanel({
       return;
     }
 
-    if (!proofFile) {
+    if (requiresProofFile && !proofFile) {
       return;
     }
 
@@ -543,7 +548,9 @@ export function CheckoutPanel({
       customerProfile?.phone ?? customerPhone.trim(),
     );
     formData.set("items", JSON.stringify(submitLines));
-    formData.set("paymentProof", proofFile);
+    if (proofFile) {
+      formData.set("paymentProof", proofFile);
+    }
     if (appliedPromotion) {
       formData.set("promotionCode", appliedPromotion.code);
     }
@@ -1039,6 +1046,9 @@ export function CheckoutPanel({
                             onSelect={() => {
                               touchField("payment");
                               setSelectedPayment(payment.key);
+                              if (!paymentMethodRequiresProof(payment.key)) {
+                                setProofFile(null);
+                              }
                             }}
                           />
                         ))}
@@ -1166,44 +1176,51 @@ export function CheckoutPanel({
                   </div>
                 )}
 
-                <CheckoutFieldGroup
-                  field="proofFile"
-                  showError={shouldShowFieldError(
-                    "proofFile",
-                    step2Validation.errors.proofFile,
-                  )}
-                  error={step2Validation.errors.proofFile}
-                  className="txn-checkout-form"
-                >
-                  <label className="txn-field">
-                    <span>Comprobante de pago</span>
-                    <input
-                      type="file"
-                      required
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      onChange={(event) => {
-                        touchField("proofFile");
-                        setProofFile(event.target.files?.[0] ?? null);
-                      }}
-                      onBlur={() => touchField("proofFile")}
-                      aria-invalid={shouldShowFieldError(
-                        "proofFile",
-                        step2Validation.errors.proofFile,
-                      )}
-                      aria-describedby={
-                        step2Validation.errors.proofFile
-                          ? "checkout-error-proofFile"
-                          : undefined
-                      }
-                      className={checkoutFileInputClass(
-                        shouldShowFieldError(
+                {requiresProofFile ? (
+                  <CheckoutFieldGroup
+                    field="proofFile"
+                    showError={shouldShowFieldError(
+                      "proofFile",
+                      step2Validation.errors.proofFile,
+                    )}
+                    error={step2Validation.errors.proofFile}
+                    className="txn-checkout-form"
+                  >
+                    <label className="txn-field">
+                      <span>Comprobante de pago</span>
+                      <input
+                        type="file"
+                        required
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        onChange={(event) => {
+                          touchField("proofFile");
+                          setProofFile(event.target.files?.[0] ?? null);
+                        }}
+                        onBlur={() => touchField("proofFile")}
+                        aria-invalid={shouldShowFieldError(
                           "proofFile",
                           step2Validation.errors.proofFile,
-                        ),
-                      )}
-                    />
-                  </label>
-                </CheckoutFieldGroup>
+                        )}
+                        aria-describedby={
+                          step2Validation.errors.proofFile
+                            ? "checkout-error-proofFile"
+                            : undefined
+                        }
+                        className={checkoutFileInputClass(
+                          shouldShowFieldError(
+                            "proofFile",
+                            step2Validation.errors.proofFile,
+                          ),
+                        )}
+                      />
+                    </label>
+                  </CheckoutFieldGroup>
+                ) : selectedPayment ? (
+                  <p className="txn-checkout-hint rounded-lg border border-zinc-200/80 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
+                    Con este método de pago no necesitas subir comprobante. El
+                    pago se confirma al entregar o en el local.
+                  </p>
+                ) : null}
               </>
             )}
           </div>
@@ -1281,7 +1298,9 @@ export function CheckoutPanel({
             {!canProceedCurrentStep && !pending ? (
               <p className="txn-checkout-blocked-hint" role="status">
                 {checkoutStep === 2
-                  ? "Completa nombre, teléfono, método de pago y comprobante para confirmar."
+                  ? requiresProofFile
+                    ? "Completa nombre, teléfono, método de pago y comprobante para confirmar."
+                    : "Completa nombre, teléfono y método de pago para confirmar."
                   : "Completa el envío y los campos obligatorios para continuar."}
               </p>
             ) : null}

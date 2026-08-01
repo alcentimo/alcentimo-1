@@ -16,7 +16,10 @@ import {
   formatDeliverySelectionSummary,
   formatPickupSelectionSummary,
 } from "@/lib/store-settings/delivery-zones";
-import { getPaymentMethod } from "@/src/config/payment-methods";
+import {
+  getPaymentMethod,
+  paymentMethodRequiresProof,
+} from "@/src/config/payment-methods";
 import { getShippingMethod, isNationalCarrierKey } from "@/src/config/shipping-methods";
 import { getCarrierBranchById } from "@/lib/shipping/carrier-branches";
 import type { PaymentMethodKey, ShippingCarrierKey } from "@/lib/store-settings/types";
@@ -147,7 +150,10 @@ export async function submitTransactionalOrder(
     return { error: "Indica un teléfono válido (mínimo 10 dígitos)." };
   }
 
-  if (!(proof instanceof File) || proof.size === 0) {
+  const requiresProof = paymentMethodRequiresProof(paymentMethodRaw);
+  const hasProofFile = proof instanceof File && proof.size > 0;
+
+  if (requiresProof && !hasProofFile) {
     return { error: "Adjunta el comprobante de pago." };
   }
 
@@ -276,9 +282,13 @@ export async function submitTransactionalOrder(
 
   const orderId = crypto.randomUUID();
 
-  const proofUpload = await uploadOrderPaymentProof(store.id, orderId, proof);
-  if (proofUpload.error || !proofUpload.url) {
-    return { error: proofUpload.error ?? "No se pudo subir el comprobante." };
+  let paymentProofUrl: string | null = null;
+  if (hasProofFile && proof instanceof File) {
+    const proofUpload = await uploadOrderPaymentProof(store.id, orderId, proof);
+    if (proofUpload.error || !proofUpload.url) {
+      return { error: proofUpload.error ?? "No se pudo subir el comprobante." };
+    }
+    paymentProofUrl = proofUpload.url;
   }
 
   let resolvedLocationId: string | null = null;
@@ -347,7 +357,7 @@ export async function submitTransactionalOrder(
     customer_phone: customerPhone,
     items: enrichedOrderItems,
     total_usd: totalUsd,
-    payment_proof_url: proofUpload.url,
+    payment_proof_url: paymentProofUrl,
     estado: "pendiente",
     location_id: resolvedLocationId,
     fulfillment_type: fulfillmentType,

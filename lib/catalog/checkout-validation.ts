@@ -38,6 +38,8 @@ export interface CheckoutStep2ValidationInput {
   paymentsCount: number;
   selectedPayment: string;
   hasProofFile: boolean;
+  /** Si false, el comprobante no es obligatorio (efectivo, punto de venta, etc.). */
+  requiresProofFile?: boolean;
 }
 
 export interface CheckoutValidationResult {
@@ -141,7 +143,7 @@ export function validateCheckoutStep2(
     errors.payment = "Selecciona un método de pago.";
   }
 
-  if (!input.hasProofFile) {
+  if (input.requiresProofFile && !input.hasProofFile) {
     errors.proofFile = "Adjunta el comprobante de pago.";
   }
 
