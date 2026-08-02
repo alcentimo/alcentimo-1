@@ -27,6 +27,7 @@ export interface CustomDomainDnsVerificationResult {
   suggestions: string[];
 }
 
+/** Destinos CNAME aceptados además de alcentimo.com (compat. Vercel). */
 const VERCEL_CNAME_HOSTS = new Set([
   "cname.vercel-dns.com",
   "cname.vercel-dns-0.com",
@@ -34,6 +35,7 @@ const VERCEL_CNAME_HOSTS = new Set([
   "cname.vercel-dns-2.com",
 ]);
 
+/** IPs A aceptadas para dominio raíz (@). */
 const VERCEL_A_RECORDS = new Set(["76.76.21.21", "216.150.1.1"]);
 
 function normalizeHost(value: string): string {
@@ -66,11 +68,7 @@ function buildAcceptedTargets(): {
     cnameTargets.add(host);
   }
 
-  const apexTarget = getCustomDomainApexATarget();
-  if (apexTarget) {
-    aTargets.add(normalizeHost(apexTarget));
-  }
-
+  aTargets.add(normalizeHost(getCustomDomainApexATarget()));
   for (const ip of VERCEL_A_RECORDS) {
     aTargets.add(ip);
   }
@@ -94,14 +92,6 @@ function cnameMatchesTarget(actual: string, accepted: Set<string>): boolean {
 function aMatchesTarget(actual: string, accepted: Set<string>): boolean {
   const normalized = normalizeHost(actual);
   return accepted.has(normalized) || VERCEL_A_RECORDS.has(normalized);
-}
-
-function hostsToVerify(domain: string): string[] {
-  if (isApexCustomDomain(domain)) {
-    return [domain, `www.${domain}`];
-  }
-
-  return [domain];
 }
 
 function expectedCnameDisplay(): string {
@@ -134,6 +124,92 @@ async function safeResolveA(host: string): Promise<string[] | null> {
   }
 }
 
+/**
+ * www / subdominio: solo CNAME → alcentimo.com.
+ * No exige ni espera registro A en www.
+ */
+async function checkCnameHost(
+  host: string,
+  cnameTargets: Set<string>,
+): Promise<DnsCheckDetail> {
+  const expected = expectedCnameDisplay();
+  const cnameRecords = await safeResolveCname(host);
+
+  if (cnameRecords?.length) {
+    const match = cnameRecords.find((record) =>
+      cnameMatchesTarget(record, cnameTargets),
+    );
+    return {
+      host,
+      recordType: "CNAME",
+      expected,
+      actual: cnameRecords.join(", "),
+      ok: Boolean(match),
+      note: host.startsWith("www.")
+        ? "www → CNAME (estándar; no uses A aquí)"
+        : "Subdominio → CNAME",
+    };
+  }
+
+  // Si solo hay A en www, no lo validamos como correcto: el estándar es CNAME.
+  const aRecords = await safeResolveA(host);
+  if (aRecords?.length) {
+    return {
+      host,
+      recordType: "CNAME",
+      expected,
+      actual: `registro A (${aRecords.join(", ")})`,
+      ok: false,
+      note: `Para ${host.startsWith("www.") ? "www" : "este host"} usa CNAME → ${expected}, no un registro A.`,
+    };
+  }
+
+  return {
+    host,
+    recordType: "CNAME",
+    expected,
+    actual: null,
+    ok: false,
+    note: host.startsWith("www.")
+      ? `Falta CNAME en www → ${expected}`
+      : `Falta CNAME → ${expected}`,
+  };
+}
+
+/**
+ * Dominio raíz (@): solo registro A → 76.76.21.21.
+ * No exige CNAME en el apex.
+ */
+async function checkApexAHost(
+  host: string,
+  aTargets: Set<string>,
+): Promise<DnsCheckDetail> {
+  const expected = expectedADisplay();
+  const aRecords = await safeResolveA(host);
+
+  if (aRecords?.length) {
+    const match = aRecords.find((record) => aMatchesTarget(record, aTargets));
+    return {
+      host,
+      recordType: "A",
+      expected,
+      actual: aRecords.join(", "),
+      ok: Boolean(match),
+      note: "Dominio raíz (@) → registro A",
+    };
+  }
+
+  // Apex sin A: no pedir CNAME como “esperado” (contradice la guía).
+  return {
+    host,
+    recordType: "A",
+    expected,
+    actual: null,
+    ok: false,
+    note: `Falta registro A en @ → ${expected}`,
+  };
+}
+
 function buildSuggestions(
   domain: string,
   checks: DnsCheckDetail[],
@@ -143,33 +219,45 @@ function buildSuggestions(
   const aTarget = expectedADisplay();
   const dnsHost = getCustomDomainDnsHostLabel(domain);
   const isApex = isApexCustomDomain(domain);
+  const failed = checks.filter((check) => !check.ok);
+
+  const wwwFailed = failed.some(
+    (check) =>
+      check.recordType === "CNAME" &&
+      (check.host.startsWith("www.") || (!isApex && check.host === domain)),
+  );
+  const apexFailed = failed.some(
+    (check) => check.recordType === "A" && check.host === domain,
+  );
 
   if (isApex) {
-    suggestions.push(
-      `Crea un registro **CNAME** con host **www** apuntando a **${cnameTarget}**.`,
-    );
-    suggestions.push(
-      `Para el dominio raíz (@), crea un registro **A** apuntando a la IP **${aTarget}**.`,
-    );
-  } else {
+    if (wwwFailed) {
+      suggestions.push(
+        `Para la versión con www: crea un **CNAME** con host **www** apuntando a **${cnameTarget}** (no uses un registro A en www).`,
+      );
+    }
+    if (apexFailed) {
+      suggestions.push(
+        `Para el dominio raíz (@): crea un registro **A** apuntando a la IP **${aTarget}**.`,
+      );
+    }
+    if (!wwwFailed && !apexFailed) {
+      suggestions.push(
+        `www → **CNAME** a **${cnameTarget}**; @ → **A** a **${aTarget}**.`,
+      );
+    }
+  } else if (wwwFailed || failed.length > 0) {
     suggestions.push(
       `Crea un registro **CNAME** con host **${dnsHost === "@" ? domain.split(".")[0] : dnsHost}** apuntando a **${cnameTarget}**.`,
     );
   }
 
   suggestions.push(
-    "Elimina registros A o CNAME antiguos que apunten a otro servicio (p. ej. parking o WordPress).",
+    "Elimina registros antiguos que apunten a otro servicio (parking, WordPress, etc.).",
   );
   suggestions.push(
-    "Si acabas de cambiar el DNS, espera entre 5 minutos y 24 horas y vuelve a verificar.",
+    "Si acabas de cambiar el DNS, espera entre 5 minutos y 24 horas y vuelve a comprobar.",
   );
-
-  const failed = checks.filter((check) => !check.ok);
-  if (failed.some((check) => check.recordType === "CNAME")) {
-    suggestions.unshift(
-      `El CNAME debe coincidir exactamente con **${cnameTarget}** (sin https:// ni rutas).`,
-    );
-  }
 
   return [...new Set(suggestions)];
 }
@@ -193,60 +281,40 @@ export async function verifyCustomDomainDns(
 
   const { cnameTargets, aTargets } = buildAcceptedTargets();
   const checks: DnsCheckDetail[] = [];
-  let anyOk = false;
+  const isApex = isApexCustomDomain(domain);
 
-  for (const host of hostsToVerify(domain)) {
-    const cnameRecords = await safeResolveCname(host);
-    const expectedCname = expectedCnameDisplay();
-
-    if (cnameRecords?.length) {
-      const match = cnameRecords.find((record) => cnameMatchesTarget(record, cnameTargets));
-      checks.push({
-        host,
-        recordType: "CNAME",
-        expected: expectedCname,
-        actual: cnameRecords.join(", "),
-        ok: Boolean(match),
-        note: host.startsWith("www.") ? "Recomendado para dominio raíz" : undefined,
-      });
-      if (match) anyOk = true;
-      continue;
-    }
-
-    const aRecords = await safeResolveA(host);
-    const expectedA = expectedADisplay();
-
-    if (aRecords?.length) {
-      const match = aRecords.find((record) => aMatchesTarget(record, aTargets));
-      checks.push({
-        host,
-        recordType: "A",
-        expected: expectedA,
-        actual: aRecords.join(", "),
-        ok: Boolean(match),
-        note: "Registro A para dominio raíz (@)",
-      });
-      if (match) anyOk = true;
-      continue;
-    }
-
-    checks.push({
-      host,
-      recordType: "CNAME",
-      expected: expectedCname,
-      actual: null,
-      ok: false,
-      note: "No encontramos CNAME ni A válido para este host.",
-    });
+  if (isApex) {
+    // Estándar Vercel/DNS: www = CNAME; apex (@) = A. Sin mezclar.
+    checks.push(await checkCnameHost(`www.${domain}`, cnameTargets));
+    checks.push(await checkApexAHost(domain, aTargets));
+  } else {
+    // Subdominio (tienda.tudominio.com): solo CNAME.
+    checks.push(await checkCnameHost(domain, cnameTargets));
   }
 
-  if (anyOk) {
+  // Con dominio apex basta con que www O @ apunten bien para activar.
+  // (No exigimos A en www ni CNAME en @.)
+  const ok = checks.some((check) => check.ok);
+
+  if (ok) {
+    const wwwOk = checks.some(
+      (check) => check.recordType === "CNAME" && check.ok,
+    );
+    const apexOk = checks.some(
+      (check) => check.recordType === "A" && check.ok,
+    );
+    const summaryParts: string[] = [];
+    if (wwwOk) summaryParts.push("www con CNAME");
+    if (apexOk) summaryParts.push("raíz (@) con registro A");
+
     return {
       ok: true,
       status: "success",
       message: "Conexión correcta",
       summary:
-        "Tu dominio ya apunta a Alcéntimo. Activamos la dirección segura automáticamente.",
+        summaryParts.length > 0
+          ? `Detectamos ${summaryParts.join(" y ")}. Activamos la dirección segura automáticamente.`
+          : "Tu dominio ya apunta a Alcéntimo. Activamos la dirección segura automáticamente.",
       checks,
       suggestions: [],
     };
@@ -254,6 +322,8 @@ export async function verifyCustomDomainDns(
 
   const suggestions = buildSuggestions(domain, checks);
   const hasAnyRecord = checks.some((check) => check.actual);
+  const cnameTarget = expectedCnameDisplay();
+  const aTarget = expectedADisplay();
 
   return {
     ok: false,
@@ -261,9 +331,13 @@ export async function verifyCustomDomainDns(
     message: hasAnyRecord
       ? "Hay que ajustar el destino"
       : "Aún no lo vemos listo",
-    summary: hasAnyRecord
-      ? "Encontramos una configuración, pero el destino no coincide. Revisa Nombre y Destino en el paso 2."
-      : "Todavía no vemos los datos pegados. Si ya los guardaste en tu proveedor, espera un poco y vuelve a comprobar.",
+    summary: isApex
+      ? hasAnyRecord
+        ? `Encontramos una configuración, pero no coincide: www → CNAME a ${cnameTarget}; @ → A a ${aTarget}.`
+        : `Todavía no vemos los registros. Recuerda: www usa CNAME a ${cnameTarget}; el dominio raíz (@) usa A a ${aTarget}.`
+      : hasAnyRecord
+        ? `Encontramos una configuración, pero el CNAME no apunta a ${cnameTarget}.`
+        : `Todavía no vemos el CNAME apuntando a ${cnameTarget}.`,
     checks,
     suggestions,
   };

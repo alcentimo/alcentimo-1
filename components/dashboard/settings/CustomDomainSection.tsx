@@ -238,8 +238,8 @@ export function CustomDomainSection({
           : "Conexión de tu subdominio",
       plainHint:
         isApex || !savedDomain
-          ? `Crea un registro CNAME con host www apuntando a ${cnameTarget}.`
-          : `Crea un registro CNAME apuntando a ${cnameTarget}.`,
+          ? `Registro CNAME: host www → ${cnameTarget}. No uses un registro A en www.`
+          : `Registro CNAME apuntando a ${cnameTarget}.`,
     },
     ...(showApexARecord
       ? [
@@ -249,7 +249,7 @@ export function CustomDomainSection({
             host: "@",
             value: apexTarget,
             title: "Dominio raíz (@)",
-            plainHint: `Crea un registro A apuntando a la IP de Vercel ${apexTarget} (para ${apexLabel} sin www).`,
+            plainHint: `Registro A: host @ → ${apexTarget} (IP de Vercel). Solo para ${apexLabel} sin www; no uses CNAME en @.`,
           },
         ]
       : []),
@@ -513,12 +513,27 @@ export function CustomDomainSection({
               </h3>
             </div>
             <p className="domain-guide-card-text">
-              No hace falta saber de tecnología: abre el sitio donde compraste el
-              dominio, busca la sección <strong>DNS</strong> y pega lo de abajo.
-              Para <strong>www</strong> usa un <strong>CNAME → {cnameTarget}</strong>.
-              Para el dominio raíz (<strong>@</strong>) usa un{" "}
-              <strong>A → {apexTarget}</strong>. Suele tardar unos minutos (a
-              veces unas horas).
+              {isApex || !savedDomain ? (
+                <>
+                  Abre el DNS de tu proveedor y crea exactamente estos registros:
+                  <br />
+                  <strong>www</strong> → tipo <strong>CNAME</strong> → destino{" "}
+                  <strong>{cnameTarget}</strong>
+                  <br />
+                  <strong>@</strong> (dominio sin www) → tipo <strong>A</strong> →
+                  IP <strong>{apexTarget}</strong>
+                  <br />
+                  No pongas un registro A en www ni un CNAME en @. Suele tardar
+                  unos minutos (a veces unas horas).
+                </>
+              ) : (
+                <>
+                  Abre el DNS de tu proveedor y crea un registro{" "}
+                  <strong>CNAME</strong> apuntando a <strong>{cnameTarget}</strong>.
+                  No uses un registro A para este subdominio. Suele tardar unos
+                  minutos (a veces unas horas).
+                </>
+              )}
             </p>
 
             <div className="domain-guide-provider-tabs" role="tablist" aria-label="Proveedor">

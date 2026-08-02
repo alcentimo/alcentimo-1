@@ -21,13 +21,13 @@ function renderSuggestionText(text: string) {
 }
 
 function friendlyCheckLabel(host: string, recordType: string): string {
-  if (host.startsWith("www.")) {
-    return "Versión con www";
-  }
   if (recordType === "A") {
-    return "Dominio sin www";
+    return "Dominio raíz (@) · registro A";
   }
-  return "Dirección de tu tienda";
+  if (host.startsWith("www.")) {
+    return "Versión con www · CNAME";
+  }
+  return "Subdominio · CNAME";
 }
 
 export function CustomDomainVerificationPanel({
