@@ -20,6 +20,16 @@ function renderSuggestionText(text: string) {
   );
 }
 
+function friendlyCheckLabel(host: string, recordType: string): string {
+  if (host.startsWith("www.")) {
+    return "Versión con www";
+  }
+  if (recordType === "A") {
+    return "Dominio sin www";
+  }
+  return "Dirección de tu tienda";
+}
+
 export function CustomDomainVerificationPanel({
   verification,
   verifying,
@@ -27,12 +37,14 @@ export function CustomDomainVerificationPanel({
   if (verifying) {
     return (
       <div
-        className="domain-dns-verify domain-dns-verify-pending"
+        className="domain-dns-verify domain-dns-verify-pending mt-4"
         role="status"
         aria-live="polite"
       >
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-        <p className="text-sm font-medium">Comprobando registros DNS…</p>
+        <p className="text-sm font-medium">
+          Revisando si tu dominio ya apunta a Alcéntimo…
+        </p>
       </div>
     );
   }
@@ -49,13 +61,29 @@ export function CustomDomainVerificationPanel({
   const Icon =
     verification.status === "success" ? CheckCircle2 : AlertCircle;
 
+  const headline =
+    verification.status === "success"
+      ? "¡Conexión correcta!"
+      : verification.status === "pending"
+        ? "Aún no lo vemos listo"
+        : "Hay que ajustar algo";
+
+  const summary =
+    verification.status === "success"
+      ? "Tu dominio ya apunta bien. Activamos el candado de seguridad (HTTPS) automáticamente."
+      : verification.summary;
+
   return (
-    <div className={cn("domain-dns-verify", toneClass)} role="status" aria-live="polite">
+    <div
+      className={cn("domain-dns-verify mt-4", toneClass)}
+      role="status"
+      aria-live="polite"
+    >
       <div className="flex items-start gap-3">
         <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">{verification.message}</p>
-          <p className="mt-1 text-xs leading-relaxed opacity-90">{verification.summary}</p>
+          <p className="text-sm font-semibold">{headline}</p>
+          <p className="mt-1 text-xs leading-relaxed opacity-90">{summary}</p>
 
           {verification.checks.length > 0 ? (
             <ul className="domain-dns-check-list mt-3 space-y-2">
@@ -68,31 +96,29 @@ export function CustomDomainVerificationPanel({
                   )}
                 >
                   <p className="font-medium">
-                    {check.host} · {check.recordType}
-                    {check.ok ? " ✓" : " ✗"}
+                    {friendlyCheckLabel(check.host, check.recordType)}
+                    {check.ok ? " · bien" : " · pendiente"}
                   </p>
                   <p className="mt-0.5 opacity-90">
-                    Esperado: <code>{check.expected}</code>
+                    Debe apuntar a: <code>{check.expected}</code>
                   </p>
                   <p className="mt-0.5 opacity-90">
-                    Detectado:{" "}
-                    <code>{check.actual ?? "sin registro"}</code>
+                    Ahora vemos:{" "}
+                    <code>{check.actual ?? "todavía no configurado"}</code>
                   </p>
-                  {check.note ? (
-                    <p className="mt-1 text-[11px] opacity-80">{check.note}</p>
-                  ) : null}
                 </li>
               ))}
             </ul>
           ) : null}
 
-          {verification.suggestions.length > 0 ? (
+          {verification.suggestions.length > 0 &&
+          verification.status !== "success" ? (
             <div className="mt-3 rounded-lg border border-current/15 bg-black/5 px-3 py-2.5 dark:bg-white/5">
-              <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-                Qué corregir en tu proveedor
+              <p className="text-xs font-semibold opacity-90">
+                Tips para terminar
               </p>
               <ul className="mt-2 space-y-1.5 text-xs leading-relaxed">
-                {verification.suggestions.map((suggestion) => (
+                {verification.suggestions.slice(0, 3).map((suggestion) => (
                   <li key={suggestion} className="flex gap-2">
                     <span aria-hidden="true">•</span>
                     <span>{renderSuggestionText(suggestion)}</span>

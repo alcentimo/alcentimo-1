@@ -1,10 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Copy, Globe, Headphones, Loader2, RefreshCw } from "lucide-react";
 import {
-  SettingsSection,
-} from "@/components/dashboard/settings/SettingsLayout";
+  Check,
+  Copy,
+  ExternalLink,
+  Globe,
+  Headphones,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
+import { SettingsSection } from "@/components/dashboard/settings/SettingsLayout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -38,71 +45,115 @@ interface DnsRecordRow {
   type: "CNAME" | "A";
   host: string;
   value: string;
-  note?: string;
+  title: string;
+  plainHint: string;
 }
 
-function DnsRecordsTable({
-  records,
-  copiedKey,
-  onCopy,
+type ProviderGuideId = "cloudflare" | "godaddy" | "namecheap" | "other";
+
+const PROVIDER_GUIDES: Array<{
+  id: ProviderGuideId;
+  label: string;
+  steps: string[];
+}> = [
+  {
+    id: "cloudflare",
+    label: "Cloudflare",
+    steps: [
+      "Entra a Cloudflare → tu dominio → DNS.",
+      "Pulsa «Añadir registro» y pega los valores de abajo (copia con un clic).",
+      "Guarda. Si ves un proxy naranja, déjalo en «Solo DNS» (gris) para dominios personalizados.",
+      "Vuelve aquí y pulsa «Comprobar si ya está listo».",
+    ],
+  },
+  {
+    id: "godaddy",
+    label: "GoDaddy",
+    steps: [
+      "Entra a GoDaddy → Mis productos → DNS de tu dominio.",
+      "Añade un registro nuevo y pega Nombre y Destino de la tarjeta de abajo.",
+      "Guarda los cambios (a veces pide confirmar).",
+      "Vuelve aquí y pulsa «Comprobar si ya está listo».",
+    ],
+  },
+  {
+    id: "namecheap",
+    label: "Namecheap",
+    steps: [
+      "Entra a Namecheap → Domain List → Manage → Advanced DNS.",
+      "Añade el registro Host Records con los valores de la tarjeta.",
+      "Guarda la fila (el check verde).",
+      "Vuelve aquí y pulsa «Comprobar si ya está listo».",
+    ],
+  },
+  {
+    id: "other",
+    label: "Otro",
+    steps: [
+      "Abre el panel donde compraste el dominio (busca «DNS» o «Zona DNS»).",
+      "Crea un registro nuevo y pega Nombre y Destino de la tarjeta de abajo.",
+      "Guarda. Puede tardar desde minutos hasta unas horas en actualizarse.",
+      "Vuelve aquí y pulsa «Comprobar si ya está listo».",
+    ],
+  },
+];
+
+function StepPill({
+  number,
+  label,
+  state,
 }: {
-  records: DnsRecordRow[];
-  copiedKey: string | null;
-  onCopy: (key: string, value: string) => void;
+  number: number;
+  label: string;
+  state: "done" | "current" | "upcoming";
 }) {
   return (
-    <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200/80 bg-white dark:border-zinc-700 dark:bg-zinc-950">
-      <table className="min-w-full text-left text-xs">
-        <thead>
-          <tr className="border-b border-zinc-200/80 text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-            <th className="px-3 py-2 font-medium">Tipo</th>
-            <th className="px-3 py-2 font-medium">Host / Nombre</th>
-            <th className="px-3 py-2 font-medium">Valor / Destino</th>
-            <th className="px-3 py-2 font-medium sr-only">Copiar</th>
-          </tr>
-        </thead>
-        <tbody>
-          {records.map((record) => (
-            <tr
-              key={record.key}
-              className="border-b border-zinc-100 last:border-0 dark:border-zinc-800/80"
-            >
-              <td className="px-3 py-2.5 font-medium text-zinc-800 dark:text-zinc-100">
-                {record.type}
-              </td>
-              <td className="px-3 py-2.5">
-                <code className="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-900">
-                  {record.host}
-                </code>
-              </td>
-              <td className="px-3 py-2.5">
-                <code className="break-all rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-900">
-                  {record.value}
-                </code>
-                {record.note ? (
-                  <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
-                    {record.note}
-                  </p>
-                ) : null}
-              </td>
-              <td className="px-3 py-2.5">
-                <button
-                  type="button"
-                  onClick={() => onCopy(record.key, record.value)}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 px-2 py-1 text-[11px] font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
-                >
-                  {copiedKey === record.key ? (
-                    <Check className="h-3 w-3" aria-hidden="true" />
-                  ) : (
-                    <Copy className="h-3 w-3" aria-hidden="true" />
-                  )}
-                  Copiar
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div
+      className={cn(
+        "domain-guide-step-pill",
+        state === "done" && "domain-guide-step-pill-done",
+        state === "current" && "domain-guide-step-pill-current",
+        state === "upcoming" && "domain-guide-step-pill-upcoming",
+      )}
+    >
+      <span className="domain-guide-step-num" aria-hidden="true">
+        {state === "done" ? <Check className="h-3.5 w-3.5" /> : number}
+      </span>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function CopyChip({
+  label,
+  value,
+  copied,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  return (
+    <div className="domain-guide-copy-chip">
+      <div className="min-w-0">
+        <p className="domain-guide-copy-label">{label}</p>
+        <code className="domain-guide-copy-value">{value}</code>
+      </div>
+      <button
+        type="button"
+        onClick={onCopy}
+        className="domain-guide-copy-btn"
+        aria-label={`Copiar ${label}`}
+      >
+        {copied ? (
+          <Check className="h-3.5 w-3.5" aria-hidden="true" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+        )}
+        {copied ? "Copiado" : "Copiar"}
+      </button>
     </div>
   );
 }
@@ -115,12 +166,16 @@ export function CustomDomainSection({
   initialDomainMode = null,
 }: CustomDomainSectionProps) {
   const { supportEmail } = usePlatformSettings();
-  const [domainInput, setDomainInput] = useState(customDomain ?? initialDomain ?? "");
+  const [domainInput, setDomainInput] = useState(
+    customDomain ?? initialDomain ?? "",
+  );
   const [savedDomain, setSavedDomain] = useState(customDomain);
   const [savedVerified, setSavedVerified] = useState(customDomainVerified);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [providerGuide, setProviderGuide] =
+    useState<ProviderGuideId>("cloudflare");
   const [verification, setVerification] =
     useState<CustomDomainDnsVerificationResult | null>(null);
   const [pending, startTransition] = useTransition();
@@ -130,39 +185,68 @@ export function CustomDomainSection({
   const apexTarget = getCustomDomainApexATarget();
   const dnsHost = savedDomain ? getCustomDomainDnsHostLabel(savedDomain) : "www";
   const isApex = savedDomain ? isApexCustomDomain(savedDomain) : false;
-  const publicUrl = savedDomain && savedVerified
-    ? getStoreCatalogPublicUrl(storeSlug, "/", {
-        customDomain: savedDomain,
-        customDomainVerified: true,
-      })
-    : null;
+  const publicUrl =
+    savedDomain && savedVerified
+      ? getStoreCatalogPublicUrl(storeSlug, "/", {
+          customDomain: savedDomain,
+          customDomainVerified: true,
+        })
+      : null;
+
+  const guideDomain = savedDomain ?? domainInput.trim() ?? "tutienda.com";
 
   const managedDomainMailto = supportEmail
     ? `mailto:${supportEmail}?subject=${encodeURIComponent("Dominio personalizado — gestión por Alcentimo")}&body=${encodeURIComponent("Hola, me gustaría que Alcentimo compre o configure mi dominio personalizado para mi tienda.\n\nDominio deseado: \nTienda: " + storeSlug)}`
     : null;
 
+  const hostForGuide = savedDomain ? (isApex ? "www" : dnsHost) : "www";
+  const apexLabel = guideDomain.replace(/^www\./, "");
   const dnsRecords: DnsRecordRow[] = [
     {
       key: "cname",
       type: "CNAME",
-      host: isApex ? "www" : dnsHost,
+      host: hostForGuide,
       value: cnameTarget,
-      note: isApex
-        ? "Recomendado: redirige www.tudominio.com hacia Alcentimo."
-        : "Para subdominios como tienda.tudominio.com.",
+      title:
+        isApex || !savedDomain
+          ? "Conexión principal (www)"
+          : "Conexión de tu subdominio",
+      plainHint:
+        isApex || !savedDomain
+          ? `Para que www.${apexLabel} abra tu tienda.`
+          : `Para que ${guideDomain} abra tu tienda.`,
     },
-    ...(apexTarget
+    ...(apexTarget && (isApex || !savedDomain)
       ? [
           {
             key: "a",
             type: "A" as const,
             host: "@",
             value: apexTarget,
-            note: "Solo si quieres usar el dominio raíz (tudominio.com).",
+            title: "Dominio sin www (opcional)",
+            plainHint: `Para que ${apexLabel} también funcione sin www.`,
           },
         ]
       : []),
   ];
+
+  const step1State: "done" | "current" | "upcoming" = savedDomain
+    ? "done"
+    : "current";
+  const step2State: "done" | "current" | "upcoming" = savedVerified
+    ? "done"
+    : savedDomain
+      ? "current"
+      : "upcoming";
+  const step3State: "done" | "current" | "upcoming" = savedVerified
+    ? "done"
+    : savedDomain
+      ? "current"
+      : "upcoming";
+
+  const activeProvider =
+    PROVIDER_GUIDES.find((guide) => guide.id === providerGuide) ??
+    PROVIDER_GUIDES[0];
 
   async function copyValue(key: string, value: string) {
     try {
@@ -192,9 +276,7 @@ export function CustomDomainSection({
 
       if (result.customDomainVerified) {
         setSavedVerified(true);
-        setSuccess(
-          "Dominio verificado y activo. Tu catálogo ya responde en esta URL.",
-        );
+        setSuccess("¡Listo! Tu dominio ya está activo en tu tienda.");
       } else if (result.verification && !result.verification.ok) {
         setSuccess(null);
       }
@@ -221,9 +303,8 @@ export function CustomDomainSection({
 
       if (result.customDomain) {
         setSuccess(
-          "Dominio guardado como pendiente de verificación. Configura el DNS y comprueba la conexión; solo entonces se registra en Vercel.",
+          "Dominio guardado. Sigue el paso 2 para conectarlo (solo unos minutos).",
         );
-        await executeVerification(result.customDomain);
       } else {
         setSuccess("Dominio eliminado.");
         setVerification(null);
@@ -238,7 +319,7 @@ export function CustomDomainSection({
     startTransition(async () => {
       const domainToCheck = domainInput.trim();
       if (!domainToCheck) {
-        setError("Ingresa un dominio válido antes de verificar.");
+        setError("Escribe tu dominio antes de comprobar la conexión.");
         return;
       }
 
@@ -257,7 +338,7 @@ export function CustomDomainSection({
       }
 
       if (!domainForVerify) {
-        setError("Ingresa un dominio válido antes de verificar.");
+        setError("Escribe tu dominio antes de comprobar la conexión.");
         return;
       }
 
@@ -286,133 +367,323 @@ export function CustomDomainSection({
 
   return (
     <SettingsSection
-      title="Dominio personalizado"
-      description="Usa tu propio dominio (ej. tutienda.com) para que tus clientes vean tu marca en la URL pública."
+      title="Tu dominio propio"
+      description="Haz que tus clientes te encuentren en tutienda.com en lugar del enlace de Alcéntimo. Te guiamos paso a paso."
     >
       {initialDomain && !customDomain ? (
-        <div className="rounded-xl border border-violet-200/80 bg-violet-50/60 px-4 py-3 text-sm text-violet-900 dark:border-violet-900/40 dark:bg-violet-950/20 dark:text-violet-200">
+        <div className="domain-guide-callout domain-guide-callout-accent">
           <p className="font-medium">
-            Dominio seleccionado al activar tu plan: {initialDomain}
+            Elegiste este dominio al activar tu plan: {initialDomain}
           </p>
           <p className="mt-1 text-xs opacity-90">
             {initialDomainMode === "purchase"
-              ? "Guarda el dominio abajo y regístralo con tu proveedor; luego conecta el DNS."
-              : "Guarda el dominio y configura los registros DNS indicados más abajo."}
+              ? "Guárdalo abajo, cómpralo si aún no lo tienes, y sigue la guía para conectarlo."
+              : "Guárdalo abajo y sigue la guía visual para conectarlo."}
           </p>
         </div>
       ) : null}
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="custom-domain-input" className="payment-field-label">
-            Tu dominio
-          </Label>
-          <Input
-            id="custom-domain-input"
-            type="text"
-            placeholder="tutienda.com o tienda.tudominio.com"
-            value={domainInput}
-            onChange={(event) => setDomainInput(event.target.value)}
-            className="payment-field-input mt-1.5"
-            autoComplete="off"
-            spellCheck={false}
-          />
-          <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-            Puedes usar un subdominio (<strong>tienda</strong>, <strong>www</strong>) o
-            el dominio raíz. Tras guardar, configura los registros DNS indicados abajo.
-          </p>
-        </div>
 
+      <div className="domain-guide-steps" aria-label="Pasos para conectar tu dominio">
+        <StepPill number={1} label="Escribe tu dominio" state={step1State} />
+        <StepPill number={2} label="Conéctalo" state={step2State} />
+        <StepPill number={3} label="Actívalo" state={step3State} />
+      </div>
+
+      <div className="space-y-5">
+        {/* Paso 1 */}
+        <section className="domain-guide-card">
+          <div className="domain-guide-card-head">
+            <span className="domain-guide-badge">Paso 1</span>
+            <h3 className="domain-guide-card-title">Escribe el dominio que quieres usar</h3>
+          </div>
+          <p className="domain-guide-card-text">
+            Puede ser el dominio completo (<strong>tutienda.com</strong>) o un
+            subdominio (<strong>tienda.tudominio.com</strong>).
+          </p>
+
+          <div className="mt-4">
+            <Label htmlFor="custom-domain-input" className="payment-field-label">
+              Dominio
+            </Label>
+            <Input
+              id="custom-domain-input"
+              type="text"
+              placeholder="ejemplo: tutienda.com"
+              value={domainInput}
+              onChange={(event) => setDomainInput(event.target.value)}
+              className="payment-field-input mt-1.5"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={pending || verifying}
+            >
+              {pending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  Guardando…
+                </>
+              ) : (
+                "Guardar y continuar"
+              )}
+            </Button>
+            {savedDomain ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClear}
+                disabled={pending || verifying}
+              >
+                Quitar dominio
+              </Button>
+            ) : null}
+          </div>
+        </section>
+
+        {/* Estado del dominio */}
         {savedDomain ? (
           <div
             className={cn(
-              "rounded-xl border px-4 py-3 text-sm",
+              "domain-guide-status",
               savedVerified
-                ? "border-emerald-200 bg-emerald-50/70 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-200"
-                : "border-amber-200 bg-amber-50/70 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200",
+                ? "domain-guide-status-ok"
+                : "domain-guide-status-pending",
             )}
           >
-            <div className="flex items-start gap-2">
-              <Globe className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              <div className="min-w-0">
-                <p className="font-medium">{savedDomain}</p>
-                <p className="mt-1 text-xs opacity-90">
-                  {savedVerified
-                    ? "Dominio activo y verificado. Tu catálogo responde en esta URL."
-                    : "Pendiente de verificación. Configura el DNS y pulsa «Verificar conexión»; el dominio solo se registra en Vercel cuando demuestres el control."}
-                </p>
-                {publicUrl ? (
-                  <p className="mt-2 break-all text-xs">{publicUrl}</p>
-                ) : null}
-              </div>
+            <Globe className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="font-medium">{savedDomain}</p>
+              <p className="mt-1 text-xs opacity-90">
+                {savedVerified
+                  ? "Activo: tu catálogo ya responde en esta dirección."
+                  : "Guardado. Falta conectarlo en el panel donde compraste el dominio (paso 2)."}
+              </p>
+              {publicUrl ? (
+                <a
+                  href={publicUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 break-all text-xs font-medium underline underline-offset-2"
+                >
+                  {publicUrl}
+                  <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
+                </a>
+              ) : null}
             </div>
           </div>
         ) : null}
 
-        <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-            Instrucciones DNS
-          </p>
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">
-            En el panel DNS de tu proveedor (GoDaddy, Cloudflare, Namecheap, etc.),
-            crea los registros que correspondan. La propagación puede tardar hasta 24 horas.
-          </p>
-
-          <DnsRecordsTable
-            records={dnsRecords}
-            copiedKey={copiedKey}
-            onCopy={copyValue}
-          />
-
-          {isApex && !apexTarget ? (
-            <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">
-              Para el dominio raíz (@), algunos proveedores no permiten CNAME.
-              Escríbenos y te ayudamos a configurarlo manualmente.
+        {/* Paso 2 — solo cuando hay dominio guardado y no está verificado */}
+        {savedDomain && !savedVerified ? (
+          <section className="domain-guide-card domain-guide-card-emphasis">
+            <div className="domain-guide-card-head">
+              <span className="domain-guide-badge">Paso 2</span>
+              <h3 className="domain-guide-card-title">
+                Copia estos datos en el panel de tu dominio
+              </h3>
+            </div>
+            <p className="domain-guide-card-text">
+              No hace falta saber de tecnología: abre el sitio donde compraste el
+              dominio, busca la sección <strong>DNS</strong> y pega lo de abajo.
+              Suele tardar unos minutos (a veces unas horas).
             </p>
-          ) : null}
 
-          {!savedVerified && savedDomain ? (
-            <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-300">
-              Tras crear los registros en tu proveedor, pulsa{" "}
-              <strong>Verificar conexión</strong>. Primero comprobamos el DNS; solo
-              si apunta a Alcentimo registramos el dominio en Vercel y activamos SSL.
+            <div className="domain-guide-provider-tabs" role="tablist" aria-label="Proveedor">
+              {PROVIDER_GUIDES.map((guide) => (
+                <button
+                  key={guide.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={providerGuide === guide.id}
+                  className={cn(
+                    "domain-guide-provider-tab",
+                    providerGuide === guide.id && "domain-guide-provider-tab-active",
+                  )}
+                  onClick={() => setProviderGuide(guide.id)}
+                >
+                  {guide.label}
+                </button>
+              ))}
+            </div>
+
+            <ol className="domain-guide-provider-steps">
+              {activeProvider.steps.map((step, index) => (
+                <li key={step}>
+                  <span className="domain-guide-provider-step-num" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+
+            <div className="mt-4 space-y-3">
+              {dnsRecords.map((record) => (
+                <article key={record.key} className="domain-guide-record-card">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                        {record.title}
+                      </p>
+                      <p className="mt-0.5 text-xs text-zinc-600 dark:text-zinc-300">
+                        {record.plainHint}
+                      </p>
+                    </div>
+                    <span className="domain-guide-record-type" title="Tipo técnico del registro">
+                      {record.type}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <CopyChip
+                      label="Nombre / Host"
+                      value={record.host}
+                      copied={copiedKey === `${record.key}-host`}
+                      onCopy={() => copyValue(`${record.key}-host`, record.host)}
+                    />
+                    <CopyChip
+                      label="Destino / Valor"
+                      value={record.value}
+                      copied={copiedKey === `${record.key}-value`}
+                      onCopy={() => copyValue(`${record.key}-value`, record.value)}
+                    />
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {isApex && !apexTarget ? (
+              <p className="mt-3 text-xs text-amber-800 dark:text-amber-200">
+                Si quieres usar el dominio sin www y tu proveedor no lo permite
+                fácil, escríbenos y te ayudamos.
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {/* Paso 3 */}
+        {savedDomain && !savedVerified ? (
+          <section className="domain-guide-card">
+            <div className="domain-guide-card-head">
+              <span className="domain-guide-badge">Paso 3</span>
+              <h3 className="domain-guide-card-title">Comprueba que ya quedó conectado</h3>
+            </div>
+            <p className="domain-guide-card-text">
+              Cuando hayas pegado los datos en tu proveedor, pulsa el botón. Si
+              aún no está listo, te diremos qué falta con palabras simples.
             </p>
-          ) : null}
-        </div>
 
-        <CustomDomainVerificationPanel
-          verification={verification}
-          verifying={verifying}
-        />
+            <div className="mt-4">
+              <Button
+                type="button"
+                onClick={handleVerifyConnection}
+                disabled={pending || verifying}
+                className="min-w-[12rem]"
+              >
+                {verifying ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Comprobando…
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                    Comprobar si ya está listo
+                  </>
+                )}
+              </Button>
+            </div>
 
-        <div className="rounded-xl border border-zinc-200/80 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
-          <div className="flex items-start gap-3">
+            <CustomDomainVerificationPanel
+              verification={verification}
+              verifying={verifying}
+            />
+          </section>
+        ) : null}
+
+        {savedVerified ? (
+          <div className="domain-guide-callout domain-guide-callout-success">
+            <Sparkles className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <div>
+              <p className="font-medium">Tu marca ya luce en la URL</p>
+              <p className="mt-1 text-xs opacity-90">
+                Comparte {savedDomain} con tus clientes. Si algo deja de funcionar,
+                puedes quitar el dominio y volver a conectarlo.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        {!savedDomain ? (
+          <div className="domain-guide-help">
             <Headphones
               className="mt-0.5 h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400"
               aria-hidden="true"
             />
             <div className="min-w-0">
               <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                ¿Aún no tienes un dominio? Adquiérelo de forma segura en nuestro
-                proveedor recomendado:
+                ¿Aún no tienes dominio?
               </p>
-              <div className="mt-3">
+              <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
+                Puedes comprarlo en minutos y luego volver aquí a conectarlo con
+                la misma guía.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
                 <a
                   href="https://www.cloudflare.com/es-es/products/registrar/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center rounded-lg bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
                 >
-                  Comprar en Cloudflare Registrar
+                  Comprar dominio
                 </a>
-              </div>
-              <p className="mt-4 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-                ¿Ya lo compraste o necesitas ayuda con la configuración DNS?
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
                 {managedDomainMailto ? (
                   <a
                     href={managedDomainMailto}
-                    className="inline-flex items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    className="inline-flex items-center rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    Pedir ayuda a soporte
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.dispatchEvent(
+                        new CustomEvent("alcentimo:open-support"),
+                      );
+                    }}
+                    className="inline-flex items-center rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    Pedir ayuda a soporte
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="domain-guide-help">
+            <Headphones
+              className="mt-0.5 h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400"
+              aria-hidden="true"
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                ¿Te trabaste en algún paso?
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
+                Escríbenos y te ayudamos a conectarlo. También puedes pedirnos
+                que lo configuremos por ti.
+              </p>
+              <div className="mt-3">
+                {managedDomainMailto ? (
+                  <a
+                    href={managedDomainMailto}
+                    className="inline-flex items-center rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
                   >
                     Contactar soporte
                   </a>
@@ -420,9 +691,11 @@ export function CustomDomainSection({
                   <button
                     type="button"
                     onClick={() => {
-                      window.dispatchEvent(new CustomEvent("alcentimo:open-support"));
+                      window.dispatchEvent(
+                        new CustomEvent("alcentimo:open-support"),
+                      );
                     }}
-                    className="inline-flex items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    className="inline-flex items-center rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
                   >
                     Contactar soporte
                   </button>
@@ -430,7 +703,7 @@ export function CustomDomainSection({
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {error ? (
           <p className="text-xs text-red-600 dark:text-red-400" role="alert">
@@ -438,53 +711,13 @@ export function CustomDomainSection({
           </p>
         ) : null}
         {success ? (
-          <p className="text-xs text-emerald-700 dark:text-emerald-300" role="status">
+          <p
+            className="text-xs text-emerald-700 dark:text-emerald-300"
+            role="status"
+          >
             {success}
           </p>
         ) : null}
-
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={handleSave} disabled={pending || verifying}>
-            {pending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Guardando…
-              </>
-            ) : (
-              "Guardar dominio"
-            )}
-          </Button>
-          {savedDomain || domainInput.trim() ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleVerifyConnection}
-              disabled={pending || verifying}
-            >
-              {verifying ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  Verificando…
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
-                  Verificar conexión
-                </>
-              )}
-            </Button>
-          ) : null}
-          {savedDomain ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClear}
-              disabled={pending || verifying}
-            >
-              Quitar dominio
-            </Button>
-          ) : null}
-        </div>
       </div>
     </SettingsSection>
   );

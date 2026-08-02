@@ -262,9 +262,9 @@ export async function verifyCustomDomainDns(
     return {
       ok: true,
       status: "success",
-      message: "Conexión DNS correcta",
+      message: "Conexión correcta",
       summary:
-        "Detectamos que tu dominio ya apunta a Alcentimo. Activaremos la URL pública en cuanto confirmes.",
+        "Tu dominio ya apunta a Alcéntimo. Activamos la dirección segura automáticamente.",
       checks,
       suggestions: [],
     };
@@ -277,11 +277,11 @@ export async function verifyCustomDomainDns(
     ok: false,
     status: hasAnyRecord ? "error" : "pending",
     message: hasAnyRecord
-      ? "DNS detectado, pero aún no apunta a Alcentimo"
-      : "Aún no detectamos los registros DNS",
+      ? "Hay que ajustar el destino"
+      : "Aún no lo vemos listo",
     summary: hasAnyRecord
-      ? "Encontramos registros, pero no coinciden con lo que necesita la plataforma. Revisa la tabla y corrige en tu proveedor."
-      : "Todavía no vemos el CNAME o registro A configurado. Si ya lo creaste, puede estar propagándose.",
+      ? "Encontramos una configuración, pero el destino no coincide. Revisa Nombre y Destino en el paso 2."
+      : "Todavía no vemos los datos pegados. Si ya los guardaste en tu proveedor, espera un poco y vuelve a comprobar.",
     checks,
     suggestions,
   };

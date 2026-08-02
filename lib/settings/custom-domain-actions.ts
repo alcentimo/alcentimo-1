@@ -296,13 +296,13 @@ export async function verifyStoreCustomDomainRequest(
         ...verification,
         ok: false,
         status: "pending",
-        message: "DNS correcto. Vercel aún está emitiendo el certificado SSL.",
+        message: "Casi listo: activando la conexión segura",
         summary:
-          "Tu DNS ya apunta bien y el dominio se registró en Vercel. Espera unos minutos y vuelve a verificar para activar HTTPS.",
+          "Tu dominio ya apunta bien. Estamos activando el candado de seguridad (HTTPS). Espera unos minutos y vuelve a comprobar.",
         suggestions: [
           ...(verification.suggestions ?? []),
-          "Vercel emite el certificado SSL automáticamente cuando el DNS está bien. Suele tardar unos minutos.",
-          "Si usas apex (midominio.com), asegúrate del registro A 76.76.21.21 y/o CNAME en www.",
+          "El candado HTTPS se activa solo; suele tardar unos minutos.",
+          "Si usas el dominio sin www, confirma también el registro opcional del paso 2.",
         ],
       },
     };
@@ -332,7 +332,7 @@ export async function verifyStoreCustomDomainRequest(
     verification: {
       ...verification,
       summary:
-        "Tu dominio apunta correctamente a Alcentimo, el SSL de Vercel está listo y el catálogo ya está activo.",
+        "Tu dominio apunta a Alcéntimo, la conexión segura está lista y tu catálogo ya está activo.",
     },
   };
 }

@@ -47,13 +47,12 @@ export function DomainsTab({
             />
             <div className="min-w-0">
               <p className="text-sm font-medium text-teal-900 dark:text-teal-100">
-                Conexión de dominio personalizado en planes de pago
+                Usa tu propio dominio (tutienda.com)
               </p>
               <p className="mt-1 text-xs leading-relaxed text-teal-800/90 dark:text-teal-200/90">
-                Conecta un dominio que ya posees (por ejemplo{" "}
-                <strong>tutienda.com</strong>) apuntando el DNS hacia Alcentimo.
-                El registro del dominio corre por tu cuenta; nosotros te guiamos
-                en la conexión. Disponible desde el plan Pro.
+                En planes de pago te guiamos paso a paso para conectar el dominio
+                que ya compraste. Sin complicaciones: copias unos datos, pegas y
+                listo. Disponible desde el plan Pro.
               </p>
               <Link
                 href="/dashboard/planes"
