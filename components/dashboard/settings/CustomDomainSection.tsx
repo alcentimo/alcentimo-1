@@ -225,6 +225,7 @@ export function CustomDomainSection({
 
   const hostForGuide = savedDomain ? (isApex ? "www" : dnsHost) : "www";
   const apexLabel = guideDomain.replace(/^www\./, "");
+  const showApexARecord = isApex || !savedDomain;
   const dnsRecords: DnsRecordRow[] = [
     {
       key: "cname",
@@ -233,22 +234,22 @@ export function CustomDomainSection({
       value: cnameTarget,
       title:
         isApex || !savedDomain
-          ? "Conexión principal (www)"
+          ? "Versión con www"
           : "Conexión de tu subdominio",
       plainHint:
         isApex || !savedDomain
-          ? `Para que www.${apexLabel} abra tu tienda.`
-          : `Para que ${guideDomain} abra tu tienda.`,
+          ? `Crea un registro CNAME con host www apuntando a ${cnameTarget}.`
+          : `Crea un registro CNAME apuntando a ${cnameTarget}.`,
     },
-    ...(apexTarget && (isApex || !savedDomain)
+    ...(showApexARecord
       ? [
           {
             key: "a",
             type: "A" as const,
             host: "@",
             value: apexTarget,
-            title: "Dominio sin www (opcional)",
-            plainHint: `Para que ${apexLabel} también funcione sin www.`,
+            title: "Dominio raíz (@)",
+            plainHint: `Crea un registro A apuntando a la IP de Vercel ${apexTarget} (para ${apexLabel} sin www).`,
           },
         ]
       : []),
@@ -514,7 +515,10 @@ export function CustomDomainSection({
             <p className="domain-guide-card-text">
               No hace falta saber de tecnología: abre el sitio donde compraste el
               dominio, busca la sección <strong>DNS</strong> y pega lo de abajo.
-              Suele tardar unos minutos (a veces unas horas).
+              Para <strong>www</strong> usa un <strong>CNAME → {cnameTarget}</strong>.
+              Para el dominio raíz (<strong>@</strong>) usa un{" "}
+              <strong>A → {apexTarget}</strong>. Suele tardar unos minutos (a
+              veces unas horas).
             </p>
 
             <div className="domain-guide-provider-tabs" role="tablist" aria-label="Proveedor">
@@ -580,13 +584,6 @@ export function CustomDomainSection({
                 </article>
               ))}
             </div>
-
-            {isApex && !apexTarget ? (
-              <p className="mt-3 text-xs text-amber-800 dark:text-amber-200">
-                Si quieres usar el dominio sin www y tu proveedor no lo permite
-                fácil, escríbenos y te ayudamos.
-              </p>
-            ) : null}
           </section>
         ) : null}
 

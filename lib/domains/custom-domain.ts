@@ -1,4 +1,4 @@
-import { getApexSiteHost, getPublicSiteHost } from "@/lib/site-url";
+import { getApexSiteHost } from "@/lib/site-url";
 
 export interface StoreCustomDomainInfo {
   customDomain: string | null;
@@ -75,21 +75,24 @@ export function validateCustomDomainInput(
   return { domain };
 }
 
-/** Destino CNAME recomendado para apuntar dominios externos. */
+/** Destino CNAME recomendado para apuntar dominios externos (www / subdominio). */
 export function getCustomDomainCnameTarget(): string {
   const fromEnv = process.env.NEXT_PUBLIC_CUSTOM_DOMAIN_CNAME_TARGET?.trim();
   if (fromEnv) {
     return fromEnv.replace(/^https?:\/\//, "").replace(/\/$/, "");
   }
 
-  return getPublicSiteHost();
+  // Por defecto: apex de la plataforma (alcentimo.com).
+  return getApexSiteHost();
 }
 
-/** IP para registro A en dominio raíz (@). Null si debe configurarse manualmente. */
-export function getCustomDomainApexATarget(): string | null {
+/** IP para registro A en dominio raíz (@). Por defecto: IP de Vercel. */
+export function getCustomDomainApexATarget(): string {
   const fromEnv = process.env.NEXT_PUBLIC_CUSTOM_DOMAIN_A_TARGET?.trim();
-  if (!fromEnv) return null;
-  return fromEnv.replace(/^https?:\/\//, "").split("/")[0] ?? null;
+  if (fromEnv) {
+    return fromEnv.replace(/^https?:\/\//, "").split("/")[0] ?? "76.76.21.21";
+  }
+  return "76.76.21.21";
 }
 
 export function isPlatformCatalogHost(hostname: string): boolean {

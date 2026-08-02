@@ -108,7 +108,7 @@ function expectedCnameDisplay(): string {
   return getCustomDomainCnameTarget();
 }
 
-function expectedADisplay(): string | null {
+function expectedADisplay(): string {
   return getCustomDomainApexATarget();
 }
 
@@ -146,17 +146,11 @@ function buildSuggestions(
 
   if (isApex) {
     suggestions.push(
-      `En tu proveedor (GoDaddy, Cloudflare, Namecheap, etc.), crea un CNAME: host **www** → destino **${cnameTarget}**.`,
+      `Crea un registro **CNAME** con host **www** apuntando a **${cnameTarget}**.`,
     );
-    if (aTarget) {
-      suggestions.push(
-        `Si quieres usar ${domain} sin www, agrega un registro **A** en host **@** apuntando a **${aTarget}**.`,
-      );
-    } else {
-      suggestions.push(
-        "Para el dominio raíz (@), algunos proveedores no permiten CNAME; usa www o contacta soporte.",
-      );
-    }
+    suggestions.push(
+      `Para el dominio raíz (@), crea un registro **A** apuntando a la IP **${aTarget}**.`,
+    );
   } else {
     suggestions.push(
       `Crea un registro **CNAME** con host **${dnsHost === "@" ? domain.split(".")[0] : dnsHost}** apuntando a **${cnameTarget}**.`,
@@ -222,7 +216,7 @@ export async function verifyCustomDomainDns(
     const aRecords = await safeResolveA(host);
     const expectedA = expectedADisplay();
 
-    if (aRecords?.length && expectedA) {
+    if (aRecords?.length) {
       const match = aRecords.find((record) => aMatchesTarget(record, aTargets));
       checks.push({
         host,
@@ -233,18 +227,6 @@ export async function verifyCustomDomainDns(
         note: "Registro A para dominio raíz (@)",
       });
       if (match) anyOk = true;
-      continue;
-    }
-
-    if (aRecords?.length && !expectedA) {
-      checks.push({
-        host,
-        recordType: "A",
-        expected: expectedCname,
-        actual: aRecords.join(", "),
-        ok: false,
-        note: "Se encontró A, pero se esperaba CNAME hacia Alcentimo.",
-      });
       continue;
     }
 

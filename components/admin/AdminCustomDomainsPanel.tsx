@@ -12,7 +12,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { getCustomDomainCnameTarget } from "@/lib/domains/custom-domain";
+import {
+  getCustomDomainApexATarget,
+  getCustomDomainCnameTarget,
+} from "@/lib/domains/custom-domain";
 
 interface AdminCustomDomainsPanelProps {
   initialRows: AdminStoreDomainRow[];
@@ -34,6 +37,7 @@ export function AdminCustomDomainsPanel({
   const [pending, startTransition] = useTransition();
 
   const cnameTarget = useMemo(() => getCustomDomainCnameTarget(), []);
+  const apexTarget = useMemo(() => getCustomDomainApexATarget(), []);
 
   function runSearch() {
     setError(null);
@@ -147,7 +151,8 @@ export function AdminCustomDomainsPanel({
         </h2>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
           Para casos donde la plataforma compra y configura el dominio del cliente.
-          Destino CNAME recomendado: <strong>{cnameTarget}</strong>
+          Destino CNAME (www): <strong>{cnameTarget}</strong>. Registro A (@):{" "}
+          <strong>{apexTarget}</strong>.
         </p>
 
         <div className="mt-4 grid gap-3">
