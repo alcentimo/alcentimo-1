@@ -230,17 +230,21 @@ export function CustomDomainSection({
       : []),
   ];
 
+  // Solo un paso "current" a la vez; futuros siempre neutrales.
+  const onConnectStep = Boolean(savedDomain) && !savedVerified && !verifying && !verification;
+  const onActivateStep = Boolean(savedDomain) && !savedVerified && (verifying || Boolean(verification));
+
   const step1State: "done" | "current" | "upcoming" = savedDomain
     ? "done"
     : "current";
-  const step2State: "done" | "current" | "upcoming" = savedVerified
+  const step2State: "done" | "current" | "upcoming" = savedVerified || onActivateStep
     ? "done"
-    : savedDomain
+    : onConnectStep
       ? "current"
       : "upcoming";
   const step3State: "done" | "current" | "upcoming" = savedVerified
     ? "done"
-    : savedDomain
+    : onActivateStep
       ? "current"
       : "upcoming";
 
