@@ -3,6 +3,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import { slugify } from "@/lib/slugify";
 import { CUSTOM_PRODUCT_CATEGORY_VALUE } from "@/lib/products/category-selection";
 import {
+  getInitialCategoriesForRubro,
   getOtherRubroExclusivePresetSlugs,
   getProductCategoriesForRubro,
   normalizeStoreRubro,
@@ -25,13 +26,88 @@ export async function getStoreRubroTienda(
   return normalizeStoreRubro(data.rubro_tienda as string | null);
 }
 
-/** @deprecated Ya no se insertan presets vacíos al crear o cambiar rubro. */
+/**
+ * Inserta en `categories` los presets del rubro que aún no existan para la tienda.
+ * Idempotente: no duplica por `(store_id, slug)` ni borra categorías previas.
+ */
 export async function syncStoreProductCategories(
-  _supabase: SupabaseClient,
-  _storeId: string,
-  _rubro: StoreRubro,
-): Promise<{ error?: string }> {
-  return {};
+  supabase: SupabaseClient,
+  storeId: string,
+  rubro: StoreRubro | string | null | undefined,
+): Promise<{ error?: string; inserted?: number }> {
+  const normalizedRubro = normalizeStoreRubro(rubro);
+  const presets = getInitialCategoriesForRubro(normalizedRubro);
+  if (presets.length === 0) {
+    return { inserted: 0 };
+  }
+
+  const presetSlugs = presets.map((item) => item.slug);
+  const { data: existing, error: lookupError } = await supabase
+    .from("categories")
+    .select("slug")
+    .eq("store_id", storeId)
+    .in("slug", presetSlugs);
+
+  if (lookupError) {
+    return { error: lookupError.message };
+  }
+
+  const existingSlugs = new Set(
+    (existing ?? []).map((row) => String(row.slug ?? "").toLowerCase()),
+  );
+  const missing = presets.filter(
+    (item) => !existingSlugs.has(item.slug.toLowerCase()),
+  );
+
+  if (missing.length === 0) {
+    return { inserted: 0 };
+  }
+
+  const { data: maxRow } = await supabase
+    .from("categories")
+    .select("sort_order")
+    .eq("store_id", storeId)
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const sortBase =
+    typeof maxRow?.sort_order === "number" && Number.isFinite(maxRow.sort_order)
+      ? maxRow.sort_order + 1
+      : 0;
+
+  const rows = missing.map((item, index) => ({
+    store_id: storeId,
+    name: item.label,
+    slug: item.slug,
+    sort_order: sortBase + index,
+    is_active: true,
+  }));
+
+  const { error: insertError } = await supabase.from("categories").insert(rows);
+
+  if (!insertError) {
+    return { inserted: rows.length };
+  }
+
+  // Carrera o slug ya creado: insertar uno a uno e ignorar 23505.
+  if (insertError.code === "23505") {
+    let inserted = 0;
+    for (const row of rows) {
+      const { error: singleError } = await supabase
+        .from("categories")
+        .insert(row);
+      if (!singleError) {
+        inserted += 1;
+        continue;
+      }
+      if (singleError.code === "23505") continue;
+      return { error: singleError.message, inserted };
+    }
+    return { inserted };
+  }
+
+  return { error: insertError.message };
 }
 
 async function findOrCreateStoreCategory(

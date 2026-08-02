@@ -19,6 +19,7 @@ import {
 } from "@/lib/stores/slug-availability";
 import { STORE_DESCRIPTION_MAX_LENGTH } from "@/lib/stores/description";
 import { isValidStoreRubro, normalizeStoreRubro } from "@/src/config/categories";
+import { syncStoreProductCategories } from "@/lib/products/rubro-categories";
 import { storeHasPCBuilder } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import {
   getFirstPaymentValidationError,
@@ -531,6 +532,7 @@ export async function saveGeneralStoreSettings(
   }
 
   const previousSlug = store.slug;
+  const previousRubro = normalizeStoreRubro(store.rubro_tienda);
   const normalizedRubro = normalizeStoreRubro(rubroTienda);
   const enablePcBuilder = storeHasPCBuilder(normalizedRubro, input.enablePcBuilder);
 
@@ -539,7 +541,7 @@ export async function saveGeneralStoreSettings(
     .update({
       name,
       slug,
-      rubro_tienda: rubroTienda,
+      rubro_tienda: normalizedRubro,
       enable_pc_builder: enablePcBuilder,
       ...(input.logoUrl !== undefined
         ? { logo_url: input.logoUrl?.trim() || null }
@@ -559,6 +561,25 @@ export async function saveGeneralStoreSettings(
     scheduleStoreSubdomainRename(store.id, previousSlug, slug);
   }
 
+  // Al cambiar (o reafirmar) el rubro, inyectar presets faltantes sin duplicar.
+  const categorySync = await syncStoreProductCategories(
+    supabase,
+    store.id,
+    normalizedRubro,
+  );
+  if (categorySync.error) {
+    console.warn(
+      JSON.stringify({
+        scope: "settings-categories",
+        event: "sync_failed",
+        storeId: store.id,
+        previousRubro,
+        rubro: normalizedRubro,
+        error: categorySync.error,
+      }),
+    );
+  }
+
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/inventario");
@@ -570,6 +591,6 @@ export async function saveGeneralStoreSettings(
 
   return {
     success: true,
-    rubroTienda: normalizeStoreRubro(rubroTienda),
+    rubroTienda: normalizedRubro,
   };
 }

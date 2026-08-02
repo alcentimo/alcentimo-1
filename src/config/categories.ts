@@ -38,12 +38,15 @@ export const STORE_RUBRO_CONFIGS: StoreRubroConfig[] = [
   {
     rubro: "ropa-moda",
     label: "Ropa, Calzado y Moda",
-    /** Sugerencias de departamento; el dueño puede crear las suyas (p. ej. otra segmentación). */
+    /** Template inicial al registrar o cambiar rubro (sin duplicar slugs existentes). */
     categorias: [
       { slug: "damas", label: "Damas", campos: [] },
       { slug: "caballeros", label: "Caballeros", campos: [] },
       { slug: "ninos", label: "Niños", campos: [] },
       { slug: "unisex", label: "Unisex", campos: [] },
+      { slug: "camisas", label: "Camisas", campos: [] },
+      { slug: "pantalones", label: "Pantalones", campos: [] },
+      { slug: "calzado", label: "Calzado", campos: [] },
       { slug: "accesorios", label: "Accesorios", campos: [] },
     ],
   },
@@ -234,6 +237,18 @@ export function getProductCategoriesForRubro(rubro: StoreRubro): ProductCategory
   return (
     CONFIG_BY_RUBRO.get(rubro)?.categorias ??
     CONFIG_BY_RUBRO.get(DEFAULT_STORE_RUBRO)!.categorias
+  );
+}
+
+/**
+ * Categorías iniciales a inyectar en Supabase para un rubro.
+ * Misma fuente que el selector de productos / presets de UI.
+ */
+export function getInitialCategoriesForRubro(
+  rubro: StoreRubro | string | null | undefined,
+): ReadonlyArray<Pick<ProductCategoryOption, "slug" | "label">> {
+  return getProductCategoriesForRubro(normalizeStoreRubro(rubro)).map(
+    ({ slug, label }) => ({ slug, label }),
   );
 }
 

@@ -28,6 +28,7 @@ import {
 import {
   getStoreRubroTienda,
   resolveProductCategoryId,
+  syncStoreProductCategories,
 } from "@/lib/products/rubro-categories";
 import { resolveProductFieldLabels } from "@/lib/products/resolve-product-field-labels";
 import {
@@ -947,7 +948,7 @@ export async function createStore(
     owner_id: auth.authUser.id,
     name,
     slug,
-  }).select("id").single();
+  }).select("id, rubro_tienda").single();
 
   if (error) {
     if (error.code === "23505") {
@@ -957,6 +958,12 @@ export async function createStore(
   }
 
   scheduleStoreSubdomainProvision({ storeId: store.id, slug });
+
+  await syncStoreProductCategories(
+    supabase,
+    store.id,
+    store.rubro_tienda as string | null,
+  );
 
   revalidatePath("/dashboard/productos/nuevo");
   revalidatePath("/dashboard/catalogo");

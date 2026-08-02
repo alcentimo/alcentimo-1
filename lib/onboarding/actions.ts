@@ -25,6 +25,7 @@ import { scheduleStoreSubdomainProvision } from "@/lib/domains/provision-store-s
 import type { OnboardingSampleProductDraft } from "@/lib/ai/onboarding-assistant-types";
 import { sampleProductsToImportRows } from "@/lib/onboarding/sample-product-import";
 import { importProductsBulk } from "@/lib/products/import-actions";
+import { syncStoreProductCategories } from "@/lib/products/rubro-categories";
 
 export type OnboardingFormState = {
   error?: string;
@@ -195,6 +196,24 @@ export async function completeOnboarding(
 
   if (settingsError) {
     return { error: settingsError.message };
+  }
+
+  // Template inicial de categorías según el rubro (idempotente).
+  const categorySync = await syncStoreProductCategories(
+    supabase,
+    store.id,
+    rubroTienda,
+  );
+  if (categorySync.error) {
+    console.warn(
+      JSON.stringify({
+        scope: "onboarding-categories",
+        event: "sync_failed",
+        storeId: store.id,
+        rubro: rubroTienda,
+        error: categorySync.error,
+      }),
+    );
   }
 
   const landingProducts = await parseLandingProductsJson(
