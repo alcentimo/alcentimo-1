@@ -48,6 +48,7 @@ import { LocationStockFields } from "@/components/dashboard/LocationStockFields"
 import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
 import { ProductTitleAutoDetectHint } from "@/components/dashboard/ProductTitleAutoDetectHint";
 import { useProductTitleAutoDetect } from "@/components/dashboard/useProductTitleAutoDetect";
+import { getProductNamePlaceholderForRubro } from "@/src/config/categories";
 import {
   emptyFoodModifiers,
   serializeFoodModifiersJson,
@@ -385,6 +386,9 @@ export function ProductForm({
         onDescriptionChange={setDescription}
         storeRubro={productFormConfig.rubroTienda}
         categoryLabel={categoryLabel}
+        namePlaceholder={getProductNamePlaceholderForRubro(
+          productFormConfig.rubroTienda,
+        )}
         disabled={isBusy}
         variant="default"
       />

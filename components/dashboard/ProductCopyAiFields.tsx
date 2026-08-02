@@ -37,7 +37,7 @@ export function ProductCopyAiFields({
   categoryLabel,
   disabled = false,
   variant = "compact",
-  namePlaceholder = "Ej: Camisa Oxford azul",
+  namePlaceholder = "Ej: Nombre del producto",
   showShortDescription = true,
 }: ProductCopyAiFieldsProps) {
   const [aiError, setAiError] = useState<string | null>(null);

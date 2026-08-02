@@ -233,6 +233,30 @@ export function getRubroLabel(rubro: StoreRubro): string {
   return STORE_RUBRO_OPTIONS.find((item) => item.value === rubro)?.label ?? rubro;
 }
 
+/** Ejemplos de nombre de producto para placeholders del formulario. */
+const PRODUCT_NAME_PLACEHOLDER_BY_RUBRO: Record<StoreRubro, string> = {
+  "ropa-moda": "Ej: Camisa Oxford Talla M",
+  alimentos: "Ej: Arroz Premium 1kg",
+  tecnologia: "Ej: Audífonos Inalámbricos Pro",
+  coleccionables: "Ej: Figura Exclusive Chase #42",
+  "salud-belleza": "Ej: Sérum vitamina C 30 ml",
+  "papeleria-libreria-oficina": "Ej: Cuaderno A4 rayado 100 hojas",
+};
+
+/**
+ * Placeholder del campo Nombre según el rubro de la tienda.
+ * Normaliza aliases legacy (p. ej. ferretería → tecnología).
+ */
+export function getProductNamePlaceholderForRubro(
+  rubro: StoreRubro | string | null | undefined,
+): string {
+  const normalized = normalizeStoreRubro(rubro);
+  return (
+    PRODUCT_NAME_PLACEHOLDER_BY_RUBRO[normalized] ??
+    PRODUCT_NAME_PLACEHOLDER_BY_RUBRO[DEFAULT_STORE_RUBRO]
+  );
+}
+
 export function getProductCategoriesForRubro(rubro: StoreRubro): ProductCategoryOption[] {
   return (
     CONFIG_BY_RUBRO.get(rubro)?.categorias ??

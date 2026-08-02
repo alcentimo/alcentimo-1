@@ -53,6 +53,7 @@ import { ProductWholesaleField } from "@/components/dashboard/ProductWholesaleFi
 import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
 import { ProductFormAiStarter } from "@/components/dashboard/ProductFormAiStarter";
 import { ProductTitleAutoDetectHint } from "@/components/dashboard/ProductTitleAutoDetectHint";
+import { getProductNamePlaceholderForRubro } from "@/src/config/categories";
 import { useProductTitleAutoDetect } from "@/components/dashboard/useProductTitleAutoDetect";
 import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
 import { validateProductPublishInput } from "@/lib/products/validate-publish-form";
@@ -206,17 +207,9 @@ function QuickProductFormSession({
       enabled: !isBusy,
     });
 
-  const namePlaceholder = isAlimentos
-    ? "Ej: Arepa reina pepiada"
-    : isTecnologia
-      ? "Ej: Smartphone Nova X 256 GB"
-      : isColeccionables
-        ? "Ej: Figura Exclusive Chase #42"
-        : isSaludBelleza
-          ? "Ej: Sérum vitamina C 30 ml"
-          : isPapeleria
-            ? "Ej: Cuaderno A4 rayado 100 hojas"
-            : "Ej: Arroz Premium 1kg";
+  const namePlaceholder = getProductNamePlaceholderForRubro(
+    productFormConfig.rubroTienda,
+  );
 
   const priceLocal = useMemo(() => {
     const usd = parseFloat(priceUsd);
