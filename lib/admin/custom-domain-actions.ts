@@ -8,6 +8,7 @@ import {
   normalizeCustomDomain,
   validateCustomDomainInput,
 } from "@/lib/domains/custom-domain";
+import { verifyCustomDomainDns } from "@/lib/domains/verify-custom-domain-dns";
 import {
   ensureVercelCustomDomain,
   isVercelCustomDomainProvisioningEnabled,
@@ -126,7 +127,7 @@ export async function adminAssignStoreCustomDomain(input: {
 
   const { data: store, error: storeError } = await admin
     .from("stores")
-    .select("id, slug, custom_domain")
+    .select("id, slug, custom_domain, custom_domain_verified")
     .eq("id", storeId)
     .maybeSingle();
 
@@ -136,12 +137,15 @@ export async function adminAssignStoreCustomDomain(input: {
   const previousDomain = normalizeCustomDomain(
     (store.custom_domain as string | null) ?? "",
   );
+  const previousVerified = Boolean(store.custom_domain_verified);
 
   const validated = validateCustomDomainInput(input.domain, {
     currentStoreId: storeId,
   });
 
   if (validated.error) return { error: validated.error };
+
+  const verified = input.verified ?? true;
 
   if (validated.domain) {
     const { data: occupied } = await admin
@@ -155,13 +159,19 @@ export async function adminAssignStoreCustomDomain(input: {
       return { error: "Ese dominio ya está asociado a otra tienda." };
     }
 
-    if (isVercelCustomDomainProvisioningEnabled()) {
+    // Solo registrar en Vercel si se marca verificado (override de soporte).
+    // Pendiente = reserva en DB sin ocupar el dominio en Vercel.
+    if (verified && isVercelCustomDomainProvisioningEnabled()) {
       const provision = await ensureVercelCustomDomain(validated.domain);
       if (!provision.ok) {
         return { error: `Vercel: ${provision.error}` };
       }
     }
-  } else if (previousDomain && isVercelCustomDomainProvisioningEnabled()) {
+  } else if (
+    previousDomain &&
+    previousVerified &&
+    isVercelCustomDomainProvisioningEnabled()
+  ) {
     const removed = await removeVercelCustomDomain(previousDomain);
     if (!removed.ok) {
       return { error: `Vercel: ${removed.error}` };
@@ -172,12 +182,12 @@ export async function adminAssignStoreCustomDomain(input: {
     previousDomain &&
     validated.domain &&
     previousDomain !== validated.domain &&
+    previousVerified &&
     isVercelCustomDomainProvisioningEnabled()
   ) {
     await removeVercelCustomDomain(previousDomain);
   }
 
-  const verified = input.verified ?? true;
   const now = new Date().toISOString();
 
   const { error } = await admin
@@ -219,10 +229,32 @@ export async function adminVerifyStoreCustomDomain(
     return { error: "La tienda no tiene dominio personalizado configurado." };
   }
 
+  const domain = normalizeCustomDomain(String(store.custom_domain));
+  if (!domain) {
+    return { error: "El dominio guardado no es válido." };
+  }
+
+  // Mismo criterio que el comercio: DNS primero, Vercel después.
+  try {
+    const dns = await verifyCustomDomainDns(domain);
+    if (!dns.ok) {
+      return {
+        error:
+          dns.summary ||
+          "El DNS aún no demuestra control del dominio. No se registró en Vercel.",
+      };
+    }
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "No se pudo comprobar el DNS del dominio.",
+    };
+  }
+
   if (isVercelCustomDomainProvisioningEnabled()) {
-    const provision = await ensureVercelCustomDomain(
-      String(store.custom_domain),
-    );
+    const provision = await ensureVercelCustomDomain(domain);
     if (!provision.ok) {
       return { error: `Vercel: ${provision.error}` };
     }
@@ -251,7 +283,7 @@ export async function adminRemoveStoreCustomDomain(
   const admin = createAdminClient();
   const { data: store, error: lookupError } = await admin
     .from("stores")
-    .select("id, slug, custom_domain")
+    .select("id, slug, custom_domain, custom_domain_verified")
     .eq("id", storeId)
     .maybeSingle();
 
@@ -261,7 +293,12 @@ export async function adminRemoveStoreCustomDomain(
   const previousDomain = normalizeCustomDomain(
     (store.custom_domain as string | null) ?? "",
   );
-  if (previousDomain && isVercelCustomDomainProvisioningEnabled()) {
+  const previousVerified = Boolean(store.custom_domain_verified);
+  if (
+    previousDomain &&
+    previousVerified &&
+    isVercelCustomDomainProvisioningEnabled()
+  ) {
     const removed = await removeVercelCustomDomain(previousDomain);
     if (!removed.ok) {
       return { error: `Vercel: ${removed.error}` };

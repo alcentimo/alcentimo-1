@@ -221,9 +221,7 @@ export function CustomDomainSection({
 
       if (result.customDomain) {
         setSuccess(
-          result.vercelProvisioned
-            ? "Dominio registrado en Vercel. Comprobando DNS y certificado SSL…"
-            : "Dominio guardado. Comprobando DNS…",
+          "Dominio guardado como pendiente de verificación. Configura el DNS y comprueba la conexión; solo entonces se registra en Vercel.",
         );
         await executeVerification(result.customDomain);
       } else {
@@ -340,7 +338,7 @@ export function CustomDomainSection({
                 <p className="mt-1 text-xs opacity-90">
                   {savedVerified
                     ? "Dominio activo y verificado. Tu catálogo responde en esta URL."
-                    : "Pendiente de verificación DNS. Usa «Verificar conexión» cuando hayas configurado los registros."}
+                    : "Pendiente de verificación. Configura el DNS y pulsa «Verificar conexión»; el dominio solo se registra en Vercel cuando demuestres el control."}
                 </p>
                 {publicUrl ? (
                   <p className="mt-2 break-all text-xs">{publicUrl}</p>
@@ -375,8 +373,8 @@ export function CustomDomainSection({
           {!savedVerified && savedDomain ? (
             <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-300">
               Tras crear los registros en tu proveedor, pulsa{" "}
-              <strong>Verificar conexión</strong>. Revisamos automáticamente si el
-              DNS ya apunta a Alcentimo.
+              <strong>Verificar conexión</strong>. Primero comprobamos el DNS; solo
+              si apunta a Alcentimo registramos el dominio en Vercel y activamos SSL.
             </p>
           ) : null}
         </div>

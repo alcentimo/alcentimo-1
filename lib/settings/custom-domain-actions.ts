@@ -24,6 +24,7 @@ export type CustomDomainActionResult = {
   customDomain?: string | null;
   customDomainVerified?: boolean;
   verification?: CustomDomainDnsVerificationResult;
+  /** true solo cuando el dominio ya se registró en Vercel tras DNS ok */
   vercelProvisioned?: boolean;
   vercelSslReady?: boolean;
 };
@@ -73,6 +74,29 @@ async function provisionDomainOnVercel(
   };
 }
 
+/**
+ * Quita de Vercel solo dominios que ya pudieron haberse provisionado
+ * (los verificados). Los pendientes nunca deben ocupar un slot en Vercel.
+ */
+async function removeProvisionedDomainFromVercel(
+  domain: string,
+  wasVerified: boolean,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!wasVerified || !domain) {
+    return { ok: true };
+  }
+
+  const removed = await removeVercelCustomDomain(domain);
+  if (!removed.ok && isVercelCustomDomainProvisioningEnabled()) {
+    return {
+      ok: false,
+      error: `No se pudo quitar el dominio de Vercel: ${removed.error}`,
+    };
+  }
+
+  return { ok: true };
+}
+
 export async function saveStoreCustomDomainRequest(
   domainInput: string,
 ): Promise<CustomDomainActionResult> {
@@ -81,6 +105,7 @@ export async function saveStoreCustomDomainRequest(
   if (!auth.ok) return { error: auth.error };
 
   const previousDomain = normalizeCustomDomain(auth.store.custom_domain ?? "");
+  const previousVerified = Boolean(auth.store.custom_domain_verified);
   const normalized = normalizeCustomDomain(domainInput);
   const occupiedByStoreId = normalized
     ? await findStoreIdByCustomDomain(normalized, auth.store.id)
@@ -93,16 +118,13 @@ export async function saveStoreCustomDomainRequest(
 
   if (validated.error) return { error: validated.error };
 
-  // Vaciar dominio = limpiar en Vercel + Supabase.
+  // Vaciar dominio = limpiar en Supabase (+ Vercel solo si ya estaba verificado).
   if (!validated.domain) {
-    if (previousDomain) {
-      const removed = await removeVercelCustomDomain(previousDomain);
-      if (!removed.ok) {
-        return {
-          error: `No se pudo quitar el dominio de Vercel: ${removed.error}`,
-        };
-      }
-    }
+    const removed = await removeProvisionedDomainFromVercel(
+      previousDomain ?? "",
+      previousVerified,
+    );
+    if (!removed.ok) return { error: removed.error };
 
     const { error } = await supabase
       .from("stores")
@@ -122,33 +144,20 @@ export async function saveStoreCustomDomainRequest(
       success: true,
       customDomain: null,
       customDomainVerified: false,
-      vercelProvisioned: true,
+      vercelProvisioned: false,
     };
   }
 
-  // 1) Registrar en Vercel (SSL automático cuando DNS esté listo).
-  const provision = await provisionDomainOnVercel(validated.domain);
-  if (!provision.ok) {
-    return { error: provision.error };
-  }
-
-  // 2) Si cambió el dominio, quitar el anterior del proyecto.
+  // Si cambia el dominio y el anterior ya estaba en Vercel, liberarlo.
   if (previousDomain && previousDomain !== validated.domain) {
-    const removed = await removeVercelCustomDomain(previousDomain);
-    if (!removed.ok) {
-      // Dominio nuevo ya está en Vercel; avisar pero no revertir.
-      console.warn(
-        JSON.stringify({
-          scope: "custom-domain-vercel",
-          event: "previous_remove_failed",
-          previousDomain,
-          error: removed.error,
-        }),
-      );
-    }
+    const removed = await removeProvisionedDomainFromVercel(
+      previousDomain,
+      previousVerified,
+    );
+    if (!removed.ok) return { error: removed.error };
   }
 
-  // 3) Persistir en Supabase (aún sin verificar DNS).
+  // Solo persistir como pendiente: NO registrar en Vercel hasta verificar DNS.
   const { error } = await supabase
     .from("stores")
     .update({
@@ -172,8 +181,7 @@ export async function saveStoreCustomDomainRequest(
     success: true,
     customDomain: validated.domain,
     customDomainVerified: false,
-    vercelProvisioned: true,
-    vercelSslReady: provision.sslReady,
+    vercelProvisioned: false,
   };
 }
 
@@ -183,15 +191,13 @@ export async function clearStoreCustomDomainRequest(): Promise<CustomDomainActio
   if (!auth.ok) return { error: auth.error };
 
   const previousDomain = normalizeCustomDomain(auth.store.custom_domain ?? "");
+  const previousVerified = Boolean(auth.store.custom_domain_verified);
 
-  if (previousDomain) {
-    const removed = await removeVercelCustomDomain(previousDomain);
-    if (!removed.ok && isVercelCustomDomainProvisioningEnabled()) {
-      return {
-        error: `No se pudo quitar el dominio de Vercel: ${removed.error}`,
-      };
-    }
-  }
+  const removed = await removeProvisionedDomainFromVercel(
+    previousDomain ?? "",
+    previousVerified,
+  );
+  if (!removed.ok) return { error: removed.error };
 
   const { error } = await supabase
     .from("stores")
@@ -211,7 +217,7 @@ export async function clearStoreCustomDomainRequest(): Promise<CustomDomainActio
     success: true,
     customDomain: null,
     customDomainVerified: false,
-    vercelProvisioned: true,
+    vercelProvisioned: false,
   };
 }
 
@@ -241,12 +247,7 @@ export async function verifyStoreCustomDomainRequest(
     };
   }
 
-  // Asegurar que el dominio sigue en el proyecto Vercel (idempotente).
-  const provision = await provisionDomainOnVercel(domain);
-  if (!provision.ok) {
-    return { error: provision.error };
-  }
-
+  // 1) Demostrar control DNS (CNAME/A) ANTES de tocar la API de Vercel.
   let verification: CustomDomainDnsVerificationResult;
   try {
     verification = await verifyCustomDomainDns(domain);
@@ -264,12 +265,18 @@ export async function verifyStoreCustomDomainRequest(
       customDomain: domain,
       customDomainVerified: false,
       verification,
-      vercelProvisioned: true,
-      vercelSslReady: provision.sslReady,
+      vercelProvisioned: false,
+      vercelSslReady: false,
     };
   }
 
-  // DNS ok: confirmar estado SSL en Vercel (misconfigured = aún no listo).
+  // 2) Solo con DNS correcto: registrar en Vercel (SSL automático).
+  const provision = await provisionDomainOnVercel(domain);
+  if (!provision.ok) {
+    return { error: provision.error };
+  }
+
+  // 3) Confirmar que Vercel ya no marca misconfigured.
   let sslReady = provision.sslReady;
   if (isVercelCustomDomainProvisioningEnabled()) {
     const status = await getVercelCustomDomainStatus(domain);
@@ -291,7 +298,7 @@ export async function verifyStoreCustomDomainRequest(
         status: "pending",
         message: "DNS correcto. Vercel aún está emitiendo el certificado SSL.",
         summary:
-          "Tu DNS ya apunta bien. Espera unos minutos y vuelve a verificar para activar HTTPS.",
+          "Tu DNS ya apunta bien y el dominio se registró en Vercel. Espera unos minutos y vuelve a verificar para activar HTTPS.",
         suggestions: [
           ...(verification.suggestions ?? []),
           "Vercel emite el certificado SSL automáticamente cuando el DNS está bien. Suele tardar unos minutos.",
