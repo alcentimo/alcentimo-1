@@ -433,10 +433,8 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           : defaults.interfacePreferences.locale,
     },
     checkout: {
-      accountMode:
-        checkoutRaw.accountMode === "libre" || checkoutRaw.accountMode === "hibrido"
-          ? checkoutRaw.accountMode
-          : defaults.checkout.accountMode,
+      // Todas las tiendas operan en modo híbrido (invitado + cuentas opcionales).
+      accountMode: "hibrido",
     },
   };
 }
@@ -529,8 +527,6 @@ export function mergeStoreSettingsConfig(
     interfacePreferences: patch.interfacePreferences
       ? { ...base.interfacePreferences, ...patch.interfacePreferences }
       : base.interfacePreferences,
-    checkout: patch.checkout
-      ? { ...base.checkout, ...patch.checkout }
-      : base.checkout,
+    checkout: { accountMode: "hibrido" },
   };
 }

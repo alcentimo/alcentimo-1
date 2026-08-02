@@ -76,13 +76,19 @@ export interface InterfacePreferencesSettings {
   locale: InterfaceLocalePreference;
 }
 
-/** Modo de cuentas de clientes en el catálogo público. */
-export type CustomerAccountMode = "libre" | "hibrido";
+/**
+ * Modo de cuentas de clientes en el catálogo público.
+ * Solo queda «hibrido» (invitado + login/registro opcional).
+ * El valor «libre» se ignora al leer/guardar por compatibilidad.
+ */
+export type CustomerAccountMode = "hibrido";
+
+/** @deprecated Solo se aceptaba «libre»; la plataforma fuerza siempre híbrido. */
+export type LegacyCustomerAccountMode = "libre" | "hibrido";
 
 export interface CheckoutSettings {
   /**
-   * libre = compra solo como invitado (sin registro/login).
-   * hibrido = invitado + cuentas opcionales (teléfono/correo + contraseña).
+   * Siempre híbrido: compra como invitado con opción de iniciar sesión o registrarse.
    */
   accountMode: CustomerAccountMode;
 }

@@ -50,15 +50,14 @@ export function CatalogAppShell({
   enablePcBuilder = false,
   assistantEnabled = false,
   whatsappPhone = null,
-  customerAccountMode = "hibrido",
+  customerAccountMode: _customerAccountMode = "hibrido",
   children,
 }: CatalogAppShellProps) {
   const { guestBanner } = usePromotionContext();
   const pcBuilderEnabled = storeHasPCBuilder(storeRubro, enablePcBuilder);
-  const accountsEnabled = customerAccountMode === "hibrido";
 
   return (
-    <CustomerAccountModeProvider accountMode={customerAccountMode}>
+    <CustomerAccountModeProvider accountMode="hibrido">
       <CatalogShellNavigationProvider storeSlug={storeSlug}>
         <CatalogStoreBrandingProvider logoUrl={storeLogoUrl} storeName={storeName}>
           <PwaServiceWorkerRegister storeSlug={storeSlug} />
@@ -67,9 +66,7 @@ export function CatalogAppShell({
             storeName={storeName}
             storeLogoUrl={storeLogoUrl}
           />
-          {accountsEnabled ? (
-            <CustomerPromoBanner promotion={guestBanner} />
-          ) : null}
+          <CustomerPromoBanner promotion={guestBanner} />
           <div className="catalog-shell-content">{children}</div>
           {assistantEnabled ? (
             <CatalogChatWidget
@@ -90,12 +87,10 @@ export function CatalogAppShell({
             whatsappPhone={whatsappPhone}
             locationHours={locationHours}
           />
-          {accountsEnabled ? (
-            <CatalogCustomerRegisterSheet
-              storeSlug={storeSlug}
-              storeName={storeName}
-            />
-          ) : null}
+          <CatalogCustomerRegisterSheet
+            storeSlug={storeSlug}
+            storeName={storeName}
+          />
           <CatalogTabBar storeSlug={storeSlug} pcBuilderEnabled={pcBuilderEnabled} />
         </CatalogStoreBrandingProvider>
       </CatalogShellNavigationProvider>

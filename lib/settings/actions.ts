@@ -161,8 +161,13 @@ export async function saveCatalogCurrencySettings(
 export async function saveCheckoutSettings(
   checkout: CheckoutSettings,
 ): Promise<SettingsActionResult> {
-  const normalized = normalizeStoreSettingsConfig({ checkout });
-  return persistSettingsPatch({ checkout: normalized.checkout });
+  // El modo de clientes ya no es configurable: siempre híbrido.
+  const normalized = normalizeStoreSettingsConfig({
+    checkout: { ...checkout, accountMode: "hibrido" },
+  });
+  return persistSettingsPatch({
+    checkout: { ...normalized.checkout, accountMode: "hibrido" },
+  });
 }
 
 export async function saveInterfacePreferencesSettings(

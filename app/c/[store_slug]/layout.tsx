@@ -181,11 +181,7 @@ export default async function TransactionalCatalogLayout({
               supportAvatarAnimation={assistantAvatar.animation}
               supportAvatarAnimated={assistantAvatar.animated}
               supportMerchantName={supportBranding?.merchantName ?? null}
-              customerAccountMode={
-                storeSettings?.checkout?.accountMode === "libre"
-                  ? "libre"
-                  : "hibrido"
-              }
+              customerAccountMode="hibrido"
             >
               {children}
             </CatalogAppShell>

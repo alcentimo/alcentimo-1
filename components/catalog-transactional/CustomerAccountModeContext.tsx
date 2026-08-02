@@ -5,30 +5,28 @@ import type { CustomerAccountMode } from "@/lib/store-settings/types";
 
 interface CustomerAccountModeContextValue {
   accountMode: CustomerAccountMode;
-  /** true cuando el modo permite registro / login de clientes. */
+  /** Siempre true: invitado + login/registro opcional. */
   accountsEnabled: boolean;
 }
 
+const HYBRID_VALUE: CustomerAccountModeContextValue = {
+  accountMode: "hibrido",
+  accountsEnabled: true,
+};
+
 const CustomerAccountModeContext =
-  createContext<CustomerAccountModeContextValue>({
-    accountMode: "hibrido",
-    accountsEnabled: true,
-  });
+  createContext<CustomerAccountModeContextValue>(HYBRID_VALUE);
 
 export function CustomerAccountModeProvider({
-  accountMode,
+  accountMode: _accountMode,
   children,
 }: {
-  accountMode: CustomerAccountMode;
+  /** Ignorado: la plataforma fuerza siempre modo híbrido. */
+  accountMode?: CustomerAccountMode;
   children: ReactNode;
 }) {
-  const value: CustomerAccountModeContextValue = {
-    accountMode,
-    accountsEnabled: accountMode === "hibrido",
-  };
-
   return (
-    <CustomerAccountModeContext.Provider value={value}>
+    <CustomerAccountModeContext.Provider value={HYBRID_VALUE}>
       {children}
     </CustomerAccountModeContext.Provider>
   );

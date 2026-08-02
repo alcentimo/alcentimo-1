@@ -13,7 +13,6 @@ import {
   Settings2,
   Tag,
   Truck,
-  Users,
 } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
 import { DomainsTab } from "@/components/dashboard/settings/DomainsTab";
@@ -21,7 +20,6 @@ import { LocationsTab } from "@/components/dashboard/settings/LocationsTab";
 import { CategoriesTab } from "@/components/dashboard/settings/CategoriesTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
 import { WholesaleTab } from "@/components/dashboard/settings/WholesaleTab";
-import { CustomerAccountsTab } from "@/components/dashboard/settings/CustomerAccountsTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
 import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
@@ -50,7 +48,6 @@ type SettingsTabId =
   | "shipping"
   | "payments"
   | "promotions"
-  | "accounts"
   | "design"
   | "domains"
   | "branches";
@@ -64,7 +61,6 @@ const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
   "shipping",
   "payments",
   "promotions",
-  "accounts",
   "design",
   "domains",
   "branches",
@@ -111,10 +107,7 @@ const SETTINGS_NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   },
   {
     label: "Clientes",
-    items: [
-      { id: "accounts", label: "Cuentas", icon: Users },
-      { id: "promotions", label: "Promociones", icon: Tag },
-    ],
+    items: [{ id: "promotions", label: "Promociones", icon: Tag }],
   },
 ];
 
@@ -257,12 +250,6 @@ export function SettingsPanel({
             initialCoupons={initialCoupons}
             initialPromotions={initialPromotions}
             products={products}
-          />
-        );
-      case "accounts":
-        return (
-          <CustomerAccountsTab
-            initialSettings={initialConfig.checkout ?? { accountMode: "hibrido" }}
           />
         );
       default:
