@@ -220,7 +220,11 @@ export function CustomDomainSection({
       setDomainInput(result.customDomain ?? "");
 
       if (result.customDomain) {
-        setSuccess("Dominio guardado. Comprobando DNS…");
+        setSuccess(
+          result.vercelProvisioned
+            ? "Dominio registrado en Vercel. Comprobando DNS y certificado SSL…"
+            : "Dominio guardado. Comprobando DNS…",
+        );
         await executeVerification(result.customDomain);
       } else {
         setSuccess("Dominio eliminado.");

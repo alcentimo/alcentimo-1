@@ -8,6 +8,11 @@ import {
   normalizeCustomDomain,
   validateCustomDomainInput,
 } from "@/lib/domains/custom-domain";
+import {
+  ensureVercelCustomDomain,
+  isVercelCustomDomainProvisioningEnabled,
+  removeVercelCustomDomain,
+} from "@/lib/domains/vercel-project-domain";
 
 export type AdminCustomDomainActionResult = {
   error?: string;
@@ -121,12 +126,16 @@ export async function adminAssignStoreCustomDomain(input: {
 
   const { data: store, error: storeError } = await admin
     .from("stores")
-    .select("id, slug")
+    .select("id, slug, custom_domain")
     .eq("id", storeId)
     .maybeSingle();
 
   if (storeError) return { error: storeError.message };
   if (!store) return { error: "Tienda no encontrada." };
+
+  const previousDomain = normalizeCustomDomain(
+    (store.custom_domain as string | null) ?? "",
+  );
 
   const validated = validateCustomDomainInput(input.domain, {
     currentStoreId: storeId,
@@ -145,6 +154,27 @@ export async function adminAssignStoreCustomDomain(input: {
     if (occupied?.id) {
       return { error: "Ese dominio ya está asociado a otra tienda." };
     }
+
+    if (isVercelCustomDomainProvisioningEnabled()) {
+      const provision = await ensureVercelCustomDomain(validated.domain);
+      if (!provision.ok) {
+        return { error: `Vercel: ${provision.error}` };
+      }
+    }
+  } else if (previousDomain && isVercelCustomDomainProvisioningEnabled()) {
+    const removed = await removeVercelCustomDomain(previousDomain);
+    if (!removed.ok) {
+      return { error: `Vercel: ${removed.error}` };
+    }
+  }
+
+  if (
+    previousDomain &&
+    validated.domain &&
+    previousDomain !== validated.domain &&
+    isVercelCustomDomainProvisioningEnabled()
+  ) {
+    await removeVercelCustomDomain(previousDomain);
   }
 
   const verified = input.verified ?? true;
@@ -189,6 +219,15 @@ export async function adminVerifyStoreCustomDomain(
     return { error: "La tienda no tiene dominio personalizado configurado." };
   }
 
+  if (isVercelCustomDomainProvisioningEnabled()) {
+    const provision = await ensureVercelCustomDomain(
+      String(store.custom_domain),
+    );
+    if (!provision.ok) {
+      return { error: `Vercel: ${provision.error}` };
+    }
+  }
+
   const { error } = await admin
     .from("stores")
     .update({
@@ -212,12 +251,22 @@ export async function adminRemoveStoreCustomDomain(
   const admin = createAdminClient();
   const { data: store, error: lookupError } = await admin
     .from("stores")
-    .select("id, slug")
+    .select("id, slug, custom_domain")
     .eq("id", storeId)
     .maybeSingle();
 
   if (lookupError) return { error: lookupError.message };
   if (!store) return { error: "Tienda no encontrada." };
+
+  const previousDomain = normalizeCustomDomain(
+    (store.custom_domain as string | null) ?? "",
+  );
+  if (previousDomain && isVercelCustomDomainProvisioningEnabled()) {
+    const removed = await removeVercelCustomDomain(previousDomain);
+    if (!removed.ok) {
+      return { error: `Vercel: ${removed.error}` };
+    }
+  }
 
   const { error } = await admin
     .from("stores")
