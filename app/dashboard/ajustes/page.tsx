@@ -95,7 +95,11 @@ export default async function AjustesPage({
       getCurrentExchangeRate(),
       getCatalogPreviewSettings(store),
       getStoreLocations(store.id).catch(() => []),
-      getStoreCategoriesForManagement(supabase, store.id).catch(() => []),
+      getStoreCategoriesForManagement(
+        supabase,
+        store.id,
+        store.rubro_tienda,
+      ).catch(() => []),
       fetchPlanSettings().catch(() => null),
       getStoreProductCount(store.id),
     ]);

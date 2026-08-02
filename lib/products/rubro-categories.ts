@@ -27,14 +27,21 @@ export async function getStoreRubroTienda(
 }
 
 /**
- * Inserta en `categories` los presets del rubro que aún no existan para la tienda.
- * Idempotente: no duplica por `(store_id, slug)` ni borra categorías previas.
+ * Inserta en `categories` solo los presets del rubro activo para ESA tienda.
+ * - Scope: siempre `store_id` concreto (nunca global).
+ * - Solo slugs del rubro actual (no inyecta presets de otros rubros).
+ * - Idempotente: no duplica por `(store_id, slug)` ni borra categorías previas.
  */
 export async function syncStoreProductCategories(
   supabase: SupabaseClient,
   storeId: string,
   rubro: StoreRubro | string | null | undefined,
 ): Promise<{ error?: string; inserted?: number }> {
+  const trimmedStoreId = storeId.trim();
+  if (!trimmedStoreId) {
+    return { error: "Tienda no válida para sincronizar categorías." };
+  }
+
   const normalizedRubro = normalizeStoreRubro(rubro);
   const presets = getInitialCategoriesForRubro(normalizedRubro);
   if (presets.length === 0) {
@@ -45,7 +52,7 @@ export async function syncStoreProductCategories(
   const { data: existing, error: lookupError } = await supabase
     .from("categories")
     .select("slug")
-    .eq("store_id", storeId)
+    .eq("store_id", trimmedStoreId)
     .in("slug", presetSlugs);
 
   if (lookupError) {
@@ -66,7 +73,7 @@ export async function syncStoreProductCategories(
   const { data: maxRow } = await supabase
     .from("categories")
     .select("sort_order")
-    .eq("store_id", storeId)
+    .eq("store_id", trimmedStoreId)
     .order("sort_order", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -77,7 +84,7 @@ export async function syncStoreProductCategories(
       : 0;
 
   const rows = missing.map((item, index) => ({
-    store_id: storeId,
+    store_id: trimmedStoreId,
     name: item.label,
     slug: item.slug,
     sort_order: sortBase + index,

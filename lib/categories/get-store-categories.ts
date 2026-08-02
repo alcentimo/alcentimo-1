@@ -1,17 +1,47 @@
 import { unstable_noStore as noStore } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StoreCategoryRow } from "@/lib/categories/types";
+import {
+  isStoreCategoryVisibleForRubro,
+  normalizeStoreRubro,
+  type StoreRubro,
+} from "@/src/config/categories";
 
 export async function getStoreCategoriesForManagement(
   supabase: SupabaseClient,
   storeId: string,
+  rubro?: StoreRubro | string | null,
 ): Promise<StoreCategoryRow[]> {
   noStore();
 
+  const trimmedStoreId = storeId.trim();
+  if (!trimmedStoreId) {
+    throw new Error("Tienda no válida para cargar categorías.");
+  }
+
+  let activeRubro = normalizeStoreRubro(rubro);
+  if (rubro == null || String(rubro).trim() === "") {
+    const { data: storeRow, error: storeError } = await supabase
+      .from("stores")
+      .select("rubro_tienda")
+      .eq("id", trimmedStoreId)
+      .maybeSingle();
+
+    if (storeError) {
+      throw new Error(
+        `No se pudo leer el rubro de la tienda: ${storeError.message}`,
+      );
+    }
+    activeRubro = normalizeStoreRubro(
+      (storeRow?.rubro_tienda as string | null) ?? null,
+    );
+  }
+
+  // Aislamiento estricto: solo filas de esta tienda.
   const { data: categories, error } = await supabase
     .from("categories")
     .select("id, name, slug, sort_order, is_active")
-    .eq("store_id", storeId)
+    .eq("store_id", trimmedStoreId)
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
 
@@ -19,14 +49,17 @@ export async function getStoreCategoriesForManagement(
     throw new Error(`No se pudieron cargar las categorías: ${error.message}`);
   }
 
-  const rows = categories ?? [];
+  const rows = (categories ?? []).filter((row) =>
+    isStoreCategoryVisibleForRubro(String(row.slug ?? ""), activeRubro),
+  );
+
   if (rows.length === 0) return [];
 
   const ids = rows.map((row) => row.id as string);
   const { data: products, error: productsError } = await supabase
     .from("products")
     .select("category_id")
-    .eq("store_id", storeId)
+    .eq("store_id", trimmedStoreId)
     .eq("is_deleted", false)
     .in("category_id", ids);
 

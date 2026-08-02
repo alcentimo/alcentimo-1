@@ -169,7 +169,7 @@ export function CategoriesTab({
     <SettingsTabShell hideSaveBar error={error}>
       <SettingsSection
         title="Categorías del catálogo"
-        description="Crea y ordena las categorías principales de tu tienda (por ejemplo Damas, Caballeros, Niños). Los compradores las usan para filtrar el catálogo."
+        description="Solo ves las categorías de tu rubro actual (más las que crees tú). Los compradores las usan para filtrar el catálogo."
       >
         <div className="space-y-4">
           {success ? (

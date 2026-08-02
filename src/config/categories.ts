@@ -253,6 +253,28 @@ export function getInitialCategoriesForRubro(
 }
 
 /**
+ * ¿Debe mostrarse esta categoría en la gestión / catálogo del rubro activo?
+ * - Presets del rubro actual: sí
+ * - Presets exclusivos de otros rubros (o retirados): no
+ * - Categorías propias del comerciante: sí
+ */
+export function isStoreCategoryVisibleForRubro(
+  slug: string,
+  rubro: StoreRubro | string | null | undefined,
+): boolean {
+  const normalizedRubro = normalizeStoreRubro(rubro);
+  const normalizedSlug = slug.trim().toLowerCase();
+  if (!normalizedSlug) return false;
+
+  const currentPresets = new Set(
+    getProductCategoriesForRubro(normalizedRubro).map((item) => item.slug),
+  );
+  if (currentPresets.has(normalizedSlug)) return true;
+
+  return !getOtherRubroExclusivePresetSlugs(normalizedRubro).has(normalizedSlug);
+}
+
+/**
  * Presets de otros rubros que NO pertenecen al rubro actual.
  * Respeta slugs compartidos (p. ej. "accesorios" en moda y tecnología).
  * Incluye presets de rubros retirados (muebles, herramientas, anillos…).

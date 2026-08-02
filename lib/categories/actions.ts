@@ -28,8 +28,9 @@ function revalidateCategoryPaths(storeSlug: string) {
 async function loadManagedCategories(
   supabase: Awaited<ReturnType<typeof createClient>>,
   storeId: string,
+  rubro?: string | null,
 ): Promise<StoreCategoryRow[]> {
-  return getStoreCategoriesForManagement(supabase, storeId);
+  return getStoreCategoriesForManagement(supabase, storeId, rubro);
 }
 
 export async function listStoreCategoriesAction(): Promise<CategoryActionResult> {
@@ -38,7 +39,11 @@ export async function listStoreCategoriesAction(): Promise<CategoryActionResult>
   if (!auth.ok) return { error: auth.error };
 
   try {
-    const categories = await loadManagedCategories(supabase, auth.store.id);
+    const categories = await loadManagedCategories(
+      supabase,
+      auth.store.id,
+      auth.store.rubro_tienda,
+    );
     return { categories };
   } catch (error) {
     return {
@@ -63,7 +68,11 @@ export async function createStoreCategoryAction(input: {
   const slug = slugify(name);
   if (!slug) return { error: "El nombre de la categoría no es válido." };
 
-  const existing = await loadManagedCategories(supabase, auth.store.id);
+  const existing = await loadManagedCategories(
+    supabase,
+    auth.store.id,
+    auth.store.rubro_tienda,
+  );
   if (existing.some((row) => row.slug === slug)) {
     return { error: "Ya tienes una categoría con ese nombre." };
   }
@@ -131,7 +140,11 @@ export async function updateStoreCategoryAction(input: {
     const slug = slugify(name);
     if (!slug) return { error: "El nombre de la categoría no es válido." };
 
-    const siblings = await loadManagedCategories(supabase, auth.store.id);
+    const siblings = await loadManagedCategories(
+      supabase,
+      auth.store.id,
+      auth.store.rubro_tienda,
+    );
     if (siblings.some((row) => row.slug === slug && row.id !== categoryId)) {
       return { error: "Ya tienes una categoría con ese nombre." };
     }
@@ -160,7 +173,11 @@ export async function updateStoreCategoryAction(input: {
   }
   if (!data) return { error: "No se encontró la categoría." };
 
-  const categories = await loadManagedCategories(supabase, auth.store.id);
+  const categories = await loadManagedCategories(
+    supabase,
+    auth.store.id,
+    auth.store.rubro_tienda,
+  );
   const category = categories.find((row) => row.id === categoryId);
   revalidateCategoryPaths(auth.store.slug);
 
@@ -191,7 +208,11 @@ export async function reorderStoreCategoriesAction(input: {
     return { error: "No hay categorías para reordenar." };
   }
 
-  const existing = await loadManagedCategories(supabase, auth.store.id);
+  const existing = await loadManagedCategories(
+    supabase,
+    auth.store.id,
+    auth.store.rubro_tienda,
+  );
   const existingIds = new Set(existing.map((row) => row.id));
   if (
     orderedIds.length !== existing.length ||
@@ -215,7 +236,11 @@ export async function reorderStoreCategoriesAction(input: {
   const failed = results.find((result) => result.error);
   if (failed?.error) return { error: failed.error.message };
 
-  const categories = await loadManagedCategories(supabase, auth.store.id);
+  const categories = await loadManagedCategories(
+    supabase,
+    auth.store.id,
+    auth.store.rubro_tienda,
+  );
   revalidateCategoryPaths(auth.store.slug);
   return { categories };
 }
@@ -230,7 +255,11 @@ export async function deleteStoreCategoryAction(input: {
   const categoryId = String(input.categoryId ?? "").trim();
   if (!categoryId) return { error: "Categoría no válida." };
 
-  const categories = await loadManagedCategories(supabase, auth.store.id);
+  const categories = await loadManagedCategories(
+    supabase,
+    auth.store.id,
+    auth.store.rubro_tienda,
+  );
   const target = categories.find((row) => row.id === categoryId);
   if (!target) return { error: "No se encontró la categoría." };
 
