@@ -182,27 +182,32 @@ export function CatalogFulfillmentProvider({
   const getAvailableStock = useCallback(
     (variantId: string | null | undefined, fallback: number) => {
       if (!variantId) return fallback;
-      // Una sola sede: usar stock del listado (misma fuente que el panel admin).
-      if (activeLocations.length <= 1) return fallback;
+
+      // Sin multi-sucursal (0–1 sedes activas): confiar en el stock global del catálogo.
+      // Evita falsos "disponible: 0" cuando la fila de sede está desfasada.
+      if (!multiLocation || activeLocations.length <= 1) {
+        return Math.max(0, fallback);
+      }
 
       const hasAnyLocationRow = locationStocks.some(
         (row) => row.variant_id === variantId,
       );
-      if (!hasAnyLocationRow) return fallback;
+      if (!hasAnyLocationRow) return Math.max(0, fallback);
 
       const locationId = selectedLocationId ?? defaultLocation?.id;
-      if (!locationId) return fallback;
+      if (!locationId) return Math.max(0, fallback);
 
       const key = `${variantId}:${locationId}`;
       // Sin fila para esta sede: no inventar stock del listado global.
       if (!stockIndex.has(key)) return 0;
 
-      return stockIndex.get(key) ?? 0;
+      return Math.max(0, stockIndex.get(key) ?? 0);
     },
     [
       activeLocations.length,
       defaultLocation?.id,
       locationStocks,
+      multiLocation,
       selectedLocationId,
       stockIndex,
     ],
