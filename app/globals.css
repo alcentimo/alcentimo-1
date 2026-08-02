@@ -9102,6 +9102,31 @@ body {
   @apply flex items-start gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-4 dark:border-zinc-800 dark:bg-zinc-900/40;
 }
 
+.domain-guide-verify-live {
+  @apply flex items-start gap-2 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/50;
+}
+
+.domain-guide-verify-live-dot {
+  @apply mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-500;
+  animation: domain-guide-verify-pulse 1.2s ease-in-out infinite;
+}
+
+.domain-guide-verify-live-text {
+  @apply text-xs leading-relaxed text-zinc-600 transition-opacity duration-300 dark:text-zinc-300;
+}
+
+@keyframes domain-guide-verify-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
 .plan-domain-promo-badge {
   @apply inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-900 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-100;
 }

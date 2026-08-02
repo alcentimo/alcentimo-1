@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import type { CustomDomainDnsVerificationResult } from "@/lib/domains/verify-custom-domain-dns";
 import { cn } from "@/lib/cn";
 
@@ -34,22 +34,7 @@ export function CustomDomainVerificationPanel({
   verification,
   verifying,
 }: CustomDomainVerificationPanelProps) {
-  if (verifying) {
-    return (
-      <div
-        className="domain-dns-verify domain-dns-verify-pending mt-4"
-        role="status"
-        aria-live="polite"
-      >
-        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-        <p className="text-sm font-medium">
-          Revisando si tu dominio ya apunta a Alcéntimo…
-        </p>
-      </div>
-    );
-  }
-
-  if (!verification) return null;
+  if (verifying || !verification) return null;
 
   const toneClass =
     verification.status === "success"

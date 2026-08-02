@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import {
   Check,
   Copy,
@@ -50,6 +50,12 @@ interface DnsRecordRow {
 }
 
 type ProviderGuideId = "cloudflare" | "godaddy" | "namecheap" | "other";
+
+const VERIFY_STATUS_MESSAGES = [
+  "Consultando servidores globales en tiempo real…",
+  "Revisando si tu dominio ya apunta a Alcéntimo…",
+  "Esto puede tardar unos segundos; no cierres esta página…",
+] as const;
 
 const PROVIDER_GUIDES: Array<{
   id: ProviderGuideId;
@@ -180,6 +186,24 @@ export function CustomDomainSection({
     useState<CustomDomainDnsVerificationResult | null>(null);
   const [pending, startTransition] = useTransition();
   const [verifying, setVerifying] = useState(false);
+  const [verifyStatusIndex, setVerifyStatusIndex] = useState(0);
+
+  useEffect(() => {
+    if (!verifying) {
+      setVerifyStatusIndex(0);
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setVerifyStatusIndex(
+        (index) => (index + 1) % VERIFY_STATUS_MESSAGES.length,
+      );
+    }, 2200);
+
+    return () => window.clearInterval(timer);
+  }, [verifying]);
+
+  const verifyStatusMessage = VERIFY_STATUS_MESSAGES[verifyStatusIndex];
 
   const cnameTarget = getCustomDomainCnameTarget();
   const apexTarget = getCustomDomainApexATarget();
@@ -262,33 +286,6 @@ export function CustomDomainSection({
     }
   }
 
-  async function executeVerification(domain: string) {
-    setVerifying(true);
-    setVerification(null);
-
-    try {
-      const result = await verifyStoreCustomDomainRequest(domain);
-
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
-
-      if (result.verification) {
-        setVerification(result.verification);
-      }
-
-      if (result.customDomainVerified) {
-        setSavedVerified(true);
-        setSuccess("¡Listo! Tu dominio ya está activo en tu tienda.");
-      } else if (result.verification && !result.verification.ok) {
-        setSuccess(null);
-      }
-    } finally {
-      setVerifying(false);
-    }
-  }
-
   function handleSave() {
     setError(null);
     setSuccess(null);
@@ -316,17 +313,22 @@ export function CustomDomainSection({
     });
   }
 
-  function handleVerifyConnection() {
+  async function handleVerifyConnection() {
+    const domainToCheck = domainInput.trim();
+    if (!domainToCheck) {
+      setError("Escribe tu dominio antes de comprobar la conexión.");
+      return;
+    }
+
+    // Activar carga al instante (fuera de startTransition) para que el botón
+    // no se vea “congelado” mientras responde el servidor.
     setError(null);
     setSuccess(null);
+    setVerification(null);
+    setVerifying(true);
+    setVerifyStatusIndex(0);
 
-    startTransition(async () => {
-      const domainToCheck = domainInput.trim();
-      if (!domainToCheck) {
-        setError("Escribe tu dominio antes de comprobar la conexión.");
-        return;
-      }
-
+    try {
       let domainForVerify = savedDomain;
 
       if (domainToCheck !== savedDomain) {
@@ -346,8 +348,26 @@ export function CustomDomainSection({
         return;
       }
 
-      await executeVerification(domainForVerify);
-    });
+      const result = await verifyStoreCustomDomainRequest(domainForVerify);
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      if (result.verification) {
+        setVerification(result.verification);
+      }
+
+      if (result.customDomainVerified) {
+        setSavedVerified(true);
+        setSuccess("¡Listo! Tu dominio ya está activo en tu tienda.");
+      } else if (result.verification && !result.verification.ok) {
+        setSuccess(null);
+      }
+    } finally {
+      setVerifying(false);
+    }
   }
 
   function handleClear() {
@@ -582,17 +602,20 @@ export function CustomDomainSection({
               aún no está listo, te diremos qué falta con palabras simples.
             </p>
 
-            <div className="mt-4">
+            <div className="mt-4 space-y-3">
               <Button
                 type="button"
-                onClick={handleVerifyConnection}
+                onClick={() => {
+                  void handleVerifyConnection();
+                }}
                 disabled={pending || verifying}
+                aria-busy={verifying}
                 className="min-w-[12rem]"
               >
                 {verifying ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    Comprobando…
+                    Consultando…
                   </>
                 ) : (
                   <>
@@ -601,12 +624,26 @@ export function CustomDomainSection({
                   </>
                 )}
               </Button>
+
+              {verifying ? (
+                <div
+                  className="domain-guide-verify-live"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  <span className="domain-guide-verify-live-dot" aria-hidden="true" />
+                  <p className="domain-guide-verify-live-text">{verifyStatusMessage}</p>
+                </div>
+              ) : null}
             </div>
 
-            <CustomDomainVerificationPanel
-              verification={verification}
-              verifying={verifying}
-            />
+            {!verifying ? (
+              <CustomDomainVerificationPanel
+                verification={verification}
+                verifying={false}
+              />
+            ) : null}
           </section>
         ) : null}
 
