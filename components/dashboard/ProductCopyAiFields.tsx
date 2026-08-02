@@ -22,6 +22,7 @@ interface ProductCopyAiFieldsProps {
   /** Estilo compacto del catálogo (sheet/dialog) vs página completa. */
   variant?: "compact" | "default";
   namePlaceholder?: string;
+  showDescription?: boolean;
   showShortDescription?: boolean;
 }
 
@@ -38,6 +39,7 @@ export function ProductCopyAiFields({
   disabled = false,
   variant = "compact",
   namePlaceholder = "Ej: Nombre del producto",
+  showDescription = true,
   showShortDescription = true,
 }: ProductCopyAiFieldsProps) {
   const [aiError, setAiError] = useState<string | null>(null);
@@ -139,10 +141,17 @@ export function ProductCopyAiFields({
             Mejorar con IA
           </Button>
         </div>
-        <p className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
-          Optimiza nombre, descripción corta y descripción completa de una sola
-          vez. Escribe un borrador breve antes de pulsar.
-        </p>
+        {showDescription || showShortDescription ? (
+          <p className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
+            Optimiza nombre, descripción corta y descripción completa de una sola
+            vez. Escribe un borrador breve antes de pulsar.
+          </p>
+        ) : (
+          <p className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
+            Mejora el nombre y genera descripciones (en ajustes avanzados) a
+            partir de un borrador breve.
+          </p>
+        )}
       </div>
 
       <div>
@@ -163,22 +172,24 @@ export function ProductCopyAiFields({
         />
       </div>
 
-      <div>
-        <Label htmlFor={`${idPrefix}-description`} className={labelClassName}>
-          Descripción
-        </Label>
-        <Textarea
-          id={`${idPrefix}-description`}
-          name="description"
-          maxLength={1800}
-          rows={5}
-          value={description}
-          onChange={(event) => onDescriptionChange(event.target.value)}
-          placeholder="Beneficios, materiales, uso… La IA puede ampliarlo con viñetas."
-          disabled={disabled}
-          className={textareaClassName}
-        />
-      </div>
+      {showDescription ? (
+        <div>
+          <Label htmlFor={`${idPrefix}-description`} className={labelClassName}>
+            Descripción
+          </Label>
+          <Textarea
+            id={`${idPrefix}-description`}
+            name="description"
+            maxLength={1800}
+            rows={isCompact ? 3 : 5}
+            value={description}
+            onChange={(event) => onDescriptionChange(event.target.value)}
+            placeholder="Beneficios, materiales, uso… La IA puede ampliarlo con viñetas."
+            disabled={disabled}
+            className={textareaClassName}
+          />
+        </div>
+      ) : null}
 
       {showShortDescription ? (
         <div>

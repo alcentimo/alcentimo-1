@@ -48,6 +48,7 @@ import { useCountry } from "@/components/providers/CountryProvider";
 import { getTransactionalCatalogPublicUrl } from "@/lib/stores";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
 import { ProductWholesaleField } from "@/components/dashboard/ProductWholesaleField";
 import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
@@ -401,6 +402,8 @@ function QuickProductFormSession({
         disabled={isBusy}
         variant="compact"
         namePlaceholder={namePlaceholder}
+        showDescription={false}
+        showShortDescription={false}
       />
       <ProductTitleAutoDetectHint hint={autoDetectHint} />
 
@@ -447,39 +450,6 @@ function QuickProductFormSession({
           </div>
         )}
       </div>
-
-      <ProductCompareAtField
-        priceUsd={priceUsd}
-        compareAtUsd={compareAtUsd}
-        onCompareAtUsdChange={setCompareAtUsd}
-        disabled={isBusy}
-        variant="compact"
-        idPrefix="quick-compare-at"
-      />
-
-      {wholesaleEnabled ? (
-        <ProductWholesaleField
-          priceUsd={priceUsd}
-          wholesalePriceUsd={wholesalePriceUsd}
-          wholesaleMinQty={wholesaleMinQty}
-          onWholesalePriceUsdChange={setWholesalePriceUsd}
-          onWholesaleMinQtyChange={setWholesaleMinQty}
-          disabled={isBusy}
-          variant="compact"
-          idPrefix="quick-wholesale"
-        />
-      ) : null}
-
-      {!hasCustomVariants || stationeryUnifiedStock ? (
-        <>
-          {stationeryUnifiedStock ? (
-            <StationeryStockHint extraFields={extraFields} stockQuantity={0} />
-          ) : null}
-          <LocationStockFields inputId="quick-stock" />
-        </>
-      ) : (
-        <LocationStockFields hidden />
-      )}
 
       <ProductGalleryField
         id="quick-image"
@@ -610,6 +580,17 @@ function QuickProductFormSession({
         />
       ) : null}
 
+      {!hasCustomVariants || stationeryUnifiedStock ? (
+        <>
+          {stationeryUnifiedStock ? (
+            <StationeryStockHint extraFields={extraFields} stockQuantity={0} />
+          ) : null}
+          <LocationStockFields inputId="quick-stock" />
+        </>
+      ) : (
+        <LocationStockFields hidden />
+      )}
+
       <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800">
         <button
           type="button"
@@ -617,7 +598,12 @@ function QuickProductFormSession({
           className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900/50"
           aria-expanded={advancedOpen}
         >
-          <span>Más opciones</span>
+          <span className="min-w-0">
+            <span className="block">Ajustes avanzados</span>
+            <span className="mt-0.5 block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+              Descripciones, ofertas, mayorista y alerta de stock
+            </span>
+          </span>
           <ChevronDown
             className={cn(
               "h-4 w-4 shrink-0 text-zinc-400 transition-transform",
@@ -627,33 +613,98 @@ function QuickProductFormSession({
           />
         </button>
 
-        {advancedOpen && (
-          <div className="space-y-4 border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-800">
-            <div>
-              <Label htmlFor="quick-low-stock" className="payment-field-label">
-                Umbral de alerta de stock
-              </Label>
-              <Input
-                id="quick-low-stock"
-                name="low_stock_threshold"
-                type="number"
-                min={0}
-                step={1}
-                defaultValue={5}
-                className="payment-field-input mt-1.5"
-              />
-            </div>
-
-            {!isRopaModa && !isAlimentos && !isSaludBelleza ? (
-              <RubroVariantsSection
-                rubro={productFormConfig.rubroTienda}
-                variants={variants}
-                onChange={setVariants}
-                disabled={isBusy}
-              />
-            ) : null}
+        <div
+          className={cn(
+            "space-y-4 border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-800",
+            !advancedOpen && "hidden",
+          )}
+        >
+          <div>
+            <Label htmlFor="quick-description" className="payment-field-label">
+              Descripción
+            </Label>
+            <Textarea
+              id="quick-description"
+              name="description"
+              maxLength={1800}
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Beneficios, materiales, uso…"
+              disabled={isBusy}
+              className="payment-field-input mt-1.5 min-h-[5.5rem] resize-y leading-relaxed"
+            />
           </div>
-        )}
+
+          <div>
+            <Label
+              htmlFor="quick-short-description"
+              className="payment-field-label"
+            >
+              Descripción corta
+            </Label>
+            <Input
+              id="quick-short-description"
+              name="short_description"
+              maxLength={160}
+              value={shortDescription}
+              onChange={(e) => setShortDescription(e.target.value)}
+              placeholder="Aparece en el listado del catálogo"
+              disabled={isBusy}
+              className="payment-field-input mt-1.5"
+            />
+          </div>
+
+          <ProductCompareAtField
+            priceUsd={priceUsd}
+            compareAtUsd={compareAtUsd}
+            onCompareAtUsdChange={setCompareAtUsd}
+            disabled={isBusy}
+            variant="compact"
+            idPrefix="quick-compare-at"
+          />
+
+          {wholesaleEnabled ? (
+            <ProductWholesaleField
+              priceUsd={priceUsd}
+              wholesalePriceUsd={wholesalePriceUsd}
+              wholesaleMinQty={wholesaleMinQty}
+              onWholesalePriceUsdChange={setWholesalePriceUsd}
+              onWholesaleMinQtyChange={setWholesaleMinQty}
+              disabled={isBusy}
+              variant="compact"
+              idPrefix="quick-wholesale"
+            />
+          ) : null}
+
+          <div>
+            <Label htmlFor="quick-low-stock" className="payment-field-label">
+              Umbral de alerta de stock
+            </Label>
+            <Input
+              id="quick-low-stock"
+              name="low_stock_threshold"
+              type="number"
+              min={0}
+              step={1}
+              defaultValue={5}
+              className="payment-field-input mt-1.5"
+            />
+            <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+              Se marca en rojo en el inventario cuando el stock sea igual o
+              menor a este valor.
+            </p>
+          </div>
+
+          {!isRopaModa && !isAlimentos && !isSaludBelleza ? (
+            <RubroVariantsSection
+              rubro={productFormConfig.rubroTienda}
+              variants={variants}
+              onChange={setVariants}
+              disabled={isBusy}
+            />
+          ) : null}
+        </div>
       </div>
 
       {!hasGallery && !galleryBusy && (
