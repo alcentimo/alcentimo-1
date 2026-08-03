@@ -43,30 +43,48 @@ export function getVenezuelaHour(reference = new Date()): number {
 
 /**
  * Fecha de vigencia de la tasa descargada.
- * Tras ~16:00 VE el BCV publica la tasa del día siguiente: se guarda para
- * activarse a las 00:00 VE. Antes de esa hora, la API suele devolver la tasa
- * ya vigente hoy.
+ *
+ * Prioridad:
+ * 1) Fecha reportada por la API (effective_date / date / fechaActualizacion)
+ *    si cae en hoy o mañana VE — evita guardar la tasa de hoy como “mañana”
+ *    en slots evening cuando el BCV ya actualizó el valor del día.
+ * 2) Heurística por slot/hora: tras ~16:00 VE los slots de tarde suelen
+ *    publicar la tasa del día siguiente.
  */
 export function resolveBcvEffectiveDate(options: {
   slot?: string;
   reference?: Date;
+  sourceEffectiveDate?: string | null;
 }): string {
   const reference = options.reference ?? new Date();
   const slot = options.slot ?? "";
   const hour = getVenezuelaHour(reference);
+  const today = getVenezuelaSyncDate(reference);
+  const tomorrow = getVenezuelaNextSyncDate(reference);
 
-  if (slot === "evening" || slot === "late_evening") {
-    return getVenezuelaNextSyncDate(reference);
+  const sourceDate = options.sourceEffectiveDate?.trim() ?? "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(sourceDate)) {
+    if (sourceDate === today || sourceDate === tomorrow) {
+      return sourceDate;
+    }
+    // Fuente atrasada: la cotización actual vale para hoy.
+    if (sourceDate < today) {
+      return today;
+    }
   }
 
-  // Manual / autoheal / afternoon sin slot claro: a partir de las 16:00 VE
+  if (slot === "evening" || slot === "late_evening") {
+    return tomorrow;
+  }
+
+  // Manual / autoheal / afternoon sin fecha de fuente: a partir de las 16:00 VE
   // tratamos la publicación como tasa del día siguiente.
   if (
     (slot === "manual" || slot === "autoheal" || slot === "afternoon" || !slot) &&
     hour >= 16
   ) {
-    return getVenezuelaNextSyncDate(reference);
+    return tomorrow;
   }
 
-  return getVenezuelaSyncDate(reference);
+  return today;
 }

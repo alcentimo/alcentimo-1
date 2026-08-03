@@ -37,7 +37,7 @@ const SLOT_SCHEDULE_LABEL: Partial<Record<BcvSyncSlot, string>> = {
   midnight: "01:00 America/Caracas",
   morning: "06:00 America/Caracas",
   midday: "09:00 America/Caracas",
-  retry: "12:00 America/Caracas",
+  retry: "12:00 / 15:30 America/Caracas",
   afternoon: "14:00 America/Caracas",
   evening: "17:00 America/Caracas",
   late_evening: "19:00 America/Caracas",

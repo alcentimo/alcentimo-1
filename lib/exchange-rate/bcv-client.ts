@@ -7,6 +7,13 @@ const FETCH_TIMEOUT_MS = 12_000;
 const FETCH_ATTEMPTS_PER_ENDPOINT = 3;
 const RETRY_BASE_DELAY_MS = 800;
 
+export interface BcvRateFetchResult {
+  rate: number;
+  /** Fecha de vigencia reportada por la fuente (YYYY-MM-DD), si existe. */
+  sourceEffectiveDate: string | null;
+  source: string;
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -31,6 +38,29 @@ function parseNumericRate(value: unknown): number | null {
     // Formato US/API: "742.8105"
     const parsed = Number.parseFloat(trimmed.replace(/[^\d.-]/g, ""));
     if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+
+  return null;
+}
+
+/** Extrae YYYY-MM-DD de campos típicos de APIs BCV. */
+export function parseSourceEffectiveDate(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const data = payload as Record<string, unknown>;
+
+  const candidates = [
+    data.effective_date,
+    data.date,
+    data.fecha,
+    data.fechaActualizacion,
+    data.fecha_actualizacion,
+    data.updated_at,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string" || !candidate.trim()) continue;
+    const match = candidate.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
   }
 
   return null;
@@ -116,7 +146,9 @@ function roundRateTwoDecimals(rate: number): number {
   return Math.round((rate + Number.EPSILON) * 100) / 100;
 }
 
-async function fetchRateFromEndpoint(endpoint: string): Promise<number> {
+async function fetchRateFromEndpoint(
+  endpoint: string,
+): Promise<BcvRateFetchResult> {
   let lastError = "sin detalle";
 
   for (let attempt = 1; attempt <= FETCH_ATTEMPTS_PER_ENDPOINT; attempt++) {
@@ -133,6 +165,7 @@ async function fetchRateFromEndpoint(endpoint: string): Promise<number> {
       const rate = extractRateFromPayload(payload);
       if (rate) {
         const rounded = roundRateTwoDecimals(rate);
+        const sourceEffectiveDate = parseSourceEffectiveDate(payload);
         console.log(
           `[bcv-sync] ${JSON.stringify({
             ts: new Date().toISOString(),
@@ -141,9 +174,14 @@ async function fetchRateFromEndpoint(endpoint: string): Promise<number> {
             attempt,
             rate: rounded,
             rawRate: rate,
+            sourceEffectiveDate,
           })}`,
         );
-        return rounded;
+        return {
+          rate: rounded,
+          sourceEffectiveDate,
+          source: endpoint,
+        };
       }
       lastError = "respuesta sin tasa válida";
     } catch (error) {
@@ -168,7 +206,7 @@ async function fetchRateFromEndpoint(endpoint: string): Promise<number> {
 }
 
 /** Obtiene la tasa USD/VES publicada por el BCV desde APIs públicas (2 decimales). */
-export async function fetchBcvUsdRate(): Promise<number> {
+export async function fetchBcvUsdRate(): Promise<BcvRateFetchResult> {
   const errors: string[] = [];
 
   for (const endpoint of BCV_API_ENDPOINTS) {

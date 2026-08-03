@@ -1,7 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 import { getActiveGlobalExchangeRate } from "@/lib/exchange-rate/get-tasa-cambio";
-import { isBcvRateBehindCalendarDay } from "@/lib/exchange-rate/rate-freshness";
+import {
+  isBcvRateBehindCalendarDay,
+  isBcvRateStale,
+} from "@/lib/exchange-rate/rate-freshness";
 import { runManualBcvSync } from "@/lib/exchange-rate/sync-bcv-run";
 import { getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
 import type { ExchangeRate } from "@/lib/database.types";
@@ -29,7 +32,8 @@ async function wasAutohealAttemptedRecently(
 
 /**
  * Si la tasa activa es de un día anterior (BCV atrasado / cron fallido),
- * intenta sincronizar en segundo plano.
+ * o el espejo tasas_cambio lleva muchas horas sin refrescarse en el mismo día,
+ * intenta sincronizar.
  *
  * Nunca deja la app sin precio: ante fallo, cooldown o timeout se conserva
  * la última tasa válida (carry-forward). Tras sync exitosa, relee por
@@ -40,7 +44,27 @@ export async function ensureBcvRateFreshForToday(
   currentRate: ExchangeRate | null,
 ): Promise<ExchangeRate | null> {
   const effectiveDate = currentRate?.effective_date ?? null;
-  if (!isBcvRateBehindCalendarDay(effectiveDate)) {
+  const behindDay = isBcvRateBehindCalendarDay(effectiveDate);
+
+  let mirrorStale = false;
+  try {
+    const adminProbe = createAdminClient();
+    const { data: mirror } = await adminProbe
+      .from("tasas_cambio")
+      .select("ultima_actualizacion, tasa")
+      .eq("moneda", "USD")
+      .maybeSingle();
+    // Mismo día operativo pero espejo viejo (>3 h): el BCV pudo publicar más tarde.
+    mirrorStale = Boolean(
+      !behindDay &&
+        mirror?.ultima_actualizacion &&
+        isBcvRateStale(String(mirror.ultima_actualizacion), 3),
+    );
+  } catch {
+    mirrorStale = false;
+  }
+
+  if (!behindDay && !mirrorStale) {
     return currentRate;
   }
 
@@ -54,6 +78,7 @@ export async function ensureBcvRateFreshForToday(
       updatedAt: carryForward?.created_at ?? null,
       rate: carryForward?.rate ?? null,
       carryForward: true,
+      reason: behindDay ? "behind_calendar_day" : "mirror_stale_same_day",
     },
     "warn",
   );

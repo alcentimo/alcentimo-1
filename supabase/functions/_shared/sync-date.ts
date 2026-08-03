@@ -35,16 +35,33 @@ export function getVenezuelaHour(reference = new Date()): number {
   return hour;
 }
 
+/**
+ * Fecha de vigencia de la tasa descargada.
+ * Prefiere effective_date de la API (hoy/mañana VE) sobre la heurística de slot.
+ */
 export function resolveBcvEffectiveDate(options: {
   slot?: string;
   reference?: Date;
+  sourceEffectiveDate?: string | null;
 }): string {
   const reference = options.reference ?? new Date();
   const slot = options.slot ?? "";
   const hour = getVenezuelaHour(reference);
+  const today = getVenezuelaSyncDate(reference);
+  const tomorrow = getVenezuelaNextSyncDate(reference);
+
+  const sourceDate = options.sourceEffectiveDate?.trim() ?? "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(sourceDate)) {
+    if (sourceDate === today || sourceDate === tomorrow) {
+      return sourceDate;
+    }
+    if (sourceDate < today) {
+      return today;
+    }
+  }
 
   if (slot === "evening" || slot === "late_evening") {
-    return getVenezuelaNextSyncDate(reference);
+    return tomorrow;
   }
 
   if (
@@ -54,8 +71,8 @@ export function resolveBcvEffectiveDate(options: {
       !slot) &&
     hour >= 16
   ) {
-    return getVenezuelaNextSyncDate(reference);
+    return tomorrow;
   }
 
-  return getVenezuelaSyncDate(reference);
+  return today;
 }

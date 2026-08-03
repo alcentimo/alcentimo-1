@@ -96,8 +96,7 @@ export async function mirrorActiveRateToTasasCambio(
 
 /**
  * Descarga la tasa BCV y la guarda con fecha de vigencia.
- * - Tarde (≥16:00 / slots evening): vigencia = mañana (no se muestra aún).
- * - Resto del día: vigencia = hoy (activa de inmediato).
+ * Prefiere la effective_date de la API; si no hay, usa heurística por slot.
  * tasas_cambio solo refleja la tasa activa hoy.
  */
 export async function syncBcvTasaToDatabase(
@@ -106,9 +105,14 @@ export async function syncBcvTasaToDatabase(
 ): Promise<SyncBcvTasaResult> {
   try {
     logBcvSync("fetch_start", { slot: options?.slot ?? null });
-    const rawRate = await fetchBcvUsdRate();
-    const rate = roundExchangeRate(rawRate);
-    logBcvSync("fetch_success", { rate, rawRate });
+    const fetched = await fetchBcvUsdRate();
+    const rate = roundExchangeRate(fetched.rate);
+    logBcvSync("fetch_success", {
+      rate,
+      rawRate: fetched.rate,
+      sourceEffectiveDate: fetched.sourceEffectiveDate,
+      source: fetched.source,
+    });
 
     if (!Number.isFinite(rate) || rate <= 0) {
       logBcvSync("fetch_invalid_rate", { rate }, "error");
@@ -119,7 +123,10 @@ export async function syncBcvTasaToDatabase(
     }
 
     const today = getVenezuelaSyncDate();
-    const effectiveDate = resolveBcvEffectiveDate({ slot: options?.slot });
+    const effectiveDate = resolveBcvEffectiveDate({
+      slot: options?.slot,
+      sourceEffectiveDate: fetched.sourceEffectiveDate,
+    });
     const activatedNow = effectiveDate <= today;
     const updatedAt = new Date().toISOString();
 
@@ -133,6 +140,7 @@ export async function syncBcvTasaToDatabase(
       activatedNow,
       rate,
       slot: options?.slot ?? null,
+      sourceEffectiveDate: fetched.sourceEffectiveDate,
     });
 
     const write = await upsertExchangeRateForDate(admin, {
@@ -143,6 +151,28 @@ export async function syncBcvTasaToDatabase(
     if (write.error) {
       logBcvSync("db_legacy_upsert_failed", { error: write.error }, "error");
       return { success: false, error: write.error };
+    }
+
+    // Revisión intradía: si el slot programó mañana pero la API no confirma
+    // mañana, actualiza también la fila de hoy (BCV revisó el valor del día).
+    if (
+      !activatedNow &&
+      fetched.sourceEffectiveDate !== effectiveDate
+    ) {
+      const todayWrite = await upsertExchangeRateForDate(admin, {
+        rate,
+        effectiveDate: today,
+        notes: "Actualización BCV intradía (alineada a valor publicado)",
+      });
+      if (todayWrite.error) {
+        logBcvSync(
+          "db_today_align_failed",
+          { error: todayWrite.error },
+          "error",
+        );
+      } else {
+        logBcvSync("db_today_align_ok", { rate, today });
+      }
     }
 
     // tasas_cambio = solo tasa activa (nunca adelantar la del día siguiente).
@@ -162,10 +192,9 @@ export async function syncBcvTasaToDatabase(
 
     return {
       success: true,
-      rate,
-      effectiveDate,
-      activatedNow,
-      // Si quedó programada, devolvemos la tasa activa actual para no confundir la UI.
+      rate: mirror.rate ?? rate,
+      effectiveDate: mirror.effectiveDate ?? effectiveDate,
+      activatedNow: (mirror.effectiveDate ?? effectiveDate) <= today,
       updatedAt,
     };
   } catch (error) {

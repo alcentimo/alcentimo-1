@@ -5,15 +5,53 @@ const BCV_API_ENDPOINTS = [
 
 const FETCH_TIMEOUT_MS = 12_000;
 
+export interface BcvRateFetchResult {
+  rate: number;
+  /** Fecha de vigencia reportada por la fuente (YYYY-MM-DD), si existe. */
+  sourceEffectiveDate: string | null;
+  source: string;
+}
+
 function parseNumericRate(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value) && value > 0) {
     return value;
   }
 
   if (typeof value === "string") {
-    const normalized = value.trim().replace(/\./g, "").replace(",", ".");
-    const parsed = Number.parseFloat(normalized);
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    if (trimmed.includes(",")) {
+      const normalized = trimmed.replace(/\./g, "").replace(",", ".");
+      const parsed = Number.parseFloat(normalized);
+      if (Number.isFinite(parsed) && parsed > 0) return parsed;
+      return null;
+    }
+
+    const parsed = Number.parseFloat(trimmed.replace(/[^\d.-]/g, ""));
     if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+
+  return null;
+}
+
+export function parseSourceEffectiveDate(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const data = payload as Record<string, unknown>;
+
+  const candidates = [
+    data.effective_date,
+    data.date,
+    data.fecha,
+    data.fechaActualizacion,
+    data.fecha_actualizacion,
+    data.updated_at,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string" || !candidate.trim()) continue;
+    const match = candidate.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
   }
 
   return null;
@@ -96,7 +134,7 @@ async function fetchJson(url: string): Promise<unknown> {
   }
 }
 
-export async function fetchBcvUsdRate(): Promise<number> {
+export async function fetchBcvUsdRate(): Promise<BcvRateFetchResult> {
   const errors: string[] = [];
 
   for (const endpoint of BCV_API_ENDPOINTS) {
@@ -104,7 +142,11 @@ export async function fetchBcvUsdRate(): Promise<number> {
       const payload = await fetchJson(endpoint);
       const rate = extractRateFromPayload(payload);
       if (rate) {
-        return Math.round((rate + Number.EPSILON) * 100) / 100;
+        return {
+          rate: Math.round((rate + Number.EPSILON) * 100) / 100,
+          sourceEffectiveDate: parseSourceEffectiveDate(payload),
+          source: endpoint,
+        };
       }
       errors.push(`${endpoint}: respuesta sin tasa válida`);
     } catch (error) {

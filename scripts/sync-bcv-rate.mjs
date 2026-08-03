@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Sincroniza la tasa BCV en tasas_cambio.
+ * Sincroniza la tasa BCV en tasas_cambio + exchange_rate.
  * Uso: node scripts/sync-bcv-rate.mjs
  * Requiere NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en .env.local
  */
@@ -34,9 +34,34 @@ const BCV_API_ENDPOINTS = [
 function parseNumericRate(value) {
   if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
   if (typeof value === "string") {
-    const normalized = value.trim().replace(/\./g, "").replace(",", ".");
-    const parsed = Number.parseFloat(normalized);
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (trimmed.includes(",")) {
+      const normalized = trimmed.replace(/\./g, "").replace(",", ".");
+      const parsed = Number.parseFloat(normalized);
+      if (Number.isFinite(parsed) && parsed > 0) return parsed;
+      return null;
+    }
+    const parsed = Number.parseFloat(trimmed.replace(/[^\d.-]/g, ""));
     if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+  return null;
+}
+
+function parseSourceEffectiveDate(payload) {
+  if (!payload || typeof payload !== "object") return null;
+  const candidates = [
+    payload.effective_date,
+    payload.date,
+    payload.fecha,
+    payload.fechaActualizacion,
+    payload.fecha_actualizacion,
+    payload.updated_at,
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string" || !candidate.trim()) continue;
+    const match = candidate.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
   }
   return null;
 }
@@ -84,7 +109,13 @@ async function fetchBcvUsdRate() {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = await response.json();
       const rate = extractRate(payload);
-      if (rate) return rate;
+      if (rate) {
+        return {
+          rate: Math.round((rate + Number.EPSILON) * 100) / 100,
+          sourceEffectiveDate: parseSourceEffectiveDate(payload),
+          source: endpoint,
+        };
+      }
       errors.push(`${endpoint}: sin tasa válida`);
     } catch (error) {
       errors.push(`${endpoint}: ${error instanceof Error ? error.message : "error"}`);
@@ -105,7 +136,7 @@ function getVenezuelaSyncDate(reference = new Date()) {
 async function logSyncAttempt(admin, { syncDate, success, rate, error }) {
   await admin.from("tasas_cambio_sync_logs").insert({
     sync_date: syncDate,
-    slot: "retry",
+    slot: "manual",
     status: success ? "success" : "failure",
     rate: success ? rate : null,
     error_message: success ? null : error,
@@ -121,6 +152,36 @@ async function resolveBcvAlerts(admin, syncDate) {
     .is("resolved_at", null);
 }
 
+async function upsertExchangeRateForDate(admin, { rate, effectiveDate, notes }) {
+  const { data: existingRate } = await admin
+    .from("exchange_rate")
+    .select("id")
+    .is("store_id", null)
+    .eq("effective_date", effectiveDate)
+    .maybeSingle();
+
+  if (existingRate?.id) {
+    const { error } = await admin
+      .from("exchange_rate")
+      .update({
+        rate,
+        source: "bcv",
+        notes,
+      })
+      .eq("id", existingRate.id);
+    return error;
+  }
+
+  const { error } = await admin.from("exchange_rate").insert({
+    rate,
+    source: "bcv",
+    effective_date: effectiveDate,
+    store_id: null,
+    notes,
+  });
+  return error;
+}
+
 async function main() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
@@ -130,7 +191,8 @@ async function main() {
     process.exit(1);
   }
 
-  const rate = await fetchBcvUsdRate();
+  const fetched = await fetchBcvUsdRate();
+  const rate = fetched.rate;
   if (!Number.isFinite(rate) || rate <= 0) {
     console.error("La API BCV devolvió una tasa nula o inválida.");
     process.exit(1);
@@ -138,13 +200,46 @@ async function main() {
 
   const updatedAt = new Date().toISOString();
   const syncDate = getVenezuelaSyncDate();
-  const effectiveDate = updatedAt.slice(0, 10);
+  // Preferir fecha de la API si es hoy/mañana VE; si no, hoy operativo.
+  const sourceDate = fetched.sourceEffectiveDate;
+  const effectiveDate =
+    sourceDate === syncDate ||
+    (typeof sourceDate === "string" && sourceDate > syncDate)
+      ? sourceDate
+      : syncDate;
   const admin = createClient(url, serviceRoleKey);
 
+  const writeError = await upsertExchangeRateForDate(admin, {
+    rate,
+    effectiveDate,
+    notes: "Actualización manual (script sync-bcv-rate)",
+  });
+
+  if (writeError) {
+    await logSyncAttempt(admin, {
+      syncDate,
+      success: false,
+      error: writeError.message,
+    });
+    console.error("Error en exchange_rate:", writeError.message);
+    process.exit(1);
+  }
+
+  // Espejo activo: última tasa con effective_date <= hoy VE
+  const { data: active } = await admin
+    .from("exchange_rate")
+    .select("rate, effective_date")
+    .is("store_id", null)
+    .lte("effective_date", syncDate)
+    .order("effective_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const activeRate = active ? Number(active.rate) : rate;
   const { error: tasaError } = await admin.from("tasas_cambio").upsert(
     {
       moneda: "USD",
-      tasa: rate,
+      tasa: activeRate,
       ultima_actualizacion: updatedAt,
     },
     { onConflict: "moneda" },
@@ -160,36 +255,12 @@ async function main() {
     process.exit(1);
   }
 
-  const { data: existingRate } = await admin
-    .from("exchange_rate")
-    .select("id")
-    .is("store_id", null)
-    .eq("effective_date", effectiveDate)
-    .maybeSingle();
-
-  if (existingRate?.id) {
-    await admin
-      .from("exchange_rate")
-      .update({
-        rate,
-        source: "bcv",
-        notes: "Actualización automática diaria (API BCV)",
-      })
-      .eq("id", existingRate.id);
-  } else {
-    await admin.from("exchange_rate").insert({
-      rate,
-      source: "bcv",
-      effective_date: effectiveDate,
-      store_id: null,
-      notes: "Actualización automática diaria (API BCV)",
-    });
-  }
-
-  await logSyncAttempt(admin, { syncDate, success: true, rate });
+  await logSyncAttempt(admin, { syncDate, success: true, rate: activeRate });
   await resolveBcvAlerts(admin, syncDate);
 
-  console.log(`Tasa BCV actualizada: ${rate} VES/USD (${updatedAt})`);
+  console.log(
+    `Tasa BCV actualizada: ${activeRate} VES/USD (effective=${active?.effective_date ?? effectiveDate}, source=${fetched.source}, apiDate=${sourceDate ?? "n/a"}, ${updatedAt})`,
+  );
 }
 
 main().catch((error) => {

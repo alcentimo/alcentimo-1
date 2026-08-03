@@ -53,7 +53,7 @@ async function upsertExchangeRateForDate(
 
 async function mirrorActiveRateToTasasCambio(
   admin: SupabaseClient,
-): Promise<{ error?: string }> {
+): Promise<{ rate?: number; effectiveDate?: string; error?: string }> {
   const today = getVenezuelaSyncDate();
   const { data, error } = await admin
     .from("exchange_rate")
@@ -76,7 +76,12 @@ async function mirrorActiveRateToTasasCambio(
     },
     { onConflict: "moneda" },
   );
-  return upsertError ? { error: upsertError.message } : {};
+  if (upsertError) return { error: upsertError.message };
+
+  return {
+    rate,
+    effectiveDate: String(data.effective_date),
+  };
 }
 
 export async function syncBcvTasaToDatabase(
@@ -84,7 +89,8 @@ export async function syncBcvTasaToDatabase(
   options?: { slot?: string },
 ): Promise<SyncBcvTasaResult> {
   try {
-    const rate = roundRate(await fetchBcvUsdRate());
+    const fetched = await fetchBcvUsdRate();
+    const rate = roundRate(fetched.rate);
     if (!Number.isFinite(rate) || rate <= 0) {
       return {
         success: false,
@@ -93,7 +99,10 @@ export async function syncBcvTasaToDatabase(
     }
 
     const today = getVenezuelaSyncDate();
-    const effectiveDate = resolveBcvEffectiveDate({ slot: options?.slot });
+    const effectiveDate = resolveBcvEffectiveDate({
+      slot: options?.slot,
+      sourceEffectiveDate: fetched.sourceEffectiveDate,
+    });
     const activatedNow = effectiveDate <= today;
     const updatedAt = new Date().toISOString();
     const notes = activatedNow
@@ -107,14 +116,23 @@ export async function syncBcvTasaToDatabase(
     });
     if (write.error) return { success: false, error: write.error };
 
+    // Revisión intradía si el slot programó mañana sin confirmación de la API.
+    if (!activatedNow && fetched.sourceEffectiveDate !== effectiveDate) {
+      await upsertExchangeRateForDate(admin, {
+        rate,
+        effectiveDate: today,
+        notes: "Actualización BCV intradía (alineada a valor publicado)",
+      });
+    }
+
     const mirror = await mirrorActiveRateToTasasCambio(admin);
     if (mirror.error) return { success: false, error: mirror.error };
 
     return {
       success: true,
-      rate,
-      effectiveDate,
-      activatedNow,
+      rate: mirror.rate ?? rate,
+      effectiveDate: mirror.effectiveDate ?? effectiveDate,
+      activatedNow: (mirror.effectiveDate ?? effectiveDate) <= today,
       updatedAt,
     };
   } catch (error) {
