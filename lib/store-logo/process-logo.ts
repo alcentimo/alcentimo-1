@@ -2,6 +2,7 @@ import sharp from "sharp";
 import { STORE_LOGO_RECOMMENDED_SIZE } from "@/lib/store-logo/constants";
 import {
   validateStoreLogoDimensions,
+  validateStoreLogoFileSize,
   validateStoreLogoMimeType,
 } from "@/lib/store-logo/validate";
 
@@ -28,6 +29,12 @@ export async function processStoreLogoFile(
     return { ok: false, error: mimeError };
   }
 
+  const isGifMime = file.type.trim().toLowerCase() === "image/gif";
+  const sizeError = validateStoreLogoFileSize(file.size, isGifMime);
+  if (sizeError) {
+    return { ok: false, error: sizeError };
+  }
+
   const input = Buffer.from(await file.arrayBuffer());
   return processStoreLogoBuffer(input, file.type);
 }
@@ -46,7 +53,9 @@ export async function processStoreLogoBuffer(
   try {
     const metadata = await sharp(input, { animated: true }).metadata();
     width = metadata.width ?? 0;
-    height = metadata.height ?? 0;
+    // Con animated:true, `height` puede ser la suma de fotogramas.
+    // `pageHeight` es el alto real de un solo fotograma del GIF.
+    height = metadata.pageHeight ?? metadata.height ?? 0;
     format = metadata.format;
   } catch {
     return {
@@ -55,18 +64,36 @@ export async function processStoreLogoBuffer(
     };
   }
 
-  const validation = validateStoreLogoDimensions(width, height);
+  const isGif =
+    format === "gif" || mimeType?.trim().toLowerCase() === "image/gif";
+
+  // Si Sharp no dio pageHeight y el alto parece apilado, usar el primer fotograma.
+  if (isGif && width > 0 && height > width * 2) {
+    try {
+      const frameMeta = await sharp(input, { animated: false, pages: 1 }).metadata();
+      width = frameMeta.width ?? width;
+      height = frameMeta.height ?? width;
+    } catch {
+      // Mantener dimensiones previas; la validación de GIF omitirá el tope de px.
+    }
+  }
+
+  const validation = validateStoreLogoDimensions(width, height, {
+    skipMaxPixelCheck: isGif,
+  });
 
   if (!validation.ok) {
     return { ok: false, error: validation.error };
   }
 
-  const isGif =
-    format === "gif" || mimeType?.trim().toLowerCase() === "image/gif";
+  const sizeError = validateStoreLogoFileSize(input.length, isGif);
+  if (sizeError) {
+    return { ok: false, error: sizeError };
+  }
 
   try {
     // Iconos PWA: siempre un fotograma estático PNG (los GIFs no sirven bien como icono).
-    const iconSource = await sharp(input, { animated: false })
+    const iconSource = await sharp(input, { animated: false, pages: 1 })
       .rotate()
       .resize(STORE_LOGO_RECOMMENDED_SIZE, STORE_LOGO_RECOMMENDED_SIZE, {
         fit: "contain",

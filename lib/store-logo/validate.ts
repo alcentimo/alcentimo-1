@@ -1,10 +1,13 @@
 import {
   STORE_LOGO_ALLOWED_MIME_TYPES,
   STORE_LOGO_ASPECT_TOLERANCE,
+  STORE_LOGO_GIF_MAX_BYTES,
+  STORE_LOGO_MAX_BYTES,
   STORE_LOGO_MAX_SIZE,
   STORE_LOGO_MIN_SIZE,
   STORE_LOGO_RECOMMENDED_SIZE,
 } from "@/lib/store-logo/constants";
+import { formatFileSize } from "@/lib/image-compress";
 
 export function isSquareAspectRatio(
   width: number,
@@ -22,6 +25,7 @@ export const STORE_LOGO_NON_SQUARE_WARNING =
 export function validateStoreLogoDimensions(
   width: number,
   height: number,
+  options?: { skipMaxPixelCheck?: boolean },
 ):
   | { ok: true; warning?: string }
   | { ok: false; error: string } {
@@ -39,7 +43,9 @@ export function validateStoreLogoDimensions(
     };
   }
 
-  if (maxSide > STORE_LOGO_MAX_SIZE) {
+  // En GIFs animados, Sharp a veces reporta altura = fotogramas apilados.
+  // Para GIF confiamos en el límite de peso, no en el tope de píxeles.
+  if (!options?.skipMaxPixelCheck && maxSide > STORE_LOGO_MAX_SIZE) {
     return {
       ok: false,
       error: `El logo es muy grande. Usa como máximo ${STORE_LOGO_MAX_SIZE}×${STORE_LOGO_MAX_SIZE}px.`,
@@ -63,6 +69,17 @@ export function validateStoreLogoDimensions(
     ok: true,
     warning: warnings.length > 0 ? warnings.join(" ") : undefined,
   };
+}
+
+export function validateStoreLogoFileSize(
+  byteSize: number,
+  isGif: boolean,
+): string | null {
+  const maxBytes = isGif ? STORE_LOGO_GIF_MAX_BYTES : STORE_LOGO_MAX_BYTES;
+  if (byteSize > maxBytes) {
+    return `La imagen supera el límite de ${formatFileSize(maxBytes)}.`;
+  }
+  return null;
 }
 
 export function validateStoreLogoMimeType(mimeType: string): string | null {

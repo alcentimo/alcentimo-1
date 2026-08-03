@@ -6,9 +6,12 @@ import { AlertTriangle, Check, ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { clearStoreLogo, uploadStoreLogo } from "@/lib/settings/actions";
 import {
   STORE_LOGO_ACCEPT,
+  STORE_LOGO_GIF_MAX_BYTES,
   STORE_LOGO_HELP_TEXT,
+  STORE_LOGO_MAX_BYTES,
 } from "@/lib/store-logo/constants";
-import { isGifImageUrl } from "@/lib/media/is-gif-url";
+import { formatFileSize } from "@/lib/image-compress";
+import { isGifImageFile, isGifImageUrl } from "@/lib/media/is-gif-url";
 import { cn } from "@/lib/cn";
 
 interface StoreLogoUploadFieldProps {
@@ -53,6 +56,15 @@ export function StoreLogoUploadField({
     setWarning(null);
     setUploadSuccess(false);
     clearPreview();
+
+    // GIFs: no validar dimensiones en cliente (los fotogramas engañan al Image()).
+    // Solo límite de peso; el servidor usa pageHeight / omite tope de píxeles.
+    const isGif = isGifImageFile(file);
+    const maxBytes = isGif ? STORE_LOGO_GIF_MAX_BYTES : STORE_LOGO_MAX_BYTES;
+    if (file.size > maxBytes) {
+      setError(`La imagen supera el límite de ${formatFileSize(maxBytes)}.`);
+      return;
+    }
 
     const localUrl = URL.createObjectURL(file);
     setPreviewUrl(localUrl);

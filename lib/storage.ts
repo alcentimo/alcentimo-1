@@ -17,6 +17,10 @@ import {
   PRODUCT_IMAGE_MAX_OUTPUT_BYTES,
   PRODUCT_IMAGE_WEBP_QUALITY,
 } from "@/lib/product-image";
+import {
+  STORE_LOGO_GIF_MAX_BYTES,
+  STORE_LOGO_MAX_BYTES,
+} from "@/lib/store-logo/constants";
 import { processStoreLogoFile } from "@/lib/store-logo/process-logo";
 import { processPlatformLogoFile } from "@/lib/platform/process-platform-logo";
 
@@ -323,8 +327,12 @@ export async function uploadStoreLogoImage(
   storeId: string,
   file: File,
 ): Promise<UploadStoreLogoResult> {
-  if (file.size > MAX_QR_INPUT_SIZE) {
-    return { error: "La imagen supera el límite de 2 MB." };
+  const isGif = file.type === "image/gif";
+  const maxBytes = isGif ? STORE_LOGO_GIF_MAX_BYTES : STORE_LOGO_MAX_BYTES;
+  if (file.size > maxBytes) {
+    return {
+      error: `La imagen supera el límite de ${formatFileSize(maxBytes)}.`,
+    };
   }
 
   const processed = await processStoreLogoFile(file);
