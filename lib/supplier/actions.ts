@@ -20,14 +20,15 @@ export interface SupplierProduct {
   updatedAt: string;
 }
 
-type ActionResult<T = Record<string, never>> =
-  | ({ error: string } & Partial<T>)
-  | ({ error?: undefined } & T);
+/** Resultado de acciones del hub: error opcional + payload parcial tipado. */
+type ActionResult<T extends object = object> = {
+  error?: string;
+} & Partial<T>;
 
-async function requireSupplierUser(): Promise<
-  | { error: string; user?: undefined }
-  | { error?: undefined; user: { id: string } }
-> {
+async function requireSupplierUser(): Promise<{
+  error?: string;
+  user?: { id: string };
+}> {
   const supabase = await createClient();
   const {
     data: { user },

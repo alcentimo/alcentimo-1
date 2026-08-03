@@ -86,9 +86,10 @@ export function SupplierProductsPanel({
           setError(result.error ?? "No se pudo actualizar.");
           return;
         }
+        const updated = result.product;
         setProducts((current) =>
           current.map((product) =>
-            product.id === result.product!.id ? result.product! : product,
+            product.id === updated.id ? updated : product,
           ),
         );
         setMessage("Producto actualizado.");
@@ -101,7 +102,8 @@ export function SupplierProductsPanel({
         setError(result.error ?? "No se pudo crear el producto.");
         return;
       }
-      setProducts((current) => [result.product!, ...current]);
+      const created = result.product;
+      setProducts((current) => [created, ...current]);
       setMessage("Producto cargado.");
       resetForm();
     });
