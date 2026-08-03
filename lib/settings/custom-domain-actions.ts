@@ -97,6 +97,54 @@ async function removeProvisionedDomainFromVercel(
   return { ok: true };
 }
 
+/**
+ * Requiere la contraseña actual de la cuenta antes de una acción destructiva
+ * (p. ej. quitar el dominio personalizado).
+ */
+async function verifyAccountPasswordForDestructiveAction(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  currentPassword: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const password = currentPassword.trim();
+  if (!password) {
+    return {
+      ok: false,
+      error: "Ingresa tu contraseña actual para continuar.",
+    };
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user?.email) {
+    return { ok: false, error: "Debes iniciar sesión." };
+  }
+
+  const hasPasswordLogin =
+    user.identities?.some((identity) => identity.provider === "email") ?? false;
+
+  if (!hasPasswordLogin) {
+    return {
+      ok: false,
+      error:
+        "Tu cuenta no tiene contraseña. Configúrala en Cuenta → Seguridad antes de quitar el dominio.",
+    };
+  }
+
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password,
+  });
+
+  if (verifyError) {
+    return { ok: false, error: "La contraseña no es correcta." };
+  }
+
+  return { ok: true };
+}
+
 export async function saveStoreCustomDomainRequest(
   domainInput: string,
 ): Promise<CustomDomainActionResult> {
@@ -118,27 +166,14 @@ export async function saveStoreCustomDomainRequest(
 
   if (validated.error) return { error: validated.error };
 
-  // Vaciar dominio = limpiar en Supabase (+ Vercel solo si ya estaba verificado).
+  // Vaciar dominio solo vía clearStoreCustomDomainRequest (requiere contraseña).
   if (!validated.domain) {
-    const removed = await removeProvisionedDomainFromVercel(
-      previousDomain ?? "",
-      previousVerified,
-    );
-    if (!removed.ok) return { error: removed.error };
-
-    const { error } = await supabase
-      .from("stores")
-      .update({
-        custom_domain: null,
-        custom_domain_verified: false,
-        custom_domain_verified_at: null,
-      })
-      .eq("id", auth.store.id);
-
-    if (error) return { error: error.message };
-
-    revalidatePath("/dashboard/ajustes");
-    revalidatePath(`/c/${auth.store.slug}`);
+    if (previousDomain) {
+      return {
+        error:
+          "Para quitar el dominio usa «Quitar dominio» y confirma con tu contraseña.",
+      };
+    }
 
     return {
       success: true,
@@ -185,16 +220,35 @@ export async function saveStoreCustomDomainRequest(
   };
 }
 
-export async function clearStoreCustomDomainRequest(): Promise<CustomDomainActionResult> {
+export async function clearStoreCustomDomainRequest(
+  currentPassword: string,
+): Promise<CustomDomainActionResult> {
   const supabase = await createClient();
   const auth = await requireAuthStore(supabase);
   if (!auth.ok) return { error: auth.error };
 
+  const passwordCheck = await verifyAccountPasswordForDestructiveAction(
+    supabase,
+    currentPassword,
+  );
+  if (!passwordCheck.ok) {
+    return { error: passwordCheck.error };
+  }
+
   const previousDomain = normalizeCustomDomain(auth.store.custom_domain ?? "");
   const previousVerified = Boolean(auth.store.custom_domain_verified);
 
+  if (!previousDomain) {
+    return {
+      success: true,
+      customDomain: null,
+      customDomainVerified: false,
+      vercelProvisioned: false,
+    };
+  }
+
   const removed = await removeProvisionedDomainFromVercel(
-    previousDomain ?? "",
+    previousDomain,
     previousVerified,
   );
   if (!removed.ok) return { error: removed.error };

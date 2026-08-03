@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import {
+  AlertTriangle,
   Check,
   Copy,
   ExternalLink,
@@ -15,6 +16,15 @@ import { SettingsSection } from "@/components/dashboard/settings/SettingsLayout"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/PasswordInput";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   clearStoreCustomDomainRequest,
   saveStoreCustomDomainRequest,
@@ -187,6 +197,9 @@ export function CustomDomainSection({
   const [pending, startTransition] = useTransition();
   const [verifying, setVerifying] = useState(false);
   const [verifyStatusIndex, setVerifyStatusIndex] = useState(0);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const [clearPassword, setClearPassword] = useState("");
+  const [clearError, setClearError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!verifying) {
@@ -371,14 +384,33 @@ export function CustomDomainSection({
     }
   }
 
-  function handleClear() {
+  function openClearConfirm() {
+    setClearPassword("");
+    setClearError(null);
+    setClearConfirmOpen(true);
+  }
+
+  function closeClearConfirm() {
+    if (pending) return;
+    setClearConfirmOpen(false);
+    setClearPassword("");
+    setClearError(null);
+  }
+
+  function handleConfirmClear() {
+    setClearError(null);
     setError(null);
     setSuccess(null);
 
+    if (!clearPassword.trim()) {
+      setClearError("Ingresa tu contraseña actual para continuar.");
+      return;
+    }
+
     startTransition(async () => {
-      const result = await clearStoreCustomDomainRequest();
+      const result = await clearStoreCustomDomainRequest(clearPassword);
       if (result.error) {
-        setError(result.error);
+        setClearError(result.error);
         return;
       }
 
@@ -386,6 +418,9 @@ export function CustomDomainSection({
       setSavedVerified(false);
       setDomainInput("");
       setVerification(null);
+      setClearConfirmOpen(false);
+      setClearPassword("");
+      setClearError(null);
       setSuccess("Dominio personalizado eliminado.");
     });
   }
@@ -461,7 +496,7 @@ export function CustomDomainSection({
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleClear}
+                onClick={openClearConfirm}
                 disabled={pending || verifying}
               >
                 Quitar dominio
@@ -772,6 +807,106 @@ export function CustomDomainSection({
           </p>
         ) : null}
       </div>
+
+      <Dialog
+        open={clearConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open) closeClearConfirm();
+          else setClearConfirmOpen(true);
+        }}
+        dismissible={!pending}
+      >
+        <DialogContent
+          className="relative max-w-md"
+          onClose={pending ? undefined : closeClearConfirm}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle
+                className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
+                aria-hidden="true"
+              />
+              Quitar dominio personalizado
+            </DialogTitle>
+            <DialogDescription className="text-left">
+              Vas a desconectar{" "}
+              <strong className="font-semibold text-zinc-800 dark:text-zinc-200">
+                {savedDomain}
+              </strong>{" "}
+              de tu tienda. Tu catálogo dejará de responder en esa dirección y
+              volverá al enlace de Alcéntimo. Por seguridad, confirma tu
+              identidad con la contraseña de tu cuenta.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="clear-domain-password">Contraseña actual</Label>
+            <PasswordInput
+              id="clear-domain-password"
+              autoComplete="current-password"
+              value={clearPassword}
+              disabled={pending}
+              placeholder="Tu contraseña de Alcéntimo"
+              aria-invalid={clearError != null}
+              aria-describedby={
+                clearError ? "clear-domain-password-error" : undefined
+              }
+              onChange={(event) => {
+                setClearPassword(event.target.value);
+                if (clearError) setClearError(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  if (!pending && clearPassword.trim()) {
+                    handleConfirmClear();
+                  }
+                }
+              }}
+            />
+            {clearError ? (
+              <p
+                id="clear-domain-password-error"
+                className="text-xs text-red-600 dark:text-red-400"
+                role="alert"
+              >
+                {clearError}
+              </p>
+            ) : (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Esta acción no se puede deshacer sin volver a configurar el
+                dominio.
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeClearConfirm}
+              disabled={pending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              className="bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
+              disabled={pending || !clearPassword.trim()}
+              onClick={handleConfirmClear}
+            >
+              {pending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  Quitando…
+                </>
+              ) : (
+                "Quitar dominio"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SettingsSection>
   );
 }
