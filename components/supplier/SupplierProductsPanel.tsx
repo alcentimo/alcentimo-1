@@ -2,8 +2,24 @@
 
 import Image from "next/image";
 import { useMemo, useState, useTransition } from "react";
-import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Boxes,
+  CircleAlert,
+  Loader2,
+  Package,
+  Pencil,
+  Plus,
+  Trash2,
+  Wallet,
+} from "lucide-react";
 import { ProductImageField } from "@/components/dashboard/ProductImageField";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   archiveSupplierProduct,
   createSupplierProduct,
@@ -17,153 +33,229 @@ interface SupplierProductsPanelProps {
   initialProducts: SupplierProduct[];
 }
 
-type FormMode = "create" | "edit";
+type ProductFormState = {
+  title: string;
+  description: string;
+  stock: string;
+  basePriceUsd: string;
+  imageFile: File | null;
+  imageKey: number;
+};
+
+const EMPTY_FORM: Omit<ProductFormState, "imageKey"> = {
+  title: "",
+  description: "",
+  stock: "0",
+  basePriceUsd: "",
+  imageFile: null,
+};
+
+function formFromProduct(product: SupplierProduct): ProductFormState {
+  return {
+    title: product.title,
+    description: product.description,
+    stock: String(product.stock),
+    basePriceUsd: String(product.basePriceUsd),
+    imageFile: null,
+    imageKey: Date.now(),
+  };
+}
+
+function buildFormData(form: ProductFormState): FormData {
+  const formData = new FormData();
+  formData.set("title", form.title);
+  formData.set("description", form.description);
+  formData.set("stock", form.stock);
+  formData.set("basePriceUsd", form.basePriceUsd);
+  if (form.imageFile) {
+    formData.set("image", form.imageFile);
+  }
+  return formData;
+}
 
 export function SupplierProductsPanel({
   initialProducts,
 }: SupplierProductsPanelProps) {
   const [products, setProducts] = useState(initialProducts);
-  const [mode, setMode] = useState<FormMode>("create");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [stock, setStock] = useState("0");
-  const [basePriceUsd, setBasePriceUsd] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imageKey, setImageKey] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [createForm, setCreateForm] = useState<ProductFormState>({
+    ...EMPTY_FORM,
+    imageKey: 0,
+  });
+  const [editingProduct, setEditingProduct] = useState<SupplierProduct | null>(
+    null,
+  );
+  const [editForm, setEditForm] = useState<ProductFormState | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createMessage, setCreateMessage] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [listMessage, setListMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const editingProduct = useMemo(
-    () => products.find((product) => product.id === editingId) ?? null,
-    [products, editingId],
-  );
+  const metrics = useMemo(() => {
+    const totalProducts = products.length;
+    const totalStock = products.reduce((sum, product) => sum + product.stock, 0);
+    const inventoryValueUsd = products.reduce(
+      (sum, product) => sum + product.stock * product.basePriceUsd,
+      0,
+    );
+    const outOfStock = products.filter((product) => product.stock <= 0).length;
+    return { totalProducts, totalStock, inventoryValueUsd, outOfStock };
+  }, [products]);
 
-  function resetForm() {
-    setMode("create");
-    setEditingId(null);
-    setTitle("");
-    setDescription("");
-    setStock("0");
-    setBasePriceUsd("");
-    setImageFile(null);
-    setImageKey((value) => value + 1);
-    setError(null);
+  const editOpen = Boolean(editingProduct && editForm);
+
+  function resetCreateForm() {
+    setCreateForm({
+      ...EMPTY_FORM,
+      imageKey: Date.now(),
+    });
+    setCreateError(null);
+  }
+
+  function closeEditModal() {
+    setEditingProduct(null);
+    setEditForm(null);
+    setEditError(null);
   }
 
   function startEdit(product: SupplierProduct) {
-    setMode("edit");
-    setEditingId(product.id);
-    setTitle(product.title);
-    setDescription(product.description);
-    setStock(String(product.stock));
-    setBasePriceUsd(String(product.basePriceUsd));
-    setImageFile(null);
-    setImageKey((value) => value + 1);
-    setError(null);
-    setMessage(null);
+    setEditingProduct(product);
+    setEditForm(formFromProduct(product));
+    setEditError(null);
+    setListMessage(null);
+    setCreateMessage(null);
   }
 
-  function handleSubmit() {
-    setError(null);
-    setMessage(null);
-
-    const formData = new FormData();
-    formData.set("title", title);
-    formData.set("description", description);
-    formData.set("stock", stock);
-    formData.set("basePriceUsd", basePriceUsd);
-    if (imageFile) {
-      formData.set("image", imageFile);
-    }
+  function handleCreate() {
+    setCreateError(null);
+    setCreateMessage(null);
+    setListMessage(null);
 
     startTransition(async () => {
-      if (mode === "edit" && editingId) {
-        const result = await updateSupplierProduct(editingId, formData);
-        if (result.error || !result.product) {
-          setError(result.error ?? "No se pudo actualizar.");
-          return;
-        }
-        const updated = result.product;
-        setProducts((current) =>
-          current.map((product) =>
-            product.id === updated.id ? updated : product,
-          ),
-        );
-        setMessage("Producto actualizado.");
-        resetForm();
-        return;
-      }
-
-      const result = await createSupplierProduct(formData);
+      const result = await createSupplierProduct(buildFormData(createForm));
       if (result.error || !result.product) {
-        setError(result.error ?? "No se pudo crear el producto.");
+        setCreateError(result.error ?? "No se pudo crear el producto.");
         return;
       }
-      const created = result.product;
-      setProducts((current) => [created, ...current]);
-      setMessage("Producto cargado.");
-      resetForm();
+      setProducts((current) => [result.product!, ...current]);
+      setCreateMessage("Producto cargado.");
+      resetCreateForm();
+    });
+  }
+
+  function handleSaveEdit() {
+    if (!editingProduct || !editForm) return;
+    setEditError(null);
+    setListMessage(null);
+
+    startTransition(async () => {
+      const result = await updateSupplierProduct(
+        editingProduct.id,
+        buildFormData(editForm),
+      );
+      if (result.error || !result.product) {
+        setEditError(result.error ?? "No se pudo actualizar.");
+        return;
+      }
+      const updated = result.product;
+      setProducts((current) =>
+        current.map((product) =>
+          product.id === updated.id ? updated : product,
+        ),
+      );
+      setListMessage("Producto actualizado.");
+      closeEditModal();
     });
   }
 
   function handleArchive(productId: string) {
-    setError(null);
-    setMessage(null);
+    setCreateError(null);
+    setCreateMessage(null);
+    setListMessage(null);
     startTransition(async () => {
       const result = await archiveSupplierProduct(productId);
       if (result.error) {
-        setError(result.error);
+        setListMessage(null);
+        setCreateError(result.error);
         return;
       }
       setProducts((current) =>
         current.filter((product) => product.id !== productId),
       );
-      if (editingId === productId) resetForm();
-      setMessage("Producto archivado.");
+      if (editingProduct?.id === productId) closeEditModal();
+      setListMessage("Producto archivado.");
     });
   }
 
   return (
     <div className="space-y-6">
+      <div className="supplier-hub-metrics" aria-label="Resumen de productos">
+        <div className="supplier-hub-metric">
+          <span className="supplier-hub-metric-icon" aria-hidden="true">
+            <Package className="h-4 w-4" />
+          </span>
+          <div>
+            <p className="supplier-hub-metric-label">Productos cargados</p>
+            <p className="supplier-hub-metric-value">{metrics.totalProducts}</p>
+          </div>
+        </div>
+        <div className="supplier-hub-metric">
+          <span className="supplier-hub-metric-icon" aria-hidden="true">
+            <Boxes className="h-4 w-4" />
+          </span>
+          <div>
+            <p className="supplier-hub-metric-label">Stock global</p>
+            <p className="supplier-hub-metric-value">
+              {metrics.totalStock.toLocaleString("es")}
+            </p>
+          </div>
+        </div>
+        <div className="supplier-hub-metric">
+          <span className="supplier-hub-metric-icon" aria-hidden="true">
+            <Wallet className="h-4 w-4" />
+          </span>
+          <div>
+            <p className="supplier-hub-metric-label">Valor inventario</p>
+            <p className="supplier-hub-metric-value">
+              {formatUsd(metrics.inventoryValueUsd)}
+            </p>
+          </div>
+        </div>
+        <div className="supplier-hub-metric">
+          <span className="supplier-hub-metric-icon" aria-hidden="true">
+            <CircleAlert className="h-4 w-4" />
+          </span>
+          <div>
+            <p className="supplier-hub-metric-label">Sin stock</p>
+            <p className="supplier-hub-metric-value">{metrics.outOfStock}</p>
+          </div>
+        </div>
+      </div>
+
       <section className="supplier-hub-card">
         <div className="supplier-hub-card-header">
           <div>
             <p className="supplier-hub-section-label">Catálogo mayorista</p>
-            <h1 className="supplier-hub-heading">
-              {mode === "edit" ? "Editar producto" : "Cargar producto"}
-            </h1>
+            <h1 className="supplier-hub-heading">Cargar producto</h1>
             <p className="supplier-hub-subheading">
-              Panel interno para proveedores. No aparece en el menú de
-              comerciantes ni en el catálogo público.
+              Añade un producto nuevo al hub. Para modificar uno existente, usa
+              Editar en la lista.
             </p>
           </div>
-          {mode === "edit" ? (
-            <button
-              type="button"
-              className="btn-brand-outline !min-h-9 !px-3 !text-xs"
-              onClick={resetForm}
-            >
-              Nuevo producto
-            </button>
-          ) : null}
         </div>
 
         <div className="mt-5 grid gap-5 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
           <ProductImageField
-            key={imageKey}
+            key={createForm.imageKey}
             id="supplier-product-image"
-            mode={mode === "edit" ? "edit" : "create"}
+            mode="create"
             layout="compact"
-            initialPreviewUrl={
-              mode === "edit" ? editingProduct?.imageUrl ?? null : null
-            }
+            initialPreviewUrl={null}
             disabled={pending}
             onImageReady={({ file }) => {
-              setImageFile(file);
+              setCreateForm((current) => ({ ...current, imageFile: file }));
             }}
-            onError={(msg) => setError(msg)}
+            onError={(msg) => setCreateError(msg)}
           />
 
           <div className="space-y-3">
@@ -173,8 +265,13 @@ export function SupplierProductsPanel({
               </label>
               <input
                 id="supplier-title"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
+                value={createForm.title}
+                onChange={(event) =>
+                  setCreateForm((current) => ({
+                    ...current,
+                    title: event.target.value,
+                  }))
+                }
                 className="input-field"
                 placeholder="Ej: Caja mayorista de snacks"
                 disabled={pending}
@@ -187,8 +284,13 @@ export function SupplierProductsPanel({
               <textarea
                 id="supplier-description"
                 rows={4}
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
+                value={createForm.description}
+                onChange={(event) =>
+                  setCreateForm((current) => ({
+                    ...current,
+                    description: event.target.value,
+                  }))
+                }
                 className="input-field resize-none"
                 placeholder="Detalles para el comerciante (contenido, presentación, condiciones…)"
                 disabled={pending}
@@ -204,8 +306,13 @@ export function SupplierProductsPanel({
                   type="number"
                   min={0}
                   step={1}
-                  value={stock}
-                  onChange={(event) => setStock(event.target.value)}
+                  value={createForm.stock}
+                  onChange={(event) =>
+                    setCreateForm((current) => ({
+                      ...current,
+                      stock: event.target.value,
+                    }))
+                  }
                   className="input-field"
                   disabled={pending}
                 />
@@ -224,8 +331,13 @@ export function SupplierProductsPanel({
                     min={0}
                     step="0.01"
                     inputMode="decimal"
-                    value={basePriceUsd}
-                    onChange={(event) => setBasePriceUsd(event.target.value)}
+                    value={createForm.basePriceUsd}
+                    onChange={(event) =>
+                      setCreateForm((current) => ({
+                        ...current,
+                        basePriceUsd: event.target.value,
+                      }))
+                    }
                     className="input-field !mt-0 pl-7"
                     placeholder="0.00"
                     disabled={pending}
@@ -236,28 +348,28 @@ export function SupplierProductsPanel({
           </div>
         </div>
 
-        {error ? (
+        {createError ? (
           <p className="mt-4 text-sm text-red-600" role="alert">
-            {error}
+            {createError}
           </p>
         ) : null}
-        {message ? <p className="supplier-hub-success mt-4">{message}</p> : null}
+        {createMessage ? (
+          <p className="supplier-hub-success mt-4">{createMessage}</p>
+        ) : null}
 
         <div className="mt-5 flex flex-wrap gap-2">
           <button
             type="button"
             className="btn-brand"
-            onClick={handleSubmit}
+            onClick={handleCreate}
             disabled={pending}
           >
-            {pending ? (
+            {pending && !editOpen ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : mode === "edit" ? (
-              <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
             ) : (
               <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
             )}
-            {mode === "edit" ? "Guardar cambios" : "Publicar en hub"}
+            Publicar en hub
           </button>
         </div>
       </section>
@@ -266,6 +378,9 @@ export function SupplierProductsPanel({
         <p className="supplier-hub-section-label">
           Productos cargados ({products.length})
         </p>
+        {listMessage ? (
+          <p className="supplier-hub-success mt-2">{listMessage}</p>
+        ) : null}
         {products.length === 0 ? (
           <p className="supplier-hub-empty mt-3">
             Aún no hay productos. Usa el formulario de arriba para cargar el
@@ -278,7 +393,8 @@ export function SupplierProductsPanel({
                 key={product.id}
                 className={cn(
                   "supplier-hub-list-item",
-                  editingId === product.id && "supplier-hub-list-item-active",
+                  editingProduct?.id === product.id &&
+                    "supplier-hub-list-item-active",
                 )}
               >
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-emerald-50 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:ring-emerald-900/50">
@@ -313,9 +429,9 @@ export function SupplierProductsPanel({
                     className="btn-brand-outline !min-h-8 !gap-1.5 !px-2.5 !text-xs"
                     disabled={pending}
                     onClick={() => startEdit(product)}
-                    aria-label="Editar"
                   >
                     <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span className="hidden sm:inline">Editar</span>
                   </button>
                   <button
                     type="button"
@@ -332,6 +448,181 @@ export function SupplierProductsPanel({
           </ul>
         )}
       </section>
+
+      <Dialog
+        open={editOpen}
+        onOpenChange={(open) => {
+          if (!open) closeEditModal();
+        }}
+        containerClassName="max-w-2xl"
+      >
+        <DialogContent
+          className="relative max-h-[90vh] overflow-y-auto border-emerald-200/70 p-5 shadow-[0_16px_48px_rgba(5,150,105,0.12)] sm:p-6 dark:border-emerald-900/40"
+          onClose={closeEditModal}
+        >
+          <DialogHeader>
+            <p className="supplier-hub-section-label">Edición</p>
+            <DialogTitle>Editar producto</DialogTitle>
+            <DialogDescription>
+              Actualiza título, descripción, stock, precio o foto. Los cambios se
+              guardan en Supabase al confirmar.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editForm && editingProduct ? (
+            <div className="mt-5 space-y-4">
+              <div className="grid gap-5 md:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
+                <ProductImageField
+                  key={editForm.imageKey}
+                  id="supplier-edit-product-image"
+                  mode="edit"
+                  layout="compact"
+                  initialPreviewUrl={editingProduct.imageUrl}
+                  disabled={pending}
+                  onImageReady={({ file }) => {
+                    setEditForm((current) =>
+                      current ? { ...current, imageFile: file } : current,
+                    );
+                  }}
+                  onError={(msg) => setEditError(msg)}
+                />
+
+                <div className="space-y-3">
+                  <div>
+                    <label htmlFor="supplier-edit-title" className="label-field">
+                      Título
+                    </label>
+                    <input
+                      id="supplier-edit-title"
+                      value={editForm.title}
+                      onChange={(event) =>
+                        setEditForm((current) =>
+                          current
+                            ? { ...current, title: event.target.value }
+                            : current,
+                        )
+                      }
+                      className="input-field"
+                      disabled={pending}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="supplier-edit-description"
+                      className="label-field"
+                    >
+                      Descripción
+                    </label>
+                    <textarea
+                      id="supplier-edit-description"
+                      rows={4}
+                      value={editForm.description}
+                      onChange={(event) =>
+                        setEditForm((current) =>
+                          current
+                            ? { ...current, description: event.target.value }
+                            : current,
+                        )
+                      }
+                      className="input-field resize-none"
+                      disabled={pending}
+                    />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="supplier-edit-stock" className="label-field">
+                        Stock
+                      </label>
+                      <input
+                        id="supplier-edit-stock"
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={editForm.stock}
+                        onChange={(event) =>
+                          setEditForm((current) =>
+                            current
+                              ? { ...current, stock: event.target.value }
+                              : current,
+                          )
+                        }
+                        className="input-field"
+                        disabled={pending}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="supplier-edit-price"
+                        className="label-field"
+                      >
+                        Precio base (USD)
+                      </label>
+                      <div className="relative mt-1.5">
+                        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-zinc-400">
+                          $
+                        </span>
+                        <input
+                          id="supplier-edit-price"
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          inputMode="decimal"
+                          value={editForm.basePriceUsd}
+                          onChange={(event) =>
+                            setEditForm((current) =>
+                              current
+                                ? {
+                                    ...current,
+                                    basePriceUsd: event.target.value,
+                                  }
+                                : current,
+                            )
+                          }
+                          className="input-field !mt-0 pl-7"
+                          disabled={pending}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {editError ? (
+                <p className="text-sm text-red-600" role="alert">
+                  {editError}
+                </p>
+              ) : null}
+
+              <div className="flex flex-wrap justify-end gap-2 border-t border-emerald-100 pt-4 dark:border-emerald-900/40">
+                <button
+                  type="button"
+                  className="btn-brand-outline !min-h-10 !px-4 !text-sm"
+                  onClick={closeEditModal}
+                  disabled={pending}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="btn-brand !min-h-10"
+                  onClick={handleSaveEdit}
+                  disabled={pending}
+                >
+                  {pending ? (
+                    <Loader2
+                      className="mr-2 h-4 w-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
+                  )}
+                  Guardar cambios
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

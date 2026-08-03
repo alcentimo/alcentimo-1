@@ -9553,3 +9553,23 @@ body {
 .supplier-hub-alert {
   @apply rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100;
 }
+
+.supplier-hub-metrics {
+  @apply grid grid-cols-2 gap-3 lg:grid-cols-4;
+}
+
+.supplier-hub-metric {
+  @apply flex items-center gap-3 rounded-2xl border border-emerald-200/70 bg-white/95 px-3.5 py-3 shadow-[0_6px_20px_rgba(5,150,105,0.05)] dark:border-emerald-900/40 dark:bg-zinc-950;
+}
+
+.supplier-hub-metric-icon {
+  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300;
+}
+
+.supplier-hub-metric-label {
+  @apply text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400;
+}
+
+.supplier-hub-metric-value {
+  @apply mt-0.5 text-base font-semibold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50;
+}
