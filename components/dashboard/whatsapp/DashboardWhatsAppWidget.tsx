@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ExternalLink, Loader2, X } from "lucide-react";
 import { buildCustomerWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
 import { cn } from "@/lib/cn";
@@ -25,7 +26,7 @@ export interface DashboardWhatsAppWidgetProps {
   phone: string | null;
   message: string;
   onMessageChange: (value: string) => void;
-  /** Contenido opcional encima del hilo (p. ej. selector de objetivos IA). */
+  /** Contenido opcional encima del editor (p. ej. chips de IA). */
   toolbar?: ReactNode;
   hint?: string;
   loading?: boolean;
@@ -35,8 +36,9 @@ export interface DashboardWhatsAppWidgetProps {
 }
 
 /**
- * Widget flotante de WhatsApp para el dashboard (estilo catálogo).
- * No abre wa.me hasta que el usuario pulse «Abrir chat».
+ * Modal único de WhatsApp para el dashboard (Clientes / Órdenes).
+ * Se monta en document.body para no solaparse con slideovers.
+ * No abre wa.me hasta que el usuario pulse Continuar.
  */
 export function DashboardWhatsAppWidget({
   open,
@@ -54,8 +56,13 @@ export function DashboardWhatsAppWidget({
 }: DashboardWhatsAppWidgetProps) {
   const titleId = useId();
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [mounted, setMounted] = useState(false);
   const displayName = contactName.trim() || "cliente";
   const whatsappUrl = buildCustomerWhatsAppUrl(phone, undefined, message);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -80,7 +87,7 @@ export function DashboardWhatsAppWidget({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!mounted || !open) return null;
 
   function handleOpenChat() {
     if (!whatsappUrl || loading || !message.trim()) return;
@@ -88,7 +95,7 @@ export function DashboardWhatsAppWidget({
     onClose();
   }
 
-  return (
+  return createPortal(
     <div
       className={cn("dashboard-wa-overlay", className)}
       role="presentation"
@@ -106,7 +113,7 @@ export function DashboardWhatsAppWidget({
         aria-modal="true"
         aria-labelledby={titleId}
       >
-        <header className="catalog-wa-header">
+        <header className="catalog-wa-header shrink-0">
           <div className="catalog-wa-header-main">
             <span className="catalog-wa-header-icon" aria-hidden="true">
               <WhatsAppGlyph className="h-5 w-5" />
@@ -115,7 +122,7 @@ export function DashboardWhatsAppWidget({
               <h2 id={titleId} className="catalog-wa-title">
                 {displayName}
               </h2>
-              <p className="catalog-wa-status">Vista previa · WhatsApp</p>
+              <p className="catalog-wa-status">WhatsApp · editar y enviar</p>
             </div>
           </div>
           <button
@@ -128,38 +135,43 @@ export function DashboardWhatsAppWidget({
           </button>
         </header>
 
-        {toolbar ? <div className="dashboard-wa-toolbar">{toolbar}</div> : null}
+        {toolbar ? (
+          <div className="dashboard-wa-toolbar shrink-0">{toolbar}</div>
+        ) : null}
 
-        <div className="catalog-wa-messages">
-          <div className="catalog-wa-bubble catalog-wa-bubble-store whitespace-pre-wrap">
-            {loading && !message.trim() ? (
-              <span className="inline-flex items-center gap-2 text-zinc-500">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Generando mensaje…
-              </span>
-            ) : (
-              message.trim() || "El mensaje aparecerá aquí."
-            )}
-          </div>
-          <p className="catalog-wa-hint">{hint}</p>
-          {error ? (
-            <p className="text-xs text-amber-800" role="alert">
-              {error}
-            </p>
+        <div className="dashboard-wa-body">
+          {loading && !message.trim() ? (
+            <div className="dashboard-wa-loading" aria-live="polite">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              Generando mensaje…
+            </div>
           ) : null}
-        </div>
-
-        <div className="dashboard-wa-composer">
           <textarea
             ref={inputRef}
             value={message}
             onChange={(event) => onMessageChange(event.target.value)}
-            rows={3}
             disabled={loading}
             placeholder="Escribe o edita el mensaje…"
-            className="catalog-wa-input min-h-[4.5rem] max-h-36"
+            className="dashboard-wa-editor"
             aria-label="Mensaje para WhatsApp"
           />
+        </div>
+
+        <footer className="dashboard-wa-footer shrink-0">
+          {error ? (
+            <p className="dashboard-wa-error" role="alert">
+              {error}
+            </p>
+          ) : (
+            <p className="dashboard-wa-hint">{hint}</p>
+          )}
+
+          {!whatsappUrl ? (
+            <p className="dashboard-wa-no-phone">
+              No hay un teléfono válido para abrir WhatsApp.
+            </p>
+          ) : null}
+
           <button
             type="button"
             className={cn(
@@ -177,14 +189,9 @@ export function DashboardWhatsAppWidget({
             )}
             {primaryLabel}
           </button>
-        </div>
-
-        {!whatsappUrl ? (
-          <p className="dashboard-wa-no-phone">
-            No hay un teléfono válido para abrir WhatsApp.
-          </p>
-        ) : null}
+        </footer>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

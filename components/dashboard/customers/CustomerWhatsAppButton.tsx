@@ -98,14 +98,14 @@ export function CustomerWhatsAppButton({
   }
 
   const toolbar = (
-    <div className="space-y-2">
-      <div className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-600">
-        <Sparkles className="h-3.5 w-3.5 text-violet-600" aria-hidden="true" />
-        Generar con IA
-      </div>
+    <div className="dashboard-wa-ai-row">
+      <span className="dashboard-wa-ai-label">
+        <Sparkles className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />
+        IA
+      </span>
       <div
-        className="flex flex-wrap gap-1.5"
-        role="group"
+        className="dashboard-wa-ai-chips"
+        role="tablist"
         aria-label="Objetivos de mensaje con IA"
       >
         {CUSTOMER_MESSAGE_GOAL_OPTIONS.map((option) => {
@@ -116,6 +116,8 @@ export function CustomerWhatsAppButton({
             <button
               key={option.value}
               type="button"
+              role="tab"
+              aria-selected={selected}
               disabled={loading}
               title={option.description}
               onClick={() => void generateWithAi(option.value)}
@@ -127,9 +129,7 @@ export function CustomerWhatsAppButton({
             >
               {loading && selected ? (
                 <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
-              ) : (
-                <Sparkles className="h-3 w-3" aria-hidden="true" />
-              )}
+              ) : null}
               {option.label}
             </button>
           );

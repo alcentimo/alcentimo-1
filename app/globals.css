@@ -7672,26 +7672,70 @@ body {
   background-color: #25d366;
 }
 
-/* Widget WhatsApp del dashboard (Clientes / Órdenes) */
+/* Widget WhatsApp del dashboard (Clientes / Órdenes) — por encima de slideovers */
 .dashboard-wa-overlay {
-  @apply fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:justify-end sm:p-6;
+  @apply fixed inset-0 z-[80] flex items-end justify-center p-0 sm:items-center sm:p-6;
 }
 
 .dashboard-wa-backdrop {
-  @apply absolute inset-0 bg-black/40 backdrop-blur-[1px];
+  @apply absolute inset-0 bg-black/45 backdrop-blur-[1px];
 }
 
 .dashboard-wa-panel {
-  @apply relative z-10 flex h-[min(34rem,calc(100dvh-3rem))] w-full max-w-md flex-col overflow-hidden rounded-t-2xl bg-[#efeae2] shadow-2xl sm:h-[min(36rem,calc(100dvh-4rem))] sm:rounded-2xl;
+  @apply relative z-10 flex max-h-[min(36rem,calc(100dvh-1.5rem))] w-full max-w-md flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-h-[min(38rem,calc(100dvh-3rem))] sm:rounded-2xl;
+  height: min(36rem, calc(100dvh - 1.5rem));
   animation: catalog-wa-slide-up 0.22s ease-out;
 }
 
 .dashboard-wa-toolbar {
-  @apply shrink-0 space-y-2 border-b border-zinc-200/70 bg-[#f7f5f1] px-3 py-3;
+  @apply shrink-0 border-b border-zinc-200/80 bg-zinc-50/90 px-3 py-2.5;
 }
 
-.dashboard-wa-composer {
-  @apply flex flex-col gap-2 border-t border-zinc-200/80 bg-[#f0f2f5] px-3 py-3;
+.dashboard-wa-ai-row {
+  @apply flex items-center gap-1.5;
+}
+
+.dashboard-wa-ai-label {
+  @apply inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-zinc-600;
+}
+
+.dashboard-wa-ai-chips {
+  @apply flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-0.5;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dashboard-wa-ai-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.dashboard-wa-body {
+  @apply flex min-h-0 flex-1 flex-col gap-2 px-3 py-3;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgb(0 0 0 / 0.03) 0.5px, transparent 0.6px),
+    radial-gradient(circle at 80% 40%, rgb(0 0 0 / 0.03) 0.5px, transparent 0.6px);
+  background-color: #efeae2;
+  background-size: 18px 18px;
+}
+
+.dashboard-wa-loading {
+  @apply inline-flex items-center gap-2 text-xs font-medium text-zinc-500;
+}
+
+.dashboard-wa-editor {
+  @apply min-h-0 w-full flex-1 resize-none rounded-xl border-0 bg-white px-3.5 py-3 text-sm leading-relaxed text-zinc-900 shadow-sm outline-none ring-1 ring-zinc-200/90 placeholder:text-zinc-400 focus:ring-2 focus:ring-[#25d366]/35 disabled:opacity-60;
+}
+
+.dashboard-wa-footer {
+  @apply shrink-0 space-y-2 border-t border-zinc-200/80 bg-[#f0f2f5] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3;
+}
+
+.dashboard-wa-hint {
+  @apply text-[11px] leading-relaxed text-zinc-500;
+}
+
+.dashboard-wa-error {
+  @apply text-[11px] leading-relaxed text-amber-800;
 }
 
 .dashboard-wa-open-btn {
@@ -7700,19 +7744,19 @@ body {
 }
 
 .dashboard-wa-no-phone {
-  @apply px-4 pb-3 text-center text-xs text-red-600;
+  @apply text-center text-xs text-red-600;
 }
 
 .dashboard-wa-ai-chip {
-  @apply inline-flex items-center gap-1 rounded-full border border-zinc-200/90 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-zinc-700 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-800 disabled:opacity-50;
+  @apply inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-zinc-200/90 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-zinc-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900 disabled:opacity-50;
 }
 
 .dashboard-wa-ai-chip-suggested {
-  @apply border-violet-200 bg-violet-50/70 text-violet-800;
+  @apply border-emerald-200 bg-emerald-50/80 text-emerald-900;
 }
 
 .dashboard-wa-ai-chip-active {
-  @apply border-violet-600 bg-violet-600 text-white hover:border-violet-600 hover:bg-violet-600 hover:text-white;
+  @apply border-emerald-700 bg-emerald-700 text-white hover:border-emerald-700 hover:bg-emerald-700 hover:text-white;
 }
 
 .catalog-chat-overlay {
