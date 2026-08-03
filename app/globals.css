@@ -6056,20 +6056,21 @@ body {
 }
 
 .txn-catalog--list {
-  --pc-list-media-width: clamp(5.5rem, 22vw, 7rem);
+  --pc-list-media-ratio: 4 / 5;
 }
 
+/* Tarjeta grande: una columna con foto amplia. */
 .txn-catalog--list .store-product-card {
-  @apply flex w-full min-w-0 flex-row items-stretch overflow-hidden;
-  --pc-media-ratio: 1 / 1;
-  --pc-body-pad: clamp(0.5rem, 1.5vw, 0.625rem);
+  @apply flex w-full min-w-0 flex-col items-stretch overflow-hidden;
+  --pc-media-ratio: var(--pc-list-media-ratio);
 }
 
 .txn-catalog--list .store-product-media {
-  width: var(--pc-list-media-width);
-  min-width: var(--pc-list-media-width);
-  max-width: var(--pc-list-media-width);
-  @apply shrink-0 self-stretch;
+  @apply w-full max-w-none shrink-0 self-stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  aspect-ratio: var(--pc-media-ratio);
 }
 
 .txn-catalog--list .store-product-content {
@@ -6080,9 +6081,7 @@ body {
   display: flex;
   flex-direction: column;
   @apply min-w-0 flex-1;
-  padding-block: var(--pc-body-pad);
-  padding-right: var(--pc-body-pad);
-  padding-left: 0;
+  padding: var(--pc-body-pad);
   gap: var(--pc-gap);
 }
 
@@ -6092,94 +6091,20 @@ body {
 
 .txn-catalog--list .store-product-footer {
   padding-inline: var(--pc-body-pad);
-  padding-left: 0;
+  padding-bottom: var(--pc-body-pad);
 }
 
 .txn-catalog--list .store-product-action {
-  @apply hidden;
+  @apply flex;
 }
 
 .txn-catalog--list .store-add-btn-mobile {
   @apply w-full max-w-none;
 }
 
-@media (min-width: 640px) {
-  .txn-catalog--list {
-    --pc-list-media-width: clamp(7rem, 10vw, 10.5rem);
-  }
-
-  .txn-catalog--list .store-product-content {
-    @apply flex-row items-stretch gap-3;
-  }
-
-  .txn-catalog--list .store-product-body {
-    display: grid;
-    flex: 1;
-    align-content: center;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: repeat(4, auto);
-    column-gap: 1.25rem;
-    row-gap: 0.25rem;
-  }
-
-  .txn-catalog--list .store-product-slot {
-    min-height: unset;
-  }
-
-  .txn-catalog--list .store-product-slot-meta {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .txn-catalog--list .store-product-slot-title {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .txn-catalog--list .store-product-slot-desc {
-    grid-column: 1;
-    grid-row: 3;
-  }
-
-  .txn-catalog--list .store-product-slot-variant {
-    grid-column: 1 / -1;
-    grid-row: 4;
-  }
-
-  .txn-catalog--list .store-product-slot-pricing {
-    grid-column: 2;
-    grid-row: 1 / 4;
-    align-self: center;
-    text-align: right;
-  }
-
-  .txn-catalog--list .store-product-body--no-desc .store-product-slot-pricing {
-    grid-row: 1 / 3;
-  }
-
-  .txn-catalog--list .store-product-body--no-prices .store-product-slot-pricing {
-    display: none;
-  }
-
-  .txn-catalog--list .store-product-body--no-desc-prices .store-product-slot-pricing {
-    display: none;
-  }
-
-  .txn-catalog--list .store-product-footer {
-    display: flex !important;
-    width: auto;
-    min-width: 8.75rem;
-    flex-shrink: 0;
-    align-items: center;
-    align-self: stretch;
-    border-top: 0;
-    padding-block: var(--pc-body-pad);
-    padding-inline: var(--pc-body-pad) var(--pc-body-pad);
-    padding-left: 0;
-  }
-
-  .txn-catalog--list .store-add-btn-mobile {
-    @apply w-full min-w-[7.5rem] max-w-[10.5rem];
+@media (min-width: 768px) {
+  .txn-catalog--list .txn-product-list {
+    @apply mx-auto max-w-2xl;
   }
 }
 
@@ -7895,6 +7820,20 @@ body {
 
 .catalog-browse-search-clear {
   @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-600;
+}
+
+.catalog-layout-toggle {
+  @apply inline-flex h-10 shrink-0 items-center rounded-xl border border-neutral-200/90 bg-neutral-50/50 p-0.5;
+}
+
+.catalog-layout-toggle-btn {
+  @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-white hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40;
+}
+
+.catalog-layout-toggle-btn-active {
+  background-color: color-mix(in srgb, var(--txn-primary, #0d9488) 12%, white);
+  color: var(--txn-primary, #0d9488);
+  @apply shadow-sm;
 }
 
 .catalog-browse-category-rail {

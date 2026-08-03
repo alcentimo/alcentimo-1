@@ -2,9 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
+import {
+  ChevronDown,
+  LayoutGrid,
+  Rows3,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { CATALOG_SORT_OPTIONS, type CatalogSortKey } from "@/lib/catalog/catalog-browse";
+import type { CatalogLayoutMode } from "@/lib/store-settings/types";
 import { Select } from "@/components/ui/select";
 import {
   Sheet,
@@ -34,6 +42,8 @@ interface CatalogBrowseToolbarProps {
   hasActiveFilters: boolean;
   onClearFilters?: () => void;
   showCategoryFilter?: boolean;
+  layout?: CatalogLayoutMode;
+  onLayoutChange?: (layout: CatalogLayoutMode) => void;
 }
 
 function splitVisibleCategories(
@@ -79,6 +89,8 @@ export function CatalogBrowseToolbar({
   hasActiveFilters,
   onClearFilters,
   showCategoryFilter = true,
+  layout,
+  onLayoutChange,
 }: CatalogBrowseToolbarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -181,6 +193,41 @@ export function CatalogBrowseToolbar({
             </button>
           ) : null}
         </label>
+
+        {layout && onLayoutChange ? (
+          <div
+            className="catalog-layout-toggle"
+            role="group"
+            aria-label="Vista del catálogo"
+          >
+            <button
+              type="button"
+              className={cn(
+                "catalog-layout-toggle-btn",
+                layout === "list" && "catalog-layout-toggle-btn-active",
+              )}
+              aria-pressed={layout === "list"}
+              aria-label="Vista de tarjeta grande"
+              title="Tarjeta grande"
+              onClick={() => onLayoutChange("list")}
+            >
+              <Rows3 className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={cn(
+                "catalog-layout-toggle-btn",
+                layout === "grid" && "catalog-layout-toggle-btn-active",
+              )}
+              aria-pressed={layout === "grid"}
+              aria-label="Vista de dos columnas"
+              title="Dos columnas"
+              onClick={() => onLayoutChange("grid")}
+            >
+              <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {showCategories ? (

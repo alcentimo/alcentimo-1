@@ -14,6 +14,7 @@ import {
   getCatalogDesignClasses,
   getCatalogProductGridClassName,
   getCatalogThemeStyle,
+  resolveCatalogDesign,
 } from "@/lib/store-settings/catalog-theme";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import {
@@ -31,6 +32,7 @@ import { CatalogBrowseToolbar } from "@/components/catalog-transactional/Catalog
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
 import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
 import { useCatalogBrowse } from "@/components/catalog-transactional/useCatalogBrowse";
+import { useCatalogLayoutPreference } from "@/components/catalog-transactional/useCatalogLayoutPreference";
 import {
   CatalogFulfillmentProvider,
   useCatalogFulfillment,
@@ -316,6 +318,18 @@ function TransactionalCatalogContent({
     serverPagination: browseServerPagination,
   });
 
+  const storeDefaultLayout = resolveCatalogDesign(
+    catalogDesign,
+    store.rubro_tienda,
+  ).layout;
+  const { layout: preferredLayout, setLayout: setPreferredLayout } =
+    useCatalogLayoutPreference(store.slug, storeDefaultLayout);
+
+  const effectiveDesign = useMemo(
+    () => ({ ...catalogDesign, layout: preferredLayout }),
+    [catalogDesign, preferredLayout],
+  );
+
   const useFlatBrowseLayout =
     !isFoodMenu || browse.hasActiveFilters || catalogProducts.length > 20;
 
@@ -375,7 +389,7 @@ function TransactionalCatalogContent({
   );
 
   const gridClassName = getCatalogProductGridClassName(
-    catalogDesign,
+    effectiveDesign,
     store.rubro_tienda,
   );
 
@@ -383,7 +397,7 @@ function TransactionalCatalogContent({
     <div
       className={cn(
         "txn-catalog",
-        getCatalogDesignClasses(catalogDesign, store.rubro_tienda),
+        getCatalogDesignClasses(effectiveDesign, store.rubro_tienda),
         isFoodMenu && "txn-catalog--food-menu",
         isTechCatalog && "txn-catalog--tech",
         isCollectiblesCatalog && "txn-catalog--collectibles",
@@ -392,7 +406,7 @@ function TransactionalCatalogContent({
         previewMode && "txn-catalog--preview",
         previewMode && referenceMode && "txn-catalog--reference-mode",
       )}
-      style={getCatalogThemeStyle(catalogDesign, store.rubro_tienda)}
+      style={getCatalogThemeStyle(effectiveDesign, store.rubro_tienda)}
     >
       <CatalogStoreIdentityHeader
         storeName={store.name}
@@ -426,6 +440,8 @@ function TransactionalCatalogContent({
           filteredCount={browse.totalCount}
           hasActiveFilters={browse.hasActiveFilters}
           onClearFilters={browse.clearFilters}
+          layout={preferredLayout}
+          onLayoutChange={setPreferredLayout}
         />
       ) : null}
 
@@ -507,7 +523,7 @@ function TransactionalCatalogContent({
                 </div>
                 <div
                   className={getCatalogProductGridClassName(
-                    catalogDesign,
+                    effectiveDesign,
                     store.rubro_tienda,
                     "food-menu-grid",
                   )}

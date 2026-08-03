@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
-import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
+import type { CatalogDesignSettings, CatalogCurrencySettings, CatalogLayoutMode } from "@/lib/store-settings/types";
 import {
   resolveStorefrontCatalogCategories,
   extractCatalogCategories,
@@ -14,6 +14,7 @@ import {
   getCatalogDesignClasses,
   getCatalogProductGridClassName,
   getCatalogThemeStyle,
+  resolveCatalogDesign,
 } from "@/lib/store-settings/catalog-theme";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import {
@@ -30,6 +31,7 @@ import { CatalogBrowseToolbar } from "@/components/catalog-transactional/Catalog
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
 import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
 import { useCatalogBrowse } from "@/components/catalog-transactional/useCatalogBrowse";
+import { useCatalogLayoutPreference } from "@/components/catalog-transactional/useCatalogLayoutPreference";
 import {
   CatalogFulfillmentProvider,
   useCatalogFulfillment,
@@ -161,8 +163,20 @@ function CatalogCategoriesViewInner({
     serverPagination: browseServerPagination,
   });
 
-  const gridClassName = getCatalogProductGridClassName(
+  const storeDefaultLayout = resolveCatalogDesign(
     catalogDesign,
+    store.rubro_tienda,
+  ).layout;
+  const { layout: preferredLayout, setLayout: setPreferredLayout } =
+    useCatalogLayoutPreference(store.slug, storeDefaultLayout);
+
+  const effectiveDesign = useMemo(
+    () => ({ ...catalogDesign, layout: preferredLayout }),
+    [catalogDesign, preferredLayout],
+  );
+
+  const gridClassName = getCatalogProductGridClassName(
+    effectiveDesign,
     store.rubro_tienda,
   );
 
@@ -178,7 +192,7 @@ function CatalogCategoriesViewInner({
         store={store}
         products={products}
         purchaseInfo={purchaseInfo}
-        catalogDesign={catalogDesign}
+        catalogDesign={effectiveDesign}
         catalogCurrency={catalogCurrency}
         exchangeRate={exchangeRate}
         showOfficialRate={showOfficialRate}
@@ -189,6 +203,8 @@ function CatalogCategoriesViewInner({
         categoryOptions={categoryOptions}
         browse={browse}
         gridClassName={gridClassName}
+        preferredLayout={preferredLayout}
+        onLayoutChange={setPreferredLayout}
         addItem={addItem}
         initialProductId={initialProductId}
       />
@@ -211,6 +227,8 @@ interface CatalogCategoriesPageContentProps {
   categoryOptions: CatalogCategoryOption[];
   browse: ReturnType<typeof useCatalogBrowse>;
   gridClassName: string;
+  preferredLayout: CatalogLayoutMode;
+  onLayoutChange: (layout: CatalogLayoutMode) => void;
   addItem: ReturnType<typeof useCart>["addItem"];
   initialProductId?: string | null;
 }
@@ -230,6 +248,8 @@ function CatalogCategoriesPageContent({
   categoryOptions,
   browse,
   gridClassName,
+  preferredLayout,
+  onLayoutChange,
   addItem,
   initialProductId = null,
 }: CatalogCategoriesPageContentProps) {
@@ -299,6 +319,8 @@ function CatalogCategoriesPageContent({
           filteredCount={browse.totalCount}
           hasActiveFilters={browse.hasActiveFilters}
           onClearFilters={browse.clearFilters}
+          layout={preferredLayout}
+          onLayoutChange={onLayoutChange}
         />
       ) : null}
 

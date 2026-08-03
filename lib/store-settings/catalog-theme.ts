@@ -184,9 +184,9 @@ export function resolveCatalogDesign(
   }
 
   const layout =
-    design?.theme != null
-      ? preset.layout
-      : normalizeCatalogLayout(design?.layout ?? preset.layout);
+    design?.layout === "list" || design?.layout === "grid"
+      ? design.layout
+      : normalizeCatalogLayout(preset.layout);
 
   return {
     theme,

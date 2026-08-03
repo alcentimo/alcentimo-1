@@ -8,6 +8,7 @@ import {
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import { normalizeHex6 } from "@/lib/store-settings/color-contrast";
+import { normalizeCatalogLayout } from "@/lib/store-settings/catalog-theme";
 import { sanitizePromoBannerForStorage } from "@/lib/store-settings/promo-banner";
 import { sanitizeAssistantAvatarForStorage } from "@/lib/store-settings/assistant-avatar";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
@@ -120,6 +121,9 @@ export async function saveCatalogDesignSettings(
     theme: normalized.catalogDesign.theme,
     saleMode: normalized.catalogDesign.saleMode,
     visibility: normalized.catalogDesign.visibility,
+    layout: normalizeCatalogLayout(
+      design.layout ?? normalized.catalogDesign.layout,
+    ),
     promoBanner: sanitizePromoBannerForStorage(
       design.promoBanner ?? normalized.catalogDesign.promoBanner,
       auth.store.slug,

@@ -164,6 +164,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
     catalogDesign: {
       theme: "minimal",
       saleMode: "quick",
+      layout: "grid",
       visibility: {
         showStock: true,
         showDescription: true,
