@@ -25,7 +25,7 @@ export default async function ProveedorDashboardPage() {
   }
 
   const listed = await listSupplierProducts();
-  const products = listed.error ? [] : listed.products;
+  const products = listed.error ? [] : (listed.products ?? []);
   const loadError = listed.error;
 
   return (
