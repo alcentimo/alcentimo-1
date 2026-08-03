@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { CatalogAssistantAvatarField } from "@/components/dashboard/settings/CatalogAssistantAvatarField";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { saveCatalogAssistantAvatarSettings } from "@/lib/settings/actions";
@@ -78,7 +78,7 @@ export function CatalogAssistantAvatarPanel({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {isSaving ? <SavingHint /> : null}
+          <SavingHint visible={isSaving} />
           {saved && !isSaving ? (
             <span
               className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-700 dark:text-teal-300"
@@ -87,12 +87,6 @@ export function CatalogAssistantAvatarPanel({
               <Check className="h-3.5 w-3.5" aria-hidden="true" />
               Guardado
             </span>
-          ) : null}
-          {isSaving ? (
-            <Loader2
-              className="h-4 w-4 animate-spin text-zinc-400"
-              aria-hidden="true"
-            />
           ) : null}
         </div>
       </header>
