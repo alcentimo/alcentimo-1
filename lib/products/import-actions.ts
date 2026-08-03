@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
-import { slugify, uniqueSlug } from "@/lib/slugify";
+import { slugify } from "@/lib/slugify";
+import {
+  allocateUniqueProductSlug,
+  isProductSlugUniqueViolation,
+  randomProductSlugSuffix,
+} from "@/lib/products/allocate-product-slug";
 import { assertCanCreateProduct } from "@/lib/plans/product-limit";
 import { buildProductMetadata } from "@/lib/products/extra-fields";
 import {
@@ -313,41 +318,54 @@ async function createImportedProduct(
 ): Promise<{ productId?: string; slug?: string; error?: string }> {
   const { storeId, storeSlug, categoryId, row } = params;
 
-  let productSlug = slugify(row.nombre) || "producto";
-  for (let i = 0; i < 5; i++) {
-    const candidate =
-      i === 0 ? productSlug : uniqueSlug(row.nombre, crypto.randomUUID());
-    const { data: taken } = await supabase
+  const metadata = buildProductMetadata(null, {}, []);
+
+  let productSlug = "";
+  let productId = "";
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    productSlug =
+      attempt === 0
+        ? await allocateUniqueProductSlug(supabase, storeId, row.nombre)
+        : await allocateUniqueProductSlug(
+            supabase,
+            storeId,
+            `${row.nombre}-${randomProductSlugSuffix(5)}`,
+          );
+
+    const { data: product, error: productError } = await supabase
       .from("products")
+      .insert({
+        store_id: storeId,
+        category_id: categoryId,
+        name: row.nombre,
+        slug: productSlug,
+        short_description: row.descripcion,
+        description: row.descripcion,
+        metadata,
+      })
       .select("id")
-      .eq("store_id", storeId)
-      .eq("slug", candidate)
-      .maybeSingle();
-    if (!taken) {
-      productSlug = candidate;
+      .single();
+
+    if (!productError && product) {
+      productId = product.id as string;
       break;
+    }
+
+    if (
+      !productError ||
+      !isProductSlugUniqueViolation(productError) ||
+      attempt === 2
+    ) {
+      return {
+        error: productError?.message ?? "No se pudo crear el producto importado.",
+      };
     }
   }
 
-  const metadata = buildProductMetadata(null, {}, []);
-
-  const { data: product, error: productError } = await supabase
-    .from("products")
-    .insert({
-      store_id: storeId,
-      category_id: categoryId,
-      name: row.nombre,
-      slug: productSlug,
-      short_description: row.descripcion,
-      description: row.descripcion,
-      metadata,
-    })
-    .select("id")
-    .single();
-
-  if (productError) return { error: productError.message };
-
-  const productId = product.id as string;
+  if (!productId) {
+    return { error: "No se pudo crear el producto importado." };
+  }
   const sku = `${storeSlug}-${productSlug}`.slice(0, 80);
 
   const { data: variant, error: variantError } = await supabase

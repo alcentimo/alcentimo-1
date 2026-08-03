@@ -5,7 +5,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore, requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { getStoreCatalogUrl, getUserStore } from "@/lib/stores";
-import { slugify, uniqueSlug } from "@/lib/slugify";
+import {
+  allocateUniqueProductSlug,
+  isProductSlugUniqueViolation,
+  randomProductSlugSuffix,
+} from "@/lib/products/allocate-product-slug";
 import {
   STORE_SLUG_UNAVAILABLE_MESSAGE,
   validateStoreSlugCandidate,
@@ -427,42 +431,53 @@ export async function createProduct(
     return { error: "La categoría no pertenece a tu tienda." };
   }
 
-  let productSlug = slugify(name) || "producto";
-  for (let i = 0; i < 5; i++) {
-    const candidate = i === 0 ? productSlug : uniqueSlug(name, crypto.randomUUID());
-    const { data: taken } = await supabase
+  const sortOrder = await getNextProductSortOrder(supabase, store.id);
+
+  let productSlug = "";
+  let productId = "";
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    productSlug =
+      attempt === 0
+        ? await allocateUniqueProductSlug(supabase, store.id, name)
+        : await allocateUniqueProductSlug(
+            supabase,
+            store.id,
+            `${name}-${randomProductSlugSuffix(5)}`,
+          );
+
+    const { data: product, error: productError } = await supabase
       .from("products")
+      .insert({
+        store_id: store.id,
+        category_id: categoryId,
+        name,
+        slug: productSlug,
+        short_description: shortDescription || null,
+        description: description || null,
+        metadata,
+        sort_order: sortOrder,
+      })
       .select("id")
-      .eq("store_id", store.id)
-      .eq("slug", candidate)
-      .eq("is_deleted", false)
-      .maybeSingle();
-    if (!taken) {
-      productSlug = candidate;
+      .single();
+
+    if (!productError && product) {
+      productId = product.id as string;
       break;
+    }
+
+    if (
+      !productError ||
+      !isProductSlugUniqueViolation(productError) ||
+      attempt === 2
+    ) {
+      return { error: productError?.message ?? "No se pudo crear el producto." };
     }
   }
 
-  const sortOrder = await getNextProductSortOrder(supabase, store.id);
-
-  const { data: product, error: productError } = await supabase
-    .from("products")
-    .insert({
-      store_id: store.id,
-      category_id: categoryId,
-      name,
-      slug: productSlug,
-      short_description: shortDescription || null,
-      description: description || null,
-      metadata,
-      sort_order: sortOrder,
-    })
-    .select("id")
-    .single();
-
-  if (productError) return { error: productError.message };
-
-  const productId = product.id as string;
+  if (!productId) {
+    return { error: "No se pudo crear el producto." };
+  }
   const sku = `${store.slug}-${productSlug}`.slice(0, 80);
 
   const { data: variant, error: variantError } = await supabase
@@ -1357,41 +1372,54 @@ export async function duplicateProduct(
     .order("sort_order", { ascending: true });
 
   const copyName = `${source.name} (copia)`;
-  let productSlug = slugify(copyName) || "producto-copia";
-  for (let i = 0; i < 5; i++) {
-    const candidate =
-      i === 0 ? productSlug : uniqueSlug(copyName, crypto.randomUUID());
-    const { data: taken } = await supabase
+  let productSlug = "";
+  let newProductId = "";
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    productSlug =
+      attempt === 0
+        ? await allocateUniqueProductSlug(supabase, store.id, copyName, {
+            fallbackBase: "producto-copia",
+          })
+        : await allocateUniqueProductSlug(
+            supabase,
+            store.id,
+            `${copyName}-${randomProductSlugSuffix(5)}`,
+            { fallbackBase: "producto-copia" },
+          );
+
+    const { data: newProduct, error: insertError } = await supabase
       .from("products")
+      .insert({
+        store_id: store.id,
+        category_id: source.category_id,
+        name: copyName,
+        slug: productSlug,
+        short_description: source.short_description,
+        description: source.description,
+        brand: source.brand,
+        is_featured: false,
+      })
       .select("id")
-      .eq("store_id", store.id)
-      .eq("slug", candidate)
-      .eq("is_deleted", false)
-      .maybeSingle();
-    if (!taken) {
-      productSlug = candidate;
+      .single();
+
+    if (!insertError && newProduct) {
+      newProductId = newProduct.id as string;
       break;
+    }
+
+    if (
+      !insertError ||
+      !isProductSlugUniqueViolation(insertError) ||
+      attempt === 2
+    ) {
+      return { error: insertError?.message ?? "No se pudo duplicar el producto." };
     }
   }
 
-  const { data: newProduct, error: insertError } = await supabase
-    .from("products")
-    .insert({
-      store_id: store.id,
-      category_id: source.category_id,
-      name: copyName,
-      slug: productSlug,
-      short_description: source.short_description,
-      description: source.description,
-      brand: source.brand,
-      is_featured: false,
-    })
-    .select("id")
-    .single();
-
-  if (insertError) return { error: insertError.message };
-
-  const newProductId = newProduct.id as string;
+  if (!newProductId) {
+    return { error: "No se pudo duplicar el producto." };
+  }
   const sku = `${store.slug}-${productSlug}`.slice(0, 80);
 
   const { data: newVariant, error: newVariantError } = await supabase
