@@ -4,14 +4,13 @@ import Image from "next/image";
 import { useMemo, useState, useTransition } from "react";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { ProductImageField } from "@/components/dashboard/ProductImageField";
-import { Button } from "@/components/ui/button";
-import { formatUsd } from "@/lib/format";
 import {
   archiveSupplierProduct,
   createSupplierProduct,
   updateSupplierProduct,
   type SupplierProduct,
 } from "@/lib/supplier/actions";
+import { formatUsd } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 interface SupplierProductsPanelProps {
@@ -127,22 +126,27 @@ export function SupplierProductsPanel({
   }
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="space-y-6">
+      <section className="supplier-hub-card">
+        <div className="supplier-hub-card-header">
           <div>
-            <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            <p className="supplier-hub-section-label">Catálogo mayorista</p>
+            <h1 className="supplier-hub-heading">
               {mode === "edit" ? "Editar producto" : "Cargar producto"}
             </h1>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="supplier-hub-subheading">
               Panel interno para proveedores. No aparece en el menú de
               comerciantes ni en el catálogo público.
             </p>
           </div>
           {mode === "edit" ? (
-            <Button type="button" variant="outline" size="sm" onClick={resetForm}>
+            <button
+              type="button"
+              className="btn-brand-outline !min-h-9 !px-3 !text-xs"
+              onClick={resetForm}
+            >
               Nuevo producto
-            </Button>
+            </button>
           ) : null}
         </div>
 
@@ -171,7 +175,7 @@ export function SupplierProductsPanel({
                 id="supplier-title"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                className="input-field mt-1.5"
+                className="input-field"
                 placeholder="Ej: Caja mayorista de snacks"
                 disabled={pending}
               />
@@ -185,7 +189,7 @@ export function SupplierProductsPanel({
                 rows={4}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
-                className="input-field mt-1.5 resize-none"
+                className="input-field resize-none"
                 placeholder="Detalles para el comerciante (contenido, presentación, condiciones…)"
                 disabled={pending}
               />
@@ -202,7 +206,7 @@ export function SupplierProductsPanel({
                   step={1}
                   value={stock}
                   onChange={(event) => setStock(event.target.value)}
-                  className="input-field mt-1.5"
+                  className="input-field"
                   disabled={pending}
                 />
               </div>
@@ -222,7 +226,7 @@ export function SupplierProductsPanel({
                     inputMode="decimal"
                     value={basePriceUsd}
                     onChange={(event) => setBasePriceUsd(event.target.value)}
-                    className="input-field pl-7"
+                    className="input-field !mt-0 pl-7"
                     placeholder="0.00"
                     disabled={pending}
                   />
@@ -237,14 +241,15 @@ export function SupplierProductsPanel({
             {error}
           </p>
         ) : null}
-        {message ? (
-          <p className="mt-4 text-sm text-emerald-700 dark:text-emerald-400">
-            {message}
-          </p>
-        ) : null}
+        {message ? <p className="supplier-hub-success mt-4">{message}</p> : null}
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button type="button" onClick={handleSubmit} disabled={pending}>
+          <button
+            type="button"
+            className="btn-brand"
+            onClick={handleSubmit}
+            disabled={pending}
+          >
             {pending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
             ) : mode === "edit" ? (
@@ -253,30 +258,30 @@ export function SupplierProductsPanel({
               <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
             )}
             {mode === "edit" ? "Guardar cambios" : "Publicar en hub"}
-          </Button>
+          </button>
         </div>
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+        <p className="supplier-hub-section-label">
           Productos cargados ({products.length})
-        </h2>
+        </p>
         {products.length === 0 ? (
-          <p className="mt-3 rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800">
+          <p className="supplier-hub-empty mt-3">
             Aún no hay productos. Usa el formulario de arriba para cargar el
             primero.
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-zinc-100 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-950">
+          <ul className="supplier-hub-list mt-3">
             {products.map((product) => (
               <li
                 key={product.id}
                 className={cn(
-                  "flex flex-col gap-3 p-4 sm:flex-row sm:items-center",
-                  editingId === product.id && "bg-teal-50/40 dark:bg-teal-950/20",
+                  "supplier-hub-list-item",
+                  editingId === product.id && "supplier-hub-list-item-active",
                 )}
               >
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-emerald-50 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:ring-emerald-900/50">
                   {product.imageUrl ? (
                     <Image
                       src={product.imageUrl}
@@ -298,31 +303,29 @@ export function SupplierProductsPanel({
                   <p className="mt-0.5 line-clamp-2 text-xs text-zinc-500">
                     {product.description || "Sin descripción"}
                   </p>
-                  <p className="mt-1 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                     {formatUsd(product.basePriceUsd)} · Stock {product.stock}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
+                    className="btn-brand-outline !min-h-8 !gap-1.5 !px-2.5 !text-xs"
                     disabled={pending}
                     onClick={() => startEdit(product)}
+                    aria-label="Editar"
                   >
                     <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                    <span className="sr-only">Editar</span>
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
+                    className="btn-brand-outline !min-h-8 !gap-1.5 !px-2.5 !text-xs"
                     disabled={pending}
                     onClick={() => handleArchive(product.id)}
+                    aria-label="Archivar"
                   >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    <span className="sr-only">Archivar</span>
-                  </Button>
+                  </button>
                 </div>
               </li>
             ))}

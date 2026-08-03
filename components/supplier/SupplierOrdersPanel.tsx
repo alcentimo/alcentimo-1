@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Loader2, PackagePlus, Truck } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { formatUsd } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { SupplierProduct } from "@/lib/supplier/actions";
@@ -35,11 +34,11 @@ function formatOrderDate(value: string): string {
 function statusBadgeClass(status: SupplierOrderStatus): string {
   switch (status) {
     case "despachado":
-      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300";
+      return "supplier-hub-status-despachado";
     case "preparando":
-      return "bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200";
+      return "supplier-hub-status-preparando";
     default:
-      return "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300";
+      return "supplier-hub-status-pendiente";
   }
 }
 
@@ -179,33 +178,32 @@ export function SupplierOrdersPanel({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="supplier-hub-card-header">
         <div>
-          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-            Pedidos recibidos
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="supplier-hub-section-label">Operaciones</p>
+          <h1 className="supplier-hub-heading">Pedidos recibidos</h1>
+          <p className="supplier-hub-subheading">
             Gestiona despachos a comerciantes: datos de envío, estatus y número
             de guía.
           </p>
         </div>
-        <Button
+        <button
           type="button"
-          size="sm"
-          variant={showCreate ? "outline" : "default"}
+          className={cn(
+            showCreate ? "btn-brand-outline" : "btn-brand",
+            "!min-h-9 !px-3.5 !text-xs",
+          )}
           onClick={() => setShowCreate((value) => !value)}
         >
           <PackagePlus className="mr-1.5 h-4 w-4" aria-hidden="true" />
           {showCreate ? "Cerrar formulario" : "Registrar pedido"}
-        </Button>
+        </button>
       </div>
 
       {showCreate ? (
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            Nuevo pedido
-          </h2>
-          <p className="mt-1 text-xs text-zinc-500">
+        <section className="supplier-hub-card">
+          <h2 className="supplier-hub-heading text-base">Nuevo pedido</h2>
+          <p className="supplier-hub-subheading">
             Úsalo para registrar pedidos recibidos por WhatsApp o del marketplace
             de mayoristas. Descuenta stock automáticamente.
           </p>
@@ -217,7 +215,7 @@ export function SupplierOrdersPanel({
               </label>
               <input
                 id="so-buyer-name"
-                className="input-field mt-1.5"
+                className="input-field"
                 value={buyerName}
                 onChange={(event) => setBuyerName(event.target.value)}
                 disabled={pending}
@@ -229,7 +227,7 @@ export function SupplierOrdersPanel({
               </label>
               <input
                 id="so-buyer-phone"
-                className="input-field mt-1.5"
+                className="input-field"
                 value={buyerPhone}
                 onChange={(event) => setBuyerPhone(event.target.value)}
                 disabled={pending}
@@ -242,7 +240,7 @@ export function SupplierOrdersPanel({
               <textarea
                 id="so-buyer-address"
                 rows={2}
-                className="input-field mt-1.5 resize-none"
+                className="input-field resize-none"
                 value={buyerAddress}
                 onChange={(event) => setBuyerAddress(event.target.value)}
                 disabled={pending}
@@ -254,7 +252,7 @@ export function SupplierOrdersPanel({
               </label>
               <select
                 id="so-carrier"
-                className="input-field mt-1.5"
+                className="input-field"
                 value={shippingCarrier}
                 onChange={(event) => setShippingCarrier(event.target.value)}
                 disabled={pending}
@@ -272,7 +270,7 @@ export function SupplierOrdersPanel({
               </label>
               <input
                 id="so-branch"
-                className="input-field mt-1.5"
+                className="input-field"
                 value={shippingBranchName}
                 onChange={(event) => setShippingBranchName(event.target.value)}
                 placeholder="Ej: MRW Valencia Norte"
@@ -285,7 +283,7 @@ export function SupplierOrdersPanel({
               </label>
               <input
                 id="so-branch-address"
-                className="input-field mt-1.5"
+                className="input-field"
                 value={shippingBranchAddress}
                 onChange={(event) =>
                   setShippingBranchAddress(event.target.value)
@@ -295,10 +293,8 @@ export function SupplierOrdersPanel({
             </div>
           </div>
 
-          <div className="mt-4 rounded-xl border border-zinc-100 bg-zinc-50/80 p-3 dark:border-zinc-800 dark:bg-zinc-900/40">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              Productos
-            </p>
+          <div className="supplier-hub-soft-panel mt-4">
+            <p className="supplier-hub-section-label">Productos</p>
             {products.length === 0 ? (
               <p className="mt-2 text-sm text-zinc-500">
                 Primero carga productos en la pestaña Productos.
@@ -311,7 +307,7 @@ export function SupplierOrdersPanel({
                   </label>
                   <select
                     id="so-product"
-                    className="input-field mt-1.5"
+                    className="input-field"
                     value={lineProductId}
                     onChange={(event) => setLineProductId(event.target.value)}
                     disabled={pending}
@@ -332,21 +328,20 @@ export function SupplierOrdersPanel({
                     type="number"
                     min={1}
                     step={1}
-                    className="input-field mt-1.5"
+                    className="input-field"
                     value={lineQty}
                     onChange={(event) => setLineQty(event.target.value)}
                     disabled={pending}
                   />
                 </div>
-                <Button
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
+                  className="btn-brand-outline !min-h-10 !px-3 !text-xs"
                   onClick={addDraftLine}
                   disabled={pending}
                 >
                   Añadir
-                </Button>
+                </button>
               </div>
             )}
 
@@ -363,7 +358,7 @@ export function SupplierOrdersPanel({
                     </span>
                     <button
                       type="button"
-                      className="text-xs text-red-600 hover:underline"
+                      className="text-xs font-medium text-red-600 hover:underline"
                       onClick={() =>
                         setDraftLines((current) =>
                           current.filter(
@@ -387,7 +382,7 @@ export function SupplierOrdersPanel({
             <textarea
               id="so-notes"
               rows={2}
-              className="input-field mt-1.5 resize-none"
+              className="input-field resize-none"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               disabled={pending}
@@ -395,8 +390,9 @@ export function SupplierOrdersPanel({
           </div>
 
           <div className="mt-4">
-            <Button
+            <button
               type="button"
+              className="btn-brand"
               onClick={handleCreateOrder}
               disabled={pending || draftLines.length === 0}
             >
@@ -404,7 +400,7 @@ export function SupplierOrdersPanel({
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               ) : null}
               Guardar pedido
-            </Button>
+            </button>
           </div>
         </section>
       ) : null}
@@ -414,35 +410,32 @@ export function SupplierOrdersPanel({
           {error}
         </p>
       ) : null}
-      {message ? (
-        <p className="text-sm text-emerald-700 dark:text-emerald-400">{message}</p>
-      ) : null}
+      {message ? <p className="supplier-hub-success">{message}</p> : null}
 
       {orders.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-200 px-4 py-10 text-center text-sm text-zinc-500 dark:border-zinc-800">
+        <p className="supplier-hub-empty">
           Aún no hay pedidos. Cuando un comerciante compre tus productos (o
           registres uno manualmente), aparecerán aquí.
         </p>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
-          <ul className="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+          <ul className="supplier-hub-list">
             {orders.map((order) => (
               <li key={order.id}>
                 <button
                   type="button"
                   onClick={() => selectOrder(order)}
                   className={cn(
-                    "flex w-full flex-col gap-1 border-b border-zinc-100 px-4 py-3 text-left transition last:border-b-0 dark:border-zinc-800",
-                    selectedId === order.id
-                      ? "bg-teal-50/70 dark:bg-teal-950/30"
-                      : "hover:bg-zinc-50 dark:hover:bg-zinc-900/50",
+                    "supplier-hub-order-row",
+                    selectedId === order.id && "supplier-hub-order-row-active",
                   )}
                 >
                   <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
                     {order.buyerName}
                   </span>
                   <span className="text-[11px] text-zinc-500">
-                    {formatOrderDate(order.createdAt)} · {formatUsd(order.totalUsd)}
+                    {formatOrderDate(order.createdAt)} ·{" "}
+                    {formatUsd(order.totalUsd)}
                   </span>
                   <span
                     className={cn(
@@ -458,10 +451,10 @@ export function SupplierOrdersPanel({
           </ul>
 
           {selected ? (
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+            <section className="supplier-hub-card">
+              <div className="supplier-hub-card-header">
                 <div>
-                  <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                  <h2 className="supplier-hub-heading text-base">
                     {selected.buyerName}
                   </h2>
                   <p className="mt-1 text-xs text-zinc-500">
@@ -479,10 +472,8 @@ export function SupplierOrdersPanel({
               </div>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3 dark:border-zinc-800 dark:bg-zinc-900/40">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                    Comprador
-                  </p>
+                <div className="supplier-hub-soft-panel">
+                  <p className="supplier-hub-section-label">Comprador</p>
                   <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
                     {selected.buyerName}
                   </p>
@@ -494,12 +485,10 @@ export function SupplierOrdersPanel({
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3 dark:border-zinc-800 dark:bg-zinc-900/40">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                    Envío
-                  </p>
+                <div className="supplier-hub-soft-panel">
+                  <p className="supplier-hub-section-label">Envío</p>
                   <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                    <Truck className="h-3.5 w-3.5" aria-hidden="true" />
+                    <Truck className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
                     {supplierCarrierLabel(selected.shippingCarrier)}
                   </p>
                   <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
@@ -512,14 +501,12 @@ export function SupplierOrdersPanel({
               </div>
 
               <div className="mt-5">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                  Productos
-                </p>
-                <ul className="mt-2 divide-y divide-zinc-100 rounded-xl border border-zinc-100 dark:divide-zinc-800 dark:border-zinc-800">
+                <p className="supplier-hub-section-label">Productos</p>
+                <ul className="mt-2 divide-y divide-emerald-50 overflow-hidden rounded-xl border border-emerald-100 dark:divide-emerald-950/40 dark:border-emerald-900/40">
                   {selected.items.map((item) => (
                     <li
                       key={item.id}
-                      className="flex items-start justify-between gap-3 px-3 py-2.5 text-sm"
+                      className="flex items-start justify-between gap-3 bg-white px-3 py-2.5 text-sm dark:bg-zinc-950"
                     >
                       <div className="min-w-0">
                         <p className="font-medium text-zinc-900 dark:text-zinc-50">
@@ -529,7 +516,7 @@ export function SupplierOrdersPanel({
                           {formatUsd(item.unitPriceUsd)} c/u
                         </p>
                       </div>
-                      <span className="shrink-0 tabular-nums text-zinc-700 dark:text-zinc-200">
+                      <span className="shrink-0 tabular-nums font-medium text-emerald-700 dark:text-emerald-400">
                         {formatUsd(item.lineTotalUsd)}
                       </span>
                     </li>
@@ -541,12 +528,12 @@ export function SupplierOrdersPanel({
               </div>
 
               {selected.notes.trim() ? (
-                <p className="mt-4 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
+                <p className="supplier-hub-soft-panel mt-4 text-xs text-zinc-600 dark:text-zinc-300">
                   Notas: {selected.notes}
                 </p>
               ) : null}
 
-              <div className="mt-6 border-t border-zinc-100 pt-5 dark:border-zinc-800">
+              <div className="mt-6 border-t border-emerald-100 pt-5 dark:border-emerald-900/40">
                 <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                   Estatus de despacho
                 </p>
@@ -557,7 +544,7 @@ export function SupplierOrdersPanel({
                     </label>
                     <select
                       id="so-status"
-                      className="input-field mt-1.5"
+                      className="input-field"
                       value={editStatus}
                       onChange={(event) =>
                         setEditStatus(event.target.value as SupplierOrderStatus)
@@ -577,7 +564,7 @@ export function SupplierOrdersPanel({
                     </label>
                     <input
                       id="so-tracking"
-                      className="input-field mt-1.5"
+                      className="input-field"
                       value={editTracking}
                       onChange={(event) => setEditTracking(event.target.value)}
                       placeholder="Ej: MRW-123456789"
@@ -585,9 +572,9 @@ export function SupplierOrdersPanel({
                     />
                   </div>
                 </div>
-                <Button
+                <button
                   type="button"
-                  className="mt-4"
+                  className="btn-brand mt-4"
                   onClick={handleSaveDispatch}
                   disabled={pending}
                 >
@@ -600,7 +587,7 @@ export function SupplierOrdersPanel({
                     <Truck className="mr-2 h-4 w-4" aria-hidden="true" />
                   )}
                   Guardar despacho
-                </Button>
+                </button>
               </div>
             </section>
           ) : null}

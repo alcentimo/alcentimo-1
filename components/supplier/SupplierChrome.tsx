@@ -1,46 +1,64 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import { cn } from "@/lib/cn";
 
 interface SupplierChromeProps {
   email: string | null;
   children: React.ReactNode;
 }
 
-/** Shell del hub oculto de proveedores: sin nav de comerciantes. */
+/** Shell del hub oculto de proveedores — identidad Alcéntimo. */
 export function SupplierChrome({ email, children }: SupplierChromeProps) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab");
+  const onPedidos =
+    pathname.startsWith("/proveedor") && tab === "pedidos";
+  const onProductos = pathname.startsWith("/proveedor") && !onPedidos;
+
   return (
-    <div className="min-h-dvh bg-zinc-50 dark:bg-zinc-950">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-7">
-          <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Acceso interno
-            </p>
-            <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              Hub de proveedores
-            </p>
+    <div className="supplier-hub-shell">
+      <header className="supplier-hub-header">
+        <div className="supplier-hub-header-inner">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="supplier-hub-brand-mark" aria-hidden="true">
+              a
+            </span>
+            <div className="min-w-0">
+              <p className="supplier-hub-eyebrow">Alcéntimo · Mayoristas</p>
+              <p className="supplier-hub-title">Hub de proveedores</p>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {email ? (
-              <span className="truncate text-zinc-500 dark:text-zinc-400">
+              <span className="mr-1 hidden max-w-[12rem] truncate text-xs text-zinc-500 sm:inline dark:text-zinc-400">
                 {email}
               </span>
             ) : null}
             <Link
               href="/proveedor/dashboard"
-              className="font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+              className={cn(
+                "supplier-hub-nav-link",
+                onProductos && "supplier-hub-nav-link-active",
+              )}
             >
               Productos
             </Link>
             <Link
               href="/proveedor/dashboard?tab=pedidos"
-              className="font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+              className={cn(
+                "supplier-hub-nav-link",
+                onPedidos && "supplier-hub-nav-link-active",
+              )}
             >
               Pedidos
             </Link>
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-5 py-6 sm:px-7">{children}</main>
+      <main className="supplier-hub-main">{children}</main>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { SupplierChrome } from "@/components/supplier/SupplierChrome";
 import { resolveSupplierAuthEmail } from "@/lib/supplier/access";
@@ -21,8 +22,22 @@ export default async function ProveedorLayout({
   } = await supabase.auth.getUser();
 
   return (
-    <SupplierChrome email={resolveSupplierAuthEmail(user) ?? user?.email ?? null}>
-      {children}
-    </SupplierChrome>
+    <Suspense
+      fallback={
+        <div className="supplier-hub-shell">
+          <main className="supplier-hub-main">
+            <div className="supplier-hub-card text-sm text-zinc-500">
+              Cargando hub…
+            </div>
+          </main>
+        </div>
+      }
+    >
+      <SupplierChrome
+        email={resolveSupplierAuthEmail(user) ?? user?.email ?? null}
+      >
+        {children}
+      </SupplierChrome>
+    </Suspense>
   );
 }
