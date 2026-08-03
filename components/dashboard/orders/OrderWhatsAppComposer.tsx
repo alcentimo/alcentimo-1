@@ -36,26 +36,30 @@ export function OrderWhatsAppComposer({
   onClose,
 }: OrderWhatsAppComposerProps) {
   const lockedStatusUpdate = Boolean(newEstado);
-  const [goal, setGoal] = useState<OrderMessageGoalOption["value"]>(initialIntent);
+  const [goal, setGoal] = useState<OrderMessageGoalOption["value"] | null>(
+    lockedStatusUpdate ? null : initialIntent,
+  );
   const [message, setMessage] = useState(fallbackMessage);
+  const [aiRequested, setAiRequested] = useState(lockedStatusUpdate);
 
   const intent: OrderWhatsAppMessageIntent = lockedStatusUpdate
     ? "status_update"
-    : goal;
+    : (goal ?? initialIntent);
 
   const { message: aiMessage, loading, error, regenerate } =
     useOrderAiWhatsAppMessage({
       orderId,
       newEstado,
       intent,
-      enabled: open,
+      enabled: open && aiRequested,
     });
 
   useEffect(() => {
     if (!open) return;
-    setGoal(initialIntent);
+    setGoal(lockedStatusUpdate ? null : initialIntent);
     setMessage(fallbackMessage);
-  }, [open, initialIntent, fallbackMessage]);
+    setAiRequested(lockedStatusUpdate);
+  }, [open, initialIntent, fallbackMessage, lockedStatusUpdate]);
 
   useEffect(() => {
     if (aiMessage) setMessage(aiMessage);
@@ -63,47 +67,53 @@ export function OrderWhatsAppComposer({
 
   const displayName = customerName.trim() || "cliente";
 
+  function handleSelectGoal(nextGoal: OrderMessageGoalOption["value"]) {
+    setGoal(nextGoal);
+    setAiRequested(true);
+  }
+
   const toolbar = (
     <div className="space-y-2">
       {lockedStatusUpdate ? (
         <p className="rounded-lg border border-emerald-200/80 bg-white/80 px-3 py-2 text-[11px] leading-relaxed text-emerald-900">
           Actualización de estado del pedido
-          {storeName?.trim() ? ` · ${storeName.trim()}` : ""}. Puedes editar el
-          mensaje antes de continuar.
+          {storeName?.trim() ? ` · ${storeName.trim()}` : ""}. Edita el mensaje
+          antes de continuar.
         </p>
       ) : (
         <>
-          <p className="text-[11px] font-medium text-zinc-600">
-            Objetivo del mensaje
-          </p>
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-600">
+            <Sparkles className="h-3.5 w-3.5 text-violet-600" aria-hidden="true" />
+            Generar con IA
+          </div>
           <div
-            className="grid gap-1.5"
-            role="radiogroup"
-            aria-label="Objetivo del mensaje"
+            className="flex flex-wrap gap-1.5"
+            role="group"
+            aria-label="Objetivos de mensaje con IA"
           >
             {ORDER_MESSAGE_GOAL_OPTIONS.map((option) => {
-              const selected = goal === option.value;
+              const selected = goal === option.value && aiRequested;
+              const suggested = option.value === initialIntent;
+
               return (
                 <button
                   key={option.value}
                   type="button"
-                  role="radio"
-                  aria-checked={selected}
                   disabled={loading}
-                  onClick={() => setGoal(option.value)}
+                  title={option.description}
+                  onClick={() => handleSelectGoal(option.value)}
                   className={cn(
-                    "rounded-lg border px-2.5 py-2 text-left transition-colors",
-                    selected
-                      ? "border-emerald-600 bg-white"
-                      : "border-transparent bg-white/60 hover:border-zinc-200",
+                    "dashboard-wa-ai-chip",
+                    selected && "dashboard-wa-ai-chip-active",
+                    suggested && !selected && "dashboard-wa-ai-chip-suggested",
                   )}
                 >
-                  <p className="text-xs font-semibold text-zinc-900">
-                    {option.label}
-                  </p>
-                  <p className="mt-0.5 text-[10px] leading-snug text-zinc-500">
-                    {option.description}
-                  </p>
+                  {loading && selected ? (
+                    <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" aria-hidden="true" />
+                  )}
+                  {option.label}
                 </button>
               );
             })}
@@ -111,19 +121,21 @@ export function OrderWhatsAppComposer({
         </>
       )}
 
-      <button
-        type="button"
-        onClick={() => void regenerate()}
-        disabled={loading}
-        className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 transition hover:text-emerald-950 disabled:opacity-50"
-      >
-        {loading ? (
-          <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
-        ) : (
-          <Sparkles className="h-3 w-3" aria-hidden="true" />
-        )}
-        Regenerar con IA
-      </button>
+      {aiRequested ? (
+        <button
+          type="button"
+          onClick={() => void regenerate()}
+          disabled={loading}
+          className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 transition hover:text-emerald-950 disabled:opacity-50"
+        >
+          {loading ? (
+            <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+          ) : (
+            <Sparkles className="h-3 w-3" aria-hidden="true" />
+          )}
+          Regenerar
+        </button>
+      ) : null}
     </div>
   );
 
@@ -142,8 +154,8 @@ export function OrderWhatsAppComposer({
           ? `${error}. Se muestra un mensaje de respaldo que puedes editar.`
           : null
       }
-      primaryLabel="Abrir chat"
-      hint="El mensaje incluye datos del pedido. WhatsApp solo se abre al pulsar Abrir chat."
+      primaryLabel="Continuar"
+      hint="Elige un objetivo con IA o edita el mensaje. WhatsApp solo se abre al pulsar Continuar."
     />
   );
 }

@@ -13,7 +13,6 @@ import {
   type CustomerSegment,
 } from "@/lib/customers/customer-segments";
 import { CustomerWhatsAppButton } from "@/components/dashboard/customers/CustomerWhatsAppButton";
-import { CustomerAiMessageButton } from "@/components/dashboard/customers/CustomerAiMessageButton";
 import { CustomerDetailSlideOver } from "@/components/dashboard/customers/CustomerDetailSlideOver";
 import { cn } from "@/lib/cn";
 
@@ -107,16 +106,7 @@ function CustomerTableRow({
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          <CustomerAiMessageButton
-            customer={customer}
-            storeName={storeName}
-            compact
-          />
-          <CustomerWhatsAppButton
-            customerName={customer.displayName}
-            phone={customer.phone}
-            storeName={storeName}
-          />
+          <CustomerWhatsAppButton customer={customer} storeName={storeName} />
         </div>
       </td>
     </tr>
@@ -161,16 +151,7 @@ function CustomerMobileCard({
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          <CustomerAiMessageButton
-            customer={customer}
-            storeName={storeName}
-            compact
-          />
-          <CustomerWhatsAppButton
-            customerName={customer.displayName}
-            phone={customer.phone}
-            storeName={storeName}
-          />
+          <CustomerWhatsAppButton customer={customer} storeName={storeName} />
         </div>
       </div>
       <dl className="customers-mobile-metrics">

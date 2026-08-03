@@ -7703,6 +7703,18 @@ body {
   @apply px-4 pb-3 text-center text-xs text-red-600;
 }
 
+.dashboard-wa-ai-chip {
+  @apply inline-flex items-center gap-1 rounded-full border border-zinc-200/90 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-zinc-700 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-800 disabled:opacity-50;
+}
+
+.dashboard-wa-ai-chip-suggested {
+  @apply border-violet-200 bg-violet-50/70 text-violet-800;
+}
+
+.dashboard-wa-ai-chip-active {
+  @apply border-violet-600 bg-violet-600 text-white hover:border-violet-600 hover:bg-violet-600 hover:text-white;
+}
+
 .catalog-chat-overlay {
   @apply fixed inset-0 z-50 flex items-end justify-start p-0 sm:items-end sm:p-4;
 }
