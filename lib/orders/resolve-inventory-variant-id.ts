@@ -7,7 +7,11 @@ export interface ProductVariantRow {
   is_default: boolean;
 }
 
-/** Mapea el id de variante del catálogo al UUID real en product_variants. */
+/**
+ * Mapea el id de variante del catálogo al UUID real en product_variants.
+ * No cae en silencio al default (Base): en ropa/moda eso descuenta stock 0
+ * y provoca "disponible: 0" aunque la combinación talla/color sí tenga stock.
+ */
 export function resolveOrderLineInventoryVariantId(options: {
   catalogVariantId: string;
   productId: string;
@@ -29,19 +33,23 @@ export function resolveOrderLineInventoryVariantId(options: {
   if (trimmedCatalogId) {
     const directMatch = forProduct.find((row) => row.id === trimmedCatalogId);
     if (directMatch) return directMatch.id;
-  }
 
-  const jsonVariants = parseVariantsJson(productVariantsJson);
-  const jsonVariant = trimmedCatalogId
-    ? jsonVariants.find((variant) => variant.id === trimmedCatalogId)
-    : null;
-
-  if (jsonVariant) {
-    const byName = forProduct.find(
-      (row) =>
-        row.name.trim().toLowerCase() === jsonVariant.name.trim().toLowerCase(),
+    const jsonVariants = parseVariantsJson(productVariantsJson);
+    const jsonVariant = jsonVariants.find(
+      (variant) => variant.id === trimmedCatalogId,
     );
-    if (byName) return byName.id;
+
+    if (jsonVariant) {
+      const byName = forProduct.find(
+        (row) =>
+          row.name.trim().toLowerCase() ===
+          jsonVariant.name.trim().toLowerCase(),
+      );
+      if (byName) return byName.id;
+    }
+
+    // Variante concreta pedida pero no vinculable: fallar claro en checkout.
+    return null;
   }
 
   const defaultRow =
