@@ -17,6 +17,7 @@ import {
   checkSupportAdminAccess,
   resolveAuthEmail,
 } from "@/lib/support/admin-access";
+import { checkSupplierAccess } from "@/lib/supplier/access";
 import {
   canAccessDashboardPath,
   DASHBOARD_INVITATION_PATH,
@@ -41,6 +42,7 @@ import { normalizeCustomDomain, isPlatformCatalogHost } from "@/lib/domains/cust
 
 const DASHBOARD_PREFIX = "/dashboard";
 const ADMIN_PREFIX = "/admin";
+const PROVEEDOR_PREFIX = "/proveedor";
 const DASHBOARD_LOGIN = "/dashboard/login";
 const REGISTER_PATH = "/register";
 const RECOVER_PASSWORD_PATH = "/dashboard/recuperar-contrasena";
@@ -231,6 +233,7 @@ export async function middleware(request: NextRequest) {
 
   const isDashboard = pathname.startsWith(DASHBOARD_PREFIX);
   const isAdminRoute = pathname.startsWith(ADMIN_PREFIX);
+  const isProveedorRoute = pathname.startsWith(PROVEEDOR_PREFIX);
   const isRegisterRoute = pathname === REGISTER_PATH;
   const customerAccountPath = parseCustomerAccountPath(pathname, effectiveStoreSlug);
   const isCustomerAccountRoute = Boolean(customerAccountPath);
@@ -374,6 +377,39 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
+  if (isProveedorRoute) {
+    if (!authenticatedUser) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = DASHBOARD_LOGIN;
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    const supplierEmail = resolveAuthEmail(authenticatedUser);
+    const supplierAccess = checkSupplierAccess(supplierEmail);
+
+    if (!supplierAccess.ok) {
+      console.warn("[supplier-access-denied]", {
+        path: pathname,
+        reason: supplierAccess.reason,
+        sessionEmail: authenticatedUser.email ?? null,
+        resolvedEmail: supplierEmail,
+        allowlistCount: supplierAccess.allowlistCount,
+        envVarPresent: Boolean(process.env.SUPPLIER_EMAILS?.trim()),
+      });
+
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = "/dashboard/catalogo";
+      dashboardUrl.searchParams.set(
+        "proveedor_denied",
+        supplierAccess.reason ?? "denied",
+      );
+      return NextResponse.redirect(dashboardUrl);
+    }
+
+    return supabaseResponse;
+  }
+
   if (isActivar && authenticatedUser) {
     const role = await getMerchantStoreRole(supabase, authenticatedUser.id);
     if (role && role !== "owner") {
@@ -477,6 +513,18 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(redirectUrl);
       }
 
+      if (
+        next?.startsWith(PROVEEDOR_PREFIX) &&
+        checkSupplierAccess(resolveAuthEmail(authenticatedUser)).ok
+      ) {
+        applySafeInternalNextRedirect(
+          redirectUrl,
+          next,
+          "/proveedor/dashboard",
+        );
+        return NextResponse.redirect(redirectUrl);
+      }
+
       const hasMerchantStore = await userHasMerchantStore(
         supabase,
         authenticatedUser.id,
@@ -488,6 +536,7 @@ export async function middleware(request: NextRequest) {
           next &&
             (next.startsWith(DASHBOARD_PREFIX) ||
               next.startsWith(ADMIN_PREFIX) ||
+              next.startsWith(PROVEEDOR_PREFIX) ||
               next.startsWith(DASHBOARD_INVITATION_PATH))
             ? next
             : null,
