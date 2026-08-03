@@ -1,15 +1,13 @@
 "use client";
 
 import { useMemo, useState, type MouseEvent } from "react";
-import { Loader2, Sparkles, X } from "lucide-react";
+import { MessageCircle, Sparkles, X } from "lucide-react";
 import type { CatalogOrder } from "@/lib/orders/types";
 import type { OrderEstado } from "@/lib/orders/order-status";
-import { buildCustomerWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import { renderOrderWhatsAppMessage } from "@/lib/orders/render-order-message";
 import type { MessageTemplatesSettings } from "@/lib/store-settings/types";
 import { OrderWhatsAppComposer } from "@/components/dashboard/orders/OrderWhatsAppComposer";
-import { useOrderAiWhatsAppMessage } from "@/components/dashboard/orders/useOrderAiWhatsAppMessage";
 import { cn } from "@/lib/cn";
 
 interface OrderStatusWhatsAppPromptProps {
@@ -42,31 +40,7 @@ export function OrderStatusWhatsAppPrompt({
     [order, messageTemplates, storeName],
   );
 
-  const { message: aiMessage, loading } = useOrderAiWhatsAppMessage({
-    orderId: order.id,
-    newEstado,
-    intent: "status_update",
-    enabled: hasPhone,
-  });
-
-  const activeMessage = aiMessage ?? fallbackMessage;
-  const whatsappUrl = buildCustomerWhatsAppUrl(
-    order.customer_phone,
-    undefined,
-    activeMessage,
-  );
-
-  function handleSendClick(event: MouseEvent) {
-    event.stopPropagation();
-    if (!hasPhone || loading) return;
-
-    if (whatsappUrl) {
-      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-      onDismiss();
-    }
-  }
-
-  function handleEditClick(event: MouseEvent) {
+  function handlePreviewClick(event: MouseEvent) {
     event.stopPropagation();
     if (!hasPhone) return;
     setComposerOpen(true);
@@ -89,34 +63,26 @@ export function OrderStatusWhatsAppPrompt({
       >
         <button
           type="button"
-          onClick={handleSendClick}
-          disabled={!hasPhone || loading}
+          onClick={handlePreviewClick}
+          disabled={!hasPhone}
           className="orders-status-wa-prompt-action"
           aria-label={
             hasPhone
-              ? "Enviar actualización por WhatsApp"
+              ? "Preparar mensaje de WhatsApp"
               : "Sin teléfono para WhatsApp"
           }
         >
-          {loading ? (
-            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden="true" />
+          {hasPhone ? (
+            <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           ) : (
             <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           )}
           <span>
-            {loading ? "Generando mensaje…" : "Enviar actualización por WhatsApp"}
+            {hasPhone
+              ? "Preparar mensaje de WhatsApp"
+              : "Sin teléfono para WhatsApp"}
           </span>
         </button>
-        {!loading && hasPhone ? (
-          <button
-            type="button"
-            onClick={handleEditClick}
-            className="orders-status-wa-prompt-edit"
-            aria-label="Editar mensaje antes de enviar"
-          >
-            Editar
-          </button>
-        ) : null}
         <button
           type="button"
           onClick={handleDismiss}

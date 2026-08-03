@@ -229,19 +229,21 @@ export function CustomerAiMessageDialog({
           </Button>
 
           {whatsAppUrl ? (
-            <a
-              href={whatsAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              disabled={!message.trim() || loading}
+              onClick={() => {
+                window.open(whatsAppUrl, "_blank", "noopener,noreferrer");
+                onOpenChange(false);
+              }}
               className={cn(
                 "btn-primary inline-flex items-center justify-center gap-1.5",
-                (!message.trim() || loading) && "pointer-events-none opacity-50",
+                (!message.trim() || loading) && "opacity-50",
               )}
-              aria-disabled={!message.trim() || loading}
             >
               <MessageCircle className="h-4 w-4" aria-hidden="true" />
-              Enviar por WhatsApp
-            </a>
+              Abrir chat
+            </button>
           ) : (
             <span className="text-xs text-zinc-500">
               Este cliente no tiene teléfono registrado.

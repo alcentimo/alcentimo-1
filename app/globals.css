@@ -7672,6 +7672,37 @@ body {
   background-color: #25d366;
 }
 
+/* Widget WhatsApp del dashboard (Clientes / Órdenes) */
+.dashboard-wa-overlay {
+  @apply fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:justify-end sm:p-6;
+}
+
+.dashboard-wa-backdrop {
+  @apply absolute inset-0 bg-black/40 backdrop-blur-[1px];
+}
+
+.dashboard-wa-panel {
+  @apply relative z-10 flex h-[min(34rem,calc(100dvh-3rem))] w-full max-w-md flex-col overflow-hidden rounded-t-2xl bg-[#efeae2] shadow-2xl sm:h-[min(36rem,calc(100dvh-4rem))] sm:rounded-2xl;
+  animation: catalog-wa-slide-up 0.22s ease-out;
+}
+
+.dashboard-wa-toolbar {
+  @apply shrink-0 space-y-2 border-b border-zinc-200/70 bg-[#f7f5f1] px-3 py-3;
+}
+
+.dashboard-wa-composer {
+  @apply flex flex-col gap-2 border-t border-zinc-200/80 bg-[#f0f2f5] px-3 py-3;
+}
+
+.dashboard-wa-open-btn {
+  @apply inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition hover:brightness-95;
+  background-color: #25d366;
+}
+
+.dashboard-wa-no-phone {
+  @apply px-4 pb-3 text-center text-xs text-red-600;
+}
+
 .catalog-chat-overlay {
   @apply fixed inset-0 z-50 flex items-end justify-start p-0 sm:items-end sm:p-4;
 }
