@@ -1,0 +1,73 @@
+import { NATIONAL_CARRIER_METHODS } from "@/src/config/shipping-methods";
+
+export const SUPPLIER_ORDER_STATUSES = [
+  "pendiente",
+  "preparando",
+  "despachado",
+] as const;
+
+export type SupplierOrderStatus = (typeof SUPPLIER_ORDER_STATUSES)[number];
+
+export const SUPPLIER_ORDER_STATUS_LABELS: Record<SupplierOrderStatus, string> =
+  {
+    pendiente: "Pendiente",
+    preparando: "Preparando",
+    despachado: "Despachado",
+  };
+
+export function isSupplierOrderStatus(
+  value: unknown,
+): value is SupplierOrderStatus {
+  return (
+    value === "pendiente" ||
+    value === "preparando" ||
+    value === "despachado"
+  );
+}
+
+export const SUPPLIER_SHIPPING_CARRIER_OPTIONS = [
+  ...NATIONAL_CARRIER_METHODS.map((method) => ({
+    value: method.key,
+    label: method.label,
+  })),
+  { value: "otro", label: "Otra agencia / coordinado" },
+] as const;
+
+export function supplierCarrierLabel(value: string | null | undefined): string {
+  if (!value?.trim()) return "Sin agencia";
+  const found = SUPPLIER_SHIPPING_CARRIER_OPTIONS.find(
+    (option) => option.value === value,
+  );
+  return found?.label ?? value;
+}
+
+export interface SupplierOrderItem {
+  id: string;
+  productId: string | null;
+  productTitle: string;
+  quantity: number;
+  unitPriceUsd: number;
+  lineTotalUsd: number;
+}
+
+export interface SupplierOrder {
+  id: string;
+  buyerName: string;
+  buyerPhone: string | null;
+  buyerAddress: string | null;
+  shippingCarrier: string | null;
+  shippingBranchName: string | null;
+  shippingBranchAddress: string | null;
+  status: SupplierOrderStatus;
+  trackingNumber: string | null;
+  notes: string;
+  totalUsd: number;
+  createdAt: string;
+  updatedAt: string;
+  items: SupplierOrderItem[];
+}
+
+export interface CreateSupplierOrderItemInput {
+  productId: string;
+  quantity: number;
+}
