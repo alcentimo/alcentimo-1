@@ -36,6 +36,10 @@ import {
 import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
 import type { AppliedPromotion } from "@/lib/promotions/types";
 import {
+  formatShippingOptionHint,
+  resolveShippingQuote,
+} from "@/lib/store-settings/shipping-pricing";
+import {
   getStoreCustomerAccountPath,
 } from "@/lib/store-host";
 import type { CatalogFulfillmentMode } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
@@ -291,7 +295,19 @@ export function CheckoutPanel({
     );
   }, [appliedPromotion, subtotalUsd]);
 
-  const totalUsd = Math.max(0, subtotalUsd - discountUsd);
+  const merchandiseUsd = Math.max(0, subtotalUsd - discountUsd);
+
+  const shippingQuote = useMemo(
+    () =>
+      resolveShippingQuote({
+        pricing: purchaseInfo.shippingPricing,
+        method: selectedShipping,
+        merchandiseUsd,
+      }),
+    [purchaseInfo.shippingPricing, selectedShipping, merchandiseUsd],
+  );
+
+  const totalUsd = merchandiseUsd + shippingQuote.chargeUsd;
   const totalLocal =
     showBsConversion && exchangeRate && exchangeRate > 0
       ? totalUsd * exchangeRate
@@ -345,6 +361,12 @@ export function CheckoutPanel({
   const shippingLabel =
     shippingOptions.find((option) => option.key === selectedShipping)
       ?.label ?? "";
+  const shippingDisplayLabel = shippingLabel
+    ? `${shippingLabel} · ${shippingQuote.chargeLabel}`
+    : shippingQuote.chargeLabel !== "—"
+      ? shippingQuote.chargeLabel
+      : "";
+  const shippingHint = formatShippingOptionHint(shippingQuote);
   const paymentLabel =
     paymentOptions.find((payment) => payment.key === selectedPayment)
       ?.label ?? "";
@@ -722,6 +744,34 @@ export function CheckoutPanel({
                           <p className="txn-checkout-section-title">
                             Método de envío
                           </p>
+                          {purchaseInfo.shippingPricing.freeShippingEnabled ? (
+                            <p
+                              className={cn(
+                                "mb-3 rounded-lg border px-3 py-2 text-xs leading-relaxed",
+                                shippingQuote.freeShipping.unlocked
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200"
+                                  : "border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300",
+                              )}
+                            >
+                              {shippingQuote.freeShipping.unlocked
+                                ? "¡Envío gratis desbloqueado en este pedido!"
+                                : `Envío gratis desde ${formatUsd(purchaseInfo.shippingPricing.freeShippingMinUsd)}. ${
+                                    shippingQuote.freeShipping.remainingUsd > 0
+                                      ? `Te faltan ${formatUsd(shippingQuote.freeShipping.remainingUsd)}.`
+                                      : ""
+                                  }`}
+                            </p>
+                          ) : purchaseInfo.shippingPricing.mode === "cod" ? (
+                            <p className="mb-3 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                              Modalidad: cobro a destino. Pagas el flete en la
+                              agencia al retirar tu paquete.
+                            </p>
+                          ) : (
+                            <p className="mb-3 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                              Modalidad: tarifa plana nacional de{" "}
+                              {formatUsd(purchaseInfo.shippingPricing.flatRateUsd)}.
+                            </p>
+                          )}
                           <div className="txn-checkout-method-grid">
                             {shippingOptions.map((option) => (
                               <ShippingMethodCard
@@ -1172,7 +1222,28 @@ export function CheckoutPanel({
                 <strong>-{formatUsd(discountUsd)}</strong>
               </div>
             ) : null}
-            {checkoutStep === 2 || discountUsd > 0 ? (
+            {selectedShipping && shippingQuote.appliesPaidShipping ? (
+              <div className="txn-checkout-total !border-0 !px-0 !py-0">
+                <span>Envío</span>
+                <strong
+                  className={
+                    shippingQuote.isFree
+                      ? "text-emerald-700 dark:text-emerald-400"
+                      : undefined
+                  }
+                >
+                  {shippingQuote.chargeLabel}
+                </strong>
+              </div>
+            ) : null}
+            {shippingHint && selectedShipping ? (
+              <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                {shippingHint}
+              </p>
+            ) : null}
+            {checkoutStep === 2 ||
+            discountUsd > 0 ||
+            (selectedShipping && shippingQuote.appliesPaidShipping) ? (
               <div className="txn-checkout-total !border-0 !px-0 !py-0">
                 <span>Total</span>
                 <strong>{formatUsd(totalUsd)}</strong>
@@ -1233,10 +1304,10 @@ export function CheckoutPanel({
               </p>
             )}
 
-            {checkoutStep === 2 && (shippingLabel || paymentLabel) && (
+            {checkoutStep === 2 && (shippingDisplayLabel || paymentLabel) && (
               <p className="txn-checkout-hint">
-                {shippingLabel ? `Envío: ${shippingLabel}` : null}
-                {shippingLabel && paymentLabel ? " · " : null}
+                {shippingDisplayLabel ? `Envío: ${shippingDisplayLabel}` : null}
+                {shippingDisplayLabel && paymentLabel ? " · " : null}
                 {paymentLabel ? `Pago: ${paymentLabel}` : null}
               </p>
             )}

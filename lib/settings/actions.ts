@@ -224,7 +224,19 @@ export async function saveShippingSettings(
   shipping: ShippingSettings,
 ): Promise<SettingsActionResult> {
   const normalized = normalizeStoreSettingsConfig({ shipping });
-  return persistSettingsPatch({ shipping: normalized.shipping });
+  const next = normalized.shipping;
+
+  if (next.pricingMode === "flat" && next.flatRateUsd <= 0) {
+    return { error: "Indica una tarifa plana de envío mayor a $0." };
+  }
+
+  if (next.freeShippingEnabled && next.freeShippingMinUsd <= 0) {
+    return {
+      error: "Indica un monto mínimo mayor a $0 para el envío gratis.",
+    };
+  }
+
+  return persistSettingsPatch({ shipping: next });
 }
 
 export type SavePaymentsOptions = {

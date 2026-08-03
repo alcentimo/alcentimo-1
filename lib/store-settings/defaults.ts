@@ -86,6 +86,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function normalizeUsdAmount(value: unknown, fallback: number): number {
+  const raw =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value)
+        : Number.NaN;
+  if (!Number.isFinite(raw) || raw < 0) return fallback;
+  return Math.round(raw * 100) / 100;
+}
+
 function normalizeDaySchedule(
   dayRaw: unknown,
   fallbackOpen: string,
@@ -144,6 +155,10 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       deliveryDetails: "",
       deliveryZones: [],
       pickupPoints: [],
+      pricingMode: "cod",
+      flatRateUsd: 3,
+      freeShippingEnabled: false,
+      freeShippingMinUsd: 25,
     },
     payments: {
       methods,
@@ -312,6 +327,22 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           : defaults.shipping.deliveryDetails,
       deliveryZones: normalizeDeliveryZones(shippingRaw.deliveryZones),
       pickupPoints: normalizePickupPoints(shippingRaw.pickupPoints),
+      pricingMode:
+        shippingRaw.pricingMode === "flat" || shippingRaw.pricingMode === "cod"
+          ? shippingRaw.pricingMode
+          : defaults.shipping.pricingMode,
+      flatRateUsd: normalizeUsdAmount(
+        shippingRaw.flatRateUsd,
+        defaults.shipping.flatRateUsd,
+      ),
+      freeShippingEnabled:
+        typeof shippingRaw.freeShippingEnabled === "boolean"
+          ? shippingRaw.freeShippingEnabled
+          : defaults.shipping.freeShippingEnabled,
+      freeShippingMinUsd: normalizeUsdAmount(
+        shippingRaw.freeShippingMinUsd,
+        defaults.shipping.freeShippingMinUsd,
+      ),
     },
     payments: {
       methods,

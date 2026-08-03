@@ -19,6 +19,9 @@ export interface DeliveryZone {
   meetingPoints: DeliveryMeetingPoint[];
 }
 
+/** Modalidad de cobro del envío para el comerciante venezolano. */
+export type ShippingPricingMode = "cod" | "flat";
+
 export interface ShippingSettings {
   carriers: Record<ShippingCarrierKey, boolean>;
   deliveryDetails: string;
@@ -26,6 +29,18 @@ export interface ShippingSettings {
   deliveryZones: DeliveryZone[];
   /** Puntos de encuentro para retiro sin tienda física. */
   pickupPoints: DeliveryMeetingPoint[];
+  /**
+   * Cómo se cobra el envío (encomienda nacional / entrega).
+   * `cod` = cobro a destino en agencia (default VE).
+   * `flat` = tarifa plana cobrada por adelantado.
+   */
+  pricingMode: ShippingPricingMode;
+  /** Costo fijo en USD si `pricingMode === "flat"`. */
+  flatRateUsd: number;
+  /** Activa envío gratis al alcanzar un mínimo de compra. */
+  freeShippingEnabled: boolean;
+  /** Monto mínimo del carrito (USD) para desbloquear envío gratis. */
+  freeShippingMinUsd: number;
 }
 
 export type PaymentMethodKey =

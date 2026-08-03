@@ -9,6 +9,7 @@ import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { getWhatsAppOrderDetailUrl } from "@/lib/orders/order-links";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
+import { resolveShippingQuote } from "@/lib/store-settings/shipping-pricing";
 import {
   findDeliveryZone,
   findMeetingPointInZone,
@@ -275,6 +276,14 @@ export async function submitTransactionalOrder(
 
   const totalUsd = Math.max(0, subtotalUsd - discountUsd);
 
+  const merchandiseUsd = totalUsd;
+  const shippingQuote = resolveShippingQuote({
+    pricing: purchaseInfo.shippingPricing,
+    method: shippingMethodRaw,
+    merchandiseUsd,
+  });
+  const orderTotalUsd = merchandiseUsd + shippingQuote.chargeUsd;
+
   const orderId = crypto.randomUUID();
 
   let paymentProofUrl: string | null = null;
@@ -351,7 +360,7 @@ export async function submitTransactionalOrder(
     customer_name: customerName,
     customer_phone: customerPhone,
     items: enrichedOrderItems,
-    total_usd: totalUsd,
+    total_usd: orderTotalUsd,
     payment_proof_url: paymentProofUrl,
     estado: "pendiente",
     location_id: resolvedLocationId,
@@ -404,9 +413,12 @@ export async function submitTransactionalOrder(
   const paymentLabel = paymentMethodRaw
     ? getPaymentMethod(paymentMethodRaw as PaymentMethodKey).label
     : undefined;
-  const shippingLabel = shippingMethodRaw
+  const carrierLabel = shippingMethodRaw
     ? getShippingMethod(shippingMethodRaw as ShippingCarrierKey).label
     : undefined;
+  const shippingLabel = [carrierLabel, shippingQuote.summaryLabel]
+    .filter(Boolean)
+    .join(" · ");
 
   const fulfillmentLabel =
     fulfillmentType === "pickup"
@@ -424,11 +436,18 @@ export async function submitTransactionalOrder(
   const message = buildTransactionalOrderWhatsAppMessage({
     customerName,
     items: orderItems,
-    totalUsd,
+    totalUsd: orderTotalUsd,
     orderDetailUrl: getWhatsAppOrderDetailUrl(orderId),
     paymentLabel,
-    shippingLabel,
-    subtotalUsd: discountUsd > 0 ? subtotalUsd : undefined,
+    shippingLabel: shippingLabel || undefined,
+    shippingCostUsd: shippingQuote.chargeUsd,
+    shippingChargeLabel: shippingQuote.appliesPaidShipping
+      ? shippingQuote.chargeLabel
+      : undefined,
+    subtotalUsd:
+      discountUsd > 0 || shippingQuote.chargeUsd > 0 || shippingQuote.isCod
+        ? subtotalUsd
+        : undefined,
     discountUsd: discountUsd > 0 ? discountUsd : undefined,
     promotionLabel,
     locationName: resolvedLocationName ?? undefined,

@@ -2,6 +2,7 @@ import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
 import { BrandLogoTile } from "@/components/ui/BrandLogoTile";
 import { getPaymentMethod } from "@/src/config/payment-methods";
+import { formatUsd } from "@/lib/format";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
 
@@ -69,6 +70,14 @@ export function PurchaseInfoPanel({ purchaseInfo }: PurchaseInfoPanelProps) {
         {hasShipping && (
           <section>
             <h3 className="purchase-info-section-title">Envío</h3>
+            <p className="mb-3 text-xs leading-relaxed text-zinc-500">
+              {purchaseInfo.shippingPricing.mode === "flat"
+                ? `Tarifa plana nacional: ${formatUsd(purchaseInfo.shippingPricing.flatRateUsd)}.`
+                : "Cobro a destino: pagas el flete en la agencia al retirar."}
+              {purchaseInfo.shippingPricing.freeShippingEnabled
+                ? ` Envío gratis desde ${formatUsd(purchaseInfo.shippingPricing.freeShippingMinUsd)}.`
+                : ""}
+            </p>
             <ul className="purchase-info-method-list">
               {purchaseInfo.shipping.map((option) => (
                 <li key={option.key}>

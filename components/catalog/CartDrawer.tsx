@@ -23,6 +23,7 @@ import {
   isCartItemEligible,
 } from "@/lib/coupons/discount";
 import type { AppliedCoupon } from "@/lib/coupons/types";
+import { resolveShippingQuote } from "@/lib/store-settings/shipping-pricing";
 
 interface CartDrawerProps {
   open: boolean;
@@ -118,8 +119,25 @@ export function CartDrawer({
 
   const discountUsd = couponBreakdown?.discountUsd ?? 0;
   const discountVes = couponBreakdown?.discountVes ?? 0;
-  const totalUsd = Math.max(0, subtotalUsd - discountUsd);
-  const totalVes = Math.max(0, subtotalVes - discountVes);
+  const merchandiseUsd = Math.max(0, subtotalUsd - discountUsd);
+  const merchandiseVes = Math.max(0, subtotalVes - discountVes);
+
+  const shippingQuote = useMemo(
+    () =>
+      resolveShippingQuote({
+        pricing: purchaseInfo.shippingPricing,
+        method: selectedShipping,
+        merchandiseUsd,
+      }),
+    [purchaseInfo.shippingPricing, selectedShipping, merchandiseUsd],
+  );
+
+  const totalUsd = merchandiseUsd + shippingQuote.chargeUsd;
+  const totalVes =
+    merchandiseVes +
+    (shippingQuote.chargeUsd > 0 && subtotalUsd > 0
+      ? shippingQuote.chargeUsd * (subtotalVes / subtotalUsd)
+      : 0);
 
   useEffect(() => {
     if (!open) return;
@@ -598,16 +616,41 @@ export function CartDrawer({
 
               <div className="store-cart-summary space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">
-                    {checkoutStep === 1 ? "Subtotal" : "Total"}
-                  </span>
+                  <span className="text-sm text-zinc-500">Subtotal</span>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-zinc-900">
-                      {formatUsd(checkoutStep === 1 ? subtotalUsd : totalUsd)}
+                      {formatUsd(subtotalUsd)}
                     </p>
-                    {showBsConversion && (checkoutStep === 1 ? subtotalVes : totalVes) > 0 && (
+                    {showBsConversion && subtotalVes > 0 && (
                       <p className="text-xs text-zinc-400">
-                        {formatVes(checkoutStep === 1 ? subtotalVes : totalVes)}
+                        {formatVes(subtotalVes)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {selectedShipping && shippingQuote.appliesPaidShipping ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-500">Envío</span>
+                    <p
+                      className={`text-sm font-semibold ${
+                        shippingQuote.isFree
+                          ? "text-emerald-700"
+                          : "text-zinc-900"
+                      }`}
+                    >
+                      {shippingQuote.chargeLabel}
+                    </p>
+                  </div>
+                ) : null}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-500">Total</span>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-zinc-900">
+                      {formatUsd(totalUsd)}
+                    </p>
+                    {showBsConversion && totalVes > 0 && (
+                      <p className="text-xs text-zinc-400">
+                        {formatVes(totalVes)}
                       </p>
                     )}
                   </div>

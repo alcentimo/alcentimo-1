@@ -15,6 +15,8 @@ export interface TransactionalOrderWhatsAppMessageInput {
   orderDetailUrl: string;
   paymentLabel?: string;
   shippingLabel?: string;
+  shippingCostUsd?: number;
+  shippingChargeLabel?: string;
   subtotalUsd?: number;
   discountUsd?: number;
   promotionLabel?: string;
@@ -85,10 +87,19 @@ export function buildTransactionalOrderWhatsAppMessage(
     body.push(
       `🏷️ Descuento${input.promotionLabel ? ` (${sanitizeCustomerText(input.promotionLabel)})` : ""}: -${formatUsd(input.discountUsd)}`,
     );
-    body.push(`💰 Total: ${formatUsd(input.totalUsd)}`);
-  } else {
-    body.push(`💰 Total: ${formatUsd(input.totalUsd)}`);
+  } else if (input.subtotalUsd != null && input.subtotalUsd !== input.totalUsd) {
+    body.push(`💰 Subtotal: ${formatUsd(input.subtotalUsd)}`);
   }
+
+  if (input.shippingChargeLabel?.trim()) {
+    body.push(
+      `🚚 Costo de envío: ${sanitizeCustomerText(input.shippingChargeLabel)}`,
+    );
+  } else if (input.shippingCostUsd != null && input.shippingCostUsd > 0) {
+    body.push(`🚚 Costo de envío: ${formatUsd(input.shippingCostUsd)}`);
+  }
+
+  body.push(`💰 Total: ${formatUsd(input.totalUsd)}`);
 
   if (input.paymentLabel?.trim()) {
     body.push("", `💳 Pago: ${sanitizeCustomerText(input.paymentLabel)}`);

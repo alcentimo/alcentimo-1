@@ -5,6 +5,10 @@ import {
 } from "@/src/config/shipping-methods";
 import { getPaymentMethod, PAYMENT_METHODS } from "@/src/config/payment-methods";
 import { normalizeWhatsAppChatWelcome } from "@/lib/catalog/whatsapp-quick-chat";
+import {
+  toShippingPricingPublicConfig,
+  type ShippingPricingPublicConfig,
+} from "@/lib/store-settings/shipping-pricing";
 import type {
   DeliveryMeetingPoint,
   DeliveryZone,
@@ -32,6 +36,7 @@ export interface PublicPaymentOption {
 
 export interface PublicPurchaseInfo {
   shipping: PublicShippingOption[];
+  shippingPricing: ShippingPricingPublicConfig;
   payments: PublicPaymentOption[];
   installments: {
     enabled: boolean;
@@ -95,6 +100,7 @@ export function buildPublicPurchaseInfo(
 
   return {
     shipping,
+    shippingPricing: toShippingPricingPublicConfig(config.shipping),
     payments,
     installments,
     whatsappPhone: config.contact.whatsappPhone.trim(),
