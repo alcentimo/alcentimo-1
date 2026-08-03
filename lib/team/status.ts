@@ -5,11 +5,11 @@ export type TeamMemberStatus = "active";
 export type InvitationStatus = "pending" | "expired" | "revoked";
 
 export const TEAM_MEMBER_STATUS_LABELS: Record<TeamMemberStatus, string> = {
-  active: "Activa",
+  active: "Activo",
 };
 
 export const INVITATION_STATUS_LABELS: Record<InvitationStatus, string> = {
-  pending: "Pendiente",
+  pending: "Invitación pendiente",
   expired: "Expirada",
   revoked: "Revocada",
 };
