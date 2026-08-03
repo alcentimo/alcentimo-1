@@ -1,3 +1,5 @@
+import "server-only";
+
 import sharp from "sharp";
 import { STORE_LOGO_RECOMMENDED_SIZE } from "@/lib/store-logo/constants";
 import {

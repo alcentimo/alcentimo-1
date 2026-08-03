@@ -10,7 +10,7 @@ import {
   STORE_LOGO_HELP_TEXT,
   STORE_LOGO_MAX_BYTES,
 } from "@/lib/store-logo/constants";
-import { formatFileSize } from "@/lib/image-compress";
+import { formatFileSize } from "@/lib/format-file-size";
 import { isGifImageFile, isGifImageUrl } from "@/lib/media/is-gif-url";
 import { cn } from "@/lib/cn";
 

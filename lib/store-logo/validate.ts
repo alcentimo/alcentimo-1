@@ -7,7 +7,7 @@ import {
   STORE_LOGO_MIN_SIZE,
   STORE_LOGO_RECOMMENDED_SIZE,
 } from "@/lib/store-logo/constants";
-import { formatFileSize } from "@/lib/image-compress";
+import { formatFileSize } from "@/lib/format-file-size";
 
 export function isSquareAspectRatio(
   width: number,

@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { formatFileSize } from "@/lib/format-file-size";
 import {
   compressBannerImage,
   compressProductImage,
-  formatFileSize,
   type ImageOptimizationResult,
 } from "@/lib/image-compress";
 import {
