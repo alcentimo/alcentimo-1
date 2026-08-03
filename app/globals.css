@@ -7957,7 +7957,7 @@ body {
 }
 
 .catalog-browse-toolbar {
-  @apply sticky top-0 z-10 border-b border-neutral-200/80 bg-white/96 px-4 py-2.5 backdrop-blur-sm sm:px-6;
+  @apply sticky top-0 z-10 border-b border-neutral-200/70 bg-white/96 px-4 py-2 backdrop-blur-sm sm:px-6;
 }
 
 .catalog-browse-toolbar-row {
@@ -8006,24 +8006,8 @@ body {
   @apply shadow-sm;
 }
 
-.catalog-browse-category-rail {
-  @apply mt-2.5 space-y-1.5;
-}
-
-.catalog-browse-category-rail-label {
-  @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500;
-}
-
-.catalog-browse-category-chips {
-  @apply mt-0 flex-nowrap gap-2 overflow-x-auto px-0 pb-1 [-ms-overflow-style:none] [scrollbar-width:none];
-}
-
-.catalog-browse-category-chips::-webkit-scrollbar {
-  display: none;
-}
-
 .catalog-browse-meta {
-  @apply mt-2 flex flex-wrap items-center justify-between gap-2;
+  @apply mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1;
 }
 
 .catalog-browse-meta-left {
@@ -8031,19 +8015,27 @@ body {
 }
 
 .catalog-browse-count {
-  @apply text-xs text-neutral-500;
+  @apply text-[11px] leading-none text-neutral-400 sm:text-xs;
+}
+
+.catalog-browse-count strong {
+  @apply font-medium text-neutral-500;
 }
 
 .catalog-browse-clear {
-  @apply text-xs font-medium text-teal-700 transition hover:text-teal-900;
+  @apply text-[11px] font-medium text-teal-700/90 transition hover:text-teal-900 sm:text-xs;
 }
 
 .catalog-browse-sort {
-  @apply ml-auto flex min-h-9 max-w-full items-center rounded-lg border border-neutral-200/80 bg-neutral-50/40 px-2.5 py-1 sm:min-w-[11rem];
+  @apply ml-auto inline-flex max-w-full items-center;
 }
 
 .catalog-browse-sort-select {
-  @apply min-w-0 flex-1 border-0 bg-transparent text-xs text-neutral-800 outline-none sm:text-sm;
+  @apply max-w-[9.5rem] cursor-pointer appearance-none border-0 bg-transparent bg-none py-0.5 pr-4 text-right text-[11px] font-medium tracking-tight text-neutral-400 outline-none transition hover:text-neutral-600 focus-visible:text-neutral-700 sm:max-w-[11rem] sm:text-xs;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a3a3a3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: 12px;
 }
 
 .catalog-browse-filters-sheet {

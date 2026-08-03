@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  ChevronDown,
   LayoutGrid,
   Rows3,
   Search,
@@ -13,7 +12,6 @@ import {
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { CATALOG_SORT_OPTIONS, type CatalogSortKey } from "@/lib/catalog/catalog-browse";
 import type { CatalogLayoutMode } from "@/lib/store-settings/types";
-import { Select } from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -26,8 +24,6 @@ import {
   useCatalogShellNavigationOptional,
   useRegisterCatalogSearchFocus,
 } from "@/components/catalog-transactional/CatalogShellNavigation";
-
-const MAX_VISIBLE_CATEGORY_CHIPS = 8;
 
 interface CatalogBrowseToolbarProps {
   searchQuery: string;
@@ -44,36 +40,6 @@ interface CatalogBrowseToolbarProps {
   showCategoryFilter?: boolean;
   layout?: CatalogLayoutMode;
   onLayoutChange?: (layout: CatalogLayoutMode) => void;
-}
-
-function splitVisibleCategories(
-  categories: CatalogCategoryOption[],
-  activeSlug: string | null,
-): {
-  visible: CatalogCategoryOption[];
-  overflow: CatalogCategoryOption[];
-} {
-  if (categories.length <= MAX_VISIBLE_CATEGORY_CHIPS) {
-    return { visible: categories, overflow: [] };
-  }
-
-  const activeIndex = activeSlug
-    ? categories.findIndex((category) => category.slug === activeSlug)
-    : -1;
-
-  if (activeIndex >= MAX_VISIBLE_CATEGORY_CHIPS) {
-    const active = categories[activeIndex];
-    const leading = categories.slice(0, MAX_VISIBLE_CATEGORY_CHIPS - 1);
-    const visible = [...leading, active];
-    const visibleSlugs = new Set(visible.map((category) => category.slug));
-    const overflow = categories.filter((category) => !visibleSlugs.has(category.slug));
-    return { visible, overflow };
-  }
-
-  return {
-    visible: categories.slice(0, MAX_VISIBLE_CATEGORY_CHIPS),
-    overflow: categories.slice(MAX_VISIBLE_CATEGORY_CHIPS),
-  };
 }
 
 export function CatalogBrowseToolbar({
@@ -97,9 +63,13 @@ export function CatalogBrowseToolbar({
   const shellNav = useCatalogShellNavigationOptional();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const handledBuscarDeepLinkRef = useRef(false);
-  const [moreOpen, setMoreOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const showCategories = showCategoryFilter && categories.length > 0;
+  const activeCategoryName =
+    categorySlug == null
+      ? null
+      : categories.find((category) => category.slug === categorySlug)?.name ??
+        null;
 
   const focusSearchInput = useCallback(() => {
     const input = searchInputRef.current;
@@ -127,15 +97,6 @@ export function CatalogBrowseToolbar({
     const query = url.searchParams.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }, [focusSearchInput, pathname, router, shellNav]);
-
-  const { visible: visibleCategories, overflow: overflowCategories } = useMemo(
-    () => splitVisibleCategories(categories, categorySlug),
-    [categories, categorySlug],
-  );
-
-  const activeOverflowCategory = overflowCategories.find(
-    (category) => category.slug === categorySlug,
-  );
 
   return (
     <section
@@ -171,7 +132,6 @@ export function CatalogBrowseToolbar({
             onChange={(event) => onSearchQueryChange(event.target.value)}
             onFocus={() => shellNav?.focusSearch()}
             onBlur={() => {
-              // Mantener el tab activo un instante; Inicio/Perfil lo limpian al navegar.
               window.setTimeout(() => {
                 if (document.activeElement === searchInputRef.current) return;
                 shellNav?.clearSearchActive();
@@ -230,119 +190,23 @@ export function CatalogBrowseToolbar({
         ) : null}
       </div>
 
-      {showCategories ? (
-        <div className="catalog-browse-category-rail" aria-label="Categorías">
-          <p className="catalog-browse-category-rail-label">Categorías</p>
-          <div
-            className="catalog-category-chips catalog-browse-category-chips"
-            role="tablist"
-            aria-label="Filtrar por categoría"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={categorySlug == null}
-              onClick={() => onCategorySlugChange(null)}
-              className={cn(
-                "catalog-category-chip",
-                categorySlug == null && "catalog-category-chip-active",
-              )}
-            >
-              Todas
-            </button>
-
-            {visibleCategories.map((category) => (
-              <button
-                key={category.slug}
-                type="button"
-                role="tab"
-                aria-selected={categorySlug === category.slug}
-                onClick={() => onCategorySlugChange(category.slug)}
-                className={cn(
-                  "catalog-category-chip",
-                  categorySlug === category.slug && "catalog-category-chip-active",
-                )}
-              >
-                {category.name}
-              </button>
-            ))}
-
-            {overflowCategories.length > 0 ? (
-              <div className="catalog-category-more">
-                <button
-                  type="button"
-                  className={cn(
-                    "catalog-category-chip catalog-category-more-trigger",
-                    activeOverflowCategory && "catalog-category-chip-active",
-                  )}
-                  aria-expanded={moreOpen}
-                  aria-haspopup="listbox"
-                  onClick={() => setMoreOpen((open) => !open)}
-                >
-                  {activeOverflowCategory ? activeOverflowCategory.name : "Ver más"}
-                  <ChevronDown
-                    className={cn(
-                      "h-3.5 w-3.5 shrink-0 transition-transform",
-                      moreOpen && "rotate-180",
-                    )}
-                    aria-hidden="true"
-                  />
-                </button>
-
-                {moreOpen ? (
-                  <>
-                    <button
-                      type="button"
-                      className="catalog-category-more-backdrop"
-                      aria-label="Cerrar categorías"
-                      onClick={() => setMoreOpen(false)}
-                    />
-                    <ul
-                      className="catalog-category-more-menu"
-                      role="listbox"
-                      aria-label="Más categorías"
-                    >
-                      {overflowCategories.map((category) => (
-                        <li key={category.slug} role="presentation">
-                          <button
-                            type="button"
-                            role="option"
-                            aria-selected={categorySlug === category.slug}
-                            className={cn(
-                              "catalog-category-more-option",
-                              categorySlug === category.slug &&
-                                "catalog-category-more-option-active",
-                            )}
-                            onClick={() => {
-                              onCategorySlugChange(category.slug);
-                              setMoreOpen(false);
-                            }}
-                          >
-                            {category.name}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
       <div className="catalog-browse-meta">
         <div className="catalog-browse-meta-left">
           <p className="catalog-browse-count">
             {hasActiveFilters ? (
               <>
                 Mostrando <strong>{filteredCount}</strong> de{" "}
-                <strong>{totalCount}</strong> productos
+                <strong>{totalCount}</strong>
+                {activeCategoryName ? (
+                  <>
+                    {" "}
+                    en <strong>{activeCategoryName}</strong>
+                  </>
+                ) : null}
               </>
             ) : (
               <>
                 <strong>{totalCount}</strong> producto
-                {totalCount === 1 ? "" : "s"} disponible
                 {totalCount === 1 ? "" : "s"}
               </>
             )}
@@ -353,13 +217,14 @@ export function CatalogBrowseToolbar({
               onClick={onClearFilters}
               className="catalog-browse-clear"
             >
-              Limpiar filtros
+              Limpiar
             </button>
           ) : null}
         </div>
 
-        <div className="catalog-browse-sort">
-          <Select
+        <label className="catalog-browse-sort">
+          <span className="sr-only">Ordenar productos</span>
+          <select
             id="catalog-browse-sort"
             value={sortKey}
             onChange={(event) =>
@@ -373,8 +238,8 @@ export function CatalogBrowseToolbar({
                 {option.label}
               </option>
             ))}
-          </Select>
-        </div>
+          </select>
+        </label>
       </div>
 
       <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
