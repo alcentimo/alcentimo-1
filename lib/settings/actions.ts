@@ -478,6 +478,8 @@ function revalidatePublicStorePaths(slug: string) {
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/catalogo");
   revalidatePath(`/c/${slug}`);
+  revalidatePath(`/c/${slug}`, "layout");
+  revalidatePath(`/c/${slug}/manifest.json`);
   revalidatePath(`/tienda/${slug}`);
 }
 

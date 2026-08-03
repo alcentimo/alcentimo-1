@@ -308,6 +308,9 @@ export async function uploadStoreLogoImage(
 
   const { logoPng, icon192, icon512, warning } = processed.assets;
   const paths = getStoreLogoStoragePaths(storeId);
+  // Misma ruta con upsert + Cache-Control largo: sin ?v= el navegador/CDN
+  // sigue sirviendo el PNG antiguo aunque la DB ya apunte al archivo nuevo.
+  const version = Date.now();
 
   const uploads = [
     { path: paths.logo, body: logoPng, contentType: "image/png" },
@@ -340,9 +343,9 @@ export async function uploadStoreLogoImage(
     .getPublicUrl(paths.icon512);
 
   return {
-    url: logoData.publicUrl,
-    pwaIcon192Url: icon192Data.publicUrl,
-    pwaIcon512Url: icon512Data.publicUrl,
+    url: `${logoData.publicUrl}?v=${version}`,
+    pwaIcon192Url: `${icon192Data.publicUrl}?v=${version}`,
+    pwaIcon512Url: `${icon512Data.publicUrl}?v=${version}`,
     warning,
   };
 }
