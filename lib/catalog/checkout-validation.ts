@@ -38,7 +38,7 @@ export interface CheckoutStep2ValidationInput {
   paymentsCount: number;
   selectedPayment: string;
   hasProofFile: boolean;
-  /** Si false, el comprobante no es obligatorio (efectivo, punto de venta, etc.). */
+  /** Si true, el comprobante es obligatorio. Por defecto / en checkout: false (opcional). */
   requiresProofFile?: boolean;
 }
 

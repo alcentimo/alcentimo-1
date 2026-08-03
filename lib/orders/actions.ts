@@ -18,7 +18,6 @@ import {
 } from "@/lib/store-settings/delivery-zones";
 import {
   getPaymentMethod,
-  paymentMethodRequiresProof,
 } from "@/src/config/payment-methods";
 import { getShippingMethod, isNationalCarrierKey } from "@/src/config/shipping-methods";
 import { getCarrierBranchById } from "@/lib/shipping/carrier-branches";
@@ -150,12 +149,8 @@ export async function submitTransactionalOrder(
     return { error: "Indica un teléfono válido (mínimo 10 dígitos)." };
   }
 
-  const requiresProof = paymentMethodRequiresProof(paymentMethodRaw);
   const hasProofFile = proof instanceof File && proof.size > 0;
-
-  if (requiresProof && !hasProofFile) {
-    return { error: "Adjunta el comprobante de pago." };
-  }
+  // El comprobante es siempre opcional: el pedido puede confirmarse por WhatsApp sin adjunto.
 
   const trimmedDeliveryAddress = deliveryAddressRaw.slice(0, 320);
   const trimmedFulfillmentNotes = fulfillmentNotesRaw.slice(0, 200);

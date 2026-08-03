@@ -20,8 +20,8 @@ export interface PaymentMethodDefinition {
   description: string;
   fields: PaymentMethodFieldDefinition[];
   /**
-   * Si true, el checkout exige comprobante de pago.
-   * Efectivo / punto de venta / contra entrega no lo requieren.
+   * Si true, el checkout muestra el campo para adjuntar comprobante (siempre opcional).
+   * Efectivo / punto de venta / contra entrega no lo muestran.
    */
   requiresPaymentProof?: boolean;
 }
@@ -227,7 +227,7 @@ export function getPaymentMethod(key: PaymentMethodKey): PaymentMethodDefinition
   return PAYMENT_METHOD_BY_KEY[key];
 }
 
-/** true si el método de pago del checkout exige adjuntar comprobante. */
+/** true si el checkout debe mostrar el campo de comprobante (opcional). */
 export function paymentMethodRequiresProof(
   key: string | null | undefined,
 ): boolean {

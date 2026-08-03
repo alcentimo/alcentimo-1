@@ -390,7 +390,7 @@ export function CheckoutPanel({
     ],
   );
 
-  const requiresProofFile = paymentMethodRequiresProof(selectedPayment);
+  const showsProofUpload = paymentMethodRequiresProof(selectedPayment);
 
   const step2Validation = useMemo(
     () =>
@@ -404,7 +404,7 @@ export function CheckoutPanel({
         paymentsCount: paymentOptions.length,
         selectedPayment,
         hasProofFile: Boolean(proofFile),
-        requiresProofFile,
+        requiresProofFile: false,
       }),
     [
       items.length,
@@ -416,7 +416,6 @@ export function CheckoutPanel({
       paymentOptions.length,
       selectedPayment,
       proofFile,
-      requiresProofFile,
     ],
   );
 
@@ -488,10 +487,6 @@ export function CheckoutPanel({
       markInvalidFieldsTouched(step2Validation.errors);
       setError(summarizeCheckoutValidation(step2Validation));
       scrollToFirstCheckoutError(step2Validation.firstErrorField);
-      return;
-    }
-
-    if (requiresProofFile && !proofFile) {
       return;
     }
 
@@ -1176,7 +1171,7 @@ export function CheckoutPanel({
                   </div>
                 )}
 
-                {requiresProofFile ? (
+                {showsProofUpload ? (
                   <CheckoutFieldGroup
                     field="proofFile"
                     showError={shouldShowFieldError(
@@ -1187,10 +1182,14 @@ export function CheckoutPanel({
                     className="txn-checkout-form"
                   >
                     <label className="txn-field">
-                      <span>Comprobante de pago</span>
+                      <span>
+                        Comprobante de pago{" "}
+                        <span className="font-normal text-zinc-500">
+                          (opcional)
+                        </span>
+                      </span>
                       <input
                         type="file"
-                        required
                         accept="image/jpeg,image/png,image/webp,image/gif"
                         onChange={(event) => {
                           touchField("proofFile");
@@ -1204,7 +1203,7 @@ export function CheckoutPanel({
                         aria-describedby={
                           step2Validation.errors.proofFile
                             ? "checkout-error-proofFile"
-                            : undefined
+                            : "checkout-proof-optional-hint"
                         }
                         className={checkoutFileInputClass(
                           shouldShowFieldError(
@@ -1214,6 +1213,13 @@ export function CheckoutPanel({
                         )}
                       />
                     </label>
+                    <p
+                      id="checkout-proof-optional-hint"
+                      className="mt-1.5 text-xs leading-snug text-zinc-500 dark:text-zinc-400"
+                    >
+                      Puedes confirmar el pedido sin adjuntar archivo y enviar
+                      el comprobante después por WhatsApp.
+                    </p>
                   </CheckoutFieldGroup>
                 ) : selectedPayment ? (
                   <p className="txn-checkout-hint rounded-lg border border-zinc-200/80 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
@@ -1298,9 +1304,7 @@ export function CheckoutPanel({
             {!canProceedCurrentStep && !pending ? (
               <p className="txn-checkout-blocked-hint" role="status">
                 {checkoutStep === 2
-                  ? requiresProofFile
-                    ? "Completa nombre, teléfono, método de pago y comprobante para confirmar."
-                    : "Completa nombre, teléfono y método de pago para confirmar."
+                  ? "Completa nombre, teléfono y método de pago para confirmar."
                   : "Completa el envío y los campos obligatorios para continuar."}
               </p>
             ) : null}
