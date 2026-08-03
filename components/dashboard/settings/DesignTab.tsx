@@ -21,7 +21,6 @@ import {
 import { CatalogPrimaryColorField } from "@/components/dashboard/settings/CatalogPrimaryColorField";
 import { CatalogPromoBannerField } from "@/components/dashboard/settings/CatalogPromoBannerField";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
-import { CatalogAssistantAvatarField } from "@/components/dashboard/settings/CatalogAssistantAvatarField";
 import { SettingsTabShell } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
@@ -37,7 +36,6 @@ import { getRubroPalette } from "@/lib/store-settings/rubro-palettes";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { Store } from "@/lib/database.types";
 import type {
-  CatalogAssistantAvatarSettings,
   CatalogDesignSettings,
   CatalogPromoBannerSettings,
   CatalogThemeId,
@@ -47,7 +45,6 @@ import {
   defaultPromoBannerSettings,
   normalizePromoBannerDraft,
 } from "@/lib/store-settings/promo-banner";
-import { normalizeAssistantAvatarDraft } from "@/lib/store-settings/assistant-avatar";
 import { cn } from "@/lib/cn";
 import {
   DEFAULT_STORE_RUBRO,
@@ -64,7 +61,6 @@ interface DesignTabPreviewContext {
 interface DesignTabProps {
   initialDesign: CatalogDesignSettings;
   storeRubro?: string | null;
-  storeLogoUrl?: string | null;
   preview?: DesignTabPreviewContext | null;
   products?: CouponProductOption[];
   catalogLink?: {
@@ -79,14 +75,12 @@ type SavingField =
   | keyof CatalogVisibilitySettings
   | "primaryColor"
   | "promoBanner"
-  | "assistantAvatar"
   | null;
 
 type AccordionSection =
   | "theme"
   | "brandColor"
   | "promoBanner"
-  | "assistantAvatar"
   | "visibility";
 
 interface DesignAccordionProps {
@@ -198,7 +192,6 @@ function DesignOption({
 export function DesignTab({
   initialDesign,
   storeRubro: storeRubroProp = null,
-  storeLogoUrl = null,
   preview = null,
   products = [],
   catalogLink = null,
@@ -211,7 +204,6 @@ export function DesignTab({
   const [isSaving, startSave] = useTransition();
   const colorSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const promoBannerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const assistantAvatarSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const storeRubro = normalizeStoreRubro(
     storeRubroProp ?? preview?.store.rubro_tienda ?? DEFAULT_STORE_RUBRO,
@@ -258,7 +250,6 @@ export function DesignTab({
         ? { ...design.visibility, ...patch.visibility }
         : design.visibility,
       promoBanner: patch.promoBanner ?? design.promoBanner,
-      assistantAvatar: patch.assistantAvatar ?? design.assistantAvatar,
     };
     setDesign(nextDesign);
     persist(nextDesign, field);
@@ -332,26 +323,6 @@ export function DesignTab({
     }
   }
 
-  function scheduleAssistantAvatarSave(nextDesign: CatalogDesignSettings) {
-    if (assistantAvatarSaveTimerRef.current) {
-      clearTimeout(assistantAvatarSaveTimerRef.current);
-    }
-
-    assistantAvatarSaveTimerRef.current = setTimeout(() => {
-      persist(nextDesign, "assistantAvatar");
-    }, 400);
-  }
-
-  function setAssistantAvatar(next: CatalogAssistantAvatarSettings) {
-    const draft = normalizeAssistantAvatarDraft(next);
-    const nextDesign: CatalogDesignSettings = {
-      ...design,
-      assistantAvatar: draft,
-    };
-    setDesign(nextDesign);
-    scheduleAssistantAvatarSave(nextDesign);
-  }
-
   function resetPrimaryColor() {
     if (colorSaveTimerRef.current) {
       clearTimeout(colorSaveTimerRef.current);
@@ -370,9 +341,6 @@ export function DesignTab({
       }
       if (promoBannerSaveTimerRef.current) {
         clearTimeout(promoBannerSaveTimerRef.current);
-      }
-      if (assistantAvatarSaveTimerRef.current) {
-        clearTimeout(assistantAvatarSaveTimerRef.current);
       }
     };
   }, []);
@@ -398,13 +366,6 @@ export function DesignTab({
         : `${promoBannerSettings.slides.length} borrador(es)`
       : "Activado · sin imágenes"
     : "Desactivado";
-  const assistantAvatarSettings = normalizeAssistantAvatarDraft(
-    design.assistantAvatar,
-  );
-  const assistantAvatarSummary =
-    assistantAvatarSettings.mode === "custom"
-      ? "Foto personalizada"
-      : "Logo de la tienda";
   const visibilitySummary =
     [
       design.visibility.showStock && "Stock",
@@ -519,20 +480,6 @@ export function DesignTab({
                 value={design.promoBanner}
                 onChange={setPromoBanner}
                 products={products}
-              />
-            </DesignAccordion>
-
-            <DesignAccordion
-              title="Avatar del Asistente de IA"
-              summary={assistantAvatarSummary}
-              open={openSection === "assistantAvatar"}
-              onToggle={() => toggleSection("assistantAvatar")}
-            >
-              <CatalogAssistantAvatarField
-                value={design.assistantAvatar}
-                storeLogoUrl={storeLogoUrl ?? preview?.store.logo_url ?? null}
-                disabled={isSaving && savingField === "assistantAvatar"}
-                onChange={setAssistantAvatar}
               />
             </DesignAccordion>
 

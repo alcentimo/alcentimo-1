@@ -28,6 +28,7 @@ import {
 import { scheduleStoreSubdomainRename } from "@/lib/domains/provision-store-subdomain";
 import type {
   ContactSettings,
+  CatalogAssistantAvatarSettings,
   CatalogCurrencySettings,
   CatalogDesignSettings,
   CheckoutSettings,
@@ -76,10 +77,31 @@ async function persistSettingsPatch(
 
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
+  revalidatePath("/dashboard/asistente");
   revalidatePath("/dashboard/pedidos");
   revalidatePublicStorePaths(store.slug);
 
   return { success: true };
+}
+
+/** Guarda solo el avatar del asistente del catálogo (sin tocar el resto del diseño). */
+export async function saveCatalogAssistantAvatarSettings(
+  assistantAvatar: CatalogAssistantAvatarSettings,
+): Promise<SettingsActionResult> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+
+  if (!auth.ok) {
+    return { error: auth.error };
+  }
+
+  const current = await getStoreSettingsConfig(auth.store.id);
+  return persistSettingsPatch({
+    catalogDesign: {
+      ...current.catalogDesign,
+      assistantAvatar: sanitizeAssistantAvatarForStorage(assistantAvatar),
+    },
+  });
 }
 
 export async function saveCatalogDesignSettings(
@@ -92,6 +114,7 @@ export async function saveCatalogDesignSettings(
     return { error: auth.error };
   }
 
+  const current = await getStoreSettingsConfig(auth.store.id);
   const normalized = normalizeStoreSettingsConfig({ catalogDesign: design });
   const catalogDesign: CatalogDesignSettings = {
     theme: normalized.catalogDesign.theme,
@@ -101,8 +124,9 @@ export async function saveCatalogDesignSettings(
       design.promoBanner ?? normalized.catalogDesign.promoBanner,
       auth.store.slug,
     ),
+    // El avatar se administra en Asistente IA; no sobrescribirlo desde Diseño.
     assistantAvatar: sanitizeAssistantAvatarForStorage(
-      design.assistantAvatar ?? normalized.catalogDesign.assistantAvatar,
+      current.catalogDesign.assistantAvatar,
     ),
   };
 
@@ -114,7 +138,6 @@ export async function saveCatalogDesignSettings(
     }
   }
 
-  const current = await getStoreSettingsConfig(auth.store.id);
   const merged: StoreSettingsConfig = {
     ...current,
     catalogDesign,
