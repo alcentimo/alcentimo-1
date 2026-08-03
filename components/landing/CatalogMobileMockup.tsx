@@ -1,4 +1,4 @@
-import { Home, ShoppingBag, User } from "lucide-react";
+import { Home, Search, User } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 interface CatalogMobileMockupProps {
@@ -45,7 +45,7 @@ export function CatalogMobileMockup({ className }: CatalogMobileMockupProps) {
 
           <div className="landing-mobile-mockup-tabbar">
             <Home className="h-3 w-3 text-emerald-600" />
-            <ShoppingBag className="h-3 w-3 text-zinc-400" />
+            <Search className="h-3 w-3 text-zinc-400" />
             <User className="h-3 w-3 text-zinc-400" />
           </div>
         </div>

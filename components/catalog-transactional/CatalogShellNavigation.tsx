@@ -25,6 +25,7 @@ interface CatalogShellNavigationContextValue {
   registerOpen: boolean;
   registerMode: CatalogCustomerAuthMode;
   cartActive: boolean;
+  searchActive: boolean;
   openProfile: () => void;
   closeProfile: () => void;
   openRegister: (mode?: CatalogCustomerAuthMode) => void;
@@ -33,7 +34,10 @@ interface CatalogShellNavigationContextValue {
   openCart: () => void;
   closeCart: () => void;
   setCartActive: (active: boolean) => void;
+  focusSearch: () => void;
+  clearSearchActive: () => void;
   registerCartController: (controller: CatalogCartController | null) => void;
+  registerSearchFocus: (focus: (() => void) | null) => void;
 }
 
 const CatalogShellNavigationContext =
@@ -50,11 +54,13 @@ export function CatalogShellNavigationProvider({
 }: CatalogShellNavigationProviderProps) {
   const router = useRouter();
   const cartControllerRef = useRef<CatalogCartController | null>(null);
+  const searchFocusRef = useRef<(() => void) | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerMode, setRegisterMode] =
     useState<CatalogCustomerAuthMode>("register");
   const [cartActive, setCartActive] = useState(false);
+  const [searchActive, setSearchActive] = useState(false);
 
   const registerCartController = useCallback(
     (controller: CatalogCartController | null) => {
@@ -63,12 +69,30 @@ export function CatalogShellNavigationProvider({
     [],
   );
 
+  const registerSearchFocus = useCallback((focus: (() => void) | null) => {
+    searchFocusRef.current = focus;
+  }, []);
+
+  const clearSearchActive = useCallback(() => {
+    setSearchActive(false);
+  }, []);
+
+  const focusSearch = useCallback(() => {
+    cartControllerRef.current?.close();
+    setCartActive(false);
+    setProfileOpen(false);
+    setRegisterOpen(false);
+    setSearchActive(true);
+    searchFocusRef.current?.();
+  }, []);
+
   const openCart = useCallback(() => {
     if (cartControllerRef.current) {
       cartControllerRef.current.open();
       setCartActive(true);
       setProfileOpen(false);
       setRegisterOpen(false);
+      setSearchActive(false);
       return;
     }
 
@@ -87,6 +111,7 @@ export function CatalogShellNavigationProvider({
     setProfileOpen(true);
     setRegisterOpen(false);
     setCartActive(false);
+    setSearchActive(false);
   }, []);
 
   const closeProfile = useCallback(() => {
@@ -99,6 +124,7 @@ export function CatalogShellNavigationProvider({
     setRegisterMode(mode);
     setRegisterOpen(true);
     setCartActive(false);
+    setSearchActive(false);
   }, []);
 
   const closeRegister = useCallback(() => {
@@ -112,6 +138,7 @@ export function CatalogShellNavigationProvider({
       registerOpen,
       registerMode,
       cartActive,
+      searchActive,
       openProfile,
       closeProfile,
       openRegister,
@@ -120,20 +147,27 @@ export function CatalogShellNavigationProvider({
       openCart,
       closeCart,
       setCartActive,
+      focusSearch,
+      clearSearchActive,
       registerCartController,
+      registerSearchFocus,
     }),
     [
       profileOpen,
       registerOpen,
       registerMode,
       cartActive,
+      searchActive,
       openProfile,
       closeProfile,
       openRegister,
       closeRegister,
       openCart,
       closeCart,
+      focusSearch,
+      clearSearchActive,
       registerCartController,
+      registerSearchFocus,
     ],
   );
 
@@ -177,4 +211,17 @@ export function useRegisterCatalogCartController(
       shellNav.registerCartController(null);
     };
   }, [shellNav, openCartSummary, closeCart]);
+}
+
+/** Conecta el foco del buscador del catálogo con la pestaña Buscar. */
+export function useRegisterCatalogSearchFocus(focusSearchInput: () => void) {
+  const shellNav = useCatalogShellNavigationOptional();
+
+  useEffect(() => {
+    if (!shellNav) return;
+    shellNav.registerSearchFocus(focusSearchInput);
+    return () => {
+      shellNav.registerSearchFocus(null);
+    };
+  }, [shellNav, focusSearchInput]);
 }

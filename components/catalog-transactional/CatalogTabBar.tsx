@@ -3,18 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { MouseEvent } from "react";
-import { Cpu, Home, LayoutGrid, ShoppingBag, User } from "lucide-react";
+import { Cpu, Home, Search, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 
-export type CatalogTabId =
-  | "inicio"
-  | "armar-pc"
-  | "categorias"
-  | "compras"
-  | "perfil";
+export type CatalogTabId = "inicio" | "buscar" | "armar-pc" | "perfil";
 
 interface CatalogTabBarProps {
   storeSlug: string;
@@ -22,67 +17,70 @@ interface CatalogTabBarProps {
   pcBuilderEnabled?: boolean;
 }
 
-type CatalogTabSegment = "" | "armar-pc" | "categorias";
+type CatalogTabSegment = "" | "armar-pc";
 
 interface CatalogTabDefinition {
   id: CatalogTabId;
   label: string;
   segment?: CatalogTabSegment;
   icon: LucideIcon;
-  action?: "cart" | "profile";
+  action?: "search" | "profile";
 }
 
 const BASE_TABS: CatalogTabDefinition[] = [
   { id: "inicio", label: "Inicio", segment: "", icon: Home },
-  {
-    id: "categorias",
-    label: "Categorías",
-    segment: "categorias",
-    icon: LayoutGrid,
-  },
-  { id: "compras", label: "Compras", icon: ShoppingBag, action: "cart" },
+  { id: "buscar", label: "Buscar", icon: Search, action: "search" },
   { id: "perfil", label: "Perfil", icon: User, action: "profile" },
 ];
 
 const PC_BUILDER_TAB: CatalogTabDefinition = {
   id: "armar-pc",
-  label: "Arma tu PC",
+  label: "Arma PC",
   segment: "armar-pc",
   icon: Cpu,
 };
 
 function buildTabs(pcBuilderEnabled: boolean): CatalogTabDefinition[] {
   if (!pcBuilderEnabled) return BASE_TABS;
+  // Inicio · Buscar · Arma PC · Perfil (máx. 4; el carrito vive en el FAB)
+  return [BASE_TABS[0], BASE_TABS[1], PC_BUILDER_TAB, BASE_TABS[2]];
+}
 
-  return [BASE_TABS[0], PC_BUILDER_TAB, ...BASE_TABS.slice(1)];
+function isCatalogHomePath(pathname: string, base: string): boolean {
+  if (pathname === base || pathname === `${base}/`) return true;
+  if (pathname.startsWith(`${base}/categorias`)) return true;
+  if (base === "/") {
+    return (
+      pathname === "/" ||
+      pathname === "" ||
+      pathname.startsWith("/categorias")
+    );
+  }
+  return false;
 }
 
 function resolveActiveTab(
   pathname: string,
   storeSlug: string,
   pcBuilderEnabled: boolean,
-  cartActive: boolean,
+  searchActive: boolean,
   profileOpen: boolean,
 ): CatalogTabId {
-  if (cartActive) return "compras";
   if (profileOpen) return "perfil";
+  if (searchActive) return "buscar";
 
   const base = getStoreCatalogBasePath(storeSlug);
-
-  if (pathname === base || pathname === `${base}/`) {
-    return "inicio";
-  }
 
   if (pcBuilderEnabled && pathname.startsWith(`${base}/armar-pc`)) {
     return "armar-pc";
   }
 
-  if (pathname.startsWith(`${base}/categorias`)) return "categorias";
+  if (base === "/" && pcBuilderEnabled && pathname.startsWith("/armar-pc")) {
+    return "armar-pc";
+  }
 
-  if (base === "/") {
-    if (pathname === "/" || pathname === "") return "inicio";
-    if (pcBuilderEnabled && pathname.startsWith("/armar-pc")) return "armar-pc";
-    if (pathname.startsWith("/categorias")) return "categorias";
+  if (isCatalogHomePath(pathname, base)) {
+    return "inicio";
   }
 
   return "inicio";
@@ -96,6 +94,10 @@ function buildTabHref(
   return `${base}/${segment}`.replace("//", "/");
 }
 
+function buildSearchHref(base: string): string {
+  return base === "/" ? "/?buscar=1" : `${base}?buscar=1`;
+}
+
 export function CatalogTabBar({
   storeSlug,
   pcBuilderEnabled = false,
@@ -103,13 +105,13 @@ export function CatalogTabBar({
   const pathname = usePathname();
   const router = useRouter();
   const shellNav = useCatalogShellNavigationOptional();
-  const cartActive = shellNav?.cartActive ?? false;
+  const searchActive = shellNav?.searchActive ?? false;
   const profileOpen = shellNav?.profileOpen ?? false;
   const activeTab = resolveActiveTab(
     pathname,
     storeSlug,
     pcBuilderEnabled,
-    cartActive,
+    searchActive,
     profileOpen,
   );
   const base = getStoreCatalogBasePath(storeSlug);
@@ -117,12 +119,35 @@ export function CatalogTabBar({
 
   function handleInicioClick(event: MouseEvent<HTMLAnchorElement>) {
     const href = buildTabHref(base, "");
+    shellNav?.clearSearchActive();
+    shellNav?.closeProfile();
+    shellNav?.closeCart();
+
     if (pathname === href || pathname === `${href}/`) {
       event.preventDefault();
       window.scrollTo({ top: 0, behavior: "smooth" });
-      shellNav?.closeProfile();
-      shellNav?.closeCart();
     }
+  }
+
+  function handleSearchClick() {
+    shellNav?.closeProfile();
+    shellNav?.closeCart();
+
+    if (isCatalogHomePath(pathname, base)) {
+      if (shellNav) {
+        shellNav.focusSearch();
+        return;
+      }
+
+      const input = document.getElementById(
+        "catalog-browse-search",
+      ) as HTMLInputElement | null;
+      input?.scrollIntoView({ behavior: "smooth", block: "center" });
+      window.setTimeout(() => input?.focus({ preventScroll: true }), 180);
+      return;
+    }
+
+    router.push(buildSearchHref(base));
   }
 
   return (
@@ -139,24 +164,18 @@ export function CatalogTabBar({
         {tabs.map(({ id, label, segment, icon: Icon, action }) => {
           const isActive = activeTab === id;
 
-          if (action === "cart") {
+          if (action === "search") {
             return (
               <button
                 key={id}
                 type="button"
-                onClick={() => {
-                  if (shellNav) {
-                    shellNav.openCart();
-                    return;
-                  }
-                  router.push(buildTabHref(base, undefined) + "?carrito=1");
-                }}
+                onClick={handleSearchClick}
                 className={cn(
                   "catalog-tab-item",
                   isActive && "catalog-tab-item-active",
                 )}
                 aria-current={isActive ? "page" : undefined}
-                aria-label="Abrir carrito de compras"
+                aria-label="Buscar en el catálogo"
               >
                 <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
                 <span>{label}</span>
@@ -193,6 +212,7 @@ export function CatalogTabBar({
                 id === "inicio"
                   ? handleInicioClick
                   : () => {
+                      shellNav?.clearSearchActive();
                       shellNav?.closeProfile();
                       shellNav?.closeCart();
                     }

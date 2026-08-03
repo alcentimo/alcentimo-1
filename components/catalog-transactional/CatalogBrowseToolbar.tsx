@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { CATALOG_SORT_OPTIONS, type CatalogSortKey } from "@/lib/catalog/catalog-browse";
@@ -13,6 +14,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/cn";
+import {
+  useCatalogShellNavigationOptional,
+  useRegisterCatalogSearchFocus,
+} from "@/components/catalog-transactional/CatalogShellNavigation";
 
 const MAX_VISIBLE_CATEGORY_CHIPS = 8;
 
@@ -75,9 +80,41 @@ export function CatalogBrowseToolbar({
   onClearFilters,
   showCategoryFilter = true,
 }: CatalogBrowseToolbarProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const shellNav = useCatalogShellNavigationOptional();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const handledBuscarDeepLinkRef = useRef(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const showCategories = showCategoryFilter && categories.length > 0;
+
+  const focusSearchInput = useCallback(() => {
+    const input = searchInputRef.current;
+    if (!input) return;
+    input.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => {
+      input.focus({ preventScroll: true });
+      input.select();
+    }, 180);
+  }, []);
+
+  useRegisterCatalogSearchFocus(focusSearchInput);
+
+  useEffect(() => {
+    if (handledBuscarDeepLinkRef.current) return;
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("buscar") !== "1") return;
+
+    handledBuscarDeepLinkRef.current = true;
+    shellNav?.focusSearch();
+    focusSearchInput();
+
+    url.searchParams.delete("buscar");
+    const query = url.searchParams.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [focusSearchInput, pathname, router, shellNav]);
 
   const { visible: visibleCategories, overflow: overflowCategories } = useMemo(
     () => splitVisibleCategories(categories, categorySlug),
@@ -115,10 +152,19 @@ export function CatalogBrowseToolbar({
         <label className="catalog-browse-search" htmlFor="catalog-browse-search">
           <Search className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden="true" />
           <input
+            ref={searchInputRef}
             id="catalog-browse-search"
             type="search"
             value={searchQuery}
             onChange={(event) => onSearchQueryChange(event.target.value)}
+            onFocus={() => shellNav?.focusSearch()}
+            onBlur={() => {
+              // Mantener el tab activo un instante; Inicio/Perfil lo limpian al navegar.
+              window.setTimeout(() => {
+                if (document.activeElement === searchInputRef.current) return;
+                shellNav?.clearSearchActive();
+              }, 200);
+            }}
             placeholder="Buscar productos..."
             className="catalog-browse-search-input"
             autoComplete="off"
