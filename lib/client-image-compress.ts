@@ -54,13 +54,21 @@ function toWebpFile(blob: Blob, originalName: string): File {
 export async function compressImageForUpload(
   file: File,
 ): Promise<{ file: File; message: string }> {
-  const imageCompression = await getImageCompression();
-
   if (file.size > PRODUCT_IMAGE_MAX_INPUT_BYTES) {
     throw new Error(
       `La imagen es demasiado grande (${formatImageSize(file.size)}). Usa un archivo menor a ${formatImageSize(PRODUCT_IMAGE_MAX_INPUT_BYTES)}.`,
     );
   }
+
+  // Conservar animación: no convertir GIF a WebP estático.
+  if (file.type === "image/gif" || /\.gif$/i.test(file.name)) {
+    return {
+      file,
+      message: "GIF animado conservado sin conversión.",
+    };
+  }
+
+  const imageCompression = await getImageCompression();
 
   const originalSize = file.size;
   let maxDim = PRODUCT_IMAGE_MAX_DIMENSION;

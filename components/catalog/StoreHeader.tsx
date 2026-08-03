@@ -6,6 +6,7 @@ import { Cpu, ShoppingBag } from "lucide-react";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import type { Store } from "@/lib/database.types";
 import type { LocationHoursSettings } from "@/lib/store-settings/types";
+import { isGifImageUrl } from "@/lib/media/is-gif-url";
 import { storeHasPCBuilderFromStore } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import { getStoreCatalogUrl } from "@/lib/stores";
 
@@ -26,6 +27,7 @@ function StoreLogo({ store }: { store: Store }) {
           fill
           sizes="44px"
           className="object-cover"
+          unoptimized={isGifImageUrl(store.logo_url)}
         />
       </div>
     );

@@ -7,6 +7,7 @@ import {
   useCatalogStoreBranding,
 } from "@/components/catalog/CatalogStoreBrandingContext";
 import { cn } from "@/lib/cn";
+import { isGifImageUrl } from "@/lib/media/is-gif-url";
 
 interface CatalogProductMediaFallbackProps {
   alt?: string;
@@ -41,6 +42,7 @@ export function CatalogProductMediaFallback({
             fill
             sizes="200px"
             className="catalog-product-media-fallback-logo-image"
+            unoptimized={isGifImageUrl(logoUrl)}
           />
         </div>
       ) : monogram ? (

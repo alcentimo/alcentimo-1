@@ -231,7 +231,7 @@ export async function uploadCatalogBannerAssetImage(
   return { url: data.publicUrl };
 }
 
-/** Sube imágenes de configuración (QR Pago Móvil, etc.) al bucket store-assets. */
+/** Sube imágenes de configuración (QR Pago Móvil, avatar IA, etc.) al bucket store-assets. */
 export async function uploadStoreAssetImage(
   supabase: SupabaseClient,
   storeId: string,
@@ -247,6 +247,30 @@ export async function uploadStoreAssetImage(
   }
 
   const inputBuffer = Buffer.from(await file.arrayBuffer());
+  const safeFolder = folder.replace(/[^a-z0-9-]/gi, "");
+  const isGif = file.type === "image/gif";
+
+  // GIFs animados: subir el original sin Sharp/WebP (congelaría la animación).
+  if (isGif) {
+    const path = `${storeId}/${safeFolder}/${crypto.randomUUID()}.gif`;
+    const { error: uploadError } = await supabase.storage
+      .from(STORE_ASSETS_BUCKET)
+      .upload(path, inputBuffer, {
+        cacheControl: "31536000",
+        upsert: false,
+        contentType: "image/gif",
+      });
+
+    if (uploadError) {
+      return { error: uploadError.message };
+    }
+
+    const { data } = supabase.storage
+      .from(STORE_ASSETS_BUCKET)
+      .getPublicUrl(path);
+
+    return { url: data.publicUrl };
+  }
 
   let optimization: ImageOptimizationResult;
   try {
@@ -255,7 +279,6 @@ export async function uploadStoreAssetImage(
     return { error: "No se pudo procesar la imagen. Prueba con otro archivo." };
   }
 
-  const safeFolder = folder.replace(/[^a-z0-9-]/gi, "");
   const path = `${storeId}/${safeFolder}/${crypto.randomUUID()}.webp`;
 
   const { error: uploadError } = await supabase.storage
@@ -283,9 +306,12 @@ export interface UploadStoreLogoResult {
   error?: string;
 }
 
-function getStoreLogoStoragePaths(storeId: string) {
+function getStoreLogoStoragePaths(
+  storeId: string,
+  logoExtension: "png" | "gif" = "png",
+) {
   return {
-    logo: `${storeId}/logo.png`,
+    logo: `${storeId}/logo.${logoExtension}`,
     icon192: `${storeId}/pwa/icon-192x192.png`,
     icon512: `${storeId}/pwa/icon-512x512.png`,
   };
@@ -306,14 +332,20 @@ export async function uploadStoreLogoImage(
     return { error: processed.error };
   }
 
-  const { logoPng, icon192, icon512, warning } = processed.assets;
-  const paths = getStoreLogoStoragePaths(storeId);
+  const { logoBuffer, logoContentType, logoExtension, icon192, icon512, warning } =
+    processed.assets;
+  const paths = getStoreLogoStoragePaths(storeId, logoExtension);
   // Misma ruta con upsert + Cache-Control largo: sin ?v= el navegador/CDN
   // sigue sirviendo el PNG antiguo aunque la DB ya apunte al archivo nuevo.
   const version = Date.now();
 
+  // Si cambia PNG ↔ GIF, elimina el archivo del formato anterior.
+  const alternateLogoPath =
+    logoExtension === "gif" ? `${storeId}/logo.png` : `${storeId}/logo.gif`;
+  await supabase.storage.from(STORE_LOGOS_BUCKET).remove([alternateLogoPath]);
+
   const uploads = [
-    { path: paths.logo, body: logoPng, contentType: "image/png" },
+    { path: paths.logo, body: logoBuffer, contentType: logoContentType },
     { path: paths.icon192, body: icon192, contentType: "image/png" },
     { path: paths.icon512, body: icon512, contentType: "image/png" },
   ] as const;
@@ -354,8 +386,12 @@ export async function removeStoreLogoAssets(
   supabase: SupabaseClient,
   storeId: string,
 ): Promise<void> {
-  const paths = Object.values(getStoreLogoStoragePaths(storeId));
-  await supabase.storage.from(STORE_LOGOS_BUCKET).remove(paths);
+  const paths = [
+    ...Object.values(getStoreLogoStoragePaths(storeId, "png")),
+    ...Object.values(getStoreLogoStoragePaths(storeId, "gif")),
+  ];
+  const uniquePaths = [...new Set(paths)];
+  await supabase.storage.from(STORE_LOGOS_BUCKET).remove(uniquePaths);
 }
 
 export interface UploadPlatformLogoResult {

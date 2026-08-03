@@ -112,8 +112,9 @@ export default async function TransactionalCatalogLayout({
     void recordCatalogVisit(storeSlug, cartAuth.storeId, cartAuth.userId);
   }
 
+  // Preferir logo_url para UI (puede ser GIF animado). Los iconos PWA quedan para el manifest.
   const storeLogoUrl =
-    store?.pwa_icon_192_url ?? store?.pwa_icon_512_url ?? store?.logo_url ?? null;
+    store?.logo_url ?? store?.pwa_icon_192_url ?? store?.pwa_icon_512_url ?? null;
   const origin = await getRequestOrigin();
   const manifestAbsoluteUrl = getStoreCatalogManifestAbsoluteUrl(
     storeSlug,

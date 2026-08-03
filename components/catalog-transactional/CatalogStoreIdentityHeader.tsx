@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { formatExchangeRate } from "@/lib/format";
+import { isGifImageUrl } from "@/lib/media/is-gif-url";
 import type { LocationHoursSettings } from "@/lib/store-settings/types";
 
 interface CatalogStoreIdentityHeaderProps {
@@ -57,6 +58,7 @@ export function CatalogStoreIdentityHeader({
                   fill
                   sizes="40px"
                   className="object-cover"
+                  unoptimized={isGifImageUrl(logoUrl)}
                 />
               </div>
             ) : (

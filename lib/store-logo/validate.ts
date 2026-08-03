@@ -70,7 +70,7 @@ export function validateStoreLogoMimeType(mimeType: string): string | null {
   if (
     !(STORE_LOGO_ALLOWED_MIME_TYPES as readonly string[]).includes(normalized)
   ) {
-    return "Usa PNG, JPG o WebP (preferible cuadrado, idealmente PNG).";
+    return "Usa PNG, JPG, WebP o GIF (preferible cuadrado).";
   }
   return null;
 }

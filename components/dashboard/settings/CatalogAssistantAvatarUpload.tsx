@@ -12,6 +12,7 @@ import {
 import { Check, ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { uploadCatalogAssistantAvatarImage } from "@/lib/settings/actions";
 import { compressImageForUpload } from "@/lib/client-image-compress";
+import { isGifImageFile, isGifImageUrl } from "@/lib/media/is-gif-url";
 import { cn } from "@/lib/cn";
 
 export interface CatalogAssistantAvatarUploadHandle {
@@ -70,13 +71,15 @@ export const CatalogAssistantAvatarUpload = forwardRef<
 
     let optimizedFile = file;
     try {
-      const { file: compressed } = await compressImageForUpload(file);
-      optimizedFile = compressed;
+      if (!isGifImageFile(file)) {
+        const { file: compressed } = await compressImageForUpload(file);
+        optimizedFile = compressed;
+      }
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "No se pudo optimizar la imagen. Prueba con JPG o PNG.",
+          : "No se pudo optimizar la imagen. Prueba con JPG, PNG o GIF.",
       );
       setCompressing(false);
       return;
@@ -158,7 +161,9 @@ export const CatalogAssistantAvatarUpload = forwardRef<
               fill
               sizes="80px"
               className="object-cover"
-              unoptimized={Boolean(previewUrl)}
+              unoptimized={
+                Boolean(previewUrl) || isGifImageUrl(displayUrl)
+              }
             />
           ) : (
             <ImagePlus className="h-5 w-5 text-zinc-400" aria-hidden="true" />
@@ -205,7 +210,7 @@ export const CatalogAssistantAvatarUpload = forwardRef<
             </button>
           ) : null}
           <p className="text-xs leading-snug text-zinc-500">
-            Imagen cuadrada recomendada. Se optimiza automáticamente.
+            PNG, JPG o GIF animado. Los GIF conservan el movimiento.
           </p>
         </div>
       </div>

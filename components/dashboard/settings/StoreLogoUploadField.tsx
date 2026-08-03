@@ -8,6 +8,7 @@ import {
   STORE_LOGO_ACCEPT,
   STORE_LOGO_HELP_TEXT,
 } from "@/lib/store-logo/constants";
+import { isGifImageUrl } from "@/lib/media/is-gif-url";
 import { cn } from "@/lib/cn";
 
 interface StoreLogoUploadFieldProps {
@@ -120,7 +121,9 @@ export function StoreLogoUploadField({
               fill
               sizes="72px"
               className="object-cover"
-              unoptimized={Boolean(previewUrl)}
+              unoptimized={
+                Boolean(previewUrl) || isGifImageUrl(displayUrl)
+              }
             />
           ) : (
             <span className="text-lg font-semibold text-zinc-400" aria-hidden="true">
