@@ -261,11 +261,14 @@ export async function saveLocationHoursSettings(input: {
   locationHours: LocationHoursSettings;
   whatsappPhone?: string;
   whatsappPhones?: string[];
+  whatsappChatWelcome?: string;
 }): Promise<SettingsActionResult> {
   const normalized = normalizeStoreSettingsConfig({
     locationHours: input.locationHours,
     contact:
-      Array.isArray(input.whatsappPhones) || typeof input.whatsappPhone === "string"
+      Array.isArray(input.whatsappPhones) ||
+      typeof input.whatsappPhone === "string" ||
+      typeof input.whatsappChatWelcome === "string"
         ? {
             whatsappPhone:
               typeof input.whatsappPhone === "string"
@@ -274,13 +277,18 @@ export async function saveLocationHoursSettings(input: {
             whatsappPhones: Array.isArray(input.whatsappPhones)
               ? input.whatsappPhones
               : undefined,
+            ...(typeof input.whatsappChatWelcome === "string"
+              ? { whatsappChatWelcome: input.whatsappChatWelcome }
+              : {}),
           }
         : undefined,
   });
 
   return persistSettingsPatch({
     locationHours: normalized.locationHours,
-    ...(Array.isArray(input.whatsappPhones) || typeof input.whatsappPhone === "string"
+    ...(Array.isArray(input.whatsappPhones) ||
+    typeof input.whatsappPhone === "string" ||
+    typeof input.whatsappChatWelcome === "string"
       ? { contact: normalized.contact }
       : {}),
   });

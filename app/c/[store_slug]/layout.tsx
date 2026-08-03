@@ -128,6 +128,8 @@ export default async function TransactionalCatalogLayout({
   const wholesaleEnabled =
     storeSettings?.catalogCurrency.wholesaleEnabled ?? false;
   const whatsappPhone = storeSettings?.contact.whatsappPhone?.trim() || null;
+  const whatsappChatWelcome =
+    storeSettings?.contact.whatsappChatWelcome?.trim() || null;
   const supportBranding = store
     ? await getStorefrontSupportBranding(store)
     : null;
@@ -178,6 +180,7 @@ export default async function TransactionalCatalogLayout({
               enablePcBuilder={store?.enable_pc_builder}
               assistantEnabled={assistantEnabled}
               whatsappPhone={whatsappPhone}
+              whatsappChatWelcome={whatsappChatWelcome}
               supportAvatarUrl={assistantAvatar.url}
               supportAvatarAnimation={assistantAvatar.animation}
               supportAvatarAnimated={assistantAvatar.animated}

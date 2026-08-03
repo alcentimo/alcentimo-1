@@ -7487,6 +7487,104 @@ body {
   color: var(--txn-primary-fg, #ffffff);
 }
 
+/* Chat rápido WhatsApp — encima del FAB del carrito (derecha) */
+.catalog-wa-fab {
+  @apply fixed z-30 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition active:scale-95;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: calc(8.5rem + env(safe-area-inset-bottom, 0px));
+  background-color: #25d366;
+}
+
+.catalog-wa-fab:hover {
+  background-color: #20bd5a;
+}
+
+.catalog-wa-fab-hidden {
+  @apply pointer-events-none opacity-0;
+}
+
+.catalog-wa-overlay {
+  @apply fixed inset-0 z-50 flex items-end justify-end p-0 sm:items-end sm:p-4;
+}
+
+.catalog-wa-backdrop {
+  @apply absolute inset-0 bg-black/35;
+}
+
+.catalog-wa-panel {
+  @apply relative z-10 flex h-[min(28rem,calc(100dvh-5.5rem))] w-full max-w-sm flex-col overflow-hidden rounded-t-2xl bg-[#efeae2] shadow-2xl sm:mb-[4.5rem] sm:h-[min(30rem,calc(100dvh-7rem))] sm:rounded-2xl;
+  animation: catalog-wa-slide-up 0.22s ease-out;
+}
+
+@keyframes catalog-wa-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.catalog-wa-header {
+  @apply flex items-center justify-between gap-3 px-4 py-3 text-white;
+  background: linear-gradient(180deg, #075e54 0%, #128c7e 100%);
+}
+
+.catalog-wa-header-main {
+  @apply flex min-w-0 items-center gap-3;
+}
+
+.catalog-wa-header-icon {
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15;
+}
+
+.catalog-wa-title {
+  @apply truncate text-sm font-semibold tracking-tight;
+}
+
+.catalog-wa-status {
+  @apply text-[11px] text-emerald-100/90;
+}
+
+.catalog-wa-close {
+  @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10;
+}
+
+.catalog-wa-messages {
+  @apply flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgb(0 0 0 / 0.03) 0.5px, transparent 0.6px),
+    radial-gradient(circle at 80% 40%, rgb(0 0 0 / 0.03) 0.5px, transparent 0.6px);
+  background-size: 18px 18px;
+}
+
+.catalog-wa-bubble {
+  @apply max-w-[88%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm;
+}
+
+.catalog-wa-bubble-store {
+  @apply mr-auto rounded-tl-sm bg-white text-zinc-800;
+}
+
+.catalog-wa-hint {
+  @apply text-[11px] leading-relaxed text-zinc-500;
+}
+
+.catalog-wa-composer {
+  @apply flex items-end gap-2 border-t border-zinc-200/80 bg-[#f0f2f5] px-3 py-3;
+}
+
+.catalog-wa-input {
+  @apply min-h-[2.75rem] max-h-28 min-w-0 flex-1 resize-none rounded-2xl border-0 bg-white px-3.5 py-2.5 text-sm text-zinc-900 outline-none ring-1 ring-zinc-200/80 placeholder:text-zinc-400 focus:ring-2 focus:ring-[#25d366]/40;
+}
+
+.catalog-wa-send {
+  @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white transition enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-45;
+  background-color: #25d366;
+}
+
 .catalog-chat-fab {
   @apply fixed z-30 flex h-14 w-14 items-center justify-center rounded-full p-0 shadow-lg ring-2 ring-white/80 transition active:scale-95 dark:ring-zinc-900/80;
   left: max(1rem, env(safe-area-inset-left, 0px));

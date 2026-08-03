@@ -21,6 +21,7 @@ import {
   defaultAssistantAvatarSettings,
   normalizeAssistantAvatarSettings,
 } from "@/lib/store-settings/assistant-avatar";
+import { normalizeWhatsAppChatWelcome } from "@/lib/catalog/whatsapp-quick-chat";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "mrw",
@@ -153,6 +154,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
     contact: {
       whatsappPhone: "",
       whatsappPhones: [],
+      whatsappChatWelcome: normalizeWhatsAppChatWelcome(undefined),
     },
     locationHours: {
       address: "",
@@ -331,6 +333,9 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
     contact: {
       whatsappPhone: whatsappPhones[0] ?? "",
       whatsappPhones,
+      whatsappChatWelcome: normalizeWhatsAppChatWelcome(
+        contactRaw.whatsappChatWelcome,
+      ),
     },
     locationHours: {
       address:
@@ -496,6 +501,10 @@ export function mergeStoreSettingsConfig(
           return {
             whatsappPhone: phones[0] ?? "",
             whatsappPhones: phones,
+            whatsappChatWelcome: normalizeWhatsAppChatWelcome(
+              patch.contact.whatsappChatWelcome ??
+                base.contact.whatsappChatWelcome,
+            ),
           };
         })()
       : base.contact,

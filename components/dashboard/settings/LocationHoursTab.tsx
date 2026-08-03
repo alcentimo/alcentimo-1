@@ -10,8 +10,14 @@ import {
 } from "@/components/dashboard/settings/SettingsLayout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
+import {
+  DEFAULT_WHATSAPP_CHAT_WELCOME,
+  WHATSAPP_CHAT_WELCOME_MAX_LENGTH,
+  normalizeWhatsAppChatWelcome,
+} from "@/lib/catalog/whatsapp-quick-chat";
 import { saveLocationHoursSettings } from "@/lib/settings/actions";
 import type {
   ContactSettings,
@@ -51,6 +57,9 @@ export function LocationHoursTab({
   const [locationHours, setLocationHours] = useState(initialLocationHours);
   const [whatsappPhones, setWhatsappPhones] = useState(() =>
     initialPhones(initialContact),
+  );
+  const [whatsappChatWelcome, setWhatsappChatWelcome] = useState(() =>
+    normalizeWhatsAppChatWelcome(initialContact.whatsappChatWelcome),
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,6 +135,7 @@ export function LocationHoursTab({
         locationHours,
         whatsappPhones: cleanedPhones,
         whatsappPhone: cleanedPhones[0] ?? "",
+        whatsappChatWelcome,
       });
       setSaving(false);
 
@@ -133,10 +143,14 @@ export function LocationHoursTab({
         setError(result.error);
         setLocationHours(initialLocationHours);
         setWhatsappPhones(initialPhones(initialContact));
+        setWhatsappChatWelcome(
+          normalizeWhatsAppChatWelcome(initialContact.whatsappChatWelcome),
+        );
         return;
       }
 
       setWhatsappPhones(cleanedPhones.length > 0 ? cleanedPhones : [""]);
+      setWhatsappChatWelcome(normalizeWhatsAppChatWelcome(whatsappChatWelcome));
       setSuccess(true);
     });
   }
@@ -361,6 +375,33 @@ export function LocationHoursTab({
               Agregar otro WhatsApp
             </button>
           ) : null}
+
+          <div className="space-y-1.5 border-t border-zinc-200/80 pt-3 dark:border-zinc-800">
+            <Label
+              htmlFor="whatsapp-chat-welcome"
+              className="payment-field-label"
+            >
+              Mensaje de bienvenida del chat rápido
+            </Label>
+            <Textarea
+              id="whatsapp-chat-welcome"
+              value={whatsappChatWelcome}
+              onChange={(e) => {
+                setWhatsappChatWelcome(
+                  e.target.value.slice(0, WHATSAPP_CHAT_WELCOME_MAX_LENGTH),
+                );
+                setSuccess(false);
+              }}
+              rows={3}
+              maxLength={WHATSAPP_CHAT_WELCOME_MAX_LENGTH}
+              placeholder={DEFAULT_WHATSAPP_CHAT_WELCOME}
+              className="payment-field-input mt-1.5"
+            />
+            <p className="text-[11px] text-zinc-400">
+              Aparece en la burbuja de WhatsApp del catálogo.{" "}
+              {whatsappChatWelcome.length}/{WHATSAPP_CHAT_WELCOME_MAX_LENGTH}
+            </p>
+          </div>
         </div>
       </SettingsSection>
 

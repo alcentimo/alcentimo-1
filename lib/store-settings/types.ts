@@ -116,6 +116,11 @@ export interface ContactSettings {
   whatsappPhone: string;
   /** Hasta 3 números de WhatsApp para recepción de pedidos. */
   whatsappPhones: string[];
+  /**
+   * Mensaje de bienvenida del chat rápido flotante en el catálogo.
+   * Editable por el comercio.
+   */
+  whatsappChatWelcome?: string;
 }
 
 export const WEEKDAY_KEYS = [

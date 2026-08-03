@@ -4,6 +4,7 @@ import {
   NATIONAL_CARRIER_METHODS,
 } from "@/src/config/shipping-methods";
 import { getPaymentMethod, PAYMENT_METHODS } from "@/src/config/payment-methods";
+import { normalizeWhatsAppChatWelcome } from "@/lib/catalog/whatsapp-quick-chat";
 import type {
   DeliveryMeetingPoint,
   DeliveryZone,
@@ -42,6 +43,8 @@ export interface PublicPurchaseInfo {
   whatsappPhone: string;
   /** Hasta 3 números configurados para recepción de pedidos. */
   whatsappPhones: string[];
+  /** Bienvenida del chat rápido flotante de WhatsApp. */
+  whatsappChatWelcome: string;
   locationHours: LocationHoursSettings;
   deliveryZones: DeliveryZone[];
   pickupPoints: DeliveryMeetingPoint[];
@@ -98,6 +101,9 @@ export function buildPublicPurchaseInfo(
     whatsappPhones: config.contact.whatsappPhones
       .map((phone) => phone.trim())
       .filter(Boolean),
+    whatsappChatWelcome: normalizeWhatsAppChatWelcome(
+      config.contact.whatsappChatWelcome,
+    ),
     locationHours: config.locationHours,
     deliveryZones: config.shipping.deliveryZones,
     pickupPoints: config.shipping.pickupPoints,

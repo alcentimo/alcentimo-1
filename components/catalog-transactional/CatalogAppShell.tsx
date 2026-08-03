@@ -7,6 +7,7 @@ import { CatalogCustomerRegisterSheet } from "@/components/catalog-transactional
 import { CatalogStoreProfileSheet } from "@/components/catalog-transactional/CatalogStoreProfileSheet";
 import { CatalogTabBar } from "@/components/catalog-transactional/CatalogTabBar";
 import { CatalogChatWidget } from "@/components/catalog-transactional/CatalogChatWidget";
+import { CatalogWhatsAppQuickChat } from "@/components/catalog-transactional/CatalogWhatsAppQuickChat";
 import { CustomerPromoBanner } from "@/components/catalog-transactional/CustomerPromoBanner";
 import { InstallPwaBanner } from "@/components/catalog-transactional/InstallPwaBanner";
 import { PwaServiceWorkerRegister } from "@/components/catalog-transactional/PwaServiceWorkerRegister";
@@ -32,6 +33,7 @@ interface CatalogAppShellProps {
   enablePcBuilder?: boolean;
   assistantEnabled?: boolean;
   whatsappPhone?: string | null;
+  whatsappChatWelcome?: string | null;
   customerAccountMode?: CustomerAccountMode;
   children: ReactNode;
 }
@@ -50,6 +52,7 @@ export function CatalogAppShell({
   enablePcBuilder = false,
   assistantEnabled = false,
   whatsappPhone = null,
+  whatsappChatWelcome = null,
   customerAccountMode: _customerAccountMode = "hibrido",
   children,
 }: CatalogAppShellProps) {
@@ -77,6 +80,13 @@ export function CatalogAppShell({
               avatarAnimated={supportAvatarAnimated}
               merchantName={supportMerchantName}
               whatsappPhone={whatsappPhone}
+            />
+          ) : null}
+          {whatsappPhone?.trim() ? (
+            <CatalogWhatsAppQuickChat
+              storeName={storeName}
+              whatsappPhone={whatsappPhone}
+              welcomeMessage={whatsappChatWelcome}
             />
           ) : null}
           <CatalogStoreProfileSheet
