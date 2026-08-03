@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/cn";
 
+export type SheetSide = "left" | "right" | "bottom";
+
 interface SheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -13,7 +15,17 @@ interface SheetProps {
   modal?: boolean;
   /** Bloquear scroll del body mientras el panel está abierto. */
   lockScroll?: boolean;
+  /** Alineación del panel en el viewport. Por defecto derecha. */
+  side?: SheetSide;
+  /** Clases extra en el contenedor del portal (p. ej. variantes responsivas). */
+  className?: string;
 }
+
+const SIDE_OVERLAY: Record<SheetSide, string> = {
+  left: "justify-start",
+  right: "justify-end",
+  bottom: "items-end justify-center",
+};
 
 export function Sheet({
   open,
@@ -21,6 +33,8 @@ export function Sheet({
   children,
   modal = true,
   lockScroll = true,
+  side = "right",
+  className,
 }: SheetProps) {
   useEffect(() => {
     if (!open || !lockScroll) return;
@@ -43,7 +57,13 @@ export function Sheet({
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div
+      className={cn(
+        "fixed inset-0 z-50 flex",
+        SIDE_OVERLAY[side],
+        className,
+      )}
+    >
       <button
         type="button"
         className={cn(
@@ -65,13 +85,35 @@ interface SheetContentProps {
   children: ReactNode;
   className?: string;
   onClose?: () => void;
+  side?: SheetSide;
+  /**
+   * Si es true, no aplica estilos de lado (útil cuando el layout
+   * responsivo vive por completo en CSS, p. ej. filtros del catálogo).
+   */
+  unstyledSide?: boolean;
 }
 
-export function SheetContent({ children, className, onClose }: SheetContentProps) {
+const SIDE_CONTENT: Record<SheetSide, string> = {
+  left:
+    "h-full w-full max-w-md border-r border-zinc-200 shadow-2xl dark:border-zinc-800",
+  right:
+    "h-full w-full max-w-md border-l border-zinc-200 shadow-2xl dark:border-zinc-800",
+  bottom:
+    "mt-auto h-auto max-h-[min(85dvh,40rem)] w-full max-w-none rounded-t-2xl border-t border-zinc-200 pb-[env(safe-area-inset-bottom,0px)] shadow-2xl dark:border-zinc-800",
+};
+
+export function SheetContent({
+  children,
+  className,
+  onClose,
+  side = "right",
+  unstyledSide = false,
+}: SheetContentProps) {
   return (
     <div
       className={cn(
-        "relative z-10 flex h-full w-full max-w-md flex-col border-l border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950",
+        "relative z-10 flex flex-col bg-white dark:bg-zinc-950",
+        !unstyledSide && SIDE_CONTENT[side],
         className,
       )}
       role="dialog"

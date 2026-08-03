@@ -242,12 +242,21 @@ export function CatalogBrowseToolbar({
         </label>
       </div>
 
-      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+      <Sheet
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        side="bottom"
+        className="catalog-browse-filters-overlay"
+      >
         <SheetContent
+          unstyledSide
           className="catalog-browse-filters-sheet"
           onClose={() => setFiltersOpen(false)}
         >
-          <SheetHeader>
+          <div className="catalog-browse-filters-handle" aria-hidden="true">
+            <span className="catalog-browse-filters-handle-bar" />
+          </div>
+          <SheetHeader className="catalog-browse-filters-header">
             <SheetTitle>Filtros</SheetTitle>
             <SheetDescription>
               Afina el catálogo por categoría
