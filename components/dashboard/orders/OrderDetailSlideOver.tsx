@@ -6,7 +6,6 @@ import { X } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import type { CatalogOrder } from "@/lib/orders/types";
 import type { OrderEstado } from "@/lib/orders/order-status";
-import type { MessageTemplatesSettings } from "@/lib/store-settings/types";
 import { OrderStatusSelect } from "@/components/dashboard/orders/OrderStatusSelect";
 import { OrderStatusWhatsAppPrompt } from "@/components/dashboard/orders/OrderStatusWhatsAppPrompt";
 import { OrderShippingDetails } from "@/components/dashboard/orders/OrderShippingDetails";
@@ -22,9 +21,8 @@ function formatOrderDate(value: string): string {
 interface OrderDetailSlideOverProps {
   order: CatalogOrder | null;
   open: boolean;
-  storeName: string;
-  messageTemplates: MessageTemplatesSettings;
   onClose: () => void;
+  onOpenWhatsApp: (orderId: string, newEstado?: OrderEstado) => void;
   onEstadoUpdated?: (
     orderId: string,
     estado: OrderEstado,
@@ -37,9 +35,8 @@ interface OrderDetailSlideOverProps {
 export function OrderDetailSlideOver({
   order,
   open,
-  storeName,
-  messageTemplates,
   onClose,
+  onOpenWhatsApp,
   onEstadoUpdated,
   pendingStatusNotifyEstado,
   onDismissStatusNotify,
@@ -116,10 +113,10 @@ export function OrderDetailSlideOver({
             {pendingStatusNotifyEstado && onDismissStatusNotify ? (
               <OrderStatusWhatsAppPrompt
                 order={order}
-                storeName={storeName}
-                messageTemplates={messageTemplates}
-                newEstado={pendingStatusNotifyEstado}
                 onDismiss={onDismissStatusNotify}
+                onOpenRequest={() =>
+                  onOpenWhatsApp(order.id, pendingStatusNotifyEstado)
+                }
                 className="mt-3"
               />
             ) : null}
@@ -136,9 +133,8 @@ export function OrderDetailSlideOver({
             <OrderShippingDetails order={order} />
             <OrderWhatsAppButton
               order={order}
-              storeName={storeName}
-              messageTemplates={messageTemplates}
               className="mt-3"
+              onOpenRequest={() => onOpenWhatsApp(order.id)}
             />
           </section>
 

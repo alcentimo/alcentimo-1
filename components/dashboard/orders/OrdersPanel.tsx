@@ -16,13 +16,21 @@ import { OrderStatusSelect } from "@/components/dashboard/orders/OrderStatusSele
 import { OrderStatusWhatsAppPrompt } from "@/components/dashboard/orders/OrderStatusWhatsAppPrompt";
 import { OrderDetailSlideOver } from "@/components/dashboard/orders/OrderDetailSlideOver";
 import { OrderWhatsAppButton } from "@/components/dashboard/orders/OrderWhatsAppButton";
+import { OrderWhatsAppComposer } from "@/components/dashboard/orders/OrderWhatsAppComposer";
 import { OrdersKpiRow } from "@/components/dashboard/orders/OrdersKpiRow";
 import { Button } from "@/components/ui/button";
 import { fetchStoreOrdersPage } from "@/lib/orders/actions";
 import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
 import type { StoreLocation } from "@/lib/locations/types";
 import { formatOrderShippingSummary } from "@/lib/orders/shipping-display";
+import { renderOrderWhatsAppMessage } from "@/lib/orders/render-order-message";
+import { suggestOrderMessageIntent } from "@/lib/ai/order-message-types";
 import { cn } from "@/lib/cn";
+
+type OrderWhatsAppSession = {
+  orderId: string;
+  newEstado?: OrderEstado;
+};
 
 const FILTER_TABS: { id: OrderFilterId; label: string }[] = [
   { id: "pending", label: "Activos" },
@@ -83,18 +91,15 @@ function OrderSectionLabel({ label }: { label: string }) {
 
 const OrderRow = memo(function OrderRow({
   order,
-  storeName,
-  messageTemplates,
   onSelect,
   onEstadoUpdated,
+  onOpenWhatsApp,
   dimmed = false,
   pendingStatusNotifyEstado,
   onDismissStatusNotify,
   showLocationColumn = false,
 }: {
   order: CatalogOrder;
-  storeName: string;
-  messageTemplates: MessageTemplatesSettings;
   onSelect: (orderId: string) => void;
   onEstadoUpdated: (
     orderId: string,
@@ -104,6 +109,7 @@ const OrderRow = memo(function OrderRow({
       trackingNumber?: string | null;
     },
   ) => void;
+  onOpenWhatsApp: (orderId: string, newEstado?: OrderEstado) => void;
   pendingStatusNotifyEstado?: OrderEstado;
   onDismissStatusNotify?: () => void;
   dimmed?: boolean;
@@ -137,10 +143,10 @@ const OrderRow = memo(function OrderRow({
         {pendingStatusNotifyEstado && onDismissStatusNotify ? (
           <OrderStatusWhatsAppPrompt
             order={order}
-            storeName={storeName}
-            messageTemplates={messageTemplates}
-            newEstado={pendingStatusNotifyEstado}
             onDismiss={onDismissStatusNotify}
+            onOpenRequest={() =>
+              onOpenWhatsApp(order.id, pendingStatusNotifyEstado)
+            }
             className="mt-2"
           />
         ) : null}
@@ -159,9 +165,8 @@ const OrderRow = memo(function OrderRow({
       <td className="orders-ops-cell hidden sm:table-cell">
         <OrderWhatsAppButton
           order={order}
-          storeName={storeName}
-          messageTemplates={messageTemplates}
           compact
+          onOpenRequest={() => onOpenWhatsApp(order.id)}
         />
       </td>
       <td className="orders-ops-cell w-8 text-zinc-400">
@@ -176,17 +181,14 @@ const OrderRow = memo(function OrderRow({
 
 const OrderMobileCard = memo(function OrderMobileCard({
   order,
-  storeName,
-  messageTemplates,
   onSelect,
   onEstadoUpdated,
+  onOpenWhatsApp,
   dimmed = false,
   pendingStatusNotifyEstado,
   onDismissStatusNotify,
 }: {
   order: CatalogOrder;
-  storeName: string;
-  messageTemplates: MessageTemplatesSettings;
   onSelect: (orderId: string) => void;
   onEstadoUpdated: (
     orderId: string,
@@ -196,6 +198,7 @@ const OrderMobileCard = memo(function OrderMobileCard({
       trackingNumber?: string | null;
     },
   ) => void;
+  onOpenWhatsApp: (orderId: string, newEstado?: OrderEstado) => void;
   pendingStatusNotifyEstado?: OrderEstado;
   onDismissStatusNotify?: () => void;
   dimmed?: boolean;
@@ -238,10 +241,10 @@ const OrderMobileCard = memo(function OrderMobileCard({
           {pendingStatusNotifyEstado && onDismissStatusNotify ? (
             <OrderStatusWhatsAppPrompt
               order={order}
-              storeName={storeName}
-              messageTemplates={messageTemplates}
-              newEstado={pendingStatusNotifyEstado}
               onDismiss={onDismissStatusNotify}
+              onOpenRequest={() =>
+                onOpenWhatsApp(order.id, pendingStatusNotifyEstado)
+              }
               className="mt-2"
               compact
             />
@@ -265,9 +268,8 @@ const OrderMobileCard = memo(function OrderMobileCard({
       >
         <OrderWhatsAppButton
           order={order}
-          storeName={storeName}
-          messageTemplates={messageTemplates}
           compact
+          onOpenRequest={() => onOpenWhatsApp(order.id)}
         />
       </div>
     </article>
@@ -296,6 +298,8 @@ export function OrdersPanel({
   const tableColumnCount = multiLocation ? 7 : 6;
   const skipInitialLocationReload = useRef(true);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [whatsAppSession, setWhatsAppSession] =
+    useState<OrderWhatsAppSession | null>(null);
   const [statusNotifyByOrderId, setStatusNotifyByOrderId] = useState<
     Record<string, OrderEstado>
   >({});
@@ -310,6 +314,24 @@ export function OrdersPanel({
       return next;
     });
   }, []);
+
+  const openOrderWhatsApp = useCallback(
+    (orderId: string, newEstado?: OrderEstado) => {
+      setSelectedOrderId(null);
+      setWhatsAppSession({ orderId, newEstado });
+    },
+    [],
+  );
+
+  const closeOrderWhatsApp = useCallback(() => {
+    setWhatsAppSession((current) => {
+      if (current?.newEstado) {
+        const orderId = current.orderId;
+        queueMicrotask(() => dismissStatusNotify(orderId));
+      }
+      return null;
+    });
+  }, [dismissStatusNotify]);
 
   const handleEstadoUpdated = useCallback(
     (
@@ -440,6 +462,31 @@ export function OrdersPanel({
     [orders, selectedOrderId],
   );
 
+  const whatsAppOrder = useMemo(
+    () =>
+      whatsAppSession
+        ? (orders.find((order) => order.id === whatsAppSession.orderId) ?? null)
+        : null,
+    [orders, whatsAppSession],
+  );
+
+  const whatsAppFallbackMessage = useMemo(() => {
+    if (!whatsAppOrder) return "";
+    return renderOrderWhatsAppMessage(
+      whatsAppOrder,
+      messageTemplates,
+      storeName,
+    );
+  }, [whatsAppOrder, messageTemplates, storeName]);
+
+  const whatsAppSuggestedIntent = useMemo(
+    () =>
+      whatsAppOrder
+        ? suggestOrderMessageIntent(whatsAppOrder.estado)
+        : "order_confirmation",
+    [whatsAppOrder],
+  );
+
   const renderOrderRowProps = useCallback(
     (order: CatalogOrder) => ({
       pendingStatusNotifyEstado: statusNotifyByOrderId[order.id],
@@ -553,10 +600,9 @@ export function OrdersPanel({
                   <OrderMobileCard
                     key={order.id}
                     order={order}
-                    storeName={storeName}
-                    messageTemplates={messageTemplates}
                     onSelect={handleSelectOrder}
                     onEstadoUpdated={handleEstadoUpdated}
+                    onOpenWhatsApp={openOrderWhatsApp}
                     dimmed={isOrderDimmed(order)}
                     {...renderOrderRowProps(order)}
                   />
@@ -568,10 +614,9 @@ export function OrdersPanel({
               <OrderMobileCard
                 key={order.id}
                 order={order}
-                storeName={storeName}
-                messageTemplates={messageTemplates}
                 onSelect={handleSelectOrder}
                 onEstadoUpdated={handleEstadoUpdated}
+                onOpenWhatsApp={openOrderWhatsApp}
                 dimmed={isOrderDimmed(order)}
                 {...renderOrderRowProps(order)}
               />
@@ -615,10 +660,9 @@ export function OrdersPanel({
                       <OrderRow
                         key={order.id}
                         order={order}
-                        storeName={storeName}
-                        messageTemplates={messageTemplates}
                         onSelect={handleSelectOrder}
                         onEstadoUpdated={handleEstadoUpdated}
+                        onOpenWhatsApp={openOrderWhatsApp}
                         dimmed={isOrderDimmed(order)}
                         showLocationColumn={multiLocation}
                         {...renderOrderRowProps(order)}
@@ -631,10 +675,9 @@ export function OrdersPanel({
                   <OrderRow
                     key={order.id}
                     order={order}
-                    storeName={storeName}
-                    messageTemplates={messageTemplates}
                     onSelect={handleSelectOrder}
                     onEstadoUpdated={handleEstadoUpdated}
+                    onOpenWhatsApp={openOrderWhatsApp}
                     dimmed={isOrderDimmed(order)}
                     showLocationColumn={multiLocation}
                     {...renderOrderRowProps(order)}
@@ -676,9 +719,8 @@ export function OrdersPanel({
       <OrderDetailSlideOver
         order={selectedOrder}
         open={Boolean(selectedOrder)}
-        storeName={storeName}
-        messageTemplates={messageTemplates}
         onClose={() => setSelectedOrderId(null)}
+        onOpenWhatsApp={openOrderWhatsApp}
         onEstadoUpdated={handleEstadoUpdated}
         pendingStatusNotifyEstado={
           selectedOrder ? statusNotifyByOrderId[selectedOrder.id] : undefined
@@ -689,6 +731,20 @@ export function OrdersPanel({
             : undefined
         }
       />
+
+      {whatsAppOrder && whatsAppSession ? (
+        <OrderWhatsAppComposer
+          open
+          customerName={whatsAppOrder.customer_name}
+          customerPhone={whatsAppOrder.customer_phone}
+          fallbackMessage={whatsAppFallbackMessage}
+          orderId={whatsAppOrder.id}
+          storeName={storeName}
+          initialIntent={whatsAppSuggestedIntent}
+          newEstado={whatsAppSession.newEstado}
+          onClose={closeOrderWhatsApp}
+        />
+      ) : null}
     </>
   );
 }
