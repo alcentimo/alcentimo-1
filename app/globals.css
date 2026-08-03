@@ -8081,6 +8081,18 @@ body {
   @apply space-y-3 px-6 py-5;
 }
 
+.txn-checkout-items--compact {
+  @apply pb-3 pt-3;
+}
+
+.txn-checkout-item-meta {
+  @apply flex flex-wrap items-baseline gap-x-2 gap-y-0.5;
+}
+
+.txn-remove-btn {
+  @apply inline-flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-zinc-200/80 bg-white text-zinc-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 active:scale-95 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/30 dark:hover:text-red-400;
+}
+
 .txn-checkout-scroll {
   @apply min-h-0 flex-1 overflow-y-auto;
 }
@@ -8151,10 +8163,6 @@ body {
 
 .dark .inventory-stock-adjust-btn:not(:disabled):active {
   background-color: rgb(19 78 74 / 0.35);
-}
-
-.txn-remove-btn {
-  @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400;
 }
 
 .txn-checkout-total {

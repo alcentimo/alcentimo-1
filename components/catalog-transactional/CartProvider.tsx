@@ -411,9 +411,21 @@ export function CartProvider({
                   ) !== key,
               )
               .reduce((sum, row) => sum + row.quantity, 0);
-            const stockCap = Math.max(0, item.availableStock);
+            const stockCap = Math.max(0, Number(item.availableStock) || 0);
             const maxForLine = Math.max(0, stockCap - otherQty);
-            const nextQty = Math.max(0, Math.min(quantity, maxForLine));
+
+            // Cantidad 0 o menos → eliminar línea.
+            if (quantity <= 0) {
+              return refreshCartItemPricing(item, 0, wholesaleEnabled);
+            }
+
+            // No subir por encima del stock; si el stock llegó a 0, no borrar al
+            // intentar (+), solo impedir el aumento.
+            const nextQty =
+              maxForLine > 0
+                ? Math.min(quantity, maxForLine)
+                : Math.min(quantity, item.quantity);
+
             return refreshCartItemPricing(item, nextQty, wholesaleEnabled);
           })
           .filter((item) => item.quantity > 0),

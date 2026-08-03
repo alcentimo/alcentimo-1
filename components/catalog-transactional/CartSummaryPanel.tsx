@@ -1,13 +1,11 @@
 "use client";
 
-import Image from "next/image";
-import { MessageCircle, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
-import { cartItemKey } from "@/lib/catalog/cart-types";
+import { MessageCircle, ShoppingBag, X } from "lucide-react";
 import { buildCartWhatsAppMessage } from "@/lib/catalog/cart-whatsapp-message";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { formatUsd } from "@/lib/format";
-import { WholesalePriceBadge } from "@/components/catalog/WholesalePriceBadge";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
+import { CartLineItems } from "@/components/catalog-transactional/CartLineItems";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
 
@@ -79,106 +77,11 @@ export function CartSummaryPanel({
       ) : (
         <>
           <div className="txn-checkout-scroll">
-            <ul className="txn-checkout-items">
-              {items.map((item) => {
-                const key = cartItemKey(
-                  item.product.product_id,
-                  item.variantId,
-                  item.modifiers,
-                );
-                return (
-                  <li key={key} className="txn-checkout-item">
-                    <div className="txn-checkout-item-thumb">
-                      {item.product.thumb_url ? (
-                        <Image
-                          src={item.product.thumb_url}
-                          alt={item.product.product_name}
-                          fill
-                          sizes="72px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-base font-semibold text-zinc-400">
-                          {item.product.product_name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="txn-checkout-item-body">
-                      <div className="txn-checkout-item-top">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold leading-snug text-zinc-900 dark:text-zinc-50">
-                            {item.product.product_name}
-                          </p>
-                          {item.variantName !== "Estándar" && (
-                            <p className="mt-0.5 truncate text-xs text-zinc-500">
-                              {item.variantName}
-                            </p>
-                          )}
-                          {item.wholesaleApplied ? (
-                            <WholesalePriceBadge className="mt-1.5" compact />
-                          ) : null}
-                        </div>
-                        <button
-                          type="button"
-                          className="txn-remove-btn"
-                          onClick={() =>
-                            removeItem(
-                              item.product.product_id,
-                              item.variantId,
-                              item.modifiers,
-                            )
-                          }
-                          aria-label={`Eliminar ${item.product.product_name} del carrito`}
-                        >
-                          <Trash2 className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                      </div>
-
-                      <p className="text-sm font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
-                        {formatUsd(item.unitPriceUsd * item.quantity)}
-                      </p>
-
-                      <div className="txn-checkout-item-qty">
-                        <button
-                          type="button"
-                          className="txn-qty-btn"
-                          onClick={() =>
-                            updateQuantity(
-                              item.product.product_id,
-                              item.variantId,
-                              item.quantity - 1,
-                              item.modifiers,
-                            )
-                          }
-                          aria-label="Reducir cantidad"
-                        >
-                          <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="min-w-7 text-center text-sm font-medium tabular-nums">
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          className="txn-qty-btn"
-                          onClick={() =>
-                            updateQuantity(
-                              item.product.product_id,
-                              item.variantId,
-                              item.quantity + 1,
-                              item.modifiers,
-                            )
-                          }
-                          aria-label="Aumentar cantidad"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            <CartLineItems
+              items={items}
+              onUpdateQuantity={updateQuantity}
+              onRemoveItem={removeItem}
+            />
           </div>
 
           <footer className="txn-checkout-footer safe-area-bottom">
