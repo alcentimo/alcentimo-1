@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sheet";
 import { CatalogPrimaryColorField } from "@/components/dashboard/settings/CatalogPrimaryColorField";
 import { CatalogPromoBannerField } from "@/components/dashboard/settings/CatalogPromoBannerField";
+import { CatalogFaqField } from "@/components/dashboard/settings/CatalogFaqField";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import { SettingsTabShell } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
@@ -37,6 +38,7 @@ import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-pa
 import type { Store } from "@/lib/database.types";
 import type {
   CatalogDesignSettings,
+  CatalogFaqSettings,
   CatalogLayoutMode,
   CatalogPromoBannerSettings,
   CatalogThemeId,
@@ -46,6 +48,10 @@ import {
   defaultPromoBannerSettings,
   normalizePromoBannerDraft,
 } from "@/lib/store-settings/promo-banner";
+import {
+  defaultCatalogFaqSettings,
+  normalizeCatalogFaqDraft,
+} from "@/lib/store-settings/catalog-faq";
 import { CATALOG_LAYOUT_OPTIONS, getCatalogLayoutOption } from "@/lib/catalog/catalog-layout";
 import { cn } from "@/lib/cn";
 import {
@@ -78,6 +84,7 @@ type SavingField =
   | keyof CatalogVisibilitySettings
   | "primaryColor"
   | "promoBanner"
+  | "faq"
   | null;
 
 type AccordionSection =
@@ -85,6 +92,7 @@ type AccordionSection =
   | "layout"
   | "brandColor"
   | "promoBanner"
+  | "faq"
   | "visibility";
 
 interface DesignAccordionProps {
@@ -208,6 +216,7 @@ export function DesignTab({
   const [isSaving, startSave] = useTransition();
   const colorSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const promoBannerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const faqSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const storeRubro = normalizeStoreRubro(
     storeRubroProp ?? preview?.store.rubro_tienda ?? DEFAULT_STORE_RUBRO,
@@ -254,6 +263,7 @@ export function DesignTab({
         ? { ...design.visibility, ...patch.visibility }
         : design.visibility,
       promoBanner: patch.promoBanner ?? design.promoBanner,
+      faq: patch.faq ?? design.faq,
     };
     setDesign(nextDesign);
     persist(nextDesign, field);
@@ -332,6 +342,28 @@ export function DesignTab({
     }
   }
 
+  function scheduleFaqSave(nextDesign: CatalogDesignSettings) {
+    if (faqSaveTimerRef.current) {
+      clearTimeout(faqSaveTimerRef.current);
+    }
+
+    faqSaveTimerRef.current = setTimeout(() => {
+      persist(nextDesign, "faq");
+    }, 400);
+  }
+
+  function setFaq(next: CatalogFaqSettings, shouldSave = true) {
+    const draft = normalizeCatalogFaqDraft(next);
+    const nextDesign: CatalogDesignSettings = {
+      ...design,
+      faq: draft,
+    };
+    setDesign(nextDesign);
+    if (shouldSave) {
+      scheduleFaqSave(nextDesign);
+    }
+  }
+
   function resetPrimaryColor() {
     if (colorSaveTimerRef.current) {
       clearTimeout(colorSaveTimerRef.current);
@@ -351,6 +383,9 @@ export function DesignTab({
       if (promoBannerSaveTimerRef.current) {
         clearTimeout(promoBannerSaveTimerRef.current);
       }
+      if (faqSaveTimerRef.current) {
+        clearTimeout(faqSaveTimerRef.current);
+      }
     };
   }, []);
 
@@ -368,6 +403,9 @@ export function DesignTab({
   const promoBannerSettings = normalizePromoBannerDraft(
     design.promoBanner ?? defaultPromoBannerSettings(),
   );
+  const faqSettings = normalizeCatalogFaqDraft(
+    design.faq ?? defaultCatalogFaqSettings(),
+  );
   const savedSlideCount = promoBannerSettings.slides.filter((slide) =>
     slide.mobileImageUrl.startsWith("http"),
   ).length;
@@ -377,6 +415,11 @@ export function DesignTab({
         ? `${savedSlideCount} imagen(es)`
         : `${promoBannerSettings.slides.length} borrador(es)`
       : "Activado · sin imágenes"
+    : "Desactivado";
+  const faqSummary = faqSettings.enabled
+    ? faqSettings.items.filter((item) => item.question.trim()).length > 0
+      ? `${faqSettings.items.filter((item) => item.question.trim()).length} pregunta(s)`
+      : "Activado · sin preguntas"
     : "Desactivado";
   const visibilitySummary =
     [
@@ -521,6 +564,15 @@ export function DesignTab({
                 onChange={setPromoBanner}
                 products={products}
               />
+            </DesignAccordion>
+
+            <DesignAccordion
+              title="Preguntas frecuentes"
+              summary={faqSummary}
+              open={openSection === "faq"}
+              onToggle={() => toggleSection("faq")}
+            >
+              <CatalogFaqField value={design.faq} onChange={setFaq} />
             </DesignAccordion>
 
             <DesignAccordion

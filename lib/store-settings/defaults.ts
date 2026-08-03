@@ -18,6 +18,10 @@ import {
   normalizePromoBannerSettings,
 } from "@/lib/store-settings/promo-banner";
 import {
+  defaultCatalogFaqSettings,
+  normalizeCatalogFaqDraft,
+} from "@/lib/store-settings/catalog-faq";
+import {
   defaultAssistantAvatarSettings,
   normalizeAssistantAvatarSettings,
 } from "@/lib/store-settings/assistant-avatar";
@@ -173,6 +177,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
         showPrices: true,
       },
       promoBanner: defaultPromoBannerSettings(),
+      faq: defaultCatalogFaqSettings(),
       assistantAvatar: defaultAssistantAvatarSettings(),
     },
     catalogCurrency: {
@@ -393,6 +398,9 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
         : {}),
       promoBanner: normalizePromoBannerSettings(
         designRaw.promoBanner ?? defaults.catalogDesign.promoBanner,
+      ),
+      faq: normalizeCatalogFaqDraft(
+        designRaw.faq ?? defaults.catalogDesign.faq,
       ),
       assistantAvatar: normalizeAssistantAvatarSettings(
         designRaw.assistantAvatar ?? defaults.catalogDesign.assistantAvatar,

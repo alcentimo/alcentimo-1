@@ -202,6 +202,17 @@ export interface CatalogAssistantAvatarSettings {
   customImageUrl?: string;
 }
 
+export interface CatalogFaqItem {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+export interface CatalogFaqSettings {
+  enabled: boolean;
+  items: CatalogFaqItem[];
+}
+
 export interface CatalogDesignSettings {
   theme: CatalogThemeId;
   saleMode: CatalogSaleMode;
@@ -210,6 +221,8 @@ export interface CatalogDesignSettings {
   primaryColor?: string;
   /** Carrusel promocional opcional en la parte superior del catálogo. */
   promoBanner?: CatalogPromoBannerSettings;
+  /** Preguntas frecuentes opcionales al final del catálogo. */
+  faq?: CatalogFaqSettings;
   /** Avatar del asistente de IA en el widget flotante y chat del catálogo. */
   assistantAvatar?: CatalogAssistantAvatarSettings;
   /** Derivado del tema al renderizar; opcional en almacenamiento legacy. */

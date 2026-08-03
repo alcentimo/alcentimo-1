@@ -40,6 +40,7 @@ import {
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
 import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
 import { CatalogStoreIdentityHeader } from "@/components/catalog-transactional/CatalogStoreIdentityHeader";
+import { CatalogFaqSection } from "@/components/catalog-transactional/CatalogFaqSection";
 import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
@@ -540,6 +541,11 @@ function TransactionalCatalogContent({
           </div>
         )}
       </main>
+
+      <CatalogFaqSection
+        faq={effectiveDesign.faq ?? catalogDesign.faq}
+        storeName={store.name}
+      />
 
       {!previewMode ? (
         <CatalogCartHost
