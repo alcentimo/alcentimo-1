@@ -45,11 +45,38 @@ function estadoHint(estado: OrderEstado): string {
   }
 }
 
-function buildSystemPrompt(): string {
+function intentBrief(intent: OrderWhatsAppMessageIntent): string {
+  switch (intent) {
+    case "order_confirmation":
+      return "Objetivo: confirmación de pedido (recibido / en preparación).";
+    case "shipping_notice":
+      return "Objetivo: notificación de envío o guía de despacho.";
+    case "payment_reminder":
+      return "Objetivo: recordatorio amable de pago o confirmación de transferencia.";
+    case "status_update":
+      return "Objetivo: avisar el nuevo estado del pedido.";
+    case "general":
+    default:
+      return "Objetivo: mensaje claro sobre el pedido.";
+  }
+}
+
+function buildSystemPrompt(intent: OrderWhatsAppMessageIntent): string {
   return [
-    'Mensajes WhatsApp sobre pedidos en español LATAM. JSON: { "message": string }',
-    "Sin emojis. Máx 400 chars. Incluye cliente, ref, productos y total si cabe. Firma con tienda.",
-  ].join(" ");
+    "Mensajes WhatsApp sobre pedidos en español LATAM. JSON: { \"message\": string }",
+    "Sin emojis. Máx 400 chars.",
+    "Incluye SIEMPRE: nombre del cliente, referencia del pedido, resumen de productos y total.",
+    "Firma con el nombre de la tienda.",
+    intentBrief(intent),
+    intent === "shipping_notice"
+      ? "Si hay número de guía, inclúyelo. Si no, indica que el pedido ya fue despachado."
+      : "",
+    intent === "payment_reminder"
+      ? "Sé cordial y concreto: menciona el total pendiente sin sonar agresivo."
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function buildUserPrompt(input: GenerateOrderWhatsAppMessageInput): string {
@@ -58,13 +85,21 @@ function buildUserPrompt(input: GenerateOrderWhatsAppMessageInput): string {
       ? `nuevo:${ORDER_ESTADO_LABELS[input.newEstado]} (${estadoHint(input.newEstado)})`
       : `estado:${ORDER_ESTADO_LABELS[input.currentEstado]}`;
 
+  const tracking = input.trackingNumber?.trim()
+    ? `Guía:${input.trackingNumber.trim()}`
+    : null;
+
   return [
     `Tienda:${input.storeName.trim() || "tienda"}`,
     `Cliente:${input.customerName.trim() || "cliente"}`,
     `Ref:${input.orderReference} Total:${formatUsd(input.totalUsd)}`,
+    `Intent:${input.intent}`,
     estado,
+    tracking,
     `Items:${input.productsSummary.trim() || "sin detalle"}`,
-  ].join(" | ");
+  ]
+    .filter(Boolean)
+    .join(" | ");
 }
 
 function parseModelJson(content: string): GenerateOrderWhatsAppMessageResult {
@@ -98,7 +133,7 @@ export async function generateOrderWhatsAppMessage(
       max_tokens: AI_MAX_TOKENS.whatsappMessage,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: buildSystemPrompt() },
+        { role: "system", content: buildSystemPrompt(input.intent) },
         { role: "user", content: buildUserPrompt(input) },
       ],
     });

@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import { generateOrderWhatsAppMessage } from "@/lib/ai/generate-order-whatsapp-message";
-import type { OrderWhatsAppMessageIntent } from "@/lib/ai/order-message-types";
+import {
+  isOrderMessageGoal,
+  type OrderWhatsAppMessageIntent,
+} from "@/lib/ai/order-message-types";
 import { getStoreOrderById } from "@/lib/orders/get-store-orders";
 import { formatOrderPublicId } from "@/lib/orders/order-status-whatsapp";
 import { isValidOrderEstado, type OrderEstado } from "@/lib/orders/order-status";
@@ -21,8 +24,9 @@ function normalizeIntent(
   value: unknown,
   newEstado?: OrderEstado,
 ): OrderWhatsAppMessageIntent {
-  if (value === "general" || value === "status_update") return value;
-  return newEstado ? "status_update" : "general";
+  if (value === "status_update" || value === "general") return value;
+  if (isOrderMessageGoal(value)) return value;
+  return newEstado ? "status_update" : "order_confirmation";
 }
 
 function normalizeEstado(value: unknown): OrderEstado | undefined {
@@ -80,6 +84,7 @@ export async function POST(request: Request) {
       currentEstado: order.estado,
       newEstado: intent === "status_update" ? newEstado ?? order.estado : undefined,
       intent,
+      trackingNumber: order.tracking_number,
     });
 
     return NextResponse.json(result, {

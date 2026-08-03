@@ -1,10 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, MessageCircle, Sparkles, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Check, Copy, Loader2, MessageCircle, Sparkles } from "lucide-react";
 import type { OrderEstado } from "@/lib/orders/order-status";
+import {
+  ORDER_MESSAGE_GOAL_OPTIONS,
+  type OrderMessageGoalOption,
+  type OrderWhatsAppMessageIntent,
+} from "@/lib/ai/order-message-types";
 import { buildCustomerWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
 import { useOrderAiWhatsAppMessage } from "@/components/dashboard/orders/useOrderAiWhatsAppMessage";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
 interface OrderWhatsAppComposerProps {
@@ -13,6 +27,10 @@ interface OrderWhatsAppComposerProps {
   customerPhone: string | null;
   fallbackMessage: string;
   orderId: string;
+  storeName?: string;
+  /** Objetivo inicial sugerido (confirmación / envío / pago). */
+  initialIntent?: OrderMessageGoalOption["value"];
+  /** Si viene de un cambio de estado, fija el modo status_update. */
   newEstado?: OrderEstado;
   onClose: () => void;
 }
@@ -23,131 +41,188 @@ export function OrderWhatsAppComposer({
   customerPhone,
   fallbackMessage,
   orderId,
+  storeName,
+  initialIntent = "order_confirmation",
   newEstado,
   onClose,
 }: OrderWhatsAppComposerProps) {
+  const lockedStatusUpdate = Boolean(newEstado);
+  const [goal, setGoal] = useState<OrderMessageGoalOption["value"]>(initialIntent);
   const [message, setMessage] = useState(fallbackMessage);
+  const [copied, setCopied] = useState(false);
 
-  const { message: aiMessage, loading, error, regenerate } = useOrderAiWhatsAppMessage({
-    orderId,
-    newEstado,
-    enabled: open,
-  });
+  const intent: OrderWhatsAppMessageIntent = lockedStatusUpdate
+    ? "status_update"
+    : goal;
+
+  const { message: aiMessage, loading, error, regenerate } =
+    useOrderAiWhatsAppMessage({
+      orderId,
+      newEstado,
+      intent,
+      enabled: open,
+    });
 
   useEffect(() => {
     if (!open) return;
+    setGoal(initialIntent);
     setMessage(fallbackMessage);
-  }, [open, fallbackMessage]);
+    setCopied(false);
+  }, [open, initialIntent, fallbackMessage]);
 
   useEffect(() => {
     if (aiMessage) setMessage(aiMessage);
   }, [aiMessage]);
 
-  useEffect(() => {
-    if (!open) return;
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+  const handleCopy = useCallback(async () => {
+    if (!message.trim()) return;
+    try {
+      await navigator.clipboard.writeText(message);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // El error de generación ya cubre fallos de red; copiar es secundario.
     }
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
+  }, [message]);
 
   const whatsappUrl = buildCustomerWhatsAppUrl(customerPhone, undefined, message);
+  const displayName = customerName.trim() || "cliente";
 
   return (
-    <div className="orders-wa-composer-root" role="presentation">
-      <button
-        type="button"
-        className="orders-slideover-backdrop"
-        aria-label="Cerrar compositor de WhatsApp"
-        onClick={onClose}
-      />
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
+      containerClassName="max-w-xl"
+    >
+      <DialogContent className="relative" onClose={onClose}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+            Mensaje con IA para WhatsApp
+          </DialogTitle>
+          <DialogDescription>
+            Mensaje de ventas para {displayName}
+            {storeName?.trim() ? ` desde ${storeName.trim()}` : ""}. Incluye
+            productos y total del pedido.
+          </DialogDescription>
+        </DialogHeader>
 
-      <div
-        className="orders-wa-composer-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="wa-composer-title"
-      >
-        <header className="orders-wa-composer-header">
-          <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              <Sparkles className="h-3.5 w-3.5 text-violet-600" aria-hidden="true" />
-              WhatsApp con IA
+        <div className="space-y-4">
+          {lockedStatusUpdate ? (
+            <p className="rounded-xl border border-violet-200/80 bg-violet-50/70 px-3 py-2 text-xs text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/30 dark:text-violet-200">
+              Mensaje de actualización de estado. Puedes editarlo antes de
+              enviarlo.
             </p>
-            <h2
-              id="wa-composer-title"
-              className="mt-1 truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50"
-            >
-              Mensaje para {customerName}
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="touch-target rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-            aria-label="Cerrar"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </header>
+          ) : (
+            <div>
+              <p className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400">
+                Objetivo del mensaje
+              </p>
+              <div
+                className="mt-2 grid gap-2 sm:grid-cols-1"
+                role="radiogroup"
+                aria-label="Objetivo del mensaje"
+              >
+                {ORDER_MESSAGE_GOAL_OPTIONS.map((option) => {
+                  const selected = goal === option.value;
 
-        <div className="orders-wa-composer-body">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <label htmlFor="wa-composer-message" className="orders-slideover-label">
-              Mensaje generado — puedes editarlo antes de enviar
-            </label>
-            <button
-              type="button"
-              onClick={() => void regenerate()}
-              disabled={loading}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-violet-700 transition hover:text-violet-800 disabled:opacity-50 dark:text-violet-400"
-            >
-              {loading ? (
-                <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
-              ) : (
-                <Sparkles className="h-3 w-3" aria-hidden="true" />
-              )}
-              Regenerar
-            </button>
-          </div>
-
-          <div className="relative">
-            <textarea
-              id="wa-composer-message"
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              rows={10}
-              disabled={loading && !message}
-              className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm leading-relaxed text-zinc-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-            />
-            {loading ? (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-white/60 dark:bg-zinc-950/60">
-                <Loader2
-                  className="h-5 w-5 animate-spin text-emerald-600"
-                  aria-hidden="true"
-                />
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      disabled={loading}
+                      onClick={() => setGoal(option.value)}
+                      className={cn(
+                        "rounded-xl border px-3 py-2.5 text-left transition-colors",
+                        selected
+                          ? "border-emerald-600 bg-emerald-50/80 dark:border-emerald-500 dark:bg-emerald-950/30"
+                          : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700",
+                      )}
+                    >
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                        {option.label}
+                      </p>
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        {option.description}
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
-            ) : null}
+            </div>
+          )}
+
+          <div>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400">
+                Mensaje generado
+              </p>
+              <button
+                type="button"
+                onClick={() => void regenerate()}
+                disabled={loading}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 transition hover:text-emerald-800 disabled:opacity-50 dark:text-emerald-400"
+              >
+                {loading ? (
+                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Sparkles className="h-3 w-3" aria-hidden="true" />
+                )}
+                Regenerar
+              </button>
+            </div>
+
+            <div className="relative">
+              <textarea
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                rows={8}
+                disabled={loading}
+                placeholder={
+                  loading
+                    ? "Generando mensaje con datos del pedido…"
+                    : "El mensaje aparecerá aquí."
+                }
+                className="min-h-[170px] w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm leading-relaxed text-zinc-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              />
+              {loading ? (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-white/60 dark:bg-zinc-950/60">
+                  <Loader2
+                    className="h-5 w-5 animate-spin text-emerald-600"
+                    aria-hidden="true"
+                  />
+                </div>
+              ) : null}
+            </div>
           </div>
 
           {error ? (
-            <p className="mt-2 text-xs text-amber-700 dark:text-amber-400" role="alert">
+            <p className="text-sm text-amber-700 dark:text-amber-400" role="alert">
               {error}. Se muestra un mensaje de respaldo que puedes editar.
             </p>
           ) : null}
         </div>
 
-        <footer className="orders-wa-composer-footer">
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!message.trim() || loading}
+            onClick={() => void handleCopy()}
+            className="gap-1.5"
+          >
+            {copied ? (
+              <Check className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Copy className="h-4 w-4" aria-hidden="true" />
+            )}
+            {copied ? "Copiado" : "Copiar mensaje"}
+          </Button>
+
           {whatsappUrl ? (
             <a
               href={whatsappUrl}
@@ -155,20 +230,21 @@ export function OrderWhatsAppComposer({
               rel="noopener noreferrer"
               onClick={onClose}
               className={cn(
-                "btn-brand inline-flex min-h-11 w-full items-center justify-center gap-2",
-                loading && !message && "pointer-events-none opacity-50",
+                "btn-primary inline-flex items-center justify-center gap-1.5",
+                (!message.trim() || loading) && "pointer-events-none opacity-50",
               )}
+              aria-disabled={!message.trim() || loading}
             >
               <MessageCircle className="h-4 w-4" aria-hidden="true" />
               Enviar por WhatsApp
             </a>
           ) : (
-            <p className="text-center text-sm text-red-600 dark:text-red-400">
-              No hay un teléfono válido para WhatsApp.
-            </p>
+            <span className="text-xs text-zinc-500">
+              Este pedido no tiene teléfono válido para WhatsApp.
+            </span>
           )}
-        </footer>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

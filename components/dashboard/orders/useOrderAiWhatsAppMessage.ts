@@ -42,7 +42,7 @@ export function useOrderAiWhatsAppMessage({
         body: JSON.stringify({
           orderId,
           newEstado,
-          intent: intent ?? (newEstado ? "status_update" : "general"),
+          intent: intent ?? (newEstado ? "status_update" : "order_confirmation"),
         }),
       });
 

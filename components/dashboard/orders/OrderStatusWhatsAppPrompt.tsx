@@ -139,6 +139,7 @@ export function OrderStatusWhatsAppPrompt({
         customerPhone={order.customer_phone}
         fallbackMessage={fallbackMessage}
         orderId={order.id}
+        storeName={storeName}
         newEstado={newEstado}
         onClose={() => {
           setComposerOpen(false);

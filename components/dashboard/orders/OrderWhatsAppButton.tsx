@@ -5,6 +5,7 @@ import { MessageCircle } from "lucide-react";
 import type { CatalogOrder } from "@/lib/orders/types";
 import { renderOrderWhatsAppMessage } from "@/lib/orders/render-order-message";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
+import { suggestOrderMessageIntent } from "@/lib/ai/order-message-types";
 import type { MessageTemplatesSettings } from "@/lib/store-settings/types";
 import { OrderWhatsAppComposer } from "@/components/dashboard/orders/OrderWhatsAppComposer";
 import { cn } from "@/lib/cn";
@@ -31,6 +32,11 @@ export function OrderWhatsAppButton({
   const fallbackMessage = useMemo(
     () => renderOrderWhatsAppMessage(order, messageTemplates, storeName),
     [order, messageTemplates, storeName],
+  );
+
+  const suggestedIntent = useMemo(
+    () => suggestOrderMessageIntent(order.estado),
+    [order.estado],
   );
 
   if (!hasPhone) {
@@ -69,6 +75,8 @@ export function OrderWhatsAppButton({
         customerPhone={order.customer_phone}
         fallbackMessage={fallbackMessage}
         orderId={order.id}
+        storeName={storeName}
+        initialIntent={suggestedIntent}
         onClose={() => setOpen(false)}
       />
     </>
