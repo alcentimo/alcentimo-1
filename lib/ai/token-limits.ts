@@ -10,6 +10,8 @@ export const AI_MAX_TOKENS = {
   productCopy: 450,
   /** Descripción de identidad de marca (cabecera compacta, 1-2 oraciones) */
   storeDescription: 120,
+  /** FAQ del catálogo (3–4 Q&A en JSON) */
+  catalogFaq: 700,
   /** Saludo onboarding (2-3 frases) */
   onboardingWelcome: 100,
   /** JSON con 3 productos de ejemplo */

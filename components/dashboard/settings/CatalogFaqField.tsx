@@ -1,6 +1,7 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ import type {
   CatalogFaqItem,
   CatalogFaqSettings,
 } from "@/lib/store-settings/types";
+import { cn } from "@/lib/cn";
 
 interface CatalogFaqFieldProps {
   value?: CatalogFaqSettings;
@@ -26,6 +28,8 @@ interface CatalogFaqFieldProps {
 export function CatalogFaqField({ value, onChange }: CatalogFaqFieldProps) {
   const faq = normalizeCatalogFaqDraft(value ?? defaultCatalogFaqSettings());
   const canAdd = faq.items.length < MAX_CATALOG_FAQ_ITEMS;
+  const [generating, setGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   function emit(next: CatalogFaqSettings, shouldSave = true) {
     onChange(normalizeCatalogFaqDraft(next), shouldSave);
@@ -91,6 +95,68 @@ export function CatalogFaqField({ value, onChange }: CatalogFaqFieldProps) {
     );
   }
 
+  async function generateWithAi() {
+    const hasContent = faq.items.some(
+      (item) => item.question.trim() || item.answer.trim(),
+    );
+    if (hasContent) {
+      const confirmed = window.confirm(
+        "Esto reemplazará las preguntas actuales con sugerencias de IA. Podrás editarlas o borrarlas después. ¿Continuar?",
+      );
+      if (!confirmed) return;
+    }
+
+    setAiError(null);
+    setGenerating(true);
+
+    try {
+      const response = await fetch(
+        "/api/dashboard/settings/generate-catalog-faq",
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+
+      const payload = (await response.json()) as {
+        error?: string;
+        items?: Array<{ question?: string; answer?: string }>;
+      };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ?? "No se pudieron generar las preguntas.",
+        );
+      }
+
+      const items = (payload.items ?? [])
+        .map((item) => ({
+          id: createCatalogFaqItemId(),
+          question: (item.question ?? "")
+            .trim()
+            .slice(0, CATALOG_FAQ_QUESTION_MAX),
+          answer: (item.answer ?? "").trim().slice(0, CATALOG_FAQ_ANSWER_MAX),
+        }))
+        .filter((item) => item.question && item.answer)
+        .slice(0, MAX_CATALOG_FAQ_ITEMS);
+
+      if (items.length === 0) {
+        throw new Error("La IA no devolvió preguntas válidas.");
+      }
+
+      emit({ enabled: true, items }, true);
+    } catch (error) {
+      setAiError(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron generar las preguntas.",
+      );
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   return (
     <div className="design-faq-panel space-y-3">
       <div className="design-visibility-row">
@@ -110,7 +176,35 @@ export function CatalogFaqField({ value, onChange }: CatalogFaqFieldProps) {
         />
       </div>
 
-      {faq.enabled ? (
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={() => void generateWithAi()}
+          disabled={generating}
+          className={cn(
+            "design-faq-ai-btn",
+            generating && "pointer-events-none opacity-70",
+          )}
+        >
+          {generating ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          ) : (
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
+          {generating ? "Generando…" : "Sugerir preguntas con IA"}
+        </button>
+        <p className="text-[11px] leading-relaxed text-zinc-500">
+          Usa el nombre, rubro, productos, categorías, envíos y pagos de tu
+          tienda. Luego puedes editar o eliminar cada pregunta.
+        </p>
+        {aiError ? (
+          <p className="text-xs text-red-600 dark:text-red-400" role="alert">
+            {aiError}
+          </p>
+        ) : null}
+      </div>
+
+      {faq.enabled || faq.items.length > 0 ? (
         <div className="design-faq-list space-y-3">
           {faq.items.map((item, index) => (
             <div key={item.id} className="design-faq-card space-y-2">

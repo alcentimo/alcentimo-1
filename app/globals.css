@@ -6703,6 +6703,10 @@ body {
   @apply inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-300 px-3 py-2.5 text-xs font-medium text-zinc-600 transition hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900;
 }
 
+.design-faq-ai-btn {
+  @apply inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-teal-200/90 bg-teal-50/70 px-3 py-2.5 text-xs font-semibold text-teal-800 transition hover:border-teal-300 hover:bg-teal-50 dark:border-teal-900 dark:bg-teal-950/30 dark:text-teal-200 dark:hover:bg-teal-950/50;
+}
+
 .catalog-faq {
   @apply mx-auto w-full max-w-3xl px-4 pb-8 pt-2 sm:px-6;
 }
