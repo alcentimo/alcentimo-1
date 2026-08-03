@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Send, X } from "lucide-react";
 import { CatalogChatAvatar } from "@/components/catalog-transactional/CatalogChatAvatar";
+import { useCatalogShellNavigation } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { cn } from "@/lib/cn";
 import { readFulfillmentPrefs } from "@/lib/catalog/fulfillment-storage";
 import { buildStorefrontSupportWhatsAppMessage } from "@/lib/catalog/storefront-support-whatsapp";
@@ -50,12 +51,15 @@ export function CatalogChatWidget({
   merchantName = null,
   whatsappPhone = null,
 }: CatalogChatWidgetProps) {
+  const shellNav = useCatalogShellNavigation();
+  const open = shellNav.assistantOpen;
+  const closeAssistant = shellNav.closeAssistant;
+
   const supportTitle = useMemo(
     () => `Soporte — ${storeName}`,
     [storeName],
   );
 
-  const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<StorefrontAssistantMessage[]>(() => [
     createMessage("assistant", buildWelcomeMessage(storeName, merchantName)),
@@ -72,6 +76,13 @@ export function CatalogChatWidget({
   const showMerchantSubtitle =
     Boolean(merchantName) &&
     merchantName!.trim().toLowerCase() !== storeName.trim().toLowerCase();
+
+  useEffect(() => {
+    shellNav.setAssistantAvailable(true);
+    return () => {
+      shellNav.setAssistantAvailable(false);
+    };
+  }, [shellNav]);
 
   useEffect(() => {
     if (!open) return;
@@ -168,196 +179,178 @@ export function CatalogChatWidget({
     void sendMessage(input);
   }
 
+  if (!open) return null;
+
   return (
-    <>
+    <div
+      className="catalog-chat-overlay"
+      role="dialog"
+      aria-label={supportTitle}
+    >
       <button
         type="button"
-        onClick={() => setOpen(true)}
-        className={cn("catalog-chat-fab", open && "catalog-chat-fab-hidden")}
-        aria-label={`Abrir soporte de ${storeName}`}
-      >
-        <CatalogChatAvatar
-          imageUrl={avatarUrl}
-          label={avatarLabel}
-          size="sm"
-          animation={avatarAnimation}
-          animated={avatarAnimated}
-          className="catalog-chat-fab-avatar"
-        />
-      </button>
-
-      {open ? (
-        <div
-          className="catalog-chat-overlay"
-          role="dialog"
-          aria-label={supportTitle}
-        >
+        className="txn-cart-backdrop"
+        aria-label="Cerrar asistente"
+        onClick={closeAssistant}
+      />
+      <div className="catalog-chat-panel">
+        <header className="catalog-chat-header">
+          <div className="catalog-chat-header-main">
+            <CatalogChatAvatar
+              imageUrl={avatarUrl}
+              label={avatarLabel}
+              size="md"
+              animation={avatarAnimation}
+              animated={avatarAnimated}
+            />
+            <div className="min-w-0">
+              <h2 className="catalog-chat-title">{supportTitle}</h2>
+              <div className="catalog-chat-subtitle-row">
+                {showMerchantSubtitle ? (
+                  <p className="catalog-chat-subtitle">{merchantName}</p>
+                ) : null}
+                <span className="catalog-chat-ai-badge">
+                  Asistencia inteligente
+                </span>
+              </div>
+            </div>
+          </div>
           <button
             type="button"
-            className="txn-cart-backdrop"
-            aria-label="Cerrar asistente"
-            onClick={() => setOpen(false)}
-          />
-          <div className="catalog-chat-panel">
-            <header className="catalog-chat-header">
-              <div className="catalog-chat-header-main">
+            onClick={closeAssistant}
+            className="txn-icon-btn"
+            aria-label="Cerrar chat"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </header>
+
+        <div ref={scrollRef} className="catalog-chat-messages">
+          {messages.map((message, index) => (
+            <div
+              key={`${message.role}-${index}`}
+              className={cn(
+                "catalog-chat-bubble-row",
+                message.role === "user" && "catalog-chat-bubble-row-user",
+              )}
+            >
+              {message.role === "assistant" ? (
                 <CatalogChatAvatar
                   imageUrl={avatarUrl}
                   label={avatarLabel}
-                  size="md"
+                  size="sm"
                   animation={avatarAnimation}
                   animated={avatarAnimated}
+                  className="catalog-chat-bubble-avatar"
                 />
-                <div className="min-w-0">
-                  <h2 className="catalog-chat-title">{supportTitle}</h2>
-                  <div className="catalog-chat-subtitle-row">
-                    {showMerchantSubtitle ? (
-                      <p className="catalog-chat-subtitle">{merchantName}</p>
-                    ) : null}
-                    <span className="catalog-chat-ai-badge">
-                      Asistencia inteligente
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="txn-icon-btn"
-                aria-label="Cerrar chat"
-              >
-                <X className="h-5 w-5" aria-hidden="true" />
-              </button>
-            </header>
-
-            <div ref={scrollRef} className="catalog-chat-messages">
-              {messages.map((message, index) => (
-                <div
-                  key={`${message.role}-${index}`}
-                  className={cn(
-                    "catalog-chat-bubble-row",
-                    message.role === "user" && "catalog-chat-bubble-row-user",
-                  )}
-                >
-                  {message.role === "assistant" ? (
-                    <CatalogChatAvatar
-                      imageUrl={avatarUrl}
-                      label={avatarLabel}
-                      size="sm"
-                      animation={avatarAnimation}
-                      animated={avatarAnimated}
-                      className="catalog-chat-bubble-avatar"
-                    />
-                  ) : null}
-                  <div
-                    className={cn(
-                      "catalog-chat-bubble",
-                      message.role === "user"
-                        ? "catalog-chat-bubble-user"
-                        : "catalog-chat-bubble-assistant",
-                    )}
-                  >
-                    {message.content}
-                  </div>
-                </div>
-              ))}
-              {loading ? (
-                <div className="catalog-chat-bubble-row">
-                  <CatalogChatAvatar
-                    imageUrl={avatarUrl}
-                    label={avatarLabel}
-                    size="sm"
-                    animation={avatarAnimation}
-                    animated={avatarAnimated}
-                    className="catalog-chat-bubble-avatar"
-                  />
-                  <div className="catalog-chat-bubble catalog-chat-bubble-assistant catalog-chat-typing">
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    <span>Consultando catálogo…</span>
-                  </div>
-                </div>
               ) : null}
-            </div>
-
-            {error ? (
-              <p className="catalog-chat-error" role="alert">
-                {error}
-              </p>
-            ) : null}
-
-            {showHumanSupport && whatsappReady ? (
-              <div className="catalog-chat-human-banner">
-                <p>¿Quieres que te atienda una persona? Escríbenos por WhatsApp.</p>
-                <button
-                  type="button"
-                  className="catalog-chat-human-btn"
-                  onClick={() => openWhatsAppSupport()}
-                >
-                  Hablar con un operador
-                </button>
-              </div>
-            ) : null}
-
-            <div className="catalog-chat-quick-prompts">
-              {QUICK_PROMPTS.map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  disabled={loading}
-                  onClick={() => void sendMessage(prompt)}
-                  className="catalog-chat-quick-prompt"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-
-            <form onSubmit={handleSubmit} className="catalog-chat-input-row">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void sendMessage(input);
-                  }
-                }}
-                rows={1}
-                maxLength={500}
-                disabled={loading}
-                placeholder="Pregunta por productos, stock o envíos…"
-                className="catalog-chat-input"
-                aria-label={`Mensaje para ${supportTitle}`}
-              />
-              <button
-                type="submit"
-                disabled={loading || !input.trim()}
-                className="catalog-chat-send-btn"
-                aria-label="Enviar mensaje"
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <Send className="h-4 w-4" aria-hidden="true" />
+              <div
+                className={cn(
+                  "catalog-chat-bubble",
+                  message.role === "user"
+                    ? "catalog-chat-bubble-user"
+                    : "catalog-chat-bubble-assistant",
                 )}
-              </button>
-            </form>
-
-            {whatsappReady ? (
-              <div className="catalog-chat-footer">
-                <button
-                  type="button"
-                  className="catalog-chat-whatsapp-btn"
-                  onClick={() => openWhatsAppSupport()}
-                >
-                  Hablar con un humano por WhatsApp
-                </button>
+              >
+                {message.content}
               </div>
-            ) : null}
-          </div>
+            </div>
+          ))}
+          {loading ? (
+            <div className="catalog-chat-bubble-row">
+              <CatalogChatAvatar
+                imageUrl={avatarUrl}
+                label={avatarLabel}
+                size="sm"
+                animation={avatarAnimation}
+                animated={avatarAnimated}
+                className="catalog-chat-bubble-avatar"
+              />
+              <div className="catalog-chat-bubble catalog-chat-bubble-assistant catalog-chat-typing">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                <span>Consultando catálogo…</span>
+              </div>
+            </div>
+          ) : null}
         </div>
-      ) : null}
-    </>
+
+        {error ? (
+          <p className="catalog-chat-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        {showHumanSupport && whatsappReady ? (
+          <div className="catalog-chat-human-banner">
+            <p>¿Quieres que te atienda una persona? Escríbenos por WhatsApp.</p>
+            <button
+              type="button"
+              className="catalog-chat-human-btn"
+              onClick={() => openWhatsAppSupport()}
+            >
+              Hablar con un operador
+            </button>
+          </div>
+        ) : null}
+
+        <div className="catalog-chat-quick-prompts">
+          {QUICK_PROMPTS.map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              disabled={loading}
+              onClick={() => void sendMessage(prompt)}
+              className="catalog-chat-quick-prompt"
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit} className="catalog-chat-input-row">
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                void sendMessage(input);
+              }
+            }}
+            rows={1}
+            maxLength={500}
+            disabled={loading}
+            placeholder="Pregunta por productos, stock o envíos…"
+            className="catalog-chat-input"
+            aria-label={`Mensaje para ${supportTitle}`}
+          />
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="catalog-chat-send-btn"
+            aria-label="Enviar mensaje"
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Send className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
+        </form>
+
+        {whatsappReady ? (
+          <div className="catalog-chat-footer">
+            <button
+              type="button"
+              className="catalog-chat-whatsapp-btn"
+              onClick={() => openWhatsAppSupport()}
+            >
+              Hablar con un humano por WhatsApp
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }

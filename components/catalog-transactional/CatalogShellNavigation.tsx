@@ -26,6 +26,8 @@ interface CatalogShellNavigationContextValue {
   registerMode: CatalogCustomerAuthMode;
   cartActive: boolean;
   searchActive: boolean;
+  assistantOpen: boolean;
+  assistantAvailable: boolean;
   openProfile: () => void;
   closeProfile: () => void;
   openRegister: (mode?: CatalogCustomerAuthMode) => void;
@@ -34,6 +36,9 @@ interface CatalogShellNavigationContextValue {
   openCart: () => void;
   closeCart: () => void;
   setCartActive: (active: boolean) => void;
+  openAssistant: () => void;
+  closeAssistant: () => void;
+  setAssistantAvailable: (available: boolean) => void;
   focusSearch: () => void;
   clearSearchActive: () => void;
   registerCartController: (controller: CatalogCartController | null) => void;
@@ -61,6 +66,8 @@ export function CatalogShellNavigationProvider({
     useState<CatalogCustomerAuthMode>("register");
   const [cartActive, setCartActive] = useState(false);
   const [searchActive, setSearchActive] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantAvailable, setAssistantAvailableState] = useState(false);
 
   const registerCartController = useCallback(
     (controller: CatalogCartController | null) => {
@@ -82,6 +89,7 @@ export function CatalogShellNavigationProvider({
     setCartActive(false);
     setProfileOpen(false);
     setRegisterOpen(false);
+    setAssistantOpen(false);
     setSearchActive(true);
     searchFocusRef.current?.();
   }, []);
@@ -92,6 +100,7 @@ export function CatalogShellNavigationProvider({
       setCartActive(true);
       setProfileOpen(false);
       setRegisterOpen(false);
+      setAssistantOpen(false);
       setSearchActive(false);
       return;
     }
@@ -111,6 +120,7 @@ export function CatalogShellNavigationProvider({
     setProfileOpen(true);
     setRegisterOpen(false);
     setCartActive(false);
+    setAssistantOpen(false);
     setSearchActive(false);
   }, []);
 
@@ -124,12 +134,31 @@ export function CatalogShellNavigationProvider({
     setRegisterMode(mode);
     setRegisterOpen(true);
     setCartActive(false);
+    setAssistantOpen(false);
     setSearchActive(false);
   }, []);
 
   const closeRegister = useCallback(() => {
     setRegisterOpen(false);
     setRegisterMode("register");
+  }, []);
+
+  const openAssistant = useCallback(() => {
+    cartControllerRef.current?.close();
+    setAssistantOpen(true);
+    setProfileOpen(false);
+    setRegisterOpen(false);
+    setCartActive(false);
+    setSearchActive(false);
+  }, []);
+
+  const closeAssistant = useCallback(() => {
+    setAssistantOpen(false);
+  }, []);
+
+  const setAssistantAvailable = useCallback((available: boolean) => {
+    setAssistantAvailableState(available);
+    if (!available) setAssistantOpen(false);
   }, []);
 
   const value = useMemo<CatalogShellNavigationContextValue>(
@@ -139,6 +168,8 @@ export function CatalogShellNavigationProvider({
       registerMode,
       cartActive,
       searchActive,
+      assistantOpen,
+      assistantAvailable,
       openProfile,
       closeProfile,
       openRegister,
@@ -147,6 +178,9 @@ export function CatalogShellNavigationProvider({
       openCart,
       closeCart,
       setCartActive,
+      openAssistant,
+      closeAssistant,
+      setAssistantAvailable,
       focusSearch,
       clearSearchActive,
       registerCartController,
@@ -158,12 +192,17 @@ export function CatalogShellNavigationProvider({
       registerMode,
       cartActive,
       searchActive,
+      assistantOpen,
+      assistantAvailable,
       openProfile,
       closeProfile,
       openRegister,
       closeRegister,
       openCart,
       closeCart,
+      openAssistant,
+      closeAssistant,
+      setAssistantAvailable,
       focusSearch,
       clearSearchActive,
       registerCartController,

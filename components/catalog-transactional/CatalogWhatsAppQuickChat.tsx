@@ -71,7 +71,7 @@ export function CatalogWhatsAppQuickChat({
         aria-controls={open ? titleId : undefined}
         onClick={() => setOpen(true)}
       >
-        <WhatsAppGlyph className="h-7 w-7" />
+        <WhatsAppGlyph className="h-5 w-5" />
       </button>
 
       {open ? (

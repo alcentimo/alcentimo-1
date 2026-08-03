@@ -5202,7 +5202,7 @@ body {
 }
 
 .txn-catalog-identity-card {
-  @apply mx-auto w-full max-w-6xl rounded-xl border px-3 py-2 shadow-sm sm:rounded-2xl sm:px-4 sm:py-2.5;
+  @apply mx-auto flex w-full max-w-6xl items-start gap-2 rounded-xl border px-3 py-2 shadow-sm sm:gap-3 sm:rounded-2xl sm:px-4 sm:py-2.5;
   border-color: color-mix(
     in srgb,
     var(--txn-header-border, #e5e5e5) 85%,
@@ -5216,6 +5216,17 @@ body {
   box-shadow:
     0 1px 2px rgb(0 0 0 / 0.03),
     0 4px 14px -8px rgb(0 0 0 / 0.1);
+}
+
+.txn-catalog-assistant-btn {
+  @apply mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold tracking-tight transition active:scale-95 sm:px-3 sm:text-xs;
+  border-color: color-mix(in srgb, var(--txn-primary, #0d9488) 28%, transparent);
+  background-color: color-mix(in srgb, var(--txn-primary, #0d9488) 10%, white);
+  color: var(--txn-primary, #0d9488);
+}
+
+.txn-catalog-assistant-btn:hover {
+  background-color: color-mix(in srgb, var(--txn-primary, #0d9488) 16%, white);
 }
 
 .txn-promo-banner {
@@ -7469,6 +7480,13 @@ body {
   background-color: #25d366;
 }
 
+.catalog-profile-assistant-btn {
+  @apply inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition active:scale-[0.98];
+  border-color: color-mix(in srgb, var(--txn-primary, #0d9488) 30%, transparent);
+  background-color: color-mix(in srgb, var(--txn-primary, #0d9488) 10%, white);
+  color: var(--txn-primary, #0d9488);
+}
+
 .catalog-profile-link-btn {
   @apply inline-flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 active:scale-[0.98];
 }
@@ -7544,7 +7562,8 @@ body {
 .catalog-cart-fab {
   @apply fixed z-30 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition active:scale-95;
   right: max(1rem, env(safe-area-inset-right, 0px));
-  bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+  /* Sobre la tab bar (~4rem) + aire para el pulgar */
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
   background-color: var(--txn-primary, #0d9488);
 }
 
@@ -7554,10 +7573,11 @@ body {
   color: var(--txn-primary-fg, #ffffff);
 }
 
-/* Chat rápido WhatsApp — encima del FAB del carrito (derecha) */
+/* WhatsApp compacto, apilado encima del carrito (misma columna derecha) */
 .catalog-wa-fab {
-  @apply fixed z-30 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition active:scale-95;
-  right: max(1rem, env(safe-area-inset-right, 0px));
+  @apply fixed z-30 flex h-11 w-11 items-center justify-center rounded-full text-white shadow-md transition active:scale-95;
+  right: max(1.25rem, calc(env(safe-area-inset-right, 0px) + 0.25rem));
+  /* carrito bottom 4.5 + alto 3.5 + gap 0.5 = 8.5 */
   bottom: calc(8.5rem + env(safe-area-inset-bottom, 0px));
   background-color: #25d366;
 }
@@ -7650,21 +7670,6 @@ body {
 .catalog-wa-send {
   @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white transition enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-45;
   background-color: #25d366;
-}
-
-.catalog-chat-fab {
-  @apply fixed z-30 flex h-14 w-14 items-center justify-center rounded-full p-0 shadow-lg ring-2 ring-white/80 transition active:scale-95 dark:ring-zinc-900/80;
-  left: max(1rem, env(safe-area-inset-left, 0px));
-  bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
-  background-color: color-mix(in srgb, var(--txn-primary, #0d9488) 12%, white);
-}
-
-.catalog-chat-fab-avatar {
-  @apply h-11 w-11;
-}
-
-.catalog-chat-fab-hidden {
-  @apply pointer-events-none opacity-0;
 }
 
 .catalog-chat-overlay {

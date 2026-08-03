@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import { Sparkles } from "lucide-react";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
+import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { formatExchangeRate } from "@/lib/format";
 import { isGifImageUrl } from "@/lib/media/is-gif-url";
 import type { LocationHoursSettings } from "@/lib/store-settings/types";
@@ -37,6 +39,8 @@ export function CatalogStoreIdentityHeader({
   showOfficialRate = false,
   exchangeRate = null,
 }: CatalogStoreIdentityHeaderProps) {
+  const shellNav = useCatalogShellNavigationOptional();
+  const showAssistant = Boolean(shellNav?.assistantAvailable);
   const initials = getStoreInitials(storeName);
   const description = storeDescription?.trim() || null;
   const showRate =
@@ -93,6 +97,18 @@ export function CatalogStoreIdentityHeader({
               ) : null}
             </div>
           </div>
+
+          {showAssistant ? (
+            <button
+              type="button"
+              className="txn-catalog-assistant-btn"
+              aria-label="Abrir asistente de la tienda"
+              onClick={() => shellNav?.openAssistant()}
+            >
+              <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Ayuda</span>
+            </button>
+          ) : null}
         </div>
       </div>
     </header>

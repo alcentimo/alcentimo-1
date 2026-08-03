@@ -2,7 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { LogIn, LogOut, MessageCircle, ShoppingBag, UserPlus, UserRound } from "lucide-react";
+import {
+  LogIn,
+  LogOut,
+  MessageCircle,
+  ShoppingBag,
+  Sparkles,
+  UserPlus,
+  UserRound,
+} from "lucide-react";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { getStoreCatalogBasePath, getStoreCustomerAccountPath } from "@/lib/store-host";
@@ -139,6 +147,22 @@ export function CatalogStoreProfileSheet({
                   .filter(Boolean)
                   .join(", ")}
               </p>
+            </div>
+          ) : null}
+
+          {shellNav.assistantAvailable ? (
+            <div className="catalog-profile-section">
+              <button
+                type="button"
+                className="catalog-profile-assistant-btn"
+                onClick={() => {
+                  onClose();
+                  shellNav.openAssistant();
+                }}
+              >
+                <Sparkles className="h-5 w-5 shrink-0" aria-hidden="true" />
+                Asistente de la tienda
+              </button>
             </div>
           ) : null}
 
