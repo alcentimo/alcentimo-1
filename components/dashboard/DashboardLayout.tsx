@@ -16,6 +16,7 @@ import type { DashboardStoreRole } from "@/lib/team/permissions";
 import { isDashboardStoreOwner } from "@/lib/team/permissions";
 import type { AccountSnapshot } from "@/lib/account/types";
 import type { SubscriptionStatus } from "@/lib/plans/plan-activation";
+import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 import {
   BRAND_LOGO_HEIGHT,
   BRAND_LOGO_PATH,
@@ -31,6 +32,8 @@ interface DashboardLayoutProps {
   planName?: string | null;
   subscriptionStatus?: SubscriptionStatus | null;
   trialActive?: boolean;
+  trialEligible?: boolean;
+  proTrialSetup?: ProTrialSetupPick | null;
   exchangeRate?: number | null;
   exchangeRateUpdatedAt?: string | null;
   isSupportAdmin?: boolean;
@@ -55,6 +58,8 @@ function DashboardShell({
   planName = null,
   subscriptionStatus = "none",
   trialActive = false,
+  trialEligible = false,
+  proTrialSetup = null,
   exchangeRate = null,
   exchangeRateUpdatedAt = null,
   isSupportAdmin = false,
@@ -163,6 +168,8 @@ function DashboardShell({
         planName={planName}
         subscriptionStatus={subscriptionStatus}
         trialActive={trialActive}
+        trialEligible={trialEligible}
+        proTrialSetup={proTrialSetup}
         mobileOpen={sidebarOpen}
         immersiveHidden={false}
         onCloseMobile={closeSidebar}

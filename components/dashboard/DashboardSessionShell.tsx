@@ -9,6 +9,7 @@ import {
   fetchDashboardShellData,
   type DashboardShellData,
 } from "@/lib/dashboard/fetch-dashboard-shell-data";
+import { DASHBOARD_SHELL_REFRESH_EVENT } from "@/lib/dashboard/shell-refresh";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import type { AccountSnapshot } from "@/lib/account/types";
 
@@ -42,11 +43,16 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
     function onVisibility() {
       if (document.visibilityState === "visible") refreshShell();
     }
+    function onShellRefresh() {
+      refreshShell();
+    }
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener(DASHBOARD_SHELL_REFRESH_EVENT, onShellRefresh);
     return () => {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener(DASHBOARD_SHELL_REFRESH_EVENT, onShellRefresh);
     };
   }, [refreshShell]);
 
@@ -63,6 +69,8 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
           planName={shell?.planName ?? null}
           subscriptionStatus={shell?.subscriptionStatus ?? "none"}
           trialActive={shell?.trialActive ?? false}
+          trialEligible={shell?.trialEligible ?? false}
+          proTrialSetup={shell?.proTrialSetup ?? null}
           exchangeRate={shell?.exchangeRate ?? null}
           exchangeRateUpdatedAt={shell?.exchangeRateUpdatedAt ?? null}
           isSupportAdmin={shell?.isSupportAdmin ?? false}

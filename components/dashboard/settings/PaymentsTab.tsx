@@ -21,6 +21,7 @@ import {
   type PaymentFieldErrors,
 } from "@/lib/payments/validate-payment-fields";
 import { savePaymentsSettings } from "@/lib/settings/actions";
+import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
 import { useCountry } from "@/components/providers/CountryProvider";
 import { getCountryConfig } from "@/lib/country-config";
 import { getPaymentMethod } from "@/src/config/payment-methods";
@@ -109,7 +110,9 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
           setPayments(initialSettings.methods);
           setInstallments(initialSettings.installments);
         }
+        return;
       }
+      requestDashboardShellRefresh();
     });
   }
 
@@ -213,6 +216,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
         return;
       }
       setSuccess("Configuración de pagos guardada correctamente.");
+      requestDashboardShellRefresh();
     });
   }
 

@@ -13,7 +13,7 @@ import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import type { InventoryAiSuggestionRow } from "@/lib/inventory-ai/types";
 import { InventoryAiSuggestionCards } from "@/components/dashboard/InventoryAiSuggestionCards";
-import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
+import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
 
 interface CatalogPanelProps {
   store: Store;
@@ -64,12 +64,9 @@ export function CatalogPanel({
     () => searchParams.get("nuevo") === "1",
   );
 
-  const handleOpenCreate = useCallback(() => {
-    setAutoOpenCreate(true);
-  }, []);
-
   const handleSampleProductsCreated = useCallback(() => {
     router.refresh();
+    requestDashboardShellRefresh();
   }, [router]);
 
   useEffect(() => {
@@ -100,41 +97,17 @@ export function CatalogPanel({
   }, [searchParamsKey, router]);
 
   const trial = productLimitContext?.trial ?? null;
-  const trialEligible = trial?.eligible ?? false;
   const trialActive = trial?.active ?? false;
-  // Solo progreso/reclamo: con prueba activa el plan ya se ve en la sidebar.
-  const showTrialBanner =
-    Boolean(productLimitContext) && trialEligible && !trialActive;
-  const [checklistVisible, setChecklistVisible] = useState(false);
 
   return (
     <>
       <Suspense fallback={null}>
         <OnboardingExperience
           storeId={store.id}
-          storeName={store.name}
-          rubroLabel={rubroLabel}
-          setupStatus={setupStatus}
           showWelcomeFromUrl={showWelcomeFromUrl}
-          trialEligible={trialEligible}
           trialActive={trialActive}
-          onOpenCreateProduct={handleOpenCreate}
-          onChecklistVisibilityChange={setChecklistVisible}
         />
       </Suspense>
-
-      {/* Evita duplicar "configuración" sobre el chip de primeros pasos. */}
-      {showTrialBanner && !checklistVisible ? (
-        <ProTrialBanner
-          showBanner
-          trialEligible={trialEligible}
-          trialActive={trialActive}
-          trialEndsAt={trial?.endsAt ?? null}
-          setupStatus={setupStatus}
-          compact
-          autoOpenClaimModal={false}
-        />
-      ) : null}
 
       <InventoryAiSuggestionCards
         initialSuggestions={inventorySuggestions}

@@ -26,6 +26,7 @@ import {
   type CatalogStockFilter,
 } from "@/lib/inventory/stock-status";
 import { deleteProduct, fetchInventoryProducts, adjustProductStock, reorderProducts } from "@/lib/products/actions";
+import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
 import { hasMultipleVariants } from "@/lib/products/variants";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -883,6 +884,7 @@ export function InventoryPanel({
         return;
       }
 
+      requestDashboardShellRefresh();
       refreshProducts();
     },
     [refreshProducts],

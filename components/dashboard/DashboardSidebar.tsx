@@ -32,6 +32,8 @@ import {
   BRAND_LOGO_PATH,
   BRAND_LOGO_WIDTH,
 } from "@/lib/brand/assets";
+import { SidebarProTrialProgress } from "@/components/dashboard/plans/SidebarProTrialProgress";
+import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "alcentimo-dashboard-sidebar-collapsed";
 const DASHBOARD_HOME_HREF = "/dashboard/catalogo";
@@ -42,6 +44,8 @@ interface DashboardSidebarProps {
   planName?: string | null;
   subscriptionStatus?: SubscriptionStatus | string | null;
   trialActive?: boolean;
+  trialEligible?: boolean;
+  proTrialSetup?: ProTrialSetupPick | null;
   mobileOpen: boolean;
   immersiveHidden: boolean;
   onCloseMobile: () => void;
@@ -189,6 +193,8 @@ export function DashboardSidebar({
   planName = null,
   subscriptionStatus = "none",
   trialActive = false,
+  trialEligible = false,
+  proTrialSetup = null,
   mobileOpen,
   immersiveHidden,
   onCloseMobile,
@@ -366,6 +372,17 @@ export function DashboardSidebar({
             expanded={drawerExpanded}
           />
         </div>
+
+        {proTrialSetup ? (
+          <div className={cn(drawerExpanded ? "mb-2" : "mb-1")}>
+            <SidebarProTrialProgress
+              setup={proTrialSetup}
+              trialEligible={trialEligible}
+              trialActive={trialActive}
+              expanded={drawerExpanded}
+            />
+          </div>
+        ) : null}
 
         <div className="space-y-1">
           <DashboardAccountMenu

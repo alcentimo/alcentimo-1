@@ -11,6 +11,7 @@ import {
 import { DeliveryZonesEditor } from "@/components/dashboard/settings/DeliveryZonesEditor";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { saveShippingSettings } from "@/lib/settings/actions";
+import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
 import { useCountry } from "@/components/providers/CountryProvider";
 import {
   getLocalShippingForCountry,
@@ -156,7 +157,9 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
       if (result.error) {
         setError(result.error);
         revertToInitial();
+        return;
       }
+      requestDashboardShellRefresh();
     });
   }
 

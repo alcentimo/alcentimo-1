@@ -26,6 +26,11 @@ import type { InterfacePreferencesSettings } from "@/lib/store-settings/types";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
 import type { Profile } from "@/lib/database.types";
 import type { UserWithPlan } from "@/lib/auth/get-user-profile";
+import { getStoreProductCount } from "@/lib/plans/product-limit";
+import {
+  getOnboardingSetupStatus,
+  type ProTrialSetupPick,
+} from "@/lib/onboarding/setup-status";
 
 const SHELL_QUERY_TIMEOUT_MS = 8_000;
 
@@ -38,6 +43,8 @@ export type DashboardShellData =
       planName: string | null;
       subscriptionStatus: SubscriptionStatus;
       trialActive: boolean;
+      trialEligible: boolean;
+      proTrialSetup: ProTrialSetupPick | null;
       exchangeRate: number | null;
       exchangeRateUpdatedAt: string | null;
       isSupportAdmin: boolean;
@@ -108,7 +115,7 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
     const displayPlan = getDisplayPlanForProfile(authUser.profile);
     const trial = resolveProTrialStatus(authUser.profile, displayPlan.planId);
 
-    const [exchangeRateRow, settingsConfig] = await Promise.all([
+    const [exchangeRateRow, settingsConfig, productCount] = await Promise.all([
       withTimeoutFallback(
         getCurrentExchangeRate(),
         SHELL_QUERY_TIMEOUT_MS,
@@ -123,11 +130,29 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
             "shell:getStoreSettingsConfig",
           )
         : Promise.resolve(defaultStoreSettingsConfig()),
+      store
+        ? withTimeoutFallback(
+            getStoreProductCount(store.id),
+            SHELL_QUERY_TIMEOUT_MS,
+            0,
+            "shell:getStoreProductCount",
+          )
+        : Promise.resolve(0),
     ]);
 
     const exchangeRate = exchangeRateRow?.rate ?? null;
     const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
     const ownerFlag = store ? isStoreOwner(store, authUser.id) : false;
+    const setupStatus = store
+      ? getOnboardingSetupStatus(productCount, settingsConfig, store.slug)
+      : null;
+    const proTrialSetup: ProTrialSetupPick | null = setupStatus
+      ? {
+          hasMinProductsForProTrial: setupStatus.hasMinProductsForProTrial,
+          hasPaymentsConfigured: setupStatus.hasPaymentsConfigured,
+          hasShippingConfigured: setupStatus.hasShippingConfigured,
+        }
+      : null;
 
     return {
       ok: true,
@@ -139,6 +164,8 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
         authUser.profile?.subscription_status,
       ),
       trialActive: trial.active,
+      trialEligible: trial.eligible,
+      proTrialSetup,
       exchangeRate,
       exchangeRateUpdatedAt,
       isSupportAdmin: isSupportAdmin(

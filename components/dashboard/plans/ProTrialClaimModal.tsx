@@ -13,6 +13,7 @@ import {
 import { startProTrial } from "@/lib/plans/trial-actions";
 import { PRO_TRIAL_CLAIM_CODE } from "@/lib/plans/trial";
 import { persistProTrialCongrats } from "@/lib/plans/pro-trial-congrats-storage";
+import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
 
 interface ProTrialClaimModalProps {
   open: boolean;
@@ -54,6 +55,7 @@ export function ProTrialClaimModal({
       // Persiste la felicitación para que sobreviva al refresh y no se cierre sola.
       persistProTrialCongrats(result.endsAt);
       handleOpenChange(false);
+      requestDashboardShellRefresh();
       router.refresh();
     });
   }
