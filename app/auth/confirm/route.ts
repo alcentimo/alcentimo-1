@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   const { url, anonKey } = requireSupabasePublicEnv();
 
   const supabase = createServerClient(url, anonKey, {
-    cookieOptions: getSupabaseCookieOptions(),
+    cookieOptions: getSupabaseCookieOptions(request.nextUrl.hostname),
     cookies: {
       getAll() {
         return request.cookies.getAll();

@@ -18,6 +18,7 @@ import {
   resolvePostAuthPath,
 } from "@/lib/auth/post-auth-redirect";
 import { createClient } from "@/lib/supabase/client";
+import { ensureBrowserSessionReady } from "@/lib/auth/ensure-browser-session";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { SignupEmailVerificationPanel } from "@/components/dashboard/SignupEmailVerificationPanel";
@@ -105,39 +106,6 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
     setSuccessNotice(message);
     setSignupNotice(message);
     setSignupConfirmationSent(true);
-  }
-
-  async function ensureBrowserSessionReady(): Promise<boolean> {
-    const supabase = createClient();
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-
-    if (session?.access_token && !sessionError) {
-      return true;
-    }
-
-    // Reintento corto: a veces la cookie SSR aún no está lista en móvil.
-    await new Promise((resolve) => setTimeout(resolve, 250));
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (user && !userError) {
-      return true;
-    }
-
-    logAuthEvent(
-      "signin_session_not_ready",
-      {
-        sessionError: sessionError?.message ?? null,
-        userError: userError?.message ?? null,
-      },
-      "warn",
-    );
-    return false;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -265,7 +233,19 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
         return;
       }
 
-      const sessionReady = await ensureBrowserSessionReady();
+      if (!result.data.session) {
+        setLoading(false);
+        logAuthEvent("signin_no_session_payload", {}, "warn");
+        setError(
+          "El acceso se inició, pero la sesión no quedó lista en este dispositivo. Intenta de nuevo.",
+        );
+        return;
+      }
+
+      const sessionReady = await ensureBrowserSessionReady(
+        supabase,
+        result.data.session,
+      );
       setLoading(false);
 
       if (!sessionReady) {
