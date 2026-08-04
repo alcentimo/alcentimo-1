@@ -30,6 +30,10 @@ import {
   defaultDropshipPricingSettings,
   normalizeDropshipPricingSettings,
 } from "@/lib/dropship/margin";
+import {
+  defaultCatalogAccessSettings,
+  normalizeCatalogAccessSettings,
+} from "@/lib/catalog-access/types";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "mrw",
@@ -205,6 +209,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       wholesaleEnabled: false,
     },
     dropshipPricing: defaultDropshipPricingSettings(),
+    catalogAccess: defaultCatalogAccessSettings(),
     messageTemplates: defaultMessageTemplates(),
     interfacePreferences: {
       theme: "system",
@@ -457,6 +462,7 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           : defaults.catalogCurrency.wholesaleEnabled,
     },
     dropshipPricing: normalizeDropshipPricingSettings(raw.dropshipPricing),
+    catalogAccess: normalizeCatalogAccessSettings(raw.catalogAccess),
     messageTemplates: {
       nuevo:
         typeof templatesRaw.nuevo === "string" && templatesRaw.nuevo.trim()
@@ -582,6 +588,12 @@ export function mergeStoreSettingsConfig(
           ...patch.dropshipPricing,
         })
       : base.dropshipPricing,
+    catalogAccess: patch.catalogAccess
+      ? normalizeCatalogAccessSettings({
+          ...base.catalogAccess,
+          ...patch.catalogAccess,
+        })
+      : base.catalogAccess,
     messageTemplates: patch.messageTemplates
       ? { ...base.messageTemplates, ...patch.messageTemplates }
       : base.messageTemplates,

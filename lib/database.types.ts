@@ -154,6 +154,8 @@ export interface Store {
   custom_domain_verified: boolean;
   custom_domain_verified_at: string | null;
   is_active: boolean;
+  /** Visibilidad del catálogo público. */
+  catalog_access_mode?: "public" | "draft" | "private" | "password" | string;
   created_at: string;
   updated_at: string;
 }

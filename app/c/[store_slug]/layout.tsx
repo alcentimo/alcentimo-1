@@ -22,6 +22,15 @@ import { getOpenAiApiKey } from "@/lib/env/server";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { getStorefrontSupportBranding } from "@/lib/catalog/get-storefront-support-branding";
 import { resolveStorefrontAssistantAvatar } from "@/lib/catalog/resolve-storefront-assistant-avatar";
+import { resolveCatalogAccess } from "@/lib/catalog-access/resolve";
+import {
+  CATALOG_ACCESS_MODE_LABELS,
+  isRestrictedCatalogAccessMode,
+  normalizeCatalogAccessSettings,
+} from "@/lib/catalog-access/types";
+import { CatalogAccessGate } from "@/components/catalog-transactional/CatalogAccessGate";
+import { CatalogAccessPreviewBanner } from "@/components/catalog-transactional/CatalogAccessPreviewBanner";
+import { notFound } from "next/navigation";
 
 interface TransactionalCatalogLayoutProps {
   children: ReactNode;
@@ -76,6 +85,10 @@ export async function generateMetadata({
     });
   }
 
+  const settings = await getPublicStoreSettingsConfig(store.id);
+  const accessMode = normalizeCatalogAccessSettings(settings.catalogAccess).mode;
+  const restricted = isRestrictedCatalogAccessMode(accessMode);
+
   return {
     metadataBase: new URL(origin),
     title: `${storeName} — Pedidos`,
@@ -83,6 +96,9 @@ export async function generateMetadata({
     alternates: {
       canonical: canonicalUrl,
     },
+    robots: restricted
+      ? { index: false, follow: false, googleBot: { index: false, follow: false } }
+      : undefined,
     manifest: manifestAbsoluteUrl,
     applicationName: storeName,
     themeColor: theme.theme_color,
@@ -108,13 +124,26 @@ export default async function TransactionalCatalogLayout({
     customerSession.isCustomer,
   );
 
+  if (!store) {
+    notFound();
+  }
+
+  const access = await resolveCatalogAccess({
+    storeId: store.id,
+    storeName: store.name,
+  });
+
+  if (access.status === "unavailable") {
+    notFound();
+  }
+
   if (cartAuth.storeId) {
     void recordCatalogVisit(storeSlug, cartAuth.storeId, cartAuth.userId);
   }
 
   // Preferir logo_url para UI (puede ser GIF animado). Los iconos PWA quedan para el manifest.
   const storeLogoUrl =
-    store?.logo_url ?? store?.pwa_icon_192_url ?? store?.pwa_icon_512_url ?? null;
+    store.logo_url ?? store.pwa_icon_192_url ?? store.pwa_icon_512_url ?? null;
   const origin = await getRequestOrigin();
   const manifestAbsoluteUrl = getStoreCatalogManifestAbsoluteUrl(
     storeSlug,
@@ -122,22 +151,29 @@ export default async function TransactionalCatalogLayout({
   );
   const themeContext = await getPublicCatalogThemeContext(storeSlug);
   const assistantEnabled = Boolean(getOpenAiApiKey());
-  const storeSettings = cartAuth.storeId
-    ? await getPublicStoreSettingsConfig(cartAuth.storeId)
-    : null;
+  const storeSettings = await getPublicStoreSettingsConfig(store.id);
   const wholesaleEnabled =
-    storeSettings?.catalogCurrency.wholesaleEnabled ?? false;
-  const whatsappPhone = storeSettings?.contact.whatsappPhone?.trim() || null;
+    storeSettings.catalogCurrency.wholesaleEnabled ?? false;
+  const whatsappPhone = storeSettings.contact.whatsappPhone?.trim() || null;
   const whatsappChatWelcome =
-    storeSettings?.contact.whatsappChatWelcome?.trim() || null;
-  const supportBranding = store
-    ? await getStorefrontSupportBranding(store)
-    : null;
+    storeSettings.contact.whatsappChatWelcome?.trim() || null;
+  const supportBranding = await getStorefrontSupportBranding(store);
   const storeLogoFallback = supportBranding?.avatarUrl ?? storeLogoUrl;
   const assistantAvatar = resolveStorefrontAssistantAvatar(
-    storeSettings?.catalogDesign.assistantAvatar,
+    storeSettings.catalogDesign.assistantAvatar,
     storeLogoFallback,
   );
+
+  const lockedContent =
+    access.status === "locked" ? (
+      <CatalogAccessGate
+        storeSlug={storeSlug}
+        storeName={access.storeName}
+        reason={access.reason}
+      />
+    ) : (
+      children
+    );
 
   return (
     <div
@@ -152,6 +188,11 @@ export default async function TransactionalCatalogLayout({
         manifestAbsoluteUrl={manifestAbsoluteUrl}
         storeSlug={storeSlug}
       />
+      {access.status === "open" && access.preview ? (
+        <CatalogAccessPreviewBanner
+          modeLabel={CATALOG_ACCESS_MODE_LABELS[access.mode]}
+        />
+      ) : null}
       <CartProvider
         storeSlug={storeSlug}
         storeId={cartAuth.storeId}
@@ -172,13 +213,13 @@ export default async function TransactionalCatalogLayout({
           >
             <CatalogAppShell
               storeSlug={storeSlug}
-              storeName={store?.name ?? ""}
+              storeName={store.name ?? ""}
               storeLogoUrl={storeLogoUrl}
-              storeDescription={store?.description ?? null}
-              locationHours={storeSettings?.locationHours ?? null}
-              storeRubro={store?.rubro_tienda}
-              enablePcBuilder={store?.enable_pc_builder}
-              assistantEnabled={assistantEnabled}
+              storeDescription={store.description ?? null}
+              locationHours={storeSettings.locationHours ?? null}
+              storeRubro={store.rubro_tienda}
+              enablePcBuilder={store.enable_pc_builder}
+              assistantEnabled={assistantEnabled && access.status === "open"}
               whatsappPhone={whatsappPhone}
               whatsappChatWelcome={whatsappChatWelcome}
               supportAvatarUrl={assistantAvatar.url}
@@ -187,7 +228,7 @@ export default async function TransactionalCatalogLayout({
               supportMerchantName={supportBranding?.merchantName ?? null}
               customerAccountMode="hibrido"
             >
-              {children}
+              {lockedContent}
             </CatalogAppShell>
           </CustomerSessionProvider>
         </PromotionProvider>

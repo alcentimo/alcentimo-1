@@ -7,6 +7,7 @@ import {
   Coins,
   CreditCard,
   Globe,
+  Lock,
   MapPin,
   Palette,
   FolderTree,
@@ -22,6 +23,7 @@ import { CategoriesTab } from "@/components/dashboard/settings/CategoriesTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
 import { WholesaleTab } from "@/components/dashboard/settings/WholesaleTab";
 import { DropshipPricingTab } from "@/components/dashboard/settings/DropshipPricingTab";
+import { CatalogAccessTab } from "@/components/dashboard/settings/CatalogAccessTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
 import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
@@ -47,6 +49,7 @@ type SettingsTabId =
   | "currency"
   | "wholesale"
   | "dropship"
+  | "catalog-access"
   | "location"
   | "shipping"
   | "payments"
@@ -61,6 +64,7 @@ const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
   "currency",
   "wholesale",
   "dropship",
+  "catalog-access",
   "location",
   "shipping",
   "payments",
@@ -108,6 +112,7 @@ const SETTINGS_NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { id: "domains", label: "Dominio", icon: Globe },
       { id: "design", label: "Diseño del catálogo", icon: Palette },
+      { id: "catalog-access", label: "Acceso al catálogo", icon: Lock },
     ],
   },
   {
@@ -256,6 +261,12 @@ export function SettingsPanel({
                   }
                 : null
             }
+          />
+        );
+      case "catalog-access":
+        return (
+          <CatalogAccessTab
+            initialMode={initialConfig.catalogAccess?.mode ?? "public"}
           />
         );
       case "promotions":

@@ -118,6 +118,8 @@ export interface StoreSettingsConfig {
   catalogCurrency: CatalogCurrencySettings;
   /** Margen automático / sugerido sobre costo de proveedores (dropshipping). */
   dropshipPricing: DropshipPricingSettings;
+  /** Visibilidad / protección del catálogo público. */
+  catalogAccess: CatalogAccessSettings;
   messageTemplates: MessageTemplatesSettings;
   interfacePreferences: InterfacePreferencesSettings;
   checkout: CheckoutSettings;
@@ -264,6 +266,13 @@ export interface DropshipPricingSettings {
   marginValue: number;
   /** Recalcula el precio de venta al cambiar el costo del mayorista. */
   autoApplyOnCostChange: boolean;
+}
+
+/** Visibilidad del catálogo público (no incluye el hash de contraseña). */
+export type CatalogAccessMode = "public" | "draft" | "private" | "password";
+
+export interface CatalogAccessSettings {
+  mode: CatalogAccessMode;
 }
 
 export type OrderMessageTemplateKey = "nuevo" | "confirmado" | "enviado";
