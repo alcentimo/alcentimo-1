@@ -12,6 +12,7 @@ import {
   ROPA_MODA_SHOE_SIZE_US_PRESETS,
   ROPA_MODA_SIZE_PRESETS,
   createDefaultFashionMatrix,
+  fashionMatrixHasDetailedStock,
   fashionMatrixToVariants,
   fashionVariantKey,
   filterSizesForFashionKind,
@@ -111,14 +112,12 @@ function StockInput({
   value,
   onChange,
   disabled,
-  required,
   ariaLabel,
   className,
 }: {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-  required?: boolean;
   ariaLabel: string;
   className?: string;
 }) {
@@ -128,14 +127,14 @@ function StockInput({
       inputMode="numeric"
       min={0}
       step={1}
-      required={required}
       value={value}
+      placeholder="—"
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
       aria-label={ariaLabel}
       className={
         className ??
-        "min-h-10 w-full min-w-[3.25rem] rounded-md border border-zinc-200 bg-white px-2 py-2 text-sm tabular-nums outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600/20 dark:border-zinc-700 dark:bg-zinc-950 sm:min-h-0 sm:w-20 sm:py-1.5"
+        "min-h-10 w-full min-w-[3.25rem] rounded-md border border-zinc-200 bg-white px-2 py-2 text-sm tabular-nums outline-none placeholder:text-zinc-300 focus:border-teal-600 focus:ring-1 focus:ring-teal-600/20 dark:border-zinc-700 dark:bg-zinc-950 dark:placeholder:text-zinc-600 sm:min-h-0 sm:w-20 sm:py-1.5"
       }
     />
   );
@@ -143,7 +142,7 @@ function StockInput({
 
 function kindDescription(kind: FashionProductKind): string {
   if (kind === "calzado") {
-    return "Numeraciones EUR o US y colores. Cada combinación tiene su propio stock.";
+    return "Numeraciones EUR o US y colores. El stock por combinación es opcional.";
   }
   if (kind === "ambos") {
     return "Ropa (S–XL), pantalones/jeans (28–36) y calzado (EUR o US) en la misma matriz.";
@@ -190,6 +189,7 @@ export function FashionVariantsEditor({
   const showShoeSizes = productKind === "calzado" || productKind === "ambos";
 
   const combinationCount = matrix.sizes.length * matrix.colors.length;
+  const hasDetailedStock = fashionMatrixHasDetailedStock(matrix);
 
   function commit(next: FashionMatrixState) {
     const stocks = { ...next.stocks };
@@ -201,7 +201,7 @@ export function FashionVariantsEditor({
       for (const color of next.colors) {
         const key = fashionVariantKey(size, color);
         activeKeys.add(key);
-        if (stocks[key] == null) stocks[key] = "0";
+        if (stocks[key] == null) stocks[key] = "";
         if (priceExtras[key] == null) priceExtras[key] = "0";
       }
     }
@@ -708,10 +708,9 @@ export function FashionVariantsEditor({
                           {color}
                         </span>
                         <StockInput
-                          value={matrix.stocks[key] ?? "0"}
+                          value={matrix.stocks[key] ?? ""}
                           onChange={(value) => setStock(size, color, value)}
                           disabled={disabled}
-                          required={required}
                           ariaLabel={`Stock ${size} ${color}`}
                         />
                       </label>
@@ -763,10 +762,9 @@ export function FashionVariantsEditor({
                       return (
                         <td key={key} className="px-2 py-1.5">
                           <StockInput
-                            value={matrix.stocks[key] ?? "0"}
+                            value={matrix.stocks[key] ?? ""}
                             onChange={(value) => setStock(size, color, value)}
                             disabled={disabled}
-                            required={required}
                             ariaLabel={`Stock ${size} ${color}`}
                           />
                         </td>
@@ -778,10 +776,18 @@ export function FashionVariantsEditor({
             </table>
           </div>
 
-          <p className="border-t border-zinc-100 px-3 py-2 text-[11px] leading-relaxed text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-            Indica cuántas unidades hay de cada talla y color. Usa 0 si esa
-            combinación no está disponible.
-          </p>
+          {!hasDetailedStock ? (
+            <p className="border-t border-teal-100 bg-teal-50/70 px-3 py-2 text-[11px] leading-relaxed text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-200">
+              No has agregado stock detallado. El producto se mostrará disponible
+              para tus clientes.
+            </p>
+          ) : (
+            <p className="border-t border-zinc-100 px-3 py-2 text-[11px] leading-relaxed text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+              Deja vacío para stock abierto. Usa 0 si esa combinación no está
+              disponible. Si escribes un número, se controlará el inventario de
+              esa variante.
+            </p>
+          )}
         </div>
       ) : null}
     </div>

@@ -1,4 +1,5 @@
 import type { CatalogListItem } from "@/lib/database.types";
+import { isOpenStockQuantity } from "@/lib/inventory/open-stock";
 
 export const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 export const CRITICAL_STOCK_THRESHOLD = 3;
@@ -38,6 +39,8 @@ export function getLowStockThreshold(product: CatalogListItem): number {
 export function isOutOfStock(
   product: Pick<CatalogListItem, "available_stock" | "stock_quantity">,
 ): boolean {
+  if (isOpenStockQuantity(product.available_stock)) return false;
+  if (isOpenStockQuantity(product.stock_quantity)) return false;
   const stock = getProductStockQuantity(product);
   return stock <= 0 || product.available_stock <= 0;
 }
@@ -46,10 +49,12 @@ export function isCriticalStock(
   product: Pick<CatalogListItem, "stock_quantity">,
 ): boolean {
   const stock = getProductStockQuantity(product);
+  if (isOpenStockQuantity(stock)) return false;
   return stock > 0 && stock <= CRITICAL_STOCK_THRESHOLD;
 }
 
 export function isLowStock(product: CatalogListItem): boolean {
+  if (isOpenStockQuantity(product.available_stock)) return false;
   return (
     product.available_stock > 0 &&
     product.available_stock <= getLowStockThreshold(product)
@@ -59,7 +64,9 @@ export function isLowStock(product: CatalogListItem): boolean {
 export function matchesCriticalStockFilter(
   product: Pick<CatalogListItem, "stock_quantity">,
 ): boolean {
-  return getProductStockQuantity(product) <= CRITICAL_STOCK_THRESHOLD;
+  const stock = getProductStockQuantity(product);
+  if (isOpenStockQuantity(stock)) return false;
+  return stock <= CRITICAL_STOCK_THRESHOLD;
 }
 
 export function countCriticalStockProducts(products: CatalogListItem[]): number {

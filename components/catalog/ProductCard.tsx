@@ -15,6 +15,7 @@ import {
 } from "@/components/catalog/WholesalePriceBadge";
 import { cartItemKey, sumModifiersExtraUsd, type CartModifierSelection } from "@/lib/catalog/cart-types";
 import { getLowStockThreshold } from "@/lib/inventory/stock-status";
+import { shouldShowExactStockQuantity, resolveCartStockCap } from "@/lib/inventory/open-stock";
 import {
   getCatalogVariantOptions,
   hasMultipleVariants,
@@ -105,6 +106,10 @@ function StockBadge({
         Agotado
       </span>
     );
+  }
+
+  if (!shouldShowExactStockQuantity(availableStock)) {
+    return null;
   }
 
   if (availableStock <= threshold) {
@@ -207,7 +212,10 @@ export const ProductCard = memo(function ProductCard({
     : product.available_stock;
   const showStockOverlay = showStock && outOfStock;
   const showStockBadge =
-    showStock && !outOfStock && displayStock > 0 && displayStock <= threshold;
+    showStock &&
+    !outOfStock &&
+    shouldShowExactStockQuantity(displayStock) &&
+    displayStock <= threshold;
   const activeStock = selectedVariant?.availableStock ?? 0;
   const contextCartQuantity =
     cartContext?.items.find(
@@ -243,7 +251,10 @@ export const ProductCard = memo(function ProductCard({
   const displayPriceUsd = activePricing?.unitPriceUsd ?? retailDisplayUsd;
   const wholesaleApplied = activePricing?.wholesaleApplied ?? false;
   const inCart = effectiveCartQuantity > 0;
-  const remaining = Math.max(0, activeStock - effectiveCartQuantity);
+  const remaining = Math.max(
+    0,
+    resolveCartStockCap(activeStock) - effectiveCartQuantity,
+  );
   const canAddMore =
     !outOfStock && remaining > 0 && onAddToCart && selectedVariant;
   const showAddButton =

@@ -1,5 +1,10 @@
 import type { VariantFormInput } from "@/lib/products/variants";
 import {
+  OPEN_STOCK_QUANTITY,
+  isOpenStockVariant,
+  withOpenInventoryAttributes,
+} from "@/lib/inventory/open-stock";
+import {
   ROPA_MODA_ATTR_COLOR,
   ROPA_MODA_ATTR_LONGITUD_CM,
   ROPA_MODA_ATTR_TALLA,
@@ -102,7 +107,8 @@ function buildMatrix(
     }
     for (const color of colors) {
       const key = fashionVariantKey(size, color);
-      stocks[key] = "0";
+      // Vacío = stock abierto (disponible sin inventario detallado).
+      stocks[key] = "";
       priceExtras[key] = "0";
     }
   }
@@ -160,7 +166,7 @@ export function variantsToFashionMatrix(
     }
 
     const key = fashionVariantKey(attrs.talla, attrs.color);
-    stocks[key] = variant.stock || "0";
+    stocks[key] = isOpenStockVariant(variant) ? "" : variant.stock || "0";
     priceExtras[key] = variant.priceExtraUsd || "0";
     ids[key] = variant.id;
 
@@ -195,31 +201,56 @@ export function fashionMatrixToVariants(
     for (const color of matrix.colors) {
       const key = fashionVariantKey(size, color);
       const stockRaw = matrix.stocks[key];
-      // Celda vacía = combinación no ofrecida
-      if (stockRaw == null || String(stockRaw).trim() === "") continue;
-
-      const stock = Math.max(0, parseInt(String(stockRaw), 10) || 0);
+      const trimmed =
+        stockRaw == null ? "" : String(stockRaw).trim();
       const priceExtra = matrix.priceExtras[key] ?? "0";
 
-      const attributes: Record<string, string> = {
+      const baseAttributes: Record<string, string> = {
         [ROPA_MODA_ATTR_TALLA]: size,
         [ROPA_MODA_ATTR_COLOR]: color,
       };
       if (lengthCm) {
-        attributes[ROPA_MODA_ATTR_LONGITUD_CM] = lengthCm;
+        baseAttributes[ROPA_MODA_ATTR_LONGITUD_CM] = lengthCm;
       }
+
+      // Celda vacía = combinación ofrecida con stock abierto (sin detalle).
+      if (trimmed === "") {
+        rows.push({
+          id: matrix.ids[key],
+          name: formatFashionVariantName(size, color),
+          priceExtraUsd: priceExtra,
+          stock: String(OPEN_STOCK_QUANTITY),
+          attributes: withOpenInventoryAttributes(baseAttributes),
+        });
+        continue;
+      }
+
+      const stock = Math.max(0, parseInt(trimmed, 10) || 0);
 
       rows.push({
         id: matrix.ids[key],
         name: formatFashionVariantName(size, color),
         priceExtraUsd: priceExtra,
         stock: String(stock),
-        attributes,
+        attributes: baseAttributes,
       });
     }
   }
 
   return rows;
+}
+
+/** True si el dueño escribió al menos una cantidad (incluye 0). */
+export function fashionMatrixHasDetailedStock(
+  matrix: FashionMatrixState,
+): boolean {
+  for (const size of matrix.sizes) {
+    for (const color of matrix.colors) {
+      const raw = matrix.stocks[fashionVariantKey(size, color)];
+      if (raw != null && String(raw).trim() !== "") return true;
+    }
+  }
+  return false;
 }
 
 /** Conserva cm solo de tallas de calzado activas (sin re-normalizar al editar). */

@@ -31,6 +31,10 @@ import {
   isProductOutOfStock,
 } from "@/lib/products/variants";
 import { getLowStockThreshold } from "@/lib/inventory/stock-status";
+import {
+  resolveCartStockCap,
+  shouldShowExactStockQuantity,
+} from "@/lib/inventory/open-stock";
 import { formatApproxBs, formatUsd } from "@/lib/format";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import {
@@ -213,7 +217,8 @@ export function CatalogProductDetailPanel({
   const displayStock = showVariantSelector
     ? (selectedVariant?.availableStock ?? 0)
     : product.available_stock;
-  const remaining = Math.max(0, displayStock - contextCartQuantity);
+  const stockCap = resolveCartStockCap(displayStock);
+  const remaining = Math.max(0, stockCap - contextCartQuantity);
   const canAddMore =
     !outOfStock && remaining > 0 && onAddToCart && selectedVariant;
   const inCart = contextCartQuantity > 0;
@@ -400,7 +405,9 @@ export function CatalogProductDetailPanel({
               </div>
             ) : null}
 
-            {!outOfStock && displayStock <= threshold ? (
+            {!outOfStock &&
+            shouldShowExactStockQuantity(displayStock) &&
+            displayStock <= threshold ? (
               <p className="product-detail-stock-hint">
                 Quedan {displayStock} disponibles
               </p>

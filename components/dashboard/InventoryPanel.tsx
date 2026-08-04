@@ -25,6 +25,7 @@ import {
   matchesCriticalStockFilter,
   type CatalogStockFilter,
 } from "@/lib/inventory/stock-status";
+import { isOpenStockQuantity } from "@/lib/inventory/open-stock";
 import { deleteProduct, fetchInventoryProducts, adjustProductStock, reorderProducts } from "@/lib/products/actions";
 import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
 import { hasMultipleVariants } from "@/lib/products/variants";
@@ -171,6 +172,10 @@ const StockBadge = memo(function StockBadge({
 }) {
   if (stockQuantity <= 0) {
     return <span className="stock-badge stock-badge-out">Agotado</span>;
+  }
+
+  if (isOpenStockQuantity(stockQuantity)) {
+    return <span className="stock-badge stock-badge-ok">Disponible</span>;
   }
 
   if (stockQuantity <= CRITICAL_STOCK_THRESHOLD) {
@@ -341,7 +346,7 @@ const InventoryStockControls = memo(function InventoryStockControls({
                   "text-zinc-900 dark:text-zinc-50",
               )}
             >
-              {stockQuantity}
+              {isOpenStockQuantity(stockQuantity) ? "—" : stockQuantity}
             </span>
             <StockBadge stockQuantity={stockQuantity} />
           </div>

@@ -31,6 +31,7 @@ import {
   syncCustomerCart,
 } from "@/lib/customers/cart-actions";
 import { createClient } from "@/lib/supabase/client";
+import { resolveCartStockCap } from "@/lib/inventory/open-stock";
 
 interface CartProviderProps {
   storeSlug: string;
@@ -324,8 +325,7 @@ export function CartProvider({
               item.variantId === variant.id,
           )
           .reduce((sum, item) => sum + item.quantity, 0);
-        const stockCap = Math.max(
-          0,
+        const stockCap = resolveCartStockCap(
           existing?.availableStock ?? variant.availableStock,
         );
         const remainingForVariant = Math.max(0, stockCap - qtyForVariant);
@@ -344,7 +344,7 @@ export function CartProvider({
           );
         }
 
-        if (remainingForVariant <= 0 || variant.availableStock <= 0) {
+        if (remainingForVariant <= 0 || stockCap <= 0) {
           return current;
         }
 
@@ -411,7 +411,9 @@ export function CartProvider({
                   ) !== key,
               )
               .reduce((sum, row) => sum + row.quantity, 0);
-            const stockCap = Math.max(0, Number(item.availableStock) || 0);
+            const stockCap = resolveCartStockCap(
+              Number(item.availableStock) || 0,
+            );
             const maxForLine = Math.max(0, stockCap - otherQty);
 
             // Cantidad 0 o menos → eliminar línea.
