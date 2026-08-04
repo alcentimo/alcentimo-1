@@ -127,10 +127,12 @@ export function DropshipPricingTab({
   }
 
   function handleImport(supplierProductIdToImport: string) {
+    if (importingId) return;
     setError(null);
     setMessage(null);
     setImportingId(supplierProductIdToImport);
-    startTransition(async () => {
+
+    void (async () => {
       try {
         const result = await importSupplierProductToStoreCatalog(
           supplierProductIdToImport,
@@ -144,7 +146,7 @@ export function DropshipPricingTab({
         }
         setMessage(
           result.productName && result.retailUsd != null
-            ? `"${result.productName}" agregado a tu catálogo a ${formatUsd(result.retailUsd)}.`
+            ? `"${result.productName}" agregado a tu catálogo a ${formatUsd(result.retailUsd)} (stock sincronizado con el mayorista).`
             : "Producto agregado a tu catálogo.",
         );
         const [listed, catalog] = await Promise.all([
@@ -165,7 +167,7 @@ export function DropshipPricingTab({
       } finally {
         setImportingId(null);
       }
-    });
+    })();
   }
 
   function handleLink() {
@@ -337,7 +339,7 @@ export function DropshipPricingTab({
                   const canImport =
                     settings.enabled &&
                     !product.alreadyImported &&
-                    !pending;
+                    importingId === null;
 
                   return (
                     <li

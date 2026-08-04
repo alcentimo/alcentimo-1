@@ -32,7 +32,15 @@ export async function adjustSupplierProductStock(
   });
 
   if (error) {
-    return { ok: false, error: error.message };
+    const msg = error.message || "";
+    if (/adjust_supplier_product_stock|Could not find the function|schema cache/i.test(msg)) {
+      return {
+        ok: false,
+        error:
+          "Falta aplicar la migración 098 en Supabase (adjust_supplier_product_stock).",
+      };
+    }
+    return { ok: false, error: msg };
   }
 
   const result = data as AdjustStockRpc | null;
