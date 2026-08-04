@@ -18,6 +18,7 @@ import { OrderDetailSlideOver } from "@/components/dashboard/orders/OrderDetailS
 import { OrderWhatsAppButton } from "@/components/dashboard/orders/OrderWhatsAppButton";
 import { OrderWhatsAppComposer } from "@/components/dashboard/orders/OrderWhatsAppComposer";
 import { OrdersKpiRow } from "@/components/dashboard/orders/OrdersKpiRow";
+import { OrderCustomerKindBadge } from "@/components/dashboard/orders/OrderCustomerKindBadge";
 import { Button } from "@/components/ui/button";
 import { fetchStoreOrdersPage } from "@/lib/orders/actions";
 import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
@@ -121,9 +122,12 @@ const OrderRow = memo(function OrderRow({
       onClick={() => onSelect(order.id)}
     >
       <td className="orders-ops-cell">
-        <p className="font-medium text-zinc-900 dark:text-zinc-50">
-          {order.customer_name}
-        </p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <p className="font-medium text-zinc-900 dark:text-zinc-50">
+            {order.customer_name}
+          </p>
+          <OrderCustomerKindBadge order={order} />
+        </div>
         <p className="mt-0.5 line-clamp-1 text-xs text-zinc-500">
           {summarizeItems(order)}
         </p>
@@ -222,6 +226,7 @@ const OrderMobileCard = memo(function OrderMobileCard({
             <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
               {order.customer_name}
             </p>
+            <OrderCustomerKindBadge order={order} />
             <OrderStatusSelect
               orderId={order.id}
               estado={order.estado}

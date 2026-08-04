@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { OrderStatusSelect } from "@/components/dashboard/orders/OrderStatusSelect";
 import { OrderShippingDetails } from "@/components/dashboard/orders/OrderShippingDetails";
+import { OrderCustomerKindBadge } from "@/components/dashboard/orders/OrderCustomerKindBadge";
 import type { OrderEstado } from "@/lib/orders/order-status";
 
 function formatOrderDate(value: string): string {
@@ -48,7 +49,10 @@ export function OrderDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange} containerClassName="max-w-2xl">
       <DialogContent className="relative max-h-[90vh] overflow-y-auto" onClose={() => onOpenChange(false)}>
         <DialogHeader>
-          <DialogTitle>Pedido de {order.customer_name}</DialogTitle>
+          <DialogTitle className="flex flex-wrap items-center gap-2">
+            <span>Pedido de {order.customer_name}</span>
+            <OrderCustomerKindBadge order={order} />
+          </DialogTitle>
           <DialogDescription>
             {formatOrderDate(order.created_at)} · {formatUsd(order.total_usd)}
           </DialogDescription>
@@ -59,9 +63,12 @@ export function OrderDetailDialog({
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
               Cliente
             </p>
-            <p className="mt-2 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-              {order.customer_name}
-            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                {order.customer_name}
+              </p>
+              <OrderCustomerKindBadge order={order} />
+            </div>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
               {order.customer_phone ?? "Sin teléfono registrado"}
             </p>

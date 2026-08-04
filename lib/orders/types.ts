@@ -34,6 +34,8 @@ export interface CatalogOrder {
   store_id: string;
   customer_name: string;
   customer_phone: string | null;
+  /** Si hay user id, el cliente compró (o quedó vinculado) con cuenta en la tienda. */
+  customer_user_id?: string | null;
   items: OrderLineItem[];
   total_usd: number;
   payment_proof_url: string | null;

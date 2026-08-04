@@ -51,6 +51,7 @@ function mapOrderRows(
       store_id: row.store_id as string,
       customer_name: row.customer_name as string,
       customer_phone: (row.customer_phone as string | null) ?? null,
+      customer_user_id: (row.customer_user_id as string | null) ?? null,
       items: parseOrderItems(row.items),
       total_usd: Number(row.total_usd) || 0,
       payment_proof_url: row.payment_proof_url as string | null,
@@ -92,7 +93,7 @@ export async function getStoreOrders(
   let query = supabase
     .from("orders")
     .select(
-      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, shipping_method, shipping_branch_code, shipping_branch_name, shipping_branch_address, delivery_address, tracking_number, store_locations(name)",
+      "id, store_id, customer_name, customer_phone, customer_user_id, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, shipping_method, shipping_branch_code, shipping_branch_name, shipping_branch_address, delivery_address, tracking_number, store_locations(name)",
       { count: "exact" },
     )
     .eq("store_id", storeId);
@@ -138,7 +139,7 @@ export async function getStoreOrderById(
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, store_id, customer_name, customer_phone, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, shipping_method, shipping_branch_code, shipping_branch_name, shipping_branch_address, delivery_address, tracking_number, store_locations(name)",
+      "id, store_id, customer_name, customer_phone, customer_user_id, items, total_usd, payment_proof_url, estado, created_at, location_id, fulfillment_type, shipping_method, shipping_branch_code, shipping_branch_name, shipping_branch_address, delivery_address, tracking_number, store_locations(name)",
     )
     .eq("store_id", storeId)
     .eq("id", normalizedOrderId)

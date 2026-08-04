@@ -10,6 +10,7 @@ import { OrderStatusSelect } from "@/components/dashboard/orders/OrderStatusSele
 import { OrderStatusWhatsAppPrompt } from "@/components/dashboard/orders/OrderStatusWhatsAppPrompt";
 import { OrderShippingDetails } from "@/components/dashboard/orders/OrderShippingDetails";
 import { OrderWhatsAppButton } from "@/components/dashboard/orders/OrderWhatsAppButton";
+import { OrderCustomerKindBadge } from "@/components/dashboard/orders/OrderCustomerKindBadge";
 
 function formatOrderDate(value: string): string {
   return new Intl.DateTimeFormat("es", {
@@ -81,9 +82,10 @@ export function OrderDetailSlideOver({
             </p>
             <h2
               id="order-slideover-title"
-              className="mt-1 truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+              className="mt-1 flex flex-wrap items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
             >
-              {order.customer_name}
+              <span className="truncate">{order.customer_name}</span>
+              <OrderCustomerKindBadge order={order} />
             </h2>
             <p className="mt-1 text-sm text-zinc-500">
               {formatOrderDate(order.created_at)} · {formatUsd(order.total_usd)}
@@ -124,9 +126,12 @@ export function OrderDetailSlideOver({
 
           <section className="orders-slideover-section">
             <p className="orders-slideover-label">Cliente</p>
-            <p className="mt-2 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-              {order.customer_name}
-            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                {order.customer_name}
+              </p>
+              <OrderCustomerKindBadge order={order} />
+            </div>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
               {order.customer_phone ?? "Sin teléfono registrado"}
             </p>
