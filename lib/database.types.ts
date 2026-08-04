@@ -156,6 +156,8 @@ export interface Store {
   is_active: boolean;
   /** Visibilidad del catálogo público. */
   catalog_access_mode?: "public" | "draft" | "private" | "password" | string;
+  /** Marca permanente: la tienda ya reclamó la prueba Pro. */
+  pro_trial_claimed_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -657,9 +659,19 @@ export type StoreInsert = {
   pwa_icon_512_url?: string | null;
   country?: string | null;
   is_active?: boolean;
+  pro_trial_claimed_at?: string | null;
   created_at?: string;
   updated_at?: string;
 };
+
+export interface ProTrialContactClaim {
+  id: string;
+  store_id: string;
+  owner_user_id: string;
+  contact_email_normalized: string | null;
+  contact_phone_normalized: string | null;
+  claimed_at: string;
+}
 
 export interface StoreSettings {
   id: string;
@@ -849,6 +861,15 @@ export interface Database {
         Row: Store;
         Insert: StoreInsert;
         Update: Partial<Store>;
+        Relationships: [];
+      };
+      pro_trial_contact_claims: {
+        Row: ProTrialContactClaim;
+        Insert: Omit<ProTrialContactClaim, "id" | "claimed_at"> & {
+          id?: string;
+          claimed_at?: string;
+        };
+        Update: Partial<ProTrialContactClaim>;
         Relationships: [];
       };
       store_members: {

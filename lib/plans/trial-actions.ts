@@ -17,6 +17,10 @@ import {
   isValidProTrialClaimCode,
   PRO_TRIAL_CLAIM_CODE,
 } from "@/lib/plans/trial";
+import {
+  assertProTrialContactAvailable,
+  recordProTrialClaimArtifacts,
+} from "@/lib/plans/pro-trial-abuse";
 
 export type StartProTrialResult =
   | { ok: true; endsAt: string }
@@ -33,7 +37,10 @@ export type TryActivateProTrialResult =
         | "already_used"
         | "setup_incomplete"
         | "claim_required"
-        | "no_store";
+        | "no_store"
+        | "store_already_claimed"
+        | "contact_blocked";
+      error?: string;
     }
   | { ok: false; error: string };
 
@@ -108,19 +115,24 @@ async function activateProTrialViaRpc(
 
 async function activateProTrialViaAdmin(
   userId: string,
+  storeId: string,
+  emailNormalized: string,
+  phoneNormalized: string,
 ): Promise<StartProTrialResult> {
   const admin = createAdminClient();
   const startedAt = new Date();
   const endsAt = new Date(startedAt);
   endsAt.setMonth(endsAt.getMonth() + 1);
+  const startedIso = startedAt.toISOString();
+  const endsIso = endsAt.toISOString();
 
   const { data, error } = await admin
     .from("profiles")
     .update({
       plan: "FREE",
       subscription_status: "none",
-      pro_trial_started_at: startedAt.toISOString(),
-      pro_trial_ends_at: endsAt.toISOString(),
+      pro_trial_started_at: startedIso,
+      pro_trial_ends_at: endsIso,
     })
     .eq("id", userId)
     .is("pro_trial_started_at", null)
@@ -138,6 +150,27 @@ async function activateProTrialViaAdmin(
     };
   }
 
+  const artifacts = await recordProTrialClaimArtifacts({
+    storeId,
+    ownerUserId: userId,
+    emailNormalized,
+    phoneNormalized,
+    claimedAtIso: startedIso,
+  });
+
+  if (!artifacts.ok) {
+    // Rollback best-effort del perfil si no pudimos registrar el anti-abuso.
+    await admin
+      .from("profiles")
+      .update({
+        pro_trial_started_at: null,
+        pro_trial_ends_at: null,
+      })
+      .eq("id", userId)
+      .eq("pro_trial_started_at", startedIso);
+    return { ok: false, error: artifacts.error };
+  }
+
   return { ok: true, endsAt: data.pro_trial_ends_at };
 }
 
@@ -145,6 +178,9 @@ async function performProTrialActivation(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   claimCode: string,
+  storeId: string,
+  emailNormalized: string,
+  phoneNormalized: string,
 ): Promise<StartProTrialResult> {
   let activation = await activateProTrialViaRpc(supabase, userId, claimCode);
 
@@ -153,12 +189,26 @@ async function performProTrialActivation(
     (activation.error.includes("function") ||
       activation.error.includes("does not exist"))
   ) {
-    activation = await activateProTrialViaAdmin(userId);
+    activation = await activateProTrialViaAdmin(
+      userId,
+      storeId,
+      emailNormalized,
+      phoneNormalized,
+    );
   }
 
   if (!activation.ok) {
     return activation;
   }
+
+  // Si el RPC antiguo no escribió artifacts, completarlos (idempotente).
+  await recordProTrialClaimArtifacts({
+    storeId,
+    ownerUserId: userId,
+    emailNormalized,
+    phoneNormalized,
+    claimedAtIso: new Date().toISOString(),
+  });
 
   revalidateTrialPaths();
   return activation;
@@ -257,11 +307,36 @@ export async function tryActivateProTrialOnSetupComplete(options?: {
     return { ok: true, activated: false, reason: "claim_required" };
   }
 
+  const contactGuard = await assertProTrialContactAvailable({
+    storeId: store.id,
+    ownerEmail: auth.authUser.email,
+  });
+
+  if (!contactGuard.ok) {
+    if (contactGuard.reason === "store_already_claimed") {
+      return {
+        ok: true,
+        activated: false,
+        reason: "store_already_claimed",
+        error: contactGuard.error,
+      };
+    }
+    return {
+      ok: true,
+      activated: false,
+      reason: "contact_blocked",
+      error: contactGuard.error,
+    };
+  }
+
   const claimCode = (options?.claimCode ?? "").trim().toUpperCase();
   const activation = await performProTrialActivation(
     supabase,
     userId,
     claimCode,
+    store.id,
+    contactGuard.emailNormalized,
+    contactGuard.phoneNormalized,
   );
   if (!activation.ok) {
     return { ok: false, error: activation.error };
@@ -308,6 +383,23 @@ export async function startProTrial(claimCode?: string): Promise<StartProTrialRe
 
   if (result.reason === "already_used") {
     return { ok: false, error: "Ya usaste tu mes de prueba Pro." };
+  }
+
+  if (result.reason === "store_already_claimed") {
+    return {
+      ok: false,
+      error:
+        result.error ?? "Esta tienda ya reclamó la prueba gratis del Plan Pro.",
+    };
+  }
+
+  if (result.reason === "contact_blocked") {
+    return {
+      ok: false,
+      error:
+        result.error ??
+        "Este correo o teléfono ya se usó para reclamar la prueba Pro en otra tienda.",
+    };
   }
 
   if (result.reason === "not_eligible") {
