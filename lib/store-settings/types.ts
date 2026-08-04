@@ -116,6 +116,8 @@ export interface StoreSettingsConfig {
   locationHours: LocationHoursSettings;
   catalogDesign: CatalogDesignSettings;
   catalogCurrency: CatalogCurrencySettings;
+  /** Margen automático / sugerido sobre costo de proveedores (dropshipping). */
+  dropshipPricing: DropshipPricingSettings;
   messageTemplates: MessageTemplatesSettings;
   interfacePreferences: InterfacePreferencesSettings;
   checkout: CheckoutSettings;
@@ -251,6 +253,17 @@ export interface CatalogCurrencySettings {
   showBsConversion: boolean;
   /** Activa precios mayoristas por producto en catálogo, carrito y checkout. */
   wholesaleEnabled: boolean;
+}
+
+/** Regla de margen del comerciante sobre el costo dropshipping. */
+export type DropshipMarginType = "percent" | "fixed";
+
+export interface DropshipPricingSettings {
+  enabled: boolean;
+  marginType: DropshipMarginType;
+  marginValue: number;
+  /** Recalcula el precio de venta al cambiar el costo del mayorista. */
+  autoApplyOnCostChange: boolean;
 }
 
 export type OrderMessageTemplateKey = "nuevo" | "confirmado" | "enviado";

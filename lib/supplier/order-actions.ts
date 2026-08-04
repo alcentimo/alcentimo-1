@@ -42,6 +42,9 @@ async function requireSupplierUser(): Promise<{
 }
 
 function mapItem(row: Record<string, unknown>): SupplierOrderItem {
+  const unitPrice = Number(row.unit_price_usd) || 0;
+  const unitCost =
+    row.unit_cost_usd != null ? Number(row.unit_cost_usd) || 0 : unitPrice;
   return {
     id: String(row.id),
     productId:
@@ -50,7 +53,10 @@ function mapItem(row: Record<string, unknown>): SupplierOrderItem {
         : null,
     productTitle: String(row.product_title ?? ""),
     quantity: Number(row.quantity) || 0,
-    unitPriceUsd: Number(row.unit_price_usd) || 0,
+    unitPriceUsd: unitPrice,
+    unitCostUsd: unitCost,
+    costLockedAt:
+      typeof row.cost_locked_at === "string" ? row.cost_locked_at : null,
     lineTotalUsd: Number(row.line_total_usd) || 0,
   };
 }
@@ -132,7 +138,7 @@ export async function listSupplierOrders(): Promise<
   const { data: itemRows, error: itemsError } = await admin
     .from("supplier_order_items")
     .select(
-      "id, order_id, product_id, product_title, quantity, unit_price_usd, line_total_usd",
+      "id, order_id, product_id, product_title, quantity, unit_price_usd, unit_cost_usd, cost_locked_at, line_total_usd",
     )
     .in("order_id", orderIds);
 
@@ -204,10 +210,13 @@ export async function createSupplierOrder(input: {
     product_title: string;
     quantity: number;
     unit_price_usd: number;
+    unit_cost_usd: number;
+    cost_locked_at: string;
     line_total_usd: number;
   }> = [];
 
   let totalUsd = 0;
+  const lockedAt = new Date().toISOString();
 
   for (const item of input.items) {
     const qty = Math.floor(Number(item.quantity));
@@ -227,6 +236,7 @@ export async function createSupplierOrder(input: {
       };
     }
 
+    // Congela el costo/precio vigente al emitir el pedido (protección dropshipping).
     const unit = Math.round((Number(product.base_price_usd) || 0) * 100) / 100;
     const lineTotal = Math.round(unit * qty * 100) / 100;
     totalUsd += lineTotal;
@@ -236,6 +246,8 @@ export async function createSupplierOrder(input: {
       product_title: String(product.title),
       quantity: qty,
       unit_price_usd: unit,
+      unit_cost_usd: unit,
+      cost_locked_at: lockedAt,
       line_total_usd: lineTotal,
     });
   }
@@ -280,7 +292,7 @@ export async function createSupplierOrder(input: {
       })),
     )
     .select(
-      "id, order_id, product_id, product_title, quantity, unit_price_usd, line_total_usd",
+      "id, order_id, product_id, product_title, quantity, unit_price_usd, unit_cost_usd, cost_locked_at, line_total_usd",
     );
 
   if (itemsError) {
@@ -363,7 +375,7 @@ export async function updateSupplierOrderDispatch(input: {
   const { data: itemRows, error: itemsError } = await admin
     .from("supplier_order_items")
     .select(
-      "id, order_id, product_id, product_title, quantity, unit_price_usd, line_total_usd",
+      "id, order_id, product_id, product_title, quantity, unit_price_usd, unit_cost_usd, cost_locked_at, line_total_usd",
     )
     .eq("order_id", orderId);
 

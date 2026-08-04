@@ -8,6 +8,7 @@ import {
   resolveSupplierAuthEmail,
 } from "@/lib/supplier/access";
 import { uploadSupplierProductImage } from "@/lib/supplier/storage";
+import { recordSupplierPriceChangeAndNotify } from "@/lib/dropship/price-change";
 
 export interface SupplierProduct {
   id: string;
@@ -148,8 +149,17 @@ export async function createSupplierProduct(
     return { error: error?.message ?? "No se pudo crear el producto." };
   }
 
+  const created = mapRow(data as Record<string, unknown>);
+  await admin.from("supplier_product_price_history").insert({
+    supplier_product_id: created.id,
+    old_price_usd: null,
+    new_price_usd: created.basePriceUsd,
+    changed_by: auth.user.id,
+    note: "Precio inicial al crear el producto.",
+  });
+
   revalidatePath("/proveedor/dashboard");
-  return { product: mapRow(data as Record<string, unknown>) };
+  return { product: created };
 }
 
 export async function updateSupplierProduct(
@@ -183,11 +193,25 @@ export async function updateSupplierProduct(
   }
 
   const admin = createAdminClient();
+
+  const { data: existing, error: existingError } = await admin
+    .from("supplier_products")
+    .select("id, base_price_usd, title")
+    .eq("id", id)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (existingError) return { error: existingError.message };
+  if (!existing) return { error: "Producto no encontrado." };
+
+  const previousPrice = Number(existing.base_price_usd) || 0;
+  const nextPrice = Math.round(basePriceUsd * 100) / 100;
+
   const patch: Record<string, unknown> = {
     title: title.slice(0, 180),
     description: description.slice(0, 4000),
     stock,
-    base_price_usd: Math.round(basePriceUsd * 100) / 100,
+    base_price_usd: nextPrice,
     updated_at: new Date().toISOString(),
   };
 
@@ -216,8 +240,20 @@ export async function updateSupplierProduct(
   if (error) return { error: error.message };
   if (!data) return { error: "Producto no encontrado." };
 
+  const updated = mapRow(data as Record<string, unknown>);
+
+  // Órdenes ya emitidas conservan su snapshot; solo historial + alertas a tiendas vinculadas.
+  await recordSupplierPriceChangeAndNotify({
+    admin,
+    supplierProductId: updated.id,
+    productTitle: updated.title,
+    oldPriceUsd: previousPrice,
+    newPriceUsd: updated.basePriceUsd,
+    changedBy: auth.user.id,
+  });
+
   revalidatePath("/proveedor/dashboard");
-  return { product: mapRow(data as Record<string, unknown>) };
+  return { product: updated };
 }
 
 export async function archiveSupplierProduct(

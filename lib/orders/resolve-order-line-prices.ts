@@ -109,7 +109,29 @@ export async function resolveOrderLinesWithPricing(
     });
   }
 
+  const { data: dropshipLinks } = await admin
+    .from("store_dropship_links")
+    .select("product_id, supplier_product_id, supplier_products(base_price_usd)")
+    .eq("store_id", storeId)
+    .in("product_id", productIds);
+
+  const dropshipCostByProduct = new Map<
+    string,
+    { supplierProductId: string; costUsd: number }
+  >();
+  for (const row of (dropshipLinks as Record<string, unknown>[] | null) ?? []) {
+    const productId = String(row.product_id ?? "");
+    const supplierProductId = String(row.supplier_product_id ?? "");
+    const supplier = row.supplier_products as { base_price_usd?: number } | null;
+    if (!productId || !supplierProductId) continue;
+    dropshipCostByProduct.set(productId, {
+      supplierProductId,
+      costUsd: Number(supplier?.base_price_usd) || 0,
+    });
+  }
+
   const resolved: OrderLineItem[] = [];
+  const costLockedAt = new Date().toISOString();
 
   for (const line of lines) {
     const product = productMap.get(line.productId);
@@ -178,7 +200,8 @@ export async function resolveOrderLinesWithPricing(
       };
     }
 
-    resolved.push({
+    const dropship = dropshipCostByProduct.get(line.productId);
+    const item: OrderLineItem = {
       product_id: line.productId,
       variant_id: inventoryVariantId,
       product_name: line.productName,
@@ -188,7 +211,15 @@ export async function resolveOrderLinesWithPricing(
       line_total_usd: pricing.unitPriceUsd * line.quantity,
       pricing_tier: pricing.wholesaleApplied ? "wholesale" : "retail",
       retail_unit_price_usd: pricing.retailUnitUsd,
-    });
+    };
+
+    if (dropship) {
+      item.unit_cost_usd = Math.round(dropship.costUsd * 100) / 100;
+      item.supplier_product_id = dropship.supplierProductId;
+      item.cost_locked_at = costLockedAt;
+    }
+
+    resolved.push(item);
   }
 
   return { items: resolved };

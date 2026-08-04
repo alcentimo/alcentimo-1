@@ -13,6 +13,7 @@ import {
   Settings2,
   Tag,
   Truck,
+  Workflow,
 } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
 import { DomainsTab } from "@/components/dashboard/settings/DomainsTab";
@@ -20,6 +21,7 @@ import { LocationsTab } from "@/components/dashboard/settings/LocationsTab";
 import { CategoriesTab } from "@/components/dashboard/settings/CategoriesTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
 import { WholesaleTab } from "@/components/dashboard/settings/WholesaleTab";
+import { DropshipPricingTab } from "@/components/dashboard/settings/DropshipPricingTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
 import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
@@ -44,6 +46,7 @@ type SettingsTabId =
   | "categories"
   | "currency"
   | "wholesale"
+  | "dropship"
   | "location"
   | "shipping"
   | "payments"
@@ -57,6 +60,7 @@ const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
   "categories",
   "currency",
   "wholesale",
+  "dropship",
   "location",
   "shipping",
   "payments",
@@ -88,6 +92,7 @@ const SETTINGS_NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { id: "location", label: "Horarios y contacto", icon: Clock },
       { id: "currency", label: "Moneda", icon: Coins },
       { id: "wholesale", label: "Venta al mayor", icon: Boxes },
+      { id: "dropship", label: "Dropshipping", icon: Workflow },
     ],
   },
   {
@@ -192,6 +197,16 @@ export function SettingsPanel({
         return (
           <WholesaleTab
             initialEnabled={initialConfig.catalogCurrency.wholesaleEnabled}
+          />
+        );
+      case "dropship":
+        return (
+          <DropshipPricingTab
+            initialSettings={initialConfig.dropshipPricing}
+            storeProducts={products.map((product) => ({
+              id: product.id,
+              name: product.name,
+            }))}
           />
         );
       case "location":

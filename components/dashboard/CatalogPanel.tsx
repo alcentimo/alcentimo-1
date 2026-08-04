@@ -14,6 +14,7 @@ import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import type { InventoryAiSuggestionRow } from "@/lib/inventory-ai/types";
 import { InventoryAiSuggestionCards } from "@/components/dashboard/InventoryAiSuggestionCards";
 import { ProTrialBanner } from "@/components/dashboard/plans/ProTrialBanner";
+import { SupplierPriceChangeAlertsBanner } from "@/components/dashboard/SupplierPriceChangeAlertsBanner";
 
 interface CatalogPanelProps {
   store: Store;
@@ -131,6 +132,8 @@ export function CatalogPanel({
           compact
         />
       ) : null}
+
+      <SupplierPriceChangeAlertsBanner />
 
       <InventoryAiSuggestionCards
         initialSuggestions={inventorySuggestions}

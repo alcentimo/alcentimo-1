@@ -18,6 +18,15 @@ export interface OrderLineItem {
   pricing_tier?: "retail" | "wholesale";
   /** Precio unitario de detal de referencia cuando aplica mayorista. */
   retail_unit_price_usd?: number;
+  /**
+   * Costo mayorista congelado al emitir el pedido (dropshipping).
+   * Las órdenes posteriores usan el costo vigente; las emitidas conservan este valor.
+   */
+  unit_cost_usd?: number;
+  /** SKU del proveedor vinculado al momento del pedido. */
+  supplier_product_id?: string | null;
+  /** Momento en que se congeló el costo. */
+  cost_locked_at?: string;
 }
 
 export interface CatalogOrder {

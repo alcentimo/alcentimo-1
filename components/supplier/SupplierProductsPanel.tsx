@@ -465,7 +465,9 @@ export function SupplierProductsPanel({
             <DialogTitle>Editar producto</DialogTitle>
             <DialogDescription>
               Actualiza título, descripción, stock, precio o foto. Los cambios se
-              guardan en Supabase al confirmar.
+              guardan en Supabase al confirmar. Si cambias el precio base, las
+              órdenes ya emitidas conservan el costo anterior; los comerciantes
+              vinculados recibirán una alerta.
             </DialogDescription>
           </DialogHeader>
 

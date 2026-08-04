@@ -514,6 +514,13 @@ export function SupplierOrdersPanel({
                         </p>
                         <p className="text-xs text-zinc-500">
                           {formatUsd(item.unitPriceUsd)} c/u
+                          {item.unitCostUsd != null &&
+                          item.unitCostUsd !== item.unitPriceUsd
+                            ? ` · costo ${formatUsd(item.unitCostUsd)}`
+                            : ""}
+                          {item.costLockedAt
+                            ? " · costo congelado"
+                            : ""}
                         </p>
                       </div>
                       <span className="shrink-0 tabular-nums font-medium text-emerald-700 dark:text-emerald-400">

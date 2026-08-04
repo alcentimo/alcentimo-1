@@ -26,6 +26,10 @@ import {
   normalizeAssistantAvatarSettings,
 } from "@/lib/store-settings/assistant-avatar";
 import { normalizeWhatsAppChatWelcome } from "@/lib/catalog/whatsapp-quick-chat";
+import {
+  defaultDropshipPricingSettings,
+  normalizeDropshipPricingSettings,
+} from "@/lib/dropship/margin";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "mrw",
@@ -200,6 +204,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       showBsConversion: true,
       wholesaleEnabled: false,
     },
+    dropshipPricing: defaultDropshipPricingSettings(),
     messageTemplates: defaultMessageTemplates(),
     interfacePreferences: {
       theme: "system",
@@ -451,6 +456,7 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           ? currencyRaw.wholesaleEnabled
           : defaults.catalogCurrency.wholesaleEnabled,
     },
+    dropshipPricing: normalizeDropshipPricingSettings(raw.dropshipPricing),
     messageTemplates: {
       nuevo:
         typeof templatesRaw.nuevo === "string" && templatesRaw.nuevo.trim()
@@ -570,6 +576,12 @@ export function mergeStoreSettingsConfig(
     catalogCurrency: patch.catalogCurrency
       ? { ...base.catalogCurrency, ...patch.catalogCurrency }
       : base.catalogCurrency,
+    dropshipPricing: patch.dropshipPricing
+      ? normalizeDropshipPricingSettings({
+          ...base.dropshipPricing,
+          ...patch.dropshipPricing,
+        })
+      : base.dropshipPricing,
     messageTemplates: patch.messageTemplates
       ? { ...base.messageTemplates, ...patch.messageTemplates }
       : base.messageTemplates,

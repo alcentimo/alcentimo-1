@@ -46,7 +46,11 @@ export interface SupplierOrderItem {
   productId: string | null;
   productTitle: string;
   quantity: number;
+  /** Precio cobrado al comerciante (snapshot inmutable). */
   unitPriceUsd: number;
+  /** Costo mayorista congelado al emitir el pedido. */
+  unitCostUsd: number;
+  costLockedAt: string | null;
   lineTotalUsd: number;
 }
 
