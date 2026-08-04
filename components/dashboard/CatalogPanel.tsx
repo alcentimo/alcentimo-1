@@ -105,6 +105,7 @@ export function CatalogPanel({
   // Solo progreso/reclamo: con prueba activa el plan ya se ve en la sidebar.
   const showTrialBanner =
     Boolean(productLimitContext) && trialEligible && !trialActive;
+  const [checklistVisible, setChecklistVisible] = useState(false);
 
   return (
     <>
@@ -118,10 +119,12 @@ export function CatalogPanel({
           trialEligible={trialEligible}
           trialActive={trialActive}
           onOpenCreateProduct={handleOpenCreate}
+          onChecklistVisibilityChange={setChecklistVisible}
         />
       </Suspense>
 
-      {showTrialBanner ? (
+      {/* Evita duplicar "configuración" sobre el chip de primeros pasos. */}
+      {showTrialBanner && !checklistVisible ? (
         <ProTrialBanner
           showBanner
           trialEligible={trialEligible}
@@ -129,6 +132,7 @@ export function CatalogPanel({
           trialEndsAt={trial?.endsAt ?? null}
           setupStatus={setupStatus}
           compact
+          autoOpenClaimModal={false}
         />
       ) : null}
 

@@ -1308,16 +1308,24 @@ body {
 }
 
 .onboarding-checklist {
-  @apply fixed right-4 z-40 w-[min(100vw-2rem,19rem)] overflow-hidden rounded-xl border border-zinc-200/80 bg-white/95 shadow-lg backdrop-blur-sm dark:border-zinc-800/80 dark:bg-zinc-950/95;
-  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  @apply fixed z-30 w-[min(100vw-2rem,16.5rem)] overflow-hidden rounded-2xl border border-zinc-200/70 bg-white/90 shadow-md backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-950/90;
+  right: 0.75rem;
+  bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  .onboarding-checklist {
+    right: 1rem;
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 .onboarding-checklist-collapsed {
-  @apply w-[min(100vw-2rem,15rem)];
+  @apply w-[min(100vw-2rem,13.5rem)];
 }
 
 .onboarding-checklist-header {
-  @apply flex items-center justify-between gap-2 px-3 py-2.5;
+  @apply flex items-center justify-between gap-1.5 px-2.5 py-2;
 }
 
 .onboarding-checklist-summary {
@@ -1325,7 +1333,7 @@ body {
 }
 
 .onboarding-checklist-eyebrow {
-  @apply text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400;
+  @apply truncate text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400;
 }
 
 .onboarding-checklist-title {
@@ -1336,20 +1344,32 @@ body {
   @apply mt-0.5 text-[11px] font-medium text-zinc-700 dark:text-zinc-300;
 }
 
+.onboarding-checklist-bar {
+  @apply mt-1.5 h-1 w-full overflow-hidden rounded-full bg-zinc-200/80 dark:bg-zinc-800;
+}
+
+.onboarding-checklist-bar-fill {
+  @apply block h-full rounded-full bg-emerald-500 transition-[width] duration-300 dark:bg-emerald-400;
+}
+
 .onboarding-checklist-icon-btn {
   @apply inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-900 dark:hover:text-zinc-200;
 }
 
 .onboarding-checklist-body {
-  @apply max-h-[min(60vh,24rem)] overflow-y-auto border-t border-zinc-200/70 px-3 py-2.5 dark:border-zinc-800/70;
+  @apply max-h-[min(42vh,18rem)] overflow-y-auto border-t border-zinc-200/70 px-2.5 py-2 dark:border-zinc-800/70;
+}
+
+.onboarding-checklist-hint {
+  @apply mb-2 rounded-lg bg-emerald-50/80 px-2 py-1.5 text-[10px] leading-snug text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200;
 }
 
 .onboarding-checklist-steps {
-  @apply space-y-2;
+  @apply space-y-1.5;
 }
 
 .onboarding-checklist-step {
-  @apply flex gap-2 rounded-lg border border-zinc-200/60 bg-zinc-50/50 p-2.5 dark:border-zinc-800/60 dark:bg-zinc-900/30;
+  @apply flex gap-2 rounded-lg border border-zinc-200/60 bg-zinc-50/50 p-2 dark:border-zinc-800/60 dark:bg-zinc-900/30;
 }
 
 .onboarding-checklist-step-done {

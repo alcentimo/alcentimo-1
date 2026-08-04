@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AiWelcomeDialog } from "@/components/onboarding/AiWelcomeDialog";
 import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
 import { ProTrialActivationWatcher } from "@/components/onboarding/ProTrialActivationWatcher";
 import {
   isOnboardingChecklistDismissed,
+  isShareLinkStepCompleted,
+  isWelcomeSeen,
+  markWelcomeSeen,
 } from "@/lib/onboarding/client-storage";
 import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 
@@ -19,22 +21,34 @@ interface OnboardingExperienceProps {
   trialEligible: boolean;
   trialActive: boolean;
   onOpenCreateProduct: () => void;
+  /** Notifica si el chip de primeros pasos está visible (para no duplicar banners). */
+  onChecklistVisibilityChange?: (visible: boolean) => void;
+}
+
+function isChecklistComplete(
+  storeId: string,
+  setupStatus: OnboardingSetupStatus,
+): boolean {
+  return (
+    setupStatus.hasProducts &&
+    setupStatus.hasPaymentsConfigured &&
+    isShareLinkStepCompleted(storeId)
+  );
 }
 
 export function OnboardingExperience({
   storeId,
   storeName,
-  rubroLabel,
   setupStatus,
   showWelcomeFromUrl,
-  trialEligible,
   trialActive,
   onOpenCreateProduct,
+  onChecklistVisibilityChange,
 }: OnboardingExperienceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [checklistVisible, setChecklistVisible] = useState(false);
+  const [showWelcomeHint, setShowWelcomeHint] = useState(false);
 
   const stripOnboardedParam = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -47,15 +61,33 @@ export function OnboardingExperience({
   }, [router, searchParams]);
 
   useEffect(() => {
+    const dismissed = isOnboardingChecklistDismissed(storeId);
+    const complete = isChecklistComplete(storeId, setupStatus);
+    const visible = !dismissed && !complete;
+    setChecklistVisible(visible);
+    onChecklistVisibilityChange?.(visible);
+
+    // Primer ingreso: sin modal. Solo una pista sutil en el chip.
     if (showWelcomeFromUrl) {
-      setWelcomeOpen(true);
+      if (!isWelcomeSeen(storeId)) {
+        markWelcomeSeen(storeId);
+        setShowWelcomeHint(true);
+      }
+      stripOnboardedParam();
     }
-    setChecklistVisible(!isOnboardingChecklistDismissed(storeId));
-  }, [showWelcomeFromUrl, storeId]);
+  }, [
+    showWelcomeFromUrl,
+    storeId,
+    setupStatus,
+    stripOnboardedParam,
+    onChecklistVisibilityChange,
+  ]);
 
   useEffect(() => {
     function onChecklistDismissed() {
       setChecklistVisible(false);
+      setShowWelcomeHint(false);
+      onChecklistVisibilityChange?.(false);
     }
     window.addEventListener(
       "alcentimo:onboarding-checklist-dismissed",
@@ -67,9 +99,7 @@ export function OnboardingExperience({
         onChecklistDismissed,
       );
     };
-  }, []);
-
-  const showChecklist = checklistVisible;
+  }, [onChecklistVisibilityChange]);
 
   return (
     <>
@@ -77,25 +107,12 @@ export function OnboardingExperience({
         <ProTrialActivationWatcher trialActive={trialActive} />
       </Suspense>
 
-      <AiWelcomeDialog
-        open={welcomeOpen}
-        storeId={storeId}
-        storeName={storeName}
-        rubroLabel={rubroLabel}
-        onOpenChange={(open) => {
-          setWelcomeOpen(open);
-          if (!open) stripOnboardedParam();
-        }}
-        onContinue={() => {
-          stripOnboardedParam();
-          setChecklistVisible(true);
-        }}
-      />
-
-      {showChecklist ? (
+      {checklistVisible ? (
         <OnboardingChecklist
           storeId={storeId}
+          storeName={storeName}
           setupStatus={setupStatus}
+          welcomeHint={showWelcomeHint}
           onOpenCreateProduct={onOpenCreateProduct}
         />
       ) : null}

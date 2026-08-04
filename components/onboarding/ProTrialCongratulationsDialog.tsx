@@ -20,8 +20,8 @@ interface ProTrialCongratulationsDialogProps {
 }
 
 /**
- * Modal de felicitaciones fijo: no se cierra solo (ni Escape ni clic fuera).
- * Solo cierra con X o con el botón de acción.
+ * Modal de felicitaciones al activar Pro.
+ * Se puede cerrar con Escape, clic fuera, X o el botón de acción.
  */
 export function ProTrialCongratulationsDialog({
   open,
@@ -41,7 +41,12 @@ export function ProTrialCongratulationsDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={() => {}} dismissible={false}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) dismiss();
+      }}
+    >
       <DialogContent className="onboarding-welcome-dialog relative max-w-lg overflow-hidden p-0">
         <div className="onboarding-welcome-hero px-6 pb-5 pt-6">
           <div className="flex items-start justify-between gap-3">

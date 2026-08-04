@@ -22,7 +22,10 @@ import { cn } from "@/lib/cn";
 
 interface OnboardingChecklistProps {
   storeId: string;
+  storeName?: string;
   setupStatus: OnboardingSetupStatus;
+  /** Pista breve tras el primer ingreso (sin modal). */
+  welcomeHint?: boolean;
   onOpenCreateProduct: () => void;
 }
 
@@ -37,12 +40,16 @@ interface ChecklistStep {
 
 export function OnboardingChecklist({
   storeId,
+  storeName,
   setupStatus,
+  welcomeHint = false,
   onOpenCreateProduct,
 }: OnboardingChecklistProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [shareCopied, setShareCopied] = useState(false);
-  const [shareDone, setShareDone] = useState(() => isShareLinkStepCompleted(storeId));
+  const [shareDone, setShareDone] = useState(() =>
+    isShareLinkStepCompleted(storeId),
+  );
 
   const catalogUrl = useMemo(() => {
     if (typeof window === "undefined") return setupStatus.catalogPath;
@@ -60,7 +67,8 @@ export function OnboardingChecklist({
       {
         id: "payments",
         title: "Configurar métodos de pago",
-        description: "Activa al menos un método para que tus clientes puedan pagarte.",
+        description:
+          "Activa al menos un método para que tus clientes puedan pagarte.",
         done: setupStatus.hasPaymentsConfigured,
       },
       {
@@ -75,10 +83,13 @@ export function OnboardingChecklist({
 
   const completedCount = steps.filter((step) => step.done).length;
   const allDone = completedCount === steps.length;
+  const progressPct = Math.round((completedCount / steps.length) * 100);
 
   const handleDismiss = useCallback(() => {
     dismissOnboardingChecklist(storeId);
-    window.dispatchEvent(new CustomEvent("alcentimo:onboarding-checklist-dismissed"));
+    window.dispatchEvent(
+      new CustomEvent("alcentimo:onboarding-checklist-dismissed"),
+    );
   }, [storeId]);
 
   const handleCopyLink = useCallback(async () => {
@@ -110,17 +121,36 @@ export function OnboardingChecklist({
           onClick={() => setCollapsed((value) => !value)}
           aria-expanded={!collapsed}
         >
-          <p className="onboarding-checklist-eyebrow">Configuración inicial</p>
-          <p className="onboarding-checklist-progress">
-            {completedCount}/{steps.length} pasos
+          <p className="onboarding-checklist-eyebrow">
+            {welcomeHint
+              ? storeName
+                ? `Bienvenido/a, ${storeName}`
+                : "Bienvenido/a"
+              : "Primeros pasos"}
           </p>
+          <p className="onboarding-checklist-progress">
+            {completedCount}/{steps.length} listos
+          </p>
+          <div
+            className="onboarding-checklist-bar"
+            role="progressbar"
+            aria-valuenow={completedCount}
+            aria-valuemin={0}
+            aria-valuemax={steps.length}
+            aria-label="Progreso de configuración"
+          >
+            <span
+              className="onboarding-checklist-bar-fill"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
         </button>
         <div className="flex shrink-0 items-center gap-0.5">
           <button
             type="button"
             className="onboarding-checklist-icon-btn"
             onClick={() => setCollapsed((value) => !value)}
-            aria-label={collapsed ? "Expandir checklist" : "Minimizar checklist"}
+            aria-label={collapsed ? "Ver pasos" : "Minimizar"}
           >
             {collapsed ? (
               <ChevronUp className="h-3.5 w-3.5" />
@@ -132,7 +162,7 @@ export function OnboardingChecklist({
             type="button"
             className="onboarding-checklist-icon-btn"
             onClick={handleDismiss}
-            aria-label="Ocultar checklist"
+            aria-label="Ocultar primeros pasos"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -141,6 +171,12 @@ export function OnboardingChecklist({
 
       {!collapsed ? (
         <div className="onboarding-checklist-body">
+          {welcomeHint ? (
+            <p className="onboarding-checklist-hint">
+              Empieza cuando quieras: el catálogo y los botones siguen
+              disponibles.
+            </p>
+          ) : null}
           <ol className="onboarding-checklist-steps">
             {steps.map((step) => (
               <li
@@ -150,7 +186,10 @@ export function OnboardingChecklist({
                   step.done && "onboarding-checklist-step-done",
                 )}
               >
-                <span className="onboarding-checklist-step-icon" aria-hidden="true">
+                <span
+                  className="onboarding-checklist-step-icon"
+                  aria-hidden="true"
+                >
                   {step.done ? (
                     <CheckCircle2 className="h-3.5 w-3.5" />
                   ) : (
@@ -159,7 +198,9 @@ export function OnboardingChecklist({
                 </span>
                 <div className="min-w-0">
                   <p className="onboarding-checklist-step-title">{step.title}</p>
-                  <p className="onboarding-checklist-step-copy">{step.description}</p>
+                  <p className="onboarding-checklist-step-copy">
+                    {step.description}
+                  </p>
 
                   {step.id === "products" && !step.done ? (
                     <div className="onboarding-checklist-actions">
