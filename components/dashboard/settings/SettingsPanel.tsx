@@ -13,6 +13,7 @@ import {
   Settings2,
   Tag,
   Truck,
+  Workflow,
 } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
 import { DomainsTab } from "@/components/dashboard/settings/DomainsTab";
@@ -20,6 +21,7 @@ import { LocationsTab } from "@/components/dashboard/settings/LocationsTab";
 import { CategoriesTab } from "@/components/dashboard/settings/CategoriesTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
 import { WholesaleTab } from "@/components/dashboard/settings/WholesaleTab";
+import { DropshipPricingTab } from "@/components/dashboard/settings/DropshipPricingTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
 import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
@@ -44,6 +46,7 @@ type SettingsTabId =
   | "categories"
   | "currency"
   | "wholesale"
+  | "dropship"
   | "location"
   | "shipping"
   | "payments"
@@ -57,6 +60,7 @@ const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
   "categories",
   "currency",
   "wholesale",
+  "dropship",
   "location",
   "shipping",
   "payments",
@@ -66,7 +70,13 @@ const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
   "branches",
 ]);
 
-function resolveInitialTab(tab: string | undefined): SettingsTabId {
+function resolveInitialTab(
+  tab: string | undefined,
+  showDropshipping: boolean,
+): SettingsTabId {
+  if (tab === "dropship" && !showDropshipping) {
+    return "general";
+  }
   if (tab && VALID_SETTINGS_TABS.has(tab as SettingsTabId)) {
     return tab as SettingsTabId;
   }
@@ -79,40 +89,47 @@ type NavItem = {
   icon: typeof Settings2;
 };
 
-const SETTINGS_NAV_GROUPS: {
+function buildSettingsNavGroups(showDropshipping: boolean): {
   label: string;
   items: NavItem[];
-}[] = [
-  {
-    label: "Tienda",
-    items: [
-      { id: "general", label: "Identidad", icon: Settings2 },
-      { id: "categories", label: "Categorías", icon: FolderTree },
-      { id: "location", label: "Horarios y contacto", icon: Clock },
-      { id: "currency", label: "Moneda", icon: Coins },
-      { id: "wholesale", label: "Venta al mayor", icon: Boxes },
-    ],
-  },
-  {
-    label: "Operación",
-    items: [
-      { id: "shipping", label: "Envíos", icon: Truck },
-      { id: "payments", label: "Pagos", icon: CreditCard },
-      { id: "branches", label: "Sucursales", icon: MapPin },
-    ],
-  },
-  {
-    label: "Presencia",
-    items: [
-      { id: "domains", label: "Dominio", icon: Globe },
-      { id: "design", label: "Diseño del catálogo", icon: Palette },
-    ],
-  },
-  {
-    label: "Clientes",
-    items: [{ id: "promotions", label: "Promociones", icon: Tag }],
-  },
-];
+}[] {
+  return [
+    {
+      label: "Tienda",
+      items: [
+        { id: "general", label: "Identidad", icon: Settings2 },
+        { id: "categories", label: "Categorías", icon: FolderTree },
+        { id: "location", label: "Horarios y contacto", icon: Clock },
+        { id: "currency", label: "Moneda", icon: Coins },
+        { id: "wholesale", label: "Venta al mayor", icon: Boxes },
+        ...(showDropshipping
+          ? ([
+              { id: "dropship", label: "Dropshipping", icon: Workflow },
+            ] as NavItem[])
+          : []),
+      ],
+    },
+    {
+      label: "Operación",
+      items: [
+        { id: "shipping", label: "Envíos", icon: Truck },
+        { id: "payments", label: "Pagos", icon: CreditCard },
+        { id: "branches", label: "Sucursales", icon: MapPin },
+      ],
+    },
+    {
+      label: "Presencia",
+      items: [
+        { id: "domains", label: "Dominio", icon: Globe },
+        { id: "design", label: "Diseño del catálogo", icon: Palette },
+      ],
+    },
+    {
+      label: "Clientes",
+      items: [{ id: "promotions", label: "Promociones", icon: Tag }],
+    },
+  ];
+}
 
 interface DesignPreviewContext {
   store: Store;
@@ -135,6 +152,8 @@ interface SettingsPanelProps {
   initialCategories?: StoreCategoryRow[];
   initialDomain?: string | null;
   initialDomainMode?: "connect" | "purchase" | null;
+  /** Solo el admin de soporte del sistema ve Dropshipping. */
+  showDropshipping?: boolean;
 }
 
 export function SettingsPanel({
@@ -151,14 +170,16 @@ export function SettingsPanel({
   initialCategories = [],
   initialDomain = null,
   initialDomainMode = null,
+  showDropshipping = false,
 }: SettingsPanelProps) {
+  const navGroups = buildSettingsNavGroups(showDropshipping);
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() =>
-    resolveInitialTab(initialTab),
+    resolveInitialTab(initialTab, showDropshipping),
   );
 
   useEffect(() => {
-    setActiveTab(resolveInitialTab(initialTab));
-  }, [initialTab]);
+    setActiveTab(resolveInitialTab(initialTab, showDropshipping));
+  }, [initialTab, showDropshipping]);
 
   const storeSlug = store?.slug ?? "mi-tienda";
 
@@ -195,6 +216,23 @@ export function SettingsPanel({
         return (
           <WholesaleTab
             initialEnabled={initialConfig.catalogCurrency.wholesaleEnabled}
+          />
+        );
+      case "dropship":
+        if (!showDropshipping) {
+          return (
+            <p className="text-sm text-zinc-500">
+              Dropshipping no está disponible en esta fase.
+            </p>
+          );
+        }
+        return (
+          <DropshipPricingTab
+            initialSettings={initialConfig.dropshipPricing}
+            storeProducts={products.map((product) => ({
+              id: product.id,
+              name: product.name,
+            }))}
           />
         );
       case "location":
@@ -264,7 +302,7 @@ export function SettingsPanel({
       <div className="settings-workspace-layout">
         <aside className="settings-sidebar" aria-label="Secciones de configuración">
           <nav className="settings-sidebar-nav">
-            {SETTINGS_NAV_GROUPS.map((group) => (
+            {navGroups.map((group) => (
               <div key={group.label} className="settings-sidebar-group">
                 <p className="settings-sidebar-group-label">{group.label}</p>
                 <ul className="settings-sidebar-list">
