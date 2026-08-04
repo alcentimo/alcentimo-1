@@ -187,9 +187,7 @@ export async function submitTransactionalOrder(
         meetingPointReference: point.reference,
         notes: trimmedFulfillmentNotes || trimmedDeliveryAddress || null,
       });
-    } else if (trimmedDeliveryAddress.length < 8) {
-      return { error: "Indica tu dirección de entrega (mínimo 8 caracteres)." };
-    } else {
+    } else if (trimmedDeliveryAddress.length > 0) {
       resolvedFulfillmentAddress = trimmedDeliveryAddress;
     }
   }

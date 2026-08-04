@@ -103,10 +103,8 @@ export function validateCheckoutStep1(
       if (!input.meetingPointId) {
         errors.meetingPoint = "Selecciona el punto de encuentro.";
       }
-    } else if (input.deliveryAddress.trim().length < 8) {
-      errors.deliveryAddress =
-        "Indica tu dirección de entrega (mínimo 8 caracteres).";
     }
+    // Dirección libre: opcional (se puede acordar por WhatsApp).
   }
 
   if (

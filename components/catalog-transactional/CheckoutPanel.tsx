@@ -862,10 +862,13 @@ export function CheckoutPanel({
                           error={step1Validation.errors.deliveryAddress}
                         >
                           <label className="txn-field">
-                            <span>Dirección de entrega</span>
+                            <span>
+                              Dirección de entrega{" "}
+                              <span className="font-normal text-zinc-400">
+                                (opcional)
+                              </span>
+                            </span>
                             <textarea
-                              required
-                              minLength={8}
                               rows={3}
                               value={deliveryAddress}
                               onChange={(event) => {
@@ -873,7 +876,7 @@ export function CheckoutPanel({
                                 setDeliveryAddress(event.target.value);
                               }}
                               onBlur={() => touchField("deliveryAddress")}
-                              placeholder="Calle, edificio, referencia…"
+                              placeholder="Calle, edificio, referencia… o acuerda por WhatsApp"
                               aria-invalid={shouldShowFieldError(
                                 "deliveryAddress",
                                 step1Validation.errors.deliveryAddress,
@@ -881,7 +884,7 @@ export function CheckoutPanel({
                               aria-describedby={
                                 step1Validation.errors.deliveryAddress
                                   ? "checkout-error-deliveryAddress"
-                                  : undefined
+                                  : "checkout-hint-deliveryAddress"
                               }
                               className={checkoutInputClass(
                                 shouldShowFieldError(
@@ -891,6 +894,13 @@ export function CheckoutPanel({
                                 "min-h-[5rem] resize-y",
                               )}
                             />
+                            <span
+                              id="checkout-hint-deliveryAddress"
+                              className="mt-1 block text-xs text-zinc-500 dark:text-zinc-400"
+                            >
+                              Puedes dejarla vacía y acordar la entrega por
+                              WhatsApp.
+                            </span>
                           </label>
                         </CheckoutFieldGroup>
                       )
