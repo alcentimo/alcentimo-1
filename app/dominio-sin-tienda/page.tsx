@@ -3,7 +3,16 @@ import { PageContainer } from "@/components/ui/PageContainer";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { getSiteUrl } from "@/lib/site-url";
 
-export default function CatalogNotFound() {
+export const metadata = {
+  title: "Tienda no encontrada — alcentimo",
+  robots: { index: false, follow: false },
+};
+
+/**
+ * Vista amigable cuando un dominio personalizado apunta a Alcéntimo
+ * pero ya no hay una tienda activa asociada (p. ej. tienda eliminada).
+ */
+export default function DominioSinTiendaPage() {
   const platformUrl = getSiteUrl();
 
   return (
@@ -20,12 +29,13 @@ export default function CatalogNotFound() {
             centered
             className="mx-auto justify-center"
           />
-          <p className="section-label mt-4">Catálogo</p>
+          <p className="section-label mt-4">404</p>
           <h1 className="mt-2 text-xl font-bold text-zinc-900 sm:text-2xl dark:text-zinc-50">
             Tienda no encontrada
           </h1>
           <p className="mt-2 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-            El enlace no existe o la tienda está inactiva.
+            Este dominio ya no está asociado a una tienda activa en Alcéntimo.
+            Puede haber sido eliminada o desactivada.
           </p>
           <Link href={platformUrl} className="btn-primary mt-6 inline-flex">
             Ir a Alcéntimo

@@ -189,6 +189,19 @@ export async function middleware(request: NextRequest) {
       );
       if (store) {
         effectiveStoreSlug = store.slug;
+      } else {
+        // Dominio externo huérfano (tienda eliminada/inactiva): no servir la landing.
+        const orphanPassthrough =
+          pathname === "/dominio-sin-tienda" ||
+          pathname.startsWith("/auth/") ||
+          pathname.startsWith("/_next/");
+
+        if (!orphanPassthrough) {
+          const rewriteUrl = request.nextUrl.clone();
+          rewriteUrl.pathname = "/dominio-sin-tienda";
+          rewriteUrl.search = "";
+          return NextResponse.rewrite(rewriteUrl, { status: 404 });
+        }
       }
     }
   }
