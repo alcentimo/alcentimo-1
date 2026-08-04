@@ -206,6 +206,7 @@ export function getProductLimitErrorMessage(
   trial?: {
     eligible: boolean;
     active: boolean;
+    benefitsActive?: boolean;
     consumed?: boolean;
     startedAt?: string | null;
     /** Límite del plan Pro (prueba); si falta, usa PLANS.starter. */
@@ -214,9 +215,10 @@ export function getProductLimitErrorMessage(
 ): string {
   if (check.canCreateMore) return "";
 
+  const trialBenefits = trial?.benefitsActive ?? trial?.active;
   const canOfferProTrial =
     trial != null &&
-    !trial.active &&
+    !trialBenefits &&
     !trial.consumed &&
     trial.startedAt == null &&
     trial.eligible;

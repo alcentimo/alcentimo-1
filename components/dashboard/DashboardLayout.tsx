@@ -17,6 +17,8 @@ import { isDashboardStoreOwner } from "@/lib/team/permissions";
 import type { AccountSnapshot } from "@/lib/account/types";
 import type { SubscriptionStatus } from "@/lib/plans/plan-activation";
 import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
+import type { ProTrialPhase } from "@/lib/plans/trial";
+import { ProTrialLifecycleBanner } from "@/components/dashboard/plans/ProTrialLifecycleBanner";
 import {
   BRAND_LOGO_HEIGHT,
   BRAND_LOGO_PATH,
@@ -33,6 +35,9 @@ interface DashboardLayoutProps {
   subscriptionStatus?: SubscriptionStatus | null;
   trialActive?: boolean;
   trialEligible?: boolean;
+  trialPhase?: ProTrialPhase;
+  trialEndsAt?: string | null;
+  trialGraceEndsAt?: string | null;
   proTrialSetup?: ProTrialSetupPick | null;
   proTrialProductCount?: number;
   exchangeRate?: number | null;
@@ -60,6 +65,9 @@ function DashboardShell({
   subscriptionStatus = "none",
   trialActive = false,
   trialEligible = false,
+  trialPhase = "none",
+  trialEndsAt = null,
+  trialGraceEndsAt = null,
   proTrialSetup = null,
   proTrialProductCount = 0,
   exchangeRate = null,
@@ -171,6 +179,7 @@ function DashboardShell({
         subscriptionStatus={subscriptionStatus}
         trialActive={trialActive}
         trialEligible={trialEligible}
+        trialPhase={trialPhase}
         proTrialSetup={proTrialSetup}
         proTrialProductCount={proTrialProductCount}
         mobileOpen={sidebarOpen}
@@ -236,6 +245,11 @@ function DashboardShell({
         </header>
 
         <main className="dashboard-main flex min-h-0 flex-1 flex-col overflow-y-auto p-4 safe-area-inset sm:p-7 lg:p-9">
+          <ProTrialLifecycleBanner
+            phase={trialPhase}
+            endsAt={trialEndsAt}
+            graceEndsAt={trialGraceEndsAt}
+          />
           <DashboardRouteVisitTracker pathname={pathname} />
           <DashboardViewKeepAlive pathname={pathname}>{children}</DashboardViewKeepAlive>
         </main>

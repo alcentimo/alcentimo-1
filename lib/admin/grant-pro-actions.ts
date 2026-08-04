@@ -164,9 +164,121 @@ export async function grantProMonthToUsers(input: {
 }
 
 /**
- * Activa o extiende la prueba Pro gratuita (pro_trial_*) sin validación anti-abuso.
- * Solo para support admin. Los usuarios normales siguen bloqueados en startProTrial.
+ * Cierra la prueba/prórroga/revisión y aplica Plan Gratis.
+ * Única vía de “downgrade” post-prueba: decisión manual del admin.
  */
+export async function closeProTrialToFreePlan(input: {
+  userId: string;
+  note?: string;
+}): Promise<GrantProResult> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const userId = input.userId.trim();
+  if (!userId) return { error: "Usuario no válido." };
+
+  const admin = createAdminClient();
+  const closedIso = new Date().toISOString();
+
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .select("id, pro_trial_started_at, pro_trial_closed_at, subscription_status")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (profileError) return { error: profileError.message };
+  if (!profile) return { error: "Usuario no encontrado." };
+
+  const subscriptionStatus = profile.subscription_status ?? "none";
+  if (subscriptionStatus === "active" || subscriptionStatus === "provisional") {
+    return {
+      error:
+        "Este usuario tiene suscripción de pago. Revoca el pago o cambia el plan desde pagos, no desde la prueba.",
+    };
+  }
+
+  if (!profile.pro_trial_started_at) {
+    // Sin prueba: igual forzar FREE limpio.
+    const { error: freeError } = await admin
+      .from("profiles")
+      .update({
+        plan: "FREE",
+        subscription_status: "none",
+        billing_period: null,
+        subscription_period_started_at: null,
+        subscription_period_ends_at: null,
+      })
+      .eq("id", userId);
+    if (freeError) return { error: freeError.message };
+  } else {
+    const { error: closeError } = await admin
+      .from("profiles")
+      .update({
+        plan: "FREE",
+        subscription_status: "none",
+        pro_trial_closed_at: closedIso,
+        billing_period: null,
+        subscription_period_started_at: null,
+        subscription_period_ends_at: null,
+      })
+      .eq("id", userId);
+    if (closeError) return { error: closeError.message };
+  }
+
+  await logGrowthAction({
+    actorId: auth.user.id,
+    action: "close_pro_trial",
+    targetUserId: userId,
+    summary: "Pasó la cuenta a Plan Gratis (cierre manual de prueba)",
+    meta: {
+      note: input.note?.trim() || "Cierre manual admin → Plan Gratis",
+      closed_at: closedIso,
+    },
+  });
+
+  revalidateGrowthPaths();
+  return { success: true, granted: 1 };
+}
+
+export async function closeProTrialToFreePlanForUsers(input: {
+  userIds: string[];
+  note?: string;
+}): Promise<GrantProResult> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const userIds = Array.from(
+    new Set(input.userIds.map((id) => id.trim()).filter(Boolean)),
+  );
+  if (userIds.length === 0) {
+    return { error: "Selecciona al menos un usuario." };
+  }
+
+  let granted = 0;
+  let failed = 0;
+
+  for (const userId of userIds) {
+    const result = await closeProTrialToFreePlan({
+      userId,
+      note:
+        input.note ??
+        `Cierre masivo a Plan Gratis (${userIds.length} usuarios)`,
+    });
+    // closeProTrialToFreePlan re-checks admin each time — ok but wasteful.
+    // For mass, call internal logic... keeping simple for now.
+    if (result.error) failed += 1;
+    else granted += 1;
+  }
+
+  revalidateGrowthPaths();
+
+  if (granted === 0) {
+    return { error: "No se pudo pasar a Plan Gratis a ningún usuario." };
+  }
+
+  return { success: true, granted, failed };
+}
+
 async function grantOrExtendProTrialToSingleUser(input: {
   adminUserId: string;
   userId: string;
@@ -223,6 +335,7 @@ async function grantOrExtendProTrialToSingleUser(input: {
       subscription_status: "none",
       pro_trial_started_at: startedIso,
       pro_trial_ends_at: endsIso,
+      pro_trial_closed_at: null,
       billing_period: null,
       subscription_period_started_at: null,
       subscription_period_ends_at: null,

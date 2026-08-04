@@ -16,6 +16,7 @@ import {
 import {
   isValidProTrialClaimCode,
   PRO_TRIAL_CLAIM_CODE,
+  resolveProTrialStatus,
 } from "@/lib/plans/trial";
 import {
   assertProTrialContactAvailable,
@@ -267,7 +268,7 @@ export async function tryActivateProTrialOnSetupComplete(options?: {
   const admin = createAdminClient();
   const { data: profile, error: profileError } = await admin
     .from("profiles")
-    .select("plan, subscription_status, pro_trial_started_at, pro_trial_ends_at")
+    .select("plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, pro_trial_closed_at")
     .eq("id", userId)
     .maybeSingle();
 
@@ -278,16 +279,9 @@ export async function tryActivateProTrialOnSetupComplete(options?: {
     };
   }
 
-  const now = Date.now();
-  const endsMs = profile.pro_trial_ends_at
-    ? new Date(profile.pro_trial_ends_at).getTime()
-    : null;
-  const trialActive =
-    profile.pro_trial_started_at != null &&
-    endsMs != null &&
-    endsMs > now;
+  const trialStatus = resolveProTrialStatus(profile);
 
-  if (trialActive) {
+  if (trialStatus.benefitsActive) {
     return { ok: true, activated: false, reason: "already_active" };
   }
 

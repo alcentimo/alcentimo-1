@@ -13,6 +13,8 @@ import {
   grantProMonthToUsers,
   grantOrExtendProTrialToUser,
   grantOrExtendProTrialToUsers,
+  closeProTrialToFreePlan,
+  closeProTrialToFreePlanForUsers,
   sendPromoOffersToUsers,
 } from "@/lib/admin/grant-pro-actions";
 import {
@@ -31,6 +33,7 @@ type GrowthSubTab = "usuarios" | "cupones" | "campanas" | "historial";
 const ACTION_LABELS: Record<string, string> = {
   grant_pro: "Otorgar Pro",
   grant_pro_trial: "Prueba Pro",
+  close_pro_trial: "Pasar a Gratis",
   create_coupon: "Crear cupón",
   toggle_coupon: "Cupón on/off",
   create_campaign: "Crear campaña",
@@ -100,6 +103,7 @@ export function AdminGrowthPanel({
   const [pending, startTransition] = useTransition();
   const [grantingId, setGrantingId] = useState<string | null>(null);
   const [grantingTrialId, setGrantingTrialId] = useState<string | null>(null);
+  const [closingFreeId, setClosingFreeId] = useState<string | null>(null);
 
   const filteredUsers = useMemo(() => {
     const min = minProducts.trim() === "" ? null : Number(minProducts);
@@ -244,6 +248,72 @@ export function AdminGrowthPanel({
       setSelected(new Set());
       setSuccess(
         `Prueba Pro activada/extendida para ${result.granted ?? ids.length} usuario(s)${
+          result.failed ? ` (${result.failed} fallaron)` : ""
+        }.`,
+      );
+    });
+  }
+
+  function handleCloseToFree(userId: string) {
+    setError(null);
+    setSuccess(null);
+    setClosingFreeId(userId);
+    startTransition(async () => {
+      const result = await closeProTrialToFreePlan({ userId });
+      setClosingFreeId(null);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setUsers((prev) =>
+        prev.map((row) =>
+          row.id === userId
+            ? { ...row, plan: "FREE", subscriptionStatus: "none" }
+            : row,
+        ),
+      );
+      setSuccess("Cuenta pasada a Plan Gratis (cierre manual).");
+      setAuditLog((prev) => [
+        {
+          id: `local-${Date.now()}`,
+          actorId: "me",
+          actorEmail: "tú",
+          action: "close_pro_trial",
+          targetUserId: userId,
+          targetEmail: users.find((u) => u.id === userId)?.email ?? null,
+          summary: "Pasó la cuenta a Plan Gratis",
+          meta: {},
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+    });
+  }
+
+  function handleCloseToFreeSelected() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) {
+      setError("Selecciona al menos un usuario.");
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    startTransition(async () => {
+      const result = await closeProTrialToFreePlanForUsers({ userIds: ids });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setUsers((prev) =>
+        prev.map((row) =>
+          ids.includes(row.id)
+            ? { ...row, plan: "FREE", subscriptionStatus: "none" }
+            : row,
+        ),
+      );
+      setSelected(new Set());
+      setSuccess(
+        `Pasados a Plan Gratis: ${result.granted ?? ids.length}${
           result.failed ? ` (${result.failed} fallaron)` : ""
         }.`,
       );
@@ -474,6 +544,14 @@ export function AdminGrowthPanel({
             >
               Prueba Pro +30d a seleccionados ({selected.size})
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending || selected.size === 0}
+              onClick={handleCloseToFreeSelected}
+            >
+              Pasar a Gratis ({selected.size})
+            </Button>
           </div>
 
           <form
@@ -586,6 +664,18 @@ export function AdminGrowthPanel({
                           {grantingTrialId === user.id
                             ? "Activando…"
                             : "Prueba +30d"}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={pending && closingFreeId === user.id}
+                          onClick={() => handleCloseToFree(user.id)}
+                          title="Cierra la prueba/prórroga y aplica Plan Gratis (solo admin)"
+                        >
+                          {closingFreeId === user.id
+                            ? "Cerrando…"
+                            : "→ Gratis"}
                         </Button>
                       </div>
                     </td>

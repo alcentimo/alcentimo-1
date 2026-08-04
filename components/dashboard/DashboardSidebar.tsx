@@ -34,6 +34,7 @@ import {
 } from "@/lib/brand/assets";
 import { SidebarProTrialProgress } from "@/components/dashboard/plans/SidebarProTrialProgress";
 import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
+import type { ProTrialPhase } from "@/lib/plans/trial";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "alcentimo-dashboard-sidebar-collapsed";
 const DASHBOARD_HOME_HREF = "/dashboard/catalogo";
@@ -45,6 +46,7 @@ interface DashboardSidebarProps {
   subscriptionStatus?: SubscriptionStatus | string | null;
   trialActive?: boolean;
   trialEligible?: boolean;
+  trialPhase?: ProTrialPhase;
   proTrialSetup?: ProTrialSetupPick | null;
   proTrialProductCount?: number;
   mobileOpen: boolean;
@@ -119,16 +121,19 @@ function SidebarPlanStatus({
   planName,
   subscriptionStatus,
   trialActive,
+  trialPhase,
   expanded,
 }: {
   planName: string | null;
   subscriptionStatus: SubscriptionStatus | string | null | undefined;
   trialActive: boolean;
+  trialPhase: ProTrialPhase;
   expanded: boolean;
 }) {
   const status = resolveSubscriptionStatus(subscriptionStatus);
   const statusLabel = formatSubscriptionStatusLabel(subscriptionStatus, {
     trialActive,
+    trialPhase,
   });
   const resolvedPlanName = planName?.trim() || null;
   const summary = resolvedPlanName
@@ -138,9 +143,13 @@ function SidebarPlanStatus({
   const statusBadgeClass =
     status === "provisional"
       ? "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-800/60"
-      : trialActive
-        ? "bg-teal-50 text-teal-800 ring-1 ring-inset ring-teal-200/80 dark:bg-teal-950/50 dark:text-teal-300 dark:ring-teal-800/60"
-        : "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-800/60";
+      : trialPhase === "grace"
+        ? "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-800/60"
+        : trialPhase === "review"
+          ? "bg-sky-50 text-sky-800 ring-1 ring-inset ring-sky-200/80 dark:bg-sky-950/50 dark:text-sky-300 dark:ring-sky-800/60"
+          : trialActive
+            ? "bg-teal-50 text-teal-800 ring-1 ring-inset ring-teal-200/80 dark:bg-teal-950/50 dark:text-teal-300 dark:ring-teal-800/60"
+            : "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-800/60";
 
   if (!expanded) {
     return (
@@ -156,9 +165,13 @@ function SidebarPlanStatus({
               ? "bg-zinc-300 dark:bg-zinc-600"
               : status === "provisional"
                 ? "bg-amber-500"
-                : trialActive
-                  ? "bg-teal-500"
-                  : "bg-emerald-500",
+                : trialPhase === "grace"
+                  ? "bg-amber-500"
+                  : trialPhase === "review"
+                    ? "bg-sky-500"
+                    : trialActive
+                      ? "bg-teal-500"
+                      : "bg-emerald-500",
           )}
           aria-hidden="true"
         />
@@ -195,6 +208,7 @@ export function DashboardSidebar({
   subscriptionStatus = "none",
   trialActive = false,
   trialEligible = false,
+  trialPhase = "none",
   proTrialSetup = null,
   proTrialProductCount = 0,
   mobileOpen,
@@ -371,6 +385,7 @@ export function DashboardSidebar({
             planName={planName}
             subscriptionStatus={subscriptionStatus}
             trialActive={trialActive}
+            trialPhase={trialPhase}
             expanded={drawerExpanded}
           />
         </div>

@@ -8,15 +8,50 @@ import {
 import { PLAN_PRICING_TIERS } from "@/src/config/plan-pricing-ui";
 import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
 
+/** Días de prórroga con beneficios Pro tras el fin formal de la prueba. */
+export const PRO_TRIAL_GRACE_DAYS = 5;
+
+export type ProTrialPhase =
+  | "none"
+  | "active"
+  | "grace"
+  | "review"
+  | "closed";
+
 export interface ProTrialStatus {
   eligible: boolean;
+  /** Periodo formal de prueba (antes de pro_trial_ends_at). */
   active: boolean;
+  /** Prórroga de 5 días con beneficios Pro y aviso. */
+  inGrace: boolean;
+  /** Tras la prórroga: sigue con beneficios hasta cierre admin. */
+  inReview: boolean;
+  /** Admin cerró la prueba → Plan Gratis efectivo. */
+  closed: boolean;
+  /**
+   * Beneficios Pro (límites/UI): activos en active, grace y review.
+   * Solo se cortan con cierre admin (o suscripción de pago).
+   */
+  benefitsActive: boolean;
+  /** Ya usó la prueba y no tiene beneficios (cerrada o elegible false). */
   consumed: boolean;
   startedAt: string | null;
   endsAt: string | null;
+  graceEndsAt: string | null;
+  closedAt: string | null;
+  phase: ProTrialPhase;
 }
 
 export const PRO_TRIAL_DISPLAY_PLAN_NAME = "Plan Pro";
+
+type TrialProfilePick = Pick<
+  Profile,
+  | "plan"
+  | "subscription_status"
+  | "pro_trial_started_at"
+  | "pro_trial_ends_at"
+  | "pro_trial_closed_at"
+>;
 
 export function getCommercialPlanLabel(planId: PlanId): string {
   const tier = PLAN_PRICING_TIERS.find((entry) => entry.planId === planId);
@@ -26,45 +61,80 @@ export function getCommercialPlanLabel(planId: PlanId): string {
   return getPlanById(planId).name;
 }
 
+function addDaysIso(iso: string, days: number): string {
+  const date = new Date(iso);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString();
+}
+
 export function resolveProTrialStatus(
-  profile: Pick<
-    Profile,
-    "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
-  > | null,
+  profile: TrialProfilePick | null,
   planId?: PlanId,
 ): ProTrialStatus {
-  const resolvedPlanId = planId ?? resolvePlanId(profile?.plan);
+  void planId;
   const startedAt = profile?.pro_trial_started_at ?? null;
   const endsAt = profile?.pro_trial_ends_at ?? null;
+  const closedAt = profile?.pro_trial_closed_at ?? null;
   const now = Date.now();
   const endsMs = endsAt ? new Date(endsAt).getTime() : null;
+  const graceEndsAt =
+    endsAt != null ? addDaysIso(endsAt, PRO_TRIAL_GRACE_DAYS) : null;
+  const graceEndsMs = graceEndsAt ? new Date(graceEndsAt).getTime() : null;
+
+  const closed = startedAt != null && closedAt != null;
   const active =
+    !closed &&
     startedAt != null &&
     endsMs != null &&
     endsMs > now;
-  const consumed = startedAt != null && !active;
-  const eligible = isEligiblePlanForProTrial(profile) && !active;
+  const inGrace =
+    !closed &&
+    startedAt != null &&
+    endsMs != null &&
+    endsMs <= now &&
+    graceEndsMs != null &&
+    graceEndsMs > now;
+  const inReview =
+    !closed &&
+    startedAt != null &&
+    endsMs != null &&
+    graceEndsMs != null &&
+    graceEndsMs <= now;
+
+  const benefitsActive = active || inGrace || inReview;
+  const consumed = startedAt != null && !benefitsActive;
+  const eligible = isEligiblePlanForProTrial(profile) && !benefitsActive;
+
+  let phase: ProTrialPhase = "none";
+  if (closed) phase = "closed";
+  else if (active) phase = "active";
+  else if (inGrace) phase = "grace";
+  else if (inReview) phase = "review";
 
   return {
     eligible,
     active,
+    inGrace,
+    inReview,
+    closed,
+    benefitsActive,
     consumed,
     startedAt,
-    endsAt: active ? endsAt : endsAt,
+    endsAt,
+    graceEndsAt: benefitsActive || closed ? graceEndsAt : graceEndsAt,
+    closedAt,
+    phase,
   };
 }
 
-/** Plan y nombre mostrados en UI (trial activo = Plan Pro / starter). */
+/** Plan y nombre mostrados en UI (beneficios Pro = Plan Pro / starter). */
 export function getDisplayPlanForProfile(
-  profile: Pick<
-    Profile,
-    "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
-  > | null,
+  profile: TrialProfilePick | null,
 ): { planId: PlanId; plan: PlanDefinition; planName: string } {
   const basePlanId = resolvePlanId(profile?.plan);
   const trial = resolveProTrialStatus(profile, basePlanId);
 
-  if (trial.active) {
+  if (trial.benefitsActive) {
     return {
       planId: "starter",
       plan: getPlanById("starter"),
@@ -103,49 +173,42 @@ export function isValidProTrialClaimCode(claimCode: string): boolean {
 export function shouldPromoteProTrialAtLimit(
   trial?: Pick<
     ProTrialStatus,
-    "eligible" | "active" | "consumed" | "startedAt"
+    "eligible" | "active" | "consumed" | "startedAt" | "benefitsActive"
   > | null,
 ): boolean {
-  if (!trial || trial.active || trial.consumed) return false;
+  if (!trial || trial.benefitsActive || trial.consumed) return false;
   if (trial.startedAt != null) return false;
   return trial.eligible;
 }
 
-/** Muestra el banner de prueba Pro (elegible, activo o consumido). */
+/** Muestra el banner de prueba Pro (elegible o con beneficios activos). */
 export function shouldShowProTrialBanner(
-  profile: Pick<
-    Profile,
-    "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
-  > | null,
+  profile: TrialProfilePick | null,
 ): boolean {
   return shouldShowProTrialOnActivar(profile);
 }
 
 /**
- * /activar: prueba obligatoria si nunca se usó (pro_trial_started_at NULL) y el perfil es elegible.
- * No depende del conteo de productos ni de haber alcanzado el límite.
+ * /activar: prueba si nunca se usó y es elegible, o si aún tiene beneficios activos.
  */
 export function shouldShowProTrialOnActivar(
-  profile: Pick<
-    Profile,
-    "plan" | "subscription_status" | "pro_trial_started_at" | "pro_trial_ends_at"
-  > | null,
+  profile: TrialProfilePick | null,
 ): boolean {
   if (!profile) return false;
 
   const trial = resolveProTrialStatus(profile);
-  if (trial.active) return true;
+  if (trial.benefitsActive) return true;
   if (!hasUnusedProTrial(profile)) return false;
 
   return isEligiblePlanForProTrial(profile);
 }
 
-/** Plan efectivo para límites de productos (trial Pro = starter/250). */
+/** Plan efectivo para límites (beneficios Pro = starter/250). */
 export function getEffectivePlanIdForLimits(
   planId: PlanId,
   trial: ProTrialStatus,
 ): PlanId {
-  if (trial.active) {
+  if (trial.benefitsActive) {
     return "starter";
   }
   return planId;
@@ -165,4 +228,12 @@ export function getProTrialLimitLabel(productLimit?: number | null): string {
       : productLimit;
   if (limit == null) return "productos ilimitados";
   return `${limit} productos`;
+}
+
+/** Etiqueta corta de fase para sidebar / badges. */
+export function formatProTrialPhaseLabel(trial: ProTrialStatus): string | null {
+  if (trial.phase === "active") return "Prueba activa";
+  if (trial.phase === "grace") return "Prórroga";
+  if (trial.phase === "review") return "En revisión";
+  return null;
 }

@@ -44,11 +44,18 @@ export function resolveSubscriptionStatus(
 /** Etiqueta corta para UI (sidebar, resumen de cuenta). */
 export function formatSubscriptionStatusLabel(
   value: string | null | undefined,
-  options?: { trialActive?: boolean },
+  options?: {
+    trialActive?: boolean;
+    trialPhase?: "none" | "active" | "grace" | "review" | "closed";
+  },
 ): string {
   const status = resolveSubscriptionStatus(value);
   if (status === "provisional") return "Provisional";
-  if (options?.trialActive) return "Prueba activa";
+  if (options?.trialPhase === "grace") return "Prórroga";
+  if (options?.trialPhase === "review") return "En revisión";
+  if (options?.trialPhase === "active" || options?.trialActive) {
+    return "Prueba activa";
+  }
   if (status === "active") return "Activo";
   return "Activo";
 }
@@ -104,6 +111,7 @@ export function buildPaidProfilePatch(
       subscription_status: subscriptionStatus,
       pro_trial_started_at: null,
       pro_trial_ends_at: null,
+      pro_trial_closed_at: null,
       billing_period: null,
       subscription_period_started_at: null,
       subscription_period_ends_at: null,
@@ -120,6 +128,7 @@ export function buildPaidProfilePatch(
     subscription_status: subscriptionStatus,
     pro_trial_started_at: null,
     pro_trial_ends_at: null,
+    pro_trial_closed_at: null,
     billing_period: billingPeriod,
     subscription_period_started_at: startedAt.toISOString(),
     subscription_period_ends_at: endsAt.toISOString(),

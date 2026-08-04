@@ -72,6 +72,7 @@ async function getStoreOwnerProfile(
   | "subscription_status"
   | "pro_trial_started_at"
   | "pro_trial_ends_at"
+  | "pro_trial_closed_at"
   | "billing_period"
   | "subscription_period_started_at"
   | "subscription_period_ends_at"
@@ -81,13 +82,13 @@ async function getStoreOwnerProfile(
   const { data, error } = await admin
     .from("profiles")
     .select(
-      "plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, billing_period, subscription_period_started_at, subscription_period_ends_at, extra_locations_authorized",
+      "plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, pro_trial_closed_at, billing_period, subscription_period_started_at, subscription_period_ends_at, extra_locations_authorized",
     )
     .eq("id", ownerId)
     .maybeSingle();
 
   if (error) {
-    // Fallback si la migración 063 aún no está aplicada.
+    // Fallback si la migración 100 / 063 aún no está aplicada.
     const { data: fallback, error: fallbackError } = await admin
       .from("profiles")
       .select(
@@ -98,7 +99,11 @@ async function getStoreOwnerProfile(
 
     if (fallbackError) throw new Error(fallbackError.message);
     if (!fallback) return null;
-    return { ...fallback, extra_locations_authorized: 0 };
+    return {
+      ...fallback,
+      pro_trial_closed_at: null,
+      extra_locations_authorized: 0,
+    };
   }
 
   return data;
@@ -114,6 +119,7 @@ export async function getStoreOwnerPlanProfile(
       | "subscription_status"
       | "pro_trial_started_at"
       | "pro_trial_ends_at"
+      | "pro_trial_closed_at"
       | "billing_period"
       | "subscription_period_started_at"
       | "subscription_period_ends_at"

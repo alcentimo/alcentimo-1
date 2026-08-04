@@ -70,6 +70,9 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
           subscriptionStatus={shell?.subscriptionStatus ?? "none"}
           trialActive={shell?.trialActive ?? false}
           trialEligible={shell?.trialEligible ?? false}
+          trialPhase={shell?.trialPhase ?? "none"}
+          trialEndsAt={shell?.trialEndsAt ?? null}
+          trialGraceEndsAt={shell?.trialGraceEndsAt ?? null}
           proTrialSetup={shell?.proTrialSetup ?? null}
           proTrialProductCount={shell?.proTrialProductCount ?? 0}
           exchangeRate={shell?.exchangeRate ?? null}

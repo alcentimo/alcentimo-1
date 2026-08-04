@@ -140,7 +140,7 @@ export default async function ActivarPage() {
           <p className="section-label">Activación</p>
           <h1 className="page-header-title">Activa tu cuenta</h1>
           <p className="page-header-desc">
-            {showProTrialSection && !trial.active
+            {showProTrialSection && !trial.benefitsActive
               ? atProductLimit
                 ? `Has alcanzado el límite de ${freeProductLimit} productos. Configura pagos y envíos, y escribe ALCENTIMO para reclamar 30 días gratis del Plan Pro (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
                 : `Publica al menos ${freeProductLimit} productos activos, configura pagos y envíos, y escribe ALCENTIMO para reclamar 30 días gratis del Plan Pro (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
@@ -153,7 +153,7 @@ export default async function ActivarPage() {
             <ProTrialBanner
               showBanner
               trialEligible={trialEligible}
-              trialActive={trial.active}
+              trialActive={trial.benefitsActive}
               trialEndsAt={trial.endsAt}
               setupStatus={trialSetupStatus}
             />
@@ -179,7 +179,7 @@ export default async function ActivarPage() {
           productCount={productLimitStatus?.currentCount ?? null}
           productLimit={productLimitStatus?.productLimit ?? null}
           exchangeRate={exchangeRateRow?.rate ?? null}
-          trialActive={trial.active}
+          trialActive={trial.benefitsActive}
           trialEndsAt={trial.endsAt}
           subscriptionStatus={authUser.profile?.subscription_status ?? "none"}
           subscriptionPeriodEndsAt={

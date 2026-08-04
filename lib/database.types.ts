@@ -22,6 +22,8 @@ export interface Profile {
   subscription_period_ends_at?: string | null;
   pro_trial_started_at?: string | null;
   pro_trial_ends_at?: string | null;
+  /** Cierre manual por admin: corta beneficios Pro (gracia/revisión). */
+  pro_trial_closed_at?: string | null;
   /** Sedes adicionales autorizadas sobre las incluidas en el plan. */
   extra_locations_authorized?: number | null;
   created_at?: string;

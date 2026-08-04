@@ -132,7 +132,7 @@ export default async function PlanesPage() {
           <ProTrialBanner
             showBanner
             trialEligible={trial.eligible}
-            trialActive={trial.active}
+            trialActive={trial.benefitsActive}
             trialEndsAt={trial.endsAt}
             setupStatus={trialSetupStatus}
           />
@@ -145,7 +145,7 @@ export default async function PlanesPage() {
         productCount={productLimitContext?.currentCount ?? null}
         productLimit={productLimitContext?.productLimit ?? null}
         exchangeRate={exchangeRate}
-        trialActive={trial.active}
+        trialActive={trial.benefitsActive}
         trialEndsAt={trial.endsAt}
         subscriptionStatus={authUser.profile?.subscription_status ?? "none"}
         subscriptionPeriodStartedAt={

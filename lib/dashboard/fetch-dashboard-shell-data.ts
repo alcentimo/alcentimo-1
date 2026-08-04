@@ -44,6 +44,9 @@ export type DashboardShellData =
       subscriptionStatus: SubscriptionStatus;
       trialActive: boolean;
       trialEligible: boolean;
+      trialPhase: "none" | "active" | "grace" | "review" | "closed";
+      trialEndsAt: string | null;
+      trialGraceEndsAt: string | null;
       proTrialSetup: ProTrialSetupPick | null;
       /** Productos activos (para contador N/10 en Primeros pasos). */
       proTrialProductCount: number;
@@ -67,6 +70,7 @@ function toOwnerProfile(
     subscription_status: ownerPlan.subscription_status,
     pro_trial_started_at: ownerPlan.pro_trial_started_at,
     pro_trial_ends_at: ownerPlan.pro_trial_ends_at,
+    pro_trial_closed_at: ownerPlan.pro_trial_closed_at ?? null,
     billing_period: ownerPlan.billing_period,
     subscription_period_started_at: ownerPlan.subscription_period_started_at,
     subscription_period_ends_at: ownerPlan.subscription_period_ends_at,
@@ -165,8 +169,11 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
       subscriptionStatus: resolveSubscriptionStatus(
         authUser.profile?.subscription_status,
       ),
-      trialActive: trial.active,
+      trialActive: trial.benefitsActive,
       trialEligible: trial.eligible,
+      trialPhase: trial.phase,
+      trialEndsAt: trial.endsAt,
+      trialGraceEndsAt: trial.graceEndsAt,
       proTrialSetup,
       proTrialProductCount: store ? productCount : 0,
       exchangeRate,
