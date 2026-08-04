@@ -118,7 +118,7 @@ export async function resolveOrderLinesWithPricing(
     .in("product_id", productIds);
 
   const dropshipCostByProduct = new Map<
-    string;
+    string,
     {
       supplierProductId: string;
       costUsd: number;
