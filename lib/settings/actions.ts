@@ -34,7 +34,6 @@ import type {
   CatalogCurrencySettings,
   CatalogDesignSettings,
   CheckoutSettings,
-  DropshipPricingSettings,
   InterfacePreferencesSettings,
   LocationHoursSettings,
   MessageTemplatesSettings,
@@ -43,7 +42,6 @@ import type {
   StoredPromotion,
   StoreSettingsConfig,
 } from "@/lib/store-settings/types";
-import { requireDropshipFeatureAccess } from "@/lib/dropship/feature-access";
 
 export type SettingsActionResult = {
   error?: string;
@@ -190,42 +188,6 @@ export async function saveCatalogCurrencySettings(
     },
   });
   return persistSettingsPatch({ catalogCurrency: normalized.catalogCurrency });
-}
-
-export async function saveDropshipPricingSettings(
-  dropshipPricing: Partial<DropshipPricingSettings>,
-): Promise<SettingsActionResult> {
-  const supabase = await createClient();
-  const auth = await requireAuthStore(supabase);
-  if (!auth.ok) {
-    return { error: auth.error };
-  }
-
-  const feature = await requireDropshipFeatureAccess({
-    email: auth.authUser.email,
-  });
-  if (!feature.ok) {
-    return { error: feature.error };
-  }
-
-  const current = await getStoreSettingsConfig(auth.store.id);
-  const normalized = normalizeStoreSettingsConfig({
-    dropshipPricing: {
-      ...current.dropshipPricing,
-      ...dropshipPricing,
-    },
-  });
-
-  if (
-    normalized.dropshipPricing.enabled &&
-    normalized.dropshipPricing.marginValue < 0
-  ) {
-    return { error: "El margen debe ser mayor o igual a 0." };
-  }
-
-  return persistSettingsPatch({
-    dropshipPricing: normalized.dropshipPricing,
-  });
 }
 
 export async function saveCheckoutSettings(
