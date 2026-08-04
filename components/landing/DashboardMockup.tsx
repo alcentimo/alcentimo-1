@@ -12,9 +12,9 @@ interface DashboardMockupProps {
 }
 
 const MOCK_PRODUCTS = [
-  { name: "Aceite 900ml", price: "$4.50", stock: "24 u." },
-  { name: "Arroz 1kg", price: "$2.80", stock: "18 u." },
-  { name: "Harina PAN", price: "$1.90", stock: "42 u." },
+  { name: "Vestido casual", detail: "Talla M · 8 u.", price: "$25.00" },
+  { name: "Jeans Slim Fit", detail: "Talla 32 · 12 u.", price: "$35.00" },
+  { name: "Camisa básica", detail: "Talla L · 15 u.", price: "$15.00" },
 ] as const;
 
 export function DashboardMockup({ className }: DashboardMockupProps) {
@@ -55,7 +55,7 @@ export function DashboardMockup({ className }: DashboardMockupProps) {
                 <p className="text-[10px] font-medium uppercase tracking-wide text-emerald-600">
                   Mi tienda
                 </p>
-                <p className="text-sm font-semibold text-zinc-900">Ferretería El Sol</p>
+                <p className="text-sm font-semibold text-zinc-900">Boutique Luna</p>
               </div>
               <Badge variant="success" className="text-[10px]">
                 Catálogo activo
@@ -84,7 +84,7 @@ export function DashboardMockup({ className }: DashboardMockupProps) {
                     <p className="truncate text-[11px] font-medium text-zinc-800">
                       {product.name}
                     </p>
-                    <p className="text-[10px] text-zinc-500">{product.stock}</p>
+                    <p className="text-[10px] text-zinc-500">{product.detail}</p>
                   </div>
                   <p className="text-[11px] font-semibold text-emerald-700">
                     {product.price}

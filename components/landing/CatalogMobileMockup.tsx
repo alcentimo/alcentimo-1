@@ -6,8 +6,9 @@ interface CatalogMobileMockupProps {
 }
 
 const MOBILE_PRODUCTS = [
-  { name: "Aceite 900ml", price: "$4.50" },
-  { name: "Arroz 1kg", price: "$2.80" },
+  { name: "Vestido casual", size: "Talla M", price: "$25.00" },
+  { name: "Jeans Slim Fit", size: "Talla 32", price: "$35.00" },
+  { name: "Camisa básica", size: "Talla L", price: "$15.00" },
 ] as const;
 
 export function CatalogMobileMockup({ className }: CatalogMobileMockupProps) {
@@ -20,12 +21,12 @@ export function CatalogMobileMockup({ className }: CatalogMobileMockupProps) {
         <div className="landing-mobile-mockup-notch" />
         <div className="landing-mobile-mockup-screen">
           <header className="landing-mobile-mockup-header">
-            <div className="landing-mobile-mockup-store-logo">FS</div>
+            <div className="landing-mobile-mockup-store-logo">BL</div>
             <div className="min-w-0">
               <p className="truncate text-[9px] font-semibold text-zinc-900">
-                Ferretería El Sol
+                Boutique Luna
               </p>
-              <p className="text-[8px] text-emerald-600">Catálogo</p>
+              <p className="text-[8px] text-emerald-600">Moda · Catálogo</p>
             </div>
           </header>
 
@@ -36,6 +37,7 @@ export function CatalogMobileMockup({ className }: CatalogMobileMockupProps) {
                 <p className="mt-1 truncate text-[7px] font-medium text-zinc-800">
                   {product.name}
                 </p>
+                <p className="truncate text-[6px] text-zinc-500">{product.size}</p>
                 <p className="text-[7px] font-semibold text-emerald-700">
                   {product.price}
                 </p>
