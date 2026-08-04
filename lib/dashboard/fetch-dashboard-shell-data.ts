@@ -31,6 +31,7 @@ import {
   getOnboardingSetupStatus,
   type ProTrialSetupPick,
 } from "@/lib/onboarding/setup-status";
+import { scheduleStoreSubdomainProvision } from "@/lib/domains/provision-store-subdomain";
 
 const SHELL_QUERY_TIMEOUT_MS = 8_000;
 
@@ -103,6 +104,10 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
     }
 
     const store = await getUserStore(supabase, auth.authUser.id);
+    if (store?.id && store.slug) {
+      // Idempotente: asegura CNAME + dominio Vercel (evita ERR_CONNECTION_CLOSED).
+      scheduleStoreSubdomainProvision({ storeId: store.id, slug: store.slug });
+    }
     const storeRole = store
       ? await getStoreMemberRole(supabase, store.id, auth.authUser.id)
       : null;
