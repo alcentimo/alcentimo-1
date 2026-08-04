@@ -135,23 +135,28 @@ export function SidebarProTrialProgress({
                 className={cn(
                   "flex items-center gap-1.5 rounded-md px-1 py-0.5 text-[11px] leading-snug transition-colors",
                   done
-                    ? "text-emerald-700 dark:text-emerald-300"
-                    : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
+                    ? "pointer-events-none text-zinc-400 dark:text-zinc-500"
+                    : "font-medium text-zinc-800 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:hover:text-white",
                 )}
-                aria-current={done ? undefined : undefined}
               >
                 {done ? (
                   <CheckCircle2
-                    className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                    className="h-3.5 w-3.5 shrink-0 text-emerald-500/70 dark:text-emerald-400/60"
                     aria-hidden="true"
                   />
                 ) : (
                   <Circle
-                    className="h-3.5 w-3.5 shrink-0 text-zinc-400"
+                    className="h-3.5 w-3.5 shrink-0 text-zinc-400 dark:text-zinc-500"
                     aria-hidden="true"
                   />
                 )}
-                <span className={cn("truncate", done && "line-through decoration-emerald-600/40")}>
+                <span
+                  className={cn(
+                    "truncate",
+                    done &&
+                      "line-through decoration-zinc-300 decoration-1 dark:decoration-zinc-600",
+                  )}
+                >
                   {step.short}
                 </span>
               </Link>

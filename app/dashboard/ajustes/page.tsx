@@ -6,7 +6,6 @@ import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { getStoreCoupons } from "@/lib/coupons/actions";
 import { getStorePromotions } from "@/lib/promotions/actions";
 import { getStoreInventory } from "@/lib/inventory";
-import { getStoreProductCount } from "@/lib/plans/product-limit";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import { SettingsPanel } from "@/components/dashboard/settings/SettingsPanel";
@@ -20,9 +19,6 @@ import {
   getEffectivePlanIdForLimits,
   resolveProTrialStatus,
 } from "@/lib/plans/trial";
-import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
-import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
-import { AjustesProTrialActivation } from "@/components/dashboard/settings/AjustesProTrialActivation";
 import { isSupportAdmin } from "@/lib/support/is-support-admin";
 
 export const dynamic = "force-dynamic";
@@ -76,18 +72,8 @@ export default async function AjustesPage({
     baseSettings: Awaited<ReturnType<typeof getCatalogPreviewSettings>>;
   } | null = null;
 
-  let trialSetupStatus = {
-    hasProducts: false,
-    hasMinProductsForProTrial: false,
-    hasPaymentsConfigured: false,
-    hasShippingConfigured: false,
-  };
-  let trialEligible = false;
-  let trialActive = false;
-  let trialEndsAt: string | null = null;
-
   if (store) {
-    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations, storeCategories, planSettings, activeProductCount] =
+    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations, storeCategories, planSettings] =
       await Promise.all([
       getStoreSettingsConfig(store.id),
       getStoreCoupons(store.id),
@@ -102,7 +88,6 @@ export default async function AjustesPage({
         store.rubro_tienda,
       ).catch(() => []),
       fetchPlanSettings().catch(() => null),
-      getStoreProductCount(store.id),
     ]);
 
     settingsConfig = config;
@@ -110,15 +95,7 @@ export default async function AjustesPage({
     promotions = promotionRows;
     locations = storeLocations;
     categories = storeCategories;
-    trialSetupStatus = getOnboardingSetupStatus(
-      activeProductCount,
-      config,
-      store.slug,
-    );
     const trial = resolveProTrialStatus(authUser.profile, authUser.planId);
-    trialEligible = isEligiblePlanForProTrial(authUser.profile);
-    trialActive = trial.active;
-    trialEndsAt = trial.endsAt;
     products = inventory.products.map((product) => ({
       id: product.product_id,
       name: product.product_name,
@@ -164,15 +141,6 @@ export default async function AjustesPage({
             : "Marca, envíos, pagos y presencia en línea."
         }
       />
-
-      {store ? (
-        <AjustesProTrialActivation
-          trialEligible={trialEligible}
-          trialActive={trialActive}
-          trialEndsAt={trialEndsAt}
-          setupStatus={trialSetupStatus}
-        />
-      ) : null}
 
       <SettingsPanel
         store={
