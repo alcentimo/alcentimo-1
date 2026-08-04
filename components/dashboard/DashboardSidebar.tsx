@@ -46,6 +46,7 @@ interface DashboardSidebarProps {
   trialActive?: boolean;
   trialEligible?: boolean;
   proTrialSetup?: ProTrialSetupPick | null;
+  proTrialProductCount?: number;
   mobileOpen: boolean;
   immersiveHidden: boolean;
   onCloseMobile: () => void;
@@ -195,6 +196,7 @@ export function DashboardSidebar({
   trialActive = false,
   trialEligible = false,
   proTrialSetup = null,
+  proTrialProductCount = 0,
   mobileOpen,
   immersiveHidden,
   onCloseMobile,
@@ -377,6 +379,7 @@ export function DashboardSidebar({
           <div className={cn(drawerExpanded ? "mb-2" : "mb-1")}>
             <SidebarProTrialProgress
               setup={proTrialSetup}
+              productCount={proTrialProductCount}
               trialEligible={trialEligible}
               trialActive={trialActive}
               expanded={drawerExpanded}

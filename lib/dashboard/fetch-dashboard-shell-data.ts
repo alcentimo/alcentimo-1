@@ -45,6 +45,8 @@ export type DashboardShellData =
       trialActive: boolean;
       trialEligible: boolean;
       proTrialSetup: ProTrialSetupPick | null;
+      /** Productos activos (para contador N/10 en Primeros pasos). */
+      proTrialProductCount: number;
       exchangeRate: number | null;
       exchangeRateUpdatedAt: string | null;
       isSupportAdmin: boolean;
@@ -166,6 +168,7 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
       trialActive: trial.active,
       trialEligible: trial.eligible,
       proTrialSetup,
+      proTrialProductCount: store ? productCount : 0,
       exchangeRate,
       exchangeRateUpdatedAt,
       isSupportAdmin: isSupportAdmin(

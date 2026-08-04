@@ -16,6 +16,7 @@ import { cn } from "@/lib/cn";
 
 interface SidebarProTrialProgressProps {
   setup: ProTrialSetupPick;
+  productCount: number;
   trialEligible: boolean;
   trialActive: boolean;
   expanded: boolean;
@@ -24,17 +25,14 @@ interface SidebarProTrialProgressProps {
 const STEPS = [
   {
     key: "products" as const,
-    short: `${PRO_TRIAL_MIN_ACTIVE_PRODUCTS} productos`,
     href: "/dashboard/catalogo?nuevo=1",
   },
   {
     key: "payments" as const,
-    short: "Método de pago",
     href: "/dashboard/ajustes?tab=payments",
   },
   {
     key: "shipping" as const,
-    short: "Método de envío",
     href: "/dashboard/ajustes?tab=shipping",
   },
 ] as const;
@@ -45,12 +43,28 @@ function stepDone(setup: ProTrialSetupPick, key: (typeof STEPS)[number]["key"]) 
   return setup.hasShippingConfigured;
 }
 
+function stepLabel(
+  key: (typeof STEPS)[number]["key"],
+  productCount: number,
+): string {
+  if (key === "products") {
+    const current = Math.min(
+      Math.max(0, productCount),
+      PRO_TRIAL_MIN_ACTIVE_PRODUCTS,
+    );
+    return `${current}/${PRO_TRIAL_MIN_ACTIVE_PRODUCTS} productos`;
+  }
+  if (key === "payments") return "Método de pago";
+  return "Método de envío";
+}
+
 /**
  * Progreso de la prueba Pro en la sidebar (debajo del plan).
  * No es flotante: no tapa el catálogo.
  */
 export function SidebarProTrialProgress({
   setup,
+  productCount,
   trialEligible,
   trialActive,
   expanded,
@@ -67,7 +81,8 @@ export function SidebarProTrialProgress({
     (setup.hasShippingConfigured ? 1 : 0);
   const percent = getProTrialSetupProgressPercent(setup);
   const unlockReady = isProTrialUnlockReady(setup);
-  const summary = `Primeros pasos Pro ${completed}/3`;
+  const productLabel = stepLabel("products", productCount);
+  const summary = `Primeros pasos Pro ${completed}/3 · ${productLabel}`;
 
   if (!expanded) {
     return (
@@ -125,6 +140,7 @@ export function SidebarProTrialProgress({
       <ul className="space-y-1">
         {STEPS.map((step) => {
           const done = stepDone(setup, step.key);
+          const label = stepLabel(step.key, productCount);
           return (
             <li key={step.key}>
               <Link
@@ -157,7 +173,7 @@ export function SidebarProTrialProgress({
                       "line-through decoration-zinc-300 decoration-1 dark:decoration-zinc-600",
                   )}
                 >
-                  {step.short}
+                  {label}
                 </span>
               </Link>
             </li>

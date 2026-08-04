@@ -71,6 +71,7 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
           trialActive={shell?.trialActive ?? false}
           trialEligible={shell?.trialEligible ?? false}
           proTrialSetup={shell?.proTrialSetup ?? null}
+          proTrialProductCount={shell?.proTrialProductCount ?? 0}
           exchangeRate={shell?.exchangeRate ?? null}
           exchangeRateUpdatedAt={shell?.exchangeRateUpdatedAt ?? null}
           isSupportAdmin={shell?.isSupportAdmin ?? false}
