@@ -11,6 +11,8 @@ import type {
 import {
   grantProMonthToUser,
   grantProMonthToUsers,
+  grantOrExtendProTrialToUser,
+  grantOrExtendProTrialToUsers,
   sendPromoOffersToUsers,
 } from "@/lib/admin/grant-pro-actions";
 import {
@@ -28,6 +30,7 @@ type GrowthSubTab = "usuarios" | "cupones" | "campanas" | "historial";
 
 const ACTION_LABELS: Record<string, string> = {
   grant_pro: "Otorgar Pro",
+  grant_pro_trial: "Prueba Pro",
   create_coupon: "Crear cupón",
   toggle_coupon: "Cupón on/off",
   create_campaign: "Crear campaña",
@@ -96,6 +99,7 @@ export function AdminGrowthPanel({
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [grantingId, setGrantingId] = useState<string | null>(null);
+  const [grantingTrialId, setGrantingTrialId] = useState<string | null>(null);
 
   const filteredUsers = useMemo(() => {
     const min = minProducts.trim() === "" ? null : Number(minProducts);
@@ -167,6 +171,35 @@ export function AdminGrowthPanel({
     });
   }
 
+  function handleGrantTrial(userId: string) {
+    setError(null);
+    setSuccess(null);
+    setGrantingTrialId(userId);
+    startTransition(async () => {
+      const result = await grantOrExtendProTrialToUser({ userId, days: 30 });
+      setGrantingTrialId(null);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setSuccess("Prueba Pro activada/extendida por 30 días (sin anti-abuso).");
+      setAuditLog((prev) => [
+        {
+          id: `local-${Date.now()}`,
+          actorId: "me",
+          actorEmail: "tú",
+          action: "grant_pro_trial",
+          targetUserId: userId,
+          targetEmail: users.find((u) => u.id === userId)?.email ?? null,
+          summary: "Activó/extendió prueba Pro por 30 días",
+          meta: { days: 30, ends_at: result.endsAt ?? null },
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+    });
+  }
+
   function handleGrantSelected() {
     const ids = Array.from(selected);
     if (ids.length === 0) {
@@ -185,6 +218,32 @@ export function AdminGrowthPanel({
       setSelected(new Set());
       setSuccess(
         `Pro otorgado a ${result.granted ?? ids.length} usuario(s)${
+          result.failed ? ` (${result.failed} fallaron)` : ""
+        }.`,
+      );
+    });
+  }
+
+  function handleGrantTrialSelected() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) {
+      setError("Selecciona al menos un usuario.");
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    startTransition(async () => {
+      const result = await grantOrExtendProTrialToUsers({
+        userIds: ids,
+        days: 30,
+      });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setSelected(new Set());
+      setSuccess(
+        `Prueba Pro activada/extendida para ${result.granted ?? ids.length} usuario(s)${
           result.failed ? ` (${result.failed} fallaron)` : ""
         }.`,
       );
@@ -407,6 +466,14 @@ export function AdminGrowthPanel({
             >
               Otorgar Pro a seleccionados ({selected.size})
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending || selected.size === 0}
+              onClick={handleGrantTrialSelected}
+            >
+              Prueba Pro +30d a seleccionados ({selected.size})
+            </Button>
           </div>
 
           <form
@@ -499,14 +566,28 @@ export function AdminGrowthPanel({
                     </td>
                     <td className="px-3 py-2">{user.productCount}</td>
                     <td className="px-3 py-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={pending && grantingId === user.id}
-                        onClick={() => handleGrant(user.id)}
-                      >
-                        {grantingId === user.id ? "Otorgando…" : "Otorgar Pro"}
-                      </Button>
+                      <div className="flex flex-wrap gap-1.5">
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={pending && grantingId === user.id}
+                          onClick={() => handleGrant(user.id)}
+                        >
+                          {grantingId === user.id ? "Otorgando…" : "Otorgar Pro"}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={pending && grantingTrialId === user.id}
+                          onClick={() => handleGrantTrial(user.id)}
+                          title="Activa o extiende la prueba Pro gratis sin validación anti-abuso"
+                        >
+                          {grantingTrialId === user.id
+                            ? "Activando…"
+                            : "Prueba +30d"}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

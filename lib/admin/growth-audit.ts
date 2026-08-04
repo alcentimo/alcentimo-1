@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type GrowthAuditAction =
   | "grant_pro"
+  | "grant_pro_trial"
   | "create_coupon"
   | "toggle_coupon"
   | "create_campaign"

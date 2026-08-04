@@ -23,10 +23,8 @@ function normalizeClaimEmail(email: string | null | undefined): string | null {
 }
 
 /**
- * Valida anti-abuso antes de reclamar la prueba Pro:
- * - la tienda no debe haber reclamado antes
- * - WhatsApp principal obligatorio
- * - correo y teléfono no deben figurar en claims de otras tiendas
+ * Valida anti-abuso antes de reclamar la prueba Pro (solo flujo de usuario).
+ * El panel admin usa grantOrExtendProTrialToUser y no pasa por aquí.
  */
 export async function assertProTrialContactAvailable(options: {
   storeId: string;
