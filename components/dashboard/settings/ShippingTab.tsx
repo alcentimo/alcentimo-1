@@ -19,12 +19,10 @@ import {
 } from "@/lib/country-config";
 import { getShippingMethod } from "@/src/config/shipping-methods";
 import { formatUsd } from "@/lib/format";
-import { cn } from "@/lib/cn";
 import type {
   DeliveryMeetingPoint,
   DeliveryZone,
   ShippingCarrierKey,
-  ShippingPricingMode,
   ShippingSettings,
 } from "@/lib/store-settings/types";
 
@@ -79,12 +77,6 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
   const [pickupPoints, setPickupPoints] = useState<DeliveryMeetingPoint[]>(
     initialSettings.pickupPoints,
   );
-  const [pricingMode, setPricingMode] = useState<ShippingPricingMode>(
-    initialSettings.pricingMode,
-  );
-  const [flatRateUsd, setFlatRateUsd] = useState(
-    String(initialSettings.flatRateUsd),
-  );
   const [freeShippingEnabled, setFreeShippingEnabled] = useState(
     initialSettings.freeShippingEnabled,
   );
@@ -109,8 +101,6 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
     nextDetails: string,
     nextDeliveryZones: DeliveryZone[],
     nextPickupPoints: DeliveryMeetingPoint[],
-    nextPricingMode: ShippingPricingMode = pricingMode,
-    nextFlatRate = flatRateUsd,
     nextFreeEnabled = freeShippingEnabled,
     nextFreeMin = freeShippingMinUsd,
   ): ShippingSettings {
@@ -119,8 +109,8 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
       deliveryDetails: nextDetails,
       deliveryZones: nextDeliveryZones,
       pickupPoints: nextPickupPoints,
-      pricingMode: nextPricingMode,
-      flatRateUsd: parseAmount(nextFlatRate, initialSettings.flatRateUsd),
+      pricingMode: "cod",
+      flatRateUsd: initialSettings.flatRateUsd,
       freeShippingEnabled: nextFreeEnabled,
       freeShippingMinUsd: parseAmount(
         nextFreeMin,
@@ -134,8 +124,6 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
     setDeliveryDetails(initialSettings.deliveryDetails);
     setDeliveryZones(initialSettings.deliveryZones);
     setPickupPoints(initialSettings.pickupPoints);
-    setPricingMode(initialSettings.pricingMode);
-    setFlatRateUsd(String(initialSettings.flatRateUsd));
     setFreeShippingEnabled(initialSettings.freeShippingEnabled);
     setFreeShippingMinUsd(String(initialSettings.freeShippingMinUsd));
   }
@@ -174,30 +162,12 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
   }
 
   function handleSaveForm() {
-    if (pricingMode === "flat" && parseAmount(flatRateUsd, 0) <= 0) {
-      setError("Indica una tarifa plana mayor a $0.");
-      return;
-    }
     if (freeShippingEnabled && parseAmount(freeShippingMinUsd, 0) <= 0) {
       setError("Indica un monto mínimo mayor a $0 para el envío gratis.");
       return;
     }
     persist(
       buildPayload(carriers, deliveryDetails, deliveryZones, pickupPoints),
-      "form",
-    );
-  }
-
-  function selectPricingMode(nextMode: ShippingPricingMode) {
-    setPricingMode(nextMode);
-    persist(
-      buildPayload(
-        carriers,
-        deliveryDetails,
-        deliveryZones,
-        pickupPoints,
-        nextMode,
-      ),
       "form",
     );
   }
@@ -210,8 +180,6 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
         deliveryDetails,
         deliveryZones,
         pickupPoints,
-        pricingMode,
-        flatRateUsd,
         enabled,
       ),
       "form",
@@ -281,7 +249,6 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
     );
   }
 
-  const flatPreview = parseAmount(flatRateUsd, initialSettings.flatRateUsd);
   const freeMinPreview = parseAmount(
     freeShippingMinUsd,
     initialSettings.freeShippingMinUsd,
@@ -296,98 +263,22 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
     >
       <SettingsSection
         title="Cómo cobras el envío"
-        description="Elige la modalidad que verá el cliente en el checkout. Puedes combinarla con envío gratis condicionado."
+        description="El cliente paga el flete en la agencia al retirar. Puedes combinarlo con envío gratis condicionado."
         variant="payments"
       >
-        <div className="grid gap-3">
-          <label
-            className={cn(
-              "flex cursor-pointer gap-3 rounded-xl border p-4 transition",
-              pricingMode === "cod"
-                ? "border-teal-500 bg-teal-50/70 ring-1 ring-teal-500/30 dark:border-teal-400 dark:bg-teal-950/30"
-                : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950",
-            )}
-          >
-            <input
-              type="radio"
-              name="shipping-pricing-mode"
-              className="mt-1"
-              checked={pricingMode === "cod"}
-              onChange={() => selectPricingMode("cod")}
-            />
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                Cobro a destino (recomendado)
-                <ShippingHelpHint label="Qué es cobro a destino">
-                  El cliente paga el costo del envío directamente en la agencia
-                  (MRW, Tealca, Zoom, etc.) al retirar su paquete. Tú no adelantas
-                  el flete ni lo sumas al total del pedido.
-                </ShippingHelpHint>
-              </span>
-              <span className="mt-1 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                Ideal en Venezuela: el flete lo paga el comprador en la oficina de
-                la encomienda. En el checkout verá “Cobro a destino”.
-              </span>
-            </span>
-          </label>
-
-          <label
-            className={cn(
-              "flex cursor-pointer gap-3 rounded-xl border p-4 transition",
-              pricingMode === "flat"
-                ? "border-teal-500 bg-teal-50/70 ring-1 ring-teal-500/30 dark:border-teal-400 dark:bg-teal-950/30"
-                : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950",
-            )}
-          >
-            <input
-              type="radio"
-              name="shipping-pricing-mode"
-              className="mt-1"
-              checked={pricingMode === "flat"}
-              onChange={() => selectPricingMode("flat")}
-            />
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                Tarifa plana nacional
-                <ShippingHelpHint label="Qué es tarifa plana">
-                  Cobras un monto fijo de envío por adelantado (por ejemplo $3 o
-                  $4) junto con el pedido. Útil si quieres cubrir parte del flete
-                  o simplificar el cobro.
-                </ShippingHelpHint>
-              </span>
-              <span className="mt-1 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                Un solo costo de envío para todo el país, sumado al total del
-                checkout.
-              </span>
-
-              {pricingMode === "flat" ? (
-                <div className="mt-3 max-w-xs">
-                  <label htmlFor="flat-rate-usd" className="label-field">
-                    Costo de envío (USD)
-                  </label>
-                  <div className="relative mt-1.5">
-                    <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-zinc-400">
-                      $
-                    </span>
-                    <input
-                      id="flat-rate-usd"
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      inputMode="decimal"
-                      value={flatRateUsd}
-                      onChange={(event) => setFlatRateUsd(event.target.value)}
-                      className="input-field pl-7"
-                      placeholder="3.00"
-                    />
-                  </div>
-                  <p className="mt-1.5 text-[11px] text-zinc-500">
-                    Vista previa: el cliente verá envío {formatUsd(flatPreview)}.
-                  </p>
-                </div>
-              ) : null}
-            </span>
-          </label>
+        <div className="rounded-xl border border-teal-500 bg-teal-50/70 p-4 ring-1 ring-teal-500/30 dark:border-teal-400 dark:bg-teal-950/30">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            Cobro a destino (recomendado)
+            <ShippingHelpHint label="Qué es cobro a destino">
+              El cliente paga el costo del envío directamente en la agencia
+              (MRW, Tealca, Zoom, etc.) al retirar su paquete. Tú no adelantas
+              el flete ni lo sumas al total del pedido.
+            </ShippingHelpHint>
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
+            Ideal en Venezuela: el flete lo paga el comprador en la oficina de
+            la encomienda. En el checkout verá “Cobro a destino”.
+          </p>
         </div>
       </SettingsSection>
 
@@ -403,8 +294,8 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
                 Activar envío gratis
                 <ShippingHelpHint label="Cómo funciona el envío gratis">
                   Cuando el carrito alcanza el monto mínimo, el checkout muestra
-                  “Gratis” automáticamente (ya no cobro a destino ni tarifa
-                  plana). Si no llega al mínimo, se aplica tu modalidad normal.
+                  “Gratis” automáticamente (ya no cobro a destino). Si no llega
+                  al mínimo, se aplica cobro a destino.
                 </ShippingHelpHint>
               </p>
               <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">

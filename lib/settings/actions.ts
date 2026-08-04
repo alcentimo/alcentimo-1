@@ -262,11 +262,10 @@ export async function saveShippingSettings(
   shipping: ShippingSettings,
 ): Promise<SettingsActionResult> {
   const normalized = normalizeStoreSettingsConfig({ shipping });
-  const next = normalized.shipping;
-
-  if (next.pricingMode === "flat" && next.flatRateUsd <= 0) {
-    return { error: "Indica una tarifa plana de envío mayor a $0." };
-  }
+  const next = {
+    ...normalized.shipping,
+    pricingMode: "cod" as const,
+  };
 
   if (next.freeShippingEnabled && next.freeShippingMinUsd <= 0) {
     return {
