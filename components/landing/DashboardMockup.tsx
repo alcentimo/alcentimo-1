@@ -6,9 +6,12 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
+import { formatExchangeRate } from "@/lib/format";
 
 interface DashboardMockupProps {
   className?: string;
+  /** Tasa BCV vigente (misma fuente que el dashboard). */
+  exchangeRate?: number | null;
 }
 
 const MOCK_PRODUCTS = [
@@ -17,7 +20,15 @@ const MOCK_PRODUCTS = [
   { name: "Camisa básica", detail: "Talla L · 15 u.", price: "$15.00" },
 ] as const;
 
-export function DashboardMockup({ className }: DashboardMockupProps) {
+export function DashboardMockup({
+  className,
+  exchangeRate = null,
+}: DashboardMockupProps) {
+  const rateLabel =
+    exchangeRate != null
+      ? `Bs. ${formatExchangeRate(exchangeRate)}`
+      : "Bs. —";
+
   return (
     <div
       className={cn("landing-dashboard-mockup", className)}
@@ -72,7 +83,9 @@ export function DashboardMockup({ className }: DashboardMockupProps) {
               </div>
               <div className="landing-dashboard-mockup-stat">
                 <p className="text-[10px] text-zinc-500">Tasa BCV</p>
-                <p className="mt-0.5 text-sm font-semibold text-zinc-900">Bs. 68,42</p>
+                <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-900">
+                  {rateLabel}
+                </p>
               </div>
             </div>
 
