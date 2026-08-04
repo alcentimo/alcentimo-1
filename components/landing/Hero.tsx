@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { HeroCompositeMockup } from "@/components/landing/HeroCompositeMockup";
+import { LandingFashionCatalogMockup } from "@/components/landing/LandingFashionCatalogMockup";
 import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 
 const heroHighlights = [
@@ -72,7 +72,7 @@ export function Hero({ exchangeRate = null }: HeroProps) {
           </div>
 
           <div className="w-full lg:justify-self-end">
-            <HeroCompositeMockup exchangeRate={exchangeRate} />
+            <LandingFashionCatalogMockup exchangeRate={exchangeRate} />
           </div>
         </div>
       </div>

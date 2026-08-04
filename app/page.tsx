@@ -21,7 +21,7 @@ export default async function Home() {
     fetchPlanPricingTiers(),
     withTimeoutFallback(
       getCurrentExchangeRate(),
-      4_000,
+      8_000,
       null,
       "landing:getCurrentExchangeRate",
     ),
