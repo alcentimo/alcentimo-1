@@ -53,7 +53,6 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(() => {
     if (!urlError && !urlErrorDescription) return null;
     return formatAuthError(urlErrorDescription || urlError);
@@ -83,7 +82,6 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
     setSuccessNotice(null);
     setSignupConfirmationSent(false);
     setSignupNotice(null);
-    setConfirmPassword("");
     setAcceptedLegalTerms(false);
     if (nextMode === "signup") {
       setExistingAccountNotice(false);
@@ -113,18 +111,11 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
     setError(null);
     setSuccessNotice(null);
 
-    if (mode === "signup") {
-      if (!acceptedLegalTerms) {
-        setError(
-          "Debes aceptar los Términos y Condiciones y la Política de Privacidad.",
-        );
-        return;
-      }
-
-      if (password !== confirmPassword) {
-        setError("Las contraseñas no coinciden.");
-        return;
-      }
+    if (mode === "signup" && !acceptedLegalTerms) {
+      setError(
+        "Debes aceptar los Términos y Condiciones y la Política de Privacidad.",
+      );
+      return;
     }
 
     setLoading(true);
@@ -313,7 +304,7 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
         postAuthPath={postAuthPath}
         disabled={isBusy}
         className="mt-6"
-        buttonClassName="rounded-[10px] border-zinc-200/80 py-3.5 font-semibold shadow-[0_1px_2px_rgba(24,24,27,0.04)] hover:bg-zinc-50 dark:hover:bg-zinc-800"
+        buttonClassName="rounded-xl border-zinc-300 bg-white py-3.5 text-base font-semibold shadow-md shadow-zinc-900/10 ring-1 ring-zinc-900/5 hover:bg-zinc-50 hover:shadow-lg dark:border-zinc-600 dark:shadow-black/30 dark:ring-white/10 dark:hover:bg-zinc-800"
         onError={(message) => {
           logAuthEvent("google_signin_error", { message }, "warn");
           setError(formatAuthError(message));
@@ -369,22 +360,6 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
             </p>
           ) : null}
         </div>
-
-        {mode === "signup" ? (
-          <div>
-            <label htmlFor="confirm_password" className="label-field">
-              Confirmar contraseña
-            </label>
-            <PasswordInput
-              id="confirm_password"
-              required
-              minLength={6}
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-          </div>
-        ) : null}
 
         {mode === "signup" ? (
           <label className="flex items-start gap-2.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">

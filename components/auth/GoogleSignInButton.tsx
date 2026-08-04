@@ -192,7 +192,7 @@ export function GoogleSignInButton({
     <div className={cn("space-y-2", className)}>
       <div
         className={cn(
-          "relative w-full min-h-11",
+          "relative w-full min-h-12",
           isDisabled && "pointer-events-none opacity-60",
         )}
       >
