@@ -93,6 +93,7 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
       title: string;
       basePriceUsd: number;
       stock: number;
+      category: string;
     }>;
   }>
 > {
@@ -103,7 +104,7 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("supplier_products")
-    .select("id, title, base_price_usd, stock")
+    .select("id, title, base_price_usd, stock, category")
     .eq("is_active", true)
     .order("title", { ascending: true })
     .limit(200);
@@ -116,6 +117,7 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
       title: String(row.title ?? ""),
       basePriceUsd: Number(row.base_price_usd) || 0,
       stock: Number(row.stock) || 0,
+      category: String(row.category ?? "otros"),
     })),
   };
 }

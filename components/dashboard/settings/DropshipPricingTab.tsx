@@ -14,6 +14,7 @@ import {
 } from "@/lib/dropship/margin";
 import type { DropshipPricingSettings } from "@/lib/store-settings/types";
 import { formatUsd } from "@/lib/format";
+import { supplierCategoryLabel } from "@/lib/supplier/categories";
 import {
   linkStoreDropshipProduct,
   listActiveSupplierCatalogForMerchant,
@@ -37,7 +38,13 @@ export function DropshipPricingTab({
   const [message, setMessage] = useState<string | null>(null);
   const [links, setLinks] = useState<DropshipLinkRow[]>([]);
   const [supplierProducts, setSupplierProducts] = useState<
-    Array<{ id: string; title: string; basePriceUsd: number; stock: number }>
+    Array<{
+      id: string;
+      title: string;
+      basePriceUsd: number;
+      stock: number;
+      category: string;
+    }>
   >([]);
   const [storeProductId, setStoreProductId] = useState(
     storeProducts[0]?.id ?? "",
@@ -266,7 +273,8 @@ export function DropshipPricingTab({
               >
                 {supplierProducts.map((product) => (
                   <option key={product.id} value={product.id}>
-                    {product.title} · {formatUsd(product.basePriceUsd)}
+                    {product.title} · {formatUsd(product.basePriceUsd)} ·{" "}
+                    {supplierCategoryLabel(product.category)}
                   </option>
                 ))}
               </select>

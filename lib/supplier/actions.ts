@@ -9,11 +9,22 @@ import {
 } from "@/lib/supplier/access";
 import { uploadSupplierProductImage } from "@/lib/supplier/storage";
 import { recordSupplierPriceChangeAndNotify } from "@/lib/dropship/price-change";
+import {
+  normalizeSupplierProductCategory,
+  type SupplierProductCategory,
+} from "@/lib/supplier/categories";
+import {
+  normalizeSupplierProductVariants,
+  parseSupplierVariantsFromForm,
+  type SupplierProductVariants,
+} from "@/lib/supplier/variants";
 
 export interface SupplierProduct {
   id: string;
   title: string;
   description: string;
+  category: SupplierProductCategory;
+  variants: SupplierProductVariants;
   stock: number;
   basePriceUsd: number;
   imageUrl: string | null;
@@ -48,11 +59,16 @@ async function requireSupplierUser(): Promise<{
   return { user: { id: user.id } };
 }
 
+const PRODUCT_SELECT =
+  "id, title, description, category, variants, stock, base_price_usd, image_url, created_at, updated_at";
+
 function mapRow(row: Record<string, unknown>): SupplierProduct {
   return {
     id: String(row.id),
     title: String(row.title ?? ""),
     description: String(row.description ?? ""),
+    category: normalizeSupplierProductCategory(row.category),
+    variants: normalizeSupplierProductVariants(row.variants),
     stock: Number(row.stock) || 0,
     basePriceUsd: Number(row.base_price_usd) || 0,
     imageUrl:
@@ -64,38 +80,20 @@ function mapRow(row: Record<string, unknown>): SupplierProduct {
   };
 }
 
-export async function listSupplierProducts(): Promise<
-  ActionResult<{ products: SupplierProduct[] }>
-> {
-  const auth = await requireSupplierUser();
-  if (auth.error) return { error: auth.error };
-
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("supplier_products")
-    .select(
-      "id, title, description, stock, base_price_usd, image_url, created_at, updated_at",
-    )
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  return {
-    products: ((data as Record<string, unknown>[] | null) ?? []).map(mapRow),
-  };
-}
-
-export async function createSupplierProduct(
-  formData: FormData,
-): Promise<ActionResult<{ product: SupplierProduct }>> {
-  const auth = await requireSupplierUser();
-  if (auth.error || !auth.user) return { error: auth.error ?? "Sin sesión." };
-
+function parseProductFields(formData: FormData): {
+  error?: string;
+  title?: string;
+  description?: string;
+  category?: SupplierProductCategory;
+  variants?: SupplierProductVariants;
+  stock?: number;
+  basePriceUsd?: number;
+  image?: FormDataEntryValue | null;
+} {
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
+  const category = normalizeSupplierProductCategory(formData.get("category"));
+  const variants = parseSupplierVariantsFromForm(formData.get("variants"));
   const stockRaw = String(formData.get("stock") ?? "0").trim();
   const priceRaw = String(formData.get("basePriceUsd") ?? "0").trim();
   const image = formData.get("image");
@@ -114,14 +112,64 @@ export async function createSupplierProduct(
     return { error: "Indica un precio base válido en USD." };
   }
 
+  for (const option of variants.options) {
+    if (!option.label.trim()) {
+      return { error: "Cada variante debe tener un nombre." };
+    }
+  }
+
+  return {
+    title,
+    description,
+    category,
+    variants: normalizeSupplierProductVariants(variants),
+    stock,
+    basePriceUsd: Math.round(basePriceUsd * 100) / 100,
+    image,
+  };
+}
+
+export async function listSupplierProducts(): Promise<
+  ActionResult<{ products: SupplierProduct[] }>
+> {
+  const auth = await requireSupplierUser();
+  if (auth.error) return { error: auth.error };
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("supplier_products")
+    .select(PRODUCT_SELECT)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {
+    products: ((data as Record<string, unknown>[] | null) ?? []).map(mapRow),
+  };
+}
+
+export async function createSupplierProduct(
+  formData: FormData,
+): Promise<ActionResult<{ product: SupplierProduct }>> {
+  const auth = await requireSupplierUser();
+  if (auth.error || !auth.user) return { error: auth.error ?? "Sin sesión." };
+
+  const parsed = parseProductFields(formData);
+  if (parsed.error || !parsed.title || parsed.stock == null || parsed.basePriceUsd == null) {
+    return { error: parsed.error ?? "Datos inválidos." };
+  }
+
   const admin = createAdminClient();
   let imageUrl: string | null = null;
 
-  if (image instanceof File && image.size > 0) {
+  if (parsed.image instanceof File && parsed.image.size > 0) {
     const uploaded = await uploadSupplierProductImage(
       admin,
       auth.user.id,
-      image,
+      parsed.image,
     );
     if (uploaded.error || !uploaded.publicUrl) {
       return { error: uploaded.error ?? "No se pudo subir la foto." };
@@ -133,16 +181,16 @@ export async function createSupplierProduct(
     .from("supplier_products")
     .insert({
       created_by: auth.user.id,
-      title: title.slice(0, 180),
-      description: description.slice(0, 4000),
-      stock,
-      base_price_usd: Math.round(basePriceUsd * 100) / 100,
+      title: parsed.title.slice(0, 180),
+      description: (parsed.description ?? "").slice(0, 4000),
+      category: parsed.category ?? "otros",
+      variants: parsed.variants ?? normalizeSupplierProductVariants(null),
+      stock: parsed.stock,
+      base_price_usd: parsed.basePriceUsd,
       image_url: imageUrl,
       is_active: true,
     })
-    .select(
-      "id, title, description, stock, base_price_usd, image_url, created_at, updated_at",
-    )
+    .select(PRODUCT_SELECT)
     .single();
 
   if (error || !data) {
@@ -172,24 +220,9 @@ export async function updateSupplierProduct(
   const id = productId.trim();
   if (!id) return { error: "Producto inválido." };
 
-  const title = String(formData.get("title") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const stockRaw = String(formData.get("stock") ?? "0").trim();
-  const priceRaw = String(formData.get("basePriceUsd") ?? "0").trim();
-  const image = formData.get("image");
-
-  if (title.length < 2) {
-    return { error: "Indica un título de al menos 2 caracteres." };
-  }
-
-  const stock = Number(stockRaw);
-  if (!Number.isFinite(stock) || stock < 0 || !Number.isInteger(stock)) {
-    return { error: "El stock debe ser un número entero ≥ 0." };
-  }
-
-  const basePriceUsd = Number(priceRaw.replace(",", "."));
-  if (!Number.isFinite(basePriceUsd) || basePriceUsd < 0) {
-    return { error: "Indica un precio base válido en USD." };
+  const parsed = parseProductFields(formData);
+  if (parsed.error || !parsed.title || parsed.stock == null || parsed.basePriceUsd == null) {
+    return { error: parsed.error ?? "Datos inválidos." };
   }
 
   const admin = createAdminClient();
@@ -205,21 +238,23 @@ export async function updateSupplierProduct(
   if (!existing) return { error: "Producto no encontrado." };
 
   const previousPrice = Number(existing.base_price_usd) || 0;
-  const nextPrice = Math.round(basePriceUsd * 100) / 100;
+  const nextPrice = parsed.basePriceUsd;
 
   const patch: Record<string, unknown> = {
-    title: title.slice(0, 180),
-    description: description.slice(0, 4000),
-    stock,
+    title: parsed.title.slice(0, 180),
+    description: (parsed.description ?? "").slice(0, 4000),
+    category: parsed.category ?? "otros",
+    variants: parsed.variants ?? normalizeSupplierProductVariants(null),
+    stock: parsed.stock,
     base_price_usd: nextPrice,
     updated_at: new Date().toISOString(),
   };
 
-  if (image instanceof File && image.size > 0) {
+  if (parsed.image instanceof File && parsed.image.size > 0) {
     const uploaded = await uploadSupplierProductImage(
       admin,
       auth.user.id,
-      image,
+      parsed.image,
     );
     if (uploaded.error || !uploaded.publicUrl) {
       return { error: uploaded.error ?? "No se pudo subir la foto." };
@@ -232,9 +267,7 @@ export async function updateSupplierProduct(
     .update(patch)
     .eq("id", id)
     .eq("is_active", true)
-    .select(
-      "id, title, description, stock, base_price_usd, image_url, created_at, updated_at",
-    )
+    .select(PRODUCT_SELECT)
     .maybeSingle();
 
   if (error) return { error: error.message };
@@ -242,7 +275,6 @@ export async function updateSupplierProduct(
 
   const updated = mapRow(data as Record<string, unknown>);
 
-  // Órdenes ya emitidas conservan su snapshot; solo historial + alertas a tiendas vinculadas.
   await recordSupplierPriceChangeAndNotify({
     admin,
     supplierProductId: updated.id,
