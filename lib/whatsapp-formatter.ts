@@ -12,7 +12,6 @@ export interface TransactionalOrderWhatsAppMessageInput {
   customerName: string;
   items: TransactionalOrderWhatsAppItem[];
   totalUsd: number;
-  orderDetailUrl: string;
   paymentLabel?: string;
   shippingLabel?: string;
   shippingCostUsd?: number;
@@ -31,20 +30,8 @@ export interface TransactionalOrderWhatsAppMessageInput {
 const STORAGE_URL_PATTERN =
   /https?:\/\/[^\s]*supabase\.co[^\s]*/gi;
 
-const PLATFORM_HOST_PATTERN = /(^|\.)alcentimo\.com$/i;
-
 function stripStorageUrls(text: string): string {
   return text.replace(STORAGE_URL_PATTERN, "").replace(/\n{3,}/g, "\n\n").trim();
-}
-
-function isPlatformOrderUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url.trim());
-    if (/supabase\.co|storage\/v1/i.test(parsed.href)) return false;
-    return PLATFORM_HOST_PATTERN.test(parsed.hostname);
-  } catch {
-    return false;
-  }
 }
 
 function sanitizeCustomerText(value: string): string {
@@ -52,8 +39,8 @@ function sanitizeCustomerText(value: string): string {
 }
 
 /**
- * Mensaje de notificación de pedido para WhatsApp.
- * Solo incluye un enlace de la plataforma al final (sin URLs de Storage).
+ * Mensaje de pedido para WhatsApp (cliente → tienda).
+ * Solo datos de la compra: sin URLs de la plataforma.
  */
 export function buildTransactionalOrderWhatsAppMessage(
   input: TransactionalOrderWhatsAppMessageInput,
@@ -131,13 +118,5 @@ export function buildTransactionalOrderWhatsAppMessage(
     body.push(`🏠 Entrega: ${sanitizeCustomerText(input.deliveryAddress)}`);
   }
 
-  const messageBody = body.join("\n");
-
-  const orderUrl = stripStorageUrls(input.orderDetailUrl.trim());
-  if (!orderUrl || !isPlatformOrderUrl(orderUrl)) {
-    return stripStorageUrls(messageBody);
-  }
-
-  // Solo el enlace de la plataforma al final → una única vista previa con marca Alcentimo.
-  return `${stripStorageUrls(messageBody)}\n\n${orderUrl}`;
+  return stripStorageUrls(body.join("\n"));
 }

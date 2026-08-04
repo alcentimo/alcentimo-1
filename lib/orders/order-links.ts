@@ -8,12 +8,3 @@ export function getPublicOrderDetailUrl(orderId: string): string {
   const safeBase = /supabase/i.test(base) ? DEFAULT_PLATFORM_ORIGIN : base;
   return `${safeBase}/pedidos/${orderId}`;
 }
-
-/**
- * URL usada en mensajes de WhatsApp: siempre alcentimo.com,
- * nunca Storage, localhost ni dominios de preview.
- */
-export function getWhatsAppOrderDetailUrl(orderId: string): string {
-  const trimmedId = orderId.trim();
-  return `https://alcentimo.com/pedidos/${trimmedId}`;
-}
