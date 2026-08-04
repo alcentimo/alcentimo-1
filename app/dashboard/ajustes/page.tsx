@@ -23,6 +23,7 @@ import {
 import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
 import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import { AjustesProTrialActivation } from "@/components/dashboard/settings/AjustesProTrialActivation";
+import { isSupportAdmin } from "@/lib/support/is-support-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -202,6 +203,7 @@ export default async function AjustesPage({
         initialDomainMode={
           mode === "connect" || mode === "purchase" ? mode : null
         }
+        showDropshipping={isSupportAdmin(session.authUser.email)}
       />
     </div>
   );

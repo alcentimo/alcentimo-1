@@ -68,7 +68,7 @@ export function CatalogAccessTab({ initialMode }: CatalogAccessTabProps) {
     <SettingsTabShell error={error} hideSaveBar>
       <SettingsSection
         title="Acceso al catálogo"
-        description="Controla quién puede ver tu tienda pública. Úsalo para probar productos de mayoristas sin exponer el catálogo."
+        description="Controla quién puede ver tu tienda pública. Útil para pruebas internas sin exponer el catálogo."
         variant="payments"
       >
         <div className="space-y-3">
@@ -107,7 +107,7 @@ export function CatalogAccessTab({ initialMode }: CatalogAccessTabProps) {
                       : option === "draft"
                         ? "No aparece para visitantes. Solo tú (con sesión) puedes previsualizarlo."
                         : option === "private"
-                          ? "Bloqueado al público. Ideal mientras configuras dropshipping."
+                          ? "Bloqueado al público. Ideal mientras preparas o pruebas tu catálogo."
                           : "Los visitantes deben ingresar una contraseña antes de ver productos."}
                   </span>
                 </span>

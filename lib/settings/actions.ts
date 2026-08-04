@@ -43,6 +43,7 @@ import type {
   StoredPromotion,
   StoreSettingsConfig,
 } from "@/lib/store-settings/types";
+import { requireDropshipFeatureAccess } from "@/lib/dropship/feature-access";
 
 export type SettingsActionResult = {
   error?: string;
@@ -198,6 +199,13 @@ export async function saveDropshipPricingSettings(
   const auth = await requireAuthStore(supabase);
   if (!auth.ok) {
     return { error: auth.error };
+  }
+
+  const feature = await requireDropshipFeatureAccess({
+    email: auth.authUser.email,
+  });
+  if (!feature.ok) {
+    return { error: feature.error };
   }
 
   const current = await getStoreSettingsConfig(auth.store.id);

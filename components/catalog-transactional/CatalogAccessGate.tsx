@@ -49,7 +49,7 @@ export function CatalogAccessGate({
       <p className="mt-2 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
         {reason === "private"
           ? `«${storeName}» no está disponible para el público. Si eres el comercio, inicia sesión en el panel o cambia el acceso en Ajustes.`
-          : `«${storeName}» requiere una contraseña para ver los productos. Ideal para pruebas de dropshipping o catálogos mayoristas.`}
+          : `«${storeName}» requiere una contraseña para ver los productos.`}
       </p>
 
       {reason === "password_required" ? (

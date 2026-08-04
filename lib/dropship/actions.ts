@@ -10,10 +10,24 @@ import {
 import { suggestRetailFromWholesaleCost } from "@/lib/dropship/margin";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { normalizeDropshipPricingSettings } from "@/lib/dropship/margin";
+import { requireDropshipFeatureAccess } from "@/lib/dropship/feature-access";
 
 type ActionResult<T extends object = object> = {
   error?: string;
 } & Partial<T>;
+
+async function requireDropshipStore() {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) return { error: auth.error } as const;
+
+  const feature = await requireDropshipFeatureAccess({
+    email: auth.authUser.email,
+  });
+  if (!feature.ok) return { error: feature.error } as const;
+
+  return { auth, supabase } as const;
+}
 
 export type DropshipLinkRow = {
   id: string;
@@ -42,9 +56,9 @@ export type SupplierPriceAlertRow = {
 export async function listStoreDropshipLinks(): Promise<
   ActionResult<{ links: DropshipLinkRow[] }>
 > {
-  const supabase = await createClient();
-  const auth = await requireAuthStore(supabase);
-  if (!auth.ok) return { error: auth.error };
+  const gate = await requireDropshipStore();
+  if ("error" in gate) return { error: gate.error };
+  const { auth } = gate;
 
   const admin = createAdminClient();
   const settings = await getStoreSettingsConfig(auth.store.id);
@@ -97,9 +111,8 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
     }>;
   }>
 > {
-  const supabase = await createClient();
-  const auth = await requireAuthStore(supabase);
-  if (!auth.ok) return { error: auth.error };
+  const gate = await requireDropshipStore();
+  if ("error" in gate) return { error: gate.error };
 
   const admin = createAdminClient();
   const { data, error } = await admin
@@ -127,9 +140,9 @@ export async function linkStoreDropshipProduct(input: {
   supplierProductId: string;
   autoReprice?: boolean;
 }): Promise<ActionResult<{ linkId: string }>> {
-  const supabase = await createClient();
-  const auth = await requireAuthStore(supabase);
-  if (!auth.ok) return { error: auth.error };
+  const gate = await requireDropshipStore();
+  if ("error" in gate) return { error: gate.error };
+  const { auth } = gate;
 
   const productId = input.productId.trim();
   const supplierProductId = input.supplierProductId.trim();
@@ -183,9 +196,9 @@ export async function linkStoreDropshipProduct(input: {
 export async function unlinkStoreDropshipProduct(
   linkId: string,
 ): Promise<ActionResult> {
-  const supabase = await createClient();
-  const auth = await requireAuthStore(supabase);
-  if (!auth.ok) return { error: auth.error };
+  const gate = await requireDropshipStore();
+  if ("error" in gate) return { error: gate.error };
+  const { auth } = gate;
 
   const admin = createAdminClient();
   const { error } = await admin
@@ -203,9 +216,12 @@ export async function unlinkStoreDropshipProduct(
 export async function listUnreadSupplierPriceAlerts(): Promise<
   ActionResult<{ alerts: SupplierPriceAlertRow[]; unreadCount: number }>
 > {
-  const supabase = await createClient();
-  const auth = await requireAuthStore(supabase);
-  if (!auth.ok) return { error: auth.error };
+  const gate = await requireDropshipStore();
+  // Feature oculta para comerciantes: sin alertas ni errores en UI.
+  if ("error" in gate) {
+    return { alerts: [], unreadCount: 0 };
+  }
+  const { auth } = gate;
 
   const admin = createAdminClient();
   const { data, error } = await admin
@@ -252,9 +268,9 @@ export async function listUnreadSupplierPriceAlerts(): Promise<
 export async function dismissSupplierPriceAlert(
   alertId: string,
 ): Promise<ActionResult> {
-  const supabase = await createClient();
-  const auth = await requireAuthStore(supabase);
-  if (!auth.ok) return { error: auth.error };
+  const gate = await requireDropshipStore();
+  if ("error" in gate) return { error: gate.error };
+  const { auth } = gate;
 
   const admin = createAdminClient();
   const { error } = await admin
@@ -274,9 +290,9 @@ export async function dismissSupplierPriceAlert(
 export async function applySuggestedPriceFromAlert(
   alertId: string,
 ): Promise<ActionResult> {
-  const supabase = await createClient();
-  const auth = await requireAuthStore(supabase);
-  if (!auth.ok) return { error: auth.error };
+  const gate = await requireDropshipStore();
+  if ("error" in gate) return { error: gate.error };
+  const { auth } = gate;
 
   const admin = createAdminClient();
   const { data: alert, error } = await admin
