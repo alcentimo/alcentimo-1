@@ -137,7 +137,7 @@ export function DropshipPricingTab({
         const result = await importSupplierProductToStoreCatalog(
           supplierProductIdToImport,
         );
-        if (!result || result.error) {
+        if (!result?.productId || result.error) {
           setError(
             result?.error ??
               "No se pudo importar el producto. Intenta de nuevo.",

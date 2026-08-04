@@ -94,10 +94,9 @@ async function upsertCatalogProductImage(
     full_url: imageUrl,
     is_primary: true,
     alt_text: name,
-    mime_type: null,
-    byte_size: null,
-    width: null,
-    height: null,
+    // mime_type es NOT NULL con default image/webp; no enviar null.
+    mime_type: "image/webp",
+    sort_order: 0,
   });
 
   return error?.message;
@@ -286,9 +285,11 @@ export async function importSupplierProductToStoreCatalog(
   supplierProductId: string,
 ): Promise<
   ActionResult<{
+    ok: true;
     productId: string;
     retailUsd: number;
     productName: string;
+    linkId: string;
   }>
 > {
   try {
@@ -530,27 +531,35 @@ export async function importSupplierProductToStoreCatalog(
         imageUrl,
       );
       if (imageError) {
-        await rollback();
-        return { error: imageError };
+        // No revertir el producto por la foto: el catálogo queda usable.
+        console.error(
+          "[dropship-import] imagen no guardada:",
+          imageError,
+          productId,
+        );
       }
     }
 
-    const { error: linkError } = await admin.from("store_dropship_links").insert({
-      store_id: auth.store.id,
-      product_id: productId,
-      supplier_product_id: supplierId,
-      auto_reprice: dropship.autoApplyOnCostChange,
-      last_cost_usd: cost,
-      updated_at: new Date().toISOString(),
-    });
+    const { data: linkRow, error: linkError } = await admin
+      .from("store_dropship_links")
+      .insert({
+        store_id: auth.store.id,
+        product_id: productId,
+        supplier_product_id: supplierId,
+        auto_reprice: dropship.autoApplyOnCostChange,
+        last_cost_usd: cost,
+        updated_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
 
-    if (linkError) {
+    if (linkError || !linkRow) {
       await rollback();
       return {
         error:
-          linkError.code === "23505"
+          linkError?.code === "23505"
             ? "Este producto mayorista ya está en tu catálogo."
-            : linkError.message,
+            : linkError?.message ?? "No se pudo vincular el producto mayorista.",
       };
     }
 
@@ -563,9 +572,11 @@ export async function importSupplierProductToStoreCatalog(
     revalidatePath(`/c/${auth.store.slug}`);
 
     return {
+      ok: true as const,
       productId,
       retailUsd,
       productName: title.slice(0, 120),
+      linkId: String(linkRow.id),
     };
   } catch (error) {
     const message =

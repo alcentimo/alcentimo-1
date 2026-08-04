@@ -100,10 +100,8 @@ async function upsertProductImage(
     full_url: imageUrl,
     is_primary: true,
     alt_text: name,
-    mime_type: null,
-    byte_size: null,
-    width: null,
-    height: null,
+    mime_type: "image/webp",
+    sort_order: 0,
   });
 
   return error?.message;
