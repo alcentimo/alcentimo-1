@@ -34,6 +34,9 @@ import {
   type SupplierProductVariants,
 } from "@/lib/supplier/variants";
 import { normalizeStoreRubro } from "@/src/config/categories";
+import { syncDefaultLocationStockFromVariant } from "@/lib/locations/sync-stock";
+import { mirrorSupplierStockToLinkedStores } from "@/lib/dropship/supplier-stock";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type ActionResult<T extends object = object> = {
   error?: string;
@@ -56,34 +59,35 @@ async function requireDropshipStore() {
 
 function mapSupplierVariantsToCatalog(
   supplierVariants: SupplierProductVariants,
-  fallbackStock: number,
 ): ProductVariantJson[] {
   if (supplierVariants.options.length === 0) return [];
 
-  const attributeKey = supplierVariantAttributeLabel(supplierVariants)
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "_")
-    .slice(0, 40) || "variante";
+  const attributeKey =
+    supplierVariantAttributeLabel(supplierVariants)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "_")
+      .slice(0, 40) || "variante";
 
+  // El stock vive en el mayorista; las opciones solo describen atributos.
   return supplierVariants.options.map((option) => ({
-    id: option.id || crypto.randomUUID(),
+    id: crypto.randomUUID(),
     name: option.label,
     price_extra_usd: Number(option.priceExtraUsd) || 0,
-    stock: fallbackStock,
+    stock: 0,
     attributes: { [attributeKey]: option.label },
   }));
 }
 
 async function upsertCatalogProductImage(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  client: SupabaseClient,
   productId: string,
   name: string,
   imageUrl: string,
 ): Promise<string | undefined> {
-  await supabase.from("product_images").delete().eq("product_id", productId);
+  await client.from("product_images").delete().eq("product_id", productId);
 
-  const { error } = await supabase.from("product_images").insert({
+  const { error } = await client.from("product_images").insert({
     product_id: productId,
     thumb_url: imageUrl,
     medium_url: imageUrl,
@@ -97,6 +101,31 @@ async function upsertCatalogProductImage(
   });
 
   return error?.message;
+}
+
+async function softDeleteImportedProduct(
+  client: SupabaseClient,
+  productId: string,
+) {
+  await client
+    .from("products")
+    .update({ is_deleted: true, is_active: false })
+    .eq("id", productId);
+}
+
+async function nextProductSortOrder(
+  client: SupabaseClient,
+  storeId: string,
+): Promise<number> {
+  const { data } = await client
+    .from("products")
+    .select("sort_order")
+    .eq("store_id", storeId)
+    .eq("is_deleted", false)
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return (Number(data?.sort_order) || 0) - 1;
 }
 
 export type DropshipLinkRow = {
@@ -262,254 +291,289 @@ export async function importSupplierProductToStoreCatalog(
     productName: string;
   }>
 > {
-  const gate = await requireDropshipStore();
-  if ("error" in gate) return { error: gate.error };
-  const { auth, supabase } = gate;
+  try {
+    const gate = await requireDropshipStore();
+    if ("error" in gate) return { error: gate.error };
+    const { auth } = gate;
 
-  const supplierId = supplierProductId.trim();
-  if (!supplierId) {
-    return { error: "Selecciona un producto mayorista." };
-  }
+    const supplierId = supplierProductId.trim();
+    if (!supplierId) {
+      return { error: "Selecciona un producto mayorista." };
+    }
 
-  const settings = await getStoreSettingsConfig(auth.store.id);
-  const dropship = normalizeDropshipPricingSettings(settings.dropshipPricing);
-  if (!dropship.enabled) {
-    return {
-      error:
-        "Activa la regla de margen en esta misma pestaña antes de importar productos.",
-    };
-  }
+    const settings = await getStoreSettingsConfig(auth.store.id);
+    const dropship = normalizeDropshipPricingSettings(settings.dropshipPricing);
+    if (!dropship.enabled) {
+      return {
+        error:
+          "Activa la regla de margen en esta misma pestaña antes de importar productos.",
+      };
+    }
 
-  const admin = createAdminClient();
+    const admin = createAdminClient();
 
-  const { data: existingLink } = await admin
-    .from("store_dropship_links")
-    .select("id, product_id")
-    .eq("store_id", auth.store.id)
-    .eq("supplier_product_id", supplierId)
-    .maybeSingle();
+    const { data: existingLink } = await admin
+      .from("store_dropship_links")
+      .select("id, product_id")
+      .eq("store_id", auth.store.id)
+      .eq("supplier_product_id", supplierId)
+      .maybeSingle();
 
-  if (existingLink) {
-    return {
-      error: "Este producto mayorista ya está en tu catálogo.",
-    };
-  }
+    if (existingLink) {
+      return { error: "Este producto mayorista ya está en tu catálogo." };
+    }
 
-  const { data: supplierRow, error: supplierError } = await admin
-    .from("supplier_products")
-    .select(
-      "id, title, description, base_price_usd, stock, category, image_url, variants, is_active",
-    )
-    .eq("id", supplierId)
-    .maybeSingle();
+    const { data: supplierRow, error: supplierError } = await admin
+      .from("supplier_products")
+      .select(
+        "id, title, description, base_price_usd, stock, category, image_url, variants, is_active",
+      )
+      .eq("id", supplierId)
+      .maybeSingle();
 
-  if (supplierError) return { error: supplierError.message };
-  if (!supplierRow || supplierRow.is_active === false) {
-    return { error: "Producto mayorista no disponible." };
-  }
+    if (supplierError) return { error: supplierError.message };
+    if (!supplierRow || supplierRow.is_active === false) {
+      return { error: "Producto mayorista no disponible." };
+    }
 
-  const title = String(supplierRow.title ?? "").trim();
-  if (!title) return { error: "El producto mayorista no tiene nombre." };
+    const title = String(supplierRow.title ?? "").trim();
+    if (!title) return { error: "El producto mayorista no tiene nombre." };
 
-  const cost = Number(supplierRow.base_price_usd) || 0;
-  const retailUsd = suggestRetailFromWholesaleCost(cost, dropship);
-  if (retailUsd == null || retailUsd < 0) {
-    return {
-      error: "No se pudo calcular el precio de venta con tu regla de margen.",
-    };
-  }
+    const cost = Number(supplierRow.base_price_usd) || 0;
+    const retailUsd = suggestRetailFromWholesaleCost(cost, dropship);
+    if (retailUsd == null || retailUsd < 0) {
+      return {
+        error: "No se pudo calcular el precio de venta con tu regla de margen.",
+      };
+    }
 
-  const productLimitCheck = await assertCanCreateProduct(auth.store.id);
-  if (!productLimitCheck.ok) {
-    return { error: productLimitCheck.error };
-  }
+    const productLimitCheck = await assertCanCreateProduct(auth.store.id);
+    if (!productLimitCheck.ok) {
+      return { error: productLimitCheck.error };
+    }
 
-  const categoryLabel = supplierCategoryLabel(
-    normalizeSupplierProductCategory(supplierRow.category),
-  );
-  const { data: storeCategories, error: categoriesError } = await supabase
-    .from("categories")
-    .select("id, name, slug")
-    .eq("store_id", auth.store.id);
+    const categoryLabel = supplierCategoryLabel(
+      normalizeSupplierProductCategory(supplierRow.category),
+    );
+    const { data: storeCategories, error: categoriesError } = await admin
+      .from("categories")
+      .select("id, name, slug")
+      .eq("store_id", auth.store.id);
 
-  if (categoriesError) return { error: categoriesError.message };
+    if (categoriesError) return { error: categoriesError.message };
 
-  const categoryCache = buildImportCategoryCache(
-    (storeCategories ?? []) as { id: string; name: string; slug: string }[],
-  );
-  const categoryResolved = await resolveOrCreateImportCategory(
-    supabase,
-    auth.store.id,
-    categoryLabel,
-    categoryCache,
-    normalizeStoreRubro(auth.store.rubro_tienda),
-  );
-  if (categoryResolved.error || !categoryResolved.categoryId) {
-    return {
-      error:
-        categoryResolved.error ??
-        "No se pudo asignar la categoría del producto.",
-    };
-  }
+    const categoryCache = buildImportCategoryCache(
+      (storeCategories ?? []) as { id: string; name: string; slug: string }[],
+    );
+    const categoryResolved = await resolveOrCreateImportCategory(
+      admin,
+      auth.store.id,
+      categoryLabel,
+      categoryCache,
+      normalizeStoreRubro(auth.store.rubro_tienda),
+    );
+    if (categoryResolved.error || !categoryResolved.categoryId) {
+      return {
+        error:
+          categoryResolved.error ??
+          "No se pudo asignar la categoría del producto.",
+      };
+    }
 
-  const description =
-    typeof supplierRow.description === "string"
-      ? supplierRow.description.trim().slice(0, 2000) || null
-      : null;
-  const stock = Math.max(0, Math.floor(Number(supplierRow.stock) || 0));
-  const imageUrl =
-    typeof supplierRow.image_url === "string" && supplierRow.image_url.trim()
-      ? supplierRow.image_url.trim()
-      : null;
-  const supplierVariants = normalizeSupplierProductVariants(
-    supplierRow.variants,
-  );
-  const catalogVariants = mapSupplierVariantsToCatalog(
-    supplierVariants,
-    stock,
-  );
+    const description =
+      typeof supplierRow.description === "string"
+        ? supplierRow.description.trim().slice(0, 2000) || null
+        : null;
+    const stock = Math.max(0, Math.floor(Number(supplierRow.stock) || 0));
+    const imageUrl =
+      typeof supplierRow.image_url === "string" && supplierRow.image_url.trim()
+        ? supplierRow.image_url.trim()
+        : null;
+    const supplierVariants = normalizeSupplierProductVariants(
+      supplierRow.variants,
+    );
+    const catalogVariants = mapSupplierVariantsToCatalog(supplierVariants);
+    const metadata = buildProductMetadata(null, {}, []);
+    const sortOrder = await nextProductSortOrder(admin, auth.store.id);
 
-  const metadata = buildProductMetadata(null, {}, []);
+    let productSlug = "";
+    let productId = "";
 
-  let productSlug = "";
-  let productId = "";
+    for (let attempt = 0; attempt < 3; attempt++) {
+      productSlug =
+        attempt === 0
+          ? await allocateUniqueProductSlug(admin, auth.store.id, title)
+          : await allocateUniqueProductSlug(
+              admin,
+              auth.store.id,
+              `${title}-${randomProductSlugSuffix(5)}`,
+            );
 
-  for (let attempt = 0; attempt < 3; attempt++) {
-    productSlug =
-      attempt === 0
-        ? await allocateUniqueProductSlug(supabase, auth.store.id, title)
-        : await allocateUniqueProductSlug(
-            supabase,
-            auth.store.id,
-            `${title}-${randomProductSlugSuffix(5)}`,
-          );
+      const { data: product, error: productError } = await admin
+        .from("products")
+        .insert({
+          store_id: auth.store.id,
+          category_id: categoryResolved.categoryId,
+          name: title.slice(0, 120),
+          slug: productSlug,
+          short_description: description,
+          description,
+          metadata,
+          sort_order: sortOrder,
+          is_active: true,
+          is_deleted: false,
+        })
+        .select("id")
+        .single();
 
-    const { data: product, error: productError } = await supabase
-      .from("products")
+      if (!productError && product) {
+        productId = product.id as string;
+        break;
+      }
+
+      if (
+        !productError ||
+        !isProductSlugUniqueViolation(productError) ||
+        attempt === 2
+      ) {
+        return {
+          error:
+            productError?.message ??
+            "No se pudo crear el producto en tu catálogo.",
+        };
+      }
+    }
+
+    if (!productId) {
+      return { error: "No se pudo crear el producto en tu catálogo." };
+    }
+
+    const rollback = async () => softDeleteImportedProduct(admin, productId);
+
+    const sku = `${auth.store.slug}-${productSlug}`.slice(0, 80);
+    const { data: variant, error: variantError } = await admin
+      .from("product_variants")
       .insert({
-        store_id: auth.store.id,
-        category_id: categoryResolved.categoryId,
-        name: title.slice(0, 120),
-        slug: productSlug,
-        short_description: description,
-        description,
-        metadata,
+        product_id: productId,
+        sku,
+        name: catalogVariants.length > 0 ? "Base" : "Estándar",
+        stock_quantity: stock,
+        low_stock_threshold: DEFAULT_LOW_STOCK_THRESHOLD,
+        is_default: true,
+        is_active: true,
       })
       .select("id")
       .single();
 
-    if (!productError && product) {
-      productId = product.id as string;
-      break;
+    if (variantError || !variant) {
+      await rollback();
+      return { error: variantError?.message ?? "No se pudo crear la variante." };
     }
 
-    if (
-      !productError ||
-      !isProductSlugUniqueViolation(productError) ||
-      attempt === 2
-    ) {
+    const variantId = variant.id as string;
+
+    const { error: priceError } = await admin.from("product_prices").insert({
+      variant_id: variantId,
+      amount_usd: retailUsd,
+    });
+
+    if (priceError) {
+      await rollback();
+      return { error: priceError.message };
+    }
+
+    const locationSync = await syncDefaultLocationStockFromVariant(
+      admin,
+      auth.store.id,
+      variantId,
+      stock,
+    );
+    if (locationSync.error) {
+      await rollback();
+      return { error: locationSync.error };
+    }
+
+    if (catalogVariants.length > 0) {
+      const synced = await syncProductVariants(admin, {
+        productId,
+        storeSlug: auth.store.slug,
+        productSlug,
+        basePriceUsd: retailUsd,
+        lowStockThreshold: DEFAULT_LOW_STOCK_THRESHOLD,
+        variants: catalogVariants,
+        defaultVariantId: variantId,
+        storeId: auth.store.id,
+      });
+      if (synced.error) {
+        await rollback();
+        return { error: synced.error };
+      }
+
+      // Tras sync de variantes, restaurar stock espejo del mayorista en la base.
+      await admin
+        .from("product_variants")
+        .update({ stock_quantity: stock })
+        .eq("id", variantId);
+      await syncDefaultLocationStockFromVariant(
+        admin,
+        auth.store.id,
+        variantId,
+        stock,
+      );
+    }
+
+    if (imageUrl) {
+      const imageError = await upsertCatalogProductImage(
+        admin,
+        productId,
+        title,
+        imageUrl,
+      );
+      if (imageError) {
+        await rollback();
+        return { error: imageError };
+      }
+    }
+
+    const { error: linkError } = await admin.from("store_dropship_links").insert({
+      store_id: auth.store.id,
+      product_id: productId,
+      supplier_product_id: supplierId,
+      auto_reprice: dropship.autoApplyOnCostChange,
+      last_cost_usd: cost,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (linkError) {
+      await rollback();
       return {
         error:
-          productError?.message ?? "No se pudo crear el producto en tu catálogo.",
+          linkError.code === "23505"
+            ? "Este producto mayorista ya está en tu catálogo."
+            : linkError.message,
       };
     }
-  }
 
-  if (!productId) {
-    return { error: "No se pudo crear el producto en tu catálogo." };
-  }
+    await mirrorSupplierStockToLinkedStores(admin, supplierId, stock);
 
-  const sku = `${auth.store.slug}-${productSlug}`.slice(0, 80);
-  const { data: variant, error: variantError } = await supabase
-    .from("product_variants")
-    .insert({
-      product_id: productId,
-      sku,
-      name: "Estándar",
-      stock_quantity: stock,
-      low_stock_threshold: DEFAULT_LOW_STOCK_THRESHOLD,
-      is_default: true,
-    })
-    .select("id")
-    .single();
+    revalidatePath("/dashboard/ajustes");
+    revalidatePath("/dashboard/catalogo");
+    revalidatePath("/dashboard/inventario");
+    revalidatePath("/dashboard");
+    revalidatePath(`/c/${auth.store.slug}`);
 
-  if (variantError) {
-    await supabase.from("products").delete().eq("id", productId);
-    return { error: variantError.message };
-  }
-
-  const variantId = variant.id as string;
-
-  const { error: priceError } = await supabase.from("product_prices").insert({
-    variant_id: variantId,
-    amount_usd: retailUsd,
-  });
-
-  if (priceError) {
-    await supabase.from("products").delete().eq("id", productId);
-    return { error: priceError.message };
-  }
-
-  if (catalogVariants.length > 0) {
-    const synced = await syncProductVariants(supabase, {
-      productId,
-      storeSlug: auth.store.slug,
-      productSlug,
-      basePriceUsd: retailUsd,
-      lowStockThreshold: DEFAULT_LOW_STOCK_THRESHOLD,
-      variants: catalogVariants,
-      defaultVariantId: variantId,
-      storeId: auth.store.id,
-    });
-    if (synced.error) {
-      await supabase.from("products").delete().eq("id", productId);
-      return { error: synced.error };
-    }
-  }
-
-  if (imageUrl) {
-    const imageError = await upsertCatalogProductImage(
-      supabase,
-      productId,
-      title,
-      imageUrl,
-    );
-    if (imageError) {
-      await supabase.from("products").delete().eq("id", productId);
-      return { error: imageError };
-    }
-  }
-
-  const { error: linkError } = await admin.from("store_dropship_links").insert({
-    store_id: auth.store.id,
-    product_id: productId,
-    supplier_product_id: supplierId,
-    auto_reprice: dropship.autoApplyOnCostChange,
-    last_cost_usd: cost,
-    updated_at: new Date().toISOString(),
-  });
-
-  if (linkError) {
-    await supabase.from("products").delete().eq("id", productId);
     return {
-      error:
-        linkError.code === "23505"
-          ? "Este producto mayorista ya está en tu catálogo."
-          : linkError.message,
+      productId,
+      retailUsd,
+      productName: title.slice(0, 120),
     };
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "No se pudo importar el producto mayorista.";
+    return { error: message };
   }
-
-  revalidatePath("/dashboard/ajustes");
-  revalidatePath("/dashboard/catalogo");
-  revalidatePath("/dashboard/inventario");
-  revalidatePath("/dashboard");
-  revalidatePath(`/c/${auth.store.slug}`);
-
-  return {
-    productId,
-    retailUsd,
-    productName: title.slice(0, 120),
-  };
 }
 
 export async function linkStoreDropshipProduct(input: {
@@ -539,13 +603,14 @@ export async function linkStoreDropshipProduct(input: {
 
   const { data: supplier } = await admin
     .from("supplier_products")
-    .select("id, base_price_usd")
+    .select("id, base_price_usd, stock")
     .eq("id", supplierProductId)
     .eq("is_active", true)
     .maybeSingle();
   if (!supplier) return { error: "Producto mayorista no disponible." };
 
   const cost = Number(supplier.base_price_usd) || 0;
+  const supplierStock = Math.max(0, Math.floor(Number(supplier.stock) || 0));
 
   const { data, error } = await admin
     .from("store_dropship_links")
@@ -564,6 +629,8 @@ export async function linkStoreDropshipProduct(input: {
     .single();
 
   if (error) return { error: error.message };
+
+  await mirrorSupplierStockToLinkedStores(admin, supplierProductId, supplierStock);
 
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/catalogo");

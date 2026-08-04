@@ -111,23 +111,62 @@ export async function resolveOrderLinesWithPricing(
 
   const { data: dropshipLinks } = await admin
     .from("store_dropship_links")
-    .select("product_id, supplier_product_id, supplier_products(base_price_usd)")
+    .select(
+      "product_id, supplier_product_id, supplier_products(base_price_usd, stock, title)",
+    )
     .eq("store_id", storeId)
     .in("product_id", productIds);
 
   const dropshipCostByProduct = new Map<
-    string,
-    { supplierProductId: string; costUsd: number }
+    string;
+    {
+      supplierProductId: string;
+      costUsd: number;
+      stock: number;
+      title: string;
+    }
   >();
   for (const row of (dropshipLinks as Record<string, unknown>[] | null) ?? []) {
     const productId = String(row.product_id ?? "");
     const supplierProductId = String(row.supplier_product_id ?? "");
-    const supplier = row.supplier_products as { base_price_usd?: number } | null;
+    const supplier = row.supplier_products as {
+      base_price_usd?: number;
+      stock?: number;
+      title?: string;
+    } | null;
     if (!productId || !supplierProductId) continue;
     dropshipCostByProduct.set(productId, {
       supplierProductId,
       costUsd: Number(supplier?.base_price_usd) || 0,
+      stock: Math.max(0, Math.floor(Number(supplier?.stock) || 0)),
+      title: String(supplier?.title ?? "Mayorista"),
     });
+  }
+
+  // Validar stock agregado del mayorista antes de armar el pedido.
+  const requestedBySupplier = new Map<string, { qty: number; title: string; stock: number }>();
+  for (const line of lines) {
+    const dropship = dropshipCostByProduct.get(line.productId);
+    if (!dropship) continue;
+    const qty = Math.max(1, Math.floor(line.quantity));
+    const current = requestedBySupplier.get(dropship.supplierProductId);
+    if (current) {
+      current.qty += qty;
+    } else {
+      requestedBySupplier.set(dropship.supplierProductId, {
+        qty,
+        title: dropship.title,
+        stock: dropship.stock,
+      });
+    }
+  }
+  for (const entry of requestedBySupplier.values()) {
+    if (entry.qty > entry.stock) {
+      return {
+        items: [],
+        error: `Stock insuficiente del mayorista para "${entry.title}" (disponible: ${entry.stock}).`,
+      };
+    }
   }
 
   const resolved: OrderLineItem[] = [];

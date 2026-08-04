@@ -131,20 +131,40 @@ export function DropshipPricingTab({
     setMessage(null);
     setImportingId(supplierProductIdToImport);
     startTransition(async () => {
-      const result = await importSupplierProductToStoreCatalog(
-        supplierProductIdToImport,
-      );
-      setImportingId(null);
-      if (result.error) {
-        setError(result.error);
-        return;
+      try {
+        const result = await importSupplierProductToStoreCatalog(
+          supplierProductIdToImport,
+        );
+        if (!result || result.error) {
+          setError(
+            result?.error ??
+              "No se pudo importar el producto. Intenta de nuevo.",
+          );
+          return;
+        }
+        setMessage(
+          result.productName && result.retailUsd != null
+            ? `"${result.productName}" agregado a tu catálogo a ${formatUsd(result.retailUsd)}.`
+            : "Producto agregado a tu catálogo.",
+        );
+        const [listed, catalog] = await Promise.all([
+          listStoreDropshipLinks(),
+          listActiveSupplierCatalogForMerchant(),
+        ]);
+        if (listed.links) setLinks(listed.links);
+        if (catalog.products) setSupplierProducts(catalog.products);
+        if (listed.error || catalog.error) {
+          setError(listed.error ?? catalog.error ?? null);
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "No se pudo importar el producto. Intenta de nuevo.",
+        );
+      } finally {
+        setImportingId(null);
       }
-      setMessage(
-        result.productName && result.retailUsd != null
-          ? `"${result.productName}" agregado a tu catálogo a ${formatUsd(result.retailUsd)}.`
-          : "Producto agregado a tu catálogo.",
-      );
-      refreshLinks();
     });
   }
 
@@ -275,7 +295,7 @@ export function DropshipPricingTab({
 
       <SettingsSection
         title="Catálogo mayorista"
-        description="Explora los productos del proveedor e impórtalos a tu tienda con el margen ya aplicado. No necesitas crearlos a mano."
+        description="Explora los productos del proveedor e impórtalos a tu tienda con el margen ya aplicado. El stock se sincroniza desde el inventario central del mayorista para evitar sobreventas entre tiendas."
         variant="payments"
       >
         {!settings.enabled ? (

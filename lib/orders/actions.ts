@@ -37,6 +37,10 @@ import {
 } from "@/lib/orders/get-store-orders";
 import { ORDERS_PAGE_SIZE } from "@/lib/inventory/constants";
 import { resolveOrderLinesWithPricing } from "@/lib/orders/resolve-order-line-prices";
+import {
+  consumeDropshipStockForOrderLines,
+  restoreDropshipStockForOrderLines,
+} from "@/lib/dropship/supplier-stock";
 
 export interface SubmitTransactionalOrderResult {
   error?: string;
@@ -382,8 +386,21 @@ export async function submitTransactionalOrder(
     return { error: insertError.message };
   }
 
+  const dropshipStock = await consumeDropshipStockForOrderLines(
+    admin,
+    store.id,
+    enrichedOrderItems,
+  );
+  if (dropshipStock.error) {
+    await admin.from("orders").delete().eq("id", orderId);
+    return { error: dropshipStock.error };
+  }
+
   const reserveResult = await reserveOrderInventory(admin, orderId);
   if (reserveResult.error) {
+    if (dropshipStock.consumed.length > 0) {
+      await restoreDropshipStockForOrderLines(admin, enrichedOrderItems);
+    }
     await admin.from("orders").delete().eq("id", orderId);
     return { error: reserveResult.error };
   }
@@ -399,12 +416,18 @@ export async function submitTransactionalOrder(
     );
 
     if (redeemError) {
+      if (dropshipStock.consumed.length > 0) {
+        await restoreDropshipStockForOrderLines(admin, enrichedOrderItems);
+      }
       await admin.from("orders").delete().eq("id", orderId);
       return { error: redeemError.message };
     }
 
     const redeemed = redeemResult as { error?: string; success?: boolean } | null;
     if (redeemed?.error) {
+      if (dropshipStock.consumed.length > 0) {
+        await restoreDropshipStockForOrderLines(admin, enrichedOrderItems);
+      }
       await admin.from("orders").delete().eq("id", orderId);
       return { error: redeemed.error };
     }

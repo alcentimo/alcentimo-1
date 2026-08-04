@@ -2,12 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import { updateOrderEstadoWithInventory } from "@/lib/orders/order-inventory";
 import {
   isValidOrderEstado,
   type OrderEstado,
 } from "@/lib/orders/order-status";
+import type { OrderLineItem } from "@/lib/orders/types";
+import { restoreDropshipStockForOrderLines } from "@/lib/dropship/supplier-stock";
 
 export interface UpdateOrderEstadoOptions {
   /** Número de guía de encomienda (opcional al marcar Enviado). */
@@ -30,6 +33,16 @@ function revalidateOrderPaths(storeSlug: string, orderId: string) {
   revalidatePath(`/pedidos/${orderId}`);
 }
 
+function parseOrderItems(raw: unknown): OrderLineItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (item): item is OrderLineItem =>
+      !!item &&
+      typeof item === "object" &&
+      typeof (item as OrderLineItem).product_id === "string",
+  );
+}
+
 export async function updateOrderEstado(
   orderId: string,
   estado: OrderEstado,
@@ -48,6 +61,20 @@ export async function updateOrderEstado(
   const auth = await requireAuthStore(supabase);
   if (!auth.ok) return { error: auth.error };
 
+  let previousEstado: string | null = null;
+  let orderItems: OrderLineItem[] = [];
+
+  if (estado === "cancelado") {
+    const { data: existingOrder } = await supabase
+      .from("orders")
+      .select("estado, items")
+      .eq("id", trimmedId)
+      .eq("store_id", auth.store.id)
+      .maybeSingle();
+    previousEstado = (existingOrder?.estado as string | undefined) ?? null;
+    orderItems = parseOrderItems(existingOrder?.items);
+  }
+
   const result = await updateOrderEstadoWithInventory(
     supabase,
     trimmedId,
@@ -56,6 +83,16 @@ export async function updateOrderEstado(
   );
 
   if (result.error) return { error: result.error };
+
+  if (
+    estado === "cancelado" &&
+    previousEstado &&
+    previousEstado !== "cancelado" &&
+    orderItems.some((item) => item.supplier_product_id)
+  ) {
+    const admin = createAdminClient();
+    await restoreDropshipStockForOrderLines(admin, orderItems);
+  }
 
   let trackingNumber: string | null | undefined = undefined;
 

@@ -9,6 +9,7 @@ import {
 } from "@/lib/supplier/access";
 import { uploadSupplierProductImage } from "@/lib/supplier/storage";
 import { recordSupplierPriceChangeAndNotify } from "@/lib/dropship/price-change";
+import { mirrorSupplierStockToLinkedStores } from "@/lib/dropship/supplier-stock";
 import {
   normalizeSupplierProductCategory,
   type SupplierProductCategory,
@@ -284,7 +285,11 @@ export async function updateSupplierProduct(
     changedBy: auth.user.id,
   });
 
+  await mirrorSupplierStockToLinkedStores(admin, updated.id, updated.stock);
+
   revalidatePath("/proveedor/dashboard");
+  revalidatePath("/dashboard/catalogo");
+  revalidatePath("/dashboard/inventario");
   return { product: updated };
 }
 
