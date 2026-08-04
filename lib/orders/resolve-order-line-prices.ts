@@ -117,15 +117,14 @@ export async function resolveOrderLinesWithPricing(
     .eq("store_id", storeId)
     .in("product_id", productIds);
 
-  const dropshipCostByProduct = new Map<
-    string,
-    {
-      supplierProductId: string;
-      costUsd: number;
-      stock: number;
-      title: string;
-    }
-  >();
+  type DropshipCostInfo = {
+    supplierProductId: string;
+    costUsd: number;
+    stock: number;
+    title: string;
+  };
+
+  const dropshipCostByProduct = new Map<string, DropshipCostInfo>();
   for (const row of (dropshipLinks as Record<string, unknown>[] | null) ?? []) {
     const productId = String(row.product_id ?? "");
     const supplierProductId = String(row.supplier_product_id ?? "");
@@ -144,7 +143,10 @@ export async function resolveOrderLinesWithPricing(
   }
 
   // Validar stock agregado del mayorista antes de armar el pedido.
-  const requestedBySupplier = new Map<string, { qty: number; title: string; stock: number }>();
+  const requestedBySupplier = new Map<
+    string,
+    { qty: number; title: string; stock: number }
+  >();
   for (const line of lines) {
     const dropship = dropshipCostByProduct.get(line.productId);
     if (!dropship) continue;
