@@ -1,25 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { CheckCircle2 } from "lucide-react";
-import { CheckoutQuickAuth } from "@/components/catalog-transactional/CheckoutQuickAuth";
-import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { CheckCircle2, MessageCircle } from "lucide-react";
 import { formatUsd } from "@/lib/format";
-import {
-  getStoreCustomerAccountPath,
-} from "@/lib/store-host";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
+import { getStoreCustomerAccountPath } from "@/lib/store-host";
 import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
 
 interface CheckoutSuccessScreenProps {
   storeSlug: string;
   orderId: string;
   totalUsd: number;
+  whatsappUrl?: string | null;
   whatsappOpened: boolean;
   wasGuest: boolean;
-  customerName: string;
-  customerPhone: string;
   onClose: () => void;
 }
 
@@ -27,19 +21,17 @@ export function CheckoutSuccessScreen({
   storeSlug,
   orderId,
   totalUsd,
+  whatsappUrl = null,
   whatsappOpened,
   wasGuest,
-  customerName,
-  customerPhone,
   onClose,
 }: CheckoutSuccessScreenProps) {
-  const [savedAccount, setSavedAccount] = useState(false);
   const { accountsEnabled } = useCustomerAccountMode();
 
   const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
   const registerBase = buildCustomerRegisterPath(storeSlug, accountPath);
   const fullRegisterPath = `${registerBase}${registerBase.includes("?") ? "&" : "?"}orderId=${encodeURIComponent(orderId)}`;
-  const offerAccount = wasGuest && !savedAccount && accountsEnabled;
+  const showAccountLink = wasGuest && accountsEnabled;
 
   return (
     <div className="txn-checkout-success">
@@ -54,78 +46,51 @@ export function CheckoutSuccessScreen({
         {formatUsd(totalUsd)}
       </p>
       <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-        {whatsappOpened
-          ? "Tu pedido ya está en la tienda. Te abrimos WhatsApp para que envíes el comprobante y confirmes con el comercio."
+        {whatsappUrl
+          ? whatsappOpened
+            ? "Tu pedido ya está en la tienda. Completa el envío por WhatsApp para que el comercio lo reciba."
+            : "Tu pedido ya está guardado. Ábrelo en WhatsApp para enviárselo al comercio."
           : "Tu pedido quedó registrado. La tienda lo revisará y te contactará si hace falta."}
       </p>
 
-      {whatsappOpened ? (
+      {whatsappUrl ? (
         <ol className="txn-checkout-success-steps mt-4 w-full text-left text-xs text-zinc-600 dark:text-zinc-300">
-          <li>1. Envía el comprobante por WhatsApp.</li>
+          <li>1. Envía el mensaje prearmado por WhatsApp.</li>
           <li>2. Espera la confirmación de la tienda.</li>
-          {accountsEnabled ? (
-            <li>3. Opcional: guarda tus datos abajo para la próxima compra.</li>
-          ) : (
-            <li>3. Listo: puedes seguir comprando cuando quieras.</li>
-          )}
+          <li>3. Listo: puedes seguir comprando cuando quieras.</li>
         </ol>
       ) : null}
 
-      {offerAccount ? (
-        <div className="txn-checkout-success-save mt-6 w-full text-left">
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            ¿Quieres crear una cuenta? (opcional)
-          </p>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Tu pedido ya está listo. Si quieres, guarda teléfono y contraseña para
-            la próxima compra — sin SMS. También puedes continuar sin cuenta.
-          </p>
-
-          <CheckoutQuickAuth
-            variant="postPurchase"
-            storeSlug={storeSlug}
-            orderId={orderId}
-            initialDisplayName={customerName}
-            initialPhone={customerPhone}
-            onAuthenticated={() => setSavedAccount(true)}
-          />
-
-          <div className="txn-checkout-success-divider">
-            <span>o</span>
-          </div>
-
-          <GoogleSignInButton
-            postAuthPath={accountPath}
-            storeSlug={storeSlug}
-            orderId={orderId}
-            buttonClassName="txn-google-auth-btn pointer-events-none border-0 bg-transparent shadow-none"
-          />
-        </div>
+      {whatsappUrl ? (
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="txn-submit-btn mt-6 inline-flex items-center justify-center gap-2"
+        >
+          <MessageCircle className="h-4 w-4" aria-hidden="true" />
+          {whatsappOpened ? "Volver a abrir WhatsApp" : "Abrir WhatsApp"}
+        </a>
       ) : null}
 
-      {savedAccount ? (
-        <div className="txn-checkout-success-saved mt-6 w-full rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
-          <p className="font-medium">Datos guardados.</p>
-          <p className="mt-1 text-xs opacity-90">
-            Tu pedido ya está en{" "}
-            <Link href={accountPath} className="font-semibold underline">
-              Mis compras
-            </Link>
-            .
-          </p>
-        </div>
-      ) : null}
-
-      <button type="button" onClick={onClose} className="txn-submit-btn mt-6">
-        {offerAccount ? "Ahora no, seguir comprando" : "Seguir comprando"}
+      <button
+        type="button"
+        onClick={onClose}
+        className={
+          whatsappUrl
+            ? "txn-whatsapp-outline-btn mt-3 w-full"
+            : "txn-submit-btn mt-6"
+        }
+      >
+        Seguir comprando
       </button>
 
-      {offerAccount ? (
+      {showAccountLink ? (
         <Link
           href={fullRegisterPath}
-          className="mt-3 text-xs text-zinc-500 underline hover:text-zinc-800 dark:hover:text-zinc-200"
+          className="mt-4 text-xs text-zinc-500 underline hover:text-zinc-800 dark:hover:text-zinc-200"
         >
-          Crear cuenta con más opciones
+          Crear cuenta (opcional)
         </Link>
       ) : null}
     </div>

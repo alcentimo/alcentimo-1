@@ -117,10 +117,9 @@ export function CheckoutPanel({
   const [successOrder, setSuccessOrder] = useState<{
     orderId: string;
     totalUsd: number;
+    whatsappUrl: string | null;
     whatsappOpened: boolean;
     wasGuest: boolean;
-    customerName: string;
-    customerPhone: string;
   } | null>(null);
   const [selectedShipping, setSelectedShipping] = useState("");
   const [selectedPayment, setSelectedPayment] = useState("");
@@ -610,22 +609,63 @@ export function CheckoutPanel({
 
     if (locationId) formData.set("locationId", locationId);
 
+    // Abrir la pestaña en el gesto del clic (antes del await) para evitar el bloqueo
+    // de popups; luego navegamos a wa.me cuando la orden ya está creada.
+    let waWindow: Window | null = null;
+    if (whatsappConfigured && typeof window !== "undefined") {
+      try {
+        waWindow = window.open("about:blank", "alcentimo-wa-checkout");
+      } catch {
+        waWindow = null;
+      }
+    }
+
     startTransition(async () => {
       const result = await submitTransactionalOrder(formData);
 
       if (result.error) {
+        if (waWindow && !waWindow.closed) {
+          waWindow.close();
+        }
         setError(result.error);
         return;
       }
 
-      const openedWhatsApp = Boolean(result.whatsappUrl);
-      if (result.whatsappUrl) {
-        window.open(result.whatsappUrl, "_blank", "noopener,noreferrer");
+      let openedWhatsApp = false;
+      const whatsappUrl = result.whatsappUrl?.trim() || null;
+
+      if (whatsappUrl) {
+        if (waWindow && !waWindow.closed) {
+          try {
+            waWindow.location.href = whatsappUrl;
+            openedWhatsApp = true;
+          } catch {
+            try {
+              waWindow.close();
+            } catch {
+              // ignore
+            }
+            waWindow = null;
+          }
+        }
+
+        if (!openedWhatsApp) {
+          // Fallback: intentar abrir de nuevo (puede fallar tras el await).
+          try {
+            const fallback = window.open(
+              whatsappUrl,
+              "alcentimo-wa-checkout",
+            );
+            openedWhatsApp = Boolean(fallback && !fallback.closed);
+          } catch {
+            openedWhatsApp = false;
+          }
+        }
+      } else if (waWindow && !waWindow.closed) {
+        waWindow.close();
       }
 
       const wasGuest = !customerProfile;
-      const submittedName = customerProfile?.displayName ?? customerName.trim();
-      const submittedPhone = customerProfile?.phone ?? customerPhone.trim();
 
       clearCart();
       setCheckoutStep(1);
@@ -647,10 +687,9 @@ export function CheckoutPanel({
         setSuccessOrder({
           orderId: result.orderId,
           totalUsd,
+          whatsappUrl,
           whatsappOpened: openedWhatsApp,
           wasGuest,
-          customerName: submittedName,
-          customerPhone: submittedPhone,
         });
         return;
       }
@@ -666,10 +705,9 @@ export function CheckoutPanel({
           storeSlug={storeSlug}
           orderId={successOrder.orderId}
           totalUsd={successOrder.totalUsd}
+          whatsappUrl={successOrder.whatsappUrl}
           whatsappOpened={successOrder.whatsappOpened}
           wasGuest={successOrder.wasGuest}
-          customerName={successOrder.customerName}
-          customerPhone={successOrder.customerPhone}
           onClose={() => {
             setSuccessOrder(null);
             onClose();
