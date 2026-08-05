@@ -160,11 +160,7 @@ export async function submitTransactionalOrder(
   const trimmedDeliveryAddress = deliveryAddressRaw.slice(0, 320);
   const trimmedFulfillmentNotes = fulfillmentNotesRaw.slice(0, 200);
 
-  if (isNationalCarrierKey(shippingMethodRaw)) {
-    if (!resolvedShippingBranch && !shippingBranchNameRaw) {
-      return { error: "Selecciona la sucursal de destino de la agencia." };
-    }
-  }
+  // Sucursal de agencia nacional: opcional (se puede acordar después por WhatsApp).
 
   const settings = await getPublicStoreSettingsConfig(store.id);
   const purchaseInfo = buildPublicPurchaseInfo(settings);

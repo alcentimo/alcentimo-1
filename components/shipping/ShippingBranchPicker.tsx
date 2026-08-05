@@ -7,7 +7,6 @@ import {
   formatCarrierBranchAddress,
   formatCarrierBranchLabel,
   getCarrierBranchById,
-  getCarrierBranchCoverage,
   getCarrierBranchesByLocation,
   getCarrierCities,
   getCarrierStates,
@@ -85,10 +84,6 @@ export function ShippingBranchPicker({
     [value],
   );
   const carrierLabel = getShippingMethod(carrier)?.label ?? carrier;
-  const coverage = useMemo(
-    () => getCarrierBranchCoverage(carrier),
-    [carrier],
-  );
   const states = useMemo(() => getCarrierStates(carrier), [carrier]);
 
   const [state, setState] = useState(selectedBranch?.state ?? "");
@@ -147,13 +142,16 @@ export function ShippingBranchPicker({
     return (
       <div className="shipping-branch-picker">
         <div className="shipping-branch-picker-header">
-          <p className="shipping-branch-picker-eyebrow">Oficina de retiro</p>
+          <p className="shipping-branch-picker-eyebrow">
+            Oficina / Sucursal de retiro
+          </p>
           <p className="shipping-branch-picker-title">
-            Sucursal {carrierLabel}
+            Sucursal {carrierLabel}{" "}
+            <span className="font-normal text-zinc-400">(opcional)</span>
           </p>
           <p className="shipping-branch-picker-desc">
-            Busca por nombre o filtra por estado y ciudad para ubicar cualquier
-            oficina de la red nacional.
+            Opcional: Si no conoces la agencia exacta, puedes coordinarla luego
+            por WhatsApp.
           </p>
         </div>
 
@@ -185,11 +183,16 @@ export function ShippingBranchPicker({
   return (
     <div className="shipping-branch-picker">
       <div className="shipping-branch-picker-header">
-        <p className="shipping-branch-picker-eyebrow">Oficina de retiro</p>
-        <p className="shipping-branch-picker-title">Sucursal {carrierLabel}</p>
+        <p className="shipping-branch-picker-eyebrow">
+          Oficina / Sucursal de retiro
+        </p>
+        <p className="shipping-branch-picker-title">
+          Sucursal {carrierLabel}{" "}
+          <span className="font-normal text-zinc-400">(opcional)</span>
+        </p>
         <p className="shipping-branch-picker-desc">
-          {coverage.offices} oficinas en {coverage.states} estados. Busca por
-          ciudad o nombre, o filtra estado → ciudad.
+          Opcional: Si no conoces la agencia exacta, puedes coordinarla luego
+          por WhatsApp.
         </p>
       </div>
 
@@ -203,7 +206,7 @@ export function ShippingBranchPicker({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar oficina, ciudad, zona o código…"
+            placeholder="Opcional: buscar oficina, ciudad o código…"
             className="shipping-branch-search-input"
             autoComplete="off"
           />
@@ -287,8 +290,9 @@ export function ShippingBranchPicker({
           </>
         ) : (
           <p className="shipping-branch-empty rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
-            Escribe al menos 2 letras para buscar en todo el país, o elige un
-            estado para ver el listado de esa zona.
+            Opcional: escribe al menos 2 letras para buscar en todo el país, o
+            elige un estado. Si no la conoces aún, puedes continuar y
+            coordinarla luego por WhatsApp.
           </p>
         )}
       </div>

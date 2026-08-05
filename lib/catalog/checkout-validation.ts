@@ -91,9 +91,7 @@ export function validateCheckoutStep1(
     errors.shipping = "Selecciona un método de envío para continuar.";
   }
 
-  if (input.isNationalCarrierSelected && !input.shippingBranchCode) {
-    errors.shippingBranch = "Selecciona la sucursal de destino de la agencia.";
-  }
+  // Sucursal de agencia (MRW/Zoom/etc.): opcional; se puede coordinar luego por WhatsApp.
 
   if (input.isLocalDeliverySelected) {
     if (input.hasDeliveryZones) {
