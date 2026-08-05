@@ -27,8 +27,25 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { AdminCriticalConfirmDialog } from "@/components/admin/AdminCriticalConfirmDialog";
 
 type GrowthSubTab = "usuarios" | "cupones" | "campanas" | "historial";
+
+type CriticalPlanAction =
+  | {
+      kind: "grant" | "grant_trial" | "close_free";
+      userId: string;
+    }
+  | {
+      kind: "grant_selected" | "grant_trial_selected" | "close_free_selected";
+    }
+  | {
+      kind: "send_promo";
+      title: string;
+      message: string;
+      couponId: string | null;
+      formElement: HTMLFormElement;
+    };
 
 const ACTION_LABELS: Record<string, string> = {
   grant_pro: "Otorgar Pro",
@@ -141,6 +158,8 @@ export function AdminGrowthPanel({
   const [grantingTrialId, setGrantingTrialId] = useState<string | null>(null);
   const [closingFreeId, setClosingFreeId] = useState<string | null>(null);
   const [visitsSortDesc, setVisitsSortDesc] = useState(true);
+  const [criticalAction, setCriticalAction] =
+    useState<CriticalPlanAction | null>(null);
 
   const filteredUsers = useMemo(() => {
     const min = minProducts.trim() === "" ? null : Number(minProducts);
@@ -198,7 +217,77 @@ export function AdminGrowthPanel({
     setSelected(new Set(filteredUsers.map((u) => u.id)));
   }
 
-  function handleGrant(userId: string) {
+  function resolveTargetLabel(userId: string): string {
+    const user = users.find((row) => row.id === userId);
+    if (!user) return "el usuario seleccionado";
+    const store =
+      user.storeName && user.storeName !== "Sin tienda"
+        ? `«${user.storeName}»`
+        : null;
+    const email = user.email ?? "sin email";
+    return store ? `la tienda ${store} (${email})` : `el usuario ${email}`;
+  }
+
+  function getCriticalConfirmCopy(action: CriticalPlanAction): {
+    title: string;
+    impact: string;
+    confirmLabel: string;
+    destructive: boolean;
+  } {
+    switch (action.kind) {
+      case "grant":
+        return {
+          title: "Otorgar Plan Pro",
+          impact: `Vas a cambiar ${resolveTargetLabel(action.userId)} al plan Pro por 30 días.`,
+          confirmLabel: "Otorgar Pro",
+          destructive: false,
+        };
+      case "grant_trial":
+        return {
+          title: "Activar prueba Pro",
+          impact: `Vas a activar o extender la prueba Pro (+30 días) para ${resolveTargetLabel(action.userId)}.`,
+          confirmLabel: "Activar prueba",
+          destructive: false,
+        };
+      case "close_free":
+        return {
+          title: "Pasar a Plan Gratis",
+          impact: `Vas a cerrar la prueba/prórroga y dejar ${resolveTargetLabel(action.userId)} en Plan Gratis.`,
+          confirmLabel: "Pasar a Gratis",
+          destructive: true,
+        };
+      case "grant_selected":
+        return {
+          title: "Otorgar Pro a seleccionados",
+          impact: `Vas a otorgar Plan Pro (30 días) a ${selected.size} usuario(s) seleccionado(s).`,
+          confirmLabel: "Otorgar Pro",
+          destructive: false,
+        };
+      case "grant_trial_selected":
+        return {
+          title: "Prueba Pro a seleccionados",
+          impact: `Vas a activar/extender prueba Pro (+30 días) a ${selected.size} usuario(s) seleccionado(s).`,
+          confirmLabel: "Activar prueba",
+          destructive: false,
+        };
+      case "close_free_selected":
+        return {
+          title: "Pasar seleccionados a Gratis",
+          impact: `Vas a pasar a Plan Gratis a ${selected.size} usuario(s) seleccionado(s).`,
+          confirmLabel: "Pasar a Gratis",
+          destructive: true,
+        };
+      case "send_promo":
+        return {
+          title: "Enviar promoción masiva",
+          impact: `Vas a enviar «${action.title}» a ${selected.size} usuario(s). Esta acción no se puede deshacer.`,
+          confirmLabel: "Enviar promoción",
+          destructive: false,
+        };
+    }
+  }
+
+  function executeGrant(userId: string) {
     setError(null);
     setSuccess(null);
     setGrantingId(userId);
@@ -228,7 +317,7 @@ export function AdminGrowthPanel({
     });
   }
 
-  function handleGrantTrial(userId: string) {
+  function executeGrantTrial(userId: string) {
     setError(null);
     setSuccess(null);
     setGrantingTrialId(userId);
@@ -255,6 +344,42 @@ export function AdminGrowthPanel({
         ...prev,
       ]);
     });
+  }
+
+  function requestGrant(userId: string) {
+    setCriticalAction({ kind: "grant", userId });
+  }
+
+  function requestGrantTrial(userId: string) {
+    setCriticalAction({ kind: "grant_trial", userId });
+  }
+
+  function requestCloseToFree(userId: string) {
+    setCriticalAction({ kind: "close_free", userId });
+  }
+
+  function requestGrantSelected() {
+    if (selected.size === 0) {
+      setError("Selecciona al menos un usuario.");
+      return;
+    }
+    setCriticalAction({ kind: "grant_selected" });
+  }
+
+  function requestGrantTrialSelected() {
+    if (selected.size === 0) {
+      setError("Selecciona al menos un usuario.");
+      return;
+    }
+    setCriticalAction({ kind: "grant_trial_selected" });
+  }
+
+  function requestCloseToFreeSelected() {
+    if (selected.size === 0) {
+      setError("Selecciona al menos un usuario.");
+      return;
+    }
+    setCriticalAction({ kind: "close_free_selected" });
   }
 
   function handleGrantSelected() {
@@ -378,21 +503,43 @@ export function AdminGrowthPanel({
     setError(null);
     setSuccess(null);
     const form = new FormData(event.currentTarget);
-    const title = String(form.get("title") ?? "");
-    const message = String(form.get("message") ?? "");
+    const title = String(form.get("title") ?? "").trim();
+    const message = String(form.get("message") ?? "").trim();
     const couponId = String(form.get("couponId") ?? "") || null;
     const ids = Array.from(selected);
     if (ids.length === 0) {
       setError("Selecciona usuarios o usa «Seleccionar filtrados».");
       return;
     }
+    if (!title || !message) {
+      setError("Completa el título y el mensaje de la promoción.");
+      return;
+    }
 
+    setCriticalAction({
+      kind: "send_promo",
+      title,
+      message,
+      couponId,
+      formElement: event.currentTarget,
+    });
+  }
+
+  function executeSendPromo(action: Extract<CriticalPlanAction, { kind: "send_promo" }>) {
+    const ids = Array.from(selected);
+    if (ids.length === 0) {
+      setError("Selecciona usuarios o usa «Seleccionar filtrados».");
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
     startTransition(async () => {
       const result = await sendPromoOffersToUsers({
         userIds: ids,
-        title,
-        message,
-        couponId,
+        title: action.title,
+        message: action.message,
+        couponId: action.couponId,
       });
       if (result.error) {
         setError(result.error);
@@ -400,8 +547,38 @@ export function AdminGrowthPanel({
       }
       setSuccess(`Promoción enviada a ${result.sent ?? ids.length} usuarios.`);
       setSelected(new Set());
-      event.currentTarget.reset();
+      action.formElement.reset();
     });
+  }
+
+  function executeCriticalAction() {
+    if (!criticalAction) return;
+    const action = criticalAction;
+    setCriticalAction(null);
+
+    switch (action.kind) {
+      case "grant":
+        executeGrant(action.userId);
+        break;
+      case "grant_trial":
+        executeGrantTrial(action.userId);
+        break;
+      case "close_free":
+        handleCloseToFree(action.userId);
+        break;
+      case "grant_selected":
+        handleGrantSelected();
+        break;
+      case "grant_trial_selected":
+        handleGrantTrialSelected();
+        break;
+      case "close_free_selected":
+        handleCloseToFreeSelected();
+        break;
+      case "send_promo":
+        executeSendPromo(action);
+        break;
+    }
   }
 
   function handleCreateCoupon(event: FormEvent<HTMLFormElement>) {
@@ -482,6 +659,10 @@ export function AdminGrowthPanel({
       : rewardType === "fixed_discount"
         ? "Monto fijo (USD)"
         : "Días de Pro";
+
+  const criticalConfirmCopy = criticalAction
+    ? getCriticalConfirmCopy(criticalAction)
+    : null;
 
   const growthTabs =
     mode === "usuarios"
@@ -588,7 +769,7 @@ export function AdminGrowthPanel({
             <Button
               type="button"
               disabled={pending || selected.size === 0}
-              onClick={handleGrantSelected}
+              onClick={requestGrantSelected}
             >
               Otorgar Pro a seleccionados ({selected.size})
             </Button>
@@ -596,7 +777,7 @@ export function AdminGrowthPanel({
               type="button"
               variant="outline"
               disabled={pending || selected.size === 0}
-              onClick={handleGrantTrialSelected}
+              onClick={requestGrantTrialSelected}
             >
               Prueba Pro +30d a seleccionados ({selected.size})
             </Button>
@@ -604,7 +785,7 @@ export function AdminGrowthPanel({
               type="button"
               variant="outline"
               disabled={pending || selected.size === 0}
-              onClick={handleCloseToFreeSelected}
+              onClick={requestCloseToFreeSelected}
             >
               Pasar a Gratis ({selected.size})
             </Button>
@@ -791,7 +972,7 @@ export function AdminGrowthPanel({
                           type="button"
                           size="sm"
                           disabled={pending && grantingId === user.id}
-                          onClick={() => handleGrant(user.id)}
+                          onClick={() => requestGrant(user.id)}
                         >
                           {grantingId === user.id ? "Otorgando…" : "Otorgar Pro"}
                         </Button>
@@ -800,7 +981,7 @@ export function AdminGrowthPanel({
                           size="sm"
                           variant="outline"
                           disabled={pending && grantingTrialId === user.id}
-                          onClick={() => handleGrantTrial(user.id)}
+                          onClick={() => requestGrantTrial(user.id)}
                           title="Activa o extiende la prueba Pro gratis sin validación anti-abuso"
                         >
                           {grantingTrialId === user.id
@@ -812,7 +993,7 @@ export function AdminGrowthPanel({
                           size="sm"
                           variant="outline"
                           disabled={pending && closingFreeId === user.id}
-                          onClick={() => handleCloseToFree(user.id)}
+                          onClick={() => requestCloseToFree(user.id)}
                           title="Cierra la prueba/prórroga y aplica Plan Gratis (solo admin)"
                         >
                           {closingFreeId === user.id
@@ -1160,6 +1341,21 @@ export function AdminGrowthPanel({
             </tbody>
           </table>
         </div>
+      ) : null}
+
+      {criticalAction && criticalConfirmCopy ? (
+        <AdminCriticalConfirmDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setCriticalAction(null);
+          }}
+          title={criticalConfirmCopy.title}
+          impact={criticalConfirmCopy.impact}
+          confirmLabel={criticalConfirmCopy.confirmLabel}
+          destructive={criticalConfirmCopy.destructive}
+          loading={pending}
+          onConfirm={executeCriticalAction}
+        />
       ) : null}
     </div>
   );

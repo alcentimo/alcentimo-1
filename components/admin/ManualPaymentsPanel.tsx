@@ -11,7 +11,14 @@ import {
   revertVerifiedManualPayment,
   verifyManualPayment,
 } from "@/lib/plans/manual-payment-admin-actions";
+import { AdminCriticalConfirmDialog } from "@/components/admin/AdminCriticalConfirmDialog";
 import { cn } from "@/lib/cn";
+
+type CriticalPaymentAction =
+  | { kind: "approve"; paymentId: string }
+  | { kind: "revert"; paymentId: string }
+  | { kind: "reject"; paymentId: string }
+  | { kind: "correction"; paymentId: string };
 
 const STATUS_LABELS: Record<ManualPaymentStatus, string> = {
   pending: "Pendiente",
@@ -93,6 +100,8 @@ export function ManualPaymentsPanel({
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [dialogPaymentId, setDialogPaymentId] = useState<string | null>(null);
   const [dialogReason, setDialogReason] = useState("");
+  const [criticalAction, setCriticalAction] =
+    useState<CriticalPaymentAction | null>(null);
 
   const filtered = useMemo(
     () => payments.filter((item) => matchesFilter(item.status, filter)),
@@ -110,6 +119,55 @@ export function ManualPaymentsPanel({
     };
   }, [payments]);
 
+  function paymentImpactLabel(paymentId: string): string {
+    const payment = payments.find((item) => item.id === paymentId);
+    if (!payment) return "este comprobante";
+    const email = payment.user_email ?? "sin email";
+    return `${storeLabel(payment)} · ${email} · Ref ${payment.reference_number}`;
+  }
+
+  function getCriticalPaymentCopy(action: CriticalPaymentAction): {
+    title: string;
+    impact: string;
+    confirmLabel: string;
+    destructive: boolean;
+  } {
+    const target = paymentImpactLabel(action.paymentId);
+    switch (action.kind) {
+      case "approve": {
+        const payment = payments.find((item) => item.id === action.paymentId);
+        const planName = PLAN_LABELS[payment?.plan_id ?? ""] ?? "pagado";
+        return {
+          title: "Aprobar comprobante de pago",
+          impact: `Vas a aprobar el pago de ${target}. La cuenta pasará a Plan ${planName} activo.`,
+          confirmLabel: "Aprobar pago",
+          destructive: false,
+        };
+      }
+      case "revert":
+        return {
+          title: "Revertir aprobación",
+          impact: `Vas a revertir la aprobación de ${target}. El pago volverá a Pendiente y el plan activo puede verse afectado.`,
+          confirmLabel: "Revertir",
+          destructive: true,
+        };
+      case "reject":
+        return {
+          title: "Rechazar pago definitivamente",
+          impact: `Vas a rechazar de forma permanente el pago de ${target}. Esta acción bloquea reenviar la misma referencia.`,
+          confirmLabel: "Rechazar definitivamente",
+          destructive: true,
+        };
+      case "correction":
+        return {
+          title: "Solicitar corrección de pago",
+          impact: `Vas a pedir corrección del comprobante de ${target}. El usuario verá el motivo y podrá volver a subir el archivo.`,
+          confirmLabel: "Enviar solicitud",
+          destructive: false,
+        };
+    }
+  }
+
   function closeDialog() {
     setDialogMode(null);
     setDialogPaymentId(null);
@@ -124,7 +182,21 @@ export function ManualPaymentsPanel({
     setSuccess(null);
   }
 
-  function handleConfirmPayment(paymentId: string) {
+  function requestApprove(paymentId: string) {
+    setCriticalAction({ kind: "approve", paymentId });
+  }
+
+  function requestRevert(paymentId: string) {
+    setCriticalAction({ kind: "revert", paymentId });
+  }
+
+  function requestDialogSubmit() {
+    if (!dialogMode || !dialogPaymentId) return;
+    if (dialogMode === "correction" && dialogReason.trim().length < 8) return;
+    setCriticalAction({ kind: dialogMode, paymentId: dialogPaymentId });
+  }
+
+  function executeConfirmPayment(paymentId: string) {
     setError(null);
     setSuccess(null);
     setUpdatingId(paymentId);
@@ -170,7 +242,7 @@ export function ManualPaymentsPanel({
     });
   }
 
-  function handleRevertConfirmation(paymentId: string) {
+  function executeRevertConfirmation(paymentId: string) {
     setError(null);
     setSuccess(null);
     setUpdatingId(paymentId);
@@ -206,19 +278,20 @@ export function ManualPaymentsPanel({
     });
   }
 
-  function submitDialog() {
-    if (!dialogMode || !dialogPaymentId) return;
-
+  function executeDialogSubmit(
+    mode: Exclude<DialogMode, null>,
+    paymentId: string,
+  ) {
     setError(null);
     setSuccess(null);
-    setUpdatingId(dialogPaymentId);
+    setUpdatingId(paymentId);
 
     startTransition(async () => {
       const result =
-        dialogMode === "correction"
-          ? await requestPaymentCorrection(dialogPaymentId, dialogReason)
+        mode === "correction"
+          ? await requestPaymentCorrection(paymentId, dialogReason)
           : await permanentlyRejectManualPayment(
-              dialogPaymentId,
+              paymentId,
               dialogReason || undefined,
             );
 
@@ -232,8 +305,8 @@ export function ManualPaymentsPanel({
       const note = dialogReason.trim();
       setPayments((prev) =>
         prev.map((item) =>
-          item.id === dialogPaymentId
-            ? dialogMode === "correction"
+          item.id === paymentId
+            ? mode === "correction"
               ? {
                   ...item,
                   status: "needs_correction" as const,
@@ -255,12 +328,31 @@ export function ManualPaymentsPanel({
       );
 
       setSuccess(
-        dialogMode === "correction"
+        mode === "correction"
           ? "Se solicitó corrección. El usuario verá el motivo en su panel."
           : "Pago rechazado permanentemente.",
       );
       closeDialog();
     });
+  }
+
+  function executeCriticalPaymentAction() {
+    if (!criticalAction) return;
+    const action = criticalAction;
+    setCriticalAction(null);
+
+    switch (action.kind) {
+      case "approve":
+        executeConfirmPayment(action.paymentId);
+        break;
+      case "revert":
+        executeRevertConfirmation(action.paymentId);
+        break;
+      case "reject":
+      case "correction":
+        executeDialogSubmit(action.kind, action.paymentId);
+        break;
+    }
   }
 
   const dialogPayment = dialogPaymentId
@@ -269,6 +361,9 @@ export function ManualPaymentsPanel({
   const isDialogBusy = Boolean(
     dialogPaymentId && updatingId === dialogPaymentId && pending,
   );
+  const criticalPaymentCopy = criticalAction
+    ? getCriticalPaymentCopy(criticalAction)
+    : null;
 
   return (
     <div className="space-y-4">
@@ -413,7 +508,7 @@ export function ManualPaymentsPanel({
                           <button
                             type="button"
                             disabled={isUpdating}
-                            onClick={() => handleConfirmPayment(payment.id)}
+                            onClick={() => requestApprove(payment.id)}
                             className="btn-brand px-4 py-2 text-sm disabled:opacity-60"
                           >
                             {isUpdating ? "Procesando…" : "Aprobar"}
@@ -423,7 +518,7 @@ export function ManualPaymentsPanel({
                           <button
                             type="button"
                             disabled={isUpdating}
-                            onClick={() => handleRevertConfirmation(payment.id)}
+                            onClick={() => requestRevert(payment.id)}
                             className="admin-payment-action-secondary"
                           >
                             {isUpdating ? "Procesando…" : "Revertir"}
@@ -459,7 +554,7 @@ export function ManualPaymentsPanel({
         </ul>
       )}
 
-      {dialogMode && dialogPayment ? (
+      {dialogMode && dialogPayment && !criticalAction ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/50 p-4 sm:items-center">
           <div
             role="dialog"
@@ -505,7 +600,7 @@ export function ManualPaymentsPanel({
               </button>
               <button
                 type="button"
-                onClick={submitDialog}
+                onClick={requestDialogSubmit}
                 disabled={
                   isDialogBusy ||
                   (dialogMode === "correction" && dialogReason.trim().length < 8)
@@ -517,15 +612,30 @@ export function ManualPaymentsPanel({
                     : "bg-red-600 hover:bg-red-700",
                 )}
               >
-                {isDialogBusy
-                  ? "Guardando…"
-                  : dialogMode === "correction"
-                    ? "Enviar solicitud"
-                    : "Rechazar definitivamente"}
+                {dialogMode === "correction"
+                  ? "Continuar…"
+                  : "Continuar a confirmar…"}
               </button>
             </div>
           </div>
         </div>
+      ) : null}
+
+      {criticalAction && criticalPaymentCopy ? (
+        <AdminCriticalConfirmDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setCriticalAction(null);
+          }}
+          title={criticalPaymentCopy.title}
+          impact={criticalPaymentCopy.impact}
+          confirmLabel={criticalPaymentCopy.confirmLabel}
+          destructive={criticalPaymentCopy.destructive}
+          loading={Boolean(
+            updatingId === criticalAction.paymentId && pending,
+          )}
+          onConfirm={executeCriticalPaymentAction}
+        />
       ) : null}
     </div>
   );
