@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Plus } from "lucide-react";
+import { Check, ShoppingCart } from "lucide-react";
 import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVisibilitySettings } from "@/lib/store-settings/types";
@@ -191,7 +191,7 @@ export const ProductCard = memo(function ProductCard({
     isAlimentos &&
     hasFoodModifiers(parseFoodModifiersFromMetadata(product.metadata ?? null));
   const showVariantSelector = hasMultipleVariants(product);
-  /** Variantes/mods se eligen en el detalle; el + añade la opción por defecto. */
+  /** Variantes/mods se eligen en el detalle; «Añadir» usa la opción por defecto. */
   const hasConfigurableOptions = showVariantSelector || foodHasModifiers;
 
   const retailDisplayUsd = selectedVariant?.priceUsd ?? product.price_usd ?? 0;
@@ -203,7 +203,11 @@ export const ProductCard = memo(function ProductCard({
 
   const outOfStock = isProductOutOfStock(product);
   const { showStock, showDescription, showPrices } = catalogVisibility;
-  const bodyLayoutClass = getProductBodyLayoutClass(catalogVisibility);
+  // El precio vive en el pie; el cuerpo se calcula sin fila de precio.
+  const bodyLayoutClass = getProductBodyLayoutClass({
+    ...catalogVisibility,
+    showPrices: false,
+  });
   const threshold = getLowStockThreshold(product);
   const displayStock = product.available_stock;
   const showStockOverlay = showStock && outOfStock;
@@ -251,6 +255,7 @@ export const ProductCard = memo(function ProductCard({
     !outOfStock &&
     Boolean(selectedVariant) &&
     (canAddMore || inCart);
+  const showFooter = showPrices || showAddButton;
 
   const addButtonLabel = inCart
     ? `En carrito (${effectiveCartQuantity})`
@@ -286,63 +291,10 @@ export const ProductCard = memo(function ProductCard({
     onOpenDetail?.(product);
   }
 
-  function stopCardClick(event: React.MouseEvent) {
-    event.stopPropagation();
-  }
-
   function handleAddClick(event: React.MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
     handleAdd();
-  }
-
-  function renderAddButton(className: string) {
-    const showCheck = inCart && !justAdded;
-    return (
-      <button
-        type="button"
-        onClick={handleAddClick}
-        disabled={inCart && !canAddMore}
-        className={cn(
-          className,
-          "touch-manipulation",
-          inCart && "store-add-btn-in-cart",
-          inCart && canAddMore && "store-add-btn-in-cart-active",
-          inCart && !canAddMore && "store-add-btn-in-cart-max",
-          justAdded && "store-add-btn-just-added",
-        )}
-        aria-label={
-          inCart
-            ? `${addButtonLabel}. ${canAddMore ? "Pulsa para añadir otro." : "Cantidad máxima en carrito."}`
-            : addButtonLabel
-        }
-        title={
-          hasConfigurableOptions
-            ? "Añade 1 unidad con la opción por defecto. Toca la foto o el nombre para elegir variantes."
-            : addButtonLabel
-        }
-      >
-        {showCheck ? (
-          <Check className="store-add-btn-icon" aria-hidden="true" />
-        ) : (
-          <Plus className="store-add-btn-icon" aria-hidden="true" />
-        )}
-        {inCart && effectiveCartQuantity > 0 ? (
-          <span className="store-add-btn-qty" aria-hidden="true">
-            {effectiveCartQuantity > 9 ? "9+" : effectiveCartQuantity}
-          </span>
-        ) : null}
-        {plusOneTick > 0 ? (
-          <span
-            key={plusOneTick}
-            className="store-add-btn-plus-one"
-            aria-hidden="true"
-          >
-            +1
-          </span>
-        ) : null}
-      </button>
-    );
   }
 
   return (
@@ -410,12 +362,6 @@ export const ProductCard = memo(function ProductCard({
         </div>
       </div>
 
-      {showAddButton && (
-        <div className="store-product-action" onClick={stopCardClick}>
-          {renderAddButton("store-add-btn")}
-        </div>
-      )}
-
       <div className="store-product-content">
         <div className={cn("store-product-body", bodyLayoutClass)}>
           <div className="store-product-slot store-product-slot-meta">
@@ -447,41 +393,6 @@ export const ProductCard = memo(function ProductCard({
             {isPapeleria ? <StationeryBadges product={product} /> : null}
           </div>
 
-          {showPrices ? (
-            <div className="store-product-slot store-product-slot-pricing">
-              <div className="store-product-price-row">
-                <p className="store-product-price-usd">
-                  {formatUsd(displayPriceUsd)}
-                </p>
-                {hasDiscount && compareAtDisplayUsd != null && (
-                  <p className="store-product-price-compare">
-                    {formatUsd(compareAtDisplayUsd)}
-                  </p>
-                )}
-              </div>
-              {showBsConversion ? (
-                <p className="store-product-price-ves">
-                  {formatApproxBs(selectedPriceVes)}
-                </p>
-              ) : (
-                <span
-                  className="store-product-price-ves-placeholder"
-                  aria-hidden="true"
-                />
-              )}
-              {wholesaleApplied ? (
-                <WholesalePriceBadge className="mt-1.5" compact />
-              ) : wholesaleConfigured &&
-                product.wholesale_min_qty != null ? (
-                <WholesaleCatalogHint
-                  wholesalePriceUsd={product.wholesale_price_usd as number}
-                  wholesaleMinQty={product.wholesale_min_qty}
-                  className="mt-1"
-                />
-              ) : null}
-            </div>
-          ) : null}
-
           {showDescription ? (
             <div className="store-product-slot store-product-slot-desc">
               <p
@@ -495,6 +406,96 @@ export const ProductCard = memo(function ProductCard({
             </div>
           ) : null}
         </div>
+
+        {showFooter ? (
+          <div className="store-product-footer">
+            {showPrices ? (
+              <div className="store-product-slot store-product-slot-pricing store-product-footer-pricing">
+                <div className="store-product-price-row">
+                  <p className="store-product-price-usd">
+                    {formatUsd(displayPriceUsd)}
+                  </p>
+                  {hasDiscount && compareAtDisplayUsd != null && (
+                    <p className="store-product-price-compare">
+                      {formatUsd(compareAtDisplayUsd)}
+                    </p>
+                  )}
+                </div>
+                {showBsConversion ? (
+                  <p className="store-product-price-ves">
+                    {formatApproxBs(selectedPriceVes)}
+                  </p>
+                ) : (
+                  <span
+                    className="store-product-price-ves-placeholder"
+                    aria-hidden="true"
+                  />
+                )}
+                {wholesaleApplied ? (
+                  <WholesalePriceBadge className="mt-1.5" compact />
+                ) : wholesaleConfigured &&
+                  product.wholesale_min_qty != null ? (
+                  <WholesaleCatalogHint
+                    wholesalePriceUsd={product.wholesale_price_usd as number}
+                    wholesaleMinQty={product.wholesale_min_qty}
+                    className="mt-1"
+                  />
+                ) : null}
+              </div>
+            ) : (
+              <span className="store-product-footer-pricing-spacer" aria-hidden="true" />
+            )}
+
+            {showAddButton ? (
+              <button
+                type="button"
+                onClick={handleAddClick}
+                disabled={inCart && !canAddMore}
+                className={cn(
+                  "store-card-add-btn touch-manipulation",
+                  inCart && "store-card-add-btn-in-cart",
+                  inCart && canAddMore && "store-card-add-btn-active",
+                  inCart && !canAddMore && "store-card-add-btn-max",
+                  justAdded && "store-add-btn-just-added",
+                )}
+                aria-label={
+                  inCart
+                    ? `${addButtonLabel}. ${canAddMore ? "Pulsa para añadir otro." : "Cantidad máxima en carrito."}`
+                    : addButtonLabel
+                }
+                title={
+                  hasConfigurableOptions
+                    ? "Añade 1 unidad con la opción por defecto. Toca la foto o el nombre para elegir variantes."
+                    : addButtonLabel
+                }
+              >
+                {inCart && !justAdded ? (
+                  <Check className="store-card-add-btn-icon" aria-hidden="true" />
+                ) : (
+                  <ShoppingCart
+                    className="store-card-add-btn-icon"
+                    aria-hidden="true"
+                  />
+                )}
+                <span className="store-card-add-btn-label">Añadir</span>
+                {inCart && effectiveCartQuantity > 0 ? (
+                  <span className="store-card-add-btn-qty" aria-hidden="true">
+                    {effectiveCartQuantity > 9 ? "9+" : effectiveCartQuantity}
+                  </span>
+                ) : null}
+                {plusOneTick > 0 ? (
+                  <span
+                    key={plusOneTick}
+                    className="store-add-btn-plus-one"
+                    aria-hidden="true"
+                  >
+                    +1
+                  </span>
+                ) : null}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </article>
   );
