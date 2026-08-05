@@ -18,11 +18,6 @@ import { cn } from "@/lib/cn";
 
 export type CatalogPreviewViewport = "mobile" | "desktop";
 
-const VIEWPORT_WIDTH: Record<CatalogPreviewViewport, number> = {
-  mobile: 375,
-  desktop: 1024,
-};
-
 interface CatalogPreviewDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -44,7 +39,6 @@ export function CatalogPreviewDrawer({
 }: CatalogPreviewDrawerProps) {
   const [viewport, setViewport] = useState<CatalogPreviewViewport>("mobile");
   const isDesktopViewport = viewport === "desktop";
-  const viewportWidth = VIEWPORT_WIDTH[viewport];
 
   return (
     <>
@@ -105,7 +99,11 @@ export function CatalogPreviewDrawer({
                     ? "catalog-preview-viewport--desktop"
                     : "catalog-preview-viewport--mobile",
                 )}
-                style={{ width: viewportWidth }}
+                aria-label={
+                  isDesktopViewport
+                    ? "Vista previa del catálogo en escritorio"
+                    : "Vista previa del catálogo en móvil"
+                }
               >
                 <CatalogLivePreview
                   store={store}

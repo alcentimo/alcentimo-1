@@ -7481,7 +7481,7 @@ body {
   }
 }
 
-/* ?? Vista previa en vivo (dashboard) ?? */
+/* —— Vista previa en vivo (dashboard) —— */
 
 .catalog-preview-drawer {
   @apply bg-zinc-100 dark:bg-zinc-950;
@@ -7492,7 +7492,7 @@ body {
 }
 
 .catalog-preview-drawer-body {
-  @apply bg-zinc-100 px-4 py-4 dark:bg-zinc-950;
+  @apply bg-zinc-100 px-5 py-5 sm:px-6 sm:py-6 dark:bg-zinc-950;
 }
 
 .account-settings-sheet {
@@ -7510,21 +7510,50 @@ body {
 }
 
 .catalog-preview-stage {
-  @apply flex min-h-full justify-center overflow-x-auto pb-6;
+  @apply flex min-h-full items-start justify-center overflow-x-auto pb-8 pt-2;
 }
 
 .catalog-preview-viewport {
-  @apply flex shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-zinc-300 bg-white shadow-xl ring-1 ring-black/5 transition-[width] duration-200 ease-out dark:border-zinc-700 dark:bg-white;
-  height: min(72vh, 720px);
-  max-height: min(72vh, 720px);
+  @apply flex shrink-0 flex-col overflow-hidden transition-[width,max-width] duration-200 ease-out;
+  height: min(74vh, 760px);
+  max-height: min(74vh, 760px);
 }
 
+/*
+ * Marco tipo teléfono: el ancho CSS del dashboard activa sm/md/lg del catálogo
+ * real, así que forzamos paddings y grilla de móvil dentro del mockup.
+ */
 .catalog-preview-viewport--mobile {
-  max-width: 375px;
+  width: min(100%, 24rem);
+  max-width: 24rem;
+  border-radius: 1.75rem;
+  border: 1px solid rgb(228 228 231);
+  background: #111;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 18px 40px -18px rgb(0 0 0 / 0.35);
+  padding: 0.625rem;
+}
+
+:is(.dark) .catalog-preview-viewport--mobile {
+  border-color: rgb(63 63 70);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.2),
+    0 22px 48px -20px rgb(0 0 0 / 0.65);
+}
+
+.catalog-preview-viewport--mobile .catalog-live-preview-root {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: #fff;
 }
 
 .catalog-preview-viewport--desktop {
+  width: min(1024px, 100%);
   max-width: min(1024px, 100%);
+  @apply rounded-[1.25rem] border border-zinc-300 bg-white shadow-xl ring-1 ring-black/5 dark:border-zinc-700 dark:bg-white;
 }
 
 .catalog-live-preview-root {
@@ -7564,6 +7593,101 @@ body {
   bottom: auto;
   left: auto;
   right: auto;
+}
+
+/* Layout móvil real dentro del frame (ignora breakpoints del dashboard) */
+.catalog-preview-viewport--mobile .txn-catalog-header-inner {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.375rem;
+}
+
+.catalog-preview-viewport--mobile .txn-catalog-identity-card {
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.875rem;
+}
+
+.catalog-preview-viewport--mobile .txn-catalog-header-actions {
+  gap: 0.375rem;
+}
+
+.catalog-preview-viewport--mobile .txn-catalog-assistant-btn,
+.catalog-preview-viewport--mobile .txn-catalog-whatsapp-btn {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+  font-size: 0.625rem;
+}
+
+.catalog-preview-viewport--mobile .txn-promo-banner {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.catalog-preview-viewport--mobile .txn-promo-banner-viewport {
+  max-height: 140px;
+  border-radius: 0.75rem;
+}
+
+.catalog-preview-viewport--mobile .txn-promo-banner-image-desktop {
+  display: none !important;
+}
+
+.catalog-preview-viewport--mobile .txn-promo-banner-image-mobile {
+  display: block !important;
+}
+
+.catalog-preview-viewport--mobile .catalog-fulfillment-bar {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  gap: 0.5rem;
+}
+
+.catalog-preview-viewport--mobile .catalog-browse-toolbar {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.catalog-preview-viewport--mobile .txn-catalog-main {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.875rem;
+}
+
+.catalog-preview-viewport--mobile .txn-product-grid,
+.catalog-preview-viewport--mobile .txn-product-grid--immersive,
+.catalog-preview-viewport--mobile .store-product-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.625rem;
+}
+
+.catalog-preview-viewport--mobile .txn-product-list {
+  gap: 0.625rem;
+}
+
+.catalog-preview-viewport--mobile .store-product-card {
+  min-width: 0;
+}
+
+.catalog-preview-viewport--mobile .store-product-name,
+.catalog-preview-viewport--mobile .store-product-desc,
+.catalog-preview-viewport--mobile .store-product-price-usd,
+.catalog-preview-viewport--mobile .store-product-price-ves {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.catalog-preview-viewport--mobile .catalog-live-preview-tab-bar .catalog-tab-bar {
+  font-size: 0.7rem;
+}
+
+.catalog-preview-viewport--mobile .catalog-tab-item {
+  min-height: 2.875rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
 }
 
 .txn-catalog-empty {
