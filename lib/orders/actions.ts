@@ -6,7 +6,6 @@ import { resolveOrderCustomerDetails } from "@/lib/customers/get-customer-checko
 import { getStoreBySlug } from "@/lib/stores";
 import { buildTransactionalOrderWhatsAppMessage } from "@/lib/whatsapp-formatter";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
-import { buildOrderSharePublicUrl } from "@/lib/orders/order-share";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { resolveShippingQuote } from "@/lib/store-settings/shipping-pricing";
@@ -458,10 +457,7 @@ export async function submitTransactionalOrder(
     customerName,
     items: orderItems,
     totalUsd: orderTotalUsd,
-    orderShareUrl: buildOrderSharePublicUrl(store.slug, orderId, {
-      customDomain: store.custom_domain,
-      customDomainVerified: Boolean(store.custom_domain_verified),
-    }),
+    orderRef: orderId,
     paymentLabel,
     shippingLabel: shippingLabel || undefined,
     shippingCostUsd: shippingQuote.chargeUsd,

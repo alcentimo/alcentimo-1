@@ -12,8 +12,8 @@ export interface TransactionalOrderWhatsAppMessageInput {
   customerName: string;
   items: TransactionalOrderWhatsAppItem[];
   totalUsd: number;
-  /** URL pública del pedido con OG de la tienda (sin marca de la plataforma). */
-  orderShareUrl?: string;
+  /** Referencia corta del pedido (ej. B67E238D). */
+  orderRef?: string;
   paymentLabel?: string;
   shippingLabel?: string;
   shippingCostUsd?: number;
@@ -40,9 +40,15 @@ function sanitizeCustomerText(value: string): string {
   return stripStorageUrls(value).replace(/\s+/g, " ").trim();
 }
 
+function formatOrderRef(raw?: string): string | null {
+  const cleaned = raw?.trim().replace(/^#/, "") ?? "";
+  if (!cleaned) return null;
+  return cleaned.slice(0, 8).toUpperCase();
+}
+
 /**
  * Mensaje de pedido para WhatsApp (cliente → tienda).
- * Si hay orderShareUrl, se añade al final para la vista previa con marca de la tienda.
+ * Compacto: datos de la compra + referencia corta, sin URLs.
  */
 export function buildTransactionalOrderWhatsAppMessage(
   input: TransactionalOrderWhatsAppMessageInput,
@@ -57,8 +63,11 @@ export function buildTransactionalOrderWhatsAppMessage(
     return `• ${item.quantity} x ${sanitizeCustomerText(productName)}${tierLabel} - ${formatUsd(item.line_total_usd)}`;
   });
 
+  const orderRef = formatOrderRef(input.orderRef);
+
   const body = [
     "📦 Nuevo Pedido",
+    ...(orderRef ? [`Ref: #${orderRef}`] : []),
     "",
     `👤 Cliente: ${sanitizeCustomerText(input.customerName)}`,
     "",
@@ -120,17 +129,5 @@ export function buildTransactionalOrderWhatsAppMessage(
     body.push(`🏠 Entrega: ${sanitizeCustomerText(input.deliveryAddress)}`);
   }
 
-  const messageBody = stripStorageUrls(body.join("\n"));
-  const shareUrl = input.orderShareUrl?.trim() ?? "";
-
-  // Solo URLs de compartir de la tienda (nunca Storage ni /pedidos de plataforma).
-  if (
-    !shareUrl ||
-    /supabase\.co/i.test(shareUrl) ||
-    /\/pedidos\//i.test(shareUrl)
-  ) {
-    return messageBody;
-  }
-
-  return `${messageBody}\n\n${shareUrl}`;
+  return stripStorageUrls(body.join("\n"));
 }
