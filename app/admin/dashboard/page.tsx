@@ -127,7 +127,7 @@ export default async function AdminDashboardPage({
     safeLoad(
       () =>
         Promise.all([
-          getAdminUsers({ limit: 300 }),
+          getAdminUsers({ limit: 500 }),
           listSubscriptionCoupons(),
           listSubscriptionCampaigns(),
           getGrowthAuditLog(200),

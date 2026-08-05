@@ -59,6 +59,42 @@ function formatDate(iso: string | null | undefined): string {
   }).format(new Date(iso));
 }
 
+function formatPlanLabel(plan: string): string {
+  switch (plan) {
+    case "FREE":
+      return "Gratis";
+    case "PRO":
+      return "Pro";
+    case "BUSINESS":
+      return "Business";
+    case "ENTERPRISE":
+      return "Enterprise";
+    default:
+      return plan;
+  }
+}
+
+function formatSubscriptionStatus(status: string): string {
+  switch (status) {
+    case "active":
+      return "Activa";
+    case "provisional":
+      return "Provisional";
+    case "none":
+      return "Sin suscripción";
+    default:
+      return status;
+  }
+}
+
+function formatWhatsAppDisplay(phone: string | null): string {
+  if (!phone) return "—";
+  if (phone.startsWith("58") && phone.length >= 12) {
+    return `+${phone.slice(0, 2)} ${phone.slice(2, 5)} ${phone.slice(5)}`;
+  }
+  return `+${phone}`;
+}
+
 interface AdminGrowthPanelProps {
   initialUsers: AdminUserRow[];
   initialCoupons: SubscriptionCoupon[];
@@ -114,7 +150,15 @@ export function AdminGrowthPanel({
         return false;
       }
       if (q) {
-        const hay = `${user.email ?? ""} ${user.id}`.toLowerCase();
+        const hay = [
+          user.email ?? "",
+          user.storeName,
+          user.storeSlug ?? "",
+          user.whatsappPhone ?? "",
+          user.id,
+        ]
+          .join(" ")
+          .toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -508,12 +552,15 @@ export function AdminGrowthPanel({
               />
             </div>
             <div className="sm:col-span-2">
-              <Label>Buscar email / id</Label>
+              <Label htmlFor="admin-stores-search">
+                Buscar por correo, tienda o teléfono
+              </Label>
               <Input
+                id="admin-stores-search"
                 className="mt-1.5"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="usuario@correo.com"
+                placeholder="Ej. maria@correo.com, Boutique Luna, 0412…"
               />
             </div>
           </div>
@@ -606,44 +653,104 @@ export function AdminGrowthPanel({
             </Button>
           </form>
 
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            {filteredUsers.length} tienda
+            {filteredUsers.length === 1 ? "" : "s"} / cliente
+            {filteredUsers.length === 1 ? "" : "s"}
+          </p>
+
           <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-xs uppercase text-zinc-500 dark:bg-zinc-900">
+              <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
                 <tr>
-                  <th className="px-3 py-2" />
-                  <th className="px-3 py-2">Usuario</th>
-                  <th className="px-3 py-2">Plan</th>
-                  <th className="px-3 py-2">Productos</th>
-                  <th className="px-3 py-2">Acción</th>
+                  <th className="px-3 py-2.5" />
+                  <th className="px-3 py-2.5">Tienda</th>
+                  <th className="px-3 py-2.5">Correo</th>
+                  <th className="px-3 py-2.5">WhatsApp</th>
+                  <th className="px-3 py-2.5">Catálogo</th>
+                  <th className="px-3 py-2.5">Plan / estado</th>
+                  <th className="px-3 py-2.5">Productos</th>
+                  <th className="px-3 py-2.5">Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.map((user) => (
                   <tr
-                    key={user.id}
+                    key={user.rowKey}
                     className="border-t border-zinc-100 dark:border-zinc-800"
                   >
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2.5 align-top">
                       <input
                         type="checkbox"
                         checked={selected.has(user.id)}
                         onChange={() => toggleSelect(user.id)}
+                        aria-label={`Seleccionar ${user.email ?? user.storeName}`}
                       />
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2.5 align-top">
                       <div className="font-medium text-zinc-900 dark:text-zinc-50">
+                        {user.storeName}
+                      </div>
+                      {user.storeSlug ? (
+                        <div className="text-xs text-zinc-400">
+                          /{user.storeSlug}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-2.5 align-top">
+                      <div className="break-all text-zinc-800 dark:text-zinc-200">
                         {user.email ?? "Sin email"}
                       </div>
-                      <div className="text-xs text-zinc-400">{user.id}</div>
                     </td>
-                    <td className="px-3 py-2">
-                      {user.plan}
-                      <div className="text-xs text-zinc-400">
-                        {user.subscriptionStatus}
+                    <td className="px-3 py-2.5 align-top">
+                      {user.whatsappUrl ? (
+                        <a
+                          href={user.whatsappUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                        >
+                          {formatWhatsAppDisplay(user.whatsappPhone)}
+                        </a>
+                      ) : user.whatsappPhone ? (
+                        <span className="text-zinc-600 dark:text-zinc-300">
+                          {user.whatsappPhone}
+                        </span>
+                      ) : (
+                        <span className="text-zinc-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5 align-top">
+                      {user.catalogUrl ? (
+                        <a
+                          href={user.catalogUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-teal-700 hover:underline dark:text-teal-400"
+                        >
+                          Abrir catálogo
+                        </a>
+                      ) : (
+                        <span className="text-zinc-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5 align-top">
+                      <div className="font-medium text-zinc-900 dark:text-zinc-50">
+                        {formatPlanLabel(user.plan)}
                       </div>
+                      <div className="text-xs text-zinc-500">
+                        {formatSubscriptionStatus(user.subscriptionStatus)}
+                      </div>
+                      {user.periodEndsAt ? (
+                        <div className="mt-0.5 text-[11px] text-zinc-400">
+                          Hasta {formatDate(user.periodEndsAt)}
+                        </div>
+                      ) : null}
                     </td>
-                    <td className="px-3 py-2">{user.productCount}</td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2.5 align-top tabular-nums">
+                      {user.productCount}
+                    </td>
+                    <td className="px-3 py-2.5 align-top">
                       <div className="flex flex-wrap gap-1.5">
                         <Button
                           type="button"
@@ -684,10 +791,10 @@ export function AdminGrowthPanel({
                 {filteredUsers.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={8}
                       className="px-3 py-8 text-center text-zinc-500"
                     >
-                      No hay usuarios con ese filtro.
+                      No hay tiendas o usuarios con ese filtro.
                     </td>
                   </tr>
                 ) : null}
