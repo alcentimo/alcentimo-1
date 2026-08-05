@@ -2,27 +2,34 @@
 
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Plus } from "lucide-react";
-import { CatalogProductMediaFallback } from "@/components/catalog/CatalogProductMediaFallback";
 import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVisibilitySettings } from "@/lib/store-settings/types";
 import { getProductBodyLayoutClass } from "@/lib/store-settings/catalog-theme";
 import { formatUsd, formatApproxBs } from "@/lib/format";
-import { computeUsdToVes, computeProductDiscountPercent, hasWholesalePricing, isProductOnSale, resolveUnitPriceUsd } from "@/lib/catalog/pricing";
+import {
+  computeUsdToVes,
+  computeProductDiscountPercent,
+  hasWholesalePricing,
+  isProductOnSale,
+  resolveUnitPriceUsd,
+} from "@/lib/catalog/pricing";
 import {
   WholesaleCatalogHint,
   WholesalePriceBadge,
 } from "@/components/catalog/WholesalePriceBadge";
-import { cartItemKey, sumModifiersExtraUsd, type CartModifierSelection } from "@/lib/catalog/cart-types";
+import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import { getLowStockThreshold } from "@/lib/inventory/stock-status";
-import { shouldShowExactStockQuantity, resolveCartStockCap } from "@/lib/inventory/open-stock";
+import {
+  shouldShowExactStockQuantity,
+  resolveCartStockCap,
+} from "@/lib/inventory/open-stock";
 import {
   getCatalogVariantOptions,
   hasMultipleVariants,
   isProductOutOfStock,
 } from "@/lib/products/variants";
 import type { CatalogVariantOption } from "@/lib/products/variants";
-import { RubroCatalogVariantSlot } from "@/components/rubros/RubroCatalogVariantSlot";
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import {
@@ -35,6 +42,8 @@ import {
 } from "@/src/config/categories";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/cn";
+
+const EMPTY_MODIFIERS: CartModifierSelection[] = [];
 
 const TechSpecsChips = dynamic(
   () =>
@@ -146,12 +155,8 @@ export const ProductCard = memo(function ProductCard({
     () => getCatalogVariantOptions(product, activeExchangeRate),
     [product, activeExchangeRate],
   );
-  const [selectedVariantId, setSelectedVariantId] = useState(
-    () => variantOptions[0]?.id ?? product.default_variant_id,
-  );
-  const [selectedModifiers, setSelectedModifiers] = useState<
-    CartModifierSelection[]
-  >([]);
+  const selectedVariant = variantOptions[0];
+
   const [justAdded, setJustAdded] = useState(false);
   const justAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -185,18 +190,11 @@ export const ProductCard = memo(function ProductCard({
     isAlimentos &&
     hasFoodModifiers(parseFoodModifiersFromMetadata(product.metadata ?? null));
   const showVariantSelector = hasMultipleVariants(product);
-  const showOrderOptions = showVariantSelector || foodHasModifiers;
+  /** Opciones (talla/color/mods) solo en detalle; el + abre el modal. */
+  const requiresDetailToOrder =
+    (showVariantSelector || foodHasModifiers) && Boolean(onOpenDetail);
 
-  const selectedVariant = useMemo(
-    () =>
-      variantOptions.find((variant) => variant.id === selectedVariantId) ??
-      variantOptions[0],
-    [variantOptions, selectedVariantId],
-  );
-
-  const modifiersExtra = sumModifiersExtraUsd(selectedModifiers);
-  const retailDisplayUsd =
-    (selectedVariant?.priceUsd ?? product.price_usd ?? 0) + modifiersExtra;
+  const retailDisplayUsd = selectedVariant?.priceUsd ?? product.price_usd ?? 0;
   const wholesaleConfigured = hasWholesalePricing(
     product.wholesale_price_usd,
     product.wholesale_min_qty,
@@ -207,26 +205,18 @@ export const ProductCard = memo(function ProductCard({
   const { showStock, showDescription, showPrices } = catalogVisibility;
   const bodyLayoutClass = getProductBodyLayoutClass(catalogVisibility);
   const threshold = getLowStockThreshold(product);
-  const displayStock = showVariantSelector
-    ? (selectedVariant?.availableStock ?? 0)
-    : product.available_stock;
+  const displayStock = product.available_stock;
   const showStockOverlay = showStock && outOfStock;
   const showStockBadge =
     showStock &&
     !outOfStock &&
     shouldShowExactStockQuantity(displayStock) &&
     displayStock <= threshold;
-  const activeStock = selectedVariant?.availableStock ?? 0;
+  const activeStock = selectedVariant?.availableStock ?? product.available_stock;
   const contextCartQuantity =
-    cartContext?.items.find(
-      (item) =>
-        cartItemKey(
-          item.product.product_id,
-          item.variantId,
-          item.modifiers,
-        ) ===
-        cartItemKey(product.product_id, selectedVariantId, selectedModifiers),
-    )?.quantity ?? 0;
+    cartContext?.items
+      .filter((item) => item.product.product_id === product.product_id)
+      .reduce((sum, item) => sum + item.quantity, 0) ?? 0;
   const effectiveCartQuantity =
     cartQuantity > 0 ? cartQuantity : contextCartQuantity;
   const activePricing = useMemo(() => {
@@ -237,11 +227,10 @@ export const ProductCard = memo(function ProductCard({
       wholesaleMinQty: product.wholesale_min_qty,
       quantity: effectiveCartQuantity,
       wholesaleEnabled,
-      priceExtraUsd: (selectedVariant?.priceExtraUsd ?? 0) + modifiersExtra,
+      priceExtraUsd: selectedVariant?.priceExtraUsd ?? 0,
     });
   }, [
     effectiveCartQuantity,
-    modifiersExtra,
     product.price_usd,
     product.wholesale_min_qty,
     product.wholesale_price_usd,
@@ -258,11 +247,15 @@ export const ProductCard = memo(function ProductCard({
   const canAddMore =
     !outOfStock && remaining > 0 && onAddToCart && selectedVariant;
   const showAddButton =
-    !outOfStock && onAddToCart && selectedVariant && (canAddMore || inCart);
+    !outOfStock &&
+    selectedVariant &&
+    (requiresDetailToOrder || (onAddToCart && (canAddMore || inCart)));
 
-  const addButtonLabel = inCart
-    ? `En carrito (${effectiveCartQuantity})`
-    : "Agregar al carrito";
+  const addButtonLabel = requiresDetailToOrder
+    ? `Ver opciones de ${product.product_name}`
+    : inCart
+      ? `En carrito (${effectiveCartQuantity})`
+      : "Agregar al carrito";
 
   const hasDiscount = isProductOnSale(product.compare_at_usd, product.price_usd);
   const discountPercent = computeProductDiscountPercent(
@@ -281,7 +274,7 @@ export const ProductCard = memo(function ProductCard({
 
   function handleAdd() {
     if (!canAddMore || !selectedVariant) return;
-    onAddToCart?.(product, selectedVariant, selectedModifiers);
+    onAddToCart?.(product, selectedVariant, EMPTY_MODIFIERS);
     setJustAdded(true);
     if (justAddedTimerRef.current) clearTimeout(justAddedTimerRef.current);
     justAddedTimerRef.current = setTimeout(() => setJustAdded(false), 420);
@@ -295,35 +288,48 @@ export const ProductCard = memo(function ProductCard({
     event.stopPropagation();
   }
 
+  function handleAddClick(event: React.MouseEvent) {
+    event.stopPropagation();
+    if (requiresDetailToOrder) {
+      handleOpenDetail();
+      return;
+    }
+    handleAdd();
+  }
+
   function renderAddButton(className: string) {
+    const showCheck = !requiresDetailToOrder && (inCart || justAdded);
     return (
       <button
         type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          handleAdd();
-        }}
-        disabled={inCart && !canAddMore}
+        onClick={handleAddClick}
+        disabled={!requiresDetailToOrder && inCart && !canAddMore}
         className={cn(
           className,
           "touch-manipulation",
           inCart && "store-add-btn-in-cart",
-          inCart && canAddMore && "store-add-btn-in-cart-active",
-          inCart && !canAddMore && "store-add-btn-in-cart-max",
+          inCart && (canAddMore || requiresDetailToOrder) && "store-add-btn-in-cart-active",
+          inCart && !canAddMore && !requiresDetailToOrder && "store-add-btn-in-cart-max",
           justAdded && "store-add-btn-just-added",
         )}
         aria-label={
-          inCart
-            ? `${addButtonLabel}. ${canAddMore ? "Pulsa para añadir otro." : "Cantidad máxima en carrito."}`
-            : addButtonLabel
+          requiresDetailToOrder
+            ? addButtonLabel
+            : inCart
+              ? `${addButtonLabel}. ${canAddMore ? "Pulsa para añadir otro." : "Cantidad máxima en carrito."}`
+              : addButtonLabel
         }
       >
-        {inCart || justAdded ? (
-          <Check className="h-4 w-4" aria-hidden="true" />
+        {showCheck ? (
+          <Check className="store-add-btn-icon" aria-hidden="true" />
         ) : (
-          <Plus className="h-4 w-4" aria-hidden="true" />
+          <Plus className="store-add-btn-icon" aria-hidden="true" />
         )}
-        {addButtonLabel}
+        {inCart && effectiveCartQuantity > 0 ? (
+          <span className="store-add-btn-qty" aria-hidden="true">
+            {effectiveCartQuantity > 9 ? "9+" : effectiveCartQuantity}
+          </span>
+        ) : null}
       </button>
     );
   }
@@ -332,70 +338,72 @@ export const ProductCard = memo(function ProductCard({
     <article
       className={cn("store-product-card group h-full", outOfStock && "opacity-90")}
     >
-      <div
-        className={cn(
-          "store-product-media",
-          onOpenDetail && "store-product-media-openable",
-        )}
-        onClick={onOpenDetail ? handleOpenDetail : undefined}
-        onKeyDown={
-          onOpenDetail
-            ? (event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  handleOpenDetail();
-                }
-              }
-            : undefined
-        }
-        role={onOpenDetail ? "button" : undefined}
-        tabIndex={onOpenDetail ? 0 : undefined}
-        aria-label={
-          onOpenDetail ? `Ver detalle de ${product.product_name}` : undefined
-        }
-      >
-        <ProductImageGallery
-          product={product}
-          imageClassName="store-product-image"
-          fallbackClassName="store-product-media-fallback"
-          loading="lazy"
-          sizes={
-            referenceCatalog
-              ? "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, 25vw"
-          }
-        />
-
-        {showStockOverlay && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/55">
-            <StockBadge availableStock={0} threshold={threshold} emphasis />
-          </div>
-        )}
-
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-between p-3">
-          <div className="flex flex-col items-start gap-1">
-            {product.is_featured ? (
-              <span className="store-featured-badge">Destacado</span>
-            ) : null}
-            {hasDiscount ? (
-              <span className="store-sale-badge">
-                Oferta{discountPercent != null ? ` −${discountPercent}%` : ""}
-              </span>
-            ) : null}
-          </div>
-          {showStockBadge ? (
-            <StockBadge availableStock={displayStock} threshold={threshold} />
-          ) : (
-            <span aria-hidden="true" />
+      <div className="store-product-media-frame">
+        <div
+          className={cn(
+            "store-product-media",
+            onOpenDetail && "store-product-media-openable",
           )}
-        </div>
+          onClick={onOpenDetail ? handleOpenDetail : undefined}
+          onKeyDown={
+            onOpenDetail
+              ? (event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    handleOpenDetail();
+                  }
+                }
+              : undefined
+          }
+          role={onOpenDetail ? "button" : undefined}
+          tabIndex={onOpenDetail ? 0 : undefined}
+          aria-label={
+            onOpenDetail ? `Ver detalle de ${product.product_name}` : undefined
+          }
+        >
+          <ProductImageGallery
+            product={product}
+            imageClassName="store-product-image"
+            fallbackClassName="store-product-media-fallback"
+            loading="lazy"
+            sizes={
+              referenceCatalog
+                ? "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, 25vw"
+            }
+          />
 
-        {showAddButton && (
-          <div className="store-product-action" onClick={stopCardClick}>
-            {renderAddButton("store-add-btn")}
+          {showStockOverlay && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/55">
+              <StockBadge availableStock={0} threshold={threshold} emphasis />
+            </div>
+          )}
+
+          <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-between p-2.5">
+            <div className="flex flex-col items-start gap-1">
+              {product.is_featured ? (
+                <span className="store-featured-badge">Destacado</span>
+              ) : null}
+              {hasDiscount ? (
+                <span className="store-sale-badge">
+                  Oferta{discountPercent != null ? ` −${discountPercent}%` : ""}
+                </span>
+              ) : null}
+            </div>
+            {showStockBadge ? (
+              <StockBadge availableStock={displayStock} threshold={threshold} />
+            ) : (
+              <span aria-hidden="true" />
+            )}
           </div>
-        )}
+        </div>
       </div>
+
+      {showAddButton && (
+        <div className="store-product-action" onClick={stopCardClick}>
+          {renderAddButton("store-add-btn")}
+        </div>
+      )}
 
       <div className="store-product-content">
         <div className={cn("store-product-body", bodyLayoutClass)}>
@@ -428,7 +436,7 @@ export const ProductCard = memo(function ProductCard({
             {isPapeleria ? <StationeryBadges product={product} /> : null}
           </div>
 
-        {showPrices ? (
+          {showPrices ? (
             <div className="store-product-slot store-product-slot-pricing">
               <div className="store-product-price-row">
                 <p className="store-product-price-usd">
@@ -445,16 +453,19 @@ export const ProductCard = memo(function ProductCard({
                   {formatApproxBs(selectedPriceVes)}
                 </p>
               ) : (
-                <span className="store-product-price-ves-placeholder" aria-hidden="true" />
+                <span
+                  className="store-product-price-ves-placeholder"
+                  aria-hidden="true"
+                />
               )}
               {wholesaleApplied ? (
-                <WholesalePriceBadge className="mt-2" compact />
+                <WholesalePriceBadge className="mt-1.5" compact />
               ) : wholesaleConfigured &&
                 product.wholesale_min_qty != null ? (
                 <WholesaleCatalogHint
                   wholesalePriceUsd={product.wholesale_price_usd as number}
                   wholesaleMinQty={product.wholesale_min_qty}
-                  className="mt-1.5"
+                  className="mt-1"
                 />
               ) : null}
             </div>
@@ -472,35 +483,6 @@ export const ProductCard = memo(function ProductCard({
               </p>
             </div>
           ) : null}
-
-          <div
-            className="store-product-slot store-product-slot-variant"
-            onClick={stopCardClick}
-          >
-            {showOrderOptions ? (
-              <RubroCatalogVariantSlot
-                rubro={storeRubro}
-                product={product}
-                variantOptions={variantOptions}
-                selectedVariantId={selectedVariantId}
-                onSelect={setSelectedVariantId}
-                selectedModifiers={selectedModifiers}
-                onModifiersChange={setSelectedModifiers}
-                showVariants={showVariantSelector}
-                density="card"
-              />
-            ) : (
-              <span className="store-product-variant-placeholder" aria-hidden="true" />
-            )}
-          </div>
-        </div>
-
-        <div className="store-product-footer sm:hidden">
-          {showAddButton ? (
-            renderAddButton("store-add-btn-mobile")
-          ) : (
-            <span className="store-product-footer-placeholder" aria-hidden="true" />
-          )}
         </div>
       </div>
     </article>
