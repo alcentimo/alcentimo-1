@@ -28,6 +28,8 @@ interface CatalogShellNavigationContextValue {
   searchActive: boolean;
   assistantOpen: boolean;
   assistantAvailable: boolean;
+  whatsAppChatOpen: boolean;
+  whatsAppAvailable: boolean;
   openProfile: () => void;
   closeProfile: () => void;
   openRegister: (mode?: CatalogCustomerAuthMode) => void;
@@ -39,6 +41,9 @@ interface CatalogShellNavigationContextValue {
   openAssistant: () => void;
   closeAssistant: () => void;
   setAssistantAvailable: (available: boolean) => void;
+  openWhatsAppChat: () => void;
+  closeWhatsAppChat: () => void;
+  setWhatsAppAvailable: (available: boolean) => void;
   focusSearch: () => void;
   clearSearchActive: () => void;
   registerCartController: (controller: CatalogCartController | null) => void;
@@ -68,6 +73,8 @@ export function CatalogShellNavigationProvider({
   const [searchActive, setSearchActive] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantAvailable, setAssistantAvailableState] = useState(false);
+  const [whatsAppChatOpen, setWhatsAppChatOpen] = useState(false);
+  const [whatsAppAvailable, setWhatsAppAvailableState] = useState(false);
 
   const registerCartController = useCallback(
     (controller: CatalogCartController | null) => {
@@ -90,6 +97,7 @@ export function CatalogShellNavigationProvider({
     setProfileOpen(false);
     setRegisterOpen(false);
     setAssistantOpen(false);
+    setWhatsAppChatOpen(false);
     setSearchActive(true);
     searchFocusRef.current?.();
   }, []);
@@ -101,6 +109,7 @@ export function CatalogShellNavigationProvider({
       setProfileOpen(false);
       setRegisterOpen(false);
       setAssistantOpen(false);
+      setWhatsAppChatOpen(false);
       setSearchActive(false);
       return;
     }
@@ -121,6 +130,7 @@ export function CatalogShellNavigationProvider({
     setRegisterOpen(false);
     setCartActive(false);
     setAssistantOpen(false);
+    setWhatsAppChatOpen(false);
     setSearchActive(false);
   }, []);
 
@@ -135,6 +145,7 @@ export function CatalogShellNavigationProvider({
     setRegisterOpen(true);
     setCartActive(false);
     setAssistantOpen(false);
+    setWhatsAppChatOpen(false);
     setSearchActive(false);
   }, []);
 
@@ -146,6 +157,7 @@ export function CatalogShellNavigationProvider({
   const openAssistant = useCallback(() => {
     cartControllerRef.current?.close();
     setAssistantOpen(true);
+    setWhatsAppChatOpen(false);
     setProfileOpen(false);
     setRegisterOpen(false);
     setCartActive(false);
@@ -161,6 +173,25 @@ export function CatalogShellNavigationProvider({
     if (!available) setAssistantOpen(false);
   }, []);
 
+  const openWhatsAppChat = useCallback(() => {
+    cartControllerRef.current?.close();
+    setWhatsAppChatOpen(true);
+    setAssistantOpen(false);
+    setProfileOpen(false);
+    setRegisterOpen(false);
+    setCartActive(false);
+    setSearchActive(false);
+  }, []);
+
+  const closeWhatsAppChat = useCallback(() => {
+    setWhatsAppChatOpen(false);
+  }, []);
+
+  const setWhatsAppAvailable = useCallback((available: boolean) => {
+    setWhatsAppAvailableState(available);
+    if (!available) setWhatsAppChatOpen(false);
+  }, []);
+
   const value = useMemo<CatalogShellNavigationContextValue>(
     () => ({
       profileOpen,
@@ -170,6 +201,8 @@ export function CatalogShellNavigationProvider({
       searchActive,
       assistantOpen,
       assistantAvailable,
+      whatsAppChatOpen,
+      whatsAppAvailable,
       openProfile,
       closeProfile,
       openRegister,
@@ -181,6 +214,9 @@ export function CatalogShellNavigationProvider({
       openAssistant,
       closeAssistant,
       setAssistantAvailable,
+      openWhatsAppChat,
+      closeWhatsAppChat,
+      setWhatsAppAvailable,
       focusSearch,
       clearSearchActive,
       registerCartController,
@@ -194,6 +230,8 @@ export function CatalogShellNavigationProvider({
       searchActive,
       assistantOpen,
       assistantAvailable,
+      whatsAppChatOpen,
+      whatsAppAvailable,
       openProfile,
       closeProfile,
       openRegister,
@@ -203,6 +241,9 @@ export function CatalogShellNavigationProvider({
       openAssistant,
       closeAssistant,
       setAssistantAvailable,
+      openWhatsAppChat,
+      closeWhatsAppChat,
+      setWhatsAppAvailable,
       focusSearch,
       clearSearchActive,
       registerCartController,

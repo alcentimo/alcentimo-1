@@ -5410,6 +5410,31 @@ body {
   background-color: color-mix(in srgb, var(--txn-primary, #0d9488) 16%, white);
 }
 
+.txn-catalog-header-actions {
+  @apply mt-0.5 flex shrink-0 flex-col items-stretch gap-1.5 sm:flex-row sm:items-center;
+}
+
+.txn-catalog-whatsapp-btn {
+  @apply inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold tracking-tight transition active:scale-95 sm:px-3 sm:text-xs;
+  border-color: color-mix(in srgb, #25d366 35%, transparent);
+  background-color: color-mix(in srgb, #25d366 12%, white);
+  color: #128c7e;
+}
+
+.txn-catalog-whatsapp-btn:hover {
+  background-color: color-mix(in srgb, #25d366 18%, white);
+}
+
+.dark .txn-catalog-whatsapp-btn {
+  background-color: color-mix(in srgb, #25d366 16%, #09090b);
+  border-color: color-mix(in srgb, #25d366 40%, transparent);
+  color: #4ade80;
+}
+
+.dark .txn-catalog-whatsapp-btn:hover {
+  background-color: color-mix(in srgb, #25d366 24%, #09090b);
+}
+
 .txn-promo-banner {
   @apply px-4 pt-2 sm:px-6 sm:pt-3;
 }
@@ -7754,21 +7779,17 @@ body {
   color: var(--txn-primary-fg, #ffffff);
 }
 
-/* WhatsApp compacto, apilado encima del carrito (misma columna derecha) */
+/* WhatsApp ya no usa FAB; queda solo el carrito abajo a la derecha. */
 .catalog-wa-fab {
-  @apply fixed z-30 flex h-11 w-11 items-center justify-center rounded-full text-white shadow-md transition active:scale-95;
-  right: max(1.25rem, calc(env(safe-area-inset-right, 0px) + 0.25rem));
-  /* carrito bottom 4.5 + alto 3.5 + gap 0.5 = 8.5 */
-  bottom: calc(8.5rem + env(safe-area-inset-bottom, 0px));
-  background-color: #25d366;
+  @apply hidden;
 }
 
 .catalog-wa-fab:hover {
-  background-color: #20bd5a;
+  @apply hidden;
 }
 
 .catalog-wa-fab-hidden {
-  @apply pointer-events-none opacity-0;
+  @apply hidden;
 }
 
 .catalog-wa-overlay {

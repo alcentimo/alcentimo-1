@@ -2,12 +2,12 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Send, X } from "lucide-react";
-import { cn } from "@/lib/cn";
 import {
   buildWhatsAppQuickChatMessage,
   normalizeWhatsAppChatWelcome,
 } from "@/lib/catalog/whatsapp-quick-chat";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
+import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 
 interface CatalogWhatsAppQuickChatProps {
   storeName: string;
@@ -28,18 +28,30 @@ function WhatsAppGlyph({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Panel de consulta por WhatsApp (sin FAB flotante).
+ * Se abre desde la cabecera vía shell navigation.
+ */
 export function CatalogWhatsAppQuickChat({
   storeName,
   whatsappPhone,
   welcomeMessage = null,
 }: CatalogWhatsAppQuickChatProps) {
   const phone = whatsappPhone.trim();
-  const [open, setOpen] = useState(false);
+  const shellNav = useCatalogShellNavigationOptional();
+  const open = Boolean(shellNav?.whatsAppChatOpen);
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const titleId = useId();
-
   const welcome = normalizeWhatsAppChatWelcome(welcomeMessage);
+
+  useEffect(() => {
+    if (!shellNav) return;
+    shellNav.setWhatsAppAvailable(Boolean(phone));
+    return () => {
+      shellNav.setWhatsAppAvailable(false);
+    };
+  }, [shellNav, phone]);
 
   useEffect(() => {
     if (!open) return;
@@ -47,121 +59,107 @@ export function CatalogWhatsAppQuickChat({
     return () => window.clearTimeout(timer);
   }, [open]);
 
-  if (!phone) return null;
+  if (!phone || !shellNav || !open) return null;
 
   function handleSend() {
     const message = buildWhatsAppQuickChatMessage(storeName, draft);
     const url = buildWhatsAppOrderUrl(phone, message);
     if (!url) return;
     window.open(url, "_blank", "noopener,noreferrer");
-    setOpen(false);
+    shellNav.closeWhatsAppChat();
     setDraft("");
   }
 
+  function handleClose() {
+    shellNav.closeWhatsAppChat();
+  }
+
   return (
-    <>
+    <div className="catalog-wa-overlay" role="presentation">
       <button
         type="button"
-        className={cn(
-          "catalog-wa-fab",
-          open && "catalog-wa-fab-hidden",
-        )}
-        aria-label="Abrir chat de WhatsApp"
-        aria-expanded={open}
-        aria-controls={open ? titleId : undefined}
-        onClick={() => setOpen(true)}
+        className="catalog-wa-backdrop"
+        aria-label="Cerrar chat de WhatsApp"
+        onClick={handleClose}
+      />
+      <div
+        className="catalog-wa-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
       >
-        <WhatsAppGlyph className="h-5 w-5" />
-      </button>
-
-      {open ? (
-        <div className="catalog-wa-overlay" role="presentation">
+        <header className="catalog-wa-header">
+          <div className="catalog-wa-header-main">
+            <span className="catalog-wa-header-icon" aria-hidden="true">
+              <WhatsAppGlyph className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <h2 id={titleId} className="catalog-wa-title">
+                {storeName}
+              </h2>
+              <p className="catalog-wa-status">En línea · WhatsApp</p>
+            </div>
+          </div>
           <button
             type="button"
-            className="catalog-wa-backdrop"
-            aria-label="Cerrar chat de WhatsApp"
-            onClick={() => setOpen(false)}
-          />
-          <div
-            className="catalog-wa-panel"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
+            className="catalog-wa-close"
+            aria-label="Cerrar"
+            onClick={handleClose}
           >
-            <header className="catalog-wa-header">
-              <div className="catalog-wa-header-main">
-                <span className="catalog-wa-header-icon" aria-hidden="true">
-                  <WhatsAppGlyph className="h-5 w-5" />
-                </span>
-                <div className="min-w-0">
-                  <h2 id={titleId} className="catalog-wa-title">
-                    {storeName}
-                  </h2>
-                  <p className="catalog-wa-status">En línea · WhatsApp</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="catalog-wa-close"
-                aria-label="Cerrar"
-                onClick={() => setOpen(false)}
-              >
-                <X className="h-5 w-5" aria-hidden="true" />
-              </button>
-            </header>
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </header>
 
-            <div className="catalog-wa-messages">
-              <div className="catalog-wa-bubble catalog-wa-bubble-store">
-                <p>{welcome}</p>
-              </div>
-              <p className="catalog-wa-hint">
-                Escribe tu consulta y te llevamos a WhatsApp con el mensaje listo
-                para enviar.
-              </p>
-            </div>
-
-            <form
-              className="catalog-wa-composer"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!draft.trim()) {
-                  inputRef.current?.focus();
-                  return;
-                }
-                handleSend();
-              }}
-            >
-              <label className="sr-only" htmlFor={`${titleId}-input`}>
-                Tu consulta
-              </label>
-              <textarea
-                ref={inputRef}
-                id={`${titleId}-input`}
-                className="catalog-wa-input"
-                rows={2}
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="Escribe tu mensaje…"
-                enterKeyHint="send"
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    if (draft.trim()) handleSend();
-                  }
-                }}
-              />
-              <button
-                type="submit"
-                className="catalog-wa-send"
-                disabled={!draft.trim()}
-                aria-label="Enviar por WhatsApp"
-              >
-                <Send className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </form>
+        <div className="catalog-wa-messages">
+          <div className="catalog-wa-bubble catalog-wa-bubble-store">
+            <p>{welcome}</p>
           </div>
+          <p className="catalog-wa-hint">
+            Escribe tu consulta y te llevamos a WhatsApp con el mensaje listo
+            para enviar.
+          </p>
         </div>
-      ) : null}
-    </>
+
+        <form
+          className="catalog-wa-composer"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!draft.trim()) {
+              inputRef.current?.focus();
+              return;
+            }
+            handleSend();
+          }}
+        >
+          <label className="sr-only" htmlFor={`${titleId}-input`}>
+            Tu consulta
+          </label>
+          <textarea
+            ref={inputRef}
+            id={`${titleId}-input`}
+            className="catalog-wa-input"
+            rows={2}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Escribe tu mensaje…"
+            enterKeyHint="send"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                if (draft.trim()) handleSend();
+              }
+            }}
+          />
+          <button
+            type="submit"
+            className="catalog-wa-send"
+            disabled={!draft.trim()}
+            aria-label="Enviar por WhatsApp"
+          >
+            <Send className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }
