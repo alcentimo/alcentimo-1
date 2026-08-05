@@ -17,6 +17,13 @@ import {
   removeVercelCustomDomain,
   getVercelCustomDomainStatus,
 } from "@/lib/domains/vercel-project-domain";
+import { getStoreOwnerPlanProfile } from "@/lib/plans/product-limit";
+import {
+  getEffectivePlanIdForLimits,
+  resolveProTrialStatus,
+} from "@/lib/plans/trial";
+import { DASHBOARD_PLANS_HREF, resolvePlanId } from "@/src/config/plans";
+import { planIncludesCustomDomain } from "@/src/config/plan-pricing-ui";
 
 export type CustomDomainActionResult = {
   error?: string;
@@ -145,12 +152,37 @@ async function verifyAccountPasswordForDestructiveAction(
   return { ok: true };
 }
 
+/**
+ * Solo Plan Pro (y superiores / trial activo) pueden guardar o verificar
+ * un dominio personalizado. Quitar dominio sigue permitido sin plan pago.
+ */
+async function requireCustomDomainPlan(
+  storeId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const owner = await getStoreOwnerPlanProfile(storeId);
+  const planId = owner ? resolvePlanId(owner.plan) : resolvePlanId("free");
+  const trial = resolveProTrialStatus(owner, planId);
+  const effectivePlanId = getEffectivePlanIdForLimits(planId, trial);
+
+  if (!planIncludesCustomDomain(effectivePlanId)) {
+    return {
+      ok: false,
+      error: `El dominio personalizado está disponible desde el Plan Pro. Mejora tu plan en ${DASHBOARD_PLANS_HREF}.`,
+    };
+  }
+
+  return { ok: true };
+}
+
 export async function saveStoreCustomDomainRequest(
   domainInput: string,
 ): Promise<CustomDomainActionResult> {
   const supabase = await createClient();
   const auth = await requireAuthStore(supabase);
   if (!auth.ok) return { error: auth.error };
+
+  const planCheck = await requireCustomDomainPlan(auth.store.id);
+  if (!planCheck.ok) return { error: planCheck.error };
 
   const previousDomain = normalizeCustomDomain(auth.store.custom_domain ?? "");
   const previousVerified = Boolean(auth.store.custom_domain_verified);
@@ -281,6 +313,9 @@ export async function verifyStoreCustomDomainRequest(
   const supabase = await createClient();
   const auth = await requireAuthStore(supabase);
   if (!auth.ok) return { error: auth.error };
+
+  const planCheck = await requireCustomDomainPlan(auth.store.id);
+  if (!planCheck.ok) return { error: planCheck.error };
 
   const domain =
     normalizeCustomDomain(domainInput ?? "") ??

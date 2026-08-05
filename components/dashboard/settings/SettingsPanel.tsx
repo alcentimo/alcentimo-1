@@ -7,6 +7,7 @@ import {
   Coins,
   CreditCard,
   Globe,
+  Lock,
   MapPin,
   Palette,
   FolderTree,
@@ -35,6 +36,7 @@ import type { Coupon } from "@/lib/coupons/types";
 import type { Promotion } from "@/lib/promotions/types";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
 import type { PlanId } from "@/src/config/plans";
+import { planIncludesCustomDomain } from "@/src/config/plan-pricing-ui";
 import type { StoreLocation } from "@/lib/locations/types";
 import type { LocationLimitSummary } from "@/components/dashboard/settings/LocationsTab";
 import type { StoreCategoryRow } from "@/lib/categories/types";
@@ -176,6 +178,8 @@ export function SettingsPanel({
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() =>
     resolveInitialTab(initialTab, showDropshipping),
   );
+  const domainLocked =
+    planId == null || !planIncludesCustomDomain(planId);
 
   useEffect(() => {
     setActiveTab(resolveInitialTab(initialTab, showDropshipping));
@@ -309,6 +313,8 @@ export function SettingsPanel({
                   {group.items.map((item) => {
                     const Icon = item.icon;
                     const isActive = activeTab === item.id;
+                    const showProLock =
+                      item.id === "domains" && domainLocked;
 
                     return (
                       <li key={item.id}>
@@ -322,7 +328,18 @@ export function SettingsPanel({
                           )}
                         >
                           <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                          <span>{item.label}</span>
+                          <span className="min-w-0 flex-1 text-left">
+                            {item.label}
+                          </span>
+                          {showProLock ? (
+                            <span
+                              className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-zinc-200/90 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+                              title="Exclusivo Plan Pro"
+                            >
+                              <Lock className="h-3 w-3" aria-hidden="true" />
+                              Pro
+                            </span>
+                          ) : null}
                         </button>
                       </li>
                     );

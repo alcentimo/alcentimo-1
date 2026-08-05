@@ -31,7 +31,10 @@ export function isCustomDomainFeature(feature: string): boolean {
 
 export function planIncludesCustomDomain(planId: PlanId): boolean {
   return (
-    planId === "starter" || planId === "premium" || planId === "enterprise"
+    planId === "starter" ||
+    planId === "growth" ||
+    planId === "premium" ||
+    planId === "enterprise"
   );
 }
 
