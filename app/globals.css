@@ -7557,7 +7557,8 @@ body {
 }
 
 .catalog-live-preview-root {
-  @apply relative flex min-h-0 flex-col bg-white;
+  @apply relative flex min-h-0 flex-col overflow-hidden bg-white;
+  isolation: isolate;
 }
 
 .catalog-live-preview-root.txn-catalog-root {
@@ -7593,6 +7594,54 @@ body {
   bottom: auto;
   left: auto;
   right: auto;
+}
+
+/*
+ * Overlays (filtros, etc.) portaleados al marco de vista previa:
+ * siempre bottom sheet compacto, aunque el dashboard sea md+.
+ */
+.catalog-live-preview-root .catalog-browse-filters-overlay {
+  position: absolute;
+  inset: 0;
+  align-items: flex-end !important;
+  justify-content: stretch !important;
+}
+
+.catalog-live-preview-root .catalog-browse-filters-sheet {
+  width: 100% !important;
+  max-width: none !important;
+  max-height: min(70%, 22rem) !important;
+  height: auto !important;
+  border-top: 1px solid rgb(229 229 229 / 0.95) !important;
+  border-right: none !important;
+  border-radius: 1rem 1rem 0 0 !important;
+  padding-bottom: 0.5rem !important;
+  box-shadow: 0 -10px 28px rgb(0 0 0 / 0.14) !important;
+  animation: catalog-filters-sheet-up 0.24s ease-out !important;
+}
+
+.catalog-live-preview-root .catalog-browse-filters-handle {
+  display: flex !important;
+}
+
+.catalog-live-preview-root .catalog-browse-filters-header {
+  padding-top: 0.35rem;
+  padding-left: 1rem;
+  padding-right: 2.5rem;
+}
+
+.catalog-live-preview-root .catalog-browse-filters-body {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.catalog-live-preview-root .catalog-browse-filters-option {
+  min-height: 2.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  font-size: 0.8125rem;
 }
 
 /* Layout móvil real dentro del frame (ignora breakpoints del dashboard) */

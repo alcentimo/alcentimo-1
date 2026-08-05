@@ -24,6 +24,7 @@ import {
   useCatalogShellNavigationOptional,
   useRegisterCatalogSearchFocus,
 } from "@/components/catalog-transactional/CatalogShellNavigation";
+import { useCatalogPreviewPortalContainer } from "@/components/dashboard/CatalogPreviewPortalContext";
 
 interface CatalogBrowseToolbarProps {
   searchQuery: string;
@@ -61,6 +62,7 @@ export function CatalogBrowseToolbar({
   const router = useRouter();
   const pathname = usePathname();
   const shellNav = useCatalogShellNavigationOptional();
+  const previewPortalContainer = useCatalogPreviewPortalContainer();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const handledBuscarDeepLinkRef = useRef(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -247,6 +249,8 @@ export function CatalogBrowseToolbar({
         onOpenChange={setFiltersOpen}
         side="bottom"
         className="catalog-browse-filters-overlay"
+        container={previewPortalContainer}
+        lockScroll={!previewPortalContainer}
       >
         <SheetContent
           unstyledSide

@@ -7,6 +7,7 @@ import { CartProvider } from "@/components/catalog-transactional/CartProvider";
 import { PromotionProvider } from "@/components/catalog-transactional/PromotionProvider";
 import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
 import { CatalogTabBar } from "@/components/catalog-transactional/CatalogTabBar";
+import { CatalogPreviewPortalProvider } from "@/components/dashboard/CatalogPreviewPortalContext";
 import {
   getCatalogDesignClasses,
   getCatalogRubroClass,
@@ -78,7 +79,7 @@ export function CatalogLivePreview({
         isCustomer={false}
         wholesaleEnabled={settings.catalogCurrency.wholesaleEnabled}
       >
-        <div
+        <CatalogPreviewPortalProvider
           className={cn(
             "catalog-live-preview-root txn-catalog-root",
             getCatalogRubroClass(store.rubro_tienda),
@@ -95,27 +96,27 @@ export function CatalogLivePreview({
             }
             storeName={store.name}
           >
-          <div className="catalog-live-preview-scroll">
-            <TransactionalCatalog
-              store={store}
-              products={products}
-              exchangeRate={exchangeRateRow}
-              purchaseInfo={settings.purchaseInfo}
-              catalogDesign={settings.catalogDesign}
-              catalogCurrency={settings.catalogCurrency}
-              previewMode
-              referenceMode={referenceMode}
-              showReferenceCta={showReferenceCta}
-            />
-          </div>
-          <div className="catalog-live-preview-tab-bar" aria-hidden="true">
-            <CatalogTabBar
-              storeSlug={store.slug}
-              pcBuilderEnabled={storeHasPCBuilderFromStore(store)}
-            />
-          </div>
-        </CatalogStoreBrandingProvider>
-        </div>
+            <div className="catalog-live-preview-scroll">
+              <TransactionalCatalog
+                store={store}
+                products={products}
+                exchangeRate={exchangeRateRow}
+                purchaseInfo={settings.purchaseInfo}
+                catalogDesign={settings.catalogDesign}
+                catalogCurrency={settings.catalogCurrency}
+                previewMode
+                referenceMode={referenceMode}
+                showReferenceCta={showReferenceCta}
+              />
+            </div>
+            <div className="catalog-live-preview-tab-bar" aria-hidden="true">
+              <CatalogTabBar
+                storeSlug={store.slug}
+                pcBuilderEnabled={storeHasPCBuilderFromStore(store)}
+              />
+            </div>
+          </CatalogStoreBrandingProvider>
+        </CatalogPreviewPortalProvider>
       </CartProvider>
     </PromotionProvider>
   );

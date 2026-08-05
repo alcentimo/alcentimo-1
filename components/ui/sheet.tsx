@@ -19,6 +19,12 @@ interface SheetProps {
   side?: SheetSide;
   /** Clases extra en el contenedor del portal (p. ej. variantes responsivas). */
   className?: string;
+  /**
+   * Contenedor del portal. Si se pasa, el overlay se monta ahí con
+   * `absolute` (útil para vistas previas / mockups). Por defecto `document.body`
+   * con `fixed`.
+   */
+  container?: HTMLElement | null;
 }
 
 const SIDE_OVERLAY: Record<SheetSide, string> = {
@@ -35,15 +41,19 @@ export function Sheet({
   lockScroll = true,
   side = "right",
   className,
+  container = null,
 }: SheetProps) {
+  const contained = container != null;
+  const shouldLockScroll = lockScroll && !contained;
+
   useEffect(() => {
-    if (!open || !lockScroll) return;
+    if (!open || !shouldLockScroll) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previous;
     };
-  }, [open, lockScroll]);
+  }, [open, shouldLockScroll]);
 
   useEffect(() => {
     if (!open) return;
@@ -56,10 +66,15 @@ export function Sheet({
 
   if (!open) return null;
 
+  if (typeof document === "undefined") return null;
+
+  const portalTarget = contained ? container : document.body;
+  if (!portalTarget) return null;
+
   return createPortal(
     <div
       className={cn(
-        "fixed inset-0 z-50 flex",
+        contained ? "absolute inset-0 z-50 flex" : "fixed inset-0 z-50 flex",
         SIDE_OVERLAY[side],
         className,
       )}
@@ -77,7 +92,7 @@ export function Sheet({
       />
       {children}
     </div>,
-    document.body,
+    portalTarget,
   );
 }
 
