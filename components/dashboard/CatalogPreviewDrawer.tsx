@@ -48,26 +48,25 @@ export function CatalogPreviewDrawer({
           onClose={() => onOpenChange(false)}
         >
           <SheetHeader className="catalog-preview-drawer-header">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:pr-8">
-              <div>
-                <SheetTitle>Vista previa en vivo</SheetTitle>
-                <SheetDescription>
-                  Los cambios en productos se reflejan al instante. Puedes seguir editando
-                  el catálogo con este panel abierto.
+            <div className="catalog-preview-drawer-toolbar">
+              <div className="catalog-preview-drawer-heading min-w-0 pr-8 sm:pr-10">
+                <SheetTitle className="truncate">Vista previa en vivo</SheetTitle>
+                <SheetDescription className="mt-0.5 truncate">
+                  Los cambios se reflejan al instante
                 </SheetDescription>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/60">
+              <div className="catalog-preview-viewport-toggle">
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1.5 text-xs font-medium",
+                    "inline-flex items-center gap-1 text-xs font-medium",
                     !isDesktopViewport
                       ? "text-zinc-900 dark:text-zinc-100"
                       : "text-zinc-500 dark:text-zinc-400",
                   )}
                 >
                   <Smartphone className="h-3.5 w-3.5" aria-hidden="true" />
-                  Vista móvil
+                  <span className="hidden sm:inline">Móvil</span>
                 </span>
                 <SettingsSwitch
                   id="catalog-preview-viewport"
@@ -77,14 +76,14 @@ export function CatalogPreviewDrawer({
                 />
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1.5 text-xs font-medium",
+                    "inline-flex items-center gap-1 text-xs font-medium",
                     isDesktopViewport
                       ? "text-zinc-900 dark:text-zinc-100"
                       : "text-zinc-500 dark:text-zinc-400",
                   )}
                 >
                   <MonitorSmartphone className="h-3.5 w-3.5" aria-hidden="true" />
-                  Vista desktop
+                  <span className="hidden sm:inline">Desktop</span>
                 </span>
               </div>
             </div>

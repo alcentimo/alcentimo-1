@@ -7487,12 +7487,33 @@ body {
   @apply bg-zinc-100 dark:bg-zinc-950;
 }
 
-.catalog-preview-drawer-header {
-  @apply bg-white dark:bg-zinc-950;
+.catalog-preview-drawer .catalog-preview-drawer-header {
+  padding: 0.75rem 3rem 0.75rem 1rem;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: rgb(228 228 231);
+  background-color: #fff;
+}
+
+:is(.dark) .catalog-preview-drawer .catalog-preview-drawer-header {
+  border-bottom-color: rgb(39 39 42);
+  background-color: rgb(9 9 11);
+}
+
+.catalog-preview-drawer-toolbar {
+  @apply flex flex-wrap items-center justify-between gap-x-3 gap-y-2;
+}
+
+.catalog-preview-drawer-heading {
+  @apply min-w-0;
+}
+
+.catalog-preview-viewport-toggle {
+  @apply flex shrink-0 items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 dark:border-zinc-700 dark:bg-zinc-900/60;
 }
 
 .catalog-preview-drawer-body {
-  @apply bg-zinc-100 px-5 py-5 sm:px-6 sm:py-6 dark:bg-zinc-950;
+  @apply bg-zinc-100 px-4 py-4 sm:px-5 sm:py-5 dark:bg-zinc-950;
 }
 
 .account-settings-sheet {
@@ -7510,13 +7531,13 @@ body {
 }
 
 .catalog-preview-stage {
-  @apply flex min-h-full items-start justify-center overflow-x-auto pb-8 pt-2;
+  @apply flex min-h-full items-start justify-center overflow-x-auto pb-4 pt-1;
 }
 
 .catalog-preview-viewport {
   @apply flex shrink-0 flex-col overflow-hidden transition-[width,max-width] duration-200 ease-out;
-  height: min(74vh, 760px);
-  max-height: min(74vh, 760px);
+  height: min(78vh, 800px);
+  max-height: min(78vh, 800px);
 }
 
 /*
