@@ -158,6 +158,7 @@ export const ProductCard = memo(function ProductCard({
   const selectedVariant = variantOptions[0];
 
   const [justAdded, setJustAdded] = useState(false);
+  const [plusOneTick, setPlusOneTick] = useState(0);
   const justAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -190,9 +191,8 @@ export const ProductCard = memo(function ProductCard({
     isAlimentos &&
     hasFoodModifiers(parseFoodModifiersFromMetadata(product.metadata ?? null));
   const showVariantSelector = hasMultipleVariants(product);
-  /** Opciones (talla/color/mods) solo en detalle; el + abre el modal. */
-  const requiresDetailToOrder =
-    (showVariantSelector || foodHasModifiers) && Boolean(onOpenDetail);
+  /** Variantes/mods se eligen en el detalle; el + añade la opción por defecto. */
+  const hasConfigurableOptions = showVariantSelector || foodHasModifiers;
 
   const retailDisplayUsd = selectedVariant?.priceUsd ?? product.price_usd ?? 0;
   const wholesaleConfigured = hasWholesalePricing(
@@ -247,15 +247,16 @@ export const ProductCard = memo(function ProductCard({
   const canAddMore =
     !outOfStock && remaining > 0 && onAddToCart && selectedVariant;
   const showAddButton =
+    Boolean(onAddToCart) &&
     !outOfStock &&
-    selectedVariant &&
-    (requiresDetailToOrder || (onAddToCart && (canAddMore || inCart)));
+    Boolean(selectedVariant) &&
+    (canAddMore || inCart);
 
-  const addButtonLabel = requiresDetailToOrder
-    ? `Ver opciones de ${product.product_name}`
-    : inCart
-      ? `En carrito (${effectiveCartQuantity})`
-      : "Agregar al carrito";
+  const addButtonLabel = inCart
+    ? `En carrito (${effectiveCartQuantity})`
+    : hasConfigurableOptions
+      ? "Añadir al carrito (opción por defecto)"
+      : "Añadir al carrito";
 
   const hasDiscount = isProductOnSale(product.compare_at_usd, product.price_usd);
   const discountPercent = computeProductDiscountPercent(
@@ -276,8 +277,9 @@ export const ProductCard = memo(function ProductCard({
     if (!canAddMore || !selectedVariant) return;
     onAddToCart?.(product, selectedVariant, EMPTY_MODIFIERS);
     setJustAdded(true);
+    setPlusOneTick((tick) => tick + 1);
     if (justAddedTimerRef.current) clearTimeout(justAddedTimerRef.current);
-    justAddedTimerRef.current = setTimeout(() => setJustAdded(false), 420);
+    justAddedTimerRef.current = setTimeout(() => setJustAdded(false), 650);
   }
 
   function handleOpenDetail() {
@@ -289,35 +291,35 @@ export const ProductCard = memo(function ProductCard({
   }
 
   function handleAddClick(event: React.MouseEvent) {
+    event.preventDefault();
     event.stopPropagation();
-    if (requiresDetailToOrder) {
-      handleOpenDetail();
-      return;
-    }
     handleAdd();
   }
 
   function renderAddButton(className: string) {
-    const showCheck = !requiresDetailToOrder && (inCart || justAdded);
+    const showCheck = inCart && !justAdded;
     return (
       <button
         type="button"
         onClick={handleAddClick}
-        disabled={!requiresDetailToOrder && inCart && !canAddMore}
+        disabled={inCart && !canAddMore}
         className={cn(
           className,
           "touch-manipulation",
           inCart && "store-add-btn-in-cart",
-          inCart && (canAddMore || requiresDetailToOrder) && "store-add-btn-in-cart-active",
-          inCart && !canAddMore && !requiresDetailToOrder && "store-add-btn-in-cart-max",
+          inCart && canAddMore && "store-add-btn-in-cart-active",
+          inCart && !canAddMore && "store-add-btn-in-cart-max",
           justAdded && "store-add-btn-just-added",
         )}
         aria-label={
-          requiresDetailToOrder
-            ? addButtonLabel
-            : inCart
-              ? `${addButtonLabel}. ${canAddMore ? "Pulsa para añadir otro." : "Cantidad máxima en carrito."}`
-              : addButtonLabel
+          inCart
+            ? `${addButtonLabel}. ${canAddMore ? "Pulsa para añadir otro." : "Cantidad máxima en carrito."}`
+            : addButtonLabel
+        }
+        title={
+          hasConfigurableOptions
+            ? "Añade 1 unidad con la opción por defecto. Toca la foto o el nombre para elegir variantes."
+            : addButtonLabel
         }
       >
         {showCheck ? (
@@ -328,6 +330,15 @@ export const ProductCard = memo(function ProductCard({
         {inCart && effectiveCartQuantity > 0 ? (
           <span className="store-add-btn-qty" aria-hidden="true">
             {effectiveCartQuantity > 9 ? "9+" : effectiveCartQuantity}
+          </span>
+        ) : null}
+        {plusOneTick > 0 ? (
+          <span
+            key={plusOneTick}
+            className="store-add-btn-plus-one"
+            aria-hidden="true"
+          >
+            +1
           </span>
         ) : null}
       </button>
