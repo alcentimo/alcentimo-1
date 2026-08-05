@@ -66,12 +66,12 @@ export function CatalogWhatsAppQuickChat({
     const url = buildWhatsAppOrderUrl(phone, message);
     if (!url) return;
     window.open(url, "_blank", "noopener,noreferrer");
-    shellNav.closeWhatsAppChat();
+    shellNav?.closeWhatsAppChat();
     setDraft("");
   }
 
   function handleClose() {
-    shellNav.closeWhatsAppChat();
+    shellNav?.closeWhatsAppChat();
   }
 
   return (
