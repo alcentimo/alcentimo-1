@@ -54,6 +54,7 @@ export function CatalogChatWidget({
   const shellNav = useCatalogShellNavigation();
   const open = shellNav.assistantOpen;
   const closeAssistant = shellNav.closeAssistant;
+  const setAssistantAvailable = shellNav.setAssistantAvailable;
 
   const supportTitle = useMemo(
     () => `Soporte — ${storeName}`,
@@ -78,11 +79,11 @@ export function CatalogChatWidget({
     merchantName!.trim().toLowerCase() !== storeName.trim().toLowerCase();
 
   useEffect(() => {
-    shellNav.setAssistantAvailable(true);
+    setAssistantAvailable(true);
     return () => {
-      shellNav.setAssistantAvailable(false);
+      setAssistantAvailable(false);
     };
-  }, [shellNav]);
+  }, [setAssistantAvailable]);
 
   useEffect(() => {
     if (!open) return;

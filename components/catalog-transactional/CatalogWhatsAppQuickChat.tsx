@@ -39,6 +39,7 @@ export function CatalogWhatsAppQuickChat({
 }: CatalogWhatsAppQuickChatProps) {
   const phone = whatsappPhone.trim();
   const shellNav = useCatalogShellNavigationOptional();
+  const setWhatsAppAvailable = shellNav?.setWhatsAppAvailable;
   const open = Boolean(shellNav?.whatsAppChatOpen);
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -46,12 +47,12 @@ export function CatalogWhatsAppQuickChat({
   const welcome = normalizeWhatsAppChatWelcome(welcomeMessage);
 
   useEffect(() => {
-    if (!shellNav) return;
-    shellNav.setWhatsAppAvailable(Boolean(phone));
+    if (!setWhatsAppAvailable) return;
+    setWhatsAppAvailable(Boolean(phone));
     return () => {
-      shellNav.setWhatsAppAvailable(false);
+      setWhatsAppAvailable(false);
     };
-  }, [shellNav, phone]);
+  }, [setWhatsAppAvailable, phone]);
 
   useEffect(() => {
     if (!open) return;
