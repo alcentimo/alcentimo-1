@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeDbPlan } from "@/lib/plans/plan-activation";
 import type { ProfilePlanDb } from "@/lib/database.types";
-import { getLandingVisitStats } from "@/lib/analytics/get-page-visit-stats";
+import { getLandingVisitStats, getTopStoresByMonthVisits } from "@/lib/analytics/get-page-visit-stats";
+import type { TopStoreVisitRow } from "@/lib/analytics/get-page-visit-stats";
 
 export interface AdminPlanMetrics {
   totalUsers: number;
@@ -12,6 +13,7 @@ export interface AdminPlanMetrics {
   pendingPayments: number;
   landingVisitsTotal: number;
   landingVisitsMonth: number;
+  topStoresThisMonth: TopStoreVisitRow[];
 }
 
 function emptyPlanCounts(): Record<ProfilePlanDb, number> {
@@ -30,6 +32,7 @@ export async function getAdminPlanMetrics(): Promise<AdminPlanMetrics> {
   let pendingPayments = 0;
   let landingVisitsTotal = 0;
   let landingVisitsMonth = 0;
+  let topStoresThisMonth: TopStoreVisitRow[] = [];
 
   const { data: profiles, error: profilesError } = await admin
     .from("profiles")
@@ -95,12 +98,17 @@ export async function getAdminPlanMetrics(): Promise<AdminPlanMetrics> {
   }
 
   try {
-    const landing = await getLandingVisitStats(admin);
+    const [landing, topStores] = await Promise.all([
+      getLandingVisitStats(admin),
+      getTopStoresByMonthVisits(admin, 5),
+    ]);
     landingVisitsTotal = landing.totalUniqueVisitors;
     landingVisitsMonth = landing.monthUniqueVisitors;
+    topStoresThisMonth = topStores;
   } catch {
     landingVisitsTotal = 0;
     landingVisitsMonth = 0;
+    topStoresThisMonth = [];
   }
 
   return {
@@ -112,5 +120,6 @@ export async function getAdminPlanMetrics(): Promise<AdminPlanMetrics> {
     pendingPayments,
     landingVisitsTotal,
     landingVisitsMonth,
+    topStoresThisMonth,
   };
 }

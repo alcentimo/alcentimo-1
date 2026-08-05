@@ -3,7 +3,7 @@ import { normalizeDbPlan } from "@/lib/plans/plan-activation";
 import type { ProfilePlanDb } from "@/lib/database.types";
 import { getStoreCatalogPublicUrl } from "@/lib/store-host";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
-import { getStoreVisitTotalsByStoreIds } from "@/lib/analytics/get-page-visit-stats";
+import { getStoreVisitMonthTotalsByStoreIds } from "@/lib/analytics/get-page-visit-stats";
 
 export interface AdminUserRow {
   /** Owner user id (para acciones de plan). */
@@ -23,8 +23,8 @@ export interface AdminUserRow {
   catalogUrl: string | null;
   whatsappPhone: string | null;
   whatsappUrl: string | null;
-  /** Visitas únicas totales al catálogo (page_visit_daily). */
-  catalogVisitsTotal: number;
+  /** Visitas únicas del mes actual al catálogo. */
+  catalogVisitsMonth: number;
 }
 
 export interface AdminUserFilters {
@@ -161,7 +161,7 @@ export async function getAdminUsers(
     );
   }
 
-  const visitTotalsByStore = await getStoreVisitTotalsByStoreIds(
+  const visitTotalsByStore = await getStoreVisitMonthTotalsByStoreIds(
     admin,
     storeIds,
   );
@@ -222,7 +222,7 @@ export async function getAdminUsers(
       }),
       whatsappPhone,
       whatsappUrl,
-      catalogVisitsTotal: visitTotalsByStore.get(store.id) ?? 0,
+      catalogVisitsMonth: visitTotalsByStore.get(store.id) ?? 0,
     });
   }
 
@@ -258,14 +258,14 @@ export async function getAdminUsers(
       catalogUrl: null,
       whatsappPhone: null,
       whatsappUrl: null,
-      catalogVisitsTotal: 0,
+      catalogVisitsMonth: 0,
     });
   }
 
   rows.sort((a, b) => {
-    const nameCmp = a.storeName.localeCompare(b.storeName, "es");
-    if (nameCmp !== 0) return nameCmp;
-    return (b.productCount ?? 0) - (a.productCount ?? 0);
+    const visitsCmp = (b.catalogVisitsMonth ?? 0) - (a.catalogVisitsMonth ?? 0);
+    if (visitsCmp !== 0) return visitsCmp;
+    return a.storeName.localeCompare(b.storeName, "es");
   });
 
   return rows.slice(0, limit);

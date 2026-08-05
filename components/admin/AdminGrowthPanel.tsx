@@ -140,11 +140,12 @@ export function AdminGrowthPanel({
   const [grantingId, setGrantingId] = useState<string | null>(null);
   const [grantingTrialId, setGrantingTrialId] = useState<string | null>(null);
   const [closingFreeId, setClosingFreeId] = useState<string | null>(null);
+  const [visitsSortDesc, setVisitsSortDesc] = useState(true);
 
   const filteredUsers = useMemo(() => {
     const min = minProducts.trim() === "" ? null : Number(minProducts);
     const q = search.trim().toLowerCase();
-    return users.filter((user) => {
+    const filtered = users.filter((user) => {
       if (planFilter !== "all" && user.plan !== planFilter) return false;
       if (min != null && Number.isFinite(min) && user.productCount < min) {
         return false;
@@ -163,7 +164,15 @@ export function AdminGrowthPanel({
       }
       return true;
     });
-  }, [users, planFilter, minProducts, search]);
+
+    return [...filtered].sort((a, b) => {
+      const aVisits = a.catalogVisitsMonth ?? 0;
+      const bVisits = b.catalogVisitsMonth ?? 0;
+      const visitsCmp = visitsSortDesc ? bVisits - aVisits : aVisits - bVisits;
+      if (visitsCmp !== 0) return visitsCmp;
+      return a.storeName.localeCompare(b.storeName, "es");
+    });
+  }, [users, planFilter, minProducts, search, visitsSortDesc]);
 
   function markUsersAsPro(ids: string[]) {
     const idSet = new Set(ids);
@@ -668,7 +677,23 @@ export function AdminGrowthPanel({
                   <th className="px-3 py-2.5">Correo</th>
                   <th className="px-3 py-2.5">WhatsApp</th>
                   <th className="px-3 py-2.5">Catálogo</th>
-                  <th className="px-3 py-2.5">Visitas</th>
+                  <th className="px-3 py-2.5">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 font-semibold uppercase tracking-wide hover:text-zinc-800 dark:hover:text-zinc-200"
+                      onClick={() => setVisitsSortDesc((prev) => !prev)}
+                      title={
+                        visitsSortDesc
+                          ? "Ordenado: más visitas primero (clic para invertir)"
+                          : "Ordenado: menos visitas primero (clic para invertir)"
+                      }
+                    >
+                      Visitas (Mes)
+                      <span aria-hidden="true" className="text-[10px]">
+                        {visitsSortDesc ? "↓" : "↑"}
+                      </span>
+                    </button>
+                  </th>
                   <th className="px-3 py-2.5">Plan / estado</th>
                   <th className="px-3 py-2.5">Productos</th>
                   <th className="px-3 py-2.5">Acción</th>
@@ -738,7 +763,7 @@ export function AdminGrowthPanel({
                     <td className="px-3 py-2.5 align-top tabular-nums">
                       {user.storeId ? (
                         <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                          {(user.catalogVisitsTotal ?? 0).toLocaleString("es-VE")}
+                          {(user.catalogVisitsMonth ?? 0).toLocaleString("es-VE")}
                         </span>
                       ) : (
                         <span className="text-zinc-400">—</span>

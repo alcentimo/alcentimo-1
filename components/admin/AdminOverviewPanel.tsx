@@ -124,6 +124,70 @@ export function AdminOverviewPanel({
         </div>
       ) : null}
 
+      <section className="admin-panel-section" aria-label="Métricas de tráfico global">
+        <h3 className="admin-panel-section-title">Métricas de Tráfico Global</h3>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <article className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+            <div className="flex items-center gap-2 text-zinc-500">
+              <Eye className="h-4 w-4" aria-hidden="true" />
+              <p className="text-xs font-semibold uppercase tracking-wide">
+                Landing alcentimo.com
+              </p>
+            </div>
+            <p className="mt-3 text-3xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+              {metrics.landingVisitsTotal.toLocaleString("es-VE")}
+            </p>
+            <p className="mt-1 text-sm text-zinc-500">
+              visitas únicas totales
+            </p>
+            <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {metrics.landingVisitsMonth.toLocaleString("es-VE")} este mes
+            </p>
+          </article>
+
+          <article className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              Top 5 tiendas más visitadas este mes
+            </p>
+            {metrics.topStoresThisMonth.length > 0 ? (
+              <ol className="mt-3 space-y-2">
+                {metrics.topStoresThisMonth.map((store, index) => (
+                  <li
+                    key={store.storeId}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-zinc-100 bg-white px-3 py-2 dark:border-zinc-800 dark:bg-zinc-950"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                        <span className="mr-1.5 text-zinc-400">{index + 1}.</span>
+                        {store.storeName}
+                      </p>
+                      {store.storeSlug ? (
+                        <p className="truncate text-xs text-zinc-400">
+                          /{store.storeSlug}
+                        </p>
+                      ) : null}
+                    </div>
+                    <p className="shrink-0 text-sm font-semibold tabular-nums text-teal-700 dark:text-teal-400">
+                      {store.monthVisits.toLocaleString("es-VE")}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="mt-3 text-sm text-zinc-500">
+                Aún no hay visitas de catálogo este mes.
+              </p>
+            )}
+            <Link
+              href="/admin/dashboard?tab=tiendas"
+              className="mt-3 inline-block text-xs font-medium text-teal-700 hover:underline dark:text-teal-300"
+            >
+              Ver todas las tiendas →
+            </Link>
+          </article>
+        </div>
+      </section>
+
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="admin-panel-section">
           <h3 className="admin-panel-section-title">Usuarios por plan</h3>
