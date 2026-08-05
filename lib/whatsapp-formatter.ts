@@ -14,6 +14,11 @@ export interface TransactionalOrderWhatsAppMessageInput {
   totalUsd: number;
   /** Referencia corta del pedido (ej. B67E238D). */
   orderRef?: string;
+  /**
+   * URL corta de previsualización (ej. https://todoropa.alcentimo.com/o/B67E238D).
+   * Debe ser limpia; no usar UUID completo.
+   */
+  orderShareUrl?: string;
   paymentLabel?: string;
   shippingLabel?: string;
   shippingCostUsd?: number;
@@ -48,7 +53,7 @@ function formatOrderRef(raw?: string): string | null {
 
 /**
  * Mensaje de pedido para WhatsApp (cliente → tienda).
- * Compacto: datos de la compra + referencia corta, sin URLs.
+ * Incluye referencia corta y, si existe, una URL limpia para la tarjeta OG.
  */
 export function buildTransactionalOrderWhatsAppMessage(
   input: TransactionalOrderWhatsAppMessageInput,
@@ -129,5 +134,18 @@ export function buildTransactionalOrderWhatsAppMessage(
     body.push(`🏠 Entrega: ${sanitizeCustomerText(input.deliveryAddress)}`);
   }
 
-  return stripStorageUrls(body.join("\n"));
+  const messageBody = stripStorageUrls(body.join("\n"));
+  const shareUrl = input.orderShareUrl?.trim() ?? "";
+
+  // URL corta de la tienda (/o/CODIGO). Rechaza Storage y UUID largos en la ruta.
+  if (
+    !shareUrl ||
+    /supabase\.co/i.test(shareUrl) ||
+    /\/pedidos\//i.test(shareUrl) ||
+    /\/o\/[0-9a-f]{8}-[0-9a-f-]{27,}/i.test(shareUrl)
+  ) {
+    return messageBody;
+  }
+
+  return `${messageBody}\n\n${shareUrl}`;
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import {
   buildOrderSharePublicUrl,
@@ -7,7 +8,7 @@ import {
   getOrderShareDomainInfo,
   resolveOrderShareImageUrl,
 } from "@/lib/orders/order-share";
-import { getStoreCatalogPublicUrl } from "@/lib/store-host";
+import { getStoreCatalogPublicUrl, parseStoreSlugFromHost } from "@/lib/store-host";
 import { getRequestOrigin } from "@/lib/pwa/get-request-origin";
 
 export const dynamic = "force-dynamic";
@@ -16,11 +17,24 @@ interface OrderSharePageProps {
   params: Promise<{ orderId: string }>;
 }
 
+async function resolveShareHostContext() {
+  const headerStore = await headers();
+  const host =
+    headerStore.get("x-forwarded-host")?.split(",")[0]?.trim() ??
+    headerStore.get("host")?.split(":")[0]?.trim() ??
+    null;
+  return {
+    host,
+    storeSlug: host ? parseStoreSlugFromHost(host) : null,
+  };
+}
+
 export async function generateMetadata({
   params,
 }: OrderSharePageProps): Promise<Metadata> {
   const { orderId } = await params;
-  const context = await getOrderShareContext(orderId);
+  const { host, storeSlug } = await resolveShareHostContext();
+  const context = await getOrderShareContext(orderId, { host, storeSlug });
 
   if (!context) {
     return {
@@ -39,7 +53,7 @@ export async function generateMetadata({
   const imageUrl = resolveOrderShareImageUrl(
     context.store,
     requestOrigin,
-    context.orderId,
+    context.shortRef,
   );
   const title = `Nuevo pedido · ${context.store.name}`;
   const description = `Pedido #${context.shortRef} en ${context.store.name}.`;
@@ -75,7 +89,8 @@ export async function generateMetadata({
 
 export default async function OrderSharePage({ params }: OrderSharePageProps) {
   const { orderId } = await params;
-  const context = await getOrderShareContext(orderId);
+  const { host, storeSlug } = await resolveShareHostContext();
+  const context = await getOrderShareContext(orderId, { host, storeSlug });
   if (!context) notFound();
 
   const domainInfo = getOrderShareDomainInfo(context.store);

@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
+import { headers } from "next/headers";
 import { getOrderShareContext } from "@/lib/orders/order-share";
+import { parseStoreSlugFromHost } from "@/lib/store-host";
 
 export const runtime = "nodejs";
 export const alt = "Pedido";
@@ -14,7 +16,13 @@ export default async function OrderShareOpenGraphImage({
   params,
 }: OpenGraphImageProps) {
   const { orderId } = await params;
-  const context = await getOrderShareContext(orderId);
+  const headerStore = await headers();
+  const host =
+    headerStore.get("x-forwarded-host")?.split(",")[0]?.trim() ??
+    headerStore.get("host")?.split(":")[0]?.trim() ??
+    null;
+  const storeSlug = host ? parseStoreSlugFromHost(host) : null;
+  const context = await getOrderShareContext(orderId, { host, storeSlug });
   const storeName = context?.store.name?.trim() || "Tienda";
   const shortRef = context?.shortRef ?? orderId.slice(0, 8).toUpperCase();
   const logoUrl = context?.store.logoUrl ?? context?.store.iconUrl ?? null;

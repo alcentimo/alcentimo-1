@@ -41,7 +41,7 @@ export async function generateMetadata({
   const imageUrl = resolveOrderShareImageUrl(
     context.store,
     requestOrigin,
-    context.orderId,
+    context.shortRef,
   );
   const title = `Nuevo pedido · ${context.store.name}`;
   const description = `Pedido #${context.shortRef} en ${context.store.name}.`;
