@@ -456,12 +456,14 @@ export const ProductCard = memo(function ProductCard({
                   inCart && "store-card-add-btn-in-cart",
                   inCart && canAddMore && "store-card-add-btn-active",
                   inCart && !canAddMore && "store-card-add-btn-max",
-                  justAdded && "store-add-btn-just-added",
+                  justAdded && "store-card-add-btn-just-added",
                 )}
                 aria-label={
-                  inCart
-                    ? `${addButtonLabel}. ${canAddMore ? "Pulsa para añadir otro." : "Cantidad máxima en carrito."}`
-                    : addButtonLabel
+                  justAdded
+                    ? "Producto añadido al carrito"
+                    : inCart
+                      ? `${addButtonLabel}. ${canAddMore ? "Pulsa para añadir otro." : "Cantidad máxima en carrito."}`
+                      : addButtonLabel
                 }
                 title={
                   hasConfigurableOptions
@@ -469,7 +471,7 @@ export const ProductCard = memo(function ProductCard({
                     : addButtonLabel
                 }
               >
-                {inCart && !justAdded ? (
+                {justAdded || (inCart && !justAdded) ? (
                   <Check className="store-card-add-btn-icon" aria-hidden="true" />
                 ) : (
                   <ShoppingCart
@@ -477,8 +479,10 @@ export const ProductCard = memo(function ProductCard({
                     aria-hidden="true"
                   />
                 )}
-                <span className="store-card-add-btn-label">Añadir</span>
-                {inCart && effectiveCartQuantity > 0 ? (
+                <span className="store-card-add-btn-label">
+                  {justAdded ? "¡Añadido!" : "Añadir"}
+                </span>
+                {inCart && effectiveCartQuantity > 0 && !justAdded ? (
                   <span className="store-card-add-btn-qty" aria-hidden="true">
                     {effectiveCartQuantity > 9 ? "9+" : effectiveCartQuantity}
                   </span>
