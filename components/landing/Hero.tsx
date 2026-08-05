@@ -71,7 +71,7 @@ export function Hero({ exchangeRate = null }: HeroProps) {
             </p>
           </div>
 
-          <div className="w-full lg:justify-self-end">
+          <div className="landing-catalog-sandbox-host w-full lg:justify-self-end">
             <LandingBoutiqueLunaSandbox exchangeRate={exchangeRate} />
           </div>
         </div>

@@ -28,7 +28,7 @@ export function createBoutiqueLunaDemoStore(): Store {
     owner_id: "00000000-0000-4000-a000-boutiqueowner",
     name: "Boutique Luna",
     slug: BOUTIQUE_LUNA_DEMO_SLUG,
-    description: "Moda contemporánea para el día a día",
+    description: "Moda contemporánea",
     logo_url: null,
     pwa_icon_192_url: null,
     pwa_icon_512_url: null,
