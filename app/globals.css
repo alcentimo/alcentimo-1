@@ -962,17 +962,17 @@ body {
   @apply h-9 w-9 shrink-0 rounded-md bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-700 dark:to-zinc-800;
 }
 
-/* Static fashion catalog mockup (landing hero) */
+/* Static fashion catalog mockup (landing hero) — mirrors live catalog chrome */
 .landing-fashion-mockup {
-  @apply relative mx-auto w-full max-w-[22rem] sm:max-w-[24rem];
+  @apply relative mx-auto w-full max-w-[22.5rem] sm:max-w-[24.5rem];
 }
 
 .landing-fashion-mockup-frame {
-  @apply overflow-hidden rounded-2xl border border-zinc-200/90 bg-[#faf9f7] shadow-xl shadow-zinc-900/10 ring-1 ring-zinc-900/5 dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-black/30 dark:ring-white/10;
+  @apply overflow-hidden rounded-[1.35rem] border border-zinc-200/90 bg-[#fafafa] shadow-xl shadow-zinc-900/10 ring-1 ring-zinc-900/5 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-black/30 dark:ring-white/10;
 }
 
 .landing-fashion-mockup-chrome {
-  @apply flex items-center gap-1.5 border-b border-zinc-200/80 bg-white/90 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950/80;
+  @apply flex items-center gap-1.5 border-b border-zinc-200/80 bg-white/95 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950/90;
 }
 
 .landing-fashion-mockup-url {
@@ -981,78 +981,161 @@ body {
 
 .landing-fashion-mockup-stage {
   @apply relative;
+  min-height: 28rem;
 }
 
-.landing-fashion-mockup-body {
-  @apply px-3 pb-3 pt-2.5 sm:px-3.5;
+.landing-fashion-mockup-scroll {
+  @apply pb-[3.25rem];
 }
 
 .landing-fashion-mockup-header {
-  @apply flex items-start justify-between gap-2;
+  @apply sticky top-0 z-[1] px-2.5 pb-1 pt-2 sm:px-3;
+  background: color-mix(in srgb, #fafafa 88%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.landing-fashion-mockup-identity {
+  @apply flex items-start gap-2 rounded-xl border border-zinc-200/80 bg-white/95 px-2.5 py-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/90;
 }
 
 .landing-fashion-mockup-brand {
-  @apply flex min-w-0 items-center gap-2;
+  @apply flex min-w-0 flex-1 items-start gap-2;
 }
 
 .landing-fashion-mockup-logo {
-  @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-[10px] font-semibold tracking-[0.08em] text-white dark:bg-zinc-100 dark:text-zinc-900;
+  @apply mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-900 text-[10px] font-semibold tracking-[0.08em] text-white dark:border-zinc-600 dark:bg-zinc-100 dark:text-zinc-900;
+}
+
+.landing-fashion-mockup-identity-copy {
+  @apply min-w-0 flex-1;
+}
+
+.landing-fashion-mockup-identity-meta {
+  @apply flex flex-wrap items-center gap-1.5;
+}
+
+.landing-fashion-mockup-eyebrow {
+  @apply text-[9px] font-medium uppercase tracking-[0.14em] text-teal-700 dark:text-teal-400;
+}
+
+.landing-fashion-mockup-open {
+  @apply inline-flex items-center rounded-full bg-emerald-50 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300;
 }
 
 .landing-fashion-mockup-store-name {
-  @apply truncate text-[13px] font-semibold tracking-[0.04em] text-zinc-900 dark:text-zinc-50;
+  @apply mt-0.5 truncate text-[14px] font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50;
 }
 
 .landing-fashion-mockup-store-tag {
-  @apply truncate text-[10px] text-zinc-500 dark:text-zinc-400;
+  @apply mt-0.5 line-clamp-1 text-[10px] leading-snug text-zinc-500 dark:text-zinc-400;
 }
 
-.landing-fashion-mockup-rate {
-  @apply shrink-0 rounded-md border border-zinc-200/90 bg-white px-2 py-1 text-right dark:border-zinc-700 dark:bg-zinc-950;
+.landing-fashion-mockup-rate-badge {
+  @apply mt-1.5 inline-flex max-w-full flex-wrap items-baseline gap-x-1.5 gap-y-0.5 rounded-md border border-zinc-200/90 bg-zinc-50 px-1.5 py-0.5 dark:border-zinc-700 dark:bg-zinc-950;
 }
 
 .landing-fashion-mockup-rate-label {
-  @apply block text-[8px] font-medium uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-500;
+  @apply text-[8px] font-medium uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500;
 }
 
 .landing-fashion-mockup-rate-value {
-  @apply mt-0.5 block text-[10px] font-semibold tabular-nums text-zinc-900 dark:text-zinc-100;
+  @apply text-[10px] font-semibold tabular-nums text-zinc-900 dark:text-zinc-100;
+}
+
+.landing-fashion-mockup-header-actions {
+  @apply mt-0.5 flex shrink-0 flex-col items-stretch gap-1;
+}
+
+.landing-fashion-mockup-assistant-btn {
+  @apply inline-flex items-center justify-center gap-1 rounded-full border border-teal-200/80 bg-teal-50/80 px-2 py-1 text-[9px] font-semibold text-teal-800 dark:border-teal-800/50 dark:bg-teal-950/40 dark:text-teal-200;
+}
+
+.landing-fashion-mockup-whatsapp-btn {
+  @apply inline-flex items-center justify-center gap-1 rounded-full border border-[#25d366]/35 bg-[#25d366]/12 px-2 py-1 text-[9px] font-semibold text-[#128c7e] dark:border-[#25d366]/30 dark:bg-[#25d366]/15 dark:text-[#4ade80];
+}
+
+.landing-fashion-mockup-toolbar {
+  @apply mx-2.5 mt-2 flex items-center gap-1.5 sm:mx-3;
+}
+
+.landing-fashion-mockup-filters-btn {
+  @apply inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-neutral-200/90 bg-white px-2 text-[10px] font-medium text-neutral-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200;
+}
+
+.landing-fashion-mockup-search {
+  @apply flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-lg border border-neutral-200/90 bg-white px-2 text-[10px] text-neutral-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-500;
 }
 
 .landing-fashion-mockup-meta {
-  @apply mt-2 flex items-center justify-between text-[9px] font-medium uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500;
+  @apply mx-2.5 mt-2 flex items-center justify-between text-[10px] text-zinc-500 sm:mx-3 dark:text-zinc-400;
+}
+
+.landing-fashion-mockup-meta strong {
+  @apply font-semibold text-zinc-800 dark:text-zinc-200;
 }
 
 .landing-fashion-mockup-grid {
-  @apply mt-2 grid grid-cols-2 gap-2;
+  @apply mx-2.5 mt-2 grid grid-cols-2 gap-2 pb-3 sm:mx-3;
 }
 
 .landing-fashion-mockup-product {
-  @apply overflow-hidden rounded-lg border border-zinc-200/70 bg-white dark:border-zinc-700 dark:bg-zinc-950;
+  @apply overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-none dark:border-zinc-700 dark:bg-zinc-900;
 }
 
 .landing-fashion-mockup-product-media {
-  @apply relative aspect-square w-full overflow-hidden;
+  @apply relative aspect-square w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800;
+}
+
+.landing-fashion-mockup-sale-badge {
+  @apply absolute left-1.5 top-1.5 rounded-md bg-rose-600 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-white;
 }
 
 .landing-fashion-mockup-product-body {
-  @apply space-y-0 px-2 py-1.5;
+  @apply space-y-0.5 px-2 py-1.5;
+}
+
+.landing-fashion-mockup-product-category {
+  @apply truncate text-[8px] font-medium uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500;
 }
 
 .landing-fashion-mockup-product-name {
-  @apply truncate text-[10px] font-medium uppercase tracking-[0.05em] text-zinc-900 dark:text-zinc-100;
+  @apply truncate text-[11px] font-medium leading-tight text-zinc-900 dark:text-zinc-100;
+}
+
+.landing-fashion-mockup-product-pricing {
+  @apply flex items-baseline gap-1.5 pt-0.5;
 }
 
 .landing-fashion-mockup-product-price {
-  @apply pt-0.5 text-[11px] font-semibold tabular-nums text-zinc-900 dark:text-zinc-50;
+  @apply text-[12px] font-semibold tabular-nums text-zinc-900 dark:text-zinc-50;
+}
+
+.landing-fashion-mockup-product-compare {
+  @apply text-[9px] tabular-nums text-zinc-400 line-through dark:text-zinc-500;
 }
 
 .landing-fashion-mockup-product-bs {
   @apply text-[9px] tabular-nums text-zinc-500 dark:text-zinc-400;
 }
 
+.landing-fashion-mockup-add-btn {
+  @apply mt-1 flex w-full items-center justify-center rounded-lg border border-teal-600/80 bg-teal-600 px-2 py-1 text-[9px] font-semibold text-white;
+}
+
 .landing-fashion-mockup-cart-sheet {
-  @apply absolute inset-x-2 bottom-2 z-10 overflow-hidden rounded-xl border border-zinc-200/90 bg-white/95 p-2.5 shadow-lg shadow-zinc-900/15 backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-950/95 dark:shadow-black/40;
+  @apply absolute inset-x-2 bottom-[3.4rem] z-20 overflow-hidden rounded-xl border border-zinc-200/90 bg-white/97 p-2.5 shadow-lg shadow-zinc-900/15 backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-950/97 dark:shadow-black/40;
+  animation: landing-fashion-cart-in 0.28s ease-out;
+}
+
+@keyframes landing-fashion-cart-in {
+  from {
+    opacity: 0.55;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .landing-fashion-mockup-cart-head {
@@ -1068,7 +1151,7 @@ body {
 }
 
 .landing-fashion-mockup-cart-close {
-  @apply inline-flex h-6 w-6 items-center justify-center rounded-md text-zinc-400;
+  @apply inline-flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200;
 }
 
 .landing-fashion-mockup-cart-lines {
@@ -1100,27 +1183,35 @@ body {
 }
 
 .landing-fashion-mockup-cart-checkout {
-  @apply flex items-center justify-center rounded-lg bg-zinc-900 px-2.5 py-1.5 text-[10px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900;
+  @apply flex items-center justify-center rounded-lg bg-teal-700 px-2.5 py-1.5 text-[10px] font-semibold text-white dark:bg-teal-600;
 }
 
 .landing-fashion-mockup-cart-whatsapp {
   @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#25d366]/40 bg-[#25d366]/10 px-2.5 py-1.5 text-[10px] font-semibold text-[#128c7e] dark:border-[#25d366]/30 dark:bg-[#25d366]/15 dark:text-[#6ee7b7];
 }
 
-.landing-fashion-mockup-fabs {
-  @apply pointer-events-none absolute bottom-[7.75rem] right-3 z-20 flex flex-col items-center gap-2;
-}
-
-.landing-fashion-mockup-wa-fab {
-  @apply flex h-9 w-9 items-center justify-center rounded-full bg-[#25d366] text-white shadow-md;
-}
-
 .landing-fashion-mockup-cart-fab {
-  @apply relative flex h-11 w-11 items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-emerald-600;
+  @apply absolute bottom-[3.65rem] right-3 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg transition hover:scale-[1.03] active:scale-[0.97] dark:bg-teal-600;
 }
 
 .landing-fashion-mockup-cart-fab-badge {
   @apply absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-bold text-white;
+}
+
+.landing-fashion-mockup-tab-bar {
+  @apply absolute inset-x-0 bottom-0 z-10 flex items-stretch justify-evenly border-t border-neutral-200/90 bg-white/96 px-2 pb-0.5 pt-1 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/95;
+}
+
+.landing-fashion-mockup-tab {
+  @apply flex min-h-[2.75rem] flex-1 flex-col items-center justify-center gap-0.5 text-[9px] font-medium text-neutral-400 dark:text-zinc-500;
+}
+
+.landing-fashion-mockup-tab-active {
+  @apply font-semibold text-teal-700 dark:text-teal-400;
+}
+
+.landing-fashion-mockup-caption {
+  @apply mt-3 text-center text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400;
 }
 
 /* Hero composite: dashboard + mobile catalog */

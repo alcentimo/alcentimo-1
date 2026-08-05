@@ -1,53 +1,76 @@
+"use client";
+
 import Image from "next/image";
-import { MessageCircle, ShoppingBag, X } from "lucide-react";
+import { useState } from "react";
+import {
+  Home,
+  MessageCircle,
+  Search,
+  ShoppingBag,
+  SlidersHorizontal,
+  Sparkles,
+  UserRound,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/cn";
 import {
   formatApproxBs,
   formatExchangeRate,
   formatUsd,
 } from "@/lib/format";
+import { REFERENCE_RUBRO_ASSETS } from "@/lib/catalog/reference-rubro-assets";
 
 interface LandingFashionCatalogMockupProps {
   className?: string;
   exchangeRate?: number | null;
 }
 
+const FASHION_ASSETS = REFERENCE_RUBRO_ASSETS["ropa-moda"];
+
+/** Productos demo alineados con la vista previa del dashboard (ropa-moda). */
 const PRODUCTS = [
   {
-    name: "Vestido midi",
-    priceUsd: 42,
-    image: null as string | null,
-    tone: "from-[#ebe4dc] to-[#d4c4b0]",
-  },
-  {
-    name: "Jeans Slim Fit",
-    priceUsd: 35,
-    image: "/images/referencia/ropa-moda/jean-indigo.webp",
-    tone: "from-zinc-200 to-zinc-300",
-  },
-  {
-    name: "Camisa básica",
-    priceUsd: 22,
-    image: "/images/referencia/ropa-moda/camiseta-pima.webp",
-    tone: "from-stone-100 to-stone-200",
-  },
-  {
+    id: "blazer",
     name: "Blazer Milano",
+    category: "Camisas",
     priceUsd: 78,
-    image: "/images/referencia/ropa-moda/blazer-milano.webp",
-    tone: "from-neutral-200 to-neutral-300",
+    compareAtUsd: 92,
+    image: FASHION_ASSETS.img1,
+  },
+  {
+    id: "jean",
+    name: "Jean Indigo",
+    category: "Pantalones",
+    priceUsd: 54,
+    image: FASHION_ASSETS.img2,
+  },
+  {
+    id: "sneaker",
+    name: "Sneaker Court",
+    category: "Calzado",
+    priceUsd: 89,
+    image: FASHION_ASSETS.img3,
+  },
+  {
+    id: "camiseta",
+    name: "Camiseta Pima",
+    category: "Camisas",
+    priceUsd: 22,
+    image: FASHION_ASSETS.img5,
   },
 ] as const;
 
 const CART_LINES = [
-  { name: "Jeans Slim Fit", qty: 1, priceUsd: 35 },
-  { name: "Camisa básica", qty: 1, priceUsd: 22 },
+  { id: "jean", name: "Jean Indigo", qty: 1, priceUsd: 54 },
+  { id: "camiseta", name: "Camiseta Pima", qty: 1, priceUsd: 22 },
 ] as const;
 
 const CART_SUBTOTAL_USD = CART_LINES.reduce(
   (sum, line) => sum + line.priceUsd * line.qty,
   0,
 );
+
+const CART_COUNT = CART_LINES.reduce((sum, line) => sum + line.qty, 0);
 
 function WhatsAppGlyph({ className }: { className?: string }) {
   return (
@@ -62,14 +85,20 @@ function WhatsAppGlyph({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Mockup del catálogo público (Boutique Luna) para el hero de la landing.
+ * Refleja la vista previa en vivo: cabecera, búsqueda, productos, carrito y WhatsApp.
+ */
 export function LandingFashionCatalogMockup({
   className,
   exchangeRate = null,
 }: LandingFashionCatalogMockupProps) {
+  const [cartOpen, setCartOpen] = useState(true);
+
   const rateLabel =
     exchangeRate != null
-      ? `Bs. ${formatExchangeRate(exchangeRate)}`
-      : "Bs. —";
+      ? `Bs. ${formatExchangeRate(exchangeRate)} / USD`
+      : "Bs. — / USD";
 
   const cartSubtotalBs =
     exchangeRate != null
@@ -77,12 +106,9 @@ export function LandingFashionCatalogMockup({
       : null;
 
   return (
-    <div
-      className={cn("landing-fashion-mockup", className)}
-      aria-hidden="true"
-    >
+    <div className={cn("landing-fashion-mockup", className)}>
       <div className="landing-fashion-mockup-frame">
-        <div className="landing-fashion-mockup-chrome">
+        <div className="landing-fashion-mockup-chrome" aria-hidden="true">
           <span className="landing-dashboard-mockup-dot bg-red-400/90" />
           <span className="landing-dashboard-mockup-dot bg-amber-400/90" />
           <span className="landing-dashboard-mockup-dot bg-emerald-400/90" />
@@ -92,30 +118,64 @@ export function LandingFashionCatalogMockup({
         </div>
 
         <div className="landing-fashion-mockup-stage">
-          <div className="landing-fashion-mockup-body">
+          <div className="landing-fashion-mockup-scroll">
             <header className="landing-fashion-mockup-header">
-              <div className="landing-fashion-mockup-brand">
-                <div className="landing-fashion-mockup-logo">BL</div>
-                <div className="min-w-0">
-                  <p className="landing-fashion-mockup-store-name">
-                    Boutique Luna
-                  </p>
-                  <p className="landing-fashion-mockup-store-tag">
-                    Moda contemporánea
-                  </p>
+              <div className="landing-fashion-mockup-identity">
+                <div className="landing-fashion-mockup-brand">
+                  <div className="landing-fashion-mockup-logo" aria-hidden="true">
+                    BL
+                  </div>
+                  <div className="landing-fashion-mockup-identity-copy">
+                    <div className="landing-fashion-mockup-identity-meta">
+                      <p className="landing-fashion-mockup-eyebrow">Catálogo</p>
+                      <span className="landing-fashion-mockup-open">Abierto</span>
+                    </div>
+                    <p className="landing-fashion-mockup-store-name">
+                      Boutique Luna
+                    </p>
+                    <p className="landing-fashion-mockup-store-tag">
+                      Moda contemporánea para el día a día
+                    </p>
+                    <p className="landing-fashion-mockup-rate-badge">
+                      <span className="landing-fashion-mockup-rate-label">
+                        Tasa BCV
+                      </span>
+                      <span className="landing-fashion-mockup-rate-value">
+                        {rateLabel}
+                      </span>
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="landing-fashion-mockup-rate">
-                <span className="landing-fashion-mockup-rate-label">Tasa BCV</span>
-                <span className="landing-fashion-mockup-rate-value">
-                  {rateLabel}
-                </span>
+
+                <div className="landing-fashion-mockup-header-actions">
+                  <span className="landing-fashion-mockup-assistant-btn">
+                    <Sparkles className="h-3 w-3 shrink-0" aria-hidden="true" />
+                    Ayuda
+                  </span>
+                  <span className="landing-fashion-mockup-whatsapp-btn">
+                    <WhatsAppGlyph className="h-3 w-3 shrink-0" />
+                    WhatsApp
+                  </span>
+                </div>
               </div>
             </header>
 
+            <div className="landing-fashion-mockup-toolbar" aria-hidden="true">
+              <span className="landing-fashion-mockup-filters-btn">
+                <SlidersHorizontal className="h-3 w-3" />
+                Filtros
+              </span>
+              <span className="landing-fashion-mockup-search">
+                <Search className="h-3 w-3 shrink-0 text-neutral-400" />
+                <span>Buscar productos…</span>
+              </span>
+            </div>
+
             <div className="landing-fashion-mockup-meta">
-              <span>4 productos</span>
-              <span>Catálogo activo</span>
+              <span>
+                <strong>{PRODUCTS.length}</strong> productos
+              </span>
+              <span>Destacados</span>
             </div>
 
             <div className="landing-fashion-mockup-grid">
@@ -127,38 +187,49 @@ export function LandingFashionCatalogMockup({
 
                 return (
                   <article
-                    key={product.name}
+                    key={product.id}
                     className="landing-fashion-mockup-product"
                   >
-                    <div
-                      className={cn(
-                        "landing-fashion-mockup-product-media",
-                        `bg-gradient-to-br ${product.tone}`,
-                      )}
-                    >
-                      {product.image ? (
-                        <Image
-                          src={product.image}
-                          alt=""
-                          fill
-                          sizes="120px"
-                          className="object-cover"
-                          quality={75}
-                        />
+                    <div className="landing-fashion-mockup-product-media">
+                      <Image
+                        src={product.image}
+                        alt=""
+                        fill
+                        sizes="140px"
+                        className="object-cover"
+                        quality={75}
+                      />
+                      {"compareAtUsd" in product && product.compareAtUsd ? (
+                        <span className="landing-fashion-mockup-sale-badge">
+                          Oferta
+                        </span>
                       ) : null}
                     </div>
                     <div className="landing-fashion-mockup-product-body">
+                      <p className="landing-fashion-mockup-product-category">
+                        {product.category}
+                      </p>
                       <p className="landing-fashion-mockup-product-name">
                         {product.name}
                       </p>
-                      <p className="landing-fashion-mockup-product-price">
-                        {formatUsd(product.priceUsd)}
-                      </p>
+                      <div className="landing-fashion-mockup-product-pricing">
+                        <p className="landing-fashion-mockup-product-price">
+                          {formatUsd(product.priceUsd)}
+                        </p>
+                        {"compareAtUsd" in product && product.compareAtUsd ? (
+                          <p className="landing-fashion-mockup-product-compare">
+                            {formatUsd(product.compareAtUsd)}
+                          </p>
+                        ) : null}
+                      </div>
                       {bsLabel ? (
                         <p className="landing-fashion-mockup-product-bs">
                           {bsLabel}
                         </p>
                       ) : null}
+                      <span className="landing-fashion-mockup-add-btn">
+                        Agregar
+                      </span>
                     </div>
                   </article>
                 );
@@ -166,58 +237,94 @@ export function LandingFashionCatalogMockup({
             </div>
           </div>
 
-          <div className="landing-fashion-mockup-cart-sheet">
-            <div className="landing-fashion-mockup-cart-head">
-              <div>
-                <p className="landing-fashion-mockup-cart-title">Tu carrito</p>
-                <p className="landing-fashion-mockup-cart-store">Boutique Luna</p>
+          {cartOpen ? (
+            <div
+              className="landing-fashion-mockup-cart-sheet"
+              role="dialog"
+              aria-label="Tu carrito"
+            >
+              <div className="landing-fashion-mockup-cart-head">
+                <div>
+                  <p className="landing-fashion-mockup-cart-title">Tu carrito</p>
+                  <p className="landing-fashion-mockup-cart-store">
+                    Boutique Luna · {CART_COUNT} artículos
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="landing-fashion-mockup-cart-close"
+                  aria-label="Cerrar carrito"
+                  onClick={() => setCartOpen(false)}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </div>
-              <span className="landing-fashion-mockup-cart-close">
-                <X className="h-3.5 w-3.5" />
-              </span>
-            </div>
 
-            <ul className="landing-fashion-mockup-cart-lines">
-              {CART_LINES.map((line) => (
-                <li key={line.name}>
-                  <span>
-                    {line.qty}× {line.name}
-                  </span>
-                  <strong>{formatUsd(line.priceUsd)}</strong>
-                </li>
-              ))}
-            </ul>
+              <ul className="landing-fashion-mockup-cart-lines">
+                {CART_LINES.map((line) => (
+                  <li key={line.id}>
+                    <span>
+                      {line.qty}× {line.name}
+                    </span>
+                    <strong>{formatUsd(line.priceUsd)}</strong>
+                  </li>
+                ))}
+              </ul>
 
-            <div className="landing-fashion-mockup-cart-total">
-              <span>Subtotal</span>
-              <div className="text-right">
-                <strong>{formatUsd(CART_SUBTOTAL_USD)}</strong>
-                {cartSubtotalBs ? <p>{cartSubtotalBs}</p> : null}
+              <div className="landing-fashion-mockup-cart-total">
+                <span>Subtotal</span>
+                <div className="text-right">
+                  <strong>{formatUsd(CART_SUBTOTAL_USD)}</strong>
+                  {cartSubtotalBs ? <p>{cartSubtotalBs}</p> : null}
+                </div>
+              </div>
+
+              <div className="landing-fashion-mockup-cart-actions">
+                <span className="landing-fashion-mockup-cart-checkout">
+                  Finalizar pedido
+                </span>
+                <span className="landing-fashion-mockup-cart-whatsapp">
+                  <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                  Consultar por WhatsApp
+                </span>
               </div>
             </div>
+          ) : null}
 
-            <div className="landing-fashion-mockup-cart-actions">
-              <span className="landing-fashion-mockup-cart-checkout">
-                Finalizar pedido
-              </span>
-              <span className="landing-fashion-mockup-cart-whatsapp">
-                <MessageCircle className="h-3.5 w-3.5" />
-                Enviar pedido por WhatsApp
-              </span>
-            </div>
-          </div>
+          <button
+            type="button"
+            className="landing-fashion-mockup-cart-fab"
+            aria-label={
+              cartOpen ? "Ocultar carrito de demostración" : "Ver carrito de demostración"
+            }
+            onClick={() => setCartOpen((open) => !open)}
+          >
+            <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+            <span className="landing-fashion-mockup-cart-fab-badge">
+              {CART_COUNT}
+            </span>
+          </button>
 
-          <div className="landing-fashion-mockup-fabs">
-            <span className="landing-fashion-mockup-wa-fab">
-              <WhatsAppGlyph className="h-4 w-4" />
+          <nav className="landing-fashion-mockup-tab-bar" aria-hidden="true">
+            <span className="landing-fashion-mockup-tab landing-fashion-mockup-tab-active">
+              <Home className="h-3.5 w-3.5" />
+              Inicio
             </span>
-            <span className="landing-fashion-mockup-cart-fab">
-              <ShoppingBag className="h-4 w-4" />
-              <span className="landing-fashion-mockup-cart-fab-badge">2</span>
+            <span className="landing-fashion-mockup-tab">
+              <Search className="h-3.5 w-3.5" />
+              Buscar
             </span>
-          </div>
+            <span className="landing-fashion-mockup-tab">
+              <UserRound className="h-3.5 w-3.5" />
+              Perfil
+            </span>
+          </nav>
         </div>
       </div>
+
+      <p className="landing-fashion-mockup-caption">
+        Así se ve tu tienda: catálogo, carrito y pedidos por WhatsApp
+      </p>
     </div>
   );
 }
