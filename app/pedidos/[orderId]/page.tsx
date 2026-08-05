@@ -4,7 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getOrderForStore } from "@/lib/orders/get-order-for-store";
 import { PublicOrderDetailPanel } from "@/components/orders/PublicOrderDetailPanel";
-import { getSiteUrl } from "@/lib/site-url";
+import {
+  buildOrderSharePublicUrl,
+  getOrderShareContext,
+  getOrderShareDomainInfo,
+  resolveOrderShareImageUrl,
+} from "@/lib/orders/order-share";
+import { getRequestOrigin } from "@/lib/pwa/get-request-origin";
 
 export const dynamic = "force-dynamic";
 
@@ -16,34 +22,56 @@ export async function generateMetadata({
   params,
 }: PublicOrderPageProps): Promise<Metadata> {
   const { orderId } = await params;
-  const siteUrl = getSiteUrl().replace(/\/$/, "");
-  const pageUrl = `${siteUrl}/pedidos/${orderId}`;
+  const context = await getOrderShareContext(orderId);
+
+  if (!context) {
+    return {
+      title: "Pedido",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const domainInfo = getOrderShareDomainInfo(context.store);
+  const pageUrl = buildOrderSharePublicUrl(
+    context.store.slug,
+    context.orderId,
+    domainInfo,
+  );
+  const requestOrigin = await getRequestOrigin();
+  const imageUrl = resolveOrderShareImageUrl(
+    context.store,
+    requestOrigin,
+    context.orderId,
+  );
+  const title = `Nuevo pedido · ${context.store.name}`;
+  const description = `Pedido #${context.shortRef} en ${context.store.name}.`;
 
   return {
-    title: "Pedido · Alcentimo",
-    description: "Revisa el comprobante y gestiona el pedido en Alcentimo.",
+    title,
+    description,
+    applicationName: context.store.name,
+    robots: { index: false, follow: false },
     openGraph: {
-      title: "Nuevo pedido · Alcentimo",
-      description: "Gestiona tu venta desde la plataforma.",
-      siteName: "Alcentimo",
+      title,
+      description,
+      siteName: context.store.name,
       type: "website",
       url: pageUrl,
       images: [
         {
-          url: `${siteUrl}/icon-512x512.png`,
-          width: 512,
-          height: 512,
-          alt: "Alcentimo",
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: context.store.name,
         },
       ],
     },
     twitter: {
-      card: "summary",
-      title: "Nuevo pedido · Alcentimo",
-      description: "Gestiona tu venta desde la plataforma.",
-      images: [`${siteUrl}/icon-512x512.png`],
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
     },
-    robots: { index: false, follow: false },
   };
 }
 

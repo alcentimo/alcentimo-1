@@ -12,6 +12,8 @@ export interface TransactionalOrderWhatsAppMessageInput {
   customerName: string;
   items: TransactionalOrderWhatsAppItem[];
   totalUsd: number;
+  /** URL pública del pedido con OG de la tienda (sin marca de la plataforma). */
+  orderShareUrl?: string;
   paymentLabel?: string;
   shippingLabel?: string;
   shippingCostUsd?: number;
@@ -40,7 +42,7 @@ function sanitizeCustomerText(value: string): string {
 
 /**
  * Mensaje de pedido para WhatsApp (cliente → tienda).
- * Solo datos de la compra: sin URLs de la plataforma.
+ * Si hay orderShareUrl, se añade al final para la vista previa con marca de la tienda.
  */
 export function buildTransactionalOrderWhatsAppMessage(
   input: TransactionalOrderWhatsAppMessageInput,
@@ -118,5 +120,17 @@ export function buildTransactionalOrderWhatsAppMessage(
     body.push(`🏠 Entrega: ${sanitizeCustomerText(input.deliveryAddress)}`);
   }
 
-  return stripStorageUrls(body.join("\n"));
+  const messageBody = stripStorageUrls(body.join("\n"));
+  const shareUrl = input.orderShareUrl?.trim() ?? "";
+
+  // Solo URLs de compartir de la tienda (nunca Storage ni /pedidos de plataforma).
+  if (
+    !shareUrl ||
+    /supabase\.co/i.test(shareUrl) ||
+    /\/pedidos\//i.test(shareUrl)
+  ) {
+    return messageBody;
+  }
+
+  return `${messageBody}\n\n${shareUrl}`;
 }
