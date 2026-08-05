@@ -9,6 +9,7 @@ import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { LandingPricing } from "@/components/landing/LandingPricing";
 import { LandingAssistantChat } from "@/components/landing/LandingAssistantChat";
+import { LandingVisitTracker } from "@/components/landing/LandingVisitTracker";
 import { fetchPlanPricingTiers } from "@/lib/plans/get-plan-settings";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { withTimeoutFallback } from "@/lib/async/with-timeout-fallback";
@@ -31,6 +32,7 @@ export default async function Home() {
     <>
       <AdminPwaServiceWorkerRegister />
       <RecoveryUrlRedirect />
+      <LandingVisitTracker />
 
       <LandingNav />
 

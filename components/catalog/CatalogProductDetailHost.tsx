@@ -12,6 +12,8 @@ import type { ReactNode } from "react";
 
 interface CatalogProductDetailHostProps {
   children: ReactNode;
+  storeId?: string | null;
+  storeSlug?: string | null;
   exchangeRate?: number | null;
   showBsConversion?: boolean;
   storeRubro?: string | null;
@@ -29,7 +31,7 @@ function CatalogProductDetailLayer({
   storeRubro,
   wholesaleEnabled,
   onAddToCart,
-}: Omit<CatalogProductDetailHostProps, "children">) {
+}: Omit<CatalogProductDetailHostProps, "children" | "storeId" | "storeSlug">) {
   const { selectedProduct, closeProduct } = useCatalogProductDetail();
 
   if (!selectedProduct) return null;
@@ -49,6 +51,8 @@ function CatalogProductDetailLayer({
 
 export function CatalogProductDetailHost({
   children,
+  storeId,
+  storeSlug,
   exchangeRate,
   showBsConversion,
   storeRubro,
@@ -56,7 +60,7 @@ export function CatalogProductDetailHost({
   onAddToCart,
 }: CatalogProductDetailHostProps) {
   return (
-    <CatalogProductDetailProvider>
+    <CatalogProductDetailProvider storeId={storeId} storeSlug={storeSlug}>
       {children}
       <CatalogProductDetailLayer
         exchangeRate={exchangeRate}

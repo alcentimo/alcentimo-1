@@ -29,6 +29,7 @@ import { getMerchantStoreRole } from "@/lib/team/store-context";
 import { applySafeInternalNextRedirect } from "@/lib/auth/post-auth-redirect";
 import { shouldRedirectGoogleAuthToApex } from "@/lib/auth/google-oauth-origin";
 import { getCatalogVisitorCookieName } from "@/lib/analytics/track-catalog-visit";
+import { LANDING_VISITOR_COOKIE } from "@/lib/analytics/page-visit-keys";
 import { getSiteUrl } from "@/lib/site-url";
 import { getSupabaseCookieOptions } from "@/lib/supabase/cookie-options";
 import {
@@ -265,6 +266,17 @@ export async function middleware(request: NextRequest) {
   const isInvitationPage = isDashboardInvitationPath(pathname);
 
   const authenticatedUser = user ?? null;
+
+  // Cookie de sesión para visitas a la landing (alcentimo.com).
+  if (pathname === "/" && !request.cookies.get(LANDING_VISITOR_COOKIE)?.value) {
+    supabaseResponse.cookies.set(LANDING_VISITOR_COOKIE, crypto.randomUUID(), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 365,
+      path: "/",
+    });
+  }
 
   const catalogPathMatch = pathname.match(/^\/c\/([^/]+)/);
   const catalogSlug = effectiveStoreSlug ?? catalogPathMatch?.[1];

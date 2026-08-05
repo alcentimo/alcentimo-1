@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   DollarSign,
+  Eye,
   Store,
   Users,
 } from "lucide-react";
@@ -67,6 +68,19 @@ export function AdminOverviewPanel({
           </div>
           <p className="admin-kpi-card-label">Tiendas totales</p>
           <p className="admin-kpi-card-value">{metrics.totalStores}</p>
+        </article>
+
+        <article className="admin-kpi-card">
+          <div className="admin-kpi-card-icon admin-kpi-card-icon-sky">
+            <Eye className="h-4 w-4" aria-hidden="true" />
+          </div>
+          <p className="admin-kpi-card-label">Visitas a alcentimo.com</p>
+          <p className="admin-kpi-card-value">
+            {metrics.landingVisitsTotal.toLocaleString("es-VE")}
+          </p>
+          <p className="admin-kpi-card-hint">
+            {metrics.landingVisitsMonth.toLocaleString("es-VE")} este mes
+          </p>
         </article>
 
         <article className="admin-kpi-card">

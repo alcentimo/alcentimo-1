@@ -19,17 +19,41 @@ interface CatalogProductDetailContextValue {
 const CatalogProductDetailContext =
   createContext<CatalogProductDetailContextValue | null>(null);
 
+interface CatalogProductDetailProviderProps {
+  children: ReactNode;
+  storeId?: string | null;
+  storeSlug?: string | null;
+}
+
 export function CatalogProductDetailProvider({
   children,
-}: {
-  children: ReactNode;
-}) {
+  storeId = null,
+  storeSlug = null,
+}: CatalogProductDetailProviderProps) {
   const [selectedProduct, setSelectedProduct] =
     useState<CatalogListItem | null>(null);
 
-  const openProduct = useCallback((product: CatalogListItem) => {
-    setSelectedProduct(product);
-  }, []);
+  const openProduct = useCallback(
+    (product: CatalogListItem) => {
+      setSelectedProduct(product);
+      if (storeId && storeSlug && product.product_id) {
+        void fetch("/api/analytics/visit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "product",
+            storeId,
+            storeSlug,
+            productId: product.product_id,
+          }),
+          keepalive: true,
+        }).catch(() => {
+          // Silenciar errores de tracking.
+        });
+      }
+    },
+    [storeId, storeSlug],
+  );
 
   const closeProduct = useCallback(() => {
     setSelectedProduct(null);

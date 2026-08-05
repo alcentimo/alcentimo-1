@@ -88,6 +88,8 @@ function StoreCatalogInner({
 
   return (
     <CatalogProductDetailHost
+      storeId={store.id}
+      storeSlug={store.slug}
       exchangeRate={liveExchangeRate}
       showBsConversion={showBsConversion}
       storeRubro={store.rubro_tienda}

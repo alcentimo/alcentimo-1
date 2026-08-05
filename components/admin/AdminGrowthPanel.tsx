@@ -668,6 +668,7 @@ export function AdminGrowthPanel({
                   <th className="px-3 py-2.5">Correo</th>
                   <th className="px-3 py-2.5">WhatsApp</th>
                   <th className="px-3 py-2.5">Catálogo</th>
+                  <th className="px-3 py-2.5">Visitas</th>
                   <th className="px-3 py-2.5">Plan / estado</th>
                   <th className="px-3 py-2.5">Productos</th>
                   <th className="px-3 py-2.5">Acción</th>
@@ -734,6 +735,15 @@ export function AdminGrowthPanel({
                         <span className="text-zinc-400">—</span>
                       )}
                     </td>
+                    <td className="px-3 py-2.5 align-top tabular-nums">
+                      {user.storeId ? (
+                        <span className="font-medium text-zinc-900 dark:text-zinc-50">
+                          {(user.catalogVisitsTotal ?? 0).toLocaleString("es-VE")}
+                        </span>
+                      ) : (
+                        <span className="text-zinc-400">—</span>
+                      )}
+                    </td>
                     <td className="px-3 py-2.5 align-top">
                       <div className="font-medium text-zinc-900 dark:text-zinc-50">
                         {formatPlanLabel(user.plan)}
@@ -791,7 +801,7 @@ export function AdminGrowthPanel({
                 {filteredUsers.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={9}
                       className="px-3 py-8 text-center text-zinc-500"
                     >
                       No hay tiendas o usuarios con ese filtro.

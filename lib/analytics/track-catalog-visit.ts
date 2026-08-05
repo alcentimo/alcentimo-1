@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveActiveStoreBySlug } from "@/lib/customers/middleware-access";
+import { recordStoreCatalogPageVisit } from "@/lib/analytics/record-page-visit";
 
 export const CATALOG_VISITOR_COOKIE_PREFIX = "alcentimo_cv_";
 
@@ -38,16 +39,18 @@ export async function recordCatalogVisit(
           user_id: userId ?? existing.user_id,
         })
         .eq("id", existing.id);
-      return;
+    } else {
+      await admin.from("catalog_visits").insert({
+        store_id: storeId,
+        visitor_key: visitorKey,
+        user_id: userId,
+        first_seen_at: now,
+        last_seen_at: now,
+      });
     }
 
-    await admin.from("catalog_visits").insert({
-      store_id: storeId,
-      visitor_key: visitorKey,
-      user_id: userId,
-      first_seen_at: now,
-      last_seen_at: now,
-    });
+    // Agregado diario (visitas únicas por sesión / día).
+    await recordStoreCatalogPageVisit({ storeId, visitorKey });
   } catch {
     // No bloquear la carga del catálogo si falla el tracking.
   }

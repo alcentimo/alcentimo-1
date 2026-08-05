@@ -3,6 +3,7 @@ import { normalizeDbPlan } from "@/lib/plans/plan-activation";
 import type { ProfilePlanDb } from "@/lib/database.types";
 import { getStoreCatalogPublicUrl } from "@/lib/store-host";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
+import { getStoreVisitTotalsByStoreIds } from "@/lib/analytics/get-page-visit-stats";
 
 export interface AdminUserRow {
   /** Owner user id (para acciones de plan). */
@@ -22,6 +23,8 @@ export interface AdminUserRow {
   catalogUrl: string | null;
   whatsappPhone: string | null;
   whatsappUrl: string | null;
+  /** Visitas únicas totales al catálogo (page_visit_daily). */
+  catalogVisitsTotal: number;
 }
 
 export interface AdminUserFilters {
@@ -158,6 +161,11 @@ export async function getAdminUsers(
     );
   }
 
+  const visitTotalsByStore = await getStoreVisitTotalsByStoreIds(
+    admin,
+    storeIds,
+  );
+
   const planFilter =
     filters.plan && filters.plan !== "all" ? filters.plan : null;
   const search = filters.search?.trim().toLowerCase() ?? "";
@@ -214,6 +222,7 @@ export async function getAdminUsers(
       }),
       whatsappPhone,
       whatsappUrl,
+      catalogVisitsTotal: visitTotalsByStore.get(store.id) ?? 0,
     });
   }
 
@@ -249,6 +258,7 @@ export async function getAdminUsers(
       catalogUrl: null,
       whatsappPhone: null,
       whatsappUrl: null,
+      catalogVisitsTotal: 0,
     });
   }
 

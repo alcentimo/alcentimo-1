@@ -528,6 +528,10 @@ body {
   @apply bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400;
 }
 
+.admin-kpi-card-icon-sky {
+  @apply bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400;
+}
+
 .admin-kpi-card-icon-amber {
   @apply bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400;
 }

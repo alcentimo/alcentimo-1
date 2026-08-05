@@ -24,10 +24,12 @@ import {
   type StoreRubro,
 } from "@/src/config/categories";
 import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
+import { CatalogVisitStatsCard } from "@/components/dashboard/CatalogVisitStatsCard";
 import { InventoryListSkeleton } from "@/components/dashboard/InventoryListSkeleton";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { CatalogPublicLinkMenu } from "@/components/dashboard/CatalogPublicLinkMenu";
 import { Button } from "@/components/ui/button";
+import { getCatalogVisitStats } from "@/lib/analytics/get-page-visit-stats";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +96,7 @@ export default async function CatalogoPage({
     criticalStockCount,
     storeSettings,
     inventorySuggestions,
+    catalogVisitStats,
   ] = await Promise.all([
     getStoreInventory(store.slug, {
       limit: pageSize,
@@ -113,6 +116,22 @@ export default async function CatalogoPage({
         return await listPendingInventorySuggestions(supabase, store.id);
       } catch {
         return [];
+      }
+    })(),
+    (async () => {
+      try {
+        const supabase = await createClient();
+        return await getCatalogVisitStats(supabase, store.id);
+      } catch {
+        return {
+          todayUniqueVisitors: 0,
+          monthUniqueVisitors: 0,
+          totalUniqueVisitors: 0,
+          todayPageViews: 0,
+          monthPageViews: 0,
+          totalPageViews: 0,
+          topProduct: null,
+        };
       }
     })(),
   ]);
@@ -155,6 +174,8 @@ export default async function CatalogoPage({
           />
         }
       />
+
+      <CatalogVisitStatsCard stats={catalogVisitStats} />
 
       <Suspense
         fallback={

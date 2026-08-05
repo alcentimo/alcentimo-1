@@ -107,6 +107,35 @@ export interface CatalogVisit {
   last_seen_at: string;
 }
 
+export interface PageVisitDaily {
+  target_key: string;
+  store_id: string | null;
+  visit_date: string;
+  unique_visitors: number;
+  page_views: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PageVisitSession {
+  target_key: string;
+  store_id: string | null;
+  visitor_key: string;
+  visit_date: string;
+  hit_count: number;
+  first_seen_at: string;
+  last_seen_at: string;
+}
+
+export interface CatalogProductViewDaily {
+  store_id: string;
+  product_id: string;
+  visit_date: string;
+  unique_viewers: number;
+  views: number;
+  updated_at: string;
+}
+
 export type CartModifierSelectionJson = Array<{
   groupId: string;
   groupName: string;
@@ -837,6 +866,37 @@ export interface Database {
         Update: Partial<CatalogVisit>;
         Relationships: [];
       };
+      page_visit_daily: {
+        Row: PageVisitDaily;
+        Insert: Omit<PageVisitDaily, "created_at" | "updated_at"> & {
+          unique_visitors?: number;
+          page_views?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<PageVisitDaily>;
+        Relationships: [];
+      };
+      page_visit_sessions: {
+        Row: PageVisitSession;
+        Insert: Omit<PageVisitSession, "first_seen_at" | "last_seen_at"> & {
+          hit_count?: number;
+          first_seen_at?: string;
+          last_seen_at?: string;
+        };
+        Update: Partial<PageVisitSession>;
+        Relationships: [];
+      };
+      catalog_product_view_daily: {
+        Row: CatalogProductViewDaily;
+        Insert: Omit<CatalogProductViewDaily, "updated_at"> & {
+          unique_viewers?: number;
+          views?: number;
+          updated_at?: string;
+        };
+        Update: Partial<CatalogProductViewDaily>;
+        Relationships: [];
+      };
       customer_cart_items: {
         Row: CustomerCartItem;
         Insert: Omit<CustomerCartItem, "id" | "created_at" | "updated_at"> & {
@@ -1204,6 +1264,22 @@ export interface Database {
       is_member_of_store: {
         Args: { target_store_id: string };
         Returns: boolean;
+      };
+      record_page_visit: {
+        Args: {
+          p_target_key: string;
+          p_store_id: string | null;
+          p_visitor_key: string;
+        };
+        Returns: undefined;
+      };
+      record_catalog_product_view: {
+        Args: {
+          p_store_id: string;
+          p_product_id: string;
+          p_visitor_key: string;
+        };
+        Returns: undefined;
       };
       is_store_admin: {
         Args: { target_store_id: string };

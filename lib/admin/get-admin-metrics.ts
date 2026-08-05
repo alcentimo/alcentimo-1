@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeDbPlan } from "@/lib/plans/plan-activation";
 import type { ProfilePlanDb } from "@/lib/database.types";
+import { getLandingVisitStats } from "@/lib/analytics/get-page-visit-stats";
 
 export interface AdminPlanMetrics {
   totalUsers: number;
@@ -9,6 +10,8 @@ export interface AdminPlanMetrics {
   storesByPlan: Record<ProfilePlanDb, number>;
   verifiedPaymentsUsd: number;
   pendingPayments: number;
+  landingVisitsTotal: number;
+  landingVisitsMonth: number;
 }
 
 function emptyPlanCounts(): Record<ProfilePlanDb, number> {
@@ -25,6 +28,8 @@ export async function getAdminPlanMetrics(): Promise<AdminPlanMetrics> {
   let totalStores = 0;
   let verifiedPaymentsUsd = 0;
   let pendingPayments = 0;
+  let landingVisitsTotal = 0;
+  let landingVisitsMonth = 0;
 
   const { data: profiles, error: profilesError } = await admin
     .from("profiles")
@@ -89,6 +94,15 @@ export async function getAdminPlanMetrics(): Promise<AdminPlanMetrics> {
     }
   }
 
+  try {
+    const landing = await getLandingVisitStats(admin);
+    landingVisitsTotal = landing.totalUniqueVisitors;
+    landingVisitsMonth = landing.monthUniqueVisitors;
+  } catch {
+    landingVisitsTotal = 0;
+    landingVisitsMonth = 0;
+  }
+
   return {
     totalUsers,
     totalStores,
@@ -96,5 +110,7 @@ export async function getAdminPlanMetrics(): Promise<AdminPlanMetrics> {
     storesByPlan,
     verifiedPaymentsUsd: Math.round(verifiedPaymentsUsd * 100) / 100,
     pendingPayments,
+    landingVisitsTotal,
+    landingVisitsMonth,
   };
 }
