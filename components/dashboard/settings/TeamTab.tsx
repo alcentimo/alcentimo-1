@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   inviteStoreTeamMemberAction,
+  refreshStoreInvitationLinkAction,
   removeStoreMemberAction,
   resendStoreInvitationAction,
   revokeStoreInvitationAction,
@@ -87,7 +88,6 @@ function getInitials(email: string | null, displayName: string | null): string {
 function validateInviteEmail(
   rawEmail: string,
   members: TeamMemberRow[],
-  invitations: StoreInvitationRow[],
 ): string | null {
   const trimmed = rawEmail.trim();
   if (!trimmed) return "Ingresa el correo del colaborador.";
@@ -103,16 +103,22 @@ function validateInviteEmail(
   ) {
     return "Ese correo ya pertenece al equipo.";
   }
-  if (
-    invitations.some(
+  return null;
+}
+
+function findPendingInvitation(
+  rawEmail: string,
+  invitations: StoreInvitationRow[],
+): StoreInvitationRow | null {
+  const normalized = normalizeInviteEmail(rawEmail);
+  if (!normalized) return null;
+  return (
+    invitations.find(
       (invitation) =>
         invitation.status === "pending" &&
         normalizeInviteEmail(invitation.email) === normalized,
-    )
-  ) {
-    return "Ya hay una invitación pendiente para ese correo.";
-  }
-  return null;
+    ) ?? null
+  );
 }
 
 function RoleBadge({
@@ -228,11 +234,18 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
 
   const emailValidationError = useMemo(() => {
     if (!emailTouched && !inviteEmail.trim()) return null;
-    return validateInviteEmail(inviteEmail, members, invitations);
-  }, [emailTouched, inviteEmail, members, invitations]);
+    return validateInviteEmail(inviteEmail, members);
+  }, [emailTouched, inviteEmail, members]);
+
+  const matchingPendingInvitation = useMemo(() => {
+    if (!inviteEmail.trim() || emailValidationError) return null;
+    return findPendingInvitation(inviteEmail, invitations);
+  }, [inviteEmail, emailValidationError, invitations]);
 
   const inviteFormValid =
-    Boolean(inviteEmail.trim()) && emailValidationError == null;
+    Boolean(inviteEmail.trim()) &&
+    emailValidationError == null &&
+    matchingPendingInvitation == null;
 
   function refreshMessage(next: string | null, err?: string) {
     setError(err ?? null);
@@ -252,11 +265,31 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
     if (result.inviteUrl) setInviteUrl(result.inviteUrl);
   }
 
-  function handleInvite() {
+  async function copyText(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      refreshMessage("Enlace de invitación copiado. Ya puedes pegarlo en WhatsApp o correo.");
+      return true;
+    } catch {
+      refreshMessage(null, "No se pudo copiar el enlace.");
+      return false;
+    }
+  }
+
+  function handleInvite(options?: { updateExisting?: boolean }) {
     setEmailTouched(true);
-    const validation = validateInviteEmail(inviteEmail, members, invitations);
+    const validation = validateInviteEmail(inviteEmail, members);
     if (validation) {
       refreshMessage(null, validation);
+      return;
+    }
+
+    const pendingMatch = findPendingInvitation(inviteEmail, invitations);
+    if (pendingMatch && !options?.updateExisting) {
+      refreshMessage(
+        null,
+        "Ya hay una invitación pendiente para ese correo. Puedes actualizarla o copiar el enlace.",
+      );
       return;
     }
 
@@ -268,14 +301,38 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
         const result = await inviteStoreTeamMemberAction({
           email: inviteEmail,
           role: inviteRole,
+          updateExisting: options?.updateExisting,
         });
         applyTeamResult(result);
+        if (result.code === "PENDING_INVITE_EXISTS") {
+          refreshMessage(
+            null,
+            "Ya hay una invitación pendiente para ese correo. Puedes actualizarla o copiar el enlace.",
+          );
+          return;
+        }
         if (result.error) {
           refreshMessage(null, result.error);
           return;
         }
         setInviteEmail("");
         setEmailTouched(false);
+        if (options?.updateExisting) {
+          if (result.emailSent) {
+            refreshMessage(
+              `Invitación actualizada para ${invitedEmail}. Se envió un correo con el nuevo enlace.`,
+            );
+          } else if (result.emailError) {
+            refreshMessage(
+              `Invitación actualizada, pero no se pudo enviar el correo: ${result.emailError} Puedes copiar el enlace abajo.`,
+            );
+          } else {
+            refreshMessage(
+              "Invitación actualizada. Comparte el enlace con tu colaborador.",
+            );
+          }
+          return;
+        }
         if (result.emailSent) {
           refreshMessage(
             `Invitación enviada a ${invitedEmail}. El colaborador recibirá un correo para unirse.`,
@@ -294,6 +351,29 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
           null,
           "No se pudo procesar la invitación. Intenta de nuevo en unos segundos.",
         );
+      }
+    });
+  }
+
+  function handleCopyInvitationLink(invitationId: string) {
+    refreshMessage(null);
+    startTransition(async () => {
+      try {
+        const result = await refreshStoreInvitationLinkAction(invitationId);
+        applyTeamResult(result);
+        if (result.error) {
+          refreshMessage(null, result.error);
+          return;
+        }
+        if (result.inviteUrl) {
+          await copyText(result.inviteUrl);
+        } else {
+          refreshMessage(
+            "Enlace generado. Usa el cuadro de abajo para copiarlo.",
+          );
+        }
+      } catch {
+        refreshMessage(null, "No se pudo generar el enlace de invitación.");
       }
     });
   }
@@ -326,7 +406,7 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
   function handleRevokeInvitation(invitationId: string) {
     if (
       !window.confirm(
-        "¿Revocar esta invitación? El enlace dejará de funcionar.",
+        "¿Cancelar esta invitación? El enlace dejará de funcionar.",
       )
     ) {
       return;
@@ -339,7 +419,7 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
         refreshMessage(null, result.error);
         return;
       }
-      refreshMessage("Invitación revocada.");
+      refreshMessage("Invitación cancelada.");
     });
   }
 
@@ -380,12 +460,7 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
 
   async function copyInviteUrl() {
     if (!inviteUrl) return;
-    try {
-      await navigator.clipboard.writeText(inviteUrl);
-      refreshMessage("Enlace copiado al portapapeles.");
-    } catch {
-      refreshMessage(null, "No se pudo copiar el enlace.");
-    }
+    await copyText(inviteUrl);
   }
 
   const usageLabel = limit.isUnlimited
@@ -432,19 +507,9 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
                 onRoleChange={(role) => handleRoleChange(member.id, role)}
               />
             ))}
-            {pendingInvitations.map((invitation) => (
-              <InvitationRow
-                key={invitation.id}
-                invitation={invitation}
-                canManage={canManage}
-                disabled={pending}
-                onResend={() => handleResendInvitation(invitation.id)}
-                onRevoke={() => handleRevokeInvitation(invitation.id)}
-              />
-            ))}
           </ul>
 
-          {members.length === 0 && pendingInvitations.length === 0 ? (
+          {members.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
               <Users className="h-8 w-8 text-zinc-300 dark:text-zinc-600" aria-hidden="true" />
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -457,6 +522,40 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
             </div>
           ) : null}
         </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Invitaciones Pendientes"
+        description={
+          pendingInvitations.length > 0
+            ? `${pendingInvitations.length} invitación${pendingInvitations.length === 1 ? "" : "es"} esperando respuesta.`
+            : "Las invitaciones enviadas y aún no aceptadas aparecen aquí."
+        }
+        variant="payments"
+      >
+        {pendingInvitations.length > 0 ? (
+          <div className="overflow-hidden rounded-2xl border border-amber-200/80 dark:border-amber-900/40">
+            <ul className="divide-y divide-amber-100/80 dark:divide-amber-900/30">
+              {pendingInvitations.map((invitation) => (
+                <InvitationRow
+                  key={invitation.id}
+                  invitation={invitation}
+                  canManage={canManage}
+                  disabled={pending}
+                  onCopyLink={() => handleCopyInvitationLink(invitation.id)}
+                  onResend={() => handleResendInvitation(invitation.id)}
+                  onRevoke={() => handleRevokeInvitation(invitation.id)}
+                />
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/60 px-4 py-8 text-center dark:border-zinc-800 dark:bg-zinc-900/20">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              No hay invitaciones pendientes.
+            </p>
+          </div>
+        )}
       </SettingsSection>
 
       {canManage ? (
@@ -513,6 +612,10 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
                 >
                   {emailValidationError}
                 </p>
+              ) : matchingPendingInvitation ? (
+                <p className="text-xs text-amber-800 dark:text-amber-300" role="status">
+                  Ya hay una invitación pendiente para este correo.
+                </p>
               ) : inviteEmail.trim() && !emailValidationError ? (
                 <p className="text-xs text-emerald-700 dark:text-emerald-400">
                   Correo listo para invitar.
@@ -549,7 +652,7 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
                 type="button"
                 className="btn-brand h-10 w-full gap-2 sm:w-auto"
                 disabled={pending || !canInvite || !inviteFormValid}
-                onClick={handleInvite}
+                onClick={() => handleInvite()}
               >
                 {pending ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -560,6 +663,50 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
               </Button>
             </div>
           </div>
+
+          {matchingPendingInvitation && canManage ? (
+            <div
+              className="mt-4 rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-900/40 dark:bg-amber-950/20"
+              role="status"
+            >
+              <p className="text-sm font-medium text-amber-950 dark:text-amber-100">
+                Invitación pendiente para {matchingPendingInvitation.email}
+              </p>
+              <p className="mt-1 text-xs text-amber-900/80 dark:text-amber-200/80">
+                Puedes actualizar el rol y regenerar el enlace, o copiarlo para
+                enviarlo por WhatsApp o correo.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="gap-2"
+                  disabled={pending || !limit.canManageTeam}
+                  onClick={() => handleInvite({ updateExisting: true })}
+                >
+                  {pending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  Actualizar invitación
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  disabled={pending || !limit.canManageTeam}
+                  onClick={() =>
+                    handleCopyInvitationLink(matchingPendingInvitation.id)
+                  }
+                >
+                  <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                  Copiar enlace
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           {inviteUrl ? (
             <div className="mt-4 rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
@@ -730,60 +877,87 @@ function InvitationRow({
   invitation,
   canManage,
   disabled,
+  onCopyLink,
   onResend,
   onRevoke,
 }: {
   invitation: StoreInvitationRow;
   canManage: boolean;
   disabled: boolean;
+  onCopyLink: () => void;
   onResend: () => void;
   onRevoke: () => void;
 }) {
   const initials = getInitials(invitation.email, null);
 
   return (
-    <li className="flex items-center gap-3 bg-amber-50/30 px-3 py-3.5 sm:gap-4 sm:px-4 dark:bg-amber-950/10">
-      <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-dashed border-amber-300/80 bg-amber-50 text-xs font-semibold text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
-        aria-hidden="true"
-      >
-        {initials}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          {invitation.email}
-        </p>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <RoleBadge role={invitation.role} />
-          <StatusBadge kind="invitation" status={invitation.status} />
+    <li className="flex flex-col gap-3 bg-amber-50/40 px-3 py-3.5 sm:flex-row sm:items-center sm:gap-4 sm:px-4 dark:bg-amber-950/15">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-dashed border-amber-300/80 bg-amber-50 text-xs font-semibold text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+          aria-hidden="true"
+        >
+          {initials}
         </div>
-        <p className="mt-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
-          Expira {formatExpiresAt(invitation.expires_at)}
-          {invitation.last_sent_at
-            ? ` · Último envío ${formatExpiresAt(invitation.last_sent_at)}`
-            : ` · Creada ${formatExpiresAt(invitation.created_at)}`}
-        </p>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            {invitation.email}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <RoleBadge role={invitation.role} />
+            <StatusBadge kind="invitation" status={invitation.status} />
+          </div>
+          <p className="mt-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+            Expira {formatExpiresAt(invitation.expires_at)}
+            {invitation.last_sent_at
+              ? ` · Último envío ${formatExpiresAt(invitation.last_sent_at)}`
+              : ` · Creada ${formatExpiresAt(invitation.created_at)}`}
+          </p>
+        </div>
       </div>
 
       {canManage ? (
-        <DropdownMenu
-          align="end"
-          trigger={
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-9 w-9 shrink-0 p-0"
-              disabled={disabled}
-              aria-label={`Acciones para la invitación de ${invitation.email}`}
-            >
-              <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-            </Button>
-          }
-        >
-          {(close) => (
-            <>
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            disabled={disabled}
+            onClick={onCopyLink}
+            title="Genera un enlace fresco y lo copia al portapapeles"
+          >
+            <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+            Copiar enlace de invitación
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-1.5 text-red-700 hover:bg-red-50 hover:text-red-800 dark:text-red-300 dark:hover:bg-red-950/40 dark:hover:text-red-200"
+            disabled={disabled}
+            onClick={onRevoke}
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+            Cancelar / Eliminar
+          </Button>
+          <DropdownMenu
+            align="end"
+            trigger={
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9 w-9 shrink-0 p-0"
+                disabled={disabled}
+                aria-label={`Más acciones para la invitación de ${invitation.email}`}
+              >
+                <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            }
+          >
+            {(close) => (
               <DropdownMenuItem
                 disabled={disabled}
                 onClick={() => {
@@ -792,22 +966,11 @@ function InvitationRow({
                 }}
               >
                 <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-                Reenviar invitación
+                Reenviar por correo
               </DropdownMenuItem>
-              <DropdownMenuItem
-                destructive
-                disabled={disabled}
-                onClick={() => {
-                  close();
-                  onRevoke();
-                }}
-              >
-                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                Revocar invitación
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenu>
+            )}
+          </DropdownMenu>
+        </div>
       ) : null}
     </li>
   );

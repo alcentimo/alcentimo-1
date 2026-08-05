@@ -33,8 +33,12 @@ import type {
 const INVITATION_TTL_DAYS = 7;
 const TEAM_SETTINGS_PATH = "/dashboard/equipo";
 
+export type TeamActionErrorCode = "PENDING_INVITE_EXISTS";
+
 export interface TeamActionResult {
   error?: string;
+  code?: TeamActionErrorCode;
+  pendingInvitationId?: string;
   team?: StoreTeamSnapshot;
   limit?: TeamLimitSummary;
   inviteUrl?: string;
@@ -117,6 +121,68 @@ function teamLimitError(limit: TeamLimitSummary): string | null {
   return null;
 }
 
+async function rotateInvitationTokenAndDeliver(options: {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  storeId: string;
+  invitationId: string;
+  email: string;
+  role: string;
+  storeName: string;
+  inviterEmail?: string | null;
+  sendEmail: boolean;
+  roleUpdate?: string;
+}): Promise<TeamActionResult> {
+  const token = generateInvitationToken();
+  const tokenHash = hashInvitationToken(token);
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + INVITATION_TTL_DAYS);
+  const sentAt = new Date().toISOString();
+
+  const updatePayload: {
+    token_hash: string;
+    expires_at: string;
+    last_sent_at: string;
+    role?: string;
+  } = {
+    token_hash: tokenHash,
+    expires_at: expiresAt.toISOString(),
+    last_sent_at: sentAt,
+  };
+  if (options.roleUpdate && isInvitableTeamRole(options.roleUpdate)) {
+    updatePayload.role = options.roleUpdate;
+  }
+
+  const { error: updateError } = await options.supabase
+    .from("store_invitations")
+    .update(updatePayload)
+    .eq("id", options.invitationId)
+    .eq("store_id", options.storeId)
+    .is("accepted_at", null)
+    .is("revoked_at", null);
+
+  if (updateError) return { error: updateError.message };
+
+  const deliveryRole = options.roleUpdate ?? options.role;
+  let inviteUrl = `${getSiteUrl().replace(/\/$/, "")}/dashboard/invitacion?token=${encodeURIComponent(token)}`;
+  let emailSent = false;
+  let emailError: string | undefined;
+
+  if (options.sendEmail) {
+    const delivery = await deliverStoreInvitationEmail({
+      email: options.email,
+      role: deliveryRole,
+      storeName: options.storeName,
+      inviterEmail: options.inviterEmail,
+      token,
+    });
+    inviteUrl = delivery.inviteUrl;
+    emailSent = delivery.emailSent;
+    emailError = delivery.emailError;
+  }
+
+  return { inviteUrl, emailSent, emailError };
+}
+
 export async function getStoreTeamAction(): Promise<TeamActionResult> {
   const supabase = await createClient();
   const auth = await requireAuthStore(supabase);
@@ -141,6 +207,8 @@ export async function getStoreTeamAction(): Promise<TeamActionResult> {
 export async function inviteStoreTeamMemberAction(input: {
   email: string;
   role: string;
+  /** Si ya existe una invitación pendiente, la actualiza (rol + nuevo enlace). */
+  updateExisting?: boolean;
 }): Promise<TeamActionResult> {
   const supabase = await createClient();
   const auth = await requireAuthStore(supabase);
@@ -166,10 +234,6 @@ export async function inviteStoreTeamMemberAction(input: {
       store: auth.store,
       currentUserId: auth.authUser.id,
     });
-    const limitError = teamLimitError(team.limit);
-    if (limitError) {
-      return { error: limitError, limit: mapTeamLimit(team.limit) };
-    }
 
     const duplicateMember = team.members.some(
       (member) => member.email?.toLowerCase() === email,
@@ -178,15 +242,70 @@ export async function inviteStoreTeamMemberAction(input: {
       return { error: "Ese correo ya pertenece al equipo." };
     }
 
-    const duplicateInvite = team.invitations.some(
-      (invite) => invite.email.toLowerCase() === email,
-    );
-    if (duplicateInvite) {
-      return { error: "Ya hay una invitación pendiente para ese correo." };
-    }
-
     if (email === auth.authUser.email?.trim().toLowerCase()) {
       return { error: "No puedes invitarte a ti mismo." };
+    }
+
+    const existingPending = team.invitations.find(
+      (invite) =>
+        invite.status === "pending" && invite.email.toLowerCase() === email,
+    );
+
+    if (existingPending && !input.updateExisting) {
+      return {
+        error: "Ya hay una invitación pendiente para ese correo.",
+        code: "PENDING_INVITE_EXISTS",
+        pendingInvitationId: existingPending.id,
+        team,
+        limit: mapTeamLimit(team.limit),
+      };
+    }
+
+    if (existingPending && input.updateExisting) {
+      // Actualizar no consume un cupo nuevo: el slot ya estaba contado.
+      const rotated = await rotateInvitationTokenAndDeliver({
+        supabase,
+        storeId: auth.store.id,
+        invitationId: existingPending.id,
+        email: existingPending.email,
+        role: existingPending.role,
+        storeName: auth.store.name,
+        inviterEmail: auth.authUser.email,
+        sendEmail: true,
+        roleUpdate: input.role,
+      });
+      if (rotated.error) return rotated;
+
+      let refreshedTeam: StoreTeamSnapshot | undefined;
+      let refreshedLimit: TeamLimitSummary | undefined;
+      try {
+        refreshedTeam = await getStoreTeamSnapshot({
+          store: auth.store,
+          currentUserId: auth.authUser.id,
+        });
+        refreshedLimit = mapTeamLimit(refreshedTeam.limit);
+      } catch (refreshFailure) {
+        console.error("[inviteStoreTeamMemberAction] refresh", refreshFailure);
+      }
+
+      try {
+        revalidatePath(TEAM_SETTINGS_PATH);
+      } catch {
+        // La invalidación de caché no debe bloquear la respuesta.
+      }
+
+      return {
+        team: refreshedTeam,
+        limit: refreshedLimit,
+        inviteUrl: rotated.inviteUrl,
+        emailSent: rotated.emailSent,
+        emailError: rotated.emailError,
+      };
+    }
+
+    const limitError = teamLimitError(team.limit);
+    if (limitError) {
+      return { error: limitError, limit: mapTeamLimit(team.limit) };
     }
 
     const token = generateInvitationToken();
@@ -207,7 +326,10 @@ export async function inviteStoreTeamMemberAction(input: {
 
     if (insertError) {
       if (insertError.code === "23505") {
-        return { error: "Ya hay una invitación pendiente para ese correo." };
+        return {
+          error: "Ya hay una invitación pendiente para ese correo.",
+          code: "PENDING_INVITE_EXISTS",
+        };
       }
       return { error: insertError.message };
     }
@@ -312,31 +434,17 @@ export async function resendStoreInvitationAction(
   if (invitationError) return { error: invitationError.message };
   if (!invitation) return { error: "Invitación pendiente no encontrada." };
 
-  const token = generateInvitationToken();
-  const tokenHash = hashInvitationToken(token);
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + INVITATION_TTL_DAYS);
-  const sentAt = new Date().toISOString();
-
-  const { error: updateError } = await supabase
-    .from("store_invitations")
-    .update({
-      token_hash: tokenHash,
-      expires_at: expiresAt.toISOString(),
-      last_sent_at: sentAt,
-    })
-    .eq("id", invitationId)
-    .eq("store_id", auth.store.id);
-
-  if (updateError) return { error: updateError.message };
-
-  const delivery = await deliverStoreInvitationEmail({
+  const rotated = await rotateInvitationTokenAndDeliver({
+    supabase,
+    storeId: auth.store.id,
+    invitationId,
     email: invitation.email,
     role: invitation.role,
     storeName: auth.store.name,
     inviterEmail: auth.authUser.email,
-    token,
+    sendEmail: true,
   });
+  if (rotated.error) return rotated;
 
   let refreshedTeam: StoreTeamSnapshot | undefined;
   let refreshedLimit: TeamLimitSummary | undefined;
@@ -355,9 +463,70 @@ export async function resendStoreInvitationAction(
   return {
     team: refreshedTeam,
     limit: refreshedLimit,
-    inviteUrl: delivery.inviteUrl,
-    emailSent: delivery.emailSent,
-    emailError: delivery.emailError,
+    inviteUrl: rotated.inviteUrl,
+    emailSent: rotated.emailSent,
+    emailError: rotated.emailError,
+  };
+}
+
+/** Regenera el token y devuelve el enlace listo para compartir (sin reenviar correo). */
+export async function refreshStoreInvitationLinkAction(
+  invitationId: string,
+): Promise<TeamActionResult> {
+  const supabase = await createClient();
+  const auth = await requireAuthStore(supabase);
+  if (!auth.ok) return { error: auth.error };
+
+  const ownerCheck = await requireStoreTeamOwner(
+    supabase,
+    auth.store,
+    auth.authUser.id,
+  );
+  if (!ownerCheck.ok) return { error: ownerCheck.error };
+
+  const { data: invitation, error: invitationError } = await supabase
+    .from("store_invitations")
+    .select("id, email, role")
+    .eq("id", invitationId)
+    .eq("store_id", auth.store.id)
+    .is("accepted_at", null)
+    .is("revoked_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  if (invitationError) return { error: invitationError.message };
+  if (!invitation) return { error: "Invitación pendiente no encontrada." };
+
+  const rotated = await rotateInvitationTokenAndDeliver({
+    supabase,
+    storeId: auth.store.id,
+    invitationId,
+    email: invitation.email,
+    role: invitation.role,
+    storeName: auth.store.name,
+    inviterEmail: auth.authUser.email,
+    sendEmail: false,
+  });
+  if (rotated.error) return rotated;
+
+  let refreshedTeam: StoreTeamSnapshot | undefined;
+  let refreshedLimit: TeamLimitSummary | undefined;
+  try {
+    refreshedTeam = await getStoreTeamSnapshot({
+      store: auth.store,
+      currentUserId: auth.authUser.id,
+    });
+    refreshedLimit = mapTeamLimit(refreshedTeam.limit);
+  } catch (refreshFailure) {
+    console.error("[refreshStoreInvitationLinkAction] refresh", refreshFailure);
+  }
+
+  revalidatePath(TEAM_SETTINGS_PATH);
+
+  return {
+    team: refreshedTeam,
+    limit: refreshedLimit,
+    inviteUrl: rotated.inviteUrl,
   };
 }
 
