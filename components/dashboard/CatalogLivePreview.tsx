@@ -7,7 +7,11 @@ import { CartProvider } from "@/components/catalog-transactional/CartProvider";
 import { PromotionProvider } from "@/components/catalog-transactional/PromotionProvider";
 import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
 import { CatalogTabBar } from "@/components/catalog-transactional/CatalogTabBar";
+import { CatalogChatWidget } from "@/components/catalog-transactional/CatalogChatWidget";
+import { CatalogWhatsAppQuickChat } from "@/components/catalog-transactional/CatalogWhatsAppQuickChat";
+import { CatalogShellNavigationProvider } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { CatalogPreviewPortalProvider } from "@/components/dashboard/CatalogPreviewPortalContext";
+import { CustomerAccountModeProvider } from "@/components/catalog-transactional/CustomerAccountModeContext";
 import {
   getCatalogDesignClasses,
   getCatalogRubroClass,
@@ -25,6 +29,15 @@ interface CatalogLivePreviewProps {
   settings: CatalogPreviewSettings;
   referenceMode?: boolean;
   showReferenceCta?: boolean;
+  /**
+   * Sandbox interactivo (landing): carrito, Ayuda y WhatsApp reales
+   * contenidos en el marco de vista previa.
+   */
+  interactive?: boolean;
+  whatsappPhone?: string | null;
+  whatsappChatWelcome?: string | null;
+  assistantEnabled?: boolean;
+  assistantDemoMode?: boolean;
 }
 
 function toPreviewExchangeRate(
@@ -54,6 +67,11 @@ export function CatalogLivePreview({
   settings,
   referenceMode = false,
   showReferenceCta = false,
+  interactive = false,
+  whatsappPhone = null,
+  whatsappChatWelcome = null,
+  assistantEnabled = false,
+  assistantDemoMode = false,
 }: CatalogLivePreviewProps) {
   const exchangeRateRow = useMemo(
     () => toPreviewExchangeRate(exchangeRate, exchangeRateUpdatedAt),
@@ -70,7 +88,12 @@ export function CatalogLivePreview({
     [settings.catalogDesign, store.rubro_tienda],
   );
 
-  return (
+  const phone =
+    whatsappPhone?.trim() ||
+    settings.purchaseInfo.whatsappPhone?.trim() ||
+    "";
+
+  const content = (
     <PromotionProvider value={{ guestBanner: null, autoApply: null }}>
       <CartProvider
         storeSlug={store.slug}
@@ -82,6 +105,7 @@ export function CatalogLivePreview({
         <CatalogPreviewPortalProvider
           className={cn(
             "catalog-live-preview-root txn-catalog-root",
+            interactive && "catalog-live-preview-root--interactive",
             getCatalogRubroClass(store.rubro_tienda),
             themeClasses,
           )}
@@ -105,11 +129,37 @@ export function CatalogLivePreview({
                 catalogDesign={settings.catalogDesign}
                 catalogCurrency={settings.catalogCurrency}
                 previewMode
+                enableCart={interactive}
                 referenceMode={referenceMode}
                 showReferenceCta={showReferenceCta}
               />
             </div>
-            <div className="catalog-live-preview-tab-bar" aria-hidden="true">
+            {assistantEnabled ? (
+              <CatalogChatWidget
+                storeSlug={store.slug}
+                storeName={store.name}
+                merchantName={store.name}
+                whatsappPhone={phone || null}
+                demoMode={assistantDemoMode}
+              />
+            ) : null}
+            {phone ? (
+              <CatalogWhatsAppQuickChat
+                storeName={store.name}
+                whatsappPhone={phone}
+                welcomeMessage={
+                  whatsappChatWelcome ??
+                  settings.purchaseInfo.whatsappChatWelcome
+                }
+              />
+            ) : null}
+            <div
+              className={cn(
+                "catalog-live-preview-tab-bar",
+                interactive && "catalog-live-preview-tab-bar--interactive",
+              )}
+              aria-hidden={interactive ? undefined : true}
+            >
               <CatalogTabBar
                 storeSlug={store.slug}
                 pcBuilderEnabled={storeHasPCBuilderFromStore(store)}
@@ -119,5 +169,17 @@ export function CatalogLivePreview({
         </CatalogPreviewPortalProvider>
       </CartProvider>
     </PromotionProvider>
+  );
+
+  if (!interactive) {
+    return content;
+  }
+
+  return (
+    <CustomerAccountModeProvider accountMode="hibrido">
+      <CatalogShellNavigationProvider storeSlug={store.slug}>
+        {content}
+      </CatalogShellNavigationProvider>
+    </CustomerAccountModeProvider>
   );
 }

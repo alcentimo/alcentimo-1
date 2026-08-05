@@ -60,6 +60,11 @@ interface TransactionalCatalogProps {
   /** Abre la ficha de producto al cargar (`?product=`). */
   initialProductId?: string | null;
   previewMode?: boolean;
+  /**
+   * Muestra el carrito aunque `previewMode` esté activo
+   * (sandbox de landing / demos interactivas).
+   */
+  enableCart?: boolean;
   referenceMode?: boolean;
   showReferenceCta?: boolean;
   locations?: StoreLocation[];
@@ -103,6 +108,7 @@ export function TransactionalCatalog({
   openCartInitially = false,
   initialProductId = null,
   previewMode = false,
+  enableCart = false,
   referenceMode = false,
   showReferenceCta = false,
   locations = [],
@@ -128,6 +134,7 @@ export function TransactionalCatalog({
         openCartInitially={openCartInitially}
         initialProductId={initialProductId}
         previewMode={previewMode}
+        enableCart={enableCart}
         referenceMode={referenceMode}
         showReferenceCta={showReferenceCta}
         catalogTotalCount={catalogTotalCount}
@@ -149,6 +156,7 @@ function TransactionalCatalogInner({
   openCartInitially = false,
   initialProductId = null,
   previewMode = false,
+  enableCart = false,
   referenceMode = false,
   showReferenceCta = false,
   catalogTotalCount,
@@ -179,6 +187,7 @@ function TransactionalCatalogInner({
         openCartInitially={openCartInitially}
         initialProductId={initialProductId}
         previewMode={previewMode}
+        enableCart={enableCart}
         referenceMode={referenceMode}
         showReferenceCta={showReferenceCta}
         catalogTotalCount={catalogTotalCount}
@@ -205,6 +214,7 @@ function TransactionalCatalogContent({
   openCartInitially = false,
   initialProductId = null,
   previewMode = false,
+  enableCart = false,
   referenceMode = false,
   showReferenceCta = false,
   catalogTotalCount,
@@ -547,7 +557,7 @@ function TransactionalCatalogContent({
         storeName={store.name}
       />
 
-      {!previewMode ? (
+      {!previewMode || enableCart ? (
         <CatalogCartHost
           store={store}
           purchaseInfo={purchaseInfo}
@@ -556,6 +566,7 @@ function TransactionalCatalogContent({
           showBsConversion={showBsConversion}
           panelView={cartPanelView}
           onPanelViewChange={handleCartPanelViewChange}
+          sandboxMode={enableCart && previewMode}
         />
       ) : null}
     </div>

@@ -18,6 +18,8 @@ interface CatalogChatWidgetProps {
   avatarAnimated?: boolean;
   merchantName?: string | null;
   whatsappPhone?: string | null;
+  /** Respuestas locales sin API (sandbox de landing). */
+  demoMode?: boolean;
 }
 
 const QUICK_PROMPTS = [
@@ -50,6 +52,7 @@ export function CatalogChatWidget({
   avatarAnimated = false,
   merchantName = null,
   whatsappPhone = null,
+  demoMode = false,
 }: CatalogChatWidgetProps) {
   const shellNav = useCatalogShellNavigation();
   const open = shellNav.assistantOpen;
@@ -129,6 +132,18 @@ export function CatalogChatWidget({
       setLoading(true);
 
       try {
+        if (demoMode) {
+          await new Promise((resolve) => window.setTimeout(resolve, 650));
+          const demoReply =
+            "En Boutique Luna tienes blazers, jeans, sneakers y más con precios en USD y conversión a Bs. Agrega al carrito y envía el pedido por WhatsApp — ¡así funciona Alcéntimo en tu tienda!";
+          setMessages((current) => [
+            ...current,
+            createMessage("assistant", demoReply),
+          ]);
+          setShowHumanSupport(whatsappReady);
+          return;
+        }
+
         const locationId =
           readFulfillmentPrefs(storeSlug).selectedLocationId ?? null;
 
@@ -172,7 +187,7 @@ export function CatalogChatWidget({
         setLoading(false);
       }
     },
-    [loading, messages, storeSlug, whatsappReady],
+    [loading, messages, storeSlug, whatsappReady, demoMode],
   );
 
   function handleSubmit(event: React.FormEvent) {

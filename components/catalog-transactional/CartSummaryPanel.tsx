@@ -14,6 +14,11 @@ interface CartSummaryPanelProps {
   whatsappPhone?: string | null;
   onClose: () => void;
   onCheckout: () => void;
+  /**
+   * En demos (landing): «Finalizar pedido» abre WhatsApp en lugar del checkout
+   * con persistencia en servidor.
+   */
+  checkoutViaWhatsApp?: boolean;
 }
 
 export function CartSummaryPanel({
@@ -21,6 +26,7 @@ export function CartSummaryPanel({
   whatsappPhone,
   onClose,
   onCheckout,
+  checkoutViaWhatsApp = false,
 }: CartSummaryPanelProps) {
   const { items, subtotalUsd, updateQuantity, removeItem } = useCart();
   const { mode, selectedLocation } = useCatalogFulfillment();
@@ -43,6 +49,14 @@ export function CartSummaryPanel({
     if (url) {
       window.open(url, "_blank", "noopener,noreferrer");
     }
+  }
+
+  function handleCheckout() {
+    if (checkoutViaWhatsApp) {
+      handleWhatsAppInquiry();
+      return;
+    }
+    onCheckout();
   }
 
   const whatsappReady = Boolean(whatsappPhone?.trim()) && items.length > 0;
@@ -92,19 +106,22 @@ export function CartSummaryPanel({
 
             <button
               type="button"
-              onClick={onCheckout}
+              onClick={handleCheckout}
               className="txn-submit-btn txn-cart-summary-checkout-btn"
+              disabled={checkoutViaWhatsApp && !whatsappReady}
             >
-              Finalizar pedido
+              {checkoutViaWhatsApp ? "Enviar pedido por WhatsApp" : "Finalizar pedido"}
             </button>
 
             <p className="txn-checkout-hint text-center">
-              {accountsEnabled
-                ? "Compra sin cuenta · Solo nombre y teléfono al pagar. El registro es opcional."
-                : "Compra como invitado · Solo nombre y teléfono al pagar."}
+              {checkoutViaWhatsApp
+                ? "Demo interactiva · El pedido se abre en WhatsApp sin guardar en el servidor."
+                : accountsEnabled
+                  ? "Compra sin cuenta · Solo nombre y teléfono al pagar. El registro es opcional."
+                  : "Compra como invitado · Solo nombre y teléfono al pagar."}
             </p>
 
-            {whatsappReady ? (
+            {whatsappReady && !checkoutViaWhatsApp ? (
               <button
                 type="button"
                 onClick={handleWhatsAppInquiry}

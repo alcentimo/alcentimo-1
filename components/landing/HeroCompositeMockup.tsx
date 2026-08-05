@@ -1,18 +1,18 @@
 import { cn } from "@/lib/cn";
-import { LandingFashionCatalogMockup } from "@/components/landing/LandingFashionCatalogMockup";
+import { LandingBoutiqueLunaSandbox } from "@/components/landing/LandingBoutiqueLunaSandbox";
 
 interface HeroCompositeMockupProps {
   className?: string;
   exchangeRate?: number | null;
 }
 
-/** Vista previa estática del catálogo (moda) usada en el hero y demos. */
+/** Sandbox interactivo del catálogo (Boutique Luna) para el hero y demos. */
 export function HeroCompositeMockup({
   className,
   exchangeRate = null,
 }: HeroCompositeMockupProps) {
   return (
-    <LandingFashionCatalogMockup
+    <LandingBoutiqueLunaSandbox
       className={cn(className)}
       exchangeRate={exchangeRate}
     />

@@ -22,6 +22,10 @@ interface CatalogCartHostProps {
   onPanelViewChange?: (view: CartPanelView) => void;
   /** Oculta el FAB flotante cuando otro control abre el carrito. */
   showFab?: boolean;
+  /**
+   * Demo / landing: el checkout real se sustituye por envío vía WhatsApp.
+   */
+  sandboxMode?: boolean;
 }
 
 export type CartPanelView = "closed" | "summary" | "checkout";
@@ -36,6 +40,7 @@ export function CatalogCartHost({
   panelView: controlledPanelView,
   onPanelViewChange,
   showFab = true,
+  sandboxMode = false,
 }: CatalogCartHostProps) {
   const { itemCount } = useCart();
   const { mode, selectedLocationId, locations } = useCatalogFulfillment();
@@ -95,6 +100,20 @@ export function CatalogCartHost({
                 whatsappPhone={purchaseInfo.whatsappPhone}
                 onClose={closePanel}
                 onCheckout={() => setPanelView("checkout")}
+                checkoutViaWhatsApp={sandboxMode}
+              />
+            </CheckoutErrorBoundary>
+          ) : sandboxMode ? (
+            <CheckoutErrorBoundary
+              onClose={closePanel}
+              onRetry={() => setPanelView("summary")}
+            >
+              <CartSummaryPanel
+                storeName={store.name}
+                whatsappPhone={purchaseInfo.whatsappPhone}
+                onClose={closePanel}
+                onCheckout={() => setPanelView("summary")}
+                checkoutViaWhatsApp
               />
             </CheckoutErrorBoundary>
           ) : (
