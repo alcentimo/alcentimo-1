@@ -5451,53 +5451,6 @@ html:has(.landing-shell) {
   @apply relative min-h-dvh overflow-hidden bg-[#FAFAF9] dark:bg-zinc-950;
 }
 
-.auth-boot-splash {
-  @apply pointer-events-none fixed inset-0 z-[60] flex items-center justify-center bg-[#0f172a] transition-opacity duration-300 ease-out;
-}
-
-.auth-boot-splash--out {
-  @apply opacity-0;
-}
-
-.auth-boot-content {
-  @apply min-h-dvh transition-opacity duration-300 ease-out;
-}
-
-.auth-boot-content--hidden {
-  @apply opacity-0;
-}
-
-.auth-boot-content--visible {
-  @apply opacity-100;
-}
-
-.auth-boot-splash-logo {
-  @apply h-20 w-20 object-contain;
-  animation: auth-boot-logo-pulse 1.15s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auth-boot-splash {
-    @apply transition-none;
-  }
-
-  .auth-boot-splash-logo {
-    animation: none;
-  }
-}
-
-@keyframes auth-boot-logo-pulse {
-  0%,
-  100% {
-    opacity: 0.72;
-    transform: scale(0.96);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 .activar-plans-panel {
   @apply space-y-0;
 }
