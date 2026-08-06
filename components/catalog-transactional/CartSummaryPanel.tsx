@@ -130,10 +130,21 @@ export function CartSummaryPanel({
             <button
               type="button"
               onClick={handleCheckout}
-              className="txn-submit-btn txn-cart-summary-checkout-btn"
+              className={
+                checkoutViaWhatsApp
+                  ? "txn-whatsapp-primary-btn flex w-full touch-manipulation items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  : "txn-submit-btn txn-cart-summary-checkout-btn"
+              }
               disabled={checkoutViaWhatsApp && !whatsappReady}
             >
-              {checkoutViaWhatsApp ? whatsappCtaLabel : "Completar pedido"}
+              {checkoutViaWhatsApp ? (
+                <>
+                  <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                  {whatsappCtaLabel}
+                </>
+              ) : (
+                "Completar pedido"
+              )}
             </button>
 
             <p className="txn-checkout-hint text-center">

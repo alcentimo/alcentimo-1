@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, Plus, X } from "lucide-react";
+import { Check, Loader2, MessageCircle, Plus, X } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import type { CartModifierSelection } from "@/lib/catalog/cart-types";
@@ -13,6 +13,8 @@ import {
 } from "@/components/catalog/WholesalePriceBadge";
 import { fetchCatalogProductDetail } from "@/lib/catalog/fetch-catalog-product-detail";
 import type { CatalogProductGalleryImage } from "@/lib/products/product-gallery-types";
+import { buildCartWhatsAppMessage } from "@/lib/catalog/cart-whatsapp-message";
+import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import {
   computeProductDiscountPercent,
   computeUsdToVes,
@@ -22,9 +24,11 @@ import {
   resolveUnitPriceUsd,
 } from "@/lib/catalog/pricing";
 import {
+  buildCartItem,
   cartItemKey,
   sumModifiersExtraUsd,
 } from "@/lib/catalog/cart-types";
+import type { CheckoutType } from "@/lib/store-settings/types";
 import {
   getCatalogVariantOptions,
   hasMultipleVariants,
@@ -84,6 +88,8 @@ interface CatalogProductDetailPanelProps {
   showBsConversion?: boolean;
   storeRubro?: string | null;
   wholesaleEnabled?: boolean;
+  checkoutType?: CheckoutType;
+  whatsappPhone?: string | null;
   onClose: () => void;
   onAddToCart?: (
     product: CatalogListItem,
@@ -104,11 +110,15 @@ export function CatalogProductDetailPanel({
   showBsConversion = true,
   storeRubro = null,
   wholesaleEnabled = false,
+  checkoutType = "full_checkout",
+  whatsappPhone = null,
   onClose,
   onAddToCart,
 }: CatalogProductDetailPanelProps) {
   const cartContext = useCartOptional();
   const activeExchangeRate = exchangeRate ?? product.exchange_rate_used;
+  const directWhatsApp = checkoutType === "direct_whatsapp";
+  const whatsappReady = Boolean(whatsappPhone?.trim());
 
   const [detailDescription, setDetailDescription] = useState<string | null>(null);
   const [detailImages, setDetailImages] = useState<CatalogProductGalleryImage[]>(
@@ -261,6 +271,32 @@ export function CatalogProductDetailPanel({
     if (justAddedTimerRef.current) clearTimeout(justAddedTimerRef.current);
     justAddedTimerRef.current = setTimeout(() => setJustAdded(false), 420);
   }
+
+  function handleWhatsAppOrder() {
+    const phone = whatsappPhone?.trim();
+    if (!phone || !selectedVariant || outOfStock) return;
+
+    const item = buildCartItem(
+      product,
+      selectedVariant,
+      1,
+      selectedModifiers,
+      wholesaleEnabled,
+    );
+    const message = buildCartWhatsAppMessage({
+      storeName: product.store_name,
+      items: [item],
+      subtotalUsd: item.unitPriceUsd,
+    });
+    const url = buildWhatsAppOrderUrl(phone, message);
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  const showFooter = Boolean(onAddToCart) || (directWhatsApp && whatsappReady);
+  const canWhatsAppOrder =
+    directWhatsApp && whatsappReady && Boolean(selectedVariant) && !outOfStock;
 
   return (
     <div className="product-detail-overlay" role="dialog" aria-modal="true">
@@ -415,29 +451,48 @@ export function CatalogProductDetailPanel({
           </div>
         </div>
 
-        {onAddToCart ? (
-          <footer className="product-detail-footer safe-area-bottom">
-            <button
-              type="button"
-              onClick={handleAdd}
-              disabled={!canAddMore && inCart}
-              className={cn(
-                "product-detail-add-btn touch-manipulation",
-                inCart && canAddMore && "product-detail-add-btn-in-cart",
-                justAdded && "store-add-btn-just-added",
-              )}
-            >
-              {inCart || justAdded ? (
-                <Check className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Plus className="h-4 w-4" aria-hidden="true" />
-              )}
-              {inCart
-                ? canAddMore
-                  ? `En carrito (${contextCartQuantity}) · Añadir otro`
-                  : `En carrito (${contextCartQuantity})`
-                : "Agregar al carrito"}
-            </button>
+        {showFooter ? (
+          <footer className="product-detail-footer safe-area-bottom space-y-2">
+            {directWhatsApp && whatsappReady ? (
+              <button
+                type="button"
+                onClick={handleWhatsAppOrder}
+                disabled={!canWhatsAppOrder}
+                className="txn-whatsapp-primary-btn flex w-full touch-manipulation items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                Pedir por WhatsApp
+              </button>
+            ) : null}
+
+            {onAddToCart ? (
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!canAddMore && inCart}
+                className={cn(
+                  "touch-manipulation",
+                  directWhatsApp
+                    ? "txn-whatsapp-outline-btn !mt-0"
+                    : cn(
+                        "product-detail-add-btn",
+                        inCart && canAddMore && "product-detail-add-btn-in-cart",
+                        justAdded && "store-add-btn-just-added",
+                      ),
+                )}
+              >
+                {inCart || justAdded ? (
+                  <Check className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                )}
+                {inCart
+                  ? canAddMore
+                    ? `En carrito (${contextCartQuantity}) · Añadir otro`
+                    : `En carrito (${contextCartQuantity})`
+                  : "Agregar al carrito"}
+              </button>
+            ) : null}
           </footer>
         ) : null}
       </div>

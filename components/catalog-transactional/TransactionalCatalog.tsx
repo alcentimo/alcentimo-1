@@ -175,6 +175,8 @@ function TransactionalCatalogInner({
       showBsConversion={showBsConversion}
       storeRubro={store.rubro_tienda}
       wholesaleEnabled={wholesaleEnabled}
+      checkoutType={purchaseInfo.checkoutType}
+      whatsappPhone={purchaseInfo.whatsappPhone}
       onAddToCart={referenceMode ? undefined : addItem}
     >
       <TransactionalCatalogContent

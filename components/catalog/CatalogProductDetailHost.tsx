@@ -8,6 +8,7 @@ import { CatalogProductDetailPanel } from "@/components/catalog/CatalogProductDe
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import type { CartModifierSelection } from "@/lib/catalog/cart-types";
+import type { CheckoutType } from "@/lib/store-settings/types";
 import type { ReactNode } from "react";
 
 interface CatalogProductDetailHostProps {
@@ -18,6 +19,8 @@ interface CatalogProductDetailHostProps {
   showBsConversion?: boolean;
   storeRubro?: string | null;
   wholesaleEnabled?: boolean;
+  checkoutType?: CheckoutType;
+  whatsappPhone?: string | null;
   onAddToCart?: (
     product: CatalogListItem,
     variant: CatalogVariantOption,
@@ -30,6 +33,8 @@ function CatalogProductDetailLayer({
   showBsConversion,
   storeRubro,
   wholesaleEnabled,
+  checkoutType,
+  whatsappPhone,
   onAddToCart,
 }: Omit<CatalogProductDetailHostProps, "children" | "storeId" | "storeSlug">) {
   const { selectedProduct, closeProduct } = useCatalogProductDetail();
@@ -43,6 +48,8 @@ function CatalogProductDetailLayer({
       showBsConversion={showBsConversion}
       storeRubro={storeRubro}
       wholesaleEnabled={wholesaleEnabled}
+      checkoutType={checkoutType}
+      whatsappPhone={whatsappPhone}
       onClose={closeProduct}
       onAddToCart={onAddToCart}
     />
@@ -57,6 +64,8 @@ export function CatalogProductDetailHost({
   showBsConversion,
   storeRubro,
   wholesaleEnabled,
+  checkoutType,
+  whatsappPhone,
   onAddToCart,
 }: CatalogProductDetailHostProps) {
   return (
@@ -67,6 +76,8 @@ export function CatalogProductDetailHost({
         showBsConversion={showBsConversion}
         storeRubro={storeRubro}
         wholesaleEnabled={wholesaleEnabled}
+        checkoutType={checkoutType}
+        whatsappPhone={whatsappPhone}
         onAddToCart={onAddToCart}
       />
     </CatalogProductDetailProvider>
