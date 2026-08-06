@@ -480,6 +480,7 @@ export function CheckoutPanel({
     if (items.length === 0 && checkoutStep !== 1) {
       setCheckoutStep(1);
       setValidationAttempted(false);
+      setTouchedFields({});
       setError(null);
     }
   }, [items.length, checkoutStep]);
@@ -495,6 +496,7 @@ export function CheckoutPanel({
   function goToStep(step: CheckoutStep) {
     setError(null);
     setValidationAttempted(false);
+    setTouchedFields({});
     setCheckoutStep(step);
   }
 
@@ -509,12 +511,12 @@ export function CheckoutPanel({
     );
   }
 
+  /** Errores de campo solo tras intentar Continuar en el paso actual. */
   function shouldShowFieldError(
-    field: CheckoutFieldKey,
+    _field: CheckoutFieldKey,
     message?: string,
   ): message is string {
-    if (!message) return false;
-    return Boolean(touchedFields[field]) || validationAttempted;
+    return Boolean(validationAttempted && message);
   }
 
   function markInvalidFieldsTouched(
@@ -1485,16 +1487,19 @@ export function CheckoutPanel({
               disabled={pending}
               className={cn(
                 "txn-submit-btn",
-                !canProceedCurrentStep &&
+                validationAttempted &&
+                  !canProceedCurrentStep &&
                   !pending &&
                   "txn-submit-btn--blocked",
               )}
-              aria-disabled={!canProceedCurrentStep || pending}
+              aria-disabled={
+                (validationAttempted && !canProceedCurrentStep) || pending
+              }
             >
               {submitButtonLabel}
             </button>
 
-            {!canProceedCurrentStep && !pending ? (
+            {validationAttempted && !canProceedCurrentStep && !pending ? (
               <p className="txn-checkout-blocked-hint" role="status">
                 {checkoutStep === 1
                   ? "Añade productos para completar el pedido."
