@@ -403,6 +403,25 @@ export const ProductCard = memo(function ProductCard({
               >
                 {product.short_description ?? "\u00A0"}
               </p>
+              {onOpenDetail ? (
+                <button
+                  type="button"
+                  className="store-product-details-link"
+                  onClick={handleOpenDetail}
+                >
+                  Ver detalles →
+                </button>
+              ) : null}
+            </div>
+          ) : onOpenDetail ? (
+            <div className="store-product-slot store-product-slot-desc">
+              <button
+                type="button"
+                className="store-product-details-link"
+                onClick={handleOpenDetail}
+              >
+                Ver detalles →
+              </button>
             </div>
           ) : null}
         </div>

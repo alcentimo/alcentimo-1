@@ -2199,7 +2199,22 @@ body {
 }
 
 .store-product-name-open {
-  @apply block w-full cursor-pointer text-left transition-colors hover:text-teal-700;
+  @apply block w-full cursor-pointer text-left transition-colors;
+}
+
+.store-product-name-open:hover {
+  color: var(--txn-primary, #0f766e);
+}
+
+.store-product-details-link {
+  @apply mt-1.5 inline-flex cursor-pointer items-center border-0 bg-transparent p-0 text-left text-xs font-semibold transition-colors;
+  color: var(--txn-primary, #0f766e);
+}
+
+.store-product-details-link:hover {
+  color: var(--txn-primary-hover, #0f766e);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .product-detail-overlay {
@@ -7064,10 +7079,25 @@ body {
   @apply line-clamp-2 font-semibold leading-snug;
 }
 
+.txn-catalog--theme-immersive .store-product-name-open:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .txn-catalog--theme-immersive .store-product-desc {
   color: rgb(255 255 255 / 0.82);
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
   @apply line-clamp-1 text-xs leading-snug;
+}
+
+.txn-catalog--theme-immersive .store-product-details-link {
+  color: rgb(255 255 255 / 0.92);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+}
+
+.txn-catalog--theme-immersive .store-product-details-link:hover {
+  color: #fff;
 }
 
 .txn-catalog--theme-immersive .store-product-price-row {
