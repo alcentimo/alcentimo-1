@@ -60,10 +60,10 @@ export function ProTrialCongratulationsDialog({
               <div>
                 <DialogHeader className="mb-0 space-y-1 text-left">
                   <DialogTitle className="text-lg text-zinc-900 dark:text-zinc-50">
-                    ¡Felicidades! Desbloqueaste Plan Pro
+                    ¡Felicidades! Desbloqueaste Plan Profesional
                   </DialogTitle>
                   <DialogDescription className="text-xs text-zinc-500">
-                    30 días gratis del Plan Pro reclamados
+                    30 días gratis del Plan Profesional reclamados
                   </DialogDescription>
                 </DialogHeader>
               </div>
@@ -87,7 +87,7 @@ export function ProTrialCongratulationsDialog({
             </div>
             <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
               Completaste los requisitos y reclamaste tu mes gratis. Ya tienes 30
-              días del Plan Pro con hasta {proLimitLabel} publicados
+              días del Plan Profesional con hasta {proLimitLabel} publicados
               {endsAt ? (
                 <>
                   {" "}

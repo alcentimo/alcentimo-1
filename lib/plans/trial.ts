@@ -1,11 +1,11 @@
 import type { Profile } from "@/lib/database.types";
 import {
+  formatPlanLabel,
   getPlanById,
   resolvePlanId,
   type PlanDefinition,
   type PlanId,
 } from "@/src/config/plans";
-import { PLAN_PRICING_TIERS } from "@/src/config/plan-pricing-ui";
 import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
 
 /** Días de prórroga con beneficios Pro tras el fin formal de la prueba. */
@@ -42,7 +42,7 @@ export interface ProTrialStatus {
   phase: ProTrialPhase;
 }
 
-export const PRO_TRIAL_DISPLAY_PLAN_NAME = "Plan Pro";
+export const PRO_TRIAL_DISPLAY_PLAN_NAME = "Plan Profesional";
 
 type TrialProfilePick = Pick<
   Profile,
@@ -54,11 +54,7 @@ type TrialProfilePick = Pick<
 >;
 
 export function getCommercialPlanLabel(planId: PlanId): string {
-  const tier = PLAN_PRICING_TIERS.find((entry) => entry.planId === planId);
-  if (tier) {
-    return planId === "free" ? "Plan Gratis" : `Plan ${tier.displayName}`;
-  }
-  return getPlanById(planId).name;
+  return formatPlanLabel(planId);
 }
 
 function addDaysIso(iso: string, days: number): string {
@@ -157,12 +153,12 @@ export function hasUnusedProTrial(
 }
 
 export const PRO_TRIAL_AT_LIMIT_MESSAGE =
-  "¡Tu catálogo ya está listo para la prueba! Completa pagos y envíos para reclamar tu mes gratis del Plan Pro.";
+  "¡Tu catálogo ya está listo para la prueba! Completa pagos y envíos para reclamar tu mes gratis del Plan Profesional.";
 
 export const PRO_TRIAL_NEAR_LIMIT_MESSAGE =
-  "¡Estás a pocos productos de desbloquear tu mes gratis del Plan Pro! Sigue sumando artículos.";
+  "¡Estás a pocos productos de desbloquear tu mes gratis del Plan Profesional! Sigue sumando artículos.";
 
-/** Palabra obligatoria para reclamar el mes gratis del Plan Pro. */
+/** Palabra obligatoria para reclamar el mes gratis del Plan Profesional. */
 export const PRO_TRIAL_CLAIM_CODE = "ALCENTIMO";
 
 export function isValidProTrialClaimCode(claimCode: string): boolean {

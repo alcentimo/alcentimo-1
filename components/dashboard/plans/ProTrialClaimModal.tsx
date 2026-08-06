@@ -70,14 +70,14 @@ export function ProTrialClaimModal({
           <div className="mb-1 flex items-center gap-2 text-teal-700 dark:text-teal-300">
             <Gift className="h-5 w-5" aria-hidden="true" />
             <span className="text-xs font-semibold uppercase tracking-wide">
-              Prueba Plan Pro
+              Prueba Plan Profesional
             </span>
           </div>
           <DialogTitle>Reclama tu mes gratis</DialogTitle>
           <DialogDescription>
             Completaste los requisitos de tu tienda. Escribe obligatoriamente{" "}
             <strong>{PRO_TRIAL_CLAIM_CODE}</strong> para desbloquear 30 días
-            gratis del Plan Pro ($8).
+            gratis del Plan Profesional ($8).
           </DialogDescription>
         </DialogHeader>
 

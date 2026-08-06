@@ -3,12 +3,21 @@ export type PlanId = "free" | "starter" | "growth" | "premium" | "enterprise";
 export interface PlanDefinition {
   id: PlanId;
   name: string;
-  /** `null` = productos ilimitados (Business / Enterprise) */
+  /** `null` = productos ilimitados (Comercial / Corporativo) */
   productLimit: number | null;
   priceUsdYearly: number;
 }
 
 export const DEFAULT_PLAN_ID: PlanId = "free";
+
+/** Nombre comercial corto (solo UI; no altera ids de BD ni PlanId). */
+export const PLAN_SHORT_DISPLAY_NAMES: Record<PlanId, string> = {
+  free: "Gratis",
+  starter: "Profesional",
+  growth: "Profesional",
+  premium: "Comercial",
+  enterprise: "Corporativo",
+};
 
 export const PLANS: Record<PlanId, PlanDefinition> = {
   free: {
@@ -19,25 +28,25 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   },
   starter: {
     id: "starter",
-    name: "Plan Pro",
+    name: "Plan Profesional",
     productLimit: 150,
     priceUsdYearly: 39,
   },
   growth: {
     id: "growth",
-    name: "Plan Pro",
+    name: "Plan Profesional",
     productLimit: 1000,
     priceUsdYearly: 99,
   },
   premium: {
     id: "premium",
-    name: "Plan Business",
+    name: "Plan Comercial",
     productLimit: 2000,
     priceUsdYearly: 199,
   },
   enterprise: {
     id: "enterprise",
-    name: "Plan Enterprise",
+    name: "Plan Corporativo",
     productLimit: null,
     priceUsdYearly: 278,
   },
@@ -61,10 +70,10 @@ export const DASHBOARD_PLANS_HREF = "/dashboard/planes";
 export const PRODUCT_LIMIT_NEAR_REMAINING = 3;
 
 const NEXT_PLAN_DISPLAY_NAME: Record<PlanId, string | null> = {
-  free: "Pro",
-  starter: "Business",
-  growth: "Business",
-  premium: "Enterprise",
+  free: "Profesional",
+  starter: "Comercial",
+  growth: "Comercial",
+  premium: "Corporativo",
   enterprise: null,
 };
 
@@ -116,6 +125,80 @@ export function resolvePlanId(planId?: string | null): PlanId {
   if (isPlanId(lower)) return lower;
 
   return DEFAULT_PLAN_ID;
+}
+
+/**
+ * Resuelve un PlanId a partir de códigos de BD, ids internos o nombres comerciales
+ * (incluidos alias legacy: Pro, Business, Enterprise).
+ */
+export function resolvePlanIdFromLabel(
+  value: string | PlanId | null | undefined,
+): PlanId | null {
+  if (value == null) return null;
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+
+  const fromDb =
+    DB_PLAN_ALIASES[trimmed] ?? DB_PLAN_ALIASES[trimmed.toUpperCase()];
+  if (fromDb) return fromDb;
+
+  const lower = trimmed.toLowerCase();
+  if (isPlanId(lower)) return lower;
+
+  const normalized = lower
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/^plan\s+/, "")
+    .trim();
+
+  const labelAliases: Record<string, PlanId> = {
+    free: "free",
+    gratis: "free",
+    pro: "starter",
+    profesional: "starter",
+    starter: "starter",
+    growth: "growth",
+    business: "premium",
+    comercial: "premium",
+    premium: "premium",
+    enterprise: "enterprise",
+    corporativo: "enterprise",
+  };
+
+  return labelAliases[normalized] ?? null;
+}
+
+/**
+ * Traductor visual de planes (solo UI).
+ * NO cambia ids internos (`free`/`starter`/`premium`/`enterprise`),
+ * ni códigos de BD (`FREE`/`PRO`/`BUSINESS`/`ENTERPRISE`), ni validaciones.
+ *
+ * Ej.: `pro` | `PRO` | `starter` | `Plan Pro` → `Profesional`
+ */
+export function formatPlanDisplayName(
+  value: string | PlanId | null | undefined,
+): string {
+  const planId = resolvePlanIdFromLabel(value);
+  if (planId) return PLAN_SHORT_DISPLAY_NAMES[planId];
+
+  const raw = String(value ?? "").trim();
+  if (!raw) return PLAN_SHORT_DISPLAY_NAMES.free;
+  const withoutPlan = raw.replace(/^plan\s+/i, "").trim();
+  const known = Object.values(PLAN_SHORT_DISPLAY_NAMES).find(
+    (name) => name.toLowerCase() === withoutPlan.toLowerCase(),
+  );
+  return known ?? withoutPlan;
+}
+
+/** Alias preferido para UI: formatPlanName(plan) → Gratis | Profesional | Comercial | Corporativo. */
+export const formatPlanName = formatPlanDisplayName;
+
+/** Etiqueta con prefijo Plan: «Plan Profesional», «Plan Gratis», etc. (solo UI). */
+export function formatPlanLabel(
+  value: string | PlanId | null | undefined,
+): string {
+  const short = formatPlanDisplayName(value);
+  return short === "Gratis" ? "Plan Gratis" : `Plan ${short}`;
 }
 
 export function getPlanById(planId: PlanId): PlanDefinition {
@@ -230,7 +313,7 @@ export function getProductLimitErrorMessage(
         : getPlanById("starter").productLimit;
     const trialLabel =
       trialLimit == null ? "productos ilimitados" : `${trialLimit} productos`;
-    return `Completa tu catálogo y configura métodos de pago para activar 30 días gratis del Plan Pro (${trialLabel})`;
+    return `Completa tu catálogo y configura métodos de pago para activar 30 días gratis del Plan Profesional (${trialLabel})`;
   }
 
   if (isUnlimitedProductLimit(check.productLimit)) {
@@ -242,5 +325,5 @@ export function getProductLimitErrorMessage(
     return `Has alcanzado el límite de ${check.productLimit} productos. Actualiza a ${upgradePlan} para continuar.`;
   }
 
-  return `Has alcanzado el límite de ${check.productLimit} productos de tu ${check.planName}.`;
+  return `Has alcanzado el límite de ${check.productLimit} productos de tu ${formatPlanLabel(check.planId)}.`;
 }

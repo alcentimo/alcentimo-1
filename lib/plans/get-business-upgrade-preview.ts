@@ -102,7 +102,7 @@ export async function getBusinessUpgradePreview(
   if (normalizeDbPlan(profile?.plan) !== "PRO" && fromPlan !== "PRO") {
     return {
       eligible: false,
-      reason: "El upgrade a Business solo está disponible para el plan Pro.",
+      reason: "El upgrade a Comercial solo está disponible para el plan Profesional.",
       billingPeriod,
       proration,
       pendingPayment,

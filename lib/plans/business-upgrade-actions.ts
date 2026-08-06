@@ -101,7 +101,7 @@ export async function submitBusinessUpgradePayment(
 
   if (normalizeDbPlan(currentProfile?.plan) !== "PRO" && period.fromPlan !== "PRO") {
     return {
-      error: "Solo los usuarios del plan Pro pueden hacer upgrade a Business.",
+      error: "Solo los usuarios del plan Profesional pueden hacer upgrade a Comercial.",
     };
   }
 

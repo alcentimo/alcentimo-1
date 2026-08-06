@@ -14,9 +14,9 @@ const PLAN_ROWS: Array<{
   label: string;
 }> = [
   { key: "FREE", label: "Gratis" },
-  { key: "PRO", label: "Pro" },
-  { key: "BUSINESS", label: "Business" },
-  { key: "ENTERPRISE", label: "Enterprise" },
+  { key: "PRO", label: "Profesional" },
+  { key: "BUSINESS", label: "Comercial" },
+  { key: "ENTERPRISE", label: "Corporativo" },
 ];
 
 interface AdminOverviewPanelProps {

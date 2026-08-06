@@ -39,9 +39,9 @@ const STATUS_CLASS: Record<ManualPaymentStatus, string> = {
 };
 
 const PLAN_LABELS: Record<string, string> = {
-  starter: "Pro",
-  premium: "Business",
-  enterprise: "Enterprise",
+  starter: "Profesional",
+  premium: "Comercial",
+  enterprise: "Corporativo",
 };
 
 type PaymentFilter = "all" | "pending" | "verified" | "rejected";

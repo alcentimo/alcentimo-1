@@ -335,7 +335,7 @@ export function SettingsPanel({
                           {showProLock ? (
                             <span
                               className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-zinc-200/90 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-                              title="Exclusivo Plan Pro"
+                              title="Exclusivo Plan Profesional"
                             >
                               <Lock className="h-3 w-3" aria-hidden="true" />
                               Pro

@@ -48,10 +48,10 @@ export default async function UpgradePage() {
           ← Volver a planes
         </Link>
         <p className="section-label">Upgrade</p>
-        <h1 className="page-header-title">Pasar a Business</h1>
+        <h1 className="page-header-title">Pasar a Comercial</h1>
         <p className="page-header-desc">
-          Usa el saldo de tus días Pro no consumidos y paga solo la diferencia
-          para activar Business.
+          Usa el saldo de tus días Profesional no consumidos y paga solo la
+          diferencia para activar Comercial.
         </p>
       </header>
 

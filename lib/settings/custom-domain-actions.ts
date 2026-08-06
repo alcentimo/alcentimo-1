@@ -153,7 +153,7 @@ async function verifyAccountPasswordForDestructiveAction(
 }
 
 /**
- * Solo Plan Pro (y superiores / trial activo) pueden guardar o verificar
+ * Solo Plan Profesional (y superiores / trial activo) pueden guardar o verificar
  * un dominio personalizado. Quitar dominio sigue permitido sin plan pago.
  */
 async function requireCustomDomainPlan(
@@ -167,7 +167,7 @@ async function requireCustomDomainPlan(
   if (!planIncludesCustomDomain(effectivePlanId)) {
     return {
       ok: false,
-      error: `El dominio personalizado está disponible desde el Plan Pro. Mejora tu plan en ${DASHBOARD_PLANS_HREF}.`,
+      error: `El dominio personalizado está disponible desde el Plan Profesional. Mejora tu plan en ${DASHBOARD_PLANS_HREF}.`,
     };
   }
 

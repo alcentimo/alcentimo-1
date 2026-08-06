@@ -108,7 +108,7 @@ function PlanCtaButton({
             !tier.recommended && "md:py-3",
           )}
         >
-          Upgrade a Business
+          Actualizar a Comercial
         </Link>
       );
     }
@@ -123,8 +123,8 @@ function PlanCtaButton({
         )}
       >
         {tier.planId === "enterprise"
-          ? "Upgrade a Enterprise"
-          : "Upgrade a Business"}
+          ? "Actualizar a Corporativo"
+          : "Actualizar a Comercial"}
       </button>
     );
   }
@@ -139,7 +139,7 @@ function PlanCtaButton({
           !tier.recommended && "md:py-3",
         )}
       >
-        Upgrade a Enterprise
+        Actualizar a Corporativo
       </button>
     );
   }

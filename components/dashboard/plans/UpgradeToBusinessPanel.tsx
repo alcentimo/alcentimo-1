@@ -143,8 +143,8 @@ export function UpgradeToBusinessPanel({
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-300">
               {needsCorrection
-                ? "Tu upgrade a Business sigue activo, pero debes corregir el comprobante antes de confirmarlo."
-                : `Ya recibimos tu pago de upgrade a Business${amountDue > 0 ? ` por ${formatUsd(amountDue)}` : ""}. Tu acceso Business queda provisional mientras confirmamos el comprobante. No envíes otro comprobante mientras este esté pendiente.`}
+                ? "Tu upgrade a Comercial sigue activo, pero debes corregir el comprobante antes de confirmarlo."
+                : `Ya recibimos tu pago de upgrade a Comercial${amountDue > 0 ? ` por ${formatUsd(amountDue)}` : ""}. Tu acceso Comercial queda provisional mientras confirmamos el comprobante. No envíes otro comprobante mientras este esté pendiente.`}
             </p>
             {pending?.reference_number ? (
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -194,7 +194,7 @@ export function UpgradeToBusinessPanel({
           </div>
           <div className="rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-900">
             <dt className="text-xs text-zinc-500 dark:text-zinc-400">
-              Precio Business
+              Precio Comercial
             </dt>
             <dd className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
               {formatUsd(listPrice)}
@@ -275,7 +275,7 @@ export function UpgradeToBusinessPanel({
                 Reporta tu pago de {formatUsd(amountDue)}
               </p>
               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                Acceso Business provisional al enviar el comprobante.
+                Acceso Comercial provisional al enviar el comprobante.
               </p>
             </div>
 

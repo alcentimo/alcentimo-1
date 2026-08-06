@@ -6,10 +6,10 @@ const PLAN_ROWS: Array<{
   label: string;
   hint: string;
 }> = [
-  { key: "FREE", label: "Gratis", hint: "Plan Free" },
-  { key: "PRO", label: "Pro", hint: "Plan Pro" },
-  { key: "BUSINESS", label: "Business", hint: "Plan Business" },
-  { key: "ENTERPRISE", label: "Enterprise", hint: "Plan Enterprise" },
+  { key: "FREE", label: "Gratis", hint: "Plan Gratis" },
+  { key: "PRO", label: "Profesional", hint: "Plan Profesional" },
+  { key: "BUSINESS", label: "Comercial", hint: "Plan Comercial" },
+  { key: "ENTERPRISE", label: "Corporativo", hint: "Plan Corporativo" },
 ];
 
 interface AdminMetricsPanelProps {

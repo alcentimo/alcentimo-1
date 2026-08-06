@@ -116,7 +116,7 @@ export async function createStoreLocationAction(input: {
     const limitSummary = mapLocationLimitSummary(limit);
     if (limit.planId !== "enterprise") {
       return {
-        error: `Tu plan incluye ${limit.includedLocations} sucursal(es). Actualiza a Enterprise para multi-sede.`,
+        error: `Tu plan incluye ${limit.includedLocations} sucursal(es). Actualiza a Corporativo para multi-sede.`,
         limit: limitSummary,
       };
     }
@@ -159,7 +159,7 @@ export async function createStoreLocationAction(input: {
       await resolveStoreLocationLimit(auth.store.id, existing.length + 1),
     ),
     extraBranchNotice: creatingExtraBranch
-      ? `Sucursal creada. Esta sede extra suma +$${limit.nextBranchMonthlyCostUsd} USD/mes a tu plan Enterprise.`
+      ? `Sucursal creada. Esta sede extra suma +$${limit.nextBranchMonthlyCostUsd} USD/mes a tu plan Corporativo.`
       : undefined,
   };
 }

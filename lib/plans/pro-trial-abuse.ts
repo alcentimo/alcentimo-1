@@ -45,7 +45,7 @@ export async function assertProTrialContactAvailable(options: {
   if (store?.pro_trial_claimed_at) {
     return {
       ok: false,
-      error: "Esta tienda ya reclamó la prueba gratis del Plan Pro.",
+      error: "Esta tienda ya reclamó la prueba gratis del Plan Profesional.",
       reason: "store_already_claimed",
     };
   }

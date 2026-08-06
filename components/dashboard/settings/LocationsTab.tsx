@@ -171,7 +171,7 @@ export function LocationsTab({
             />
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-teal-950 dark:text-teal-50">
-                Multi-sucursal exclusivo de Enterprise
+                Multi-sucursal exclusivo de Corporativo
               </p>
               <p className="mt-1 leading-relaxed text-teal-900/85 dark:text-teal-100/85">
                 Incluye hasta 3 sedes con stock independiente
@@ -184,7 +184,7 @@ export function LocationsTab({
                 href={DASHBOARD_PLANS_HREF}
                 className="mt-2 inline-flex text-xs font-semibold text-teal-800 underline underline-offset-2 hover:text-teal-950 dark:text-teal-300 dark:hover:text-teal-100"
               >
-                Actualizar a Enterprise →
+                Actualizar a Corporativo →
               </Link>
             </div>
           </div>
@@ -217,7 +217,7 @@ export function LocationsTab({
         title="Nueva sucursal"
         description={
           !isEnterprise
-            ? "Función exclusiva del plan Enterprise: agrega sedes con stock independiente."
+            ? "Función exclusiva del plan Corporativo: agrega sedes con stock independiente."
             : canAdd
               ? "Agrega otra sede con su propia dirección y stock."
               : `Has alcanzado el máximo autorizado (${maxAllowed}). Solicita sedes extras a soporte (+$${limit?.extraLocationMonthlyUsd ?? 6}/mes c/u).`
@@ -240,7 +240,7 @@ export function LocationsTab({
                     limit.extraLocationMonthlyUsd}{" "}
                   USD/mes
                 </strong>{" "}
-                por sede adicional en tu plan Enterprise.
+                por sede adicional en tu plan Corporativo.
               </div>
             ) : null}
             {canAdd ? (
@@ -344,7 +344,7 @@ function EnterpriseLockedNewLocationCard({
     <div
       className="relative overflow-hidden rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-900/40"
       role="group"
-      aria-label="Agregar sucursal bloqueado. Exclusivo del plan Enterprise."
+      aria-label="Agregar sucursal bloqueado. Exclusivo del plan Corporativo."
     >
       <div
         className="pointer-events-none select-none space-y-3 p-4 opacity-45"
@@ -356,7 +356,7 @@ function EnterpriseLockedNewLocationCard({
           </span>
           <span className="inline-flex items-center gap-1 rounded-md bg-zinc-200/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
             <Lock className="h-3 w-3" />
-            Enterprise
+            Corporativo
           </span>
         </div>
         <div className="h-9 rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950" />
@@ -375,7 +375,7 @@ function EnterpriseLockedNewLocationCard({
           </span>
           <p className="inline-flex items-center gap-1.5 rounded-md border border-teal-200/80 bg-teal-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-200">
             <Lock className="h-3 w-3" aria-hidden="true" />
-            Exclusivo Enterprise
+            Exclusivo Corporativo
           </p>
           <p className="mt-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
             Desbloquea multi-sucursal
@@ -391,7 +391,7 @@ function EnterpriseLockedNewLocationCard({
             href={DASHBOARD_PLANS_HREF}
             className="btn-brand mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium"
           >
-            Actualizar a Enterprise
+            Actualizar a Corporativo
           </Link>
         </div>
       </div>

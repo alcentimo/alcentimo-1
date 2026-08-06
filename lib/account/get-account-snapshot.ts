@@ -6,6 +6,7 @@ import {
   getProTrialDaysRemaining,
   resolveProTrialStatus,
 } from "@/lib/plans/trial";
+import { formatPlanLabel } from "@/src/config/plans";
 
 export function buildAccountSnapshot(
   session: DashboardSession,
@@ -17,7 +18,7 @@ export function buildAccountSnapshot(
     userId: authUser.id,
     email: authUser.email ?? null,
     displayName: authUser.displayName,
-    planName: authUser.plan.name,
+    planName: formatPlanLabel(authUser.planId),
     planId: authUser.planId,
     memberSince: authUser.profile?.created_at ?? null,
     hasPasswordLogin: authUser.hasPasswordLogin,

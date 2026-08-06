@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { AdminCriticalConfirmDialog } from "@/components/admin/AdminCriticalConfirmDialog";
+import { formatPlanName } from "@/src/config/plans";
 
 type GrowthSubTab = "usuarios" | "cupones" | "campanas" | "historial";
 
@@ -48,8 +49,8 @@ type CriticalPlanAction =
     };
 
 const ACTION_LABELS: Record<string, string> = {
-  grant_pro: "Otorgar Pro",
-  grant_pro_trial: "Prueba Pro",
+  grant_pro: "Otorgar Profesional",
+  grant_pro_trial: "Prueba Profesional",
   close_pro_trial: "Pasar a Gratis",
   create_coupon: "Crear cupón",
   toggle_coupon: "Cupón on/off",
@@ -65,7 +66,7 @@ function formatReward(coupon: SubscriptionCoupon): string {
   if (coupon.reward_type === "fixed_discount") {
     return `$${coupon.discount_usd}`;
   }
-  return `${coupon.grant_pro_days} días Pro`;
+  return `${coupon.grant_pro_days} días Profesional`;
 }
 
 function formatDate(iso: string | null | undefined): string {
@@ -74,21 +75,6 @@ function formatDate(iso: string | null | undefined): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(iso));
-}
-
-function formatPlanLabel(plan: string): string {
-  switch (plan) {
-    case "FREE":
-      return "Gratis";
-    case "PRO":
-      return "Pro";
-    case "BUSINESS":
-      return "Business";
-    case "ENTERPRISE":
-      return "Enterprise";
-    default:
-      return plan;
-  }
 }
 
 function formatSubscriptionStatus(status: string): string {
@@ -237,15 +223,15 @@ export function AdminGrowthPanel({
     switch (action.kind) {
       case "grant":
         return {
-          title: "Otorgar Plan Pro",
-          impact: `Vas a cambiar ${resolveTargetLabel(action.userId)} al plan Pro por 30 días.`,
-          confirmLabel: "Otorgar Pro",
+          title: "Otorgar Plan Profesional",
+          impact: `Vas a cambiar ${resolveTargetLabel(action.userId)} al plan Profesional por 30 días.`,
+          confirmLabel: "Otorgar Profesional",
           destructive: false,
         };
       case "grant_trial":
         return {
-          title: "Activar prueba Pro",
-          impact: `Vas a activar o extender la prueba Pro (+30 días) para ${resolveTargetLabel(action.userId)}.`,
+          title: "Activar prueba Profesional",
+          impact: `Vas a activar o extender la prueba Profesional (+30 días) para ${resolveTargetLabel(action.userId)}.`,
           confirmLabel: "Activar prueba",
           destructive: false,
         };
@@ -258,15 +244,15 @@ export function AdminGrowthPanel({
         };
       case "grant_selected":
         return {
-          title: "Otorgar Pro a seleccionados",
-          impact: `Vas a otorgar Plan Pro (30 días) a ${selected.size} usuario(s) seleccionado(s).`,
-          confirmLabel: "Otorgar Pro",
+          title: "Otorgar Profesional a seleccionados",
+          impact: `Vas a otorgar Plan Profesional (30 días) a ${selected.size} usuario(s) seleccionado(s).`,
+          confirmLabel: "Otorgar Profesional",
           destructive: false,
         };
       case "grant_trial_selected":
         return {
-          title: "Prueba Pro a seleccionados",
-          impact: `Vas a activar/extender prueba Pro (+30 días) a ${selected.size} usuario(s) seleccionado(s).`,
+          title: "Prueba Profesional a seleccionados",
+          impact: `Vas a activar/extender prueba Profesional (+30 días) a ${selected.size} usuario(s) seleccionado(s).`,
           confirmLabel: "Activar prueba",
           destructive: false,
         };
@@ -299,7 +285,7 @@ export function AdminGrowthPanel({
         return;
       }
       markUsersAsPro([userId]);
-      setSuccess("Pro otorgado por 30 días.");
+      setSuccess("Profesional otorgado por 30 días.");
       setAuditLog((prev) => [
         {
           id: `local-${Date.now()}`,
@@ -328,7 +314,7 @@ export function AdminGrowthPanel({
         setError(result.error);
         return;
       }
-      setSuccess("Prueba Pro activada/extendida por 30 días (sin anti-abuso).");
+      setSuccess("Prueba Profesional activada/extendida por 30 días (sin anti-abuso).");
       setAuditLog((prev) => [
         {
           id: `local-${Date.now()}`,
@@ -337,7 +323,7 @@ export function AdminGrowthPanel({
           action: "grant_pro_trial",
           targetUserId: userId,
           targetEmail: users.find((u) => u.id === userId)?.email ?? null,
-          summary: "Activó/extendió prueba Pro por 30 días",
+          summary: "Activó/extendió prueba Profesional por 30 días",
           meta: { days: 30, ends_at: result.endsAt ?? null },
           createdAt: new Date().toISOString(),
         },
@@ -399,7 +385,7 @@ export function AdminGrowthPanel({
       markUsersAsPro(ids);
       setSelected(new Set());
       setSuccess(
-        `Pro otorgado a ${result.granted ?? ids.length} usuario(s)${
+        `Profesional otorgado a ${result.granted ?? ids.length} usuario(s)${
           result.failed ? ` (${result.failed} fallaron)` : ""
         }.`,
       );
@@ -425,7 +411,7 @@ export function AdminGrowthPanel({
       }
       setSelected(new Set());
       setSuccess(
-        `Prueba Pro activada/extendida para ${result.granted ?? ids.length} usuario(s)${
+        `Prueba Profesional activada/extendida para ${result.granted ?? ids.length} usuario(s)${
           result.failed ? ` (${result.failed} fallaron)` : ""
         }.`,
       );
@@ -658,7 +644,7 @@ export function AdminGrowthPanel({
       ? "Porcentaje (%)"
       : rewardType === "fixed_discount"
         ? "Monto fijo (USD)"
-        : "Días de Pro";
+        : "Días de Profesional";
 
   const criticalConfirmCopy = criticalAction
     ? getCriticalConfirmCopy(criticalAction)
@@ -725,9 +711,9 @@ export function AdminGrowthPanel({
               >
                 <option value="all">Todos</option>
                 <option value="FREE">Gratis</option>
-                <option value="PRO">Pro</option>
-                <option value="BUSINESS">Business</option>
-                <option value="ENTERPRISE">Enterprise</option>
+                <option value="PRO">Profesional</option>
+                <option value="BUSINESS">Comercial</option>
+                <option value="ENTERPRISE">Corporativo</option>
               </select>
             </div>
             <div>
@@ -771,7 +757,7 @@ export function AdminGrowthPanel({
               disabled={pending || selected.size === 0}
               onClick={requestGrantSelected}
             >
-              Otorgar Pro a seleccionados ({selected.size})
+              Otorgar Profesional a seleccionados ({selected.size})
             </Button>
             <Button
               type="button"
@@ -779,7 +765,7 @@ export function AdminGrowthPanel({
               disabled={pending || selected.size === 0}
               onClick={requestGrantTrialSelected}
             >
-              Prueba Pro +30d a seleccionados ({selected.size})
+              Prueba Profesional +30d a seleccionados ({selected.size})
             </Button>
             <Button
               type="button"
@@ -952,7 +938,7 @@ export function AdminGrowthPanel({
                     </td>
                     <td className="px-3 py-2.5 align-top">
                       <div className="font-medium text-zinc-900 dark:text-zinc-50">
-                        {formatPlanLabel(user.plan)}
+                        {formatPlanName(user.plan)}
                       </div>
                       <div className="text-xs text-zinc-500">
                         {formatSubscriptionStatus(user.subscriptionStatus)}
@@ -974,7 +960,7 @@ export function AdminGrowthPanel({
                           disabled={pending && grantingId === user.id}
                           onClick={() => requestGrant(user.id)}
                         >
-                          {grantingId === user.id ? "Otorgando…" : "Otorgar Pro"}
+                          {grantingId === user.id ? "Otorgando…" : "Otorgar Profesional"}
                         </Button>
                         <Button
                           type="button"
@@ -982,7 +968,7 @@ export function AdminGrowthPanel({
                           variant="outline"
                           disabled={pending && grantingTrialId === user.id}
                           onClick={() => requestGrantTrial(user.id)}
-                          title="Activa o extiende la prueba Pro gratis sin validación anti-abuso"
+                          title="Activa o extiende la prueba Profesional gratis sin validación anti-abuso"
                         >
                           {grantingTrialId === user.id
                             ? "Activando…"
@@ -1060,7 +1046,7 @@ export function AdminGrowthPanel({
                 >
                   <option value="percent_discount">Descuento %</option>
                   <option value="fixed_discount">Descuento fijo USD</option>
-                  <option value="grant_pro_days">Regalar días Pro</option>
+                  <option value="grant_pro_days">Regalar días Profesional</option>
                 </select>
               </div>
               <div>

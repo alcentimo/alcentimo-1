@@ -383,7 +383,7 @@ export async function startProTrial(claimCode?: string): Promise<StartProTrialRe
     return {
       ok: false,
       error:
-        result.error ?? "Esta tienda ya reclamó la prueba gratis del Plan Pro.",
+        result.error ?? "Esta tienda ya reclamó la prueba gratis del Plan Profesional.",
     };
   }
 

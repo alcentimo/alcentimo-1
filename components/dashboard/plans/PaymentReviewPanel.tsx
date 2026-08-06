@@ -12,8 +12,8 @@ import { formatUsd } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 const PLAN_LABELS: Record<string, string> = {
-  starter: "Pro",
-  premium: "Business",
+  starter: "Profesional",
+  premium: "Comercial",
 };
 
 interface PaymentReviewPanelProps {

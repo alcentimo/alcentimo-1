@@ -38,10 +38,10 @@ export function formatProTrialSetupRemainingMessage(setup: ProTrialSetupPick): s
     return "";
   }
   if (remaining.length === 1) {
-    return `Completa este paso para desbloquear 30 días gratis del Plan Pro: ${remaining[0]}.`;
+    return `Completa este paso para desbloquear 30 días gratis del Plan Profesional: ${remaining[0]}.`;
   }
   if (remaining.length === 2) {
-    return `Completa estos pasos para desbloquear 30 días gratis del Plan Pro: ${remaining[0]} y ${remaining[1]}.`;
+    return `Completa estos pasos para desbloquear 30 días gratis del Plan Profesional: ${remaining[0]} y ${remaining[1]}.`;
   }
-  return `Completa estos pasos para desbloquear 30 días gratis del Plan Pro: ${remaining[0]}, ${remaining[1]} y ${remaining[2]}.`;
+  return `Completa estos pasos para desbloquear 30 días gratis del Plan Profesional: ${remaining[0]}, ${remaining[1]} y ${remaining[2]}.`;
 }

@@ -3,8 +3,8 @@ import type { ManualPayment } from "@/lib/database.types";
 import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
 
 const PLAN_LABELS: Record<string, string> = {
-  starter: "Pro",
-  premium: "Business",
+  starter: "Profesional",
+  premium: "Comercial",
 };
 
 interface PermanentRejectionNoticeProps {

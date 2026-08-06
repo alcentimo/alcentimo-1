@@ -11,7 +11,7 @@ import {
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
 import type { PlanId } from "@/src/config/plans";
-import { formatProductLimit } from "@/src/config/plans";
+import { formatPlanName, formatProductLimit } from "@/src/config/plans";
 
 export type PlanSettingsKey = "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE";
 
@@ -246,7 +246,7 @@ export function buildPlanPricingTiers(
 
     return {
       planId,
-      displayName: row.displayName,
+      displayName: formatPlanName(row.displayName || planId),
       tagline: staticMeta.tagline,
       monthlyUsd: row.monthlyUsd,
       annualUsd: row.annualUsd,

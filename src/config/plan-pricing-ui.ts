@@ -1,4 +1,4 @@
-import type { PlanId } from "@/src/config/plans";
+import { formatPlanLabel, type PlanId } from "@/src/config/plans";
 
 export type BillingPeriod = "monthly" | "annual";
 
@@ -82,7 +82,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
   },
   {
     planId: "starter",
-    displayName: "Pro",
+    displayName: "Profesional",
     tagline: "Para negocios en crecimiento",
     monthlyUsd: 8,
     annualUsd: 75,
@@ -99,7 +99,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
   },
   {
     planId: "premium",
-    displayName: "Business",
+    displayName: "Comercial",
     tagline: "Para marcas establecidas",
     monthlyUsd: 15,
     annualUsd: 144,
@@ -115,7 +115,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
   },
   {
     planId: "enterprise",
-    displayName: "Enterprise",
+    displayName: "Corporativo",
     tagline: "Multi-sucursal y operaciones avanzadas",
     monthlyUsd: 29,
     annualUsd: 278,
@@ -178,10 +178,12 @@ export function formatPlanCheckoutSummary(
   tier: PlanPricingTier,
   period: BillingPeriod,
 ): string {
-  if (tier.monthlyUsd <= 0) return `Plan ${tier.displayName}`;
+  const planLabel = formatPlanLabel(tier.planId);
+
+  if (tier.monthlyUsd <= 0) return planLabel;
 
   if (period === "monthly") {
-    return `Plan ${tier.displayName} — $${tier.monthlyUsd}/mes`;
+    return `${planLabel} — $${tier.monthlyUsd}/mes`;
   }
 
   const monthlyEquivalent = getTierMonthlyDisplay(tier, period);
@@ -190,10 +192,10 @@ export function formatPlanCheckoutSummary(
     ? monthlyEquivalent
     : monthlyEquivalent.toFixed(2);
 
-  return `Plan ${tier.displayName} — $${equivLabel}/mes ($${annualTotal} al año)`;
+  return `${planLabel} — $${equivLabel}/mes ($${annualTotal} al año)`;
 }
 
-/** Ahorro destacado del plan recomendado (Pro) para el toggle anual. */
+/** Ahorro destacado del plan recomendado (Profesional) para el toggle anual. */
 export function getRecommendedAnnualSavingsLabel(): string | null {
   const recommended = PLAN_PRICING_TIERS.find((tier) => tier.recommended);
   return recommended ? formatAnnualSavingsLabel(recommended) : null;

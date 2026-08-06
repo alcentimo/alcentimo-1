@@ -21,7 +21,7 @@ interface TrialLimitDialogProps {
   onOpenChange: (open: boolean) => void;
   trialEligible: boolean;
   setupStatus?: ProTrialSetupPick;
-  /** Límite del Plan Pro en prueba (p. ej. 150). */
+  /** Límite del Plan Profesional en prueba (p. ej. 150). */
   proProductLimit?: number | null;
   /** Abre el modal de reclamación ALCENTIMO cuando los requisitos ya están listos. */
   onOpenClaimModal?: () => void;
@@ -60,12 +60,12 @@ export function TrialLimitDialog({
             ) : trialEligible && unlockReady ? (
               <>
                 Requisitos listos. Confirma con ALCENTIMO para reclamar tus 30
-                días gratis del Plan Pro ({proLimitLabel}).
+                días gratis del Plan Profesional ({proLimitLabel}).
               </>
             ) : trialEligible ? (
               <>
                 Completa la configuración inicial y escribe ALCENTIMO para
-                reclamar tus 30 días gratis del Plan Pro ({proLimitLabel}).
+                reclamar tus 30 días gratis del Plan Profesional ({proLimitLabel}).
               </>
             ) : (
               <>

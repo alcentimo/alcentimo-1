@@ -142,8 +142,8 @@ export default async function ActivarPage() {
           <p className="page-header-desc">
             {showProTrialSection && !trial.benefitsActive
               ? atProductLimit
-                ? `Has alcanzado el límite de ${freeProductLimit} productos. Configura pagos y envíos, y escribe ALCENTIMO para reclamar 30 días gratis del Plan Pro (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
-                : `Publica al menos ${freeProductLimit} productos activos, configura pagos y envíos, y escribe ALCENTIMO para reclamar 30 días gratis del Plan Pro (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
+                ? `Has alcanzado el límite de ${freeProductLimit} productos. Configura pagos y envíos, y escribe ALCENTIMO para reclamar 30 días gratis del Plan Profesional (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
+                : `Publica al menos ${freeProductLimit} productos activos, configura pagos y envíos, y escribe ALCENTIMO para reclamar 30 días gratis del Plan Profesional (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
               : `Elige el plan que mejor se adapte a tu negocio${store ? ` · ${store.name}` : ""}.`}
           </p>
         </header>

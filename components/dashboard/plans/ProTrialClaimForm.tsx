@@ -50,7 +50,7 @@ export function ProTrialClaimForm({
     <form className="pro-trial-claim" onSubmit={handleSubmit}>
       <label htmlFor={inputId} className="pro-trial-claim-label">
         Escribe <strong>{PRO_TRIAL_CLAIM_CODE}</strong> para desbloquear y
-        reclamar tu mes gratis del Plan Pro.
+        reclamar tu mes gratis del Plan Profesional.
       </label>
       <input
         id={inputId}

@@ -12,6 +12,7 @@ import {
 import { updateAccountProfileAction } from "@/lib/account/actions";
 import { formatAccountStoreRole } from "@/lib/account/get-account-snapshot";
 import type { AccountSnapshot } from "@/lib/account/types";
+import { formatPlanLabel } from "@/src/config/plans";
 
 function formatMemberSince(value: string | null): string {
   if (!value) return "—";
@@ -98,7 +99,7 @@ export function AccountProfileTab({ account }: AccountProfileTabProps) {
               Plan
             </p>
             <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              {account.planName}
+              {formatPlanLabel(account.planId)}
             </p>
           </div>
 

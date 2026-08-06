@@ -35,6 +35,7 @@ import {
 import { SidebarProTrialProgress } from "@/components/dashboard/plans/SidebarProTrialProgress";
 import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 import type { ProTrialPhase } from "@/lib/plans/trial";
+import { formatPlanLabel } from "@/src/config/plans";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "alcentimo-dashboard-sidebar-collapsed";
 const DASHBOARD_HOME_HREF = "/dashboard/catalogo";
@@ -135,7 +136,9 @@ function SidebarPlanStatus({
     trialActive,
     trialPhase,
   });
-  const resolvedPlanName = planName?.trim() || null;
+  const resolvedPlanName = planName?.trim()
+    ? formatPlanLabel(planName)
+    : null;
   const summary = resolvedPlanName
     ? `${resolvedPlanName} — ${statusLabel}`
     : `Plan — ${statusLabel}`;

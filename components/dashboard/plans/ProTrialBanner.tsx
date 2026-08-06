@@ -16,7 +16,7 @@ interface ProTrialBannerProps {
   trialActive: boolean;
   trialEndsAt: string | null;
   setupStatus: ProTrialSetupPick;
-  /** Límite de productos del Plan Pro (prueba); evita hardcodear. */
+  /** Límite de productos del Plan Profesional (prueba); evita hardcodear. */
   proProductLimit?: number | null;
   /** Abre el modal ALCENTIMO al montar si los requisitos ya están listos. */
   autoOpenClaimModal?: boolean;
@@ -117,7 +117,7 @@ export function ProTrialBanner({
           <div className="pro-trial-banner-compact-title">
             <Lock className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" />
             <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
-              Prueba gratis — Plan Pro ($8)
+              Prueba gratis — Plan Profesional ($8)
             </p>
           </div>
           <span className="pro-trial-progress-count text-xs">{completed}/3</span>
@@ -160,7 +160,7 @@ export function ProTrialBanner({
           <Lock className="mt-0.5 h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
-              Prueba gratis disponible — Plan Pro ($8)
+              Prueba gratis disponible — Plan Profesional ($8)
             </p>
           </div>
         </div>
@@ -232,7 +232,7 @@ export function ProTrialBanner({
             </p>
             <p className="mt-1 text-sm text-teal-900/80 dark:text-teal-100/80">
               Confirma con la palabra ALCENTIMO para reclamar tu mes gratis del
-              Plan Pro.
+              Plan Profesional.
             </p>
           </div>
         </div>

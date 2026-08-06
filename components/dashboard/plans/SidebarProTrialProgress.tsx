@@ -193,7 +193,7 @@ export function SidebarProTrialProgress({
         <p className="mt-1.5 text-[10px] leading-snug text-zinc-700 dark:text-zinc-300">
           Completa los 3 pasos y desbloquea{" "}
           <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-            30 días de Plan Pro
+            30 días de Plan Profesional
           </span>
           .
         </p>

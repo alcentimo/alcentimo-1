@@ -34,7 +34,7 @@ function ProLockedDomainCard({
     <div
       className="relative overflow-hidden rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-900/40"
       role="group"
-      aria-label="Dominio personalizado bloqueado. Exclusivo del Plan Pro."
+      aria-label="Dominio personalizado bloqueado. Exclusivo del Plan Profesional."
     >
       <div
         className="pointer-events-none select-none space-y-3 p-4 opacity-45"
@@ -46,7 +46,7 @@ function ProLockedDomainCard({
           </span>
           <span className="inline-flex items-center gap-1 rounded-md bg-zinc-200/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
             <Lock className="h-3 w-3" />
-            Plan Pro
+            Plan Profesional
           </span>
         </div>
         <div className="h-9 rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950" />
@@ -64,7 +64,7 @@ function ProLockedDomainCard({
           </span>
           <p className="inline-flex items-center gap-1.5 rounded-md border border-teal-200/80 bg-teal-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-200">
             <Lock className="h-3 w-3" aria-hidden="true" />
-            Exclusivo Plan Pro
+            Exclusivo Plan Profesional
           </p>
           <p className="mt-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
             Conecta tu propio dominio
@@ -80,7 +80,7 @@ function ProLockedDomainCard({
             href={DASHBOARD_PLANS_HREF}
             className="btn-brand mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium"
           >
-            Actualizar a Plan Pro
+            Actualizar a Plan Profesional
           </Link>
         </div>
       </div>
