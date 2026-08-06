@@ -166,6 +166,13 @@ export async function submitTransactionalOrder(
   const settings = await getPublicStoreSettingsConfig(store.id);
   const purchaseInfo = buildPublicPurchaseInfo(settings);
 
+  if (purchaseInfo.checkoutType === "direct_whatsapp") {
+    return {
+      error:
+        "Esta tienda recibe pedidos solo por WhatsApp. Usa «Pedir por WhatsApp» en el carrito.",
+    };
+  }
+
   let resolvedFulfillmentAddress: string | null = null;
   const deliveryZonesWithPoints = purchaseInfo.deliveryZones.filter(
     (zone) => zone.meetingPoints.length > 0,

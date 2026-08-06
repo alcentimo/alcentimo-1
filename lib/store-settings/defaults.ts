@@ -217,6 +217,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
     },
     checkout: {
       accountMode: "hibrido",
+      checkoutType: "full_checkout",
     },
   };
 }
@@ -492,6 +493,11 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
     checkout: {
       // Todas las tiendas operan en modo híbrido (invitado + cuentas opcionales).
       accountMode: "hibrido",
+      checkoutType:
+        checkoutRaw.checkoutType === "direct_whatsapp" ||
+        checkoutRaw.checkout_type === "direct_whatsapp"
+          ? "direct_whatsapp"
+          : "full_checkout",
     },
   };
 }
@@ -600,6 +606,13 @@ export function mergeStoreSettingsConfig(
     interfacePreferences: patch.interfacePreferences
       ? { ...base.interfacePreferences, ...patch.interfacePreferences }
       : base.interfacePreferences,
-    checkout: { accountMode: "hibrido" },
+    checkout: {
+      accountMode: "hibrido",
+      checkoutType:
+        patch.checkout?.checkoutType === "direct_whatsapp" ||
+        patch.checkout?.checkoutType === "full_checkout"
+          ? patch.checkout.checkoutType
+          : base.checkout.checkoutType,
+    },
   };
 }

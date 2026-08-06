@@ -17,10 +17,12 @@ interface CartSummaryPanelProps {
   exchangeRate?: number | null;
   showBsConversion?: boolean;
   /**
-   * En demos (landing): el CTA abre WhatsApp en lugar del checkout
-   * con persistencia en servidor.
+   * Demo o tienda en modo direct_whatsapp: el CTA abre wa.me
+   * con el resumen del carrito, sin formulario de checkout.
    */
   checkoutViaWhatsApp?: boolean;
+  whatsappCtaLabel?: string;
+  whatsappHint?: string;
 }
 
 export function CartSummaryPanel({
@@ -31,6 +33,8 @@ export function CartSummaryPanel({
   exchangeRate = null,
   showBsConversion = false,
   checkoutViaWhatsApp = false,
+  whatsappCtaLabel = "Pedir por WhatsApp",
+  whatsappHint = "Tu pedido se envía por WhatsApp con el resumen del carrito.",
 }: CartSummaryPanelProps) {
   const { items, subtotalUsd, updateQuantity, removeItem } = useCart();
   const { mode, selectedLocation } = useCatalogFulfillment();
@@ -129,12 +133,12 @@ export function CartSummaryPanel({
               className="txn-submit-btn txn-cart-summary-checkout-btn"
               disabled={checkoutViaWhatsApp && !whatsappReady}
             >
-              {checkoutViaWhatsApp ? "Enviar pedido por WhatsApp" : "Completar pedido"}
+              {checkoutViaWhatsApp ? whatsappCtaLabel : "Completar pedido"}
             </button>
 
             <p className="txn-checkout-hint text-center">
               {checkoutViaWhatsApp
-                ? "Demo interactiva · El pedido se abre en WhatsApp sin guardar en el servidor."
+                ? whatsappHint
                 : accountsEnabled
                   ? "Compra sin cuenta · Solo nombre y teléfono al pagar. El registro es opcional."
                   : "Compra como invitado · Solo nombre y teléfono al pagar."}

@@ -10,6 +10,7 @@ import {
   type ShippingPricingPublicConfig,
 } from "@/lib/store-settings/shipping-pricing";
 import type {
+  CheckoutType,
   DeliveryMeetingPoint,
   DeliveryZone,
   LocationHoursSettings,
@@ -53,6 +54,8 @@ export interface PublicPurchaseInfo {
   locationHours: LocationHoursSettings;
   deliveryZones: DeliveryZone[];
   pickupPoints: DeliveryMeetingPoint[];
+  /** Flujo de pedido: formulario web o WhatsApp directo. */
+  checkoutType: CheckoutType;
 }
 
 function buildShippingOption(
@@ -113,5 +116,6 @@ export function buildPublicPurchaseInfo(
     locationHours: config.locationHours,
     deliveryZones: config.shipping.deliveryZones,
     pickupPoints: config.shipping.pickupPoints,
+    checkoutType: config.checkout.checkoutType,
   };
 }

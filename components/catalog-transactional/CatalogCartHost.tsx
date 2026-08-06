@@ -55,6 +55,8 @@ export function CatalogCartHost({
   const panelView = isControlled ? controlledPanelView : internalPanelView;
   const setPanelView = isControlled ? onPanelViewChange : setInternalPanelView;
   const whatsappConfigured = Boolean(purchaseInfo.whatsappPhone?.trim());
+  const directWhatsApp =
+    sandboxMode || purchaseInfo.checkoutType === "direct_whatsapp";
 
   useEffect(() => {
     if (openInitially && !isControlled) {
@@ -91,7 +93,7 @@ export function CatalogCartHost({
             onClick={closePanel}
           />
           {panelView === "summary" || panelView === "checkout" ? (
-            sandboxMode ? (
+            directWhatsApp ? (
               <CheckoutErrorBoundary
                 onClose={closePanel}
                 onRetry={() => setPanelView("summary")}
@@ -104,6 +106,16 @@ export function CatalogCartHost({
                   exchangeRate={exchangeRate}
                   showBsConversion={showBsConversion}
                   checkoutViaWhatsApp
+                  whatsappCtaLabel={
+                    sandboxMode
+                      ? "Enviar pedido por WhatsApp"
+                      : "Pedir por WhatsApp"
+                  }
+                  whatsappHint={
+                    sandboxMode
+                      ? "Demo interactiva · El pedido se abre en WhatsApp sin guardar en el servidor."
+                      : "Tu pedido se envía por WhatsApp con el resumen del carrito."
+                  }
                 />
               </CheckoutErrorBoundary>
             ) : (

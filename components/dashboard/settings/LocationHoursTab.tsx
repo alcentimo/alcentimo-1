@@ -18,8 +18,10 @@ import {
   WHATSAPP_CHAT_WELCOME_MAX_LENGTH,
   normalizeWhatsAppChatWelcome,
 } from "@/lib/catalog/whatsapp-quick-chat";
-import { saveLocationHoursSettings } from "@/lib/settings/actions";
+import { saveCheckoutSettings, saveLocationHoursSettings } from "@/lib/settings/actions";
 import type {
+  CheckoutSettings,
+  CheckoutType,
   ContactSettings,
   LocationHoursSettings,
   WeekdayKey,
@@ -39,6 +41,7 @@ const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
 interface LocationHoursTabProps {
   initialLocationHours: LocationHoursSettings;
   initialContact: ContactSettings;
+  initialCheckout: CheckoutSettings;
 }
 
 function initialPhones(contact: ContactSettings): string[] {
@@ -53,6 +56,7 @@ function initialPhones(contact: ContactSettings): string[] {
 export function LocationHoursTab({
   initialLocationHours,
   initialContact,
+  initialCheckout,
 }: LocationHoursTabProps) {
   const [locationHours, setLocationHours] = useState(initialLocationHours);
   const [whatsappPhones, setWhatsappPhones] = useState(() =>
@@ -60,6 +64,11 @@ export function LocationHoursTab({
   );
   const [whatsappChatWelcome, setWhatsappChatWelcome] = useState(() =>
     normalizeWhatsAppChatWelcome(initialContact.whatsappChatWelcome),
+  );
+  const [checkoutType, setCheckoutType] = useState<CheckoutType>(
+    initialCheckout.checkoutType === "direct_whatsapp"
+      ? "direct_whatsapp"
+      : "full_checkout",
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -131,20 +140,32 @@ export function LocationHoursTab({
     setSaving(true);
 
     startTransition(async () => {
-      const result = await saveLocationHoursSettings({
-        locationHours,
-        whatsappPhones: cleanedPhones,
-        whatsappPhone: cleanedPhones[0] ?? "",
-        whatsappChatWelcome,
-      });
+      const [locationResult, checkoutResult] = await Promise.all([
+        saveLocationHoursSettings({
+          locationHours,
+          whatsappPhones: cleanedPhones,
+          whatsappPhone: cleanedPhones[0] ?? "",
+          whatsappChatWelcome,
+        }),
+        saveCheckoutSettings({
+          accountMode: "hibrido",
+          checkoutType,
+        }),
+      ]);
       setSaving(false);
 
-      if (result.error) {
-        setError(result.error);
+      const saveError = locationResult.error ?? checkoutResult.error;
+      if (saveError) {
+        setError(saveError);
         setLocationHours(initialLocationHours);
         setWhatsappPhones(initialPhones(initialContact));
         setWhatsappChatWelcome(
           normalizeWhatsAppChatWelcome(initialContact.whatsappChatWelcome),
+        );
+        setCheckoutType(
+          initialCheckout.checkoutType === "direct_whatsapp"
+            ? "direct_whatsapp"
+            : "full_checkout",
         );
         return;
       }
@@ -307,6 +328,73 @@ export function LocationHoursTab({
               </div>
             );
           })}
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Tipo de checkout"
+        description="Elige cómo tus clientes confirman el pedido desde el catálogo."
+        variant="payments"
+      >
+        <div className="general-settings-card space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <label
+              className={cn(
+                "flex flex-1 cursor-pointer flex-col gap-1 rounded-xl border px-4 py-3 text-sm transition-colors",
+                checkoutType === "full_checkout"
+                  ? "border-emerald-300 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/30"
+                  : "border-zinc-200 dark:border-zinc-700",
+              )}
+            >
+              <span className="inline-flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-100">
+                <input
+                  type="radio"
+                  name="checkout-type"
+                  checked={checkoutType === "full_checkout"}
+                  onChange={() => {
+                    setCheckoutType("full_checkout");
+                    setSuccess(false);
+                  }}
+                  className="text-emerald-600 focus:ring-emerald-500"
+                />
+                Checkout Completo
+              </span>
+              <span className="pl-6 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Requiere datos de envío y pago en la web.
+              </span>
+            </label>
+            <label
+              className={cn(
+                "flex flex-1 cursor-pointer flex-col gap-1 rounded-xl border px-4 py-3 text-sm transition-colors",
+                checkoutType === "direct_whatsapp"
+                  ? "border-emerald-300 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/30"
+                  : "border-zinc-200 dark:border-zinc-700",
+              )}
+            >
+              <span className="inline-flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-100">
+                <input
+                  type="radio"
+                  name="checkout-type"
+                  checked={checkoutType === "direct_whatsapp"}
+                  onChange={() => {
+                    setCheckoutType("direct_whatsapp");
+                    setSuccess(false);
+                  }}
+                  className="text-emerald-600 focus:ring-emerald-500"
+                />
+                WhatsApp Directo
+              </span>
+              <span className="pl-6 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Envía el carrito directamente a WhatsApp sin pedir formulario.
+              </span>
+            </label>
+          </div>
+          {checkoutType === "direct_whatsapp" ? (
+            <p className="text-[11px] text-zinc-400">
+              Asegúrate de tener al menos un número de WhatsApp configurado
+              abajo.
+            </p>
+          ) : null}
         </div>
       </SettingsSection>
 

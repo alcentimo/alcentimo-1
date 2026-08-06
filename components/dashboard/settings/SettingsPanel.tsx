@@ -244,6 +244,7 @@ export function SettingsPanel({
           <LocationHoursTab
             initialLocationHours={initialConfig.locationHours}
             initialContact={initialConfig.contact}
+            initialCheckout={initialConfig.checkout}
           />
         );
       case "shipping":
