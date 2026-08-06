@@ -80,8 +80,20 @@ interface CustomerCheckoutProfile {
 function pickDefaultPaymentKey(
   payments: PublicPurchaseInfo["payments"],
 ): string {
+  if (payments.length === 0) return "";
+  if (payments.length === 1) return payments[0]!.key;
   const pagoMovil = payments.find((payment) => payment.key === "pagoMovil");
-  return pagoMovil?.key ?? payments[0]?.key ?? "";
+  return pagoMovil?.key ?? payments[0]!.key;
+}
+
+function resolveSelectedPaymentKey(
+  current: string,
+  payments: PublicPurchaseInfo["payments"],
+): string {
+  if (current && payments.some((payment) => payment.key === current)) {
+    return current;
+  }
+  return pickDefaultPaymentKey(payments);
 }
 
 export function CheckoutPanel({
@@ -122,7 +134,9 @@ export function CheckoutPanel({
     wasGuest: boolean;
   } | null>(null);
   const [selectedShipping, setSelectedShipping] = useState("");
-  const [selectedPayment, setSelectedPayment] = useState("");
+  const [selectedPayment, setSelectedPayment] = useState(() =>
+    pickDefaultPaymentKey(purchaseInfo.payments ?? []),
+  );
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [promotionInput, setPromotionInput] = useState("");
   const [appliedPromotion, setAppliedPromotion] =
@@ -180,10 +194,19 @@ export function CheckoutPanel({
 
   useEffect(() => {
     if (shippingOptions.length === 1) {
-      setSelectedShipping(shippingOptions[0].key);
+      setSelectedShipping(shippingOptions[0]!.key);
     }
-    setSelectedPayment(pickDefaultPaymentKey(paymentOptions));
+    setSelectedPayment((current) =>
+      resolveSelectedPaymentKey(current, paymentOptions),
+    );
   }, [paymentOptions, shippingOptions]);
+
+  useEffect(() => {
+    if (checkoutStep !== 2) return;
+    setSelectedPayment((current) =>
+      resolveSelectedPaymentKey(current, paymentOptions),
+    );
+  }, [checkoutStep, paymentOptions]);
 
   const isNationalCarrierSelected = isNationalCarrierKey(selectedShipping);
   const isLocalDeliverySelected = selectedShipping === "delivery";
@@ -478,18 +501,29 @@ export function CheckoutPanel({
       );
       if (!group) return;
 
-      group.scrollIntoView({ behavior: "smooth", block: "center" });
+      const scrollRoot = group.closest(".txn-checkout-scroll");
+      if (scrollRoot instanceof HTMLElement) {
+        const groupRect = group.getBoundingClientRect();
+        const rootRect = scrollRoot.getBoundingClientRect();
+        const nextTop =
+          scrollRoot.scrollTop +
+          (groupRect.top - rootRect.top) -
+          Math.max(24, rootRect.height * 0.2);
+        scrollRoot.scrollTo({ top: Math.max(0, nextTop), behavior: "smooth" });
+      } else {
+        group.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
 
       const focusable = group.querySelector<HTMLElement>(
         [
-          'input:not([type="hidden"])',
+          'input:not([type="hidden"]):not([type="file"])',
+          'input[type="file"]',
           "select",
           "textarea",
           "button.shipping-method-card-interactive",
           "button[aria-pressed]",
           'button[role="radio"]',
           "button[data-checkout-focus]",
-          '[tabindex]:not([tabindex="-1"])',
         ].join(", "),
       );
 
@@ -504,8 +538,7 @@ export function CheckoutPanel({
 
     window.requestAnimationFrame(() => {
       focusTarget();
-      // Segundo intento tras el scroll suave (móviles).
-      window.setTimeout(focusTarget, 280);
+      window.setTimeout(focusTarget, 320);
     });
   }
 
@@ -525,6 +558,9 @@ export function CheckoutPanel({
         return;
       }
       setValidationAttemptedStep(0);
+      setSelectedPayment((current) =>
+        resolveSelectedPaymentKey(current, paymentOptions),
+      );
       setCheckoutStep(2);
       return;
     }

@@ -127,16 +127,18 @@ export function validateCheckoutStep2(
 
   if (!input.hasCustomerProfile) {
     if (input.customerName.trim().length < 2) {
-      errors.customerName = "Indica tu nombre (mínimo 2 caracteres).";
+      errors.customerName = "Ingresa tu nombre para continuar.";
     }
     if (!isValidCustomerPhone(input.customerPhone)) {
       errors.customerPhone =
-        "Indica un teléfono o WhatsApp válido (ej. 0412… o 412…).";
+        input.customerPhone.trim().length === 0
+          ? "Ingresa tu teléfono / WhatsApp para continuar."
+          : "Indica un teléfono o WhatsApp válido (ej. 0412… o 412…).";
     }
   }
 
   if (input.paymentsCount > 0 && !input.selectedPayment) {
-    errors.payment = "Selecciona un método de pago.";
+    errors.payment = "Selecciona un método de pago para continuar.";
   }
 
   if (input.requiresProofFile && !input.hasProofFile) {

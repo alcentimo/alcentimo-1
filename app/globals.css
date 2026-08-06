@@ -9728,12 +9728,15 @@ body {
 }
 
 .txn-input--invalid {
-  @apply border-red-400 bg-red-50/40 text-red-950 dark:border-red-700 dark:bg-red-950/20 dark:text-red-100;
+  @apply border-red-500 bg-red-50/50 text-red-950 dark:border-red-600 dark:bg-red-950/25 dark:text-red-100;
+  box-shadow: 0 0 0 1px rgb(239 68 68 / 0.35);
 }
 
 .txn-input--invalid:focus {
-  border-color: rgb(248 113 113);
-  box-shadow: 0 0 0 2px rgb(254 202 202 / 0.9);
+  border-color: rgb(239 68 68);
+  box-shadow:
+    0 0 0 1px rgb(239 68 68 / 0.55),
+    0 0 0 4px rgb(254 202 202 / 0.85);
 }
 
 .txn-file-input {
@@ -9741,7 +9744,8 @@ body {
 }
 
 .txn-file-input--invalid {
-  @apply rounded-xl border border-red-400 bg-red-50/40 px-2 py-2 dark:border-red-700 dark:bg-red-950/20;
+  @apply rounded-xl border border-red-500 bg-red-50/50 px-2 py-2 dark:border-red-600 dark:bg-red-950/25;
+  box-shadow: 0 0 0 1px rgb(239 68 68 / 0.35);
 }
 
 .checkout-field-group {
@@ -9750,12 +9754,16 @@ body {
 
 .checkout-field-group--invalid .shipping-branch-picker,
 .checkout-field-group--invalid .txn-checkout-method-grid {
-  @apply rounded-2xl ring-2 ring-red-300/70 dark:ring-red-800/70;
+  @apply rounded-2xl border border-red-300 bg-red-50/40 p-2 ring-2 ring-red-400/60 dark:border-red-800 dark:bg-red-950/20 dark:ring-red-700/60;
+}
+
+.checkout-field-group--invalid .txn-checkout-method-grid .shipping-method-card {
+  border-color: rgb(252 165 165);
 }
 
 .checkout-field-group--invalid .shipping-branch-browse,
 .checkout-field-group--invalid .shipping-branch-selected {
-  @apply rounded-2xl ring-2 ring-red-300/70 dark:ring-red-800/70;
+  @apply rounded-2xl ring-2 ring-red-400/70 dark:ring-red-700/70;
 }
 
 .txn-field-error {
@@ -9765,6 +9773,14 @@ body {
 .txn-catalog-root .txn-input:focus {
   border-color: var(--txn-primary);
   box-shadow: 0 0 0 2px var(--txn-primary-ring);
+}
+
+.txn-catalog-root .txn-input.txn-input--invalid,
+.txn-catalog-root .txn-input.txn-input--invalid:focus {
+  border-color: rgb(239 68 68);
+  box-shadow:
+    0 0 0 1px rgb(239 68 68 / 0.55),
+    0 0 0 4px rgb(254 202 202 / 0.85);
 }
 
 .txn-checkout-error {
