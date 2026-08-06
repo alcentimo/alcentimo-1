@@ -14,6 +14,13 @@ export const PWA_SW_URL = "/sw.js";
 
 export const PWA_SW_SCOPE = "/";
 
+/**
+ * Splash / chrome del PWA Admin: alinear con `dark:bg-zinc-950` del panel
+ * para evitar el parpadeo blanco al abrir en móvil.
+ */
+export const PWA_ADMIN_BACKGROUND_COLOR = "#09090b";
+export const PWA_ADMIN_THEME_COLOR = "#09090b";
+
 /** Retraso antes de registrar SW (ms): la UI debe pintar primero. */
 export const PWA_REGISTER_IDLE_TIMEOUT_MS = 500;
 

@@ -1,7 +1,13 @@
-import { PWA_ADMIN_IDENTITY_VERSION } from "@/lib/pwa/constants";
+import {
+  PWA_ADMIN_BACKGROUND_COLOR,
+  PWA_ADMIN_IDENTITY_VERSION,
+  PWA_ADMIN_THEME_COLOR,
+} from "@/lib/pwa/constants";
 import {
   BRAND_PWA_ICON_192_PATH,
   BRAND_PWA_ICON_512_PATH,
+  BRAND_PWA_ICON_MASKABLE_192_PATH,
+  BRAND_PWA_ICON_MASKABLE_512_PATH,
 } from "@/lib/brand/assets";
 import type { PlatformSettings } from "@/lib/platform/platform-settings";
 import type { WebAppManifest } from "@/lib/pwa/types";
@@ -19,6 +25,8 @@ export function buildAdminWebManifest(
   const base = normalizeOrigin(origin ?? getSiteUrl());
   const icon192 = `${base}${BRAND_PWA_ICON_192_PATH}`;
   const icon512 = `${base}${BRAND_PWA_ICON_512_PATH}`;
+  const iconMaskable192 = `${base}${BRAND_PWA_ICON_MASKABLE_192_PATH}`;
+  const iconMaskable512 = `${base}${BRAND_PWA_ICON_MASKABLE_512_PATH}`;
   const appName = platformSettings?.platformName?.trim() || "Alcentimo";
 
   return {
@@ -33,8 +41,8 @@ export function buildAdminWebManifest(
     display: "standalone",
     display_override: ["standalone", "fullscreen"],
     orientation: "portrait-primary",
-    background_color: "#ffffff",
-    theme_color: "#0d9488",
+    background_color: PWA_ADMIN_BACKGROUND_COLOR,
+    theme_color: PWA_ADMIN_THEME_COLOR,
     lang: "es",
     icons: [
       {
@@ -50,10 +58,16 @@ export function buildAdminWebManifest(
         purpose: "any",
       },
       {
-        src: icon512,
+        src: iconMaskable192,
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any maskable",
+      },
+      {
+        src: iconMaskable512,
         sizes: "512x512",
         type: "image/png",
-        purpose: "maskable",
+        purpose: "any maskable",
       },
     ],
   };
