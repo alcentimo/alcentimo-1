@@ -5,8 +5,8 @@ import path from "node:path";
 const publicDir = path.join(process.cwd(), "public");
 const sourcePath = path.join(publicDir, "isotipo-alcentimo.png");
 
-/** Fondo del splash PWA Admin (= zinc-950 / panel oscuro). */
-const MASKABLE_BG = { r: 9, g: 9, b: 11, alpha: 1 };
+/** Fondo del splash PWA Admin (= #0f172a / slate-900). */
+const MASKABLE_BG = { r: 15, g: 23, b: 42, alpha: 1 };
 
 const OUTPUTS = [
   { file: "favicon-16x16.png", size: 16 },

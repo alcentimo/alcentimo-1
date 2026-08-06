@@ -2,10 +2,9 @@ import { Suspense } from "react";
 import { AuthPanel } from "@/components/dashboard/AuthPanel";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import {
-  AuthBootSplash,
+  AuthBootGate,
   AuthBootSplashFallback,
-} from "@/components/auth/AuthBootSplash";
-import { AuthSessionRedirect } from "@/components/auth/AuthSessionRedirect";
+} from "@/components/auth/AuthBootGate";
 
 export const dynamic = "force-dynamic";
 
@@ -30,20 +29,19 @@ async function DashboardLoginPageContent({
   const isInvitationFlow = Boolean(next?.includes("/dashboard/invitacion"));
 
   return (
-    <AuthBootSplash>
-      <Suspense fallback={null}>
-        <AuthSessionRedirect />
-      </Suspense>
-      <AuthPageShell
-        title={isInvitationFlow ? "Únete al equipo" : "Gestiona tu inventario"}
-        description={
-          isInvitationFlow
-            ? "Inicia sesión o crea una cuenta para aceptar tu invitación."
-            : "Inicia sesión para publicar productos y compartir tu catálogo."
-        }
-      >
-        <AuthPanel />
-      </AuthPageShell>
-    </AuthBootSplash>
+    <Suspense fallback={<AuthBootSplashFallback />}>
+      <AuthBootGate>
+        <AuthPageShell
+          title={isInvitationFlow ? "Únete al equipo" : "Gestiona tu inventario"}
+          description={
+            isInvitationFlow
+              ? "Inicia sesión o crea una cuenta para aceptar tu invitación."
+              : "Inicia sesión para publicar productos y compartir tu catálogo."
+          }
+        >
+          <AuthPanel />
+        </AuthPageShell>
+      </AuthBootGate>
+    </Suspense>
   );
 }

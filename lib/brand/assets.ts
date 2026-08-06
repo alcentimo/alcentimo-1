@@ -1,5 +1,5 @@
 /** Rutas públicas de la marca Alcentimo. */
-const BRAND_ASSET_VERSION = "20260806a";
+const BRAND_ASSET_VERSION = "20260806b";
 
 export const BRAND_LOGO_PATH = `/logo-alcentimo.png?v=${BRAND_ASSET_VERSION}`;
 
