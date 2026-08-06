@@ -244,7 +244,6 @@ export function SettingsPanel({
           <LocationHoursTab
             initialLocationHours={initialConfig.locationHours}
             initialContact={initialConfig.contact}
-            initialCheckout={initialConfig.checkout}
           />
         );
       case "shipping":
@@ -275,6 +274,7 @@ export function SettingsPanel({
         return (
           <DesignTab
             initialDesign={initialConfig.catalogDesign}
+            initialCheckout={initialConfig.checkout}
             storeRubro={store?.rubro_tienda ?? "ropa-moda"}
             preview={designPreview}
             products={products}

@@ -8075,6 +8075,35 @@ html:has(.landing-shell) {
   background: #fff;
 }
 
+.design-checkout-preview-mock {
+  @apply absolute inset-x-0 bottom-0 z-[5] border-t border-zinc-100 bg-white/95 px-3 py-2.5 backdrop-blur-sm;
+  box-shadow: 0 -8px 20px rgb(15 23 42 / 0.06);
+}
+
+.design-checkout-preview-mock-label {
+  @apply mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400;
+}
+
+.design-checkout-preview-btn {
+  @apply flex w-full items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[11px] font-semibold;
+}
+
+.design-checkout-preview-btn + .design-checkout-preview-btn {
+  @apply mt-1.5;
+}
+
+.design-checkout-preview-btn-primary {
+  @apply bg-teal-600 text-white;
+}
+
+.design-checkout-preview-btn-whatsapp {
+  @apply bg-[#25D366] text-white;
+}
+
+.design-checkout-preview-btn-whatsapp-outline {
+  @apply border border-[#25D366]/40 bg-white text-[#128C7E];
+}
+
 .design-studio-preview-frame .design-preview-rubro-enter,
 .design-studio-preview-frame .design-preview-stage {
   display: flex;

@@ -27,13 +27,14 @@ import { SavingHint } from "@/components/dashboard/settings/SavingHint";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { DesignCatalogInlinePreview } from "@/components/dashboard/settings/DesignCatalogInlinePreview";
 import { StorePublicLinkBar } from "@/components/dashboard/settings/StorePublicLinkBar";
-import { saveCatalogDesignSettings } from "@/lib/settings/actions";
+import { saveCatalogDesignSettings, saveCheckoutSettings } from "@/lib/settings/actions";
 import {
   CATALOG_THEME_PRESETS,
   getCatalogThemeIdsForRubro,
 } from "@/lib/store-settings/catalog-theme-presets";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import { getRubroPalette } from "@/lib/store-settings/rubro-palettes";
+import { normalizeCheckoutType } from "@/lib/store-settings/defaults";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { Store } from "@/lib/database.types";
 import type {
@@ -43,6 +44,8 @@ import type {
   CatalogPromoBannerSettings,
   CatalogThemeId,
   CatalogVisibilitySettings,
+  CheckoutSettings,
+  CheckoutType,
 } from "@/lib/store-settings/types";
 import {
   defaultPromoBannerSettings,
@@ -68,6 +71,7 @@ interface DesignTabPreviewContext {
 
 interface DesignTabProps {
   initialDesign: CatalogDesignSettings;
+  initialCheckout: CheckoutSettings;
   storeRubro?: string | null;
   preview?: DesignTabPreviewContext | null;
   products?: CouponProductOption[];
@@ -85,6 +89,7 @@ type SavingField =
   | "primaryColor"
   | "promoBanner"
   | "faq"
+  | "checkout"
   | null;
 
 type AccordionSection =
@@ -93,7 +98,35 @@ type AccordionSection =
   | "brandColor"
   | "promoBanner"
   | "faq"
-  | "visibility";
+  | "visibility"
+  | "checkout";
+
+const CHECKOUT_MODE_OPTIONS: {
+  value: CheckoutType;
+  label: string;
+  tagline?: string;
+  description: string;
+}[] = [
+  {
+    value: "both",
+    label: "Ambas opciones",
+    tagline: "Predeterminado",
+    description:
+      'El cliente elige en el carrito entre "Finalizar pedido" (web) y "Pedir directo por WhatsApp".',
+  },
+  {
+    value: "full_checkout",
+    label: "Solo Checkout Completo",
+    description:
+      "Muestra únicamente el botón para llenar datos de envío y pago en la web.",
+  },
+  {
+    value: "direct_whatsapp",
+    label: "Solo WhatsApp Directo",
+    description:
+      "Muestra únicamente el botón para enviar el pedido directo a WhatsApp sin pedir formularios.",
+  },
+];
 
 interface DesignAccordionProps {
   title: string;
@@ -203,12 +236,16 @@ function DesignOption({
 
 export function DesignTab({
   initialDesign,
+  initialCheckout,
   storeRubro: storeRubroProp = null,
   preview = null,
   products = [],
   catalogLink = null,
 }: DesignTabProps) {
   const [design, setDesign] = useState(initialDesign);
+  const [checkoutType, setCheckoutType] = useState<CheckoutType>(() =>
+    normalizeCheckoutType(initialCheckout.checkoutType),
+  );
   const [error, setError] = useState<string | null>(null);
   const [savingField, setSavingField] = useState<SavingField>(null);
   const [openSection, setOpenSection] = useState<AccordionSection | null>("theme");
@@ -389,6 +426,27 @@ export function DesignTab({
     };
   }, []);
 
+  function setCheckoutMode(nextType: CheckoutType) {
+    if (nextType === checkoutType) return;
+    setError(null);
+    setCheckoutType(nextType);
+    setSavingField("checkout");
+    startSave(async () => {
+      try {
+        const result = await saveCheckoutSettings({
+          accountMode: "hibrido",
+          checkoutType: nextType,
+        });
+        if (result.error) {
+          setError(result.error);
+          setCheckoutType(normalizeCheckoutType(initialCheckout.checkoutType));
+        }
+      } finally {
+        setSavingField(null);
+      }
+    });
+  }
+
   function toggleSection(section: AccordionSection) {
     setOpenSection((current) => (current === section ? null : section));
   }
@@ -429,6 +487,9 @@ export function DesignTab({
     ]
       .filter(Boolean)
       .join(", ") || "Oculto";
+  const checkoutSummary =
+    CHECKOUT_MODE_OPTIONS.find((option) => option.value === checkoutType)
+      ?.label ?? "Ambas opciones";
 
   const previewPanel = preview ? (
     <DesignCatalogInlinePreview
@@ -437,6 +498,7 @@ export function DesignTab({
       exchangeRateUpdatedAt={preview.exchangeRateUpdatedAt}
       baseSettings={preview.baseSettings}
       design={design}
+      checkoutType={checkoutType}
     />
   ) : (
     <div className="design-studio-preview-empty">
@@ -633,6 +695,31 @@ export function DesignTab({
                     disabled={isSaving && savingField === "showPrices"}
                   />
                 </div>
+              </div>
+            </DesignAccordion>
+
+            <DesignAccordion
+              title="Modo de checkout y pedidos"
+              summary={checkoutSummary}
+              open={openSection === "checkout"}
+              onToggle={() => toggleSection("checkout")}
+            >
+              <div className="space-y-1">
+                <p className="mb-2 text-xs leading-relaxed text-zinc-500">
+                  Define cómo confirman el pedido tus clientes en el carrito del
+                  catálogo.
+                </p>
+                {CHECKOUT_MODE_OPTIONS.map((option) => (
+                  <DesignOption
+                    key={option.value}
+                    label={option.label}
+                    tagline={option.tagline}
+                    description={option.description}
+                    selected={checkoutType === option.value}
+                    disabled={isSaving && savingField === "checkout"}
+                    onClick={() => setCheckoutMode(option.value)}
+                  />
+                ))}
               </div>
             </DesignAccordion>
           </div>

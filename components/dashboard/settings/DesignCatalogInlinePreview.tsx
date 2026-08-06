@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { MessageCircle } from "lucide-react";
 import type { Store } from "@/lib/database.types";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import {
@@ -10,10 +11,11 @@ import {
 } from "@/lib/catalog/smart-preview-engine";
 import { CatalogLivePreview } from "@/components/dashboard/CatalogLivePreview";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
-import type { CatalogDesignSettings } from "@/lib/store-settings/types";
-import {
-  CATALOG_THEME_PRESETS,
-} from "@/lib/store-settings/catalog-theme-presets";
+import type {
+  CatalogDesignSettings,
+  CheckoutType,
+} from "@/lib/store-settings/types";
+import { CATALOG_THEME_PRESETS } from "@/lib/store-settings/catalog-theme-presets";
 import { normalizeStoreRubro } from "@/src/config/categories";
 import { cn } from "@/lib/cn";
 
@@ -23,7 +25,14 @@ interface DesignCatalogInlinePreviewProps {
   exchangeRateUpdatedAt?: string | null;
   baseSettings: CatalogPreviewSettings;
   design: CatalogDesignSettings;
+  checkoutType?: CheckoutType;
 }
+
+const CHECKOUT_PREVIEW_LABEL: Record<CheckoutType, string> = {
+  both: "Ambas opciones",
+  full_checkout: "Solo checkout web",
+  direct_whatsapp: "Solo WhatsApp",
+};
 
 export function DesignCatalogInlinePreview({
   store,
@@ -31,6 +40,7 @@ export function DesignCatalogInlinePreview({
   exchangeRateUpdatedAt = null,
   baseSettings,
   design,
+  checkoutType = "both",
 }: DesignCatalogInlinePreviewProps) {
   const storeRubro = normalizeStoreRubro(store.rubro_tienda);
   const { isPrefetching } = useSmartPreviewRubro(storeRubro);
@@ -47,13 +57,21 @@ export function DesignCatalogInlinePreview({
     [store, exchangeRate],
   );
 
-  const settings = useMemo(
-    (): CatalogPreviewSettings => ({
+  const settings = useMemo((): CatalogPreviewSettings => {
+    return {
       ...baseSettings,
       catalogDesign: resolvedDesign,
-    }),
-    [baseSettings, resolvedDesign],
-  );
+      purchaseInfo: {
+        ...baseSettings.purchaseInfo,
+        checkoutType,
+      },
+    };
+  }, [baseSettings, resolvedDesign, checkoutType]);
+
+  const showFullCheckout =
+    checkoutType === "both" || checkoutType === "full_checkout";
+  const showWhatsApp =
+    checkoutType === "both" || checkoutType === "direct_whatsapp";
 
   const previewStageKey = [
     resolvedDesign.theme,
@@ -63,6 +81,7 @@ export function DesignCatalogInlinePreview({
     resolvedDesign.visibility.showStock,
     resolvedDesign.visibility.showDescription,
     resolvedDesign.visibility.showPrices,
+    checkoutType,
   ].join("-");
 
   return (
@@ -70,7 +89,8 @@ export function DesignCatalogInlinePreview({
       <div className="design-studio-preview-meta">
         <p className="design-studio-preview-eyebrow">Vista previa inteligente</p>
         <p className="design-studio-preview-caption">
-          {themeLabel} · {referenceCatalog.rubroLabel}
+          {themeLabel} · {referenceCatalog.rubroLabel} ·{" "}
+          {CHECKOUT_PREVIEW_LABEL[checkoutType]}
         </p>
         <p className="mt-1 text-xs leading-relaxed text-zinc-500">
           Mockup estático según el rubro configurado en Identidad. Tus productos
@@ -102,6 +122,33 @@ export function DesignCatalogInlinePreview({
                   referenceMode
                 />
               </div>
+            </div>
+
+            <div
+              className="design-checkout-preview-mock"
+              aria-label="Simulación de botones del carrito"
+            >
+              <p className="design-checkout-preview-mock-label">Tu carrito</p>
+              {showFullCheckout ? (
+                <div className="design-checkout-preview-btn design-checkout-preview-btn-primary">
+                  Finalizar pedido
+                </div>
+              ) : null}
+              {showWhatsApp ? (
+                <div
+                  className={cn(
+                    "design-checkout-preview-btn",
+                    showFullCheckout
+                      ? "design-checkout-preview-btn-whatsapp-outline"
+                      : "design-checkout-preview-btn-whatsapp",
+                  )}
+                >
+                  <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  {checkoutType === "both"
+                    ? "Pedir directo por WhatsApp"
+                    : "Pedir por WhatsApp"}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
