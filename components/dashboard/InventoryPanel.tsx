@@ -1451,6 +1451,7 @@ export function InventoryPanel({
         onOpenChange={setTrialDialogOpen}
         trialEligible={productLimitContext?.trial.eligible ?? false}
         setupStatus={setupStatus}
+        proProductLimit={productLimitContext?.productLimit ?? null}
         onOpenClaimModal={() => setClaimModalOpen(true)}
       />
 

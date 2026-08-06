@@ -156,6 +156,9 @@ export default async function ActivarPage() {
               trialActive={trial.benefitsActive}
               trialEndsAt={trial.endsAt}
               setupStatus={trialSetupStatus}
+              proProductLimit={
+                productLimitStatus?.productLimit ?? proProductLimit
+              }
             />
           </div>
         ) : null}

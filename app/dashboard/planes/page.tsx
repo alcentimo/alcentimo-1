@@ -135,6 +135,9 @@ export default async function PlanesPage() {
             trialActive={trial.benefitsActive}
             trialEndsAt={trial.endsAt}
             setupStatus={trialSetupStatus}
+            proProductLimit={
+              productLimitContext?.productLimit ?? planSettings.PRO.productLimit
+            }
           />
         </div>
       ) : null}

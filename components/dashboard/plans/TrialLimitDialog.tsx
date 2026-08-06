@@ -13,6 +13,7 @@ import {
   formatProTrialSetupRemainingMessage,
   isProTrialUnlockReady,
 } from "@/lib/plans/trial-unlock";
+import { getProTrialLimitLabel } from "@/lib/plans/trial";
 import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 
 interface TrialLimitDialogProps {
@@ -20,6 +21,8 @@ interface TrialLimitDialogProps {
   onOpenChange: (open: boolean) => void;
   trialEligible: boolean;
   setupStatus?: ProTrialSetupPick;
+  /** Límite del Plan Pro en prueba (p. ej. 150). */
+  proProductLimit?: number | null;
   /** Abre el modal de reclamación ALCENTIMO cuando los requisitos ya están listos. */
   onOpenClaimModal?: () => void;
 }
@@ -29,9 +32,11 @@ export function TrialLimitDialog({
   onOpenChange,
   trialEligible,
   setupStatus,
+  proProductLimit,
   onOpenClaimModal,
 }: TrialLimitDialogProps) {
   const router = useRouter();
+  const proLimitLabel = getProTrialLimitLabel(proProductLimit);
 
   function handleClose(nextOpen: boolean) {
     onOpenChange(nextOpen);
@@ -50,17 +55,17 @@ export function TrialLimitDialog({
             {setupIncomplete ? (
               <>
                 {formatProTrialSetupRemainingMessage(setupStatus)} Después podrás
-                publicar hasta 250 productos con la prueba Pro.
+                publicar hasta {proLimitLabel} con la prueba Pro.
               </>
             ) : trialEligible && unlockReady ? (
               <>
                 Requisitos listos. Confirma con ALCENTIMO para reclamar tus 30
-                días gratis del Plan Pro (250 productos).
+                días gratis del Plan Pro ({proLimitLabel}).
               </>
             ) : trialEligible ? (
               <>
                 Completa la configuración inicial y escribe ALCENTIMO para
-                reclamar tus 30 días gratis del Plan Pro (250 productos).
+                reclamar tus 30 días gratis del Plan Pro ({proLimitLabel}).
               </>
             ) : (
               <>

@@ -10,12 +10,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { formatProTrialEndsAt } from "@/lib/plans/trial";
+import { formatProTrialEndsAt, getProTrialLimitLabel } from "@/lib/plans/trial";
 import { clearProTrialCongrats } from "@/lib/plans/pro-trial-congrats-storage";
 
 interface ProTrialCongratulationsDialogProps {
   open: boolean;
   endsAt: string | null;
+  proProductLimit?: number | null;
   onOpenChange: (open: boolean) => void;
 }
 
@@ -26,9 +27,11 @@ interface ProTrialCongratulationsDialogProps {
 export function ProTrialCongratulationsDialog({
   open,
   endsAt,
+  proProductLimit,
   onOpenChange,
 }: ProTrialCongratulationsDialogProps) {
   const router = useRouter();
+  const proLimitLabel = getProTrialLimitLabel(proProductLimit);
 
   function dismiss() {
     clearProTrialCongrats();
@@ -84,7 +87,7 @@ export function ProTrialCongratulationsDialog({
             </div>
             <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
               Completaste los requisitos y reclamaste tu mes gratis. Ya tienes 30
-              días del Plan Pro con hasta 250 productos publicados
+              días del Plan Pro con hasta {proLimitLabel} publicados
               {endsAt ? (
                 <>
                   {" "}

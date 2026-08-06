@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getBusinessUpgradePreview } from "@/lib/plans/get-business-upgrade-preview";
@@ -13,7 +12,6 @@ import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-
 export const dynamic = "force-dynamic";
 
 export default async function UpgradePage() {
-  const supabase = await createClient();
   const session = await getDashboardSession();
 
   if (!session) {
@@ -22,9 +20,17 @@ export default async function UpgradePage() {
 
   const { authUser } = session;
   const dbPlan = normalizeDbPlan(authUser.profile?.plan ?? authUser.rawPlan);
-  const preview = await getBusinessUpgradePreview(authUser.id, "monthly");
 
-  // Solo PRO (o quien ya tenga un upgrade pending de Business).
+  let preview;
+  try {
+    preview = await getBusinessUpgradePreview(authUser.id, "monthly");
+  } catch (error) {
+    console.error("[UpgradePage] getBusinessUpgradePreview", error);
+    redirect(`${DASHBOARD_PLANS_HREF}?upgrade=unavailable`);
+  }
+
+  // Solo PRO de pago (o quien ya tenga un upgrade pending de Business).
+  // La prueba Pro usa el checkout de planes, no este flujo de prorrateo.
   if (dbPlan !== "PRO" && !preview.pendingPayment) {
     redirect(`${DASHBOARD_PLANS_HREF}?upgrade=pro_only`);
   }

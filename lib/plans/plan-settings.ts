@@ -57,7 +57,7 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
     displayName: "Pro",
     monthlyUsd: 8,
     annualUsd: 75,
-    productLimit: 250,
+    productLimit: 150,
     userLimit: null,
     includedLocations: 1,
     extraLocationMonthlyUsd: 0,

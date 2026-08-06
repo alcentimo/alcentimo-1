@@ -78,7 +78,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     tagline: "Para negocios en crecimiento",
     monthlyUsd: 8,
     annualUsd: 75,
-    productLimitLabel: "Hasta 250 productos",
+    productLimitLabel: "Hasta 150 productos",
     recommended: true,
     features: [
       CUSTOM_DOMAIN_FEATURE,

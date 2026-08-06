@@ -57,11 +57,13 @@ function PlanCtaButton({
   tier,
   isCurrent,
   currentPlanId,
+  trialActive = false,
   onCheckout,
 }: {
   tier: PlanPricingTier;
   isCurrent: boolean;
   currentPlanId: PlanId;
+  trialActive?: boolean;
   onCheckout: (tier: PlanPricingTier) => void;
 }) {
   if (isCurrent) {
@@ -87,21 +89,44 @@ function PlanCtaButton({
     );
   }
 
-  // PRO → Business / Enterprise usa la página de upgrade con prorrateo.
+  // PRO de pago → Business: prorrateo en /dashboard/upgrade.
+  // Prueba Pro / Enterprise: checkout manual (evita 404 y flujos no elegibles).
+  const isProFamily =
+    currentPlanId === "starter" || currentPlanId === "growth";
   if (
     (tier.planId === "premium" || tier.planId === "enterprise") &&
-    (currentPlanId === "starter" || currentPlanId === "growth")
+    isProFamily
   ) {
+    const useBusinessProration =
+      tier.planId === "premium" && !trialActive && currentPlanId === "starter";
+
+    if (useBusinessProration) {
+      return (
+        <Link
+          href="/dashboard/upgrade"
+          className={cn(
+            "btn-brand mt-6 inline-flex w-full items-center justify-center px-4 py-3.5 text-sm font-semibold shadow-sm",
+            !tier.recommended && "md:py-3",
+          )}
+        >
+          Upgrade a Business
+        </Link>
+      );
+    }
+
     return (
-      <Link
-        href="/dashboard/upgrade"
+      <button
+        type="button"
+        onClick={() => onCheckout(tier)}
         className={cn(
           "btn-brand mt-6 inline-flex w-full items-center justify-center px-4 py-3.5 text-sm font-semibold shadow-sm",
           !tier.recommended && "md:py-3",
         )}
       >
-        {tier.planId === "enterprise" ? "Upgrade a Enterprise" : "Upgrade a Business"}
-      </Link>
+        {tier.planId === "enterprise"
+          ? "Upgrade a Enterprise"
+          : "Upgrade a Business"}
+      </button>
     );
   }
 
@@ -300,14 +325,14 @@ export function PlansPanel({
                   Tu marca, tu dominio
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-violet-900/90 dark:text-violet-200/90">
-                  Todos los planes de pago permiten conectar tu dominio .com (DNS a
-                  tu cargo). El plan Gratis usa{" "}
+                  Cualquier plan de pago te permite conectar tu propio dominio
+                  .com. El plan Gratis utiliza el subdominio{" "}
                   <strong>tuempresa.alcentimo.com</strong>.
                 </p>
               </div>
             </div>
             <Link
-              href="/dashboard/ajustes?tab=domains"
+              href="/dashboard/ajustes/dominio"
               className="inline-flex shrink-0 items-center justify-center rounded-lg border border-violet-300 bg-white px-4 py-2 text-sm font-medium text-violet-900 transition hover:bg-violet-50 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-100 dark:hover:bg-violet-900/40"
             >
               Gestionar dominio
@@ -378,6 +403,7 @@ export function PlansPanel({
               billing={billing}
               isCurrent={isCurrentTier(tier.planId, currentPlanId)}
               currentPlanId={currentPlanId}
+              trialActive={trialActive}
               onCheckout={openCheckout}
             />
           ))}
@@ -450,12 +476,14 @@ function PricingCard({
   billing,
   isCurrent,
   currentPlanId,
+  trialActive = false,
   onCheckout,
 }: {
   tier: PlanPricingTier;
   billing: BillingPeriod;
   isCurrent: boolean;
   currentPlanId: PlanId;
+  trialActive?: boolean;
   onCheckout: (tier: PlanPricingTier) => void;
 }) {
   const priceLabel = formatPlanPriceForTier(tier, billing);
@@ -570,6 +598,7 @@ function PricingCard({
         tier={tier}
         isCurrent={isCurrent}
         currentPlanId={currentPlanId}
+        trialActive={trialActive}
         onCheckout={onCheckout}
       />
     </article>

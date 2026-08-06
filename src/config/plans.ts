@@ -20,7 +20,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   starter: {
     id: "starter",
     name: "Plan Pro",
-    productLimit: 250,
+    productLimit: 150,
     priceUsdYearly: 39,
   },
   growth: {

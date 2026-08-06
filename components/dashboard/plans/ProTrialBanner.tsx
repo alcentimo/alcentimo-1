@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { Sparkles, Lock } from "lucide-react";
-import { formatProTrialEndsAt } from "@/lib/plans/trial";
+import { formatProTrialEndsAt, getProTrialLimitLabel } from "@/lib/plans/trial";
 import { isProTrialUnlockReady } from "@/lib/plans/trial-unlock";
 import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 import { ProTrialSetupProgress } from "@/components/dashboard/plans/ProTrialSetupProgress";
@@ -16,6 +16,8 @@ interface ProTrialBannerProps {
   trialActive: boolean;
   trialEndsAt: string | null;
   setupStatus: ProTrialSetupPick;
+  /** Límite de productos del Plan Pro (prueba); evita hardcodear. */
+  proProductLimit?: number | null;
   /** Abre el modal ALCENTIMO al montar si los requisitos ya están listos. */
   autoOpenClaimModal?: boolean;
   /**
@@ -38,6 +40,7 @@ export function ProTrialBanner({
   trialActive,
   trialEndsAt,
   setupStatus,
+  proProductLimit,
   autoOpenClaimModal = true,
   compact = false,
 }: ProTrialBannerProps) {
@@ -45,6 +48,7 @@ export function ProTrialBanner({
     trialEligible && !trialActive && isProTrialUnlockReady(setupStatus);
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const completed = setupCompletedCount(setupStatus);
+  const proLimitLabel = getProTrialLimitLabel(proProductLimit);
 
   useEffect(() => {
     if (autoOpenClaimModal && unlockReady) {
@@ -96,7 +100,7 @@ export function ProTrialBanner({
               Prueba Pro activa
             </p>
             <p className="mt-1 text-sm text-teal-900/80 dark:text-teal-100/80">
-              Publica hasta 250 productos hasta el{" "}
+              Publica hasta {proLimitLabel} hasta el{" "}
               {formatProTrialEndsAt(trialEndsAt)}.
             </p>
           </div>
