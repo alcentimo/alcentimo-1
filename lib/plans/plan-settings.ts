@@ -1,6 +1,5 @@
 import type { ProfilePlanDb } from "@/lib/database.types";
 import {
-  AI_ASSISTANT_ADVANCED_FEATURE,
   AI_ASSISTANT_FEATURE,
   AI_MULTISEDED_FEATURE,
   CUSTOM_DOMAIN_FEATURE,
@@ -88,53 +87,28 @@ const TIER_STATIC: Record<
   PlanId,
   Pick<
     PlanPricingTier,
-    "tagline" | "features" | "cta" | "recommended" | "addonNote" | "footnote"
+    "tagline" | "cta" | "recommended"
   >
 > = {
   free: {
     tagline: "Ideal para empezar",
-    features: [
-      FREE_SUBDOMAIN_FEATURE,
-      "Precios USD y Bs automáticos",
-      "Cupones, variantes y alertas de stock",
-    ],
     cta: "Continuar gratis",
   },
   starter: {
     tagline: "Para negocios en crecimiento",
-    features: [
-      CUSTOM_DOMAIN_FEATURE,
-      AI_ASSISTANT_FEATURE,
-      "Precios USD y Bs automáticos + cupones y variantes",
-    ],
     cta: PAID_PLAN_CTA,
     recommended: true,
   },
   growth: {
     tagline: "Para negocios en crecimiento",
-    features: [CUSTOM_DOMAIN_FEATURE, AI_ASSISTANT_FEATURE],
     cta: PAID_PLAN_CTA,
   },
   premium: {
     tagline: "Para marcas establecidas",
-    features: [
-      "Todo lo del plan Pro",
-      CUSTOM_DOMAIN_FEATURE,
-      "Usuarios y roles de equipo + Soporte dedicado",
-      AI_ASSISTANT_ADVANCED_FEATURE,
-    ],
-    footnote: "Importante: este plan no incluye multisede.",
     cta: PAID_PLAN_CTA,
   },
   enterprise: {
     tagline: "Multi-sucursal y operaciones avanzadas",
-    features: [
-      "Todo lo del plan Business",
-      "Hasta 3 sucursales incluidas con stock independiente por sede y selector de sede",
-      CUSTOM_DOMAIN_FEATURE,
-      AI_MULTISEDED_FEATURE,
-    ],
-    addonNote: "Sedes adicionales: +$6 USD/mes por cada sede extra",
     cta: PAID_PLAN_CTA,
   },
 };
@@ -205,12 +179,51 @@ function productLimitLabel(limit: number | null): string {
   return `Hasta ${formatted} productos`;
 }
 
-function formatAddonNote(row: PlanSettingRow): string | null {
-  if (row.planKey !== "ENTERPRISE") return null;
-  const price = row.extraLocationMonthlyUsd;
-  if (price <= 0) return null;
-  const formatted = Number.isInteger(price) ? String(price) : price.toFixed(2);
-  return `Sedes adicionales: +$${formatted} USD/mes por cada sede extra`;
+function buildTierFeatures(
+  planId: PlanId,
+  row: PlanSettingRow,
+): string[] {
+  const limitLabel = productLimitLabel(row.productLimit);
+
+  if (planId === "free") {
+    return [
+      limitLabel,
+      FREE_SUBDOMAIN_FEATURE,
+      "Precios en USD y Bs",
+      "Cupones y variantes",
+    ];
+  }
+
+  if (planId === "starter" || planId === "growth") {
+    return [
+      limitLabel,
+      CUSTOM_DOMAIN_FEATURE,
+      AI_ASSISTANT_FEATURE,
+      "Precios en USD y Bs",
+      "Cupones, variantes y alertas de stock",
+    ];
+  }
+
+  if (planId === "premium") {
+    return [
+      "Todo lo del plan Pro",
+      limitLabel,
+      "Usuarios y colaboradores de equipo",
+      "Soporte prioritario",
+    ];
+  }
+
+  const branches =
+    row.includedLocations > 0
+      ? `Hasta ${row.includedLocations} sucursales incluidas`
+      : "Hasta 3 sucursales incluidas";
+
+  return [
+    "Todo lo del plan Business",
+    limitLabel,
+    branches,
+    AI_MULTISEDED_FEATURE,
+  ];
 }
 
 /** Construye las tarjetas de precios a partir de plan_settings. */
@@ -227,18 +240,6 @@ export function buildPlanPricingTiers(
   return order.map(({ planId, key }) => {
     const row = settings[key];
     const staticMeta = TIER_STATIC[planId];
-    const features = [...staticMeta.features];
-
-    if (row.userLimit != null && planId === "premium") {
-      features.splice(1, 0, `Hasta ${row.userLimit} usuarios del equipo`);
-    }
-
-    if (planId === "enterprise" && row.includedLocations > 0) {
-      const idx = features.findIndex((f) => f.includes("sucursales"));
-      const label = `Hasta ${row.includedLocations} sucursales incluidas con stock independiente por sede y selector de sede`;
-      if (idx >= 0) features[idx] = label;
-      else features.splice(1, 0, label);
-    }
 
     return {
       planId,
@@ -248,9 +249,9 @@ export function buildPlanPricingTiers(
       annualUsd: row.annualUsd,
       productLimitLabel: productLimitLabel(row.productLimit),
       recommended: staticMeta.recommended,
-      features,
-      addonNote: formatAddonNote(row) ?? staticMeta.addonNote ?? null,
-      footnote: staticMeta.footnote ?? null,
+      features: buildTierFeatures(planId, row),
+      addonNote: null,
+      footnote: null,
       cta: staticMeta.cta,
     };
   });

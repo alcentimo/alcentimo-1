@@ -9,24 +9,19 @@ export const PRICING_DOMAIN_DISCLAIMER =
   "Nota: Todos los planes de pago permiten conectar tu propio dominio (.com). El dominio no viene incluido con la suscripción; debes adquirirlo y registrarlo por tu cuenta con tu proveedor preferido (GoDaddy, Namecheap, etc.) y nosotros te guiamos en la conexión.";
 
 /** Beneficio de conexión DNS en planes de pago. */
-export const CUSTOM_DOMAIN_FEATURE =
-  "Conexión de dominio personalizado (.com) (DNS a tu cargo)";
+export const CUSTOM_DOMAIN_FEATURE = "Dominio personalizado (.com)";
 
 /** Enlace en subdominio de plataforma (plan Gratis). */
-export const FREE_SUBDOMAIN_FEATURE =
-  "Catálogo en subdominio Alcentimo (tuempresa.alcentimo.com)";
+export const FREE_SUBDOMAIN_FEATURE = "Subdominio alcentimo.com";
 
-export const AI_ASSISTANT_FEATURE =
-  "Asistente de IA integrado (redacción, optimización y soporte)";
+export const AI_ASSISTANT_FEATURE = "Asistente IA integrado";
 
-export const AI_ASSISTANT_ADVANCED_FEATURE =
-  "Asistente de IA integrado avanzado";
+export const AI_ASSISTANT_ADVANCED_FEATURE = "Asistente IA avanzado";
 
-export const AI_MULTISEDED_FEATURE =
-  "Asistente IA Multisede de alta precisión (audita, centraliza y analiza inventarios y ventas de todas tus sucursales)";
+export const AI_MULTISEDED_FEATURE = "Asistente IA Multisede";
 
 export function isCustomDomainFeature(feature: string): boolean {
-  return feature.startsWith("Conexión de dominio personalizado");
+  return feature.toLowerCase().includes("dominio personalizado");
 }
 
 export function planIncludesCustomDomain(planId: PlanId): boolean {
@@ -66,9 +61,10 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     annualUsd: null,
     productLimitLabel: "Hasta 10 productos",
     features: [
+      "Hasta 10 productos",
       FREE_SUBDOMAIN_FEATURE,
-      "Precios USD y Bs automáticos",
-      "Cupones, variantes y alertas de stock",
+      "Precios en USD y Bs",
+      "Cupones y variantes",
     ],
     cta: "Continuar gratis",
   },
@@ -81,9 +77,11 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     productLimitLabel: "Hasta 150 productos",
     recommended: true,
     features: [
+      "Hasta 150 productos",
       CUSTOM_DOMAIN_FEATURE,
       AI_ASSISTANT_FEATURE,
-      "Precios USD y Bs automáticos + cupones y variantes",
+      "Precios en USD y Bs",
+      "Cupones, variantes y alertas de stock",
     ],
     cta: PAID_PLAN_CTA,
   },
@@ -96,11 +94,10 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     productLimitLabel: "Hasta 2.000 productos",
     features: [
       "Todo lo del plan Pro",
-      CUSTOM_DOMAIN_FEATURE,
-      "Usuarios y roles de equipo + Soporte dedicado",
-      AI_ASSISTANT_ADVANCED_FEATURE,
+      "Hasta 2.000 productos",
+      "Usuarios y colaboradores de equipo",
+      "Soporte prioritario",
     ],
-    footnote: "Importante: este plan no incluye multisede.",
     cta: PAID_PLAN_CTA,
   },
   {
@@ -112,11 +109,10 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     productLimitLabel: "Productos ilimitados",
     features: [
       "Todo lo del plan Business",
-      "Hasta 3 sucursales incluidas con stock independiente por sede y selector de sede",
-      CUSTOM_DOMAIN_FEATURE,
+      "Productos ilimitados",
+      "Hasta 3 sucursales incluidas",
       AI_MULTISEDED_FEATURE,
     ],
-    addonNote: "Sedes adicionales: +$6 USD/mes por cada sede extra",
     cta: PAID_PLAN_CTA,
   },
 ];

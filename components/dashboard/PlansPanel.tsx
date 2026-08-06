@@ -8,8 +8,6 @@ import {
   formatAnnualSavingsLabel,
   formatPlanPriceForTier,
   getRecommendedAnnualSavingsLabel,
-  isCustomDomainFeature,
-  planIncludesCustomDomain,
   PLAN_PRICING_TIERS,
   PRICING_DOMAIN_DISCLAIMER,
   type BillingPeriod,
@@ -480,57 +478,22 @@ function PricingCard({
             {savingsLabel}
           </p>
         )}
-        <p className="mt-3 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-          {tier.productLimitLabel}
-        </p>
       </div>
 
       <ul className="mt-5 flex-1 space-y-2.5">
-        {tier.features.map((feature) => {
-          const isDomainFeature = isCustomDomainFeature(feature);
-          return (
-            <li
-              key={feature}
-              className={cn(
-                "flex items-start gap-2 text-sm",
-                isDomainFeature
-                  ? "font-medium text-violet-800 dark:text-violet-200"
-                  : "text-neutral-600 dark:text-neutral-400",
-              )}
-            >
-              <Check
-                className={cn(
-                  "mt-0.5 h-3.5 w-3.5 shrink-0",
-                  isDomainFeature
-                    ? "text-violet-600 dark:text-violet-400"
-                    : "text-teal-600 dark:text-teal-400",
-                )}
-                aria-hidden="true"
-              />
-              <span>{feature}</span>
-            </li>
-          );
-        })}
+        {tier.features.map((feature) => (
+          <li
+            key={feature}
+            className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-400"
+          >
+            <Check
+              className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-600 dark:text-teal-400"
+              aria-hidden="true"
+            />
+            <span>{feature}</span>
+          </li>
+        ))}
       </ul>
-
-      {tier.footnote ? (
-        <p className="mt-4 rounded-lg border border-amber-200/80 bg-amber-50/70 px-3 py-2 text-[11px] leading-relaxed font-medium text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
-          {tier.footnote}
-        </p>
-      ) : null}
-
-      {planIncludesCustomDomain(tier.planId) ? (
-        <p className="mt-4 rounded-lg border border-violet-200/70 bg-violet-50/50 px-3 py-2 text-[11px] leading-relaxed text-violet-900 dark:border-violet-900/40 dark:bg-violet-950/20 dark:text-violet-200">
-          Tras activar el plan podrás indicar tu dominio y te guiamos para
-          conectarlo vía DNS.
-        </p>
-      ) : null}
-
-      {tier.addonNote ? (
-        <p className="mt-4 rounded-lg border border-amber-200/80 bg-amber-50/70 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
-          {tier.addonNote}
-        </p>
-      ) : null}
 
       <PlanCtaButton
         tier={tier}

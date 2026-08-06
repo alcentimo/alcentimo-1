@@ -7,7 +7,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import {
-  isCustomDomainFeature,
   planIncludesCustomDomain,
   PRICING_DOMAIN_DISCLAIMER,
   type PlanPricingTier,
@@ -107,49 +106,19 @@ export function LandingPricing({
 
                   <CardContent className="flex flex-1 flex-col pb-6 sm:px-6">
                     <ul className="flex flex-1 flex-col gap-3 border-t border-zinc-200/70 pt-5 dark:border-zinc-800/70">
-                      <li className="flex items-start gap-2.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                        <Check
-                          className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400"
-                          aria-hidden="true"
-                        />
-                        {tier.productLimitLabel}
-                      </li>
-                      {tier.features.map((feature) => {
-                        const isDomainFeature = isCustomDomainFeature(feature);
-                        return (
-                          <li
-                            key={feature}
-                            className={`flex items-start gap-2.5 text-sm leading-relaxed ${
-                              isDomainFeature
-                                ? "font-medium text-violet-800 dark:text-violet-200"
-                                : "text-zinc-600 dark:text-zinc-400"
-                            }`}
-                          >
-                            <Check
-                              className={`mt-0.5 h-4 w-4 shrink-0 ${
-                                isDomainFeature
-                                  ? "text-violet-600 dark:text-violet-400"
-                                  : "text-emerald-600 dark:text-emerald-400"
-                              }`}
-                              aria-hidden="true"
-                            />
-                            {feature}
-                          </li>
-                        );
-                      })}
+                      {tier.features.map((feature) => (
+                        <li
+                          key={feature}
+                          className="flex items-start gap-2.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400"
+                        >
+                          <Check
+                            className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+                            aria-hidden="true"
+                          />
+                          {feature}
+                        </li>
+                      ))}
                     </ul>
-
-                    {tier.footnote ? (
-                      <p className="mt-4 rounded-lg border border-amber-200/80 bg-amber-50/70 px-3 py-2 text-[11px] leading-relaxed font-medium text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
-                        {tier.footnote}
-                      </p>
-                    ) : null}
-
-                    {tier.addonNote ? (
-                      <p className="mt-3 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-[11px] leading-relaxed text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
-                        {tier.addonNote}
-                      </p>
-                    ) : null}
 
                     <Link
                       href={ctaHref}
