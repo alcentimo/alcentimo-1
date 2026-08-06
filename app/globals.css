@@ -9457,7 +9457,15 @@ body {
 }
 
 .txn-checkout-header {
-  @apply flex shrink-0 items-start justify-between gap-3 border-b border-zinc-200 px-6 py-5 dark:border-zinc-800;
+  @apply flex shrink-0 items-start justify-between gap-3 border-b border-zinc-200 px-5 py-3.5 dark:border-zinc-800 sm:px-6 sm:py-5;
+}
+
+.txn-checkout-header-main {
+  @apply flex min-w-0 items-start gap-1.5;
+}
+
+.txn-checkout-back {
+  @apply -ml-1.5 mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg leading-none text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100;
 }
 
 .txn-checkout-title {
@@ -9498,7 +9506,27 @@ body {
 }
 
 .txn-checkout-footer {
-  @apply shrink-0 space-y-3 border-t border-zinc-200/90 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950;
+  @apply shrink-0 space-y-1.5 border-t border-zinc-200/90 bg-white px-4 py-2.5 dark:border-zinc-800 dark:bg-zinc-950 sm:px-6 sm:py-3;
+}
+
+.txn-checkout-footer-bar {
+  @apply flex items-center gap-3;
+}
+
+.txn-checkout-footer-total {
+  @apply flex min-w-0 flex-1 items-baseline gap-1.5 text-xs leading-none text-zinc-500;
+}
+
+.txn-checkout-footer-total strong {
+  @apply truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50;
+}
+
+.txn-checkout-footer-cta {
+  @apply !w-auto max-w-[58%] shrink-0 !rounded-lg !px-3.5 !py-2.5 text-[13px] leading-snug sm:max-w-none sm:!px-4 sm:text-sm;
+}
+
+.txn-checkout-order-meta {
+  @apply space-y-2 border-t border-zinc-100 px-6 py-4 dark:border-zinc-800/80;
 }
 
 .txn-checkout-options {
@@ -9862,7 +9890,11 @@ body {
 }
 
 .txn-checkout-blocked-hint {
-  @apply text-center text-xs font-medium text-red-600 dark:text-red-400;
+  @apply text-center text-[11px] font-medium leading-snug text-red-600 dark:text-red-400;
+}
+
+.txn-checkout-footer > .txn-checkout-error {
+  @apply px-2 py-1.5 text-xs leading-snug;
 }
 
 .txn-submit-btn:not(:disabled):hover {

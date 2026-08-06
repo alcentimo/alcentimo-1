@@ -826,9 +826,27 @@ export function CheckoutPanel({
   return (
     <div className="txn-checkout">
       <header className="txn-checkout-header">
-        <div>
-          <h2 className="txn-checkout-title">{stepTitles[checkoutStep]}</h2>
-          <p className="txn-checkout-subtitle">{storeName}</p>
+        <div className="txn-checkout-header-main">
+          {checkoutStep > 1 ? (
+            <button
+              type="button"
+              onClick={goBackStep}
+              className="txn-checkout-back"
+              aria-label={
+                checkoutStep === 2
+                  ? "Volver al carrito"
+                  : checkoutStep === 3
+                    ? "Volver a datos"
+                    : "Volver a envío"
+              }
+            >
+              ←
+            </button>
+          ) : null}
+          <div className="min-w-0">
+            <h2 className="txn-checkout-title">{stepTitles[checkoutStep]}</h2>
+            <p className="txn-checkout-subtitle">{storeName}</p>
+          </div>
         </div>
         <button
           type="button"
@@ -1405,70 +1423,42 @@ export function CheckoutPanel({
                 ) : null}
               </section>
             ) : null}
-          </div>
 
-          <footer className="txn-checkout-footer safe-area-bottom">
-            {checkoutStep > 1 ? (
-              <button
-                type="button"
-                onClick={goBackStep}
-                className="checkout-footer-back"
-              >
-                ← Volver
-                {checkoutStep === 2
-                  ? " al carrito"
-                  : checkoutStep === 3
-                    ? " a datos"
-                    : " a envío"}
-              </button>
-            ) : null}
-
-            <div className="txn-checkout-total !border-0 !px-0 !py-0">
-              <span>{checkoutStep === 1 ? "Subtotal" : "Total"}</span>
-              <strong className="text-right tabular-nums">
-                {checkoutStep === 1
-                  ? formatUsdWithApproxBs(
-                      subtotalUsd,
-                      exchangeRate,
-                      showBsConversion,
-                    )
-                  : formatUsdWithApproxBs(
-                      totalUsd,
-                      exchangeRate,
-                      showBsConversion && checkoutStep === 4,
-                    )}
-              </strong>
-            </div>
-            {checkoutStep >= 3 && discountUsd > 0 && appliedPromotion ? (
-              <div className="txn-checkout-total txn-checkout-total-discount !border-0 !px-0 !py-0">
-                <span>Descuento ({appliedPromotion.code})</span>
-                <strong>-{formatUsd(discountUsd)}</strong>
-              </div>
-            ) : null}
             {checkoutStep >= 3 &&
-            selectedShipping &&
-            shippingQuote.appliesPaidShipping ? (
-              <div className="txn-checkout-total !border-0 !px-0 !py-0">
-                <span>Envío</span>
-                <strong
-                  className={
-                    shippingQuote.isFree
-                      ? "text-emerald-700 dark:text-emerald-400"
-                      : undefined
-                  }
-                >
-                  {shippingQuote.chargeLabel}
-                </strong>
+            ((discountUsd > 0 && appliedPromotion) ||
+              (selectedShipping && shippingQuote.appliesPaidShipping) ||
+              (shippingHint && selectedShipping)) ? (
+              <div className="txn-checkout-order-meta">
+                {discountUsd > 0 && appliedPromotion ? (
+                  <div className="txn-checkout-total txn-checkout-total-discount !border-0 !px-0 !py-0">
+                    <span>Descuento ({appliedPromotion.code})</span>
+                    <strong>-{formatUsd(discountUsd)}</strong>
+                  </div>
+                ) : null}
+                {selectedShipping && shippingQuote.appliesPaidShipping ? (
+                  <div className="txn-checkout-total !border-0 !px-0 !py-0">
+                    <span>Envío</span>
+                    <strong
+                      className={
+                        shippingQuote.isFree
+                          ? "text-emerald-700 dark:text-emerald-400"
+                          : undefined
+                      }
+                    >
+                      {shippingQuote.chargeLabel}
+                    </strong>
+                  </div>
+                ) : null}
+                {shippingHint && selectedShipping ? (
+                  <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                    {shippingHint}
+                  </p>
+                ) : null}
               </div>
-            ) : null}
-            {checkoutStep >= 3 && shippingHint && selectedShipping ? (
-              <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-                {shippingHint}
-              </p>
             ) : null}
 
             {checkoutStep === 4 && showOfficialRate && exchangeRate ? (
-              <div className="txn-checkout-rate-box">
+              <div className="txn-checkout-rate-box mx-6 mb-3">
                 <p>
                   Tasa BCV:{" "}
                   <strong>Bs. {formatExchangeRate(exchangeRate)} / USD</strong>
@@ -1484,29 +1474,32 @@ export function CheckoutPanel({
               </div>
             ) : null}
 
-            {error && (
+            {checkoutStep === 4 ? (
+              <div className="txn-checkout-order-meta !pt-0">
+                <p className="txn-checkout-hint !text-left">
+                  {whatsappConfigured
+                    ? "Tu pedido se guarda en la tienda y se abre WhatsApp para confirmar el pago."
+                    : "Tu pedido quedará registrado en el panel de la tienda."}
+                </p>
+                {shippingDisplayLabel || paymentLabel ? (
+                  <p className="txn-checkout-hint !text-left">
+                    {shippingDisplayLabel
+                      ? `Envío: ${shippingDisplayLabel}`
+                      : null}
+                    {shippingDisplayLabel && paymentLabel ? " · " : null}
+                    {paymentLabel ? `Pago: ${paymentLabel}` : null}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <footer className="txn-checkout-footer safe-area-bottom">
+            {error ? (
               <p className="txn-checkout-error" role="alert">
                 {error}
               </p>
-            )}
-
-            <button
-              type="button"
-              onClick={handleFooterAction}
-              disabled={pending}
-              className={cn(
-                "txn-submit-btn",
-                validationAttempted &&
-                  !canProceedCurrentStep &&
-                  !pending &&
-                  "txn-submit-btn--blocked",
-              )}
-              aria-disabled={
-                (validationAttempted && !canProceedCurrentStep) || pending
-              }
-            >
-              {submitButtonLabel}
-            </button>
+            ) : null}
 
             {validationAttempted && !canProceedCurrentStep && !pending ? (
               <p className="txn-checkout-blocked-hint" role="status">
@@ -1520,21 +1513,41 @@ export function CheckoutPanel({
               </p>
             ) : null}
 
-            {checkoutStep === 4 ? (
-              <p className="txn-checkout-hint">
-                {whatsappConfigured
-                  ? "Tu pedido se guarda en la tienda y se abre WhatsApp para confirmar el pago."
-                  : "Tu pedido quedará registrado en el panel de la tienda."}
-              </p>
-            ) : null}
-
-            {checkoutStep === 4 && (shippingDisplayLabel || paymentLabel) ? (
-              <p className="txn-checkout-hint">
-                {shippingDisplayLabel ? `Envío: ${shippingDisplayLabel}` : null}
-                {shippingDisplayLabel && paymentLabel ? " · " : null}
-                {paymentLabel ? `Pago: ${paymentLabel}` : null}
-              </p>
-            ) : null}
+            <div className="txn-checkout-footer-bar">
+              <div className="txn-checkout-footer-total">
+                <span>{checkoutStep === 1 ? "Subtotal" : "Total"}</span>
+                <strong className="tabular-nums">
+                  {checkoutStep === 1
+                    ? formatUsdWithApproxBs(
+                        subtotalUsd,
+                        exchangeRate,
+                        showBsConversion,
+                      )
+                    : formatUsdWithApproxBs(
+                        totalUsd,
+                        exchangeRate,
+                        showBsConversion && checkoutStep === 4,
+                      )}
+                </strong>
+              </div>
+              <button
+                type="button"
+                onClick={handleFooterAction}
+                disabled={pending}
+                className={cn(
+                  "txn-submit-btn txn-checkout-footer-cta",
+                  validationAttempted &&
+                    !canProceedCurrentStep &&
+                    !pending &&
+                    "txn-submit-btn--blocked",
+                )}
+                aria-disabled={
+                  (validationAttempted && !canProceedCurrentStep) || pending
+                }
+              >
+                {submitButtonLabel}
+              </button>
+            </div>
           </footer>
         </>
       )}
