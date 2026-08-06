@@ -40,7 +40,6 @@ import type { Store } from "@/lib/database.types";
 import type {
   CatalogDesignSettings,
   CatalogFaqSettings,
-  CatalogLayoutMode,
   CatalogPromoBannerSettings,
   CatalogThemeId,
   CatalogVisibilitySettings,
@@ -55,7 +54,6 @@ import {
   defaultCatalogFaqSettings,
   normalizeCatalogFaqDraft,
 } from "@/lib/store-settings/catalog-faq";
-import { CATALOG_LAYOUT_OPTIONS, getCatalogLayoutOption } from "@/lib/catalog/catalog-layout";
 import { cn } from "@/lib/cn";
 import {
   DEFAULT_STORE_RUBRO,
@@ -84,7 +82,6 @@ interface DesignTabProps {
 
 type SavingField =
   | CatalogThemeId
-  | CatalogLayoutMode
   | keyof CatalogVisibilitySettings
   | "primaryColor"
   | "promoBanner"
@@ -94,7 +91,6 @@ type SavingField =
 
 type AccordionSection =
   | "theme"
-  | "layout"
   | "brandColor"
   | "promoBanner"
   | "faq"
@@ -313,11 +309,6 @@ export function DesignTab({
     updateDesign({ theme }, theme);
   }
 
-  function setLayout(layout: CatalogLayoutMode) {
-    if ((design.layout ?? resolvedDesign.layout) === layout) return;
-    updateDesign({ layout }, layout);
-  }
-
   useEffect(() => {
     if (!availableThemeIds.includes(design.theme)) {
       setTheme(availableThemeIds[0]);
@@ -454,9 +445,6 @@ export function DesignTab({
   }
 
   const themeSummary = CATALOG_THEME_PRESETS[design.theme]?.label ?? "Tema";
-  const layoutSummary = getCatalogLayoutOption(
-    design.layout ?? resolvedDesign.layout,
-  ).label;
   const brandColorSummary = design.primaryColor
     ? design.primaryColor.toUpperCase()
     : `Rubro ${rubroPalette.label}`;
@@ -570,34 +558,6 @@ export function DesignTab({
                     />
                   );
                 })}
-              </div>
-            </DesignAccordion>
-
-            <DesignAccordion
-              title="Vista de productos"
-              summary={layoutSummary}
-              open={openSection === "layout"}
-              onToggle={() => toggleSection("layout")}
-            >
-              <div className="design-option-list">
-                <p className="mb-1 text-xs leading-relaxed text-zinc-500">
-                  {isFashionStore
-                    ? "En ropa conviene Dos columnas para ver más prendas en el móvil. Los clientes también pueden cambiar la vista en el catálogo."
-                    : "Elige cómo se muestran los productos. Los clientes pueden cambiarla en el catálogo."}
-                </p>
-                {CATALOG_LAYOUT_OPTIONS.map((option) => (
-                  <DesignOption
-                    key={option.id}
-                    label={option.label}
-                    tagline={option.tagline}
-                    description={option.description}
-                    selected={
-                      (design.layout ?? resolvedDesign.layout) === option.id
-                    }
-                    disabled={isSaving && savingField === option.id}
-                    onClick={() => setLayout(option.id)}
-                  />
-                ))}
               </div>
             </DesignAccordion>
 
