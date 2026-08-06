@@ -22,7 +22,7 @@ import {
   SubscriptionCouponRedeemCard,
 } from "@/components/dashboard/plans/SubscriptionPromoCards";
 import { PageContainer } from "@/components/ui/PageContainer";
-import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
+import { fetchActiveSubscriptionPaymentMethods } from "@/lib/plans/get-subscription-pago-movil";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { buildPlanPricingTiers } from "@/lib/plans/plan-settings";
@@ -60,7 +60,7 @@ export default async function PlanesPage() {
     exchangeRateRow,
     paymentReview,
     permanentRejection,
-    pagoMovil,
+    paymentMethods,
     planSettings,
     promoOffers,
     platformSettings,
@@ -70,7 +70,7 @@ export default async function PlanesPage() {
       getCurrentExchangeRate(),
       getUserPaymentReview(authUser.id),
       getLatestPermanentRejection(authUser.id),
-      fetchSubscriptionPagoMovilDetails(),
+      fetchActiveSubscriptionPaymentMethods(),
       fetchPlanSettings(),
       getOpenPromoOffersForUser(authUser.id),
       fetchPlatformSettings(),
@@ -156,7 +156,7 @@ export default async function PlanesPage() {
         }
         subscriptionPeriodEndsAt={subscriptionPeriodEndsAt}
         currentBillingPeriod={currentBillingPeriod}
-        pagoMovil={pagoMovil}
+        paymentMethods={paymentMethods}
         pricingTiers={pricingTiers}
         showCouponField={platformSettings.plansCouponBoxEnabled}
       />

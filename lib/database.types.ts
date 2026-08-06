@@ -266,10 +266,14 @@ export interface PlatformAlert {
 /** Destino de cobro de la plataforma (Pago Móvil de suscripciones). */
 export interface PaymentMethod {
   method_key: string;
+  display_name: string;
   bank: string;
   phone: string;
   ci: string;
   holder_name: string;
+  qr_image_url: string | null;
+  is_active: boolean;
+  sort_order: number;
   updated_at: string;
   updated_by: string | null;
 }

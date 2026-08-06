@@ -2,18 +2,15 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { CheckCircle2, Loader2, Smartphone, Upload } from "lucide-react";
+import { CheckCircle2, Loader2, Upload } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CopyableInline } from "@/components/payments/CopyableInline";
+import { SubscriptionPaymentDetails } from "@/components/payments/SubscriptionPaymentDetails";
 import { submitBusinessUpgradePayment } from "@/lib/plans/business-upgrade-actions";
 import type { BusinessUpgradePreview } from "@/lib/plans/get-business-upgrade-preview";
 import { formatUsd, formatVes } from "@/lib/format";
-import {
-  getSubscriptionPagoMovilDetails,
-  type SubscriptionPagoMovilDetails,
-} from "@/src/config/subscription-pago-movil";
+import type { SubscriptionPaymentMethod } from "@/src/config/subscription-pago-movil";
 import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
 
 const MIN_SUBMIT_DURATION_MS = 5000;
@@ -21,13 +18,13 @@ const MIN_SUBMIT_DURATION_MS = 5000;
 interface UpgradeToBusinessPanelProps {
   preview: BusinessUpgradePreview;
   exchangeRate?: number | null;
-  pagoMovil?: SubscriptionPagoMovilDetails;
+  paymentMethods?: SubscriptionPaymentMethod[];
 }
 
 export function UpgradeToBusinessPanel({
   preview,
   exchangeRate = null,
-  pagoMovil: pagoMovilProp,
+  paymentMethods,
 }: UpgradeToBusinessPanelProps) {
   const [referenceNumber, setReferenceNumber] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -37,7 +34,6 @@ export function UpgradeToBusinessPanel({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pagoMovil = pagoMovilProp ?? getSubscriptionPagoMovilDetails();
 
   const proration = preview.proration;
   const pending = preview.pendingPayment;
@@ -217,56 +213,11 @@ export function UpgradeToBusinessPanel({
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <section className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
-          <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            <Smartphone
-              className="h-4 w-4 text-teal-600 dark:text-teal-400"
-              aria-hidden="true"
-            />
-            Datos de Pago Móvil
-          </div>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-            Transfiere exactamente {formatUsd(amountDue)} (a la tasa BCV del
-            día) y sube el comprobante.
-          </p>
-          <dl className="mt-4 space-y-3">
-            <div>
-              <dt className="text-xs text-zinc-500 dark:text-zinc-400">Banco</dt>
-              <dd className="mt-1 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                {pagoMovil.bank}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-zinc-500 dark:text-zinc-400">
-                Teléfono
-              </dt>
-              <dd className="mt-1">
-                <CopyableInline value={pagoMovil.phone} label="Teléfono" mono />
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-zinc-500 dark:text-zinc-400">
-                Cédula / RIF
-              </dt>
-              <dd className="mt-1">
-                <CopyableInline value={pagoMovil.ci} label="Cédula / RIF" mono />
-              </dd>
-            </div>
-            {pagoMovil.holderName ? (
-              <div>
-                <dt className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Nombre del titular
-                </dt>
-                <dd className="mt-1">
-                  <CopyableInline
-                    value={pagoMovil.holderName}
-                    label="Nombre del titular"
-                  />
-                </dd>
-              </div>
-            ) : null}
-          </dl>
-        </section>
+        <SubscriptionPaymentDetails
+          paymentMethods={paymentMethods}
+          hint={`Transfiere exactamente ${formatUsd(amountDue)} (a la tasa BCV del día) y sube el comprobante.`}
+          className="border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+        />
 
         <section className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
           <form onSubmit={handleSubmit} className="space-y-4">

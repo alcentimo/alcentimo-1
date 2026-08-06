@@ -25,7 +25,7 @@ import {
 } from "@/components/dashboard/plans/SubscriptionPromoCards";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { PageContainer } from "@/components/ui/PageContainer";
-import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
+import { fetchActiveSubscriptionPaymentMethods } from "@/lib/plans/get-subscription-pago-movil";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { buildPlanPricingTiers } from "@/lib/plans/plan-settings";
@@ -86,12 +86,12 @@ export default async function ActivarPage() {
     );
   }
 
-  const [productLimitStatus, exchangeRateRow, permanentRejection, pagoMovil, planSettings, platformSettings, storeSettings] =
+  const [productLimitStatus, exchangeRateRow, permanentRejection, paymentMethods, planSettings, platformSettings, storeSettings] =
     await Promise.all([
       store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
       getCurrentExchangeRate(),
       getLatestPermanentRejection(authUser.id),
-      fetchSubscriptionPagoMovilDetails(),
+      fetchActiveSubscriptionPaymentMethods(),
       fetchPlanSettings(),
       fetchPlatformSettings(),
       store ? getStoreSettingsConfig(store.id) : Promise.resolve(null),
@@ -191,7 +191,7 @@ export default async function ActivarPage() {
           currentBillingPeriod={
             authUser.profile?.billing_period === "annual" ? "annual" : "monthly"
           }
-          pagoMovil={pagoMovil}
+          paymentMethods={paymentMethods}
           pricingTiers={pricingTiers}
           showCouponField={platformSettings.plansCouponBoxEnabled}
         />

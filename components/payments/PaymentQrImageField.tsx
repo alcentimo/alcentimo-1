@@ -7,12 +7,18 @@ import { uploadPaymentQrImage } from "@/lib/settings/actions";
 import { compressImageForUpload } from "@/lib/client-image-compress";
 import { PRODUCT_IMAGE_OPTIMIZE_HINT } from "@/lib/product-image";
 
+type UploadFn = (
+  formData: FormData,
+) => Promise<{ url?: string; error?: string }>;
+
 interface PaymentQrImageFieldProps {
   id: string;
   label: string;
   value: string;
   onChange: (url: string) => void;
   disabled?: boolean;
+  /** Por defecto sube al bucket de la tienda; admin puede pasar upload de plataforma. */
+  uploadFn?: UploadFn;
 }
 
 export function PaymentQrImageField({
@@ -21,6 +27,7 @@ export function PaymentQrImageField({
   value,
   onChange,
   disabled = false,
+  uploadFn = uploadPaymentQrImage,
 }: PaymentQrImageFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +82,7 @@ export function PaymentQrImageField({
     formData.set("file", optimizedFile);
 
     startTransition(async () => {
-      const result = await uploadPaymentQrImage(formData);
+      const result = await uploadFn(formData);
       if (result.error) {
         setError(result.error);
         clearPreview();
@@ -123,7 +130,8 @@ export function PaymentQrImageField({
         <span className="ml-1 font-normal text-zinc-400">(opcional)</span>
       </label>
       <p className="mt-0.5 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
-        Sube una imagen o pégala desde el portapapeles (Ctrl+V). {PRODUCT_IMAGE_OPTIMIZE_HINT}
+        Sube una imagen o pégala desde el portapapeles (Ctrl+V).{" "}
+        {PRODUCT_IMAGE_OPTIMIZE_HINT}
       </p>
 
       {error && (
@@ -192,14 +200,16 @@ export function PaymentQrImageField({
             disabled={isBusy || disabled}
             className="btn-brand-outline inline-flex items-center gap-2 self-start text-xs"
           >
-            {compressing ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : pending ? (
+            {compressing || pending ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
               <ImagePlus className="h-4 w-4" aria-hidden="true" />
             )}
-            {compressing ? "Optimizando…" : displayUrl ? "Cambiar QR" : "Cargar imagen QR"}
+            {compressing
+              ? "Optimizando…"
+              : displayUrl
+                ? "Cambiar QR"
+                : "Cargar imagen QR"}
           </button>
           {displayUrl && (
             <button

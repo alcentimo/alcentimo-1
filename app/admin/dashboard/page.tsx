@@ -11,12 +11,12 @@ import { getAdminUsers } from "@/lib/admin/get-admin-users";
 import { getGrowthAuditLog } from "@/lib/admin/growth-audit";
 import { getSupportMessages } from "@/lib/support/get-support-messages";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
-import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
+import { fetchSubscriptionPaymentMethods } from "@/lib/plans/get-subscription-pago-movil";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { DEFAULT_PLAN_SETTINGS } from "@/lib/plans/plan-settings";
 import { DEFAULT_PLATFORM_SETTINGS } from "@/lib/platform/platform-settings";
-import { getSubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
+import { getDefaultSubscriptionPaymentMethods } from "@/src/config/subscription-pago-movil";
 import { listAdminStoreDomains } from "@/lib/admin/custom-domain-actions";
 import {
   listSubscriptionCampaigns,
@@ -144,7 +144,7 @@ export default async function AdminDashboardPage({
       "No se pudieron cargar los dominios personalizados.",
     ),
     safeLoad(
-      () => fetchSubscriptionPagoMovilDetails(),
+      () => fetchSubscriptionPaymentMethods(),
       "No se pudieron cargar los métodos de pago.",
     ),
     safeLoad(
@@ -170,9 +170,9 @@ export default async function AdminDashboardPage({
   const growthError = growthResult.ok ? null : growthResult.error;
   const storeDomains = storeDomainsResult.ok ? storeDomainsResult.data : [];
   const storeDomainsError = storeDomainsResult.ok ? null : storeDomainsResult.error;
-  const pagoMovil = pagoMovilResult.ok
+  const paymentMethods = pagoMovilResult.ok
     ? pagoMovilResult.data
-    : getSubscriptionPagoMovilDetails();
+    : getDefaultSubscriptionPaymentMethods();
   const planSettings = planSettingsResult.ok
     ? planSettingsResult.data
     : DEFAULT_PLAN_SETTINGS;
@@ -233,7 +233,7 @@ export default async function AdminDashboardPage({
           payments={payments}
           messages={messages}
           metrics={metrics}
-          pagoMovil={pagoMovil}
+          paymentMethods={paymentMethods}
           planSettings={planSettings}
           platformSettings={platformSettings}
           growthUsers={growthUsers}

@@ -7,7 +7,7 @@ import { normalizeDbPlan } from "@/lib/plans/plan-activation";
 import { UpgradeToBusinessPanel } from "@/components/dashboard/plans/UpgradeToBusinessPanel";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
-import { fetchSubscriptionPagoMovilDetails } from "@/lib/plans/get-subscription-pago-movil";
+import { fetchActiveSubscriptionPaymentMethods } from "@/lib/plans/get-subscription-pago-movil";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,7 @@ export default async function UpgradePage() {
   }
 
   const exchangeRateRow = await getCurrentExchangeRate();
-  const pagoMovil = await fetchSubscriptionPagoMovilDetails();
+  const paymentMethods = await fetchActiveSubscriptionPaymentMethods();
 
   return (
     <PageContainer as="div" className="mx-auto max-w-4xl py-6 sm:py-8">
@@ -58,7 +58,7 @@ export default async function UpgradePage() {
       <UpgradeToBusinessPanel
         preview={preview}
         exchangeRate={exchangeRateRow?.rate ?? null}
-        pagoMovil={pagoMovil}
+        paymentMethods={paymentMethods}
       />
     </PageContainer>
   );

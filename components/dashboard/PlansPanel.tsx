@@ -15,7 +15,7 @@ import {
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
 import { formatProductLimit, type PlanId } from "@/src/config/plans";
-import type { SubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
+import type { SubscriptionPaymentMethod } from "@/src/config/subscription-pago-movil";
 import { formatProTrialEndsAt } from "@/lib/plans/trial";
 import { cn } from "@/lib/cn";
 
@@ -31,7 +31,7 @@ interface PlansPanelProps {
   subscriptionPeriodStartedAt?: string | null;
   subscriptionPeriodEndsAt?: string | null;
   currentBillingPeriod?: BillingPeriod | null;
-  pagoMovil?: SubscriptionPagoMovilDetails;
+  paymentMethods?: SubscriptionPaymentMethod[];
   pricingTiers?: PlanPricingTier[];
   /** Oculta el campo de cupón en el checkout cuando el admin lo desactiva. */
   showCouponField?: boolean;
@@ -170,7 +170,7 @@ export function PlansPanel({
   subscriptionPeriodStartedAt = null,
   subscriptionPeriodEndsAt = null,
   currentBillingPeriod = "monthly",
-  pagoMovil,
+  paymentMethods,
   pricingTiers = PLAN_PRICING_TIERS,
   showCouponField = true,
   variant = "default",
@@ -361,7 +361,7 @@ export function PlansPanel({
         currentPlanId={currentPlanId}
         subscriptionPeriodEndsAt={subscriptionPeriodEndsAt}
         currentBillingPeriod={currentBillingPeriod}
-        pagoMovil={pagoMovil}
+        paymentMethods={paymentMethods}
         pricingTiers={pricingTiers}
         showCouponField={showCouponField}
       />

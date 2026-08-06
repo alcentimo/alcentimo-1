@@ -17,7 +17,7 @@ import type {
   SubscriptionCampaign,
   SubscriptionCoupon,
 } from "@/lib/database.types";
-import type { SubscriptionPagoMovilDetails } from "@/src/config/subscription-pago-movil";
+import type { SubscriptionPaymentMethod } from "@/src/config/subscription-pago-movil";
 import type { PlanSettingsMap } from "@/lib/plans/plan-settings";
 import type { PlatformSettings } from "@/lib/platform/platform-settings";
 import type { AdminStoreDomainRow } from "@/lib/admin/custom-domain-actions";
@@ -134,7 +134,7 @@ interface AdminDashboardTabsProps {
   payments: ManualPaymentWithEmail[];
   messages: SupportMessage[];
   metrics: AdminPlanMetrics | null;
-  pagoMovil: SubscriptionPagoMovilDetails;
+  paymentMethods: SubscriptionPaymentMethod[];
   planSettings: PlanSettingsMap;
   platformSettings: PlatformSettings;
   growthUsers: AdminUserRow[];
@@ -167,7 +167,7 @@ export function AdminDashboardTabs({
   payments,
   messages,
   metrics,
-  pagoMovil,
+  paymentMethods,
   planSettings,
   platformSettings,
   growthUsers,
@@ -304,7 +304,7 @@ export function AdminDashboardTabs({
           initialSubTab={plansInitialSubTab}
           planesPanel={<PlanSettingsConfigPanel initialSettings={planSettings} />}
           pagosConfigPanel={
-            <PaymentMethodsConfigPanel initialDetails={pagoMovil} />
+            <PaymentMethodsConfigPanel initialMethods={paymentMethods} />
           }
           plataformaPanel={
             <PlatformSettingsConfigPanel initialSettings={platformSettings} />

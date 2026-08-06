@@ -486,6 +486,76 @@ export async function removePlatformLogoAsset(supabase: SupabaseClient): Promise
   await supabase.storage.from(PLATFORM_ASSETS_BUCKET).remove(uniquePaths);
 }
 
+export interface UploadPlatformAssetResult {
+  url?: string;
+  error?: string;
+}
+
+/** Sube un QR de cobro de suscripción al bucket platform-assets. */
+export async function uploadPlatformPaymentQrImage(
+  supabase: SupabaseClient,
+  file: File,
+): Promise<UploadPlatformAssetResult> {
+  if (!ALLOWED_TYPES.has(file.type)) {
+    return { error: "Formato no permitido. Usa JPG, PNG, WebP o GIF." };
+  }
+
+  if (file.size > MAX_QR_INPUT_SIZE) {
+    return { error: "La imagen supera el límite de 2 MB." };
+  }
+
+  const inputBuffer = Buffer.from(await file.arrayBuffer());
+  const isGif = file.type === "image/gif";
+  const version = Date.now();
+
+  if (isGif) {
+    const path = `subscription-payment-qr/${crypto.randomUUID()}.gif`;
+    const { error: uploadError } = await supabase.storage
+      .from(PLATFORM_ASSETS_BUCKET)
+      .upload(path, inputBuffer, {
+        cacheControl: "31536000",
+        upsert: false,
+        contentType: "image/gif",
+      });
+
+    if (uploadError) {
+      return { error: uploadError.message };
+    }
+
+    const { data } = supabase.storage
+      .from(PLATFORM_ASSETS_BUCKET)
+      .getPublicUrl(path);
+
+    return { url: `${data.publicUrl}?v=${version}` };
+  }
+
+  let optimization: ImageOptimizationResult;
+  try {
+    optimization = await compressProductImage(inputBuffer);
+  } catch {
+    return { error: "No se pudo procesar la imagen. Prueba con otro archivo." };
+  }
+
+  const path = `subscription-payment-qr/${crypto.randomUUID()}.webp`;
+  const { error: uploadError } = await supabase.storage
+    .from(PLATFORM_ASSETS_BUCKET)
+    .upload(path, optimization.buffer, {
+      cacheControl: "31536000",
+      upsert: false,
+      contentType: "image/webp",
+    });
+
+  if (uploadError) {
+    return { error: uploadError.message };
+  }
+
+  const { data } = supabase.storage
+    .from(PLATFORM_ASSETS_BUCKET)
+    .getPublicUrl(path);
+
+  return { url: `${data.publicUrl}?v=${version}` };
+}
+
 export function buildOptimizationMessage(
   optimization: ImageOptimizationResult,
 ): string {

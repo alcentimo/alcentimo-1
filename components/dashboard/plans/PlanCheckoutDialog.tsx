@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { CheckCircle2, Globe, Loader2, Smartphone, Upload } from "lucide-react";
+import { CheckCircle2, Globe, Loader2, Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CopyableInline } from "@/components/payments/CopyableInline";
+import { SubscriptionPaymentDetails } from "@/components/payments/SubscriptionPaymentDetails";
 import { submitManualPayment } from "@/lib/plans/manual-payment-actions";
 import { formatVes } from "@/lib/format";
 import {
@@ -24,10 +24,7 @@ import {
   type BillingPeriod,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
-import {
-  getSubscriptionPagoMovilDetails,
-  type SubscriptionPagoMovilDetails,
-} from "@/src/config/subscription-pago-movil";
+import type { SubscriptionPaymentMethod } from "@/src/config/subscription-pago-movil";
 import { calculateUpgradeProration } from "@/lib/plans/proration";
 import { buildChargeTableFromTiers } from "@/lib/plans/plan-settings";
 import type { PlanId } from "@/src/config/plans";
@@ -45,7 +42,8 @@ interface PlanCheckoutDialogProps {
   currentPlanId?: PlanId;
   subscriptionPeriodEndsAt?: string | null;
   currentBillingPeriod?: BillingPeriod | null;
-  pagoMovil?: SubscriptionPagoMovilDetails;
+  /** Métodos activos para cobrar la suscripción. */
+  paymentMethods?: SubscriptionPaymentMethod[];
   pricingTiers?: PlanPricingTier[];
   showCouponField?: boolean;
 }
@@ -59,7 +57,7 @@ export function PlanCheckoutDialog({
   currentPlanId = "free",
   subscriptionPeriodEndsAt = null,
   currentBillingPeriod = "monthly",
-  pagoMovil: pagoMovilProp,
+  paymentMethods,
   pricingTiers = PLAN_PRICING_TIERS,
   showCouponField = true,
 }: PlanCheckoutDialogProps) {
@@ -72,8 +70,6 @@ export function PlanCheckoutDialog({
   const [submitProgress, setSubmitProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const pagoMovil = pagoMovilProp ?? getSubscriptionPagoMovilDetails();
 
   useEffect(() => {
     if (!open) return;
@@ -187,8 +183,8 @@ export function PlanCheckoutDialog({
             <DialogHeader className="mb-6">
               <DialogTitle className="text-xl">Completa tu suscripción</DialogTitle>
               <DialogDescription>
-                Realiza el Pago Móvil, sube tu captura y obtén acceso de inmediato
-                mientras verificamos el pago.
+                Realiza el pago, sube tu captura y obtén acceso de inmediato
+                mientras verificamos el comprobante.
               </DialogDescription>
             </DialogHeader>
 
@@ -227,27 +223,7 @@ export function PlanCheckoutDialog({
                   )}
                 </div>
 
-                <div className="rounded-xl bg-neutral-100 p-4 dark:bg-neutral-900">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50">
-                    <Smartphone className="h-4 w-4 text-teal-600 dark:text-teal-400" aria-hidden="true" />
-                    Datos de Pago Móvil
-                  </div>
-                  <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
-                    Realiza el pago a la tasa BCV del día antes de confirmar.
-                  </p>
-
-                  <dl className="mt-4 space-y-3">
-                    <PagoMovilField label="Banco" value={pagoMovil.bank} />
-                    <PagoMovilField label="Teléfono" value={pagoMovil.phone} mono />
-                    <PagoMovilField label="Cédula / RIF" value={pagoMovil.ci} mono />
-                    {pagoMovil.holderName ? (
-                      <PagoMovilField
-                        label="Nombre del titular"
-                        value={pagoMovil.holderName}
-                      />
-                    ) : null}
-                  </dl>
-                </div>
+                <SubscriptionPaymentDetails paymentMethods={paymentMethods} />
               </section>
 
               <section>
@@ -390,25 +366,6 @@ export function PlanCheckoutDialog({
         )}
       </DialogContent>
     </Dialog>
-  );
-}
-
-function PagoMovilField({
-  label,
-  value,
-  mono = false,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <div>
-      <dt className="text-xs text-neutral-500 dark:text-neutral-400">{label}</dt>
-      <dd className="mt-0.5">
-        <CopyableInline value={value} label={label} mono={mono} />
-      </dd>
-    </div>
   );
 }
 
