@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { ShoppingBag, X } from "lucide-react";
-import { CheckoutStepper, type CheckoutStep } from "@/components/catalog/CheckoutStepper";
 import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
 import { ShippingBranchPicker } from "@/components/shipping/ShippingBranchPicker";
 import { DeliveryZonePicker } from "@/components/shipping/DeliveryZonePicker";
@@ -50,8 +49,7 @@ import {
 } from "@/components/catalog-transactional/CheckoutFieldFeedback";
 import {
   summarizeCheckoutValidation,
-  validateCheckoutStep1,
-  validateCheckoutStep2,
+  validateOnePageCheckout,
   type CheckoutFieldKey,
 } from "@/lib/catalog/checkout-validation";
 import { cn } from "@/lib/cn";
@@ -115,7 +113,6 @@ export function CheckoutPanel({
   const { accountsEnabled } = useCustomerAccountMode();
   const { mode: fulfillmentModeFromContext, multiLocation } = useCatalogFulfillment();
   const activeFulfillmentMode = fulfillmentMode ?? fulfillmentModeFromContext;
-  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(1);
   const [customerProfile, setCustomerProfile] =
     useState<CustomerCheckoutProfile | null>(null);
   const [customerName, setCustomerName] = useState("");
@@ -148,9 +145,7 @@ export function CheckoutPanel({
   const [touchedFields, setTouchedFields] = useState<
     Partial<Record<CheckoutFieldKey, boolean>>
   >({});
-  const [validationAttemptedStep, setValidationAttemptedStep] = useState<
-    0 | 1 | 2
-  >(0);
+  const [validationAttempted, setValidationAttempted] = useState(false);
 
   useEffect(() => {
     if (
@@ -200,13 +195,6 @@ export function CheckoutPanel({
       resolveSelectedPaymentKey(current, paymentOptions),
     );
   }, [paymentOptions, shippingOptions]);
-
-  useEffect(() => {
-    if (checkoutStep !== 2) return;
-    setSelectedPayment((current) =>
-      resolveSelectedPaymentKey(current, paymentOptions),
-    );
-  }, [checkoutStep, paymentOptions]);
 
   const isNationalCarrierSelected = isNationalCarrierKey(selectedShipping);
   const isLocalDeliverySelected = selectedShipping === "delivery";
@@ -337,9 +325,9 @@ export function CheckoutPanel({
 
   const submitButtonLabel = pending
     ? "Procesando…"
-    : checkoutStep === 1
-      ? "Continuar al pago"
-      : "Confirmar y enviar pedido";
+    : whatsappConfigured
+      ? "Enviar pedido por WhatsApp"
+      : "Confirmar Pedido";
 
   function handleApplyPromotion() {
     setPromotionError(null);
@@ -396,23 +384,39 @@ export function CheckoutPanel({
     [items],
   );
 
-  const step1Validation = useMemo(
+  const showsProofUpload = paymentMethodRequiresProof(selectedPayment);
+
+  const checkoutValidation = useMemo(
     () =>
-      validateCheckoutStep1({
-        itemsCount: items.length,
-        shippingOptionsCount: shippingOptions.length,
-        selectedShipping,
-        isNationalCarrierSelected,
-        shippingBranchCode,
-        isLocalDeliverySelected,
-        hasDeliveryZones,
-        deliveryZoneId,
-        meetingPointId,
-        deliveryAddress,
-        isPickupSelected,
-        hasPickupPoints,
-        pickupPointId,
-      }),
+      validateOnePageCheckout(
+        {
+          itemsCount: items.length,
+          shippingOptionsCount: shippingOptions.length,
+          selectedShipping,
+          isNationalCarrierSelected,
+          shippingBranchCode,
+          isLocalDeliverySelected,
+          hasDeliveryZones,
+          deliveryZoneId,
+          meetingPointId,
+          deliveryAddress,
+          isPickupSelected,
+          hasPickupPoints,
+          pickupPointId,
+        },
+        {
+          itemsCount: items.length,
+          hasCustomerProfile: Boolean(customerProfile),
+          customerName,
+          customerPhone,
+          shippingOptionsCount: purchaseInfo.shipping.length,
+          selectedShipping,
+          paymentsCount: paymentOptions.length,
+          selectedPayment,
+          hasProofFile: Boolean(proofFile),
+          requiresProofFile: false,
+        },
+      ),
     [
       items.length,
       shippingOptions.length,
@@ -427,41 +431,17 @@ export function CheckoutPanel({
       isPickupSelected,
       hasPickupPoints,
       pickupPointId,
-    ],
-  );
-
-  const showsProofUpload = paymentMethodRequiresProof(selectedPayment);
-
-  const step2Validation = useMemo(
-    () =>
-      validateCheckoutStep2({
-        itemsCount: items.length,
-        hasCustomerProfile: Boolean(customerProfile),
-        customerName,
-        customerPhone,
-        shippingOptionsCount: purchaseInfo.shipping.length,
-        selectedShipping,
-        paymentsCount: paymentOptions.length,
-        selectedPayment,
-        hasProofFile: Boolean(proofFile),
-        requiresProofFile: false,
-      }),
-    [
-      items.length,
       customerProfile,
       customerName,
       customerPhone,
       purchaseInfo.shipping.length,
-      selectedShipping,
       paymentOptions.length,
       selectedPayment,
       proofFile,
     ],
   );
 
-  const activeValidation =
-    checkoutStep === 1 ? step1Validation : step2Validation;
-  const canProceedCurrentStep = activeValidation.isValid;
+  const canSubmit = checkoutValidation.isValid && !pending;
 
   function touchField(field: CheckoutFieldKey) {
     setTouchedFields((prev) =>
@@ -474,10 +454,7 @@ export function CheckoutPanel({
     message?: string,
   ): message is string {
     if (!message) return false;
-    return (
-      Boolean(touchedFields[field]) ||
-      validationAttemptedStep >= checkoutStep
-    );
+    return Boolean(touchedFields[field]) || validationAttempted;
   }
 
   function markInvalidFieldsTouched(
@@ -542,34 +519,14 @@ export function CheckoutPanel({
     });
   }
 
-
-  const canProceedStep1 = step1Validation.isValid;
-  const canSubmitStep2 = step2Validation.isValid && !pending;
-
   function handleFooterAction() {
     setError(null);
 
-    if (checkoutStep === 1) {
-      if (!canProceedStep1) {
-        setValidationAttemptedStep(1);
-        markInvalidFieldsTouched(step1Validation.errors);
-        setError(summarizeCheckoutValidation(step1Validation));
-        scrollToFirstCheckoutError(step1Validation.firstErrorField);
-        return;
-      }
-      setValidationAttemptedStep(0);
-      setSelectedPayment((current) =>
-        resolveSelectedPaymentKey(current, paymentOptions),
-      );
-      setCheckoutStep(2);
-      return;
-    }
-
-    if (!canSubmitStep2) {
-      setValidationAttemptedStep(2);
-      markInvalidFieldsTouched(step2Validation.errors);
-      setError(summarizeCheckoutValidation(step2Validation));
-      scrollToFirstCheckoutError(step2Validation.firstErrorField);
+    if (!checkoutValidation.isValid) {
+      setValidationAttempted(true);
+      markInvalidFieldsTouched(checkoutValidation.errors);
+      setError(summarizeCheckoutValidation(checkoutValidation));
+      scrollToFirstCheckoutError(checkoutValidation.firstErrorField);
       return;
     }
 
@@ -714,7 +671,6 @@ export function CheckoutPanel({
         }
 
         if (!openedWhatsApp) {
-          // Fallback: intentar abrir de nuevo (puede fallar tras el await).
           try {
             const fallback = window.open(
               whatsappUrl,
@@ -732,7 +688,6 @@ export function CheckoutPanel({
       const wasGuest = !customerProfile;
 
       clearCart();
-      setCheckoutStep(1);
       setCustomerProfile(null);
       setCustomerName("");
       setCustomerPhone("");
@@ -746,6 +701,8 @@ export function CheckoutPanel({
       setPromotionInput("");
       setPromotionError(null);
       setProofFile(null);
+      setValidationAttempted(false);
+      setTouchedFields({});
 
       if (result.orderId) {
         setSuccessOrder({
@@ -807,527 +764,551 @@ export function CheckoutPanel({
         </div>
       ) : (
         <>
-          <CheckoutStepper
-            step={checkoutStep}
-            step1Label="Carrito y envío"
-            step2Label="Pago y contacto"
-          />
-
           <div className="txn-checkout-scroll">
-            {checkoutStep === 1 ? (
-              <>
-                {multiLocation ? (
-                  <div className="mb-4">
-                    <CatalogLocationPicker showFulfillmentModes />
-                  </div>
-                ) : null}
-
-                <CartLineItems
-                  items={items}
-                  onUpdateQuantity={updateQuantity}
-                  onRemoveItem={removeItem}
-                />
-
-                {shippingOptions.length > 0 ||
-                isNationalCarrierSelected ||
-                isLocalDeliverySelected ||
-                (isPickupSelected && hasPickupPoints) ? (
-                  <div className="txn-checkout-options">
-                    {shippingOptions.length > 0 ? (
-                      <CheckoutFieldGroup
-                        field="shipping"
-                        showError={shouldShowFieldError(
-                          "shipping",
-                          step1Validation.errors.shipping,
-                        )}
-                        error={step1Validation.errors.shipping}
-                      >
-                        <div className="txn-checkout-section">
-                          <p className="txn-checkout-section-title">
-                            Método de envío
-                          </p>
-                          {purchaseInfo.shippingPricing.freeShippingEnabled ? (
-                            <p
-                              className={cn(
-                                "mb-3 rounded-lg border px-3 py-2 text-xs leading-relaxed",
-                                shippingQuote.freeShipping.unlocked
-                                  ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200"
-                                  : "border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300",
-                              )}
-                            >
-                              {shippingQuote.freeShipping.unlocked
-                                ? "¡Envío gratis desbloqueado en este pedido!"
-                                : `Envío gratis desde ${formatUsd(purchaseInfo.shippingPricing.freeShippingMinUsd)}. ${
-                                    shippingQuote.freeShipping.remainingUsd > 0
-                                      ? `Te faltan ${formatUsd(shippingQuote.freeShipping.remainingUsd)}.`
-                                      : ""
-                                  }`}
-                            </p>
-                          ) : purchaseInfo.shippingPricing.mode === "cod" ? (
-                            <p className="mb-3 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                              Modalidad: cobro a destino. Pagas el flete en la
-                              agencia al retirar tu paquete.
-                            </p>
-                          ) : (
-                            <p className="mb-3 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                              Modalidad: tarifa plana nacional de{" "}
-                              {formatUsd(purchaseInfo.shippingPricing.flatRateUsd)}.
-                            </p>
-                          )}
-                          <div className="txn-checkout-method-grid">
-                            {shippingOptions.map((option) => (
-                              <ShippingMethodCard
-                                key={option.key}
-                                carrierKey={option.key}
-                                details={option.details}
-                                description={option.description}
-                                estimatedTime={option.estimatedTime}
-                                selectable
-                                selected={selectedShipping === option.key}
-                                onSelect={() => {
-                                  touchField("shipping");
-                                  setSelectedShipping(option.key);
-                                }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </CheckoutFieldGroup>
-                    ) : null}
-
-                    {isNationalCarrierSelected ? (
-                      <CheckoutFieldGroup
-                        field="shippingBranch"
-                        showError={shouldShowFieldError(
-                          "shippingBranch",
-                          step1Validation.errors.shippingBranch,
-                        )}
-                        error={step1Validation.errors.shippingBranch}
-                      >
-                        <ShippingBranchPicker
-                          carrier={selectedShipping as ShippingCarrierKey}
-                          value={shippingBranchCode}
-                          onChange={(branch) => {
-                            touchField("shippingBranch");
-                            setShippingBranchCode(branch?.id ?? null);
-                          }}
-                        />
-                      </CheckoutFieldGroup>
-                    ) : null}
-
-                    {isLocalDeliverySelected ? (
-                      hasDeliveryZones ? (
-                        <CheckoutFieldGroup
-                          field={
-                            step1Validation.errors.meetingPoint
-                              ? "meetingPoint"
-                              : "deliveryZone"
-                          }
-                          showError={
-                            shouldShowFieldError(
-                              "deliveryZone",
-                              step1Validation.errors.deliveryZone,
-                            ) ||
-                            shouldShowFieldError(
-                              "meetingPoint",
-                              step1Validation.errors.meetingPoint,
-                            )
-                          }
-                          error={
-                            step1Validation.errors.deliveryZone ??
-                            step1Validation.errors.meetingPoint
-                          }
-                        >
-                          <DeliveryZonePicker
-                            zones={deliveryZonesForCheckout}
-                            selectedZoneId={deliveryZoneId}
-                            selectedPointId={meetingPointId}
-                            notes={fulfillmentNotes}
-                            onZoneChange={(zoneId) => {
-                              touchField("deliveryZone");
-                              setDeliveryZoneId(zoneId);
-                            }}
-                            onPointChange={(pointId) => {
-                              touchField("meetingPoint");
-                              setMeetingPointId(pointId);
-                            }}
-                            onNotesChange={setFulfillmentNotes}
-                          />
-                        </CheckoutFieldGroup>
-                      ) : (
-                        <CheckoutFieldGroup
-                          field="deliveryAddress"
-                          showError={shouldShowFieldError(
-                            "deliveryAddress",
-                            step1Validation.errors.deliveryAddress,
-                          )}
-                          error={step1Validation.errors.deliveryAddress}
-                        >
-                          <label className="txn-field">
-                            <span>
-                              Dirección de entrega{" "}
-                              <span className="font-normal text-zinc-400">
-                                (opcional)
-                              </span>
-                            </span>
-                            <textarea
-                              rows={3}
-                              value={deliveryAddress}
-                              onChange={(event) => {
-                                touchField("deliveryAddress");
-                                setDeliveryAddress(event.target.value);
-                              }}
-                              onBlur={() => touchField("deliveryAddress")}
-                              placeholder="Calle, edificio, referencia… o acuerda por WhatsApp"
-                              aria-invalid={shouldShowFieldError(
-                                "deliveryAddress",
-                                step1Validation.errors.deliveryAddress,
-                              )}
-                              aria-describedby={
-                                step1Validation.errors.deliveryAddress
-                                  ? "checkout-error-deliveryAddress"
-                                  : "checkout-hint-deliveryAddress"
-                              }
-                              className={checkoutInputClass(
-                                shouldShowFieldError(
-                                  "deliveryAddress",
-                                  step1Validation.errors.deliveryAddress,
-                                ),
-                                "min-h-[5rem] resize-y",
-                              )}
-                            />
-                            <span
-                              id="checkout-hint-deliveryAddress"
-                              className="mt-1 block text-xs text-zinc-500 dark:text-zinc-400"
-                            >
-                              Puedes dejarla vacía y acordar la entrega por
-                              WhatsApp.
-                            </span>
-                          </label>
-                        </CheckoutFieldGroup>
-                      )
-                    ) : null}
-
-                    {isPickupSelected && hasPickupPoints ? (
-                      <CheckoutFieldGroup
-                        field="pickupPoint"
-                        showError={shouldShowFieldError(
-                          "pickupPoint",
-                          step1Validation.errors.pickupPoint,
-                        )}
-                        error={step1Validation.errors.pickupPoint}
-                      >
-                        <PickupPointPicker
-                          points={pickupPoints}
-                          selectedPointId={pickupPointId}
-                          notes={fulfillmentNotes}
-                          onPointChange={(pointId) => {
-                            touchField("pickupPoint");
-                            setPickupPointId(pointId);
-                          }}
-                          onNotesChange={setFulfillmentNotes}
-                        />
-                      </CheckoutFieldGroup>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {(customerProfile || autoApply) && (
-                  <div className="txn-checkout-promo">
-                    <p className="txn-checkout-section-title">
-                      Código de promoción
-                    </p>
-                    {appliedPromotion ? (
-                      <div className="txn-checkout-promo-applied">
-                        <div>
-                          <p className="font-medium text-emerald-800 dark:text-emerald-300">
-                            {appliedPromotion.name}
-                          </p>
-                          <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80">
-                            {appliedPromotion.code} · -{appliedPromotion.discountPercent}%
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleRemovePromotion}
-                          className="text-xs font-medium text-zinc-500 hover:text-zinc-800"
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={promotionInput}
-                          onChange={(event) => setPromotionInput(event.target.value)}
-                          placeholder="Ej: CLIENTE10"
-                          className="txn-input flex-1 uppercase"
-                          disabled={promotionPending}
-                        />
-                        <button
-                          type="button"
-                          onClick={handleApplyPromotion}
-                          disabled={!promotionInput.trim() || promotionPending}
-                          className="txn-promo-apply-btn"
-                        >
-                          {promotionPending ? "…" : "Aplicar"}
-                        </button>
-                      </div>
-                    )}
-                    {promotionError ? (
-                      <p className="mt-1 text-xs text-red-600">{promotionError}</p>
-                    ) : null}
-                  </div>
-                )}
-
-              </>
-            ) : (
-              <>
-                {customerProfile ? (
-                  <div className="txn-checkout-customer-card">
-                    <p className="txn-checkout-section-title">Tus datos</p>
-                    <dl className="txn-checkout-customer-dl">
-                      <div>
-                        <dt>Nombre</dt>
-                        <dd>{customerProfile.displayName}</dd>
-                      </div>
-                      <div>
-                        <dt>Teléfono</dt>
-                        <dd>{customerProfile.phone}</dd>
-                      </div>
-                    </dl>
-                    <Link
-                      href={getStoreCustomerAccountPath(storeSlug, "cuenta")}
-                      className="txn-checkout-customer-link"
-                    >
-                      Editar en Mi cuenta
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="txn-checkout-form">
-                    <p className="txn-checkout-section-title">
-                      Tus datos de contacto
-                    </p>
-                    <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-                      {accountsEnabled
-                        ? "Obligatorio para coordinar tu pedido. Crear una cuenta es opcional."
-                        : "Obligatorio: nombre y teléfono / WhatsApp para coordinar tu pedido."}
-                    </p>
-                    <CheckoutFieldGroup
-                      field="customerName"
-                      showError={shouldShowFieldError(
-                        "customerName",
-                        step2Validation.errors.customerName,
-                      )}
-                      error={step2Validation.errors.customerName}
-                    >
-                      <label className="txn-field">
-                        <span>Nombre completo</span>
-                        <input
-                          type="text"
-                          required
-                          minLength={2}
-                          value={customerName}
-                          onChange={(event) => {
-                            touchField("customerName");
-                            setCustomerName(event.target.value);
-                          }}
-                          onBlur={() => touchField("customerName")}
-                          placeholder="Tu nombre completo"
-                          aria-invalid={shouldShowFieldError(
-                            "customerName",
-                            step2Validation.errors.customerName,
-                          )}
-                          aria-describedby={
-                            step2Validation.errors.customerName
-                              ? "checkout-error-customerName"
-                              : undefined
-                          }
-                          className={checkoutInputClass(
-                            shouldShowFieldError(
-                              "customerName",
-                              step2Validation.errors.customerName,
-                            ),
-                          )}
-                        />
-                      </label>
-                    </CheckoutFieldGroup>
-
-                    <CheckoutFieldGroup
-                      field="customerPhone"
-                      showError={shouldShowFieldError(
-                        "customerPhone",
-                        step2Validation.errors.customerPhone,
-                      )}
-                      error={step2Validation.errors.customerPhone}
-                      className="mt-3"
-                    >
-                      <label className="txn-field">
-                        <span>Teléfono / WhatsApp</span>
-                        <input
-                          type="tel"
-                          required
-                          inputMode="tel"
-                          autoComplete="tel"
-                          minLength={10}
-                          value={customerPhone}
-                          onChange={(event) => {
-                            touchField("customerPhone");
-                            setCustomerPhone(event.target.value);
-                          }}
-                          onBlur={() => touchField("customerPhone")}
-                          placeholder="Ej: 0414-1234567"
-                          aria-invalid={shouldShowFieldError(
-                            "customerPhone",
-                            step2Validation.errors.customerPhone,
-                          )}
-                          aria-describedby={
-                            step2Validation.errors.customerPhone
-                              ? "checkout-error-customerPhone"
-                              : undefined
-                          }
-                          className={checkoutInputClass(
-                            shouldShowFieldError(
-                              "customerPhone",
-                              step2Validation.errors.customerPhone,
-                            ),
-                          )}
-                        />
-                      </label>
-                    </CheckoutFieldGroup>
-                  </div>
-                )}
-
-                <div className="txn-checkout-options">
-                  {paymentOptions.length > 0 && (
-                    <CheckoutFieldGroup
-                      field="payment"
-                      showError={shouldShowFieldError(
-                        "payment",
-                        step2Validation.errors.payment,
-                      )}
-                      error={step2Validation.errors.payment}
-                      className="txn-checkout-section"
-                    >
-                      <p className="txn-checkout-section-title">Método de pago</p>
-                      <div className="txn-checkout-method-grid">
-                        {paymentOptions.map((payment) => (
-                          <PaymentMethodCard
-                            key={payment.key}
-                            methodKey={payment.key as PaymentMethodKey}
-                            selectable
-                            selected={selectedPayment === payment.key}
-                            onSelect={() => {
-                              touchField("payment");
-                              setSelectedPayment(payment.key);
-                              if (!paymentMethodRequiresProof(payment.key)) {
-                                setProofFile(null);
-                              }
-                            }}
-                          />
-                        ))}
-                      </div>
-                      {selectedPaymentDetails && (
-                        <PaymentCheckoutDetails
-                          methodKey={selectedPaymentDetails.key}
-                          fields={selectedPaymentDetails.fields}
-                        />
-                      )}
-                    </CheckoutFieldGroup>
-                  )}
+            {/* 1. Productos */}
+            <section aria-labelledby="checkout-products-heading">
+              {multiLocation ? (
+                <div className="px-6 pt-4">
+                  <CatalogLocationPicker showFulfillmentModes />
                 </div>
+              ) : null}
+              <div className="px-6 pt-5">
+                <h3
+                  id="checkout-products-heading"
+                  className="txn-checkout-section-title"
+                >
+                  Productos
+                </h3>
+              </div>
+              <CartLineItems
+                items={items}
+                onUpdateQuantity={updateQuantity}
+                onRemoveItem={removeItem}
+                exchangeRate={exchangeRate}
+                showBsConversion={showBsConversion}
+                className="!pt-3"
+              />
 
-                {showsProofUpload ? (
+              {(customerProfile || autoApply) && (
+                <div className="txn-checkout-promo">
+                  <p className="txn-checkout-section-title">
+                    Código de promoción
+                  </p>
+                  {appliedPromotion ? (
+                    <div className="txn-checkout-promo-applied">
+                      <div>
+                        <p className="font-medium text-emerald-800 dark:text-emerald-300">
+                          {appliedPromotion.name}
+                        </p>
+                        <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80">
+                          {appliedPromotion.code} · -{appliedPromotion.discountPercent}%
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemovePromotion}
+                        className="text-xs font-medium text-zinc-500 hover:text-zinc-800"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={promotionInput}
+                        onChange={(event) => setPromotionInput(event.target.value)}
+                        placeholder="Ej: CLIENTE10"
+                        className="txn-input flex-1 uppercase"
+                        disabled={promotionPending}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyPromotion}
+                        disabled={!promotionInput.trim() || promotionPending}
+                        className="txn-promo-apply-btn"
+                      >
+                        {promotionPending ? "…" : "Aplicar"}
+                      </button>
+                    </div>
+                  )}
+                  {promotionError ? (
+                    <p className="mt-1 text-xs text-red-600">{promotionError}</p>
+                  ) : null}
+                </div>
+              )}
+            </section>
+
+            {/* 2. Datos del cliente */}
+            <section
+              className="border-t border-zinc-200/80 dark:border-zinc-800"
+              aria-labelledby="checkout-customer-heading"
+            >
+              {customerProfile ? (
+                <div className="txn-checkout-customer-card !mt-5">
+                  <h3
+                    id="checkout-customer-heading"
+                    className="txn-checkout-section-title"
+                  >
+                    Datos del cliente
+                  </h3>
+                  <dl className="txn-checkout-customer-dl">
+                    <div>
+                      <dt>Nombre</dt>
+                      <dd>{customerProfile.displayName}</dd>
+                    </div>
+                    <div>
+                      <dt>Teléfono</dt>
+                      <dd>{customerProfile.phone}</dd>
+                    </div>
+                  </dl>
+                  <Link
+                    href={getStoreCustomerAccountPath(storeSlug, "cuenta")}
+                    className="txn-checkout-customer-link"
+                  >
+                    Editar en Mi cuenta
+                  </Link>
+                </div>
+              ) : (
+                <div className="txn-checkout-form">
+                  <h3
+                    id="checkout-customer-heading"
+                    className="txn-checkout-section-title"
+                  >
+                    Datos del cliente
+                  </h3>
+                  <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+                    {accountsEnabled
+                      ? "Obligatorio para coordinar tu pedido. Crear una cuenta es opcional."
+                      : "Nombre y teléfono / WhatsApp para coordinar tu pedido."}
+                  </p>
                   <CheckoutFieldGroup
-                    field="proofFile"
+                    field="customerName"
                     showError={shouldShowFieldError(
-                      "proofFile",
-                      step2Validation.errors.proofFile,
+                      "customerName",
+                      checkoutValidation.errors.customerName,
                     )}
-                    error={step2Validation.errors.proofFile}
-                    className="txn-checkout-form"
+                    error={checkoutValidation.errors.customerName}
                   >
                     <label className="txn-field">
-                      <span>
-                        Comprobante de pago{" "}
-                        <span className="font-normal text-zinc-500">
-                          (opcional)
-                        </span>
-                      </span>
+                      <span>Nombre completo</span>
                       <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        type="text"
+                        required
+                        minLength={2}
+                        value={customerName}
                         onChange={(event) => {
-                          touchField("proofFile");
-                          setProofFile(event.target.files?.[0] ?? null);
+                          touchField("customerName");
+                          setCustomerName(event.target.value);
                         }}
-                        onBlur={() => touchField("proofFile")}
+                        onBlur={() => touchField("customerName")}
+                        placeholder="Tu nombre completo"
+                        autoComplete="name"
                         aria-invalid={shouldShowFieldError(
-                          "proofFile",
-                          step2Validation.errors.proofFile,
+                          "customerName",
+                          checkoutValidation.errors.customerName,
                         )}
                         aria-describedby={
-                          step2Validation.errors.proofFile
-                            ? "checkout-error-proofFile"
-                            : "checkout-proof-optional-hint"
+                          checkoutValidation.errors.customerName
+                            ? "checkout-error-customerName"
+                            : undefined
                         }
-                        className={checkoutFileInputClass(
+                        className={checkoutInputClass(
                           shouldShowFieldError(
-                            "proofFile",
-                            step2Validation.errors.proofFile,
+                            "customerName",
+                            checkoutValidation.errors.customerName,
                           ),
                         )}
                       />
                     </label>
-                    <p
-                      id="checkout-proof-optional-hint"
-                      className="mt-1.5 text-xs leading-snug text-zinc-500 dark:text-zinc-400"
-                    >
-                      Puedes confirmar el pedido sin adjuntar archivo y enviar
-                      el comprobante después por WhatsApp.
-                    </p>
                   </CheckoutFieldGroup>
-                ) : selectedPayment ? (
-                  <p className="txn-checkout-hint mx-6 mb-3 rounded-lg border border-zinc-200/80 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
-                    Con este método de pago no necesitas subir comprobante. El
-                    pago se confirma al entregar o en el local.
-                  </p>
-                ) : null}
 
-                <div className="txn-checkout-section px-6 pt-2">
-                  <p className="txn-checkout-section-title">Productos</p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Puedes quitar o cambiar cantidades antes de confirmar.
+                  <CheckoutFieldGroup
+                    field="customerPhone"
+                    showError={shouldShowFieldError(
+                      "customerPhone",
+                      checkoutValidation.errors.customerPhone,
+                    )}
+                    error={checkoutValidation.errors.customerPhone}
+                    className="mt-3"
+                  >
+                    <label className="txn-field">
+                      <span>Teléfono / WhatsApp</span>
+                      <input
+                        type="tel"
+                        required
+                        inputMode="tel"
+                        autoComplete="tel"
+                        minLength={10}
+                        value={customerPhone}
+                        onChange={(event) => {
+                          touchField("customerPhone");
+                          setCustomerPhone(event.target.value);
+                        }}
+                        onBlur={() => touchField("customerPhone")}
+                        placeholder="Ej: 0414-1234567"
+                        aria-invalid={shouldShowFieldError(
+                          "customerPhone",
+                          checkoutValidation.errors.customerPhone,
+                        )}
+                        aria-describedby={
+                          checkoutValidation.errors.customerPhone
+                            ? "checkout-error-customerPhone"
+                            : undefined
+                        }
+                        className={checkoutInputClass(
+                          shouldShowFieldError(
+                            "customerPhone",
+                            checkoutValidation.errors.customerPhone,
+                          ),
+                        )}
+                      />
+                    </label>
+                  </CheckoutFieldGroup>
+                </div>
+              )}
+            </section>
+
+            {/* 3. Método de envío */}
+            <section aria-labelledby="checkout-shipping-heading">
+              {shippingOptions.length > 0 ||
+              isNationalCarrierSelected ||
+              isLocalDeliverySelected ||
+              (isPickupSelected && hasPickupPoints) ? (
+                <div className="txn-checkout-options">
+                  {shippingOptions.length > 0 ? (
+                    <CheckoutFieldGroup
+                      field="shipping"
+                      showError={shouldShowFieldError(
+                        "shipping",
+                        checkoutValidation.errors.shipping,
+                      )}
+                      error={checkoutValidation.errors.shipping}
+                    >
+                      <div className="txn-checkout-section">
+                        <h3
+                          id="checkout-shipping-heading"
+                          className="txn-checkout-section-title"
+                        >
+                          Método de envío
+                        </h3>
+                        {purchaseInfo.shippingPricing.freeShippingEnabled ? (
+                          <p
+                            className={cn(
+                              "mb-3 rounded-lg border px-3 py-2 text-xs leading-relaxed",
+                              shippingQuote.freeShipping.unlocked
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200"
+                                : "border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300",
+                            )}
+                          >
+                            {shippingQuote.freeShipping.unlocked
+                              ? "¡Envío gratis desbloqueado en este pedido!"
+                              : `Envío gratis desde ${formatUsd(purchaseInfo.shippingPricing.freeShippingMinUsd)}. ${
+                                  shippingQuote.freeShipping.remainingUsd > 0
+                                    ? `Te faltan ${formatUsd(shippingQuote.freeShipping.remainingUsd)}.`
+                                    : ""
+                                }`}
+                          </p>
+                        ) : purchaseInfo.shippingPricing.mode === "cod" ? (
+                          <p className="mb-3 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                            Modalidad: cobro a destino. Pagas el flete en la
+                            agencia al retirar tu paquete.
+                          </p>
+                        ) : (
+                          <p className="mb-3 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                            Modalidad: tarifa plana nacional de{" "}
+                            {formatUsd(purchaseInfo.shippingPricing.flatRateUsd)}.
+                          </p>
+                        )}
+                        <div className="txn-checkout-method-grid">
+                          {shippingOptions.map((option) => (
+                            <ShippingMethodCard
+                              key={option.key}
+                              carrierKey={option.key}
+                              details={option.details}
+                              description={option.description}
+                              estimatedTime={option.estimatedTime}
+                              selectable
+                              selected={selectedShipping === option.key}
+                              onSelect={() => {
+                                touchField("shipping");
+                                setSelectedShipping(option.key);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </CheckoutFieldGroup>
+                  ) : (
+                    <div className="txn-checkout-section">
+                      <h3
+                        id="checkout-shipping-heading"
+                        className="txn-checkout-section-title"
+                      >
+                        Método de envío
+                      </h3>
+                    </div>
+                  )}
+
+                  {isNationalCarrierSelected ? (
+                    <CheckoutFieldGroup
+                      field="shippingBranch"
+                      showError={shouldShowFieldError(
+                        "shippingBranch",
+                        checkoutValidation.errors.shippingBranch,
+                      )}
+                      error={checkoutValidation.errors.shippingBranch}
+                    >
+                      <ShippingBranchPicker
+                        carrier={selectedShipping as ShippingCarrierKey}
+                        value={shippingBranchCode}
+                        onChange={(branch) => {
+                          touchField("shippingBranch");
+                          setShippingBranchCode(branch?.id ?? null);
+                        }}
+                      />
+                    </CheckoutFieldGroup>
+                  ) : null}
+
+                  {isLocalDeliverySelected ? (
+                    hasDeliveryZones ? (
+                      <CheckoutFieldGroup
+                        field={
+                          checkoutValidation.errors.meetingPoint
+                            ? "meetingPoint"
+                            : "deliveryZone"
+                        }
+                        showError={
+                          shouldShowFieldError(
+                            "deliveryZone",
+                            checkoutValidation.errors.deliveryZone,
+                          ) ||
+                          shouldShowFieldError(
+                            "meetingPoint",
+                            checkoutValidation.errors.meetingPoint,
+                          )
+                        }
+                        error={
+                          checkoutValidation.errors.deliveryZone ??
+                          checkoutValidation.errors.meetingPoint
+                        }
+                      >
+                        <DeliveryZonePicker
+                          zones={deliveryZonesForCheckout}
+                          selectedZoneId={deliveryZoneId}
+                          selectedPointId={meetingPointId}
+                          notes={fulfillmentNotes}
+                          onZoneChange={(zoneId) => {
+                            touchField("deliveryZone");
+                            setDeliveryZoneId(zoneId);
+                          }}
+                          onPointChange={(pointId) => {
+                            touchField("meetingPoint");
+                            setMeetingPointId(pointId);
+                          }}
+                          onNotesChange={setFulfillmentNotes}
+                        />
+                      </CheckoutFieldGroup>
+                    ) : (
+                      <CheckoutFieldGroup
+                        field="deliveryAddress"
+                        showError={shouldShowFieldError(
+                          "deliveryAddress",
+                          checkoutValidation.errors.deliveryAddress,
+                        )}
+                        error={checkoutValidation.errors.deliveryAddress}
+                      >
+                        <label className="txn-field">
+                          <span>
+                            Dirección de entrega{" "}
+                            <span className="font-normal text-zinc-400">
+                              (opcional)
+                            </span>
+                          </span>
+                          <textarea
+                            rows={3}
+                            value={deliveryAddress}
+                            onChange={(event) => {
+                              touchField("deliveryAddress");
+                              setDeliveryAddress(event.target.value);
+                            }}
+                            onBlur={() => touchField("deliveryAddress")}
+                            placeholder="Calle, edificio, referencia… o acuerda por WhatsApp"
+                            aria-invalid={shouldShowFieldError(
+                              "deliveryAddress",
+                              checkoutValidation.errors.deliveryAddress,
+                            )}
+                            aria-describedby={
+                              checkoutValidation.errors.deliveryAddress
+                                ? "checkout-error-deliveryAddress"
+                                : "checkout-hint-deliveryAddress"
+                            }
+                            className={checkoutInputClass(
+                              shouldShowFieldError(
+                                "deliveryAddress",
+                                checkoutValidation.errors.deliveryAddress,
+                              ),
+                              "min-h-[5rem] resize-y",
+                            )}
+                          />
+                          <span
+                            id="checkout-hint-deliveryAddress"
+                            className="mt-1 block text-xs text-zinc-500 dark:text-zinc-400"
+                          >
+                            Puedes dejarla vacía y acordar la entrega por
+                            WhatsApp.
+                          </span>
+                        </label>
+                      </CheckoutFieldGroup>
+                    )
+                  ) : null}
+
+                  {isPickupSelected && hasPickupPoints ? (
+                    <CheckoutFieldGroup
+                      field="pickupPoint"
+                      showError={shouldShowFieldError(
+                        "pickupPoint",
+                        checkoutValidation.errors.pickupPoint,
+                      )}
+                      error={checkoutValidation.errors.pickupPoint}
+                    >
+                      <PickupPointPicker
+                        points={pickupPoints}
+                        selectedPointId={pickupPointId}
+                        notes={fulfillmentNotes}
+                        onPointChange={(pointId) => {
+                          touchField("pickupPoint");
+                          setPickupPointId(pointId);
+                        }}
+                        onNotesChange={setFulfillmentNotes}
+                      />
+                    </CheckoutFieldGroup>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="txn-checkout-section">
+                  <h3
+                    id="checkout-shipping-heading"
+                    className="txn-checkout-section-title"
+                  >
+                    Método de envío
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Esta tienda no tiene métodos de envío configurados. Se
+                    coordinará por WhatsApp.
                   </p>
                 </div>
-                <CartLineItems
-                  items={items}
-                  onUpdateQuantity={updateQuantity}
-                  onRemoveItem={removeItem}
-                  compact
-                />
-              </>
-            )}
+              )}
+            </section>
+
+            {/* 4. Método de pago */}
+            <section aria-labelledby="checkout-payment-heading">
+              <div className="txn-checkout-options">
+                {paymentOptions.length > 0 && (
+                  <CheckoutFieldGroup
+                    field="payment"
+                    showError={shouldShowFieldError(
+                      "payment",
+                      checkoutValidation.errors.payment,
+                    )}
+                    error={checkoutValidation.errors.payment}
+                    className="txn-checkout-section"
+                  >
+                    <h3
+                      id="checkout-payment-heading"
+                      className="txn-checkout-section-title"
+                    >
+                      Método de pago
+                    </h3>
+                    <div className="txn-checkout-method-grid">
+                      {paymentOptions.map((payment) => (
+                        <PaymentMethodCard
+                          key={payment.key}
+                          methodKey={payment.key as PaymentMethodKey}
+                          selectable
+                          selected={selectedPayment === payment.key}
+                          onSelect={() => {
+                            touchField("payment");
+                            setSelectedPayment(payment.key);
+                            if (!paymentMethodRequiresProof(payment.key)) {
+                              setProofFile(null);
+                            }
+                          }}
+                        />
+                      ))}
+                    </div>
+                    {selectedPaymentDetails && (
+                      <PaymentCheckoutDetails
+                        methodKey={selectedPaymentDetails.key}
+                        fields={selectedPaymentDetails.fields}
+                      />
+                    )}
+                  </CheckoutFieldGroup>
+                )}
+              </div>
+
+              {showsProofUpload ? (
+                <CheckoutFieldGroup
+                  field="proofFile"
+                  showError={shouldShowFieldError(
+                    "proofFile",
+                    checkoutValidation.errors.proofFile,
+                  )}
+                  error={checkoutValidation.errors.proofFile}
+                  className="txn-checkout-form"
+                >
+                  <label className="txn-field">
+                    <span>
+                      Comprobante de pago{" "}
+                      <span className="font-normal text-zinc-500">
+                        (opcional)
+                      </span>
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={(event) => {
+                        touchField("proofFile");
+                        setProofFile(event.target.files?.[0] ?? null);
+                      }}
+                      onBlur={() => touchField("proofFile")}
+                      aria-invalid={shouldShowFieldError(
+                        "proofFile",
+                        checkoutValidation.errors.proofFile,
+                      )}
+                      aria-describedby={
+                        checkoutValidation.errors.proofFile
+                          ? "checkout-error-proofFile"
+                          : "checkout-proof-optional-hint"
+                      }
+                      className={checkoutFileInputClass(
+                        shouldShowFieldError(
+                          "proofFile",
+                          checkoutValidation.errors.proofFile,
+                        ),
+                      )}
+                    />
+                  </label>
+                  <p
+                    id="checkout-proof-optional-hint"
+                    className="mt-1.5 text-xs leading-snug text-zinc-500 dark:text-zinc-400"
+                  >
+                    Puedes confirmar el pedido sin adjuntar archivo y enviar
+                    el comprobante después por WhatsApp.
+                  </p>
+                </CheckoutFieldGroup>
+              ) : selectedPayment ? (
+                <p className="txn-checkout-hint mx-6 mb-3 rounded-lg border border-zinc-200/80 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
+                  Con este método de pago no necesitas subir comprobante. El
+                  pago se confirma al entregar o en el local.
+                </p>
+              ) : null}
+            </section>
           </div>
 
           <footer className="txn-checkout-footer safe-area-bottom">
-            {checkoutStep === 2 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setError(null);
-                  setValidationAttemptedStep(0);
-                  setCheckoutStep(1);
-                }}
-                className="checkout-footer-back"
-              >
-                ← Volver a productos y envío
-              </button>
-            )}
-
             <div className="txn-checkout-total !border-0 !px-0 !py-0">
-              <span>{checkoutStep === 1 ? "Subtotal" : "Subtotal"}</span>
+              <span>Subtotal</span>
               <strong>{formatUsd(subtotalUsd)}</strong>
             </div>
             {discountUsd > 0 && appliedPromotion ? (
@@ -1355,16 +1336,12 @@ export function CheckoutPanel({
                 {shippingHint}
               </p>
             ) : null}
-            {checkoutStep === 2 ||
-            discountUsd > 0 ||
-            (selectedShipping && shippingQuote.appliesPaidShipping) ? (
-              <div className="txn-checkout-total !border-0 !px-0 !py-0">
-                <span>Total</span>
-                <strong>{formatUsd(totalUsd)}</strong>
-              </div>
-            ) : null}
+            <div className="txn-checkout-total !border-0 !px-0 !py-0">
+              <span>Total</span>
+              <strong>{formatUsd(totalUsd)}</strong>
+            </div>
 
-            {checkoutStep === 2 && showOfficialRate && exchangeRate ? (
+            {showOfficialRate && exchangeRate ? (
               <div className="txn-checkout-rate-box">
                 <p>
                   Tasa BCV:{" "}
@@ -1393,32 +1370,29 @@ export function CheckoutPanel({
               disabled={pending}
               className={cn(
                 "txn-submit-btn",
-                !canProceedCurrentStep &&
+                validationAttempted &&
+                  !canSubmit &&
                   !pending &&
                   "txn-submit-btn--blocked",
               )}
-              aria-disabled={!canProceedCurrentStep || pending}
+              aria-disabled={!canSubmit || pending}
             >
               {submitButtonLabel}
             </button>
 
-            {!canProceedCurrentStep && !pending ? (
+            {validationAttempted && !canSubmit && !pending ? (
               <p className="txn-checkout-blocked-hint" role="status">
-                {checkoutStep === 2
-                  ? "Completa nombre, teléfono y método de pago para confirmar."
-                  : "Completa el envío y los campos obligatorios para continuar."}
+                Completa los campos marcados en rojo para confirmar tu pedido.
               </p>
             ) : null}
 
-            {checkoutStep === 2 && (
-              <p className="txn-checkout-hint">
-                {whatsappConfigured
-                  ? "Tu pedido se guarda en la tienda y se abre WhatsApp para confirmar el pago."
-                  : "Tu pedido quedará registrado en el panel de la tienda."}
-              </p>
-            )}
+            <p className="txn-checkout-hint">
+              {whatsappConfigured
+                ? "Tu pedido se guarda en la tienda y se abre WhatsApp para confirmar el pago."
+                : "Tu pedido quedará registrado en el panel de la tienda."}
+            </p>
 
-            {checkoutStep === 2 && (shippingDisplayLabel || paymentLabel) && (
+            {(shippingDisplayLabel || paymentLabel) && (
               <p className="txn-checkout-hint">
                 {shippingDisplayLabel ? `Envío: ${shippingDisplayLabel}` : null}
                 {shippingDisplayLabel && paymentLabel ? " · " : null}

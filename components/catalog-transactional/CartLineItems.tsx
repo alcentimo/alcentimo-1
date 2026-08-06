@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { cartItemKey, type CartItem } from "@/lib/catalog/cart-types";
-import { formatUsd } from "@/lib/format";
+import { formatApproxBs, formatUsd } from "@/lib/format";
 import { WholesalePriceBadge } from "@/components/catalog/WholesalePriceBadge";
 import { cn } from "@/lib/cn";
 
@@ -22,6 +22,9 @@ interface CartLineItemsProps {
   ) => void;
   /** Lista más compacta (p. ej. paso de pago). */
   compact?: boolean;
+  /** Tasa USD→Bs para mostrar equivalente. */
+  exchangeRate?: number | null;
+  showBsConversion?: boolean;
   className?: string;
 }
 
@@ -31,8 +34,13 @@ export function CartLineItems({
   onUpdateQuantity,
   onRemoveItem,
   compact = false,
+  exchangeRate = null,
+  showBsConversion = false,
   className,
 }: CartLineItemsProps) {
+  const canShowBs =
+    showBsConversion && typeof exchangeRate === "number" && exchangeRate > 0;
+
   return (
     <ul className={cn("txn-checkout-items", compact && "txn-checkout-items--compact", className)}>
       {items.map((item) => {
@@ -42,6 +50,7 @@ export function CartLineItems({
           item.modifiers,
         );
         const lineTotal = item.unitPriceUsd * item.quantity;
+        const lineTotalBs = canShowBs ? lineTotal * exchangeRate : null;
 
         return (
           <li key={key} className="txn-checkout-item">
@@ -96,7 +105,11 @@ export function CartLineItems({
                 <p className="text-sm font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
                   {formatUsd(lineTotal)}
                 </p>
-                {!compact ? (
+                {lineTotalBs != null ? (
+                  <p className="text-xs tabular-nums text-zinc-500">
+                    {formatApproxBs(lineTotalBs)}
+                  </p>
+                ) : !compact ? (
                   <p className="text-xs tabular-nums text-zinc-500">
                     {formatUsd(item.unitPriceUsd)} c/u
                   </p>

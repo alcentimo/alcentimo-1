@@ -152,6 +152,31 @@ export function validateCheckoutStep2(
   return buildResult(errors, STEP2_FIELD_ORDER);
 }
 
+const ONE_PAGE_FIELD_ORDER: CheckoutFieldKey[] = [
+  "customerName",
+  "customerPhone",
+  "shipping",
+  "shippingBranch",
+  "deliveryZone",
+  "meetingPoint",
+  "deliveryAddress",
+  "pickupPoint",
+  "payment",
+  "proofFile",
+];
+
+/** Validación unificada para checkout de una sola página. */
+export function validateOnePageCheckout(
+  step1: CheckoutStep1ValidationInput,
+  step2: CheckoutStep2ValidationInput,
+): CheckoutValidationResult {
+  const errors: Partial<Record<CheckoutFieldKey, string>> = {
+    ...validateCheckoutStep1(step1).errors,
+    ...validateCheckoutStep2(step2).errors,
+  };
+  return buildResult(errors, ONE_PAGE_FIELD_ORDER);
+}
+
 export function summarizeCheckoutValidation(
   result: CheckoutValidationResult,
 ): string | null {
