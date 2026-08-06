@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { Menu, X } from "lucide-react";
 import { LandingHeaderLogo } from "@/components/landing/LandingHeaderLogo";
 import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
+import { scrollToLandingHash } from "@/lib/landing/scroll-to-hash";
 
 const navLinks = [
   { href: "#experiencia", label: "Producto" },
@@ -25,6 +26,41 @@ export function LandingNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  /** Al cargar `/#precios` (o tras navegación cliente), alinear con el header fijo. */
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.startsWith("#") || hash.length < 2) return;
+
+    const timer = window.setTimeout(() => {
+      scrollToLandingHash(hash, { updateHistory: false });
+    }, 40);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  function handleHashClick(
+    event: MouseEvent<HTMLAnchorElement>,
+    href: string,
+    { closeMenu = false }: { closeMenu?: boolean } = {},
+  ) {
+    if (!href.startsWith("#")) return;
+
+    event.preventDefault();
+
+    const runScroll = () => {
+      scrollToLandingHash(href);
+    };
+
+    if (closeMenu && open) {
+      setOpen(false);
+      // Esperar a que el menú se desmonte para no calcular mal el offset.
+      window.setTimeout(runScroll, 60);
+      return;
+    }
+
+    runScroll();
+  }
+
   return (
     <header
       className={`landing-header fixed inset-x-0 top-0 z-50 transition-all safe-area-inset ${
@@ -41,7 +77,12 @@ export function LandingNav() {
           aria-label="Navegación principal"
         >
           {navLinks.map((link) => (
-            <a key={link.href} href={link.href} className="landing-nav-link">
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={(event) => handleHashClick(event, link.href)}
+              className="landing-nav-link"
+            >
               {link.label}
             </a>
           ))}
@@ -82,7 +123,9 @@ export function LandingNav() {
               <a
                 key={link.href}
                 href={link.href}
-                onClick={() => setOpen(false)}
+                onClick={(event) =>
+                  handleHashClick(event, link.href, { closeMenu: true })
+                }
                 className="landing-nav-link justify-start px-2 py-3 text-base"
               >
                 {link.label}

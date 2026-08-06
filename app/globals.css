@@ -712,6 +712,31 @@ body {
   @apply min-h-dvh bg-[#FAFAF9] dark:bg-zinc-950;
 }
 
+/* Smooth scroll a anclas de la landing (#precios, etc.) con offset del header fijo. */
+html:has(.landing-shell) {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.landing-shell) {
+    scroll-behavior: auto;
+  }
+}
+
+#precios,
+#experiencia,
+#marca-blanca {
+  scroll-margin-top: 6rem;
+}
+
+@media (min-width: 1024px) {
+  #precios,
+  #experiencia,
+  #marca-blanca {
+    scroll-margin-top: 6.5rem;
+  }
+}
+
 .landing-glass {
   @apply rounded-[12px] border border-zinc-200/50 bg-white/75 shadow-[0_1px_3px_rgba(24,24,27,0.04)] backdrop-blur-md dark:border-zinc-700/50 dark:bg-zinc-900/70 dark:shadow-none;
 }

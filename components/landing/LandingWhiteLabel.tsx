@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   ArrowRight,
   Globe,
@@ -201,13 +200,13 @@ export function LandingWhiteLabel() {
         </div>
 
         <div className="mt-12 text-center">
-          <Link
+          <a
             href="#precios"
             className="btn-brand inline-flex gap-2 px-6 py-2.5 text-sm shadow-md shadow-emerald-500/15"
           >
             Ver planes con marca blanca
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
+          </a>
         </div>
       </div>
     </section>
