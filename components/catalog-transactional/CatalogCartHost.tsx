@@ -164,6 +164,8 @@ export function CatalogCartHost({
                 onClose={closePanel}
                 fulfillmentMode={mode}
                 locationId={orderLocationId}
+                initialStep={2}
+                onBackToCart={() => setPanelView("summary")}
               />
             </CheckoutErrorBoundary>
           ) : null}

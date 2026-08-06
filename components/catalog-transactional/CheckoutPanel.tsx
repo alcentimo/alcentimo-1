@@ -68,6 +68,13 @@ interface CheckoutPanelProps {
   onClose: () => void;
   fulfillmentMode?: CatalogFulfillmentMode;
   locationId?: string | null;
+  /**
+   * Paso inicial. Desde el resumen del carrito se usa 2 para evitar
+   * la pantalla intermedia de "Completar pedido".
+   */
+  initialStep?: CheckoutStep;
+  /** Si está en Datos y vuelve atrás, regresa al resumen del carrito. */
+  onBackToCart?: () => void;
 }
 
 interface CustomerCheckoutProfile {
@@ -108,6 +115,8 @@ export function CheckoutPanel({
   onClose,
   fulfillmentMode = "delivery",
   locationId = null,
+  initialStep = 1,
+  onBackToCart,
 }: CheckoutPanelProps) {
   const { items, subtotalUsd, updateQuantity, removeItem, clearCart } =
     useCart();
@@ -149,7 +158,7 @@ export function CheckoutPanel({
     Partial<Record<CheckoutFieldKey, boolean>>
   >({});
   const [validationAttempted, setValidationAttempted] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(1);
+  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(initialStep);
 
   useEffect(() => {
     if (
@@ -476,12 +485,16 @@ export function CheckoutPanel({
 
   useEffect(() => {
     if (items.length === 0 && checkoutStep !== 1) {
+      if (onBackToCart) {
+        onBackToCart();
+        return;
+      }
       setCheckoutStep(1);
       setValidationAttempted(false);
       setTouchedFields({});
       setError(null);
     }
-  }, [items.length, checkoutStep]);
+  }, [items.length, checkoutStep, onBackToCart]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -492,6 +505,10 @@ export function CheckoutPanel({
   }, [checkoutStep]);
 
   function goToStep(step: CheckoutStep) {
+    if (step === 1 && onBackToCart) {
+      onBackToCart();
+      return;
+    }
     setError(null);
     setValidationAttempted(false);
     setTouchedFields({});
@@ -500,6 +517,10 @@ export function CheckoutPanel({
 
   function goBackStep() {
     if (checkoutStep <= 1) return;
+    if (checkoutStep === 2 && onBackToCart) {
+      onBackToCart();
+      return;
+    }
     goToStep((checkoutStep - 1) as CheckoutStep);
   }
 
