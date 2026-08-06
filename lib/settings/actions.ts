@@ -108,6 +108,15 @@ export async function saveCatalogAssistantAvatarSettings(
   });
 }
 
+/** Activa o desactiva el Asistente IA en el catálogo público. */
+export async function saveAiAssistantEnabledSettings(
+  aiAssistantEnabled: boolean,
+): Promise<SettingsActionResult> {
+  return persistSettingsPatch({
+    aiAssistantEnabled: Boolean(aiAssistantEnabled),
+  });
+}
+
 export async function saveCatalogDesignSettings(
   design: CatalogDesignSettings,
 ): Promise<SettingsActionResult> {

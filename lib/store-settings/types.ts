@@ -132,6 +132,11 @@ export interface StoreSettingsConfig {
   messageTemplates: MessageTemplatesSettings;
   interfacePreferences: InterfacePreferencesSettings;
   checkout: CheckoutSettings;
+  /**
+   * Muestra el Asistente IA («Ayuda») en el catálogo público.
+   * Por defecto `true` en tiendas nuevas.
+   */
+  aiAssistantEnabled: boolean;
 }
 
 export const MAX_WHATSAPP_PHONES = 3;

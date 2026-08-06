@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
-import { CatalogAssistantAvatarPanel } from "@/components/dashboard/assistant/CatalogAssistantAvatarPanel";
+import { CatalogAssistantEnabledPanel } from "@/components/dashboard/assistant/CatalogAssistantEnabledPanel";
 import { OwnerAssistantChat } from "@/components/dashboard/assistant/OwnerAssistantChat";
 import { InventoryAiSuggestionCards } from "@/components/dashboard/InventoryAiSuggestionCards";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
@@ -49,9 +49,8 @@ export default async function AsistentePage() {
         description={`Consultor de negocios con datos en tiempo real: inventario, ventas, clientes, promociones y mensajes de WhatsApp.`}
       />
 
-      <CatalogAssistantAvatarPanel
-        initialAvatar={storeSettings.catalogDesign.assistantAvatar}
-        storeLogoUrl={store.logo_url}
+      <CatalogAssistantEnabledPanel
+        initialEnabled={storeSettings.aiAssistantEnabled}
       />
 
       <InventoryAiSuggestionCards

@@ -1,7 +1,3 @@
-import {
-  normalizeAssistantAvatarSettings,
-  resolveAssistantAvatarCustomUrl,
-} from "@/lib/store-settings/assistant-avatar";
 import type { AssistantAvatarAnimationKind } from "@/lib/store-settings/assistant-avatar-presets";
 import type { CatalogAssistantAvatarSettings } from "@/lib/store-settings/types";
 
@@ -13,24 +9,13 @@ export interface StorefrontAssistantAvatarContext {
 }
 
 /**
- * Resuelve avatar del asistente para el catálogo público.
- * Solo logo de tienda o imagen personalizada (los presets se migran a logo).
+ * Avatar del asistente en el catálogo público: siempre el logo de la tienda
+ * (Identidad). Se ignora cualquier configuración legacy de avatar personalizado.
  */
 export function resolveStorefrontAssistantAvatar(
-  settings: CatalogAssistantAvatarSettings | undefined,
+  _settings: CatalogAssistantAvatarSettings | undefined,
   storeLogoFallback: string | null,
 ): StorefrontAssistantAvatarContext {
-  const normalized = normalizeAssistantAvatarSettings(settings);
-
-  if (normalized.mode === "custom") {
-    return {
-      url: resolveAssistantAvatarCustomUrl(normalized) ?? storeLogoFallback,
-      presetId: null,
-      animation: null,
-      animated: false,
-    };
-  }
-
   return {
     url: storeLogoFallback,
     presetId: null,

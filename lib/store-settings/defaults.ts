@@ -231,6 +231,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       accountMode: "hibrido",
       checkoutType: "both",
     },
+    aiAssistantEnabled: true,
   };
 }
 
@@ -509,6 +510,12 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
         checkoutRaw.checkoutType ?? checkoutRaw.checkout_type,
       ),
     },
+    aiAssistantEnabled:
+      typeof raw.aiAssistantEnabled === "boolean"
+        ? raw.aiAssistantEnabled
+        : typeof raw.ai_assistant_enabled === "boolean"
+          ? raw.ai_assistant_enabled
+          : defaults.aiAssistantEnabled,
   };
 }
 
@@ -622,5 +629,9 @@ export function mergeStoreSettingsConfig(
         patch.checkout?.checkoutType ?? base.checkout.checkoutType,
       ),
     },
+    aiAssistantEnabled:
+      typeof patch.aiAssistantEnabled === "boolean"
+        ? patch.aiAssistantEnabled
+        : base.aiAssistantEnabled,
   };
 }

@@ -21,7 +21,6 @@ import { getPublicStoreBySlug } from "@/lib/stores";
 import { getOpenAiApiKey } from "@/lib/env/server";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { getStorefrontSupportBranding } from "@/lib/catalog/get-storefront-support-branding";
-import { resolveStorefrontAssistantAvatar } from "@/lib/catalog/resolve-storefront-assistant-avatar";
 
 interface TransactionalCatalogLayoutProps {
   children: ReactNode;
@@ -124,7 +123,7 @@ export default async function TransactionalCatalogLayout({
     origin,
   );
   const themeContext = await getPublicCatalogThemeContext(storeSlug);
-  const assistantEnabled = Boolean(getOpenAiApiKey());
+  const platformAssistantOk = Boolean(getOpenAiApiKey());
   const storeSettings = store
     ? await getPublicStoreSettingsConfig(store.id)
     : null;
@@ -137,10 +136,8 @@ export default async function TransactionalCatalogLayout({
     ? await getStorefrontSupportBranding(store)
     : null;
   const storeLogoFallback = supportBranding?.avatarUrl ?? storeLogoUrl;
-  const assistantAvatar = resolveStorefrontAssistantAvatar(
-    storeSettings?.catalogDesign.assistantAvatar,
-    storeLogoFallback,
-  );
+  const assistantEnabled =
+    platformAssistantOk && (storeSettings?.aiAssistantEnabled ?? true);
 
   return (
     <div
@@ -184,9 +181,7 @@ export default async function TransactionalCatalogLayout({
               assistantEnabled={assistantEnabled}
               whatsappPhone={whatsappPhone}
               whatsappChatWelcome={whatsappChatWelcome}
-              supportAvatarUrl={assistantAvatar.url}
-              supportAvatarAnimation={assistantAvatar.animation}
-              supportAvatarAnimated={assistantAvatar.animated}
+              supportAvatarUrl={storeLogoFallback}
               supportMerchantName={supportBranding?.merchantName ?? null}
               customerAccountMode="hibrido"
             >
