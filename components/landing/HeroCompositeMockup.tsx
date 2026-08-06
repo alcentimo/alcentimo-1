@@ -1,20 +1,15 @@
 import { cn } from "@/lib/cn";
-import { LandingBoutiqueLunaSandbox } from "@/components/landing/LandingBoutiqueLunaSandbox";
+import { HeroCatalogStaticPreview } from "@/components/landing/HeroCatalogStaticPreview";
 
 interface HeroCompositeMockupProps {
   className?: string;
+  /** @deprecated Ya no se usa: la vista previa es estática. */
   exchangeRate?: number | null;
 }
 
-/** Sandbox interactivo del catálogo (Boutique Luna) para el hero y demos. */
+/** Vista previa estática del catálogo para el hero y demos ligeras. */
 export function HeroCompositeMockup({
   className,
-  exchangeRate = null,
 }: HeroCompositeMockupProps) {
-  return (
-    <LandingBoutiqueLunaSandbox
-      className={cn(className)}
-      exchangeRate={exchangeRate}
-    />
-  );
+  return <HeroCatalogStaticPreview className={cn(className)} />;
 }

@@ -11,22 +11,12 @@ import { LandingPricing } from "@/components/landing/LandingPricing";
 import { LandingAssistantChat } from "@/components/landing/LandingAssistantChat";
 import { LandingVisitTracker } from "@/components/landing/LandingVisitTracker";
 import { fetchPlanPricingTiers } from "@/lib/plans/get-plan-settings";
-import { getCurrentExchangeRate } from "@/lib/catalog";
-import { withTimeoutFallback } from "@/lib/async/with-timeout-fallback";
 
 /** Precios de planes cambian poco; cachear acelera TTFB de la landing. */
 export const revalidate = 300;
 
 export default async function Home() {
-  const [pricingTiers, exchangeRateRow] = await Promise.all([
-    fetchPlanPricingTiers(),
-    withTimeoutFallback(
-      getCurrentExchangeRate(),
-      8_000,
-      null,
-      "landing:getCurrentExchangeRate",
-    ),
-  ]);
+  const pricingTiers = await fetchPlanPricingTiers();
 
   return (
     <>
@@ -37,7 +27,7 @@ export default async function Home() {
       <LandingNav />
 
       <main className="landing-shell">
-        <Hero exchangeRate={exchangeRateRow?.rate ?? null} />
+        <Hero />
         <LandingCustomerExperience />
         <LandingBenefits />
         <LandingWhiteLabel />

@@ -1011,6 +1011,143 @@ html:has(.landing-shell) {
   @apply h-9 w-9 shrink-0 rounded-md bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-700 dark:to-zinc-800;
 }
 
+/* Landing hero: mockup estático de teléfono (sin sandbox interactivo) */
+.landing-hero-phone-host {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+}
+
+.landing-hero-phone {
+  display: flex;
+  width: 100%;
+  max-width: 22rem;
+  flex-direction: column;
+  align-items: center;
+}
+
+.landing-hero-phone-stage {
+  position: relative;
+  width: min(18.5rem, 78vw);
+}
+
+.landing-hero-phone-device {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2rem;
+  border: 1px solid rgb(228 228 231 / 0.95);
+  background: #0f172a;
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.06),
+    0 22px 48px -20px rgb(15 23 42 / 0.45),
+    inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  padding: 0.55rem;
+}
+
+:is(.dark) .landing-hero-phone-device {
+  border-color: rgb(63 63 70);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.25),
+    0 24px 52px -18px rgb(0 0 0 / 0.65),
+    inset 0 0 0 1px rgb(255 255 255 / 0.04);
+}
+
+.landing-hero-phone-notch {
+  position: absolute;
+  top: 0.7rem;
+  left: 50%;
+  z-index: 2;
+  height: 0.7rem;
+  width: 28%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgb(15 23 42 / 0.88);
+}
+
+.landing-hero-phone-screen {
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: #fafafa;
+  aspect-ratio: 780 / 1648;
+}
+
+.landing-hero-phone-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.landing-hero-phone-float {
+  position: absolute;
+  z-index: 3;
+  border-radius: 999px;
+  border: 1px solid rgb(228 228 231 / 0.9);
+  background: rgb(255 255 255 / 0.94);
+  padding: 0.4rem 0.7rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: rgb(39 39 42);
+  box-shadow: 0 10px 24px -16px rgb(15 23 42 / 0.45);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+:is(.dark) .landing-hero-phone-float {
+  border-color: rgb(63 63 70 / 0.9);
+  background: rgb(24 24 27 / 0.92);
+  color: rgb(244 244 245);
+}
+
+.landing-hero-phone-float-bcv {
+  top: 12%;
+  left: -0.75rem;
+}
+
+.landing-hero-phone-float-ai {
+  top: 38%;
+  right: -1rem;
+}
+
+.landing-hero-phone-float-wa {
+  bottom: 18%;
+  left: -1.1rem;
+  color: #128c7e;
+}
+
+:is(.dark) .landing-hero-phone-float-wa {
+  color: #25d366;
+}
+
+.landing-hero-phone-caption {
+  margin-top: 1rem;
+  max-width: 18rem;
+  text-align: center;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: rgb(113 113 122);
+}
+
+:is(.dark) .landing-hero-phone-caption {
+  color: rgb(161 161 170);
+}
+
+@media (max-width: 640px) {
+  .landing-hero-phone-float-bcv {
+    left: 0;
+  }
+
+  .landing-hero-phone-float-ai {
+    right: 0;
+  }
+
+  .landing-hero-phone-float-wa {
+    left: 0;
+  }
+}
+
 /* Landing hero: sandbox del catálogo público real (Boutique Luna) */
 .landing-catalog-sandbox {
   display: flex;

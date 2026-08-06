@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { LandingBoutiqueLunaSandbox } from "@/components/landing/LandingBoutiqueLunaSandbox";
+import { HeroCatalogStaticPreview } from "@/components/landing/HeroCatalogStaticPreview";
 import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 
 const heroHighlights = [
@@ -9,11 +9,7 @@ const heroHighlights = [
   "Atiende dudas de clientes en tu catálogo con asistencia inteligente.",
 ] as const;
 
-interface HeroProps {
-  exchangeRate?: number | null;
-}
-
-export function Hero({ exchangeRate = null }: HeroProps) {
+export function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-zinc-200/60 bg-[#FAFAF9] pt-28 sm:pt-32 lg:pt-36 dark:border-zinc-800/60 dark:bg-zinc-950">
       <div
@@ -71,8 +67,8 @@ export function Hero({ exchangeRate = null }: HeroProps) {
             </p>
           </div>
 
-          <div className="landing-catalog-sandbox-host w-full lg:justify-self-end">
-            <LandingBoutiqueLunaSandbox exchangeRate={exchangeRate} />
+          <div className="landing-hero-phone-host w-full lg:justify-self-end">
+            <HeroCatalogStaticPreview />
           </div>
         </div>
       </div>
