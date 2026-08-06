@@ -16,11 +16,15 @@ interface CartSummaryPanelProps {
   onCheckout: () => void;
   exchangeRate?: number | null;
   showBsConversion?: boolean;
+  /** Muestra el CTA que abre el checkout paso a paso. */
+  showFullCheckoutCta?: boolean;
+  /** Muestra el CTA que abre wa.me con el carrito. */
+  showWhatsAppCta?: boolean;
   /**
-   * Demo o tienda en modo direct_whatsapp: el CTA abre wa.me
-   * con el resumen del carrito, sin formulario de checkout.
+   * Cuando solo hay WhatsApp (sin checkout web), el botón verde es el principal.
    */
-  checkoutViaWhatsApp?: boolean;
+  whatsappAsPrimary?: boolean;
+  checkoutCtaLabel?: string;
   whatsappCtaLabel?: string;
   whatsappHint?: string;
 }
@@ -32,7 +36,10 @@ export function CartSummaryPanel({
   onCheckout,
   exchangeRate = null,
   showBsConversion = false,
-  checkoutViaWhatsApp = false,
+  showFullCheckoutCta = true,
+  showWhatsAppCta = false,
+  whatsappAsPrimary = false,
+  checkoutCtaLabel = "Finalizar pedido",
   whatsappCtaLabel = "Pedir por WhatsApp",
   whatsappHint = "Tu pedido se envía por WhatsApp con el resumen del carrito.",
 }: CartSummaryPanelProps) {
@@ -40,7 +47,7 @@ export function CartSummaryPanel({
   const { mode, selectedLocation } = useCatalogFulfillment();
   const { accountsEnabled } = useCustomerAccountMode();
 
-  function handleWhatsAppInquiry() {
+  function handleWhatsAppOrder() {
     const phone = whatsappPhone?.trim();
     if (!phone || items.length === 0) return;
 
@@ -59,15 +66,8 @@ export function CartSummaryPanel({
     }
   }
 
-  function handleCheckout() {
-    if (checkoutViaWhatsApp) {
-      handleWhatsAppInquiry();
-      return;
-    }
-    onCheckout();
-  }
-
   const whatsappReady = Boolean(whatsappPhone?.trim()) && items.length > 0;
+  const whatsappPrimary = showWhatsAppCta && (whatsappAsPrimary || !showFullCheckoutCta);
 
   return (
     <div className="txn-checkout txn-cart-summary">
@@ -127,44 +127,41 @@ export function CartSummaryPanel({
               </strong>
             </div>
 
-            <button
-              type="button"
-              onClick={handleCheckout}
-              className={
-                checkoutViaWhatsApp
-                  ? "txn-whatsapp-primary-btn flex w-full touch-manipulation items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
-                  : "txn-submit-btn txn-cart-summary-checkout-btn"
-              }
-              disabled={checkoutViaWhatsApp && !whatsappReady}
-            >
-              {checkoutViaWhatsApp ? (
-                <>
-                  <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                  {whatsappCtaLabel}
-                </>
-              ) : (
-                "Completar pedido"
-              )}
-            </button>
-
-            <p className="txn-checkout-hint text-center">
-              {checkoutViaWhatsApp
-                ? whatsappHint
-                : accountsEnabled
-                  ? "Compra sin cuenta · Solo nombre y teléfono al pagar. El registro es opcional."
-                  : "Compra como invitado · Solo nombre y teléfono al pagar."}
-            </p>
-
-            {whatsappReady && !checkoutViaWhatsApp ? (
+            {showFullCheckoutCta ? (
               <button
                 type="button"
-                onClick={handleWhatsAppInquiry}
-                className="txn-whatsapp-outline-btn"
+                onClick={onCheckout}
+                className="txn-submit-btn txn-cart-summary-checkout-btn"
               >
-                <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                Consultar por WhatsApp
+                {checkoutCtaLabel}
               </button>
             ) : null}
+
+            {showWhatsAppCta ? (
+              <button
+                type="button"
+                onClick={handleWhatsAppOrder}
+                disabled={!whatsappReady}
+                className={
+                  whatsappPrimary
+                    ? "txn-whatsapp-primary-btn flex w-full touch-manipulation items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    : "txn-whatsapp-outline-btn !mt-2"
+                }
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                {whatsappCtaLabel}
+              </button>
+            ) : null}
+
+            <p className="txn-checkout-hint text-center">
+              {whatsappPrimary
+                ? whatsappHint
+                : showFullCheckoutCta && showWhatsAppCta
+                  ? "Elige finalizar en la web o enviar el pedido por WhatsApp."
+                  : accountsEnabled
+                    ? "Compra sin cuenta · Solo nombre y teléfono al pagar. El registro es opcional."
+                    : "Compra como invitado · Solo nombre y teléfono al pagar."}
+            </p>
           </footer>
         </>
       )}

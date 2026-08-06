@@ -102,7 +102,7 @@ export type CustomerAccountMode = "hibrido";
 export type LegacyCustomerAccountMode = "libre" | "hibrido";
 
 /** Flujo de pedido en el catálogo público. */
-export type CheckoutType = "full_checkout" | "direct_whatsapp";
+export type CheckoutType = "both" | "full_checkout" | "direct_whatsapp";
 
 export interface CheckoutSettings {
   /**
@@ -110,8 +110,9 @@ export interface CheckoutSettings {
    */
   accountMode: CustomerAccountMode;
   /**
-   * `full_checkout`: formulario web (datos, envío, pago).
-   * `direct_whatsapp`: envía el carrito a WhatsApp sin pasos intermedios.
+   * `both`: checkout web + WhatsApp directo (predeterminado).
+   * `full_checkout`: solo formulario web (datos, envío, pago).
+   * `direct_whatsapp`: solo envío del carrito a WhatsApp.
    */
   checkoutType: CheckoutType;
 }

@@ -19,6 +19,7 @@ import {
   normalizeWhatsAppChatWelcome,
 } from "@/lib/catalog/whatsapp-quick-chat";
 import { saveCheckoutSettings, saveLocationHoursSettings } from "@/lib/settings/actions";
+import { normalizeCheckoutType } from "@/lib/store-settings/defaults";
 import type {
   CheckoutSettings,
   CheckoutType,
@@ -65,10 +66,8 @@ export function LocationHoursTab({
   const [whatsappChatWelcome, setWhatsappChatWelcome] = useState(() =>
     normalizeWhatsAppChatWelcome(initialContact.whatsappChatWelcome),
   );
-  const [checkoutType, setCheckoutType] = useState<CheckoutType>(
-    initialCheckout.checkoutType === "direct_whatsapp"
-      ? "direct_whatsapp"
-      : "full_checkout",
+  const [checkoutType, setCheckoutType] = useState<CheckoutType>(() =>
+    normalizeCheckoutType(initialCheckout.checkoutType),
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -162,11 +161,7 @@ export function LocationHoursTab({
         setWhatsappChatWelcome(
           normalizeWhatsAppChatWelcome(initialContact.whatsappChatWelcome),
         );
-        setCheckoutType(
-          initialCheckout.checkoutType === "direct_whatsapp"
-            ? "direct_whatsapp"
-            : "full_checkout",
-        );
+        setCheckoutType(normalizeCheckoutType(initialCheckout.checkoutType));
         return;
       }
 
@@ -332,64 +327,63 @@ export function LocationHoursTab({
       </SettingsSection>
 
       <SettingsSection
-        title="Tipo de checkout"
+        title="Modo de Pedido / Checkout"
         description="Elige cómo tus clientes confirman el pedido desde el catálogo."
         variant="payments"
       >
         <div className="general-settings-card space-y-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <label
-              className={cn(
-                "flex flex-1 cursor-pointer flex-col gap-1 rounded-xl border px-4 py-3 text-sm transition-colors",
-                checkoutType === "full_checkout"
-                  ? "border-emerald-300 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/30"
-                  : "border-zinc-200 dark:border-zinc-700",
-              )}
-            >
-              <span className="inline-flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-100">
-                <input
-                  type="radio"
-                  name="checkout-type"
-                  checked={checkoutType === "full_checkout"}
-                  onChange={() => {
-                    setCheckoutType("full_checkout");
-                    setSuccess(false);
-                  }}
-                  className="text-emerald-600 focus:ring-emerald-500"
-                />
-                Checkout Completo
-              </span>
-              <span className="pl-6 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                Requiere datos de envío y pago en la web.
-              </span>
-            </label>
-            <label
-              className={cn(
-                "flex flex-1 cursor-pointer flex-col gap-1 rounded-xl border px-4 py-3 text-sm transition-colors",
-                checkoutType === "direct_whatsapp"
-                  ? "border-emerald-300 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/30"
-                  : "border-zinc-200 dark:border-zinc-700",
-              )}
-            >
-              <span className="inline-flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-100">
-                <input
-                  type="radio"
-                  name="checkout-type"
-                  checked={checkoutType === "direct_whatsapp"}
-                  onChange={() => {
-                    setCheckoutType("direct_whatsapp");
-                    setSuccess(false);
-                  }}
-                  className="text-emerald-600 focus:ring-emerald-500"
-                />
-                WhatsApp Directo
-              </span>
-              <span className="pl-6 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                Envía el carrito directamente a WhatsApp sin pedir formulario.
-              </span>
-            </label>
+          <div className="flex flex-col gap-3">
+            {(
+              [
+                {
+                  value: "both" as const,
+                  title: "Ambas Opciones (Predeterminado)",
+                  description:
+                    "El cliente elige en el carrito: llenar datos en la web o enviar directo a WhatsApp.",
+                },
+                {
+                  value: "full_checkout" as const,
+                  title: "Solo Checkout Completo (Datos y Pago)",
+                  description:
+                    "Muestra solo el flujo estándar paso a paso en la web.",
+                },
+                {
+                  value: "direct_whatsapp" as const,
+                  title: "Solo WhatsApp Directo",
+                  description:
+                    "Muestra únicamente el botón para enviar el pedido directo a WhatsApp.",
+                },
+              ] as const
+            ).map((option) => (
+              <label
+                key={option.value}
+                className={cn(
+                  "flex cursor-pointer flex-col gap-1 rounded-xl border px-4 py-3 text-sm transition-colors",
+                  checkoutType === option.value
+                    ? "border-emerald-300 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/30"
+                    : "border-zinc-200 dark:border-zinc-700",
+                )}
+              >
+                <span className="inline-flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-100">
+                  <input
+                    type="radio"
+                    name="checkout-type"
+                    checked={checkoutType === option.value}
+                    onChange={() => {
+                      setCheckoutType(option.value);
+                      setSuccess(false);
+                    }}
+                    className="text-emerald-600 focus:ring-emerald-500"
+                  />
+                  {option.title}
+                </span>
+                <span className="pl-6 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  {option.description}
+                </span>
+              </label>
+            ))}
           </div>
-          {checkoutType === "direct_whatsapp" ? (
+          {checkoutType === "direct_whatsapp" || checkoutType === "both" ? (
             <p className="text-[11px] text-zinc-400">
               Asegúrate de tener al menos un número de WhatsApp configurado
               abajo.

@@ -9,6 +9,7 @@ import { CartSummaryPanel } from "@/components/catalog-transactional/CartSummary
 import { CheckoutPanel } from "@/components/catalog-transactional/CheckoutPanel";
 import { CheckoutErrorBoundary } from "@/components/catalog-transactional/CheckoutErrorBoundary";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
+import type { CheckoutType } from "@/lib/store-settings/types";
 
 interface CatalogCartHostProps {
   store: Pick<Store, "slug" | "name">;
@@ -30,6 +31,14 @@ interface CatalogCartHostProps {
 
 export type CartPanelView = "closed" | "summary" | "checkout";
 
+function resolveCheckoutType(
+  purchaseInfo: PublicPurchaseInfo,
+  sandboxMode: boolean,
+): CheckoutType {
+  if (sandboxMode) return "direct_whatsapp";
+  return purchaseInfo.checkoutType;
+}
+
 export function CatalogCartHost({
   store,
   purchaseInfo,
@@ -49,24 +58,39 @@ export function CatalogCartHost({
   const orderLocationId = selectedLocationId ?? defaultLocationId;
   const isControlled =
     controlledPanelView !== undefined && onPanelViewChange !== undefined;
-  const [internalPanelView, setInternalPanelView] = useState<CartPanelView>(
-    openInitially ? "checkout" : "closed",
-  );
+
+  const checkoutType = resolveCheckoutType(purchaseInfo, sandboxMode);
+  const showFullCheckoutCta =
+    checkoutType === "both" || checkoutType === "full_checkout";
+  const showWhatsAppCta =
+    checkoutType === "both" || checkoutType === "direct_whatsapp";
+  const whatsappOnly = checkoutType === "direct_whatsapp";
+
+  const initialView: CartPanelView = openInitially
+    ? showFullCheckoutCta
+      ? "checkout"
+      : "summary"
+    : "closed";
+
+  const [internalPanelView, setInternalPanelView] =
+    useState<CartPanelView>(initialView);
   const panelView = isControlled ? controlledPanelView : internalPanelView;
   const setPanelView = isControlled ? onPanelViewChange : setInternalPanelView;
   const whatsappConfigured = Boolean(purchaseInfo.whatsappPhone?.trim());
-  const directWhatsApp =
-    sandboxMode || purchaseInfo.checkoutType === "direct_whatsapp";
 
   useEffect(() => {
     if (openInitially && !isControlled) {
-      setInternalPanelView("checkout");
+      setInternalPanelView(showFullCheckoutCta ? "checkout" : "summary");
     }
-  }, [openInitially, isControlled]);
+  }, [openInitially, isControlled, showFullCheckoutCta]);
 
   function closePanel() {
     setPanelView("closed");
   }
+
+  const showSummary =
+    panelView === "summary" || (panelView === "checkout" && whatsappOnly);
+  const showCheckout = panelView === "checkout" && showFullCheckoutCta;
 
   return (
     <>
@@ -92,51 +116,56 @@ export function CatalogCartHost({
             aria-label="Cerrar carrito"
             onClick={closePanel}
           />
-          {panelView === "summary" || panelView === "checkout" ? (
-            directWhatsApp ? (
-              <CheckoutErrorBoundary
+          {showSummary ? (
+            <CheckoutErrorBoundary
+              onClose={closePanel}
+              onRetry={() => setPanelView("summary")}
+            >
+              <CartSummaryPanel
+                storeName={store.name}
+                whatsappPhone={purchaseInfo.whatsappPhone}
                 onClose={closePanel}
-                onRetry={() => setPanelView("summary")}
-              >
-                <CartSummaryPanel
-                  storeName={store.name}
-                  whatsappPhone={purchaseInfo.whatsappPhone}
-                  onClose={closePanel}
-                  onCheckout={() => setPanelView("summary")}
-                  exchangeRate={exchangeRate}
-                  showBsConversion={showBsConversion}
-                  checkoutViaWhatsApp
-                  whatsappCtaLabel={
-                    sandboxMode
-                      ? "Enviar pedido por WhatsApp"
+                onCheckout={() => setPanelView("checkout")}
+                exchangeRate={exchangeRate}
+                showBsConversion={showBsConversion}
+                showFullCheckoutCta={showFullCheckoutCta}
+                showWhatsAppCta={showWhatsAppCta}
+                whatsappAsPrimary={whatsappOnly}
+                checkoutCtaLabel="Finalizar pedido"
+                whatsappCtaLabel={
+                  sandboxMode
+                    ? "Enviar pedido por WhatsApp"
+                    : checkoutType === "both"
+                      ? "Pedir directo por WhatsApp"
                       : "Pedir por WhatsApp"
-                  }
-                  whatsappHint={
-                    sandboxMode
-                      ? "Demo interactiva · El pedido se abre en WhatsApp sin guardar en el servidor."
-                      : "Tu pedido se envía por WhatsApp con el resumen del carrito."
-                  }
-                />
-              </CheckoutErrorBoundary>
-            ) : (
-              <CheckoutErrorBoundary
+                }
+                whatsappHint={
+                  sandboxMode
+                    ? "Demo interactiva · El pedido se abre en WhatsApp sin guardar en el servidor."
+                    : "Tu pedido se envía por WhatsApp con el resumen del carrito."
+                }
+              />
+            </CheckoutErrorBoundary>
+          ) : null}
+
+          {showCheckout ? (
+            <CheckoutErrorBoundary
+              onClose={closePanel}
+              onRetry={() => setPanelView("checkout")}
+            >
+              <CheckoutPanel
+                storeSlug={store.slug}
+                storeName={store.name}
+                purchaseInfo={purchaseInfo}
+                whatsappConfigured={whatsappConfigured}
+                exchangeRate={exchangeRate}
+                showOfficialRate={showOfficialRate}
+                showBsConversion={showBsConversion}
                 onClose={closePanel}
-                onRetry={() => setPanelView("checkout")}
-              >
-                <CheckoutPanel
-                  storeSlug={store.slug}
-                  storeName={store.name}
-                  purchaseInfo={purchaseInfo}
-                  whatsappConfigured={whatsappConfigured}
-                  exchangeRate={exchangeRate}
-                  showOfficialRate={showOfficialRate}
-                  showBsConversion={showBsConversion}
-                  onClose={closePanel}
-                  fulfillmentMode={mode}
-                  locationId={orderLocationId}
-                />
-              </CheckoutErrorBoundary>
-            )
+                fulfillmentMode={mode}
+                locationId={orderLocationId}
+              />
+            </CheckoutErrorBoundary>
           ) : null}
         </div>
       ) : null}

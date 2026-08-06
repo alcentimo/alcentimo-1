@@ -1,5 +1,6 @@
 import type {
   CatalogDesignSettings,
+  CheckoutType,
   DaySchedule,
   PaymentMethodKey,
   ShippingCarrierKey,
@@ -56,6 +57,17 @@ const PAYMENT_METHOD_KEYS: PaymentMethodKey[] = [
   "crypto",
   "cashea",
 ];
+
+export function normalizeCheckoutType(raw: unknown): CheckoutType {
+  if (
+    raw === "both" ||
+    raw === "full_checkout" ||
+    raw === "direct_whatsapp"
+  ) {
+    return raw;
+  }
+  return "both";
+}
 
 const DEFAULT_OPEN_TIME = "09:00";
 const DEFAULT_CLOSE_TIME = "18:00";
@@ -217,7 +229,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
     },
     checkout: {
       accountMode: "hibrido",
-      checkoutType: "full_checkout",
+      checkoutType: "both",
     },
   };
 }
@@ -493,11 +505,9 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
     checkout: {
       // Todas las tiendas operan en modo híbrido (invitado + cuentas opcionales).
       accountMode: "hibrido",
-      checkoutType:
-        checkoutRaw.checkoutType === "direct_whatsapp" ||
-        checkoutRaw.checkout_type === "direct_whatsapp"
-          ? "direct_whatsapp"
-          : "full_checkout",
+      checkoutType: normalizeCheckoutType(
+        checkoutRaw.checkoutType ?? checkoutRaw.checkout_type,
+      ),
     },
   };
 }
@@ -608,11 +618,9 @@ export function mergeStoreSettingsConfig(
       : base.interfacePreferences,
     checkout: {
       accountMode: "hibrido",
-      checkoutType:
-        patch.checkout?.checkoutType === "direct_whatsapp" ||
-        patch.checkout?.checkoutType === "full_checkout"
-          ? patch.checkout.checkoutType
-          : base.checkout.checkoutType,
+      checkoutType: normalizeCheckoutType(
+        patch.checkout?.checkoutType ?? base.checkout.checkoutType,
+      ),
     },
   };
 }

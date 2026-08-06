@@ -110,14 +110,16 @@ export function CatalogProductDetailPanel({
   showBsConversion = true,
   storeRubro = null,
   wholesaleEnabled = false,
-  checkoutType = "full_checkout",
+  checkoutType = "both",
   whatsappPhone = null,
   onClose,
   onAddToCart,
 }: CatalogProductDetailPanelProps) {
   const cartContext = useCartOptional();
   const activeExchangeRate = exchangeRate ?? product.exchange_rate_used;
-  const directWhatsApp = checkoutType === "direct_whatsapp";
+  const showWhatsAppOrder =
+    checkoutType === "direct_whatsapp" || checkoutType === "both";
+  const whatsappPrimary = checkoutType === "direct_whatsapp";
   const whatsappReady = Boolean(whatsappPhone?.trim());
 
   const [detailDescription, setDetailDescription] = useState<string | null>(null);
@@ -294,9 +296,12 @@ export function CatalogProductDetailPanel({
     }
   }
 
-  const showFooter = Boolean(onAddToCart) || (directWhatsApp && whatsappReady);
+  const showFooter = Boolean(onAddToCart) || (showWhatsAppOrder && whatsappReady);
   const canWhatsAppOrder =
-    directWhatsApp && whatsappReady && Boolean(selectedVariant) && !outOfStock;
+    showWhatsAppOrder &&
+    whatsappReady &&
+    Boolean(selectedVariant) &&
+    !outOfStock;
 
   return (
     <div className="product-detail-overlay" role="dialog" aria-modal="true">
@@ -453,7 +458,7 @@ export function CatalogProductDetailPanel({
 
         {showFooter ? (
           <footer className="product-detail-footer safe-area-bottom space-y-2">
-            {directWhatsApp && whatsappReady ? (
+            {showWhatsAppOrder && whatsappReady && whatsappPrimary ? (
               <button
                 type="button"
                 onClick={handleWhatsAppOrder}
@@ -472,7 +477,7 @@ export function CatalogProductDetailPanel({
                 disabled={!canAddMore && inCart}
                 className={cn(
                   "touch-manipulation",
-                  directWhatsApp
+                  whatsappPrimary
                     ? "txn-whatsapp-outline-btn !mt-0"
                     : cn(
                         "product-detail-add-btn",
@@ -491,6 +496,18 @@ export function CatalogProductDetailPanel({
                     ? `En carrito (${contextCartQuantity}) · Añadir otro`
                     : `En carrito (${contextCartQuantity})`
                   : "Agregar al carrito"}
+              </button>
+            ) : null}
+
+            {showWhatsAppOrder && whatsappReady && !whatsappPrimary ? (
+              <button
+                type="button"
+                onClick={handleWhatsAppOrder}
+                disabled={!canWhatsAppOrder}
+                className="txn-whatsapp-outline-btn !mt-0"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                Pedir por WhatsApp
               </button>
             ) : null}
           </footer>
