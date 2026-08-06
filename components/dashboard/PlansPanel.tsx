@@ -312,68 +312,6 @@ export function PlansPanel({
         </section>
       ) : null}
 
-      {!isActivation ? (
-        <section className="rounded-xl border border-violet-200/80 bg-violet-50/40 px-5 py-4 dark:border-violet-900/40 dark:bg-violet-950/20">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-start gap-3">
-              <Globe
-                className="mt-0.5 h-5 w-5 shrink-0 text-violet-700 dark:text-violet-400"
-                aria-hidden="true"
-              />
-              <div>
-                <p className="text-sm font-semibold text-violet-950 dark:text-violet-100">
-                  Tu marca, tu dominio
-                </p>
-                <p className="mt-1 text-sm leading-relaxed text-violet-900/90 dark:text-violet-200/90">
-                  Cualquier plan de pago te permite conectar tu propio dominio
-                  .com. El plan Gratis utiliza el subdominio{" "}
-                  <strong>tuempresa.alcentimo.com</strong>.
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/dashboard/ajustes/dominio"
-              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-violet-300 bg-white px-4 py-2 text-sm font-medium text-violet-900 transition hover:bg-violet-50 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-100 dark:hover:bg-violet-900/40"
-            >
-              Gestionar dominio
-            </Link>
-          </div>
-        </section>
-      ) : null}
-
-      {!isActivation ? (
-        <section className="rounded-xl border border-teal-200/80 bg-teal-50/40 px-5 py-4 dark:border-teal-900/40 dark:bg-teal-950/20">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-start gap-3">
-              <Globe
-                className="mt-0.5 h-5 w-5 shrink-0 text-teal-700 dark:text-teal-400"
-                aria-hidden="true"
-              />
-              <div>
-                <p className="text-sm font-semibold text-teal-950 dark:text-teal-100">
-                  Multi-sucursal con Enterprise
-                </p>
-                <p className="mt-1 text-sm leading-relaxed text-teal-900/90 dark:text-teal-200/90">
-                  Enterprise incluye hasta <strong>3 sucursales</strong>, selector de sede
-                  y retiro en tienda, stock por ubicación, y todo lo de Business.
-                  Sedes adicionales: <strong>+$6 USD/mes</strong> cada una.
-                </p>
-              </div>
-            </div>
-            <Link
-              href={
-                currentPlanId === "enterprise"
-                  ? "/dashboard/ajustes?tab=branches"
-                  : "#planes"
-              }
-              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-teal-300 bg-white px-4 py-2 text-sm font-medium text-teal-900 transition hover:bg-teal-50 dark:border-teal-800 dark:bg-teal-950 dark:text-teal-100 dark:hover:bg-teal-900/40"
-            >
-              {currentPlanId === "enterprise" ? "Gestionar sucursales" : "Ver Enterprise"}
-            </Link>
-          </div>
-        </section>
-      ) : null}
-
       <section id="planes" className={cn(isActivation && "activar-plans-section")}>
         <div
           className={cn(
