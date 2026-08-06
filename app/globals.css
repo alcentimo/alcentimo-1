@@ -7574,11 +7574,11 @@ html:has(.landing-shell) {
   }
 
   .design-accordion-trigger {
-    @apply px-3 py-3;
+    @apply px-3 py-3.5;
   }
 
   .design-accordion-panel {
-    @apply px-2 pb-2 pt-1.5;
+    @apply px-3 pb-3 pt-2;
   }
 
   .design-studio-preview-meta {
@@ -7661,19 +7661,43 @@ html:has(.landing-shell) {
 }
 
 .design-accordion-trigger {
-  @apply flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-zinc-50/80 dark:hover:bg-zinc-900/40;
+  @apply flex w-full cursor-pointer items-center gap-3 px-4 py-3.5 text-left transition-colors duration-200 hover:bg-zinc-50 dark:hover:bg-zinc-900/50;
+}
+
+.design-accordion-open > .design-accordion-trigger {
+  @apply bg-zinc-50/70 dark:bg-zinc-900/30;
+}
+
+.design-accordion-chevron {
+  @apply transition-transform duration-300 ease-out;
 }
 
 .design-accordion-panel {
-  @apply border-t border-zinc-100 px-3 pb-3 pt-2 dark:border-zinc-800;
+  @apply border-t border-zinc-100 px-3.5 pb-3.5 pt-3 dark:border-zinc-800;
+}
+
+.design-option-list {
+  @apply flex flex-col gap-2.5;
 }
 
 .design-option {
-  @apply flex w-full rounded-lg border border-transparent px-2.5 py-2.5 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900/50;
+  @apply flex w-full cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-white px-3.5 py-3.5 text-left shadow-sm shadow-zinc-950/[0.02] transition duration-200 hover:border-zinc-300 hover:bg-zinc-50/80 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-none dark:hover:border-zinc-600 dark:hover:bg-zinc-900/60;
 }
 
 .design-option-selected {
-  @apply bg-zinc-50 dark:bg-zinc-900/60;
+  @apply border-emerald-500 bg-emerald-50/70 shadow-sm shadow-emerald-500/10 hover:border-emerald-500 hover:bg-emerald-50/90 dark:border-emerald-500 dark:bg-emerald-950/30 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/40;
+}
+
+.design-option-radio {
+  @apply mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 border-zinc-300 bg-white transition dark:border-zinc-600 dark:bg-zinc-950;
+}
+
+.design-option-radio-selected {
+  @apply border-emerald-600 dark:border-emerald-400;
+}
+
+.design-option-radio-dot {
+  @apply h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400;
 }
 
 .design-visibility-list {

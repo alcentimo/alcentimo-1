@@ -144,7 +144,7 @@ function DesignAccordion({
   children,
 }: DesignAccordionProps) {
   return (
-    <section className="design-accordion">
+    <section className={cn("design-accordion", open && "design-accordion-open")}>
       <button
         type="button"
         onClick={onToggle}
@@ -163,7 +163,7 @@ function DesignAccordion({
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 shrink-0 text-zinc-400 transition-transform duration-200",
+            "design-accordion-chevron h-4 w-4 shrink-0 text-zinc-400",
             open && "rotate-180",
           )}
           aria-hidden="true"
@@ -198,20 +198,22 @@ function DesignOption({
       type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-pressed={selected}
       className={cn("design-option", selected && "design-option-selected")}
-      style={
-        selected && accent
-          ? {
-              borderColor: `color-mix(in srgb, ${accent} 40%, transparent)`,
-              backgroundColor: `color-mix(in srgb, ${accent} 6%, white)`,
-            }
-          : undefined
-      }
     >
+      <span
+        className={cn(
+          "design-option-radio",
+          selected && "design-option-radio-selected",
+        )}
+        aria-hidden="true"
+      >
+        {selected ? <span className="design-option-radio-dot" /> : null}
+      </span>
       <span className="flex min-w-0 flex-1 items-start gap-2.5">
         {accent ? (
           <span
-            className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+            className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/5 dark:ring-white/10"
             style={{ backgroundColor: accent }}
             aria-hidden="true"
           />
@@ -225,7 +227,7 @@ function DesignOption({
               </span>
             ) : null}
           </span>
-          <span className="mt-0.5 block text-xs leading-snug text-zinc-500">
+          <span className="mt-1 block text-xs leading-relaxed text-zinc-500">
             {description}
           </span>
         </span>
@@ -546,9 +548,9 @@ export function DesignTab({
               open={openSection === "theme"}
               onToggle={() => toggleSection("theme")}
             >
-              <div className="space-y-1">
+              <div className="design-option-list">
                 {isFashionStore ? (
-                  <p className="mb-2 text-xs leading-relaxed text-zinc-500">
+                  <p className="mb-1 text-xs leading-relaxed text-zinc-500">
                     Minimalista, Neutro Cálido o Editorial Oscuro — paletas fijas
                     con contraste automático.
                   </p>
@@ -577,8 +579,8 @@ export function DesignTab({
               open={openSection === "layout"}
               onToggle={() => toggleSection("layout")}
             >
-              <div className="space-y-1">
-                <p className="mb-2 text-xs leading-relaxed text-zinc-500">
+              <div className="design-option-list">
+                <p className="mb-1 text-xs leading-relaxed text-zinc-500">
                   {isFashionStore
                     ? "En ropa conviene Dos columnas para ver más prendas en el móvil. Los clientes también pueden cambiar la vista en el catálogo."
                     : "Elige cómo se muestran los productos. Los clientes pueden cambiarla en el catálogo."}
@@ -704,8 +706,8 @@ export function DesignTab({
               open={openSection === "checkout"}
               onToggle={() => toggleSection("checkout")}
             >
-              <div className="space-y-1">
-                <p className="mb-2 text-xs leading-relaxed text-zinc-500">
+              <div className="design-option-list">
+                <p className="mb-1 text-xs leading-relaxed text-zinc-500">
                   Define cómo confirman el pedido tus clientes en el carrito del
                   catálogo.
                 </p>
