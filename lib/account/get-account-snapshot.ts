@@ -2,11 +2,16 @@ import type { DashboardSession } from "@/lib/auth/get-user-profile";
 import { isStoreOwner } from "@/lib/stores/owner-access";
 import { TEAM_ROLE_LABELS } from "@/lib/team/roles";
 import type { AccountSnapshot } from "@/lib/account/types";
+import {
+  getProTrialDaysRemaining,
+  resolveProTrialStatus,
+} from "@/lib/plans/trial";
 
 export function buildAccountSnapshot(
   session: DashboardSession,
 ): AccountSnapshot {
   const { authUser, store, storeRole } = session;
+  const trialStatus = resolveProTrialStatus(authUser.profile, authUser.planId);
 
   return {
     userId: authUser.id,
@@ -19,6 +24,17 @@ export function buildAccountSnapshot(
     isStoreOwner: store ? isStoreOwner(store, authUser.id) : false,
     storeRole,
     storeName: store?.name ?? null,
+    trial:
+      trialStatus.startedAt != null
+        ? {
+            active: trialStatus.active,
+            startedAt: trialStatus.startedAt,
+            endsAt: trialStatus.endsAt,
+            daysRemaining: trialStatus.active
+              ? getProTrialDaysRemaining(trialStatus.endsAt)
+              : null,
+          }
+        : null,
   };
 }
 

@@ -221,6 +221,38 @@ export function formatProTrialEndsAt(endsAt: string | null): string {
   );
 }
 
+/** Fecha corta dd/mm/aaaa para resúmenes de prueba. */
+export function formatProTrialShortDate(iso: string | null): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${day}/${month}/${date.getFullYear()}`;
+}
+
+/** Días calendario restantes hasta el fin formal de la prueba (≥ 0). */
+export function getProTrialDaysRemaining(
+  endsAt: string | null,
+  nowMs: number = Date.now(),
+): number | null {
+  if (!endsAt) return null;
+  const endsMs = new Date(endsAt).getTime();
+  if (Number.isNaN(endsMs)) return null;
+  const remainingMs = endsMs - nowMs;
+  if (remainingMs <= 0) return 0;
+  return Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
+}
+
+export function formatProTrialDaysRemainingLabel(
+  daysRemaining: number | null,
+): string | null {
+  if (daysRemaining == null) return null;
+  if (daysRemaining <= 0) return "Tu prueba finaliza hoy";
+  if (daysRemaining === 1) return "Te queda 1 día de prueba";
+  return `Te quedan ${daysRemaining} días de prueba`;
+}
+
 export function getProTrialLimitLabel(productLimit?: number | null): string {
   const limit =
     productLimit === undefined
