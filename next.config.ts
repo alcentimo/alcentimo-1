@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { PWA_ADMIN_START_URL } from "./lib/pwa/constants";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const withPWA = require("next-pwa")({
   dest: "public",
@@ -9,11 +10,51 @@ const withPWA = require("next-pwa")({
   // No tomar control de la pestaña actual: evita esperas al abrir desde el icono PWA.
   clientsClaim: false,
   cleanupOutdatedCaches: true,
-  cacheStartUrl: false,
-  dynamicStartUrl: false,
-  reloadOnOnline: false,
-  // Sin reglas runtime: navegación HTML y JS cargan directo desde red (sin espera de caché SW).
-  runtimeCaching: [],
+  // Precachea la URL de arranque (login PWA) para el primer open offline/lento.
+  cacheStartUrl: true,
+  dynamicStartUrl: true,
+  dynamicStartUrlRedirect: PWA_ADMIN_START_URL,
+  reloadOnOnline: true,
+  fallbacks: {
+    document: "/offline.html",
+  },
+  // Network-First en navegación HTML; si la red falla o tarda, usa caché/offline shell.
+  runtimeCaching: [
+    {
+      urlPattern: ({ request }) => request.mode === "navigate",
+      handler: "NetworkFirst",
+      options: {
+        cacheName: "alcentimo-admin-navigations",
+        networkTimeoutSeconds: 8,
+        expiration: {
+          maxEntries: 32,
+          maxAgeSeconds: 24 * 60 * 60,
+        },
+      },
+    },
+    {
+      urlPattern: /\/_next\/static\/.*/i,
+      handler: "CacheFirst",
+      options: {
+        cacheName: "alcentimo-admin-static",
+        expiration: {
+          maxEntries: 64,
+          maxAgeSeconds: 30 * 24 * 60 * 60,
+        },
+      },
+    },
+    {
+      urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico|woff2?)$/i,
+      handler: "StaleWhileRevalidate",
+      options: {
+        cacheName: "alcentimo-admin-assets",
+        expiration: {
+          maxEntries: 64,
+          maxAgeSeconds: 7 * 24 * 60 * 60,
+        },
+      },
+    },
+  ],
 });
 
 const oauthSecurityHeaders = [

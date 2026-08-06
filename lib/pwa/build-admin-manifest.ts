@@ -1,6 +1,7 @@
 import {
   PWA_ADMIN_BACKGROUND_COLOR,
   PWA_ADMIN_IDENTITY_VERSION,
+  PWA_ADMIN_START_URL,
   PWA_ADMIN_THEME_COLOR,
 } from "@/lib/pwa/constants";
 import {
@@ -17,7 +18,7 @@ function normalizeOrigin(origin: string): string {
   return origin.replace(/\/$/, "");
 }
 
-/** PWA del dueño: panel Alcentimo (scope /, start en dashboard). */
+/** PWA del dueño: panel Alcentimo (scope /, start en login PWA). */
 export function buildAdminWebManifest(
   origin?: string,
   platformSettings?: Pick<PlatformSettings, "platformName" | "tagline">,
@@ -36,7 +37,7 @@ export function buildAdminWebManifest(
     description:
       platformSettings?.tagline?.trim() ||
       "Panel de administración de inventario y catálogo digital",
-    start_url: "/dashboard/",
+    start_url: PWA_ADMIN_START_URL,
     scope: "/",
     display: "standalone",
     display_override: ["standalone", "fullscreen"],

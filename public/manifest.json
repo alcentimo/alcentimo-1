@@ -2,7 +2,7 @@
   "name": "Alcentimo",
   "short_name": "Alcentimo",
   "description": "Inventario y catálogo digital",
-  "start_url": "/dashboard/",
+  "start_url": "/dashboard/login?utm_source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",

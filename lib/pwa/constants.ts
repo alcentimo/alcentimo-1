@@ -1,5 +1,5 @@
 /** Incrementar tras cambios de estrategia SW admin. */
-export const PWA_ADMIN_RESET_VERSION = "1";
+export const PWA_ADMIN_RESET_VERSION = "2";
 
 /** Incrementar tras cambios de estrategia SW catálogo cliente. */
 export const PWA_CATALOG_RESET_VERSION = "10";
@@ -20,6 +20,12 @@ export const PWA_SW_SCOPE = "/";
  */
 export const PWA_ADMIN_BACKGROUND_COLOR = "#09090b";
 export const PWA_ADMIN_THEME_COLOR = "#09090b";
+
+/**
+ * Arranque PWA: ruta pública (sin gate de sesión en middleware) para que
+ * el shell pinte siempre; la sesión se resuelve en el cliente.
+ */
+export const PWA_ADMIN_START_URL = "/dashboard/login?utm_source=pwa";
 
 /** Retraso antes de registrar SW (ms): la UI debe pintar primero. */
 export const PWA_REGISTER_IDLE_TIMEOUT_MS = 500;

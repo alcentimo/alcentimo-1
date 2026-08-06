@@ -527,6 +527,19 @@ export async function middleware(request: NextRequest) {
     }
 
     if (authenticatedUser && isLoginPage) {
+      // Arranque PWA: dejar pintar el shell de login y resolver sesión en cliente.
+      // Evita redirecciones del middleware que rompen la primera carga instalada.
+      const fromPwa =
+        request.nextUrl.searchParams.get("utm_source") === "pwa";
+      if (fromPwa) {
+        return applySubdomainCatalogRewrite(
+          request,
+          effectiveStoreSlug,
+          pathname,
+          supabaseResponse,
+        );
+      }
+
       const next = request.nextUrl.searchParams.get("next");
       const redirectUrl = request.nextUrl.clone();
 

@@ -5,6 +5,7 @@ import {
   AuthBootSplash,
   AuthBootSplashFallback,
 } from "@/components/auth/AuthBootSplash";
+import { AuthSessionRedirect } from "@/components/auth/AuthSessionRedirect";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,9 @@ async function DashboardLoginPageContent({
 
   return (
     <AuthBootSplash>
+      <Suspense fallback={null}>
+        <AuthSessionRedirect />
+      </Suspense>
       <AuthPageShell
         title={isInvitationFlow ? "Únete al equipo" : "Gestiona tu inventario"}
         description={

@@ -2,10 +2,14 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0d9488" />
-    <title>Sin conexión</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="color-scheme" content="dark" />
+    <title>Alcentimo</title>
     <style>
+      :root {
+        color-scheme: dark;
+      }
       body {
         margin: 0;
         min-height: 100dvh;
@@ -14,28 +18,57 @@
         justify-content: center;
         padding: 24px;
         font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        background: #f8fafc;
-        color: #0f172a;
+        background: #09090b;
+        color: #fafafa;
       }
       main {
-        max-width: 24rem;
+        max-width: 22rem;
         text-align: center;
       }
+      img {
+        width: 72px;
+        height: 72px;
+        object-fit: contain;
+        margin: 0 auto 1.25rem;
+        display: block;
+      }
       h1 {
-        font-size: 1.25rem;
+        font-size: 1.15rem;
+        font-weight: 650;
         margin: 0 0 0.5rem;
+        letter-spacing: -0.02em;
       }
       p {
-        margin: 0;
-        color: #475569;
+        margin: 0 0 1.25rem;
+        color: #a1a1aa;
         line-height: 1.5;
+        font-size: 0.9375rem;
+      }
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 0.75rem;
+        background: #0d9488;
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        padding: 0.7rem 1.15rem;
+        cursor: pointer;
+      }
+      button:active {
+        transform: scale(0.98);
       }
     </style>
   </head>
   <body>
     <main>
-      <h1>Sin conexión</h1>
-      <p>Revisa tu internet e intenta abrir la tienda de nuevo.</p>
+      <img src="/icon-192x192.png" width="72" height="72" alt="" />
+      <h1>Sin conexión por ahora</h1>
+      <p>
+        No pudimos cargar Alcentimo. Revisa tu internet e inténtalo de nuevo.
+      </p>
+      <button type="button" onclick="location.reload()">Reintentar</button>
     </main>
   </body>
 </html>
