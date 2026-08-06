@@ -14,11 +14,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CopyableInline } from "@/components/payments/CopyableInline";
-import {
-  PlanDomainStep,
-  type DomainSetupMode,
-  type PlanDomainSelection,
-} from "@/components/dashboard/plans/PlanDomainStep";
 import { submitManualPayment } from "@/lib/plans/manual-payment-actions";
 import { formatVes } from "@/lib/format";
 import {
@@ -39,7 +34,7 @@ import type { PlanId } from "@/src/config/plans";
 
 const MIN_SUBMIT_DURATION_MS = 5000;
 
-type CheckoutStep = "domain" | "checkout" | "success";
+type CheckoutStep = "checkout" | "success";
 
 interface PlanCheckoutDialogProps {
   open: boolean;
@@ -68,10 +63,7 @@ export function PlanCheckoutDialog({
   pricingTiers = PLAN_PRICING_TIERS,
   showCouponField = true,
 }: PlanCheckoutDialogProps) {
-  const [step, setStep] = useState<CheckoutStep>("domain");
-  const [domainSelection, setDomainSelection] = useState<PlanDomainSelection | null>(
-    null,
-  );
+  const [step, setStep] = useState<CheckoutStep>("checkout");
   const [referenceNumber, setReferenceNumber] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -85,8 +77,7 @@ export function PlanCheckoutDialog({
 
   useEffect(() => {
     if (!open) return;
-    setStep(tier && planIncludesCustomDomain(tier.planId) ? "domain" : "checkout");
-    setDomainSelection(null);
+    setStep("checkout");
     setReferenceNumber("");
     setCouponCode("");
     setProofFile(null);
@@ -189,25 +180,8 @@ export function PlanCheckoutDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange} containerClassName="max-w-3xl">
       <DialogContent className="relative max-h-[90vh] overflow-y-auto p-0" onClose={handleClose}>
-        {step === "domain" && tier ? (
-          <PlanDomainStep
-            tier={tier}
-            onContinue={(selection) => {
-              setDomainSelection(selection);
-              setStep("checkout");
-            }}
-            onSkip={() => {
-              setDomainSelection(null);
-              setStep("checkout");
-            }}
-          />
-        ) : step === "success" ? (
-          <SuccessView
-            tier={tier}
-            billing={billing}
-            domainSelection={domainSelection}
-            onClose={handleClose}
-          />
+        {step === "success" ? (
+          <SuccessView tier={tier} onClose={handleClose} />
         ) : (
           <div className="p-6 sm:p-8">
             <DialogHeader className="mb-6">
@@ -227,19 +201,6 @@ export function PlanCheckoutDialog({
                   <p className="mt-2 text-base font-semibold text-neutral-900 dark:text-neutral-50">
                     {formatPlanCheckoutSummary(tier, billing)}
                   </p>
-                  {domainSelection?.domain ? (
-                    <div className="mt-3 rounded-lg border border-teal-200/80 bg-teal-50/60 px-3 py-2 text-xs text-teal-900 dark:border-teal-900/40 dark:bg-teal-950/20 dark:text-teal-200">
-                      <span className="inline-flex items-center gap-1.5 font-medium">
-                        <Globe className="h-3.5 w-3.5" aria-hidden="true" />
-                        Dominio seleccionado: {domainSelection.domain}
-                      </span>
-                      <p className="mt-1 opacity-90">
-                        {domainSelection.mode === "purchase"
-                          ? "Tras activar el plan, te orientamos para registrar el dominio con tu proveedor y conectarlo."
-                          : "Tras activar el plan, configura los registros DNS para conectar tu dominio."}
-                      </p>
-                    </div>
-                  ) : null}
                   {proration.isUpgradeWithCredit ? (
                     <div className="mt-3 space-y-1 text-sm text-neutral-600 dark:text-neutral-400">
                       <p>
@@ -399,16 +360,14 @@ export function PlanCheckoutDialog({
                   )}
 
                   <div className="mt-auto flex flex-col gap-2 pt-6 sm:flex-row">
-                    {planIncludesCustomDomain(tier.planId) ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setStep("domain")}
-                        disabled={submitting}
-                      >
-                        Volver al dominio
-                      </Button>
-                    ) : null}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleClose}
+                      disabled={submitting}
+                    >
+                      Cancelar
+                    </Button>
                     <button
                       type="submit"
                       disabled={submitting || !proofFile}
@@ -455,19 +414,11 @@ function PagoMovilField({
 
 function SuccessView({
   tier,
-  billing,
-  domainSelection,
   onClose,
 }: {
   tier: PlanPricingTier;
-  billing: BillingPeriod;
-  domainSelection: PlanDomainSelection | null;
   onClose: () => void;
 }) {
-  const domainHref = domainSelection?.domain
-    ? `/dashboard/ajustes?tab=domains&domain=${encodeURIComponent(domainSelection.domain)}&mode=${domainSelection.mode}`
-    : "/dashboard/ajustes?tab=domains";
-
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center sm:px-10 sm:py-14">
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-400">
@@ -480,16 +431,10 @@ function SuccessView({
         Tu acceso ya está disponible. Verificaremos tu pago en breve; si hay algún
         problema, te avisaremos por correo.
       </p>
-      {domainSelection?.domain ? (
-        <p className="mt-3 max-w-sm text-sm text-neutral-600 dark:text-neutral-400">
-          Dominio indicado: <strong>{domainSelection.domain}</strong>. Completa la
-          conexión DNS en el siguiente paso.
-        </p>
-      ) : null}
       <div className="mt-8 flex flex-col gap-2 sm:flex-row">
         {planIncludesCustomDomain(tier.planId) ? (
           <Link
-            href={domainHref}
+            href="/dashboard/ajustes/dominio"
             className="btn-brand inline-flex min-w-[10rem] items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold"
             onClick={onClose}
           >
