@@ -10,9 +10,12 @@ export type CheckoutFieldKey =
   | "customerName"
   | "customerPhone"
   | "payment"
-  | "proofFile";
+  | "proofFile"
+  | "cart";
 
-export interface CheckoutStep1ValidationInput {
+export type ProgressiveCheckoutStep = 1 | 2 | 3 | 4;
+
+export interface CheckoutShippingValidationInput {
   itemsCount: number;
   shippingOptionsCount: number;
   selectedShipping: string;
@@ -28,18 +31,30 @@ export interface CheckoutStep1ValidationInput {
   pickupPointId: string | null;
 }
 
-export interface CheckoutStep2ValidationInput {
+/** @deprecated Prefer `CheckoutShippingValidationInput`. */
+export type CheckoutStep1ValidationInput = CheckoutShippingValidationInput;
+
+export interface CheckoutCustomerValidationInput {
   itemsCount: number;
   hasCustomerProfile: boolean;
   customerName: string;
   customerPhone: string;
-  shippingOptionsCount: number;
-  selectedShipping: string;
+}
+
+export interface CheckoutPaymentValidationInput {
+  itemsCount: number;
   paymentsCount: number;
   selectedPayment: string;
   hasProofFile: boolean;
   /** Si true, el comprobante es obligatorio. Por defecto / en checkout: false (opcional). */
   requiresProofFile?: boolean;
+}
+
+export interface CheckoutStep2ValidationInput
+  extends CheckoutCustomerValidationInput,
+    CheckoutPaymentValidationInput {
+  shippingOptionsCount: number;
+  selectedShipping: string;
 }
 
 export interface CheckoutValidationResult {
@@ -48,7 +63,14 @@ export interface CheckoutValidationResult {
   firstErrorField: CheckoutFieldKey | null;
 }
 
-const STEP1_FIELD_ORDER: CheckoutFieldKey[] = [
+const CART_FIELD_ORDER: CheckoutFieldKey[] = ["cart"];
+
+const CUSTOMER_FIELD_ORDER: CheckoutFieldKey[] = [
+  "customerName",
+  "customerPhone",
+];
+
+const SHIPPING_FIELD_ORDER: CheckoutFieldKey[] = [
   "shipping",
   "shippingBranch",
   "deliveryZone",
@@ -57,12 +79,18 @@ const STEP1_FIELD_ORDER: CheckoutFieldKey[] = [
   "pickupPoint",
 ];
 
+const PAYMENT_FIELD_ORDER: CheckoutFieldKey[] = ["payment", "proofFile"];
+
 const STEP2_FIELD_ORDER: CheckoutFieldKey[] = [
-  "customerName",
-  "customerPhone",
-  "payment",
-  "proofFile",
+  ...CUSTOMER_FIELD_ORDER,
+  ...PAYMENT_FIELD_ORDER,
   "shipping",
+];
+
+const ONE_PAGE_FIELD_ORDER: CheckoutFieldKey[] = [
+  ...CUSTOMER_FIELD_ORDER,
+  ...SHIPPING_FIELD_ORDER,
+  ...PAYMENT_FIELD_ORDER,
 ];
 
 function buildResult(
@@ -78,13 +106,46 @@ function buildResult(
   };
 }
 
-export function validateCheckoutStep1(
-  input: CheckoutStep1ValidationInput,
+export function validateCheckoutCartStep(itemsCount: number): CheckoutValidationResult {
+  const errors: Partial<Record<CheckoutFieldKey, string>> = {};
+  if (itemsCount === 0) {
+    errors.cart = "Añade al menos un producto para continuar.";
+  }
+  return buildResult(errors, CART_FIELD_ORDER);
+}
+
+export function validateCheckoutCustomerStep(
+  input: CheckoutCustomerValidationInput,
 ): CheckoutValidationResult {
   const errors: Partial<Record<CheckoutFieldKey, string>> = {};
 
   if (input.itemsCount === 0) {
-    return buildResult(errors, STEP1_FIELD_ORDER);
+    errors.cart = "Añade al menos un producto para continuar.";
+    return buildResult(errors, ["cart", ...CUSTOMER_FIELD_ORDER]);
+  }
+
+  if (!input.hasCustomerProfile) {
+    if (input.customerName.trim().length < 2) {
+      errors.customerName = "Ingresa tu nombre para continuar.";
+    }
+    if (!isValidCustomerPhone(input.customerPhone)) {
+      errors.customerPhone =
+        input.customerPhone.trim().length === 0
+          ? "Ingresa tu teléfono / WhatsApp para continuar."
+          : "Indica un teléfono o WhatsApp válido (ej. 0412… o 412…).";
+    }
+  }
+
+  return buildResult(errors, CUSTOMER_FIELD_ORDER);
+}
+
+export function validateCheckoutShippingStep(
+  input: CheckoutShippingValidationInput,
+): CheckoutValidationResult {
+  const errors: Partial<Record<CheckoutFieldKey, string>> = {};
+
+  if (input.itemsCount === 0) {
+    return buildResult(errors, SHIPPING_FIELD_ORDER);
   }
 
   if (input.shippingOptionsCount > 0 && !input.selectedShipping) {
@@ -113,28 +174,16 @@ export function validateCheckoutStep1(
     errors.pickupPoint = "Selecciona el punto de retiro.";
   }
 
-  return buildResult(errors, STEP1_FIELD_ORDER);
+  return buildResult(errors, SHIPPING_FIELD_ORDER);
 }
 
-export function validateCheckoutStep2(
-  input: CheckoutStep2ValidationInput,
+export function validateCheckoutPaymentStep(
+  input: CheckoutPaymentValidationInput,
 ): CheckoutValidationResult {
   const errors: Partial<Record<CheckoutFieldKey, string>> = {};
 
   if (input.itemsCount === 0) {
-    return buildResult(errors, STEP2_FIELD_ORDER);
-  }
-
-  if (!input.hasCustomerProfile) {
-    if (input.customerName.trim().length < 2) {
-      errors.customerName = "Ingresa tu nombre para continuar.";
-    }
-    if (!isValidCustomerPhone(input.customerPhone)) {
-      errors.customerPhone =
-        input.customerPhone.trim().length === 0
-          ? "Ingresa tu teléfono / WhatsApp para continuar."
-          : "Indica un teléfono o WhatsApp válido (ej. 0412… o 412…).";
-    }
+    return buildResult(errors, PAYMENT_FIELD_ORDER);
   }
 
   if (input.paymentsCount > 0 && !input.selectedPayment) {
@@ -145,6 +194,25 @@ export function validateCheckoutStep2(
     errors.proofFile = "Adjunta el comprobante de pago.";
   }
 
+  return buildResult(errors, PAYMENT_FIELD_ORDER);
+}
+
+/** @deprecated Prefer `validateCheckoutShippingStep`. */
+export function validateCheckoutStep1(
+  input: CheckoutShippingValidationInput,
+): CheckoutValidationResult {
+  return validateCheckoutShippingStep(input);
+}
+
+/** @deprecated Prefer customer + payment step validators. */
+export function validateCheckoutStep2(
+  input: CheckoutStep2ValidationInput,
+): CheckoutValidationResult {
+  const errors: Partial<Record<CheckoutFieldKey, string>> = {
+    ...validateCheckoutCustomerStep(input).errors,
+    ...validateCheckoutPaymentStep(input).errors,
+  };
+
   if (input.shippingOptionsCount > 0 && !input.selectedShipping) {
     errors.shipping = "Selecciona un método de envío.";
   }
@@ -152,29 +220,39 @@ export function validateCheckoutStep2(
   return buildResult(errors, STEP2_FIELD_ORDER);
 }
 
-const ONE_PAGE_FIELD_ORDER: CheckoutFieldKey[] = [
-  "customerName",
-  "customerPhone",
-  "shipping",
-  "shippingBranch",
-  "deliveryZone",
-  "meetingPoint",
-  "deliveryAddress",
-  "pickupPoint",
-  "payment",
-  "proofFile",
-];
-
 /** Validación unificada para checkout de una sola página. */
 export function validateOnePageCheckout(
-  step1: CheckoutStep1ValidationInput,
-  step2: CheckoutStep2ValidationInput,
+  shipping: CheckoutShippingValidationInput,
+  rest: CheckoutStep2ValidationInput,
 ): CheckoutValidationResult {
   const errors: Partial<Record<CheckoutFieldKey, string>> = {
-    ...validateCheckoutStep1(step1).errors,
-    ...validateCheckoutStep2(step2).errors,
+    ...validateCheckoutShippingStep(shipping).errors,
+    ...validateCheckoutStep2(rest).errors,
   };
   return buildResult(errors, ONE_PAGE_FIELD_ORDER);
+}
+
+export function validateProgressiveCheckoutStep(
+  step: ProgressiveCheckoutStep,
+  input: {
+    itemsCount: number;
+    customer: CheckoutCustomerValidationInput;
+    shipping: CheckoutShippingValidationInput;
+    payment: CheckoutPaymentValidationInput;
+  },
+): CheckoutValidationResult {
+  switch (step) {
+    case 1:
+      return validateCheckoutCartStep(input.itemsCount);
+    case 2:
+      return validateCheckoutCustomerStep(input.customer);
+    case 3:
+      return validateCheckoutShippingStep(input.shipping);
+    case 4:
+      return validateCheckoutPaymentStep(input.payment);
+    default:
+      return buildResult({}, CART_FIELD_ORDER);
+  }
 }
 
 export function summarizeCheckoutValidation(

@@ -350,9 +350,9 @@ export function CartDrawer({
         ) : (
           <>
             <CheckoutStepper
-              step={checkoutStep}
-              step1Label="Productos y envío"
-              step2Label="Pago"
+              step={checkoutStep === 1 ? 1 : 2}
+              steps={2}
+              labels={["Productos y envío", "Pago"]}
             />
 
             <div className="store-cart-body">

@@ -90,51 +90,40 @@ export function CatalogCartHost({
             aria-label="Cerrar carrito"
             onClick={closePanel}
           />
-          {panelView === "summary" ? (
-            <CheckoutErrorBoundary
-              onClose={closePanel}
-              onRetry={() => setPanelView("summary")}
-            >
-              <CartSummaryPanel
-                storeName={store.name}
-                whatsappPhone={purchaseInfo.whatsappPhone}
+          {panelView === "summary" || panelView === "checkout" ? (
+            sandboxMode ? (
+              <CheckoutErrorBoundary
                 onClose={closePanel}
-                onCheckout={() => setPanelView("checkout")}
-                checkoutViaWhatsApp={sandboxMode}
-              />
-            </CheckoutErrorBoundary>
-          ) : sandboxMode ? (
-            <CheckoutErrorBoundary
-              onClose={closePanel}
-              onRetry={() => setPanelView("summary")}
-            >
-              <CartSummaryPanel
-                storeName={store.name}
-                whatsappPhone={purchaseInfo.whatsappPhone}
+                onRetry={() => setPanelView("summary")}
+              >
+                <CartSummaryPanel
+                  storeName={store.name}
+                  whatsappPhone={purchaseInfo.whatsappPhone}
+                  onClose={closePanel}
+                  onCheckout={() => setPanelView("summary")}
+                  checkoutViaWhatsApp
+                />
+              </CheckoutErrorBoundary>
+            ) : (
+              <CheckoutErrorBoundary
                 onClose={closePanel}
-                onCheckout={() => setPanelView("summary")}
-                checkoutViaWhatsApp
-              />
-            </CheckoutErrorBoundary>
-          ) : (
-            <CheckoutErrorBoundary
-              onClose={closePanel}
-              onRetry={() => setPanelView("checkout")}
-            >
-              <CheckoutPanel
-                storeSlug={store.slug}
-                storeName={store.name}
-                purchaseInfo={purchaseInfo}
-                whatsappConfigured={whatsappConfigured}
-                exchangeRate={exchangeRate}
-                showOfficialRate={showOfficialRate}
-                showBsConversion={showBsConversion}
-                onClose={closePanel}
-                fulfillmentMode={mode}
-                locationId={orderLocationId}
-              />
-            </CheckoutErrorBoundary>
-          )}
+                onRetry={() => setPanelView("checkout")}
+              >
+                <CheckoutPanel
+                  storeSlug={store.slug}
+                  storeName={store.name}
+                  purchaseInfo={purchaseInfo}
+                  whatsappConfigured={whatsappConfigured}
+                  exchangeRate={exchangeRate}
+                  showOfficialRate={showOfficialRate}
+                  showBsConversion={showBsConversion}
+                  onClose={closePanel}
+                  fulfillmentMode={mode}
+                  locationId={orderLocationId}
+                />
+              </CheckoutErrorBoundary>
+            )
+          ) : null}
         </div>
       ) : null}
     </>

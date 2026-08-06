@@ -110,7 +110,7 @@ export function CartSummaryPanel({
               className="txn-submit-btn txn-cart-summary-checkout-btn"
               disabled={checkoutViaWhatsApp && !whatsappReady}
             >
-              {checkoutViaWhatsApp ? "Enviar pedido por WhatsApp" : "Continuar con el envío"}
+              {checkoutViaWhatsApp ? "Enviar pedido por WhatsApp" : "Completar pedido"}
             </button>
 
             <p className="txn-checkout-hint text-center">
