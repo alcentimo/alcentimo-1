@@ -747,6 +747,23 @@ export function CheckoutPanel({
             openedWhatsApp = false;
           }
         }
+
+        // Último recurso: click sintético en <a> (algunos móviles bloquean window.open).
+        if (!openedWhatsApp && typeof document !== "undefined") {
+          try {
+            const link = document.createElement("a");
+            link.href = whatsappUrl;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.style.display = "none";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            openedWhatsApp = true;
+          } catch {
+            openedWhatsApp = false;
+          }
+        }
       } else if (waWindow && !waWindow.closed) {
         waWindow.close();
       }

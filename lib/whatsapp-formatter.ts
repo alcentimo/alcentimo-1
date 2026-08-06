@@ -1,4 +1,4 @@
-import { formatUsd } from "@/lib/format";
+import { formatApproxBs, formatUsd } from "@/lib/format";
 
 export interface TransactionalOrderWhatsAppItem {
   product_name: string;
@@ -10,8 +10,11 @@ export interface TransactionalOrderWhatsAppItem {
 
 export interface TransactionalOrderWhatsAppMessageInput {
   customerName: string;
+  customerPhone?: string;
   items: TransactionalOrderWhatsAppItem[];
   totalUsd: number;
+  /** Equivalente en Bs (texto ya formateado, ej. ≈ 1.234,56 Bs). */
+  totalBsLabel?: string;
   /** Referencia corta del pedido (ej. B67E238D). */
   orderRef?: string;
   /**
@@ -75,11 +78,13 @@ export function buildTransactionalOrderWhatsAppMessage(
     ...(orderRef ? [`Ref: #${orderRef}`] : []),
     "",
     `👤 Cliente: ${sanitizeCustomerText(input.customerName)}`,
-    "",
-    "📋 Productos:",
-    ...productLines,
-    "",
   ];
+
+  if (input.customerPhone?.trim()) {
+    body.push(`📱 Teléfono: ${sanitizeCustomerText(input.customerPhone)}`);
+  }
+
+  body.push("", "📋 Productos:", ...productLines, "");
 
   if (
     input.discountUsd != null &&
@@ -103,6 +108,9 @@ export function buildTransactionalOrderWhatsAppMessage(
   }
 
   body.push(`💰 Total: ${formatUsd(input.totalUsd)}`);
+  if (input.totalBsLabel?.trim()) {
+    body.push(`🇻🇪 Equivalente: ${sanitizeCustomerText(input.totalBsLabel)}`);
+  }
 
   if (input.paymentLabel?.trim()) {
     body.push("", `💳 Pago: ${sanitizeCustomerText(input.paymentLabel)}`);
@@ -148,4 +156,20 @@ export function buildTransactionalOrderWhatsAppMessage(
   }
 
   return `${messageBody}\n\n${shareUrl}`;
+}
+
+/** Helper para armar la línea de Bs a partir de tasa y total USD. */
+export function buildOrderTotalBsLabel(
+  totalUsd: number,
+  exchangeRate: number | null | undefined,
+): string | undefined {
+  if (
+    typeof exchangeRate !== "number" ||
+    !Number.isFinite(exchangeRate) ||
+    exchangeRate <= 0 ||
+    !Number.isFinite(totalUsd)
+  ) {
+    return undefined;
+  }
+  return formatApproxBs(totalUsd * exchangeRate);
 }

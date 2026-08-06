@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { CheckCircle2, MessageCircle } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
+import { cn } from "@/lib/cn";
 
 interface CheckoutSuccessScreenProps {
   storeSlug: string;
@@ -27,11 +29,29 @@ export function CheckoutSuccessScreen({
   onClose,
 }: CheckoutSuccessScreenProps) {
   const { accountsEnabled } = useCustomerAccountMode();
+  const autoOpenAttempted = useRef(false);
 
   const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
   const registerBase = buildCustomerRegisterPath(storeSlug, accountPath);
   const fullRegisterPath = `${registerBase}${registerBase.includes("?") ? "&" : "?"}orderId=${encodeURIComponent(orderId)}`;
   const showAccountLink = wasGuest && accountsEnabled;
+
+  // Si el popup del submit falló, intenta abrir WhatsApp una vez al mostrar el éxito.
+  useEffect(() => {
+    if (!whatsappUrl || whatsappOpened || autoOpenAttempted.current) return;
+    autoOpenAttempted.current = true;
+    const timer = window.setTimeout(() => {
+      try {
+        const opened = window.open(whatsappUrl, "alcentimo-wa-checkout");
+        if (!opened) {
+          // Popup bloqueado: el botón verde principal es el respaldo.
+        }
+      } catch {
+        // ignore
+      }
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [whatsappUrl, whatsappOpened]);
 
   return (
     <div className="txn-checkout-success">
@@ -66,10 +86,16 @@ export function CheckoutSuccessScreen({
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="txn-submit-btn mt-6 inline-flex items-center justify-center gap-2"
+          className={cn(
+            "txn-whatsapp-primary-btn mt-6 inline-flex w-full items-center justify-center gap-2",
+          )}
         >
-          <MessageCircle className="h-4 w-4" aria-hidden="true" />
-          {whatsappOpened ? "Volver a abrir WhatsApp" : "Abrir WhatsApp"}
+          <MessageCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
+          <span>
+            {whatsappOpened
+              ? "Abrir de nuevo en WhatsApp 📲"
+              : "Enviar/Abrir pedido en WhatsApp 📲"}
+          </span>
         </a>
       ) : null}
 
