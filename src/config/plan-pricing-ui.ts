@@ -8,8 +8,12 @@ export const PAID_PLAN_CTA = "Empezar ahora";
 export const PRICING_DOMAIN_DISCLAIMER =
   "Nota: Todos los planes de pago permiten conectar tu propio dominio (.com). El dominio no viene incluido con la suscripción; debes adquirirlo y registrarlo por tu cuenta con tu proveedor preferido (GoDaddy, Namecheap, etc.) y nosotros te guiamos en la conexión.";
 
-/** Beneficio de conexión DNS en planes de pago. */
-export const CUSTOM_DOMAIN_FEATURE = "Dominio personalizado (.com)";
+/** Beneficio de conexión DNS en planes de pago (Pro). */
+export const CUSTOM_DOMAIN_FEATURE =
+  "Conexión de dominio propio (.com, etc.)";
+
+/** Beneficio de conexión DNS en Business / Enterprise. */
+export const CUSTOM_DOMAIN_FEATURE_SHORT = "Conexión de dominio propio";
 
 /** Enlace en subdominio de plataforma (plan Gratis). */
 export const FREE_SUBDOMAIN_FEATURE = "Subdominio alcentimo.com";
@@ -20,8 +24,16 @@ export const AI_ASSISTANT_ADVANCED_FEATURE = "Asistente IA avanzado";
 
 export const AI_MULTISEDED_FEATURE = "Asistente IA Multisede";
 
+/** Nota corta junto al selector Mensual/Anual en /dashboard/planes. */
+export const PRICING_DOMAIN_TOGGLE_HINT =
+  "Los planes de pago te permiten conectar tu propio dominio (comprado por ti en tu proveedor preferido).";
+
 export function isCustomDomainFeature(feature: string): boolean {
-  return feature.toLowerCase().includes("dominio personalizado");
+  const normalized = feature.toLowerCase();
+  return (
+    normalized.includes("dominio personalizado") ||
+    normalized.includes("conexión de dominio propio")
+  );
 }
 
 export function planIncludesCustomDomain(planId: PlanId): boolean {
@@ -93,9 +105,10 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     annualUsd: 144,
     productLimitLabel: "Hasta 2.000 productos",
     features: [
-      "Todo lo del plan Pro",
+      CUSTOM_DOMAIN_FEATURE_SHORT,
       "Hasta 2.000 productos",
       "Usuarios y colaboradores de equipo",
+      AI_ASSISTANT_ADVANCED_FEATURE,
       "Soporte prioritario",
     ],
     cta: PAID_PLAN_CTA,
@@ -108,7 +121,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     annualUsd: 278,
     productLimitLabel: "Productos ilimitados",
     features: [
-      "Todo lo del plan Business",
+      CUSTOM_DOMAIN_FEATURE_SHORT,
       "Productos ilimitados",
       "Hasta 3 sucursales incluidas",
       AI_MULTISEDED_FEATURE,

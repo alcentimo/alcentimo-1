@@ -10,6 +10,7 @@ import {
   getRecommendedAnnualSavingsLabel,
   PLAN_PRICING_TIERS,
   PRICING_DOMAIN_DISCLAIMER,
+  PRICING_DOMAIN_TOGGLE_HINT,
   type BillingPeriod,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
@@ -317,6 +318,11 @@ export function PlansPanel({
             isActivation && "activar-plans-billing-toggle",
           )}
         >
+          {!isActivation ? (
+            <p className="max-w-xl text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+              ✨ {PRICING_DOMAIN_TOGGLE_HINT}
+            </p>
+          ) : null}
           <BillingToggle billing={billing} onChange={setBilling} />
           {billing === "annual" && recommendedSavings && (
             <p className="text-sm font-medium text-teal-700 dark:text-teal-400">

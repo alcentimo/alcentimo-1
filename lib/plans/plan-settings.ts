@@ -1,8 +1,10 @@
 import type { ProfilePlanDb } from "@/lib/database.types";
 import {
+  AI_ASSISTANT_ADVANCED_FEATURE,
   AI_ASSISTANT_FEATURE,
   AI_MULTISEDED_FEATURE,
   CUSTOM_DOMAIN_FEATURE,
+  CUSTOM_DOMAIN_FEATURE_SHORT,
   FREE_SUBDOMAIN_FEATURE,
   PAID_PLAN_CTA,
   type BillingPeriod,
@@ -206,9 +208,10 @@ function buildTierFeatures(
 
   if (planId === "premium") {
     return [
-      "Todo lo del plan Pro",
+      CUSTOM_DOMAIN_FEATURE_SHORT,
       limitLabel,
       "Usuarios y colaboradores de equipo",
+      AI_ASSISTANT_ADVANCED_FEATURE,
       "Soporte prioritario",
     ];
   }
@@ -219,7 +222,7 @@ function buildTierFeatures(
       : "Hasta 3 sucursales incluidas";
 
   return [
-    "Todo lo del plan Business",
+    CUSTOM_DOMAIN_FEATURE_SHORT,
     limitLabel,
     branches,
     AI_MULTISEDED_FEATURE,
