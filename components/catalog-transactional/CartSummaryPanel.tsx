@@ -3,7 +3,7 @@
 import { MessageCircle, ShoppingBag, X } from "lucide-react";
 import { buildCartWhatsAppMessage } from "@/lib/catalog/cart-whatsapp-message";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
-import { formatUsd } from "@/lib/format";
+import { formatUsdWithApproxBs } from "@/lib/format";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { CartLineItems } from "@/components/catalog-transactional/CartLineItems";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
@@ -14,6 +14,8 @@ interface CartSummaryPanelProps {
   whatsappPhone?: string | null;
   onClose: () => void;
   onCheckout: () => void;
+  exchangeRate?: number | null;
+  showBsConversion?: boolean;
   /**
    * En demos (landing): el CTA abre WhatsApp en lugar del checkout
    * con persistencia en servidor.
@@ -26,6 +28,8 @@ export function CartSummaryPanel({
   whatsappPhone,
   onClose,
   onCheckout,
+  exchangeRate = null,
+  showBsConversion = false,
   checkoutViaWhatsApp = false,
 }: CartSummaryPanelProps) {
   const { items, subtotalUsd, updateQuantity, removeItem } = useCart();
@@ -95,13 +99,21 @@ export function CartSummaryPanel({
               items={items}
               onUpdateQuantity={updateQuantity}
               onRemoveItem={removeItem}
+              exchangeRate={exchangeRate}
+              showBsConversion={showBsConversion}
             />
           </div>
 
           <footer className="txn-checkout-footer safe-area-bottom">
             <div className="txn-checkout-total !border-0 !px-0 !py-0">
               <span>Subtotal</span>
-              <strong>{formatUsd(subtotalUsd)}</strong>
+              <strong className="text-right tabular-nums">
+                {formatUsdWithApproxBs(
+                  subtotalUsd,
+                  exchangeRate,
+                  showBsConversion,
+                )}
+              </strong>
             </div>
 
             <button

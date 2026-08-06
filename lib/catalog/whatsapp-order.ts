@@ -32,16 +32,25 @@ export function buildOrderWhatsAppMessage(options: {
     const lineTotal = item.unitPriceUsd * item.quantity;
     const variantSuffix =
       item.variantName !== "Estándar" ? ` (${item.variantName})` : "";
-    return `• ${item.quantity}x ${item.product.product_name}${variantSuffix} — ${formatUsd(lineTotal)}`;
+    return `• ${item.quantity}x ${item.product.product_name}${variantSuffix} - ${formatUsd(lineTotal)}`;
   });
 
   const lines = [
     `Hola, quiero comprar en ${options.storeName}:`,
     "",
+    "📋 Productos:",
     ...productLines,
     "",
-    `Subtotal: ${formatUsd(options.subtotalUsd)}`,
   ];
+
+  const showSubtotal =
+    options.items.length > 1 ||
+    Boolean(options.couponCode && (options.discountUsd ?? 0) > 0) ||
+    options.subtotalUsd !== options.totalUsd;
+
+  if (showSubtotal) {
+    lines.push(`💰 Subtotal: ${formatUsd(options.subtotalUsd)}`);
+  }
 
   if (options.couponCode && (options.discountUsd ?? 0) > 0) {
     lines.push(
@@ -50,7 +59,7 @@ export function buildOrderWhatsAppMessage(options: {
   }
 
   lines.push(
-    `Total: ${formatUsd(options.totalUsd)}`,
+    `💰 Total: ${formatUsd(options.totalUsd)}`,
     `Método de pago: ${options.paymentLabel}`,
     `Envío: ${options.shippingLabel}`,
   );

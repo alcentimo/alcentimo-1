@@ -12,7 +12,7 @@ function formatProductSummary(order: CatalogOrder): string {
     .map((item) => {
       const variant =
         item.variant_name !== "Estándar" ? ` (${item.variant_name})` : "";
-      return `• ${item.quantity}x ${item.product_name}${variant} — ${formatUsd(item.line_total_usd)}`;
+      return `• ${item.quantity}x ${item.product_name}${variant} - ${formatUsd(item.line_total_usd)}`;
     })
     .join("\n");
 }

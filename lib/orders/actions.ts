@@ -478,10 +478,7 @@ export async function submitTransactionalOrder(
     shippingChargeLabel: shippingQuote.appliesPaidShipping
       ? shippingQuote.chargeLabel
       : undefined,
-    subtotalUsd:
-      discountUsd > 0 || shippingQuote.chargeUsd > 0 || shippingQuote.isCod
-        ? subtotalUsd
-        : undefined,
+    subtotalUsd,
     discountUsd: discountUsd > 0 ? discountUsd : undefined,
     promotionLabel,
     locationName: resolvedLocationName ?? undefined,

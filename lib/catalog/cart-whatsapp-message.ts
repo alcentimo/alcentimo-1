@@ -32,7 +32,7 @@ export function buildCartWhatsAppMessage(
     const lineTotal = item.unitPriceUsd * item.quantity;
     const variantSuffix =
       item.variantName !== "Estándar" ? ` (${item.variantName})` : "";
-    return `• ${item.quantity}x ${item.product.product_name}${variantSuffix} — ${formatUsd(lineTotal)}`;
+    return `• ${item.quantity}x ${item.product.product_name}${variantSuffix} - ${formatUsd(lineTotal)}`;
   });
 
   const lines = [
@@ -46,14 +46,23 @@ export function buildCartWhatsAppMessage(
 
   lines.push("📋 Productos:", ...productLines, "");
 
+  const total = input.totalUsd ?? input.subtotalUsd;
+  const showSubtotal =
+    input.items.length > 1 ||
+    Boolean(input.discountUsd && input.discountUsd > 0) ||
+    (input.totalUsd != null && input.totalUsd !== input.subtotalUsd);
+
+  if (showSubtotal) {
+    lines.push(`💰 Subtotal: ${formatUsd(input.subtotalUsd)}`);
+  }
+
   if (input.discountUsd && input.discountUsd > 0) {
-    lines.push(`Subtotal: ${formatUsd(input.subtotalUsd)}`);
     lines.push(
       `Descuento${input.promotionLabel ? ` (${input.promotionLabel})` : ""}: -${formatUsd(input.discountUsd)}`,
     );
   }
 
-  lines.push(`💰 Total: ${formatUsd(input.totalUsd ?? input.subtotalUsd)}`);
+  lines.push(`💰 Total: ${formatUsd(total)}`);
 
   const fulfillment = formatFulfillmentLabel(input.fulfillmentMode);
   if (fulfillment) {

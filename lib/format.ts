@@ -30,6 +30,29 @@ export function formatApproxBs(amount: number | null | undefined): string {
   return `≈ ${formatted} Bs`;
 }
 
+/**
+ * Subtotal dual para pie de carrito: `$36.00 (≈ 27.185,76 Bs)`.
+ * Si no hay tasa, solo USD.
+ */
+export function formatUsdWithApproxBs(
+  amountUsd: number | null | undefined,
+  exchangeRate?: number | null,
+  showBsConversion = true,
+): string {
+  const usd = formatUsd(amountUsd);
+  if (
+    !showBsConversion ||
+    amountUsd == null ||
+    !Number.isFinite(amountUsd) ||
+    typeof exchangeRate !== "number" ||
+    !Number.isFinite(exchangeRate) ||
+    exchangeRate <= 0
+  ) {
+    return usd;
+  }
+  return `${usd} (${formatApproxBs(amountUsd * exchangeRate)})`;
+}
+
 export function formatVes(amount: number | null | undefined): string {
   if (amount == null || !Number.isFinite(amount)) return "—";
   return `Bs. ${new Intl.NumberFormat("es-VE", {

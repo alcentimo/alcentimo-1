@@ -54,6 +54,21 @@ export function CartLineItems({
 
         return (
           <li key={key} className="txn-checkout-item">
+            <button
+              type="button"
+              className="txn-remove-btn"
+              onClick={() =>
+                onRemoveItem(
+                  item.product.product_id,
+                  item.variantId,
+                  item.modifiers,
+                )
+              }
+              aria-label={`Eliminar ${item.product.product_name} del carrito`}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+
             <div className="txn-checkout-item-thumb">
               {item.product.thumb_url ? (
                 <Image
@@ -72,7 +87,7 @@ export function CartLineItems({
 
             <div className="txn-checkout-item-body">
               <div className="txn-checkout-item-top">
-                <div className="min-w-0">
+                <div className="min-w-0 pr-1">
                   <p className="truncate text-sm font-semibold leading-snug text-zinc-900 dark:text-zinc-50">
                     {item.product.product_name}
                   </p>
@@ -85,20 +100,6 @@ export function CartLineItems({
                     <WholesalePriceBadge className="mt-1.5" compact />
                   ) : null}
                 </div>
-                <button
-                  type="button"
-                  className="txn-remove-btn"
-                  onClick={() =>
-                    onRemoveItem(
-                      item.product.product_id,
-                      item.variantId,
-                      item.modifiers,
-                    )
-                  }
-                  aria-label={`Eliminar ${item.product.product_name} del carrito`}
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />
-                </button>
               </div>
 
               <div className="txn-checkout-item-meta">
@@ -120,6 +121,7 @@ export function CartLineItems({
                 <button
                   type="button"
                   className="txn-qty-btn"
+                  disabled={item.quantity <= 1}
                   onClick={() =>
                     onUpdateQuantity(
                       item.product.product_id,
@@ -128,17 +130,9 @@ export function CartLineItems({
                       item.modifiers,
                     )
                   }
-                  aria-label={
-                    item.quantity <= 1
-                      ? `Eliminar ${item.product.product_name}`
-                      : "Reducir cantidad"
-                  }
+                  aria-label="Reducir cantidad"
                 >
-                  {item.quantity <= 1 ? (
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  ) : (
-                    <Minus className="h-3.5 w-3.5" aria-hidden="true" />
-                  )}
+                  <Minus className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
                 <span className="min-w-7 text-center text-sm font-medium tabular-nums">
                   {item.quantity}

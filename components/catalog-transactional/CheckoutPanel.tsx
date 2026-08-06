@@ -14,7 +14,7 @@ import { CartLineItems } from "@/components/catalog-transactional/CartLineItems"
 import { CheckoutSuccessScreen } from "@/components/catalog-transactional/CheckoutSuccessScreen";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { buildSubmitOrderLinesFromCartItems } from "@/lib/catalog/cart-lines";
-import { formatUsd, formatExchangeRate } from "@/lib/format";
+import { formatUsd, formatExchangeRate, formatUsdWithApproxBs } from "@/lib/format";
 import { formatCountryCurrency } from "@/lib/country-config";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { loadCustomerCheckoutContext } from "@/lib/customers/checkout-actions";
@@ -1414,8 +1414,18 @@ export function CheckoutPanel({
 
             <div className="txn-checkout-total !border-0 !px-0 !py-0">
               <span>{checkoutStep === 1 ? "Subtotal" : "Total"}</span>
-              <strong>
-                {formatUsd(checkoutStep === 1 ? subtotalUsd : totalUsd)}
+              <strong className="text-right tabular-nums">
+                {checkoutStep === 1
+                  ? formatUsdWithApproxBs(
+                      subtotalUsd,
+                      exchangeRate,
+                      showBsConversion,
+                    )
+                  : formatUsdWithApproxBs(
+                      totalUsd,
+                      exchangeRate,
+                      showBsConversion && checkoutStep === 4,
+                    )}
               </strong>
             </div>
             {checkoutStep >= 3 && discountUsd > 0 && appliedPromotion ? (

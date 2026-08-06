@@ -101,6 +101,8 @@ export function CatalogCartHost({
                   whatsappPhone={purchaseInfo.whatsappPhone}
                   onClose={closePanel}
                   onCheckout={() => setPanelView("summary")}
+                  exchangeRate={exchangeRate}
+                  showBsConversion={showBsConversion}
                   checkoutViaWhatsApp
                 />
               </CheckoutErrorBoundary>

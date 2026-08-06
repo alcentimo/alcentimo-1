@@ -68,7 +68,7 @@ export function buildTransactionalOrderWhatsAppMessage(
         : item.product_name;
     const tierLabel =
       item.pricing_tier === "wholesale" ? " · mayor" : "";
-    return `• ${item.quantity} x ${sanitizeCustomerText(productName)}${tierLabel} - ${formatUsd(item.line_total_usd)}`;
+    return `• ${item.quantity}x ${sanitizeCustomerText(productName)}${tierLabel} - ${formatUsd(item.line_total_usd)}`;
   });
 
   const orderRef = formatOrderRef(input.orderRef);
@@ -86,17 +86,32 @@ export function buildTransactionalOrderWhatsAppMessage(
 
   body.push("", "📋 Productos:", ...productLines, "");
 
-  if (
+  const hasDiscount =
     input.discountUsd != null &&
     input.discountUsd > 0 &&
-    input.subtotalUsd != null
-  ) {
-    body.push(`💰 Subtotal: ${formatUsd(input.subtotalUsd)}`);
+    input.subtotalUsd != null;
+  const hasShippingLine = Boolean(
+    input.shippingChargeLabel?.trim() ||
+      (input.shippingCostUsd != null && input.shippingCostUsd > 0),
+  );
+  const merchandiseSubtotal =
+    input.subtotalUsd != null && Number.isFinite(input.subtotalUsd)
+      ? input.subtotalUsd
+      : input.items.reduce((sum, item) => sum + item.line_total_usd, 0);
+  const showSubtotalBreakdown =
+    input.items.length > 1 ||
+    hasDiscount ||
+    hasShippingLine ||
+    merchandiseSubtotal !== input.totalUsd;
+
+  if (showSubtotalBreakdown) {
+    body.push(`💰 Subtotal: ${formatUsd(merchandiseSubtotal)}`);
+  }
+
+  if (hasDiscount && input.subtotalUsd != null) {
     body.push(
-      `🏷️ Descuento${input.promotionLabel ? ` (${sanitizeCustomerText(input.promotionLabel)})` : ""}: -${formatUsd(input.discountUsd)}`,
+      `🏷️ Descuento${input.promotionLabel ? ` (${sanitizeCustomerText(input.promotionLabel)})` : ""}: -${formatUsd(input.discountUsd!)}`,
     );
-  } else if (input.subtotalUsd != null && input.subtotalUsd !== input.totalUsd) {
-    body.push(`💰 Subtotal: ${formatUsd(input.subtotalUsd)}`);
   }
 
   if (input.shippingChargeLabel?.trim()) {
