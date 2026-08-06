@@ -139,7 +139,7 @@ export function CheckoutPanel({
     orderId: string;
     totalUsd: number;
     whatsappUrl: string | null;
-    whatsappOpened: boolean;
+    hasPaymentProof: boolean;
     wasGuest: boolean;
   } | null>(null);
   const [selectedShipping, setSelectedShipping] = useState("");
@@ -717,79 +717,18 @@ export function CheckoutPanel({
 
     if (locationId) formData.set("locationId", locationId);
 
-    // Abrir pestaña en el gesto del clic (antes del await) para evitar bloqueo de popups.
-    // Siempre intentamos: si el servidor no devuelve URL de WhatsApp, se cierra.
-    let waWindow: Window | null = null;
-    if (typeof window !== "undefined") {
-      try {
-        waWindow = window.open("about:blank", "alcentimo-wa-checkout");
-      } catch {
-        waWindow = null;
-      }
-    }
+    // Capturar si había comprobante antes de limpiar el estado local.
+    const submittedWithProof = Boolean(proofFile && proofFile.size > 0);
 
     startTransition(async () => {
       const result = await submitTransactionalOrder(formData);
 
       if (result.error) {
-        if (waWindow && !waWindow.closed) {
-          waWindow.close();
-        }
         setError(result.error);
         return;
       }
 
-      let openedWhatsApp = false;
       const whatsappUrl = result.whatsappUrl?.trim() || null;
-
-      if (whatsappUrl) {
-        if (waWindow && !waWindow.closed) {
-          try {
-            waWindow.location.href = whatsappUrl;
-            openedWhatsApp = true;
-          } catch {
-            try {
-              waWindow.close();
-            } catch {
-              // ignore
-            }
-            waWindow = null;
-          }
-        }
-
-        if (!openedWhatsApp) {
-          try {
-            const fallback = window.open(
-              whatsappUrl,
-              "alcentimo-wa-checkout",
-              "noopener,noreferrer",
-            );
-            openedWhatsApp = Boolean(fallback && !fallback.closed);
-          } catch {
-            openedWhatsApp = false;
-          }
-        }
-
-        // Último recurso: click sintético en <a> (algunos móviles bloquean window.open).
-        if (!openedWhatsApp && typeof document !== "undefined") {
-          try {
-            const link = document.createElement("a");
-            link.href = whatsappUrl;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            link.style.display = "none";
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            openedWhatsApp = true;
-          } catch {
-            openedWhatsApp = false;
-          }
-        }
-      } else if (waWindow && !waWindow.closed) {
-        waWindow.close();
-      }
-
       const wasGuest = !customerProfile;
 
       clearCart();
@@ -815,7 +754,7 @@ export function CheckoutPanel({
           orderId: result.orderId,
           totalUsd,
           whatsappUrl,
-          whatsappOpened: openedWhatsApp,
+          hasPaymentProof: submittedWithProof,
           wasGuest,
         });
         return;
@@ -833,7 +772,7 @@ export function CheckoutPanel({
           orderId={successOrder.orderId}
           totalUsd={successOrder.totalUsd}
           whatsappUrl={successOrder.whatsappUrl}
-          whatsappOpened={successOrder.whatsappOpened}
+          hasPaymentProof={successOrder.hasPaymentProof}
           wasGuest={successOrder.wasGuest}
           onClose={() => {
             setSuccessOrder(null);

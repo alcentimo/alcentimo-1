@@ -12,7 +12,7 @@ export type OrderEstado = (typeof ORDER_ESTADOS)[number];
 const LEGACY_TO_PROCESANDO = new Set(["verificando", "en_preparacion"]);
 
 export const ORDER_ESTADO_LABELS: Record<OrderEstado, string> = {
-  pendiente: "Pendiente",
+  pendiente: "Pendiente de verificación",
   procesando: "Procesando",
   enviado: "Enviado",
   entregado: "Entregado",
@@ -21,7 +21,7 @@ export const ORDER_ESTADO_LABELS: Record<OrderEstado, string> = {
 
 /** Texto corto para el selector (gestión diaria). */
 export const ORDER_ESTADO_HINTS: Record<OrderEstado, string> = {
-  pendiente: "Pedido recién recibido",
+  pendiente: "En espera de verificar el pago",
   procesando: "Pago confirmado y armado",
   enviado: "En camino (guía opcional)",
   entregado: "Pedido completado",
