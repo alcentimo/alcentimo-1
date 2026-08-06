@@ -21,7 +21,8 @@ const withPWA = require("next-pwa")({
   // Network-First en navegación HTML; si la red falla o tarda, usa caché/offline shell.
   runtimeCaching: [
     {
-      urlPattern: ({ request }) => request.mode === "navigate",
+      urlPattern: ({ request }: { request: Request }) =>
+        request.mode === "navigate",
       handler: "NetworkFirst",
       options: {
         cacheName: "alcentimo-admin-navigations",
