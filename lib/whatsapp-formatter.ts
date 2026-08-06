@@ -23,16 +23,18 @@ export interface TransactionalOrderWhatsAppMessageInput {
    */
   orderShareUrl?: string;
   paymentLabel?: string;
+  /** Método de envío (ej. MRW, Retiro, Envío a domicilio). */
   shippingLabel?: string;
-  shippingCostUsd?: number;
+  /**
+   * Modalidad de cobro del envío (ej. Cobro a destino, Gratis, $3.00).
+   * Se muestra entre paréntesis junto al método.
+   */
   shippingChargeLabel?: string;
-  subtotalUsd?: number;
   discountUsd?: number;
   promotionLabel?: string;
   locationName?: string;
   locationAddress?: string;
   deliveryAddress?: string;
-  fulfillmentLabel?: string;
   shippingBranchName?: string;
   shippingBranchAddress?: string;
 }
@@ -52,6 +54,61 @@ function formatOrderRef(raw?: string): string | null {
   const cleaned = raw?.trim().replace(/^#/, "") ?? "";
   if (!cleaned) return null;
   return cleaned.slice(0, 8).toUpperCase();
+}
+
+function buildTotalLine(totalUsd: number, totalBsLabel?: string): string {
+  const usd = formatUsd(totalUsd);
+  const bs = totalBsLabel?.trim();
+  if (!bs) return `💰 Total: ${usd}`;
+  return `💰 Total: ${usd} (${sanitizeCustomerText(bs)})`;
+}
+
+function buildShippingLine(
+  method?: string,
+  chargeLabel?: string,
+): string | null {
+  const methodClean = method?.trim() ? sanitizeCustomerText(method) : "";
+  const chargeClean = chargeLabel?.trim()
+    ? sanitizeCustomerText(chargeLabel)
+    : "";
+  if (!methodClean && !chargeClean) return null;
+  if (methodClean && chargeClean && chargeClean !== "—") {
+    return `🚚 Envío: ${methodClean} (${chargeClean})`;
+  }
+  if (methodClean) return `🚚 Envío: ${methodClean}`;
+  return `🚚 Envío: ${chargeClean}`;
+}
+
+function buildSucursalLine(input: {
+  shippingBranchName?: string;
+  shippingBranchAddress?: string;
+  locationName?: string;
+  locationAddress?: string;
+}): string | null {
+  const branchName = input.shippingBranchName?.trim()
+    ? sanitizeCustomerText(input.shippingBranchName)
+    : "";
+  const branchAddress = input.shippingBranchAddress?.trim()
+    ? sanitizeCustomerText(input.shippingBranchAddress)
+    : "";
+  const locationName = input.locationName?.trim()
+    ? sanitizeCustomerText(input.locationName)
+    : "";
+  const locationAddress = input.locationAddress?.trim()
+    ? sanitizeCustomerText(input.locationAddress)
+    : "";
+
+  if (branchName || branchAddress) {
+    const parts = [branchName, branchAddress].filter(Boolean);
+    return `📍 Sucursal: ${parts.join(" · ")}`;
+  }
+
+  if (locationName || locationAddress) {
+    const parts = [locationName, locationAddress].filter(Boolean);
+    return `📍 Sucursal: ${parts.join(" · ")}`;
+  }
+
+  return null;
 }
 
 /**
@@ -79,51 +136,20 @@ export function buildTransactionalOrderWhatsAppMessage(
     body.push(`🔖 Ref: #${orderRef}`);
   }
 
-  body.push("", "📋 Productos:", ...productLines, "");
+  body.push("📋 Productos:", ...productLines);
 
-  const hasDiscount =
+  if (
     input.discountUsd != null &&
-    input.discountUsd > 0 &&
-    input.subtotalUsd != null;
-  const hasShippingLine = Boolean(
-    input.shippingChargeLabel?.trim() ||
-      (input.shippingCostUsd != null && input.shippingCostUsd > 0),
-  );
-  const merchandiseSubtotal =
-    input.subtotalUsd != null && Number.isFinite(input.subtotalUsd)
-      ? input.subtotalUsd
-      : input.items.reduce((sum, item) => sum + item.line_total_usd, 0);
-  const showSubtotalBreakdown =
-    input.items.length > 1 ||
-    hasDiscount ||
-    hasShippingLine ||
-    merchandiseSubtotal !== input.totalUsd;
-
-  if (showSubtotalBreakdown) {
-    body.push(`💰 Subtotal: ${formatUsd(merchandiseSubtotal)}`);
-  }
-
-  if (hasDiscount && input.subtotalUsd != null) {
+    input.discountUsd > 0
+  ) {
     body.push(
-      `🏷️ Descuento${input.promotionLabel ? ` (${sanitizeCustomerText(input.promotionLabel)})` : ""}: -${formatUsd(input.discountUsd!)}`,
+      `🏷️ Descuento${input.promotionLabel ? ` (${sanitizeCustomerText(input.promotionLabel)})` : ""}: -${formatUsd(input.discountUsd)}`,
     );
   }
 
-  if (input.shippingChargeLabel?.trim()) {
-    body.push(
-      `🚚 Costo de envío: ${sanitizeCustomerText(input.shippingChargeLabel)}`,
-    );
-  } else if (input.shippingCostUsd != null && input.shippingCostUsd > 0) {
-    body.push(`🚚 Costo de envío: ${formatUsd(input.shippingCostUsd)}`);
-  }
-
-  body.push(`💰 Total: ${formatUsd(input.totalUsd)}`);
-  if (input.totalBsLabel?.trim()) {
-    body.push(`🇻🇪 Total Bs: ${sanitizeCustomerText(input.totalBsLabel)}`);
-  }
+  body.push(buildTotalLine(input.totalUsd, input.totalBsLabel));
 
   body.push(
-    "",
     "👤 Datos del cliente:",
     `Nombre: ${sanitizeCustomerText(input.customerName)}`,
   );
@@ -131,26 +157,17 @@ export function buildTransactionalOrderWhatsAppMessage(
     body.push(`Teléfono: ${sanitizeCustomerText(input.customerPhone)}`);
   }
 
-  if (input.shippingLabel?.trim()) {
-    body.push("", `🚚 Envío: ${sanitizeCustomerText(input.shippingLabel)}`);
+  const shippingLine = buildShippingLine(
+    input.shippingLabel,
+    input.shippingChargeLabel,
+  );
+  if (shippingLine) {
+    body.push(shippingLine);
   }
 
-  if (input.shippingBranchName?.trim()) {
-    body.push(`🏢 Sucursal destino: ${sanitizeCustomerText(input.shippingBranchName)}`);
-    if (input.shippingBranchAddress?.trim()) {
-      body.push(`   ${sanitizeCustomerText(input.shippingBranchAddress)}`);
-    }
-  }
-
-  if (input.fulfillmentLabel?.trim()) {
-    body.push(`📦 Modalidad: ${sanitizeCustomerText(input.fulfillmentLabel)}`);
-  }
-
-  if (input.locationName?.trim()) {
-    body.push(`📍 Sucursal: ${sanitizeCustomerText(input.locationName)}`);
-    if (input.locationAddress?.trim()) {
-      body.push(`   ${sanitizeCustomerText(input.locationAddress)}`);
-    }
+  const sucursalLine = buildSucursalLine(input);
+  if (sucursalLine) {
+    body.push(sucursalLine);
   }
 
   if (input.deliveryAddress?.trim()) {
@@ -158,7 +175,7 @@ export function buildTransactionalOrderWhatsAppMessage(
   }
 
   if (input.paymentLabel?.trim()) {
-    body.push("", `💳 Pago: ${sanitizeCustomerText(input.paymentLabel)}`);
+    body.push(`💳 Pago: ${sanitizeCustomerText(input.paymentLabel)}`);
   }
 
   const messageBody = stripStorageUrls(body.join("\n"));

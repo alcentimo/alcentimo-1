@@ -434,22 +434,23 @@ export async function submitTransactionalOrder(
   const carrierLabel = shippingMethodRaw
     ? getShippingMethod(shippingMethodRaw as ShippingCarrierKey).label
     : undefined;
-  const shippingLabel = [carrierLabel, shippingQuote.summaryLabel]
-    .filter(Boolean)
-    .join(" · ");
-
-  const fulfillmentLabel =
-    fulfillmentType === "pickup"
+  const shippingMethodLabel =
+    carrierLabel ??
+    (fulfillmentType === "pickup"
       ? purchaseInfo.pickupPoints.length > 0
         ? "Punto de encuentro"
-        : "Retiro coordinado"
+        : "Retiro"
       : fulfillmentType === "delivery"
         ? purchaseInfo.deliveryZones.some((zone) => zone.meetingPoints.length > 0)
           ? "Entrega personalizada"
           : "Envío a domicilio"
         : fulfillmentType === "shipping"
           ? "Encomienda nacional"
-          : undefined;
+          : undefined);
+  const shippingModalityLabel =
+    shippingQuote.chargeLabel && shippingQuote.chargeLabel !== "—"
+      ? shippingQuote.chargeLabel
+      : undefined;
 
   let totalBsLabel: string | undefined;
   try {
@@ -477,18 +478,13 @@ export async function submitTransactionalOrder(
       customDomainVerified: Boolean(store.custom_domain_verified),
     }),
     paymentLabel,
-    shippingLabel: shippingLabel || undefined,
-    shippingCostUsd: shippingQuote.chargeUsd,
-    shippingChargeLabel: shippingQuote.appliesPaidShipping
-      ? shippingQuote.chargeLabel
-      : undefined,
-    subtotalUsd,
+    shippingLabel: shippingMethodLabel,
+    shippingChargeLabel: shippingModalityLabel,
     discountUsd: discountUsd > 0 ? discountUsd : undefined,
     promotionLabel,
     locationName: resolvedLocationName ?? undefined,
     locationAddress: resolvedLocationAddress ?? undefined,
     deliveryAddress: resolvedFulfillmentAddress ?? undefined,
-    fulfillmentLabel,
     shippingBranchName: isNationalCarrierKey(shippingMethodRaw)
       ? shippingBranchName ?? undefined
       : undefined,
