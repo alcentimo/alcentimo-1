@@ -10,7 +10,7 @@ import {
   getEffectivePlanIdForLimits,
   resolveProTrialStatus,
 } from "@/lib/plans/trial";
-import { resolvePlanId, DASHBOARD_PLANS_HREF } from "@/src/config/plans";
+import { resolvePlanId } from "@/src/config/plans";
 import {
   generateInvitationToken,
   hashInvitationToken,
@@ -109,9 +109,6 @@ async function deliverStoreInvitationEmail(options: {
 }
 
 function teamLimitError(limit: TeamLimitSummary): string | null {
-  if (!limit.canManageTeam) {
-    return `El equipo multiusuario está disponible en Plan Business o Enterprise. Mejora tu plan en ${DASHBOARD_PLANS_HREF}.`;
-  }
   if (!limit.canInviteMore) {
     if (limit.isUnlimited) {
       return "Alcanzaste el límite técnico de usuarios para esta tienda.";

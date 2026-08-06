@@ -9,8 +9,9 @@ import type { TeamLimitSummary } from "@/lib/team/types";
 /** Techo técnico de miembros + invitaciones pendientes por tienda. */
 export const ABSOLUTE_MAX_TEAM_SLOTS = 50;
 
-export function canUseTeamFeature(planId: PlanId): boolean {
-  return planId === "premium" || planId === "enterprise";
+/** El equipo multiusuario está disponible en todos los planes. */
+export function canUseTeamFeature(_planId: PlanId): boolean {
+  return true;
 }
 
 export function getUserLimitFromSettings(
@@ -27,23 +28,7 @@ export function resolveTeamLimit(options: {
   settings?: PlanSettingsMap;
 }): TeamLimitSummary {
   const settings = options.settings ?? DEFAULT_PLAN_SETTINGS;
-  const canManageTeam = canUseTeamFeature(options.planId);
   const usedSlots = options.memberCount + options.pendingInviteCount;
-
-  if (!canManageTeam) {
-    return {
-      planId: options.planId,
-      canManageTeam: false,
-      maxAllowed: 1,
-      isUnlimited: false,
-      memberCount: options.memberCount,
-      pendingInviteCount: options.pendingInviteCount,
-      usedSlots,
-      remainingSlots: 0,
-      canInviteMore: false,
-    };
-  }
-
   const configuredLimit = getUserLimitFromSettings(options.planId, settings);
   const isUnlimited = configuredLimit == null;
   const maxAllowed = isUnlimited
@@ -65,9 +50,6 @@ export function resolveTeamLimit(options: {
 }
 
 export function formatTeamLimitLabel(limit: TeamLimitSummary): string {
-  if (!limit.canManageTeam) {
-    return "Disponible en Plan Business o Enterprise";
-  }
   if (limit.isUnlimited) {
     return "Usuarios de equipo ilimitados";
   }

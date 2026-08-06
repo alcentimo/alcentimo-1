@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import {
-  ArrowUpRight,
   CheckCircle2,
   Copy,
   Loader2,
@@ -55,7 +53,6 @@ import type {
   StoreTeamSnapshot,
   TeamMemberRow,
 } from "@/lib/team/types";
-import { DASHBOARD_PLANS_HREF, PLANS } from "@/src/config/plans";
 import { cn } from "@/lib/cn";
 
 interface TeamTabProps {
@@ -180,39 +177,17 @@ function StatusBadge({
   );
 }
 
-function TeamUpgradeBanner({ limit }: { limit: TeamLimitSummary }) {
-  if (limit.canManageTeam && limit.canInviteMore) return null;
-
-  const planName =
-    PLANS[limit.planId as keyof typeof PLANS]?.name ?? "tu plan actual";
-  const needsBusiness = !limit.canManageTeam;
+function TeamCapacityBanner({ limit }: { limit: TeamLimitSummary }) {
+  if (limit.canInviteMore) return null;
 
   return (
     <div
       role="status"
-      className="relative overflow-hidden rounded-2xl border border-teal-200/80 bg-gradient-to-br from-teal-50 via-white to-emerald-50/80 p-4 sm:p-5 dark:border-teal-900/50 dark:from-teal-950/40 dark:via-zinc-950 dark:to-emerald-950/20"
+      className="rounded-2xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100"
     >
-      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0 space-y-1.5">
-          <p className="text-sm font-semibold text-teal-950 dark:text-teal-100">
-            {needsBusiness
-              ? "Suma colaboradores a tu tienda"
-              : "Alcanzaste el límite de usuarios"}
-          </p>
-          <p className="max-w-xl text-xs leading-relaxed text-teal-900/80 dark:text-teal-200/80">
-            {needsBusiness
-              ? `Con Plan Business o Enterprise puedes invitar encargados y vendedores para compartir inventario, pedidos y atención — sin saturar tu ${planName}.`
-              : `Tu ${planName} ya usa ${limit.usedSlots} de ${limit.maxAllowed ?? limit.usedSlots} cupos. Pasa a Enterprise para ampliar el equipo y delegar con más roles.`}
-          </p>
-        </div>
-        <Link
-          href={DASHBOARD_PLANS_HREF}
-          className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
-        >
-          {needsBusiness ? "Mejorar plan" : "Ver planes"}
-          <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-        </Link>
-      </div>
+      {limit.isUnlimited
+        ? "Alcanzaste el límite técnico de usuarios para esta tienda."
+        : `Tu plan ya usa ${limit.usedSlots} de ${limit.maxAllowed ?? limit.usedSlots} cupos de equipo.`}
     </div>
   );
 }
@@ -230,7 +205,7 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
   const [pending, startTransition] = useTransition();
 
   const { members, invitations, canManage, isOwner, currentUserId } = team;
-  const canInvite = canManage && limit.canInviteMore && limit.canManageTeam;
+  const canInvite = canManage && limit.canInviteMore;
 
   const emailValidationError = useMemo(() => {
     if (!emailTouched && !inviteEmail.trim()) return null;
@@ -486,7 +461,7 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
         </p>
       ) : null}
 
-      <TeamUpgradeBanner limit={limit} />
+      <TeamCapacityBanner limit={limit} />
 
       <SettingsSection
         title="Miembros del equipo"
@@ -564,9 +539,7 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
           description={
             canInvite
               ? "Envía una invitación por correo. El enlace también quedará listo para compartir."
-              : limit.canManageTeam
-                ? "Alcanzaste el límite de usuarios de tu plan."
-                : "Mejora tu plan para invitar miembros."
+              : "Alcanzaste el límite de usuarios de tu plan."
           }
           variant="payments"
         >
@@ -681,7 +654,7 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
                   type="button"
                   size="sm"
                   className="gap-2"
-                  disabled={pending || !limit.canManageTeam}
+                  disabled={pending}
                   onClick={() => handleInvite({ updateExisting: true })}
                 >
                   {pending ? (
@@ -696,7 +669,7 @@ export function TeamTab({ initialTeam }: TeamTabProps) {
                   size="sm"
                   variant="outline"
                   className="gap-2"
-                  disabled={pending || !limit.canManageTeam}
+                  disabled={pending}
                   onClick={() =>
                     handleCopyInvitationLink(matchingPendingInvitation.id)
                   }
