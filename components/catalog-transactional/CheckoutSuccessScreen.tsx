@@ -7,7 +7,6 @@ import { formatUsd } from "@/lib/format";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
-import { cn } from "@/lib/cn";
 
 interface CheckoutSuccessScreenProps {
   storeSlug: string;
@@ -35,23 +34,21 @@ export function CheckoutSuccessScreen({
   const registerBase = buildCustomerRegisterPath(storeSlug, accountPath);
   const fullRegisterPath = `${registerBase}${registerBase.includes("?") ? "&" : "?"}orderId=${encodeURIComponent(orderId)}`;
   const showAccountLink = wasGuest && accountsEnabled;
+  const hasWhatsApp = Boolean(whatsappUrl?.trim());
 
   // Si el popup del submit falló, intenta abrir WhatsApp una vez al mostrar el éxito.
   useEffect(() => {
-    if (!whatsappUrl || whatsappOpened || autoOpenAttempted.current) return;
+    if (!hasWhatsApp || whatsappOpened || autoOpenAttempted.current) return;
     autoOpenAttempted.current = true;
     const timer = window.setTimeout(() => {
       try {
-        const opened = window.open(whatsappUrl, "alcentimo-wa-checkout");
-        if (!opened) {
-          // Popup bloqueado: el botón verde principal es el respaldo.
-        }
+        window.open(whatsappUrl!, "alcentimo-wa-checkout", "noopener,noreferrer");
       } catch {
-        // ignore
+        // El botón verde principal es el respaldo.
       }
-    }, 350);
+    }, 250);
     return () => window.clearTimeout(timer);
-  }, [whatsappUrl, whatsappOpened]);
+  }, [hasWhatsApp, whatsappUrl, whatsappOpened]);
 
   return (
     <div className="txn-checkout-success">
@@ -66,14 +63,26 @@ export function CheckoutSuccessScreen({
         {formatUsd(totalUsd)}
       </p>
       <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-        {whatsappUrl
+        {hasWhatsApp
           ? whatsappOpened
-            ? "Tu pedido ya está en la tienda. Completa el envío por WhatsApp para que el comercio lo reciba."
-            : "Tu pedido ya está guardado. Ábrelo en WhatsApp para enviárselo al comercio."
+            ? "Tu pedido ya está guardado. Completa el envío por WhatsApp para que el comercio lo reciba."
+            : "Tu pedido ya está guardado. Envíaselo a la tienda por WhatsApp para confirmarlo."
           : "Tu pedido quedó registrado. La tienda lo revisará y te contactará si hace falta."}
       </p>
 
-      {whatsappUrl ? (
+      {hasWhatsApp ? (
+        <a
+          href={whatsappUrl!}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="txn-whatsapp-primary-btn mt-6 inline-flex w-full items-center justify-center gap-2"
+        >
+          <MessageCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
+          <span>Enviar pedido por WhatsApp 📲</span>
+        </a>
+      ) : null}
+
+      {hasWhatsApp ? (
         <ol className="txn-checkout-success-steps mt-4 w-full text-left text-xs text-zinc-600 dark:text-zinc-300">
           <li>1. Envía el mensaje prearmado por WhatsApp.</li>
           <li>2. Espera la confirmación de la tienda.</li>
@@ -81,30 +90,12 @@ export function CheckoutSuccessScreen({
         </ol>
       ) : null}
 
-      {whatsappUrl ? (
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(
-            "txn-whatsapp-primary-btn mt-6 inline-flex w-full items-center justify-center gap-2",
-          )}
-        >
-          <MessageCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
-          <span>
-            {whatsappOpened
-              ? "Abrir de nuevo en WhatsApp 📲"
-              : "Enviar/Abrir pedido en WhatsApp 📲"}
-          </span>
-        </a>
-      ) : null}
-
       <button
         type="button"
         onClick={onClose}
         className={
-          whatsappUrl
-            ? "txn-whatsapp-outline-btn mt-3 w-full"
+          hasWhatsApp
+            ? "txn-whatsapp-outline-btn mt-4 w-full"
             : "txn-submit-btn mt-6"
         }
       >

@@ -73,15 +73,10 @@ export function buildTransactionalOrderWhatsAppMessage(
 
   const orderRef = formatOrderRef(input.orderRef);
 
-  const body = [
-    "📦 Nuevo Pedido",
-    ...(orderRef ? [`Ref: #${orderRef}`] : []),
-    "",
-    `👤 Cliente: ${sanitizeCustomerText(input.customerName)}`,
-  ];
+  const body: string[] = ["📦 Nuevo Pedido"];
 
-  if (input.customerPhone?.trim()) {
-    body.push(`📱 Teléfono: ${sanitizeCustomerText(input.customerPhone)}`);
+  if (orderRef) {
+    body.push(`🔖 Ref: #${orderRef}`);
   }
 
   body.push("", "📋 Productos:", ...productLines, "");
@@ -124,15 +119,20 @@ export function buildTransactionalOrderWhatsAppMessage(
 
   body.push(`💰 Total: ${formatUsd(input.totalUsd)}`);
   if (input.totalBsLabel?.trim()) {
-    body.push(`🇻🇪 Equivalente: ${sanitizeCustomerText(input.totalBsLabel)}`);
+    body.push(`🇻🇪 Total Bs: ${sanitizeCustomerText(input.totalBsLabel)}`);
   }
 
-  if (input.paymentLabel?.trim()) {
-    body.push("", `💳 Pago: ${sanitizeCustomerText(input.paymentLabel)}`);
+  body.push(
+    "",
+    "👤 Datos del cliente:",
+    `Nombre: ${sanitizeCustomerText(input.customerName)}`,
+  );
+  if (input.customerPhone?.trim()) {
+    body.push(`Teléfono: ${sanitizeCustomerText(input.customerPhone)}`);
   }
 
   if (input.shippingLabel?.trim()) {
-    body.push(`🚚 Envío: ${sanitizeCustomerText(input.shippingLabel)}`);
+    body.push("", `🚚 Envío: ${sanitizeCustomerText(input.shippingLabel)}`);
   }
 
   if (input.shippingBranchName?.trim()) {
@@ -155,6 +155,10 @@ export function buildTransactionalOrderWhatsAppMessage(
 
   if (input.deliveryAddress?.trim()) {
     body.push(`🏠 Entrega: ${sanitizeCustomerText(input.deliveryAddress)}`);
+  }
+
+  if (input.paymentLabel?.trim()) {
+    body.push("", `💳 Pago: ${sanitizeCustomerText(input.paymentLabel)}`);
   }
 
   const messageBody = stripStorageUrls(body.join("\n"));

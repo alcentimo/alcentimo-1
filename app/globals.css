@@ -9931,13 +9931,15 @@ body {
 }
 
 .txn-whatsapp-primary-btn {
-  background-color: #25d366;
-  color: #ffffff;
-  @apply min-h-12 rounded-xl px-4 py-3 text-sm font-semibold shadow-sm transition active:scale-[0.99];
+  background-color: #25d366 !important;
+  color: #ffffff !important;
+  @apply min-h-12 rounded-xl px-4 py-3 text-sm font-semibold shadow-md transition active:scale-[0.99];
+  box-shadow: 0 8px 20px rgba(37, 211, 102, 0.28);
 }
 
 .txn-whatsapp-primary-btn:hover {
-  background-color: #1ebe57;
+  background-color: #1ebe57 !important;
+  color: #ffffff !important;
 }
 
 .txn-checkout-success {

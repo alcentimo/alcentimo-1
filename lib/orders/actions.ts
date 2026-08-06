@@ -452,19 +452,23 @@ export async function submitTransactionalOrder(
           : undefined;
 
   let totalBsLabel: string | undefined;
-  if (settings.catalogCurrency.showBsConversion) {
-    try {
-      const rateRow = await getDisplayableUsdExchangeRate(admin);
-      totalBsLabel = buildOrderTotalBsLabel(orderTotalUsd, rateRow?.rate);
-    } catch {
-      totalBsLabel = undefined;
-    }
+  try {
+    const rateRow = await getDisplayableUsdExchangeRate(admin);
+    totalBsLabel = buildOrderTotalBsLabel(orderTotalUsd, rateRow?.rate);
+  } catch {
+    totalBsLabel = undefined;
   }
 
   const message = buildTransactionalOrderWhatsAppMessage({
     customerName,
     customerPhone,
-    items: orderItems,
+    items: enrichedOrderItems.map((item) => ({
+      product_name: item.product_name,
+      variant_name: item.variant_name,
+      quantity: item.quantity,
+      line_total_usd: item.line_total_usd,
+      pricing_tier: item.pricing_tier,
+    })),
     totalUsd: orderTotalUsd,
     totalBsLabel,
     orderRef: orderId,
@@ -493,8 +497,13 @@ export async function submitTransactionalOrder(
       : undefined,
   });
 
+  const storeWhatsAppPhone =
+    purchaseInfo.whatsappPhone?.trim() ||
+    purchaseInfo.whatsappPhones.find((phone) => phone.trim())?.trim() ||
+    "";
+
   const whatsappUrl =
-    buildWhatsAppOrderUrl(purchaseInfo.whatsappPhone, message) ?? undefined;
+    buildWhatsAppOrderUrl(storeWhatsAppPhone, message) ?? undefined;
 
   revalidatePath(`/c/${storeSlug}`);
   revalidatePath("/dashboard/pedidos");

@@ -335,9 +335,7 @@ export function CheckoutPanel({
         ? "Continuar a envío"
         : checkoutStep === 3
           ? "Continuar al pago"
-          : whatsappConfigured
-            ? "Enviar pedido por WhatsApp"
-            : "Confirmar Pedido";
+          : "Confirmar Pedido";
 
   const stepTitles: Record<CheckoutStep, string> = {
     1: "Tu carrito",
@@ -698,10 +696,10 @@ export function CheckoutPanel({
 
     if (locationId) formData.set("locationId", locationId);
 
-    // Abrir la pestaña en el gesto del clic (antes del await) para evitar el bloqueo
-    // de popups; luego navegamos a wa.me cuando la orden ya está creada.
+    // Abrir pestaña en el gesto del clic (antes del await) para evitar bloqueo de popups.
+    // Siempre intentamos: si el servidor no devuelve URL de WhatsApp, se cierra.
     let waWindow: Window | null = null;
-    if (whatsappConfigured && typeof window !== "undefined") {
+    if (typeof window !== "undefined") {
       try {
         waWindow = window.open("about:blank", "alcentimo-wa-checkout");
       } catch {
@@ -743,6 +741,7 @@ export function CheckoutPanel({
             const fallback = window.open(
               whatsappUrl,
               "alcentimo-wa-checkout",
+              "noopener,noreferrer",
             );
             openedWhatsApp = Boolean(fallback && !fallback.closed);
           } catch {
