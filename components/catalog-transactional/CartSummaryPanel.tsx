@@ -15,7 +15,7 @@ interface CartSummaryPanelProps {
   onClose: () => void;
   onCheckout: () => void;
   /**
-   * En demos (landing): «Finalizar pedido» abre WhatsApp en lugar del checkout
+   * En demos (landing): el CTA abre WhatsApp en lugar del checkout
    * con persistencia en servidor.
    */
   checkoutViaWhatsApp?: boolean;
@@ -110,7 +110,7 @@ export function CartSummaryPanel({
               className="txn-submit-btn txn-cart-summary-checkout-btn"
               disabled={checkoutViaWhatsApp && !whatsappReady}
             >
-              {checkoutViaWhatsApp ? "Enviar pedido por WhatsApp" : "Finalizar pedido"}
+              {checkoutViaWhatsApp ? "Enviar pedido por WhatsApp" : "Continuar con el envío"}
             </button>
 
             <p className="txn-checkout-hint text-center">

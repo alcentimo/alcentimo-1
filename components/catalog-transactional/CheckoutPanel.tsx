@@ -316,9 +316,7 @@ export function CheckoutPanel({
     ? "Procesando…"
     : checkoutStep === 1
       ? "Continuar al pago"
-      : whatsappConfigured
-        ? "Confirmar pedido y enviar por WhatsApp"
-        : "Confirmar pedido";
+      : "Confirmar y enviar pedido";
 
   function handleApplyPromotion() {
     setPromotionError(null);
@@ -473,11 +471,41 @@ export function CheckoutPanel({
 
   function scrollToFirstCheckoutError(field: CheckoutFieldKey | null) {
     if (!field || typeof document === "undefined") return;
-    window.requestAnimationFrame(() => {
-      const target = document.querySelector(
+
+    const focusTarget = () => {
+      const group = document.querySelector<HTMLElement>(
         `[data-checkout-field="${field}"]`,
       );
-      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (!group) return;
+
+      group.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      const focusable = group.querySelector<HTMLElement>(
+        [
+          'input:not([type="hidden"])',
+          "select",
+          "textarea",
+          "button.shipping-method-card-interactive",
+          "button[aria-pressed]",
+          'button[role="radio"]',
+          "button[data-checkout-focus]",
+          '[tabindex]:not([tabindex="-1"])',
+        ].join(", "),
+      );
+
+      if (focusable) {
+        try {
+          focusable.focus({ preventScroll: true });
+        } catch {
+          focusable.focus();
+        }
+      }
+    };
+
+    window.requestAnimationFrame(() => {
+      focusTarget();
+      // Segundo intento tras el scroll suave (móviles).
+      window.setTimeout(focusTarget, 280);
     });
   }
 
@@ -1020,58 +1048,6 @@ export function CheckoutPanel({
               </>
             ) : (
               <>
-                <div className="txn-checkout-section px-6 pt-5">
-                  <p className="txn-checkout-section-title">Productos</p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Puedes quitar o cambiar cantidades antes de confirmar.
-                  </p>
-                </div>
-                <CartLineItems
-                  items={items}
-                  onUpdateQuantity={updateQuantity}
-                  onRemoveItem={removeItem}
-                  compact
-                />
-
-                <div className="txn-checkout-options">
-                  {paymentOptions.length > 0 && (
-                    <CheckoutFieldGroup
-                      field="payment"
-                      showError={shouldShowFieldError(
-                        "payment",
-                        step2Validation.errors.payment,
-                      )}
-                      error={step2Validation.errors.payment}
-                      className="txn-checkout-section"
-                    >
-                      <p className="txn-checkout-section-title">Método de pago</p>
-                      <div className="txn-checkout-method-grid">
-                        {paymentOptions.map((payment) => (
-                          <PaymentMethodCard
-                            key={payment.key}
-                            methodKey={payment.key as PaymentMethodKey}
-                            selectable
-                            selected={selectedPayment === payment.key}
-                            onSelect={() => {
-                              touchField("payment");
-                              setSelectedPayment(payment.key);
-                              if (!paymentMethodRequiresProof(payment.key)) {
-                                setProofFile(null);
-                              }
-                            }}
-                          />
-                        ))}
-                      </div>
-                      {selectedPaymentDetails && (
-                        <PaymentCheckoutDetails
-                          methodKey={selectedPaymentDetails.key}
-                          fields={selectedPaymentDetails.fields}
-                        />
-                      )}
-                    </CheckoutFieldGroup>
-                  )}
-                </div>
-
                 {customerProfile ? (
                   <div className="txn-checkout-customer-card">
                     <p className="txn-checkout-section-title">Tus datos</p>
@@ -1094,11 +1070,13 @@ export function CheckoutPanel({
                   </div>
                 ) : (
                   <div className="txn-checkout-form">
-                    <p className="txn-checkout-section-title">Tus datos de contacto</p>
+                    <p className="txn-checkout-section-title">
+                      Tus datos de contacto
+                    </p>
                     <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
                       {accountsEnabled
-                        ? "Compra sin cuenta: solo nombre y teléfono para coordinar tu pedido. Crear una cuenta con contraseña es opcional al finalizar."
-                        : "Compra como invitado: solo nombre y teléfono para coordinar tu pedido."}
+                        ? "Obligatorio para coordinar tu pedido. Crear una cuenta es opcional."
+                        : "Obligatorio: nombre y teléfono / WhatsApp para coordinar tu pedido."}
                     </p>
                     <CheckoutFieldGroup
                       field="customerName"
@@ -1109,7 +1087,7 @@ export function CheckoutPanel({
                       error={step2Validation.errors.customerName}
                     >
                       <label className="txn-field">
-                        <span>Nombre</span>
+                        <span>Nombre completo</span>
                         <input
                           type="text"
                           required
@@ -1185,6 +1163,45 @@ export function CheckoutPanel({
                   </div>
                 )}
 
+                <div className="txn-checkout-options">
+                  {paymentOptions.length > 0 && (
+                    <CheckoutFieldGroup
+                      field="payment"
+                      showError={shouldShowFieldError(
+                        "payment",
+                        step2Validation.errors.payment,
+                      )}
+                      error={step2Validation.errors.payment}
+                      className="txn-checkout-section"
+                    >
+                      <p className="txn-checkout-section-title">Método de pago</p>
+                      <div className="txn-checkout-method-grid">
+                        {paymentOptions.map((payment) => (
+                          <PaymentMethodCard
+                            key={payment.key}
+                            methodKey={payment.key as PaymentMethodKey}
+                            selectable
+                            selected={selectedPayment === payment.key}
+                            onSelect={() => {
+                              touchField("payment");
+                              setSelectedPayment(payment.key);
+                              if (!paymentMethodRequiresProof(payment.key)) {
+                                setProofFile(null);
+                              }
+                            }}
+                          />
+                        ))}
+                      </div>
+                      {selectedPaymentDetails && (
+                        <PaymentCheckoutDetails
+                          methodKey={selectedPaymentDetails.key}
+                          fields={selectedPaymentDetails.fields}
+                        />
+                      )}
+                    </CheckoutFieldGroup>
+                  )}
+                </div>
+
                 {showsProofUpload ? (
                   <CheckoutFieldGroup
                     field="proofFile"
@@ -1236,11 +1253,24 @@ export function CheckoutPanel({
                     </p>
                   </CheckoutFieldGroup>
                 ) : selectedPayment ? (
-                  <p className="txn-checkout-hint rounded-lg border border-zinc-200/80 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
+                  <p className="txn-checkout-hint mx-6 mb-3 rounded-lg border border-zinc-200/80 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
                     Con este método de pago no necesitas subir comprobante. El
                     pago se confirma al entregar o en el local.
                   </p>
                 ) : null}
+
+                <div className="txn-checkout-section px-6 pt-2">
+                  <p className="txn-checkout-section-title">Productos</p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Puedes quitar o cambiar cantidades antes de confirmar.
+                  </p>
+                </div>
+                <CartLineItems
+                  items={items}
+                  onUpdateQuantity={updateQuantity}
+                  onRemoveItem={removeItem}
+                  compact
+                />
               </>
             )}
           </div>

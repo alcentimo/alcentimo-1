@@ -58,9 +58,9 @@ const STEP1_FIELD_ORDER: CheckoutFieldKey[] = [
 ];
 
 const STEP2_FIELD_ORDER: CheckoutFieldKey[] = [
-  "payment",
   "customerName",
   "customerPhone",
+  "payment",
   "proofFile",
   "shipping",
 ];
