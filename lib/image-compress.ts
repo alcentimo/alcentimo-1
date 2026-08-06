@@ -13,6 +13,12 @@ import {
   PRODUCT_IMAGE_MAX_OUTPUT_BYTES,
   PRODUCT_IMAGE_WEBP_QUALITY,
 } from "@/lib/product-image";
+import {
+  PAYMENT_PROOF_MAX_DIMENSION,
+  PAYMENT_PROOF_MAX_OUTPUT_BYTES,
+  PAYMENT_PROOF_MIN_WEBP_QUALITY,
+  PAYMENT_PROOF_WEBP_QUALITY,
+} from "@/lib/orders/payment-proof-policy";
 
 export { formatFileSize };
 
@@ -98,6 +104,63 @@ export async function compressProductImage(
   }
 
   if (best.buffer.length > PRODUCT_IMAGE_MAX_OUTPUT_BYTES) {
+    throw new Error("IMAGE_TOO_LARGE");
+  }
+
+  return {
+    buffer: best.buffer,
+    width: best.width,
+    height: best.height,
+    originalSize,
+    compressedSize: best.buffer.length,
+    quality,
+    format: "webp",
+  };
+}
+
+/**
+ * Comprobantes de pago (pedidos / suscripción):
+ * - Máx. 1080px (lado largo), proporción intacta
+ * - WebP calidad ~75–78%
+ * - Objetivo < 200 KB
+ */
+export async function compressPaymentProofImage(
+  input: Buffer | ArrayBuffer,
+): Promise<ImageOptimizationResult> {
+  const source = toBuffer(input);
+  const originalSize = source.length;
+
+  let quality = Math.round(PAYMENT_PROOF_WEBP_QUALITY * 100);
+  const minQuality = Math.round(PAYMENT_PROOF_MIN_WEBP_QUALITY * 100);
+  let maxDimension = PAYMENT_PROOF_MAX_DIMENSION;
+  let best = await encodeWebp(source, maxDimension, quality);
+
+  while (
+    best.buffer.length > PAYMENT_PROOF_MAX_OUTPUT_BYTES &&
+    maxDimension > MIN_DIMENSION
+  ) {
+    maxDimension -= DIMENSION_STEP;
+    best = await encodeWebp(source, maxDimension, quality);
+  }
+
+  while (
+    best.buffer.length > PAYMENT_PROOF_MAX_OUTPUT_BYTES &&
+    quality > minQuality
+  ) {
+    quality -= QUALITY_STEP;
+    best = await encodeWebp(source, maxDimension, quality);
+  }
+
+  // Último recurso: bajar un poco más la dimensión sin romper legibilidad.
+  while (
+    best.buffer.length > PAYMENT_PROOF_MAX_OUTPUT_BYTES &&
+    maxDimension > 640
+  ) {
+    maxDimension -= DIMENSION_STEP;
+    best = await encodeWebp(source, maxDimension, quality);
+  }
+
+  if (best.buffer.length > PAYMENT_PROOF_MAX_OUTPUT_BYTES) {
     throw new Error("IMAGE_TOO_LARGE");
   }
 

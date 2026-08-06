@@ -9,6 +9,9 @@
     },
     "app/api/cron/inventory-ai-suggestions/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/cron/purge-order-payment-proofs/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -47,6 +50,10 @@
     {
       "path": "/api/cron/inventory-ai-suggestions",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/purge-order-payment-proofs",
+      "schedule": "15 6 * * *"
     }
   ],
   "headers": [

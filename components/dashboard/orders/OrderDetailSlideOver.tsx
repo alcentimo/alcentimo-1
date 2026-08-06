@@ -11,6 +11,7 @@ import { OrderStatusWhatsAppPrompt } from "@/components/dashboard/orders/OrderSt
 import { OrderShippingDetails } from "@/components/dashboard/orders/OrderShippingDetails";
 import { OrderWhatsAppButton } from "@/components/dashboard/orders/OrderWhatsAppButton";
 import { OrderCustomerKindBadge } from "@/components/dashboard/orders/OrderCustomerKindBadge";
+import { ORDER_PAYMENT_PROOF_RETENTION_NOTICE } from "@/lib/orders/payment-proof-policy";
 
 function formatOrderDate(value: string): string {
   return new Intl.DateTimeFormat("es", {
@@ -202,6 +203,9 @@ export function OrderDetailSlideOver({
             ) : (
               <p className="mt-2 text-sm text-zinc-500">Sin comprobante adjunto.</p>
             )}
+            <p className="mt-2 text-xs leading-relaxed text-zinc-400 dark:text-zinc-500">
+              {ORDER_PAYMENT_PROOF_RETENTION_NOTICE}
+            </p>
           </section>
         </div>
       </aside>

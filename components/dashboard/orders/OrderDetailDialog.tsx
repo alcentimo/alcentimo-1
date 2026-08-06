@@ -16,6 +16,7 @@ import { OrderStatusSelect } from "@/components/dashboard/orders/OrderStatusSele
 import { OrderShippingDetails } from "@/components/dashboard/orders/OrderShippingDetails";
 import { OrderCustomerKindBadge } from "@/components/dashboard/orders/OrderCustomerKindBadge";
 import type { OrderEstado } from "@/lib/orders/order-status";
+import { ORDER_PAYMENT_PROOF_RETENTION_NOTICE } from "@/lib/orders/payment-proof-policy";
 
 function formatOrderDate(value: string): string {
   return new Intl.DateTimeFormat("es", {
@@ -172,6 +173,9 @@ export function OrderDetailDialog({
             ) : (
               <p className="mt-2 text-sm text-zinc-500">Sin comprobante adjunto.</p>
             )}
+            <p className="mt-2 text-xs leading-relaxed text-zinc-400 dark:text-zinc-500">
+              {ORDER_PAYMENT_PROOF_RETENTION_NOTICE}
+            </p>
           </section>
         </div>
       </DialogContent>

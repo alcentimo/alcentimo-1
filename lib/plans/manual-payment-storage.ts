@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  compressProductImage,
+  compressPaymentProofImage,
   type ImageOptimizationResult,
 } from "@/lib/image-compress";
 
@@ -29,7 +29,7 @@ export async function uploadSubscriptionPaymentProof(
   let optimization: ImageOptimizationResult;
   try {
     const inputBuffer = Buffer.from(await file.arrayBuffer());
-    optimization = await compressProductImage(inputBuffer);
+    optimization = await compressPaymentProofImage(inputBuffer);
   } catch {
     return { error: "No se pudo procesar la imagen del comprobante." };
   }

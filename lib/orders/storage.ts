@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  compressProductImage,
+  compressPaymentProofImage,
   type ImageOptimizationResult,
 } from "@/lib/image-compress";
 
@@ -13,6 +13,24 @@ const ALLOWED_TYPES = new Set([
   "image/webp",
   "image/gif",
 ]);
+
+export function buildOrderPaymentProofPath(
+  storeId: string,
+  orderId: string,
+): string {
+  return `${storeId}/${orderId}.webp`;
+}
+
+/** Extrae el path del bucket desde una URL pública de Supabase Storage. */
+export function extractOrderPaymentProofPathFromUrl(
+  url: string,
+): string | null {
+  const marker = `/storage/v1/object/public/${ORDER_PAYMENT_PROOFS_BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  const path = url.slice(idx + marker.length).split("?")[0]?.trim();
+  return path || null;
+}
 
 export async function uploadOrderPaymentProof(
   storeId: string,
@@ -30,13 +48,13 @@ export async function uploadOrderPaymentProof(
   let optimization: ImageOptimizationResult;
   try {
     const inputBuffer = Buffer.from(await file.arrayBuffer());
-    optimization = await compressProductImage(inputBuffer);
+    optimization = await compressPaymentProofImage(inputBuffer);
   } catch {
     return { error: "No se pudo procesar la imagen del comprobante." };
   }
 
   const admin = createAdminClient();
-  const path = `${storeId}/${orderId}.webp`;
+  const path = buildOrderPaymentProofPath(storeId, orderId);
 
   const { error: uploadError } = await admin.storage
     .from(ORDER_PAYMENT_PROOFS_BUCKET)
@@ -55,4 +73,27 @@ export async function uploadOrderPaymentProof(
     .getPublicUrl(path);
 
   return { url: data.publicUrl };
+}
+
+/** Borra el archivo físico del comprobante. No altera otros campos del pedido. */
+export async function deleteOrderPaymentProofFile(
+  storeId: string,
+  orderId: string,
+  paymentProofUrl?: string | null,
+): Promise<{ ok: boolean; error?: string }> {
+  const admin = createAdminClient();
+  const pathFromUrl = paymentProofUrl
+    ? extractOrderPaymentProofPathFromUrl(paymentProofUrl)
+    : null;
+  const path = pathFromUrl ?? buildOrderPaymentProofPath(storeId, orderId);
+
+  const { error } = await admin.storage
+    .from(ORDER_PAYMENT_PROOFS_BUCKET)
+    .remove([path]);
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  return { ok: true };
 }
