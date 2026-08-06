@@ -57,13 +57,15 @@ export function CartLineItems({
             <button
               type="button"
               className="txn-remove-btn"
-              onClick={() =>
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
                 onRemoveItem(
                   item.product.product_id,
                   item.variantId,
                   item.modifiers,
-                )
-              }
+                );
+              }}
               aria-label={`Eliminar ${item.product.product_name} del carrito`}
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -121,16 +123,27 @@ export function CartLineItems({
                 <button
                   type="button"
                   className="txn-qty-btn"
-                  disabled={item.quantity <= 1}
-                  onClick={() =>
+                  onClick={() => {
+                    if (item.quantity <= 1) {
+                      onRemoveItem(
+                        item.product.product_id,
+                        item.variantId,
+                        item.modifiers,
+                      );
+                      return;
+                    }
                     onUpdateQuantity(
                       item.product.product_id,
                       item.variantId,
                       item.quantity - 1,
                       item.modifiers,
-                    )
+                    );
+                  }}
+                  aria-label={
+                    item.quantity <= 1
+                      ? `Eliminar ${item.product.product_name} del carrito`
+                      : "Reducir cantidad"
                   }
-                  aria-label="Reducir cantidad"
                 >
                   <Minus className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>

@@ -85,12 +85,19 @@ export function CartSummaryPanel({
       {items.length === 0 ? (
         <div className="txn-checkout-empty">
           <ShoppingBag className="h-8 w-8 text-zinc-300" aria-hidden="true" />
-          <p className="mt-3 text-sm text-zinc-500">
-            Aún no has añadido productos.
+          <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-200">
+            Tu carrito está vacío
           </p>
-          <p className="mt-1 text-xs text-zinc-400">
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
             Explora el catálogo y agrega lo que necesites.
           </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="txn-submit-btn mt-6 max-w-xs"
+          >
+            Explorar catálogo
+          </button>
         </div>
       ) : (
         <>
