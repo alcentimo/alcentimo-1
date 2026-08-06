@@ -2406,7 +2406,8 @@ body {
 }
 
 .store-add-btn-qty {
-  @apply absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-bold leading-none text-white shadow-sm;
+  @apply absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none text-white shadow-sm;
+  background-color: var(--txn-primary, #0f766e);
 }
 
 .store-add-btn-mobile {
@@ -2695,24 +2696,24 @@ body {
 }
 
 .store-card-add-btn-in-cart.store-card-add-btn-active:not(:disabled):hover {
-  background-color: #d1fae5;
-  border-color: #34d399;
-  color: #047857 !important;
+  background-color: color-mix(in srgb, var(--txn-primary, #0f766e) 18%, white);
+  border-color: var(--txn-primary-border, #34d399);
+  color: var(--txn-primary-muted-fg, #047857) !important;
 }
 
 .store-card-add-btn-in-cart.store-card-add-btn-active:not(:disabled):hover .store-card-add-btn-icon,
 .store-card-add-btn-in-cart.store-card-add-btn-active:not(:disabled):hover .store-card-add-btn-label {
-  color: #047857 !important;
-  stroke: #047857 !important;
+  color: var(--txn-primary-muted-fg, #047857) !important;
+  stroke: var(--txn-primary-muted-fg, #047857) !important;
 }
 
 .store-card-add-btn-in-cart.store-card-add-btn-active:not(:disabled):focus,
 .store-card-add-btn-in-cart.store-card-add-btn-active:not(:disabled):focus-visible,
 .store-card-add-btn-in-cart.store-card-add-btn-active:not(:disabled):active {
-  background-color: #10b981 !important;
-  border-color: #059669 !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.28);
+  background-color: var(--txn-primary, #0f766e) !important;
+  border-color: var(--txn-primary-hover, #0f766e) !important;
+  color: var(--txn-primary-fg, #ffffff) !important;
+  box-shadow: 0 0 0 3px var(--txn-primary-ring, color-mix(in srgb, var(--txn-primary, #0f766e) 28%, transparent));
 }
 
 .store-card-add-btn-in-cart.store-card-add-btn-active:not(:disabled):focus .store-card-add-btn-icon,
@@ -2729,7 +2730,7 @@ body {
   background-color: rgba(255, 255, 255, 0.22);
 }
 
-/* Confirmación rápida al añadir */
+/* Confirmación rápida al añadir — color primario de la tienda */
 .store-card-add-btn.store-card-add-btn-just-added,
 .store-card-add-btn.store-card-add-btn-just-added:hover,
 .store-card-add-btn.store-card-add-btn-just-added:focus,
@@ -2739,10 +2740,10 @@ body {
 .store-card-add-btn-in-cart.store-card-add-btn-active.store-card-add-btn-just-added:hover,
 .store-card-add-btn-in-cart.store-card-add-btn-active.store-card-add-btn-just-added:focus,
 .store-card-add-btn-in-cart.store-card-add-btn-active.store-card-add-btn-just-added:active {
-  background-color: #10b981 !important;
-  border-color: #059669 !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  background-color: var(--txn-primary, #0f766e) !important;
+  border-color: var(--txn-primary-hover, #0f766e) !important;
+  color: var(--txn-primary-fg, #ffffff) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--txn-primary, #0f766e) 35%, transparent);
   animation: store-card-add-confirm 0.65s ease-out;
 }
 
@@ -7119,9 +7120,9 @@ body {
 .txn-catalog--theme-immersive .store-card-add-btn:not(:disabled):focus,
 .txn-catalog--theme-immersive .store-card-add-btn:not(:disabled):focus-visible,
 .txn-catalog--theme-immersive .store-card-add-btn:not(:disabled):active {
-  background-color: #10b981 !important;
-  border-color: #059669 !important;
-  color: #ffffff !important;
+  background-color: var(--txn-primary, #0f766e) !important;
+  border-color: var(--txn-primary-hover, #0f766e) !important;
+  color: var(--txn-primary-fg, #ffffff) !important;
 }
 
 .txn-catalog--theme-immersive .store-card-add-btn:not(:disabled):focus .store-card-add-btn-icon,
@@ -7135,8 +7136,8 @@ body {
 }
 
 .txn-catalog--theme-immersive .store-card-add-btn-active {
-  background-color: rgb(16 185 129 / 0.22);
-  border-color: rgb(52 211 153 / 0.85);
+  background-color: color-mix(in srgb, var(--txn-primary, #0f766e) 22%, transparent);
+  border-color: color-mix(in srgb, var(--txn-primary, #0f766e) 85%, white);
   color: #ecfdf5;
 }
 
@@ -7147,9 +7148,9 @@ body {
 }
 
 .txn-catalog--theme-immersive .store-card-add-btn-just-added {
-  background-color: #10b981 !important;
-  border-color: #059669 !important;
-  color: #ffffff !important;
+  background-color: var(--txn-primary, #0f766e) !important;
+  border-color: var(--txn-primary-hover, #0f766e) !important;
+  color: var(--txn-primary-fg, #ffffff) !important;
 }
 
 .txn-catalog--theme-immersive .store-featured-badge,

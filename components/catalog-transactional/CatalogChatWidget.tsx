@@ -35,13 +35,24 @@ function createMessage(
   return { role, content };
 }
 
-function buildWelcomeMessage(storeName: string, merchantName: string | null): string {
-  const hostLabel =
-    merchantName && merchantName.toLowerCase() !== storeName.toLowerCase()
-      ? `${storeName} (${merchantName})`
-      : storeName;
+function buildWelcomeMessage(storeName: string): string {
+  const name = storeName.trim() || "la tienda";
+  return `¡Hola! Bienvenido al soporte de ${name}. Puedo ayudarte con productos, stock, envíos y pagos. Si prefieres hablar con una persona, usa el botón de WhatsApp abajo.`;
+}
 
-  return `¡Hola! Bienvenido al soporte de ${hostLabel}. Puedo ayudarte con productos, stock, envíos y pagos. Si prefieres hablar con una persona, usa el botón de WhatsApp abajo.`;
+function isPlatformBrandName(value: string | null | undefined): boolean {
+  if (!value?.trim()) return false;
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return (
+    normalized === "al centimo" ||
+    normalized === "alcentimo" ||
+    normalized.includes("al centimo") ||
+    normalized.includes("alcentimo")
+  );
 }
 
 export function CatalogChatWidget({
@@ -66,7 +77,7 @@ export function CatalogChatWidget({
 
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<StorefrontAssistantMessage[]>(() => [
-    createMessage("assistant", buildWelcomeMessage(storeName, merchantName)),
+    createMessage("assistant", buildWelcomeMessage(storeName)),
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,10 +87,20 @@ export function CatalogChatWidget({
   const lastUserQuestionRef = useRef<string | null>(null);
 
   const whatsappReady = Boolean(whatsappPhone?.trim());
-  const avatarLabel = merchantName ?? storeName;
+  const avatarLabel =
+    merchantName && !isPlatformBrandName(merchantName)
+      ? merchantName
+      : storeName;
   const showMerchantSubtitle =
     Boolean(merchantName) &&
+    !isPlatformBrandName(merchantName) &&
     merchantName!.trim().toLowerCase() !== storeName.trim().toLowerCase();
+
+  useEffect(() => {
+    setMessages([
+      createMessage("assistant", buildWelcomeMessage(storeName)),
+    ]);
+  }, [storeName]);
 
   useEffect(() => {
     setAssistantAvailable(true);
@@ -134,8 +155,7 @@ export function CatalogChatWidget({
       try {
         if (demoMode) {
           await new Promise((resolve) => window.setTimeout(resolve, 650));
-          const demoReply =
-            "En Boutique Luna tienes blazers, jeans, sneakers y más con precios en USD y conversión a Bs. Agrega al carrito y envía el pedido por WhatsApp — ¡así funciona Alcéntimo en tu tienda!";
+          const demoReply = `En ${storeName} puedes explorar productos con precios en USD y conversión a Bs. Agrega al carrito y envía el pedido por WhatsApp para confirmarlo con la tienda.`;
           setMessages((current) => [
             ...current,
             createMessage("assistant", demoReply),
@@ -187,7 +207,7 @@ export function CatalogChatWidget({
         setLoading(false);
       }
     },
-    [loading, messages, storeSlug, whatsappReady, demoMode],
+    [loading, messages, storeSlug, storeName, whatsappReady, demoMode],
   );
 
   function handleSubmit(event: React.FormEvent) {

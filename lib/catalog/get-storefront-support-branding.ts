@@ -31,9 +31,27 @@ async function resolveOwnerPublicProfile(ownerId: string): Promise<{
     }
 
     const metadata = (data.user.user_metadata ?? {}) as Record<string, unknown>;
-    const merchantName =
+    const merchantNameRaw =
       readMetadataString(metadata, "display_name") ??
       readMetadataString(metadata, "full_name");
+    const merchantName = merchantNameRaw
+      ? (() => {
+          const normalized = merchantNameRaw
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+          if (
+            normalized === "al centimo" ||
+            normalized === "alcentimo" ||
+            normalized.includes("al centimo") ||
+            normalized.includes("alcentimo")
+          ) {
+            return null;
+          }
+          return merchantNameRaw;
+        })()
+      : null;
     const ownerAvatarUrl =
       readMetadataString(metadata, "picture") ??
       readMetadataString(metadata, "avatar_url");
