@@ -1,89 +1,10 @@
--- Invitaciones de equipo y metadatos opcionales en store_members.
+-- Fix: accept/preview_store_invitation fallaban con
+--   function digest(text, unknown) does not exist
+-- porque las funciones SECURITY DEFINER fijaban search_path = public
+-- y en Supabase pgcrypto (digest) vive en el schema extensions.
 
-CREATE TABLE IF NOT EXISTS public.store_invitations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  store_id UUID NOT NULL REFERENCES public.stores (id) ON DELETE CASCADE,
-  email TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'staff'
-    CHECK (role IN ('admin', 'staff')),
-  token_hash TEXT NOT NULL,
-  invited_by UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-  expires_at TIMESTAMPTZ NOT NULL,
-  accepted_at TIMESTAMPTZ NULL,
-  revoked_at TIMESTAMPTZ NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
-  CONSTRAINT store_invitations_email_format
-    CHECK (email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$')
-);
-
-COMMENT ON TABLE public.store_invitations IS
-  'Invitaciones pendientes para unirse al equipo de una tienda.';
-COMMENT ON COLUMN public.store_invitations.token_hash IS
-  'SHA-256 hex del token enviado al invitado (nunca guardar el token en claro).';
-
-CREATE INDEX IF NOT EXISTS idx_store_invitations_store
-  ON public.store_invitations (store_id, created_at DESC);
-
-CREATE INDEX IF NOT EXISTS idx_store_invitations_token_hash
-  ON public.store_invitations (token_hash)
-  WHERE accepted_at IS NULL AND revoked_at IS NULL;
-
-CREATE UNIQUE INDEX IF NOT EXISTS store_invitations_pending_email_unique
-  ON public.store_invitations (store_id, lower(trim(email)))
-  WHERE accepted_at IS NULL AND revoked_at IS NULL;
-
-ALTER TABLE public.store_members
-  ADD COLUMN IF NOT EXISTS invited_by UUID NULL REFERENCES auth.users (id) ON DELETE SET NULL,
-  ADD COLUMN IF NOT EXISTS invited_at TIMESTAMPTZ NULL,
-  ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMPTZ NULL;
-
-COMMENT ON COLUMN public.store_members.invited_by IS
-  'Usuario que envió la invitación (NULL si es el dueño registrado al crear la tienda).';
-
--- Cuenta miembros activos + invitaciones pendientes no vencidas.
-CREATE OR REPLACE FUNCTION public.count_store_team_slots(p_store_id UUID)
-RETURNS INTEGER
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT
-    COALESCE((
-      SELECT COUNT(*)::INTEGER
-      FROM public.store_members sm
-      WHERE sm.store_id = p_store_id
-    ), 0)
-    + COALESCE((
-      SELECT COUNT(*)::INTEGER
-      FROM public.store_invitations si
-      WHERE si.store_id = p_store_id
-        AND si.accepted_at IS NULL
-        AND si.revoked_at IS NULL
-        AND si.expires_at > now()
-    ), 0);
-$$;
-
-COMMENT ON FUNCTION public.count_store_team_slots(UUID) IS
-  'Miembros actuales más invitaciones pendientes vigentes (para límites de plan).';
-
-ALTER TABLE public.store_invitations ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS store_invitations_members_read ON public.store_invitations;
-CREATE POLICY store_invitations_members_read
-  ON public.store_invitations FOR SELECT
-  TO authenticated
-  USING (public.is_member_of_store(store_id));
-
-DROP POLICY IF EXISTS store_invitations_admins_manage ON public.store_invitations;
-CREATE POLICY store_invitations_admins_manage
-  ON public.store_invitations FOR ALL
-  TO authenticated
-  USING (public.is_store_admin(store_id))
-  WITH CHECK (public.is_store_admin(store_id));
-
--- Vista previa segura de una invitación por token (sin exponer el hash).
 CREATE OR REPLACE FUNCTION public.preview_store_invitation(p_token TEXT)
 RETURNS TABLE (
   invitation_id UUID,
@@ -109,7 +30,6 @@ BEGIN
     RETURN;
   END IF;
 
-  -- pgcrypto vive en schema extensions (Supabase); search_path lo incluye arriba.
   v_hash := encode(digest(convert_to(trim(p_token), 'UTF8'), 'sha256'), 'hex');
 
   RETURN QUERY
@@ -133,7 +53,6 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.preview_store_invitation(TEXT) TO authenticated;
 
--- Aceptar invitación: crea store_members si el email coincide y hay cupo (validado en app).
 CREATE OR REPLACE FUNCTION public.accept_store_invitation(p_token TEXT)
 RETURNS TABLE (
   store_id UUID,
@@ -169,7 +88,6 @@ BEGIN
     RAISE EXCEPTION 'Invitación inválida.';
   END IF;
 
-  -- pgcrypto vive en schema extensions (Supabase); search_path lo incluye arriba.
   v_hash := encode(digest(convert_to(trim(p_token), 'UTF8'), 'sha256'), 'hex');
 
   SELECT *
