@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Geist } from "next/font/google";
 import { getAdminManifestPath } from "@/lib/pwa/build-admin-manifest";
 import {
@@ -87,6 +88,24 @@ export default async function RootLayout({
         <link rel="icon" type="image/png" href={BRAND_FAVICON_PNG_PATH} sizes="32x32" />
         <link rel="icon" type="image/png" href={BRAND_FAVICON_32_PATH} sizes="32x32" />
         <link rel="apple-touch-icon" href={BRAND_APPLE_TOUCH_ICON_PATH} sizes="180x180" />
+        <Script
+          id="meta-pixel"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+              n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '2966164503744998');
+              fbq('track', 'PageView');
+            `,
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col font-sans">
         <PlatformSettingsProvider settings={platformSettings}>
