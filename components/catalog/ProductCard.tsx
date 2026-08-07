@@ -299,7 +299,10 @@ export const ProductCard = memo(function ProductCard({
 
   return (
     <article
-      className={cn("store-product-card group h-full", outOfStock && "opacity-90")}
+      className={cn(
+        "store-product-card group h-full w-full min-w-0",
+        outOfStock && "opacity-90",
+      )}
     >
       <div className="store-product-media-frame">
         <div
@@ -362,8 +365,8 @@ export const ProductCard = memo(function ProductCard({
         </div>
       </div>
 
-      <div className="store-product-content">
-        <div className={cn("store-product-body", bodyLayoutClass)}>
+      <div className="store-product-content w-full min-w-0">
+        <div className={cn("store-product-body w-full min-w-0", bodyLayoutClass)}>
           <div className="store-product-slot store-product-slot-meta">
             <p
               className={cn(
@@ -427,10 +430,10 @@ export const ProductCard = memo(function ProductCard({
         </div>
 
         {showFooter ? (
-          <div className="store-product-footer">
+          <div className="store-product-footer w-full min-w-0">
             {showPrices ? (
-              <div className="store-product-slot store-product-slot-pricing store-product-footer-pricing">
-                <div className="store-product-price-row">
+              <div className="store-product-slot store-product-slot-pricing store-product-footer-pricing w-full min-w-0">
+                <div className="store-product-price-row min-w-0">
                   <p className="store-product-price-usd">
                     {formatUsd(displayPriceUsd)}
                   </p>
