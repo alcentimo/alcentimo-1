@@ -230,11 +230,10 @@ async function main() {
 
   const updatedAt = new Date().toISOString();
   const syncDate = getVenezuelaSyncDate();
-  // Preferir fecha de la API si es hoy/mañana VE; si no, hoy operativo.
+  // Vigencia estricta de la API (viernes→lunes incluido). Sin fecha → hoy.
   const sourceDate = fetched.sourceEffectiveDate;
   const effectiveDate =
-    sourceDate === syncDate ||
-    (typeof sourceDate === "string" && sourceDate > syncDate)
+    typeof sourceDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sourceDate)
       ? sourceDate
       : syncDate;
   const admin = createClient(url, serviceRoleKey);
@@ -242,7 +241,7 @@ async function main() {
   const writeError = await upsertExchangeRateForDate(admin, {
     rate,
     effectiveDate,
-    notes: "Actualización manual (script sync-bcv-rate)",
+    notes: `Actualización manual (script sync-bcv-rate, vigencia ${effectiveDate})`,
   });
 
   if (writeError) {
@@ -255,15 +254,45 @@ async function main() {
     process.exit(1);
   }
 
-  // Espejo activo: última tasa con effective_date <= hoy VE
-  const { data: active } = await admin
-    .from("exchange_rate")
-    .select("rate, effective_date")
-    .is("store_id", null)
-    .lte("effective_date", syncDate)
-    .order("effective_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // Espejo activo: finde → tasa del próximo hábil si existe; si no, <= hoy VE.
+  const weekday = new Date(`${syncDate}T12:00:00Z`).getUTCDay();
+  const isWeekend = weekday === 0 || weekday === 6;
+  let nextBiz = syncDate;
+  {
+    let cursor = syncDate;
+    for (let i = 0; i < 10; i++) {
+      const [y, m, d] = cursor.split("-").map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d + 1));
+      cursor = dt.toISOString().slice(0, 10);
+      const wd = dt.getUTCDay();
+      if (wd !== 0 && wd !== 6) {
+        nextBiz = cursor;
+        break;
+      }
+    }
+  }
+
+  let active = null;
+  if (isWeekend) {
+    const { data: weekendAhead } = await admin
+      .from("exchange_rate")
+      .select("rate, effective_date")
+      .is("store_id", null)
+      .eq("effective_date", nextBiz)
+      .maybeSingle();
+    if (weekendAhead) active = weekendAhead;
+  }
+  if (!active) {
+    const { data } = await admin
+      .from("exchange_rate")
+      .select("rate, effective_date")
+      .is("store_id", null)
+      .lte("effective_date", syncDate)
+      .order("effective_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    active = data;
+  }
 
   const activeRate = active ? Number(active.rate) : rate;
   const { error: tasaError } = await admin.from("tasas_cambio").upsert(

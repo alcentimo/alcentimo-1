@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
+import {
+  getVenezuelaNextBusinessDate,
+  getVenezuelaSyncDate,
+  isVenezuelaWeekend,
+} from "@/lib/exchange-rate/sync-date";
 import { roundExchangeRate } from "@/lib/format";
 import type { ExchangeRate } from "@/lib/database.types";
 
@@ -17,14 +21,12 @@ function asExchangeRate(data: ExchangeRate): ExchangeRate {
 }
 
 /**
- * Tasa BCV vigente para mostrar precios.
+ * Tasa BCV legalmente vigente para precios.
  *
- * Regla de carry-forward: se toma la fila global con `effective_date <= hoy VE`
- * más reciente. Si el BCV se retrasa y publica pasada la medianoche (aún no hay
- * tasa con fecha de hoy), se mantiene temporalmente la última tasa válida
- * (ayer u anterior) para que la app nunca se quede sin precio.
- *
- * No adelanta tasas con vigencia futura (descargadas en la tarde para mañana).
+ * 1) Última fila global con `effective_date <= hoy VE` (carry-forward).
+ * 2) Fin de semana: si el viernes se publicó la tasa del próximo hábil (lunes),
+ *    esa fila (`effective_date = lunes`) se usa en sábado/domingo aunque sea futura.
+ * 3) Si no hay filas, el caller puede caer a `tasas_cambio`.
  */
 export async function getActiveGlobalExchangeRate(
   client: SupabaseClient,
@@ -32,7 +34,7 @@ export async function getActiveGlobalExchangeRate(
 ): Promise<ExchangeRate | null> {
   const today = getVenezuelaSyncDate(reference);
 
-  const { data, error } = await client
+  const { data: asOfToday, error } = await client
     .from("exchange_rate")
     .select("*")
     .is("store_id", null)
@@ -42,13 +44,30 @@ export async function getActiveGlobalExchangeRate(
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  if (!data) return null;
 
-  return asExchangeRate(data as ExchangeRate);
+  if (isVenezuelaWeekend(reference)) {
+    const nextBiz = getVenezuelaNextBusinessDate(reference);
+    const { data: weekendAhead, error: weekendError } = await client
+      .from("exchange_rate")
+      .select("*")
+      .is("store_id", null)
+      .eq("effective_date", nextBiz)
+      .maybeSingle();
+
+    if (weekendError) throw new Error(weekendError.message);
+
+    if (weekendAhead && Number(weekendAhead.rate) > 0) {
+      // Preferir la tasa del próximo hábil publicada el viernes.
+      return asExchangeRate(weekendAhead as ExchangeRate);
+    }
+  }
+
+  if (!asOfToday) return null;
+  return asExchangeRate(asOfToday as ExchangeRate);
 }
 
 /**
- * Última tasa usable para precios: carry-forward en exchange_rate,
+ * Última tasa usable para precios: vigencia legal en exchange_rate,
  * y si no hay filas, espejo en tasas_cambio.
  */
 export async function getDisplayableUsdExchangeRate(

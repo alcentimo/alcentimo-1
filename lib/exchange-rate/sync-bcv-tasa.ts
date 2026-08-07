@@ -1,8 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
 import { fetchBcvUsdRate } from "@/lib/exchange-rate/bcv-client";
+import { getActiveGlobalExchangeRate } from "@/lib/exchange-rate/get-tasa-cambio";
 import {
   getVenezuelaSyncDate,
+  isBcvEffectiveDateActiveNow,
   resolveBcvEffectiveDate,
 } from "@/lib/exchange-rate/sync-date";
 import { roundExchangeRate } from "@/lib/format";
@@ -12,7 +14,7 @@ export interface SyncBcvTasaResult {
   rate?: number;
   /** Fecha de vigencia YYYY-MM-DD (America/Caracas) con la que se guardó. */
   effectiveDate?: string;
-  /** true si la tasa ya está activa hoy; false si quedó programada para mañana. */
+  /** true si la tasa ya está activa ahora (hoy o finde→lunes). */
   activatedNow?: boolean;
   updatedAt?: string;
   error?: string;
@@ -56,48 +58,44 @@ async function upsertExchangeRateForDate(
 }
 
 /**
- * Copia a tasas_cambio la tasa vigente (effective_date <= hoy VE).
- * Incluye carry-forward: si aún no hay fila de hoy, espeja la última válida.
+ * Copia a tasas_cambio la tasa legalmente vigente
+ * (incluye sábado/domingo → tasa del lunes si ya está publicada).
  */
 export async function mirrorActiveRateToTasasCambio(
   admin: SupabaseClient,
 ): Promise<{ rate?: number; effectiveDate?: string; error?: string }> {
-  const today = getVenezuelaSyncDate();
-  const { data, error } = await admin
-    .from("exchange_rate")
-    .select("rate, effective_date, created_at")
-    .is("store_id", null)
-    .lte("effective_date", today)
-    .order("effective_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  try {
+    const active = await getActiveGlobalExchangeRate(admin);
+    if (!active) return {};
 
-  if (error) return { error: error.message };
-  if (!data) return {};
+    const rate = roundExchangeRate(Number(active.rate));
+    const updatedAt = new Date().toISOString();
+    const { error: upsertError } = await admin.from("tasas_cambio").upsert(
+      {
+        moneda: "USD",
+        tasa: rate,
+        ultima_actualizacion: updatedAt,
+      },
+      { onConflict: "moneda" },
+    );
 
-  const rate = roundExchangeRate(Number(data.rate));
-  const updatedAt = new Date().toISOString();
-  const { error: upsertError } = await admin.from("tasas_cambio").upsert(
-    {
-      moneda: "USD",
-      tasa: rate,
-      ultima_actualizacion: updatedAt,
-    },
-    { onConflict: "moneda" },
-  );
+    if (upsertError) return { error: upsertError.message };
 
-  if (upsertError) return { error: upsertError.message };
-
-  return {
-    rate,
-    effectiveDate: String(data.effective_date),
-  };
+    return {
+      rate,
+      effectiveDate: String(active.effective_date),
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Error al espejar tasa.",
+    };
+  }
 }
 
 /**
- * Descarga la tasa BCV y la guarda con fecha de vigencia.
- * Prefiere la effective_date de la API; si no hay, usa heurística por slot.
- * tasas_cambio solo refleja la tasa activa hoy.
+ * Descarga la tasa BCV y la guarda con la fecha de vigencia oficial de la API.
+ * Un día comercial = una fila en exchange_rate (unique por effective_date).
+ * tasas_cambio refleja la tasa activa ahora (incl. finde→lunes).
  */
 export async function syncBcvTasaToDatabase(
   admin: SupabaseClient,
@@ -127,12 +125,12 @@ export async function syncBcvTasaToDatabase(
       slot: options?.slot,
       sourceEffectiveDate: fetched.sourceEffectiveDate,
     });
-    const activatedNow = effectiveDate <= today;
+    const activatedNow = isBcvEffectiveDateActiveNow(effectiveDate);
     const updatedAt = new Date().toISOString();
 
     const notes = activatedNow
-      ? "Actualización automática BCV (vigente hoy)"
-      : `Publicación BCV programada para ${effectiveDate} (America/Caracas)`;
+      ? `Actualización BCV (vigente ${effectiveDate})`
+      : `Publicación BCV con vigencia ${effectiveDate} (America/Caracas)`;
 
     logBcvSync("db_upsert_start", {
       effectiveDate,
@@ -143,6 +141,7 @@ export async function syncBcvTasaToDatabase(
       sourceEffectiveDate: fetched.sourceEffectiveDate,
     });
 
+    // Persistencia estricta por día de vigencia oficial (sin mezclar con “hoy”).
     const write = await upsertExchangeRateForDate(admin, {
       rate,
       effectiveDate,
@@ -153,29 +152,6 @@ export async function syncBcvTasaToDatabase(
       return { success: false, error: write.error };
     }
 
-    // Revisión intradía: si el slot programó mañana pero la API no confirma
-    // mañana, actualiza también la fila de hoy (BCV revisó el valor del día).
-    if (
-      !activatedNow &&
-      fetched.sourceEffectiveDate !== effectiveDate
-    ) {
-      const todayWrite = await upsertExchangeRateForDate(admin, {
-        rate,
-        effectiveDate: today,
-        notes: "Actualización BCV intradía (alineada a valor publicado)",
-      });
-      if (todayWrite.error) {
-        logBcvSync(
-          "db_today_align_failed",
-          { error: todayWrite.error },
-          "error",
-        );
-      } else {
-        logBcvSync("db_today_align_ok", { rate, today });
-      }
-    }
-
-    // tasas_cambio = solo tasa activa (nunca adelantar la del día siguiente).
     const mirror = await mirrorActiveRateToTasasCambio(admin);
     if (mirror.error) {
       logBcvSync("db_upsert_failed", { error: mirror.error }, "error");
@@ -187,14 +163,16 @@ export async function syncBcvTasaToDatabase(
       effectiveDate,
       activatedNow,
       activeRate: mirror.rate ?? null,
+      activeEffectiveDate: mirror.effectiveDate ?? null,
       updatedAt,
     });
 
     return {
       success: true,
-      rate: mirror.rate ?? rate,
-      effectiveDate: mirror.effectiveDate ?? effectiveDate,
-      activatedNow: (mirror.effectiveDate ?? effectiveDate) <= today,
+      // Devolver la tasa guardada (fecha oficial), no solo el espejo activo.
+      rate,
+      effectiveDate,
+      activatedNow,
       updatedAt,
     };
   } catch (error) {

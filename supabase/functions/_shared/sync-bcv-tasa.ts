@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { fetchBcvUsdRate } from "./bcv-client.ts";
 import {
+  getVenezuelaNextBusinessDate,
   getVenezuelaSyncDate,
+  isBcvEffectiveDateActiveNow,
+  isVenezuelaWeekend,
   resolveBcvEffectiveDate,
 } from "./sync-date.ts";
 
@@ -51,10 +54,27 @@ async function upsertExchangeRateForDate(
   return error ? { error: error.message } : {};
 }
 
-async function mirrorActiveRateToTasasCambio(
+async function getActiveGlobalExchangeRate(
   admin: SupabaseClient,
-): Promise<{ rate?: number; effectiveDate?: string; error?: string }> {
+): Promise<{ rate: number; effectiveDate: string } | null> {
   const today = getVenezuelaSyncDate();
+
+  if (isVenezuelaWeekend()) {
+    const nextBiz = getVenezuelaNextBusinessDate();
+    const { data: weekendAhead } = await admin
+      .from("exchange_rate")
+      .select("rate, effective_date")
+      .is("store_id", null)
+      .eq("effective_date", nextBiz)
+      .maybeSingle();
+    if (weekendAhead && Number(weekendAhead.rate) > 0) {
+      return {
+        rate: roundRate(Number(weekendAhead.rate)),
+        effectiveDate: String(weekendAhead.effective_date),
+      };
+    }
+  }
+
   const { data, error } = await admin
     .from("exchange_rate")
     .select("rate, effective_date")
@@ -64,14 +84,23 @@ async function mirrorActiveRateToTasasCambio(
     .limit(1)
     .maybeSingle();
 
-  if (error) return { error: error.message };
-  if (!data) return {};
+  if (error || !data) return null;
+  return {
+    rate: roundRate(Number(data.rate)),
+    effectiveDate: String(data.effective_date),
+  };
+}
 
-  const rate = roundRate(Number(data.rate));
+async function mirrorActiveRateToTasasCambio(
+  admin: SupabaseClient,
+): Promise<{ rate?: number; effectiveDate?: string; error?: string }> {
+  const active = await getActiveGlobalExchangeRate(admin);
+  if (!active) return {};
+
   const { error: upsertError } = await admin.from("tasas_cambio").upsert(
     {
       moneda: "USD",
-      tasa: rate,
+      tasa: active.rate,
       ultima_actualizacion: new Date().toISOString(),
     },
     { onConflict: "moneda" },
@@ -79,8 +108,8 @@ async function mirrorActiveRateToTasasCambio(
   if (upsertError) return { error: upsertError.message };
 
   return {
-    rate,
-    effectiveDate: String(data.effective_date),
+    rate: active.rate,
+    effectiveDate: active.effectiveDate,
   };
 }
 
@@ -98,16 +127,15 @@ export async function syncBcvTasaToDatabase(
       };
     }
 
-    const today = getVenezuelaSyncDate();
     const effectiveDate = resolveBcvEffectiveDate({
       slot: options?.slot,
       sourceEffectiveDate: fetched.sourceEffectiveDate,
     });
-    const activatedNow = effectiveDate <= today;
+    const activatedNow = isBcvEffectiveDateActiveNow(effectiveDate);
     const updatedAt = new Date().toISOString();
     const notes = activatedNow
-      ? "Actualización automática BCV (vigente hoy)"
-      : `Publicación BCV programada para ${effectiveDate} (America/Caracas)`;
+      ? `Actualización BCV (vigente ${effectiveDate})`
+      : `Publicación BCV con vigencia ${effectiveDate} (America/Caracas)`;
 
     const write = await upsertExchangeRateForDate(admin, {
       rate,
@@ -116,23 +144,14 @@ export async function syncBcvTasaToDatabase(
     });
     if (write.error) return { success: false, error: write.error };
 
-    // Revisión intradía si el slot programó mañana sin confirmación de la API.
-    if (!activatedNow && fetched.sourceEffectiveDate !== effectiveDate) {
-      await upsertExchangeRateForDate(admin, {
-        rate,
-        effectiveDate: today,
-        notes: "Actualización BCV intradía (alineada a valor publicado)",
-      });
-    }
-
     const mirror = await mirrorActiveRateToTasasCambio(admin);
     if (mirror.error) return { success: false, error: mirror.error };
 
     return {
       success: true,
-      rate: mirror.rate ?? rate,
-      effectiveDate: mirror.effectiveDate ?? effectiveDate,
-      activatedNow: (mirror.effectiveDate ?? effectiveDate) <= today,
+      rate,
+      effectiveDate,
+      activatedNow,
       updatedAt,
     };
   } catch (error) {

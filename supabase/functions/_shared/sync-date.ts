@@ -35,11 +35,66 @@ export function getVenezuelaHour(reference = new Date()): number {
   return hour;
 }
 
+export function getVenezuelaWeekday(reference = new Date()): number {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Caracas",
+    weekday: "short",
+  }).format(reference);
+
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  return map[weekday] ?? 0;
+}
+
+export function isVenezuelaWeekend(reference = new Date()): boolean {
+  const day = getVenezuelaWeekday(reference);
+  return day === 0 || day === 6;
+}
+
+export function getNextBusinessDate(
+  fromDate: string,
+  options?: { exclusive?: boolean },
+): string {
+  let cursor = options?.exclusive === false
+    ? fromDate
+    : addCalendarDays(fromDate, 1);
+  for (let i = 0; i < 10; i++) {
+    const [y, m, d] = cursor.split("-").map((part) => Number.parseInt(part, 10));
+    const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    if (weekday !== 0 && weekday !== 6) return cursor;
+    cursor = addCalendarDays(cursor, 1);
+  }
+  return cursor;
+}
+
+export function getVenezuelaNextBusinessDate(reference = new Date()): string {
+  return getNextBusinessDate(getVenezuelaSyncDate(reference), {
+    exclusive: true,
+  });
+}
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+export function isBcvEffectiveDateActiveNow(
+  effectiveDate: string | null | undefined,
+  reference = new Date(),
+): boolean {
+  if (!effectiveDate || !ISO_DATE_RE.test(effectiveDate)) return false;
+  const today = getVenezuelaSyncDate(reference);
+  if (effectiveDate <= today) return true;
+  if (!isVenezuelaWeekend(reference)) return false;
+  return effectiveDate === getVenezuelaNextBusinessDate(reference);
+}
+
 /**
- * Fecha de vigencia de la tasa descargada.
- * Prefiere effective_date de la API (hoy/mañana VE) sobre la heurística de slot.
- * Si la fuente trae fecha anterior a hoy, aplica hoy (última cotización conocida),
- * asumiendo que fetchBcvUsdRate ya eligió el espejo más fresco.
+ * Persistencia estricta: fecha oficial de la API. Heurística solo sin fecha.
  */
 export function resolveBcvEffectiveDate(options: {
   slot?: string;
@@ -51,18 +106,19 @@ export function resolveBcvEffectiveDate(options: {
   const hour = getVenezuelaHour(reference);
   const today = getVenezuelaSyncDate(reference);
   const tomorrow = getVenezuelaNextSyncDate(reference);
+  const nextBiz = getVenezuelaNextBusinessDate(reference);
+  const earliestAccepted = addCalendarDays(today, -30);
+  const latestAccepted = addCalendarDays(today, 10);
 
   const sourceDate = options.sourceEffectiveDate?.trim() ?? "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(sourceDate)) {
-    if (sourceDate === today || sourceDate === tomorrow) {
+  if (ISO_DATE_RE.test(sourceDate)) {
+    if (sourceDate >= earliestAccepted && sourceDate <= latestAccepted) {
       return sourceDate;
-    }
-    if (sourceDate < today) {
-      return today;
     }
   }
 
   if (slot === "evening" || slot === "late_evening") {
+    if (getVenezuelaWeekday(reference) === 5) return nextBiz;
     return tomorrow;
   }
 
@@ -73,6 +129,7 @@ export function resolveBcvEffectiveDate(options: {
       !slot) &&
     hour >= 16
   ) {
+    if (getVenezuelaWeekday(reference) === 5) return nextBiz;
     return tomorrow;
   }
 

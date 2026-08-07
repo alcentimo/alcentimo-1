@@ -40,6 +40,21 @@ function getVenezuelaNextSyncDate(reference = new Date()): string {
   return addCalendarDays(getVenezuelaSyncDate(reference), 1);
 }
 
+function getNextBusinessDate(fromDate: string): string {
+  let cursor = addCalendarDays(fromDate, 1);
+  for (let i = 0; i < 10; i++) {
+    const [y, m, d] = cursor.split("-").map((part) => Number.parseInt(part, 10));
+    const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    if (weekday !== 0 && weekday !== 6) return cursor;
+    cursor = addCalendarDays(cursor, 1);
+  }
+  return cursor;
+}
+
+function getVenezuelaNextBusinessDate(reference = new Date()): string {
+  return getNextBusinessDate(getVenezuelaSyncDate(reference));
+}
+
 function parseNumericRate(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value) && value > 0) {
     return value;
@@ -141,9 +156,39 @@ function extractRateFromPayload(payload: unknown): number | null {
   return null;
 }
 
+function getVenezuelaWeekday(reference = new Date()): number {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Caracas",
+    weekday: "short",
+  }).format(reference);
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  return map[weekday] ?? 0;
+}
+
+function getVenezuelaHourLocal(reference = new Date()): number {
+  const hourPart = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Caracas",
+    hour: "numeric",
+    hour12: false,
+  })
+    .formatToParts(reference)
+    .find((part) => part.type === "hour")?.value;
+  const hour = Number.parseInt(hourPart ?? "0", 10);
+  if (!Number.isFinite(hour) || hour === 24) return 0;
+  return hour;
+}
+
 /**
  * Elige la cotización más fresca entre espejos.
- * Prioridad: hoy VE > mañana VE > fecha más reciente > sin fecha.
+ * Viernes ≥16:00 / finde: prioriza el próximo hábil (lunes) si está presente.
  */
 export function selectFreshestBcvRate(
   candidates: BcvRateFetchResult[],
@@ -153,14 +198,27 @@ export function selectFreshestBcvRate(
 
   const today = getVenezuelaSyncDate(reference);
   const tomorrow = getVenezuelaNextSyncDate(reference);
+  const nextBiz = getVenezuelaNextBusinessDate(reference);
+  const maxForward = addCalendarDays(today, 10);
+  const weekday = getVenezuelaWeekday(reference);
+  const hour = getVenezuelaHourLocal(reference);
+  const preferNextBusiness =
+    weekday === 0 || weekday === 6 || (weekday === 5 && hour >= 16);
+  const hasNextBiz = candidates.some(
+    (c) => c.sourceEffectiveDate?.trim() === nextBiz,
+  );
 
   const scored = candidates.map((candidate) => {
     const date = candidate.sourceEffectiveDate?.trim() ?? "";
     let freshness = 0;
-    if (date === today) freshness = 400;
+    if (preferNextBusiness && hasNextBiz && date === nextBiz) freshness = 450;
+    else if (date === today) freshness = 400;
+    else if (date === nextBiz) freshness = 380;
     else if (date === tomorrow) freshness = 300;
-    else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date < today) freshness = 100;
-    else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date > tomorrow) freshness = 50;
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date > today && date <= maxForward) {
+      freshness = 250;
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date < today) freshness = 100;
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date > maxForward) freshness = 40;
     else freshness = 150;
 
     return { candidate, freshness, date };

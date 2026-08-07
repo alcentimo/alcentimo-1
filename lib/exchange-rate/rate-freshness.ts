@@ -1,12 +1,15 @@
-import { getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
+import {
+  getVenezuelaNextBusinessDate,
+  getVenezuelaSyncDate,
+  isVenezuelaWeekend,
+} from "@/lib/exchange-rate/sync-date";
 
 /**
- * true si la tasa vigente no cubre el día operativo de Venezuela
- * (p. ej. solo hay tasa de ayer y ya es hoy).
+ * true si la tasa vigente no cubre el momento operativo de Venezuela.
  *
- * Eso es esperado si el BCV publica pasada la medianoche: la app sigue
- * mostrando la última tasa válida (carry-forward) mientras autoheal/cron
- * intentan obtener la del día.
+ * - Día hábil: atrasada si effective_date < hoy (carry-forward de ayer).
+ * - Fin de semana: al día solo si ya está la tasa del próximo hábil (lunes)
+ *   publicada el viernes; si solo hay la del viernes, autoheal reintenta.
  */
 export function isBcvRateBehindCalendarDay(
   effectiveDateOrUpdatedAt: string | null | undefined,
@@ -26,6 +29,10 @@ export function isBcvRateBehindCalendarDay(
         })();
 
   if (!rateDay) return true;
+
+  if (isVenezuelaWeekend(reference)) {
+    return rateDay !== getVenezuelaNextBusinessDate(reference);
+  }
 
   const today = getVenezuelaSyncDate(reference);
   return rateDay < today;

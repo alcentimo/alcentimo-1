@@ -1,5 +1,13 @@
 import https from "node:https";
-import { getVenezuelaNextSyncDate, getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
+import {
+  addCalendarDays,
+  getVenezuelaHour,
+  getVenezuelaNextBusinessDate,
+  getVenezuelaNextSyncDate,
+  getVenezuelaSyncDate,
+  getVenezuelaWeekday,
+  isVenezuelaWeekend,
+} from "@/lib/exchange-rate/sync-date";
 
 /** APIs públicas (espejos). El sitio oficial BCV se usa como último recurso. */
 const BCV_API_ENDPOINTS = [
@@ -130,10 +138,10 @@ function extractRateFromPayload(payload: unknown): number | null {
 
 /**
  * Elige la cotización más fresca entre espejos.
- * Prioridad: fecha de hoy VE > mañana VE > fecha más reciente > sin fecha.
  *
- * Evita el bug de first-success: bcv.today puede responder 200 con la tasa
- * de ayer mientras dolarapi (u otra fuente) ya trae la de hoy.
+ * Día hábil (antes de la publicación vespertina): prioriza hoy.
+ * Viernes ≥16:00 VE / finde: si hay tasa del próximo hábil (lunes), esa gana
+ * (publicación BCV del viernes para el lunes).
  */
 export function selectFreshestBcvRate(
   candidates: BcvRateFetchResult[],
@@ -143,14 +151,27 @@ export function selectFreshestBcvRate(
 
   const today = getVenezuelaSyncDate(reference);
   const tomorrow = getVenezuelaNextSyncDate(reference);
+  const nextBiz = getVenezuelaNextBusinessDate(reference);
+  const maxForward = addCalendarDays(today, 10);
+  const hour = getVenezuelaHour(reference);
+  const preferNextBusiness =
+    isVenezuelaWeekend(reference) ||
+    (getVenezuelaWeekday(reference) === 5 && hour >= 16);
+  const hasNextBiz = candidates.some(
+    (c) => c.sourceEffectiveDate?.trim() === nextBiz,
+  );
 
   const scored = candidates.map((candidate) => {
     const date = candidate.sourceEffectiveDate?.trim() ?? "";
     let freshness = 0;
-    if (date === today) freshness = 400;
+    if (preferNextBusiness && hasNextBiz && date === nextBiz) freshness = 450;
+    else if (date === today) freshness = 400;
+    else if (date === nextBiz) freshness = 380;
     else if (date === tomorrow) freshness = 300;
-    else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date < today) freshness = 100;
-    else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date > tomorrow) freshness = 50;
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date > today && date <= maxForward) {
+      freshness = 250;
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date < today) freshness = 100;
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date > maxForward) freshness = 40;
     else freshness = 150; // sin fecha usable
 
     return { candidate, freshness, date };
@@ -387,13 +408,17 @@ export async function fetchBcvUsdRate(): Promise<BcvRateFetchResult> {
   }
 
   const today = getVenezuelaSyncDate();
-  const tomorrow = getVenezuelaNextSyncDate();
+  const nextBiz = getVenezuelaNextBusinessDate();
+  const maxForward = addCalendarDays(today, 10);
   const bestFromApis = selectFreshestBcvRate(candidates);
   const bestDate = bestFromApis?.sourceEffectiveDate ?? null;
   const apisHaveFresh =
-    bestDate === today || bestDate === tomorrow || bestDate === null;
+    bestDate === null ||
+    bestDate === today ||
+    bestDate === nextBiz ||
+    (bestDate > today && bestDate <= maxForward);
 
-  // Si ningún espejo trae hoy/mañana, scrapear el BCV oficial.
+  // Si ningún espejo trae vigencia actual/próxima, scrapear el BCV oficial.
   if (!bestFromApis || !apisHaveFresh) {
     try {
       const official = await fetchRateFromBcvOfficialSite();
