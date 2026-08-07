@@ -153,11 +153,17 @@ export function CartSummaryPanel({
               </button>
             ) : null}
 
+            {showWhatsAppCta && !whatsappPhone?.trim() ? (
+              <p className="txn-checkout-error text-center" role="status">
+                La tienda aún no configuró un WhatsApp para recibir pedidos.
+              </p>
+            ) : null}
+
             <p className="txn-checkout-hint text-center">
               {whatsappPrimary
                 ? whatsappHint
                 : showFullCheckoutCta && showWhatsAppCta
-                  ? "Elige finalizar en la web o enviar el pedido por WhatsApp."
+                  ? whatsappHint
                   : accountsEnabled
                     ? "Compra sin cuenta · Solo nombre y teléfono al pagar. El registro es opcional."
                     : "Compra como invitado · Solo nombre y teléfono al pagar."}

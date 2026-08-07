@@ -76,7 +76,11 @@ export function CatalogCartHost({
     useState<CartPanelView>(initialView);
   const panelView = isControlled ? controlledPanelView : internalPanelView;
   const setPanelView = isControlled ? onPanelViewChange : setInternalPanelView;
-  const whatsappConfigured = Boolean(purchaseInfo.whatsappPhone?.trim());
+  const whatsappPhone =
+    purchaseInfo.whatsappPhone?.trim() ||
+    purchaseInfo.whatsappPhones.find((phone) => phone.trim())?.trim() ||
+    "";
+  const whatsappConfigured = Boolean(whatsappPhone);
 
   useEffect(() => {
     if (openInitially && !isControlled) {
@@ -123,7 +127,7 @@ export function CatalogCartHost({
             >
               <CartSummaryPanel
                 storeName={store.name}
-                whatsappPhone={purchaseInfo.whatsappPhone}
+                whatsappPhone={whatsappPhone}
                 onClose={closePanel}
                 onCheckout={() => setPanelView("checkout")}
                 exchangeRate={exchangeRate}
@@ -135,14 +139,18 @@ export function CatalogCartHost({
                 whatsappCtaLabel={
                   sandboxMode
                     ? "Enviar pedido por WhatsApp"
-                    : checkoutType === "both"
-                      ? "Pedir directo por WhatsApp"
-                      : "Pedir por WhatsApp"
+                    : whatsappOnly
+                      ? "Finalizar pedido por WhatsApp"
+                      : "Pedir directo por WhatsApp"
                 }
                 whatsappHint={
                   sandboxMode
                     ? "Demo interactiva · El pedido se abre en WhatsApp sin guardar en el servidor."
-                    : "Tu pedido se envía por WhatsApp con el resumen del carrito."
+                    : whatsappOnly
+                      ? "Tu pedido se envía por WhatsApp con el resumen del carrito."
+                      : whatsappConfigured
+                        ? "Puedes finalizar en la web (abre WhatsApp al confirmar) o enviar el carrito directo por WhatsApp."
+                        : "Configura WhatsApp en la tienda para recibir pedidos."
                 }
               />
             </CheckoutErrorBoundary>

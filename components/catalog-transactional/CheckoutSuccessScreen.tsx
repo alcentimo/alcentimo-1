@@ -98,7 +98,11 @@ export function CheckoutSuccessScreen({
           className="txn-whatsapp-primary-btn mt-6 inline-flex w-full items-center justify-center gap-2"
         >
           <MessageCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
-          <span>Enviar comprobante / Contactar por WhatsApp</span>
+          <span>
+            {hasPaymentProof
+              ? "Avisar a la tienda por WhatsApp"
+              : "Enviar pedido / comprobante por WhatsApp"}
+          </span>
         </a>
       ) : (
         <p className="mt-6 text-xs text-zinc-500 dark:text-zinc-400">
