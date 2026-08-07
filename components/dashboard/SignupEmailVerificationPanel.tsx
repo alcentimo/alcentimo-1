@@ -358,7 +358,11 @@ function VerificationPanelBody({
         </button>
       ) : (
         <Link
-          href="/dashboard/login"
+          href={
+            nextPath?.trim()
+              ? `/dashboard/login?next=${encodeURIComponent(nextPath.trim())}`
+              : "/dashboard/login"
+          }
           className="touch-target mt-5 block w-full text-center text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
         >
           <span className="link-brand">Volver a iniciar sesión</span>

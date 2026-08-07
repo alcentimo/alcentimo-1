@@ -26,7 +26,10 @@ import {
   isDashboardPublicAuthPath,
 } from "@/lib/team/permissions";
 import { getMerchantStoreRole } from "@/lib/team/store-context";
-import { applySafeInternalNextRedirect } from "@/lib/auth/post-auth-redirect";
+import {
+  applySafeInternalNextRedirect,
+  buildLoginReturnTo,
+} from "@/lib/auth/post-auth-redirect";
 import { shouldRedirectGoogleAuthToApex } from "@/lib/auth/google-oauth-origin";
 import { getCatalogVisitorCookieName } from "@/lib/analytics/track-catalog-visit";
 import { LANDING_VISITOR_COOKIE } from "@/lib/analytics/page-visit-keys";
@@ -225,14 +228,18 @@ export async function middleware(request: NextRequest) {
     const isRecovery =
       authType === "recovery" || pathname === RESET_PASSWORD_PATH;
 
+    const authReturnTo = buildLoginReturnTo(pathname, request.nextUrl.search);
+    const defaultAuthNext = isRecovery
+      ? RESET_PASSWORD_PATH
+      : isDashboardInvitationPath(pathname)
+        ? authReturnTo
+        : ONBOARDING_PATH;
+
     if (tokenHash || isRecovery) {
       const confirmUrl = request.nextUrl.clone();
       confirmUrl.pathname = AUTH_CONFIRM_PATH;
       if (!confirmUrl.searchParams.has("next")) {
-        confirmUrl.searchParams.set(
-          "next",
-          isRecovery ? RESET_PASSWORD_PATH : ONBOARDING_PATH,
-        );
+        confirmUrl.searchParams.set("next", defaultAuthNext);
       }
       return NextResponse.redirect(confirmUrl);
     }
@@ -240,7 +247,10 @@ export async function middleware(request: NextRequest) {
     const callbackUrl = request.nextUrl.clone();
     callbackUrl.pathname = AUTH_CALLBACK_PATH;
     if (!callbackUrl.searchParams.has("next")) {
-      callbackUrl.searchParams.set("next", ONBOARDING_PATH);
+      callbackUrl.searchParams.set(
+        "next",
+        isDashboardInvitationPath(pathname) ? authReturnTo : ONBOARDING_PATH,
+      );
     }
     return NextResponse.redirect(callbackUrl);
   }
@@ -376,7 +386,11 @@ export async function middleware(request: NextRequest) {
     if (!authenticatedUser) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = DASHBOARD_LOGIN;
-      loginUrl.searchParams.set("next", pathname);
+      loginUrl.search = "";
+      loginUrl.searchParams.set(
+        "next",
+        buildLoginReturnTo(pathname, request.nextUrl.search),
+      );
       return NextResponse.redirect(loginUrl);
     }
 
@@ -406,7 +420,11 @@ export async function middleware(request: NextRequest) {
     if (!authenticatedUser) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = DASHBOARD_LOGIN;
-      loginUrl.searchParams.set("next", pathname);
+      loginUrl.search = "";
+      loginUrl.searchParams.set(
+        "next",
+        buildLoginReturnTo(pathname, request.nextUrl.search),
+      );
       return NextResponse.redirect(loginUrl);
     }
 
@@ -481,7 +499,12 @@ export async function middleware(request: NextRequest) {
     if (!authenticatedUser && !isPublicAuthPage) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = DASHBOARD_LOGIN;
-      loginUrl.searchParams.set("next", pathname);
+      // Limpiar query huérfana (p. ej. ?token=) y conservar path+search en `next`.
+      loginUrl.search = "";
+      loginUrl.searchParams.set(
+        "next",
+        buildLoginReturnTo(pathname, request.nextUrl.search),
+      );
       return NextResponse.redirect(loginUrl);
     }
 
