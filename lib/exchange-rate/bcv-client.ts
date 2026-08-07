@@ -1,7 +1,13 @@
+import https from "node:https";
+import { getVenezuelaNextSyncDate, getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
+
+/** APIs públicas (espejos). El sitio oficial BCV se usa como último recurso. */
 const BCV_API_ENDPOINTS = [
-  "https://bcv.today/api/v1/rate.json",
   "https://ve.dolarapi.com/v1/dolares/oficial",
+  "https://bcv.today/api/v1/rate.json",
 ] as const;
+
+const BCV_OFFICIAL_URL = "https://www.bcv.org.ve/";
 
 const FETCH_TIMEOUT_MS = 12_000;
 const FETCH_ATTEMPTS_PER_ENDPOINT = 3;
@@ -16,6 +22,10 @@ export interface BcvRateFetchResult {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function roundRateTwoDecimals(rate: number): number {
+  return Math.round((rate + Number.EPSILON) * 100) / 100;
 }
 
 function parseNumericRate(value: unknown): number | null {
@@ -118,6 +128,43 @@ function extractRateFromPayload(payload: unknown): number | null {
   return null;
 }
 
+/**
+ * Elige la cotización más fresca entre espejos.
+ * Prioridad: fecha de hoy VE > mañana VE > fecha más reciente > sin fecha.
+ *
+ * Evita el bug de first-success: bcv.today puede responder 200 con la tasa
+ * de ayer mientras dolarapi (u otra fuente) ya trae la de hoy.
+ */
+export function selectFreshestBcvRate(
+  candidates: BcvRateFetchResult[],
+  reference = new Date(),
+): BcvRateFetchResult | null {
+  if (candidates.length === 0) return null;
+
+  const today = getVenezuelaSyncDate(reference);
+  const tomorrow = getVenezuelaNextSyncDate(reference);
+
+  const scored = candidates.map((candidate) => {
+    const date = candidate.sourceEffectiveDate?.trim() ?? "";
+    let freshness = 0;
+    if (date === today) freshness = 400;
+    else if (date === tomorrow) freshness = 300;
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date < today) freshness = 100;
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date > tomorrow) freshness = 50;
+    else freshness = 150; // sin fecha usable
+
+    return { candidate, freshness, date };
+  });
+
+  scored.sort((a, b) => {
+    if (b.freshness !== a.freshness) return b.freshness - a.freshness;
+    if (a.date && b.date && a.date !== b.date) return b.date.localeCompare(a.date);
+    return 0;
+  });
+
+  return scored[0]?.candidate ?? null;
+}
+
 async function fetchJson(url: string): Promise<unknown> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -140,10 +187,6 @@ async function fetchJson(url: string): Promise<unknown> {
   } finally {
     clearTimeout(timeout);
   }
-}
-
-function roundRateTwoDecimals(rate: number): number {
-  return Math.round((rate + Number.EPSILON) * 100) / 100;
 }
 
 async function fetchRateFromEndpoint(
@@ -205,17 +248,187 @@ async function fetchRateFromEndpoint(
   throw new Error(`${endpoint}: ${lastError}`);
 }
 
-/** Obtiene la tasa USD/VES publicada por el BCV desde APIs públicas (2 decimales). */
+/** El certificado SSL de bcv.org.ve suele fallar; usamos Agent inseguro solo aquí. */
+function fetchTextAllowInvalidCert(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const req = https.get(
+      url,
+      {
+        rejectUnauthorized: false,
+        headers: {
+          Accept: "text/html,application/xhtml+xml",
+          "User-Agent":
+            "Mozilla/5.0 (compatible; AlcentimoBCVSync/1.0; +https://alcentimo.com)",
+        },
+        timeout: FETCH_TIMEOUT_MS,
+      },
+      (res) => {
+        if ((res.statusCode ?? 0) >= 400) {
+          res.resume();
+          reject(new Error(`HTTP ${res.statusCode}`));
+          return;
+        }
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () => {
+          resolve(Buffer.concat(chunks).toString("utf8"));
+        });
+      },
+    );
+    req.on("error", reject);
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("timeout"));
+    });
+  });
+}
+
+/** Parsea USD y Fecha Valor del HTML oficial del BCV. */
+export function parseBcvOfficialHtml(html: string): BcvRateFetchResult | null {
+  const dolarBlockMatch = html.match(
+    /id=["']dolar["'][\s\S]{0,1200}?strong[^>]*>\s*([0-9][0-9.,]*)/i,
+  );
+  const rate = parseNumericRate(dolarBlockMatch?.[1] ?? null);
+  if (!rate) return null;
+
+  let sourceEffectiveDate: string | null = null;
+  const fechaValorMatch = html.match(
+    /Fecha\s*Valor[\s\S]{0,400}?content=["'](\d{4}-\d{2}-\d{2})/i,
+  );
+  if (fechaValorMatch?.[1]) {
+    sourceEffectiveDate = fechaValorMatch[1];
+  }
+
+  return {
+    rate: roundRateTwoDecimals(rate),
+    sourceEffectiveDate,
+    source: BCV_OFFICIAL_URL,
+  };
+}
+
+async function fetchRateFromBcvOfficialSite(): Promise<BcvRateFetchResult> {
+  console.log(
+    `[bcv-sync] ${JSON.stringify({
+      ts: new Date().toISOString(),
+      phase: "fetch_bcv_official",
+      endpoint: BCV_OFFICIAL_URL,
+    })}`,
+  );
+
+  // 1) Intento normal (por si el cert se repara).
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const response = await fetch(BCV_OFFICIAL_URL, {
+        signal: controller.signal,
+        headers: {
+          Accept: "text/html,application/xhtml+xml",
+          "User-Agent":
+            "Mozilla/5.0 (compatible; AlcentimoBCVSync/1.0; +https://alcentimo.com)",
+        },
+        cache: "no-store",
+      });
+      if (response.ok) {
+        const html = await response.text();
+        const parsed = parseBcvOfficialHtml(html);
+        if (parsed) return parsed;
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
+  } catch {
+    // Certificado inválido u otro error de red: caer al Agent inseguro.
+  }
+
+  // 2) Fallback tolerante al certificado roto de bcv.org.ve.
+  const html = await fetchTextAllowInvalidCert(BCV_OFFICIAL_URL);
+  const parsed = parseBcvOfficialHtml(html);
+  if (!parsed) {
+    throw new Error(`${BCV_OFFICIAL_URL}: HTML sin tasa USD válida`);
+  }
+
+  console.log(
+    `[bcv-sync] ${JSON.stringify({
+      ts: new Date().toISOString(),
+      phase: "fetch_bcv_official_ok",
+      rate: parsed.rate,
+      sourceEffectiveDate: parsed.sourceEffectiveDate,
+    })}`,
+  );
+
+  return parsed;
+}
+
+/**
+ * Obtiene la tasa USD/VES del BCV consultando varias fuentes en paralelo
+ * y eligiendo la más fresca (no first-success).
+ */
 export async function fetchBcvUsdRate(): Promise<BcvRateFetchResult> {
   const errors: string[] = [];
+  const candidates: BcvRateFetchResult[] = [];
 
-  for (const endpoint of BCV_API_ENDPOINTS) {
-    try {
-      return await fetchRateFromEndpoint(endpoint);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Error desconocido";
+  const apiResults = await Promise.allSettled(
+    BCV_API_ENDPOINTS.map((endpoint) => fetchRateFromEndpoint(endpoint)),
+  );
+
+  for (let i = 0; i < apiResults.length; i++) {
+    const result = apiResults[i];
+    const endpoint = BCV_API_ENDPOINTS[i];
+    if (result.status === "fulfilled") {
+      candidates.push(result.value);
+    } else {
+      const message =
+        result.reason instanceof Error
+          ? result.reason.message
+          : `${endpoint}: Error desconocido`;
       errors.push(message);
     }
+  }
+
+  const today = getVenezuelaSyncDate();
+  const tomorrow = getVenezuelaNextSyncDate();
+  const bestFromApis = selectFreshestBcvRate(candidates);
+  const bestDate = bestFromApis?.sourceEffectiveDate ?? null;
+  const apisHaveFresh =
+    bestDate === today || bestDate === tomorrow || bestDate === null;
+
+  // Si ningún espejo trae hoy/mañana, scrapear el BCV oficial.
+  if (!bestFromApis || !apisHaveFresh) {
+    try {
+      const official = await fetchRateFromBcvOfficialSite();
+      candidates.push(official);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : `${BCV_OFFICIAL_URL}: error`;
+      errors.push(message);
+      console.error(
+        `[bcv-sync] ${JSON.stringify({
+          ts: new Date().toISOString(),
+          phase: "fetch_bcv_official_error",
+          error: message,
+        })}`,
+      );
+    }
+  }
+
+  const best = selectFreshestBcvRate(candidates);
+  if (best) {
+    console.log(
+      `[bcv-sync] ${JSON.stringify({
+        ts: new Date().toISOString(),
+        phase: "fetch_selected",
+        source: best.source,
+        rate: best.rate,
+        sourceEffectiveDate: best.sourceEffectiveDate,
+        candidates: candidates.map((c) => ({
+          source: c.source,
+          rate: c.rate,
+          sourceEffectiveDate: c.sourceEffectiveDate,
+        })),
+      })}`,
+    );
+    return best;
   }
 
   throw new Error(

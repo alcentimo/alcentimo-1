@@ -48,7 +48,11 @@ export function getVenezuelaHour(reference = new Date()): number {
  * 1) Fecha reportada por la API (effective_date / date / fechaActualizacion)
  *    si cae en hoy o mañana VE — evita guardar la tasa de hoy como “mañana”
  *    en slots evening cuando el BCV ya actualizó el valor del día.
- * 2) Heurística por slot/hora: tras ~16:00 VE los slots de tarde suelen
+ * 2) Si la fuente trae una fecha anterior a hoy VE, se asume que es la última
+ *    cotización publicada (fines de semana / BCV atrasado) y aplica hoy.
+ *    Esto es seguro solo porque fetchBcvUsdRate() ya eligió la fuente más
+ *    fresca entre espejos; no uses first-success con bcv.today.
+ * 3) Heurística por slot/hora: tras ~16:00 VE los slots de tarde suelen
  *    publicar la tasa del día siguiente.
  */
 export function resolveBcvEffectiveDate(options: {
@@ -67,7 +71,7 @@ export function resolveBcvEffectiveDate(options: {
     if (sourceDate === today || sourceDate === tomorrow) {
       return sourceDate;
     }
-    // Fuente atrasada: la cotización actual vale para hoy.
+    // Última cotización conocida (finde / BCV aún no publica): vale para hoy.
     if (sourceDate < today) {
       return today;
     }

@@ -27,8 +27,8 @@ loadEnvFile(resolve(process.cwd(), ".env.local"));
 loadEnvFile(resolve(process.cwd(), ".env"));
 
 const BCV_API_ENDPOINTS = [
-  "https://bcv.today/api/v1/rate.json",
   "https://ve.dolarapi.com/v1/dolares/oficial",
+  "https://bcv.today/api/v1/rate.json",
 ];
 
 function parseNumericRate(value) {
@@ -98,30 +98,60 @@ function extractRate(payload) {
   return null;
 }
 
+function selectFreshestBcvRate(candidates, reference = new Date()) {
+  if (candidates.length === 0) return null;
+  const today = getVenezuelaSyncDate(reference);
+  const scored = candidates.map((candidate) => {
+    const date = candidate.sourceEffectiveDate?.trim() ?? "";
+    let freshness = 0;
+    if (date === today) freshness = 400;
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date > today) freshness = 300;
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date < today) freshness = 100;
+    else freshness = 150;
+    return { candidate, freshness, date };
+  });
+  scored.sort((a, b) => {
+    if (b.freshness !== a.freshness) return b.freshness - a.freshness;
+    if (a.date && b.date && a.date !== b.date) return b.date.localeCompare(a.date);
+    return 0;
+  });
+  return scored[0]?.candidate ?? null;
+}
+
 async function fetchBcvUsdRate() {
   const errors = [];
-  for (const endpoint of BCV_API_ENDPOINTS) {
-    try {
+  const candidates = [];
+  const results = await Promise.allSettled(
+    BCV_API_ENDPOINTS.map(async (endpoint) => {
       const response = await fetch(endpoint, {
-        headers: { Accept: "application/json" },
+        headers: { Accept: "application/json", "User-Agent": "AlcentimoBCVSync/1.0" },
         cache: "no-store",
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = await response.json();
       const rate = extractRate(payload);
-      if (rate) {
-        return {
-          rate: Math.round((rate + Number.EPSILON) * 100) / 100,
-          sourceEffectiveDate: parseSourceEffectiveDate(payload),
-          source: endpoint,
-        };
-      }
-      errors.push(`${endpoint}: sin tasa válida`);
-    } catch (error) {
-      errors.push(`${endpoint}: ${error instanceof Error ? error.message : "error"}`);
+      if (!rate) throw new Error("sin tasa válida");
+      return {
+        rate: Math.round((rate + Number.EPSILON) * 100) / 100,
+        sourceEffectiveDate: parseSourceEffectiveDate(payload),
+        source: endpoint,
+      };
+    }),
+  );
+
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    if (result.status === "fulfilled") candidates.push(result.value);
+    else {
+      errors.push(
+        `${BCV_API_ENDPOINTS[i]}: ${result.reason instanceof Error ? result.reason.message : "error"}`,
+      );
     }
   }
-  throw new Error(errors.join(" | "));
+
+  const best = selectFreshestBcvRate(candidates);
+  if (best) return best;
+  throw new Error(errors.join(" | ") || "No se pudo obtener la tasa BCV.");
 }
 
 function getVenezuelaSyncDate(reference = new Date()) {

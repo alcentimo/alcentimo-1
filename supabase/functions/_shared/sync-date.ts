@@ -38,6 +38,8 @@ export function getVenezuelaHour(reference = new Date()): number {
 /**
  * Fecha de vigencia de la tasa descargada.
  * Prefiere effective_date de la API (hoy/mañana VE) sobre la heurística de slot.
+ * Si la fuente trae fecha anterior a hoy, aplica hoy (última cotización conocida),
+ * asumiendo que fetchBcvUsdRate ya eligió el espejo más fresco.
  */
 export function resolveBcvEffectiveDate(options: {
   slot?: string;
