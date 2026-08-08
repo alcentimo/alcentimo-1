@@ -9256,18 +9256,6 @@ button.catalog-profile-footer-link {
   @apply w-full px-6 pb-6;
 }
 
-.catalog-auth-method-toggle {
-  @apply grid grid-cols-2 gap-1 rounded-xl border border-zinc-200 bg-zinc-100 p-1;
-}
-
-.catalog-auth-method-btn {
-  @apply rounded-lg px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:text-zinc-900 disabled:opacity-50;
-}
-
-.catalog-auth-method-btn-active {
-  @apply bg-white text-zinc-900 shadow-sm;
-}
-
 .catalog-register-panel .label-field {
   @apply text-sm;
 }
