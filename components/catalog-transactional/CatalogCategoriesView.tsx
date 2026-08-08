@@ -363,18 +363,17 @@ function CatalogCategoriesPageContent({
               )}
             >
               {browse.visibleProducts.map((product) => (
-                <div key={product.product_id} className="w-full min-w-0 max-w-full">
-                  <ProductCard
-                    product={product}
-                    exchangeRate={liveExchangeRate}
-                    showBsConversion={showBsConversion}
-                    catalogVisibility={catalogDesign.visibility}
-                    storeRubro={store.rubro_tienda}
-                    wholesaleEnabled={wholesaleEnabled}
-                    onAddToCart={addItem}
-                    onOpenDetail={openProduct}
-                  />
-                </div>
+                <ProductCard
+                  key={product.product_id}
+                  product={product}
+                  exchangeRate={liveExchangeRate}
+                  showBsConversion={showBsConversion}
+                  catalogVisibility={catalogDesign.visibility}
+                  storeRubro={store.rubro_tienda}
+                  wholesaleEnabled={wholesaleEnabled}
+                  onAddToCart={addItem}
+                  onOpenDetail={openProduct}
+                />
               ))}
             </div>
             <CatalogBrowseLoadMore

@@ -2221,10 +2221,6 @@ html:has(.landing-shell) {
   container-type: inline-size;
   container-name: product-card;
   --pc-media-h-factor: 1;
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
   @apply relative flex h-full flex-col overflow-hidden border shadow-sm transition-shadow duration-300 hover:shadow-lg;
 }
 
@@ -2388,7 +2384,7 @@ html:has(.landing-shell) {
 }
 
 .store-product-name-open {
-  @apply block w-full max-w-full min-w-0 cursor-pointer overflow-hidden text-left transition-colors;
+  @apply block w-full cursor-pointer text-left transition-colors;
 }
 
 .store-product-name-open:hover {
@@ -3089,23 +3085,6 @@ html:has(.landing-shell) {
   .store-product-card {
     --pc-body-pad: 0.375rem;
     --pc-media-inset: 0.375rem;
-  }
-
-  /* Móviles muy estrechos: menos padding lateral para dar aire a 2 cols */
-  .txn-catalog-main {
-    padding-inline: 0.75rem;
-  }
-}
-
-@media (max-width: 380px) {
-  .txn-catalog {
-    --pc-grid-gap: 0.375rem;
-    --pc-body-pad: 0.3125rem;
-    --pc-media-inset: 0.3125rem;
-  }
-
-  .txn-catalog-main {
-    padding-inline: 0.625rem;
   }
 }
 
@@ -6212,8 +6191,6 @@ html:has(.landing-shell) {
 
 .txn-catalog {
   @apply mx-auto flex min-h-dvh w-full max-w-7xl flex-col;
-  min-width: 0;
-  overflow-x: clip;
   --txn-primary: #0d9488;
   --txn-primary-hover: #0f766e;
   --txn-primary-fg: #ffffff;
@@ -6541,54 +6518,22 @@ html:has(.landing-shell) {
 }
 
 .txn-catalog-main {
-  @apply w-full min-w-0 max-w-full flex-1 px-4 py-3 sm:px-6 sm:py-4;
-  overflow-x: clip;
+  @apply w-full min-w-0 flex-1 px-4 py-3 sm:px-6 sm:py-4;
 }
 
-/*
- * Cuadrícula (2 cols móvil → 3 md → 4 xl).
- * minmax(0, 1fr) evita que el contenido empuje las pistas y cause solapes.
- */
-.txn-product-grid,
-.txn-product-grid--immersive {
-  display: grid;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  align-items: stretch;
+.txn-product-grid {
+  @apply grid w-full min-w-0 grid-cols-2 items-stretch md:grid-cols-3 xl:grid-cols-4;
   gap: var(--pc-grid-gap);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-@media (min-width: 768px) {
-  .txn-product-grid,
-  .txn-product-grid--immersive {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1280px) {
-  .txn-product-grid,
-  .txn-product-grid--immersive {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-/* Lista / tarjeta grande: una columna fluida */
 .txn-product-list {
-  display: flex;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  flex-direction: column;
+  @apply flex w-full min-w-0 flex-col;
   gap: var(--pc-grid-gap);
 }
 
-.txn-product-grid > *,
-.txn-product-grid--immersive > *,
-.txn-product-list > * {
-  min-width: 0;
-  max-width: 100%;
+.txn-product-grid--immersive {
+  @apply grid-cols-2 gap-2 sm:gap-2.5 md:grid-cols-3 xl:grid-cols-4;
+  gap: var(--pc-grid-gap);
 }
 
 /* Barra compacta sucursal / entrega */
@@ -6729,9 +6674,7 @@ html:has(.landing-shell) {
 .txn-catalog .store-product-name {
   font-weight: var(--txn-product-weight, 600);
   letter-spacing: var(--txn-product-tracking, -0.01em);
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  @apply line-clamp-2 max-w-full min-w-0 leading-snug text-neutral-900;
+  @apply line-clamp-2 leading-snug text-neutral-900;
 }
 
 .txn-catalog .store-product-desc {
@@ -6820,31 +6763,8 @@ html:has(.landing-shell) {
   @apply text-lg font-semibold tracking-tight text-neutral-900 sm:text-xl;
 }
 
-/* Food menu: columnas propias con tracks fluidos (sin pelear con overflow). */
-.txn-product-grid.food-menu-grid,
-.txn-product-grid--immersive.food-menu-grid {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-@media (min-width: 640px) {
-  .txn-product-grid.food-menu-grid,
-  .txn-product-grid--immersive.food-menu-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .txn-product-grid.food-menu-grid,
-  .txn-product-grid--immersive.food-menu-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-/* En vista lista, food-menu-grid no debe forzar display:grid. */
-.txn-product-list.food-menu-grid {
-  display: flex;
-  flex-direction: column;
-  grid-template-columns: unset;
+.food-menu-grid {
+  @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
 }
 
 .txn-catalog--food-menu .store-product-card {
@@ -7243,73 +7163,49 @@ html:has(.landing-shell) {
   --pc-list-media-ratio: 4 / 5;
 }
 
-/* Tarjeta grande: una columna con foto amplia (fluida en móvil y PC). */
+/* Tarjeta grande: una columna con foto amplia. */
 .txn-catalog--list .store-product-card {
-  display: flex;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  flex-direction: column;
-  align-items: stretch;
-  overflow: hidden;
+  @apply flex w-full min-w-0 flex-col items-stretch overflow-hidden;
   --pc-media-ratio: var(--pc-list-media-ratio);
 }
 
 .txn-catalog--list .store-product-media-frame {
   margin: var(--pc-media-inset) var(--pc-media-inset) 0;
   width: auto;
-  max-width: 100%;
-  min-width: 0;
+  max-width: none;
 }
 
 .txn-catalog--list .store-product-media {
-  display: block;
+  @apply w-full max-w-none shrink-0 self-stretch;
   width: 100%;
-  max-width: 100%;
   min-width: 0;
+  max-width: none;
   margin: 0;
-  flex-shrink: 0;
-  align-self: stretch;
   border-radius: var(--pc-media-radius);
   aspect-ratio: var(--pc-media-ratio);
-  max-height: min(72vw, 26rem);
 }
 
 .txn-catalog--list .store-product-content {
-  display: flex;
-  min-width: 0;
-  max-width: 100%;
-  flex: 1;
-  flex-direction: column;
+  @apply flex min-w-0 flex-1 flex-col;
 }
 
 .txn-catalog--list .store-product-body {
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  max-width: 100%;
-  flex: 1;
+  @apply min-w-0 flex-1;
   padding: var(--pc-body-pad);
   gap: var(--pc-gap);
 }
 
 .txn-catalog--list .store-product-slot {
   min-height: unset;
-  min-width: 0;
-  max-width: 100%;
 }
 
 .txn-catalog--list .store-product-footer {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.5rem;
   margin-top: 0.25rem;
   padding-inline: 0;
   padding-bottom: 0;
-  min-width: 0;
-  max-width: 100%;
 }
 
 .txn-catalog--list .store-product-action {
@@ -7322,13 +7218,7 @@ html:has(.landing-shell) {
 
 @media (min-width: 768px) {
   .txn-catalog--list .txn-product-list {
-    width: 100%;
-    max-width: 42rem; /* max-w-2xl */
-    margin-inline: auto;
-  }
-
-  .txn-catalog--list .store-product-media {
-    max-height: min(56vw, 28rem);
+    @apply mx-auto max-w-2xl;
   }
 }
 
@@ -7342,22 +7232,8 @@ html:has(.landing-shell) {
 
 .txn-catalog--theme-immersive .txn-product-grid,
 .txn-catalog--theme-immersive .txn-product-grid--immersive {
+  @apply grid-cols-2 md:grid-cols-3 xl:grid-cols-4;
   gap: var(--pc-grid-gap);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-@media (min-width: 768px) {
-  .txn-catalog--theme-immersive .txn-product-grid,
-  .txn-catalog--theme-immersive .txn-product-grid--immersive {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1280px) {
-  .txn-catalog--theme-immersive .txn-product-grid,
-  .txn-catalog--theme-immersive .txn-product-grid--immersive {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
 }
 
 .txn-catalog--theme-immersive .store-product-card {
@@ -9596,12 +9472,11 @@ html:has(.landing-shell) {
 }
 
 .catalog-browse-toolbar {
-  @apply sticky top-0 z-10 w-full min-w-0 max-w-full border-b border-neutral-200/70 bg-white/96 px-4 py-2 backdrop-blur-sm sm:px-6;
-  overflow-x: clip;
+  @apply sticky top-0 z-10 border-b border-neutral-200/70 bg-white/96 px-4 py-2 backdrop-blur-sm sm:px-6;
 }
 
 .catalog-browse-toolbar-row {
-  @apply flex min-w-0 max-w-full items-center gap-2;
+  @apply flex items-center gap-2;
 }
 
 .catalog-browse-filters-btn {
