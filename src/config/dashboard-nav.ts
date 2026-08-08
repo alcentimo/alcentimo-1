@@ -4,7 +4,7 @@ import {
   ClipboardList,
   Settings2,
   Store,
-  UserCog,
+  // UserCog, // Equipo oculto por ahora (no se usa en menú de tiendas)
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -49,13 +49,14 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     icon: Users,
     match: (pathname) => pathname.startsWith("/dashboard/clientes"),
   },
-  {
-    href: "/dashboard/equipo",
-    label: "Equipo",
-    description: "Invita encargados y vendedores a tu panel",
-    icon: UserCog,
-    match: (pathname) => pathname.startsWith("/dashboard/equipo"),
-  },
+  // Equipo oculto: no se usa por ahora en dashboards de tienda.
+  // {
+  //   href: "/dashboard/equipo",
+  //   label: "Equipo",
+  //   description: "Invita encargados y vendedores a tu panel",
+  //   icon: UserCog,
+  //   match: (pathname) => pathname.startsWith("/dashboard/equipo"),
+  // },
   {
     href: "/dashboard/analiticas",
     label: "Analíticas",
