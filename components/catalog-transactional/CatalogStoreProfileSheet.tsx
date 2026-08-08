@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LogIn,
   LogOut,
@@ -64,6 +64,8 @@ export function CatalogStoreProfileSheet({
   whatsappPhone = null,
   locationHours = null,
 }: CatalogStoreProfileSheetProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const shellNav = useCatalogShellNavigationOptional();
   const customerSession = useCustomerSessionOptional();
   const { accountsEnabled } = useCustomerAccountMode();
@@ -85,8 +87,25 @@ export function CatalogStoreProfileSheet({
       )
     : null;
 
-  const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
-  const profilePath = getStoreCustomerAccountPath(storeSlug, "perfil");
+  const pathOptions = { pathname };
+  const catalogPath = getStoreCatalogBasePath(storeSlug, pathOptions);
+  const accountPath = getStoreCustomerAccountPath(
+    storeSlug,
+    "cuenta",
+    pathOptions,
+  );
+  const profilePath = getStoreCustomerAccountPath(
+    storeSlug,
+    "perfil",
+    pathOptions,
+  );
+
+  function navigateTo(href: string) {
+    // Cerrar el sheet y navegar con el router: un Link + onClose desmontaba
+    // el ancla antes de completar la navegación.
+    onClose();
+    router.push(href);
+  }
 
   async function handleSignOut() {
     if (!customerSession) return;
@@ -205,22 +224,22 @@ export function CatalogStoreProfileSheet({
 
             {isCustomer ? (
               <>
-                <Link
-                  href={accountPath}
+                <button
+                  type="button"
                   className="catalog-profile-link-btn"
-                  onClick={onClose}
+                  onClick={() => navigateTo(accountPath)}
                 >
                   <ShoppingBag className="h-4 w-4 shrink-0" aria-hidden="true" />
                   Ver mis compras
-                </Link>
-                <Link
-                  href={profilePath}
+                </button>
+                <button
+                  type="button"
                   className="catalog-profile-link-btn catalog-profile-link-btn-secondary"
-                  onClick={onClose}
+                  onClick={() => navigateTo(profilePath)}
                 >
                   <UserRound className="h-4 w-4 shrink-0" aria-hidden="true" />
                   Mi perfil / Seguridad
-                </Link>
+                </button>
                 <button
                   type="button"
                   className="catalog-profile-link-btn catalog-profile-link-btn-secondary"
@@ -263,13 +282,13 @@ export function CatalogStoreProfileSheet({
         </div>
 
         <footer className="catalog-profile-footer">
-          <Link
-            href={getStoreCatalogBasePath(storeSlug)}
+          <button
+            type="button"
             className="catalog-profile-footer-link"
-            onClick={onClose}
+            onClick={() => navigateTo(catalogPath)}
           >
             Volver al catálogo
-          </Link>
+          </button>
         </footer>
       </aside>
     </div>

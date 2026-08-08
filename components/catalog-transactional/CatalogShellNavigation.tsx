@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
 
 interface CatalogCartController {
@@ -63,6 +63,7 @@ export function CatalogShellNavigationProvider({
   children,
 }: CatalogShellNavigationProviderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const cartControllerRef = useRef<CatalogCartController | null>(null);
   const searchFocusRef = useRef<(() => void) | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -114,10 +115,10 @@ export function CatalogShellNavigationProvider({
       return;
     }
 
-    const base = getStoreCatalogBasePath(storeSlug);
+    const base = getStoreCatalogBasePath(storeSlug, { pathname });
     const href = base === "/" ? "/?carrito=1" : `${base}?carrito=1`;
     router.push(href);
-  }, [router, storeSlug]);
+  }, [pathname, router, storeSlug]);
 
   const closeCart = useCallback(() => {
     cartControllerRef.current?.close();

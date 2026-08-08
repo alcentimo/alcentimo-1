@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { ShoppingBag, X } from "lucide-react";
 import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
@@ -132,6 +133,7 @@ export function CheckoutPanel({
   initialStep = 1,
   onBackToCart,
 }: CheckoutPanelProps) {
+  const pathname = usePathname();
   const { items, subtotalUsd, updateQuantity, removeItem, clearCart } =
     useCart();
   const { autoApply } = usePromotionContext();
@@ -999,10 +1001,12 @@ export function CheckoutPanel({
                       ) : null}
                     </dl>
                     <Link
-                      href={getStoreCustomerAccountPath(storeSlug, "cuenta")}
+                      href={getStoreCustomerAccountPath(storeSlug, "perfil", {
+                        pathname,
+                      })}
                       className="txn-checkout-customer-link"
                     >
-                      Editar en Mi cuenta
+                      Editar en Mi perfil
                     </Link>
                   </div>
                 ) : (

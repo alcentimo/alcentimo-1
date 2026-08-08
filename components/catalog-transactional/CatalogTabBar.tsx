@@ -69,7 +69,7 @@ function resolveActiveTab(
   if (profileOpen) return "perfil";
   if (searchActive) return "buscar";
 
-  const base = getStoreCatalogBasePath(storeSlug);
+  const base = getStoreCatalogBasePath(storeSlug, { pathname });
 
   if (pcBuilderEnabled && pathname.startsWith(`${base}/armar-pc`)) {
     return "armar-pc";
@@ -114,7 +114,7 @@ export function CatalogTabBar({
     searchActive,
     profileOpen,
   );
-  const base = getStoreCatalogBasePath(storeSlug);
+  const base = getStoreCatalogBasePath(storeSlug, { pathname });
   const tabs = buildTabs(pcBuilderEnabled);
 
   function handleInicioClick(event: MouseEvent<HTMLAnchorElement>) {

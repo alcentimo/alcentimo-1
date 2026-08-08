@@ -9244,6 +9244,10 @@ html:has(.landing-shell) {
   @apply text-sm font-medium text-zinc-600 transition hover:text-zinc-900;
 }
 
+button.catalog-profile-footer-link {
+  @apply bg-transparent p-0 text-left;
+}
+
 .catalog-register-sheet .catalog-register-body {
   @apply px-0 py-0;
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, Package } from "lucide-react";
 import { CustomerOrderEstadoPill } from "@/components/customers/CustomerOrderEstadoPill";
 import {
@@ -50,6 +50,7 @@ export function CustomerOrdersList({
   orders: initialOrders,
 }: CustomerOrdersListProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [orders, setOrders] = useState(initialOrders);
 
   useEffect(() => {
@@ -113,7 +114,9 @@ export function CustomerOrdersList({
     <ul className="customer-orders-list">
       {orders.map((order) => {
         const methodHint = shippingHint(order);
-        const detailHref = getStoreCustomerOrderPath(storeSlug, order.id);
+        const detailHref = getStoreCustomerOrderPath(storeSlug, order.id, {
+          pathname,
+        });
 
         return (
           <li key={order.id}>

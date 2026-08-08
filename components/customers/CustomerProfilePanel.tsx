@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -43,6 +43,7 @@ export function CustomerProfilePanel({
   whatsappPhone,
 }: CustomerProfilePanelProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const customerSession = useCustomerSessionOptional();
   const [name, setName] = useState(displayName ?? "");
   const [phoneValue, setPhoneValue] = useState(phone ?? "");
@@ -80,7 +81,13 @@ export function CustomerProfilePanel({
     undefined,
     `Hola, necesito ayuda con mi cuenta en ${storeName}.`,
   );
-  const ordersPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
+  const pathOptions = { pathname };
+  const ordersPath = getStoreCustomerAccountPath(
+    storeSlug,
+    "cuenta",
+    pathOptions,
+  );
+  const catalogPath = getStoreCatalogBasePath(storeSlug, pathOptions);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -132,7 +139,7 @@ export function CustomerProfilePanel({
     if (customerSession) {
       try {
         await customerSession.signOut();
-        router.push(getStoreCatalogBasePath(storeSlug));
+        router.push(catalogPath);
         return;
       } catch {
         // fallback abajo
@@ -149,7 +156,7 @@ export function CustomerProfilePanel({
       return;
     }
 
-    router.push(getStoreCatalogBasePath(storeSlug));
+    router.push(catalogPath);
     router.refresh();
   }
 

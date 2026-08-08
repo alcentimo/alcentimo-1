@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { CheckCircle2, MessageCircle } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
@@ -33,10 +34,13 @@ export function CheckoutSuccessScreen({
   wasGuest,
   onClose,
 }: CheckoutSuccessScreenProps) {
+  const pathname = usePathname();
   const { accountsEnabled } = useCustomerAccountMode();
   const customerSession = useCustomerSessionOptional();
 
-  const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
+  const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta", {
+    pathname,
+  });
   const registerBase = buildCustomerRegisterPath(storeSlug, accountPath);
   const fullRegisterPath = `${registerBase}${registerBase.includes("?") ? "&" : "?"}orderId=${encodeURIComponent(orderId)}`;
   const hasActiveSession = Boolean(

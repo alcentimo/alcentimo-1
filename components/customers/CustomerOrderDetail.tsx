@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, Copy, Check } from "lucide-react";
 import { CustomerOrderEstadoPill } from "@/components/customers/CustomerOrderEstadoPill";
 import { CustomerOrderStatusTimeline } from "@/components/customers/CustomerOrderStatusTimeline";
@@ -39,6 +39,7 @@ export function CustomerOrderDetail({
   order: initialOrder,
 }: CustomerOrderDetailProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [order, setOrder] = useState(initialOrder);
   const [copied, setCopied] = useState(false);
 
@@ -71,7 +72,9 @@ export function CustomerOrderDetail({
   const isNational =
     order.shipping_method != null &&
     isNationalCarrierKey(order.shipping_method);
-  const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
+  const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta", {
+    pathname,
+  });
 
   async function copyTracking() {
     if (!order.tracking_number) return;

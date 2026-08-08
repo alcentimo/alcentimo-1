@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { CustomerRegisterPanel } from "@/components/customers/CustomerRegisterPanel";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
@@ -16,6 +17,7 @@ export function CatalogCustomerRegisterSheet({
   storeName,
   orderId = null,
 }: CatalogCustomerRegisterSheetProps) {
+  const pathname = usePathname();
   const shellNav = useCatalogShellNavigationOptional();
   const customerSession = useCustomerSessionOptional();
   const open = shellNav?.registerOpen ?? false;
@@ -25,7 +27,9 @@ export function CatalogCustomerRegisterSheet({
 
   if (!shellNav) return null;
 
-  const nextPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
+  const nextPath = getStoreCustomerAccountPath(storeSlug, "cuenta", {
+    pathname,
+  });
 
   return open ? (
     <div className="txn-cart-overlay" role="presentation">

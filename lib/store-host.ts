@@ -89,13 +89,36 @@ export function getStoreCatalogOrigin(
   return getSiteUrl();
 }
 
-/** Ruta base del catálogo: "/" en subdominio o "/c/slug" en apex legacy. */
-export function getStoreCatalogBasePath(storeSlug: string): string {
+function isPathBasedCatalogPath(
+  storeSlug: string,
+  pathname: string | null | undefined,
+): boolean {
+  if (!pathname) return false;
+  const base = `/c/${normalizeStoreSlug(storeSlug)}`;
+  return pathname === base || pathname.startsWith(`${base}/`);
+}
+
+/**
+ * Ruta base del catálogo: "/" en subdominio o "/c/slug" en apex.
+ * Si `pathname` indica que ya estamos en `/c/[slug]`, conserva esa forma
+ * aunque el modo subdominio esté activo (evita saltar a "/" del apex).
+ */
+export function getStoreCatalogBasePath(
+  storeSlug: string,
+  options?: { pathname?: string | null },
+): string {
+  const slug = normalizeStoreSlug(storeSlug);
+  const pathBased = `/c/${slug}`;
+
+  if (isPathBasedCatalogPath(slug, options?.pathname)) {
+    return pathBased;
+  }
+
   if (isStoreSubdomainCatalogEnabled()) {
     return "/";
   }
 
-  return `/c/${normalizeStoreSlug(storeSlug)}`;
+  return pathBased;
 }
 
 function joinPublicPath(basePath: string, path: string): string {
@@ -129,20 +152,31 @@ export function getStoreCatalogPublicUrl(
 export function getStoreCustomerAccountPath(
   storeSlug: string,
   section: "cuenta" | "perfil" = "cuenta",
+  options?: { pathname?: string | null },
 ): string {
+  const slug = normalizeStoreSlug(storeSlug);
+  const pathBased = `/c/${slug}/${section}`;
+
+  // En catálogo path-based (/c/slug) nunca usar /cuenta|/perfil cortos:
+  // en apex eso cae al home y el clic “no hace nada”.
+  if (isPathBasedCatalogPath(slug, options?.pathname)) {
+    return pathBased;
+  }
+
   if (isStoreSubdomainCatalogEnabled()) {
     return `/${section}`;
   }
 
-  return `/c/${normalizeStoreSlug(storeSlug)}/${section}`;
+  return pathBased;
 }
 
 /** Detalle de un pedido en Mis compras (`/cuenta/{orderId}`). */
 export function getStoreCustomerOrderPath(
   storeSlug: string,
   orderId: string,
+  options?: { pathname?: string | null },
 ): string {
-  const base = getStoreCustomerAccountPath(storeSlug, "cuenta");
+  const base = getStoreCustomerAccountPath(storeSlug, "cuenta", options);
   return `${base}/${encodeURIComponent(orderId.trim())}`;
 }
 
