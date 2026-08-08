@@ -770,6 +770,13 @@ export function CheckoutPanel({
     // Capturar si había comprobante antes de limpiar el estado local.
     const submittedWithProof = Boolean(proofFile && proofFile.size > 0);
 
+    const submittedName = (
+      customerProfile?.displayName ?? customerName
+    ).trim();
+    const submittedPhone = (
+      customerProfile?.phone ?? customerPhone
+    ).trim();
+
     startTransition(async () => {
       const result = await submitTransactionalOrder(formData);
 
@@ -786,6 +793,26 @@ export function CheckoutPanel({
       const wasGuest = !(
         customerSession?.isAuthenticated || customerSession?.isCustomer
       );
+
+      // Si el cliente aportó teléfono en Datos, sincroniza sesión → autofill.
+      if (!wasGuest && customerSession) {
+        const savedPhone =
+          result.customerPhone?.trim() || submittedPhone || null;
+        const savedName =
+          result.customerName?.trim() || submittedName || null;
+        if (savedName && savedName.length >= 2) {
+          customerSession.setSessionFromRegistration(
+            {
+              displayName: savedName,
+              phone: savedPhone,
+              contactEmail: customerSession.contactEmail,
+              userId: customerSession.userId,
+            },
+            { refresh: false },
+          );
+          void customerSession.refreshSession();
+        }
+      }
 
       clearCart();
       setCustomerProfile(null);

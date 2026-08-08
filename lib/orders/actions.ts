@@ -42,11 +42,15 @@ import {
   consumeDropshipStockForOrderLines,
   restoreDropshipStockForOrderLines,
 } from "@/lib/dropship/supplier-stock";
+import { syncCustomerProfileFromCheckout } from "@/lib/customers/sync-customer-profile-from-checkout";
 
 export interface SubmitTransactionalOrderResult {
   error?: string;
   orderId?: string;
   whatsappUrl?: string;
+  /** Teléfono normalizado guardado en el pedido / perfil. */
+  customerPhone?: string;
+  customerName?: string;
 }
 
 
@@ -330,33 +334,39 @@ export async function submitTransactionalOrder(
   }
 
   if (customerUserId) {
-    const profileUpdate: Record<string, string | null> = {};
-
-    if (resolvedFulfillmentAddress) {
-      profileUpdate.delivery_address = resolvedFulfillmentAddress;
-    }
-
-    if (shippingMethodRaw) {
-      profileUpdate.preferred_shipping_method = shippingMethodRaw;
-    }
+    let preferredShippingBranchCode: string | null | undefined;
+    let preferredShippingBranchName: string | null | undefined;
+    let preferredShippingBranchAddress: string | null | undefined;
 
     if (isNationalCarrierKey(shippingMethodRaw) && shippingBranchCode) {
-      profileUpdate.preferred_shipping_branch_code = shippingBranchCode;
-      profileUpdate.preferred_shipping_branch_name = shippingBranchName;
-      profileUpdate.preferred_shipping_branch_address = shippingBranchAddress;
-    } else if (shippingMethodRaw === "delivery" || shippingMethodRaw === "pickup") {
-      profileUpdate.preferred_shipping_branch_code = null;
-      profileUpdate.preferred_shipping_branch_name = null;
-      profileUpdate.preferred_shipping_branch_address = null;
+      preferredShippingBranchCode = shippingBranchCode;
+      preferredShippingBranchName = shippingBranchName;
+      preferredShippingBranchAddress = shippingBranchAddress;
+    } else if (
+      shippingMethodRaw === "delivery" ||
+      shippingMethodRaw === "pickup"
+    ) {
+      preferredShippingBranchCode = null;
+      preferredShippingBranchName = null;
+      preferredShippingBranchAddress = null;
     }
 
-    if (Object.keys(profileUpdate).length > 0) {
-      await admin
-        .from("customer_profiles")
-        .update(profileUpdate)
-        .eq("user_id", customerUserId)
-        .eq("store_id", store.id);
-    }
+    // Guarda teléfono/nombre del paso Datos → perfil + Mis Clientes + autofill.
+    await syncCustomerProfileFromCheckout({
+      storeId: store.id,
+      userId: customerUserId,
+      displayName: customerName,
+      phone: customerPhone,
+      ...(resolvedFulfillmentAddress
+        ? { deliveryAddress: resolvedFulfillmentAddress }
+        : {}),
+      ...(shippingMethodRaw
+        ? { preferredShippingMethod: shippingMethodRaw }
+        : {}),
+      preferredShippingBranchCode,
+      preferredShippingBranchName,
+      preferredShippingBranchAddress,
+    });
   }
 
   const { error: insertError } = await admin.from("orders").insert({
@@ -509,7 +519,9 @@ export async function submitTransactionalOrder(
     buildWhatsAppOrderUrl(storeWhatsAppPhone, message) ?? undefined;
 
   revalidatePath(`/c/${storeSlug}`);
+  revalidatePath(`/c/${storeSlug}/perfil`);
   revalidatePath("/dashboard/pedidos");
+  revalidatePath("/dashboard/clientes");
   revalidatePath("/dashboard/analiticas");
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
@@ -518,6 +530,8 @@ export async function submitTransactionalOrder(
   return {
     orderId,
     whatsappUrl,
+    customerPhone,
+    customerName,
   };
 }
 
