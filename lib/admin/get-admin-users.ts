@@ -16,6 +16,10 @@ export interface AdminUserRow {
   productCount: number;
   storeCount: number;
   periodEndsAt: string | null;
+  /**
+   * Fecha de registro: `auth.users.created_at`, con fallback a
+   * `stores.created_at` (TIMESTAMPTZ NOT NULL en public.stores).
+   */
   createdAt: string | null;
   storeId: string | null;
   storeName: string;
@@ -147,6 +151,8 @@ export async function getAdminUsers(
   }
 
   const emailById = new Map<string, string | null>();
+  /** auth.users.created_at — fecha real de alta de la cuenta. */
+  const registeredAtById = new Map<string, string | null>();
   for (let i = 0; i < profileIds.length; i += 40) {
     const chunk = profileIds.slice(i, i + 40);
     await Promise.all(
@@ -154,8 +160,10 @@ export async function getAdminUsers(
         try {
           const { data } = await admin.auth.admin.getUserById(id);
           emailById.set(id, data.user?.email ?? null);
+          registeredAtById.set(id, data.user?.created_at ?? null);
         } catch {
           emailById.set(id, null);
+          registeredAtById.set(id, null);
         }
       }),
     );
@@ -212,7 +220,8 @@ export async function getAdminUsers(
       productCount,
       storeCount: storeCountByOwner.get(store.owner_id) ?? 0,
       periodEndsAt: profile.subscription_period_ends_at ?? null,
-      createdAt: store.created_at ?? null,
+      createdAt:
+        registeredAtById.get(store.owner_id) ?? store.created_at ?? null,
       storeId: store.id,
       storeName: store.name,
       storeSlug: store.slug,
@@ -251,7 +260,7 @@ export async function getAdminUsers(
       productCount,
       storeCount: 0,
       periodEndsAt: profile.subscription_period_ends_at ?? null,
-      createdAt: null,
+      createdAt: registeredAtById.get(profile.id) ?? null,
       storeId: null,
       storeName: "Sin tienda",
       storeSlug: null,

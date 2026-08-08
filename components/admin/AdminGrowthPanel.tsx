@@ -77,6 +77,24 @@ function formatDate(iso: string | null | undefined): string {
   }).format(new Date(iso));
 }
 
+/** Día de registro para la columna Registro. */
+function formatRegistrationDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Intl.DateTimeFormat("es-VE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(iso));
+}
+
+type UsersTableSortKey = "visits" | "registro";
+
+function registrationTimestamp(iso: string | null | undefined): number {
+  if (!iso) return Number.NaN;
+  const value = Date.parse(iso);
+  return Number.isFinite(value) ? value : Number.NaN;
+}
+
 function formatSubscriptionStatus(status: string): string {
   switch (status) {
     case "active":
@@ -143,9 +161,18 @@ export function AdminGrowthPanel({
   const [grantingId, setGrantingId] = useState<string | null>(null);
   const [grantingTrialId, setGrantingTrialId] = useState<string | null>(null);
   const [closingFreeId, setClosingFreeId] = useState<string | null>(null);
-  const [visitsSortDesc, setVisitsSortDesc] = useState(true);
+  const [tableSort, setTableSort] = useState<{
+    key: UsersTableSortKey;
+    desc: boolean;
+  }>({ key: "visits", desc: true });
   const [criticalAction, setCriticalAction] =
     useState<CriticalPlanAction | null>(null);
+
+  function toggleTableSort(key: UsersTableSortKey) {
+    setTableSort((prev) =>
+      prev.key === key ? { key, desc: !prev.desc } : { key, desc: true },
+    );
+  }
 
   const filteredUsers = useMemo(() => {
     const min = minProducts.trim() === "" ? null : Number(minProducts);
@@ -171,13 +198,30 @@ export function AdminGrowthPanel({
     });
 
     return [...filtered].sort((a, b) => {
+      if (tableSort.key === "registro") {
+        const aTime = registrationTimestamp(a.createdAt);
+        const bTime = registrationTimestamp(b.createdAt);
+        const aValid = Number.isFinite(aTime);
+        const bValid = Number.isFinite(bTime);
+        if (aValid && bValid) {
+          const cmp = tableSort.desc ? bTime - aTime : aTime - bTime;
+          if (cmp !== 0) return cmp;
+        } else if (aValid !== bValid) {
+          // Sin fecha al final.
+          return aValid ? -1 : 1;
+        }
+        return a.storeName.localeCompare(b.storeName, "es");
+      }
+
       const aVisits = a.catalogVisitsMonth ?? 0;
       const bVisits = b.catalogVisitsMonth ?? 0;
-      const visitsCmp = visitsSortDesc ? bVisits - aVisits : aVisits - bVisits;
+      const visitsCmp = tableSort.desc
+        ? bVisits - aVisits
+        : aVisits - bVisits;
       if (visitsCmp !== 0) return visitsCmp;
       return a.storeName.localeCompare(b.storeName, "es");
     });
-  }, [users, planFilter, minProducts, search, visitsSortDesc]);
+  }, [users, planFilter, minProducts, search, tableSort]);
 
   function markUsersAsPro(ids: string[]) {
     const idSet = new Set(ids);
@@ -842,22 +886,51 @@ export function AdminGrowthPanel({
                   <th className="px-3 py-2.5" />
                   <th className="px-3 py-2.5">Tienda</th>
                   <th className="px-3 py-2.5">Correo</th>
+                  <th className="px-3 py-2.5">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 font-semibold uppercase tracking-wide hover:text-zinc-800 dark:hover:text-zinc-200"
+                      onClick={() => toggleTableSort("registro")}
+                      title={
+                        tableSort.key === "registro"
+                          ? tableSort.desc
+                            ? "Ordenado: más reciente primero (clic para invertir)"
+                            : "Ordenado: más antiguo primero (clic para invertir)"
+                          : "Ordenar por fecha de registro"
+                      }
+                    >
+                      Registro
+                      <span aria-hidden="true" className="text-[10px]">
+                        {tableSort.key === "registro"
+                          ? tableSort.desc
+                            ? "↓"
+                            : "↑"
+                          : "↕"}
+                      </span>
+                    </button>
+                  </th>
                   <th className="px-3 py-2.5">WhatsApp</th>
                   <th className="px-3 py-2.5">Catálogo</th>
                   <th className="px-3 py-2.5">
                     <button
                       type="button"
                       className="inline-flex items-center gap-1 font-semibold uppercase tracking-wide hover:text-zinc-800 dark:hover:text-zinc-200"
-                      onClick={() => setVisitsSortDesc((prev) => !prev)}
+                      onClick={() => toggleTableSort("visits")}
                       title={
-                        visitsSortDesc
-                          ? "Ordenado: más visitas primero (clic para invertir)"
-                          : "Ordenado: menos visitas primero (clic para invertir)"
+                        tableSort.key === "visits"
+                          ? tableSort.desc
+                            ? "Ordenado: más visitas primero (clic para invertir)"
+                            : "Ordenado: menos visitas primero (clic para invertir)"
+                          : "Ordenar por visitas del mes"
                       }
                     >
                       Visitas (Mes)
                       <span aria-hidden="true" className="text-[10px]">
-                        {visitsSortDesc ? "↓" : "↑"}
+                        {tableSort.key === "visits"
+                          ? tableSort.desc
+                            ? "↓"
+                            : "↑"
+                          : "↕"}
                       </span>
                     </button>
                   </th>
@@ -894,6 +967,16 @@ export function AdminGrowthPanel({
                       <div className="break-all text-zinc-800 dark:text-zinc-200">
                         {user.email ?? "Sin email"}
                       </div>
+                    </td>
+                    <td
+                      className="whitespace-nowrap px-3 py-2.5 align-top text-zinc-700 dark:text-zinc-300"
+                      title={
+                        user.createdAt
+                          ? formatDate(user.createdAt)
+                          : "Sin fecha de registro"
+                      }
+                    >
+                      {formatRegistrationDate(user.createdAt)}
                     </td>
                     <td className="px-3 py-2.5 align-top">
                       {user.whatsappUrl ? (
