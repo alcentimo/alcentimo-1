@@ -162,6 +162,7 @@ function toStoreRow(input: {
   ownerEmail: string | null;
   ownerPlan: string | null;
   ownerSubscriptionStatus: string | null;
+  productCount?: number;
   storeCreatedAt: string | null;
   accountRegisteredAt: string | null;
 }): AdminAssistantStoreRow {
@@ -173,16 +174,22 @@ function toStoreRow(input: {
     ownerEmail: input.ownerEmail,
     ownerPlan: input.ownerPlan,
     ownerSubscriptionStatus: input.ownerSubscriptionStatus,
+    productCount: input.productCount ?? 0,
     storeCreatedAt: input.storeCreatedAt,
     accountRegisteredAt: input.accountRegisteredAt,
   };
 }
 
+function truncateMessage(value: string, max = 280): string {
+  const trimmed = value.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max).trimEnd()}…`;
+}
+
 /**
  * Contexto operativo del SaaS para el asistente IA gerencial (service role).
- * Incluye métricas, planes, pagos, tiendas con fechas de registro
- * (auth.users.created_at / stores.created_at) y búsquedas dirigidas
- * según la última pregunta del admin.
+ * Cubre tiendas/usuarios, pagos, soporte, cupones/campañas y planes,
+ * consultado en tiempo real desde la base de datos.
  */
 export async function getAdminAssistantContext(
   latestQuestion?: string | null,
@@ -192,6 +199,54 @@ export async function getAdminAssistantContext(
   const metrics = await getAdminPlanMetrics();
   const planSettings = await fetchPlanSettings();
 
+  // —— Inventario de tiendas / productos (base para el resto) ——
+  const { data: allStores } = await admin
+    .from("stores")
+    .select("id, owner_id")
+    .limit(3000);
+
+  const storeIds = (allStores ?? []).map((s) => s.id);
+  const ownerByStore = new Map(
+    (allStores ?? []).map((s) => [s.id, s.owner_id] as const),
+  );
+  const productCountByOwner = new Map<string, number>();
+  const productCountByStore = new Map<string, number>();
+  const storeCountByOwner = new Map<string, number>();
+
+  for (const store of allStores ?? []) {
+    storeCountByOwner.set(
+      store.owner_id,
+      (storeCountByOwner.get(store.owner_id) ?? 0) + 1,
+    );
+  }
+
+  if (storeIds.length > 0) {
+    // Chunk para no saturar .in()
+    for (let i = 0; i < storeIds.length; i += 800) {
+      const chunk = storeIds.slice(i, i + 800);
+      const { data: products } = await admin
+        .from("products")
+        .select("store_id")
+        .in("store_id", chunk)
+        .eq("is_active", true)
+        .eq("is_deleted", false);
+
+      for (const product of products ?? []) {
+        productCountByStore.set(
+          product.store_id,
+          (productCountByStore.get(product.store_id) ?? 0) + 1,
+        );
+        const ownerId = ownerByStore.get(product.store_id);
+        if (!ownerId) continue;
+        productCountByOwner.set(
+          ownerId,
+          (productCountByOwner.get(ownerId) ?? 0) + 1,
+        );
+      }
+    }
+  }
+
+  // —— Pagos ——
   const { data: payments, error: paymentsError } = await admin
     .from("manual_payments")
     .select(
@@ -214,37 +269,67 @@ export async function getAdminAssistantContext(
     (payment) =>
       payment.status === "pending" || payment.status === "needs_correction",
   );
-  const pendingOwnerIds = pendingRows.slice(0, 40).map((p) => p.user_id);
-  const pendingAuth = await resolveOwnerAuthMeta(pendingOwnerIds);
+  const verifiedRows = (payments ?? []).filter(
+    (payment) => payment.status === "verified",
+  );
 
-  const { data: pendingStores } = await admin
+  const paymentOwnerIds = [
+    ...pendingRows.slice(0, 50).map((p) => p.user_id),
+    ...verifiedRows.slice(0, 40).map((p) => p.user_id),
+  ];
+  const paymentAuth = await resolveOwnerAuthMeta(paymentOwnerIds);
+
+  const { data: paymentStores } = await admin
     .from("stores")
     .select("name, owner_id")
-    .in("owner_id", pendingOwnerIds.length > 0 ? pendingOwnerIds : ["00000000-0000-0000-0000-000000000000"]);
+    .in(
+      "owner_id",
+      paymentOwnerIds.length > 0
+        ? [...new Set(paymentOwnerIds)]
+        : ["00000000-0000-0000-0000-000000000000"],
+    );
 
   const storesByOwner = new Map<string, string[]>();
-  for (const store of pendingStores ?? []) {
+  for (const store of paymentStores ?? []) {
     const list = storesByOwner.get(store.owner_id) ?? [];
     list.push(store.name);
     storesByOwner.set(store.owner_id, list);
   }
 
-  const pendingPaymentsSample = pendingRows.slice(0, 25).map((payment) => ({
-    id: payment.id,
-    userEmail: pendingAuth.get(payment.user_id)?.email ?? null,
-    planId: String(payment.plan_id),
-    status: String(payment.status),
-    amountDueUsd:
-      payment.amount_due_usd == null ? null : Number(payment.amount_due_usd),
-    storeNames: storesByOwner.get(payment.user_id) ?? [],
-    createdAt: String(payment.created_at),
-  }));
+  function mapPayment(payment: {
+    id: string;
+    user_id: string;
+    plan_id: string | number;
+    status: string;
+    amount_due_usd: number | null;
+    created_at: string;
+    reference_number?: string | null;
+  }) {
+    return {
+      id: payment.id,
+      userEmail: paymentAuth.get(payment.user_id)?.email ?? null,
+      planId: String(payment.plan_id),
+      status: String(payment.status),
+      amountDueUsd:
+        payment.amount_due_usd == null ? null : Number(payment.amount_due_usd),
+      referenceNumber:
+        typeof payment.reference_number === "string"
+          ? payment.reference_number
+          : null,
+      storeNames: storesByOwner.get(payment.user_id) ?? [],
+      createdAt: String(payment.created_at),
+    };
+  }
 
+  const pendingPaymentsSample = pendingRows.slice(0, 40).map(mapPayment);
+  const verifiedPaymentsSample = verifiedRows.slice(0, 30).map(mapPayment);
+
+  // —— Tiendas (muestra reciente) ——
   const { data: stores, error: storesError } = await admin
     .from("stores")
     .select("id, name, slug, is_active, rubro_tienda, owner_id, created_at")
     .order("created_at", { ascending: false })
-    .limit(120);
+    .limit(150);
 
   if (storesError) {
     notes.push(`Tiendas: ${storesError.message}`);
@@ -276,12 +361,13 @@ export async function getAdminAssistantContext(
       ownerEmail: auth?.email ?? null,
       ownerPlan: profile ? normalizeDbPlan(profile.plan) : null,
       ownerSubscriptionStatus: profile?.subscription_status ?? null,
+      productCount: productCountByStore.get(store.id) ?? 0,
       storeCreatedAt: store.created_at ?? null,
       accountRegisteredAt: auth?.registeredAt ?? store.created_at ?? null,
     });
   });
 
-  // Altas recientes para consultas temporales (“hoy”, “esta semana”…).
+  // —— Altas recientes ——
   const recentSince = new Date();
   recentSince.setUTCDate(recentSince.getUTCDate() - 14);
   const { data: recentStores, error: recentStoresError } = await admin
@@ -321,52 +407,15 @@ export async function getAdminAssistantContext(
       ownerEmail: auth?.email ?? null,
       ownerPlan: profile ? normalizeDbPlan(profile.plan) : null,
       ownerSubscriptionStatus: profile?.subscription_status ?? null,
+      productCount: productCountByStore.get(store.id) ?? 0,
       storeCreatedAt: store.created_at ?? null,
       accountRegisteredAt: auth?.registeredAt ?? store.created_at ?? null,
     });
   });
 
-  // Usuarios cerca del límite de productos (aprox. con conteo activo por dueño).
-  const { data: allStores } = await admin
-    .from("stores")
-    .select("id, owner_id")
-    .limit(2000);
-
-  const storeIds = (allStores ?? []).map((s) => s.id);
-  const ownerByStore = new Map(
-    (allStores ?? []).map((s) => [s.id, s.owner_id] as const),
-  );
-  const productCountByOwner = new Map<string, number>();
-  const storeCountByOwner = new Map<string, number>();
-
-  for (const store of allStores ?? []) {
-    storeCountByOwner.set(
-      store.owner_id,
-      (storeCountByOwner.get(store.owner_id) ?? 0) + 1,
-    );
-  }
-
-  if (storeIds.length > 0) {
-    const { data: products } = await admin
-      .from("products")
-      .select("store_id")
-      .in("store_id", storeIds.slice(0, 1500))
-      .eq("is_active", true)
-      .eq("is_deleted", false);
-
-    for (const product of products ?? []) {
-      const ownerId = ownerByStore.get(product.store_id);
-      if (!ownerId) continue;
-      productCountByOwner.set(
-        ownerId,
-        (productCountByOwner.get(ownerId) ?? 0) + 1,
-      );
-    }
-  }
-
   const rankedOwners = [...productCountByOwner.entries()]
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 20)
+    .slice(0, 25)
     .map(([id]) => id);
   const rankedAuth = await resolveOwnerAuthMeta(rankedOwners);
   const { data: rankedProfiles } = await admin
@@ -395,6 +444,105 @@ export async function getAdminAssistantContext(
     };
   });
 
+  // —— Soporte ——
+  const { data: supportRows, error: supportError } = await admin
+    .from("support_messages")
+    .select("id, user_id, email, message, status, created_at")
+    .order("created_at", { ascending: false })
+    .limit(150);
+
+  if (supportError) {
+    notes.push(`Soporte: ${supportError.message}`);
+  }
+
+  const supportStatusCounts: Record<string, number> = {};
+  for (const row of supportRows ?? []) {
+    const status = String(row.status ?? "unknown");
+    supportStatusCounts[status] = (supportStatusCounts[status] ?? 0) + 1;
+  }
+
+  const mapSupport = (row: {
+    id: string;
+    email: string;
+    message: string;
+    status: string;
+    created_at: string;
+  }) => ({
+    id: row.id,
+    email: row.email,
+    message: truncateMessage(String(row.message ?? "")),
+    status: String(row.status),
+    createdAt: String(row.created_at),
+  });
+
+  const pendingSupportMessages = (supportRows ?? [])
+    .filter((row) => row.status === "pendiente")
+    .slice(0, 40)
+    .map(mapSupport);
+  const recentSupportMessages = (supportRows ?? []).slice(0, 40).map(mapSupport);
+
+  // —— Cupones y campañas ——
+  const { data: couponRows, error: couponsError } = await admin
+    .from("subscription_coupons")
+    .select(
+      "code, name, reward_type, discount_percent, discount_usd, grant_pro_days, redemption_count, max_redemptions, is_active, starts_at, ends_at",
+    )
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (couponsError) {
+    notes.push(`Cupones: ${couponsError.message}`);
+  }
+
+  const { data: campaignRows, error: campaignsError } = await admin
+    .from("subscription_campaigns")
+    .select(
+      "name, discount_percent, discount_usd, is_active, starts_at, ends_at, applies_to_plans",
+    )
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (campaignsError) {
+    notes.push(`Campañas: ${campaignsError.message}`);
+  }
+
+  const activeCoupons = (couponRows ?? [])
+    .filter((row) => row.is_active)
+    .slice(0, 40)
+    .map((row) => ({
+      code: row.code,
+      name: row.name,
+      rewardType: String(row.reward_type),
+      discountPercent:
+        row.discount_percent == null ? null : Number(row.discount_percent),
+      discountUsd: row.discount_usd == null ? null : Number(row.discount_usd),
+      grantProDays:
+        row.grant_pro_days == null ? null : Number(row.grant_pro_days),
+      redemptionCount: Number(row.redemption_count ?? 0),
+      maxRedemptions:
+        row.max_redemptions == null ? null : Number(row.max_redemptions),
+      isActive: Boolean(row.is_active),
+      startsAt: row.starts_at ?? null,
+      endsAt: row.ends_at ?? null,
+    }));
+
+  const activeCampaigns = (campaignRows ?? [])
+    .filter((row) => row.is_active)
+    .slice(0, 30)
+    .map((row) => ({
+      name: row.name,
+      discountPercent:
+        row.discount_percent == null ? null : Number(row.discount_percent),
+      discountUsd: row.discount_usd == null ? null : Number(row.discount_usd),
+      isActive: Boolean(row.is_active),
+      startsAt: String(row.starts_at),
+      endsAt: String(row.ends_at),
+      appliesToPlans: Array.isArray(row.applies_to_plans)
+        ? row.applies_to_plans.map(String)
+        : [],
+    }));
+
+  // —— Lookups dirigidos ——
   const targetedLookups: AdminAssistantContext["targetedLookups"] = [];
   const searchTerms = extractSearchTerms(latestQuestion ?? "");
 
@@ -410,7 +558,7 @@ export async function getAdminAssistantContext(
         "id, name, slug, is_active, rubro_tienda, owner_id, created_at",
       )
       .or(`name.ilike.%${safeTerm}%,slug.ilike.%${safeTerm}%`)
-      .limit(8);
+      .limit(10);
 
     if (storeHits && storeHits.length > 0) {
       const hitAuth = await resolveOwnerAuthMeta(
@@ -440,14 +588,51 @@ export async function getAdminAssistantContext(
           ownerEmail: auth?.email ?? null,
           ownerPlan: profile ? normalizeDbPlan(profile.plan) : null,
           ownerSubscriptionStatus: profile?.subscription_status ?? null,
+          productCount: productCountByStore.get(store.id) ?? 0,
           storeCreatedAt: store.created_at ?? null,
           accountRegisteredAt: auth?.registeredAt ?? store.created_at ?? null,
         });
       }
     }
 
+    const supportHits = (supportRows ?? [])
+      .filter(
+        (row) =>
+          row.email?.toLowerCase().includes(safeTerm) ||
+          String(row.message ?? "")
+            .toLowerCase()
+            .includes(safeTerm),
+      )
+      .slice(0, 8);
+    for (const row of supportHits) {
+      matches.push({
+        type: "support_message",
+        email: row.email,
+        status: row.status,
+        message: truncateMessage(String(row.message ?? ""), 180),
+        createdAt: row.created_at,
+      });
+    }
+
+    const couponHits = (couponRows ?? [])
+      .filter(
+        (row) =>
+          row.code?.toLowerCase().includes(safeTerm) ||
+          row.name?.toLowerCase().includes(safeTerm),
+      )
+      .slice(0, 8);
+    for (const row of couponHits) {
+      matches.push({
+        type: "coupon",
+        code: row.code,
+        name: row.name,
+        isActive: Boolean(row.is_active),
+        rewardType: String(row.reward_type),
+        endsAt: row.ends_at ?? null,
+      });
+    }
+
     if (term.includes("@")) {
-      // Búsqueda por correo: sample + altas recientes.
       const emailMatches = [...storesSample, ...recentRegistrations].filter(
         (store) => store.ownerEmail === term,
       );
@@ -458,6 +643,7 @@ export async function getAdminAssistantContext(
           slug: store.slug,
           ownerEmail: store.ownerEmail,
           ownerPlan: store.ownerPlan,
+          productCount: store.productCount,
           storeCreatedAt: store.storeCreatedAt,
           accountRegisteredAt: store.accountRegisteredAt,
         });
@@ -469,7 +655,6 @@ export async function getAdminAssistantContext(
     }
   }
 
-  // Si preguntan por “hoy/ayer/semana”, anclar un lookup temporal explícito.
   const questionLower = (latestQuestion ?? "").toLowerCase();
   const asksTemporal =
     /\b(hoy|ayer|esta semana|ultimos?\s+\d+\s+dias|últimos?\s+\d+\s+días|registrad)/i.test(
@@ -517,6 +702,7 @@ export async function getAdminAssistantContext(
           ownerEmail: store.ownerEmail,
           ownerPlan: store.ownerPlan,
           ownerSubscriptionStatus: store.ownerSubscriptionStatus,
+          productCount: store.productCount,
           storeCreatedAt: store.storeCreatedAt,
           accountRegisteredAt: store.accountRegisteredAt,
         })),
@@ -526,6 +712,7 @@ export async function getAdminAssistantContext(
           slug: store.slug,
           ownerEmail: store.ownerEmail,
           ownerPlan: store.ownerPlan,
+          productCount: store.productCount,
           storeCreatedAt: store.storeCreatedAt,
           accountRegisteredAt: store.accountRegisteredAt,
         })),
@@ -559,14 +746,21 @@ export async function getAdminAssistantContext(
         annualUsd: row.annualUsd,
         productLimit: row.productLimit,
         userLimit: row.userLimit,
+        includedLocations: row.includedLocations,
+        extraLocationMonthlyUsd: row.extraLocationMonthlyUsd,
       };
     }),
     paymentStatusCounts,
     pendingPaymentsSample,
+    verifiedPaymentsSample,
     storesSample,
-    // Limitar payload del prompt; el lookup temporal ya trae el corte de “hoy”.
     recentRegistrations: recentRegistrations.slice(0, 100),
     usersNearProductLimit,
+    supportStatusCounts,
+    pendingSupportMessages,
+    recentSupportMessages,
+    activeCoupons,
+    activeCampaigns,
     targetedLookups,
     notes,
   };

@@ -14,10 +14,10 @@ interface AdminAiAssistantPanelProps {
 
 const EXAMPLE_PROMPTS = [
   "¿Qué tiendas se registraron hoy?",
-  "¿Cuántas tiendas activas hay por plan?",
-  "¿Cuántos pagos pendientes hay?",
-  "Resume los pagos pendientes de revisión.",
-  "¿Qué usuarios tienen más productos?",
+  "¿Cuántos pagos pendientes hay y de quiénes?",
+  "¿Hay mensajes de soporte sin atender?",
+  "¿Qué cupones y campañas están activos?",
+  "Resume planes, precios y límites actuales.",
 ] as const;
 
 function createMessage(
@@ -36,7 +36,7 @@ export function AdminAiAssistantPanel({
   const [messages, setMessages] = useState<AdminAssistantMessage[]>(() => [
     createMessage(
       "assistant",
-      "Hola. Soy el asistente gerencial de Alcéntimo. Puedo consultar usuarios, tiendas, planes y pagos (p. ej. el correo de una tienda o cuántos pagos están pendientes).",
+      "Hola. Soy el asistente gerencial de Alcéntimo. Consulto en tiempo real tiendas, usuarios, pagos, soporte, cupones y planes para darte la respuesta directa.",
     ),
   ]);
   const [loading, setLoading] = useState(false);

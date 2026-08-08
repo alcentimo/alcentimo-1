@@ -17,10 +17,54 @@ export interface AdminAssistantStoreRow {
   ownerEmail: string | null;
   ownerPlan: string | null;
   ownerSubscriptionStatus: string | null;
+  productCount: number;
   /** `public.stores.created_at` */
   storeCreatedAt: string | null;
   /** `auth.users.created_at` del dueño (fecha de registro de la cuenta). */
   accountRegisteredAt: string | null;
+}
+
+export interface AdminAssistantPaymentRow {
+  id: string;
+  userEmail: string | null;
+  planId: string;
+  status: string;
+  amountDueUsd: number | null;
+  referenceNumber: string | null;
+  storeNames: string[];
+  createdAt: string;
+}
+
+export interface AdminAssistantSupportRow {
+  id: string;
+  email: string;
+  message: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface AdminAssistantCouponRow {
+  code: string;
+  name: string;
+  rewardType: string;
+  discountPercent: number | null;
+  discountUsd: number | null;
+  grantProDays: number | null;
+  redemptionCount: number;
+  maxRedemptions: number | null;
+  isActive: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
+}
+
+export interface AdminAssistantCampaignRow {
+  name: string;
+  discountPercent: number | null;
+  discountUsd: number | null;
+  isActive: boolean;
+  startsAt: string;
+  endsAt: string;
+  appliesToPlans: string[];
 }
 
 export interface AdminAssistantContext {
@@ -46,17 +90,12 @@ export interface AdminAssistantContext {
     annualUsd: number | null;
     productLimit: number | null;
     userLimit: number | null;
+    includedLocations: number;
+    extraLocationMonthlyUsd: number;
   }>;
   paymentStatusCounts: Record<string, number>;
-  pendingPaymentsSample: Array<{
-    id: string;
-    userEmail: string | null;
-    planId: string;
-    status: string;
-    amountDueUsd: number | null;
-    storeNames: string[];
-    createdAt: string;
-  }>;
+  pendingPaymentsSample: AdminAssistantPaymentRow[];
+  verifiedPaymentsSample: AdminAssistantPaymentRow[];
   storesSample: AdminAssistantStoreRow[];
   /**
    * Altas recientes (últimos ~14 días) con fechas de tienda y cuenta,
@@ -71,6 +110,11 @@ export interface AdminAssistantContext {
     periodEndsAt: string | null;
     accountRegisteredAt: string | null;
   }>;
+  supportStatusCounts: Record<string, number>;
+  pendingSupportMessages: AdminAssistantSupportRow[];
+  recentSupportMessages: AdminAssistantSupportRow[];
+  activeCoupons: AdminAssistantCouponRow[];
+  activeCampaigns: AdminAssistantCampaignRow[];
   targetedLookups: Array<{
     query: string;
     matches: Array<Record<string, string | number | boolean | null>>;

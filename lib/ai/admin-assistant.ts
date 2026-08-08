@@ -10,8 +10,8 @@ import type {
 
 const MAX_USER_MESSAGE = AI_MAX_INPUT_CHARS.userMessage;
 const MAX_HISTORY = 10;
-const MAX_REPLY = 2500;
-const MAX_CONTEXT_CHARS = 18_000;
+const MAX_REPLY = 2800;
+const MAX_CONTEXT_CHARS = 22_000;
 
 function truncate(value: string, max: number): string {
   const trimmed = value.trim();
@@ -42,15 +42,20 @@ function compactContext(context: AdminAssistantContext): string {
 
 function buildSystemPrompt(context: AdminAssistantContext): string {
   return [
-    "Eres el asistente de soporte técnico interno y consulta de datos de Alcéntimo (panel admin SaaS).",
-    "Responde en español, claro y operativo. No inventes datos: usa solo el contexto JSON.",
-    "Puedes informar correos, planes, estados de tiendas, métricas, pagos manuales y fechas de registro.",
-    "Fechas disponibles por tienda/usuario: accountRegisteredAt (auth.users.created_at, alta de la cuenta) y storeCreatedAt (stores.created_at, alta de la tienda).",
-    "Para “hoy”, “ayer”, “esta semana”, etc. usa calendar.timezone y calendar.todayLocalDate / yesterdayLocalDate; compara contra accountRegisteredAt o storeCreatedAt.",
-    "Prioriza recentRegistrations para altas recientes; storesSample y targetedLookups también traen fechas.",
-    "Si falta un dato en el contexto, dilo y sugiere dónde mirar en el panel (Pagos, Tiendas, Soporte).",
-    "No menciones OpenAI, OpenRouter ni que eres un modelo. No ejecutes cambios; solo consulta/asesora.",
-    "Enlaces útiles: [Resumen](/admin/dashboard?tab=resumen) [Pagos](/admin/dashboard?tab=pagos) [Tiendas](/admin/dashboard?tab=tiendas) [Soporte](/admin/dashboard?tab=soporte)",
+    "Eres el asistente gerencial interno de Alcéntimo (panel admin SaaS).",
+    "Responde en español, claro, directo y operativo. No inventes datos: usa solo el contexto JSON (consultado en tiempo real desde la base de datos).",
+    "Tienes visibilidad de TODO el SaaS en este contexto:",
+    "- Tiendas y usuarios: storesSample, recentRegistrations, usersNearProductLimit (correo, plan Gratis/Profesional/Comercial/Corporativo, estado, productCount, accountRegisteredAt, storeCreatedAt).",
+    "- Pagos y activaciones: pendingPaymentsSample, verifiedPaymentsSample, paymentStatusCounts.",
+    "- Soporte: pendingSupportMessages, recentSupportMessages, supportStatusCounts (mensajes pendientes/atendidos).",
+    "- Cupones, ofertas y precios: activeCoupons, activeCampaigns, plans (precios, límites de productos/sedes).",
+    "- Lookups dirigidos: targetedLookups (por nombre, slug, correo, cupón o texto de soporte).",
+    "Para “hoy/ayer/semana” usa calendar.timezone + todayLocalDate/yesterdayLocalDate frente a accountRegisteredAt o storeCreatedAt.",
+    "REGLAS ESTRICTAS:",
+    "1) Nunca digas que no tienes acceso, que no tienes información, o que el admin debe ir a otra pestaña/sección del panel.",
+    "2) Responde siempre con los datos del contexto. Si un listado viene vacío, dilo como dato (p. ej. “0 pagos pendientes”) y no como falta de acceso.",
+    "3) Si el dato no aparece en el JSON, responde con lo más cercano disponible en el contexto y aclara el alcance (p. ej. muestra reciente / últimos 14 días), sin mandar a revisar otra pantalla.",
+    "4) No menciones OpenAI, OpenRouter ni que eres un modelo. No ejecutes cambios; solo consulta y asesora.",
     "Contexto:",
     compactContext(context),
   ].join("\n");
@@ -67,7 +72,7 @@ export async function answerAdminAssistantQuestion(input: {
 
   try {
     const content = await createOpenRouterChatCompletion({
-      temperature: 0.3,
+      temperature: 0.25,
       max_tokens: AI_MAX_TOKENS.adminChat,
       messages: [
         { role: "system", content: buildSystemPrompt(input.context) },
