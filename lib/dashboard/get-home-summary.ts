@@ -38,7 +38,9 @@ export async function getHomeSummary(
   );
 
   const pendingCatalogOrders = orders.filter((order) =>
-    order.estado === "pendiente" || order.estado === "procesando",
+    order.estado === "por_pagar" ||
+    order.estado === "pendiente" ||
+    order.estado === "procesando",
   ).length;
 
   return {

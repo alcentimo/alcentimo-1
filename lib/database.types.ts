@@ -748,6 +748,7 @@ export interface ChannelMessage {
 }
 
 export type OrderEstadoDb =
+  | "por_pagar"
   | "pendiente"
   | "procesando"
   | "enviado"

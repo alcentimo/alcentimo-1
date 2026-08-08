@@ -30,8 +30,10 @@ function truncateMessage(value: string): string {
 
 function estadoHint(estado: OrderEstado): string {
   switch (estado) {
+    case "por_pagar":
+      return "falta comprobante de pago";
     case "pendiente":
-      return "confirmar recepción";
+      return "confirmar recepción / verificar pago";
     case "procesando":
       return "pago confirmado, armando pedido";
     case "entregado":
