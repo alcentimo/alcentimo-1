@@ -42,6 +42,7 @@ import {
   consumeDropshipStockForOrderLines,
   restoreDropshipStockForOrderLines,
 } from "@/lib/dropship/supplier-stock";
+import { sendNewOrderPushNotifications } from "@/lib/notifications/send-new-order-push";
 
 export interface SubmitTransactionalOrderResult {
   error?: string;
@@ -514,6 +515,13 @@ export async function submitTransactionalOrder(
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
   revalidatePath(`/pedidos/${orderId}`);
+
+  void sendNewOrderPushNotifications({
+    storeId: store.id,
+    orderId,
+    customerName,
+    totalUsd: orderTotalUsd,
+  });
 
   return {
     orderId,

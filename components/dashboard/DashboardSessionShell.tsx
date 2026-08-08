@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { OrderNotificationsProvider } from "@/components/dashboard/notifications/OrderNotificationsProvider";
 import { CountryProvider } from "@/components/providers/CountryProvider";
 import { UiPreferencesProvider } from "@/components/providers/UiPreferencesProvider";
 import {
@@ -63,28 +64,30 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
       initialPreferences={shell?.interfacePreferences ?? defaultPrefs}
     >
       <CountryProvider country={shell?.storeCountry ?? null}>
-        <DashboardLayout
-          storeName={shell?.storeName ?? null}
-          userEmail={shell?.userEmail ?? null}
-          planName={shell?.planName ?? null}
-          subscriptionStatus={shell?.subscriptionStatus ?? "none"}
-          trialActive={shell?.trialActive ?? false}
-          trialEligible={shell?.trialEligible ?? false}
-          trialPhase={shell?.trialPhase ?? "none"}
-          trialEndsAt={shell?.trialEndsAt ?? null}
-          trialGraceEndsAt={shell?.trialGraceEndsAt ?? null}
-          proTrialSetup={shell?.proTrialSetup ?? null}
-          proTrialProductCount={shell?.proTrialProductCount ?? 0}
-          exchangeRate={shell?.exchangeRate ?? null}
-          exchangeRateUpdatedAt={shell?.exchangeRateUpdatedAt ?? null}
-          isSupportAdmin={shell?.isSupportAdmin ?? false}
-          isStoreOwner={shell?.isStoreOwner ?? false}
-          storeRole={shell?.storeRole ?? null}
-          canUpgradeToBusiness={shell?.canUpgradeToBusiness ?? false}
-          accountSnapshot={accountSnapshot}
-        >
-          {children}
-        </DashboardLayout>
+        <OrderNotificationsProvider storeId={shell?.storeId ?? null}>
+          <DashboardLayout
+            storeName={shell?.storeName ?? null}
+            userEmail={shell?.userEmail ?? null}
+            planName={shell?.planName ?? null}
+            subscriptionStatus={shell?.subscriptionStatus ?? "none"}
+            trialActive={shell?.trialActive ?? false}
+            trialEligible={shell?.trialEligible ?? false}
+            trialPhase={shell?.trialPhase ?? "none"}
+            trialEndsAt={shell?.trialEndsAt ?? null}
+            trialGraceEndsAt={shell?.trialGraceEndsAt ?? null}
+            proTrialSetup={shell?.proTrialSetup ?? null}
+            proTrialProductCount={shell?.proTrialProductCount ?? 0}
+            exchangeRate={shell?.exchangeRate ?? null}
+            exchangeRateUpdatedAt={shell?.exchangeRateUpdatedAt ?? null}
+            isSupportAdmin={shell?.isSupportAdmin ?? false}
+            isStoreOwner={shell?.isStoreOwner ?? false}
+            storeRole={shell?.storeRole ?? null}
+            canUpgradeToBusiness={shell?.canUpgradeToBusiness ?? false}
+            accountSnapshot={accountSnapshot}
+          >
+            {children}
+          </DashboardLayout>
+        </OrderNotificationsProvider>
       </CountryProvider>
     </UiPreferencesProvider>
   );

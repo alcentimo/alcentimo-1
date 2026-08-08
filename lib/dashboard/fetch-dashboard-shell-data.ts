@@ -38,6 +38,7 @@ const SHELL_QUERY_TIMEOUT_MS = 8_000;
 export type DashboardShellData =
   | {
       ok: true;
+      storeId: string | null;
       storeName: string | null;
       storeCountry: string | null;
       userEmail: string | null;
@@ -167,6 +168,7 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
 
     return {
       ok: true,
+      storeId: store?.id ?? null,
       storeName: store?.name ?? null,
       storeCountry: store?.country ?? null,
       userEmail: authUser.email ?? null,

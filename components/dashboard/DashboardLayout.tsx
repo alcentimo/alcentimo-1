@@ -7,6 +7,7 @@ import { Menu } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardQuickUtilities } from "@/components/dashboard/DashboardQuickUtilities";
+import { OrderNotificationBellSlot } from "@/components/dashboard/notifications/OrderNotificationsProvider";
 import { DashboardExchangeRateBadge } from "@/components/dashboard/DashboardExchangeRateBadge";
 import { DashboardViewKeepAlive } from "@/components/dashboard/DashboardViewKeepAlive";
 import { DashboardRouteVisitTracker } from "@/components/dashboard/DashboardRouteVisitTracker";
@@ -221,7 +222,8 @@ function DashboardShell({
               />
             </Link>
 
-            <div className="dashboard-header-actions flex shrink-0 items-center">
+            <div className="dashboard-header-actions flex shrink-0 items-center gap-1">
+              <OrderNotificationBellSlot />
               {/* Móvil: tema en header; tasa BCV en la franja inferior. */}
               <div className="lg:hidden">
                 <DashboardQuickUtilities showExchangeRate={false} />

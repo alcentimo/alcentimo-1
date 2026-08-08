@@ -768,6 +768,18 @@ export interface Order {
   created_at: string;
 }
 
+export interface PushSubscriptionRow {
+  id: string;
+  user_id: string;
+  store_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Venta {
   id: string;
   store_id: string;
@@ -1198,6 +1210,17 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Order>;
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: PushSubscriptionRow;
+        Insert: Omit<PushSubscriptionRow, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          user_agent?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<PushSubscriptionRow>;
         Relationships: [];
       };
       facebook_page_posts: {

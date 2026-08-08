@@ -9,6 +9,7 @@ import {
   SettingsSection,
   SettingsTabShell,
 } from "@/components/dashboard/settings/SettingsLayout";
+import { PushNotificationsSettingsCard } from "@/components/dashboard/notifications/PushNotificationsSettingsCard";
 import { updateAccountProfileAction } from "@/lib/account/actions";
 import { formatAccountStoreRole } from "@/lib/account/get-account-snapshot";
 import type { AccountSnapshot } from "@/lib/account/types";
@@ -150,6 +151,8 @@ export function AccountProfileTab({ account }: AccountProfileTabProps) {
           </Button>
         </div>
       </SettingsSection>
+
+      {account.storeName ? <PushNotificationsSettingsCard /> : null}
     </SettingsTabShell>
   );
 }

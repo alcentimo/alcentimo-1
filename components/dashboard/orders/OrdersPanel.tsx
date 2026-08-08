@@ -7,6 +7,7 @@ import { computeOrdersKpis, groupActiveOrdersByDay, isOrderToday } from "@/lib/o
 import type { CatalogOrder } from "@/lib/orders/types";
 import {
   matchesOrderFilter,
+  normalizeOrderEstado,
   sortOrdersByBusinessRules,
   type OrderEstado,
   type OrderFilterId,
@@ -27,6 +28,10 @@ import { formatOrderShippingSummary } from "@/lib/orders/shipping-display";
 import { renderOrderWhatsAppMessage } from "@/lib/orders/render-order-message";
 import { suggestOrderMessageIntent } from "@/lib/ai/order-message-types";
 import { cn } from "@/lib/cn";
+import {
+  STORE_ORDER_INSERT_EVENT,
+  STORE_ORDER_UPDATE_EVENT,
+} from "@/lib/notifications/constants";
 
 type OrderWhatsAppSession = {
   orderId: string;
@@ -310,6 +315,62 @@ export function OrdersPanel({
   >({});
 
   const kpis = useMemo(() => computeOrdersKpis(orders), [orders]);
+
+  useEffect(() => {
+    function onInsert(event: Event) {
+      const detail = (event as CustomEvent<CatalogOrder>).detail;
+      if (!detail?.id) return;
+      setOrders((current) => {
+        if (current.some((order) => order.id === detail.id)) return current;
+        return sortOrdersByBusinessRules([detail, ...current]);
+      });
+      setTotalCount((count) => count + 1);
+    }
+
+    function onUpdate(event: Event) {
+      const detail = (event as CustomEvent<{
+        orderId: string;
+        row: Record<string, unknown>;
+      }>).detail;
+      if (!detail?.orderId) return;
+      setOrders((current) =>
+        sortOrdersByBusinessRules(
+          current.map((order) => {
+            if (order.id !== detail.orderId) return order;
+            const row = detail.row;
+            return {
+              ...order,
+              estado:
+                row.estado !== undefined
+                  ? normalizeOrderEstado(row.estado)
+                  : order.estado,
+              tracking_number:
+                row.tracking_number !== undefined
+                  ? typeof row.tracking_number === "string"
+                    ? row.tracking_number
+                    : null
+                  : order.tracking_number,
+              customer_name:
+                typeof row.customer_name === "string"
+                  ? row.customer_name
+                  : order.customer_name,
+              total_usd:
+                row.total_usd !== undefined
+                  ? Number(row.total_usd) || order.total_usd
+                  : order.total_usd,
+            };
+          }),
+        ),
+      );
+    }
+
+    window.addEventListener(STORE_ORDER_INSERT_EVENT, onInsert);
+    window.addEventListener(STORE_ORDER_UPDATE_EVENT, onUpdate);
+    return () => {
+      window.removeEventListener(STORE_ORDER_INSERT_EVENT, onInsert);
+      window.removeEventListener(STORE_ORDER_UPDATE_EVENT, onUpdate);
+    };
+  }, []);
 
   const dismissStatusNotify = useCallback((orderId: string) => {
     setStatusNotifyByOrderId((current) => {
