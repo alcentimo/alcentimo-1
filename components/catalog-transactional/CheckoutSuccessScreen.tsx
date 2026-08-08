@@ -16,6 +16,11 @@ interface CheckoutSuccessScreenProps {
   whatsappUrl?: string | null;
   /** Si el cliente adjuntó comprobante al confirmar. */
   hasPaymentProof?: boolean;
+  /**
+   * Si el método de pago del pedido admite/espera comprobante
+   * (Pago Móvil, transferencia, etc.). False en efectivo / contra entrega.
+   */
+  expectsPaymentProof?: boolean;
   /** True solo si el pedido se hizo sin sesión de cliente. */
   wasGuest: boolean;
   onClose: () => void;
@@ -31,6 +36,7 @@ export function CheckoutSuccessScreen({
   totalUsd,
   whatsappUrl = null,
   hasPaymentProof = false,
+  expectsPaymentProof = true,
   wasGuest,
   onClose,
 }: CheckoutSuccessScreenProps) {
@@ -50,6 +56,30 @@ export function CheckoutSuccessScreen({
   const showAccountLink = wasGuest && !hasActiveSession && accountsEnabled;
   const hasWhatsApp = Boolean(whatsappUrl?.trim());
   const orderRef = formatOrderRef(orderId);
+
+  const instructions = (() => {
+    if (hasPaymentProof) {
+      return {
+        title: "Tu pago está siendo verificado",
+        body: "La tienda ya recibió tu comprobante y está revisando el pago. Conserva el número de pedido; te contactarán para confirmar el despacho.",
+        whatsappLabel: "Avisar a la tienda por WhatsApp",
+      };
+    }
+    if (expectsPaymentProof) {
+      return {
+        title: "Falta enviar tu comprobante",
+        body: hasWhatsApp
+          ? "Tu pedido quedó registrado, pero aún no hay comprobante. Envía el archivo del pago por WhatsApp o escribe a la tienda para completar la verificación y que puedan preparar tu pedido."
+          : "Tu pedido quedó registrado, pero aún no hay comprobante. Contacta a la tienda y envía el archivo del pago (indica el número de pedido) para completar la verificación.",
+        whatsappLabel: "Enviar comprobante por WhatsApp",
+      };
+    }
+    return {
+      title: "Pedido en revisión de la tienda",
+      body: "Con este método de pago no hace falta comprobante. El pago se confirma al entregar o en el local. La tienda te contactará para coordinar.",
+      whatsappLabel: "Escribir a la tienda por WhatsApp",
+    };
+  })();
 
   return (
     <div className="txn-checkout-success">
@@ -76,29 +106,10 @@ export function CheckoutSuccessScreen({
       </div>
 
       <div className="mt-4 w-full rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-4 py-3 text-left text-xs leading-relaxed text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
-        {hasPaymentProof ? (
-          <>
-            <p className="font-medium text-zinc-800 dark:text-zinc-100">
-              Recibimos tu comprobante
-            </p>
-            <p className="mt-1">
-              La tienda revisará el pago y te contactará para confirmar el
-              despacho. Si quieres, también puedes avisarle por WhatsApp con el
-              detalle del pedido.
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="font-medium text-zinc-800 dark:text-zinc-100">
-              Siguiente paso: confirmar el pago
-            </p>
-            <p className="mt-1">
-              Tu pedido quedó guardado. Envía el comprobante de pago por
-              WhatsApp (o escribe a la tienda) para que puedan verificarlo y
-              preparar tu pedido.
-            </p>
-          </>
-        )}
+        <p className="font-medium text-zinc-800 dark:text-zinc-100">
+          {instructions.title}
+        </p>
+        <p className="mt-1">{instructions.body}</p>
       </div>
 
       {hasWhatsApp ? (
@@ -109,11 +120,7 @@ export function CheckoutSuccessScreen({
           className="txn-whatsapp-primary-btn mt-6 inline-flex w-full items-center justify-center gap-2"
         >
           <MessageCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
-          <span>
-            {hasPaymentProof
-              ? "Avisar a la tienda por WhatsApp"
-              : "Enviar pedido / comprobante por WhatsApp"}
-          </span>
+          <span>{instructions.whatsappLabel}</span>
         </a>
       ) : (
         <p className="mt-6 text-xs text-zinc-500 dark:text-zinc-400">
