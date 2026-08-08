@@ -137,6 +137,15 @@ export function getStoreCustomerAccountPath(
   return `/c/${normalizeStoreSlug(storeSlug)}/${section}`;
 }
 
+/** Detalle de un pedido en Mis compras (`/cuenta/{orderId}`). */
+export function getStoreCustomerOrderPath(
+  storeSlug: string,
+  orderId: string,
+): string {
+  const base = getStoreCustomerAccountPath(storeSlug, "cuenta");
+  return `${base}/${encodeURIComponent(orderId.trim())}`;
+}
+
 export function getStoreCustomerAccountUrl(
   storeSlug: string,
   section: "cuenta" | "perfil" = "cuenta",

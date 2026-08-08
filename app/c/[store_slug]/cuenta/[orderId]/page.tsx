@@ -1,22 +1,25 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CustomerOrdersList } from "@/components/customers/CustomerOrdersList";
-import { getCustomerOrdersForStore } from "@/lib/customers/get-customer-orders";
+import { CustomerOrderDetail } from "@/components/customers/CustomerOrderDetail";
+import { getCustomerOrderForStore } from "@/lib/customers/get-customer-orders";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
-import { getStoreCatalogBasePath, getStoreCustomerAccountPath } from "@/lib/store-host";
+import {
+  getStoreCatalogBasePath,
+  getStoreCustomerAccountPath,
+} from "@/lib/store-host";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-interface CustomerAccountPageProps {
-  params: Promise<{ store_slug: string }>;
+interface CustomerOrderDetailPageProps {
+  params: Promise<{ store_slug: string; orderId: string }>;
 }
 
-export default async function CustomerAccountPage({
+export default async function CustomerOrderDetailPage({
   params,
-}: CustomerAccountPageProps) {
-  const { store_slug: storeSlug } = await params;
+}: CustomerOrderDetailPageProps) {
+  const { store_slug: storeSlug, orderId } = await params;
   const store = await getPublicStoreBySlug(storeSlug);
   if (!store) notFound();
 
@@ -25,33 +28,28 @@ export default async function CustomerAccountPage({
     data: { user },
   } = await supabase.auth.getUser();
 
+  const accountPath = getStoreCustomerAccountPath(store.slug, "cuenta");
+
   if (!user) {
     redirect(
       buildCustomerRegisterPath(
         store.slug,
-        getStoreCustomerAccountPath(store.slug, "cuenta"),
+        `${accountPath}/${encodeURIComponent(orderId)}`,
       ),
     );
   }
 
-  const orders = await getCustomerOrdersForStore(store.id);
+  const order = await getCustomerOrderForStore(store.id, orderId);
+  if (!order) notFound();
 
   return (
     <div className="catalog-subpage">
-      <header className="catalog-subpage-header">
-        <h1 className="catalog-subpage-title">Mis compras</h1>
-        <p className="catalog-subpage-desc">
-          Consulta el estado de tus pedidos en {store.name} y las guías de
-          envío en tiempo real.
-        </p>
-      </header>
-
       <div className="card-panel">
-        <CustomerOrdersList
+        <CustomerOrderDetail
           storeSlug={store.slug}
           storeId={store.id}
           userId={user.id}
-          orders={orders}
+          order={order}
         />
       </div>
 

@@ -67,7 +67,9 @@ export async function fetchCustomerDetail(
   const [ordersResult, notesResult] = await Promise.all([
     supabase
       .from("orders")
-      .select("id, total_usd, estado, created_at")
+      .select(
+        "id, store_id, total_usd, estado, created_at, fulfillment_type, shipping_method, shipping_branch_name, delivery_address, tracking_number, items",
+      )
       .eq("store_id", store.id)
       .eq("customer_user_id", normalizedUserId)
       .order("created_at", { ascending: false })
@@ -88,14 +90,33 @@ export async function fetchCustomerDetail(
   }
 
   const orders: MerchantCustomerOrderRow[] = (ordersResult.data ?? []).map(
-    (row) => ({
-      id: row.id,
-      total_usd: Number(row.total_usd) || 0,
-      estado: parseOrderEstado(row.estado),
-      created_at: row.created_at,
-      publicId: formatCustomerOrderPublicId(row.id),
-      formattedDate: formatCustomerOrderDate(row.created_at),
-    }),
+    (row) => {
+      const items = Array.isArray(row.items) ? row.items : [];
+      const itemCount = items.reduce((sum, item) => {
+        if (!item || typeof item !== "object") return sum;
+        const quantity = Number((item as { quantity?: unknown }).quantity) || 0;
+        return sum + Math.max(0, quantity);
+      }, 0);
+
+      return {
+        id: row.id,
+        store_id: (row.store_id as string) || store.id,
+        total_usd: Number(row.total_usd) || 0,
+        estado: parseOrderEstado(row.estado),
+        created_at: row.created_at,
+        fulfillment_type:
+          (row.fulfillment_type as MerchantCustomerOrderRow["fulfillment_type"]) ??
+          null,
+        shipping_method: (row.shipping_method as string | null) ?? null,
+        shipping_branch_name:
+          (row.shipping_branch_name as string | null) ?? null,
+        delivery_address: (row.delivery_address as string | null) ?? null,
+        tracking_number: (row.tracking_number as string | null) ?? null,
+        item_count: itemCount,
+        publicId: formatCustomerOrderPublicId(row.id),
+        formattedDate: formatCustomerOrderDate(row.created_at),
+      };
+    },
   );
 
   return {

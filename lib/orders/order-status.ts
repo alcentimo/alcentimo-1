@@ -19,6 +19,46 @@ export const ORDER_ESTADO_LABELS: Record<OrderEstado, string> = {
   cancelado: "Cancelado",
 };
 
+/** Etiquetas orientadas al comprador final (catálogo / Mis compras). */
+export const CUSTOMER_ORDER_ESTADO_LABELS: Record<OrderEstado, string> = {
+  pendiente: "En espera de verificación",
+  procesando: "En preparación",
+  enviado: "Enviado",
+  entregado: "Entregado",
+  cancelado: "Cancelado",
+};
+
+export const CUSTOMER_ORDER_ESTADO_HINTS: Record<OrderEstado, string> = {
+  pendiente: "La tienda está revisando tu pago.",
+  procesando: "Pago confirmado. Están preparando tu pedido.",
+  enviado: "Tu pedido ya salió. Revisa la guía si aplica.",
+  entregado: "Pedido completado.",
+  cancelado: "Este pedido fue anulado.",
+};
+
+/** Pasos del seguimiento (sin cancelado). */
+export const CUSTOMER_ORDER_STATUS_STEPS = [
+  "pendiente",
+  "procesando",
+  "enviado",
+  "entregado",
+] as const satisfies readonly OrderEstado[];
+
+export type CustomerOrderStatusStep =
+  (typeof CUSTOMER_ORDER_STATUS_STEPS)[number];
+
+export function getCustomerOrderEstadoLabel(estado: OrderEstado): string {
+  return CUSTOMER_ORDER_ESTADO_LABELS[estado];
+}
+
+/** Índice del paso actual en la línea de tiempo (cancelado → -1). */
+export function getCustomerOrderStatusStepIndex(estado: OrderEstado): number {
+  if (estado === "cancelado") return -1;
+  return CUSTOMER_ORDER_STATUS_STEPS.indexOf(
+    estado as CustomerOrderStatusStep,
+  );
+}
+
 /** Texto corto para el selector (gestión diaria). */
 export const ORDER_ESTADO_HINTS: Record<OrderEstado, string> = {
   pendiente: "En espera de verificar el pago",
