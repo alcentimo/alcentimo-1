@@ -81,6 +81,51 @@ export function resolveCustomerContactEmail(
   return null;
 }
 
+/** Teléfono embebido en el email Auth sintético (`0412…@customers.phone…`). */
+export function resolvePhoneFromSyntheticAuthEmail(
+  authEmail: string | null | undefined,
+): string | null {
+  if (!isSyntheticCustomerAuthEmail(authEmail)) return null;
+  const localPart = authEmail!.split("@")[0]?.trim() ?? "";
+  if (!localPart || !isValidCustomerPhone(localPart)) return null;
+  return normalizeCustomerPhone(localPart).slice(0, 40);
+}
+
+/** Nombre visible desde metadata Auth (perfil de tienda puede estar incompleto). */
+export function resolveCustomerDisplayNameFromAuth(user: {
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+}): string | null {
+  const metadata = user.user_metadata ?? {};
+  const fromDisplay =
+    typeof metadata.display_name === "string" ? metadata.display_name.trim() : "";
+  if (fromDisplay.length >= 2) return fromDisplay.slice(0, 120);
+
+  const fromFull =
+    typeof metadata.full_name === "string" ? metadata.full_name.trim() : "";
+  if (fromFull.length >= 2) return fromFull.slice(0, 120);
+
+  const contactEmail = resolveCustomerContactEmail(user.email, metadata);
+  const emailLocal = contactEmail?.split("@")[0]?.trim();
+  return emailLocal && emailLocal.length >= 2 ? emailLocal.slice(0, 120) : null;
+}
+
+/** Teléfono desde metadata Auth o email sintético de login por teléfono. */
+export function resolveCustomerPhoneFromAuth(user: {
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+}): string | null {
+  const metadata = user.user_metadata ?? {};
+  if (typeof metadata.phone === "string" && metadata.phone.trim()) {
+    const normalized = normalizeCustomerPhone(metadata.phone);
+    if (isValidCustomerPhone(normalized)) {
+      return normalized.slice(0, 40);
+    }
+  }
+
+  return resolvePhoneFromSyntheticAuthEmail(user.email);
+}
+
 /**
  * True si el cliente puede gestionar contraseña (login email/teléfono+clave).
  * Falso para OAuth puro (p. ej. solo Google) sin identidad email.

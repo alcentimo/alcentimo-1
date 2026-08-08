@@ -163,6 +163,7 @@ export default async function TransactionalCatalogLayout({
           <CustomerSessionProvider
             storeSlug={storeSlug}
             initial={{
+              isAuthenticated: customerSession.isAuthenticated,
               isCustomer: customerSession.isCustomer,
               userId: customerSession.userId,
               displayName: customerSession.displayName,

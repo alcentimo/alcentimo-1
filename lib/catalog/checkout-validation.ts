@@ -1,5 +1,15 @@
 import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 
+/** Nombre + teléfono listos para saltar o confirmar el paso de cliente. */
+export function hasCompleteCheckoutCustomerData(
+  customerName: string,
+  customerPhone: string,
+): boolean {
+  return (
+    customerName.trim().length >= 2 && isValidCustomerPhone(customerPhone.trim())
+  );
+}
+
 export type CheckoutFieldKey =
   | "shipping"
   | "shippingBranch"

@@ -2,7 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { resolveActiveStoreBySlug } from "@/lib/customers/middleware-access";
 import {
+  isValidCustomerPhone,
+  normalizeCustomerPhone,
   resolveCustomerContactEmail,
+  resolveCustomerDisplayNameFromAuth,
+  resolveCustomerPhoneFromAuth,
   validateCustomerPhoneInput,
 } from "@/lib/customers/phone-auth";
 
@@ -18,6 +22,29 @@ export interface CustomerCheckoutContext {
   preferredShippingBranchCode: string | null;
   preferredShippingBranchName: string | null;
   preferredShippingBranchAddress: string | null;
+}
+
+function emptyGuestContext(): CustomerCheckoutContext {
+  return {
+    isAuthenticated: false,
+    isCustomer: false,
+    userId: null,
+    displayName: null,
+    phone: null,
+    contactEmail: null,
+    deliveryAddress: null,
+    preferredShippingMethod: null,
+    preferredShippingBranchCode: null,
+    preferredShippingBranchName: null,
+    preferredShippingBranchAddress: null,
+  };
+}
+
+function normalizeProfilePhone(phone: string | null | undefined): string | null {
+  const trimmed = phone?.trim();
+  if (!trimmed) return null;
+  const normalized = normalizeCustomerPhone(trimmed);
+  return isValidCustomerPhone(normalized) ? normalized.slice(0, 40) : trimmed.slice(0, 40);
 }
 
 async function getCustomerProfileForStore(
@@ -47,20 +74,12 @@ export async function getCustomerCheckoutContext(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return {
-      isAuthenticated: false,
-      isCustomer: false,
-      userId: null,
-      displayName: null,
-      phone: null,
-      contactEmail: null,
-      deliveryAddress: null,
-      preferredShippingMethod: null,
-      preferredShippingBranchCode: null,
-      preferredShippingBranchName: null,
-      preferredShippingBranchAddress: null,
-    };
+    return emptyGuestContext();
   }
+
+  const contactEmail = resolveCustomerContactEmail(user.email, user.user_metadata);
+  const authDisplayName = resolveCustomerDisplayNameFromAuth(user);
+  const authPhone = resolveCustomerPhoneFromAuth(user);
 
   const store = await resolveActiveStoreBySlug(supabase, storeSlug);
   if (!store) {
@@ -68,9 +87,9 @@ export async function getCustomerCheckoutContext(
       isAuthenticated: true,
       isCustomer: false,
       userId: user.id,
-      displayName: null,
-      phone: null,
-      contactEmail: resolveCustomerContactEmail(user.email, user.user_metadata),
+      displayName: authDisplayName,
+      phone: authPhone,
+      contactEmail,
       deliveryAddress: null,
       preferredShippingMethod: null,
       preferredShippingBranchCode: null,
@@ -85,9 +104,9 @@ export async function getCustomerCheckoutContext(
       isAuthenticated: true,
       isCustomer: false,
       userId: user.id,
-      displayName: null,
-      phone: null,
-      contactEmail: resolveCustomerContactEmail(user.email, user.user_metadata),
+      displayName: authDisplayName,
+      phone: authPhone,
+      contactEmail,
       deliveryAddress: null,
       preferredShippingMethod: null,
       preferredShippingBranchCode: null,
@@ -96,13 +115,17 @@ export async function getCustomerCheckoutContext(
     };
   }
 
+  const profileName = profile.display_name?.trim() || null;
+  const profilePhone = normalizeProfilePhone(profile.phone);
+
   return {
     isAuthenticated: true,
     isCustomer: true,
     userId: user.id,
-    displayName: profile.display_name,
-    phone: profile.phone,
-    contactEmail: resolveCustomerContactEmail(user.email, user.user_metadata),
+    displayName:
+      profileName && profileName.length >= 2 ? profileName : authDisplayName,
+    phone: profilePhone ?? authPhone,
+    contactEmail,
     deliveryAddress: (profile.delivery_address as string | null) ?? null,
     preferredShippingMethod:
       (profile.preferred_shipping_method as string | null) ?? null,
@@ -138,14 +161,21 @@ export async function resolveOrderCustomerDetails(
     profile = await getCustomerProfileForStore(supabase, user.id, storeId);
   }
 
-  const profileName = profile?.display_name?.trim();
-  const profilePhone = profile?.phone?.trim();
+  const profileName =
+    profile?.display_name?.trim() ||
+    (user ? resolveCustomerDisplayNameFromAuth(user) : null);
+  const profilePhoneRaw =
+    profile?.phone?.trim() ||
+    (user ? resolveCustomerPhoneFromAuth(user) : null);
+  const profilePhone = profilePhoneRaw
+    ? normalizeProfilePhone(profilePhoneRaw)
+    : null;
 
   if (
     profileName &&
     profileName.length >= 2 &&
     profilePhone &&
-    profilePhone.length >= 10
+    isValidCustomerPhone(profilePhone)
   ) {
     return {
       ok: true,

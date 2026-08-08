@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { ShoppingBag, X } from "lucide-react";
 import { ShippingMethodCard } from "@/components/shipping/ShippingMethodCard";
 import { ShippingBranchPicker } from "@/components/shipping/ShippingBranchPicker";
@@ -51,10 +51,15 @@ import {
   type CheckoutStep,
 } from "@/components/catalog/CheckoutStepper";
 import {
+  hasCompleteCheckoutCustomerData,
   summarizeCheckoutValidation,
   validateProgressiveCheckoutStep,
   type CheckoutFieldKey,
 } from "@/lib/catalog/checkout-validation";
+import {
+  isValidCustomerPhone,
+  normalizeCustomerPhone,
+} from "@/lib/customers/phone-auth";
 import { cn } from "@/lib/cn";
 
 interface CheckoutPanelProps {
@@ -80,9 +85,18 @@ interface CheckoutPanelProps {
 interface CustomerCheckoutProfile {
   displayName: string;
   phone: string;
+  contactEmail?: string | null;
   deliveryAddress?: string | null;
   preferredShippingMethod?: string | null;
   preferredShippingBranchCode?: string | null;
+}
+
+function normalizeCheckoutPhone(phone: string | null | undefined): string {
+  const trimmed = phone?.trim() ?? "";
+  if (!trimmed) return "";
+  return isValidCustomerPhone(trimmed)
+    ? normalizeCustomerPhone(trimmed)
+    : trimmed;
 }
 
 function pickDefaultPaymentKey(
@@ -159,28 +173,41 @@ export function CheckoutPanel({
   >({});
   const [validationAttempted, setValidationAttempted] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(initialStep);
+  const autoSkippedCustomerStepRef = useRef(false);
 
   useEffect(() => {
-    if (
-      !customerSession?.isCustomer ||
-      !customerSession.displayName ||
-      !customerSession.phone
-    ) {
-      return;
+    const loggedIn =
+      customerSession?.isAuthenticated || customerSession?.isCustomer;
+    if (!loggedIn) return;
+
+    const name = customerSession.displayName?.trim() ?? "";
+    const phone = normalizeCheckoutPhone(customerSession.phone);
+    const email = customerSession.contactEmail?.trim() || null;
+
+    if (name.length >= 2) {
+      setCustomerName(name);
+    }
+    if (phone) {
+      setCustomerPhone(phone);
     }
 
-    setCustomerName(customerSession.displayName);
-    setCustomerPhone(customerSession.phone);
-    setCustomerProfile((current) =>
-      current ?? {
-        displayName: customerSession.displayName!,
-        phone: customerSession.phone!,
-      },
-    );
+    if (hasCompleteCheckoutCustomerData(name, phone)) {
+      setCustomerProfile((current) => ({
+        displayName: name,
+        phone,
+        contactEmail: email ?? current?.contactEmail ?? null,
+        deliveryAddress: current?.deliveryAddress ?? null,
+        preferredShippingMethod: current?.preferredShippingMethod ?? null,
+        preferredShippingBranchCode:
+          current?.preferredShippingBranchCode ?? null,
+      }));
+    }
   }, [
+    customerSession?.isAuthenticated,
     customerSession?.isCustomer,
     customerSession?.displayName,
     customerSession?.phone,
+    customerSession?.contactEmail,
   ]);
 
   const shippingOptions = useMemo(
@@ -258,44 +285,55 @@ export function CheckoutPanel({
     void loadCustomerCheckoutContext(storeSlug).then((context) => {
       if (cancelled) return;
 
-      const name = context.displayName?.trim() ?? "";
-      const phone = context.phone?.trim() ?? "";
+      const loggedIn = context.isAuthenticated || context.isCustomer;
+      if (!loggedIn) return;
 
-      if (context.isCustomer && name.length >= 2 && phone.length >= 10) {
+      const name = context.displayName?.trim() ?? "";
+      const phone = normalizeCheckoutPhone(context.phone);
+      const email = context.contactEmail?.trim() || null;
+
+      if (name.length >= 2) {
+        setCustomerName(name);
+      }
+      if (phone) {
+        setCustomerPhone(phone);
+      }
+
+      if (hasCompleteCheckoutCustomerData(name, phone)) {
         setCustomerProfile({
           displayName: name,
           phone,
+          contactEmail: email,
           deliveryAddress: context.deliveryAddress,
           preferredShippingMethod: context.preferredShippingMethod,
           preferredShippingBranchCode: context.preferredShippingBranchCode,
         });
-        setCustomerName(name);
-        setCustomerPhone(phone);
-        if (context.deliveryAddress) {
-          setDeliveryAddress(context.deliveryAddress);
-        }
+      }
 
-        const preferredMethod = context.preferredShippingMethod;
+      if (context.deliveryAddress) {
+        setDeliveryAddress(context.deliveryAddress);
+      }
+
+      const preferredMethod = context.preferredShippingMethod;
+      if (
+        preferredMethod &&
+        shippingOptions.some((option) => option.key === preferredMethod)
+      ) {
+        setSelectedShipping(preferredMethod);
         if (
-          preferredMethod &&
-          shippingOptions.some((option) => option.key === preferredMethod)
+          isNationalCarrierKey(preferredMethod) &&
+          context.preferredShippingBranchCode
         ) {
-          setSelectedShipping(preferredMethod);
-          if (
-            isNationalCarrierKey(preferredMethod) &&
-            context.preferredShippingBranchCode
-          ) {
-            setShippingBranchCode(context.preferredShippingBranchCode);
-          }
-        } else if (fulfillmentMode === "pickup") {
-          const pickup = shippingOptions.find((method) => method.key === "pickup");
-          if (pickup) setSelectedShipping("pickup");
-        } else if (fulfillmentMode === "delivery") {
-          const delivery = shippingOptions.find(
-            (method) => method.key === "delivery",
-          );
-          if (delivery) setSelectedShipping("delivery");
+          setShippingBranchCode(context.preferredShippingBranchCode);
         }
+      } else if (fulfillmentMode === "pickup") {
+        const pickup = shippingOptions.find((method) => method.key === "pickup");
+        if (pickup) setSelectedShipping("pickup");
+      } else if (fulfillmentMode === "delivery") {
+        const delivery = shippingOptions.find(
+          (method) => method.key === "delivery",
+        );
+        if (delivery) setSelectedShipping("delivery");
       }
     });
 
@@ -303,6 +341,16 @@ export function CheckoutPanel({
       cancelled = true;
     };
   }, [storeSlug, fulfillmentMode, shippingOptions]);
+
+  // Si el comprador ya tiene nombre y teléfono, salta directo a envío.
+  useEffect(() => {
+    if (autoSkippedCustomerStepRef.current) return;
+    if (initialStep !== 2 || checkoutStep !== 2) return;
+    if (!customerProfile) return;
+
+    autoSkippedCustomerStepRef.current = true;
+    setCheckoutStep(3);
+  }, [customerProfile, checkoutStep, initialStep]);
 
   useEffect(() => {
     if (!customerProfile || !autoApply) return;
@@ -622,7 +670,7 @@ export function CheckoutPanel({
 
     const hasCustomerData = customerProfile
       ? true
-      : customerName.trim().length >= 2 && customerPhone.trim().length >= 10;
+      : hasCompleteCheckoutCustomerData(customerName, customerPhone);
 
     if (!hasCustomerData) {
       goToStep(2);
@@ -1009,6 +1057,12 @@ export function CheckoutPanel({
                         <dt>Teléfono</dt>
                         <dd>{customerProfile.phone}</dd>
                       </div>
+                      {customerProfile.contactEmail ? (
+                        <div>
+                          <dt>Correo</dt>
+                          <dd>{customerProfile.contactEmail}</dd>
+                        </div>
+                      ) : null}
                     </dl>
                     <Link
                       href={getStoreCustomerAccountPath(storeSlug, "cuenta")}
@@ -1026,9 +1080,12 @@ export function CheckoutPanel({
                       Datos del cliente
                     </h3>
                     <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-                      {accountsEnabled
-                        ? "Obligatorio para coordinar tu pedido. Crear una cuenta es opcional."
-                        : "Nombre y teléfono / WhatsApp para coordinar tu pedido."}
+                      {customerSession?.isAuthenticated ||
+                      customerSession?.isCustomer
+                        ? "Usamos los datos de tu cuenta. Completa solo lo que falte."
+                        : accountsEnabled
+                          ? "Obligatorio para coordinar tu pedido. Crear una cuenta es opcional."
+                          : "Nombre y teléfono / WhatsApp para coordinar tu pedido."}
                     </p>
                     <CheckoutFieldGroup
                       field="customerName"
