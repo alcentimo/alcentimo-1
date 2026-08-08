@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import {
+  mapStoreCustomerSummaryFromProfileRow,
+  sortStoreCustomersByRecentPurchase,
+} from "@/lib/customers/store-customer-shared";
+import {
   aggregateCustomerOrderStats,
   type StoreCustomerSummary,
 } from "@/lib/customers/store-customer-stats";
@@ -31,35 +35,21 @@ export async function getStoreCustomers(
 
   const statsByUser = aggregateCustomerOrderStats(ordersResult.data ?? []);
 
-  const customers = (profilesResult.data ?? []).map((profile) => {
-    const stats = statsByUser.get(profile.user_id);
+  const customers = (profilesResult.data ?? [])
+    .map((profile) => {
+      const stats = statsByUser.get(profile.user_id);
+      return mapStoreCustomerSummaryFromProfileRow(
+        profile as Record<string, unknown>,
+        {
+          orderCount: stats?.orderCount ?? 0,
+          totalSpentUsd: stats?.totalSpentUsd ?? 0,
+          lastOrderAt: stats?.lastOrderAt ?? null,
+        },
+      );
+    })
+    .filter((customer): customer is StoreCustomerSummary => Boolean(customer));
 
-    return {
-      id: profile.id,
-      userId: profile.user_id,
-      displayName: profile.display_name,
-      phone: profile.phone,
-      registeredAt: profile.created_at,
-      orderCount: stats?.orderCount ?? 0,
-      totalSpentUsd: stats?.totalSpentUsd ?? 0,
-      lastOrderAt: stats?.lastOrderAt ?? null,
-    };
-  });
-
-  return sortCustomersByRecentPurchase(customers);
-}
-
-function sortCustomersByRecentPurchase(
-  customers: StoreCustomerSummary[],
-): StoreCustomerSummary[] {
-  return [...customers].sort((a, b) => {
-    const aTime = a.lastOrderAt ? new Date(a.lastOrderAt).getTime() : 0;
-    const bTime = b.lastOrderAt ? new Date(b.lastOrderAt).getTime() : 0;
-    if (bTime !== aTime) return bTime - aTime;
-    return (
-      new Date(b.registeredAt).getTime() - new Date(a.registeredAt).getTime()
-    );
-  });
+  return sortStoreCustomersByRecentPurchase(customers);
 }
 
 export async function getStoreCustomerByUserId(
@@ -95,18 +85,15 @@ export async function getStoreCustomerByUserId(
 
   const statsByUser = aggregateCustomerOrderStats(ordersResult.data ?? []);
   const stats = statsByUser.get(normalizedUserId);
-  const profile = profileResult.data;
 
-  return {
-    id: profile.id,
-    userId: profile.user_id,
-    displayName: profile.display_name,
-    phone: profile.phone,
-    registeredAt: profile.created_at,
-    orderCount: stats?.orderCount ?? 0,
-    totalSpentUsd: stats?.totalSpentUsd ?? 0,
-    lastOrderAt: stats?.lastOrderAt ?? null,
-  };
+  return mapStoreCustomerSummaryFromProfileRow(
+    profileResult.data as Record<string, unknown>,
+    {
+      orderCount: stats?.orderCount ?? 0,
+      totalSpentUsd: stats?.totalSpentUsd ?? 0,
+      lastOrderAt: stats?.lastOrderAt ?? null,
+    },
+  );
 }
 
 export type { StoreCustomerSummary };

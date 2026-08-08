@@ -42,7 +42,11 @@ export default async function ClientesPage() {
         </p>
       </header>
 
-      <CustomersPanel customers={customers} storeName={store.name} />
+      <CustomersPanel
+        storeId={store.id}
+        customers={customers}
+        storeName={store.name}
+      />
     </PageContainer>
   );
 }

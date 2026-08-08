@@ -1,8 +1,13 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, Users } from "lucide-react";
 import type { StoreCustomerSummary } from "@/lib/customers/get-store-customers";
+import {
+  patchStoreCustomerSummaryFromProfileRow,
+  sortStoreCustomersByRecentPurchase,
+} from "@/lib/customers/store-customer-shared";
 import { formatUsd } from "@/lib/format";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import {
@@ -14,9 +19,11 @@ import {
 } from "@/lib/customers/customer-segments";
 import { CustomerWhatsAppButton } from "@/components/dashboard/customers/CustomerWhatsAppButton";
 import { CustomerDetailSlideOver } from "@/components/dashboard/customers/CustomerDetailSlideOver";
+import { useStoreCustomersRealtime } from "@/components/dashboard/customers/use-store-customers-realtime";
 import { cn } from "@/lib/cn";
 
 interface CustomersPanelProps {
+  storeId: string;
   customers: StoreCustomerSummary[];
   storeName: string;
 }
@@ -176,11 +183,98 @@ function CustomerMobileCard({
   );
 }
 
-export function CustomersPanel({ customers, storeName }: CustomersPanelProps) {
+export function CustomersPanel({
+  storeId,
+  customers: initialCustomers,
+  storeName,
+}: CustomersPanelProps) {
+  const router = useRouter();
+  const [customers, setCustomers] = useState(initialCustomers);
   const [search, setSearch] = useState("");
   const [segment, setSegment] = useState<CustomerSegment>("all");
   const [selectedCustomer, setSelectedCustomer] =
     useState<StoreCustomerSummary | null>(null);
+
+  useEffect(() => {
+    setCustomers(initialCustomers);
+  }, [initialCustomers]);
+
+  const onInsert = useCallback((customer: StoreCustomerSummary) => {
+    setCustomers((current) => {
+      if (current.some((row) => row.id === customer.id || row.userId === customer.userId)) {
+        return current.map((row) =>
+          row.id === customer.id || row.userId === customer.userId
+            ? {
+                ...row,
+                displayName: customer.displayName,
+                phone: customer.phone,
+                registeredAt: customer.registeredAt,
+              }
+            : row,
+        );
+      }
+      return sortStoreCustomersByRecentPurchase([customer, ...current]);
+    });
+    setSelectedCustomer((current) => {
+      if (!current) return current;
+      if (current.id !== customer.id && current.userId !== customer.userId) {
+        return current;
+      }
+      return {
+        ...current,
+        displayName: customer.displayName,
+        phone: customer.phone,
+        registeredAt: customer.registeredAt,
+      };
+    });
+  }, []);
+
+  const onUpdate = useCallback(
+    (customerId: string, row: Record<string, unknown>) => {
+      setCustomers((current) =>
+        current.map((customer) =>
+          customer.id === customerId
+            ? patchStoreCustomerSummaryFromProfileRow(customer, row)
+            : customer,
+        ),
+      );
+      setSelectedCustomer((current) =>
+        current && current.id === customerId
+          ? patchStoreCustomerSummaryFromProfileRow(current, row)
+          : current,
+      );
+    },
+    [],
+  );
+
+  const onDelete = useCallback((customerId: string) => {
+    setCustomers((current) =>
+      current.filter((customer) => customer.id !== customerId),
+    );
+    setSelectedCustomer((current) =>
+      current?.id === customerId ? null : current,
+    );
+  }, []);
+
+  useStoreCustomersRealtime({
+    storeId,
+    onInsert,
+    onUpdate,
+    onDelete,
+  });
+
+  useEffect(() => {
+    const refresh = () => router.refresh();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [router]);
 
   const filteredCustomers = useMemo(() => {
     const query = search.trim();

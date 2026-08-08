@@ -138,6 +138,7 @@ export async function saveCustomerProfile(input: {
   revalidatePath(`/c/${storeSlug}/perfil`);
   revalidatePath(`/c/${storeSlug}`);
   revalidatePath(getStoreCustomerAccountPath(storeSlug, "cuenta"));
+  revalidatePath("/dashboard/clientes");
 
   return {
     ok: true,

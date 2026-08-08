@@ -1,6 +1,7 @@
 "use server";
 
 import type { User } from "@supabase/supabase-js";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
@@ -296,6 +297,9 @@ async function finalizeLinkedCustomer(input: {
       // No bloquear registro si falla el vínculo de pedidos previos.
     }
   }
+
+  // Refresca Mis Clientes del dueño (además del Realtime en el panel).
+  revalidatePath("/dashboard/clientes");
 
   return {
     ok: true,
