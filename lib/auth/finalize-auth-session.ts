@@ -1,16 +1,12 @@
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
 import { sanitizeAuthReturnUrl } from "@/lib/auth/validate-auth-return-url";
-import { resolveCustomerNextDestination, buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
+import { resolveCustomerNextDestination } from "@/lib/customers/middleware-access";
 import { ensureCustomerProfileAfterAuth } from "@/lib/customers/ensure-customer-profile";
 import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
-import {
-  getStoreCatalogOrigin,
-  isStoreSubdomainCatalogEnabled,
-} from "@/lib/store-host";
 
 function resolveAuthRedirectTarget(
   next: string,
@@ -62,53 +58,35 @@ export async function finalizeAuthSessionRedirect(
     normalizedStoreSlug,
   );
 
+  // Teléfono/WhatsApp es opcional: vincula el perfil aunque no haya número.
+  try {
+    await ensureCustomerProfileAfterAuth(
+      supabase,
+      user,
+      safeNext,
+      normalizedStoreSlug ?? input.storeSlug,
+    );
+  } catch {
+    // No bloquear login si falla el vínculo cliente.
+  }
+
   if (normalizedStoreSlug) {
     const metadataPhone =
       typeof user.user_metadata?.phone === "string"
         ? user.user_metadata.phone
         : "";
 
-    if (isValidCustomerPhone(metadataPhone)) {
+    if (isValidCustomerPhone(metadataPhone) && input.orderId?.trim()) {
       try {
-        await ensureCustomerProfileAfterAuth(
-          supabase,
-          user,
-          safeNext,
-          normalizedStoreSlug,
-        );
-        if (input.orderId?.trim()) {
-          await linkGuestOrdersToCustomer({
-            storeSlug: normalizedStoreSlug,
-            userId: user.id,
-            phone: metadataPhone,
-            orderId: input.orderId.trim(),
-          });
-        }
+        await linkGuestOrdersToCustomer({
+          storeSlug: normalizedStoreSlug,
+          userId: user.id,
+          phone: metadataPhone,
+          orderId: input.orderId.trim(),
+        });
       } catch {
-        // No bloquear login si falla el vínculo cliente.
+        // No bloquear login si falla el vínculo de pedidos.
       }
-    } else {
-      const registerOrigin =
-        isStoreSubdomainCatalogEnabled()
-          ? getStoreCatalogOrigin(normalizedStoreSlug)
-          : siteUrl;
-      let completePath = buildCustomerRegisterPath(normalizedStoreSlug, safeNext);
-      completePath += `${completePath.includes("?") ? "&" : "?"}complete=phone`;
-      if (input.orderId?.trim()) {
-        completePath += `&orderId=${encodeURIComponent(input.orderId.trim())}`;
-      }
-      return `${registerOrigin}${completePath}`;
-    }
-  } else {
-    try {
-      await ensureCustomerProfileAfterAuth(
-        supabase,
-        user,
-        safeNext,
-        input.storeSlug,
-      );
-    } catch {
-      // No bloquear login si falla el vínculo cliente.
     }
   }
 

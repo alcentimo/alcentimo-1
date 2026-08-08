@@ -134,13 +134,13 @@ export default async function CustomerRegisterPage({
         sectionLabel="Cuenta de cliente"
         title={
           needsPhoneCompletion
-            ? "Confirma tu WhatsApp"
+            ? "¿Agregar WhatsApp?"
             : "Regístrate y compra más rápido"
         }
         description={
           needsPhoneCompletion
-            ? `Activa tu cuenta en ${store.name} con tu número de contacto.`
-            : `Crea tu cuenta en ${store.name} con teléfono o correo y una contraseña.`
+            ? `Puedes agregar tu WhatsApp para pedidos en ${store.name}, o continuar sin número.`
+            : `Crea tu cuenta en ${store.name} con Google o con correo y contraseña.`
         }
         footer={
           <p className="text-center text-sm text-zinc-500">

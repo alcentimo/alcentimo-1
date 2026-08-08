@@ -347,7 +347,7 @@ export function validateCustomerRegistrationInput(input: {
     }
   | { ok: false; error: string } {
   const displayName = input.displayName.trim();
-  const method = input.method ?? "phone";
+  const method = input.method ?? "email";
   const requirePassword = input.requirePassword !== false;
 
   if (!displayName || displayName.length < 2) {
