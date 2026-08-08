@@ -58,6 +58,8 @@ interface DashboardSidebarProps {
   onPrefetchAccountSettings?: () => void;
   accountSettingsActive?: boolean;
   isSupportAdmin?: boolean;
+  /** Visibilidad del ítem «Equipo» (allowlist propia, no SUPPORT_ADMIN). */
+  showTeamNav?: boolean;
   storeRole?: DashboardStoreRole | null;
 }
 
@@ -222,6 +224,7 @@ export function DashboardSidebar({
   onPrefetchAccountSettings,
   accountSettingsActive = false,
   isSupportAdmin = false,
+  showTeamNav = false,
   storeRole = null,
 }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
@@ -229,8 +232,7 @@ export function DashboardSidebar({
   const [supportKey, setSupportKey] = useState(0);
   const navItems = getDashboardNavItems({
     storeRole,
-    // Solo admins de plataforma (p. ej. alcentimo.app@gmail.com vía SUPPORT_ADMIN_EMAILS).
-    showTeamNav: isSupportAdmin,
+    showTeamNav,
   });
   const { t, navLabel } = useLocale();
   const { prefetchRoute } = useDashboardRoutePrefetch();

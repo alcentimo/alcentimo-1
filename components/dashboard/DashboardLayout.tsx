@@ -43,6 +43,7 @@ interface DashboardLayoutProps {
   exchangeRate?: number | null;
   exchangeRateUpdatedAt?: string | null;
   isSupportAdmin?: boolean;
+  showTeamNav?: boolean;
   isStoreOwner?: boolean;
   storeRole?: DashboardStoreRole | null;
   canUpgradeToBusiness?: boolean;
@@ -73,6 +74,7 @@ function DashboardShell({
   exchangeRate = null,
   exchangeRateUpdatedAt = null,
   isSupportAdmin = false,
+  showTeamNav = false,
   storeRole = null,
   canUpgradeToBusiness = false,
   accountSnapshot = null,
@@ -190,6 +192,7 @@ function DashboardShell({
         onPrefetchAccountSettings={prefetchAccountSettings}
         accountSettingsActive={accountSheetOpen || Boolean(accountQueryParam)}
         isSupportAdmin={isSupportAdmin}
+        showTeamNav={showTeamNav}
         storeRole={storeRole}
       />
 

@@ -100,8 +100,8 @@ const TEAM_NAV_HREF = "/dashboard/equipo";
 export function getDashboardNavItems(options?: {
   storeRole?: DashboardStoreRole | null;
   /**
-   * La opción «Equipo» solo se muestra a admins de plataforma
-   * (SUPPORT_ADMIN_EMAILS). No cambia permisos de ruta ni lógica de BD.
+   * La opción «Equipo» solo se muestra a correos en TEAM_NAV_ALLOWED_EMAILS
+   * (p. ej. jose95jimenez95@gmail.com). No cambia permisos de ruta ni BD.
    */
   showTeamNav?: boolean;
 }): DashboardNavItem[] {
