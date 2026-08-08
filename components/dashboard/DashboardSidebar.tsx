@@ -61,18 +61,12 @@ interface DashboardSidebarProps {
   storeRole?: DashboardStoreRole | null;
 }
 
-function navLinkClass(
-  active: boolean,
-  collapsed: boolean,
-  mobileDrawer = false,
-) {
+function navLinkClass(active: boolean, collapsed: boolean) {
   return cn(
     "group relative flex w-full items-center rounded-lg border-l-[3px] text-sm font-medium transition-colors",
     collapsed
       ? "h-10 justify-center border-transparent px-0"
-      : mobileDrawer
-        ? "min-h-12 gap-3.5 border-transparent px-3.5 py-3"
-        : "min-h-10 gap-3 border-transparent px-3 py-2",
+      : "min-h-10 gap-3 border-transparent px-3 py-2",
     active
       ? "border-emerald-600 bg-emerald-50 text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
       : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
@@ -84,7 +78,6 @@ function SidebarNavLink({
   label,
   active,
   collapsed,
-  mobileDrawer = false,
   onNavigate,
   onPrefetch,
 }: {
@@ -92,7 +85,6 @@ function SidebarNavLink({
   label: string;
   active: boolean;
   collapsed: boolean;
-  mobileDrawer?: boolean;
   onNavigate: () => void;
   onPrefetch: (href: string) => void;
 }) {
@@ -108,7 +100,7 @@ function SidebarNavLink({
     <Link
       href={item.href}
       prefetch={true}
-      className={navLinkClass(active, collapsed, mobileDrawer)}
+      className={navLinkClass(active, collapsed)}
       onClick={onNavigate}
       onMouseEnter={handlePrefetch}
       onFocus={handlePrefetch}
@@ -197,7 +189,7 @@ function SidebarPlanStatus({
     <div
       className={cn(
         "rounded-lg border border-zinc-200/90 bg-zinc-50/80 dark:border-zinc-800 dark:bg-zinc-900/50",
-        comfortable ? "px-3.5 py-3" : "px-2.5 py-2",
+        comfortable ? "px-3 py-2.5" : "px-2.5 py-2",
       )}
       aria-label={`Plan actual: ${summary}`}
     >
@@ -207,8 +199,7 @@ function SidebarPlanStatus({
       {resolvedPlanName ? (
         <span
           className={cn(
-            "inline-flex w-fit max-w-full truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-            comfortable ? "mt-2" : "mt-1.5",
+            "mt-1.5 inline-flex w-fit max-w-full truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
             statusBadgeClass,
           )}
         >
@@ -312,7 +303,7 @@ export function DashboardSidebar({
           "flex shrink-0 items-center border-b border-zinc-200 dark:border-zinc-800",
           drawerExpanded
             ? mobileOpen
-              ? "justify-between gap-3 px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))]"
+              ? "justify-between gap-2 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]"
               : "justify-between gap-2 px-4 py-3"
             : "flex-col gap-2 px-2 py-3",
         )}
@@ -376,13 +367,13 @@ export function DashboardSidebar({
       </div>
 
       {/*
-        Móvil: un solo cuerpo con scroll interno (nav + pie) bajo cabecera fija.
+        Móvil: cuerpo sin scroll (contenido compacto bajo cabecera fija).
         Desktop: `contents` para que nav (flex-1) y pie (pinned) sigan el flex del aside.
       */}
       <div
         className={
           mobileOpen
-            ? "flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]"
+            ? "flex min-h-0 flex-1 flex-col overflow-hidden"
             : "contents"
         }
       >
@@ -390,21 +381,16 @@ export function DashboardSidebar({
           className={cn(
             "flex flex-col",
             mobileOpen
-              ? "grow-0"
+              ? "min-h-0 grow-0"
               : "min-h-0 flex-1 overflow-y-auto overscroll-y-contain",
             mobileOpen && drawerExpanded
-              ? "gap-2 px-5 pb-4 pt-5"
+              ? "gap-0.5 px-4 pb-1 pt-2.5"
               : drawerExpanded
                 ? "gap-1 px-3 py-4"
                 : "gap-1 px-2 py-4",
           )}
           aria-label="Navegación principal"
         >
-          {mobileOpen && drawerExpanded ? (
-            <p className="mb-2.5 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-              Tienda
-            </p>
-          ) : null}
           {navItems.map((item) => (
             <SidebarNavLink
               key={item.href}
@@ -412,7 +398,6 @@ export function DashboardSidebar({
               label={navLabel(item.href, item.label)}
               active={isDashboardNavItemActive(pathname, item)}
               collapsed={!drawerExpanded}
-              mobileDrawer={mobileOpen && drawerExpanded}
               onNavigate={onCloseMobile}
               onPrefetch={prefetchRoute}
             />
@@ -422,9 +407,10 @@ export function DashboardSidebar({
         <div
           className={cn(
             "border-t border-zinc-200 dark:border-zinc-800",
-            mobileOpen ? "mt-auto" : "shrink-0",
+            mobileOpen ? "mt-auto shrink-0" : "shrink-0",
             mobileOpen && drawerExpanded
-              ? "space-y-4 px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+              ? // Separación limpia entre Configuración de Tienda y el bloque del plan
+                "space-y-2.5 px-4 pt-4 pb-[max(0.875rem,env(safe-area-inset-bottom))]"
               : drawerExpanded
                 ? "px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
                 : "px-2 py-3",
@@ -471,15 +457,13 @@ export function DashboardSidebar({
 
           <div
             className={cn(
-              mobileOpen && drawerExpanded ? "space-y-2" : "space-y-1",
+              mobileOpen && drawerExpanded ? "space-y-0.5" : "space-y-1",
             )}
           >
             <DashboardAccountMenu
               expanded={drawerExpanded}
               active={accountSettingsActive}
-              navLinkClass={(active, collapsed) =>
-                navLinkClass(active, collapsed, mobileOpen && drawerExpanded)
-              }
+              navLinkClass={navLinkClass}
               onOpenAccountSettings={onOpenAccountSettings}
               onPrefetchAccountSettings={onPrefetchAccountSettings}
             />
@@ -491,7 +475,6 @@ export function DashboardSidebar({
                 className={navLinkClass(
                   pathname.startsWith("/admin"),
                   !drawerExpanded,
-                  mobileOpen && drawerExpanded,
                 )}
                 onClick={onCloseMobile}
                 onMouseEnter={() => prefetchRoute("/admin/dashboard")}
@@ -518,11 +501,7 @@ export function DashboardSidebar({
                 setSupportOpen(true);
                 onCloseMobile();
               }}
-              className={navLinkClass(
-                false,
-                !drawerExpanded,
-                mobileOpen && drawerExpanded,
-              )}
+              className={navLinkClass(false, !drawerExpanded)}
               title={drawerExpanded ? undefined : t("nav.support")}
             >
               <LifeBuoy
@@ -536,11 +515,7 @@ export function DashboardSidebar({
             <button
               type="button"
               className={cn(
-                navLinkClass(
-                  false,
-                  !drawerExpanded,
-                  mobileOpen && drawerExpanded,
-                ),
+                navLinkClass(false, !drawerExpanded),
                 "touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300",
               )}
               onClick={onLogout}
