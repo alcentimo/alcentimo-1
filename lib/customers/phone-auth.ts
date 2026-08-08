@@ -1,6 +1,8 @@
 export const CUSTOMER_PHONE_AUTH_EMAIL_DOMAIN = "customers.phone.alcentimo.com";
 export const CUSTOMER_MIN_PASSWORD_LENGTH = 8;
 export const CUSTOMER_PASSWORD_SET_META_KEY = "customer_password_set";
+/** Alineado con CHECK customer_profiles_delivery_address_length. */
+export const CUSTOMER_DELIVERY_ADDRESS_MAX = 320;
 
 export type CustomerAuthMethod = "phone" | "email";
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   changeCustomerPassword,
@@ -15,7 +15,10 @@ import {
   getStoreCatalogBasePath,
   getStoreCustomerAccountPath,
 } from "@/lib/store-host";
-import type { CustomerAuthMethod } from "@/lib/customers/phone-auth";
+import {
+  CUSTOMER_DELIVERY_ADDRESS_MAX,
+  type CustomerAuthMethod,
+} from "@/lib/customers/phone-auth";
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
 
 interface CustomerProfilePanelProps {
@@ -61,13 +64,6 @@ export function CustomerProfilePanel({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    setName(displayName ?? "");
-    setPhoneValue(phone ?? "");
-    setEmailValue(contactEmail ?? "");
-    setAddressValue(deliveryAddress ?? "");
-  }, [displayName, phone, contactEmail, deliveryAddress]);
-
   const phoneRequired = loginMethod === "phone";
   const canEditContactEmail = loginMethod === "phone";
   const loginLabel =
@@ -98,69 +94,85 @@ export function CustomerProfilePanel({
     setSuccess(null);
     setSavePending(true);
 
-    const result = await saveCustomerProfile({
-      storeSlug,
-      displayName: name,
-      phone: phoneValue,
-      contactEmail: canEditContactEmail ? emailValue : undefined,
-      deliveryAddress: addressValue,
-      requirePhone: phoneRequired,
-    });
+    try {
+      const result = await saveCustomerProfile({
+        storeSlug,
+        displayName: name,
+        phone: phoneValue,
+        contactEmail: canEditContactEmail ? emailValue : undefined,
+        deliveryAddress: addressValue,
+        requirePhone: phoneRequired,
+      });
 
-    setSavePending(false);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
 
-    if (!result.ok) {
-      setError(result.error);
-      return;
+      setName(result.displayName);
+      setPhoneValue(result.phone ?? "");
+      setEmailValue(result.contactEmail ?? "");
+      setAddressValue(result.deliveryAddress ?? "");
+      setSuccess(
+        "Perfil actualizado. Tus datos se usarán al finalizar el pedido.",
+      );
+
+      // Actualiza la sesión del catálogo sin bloquear el botón ni el feedback.
+      try {
+        customerSession?.setSessionFromRegistration(
+          {
+            displayName: result.displayName,
+            phone: result.phone,
+            contactEmail: result.contactEmail,
+            userId: customerSession.userId,
+          },
+          { refresh: false },
+        );
+        void customerSession?.refreshSession();
+      } catch {
+        // El guardado en DB ya fue exitoso.
+      }
+
+      router.refresh();
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "No se pudo guardar el perfil. Inténtalo de nuevo.",
+      );
+    } finally {
+      setSavePending(false);
     }
-
-    setName(result.displayName);
-    setPhoneValue(result.phone ?? "");
-    setEmailValue(result.contactEmail ?? "");
-    setAddressValue(result.deliveryAddress ?? "");
-
-    // Actualiza la sesión del catálogo de inmediato para el autofill del checkout.
-    customerSession?.setSessionFromRegistration(
-      {
-        displayName: result.displayName,
-        phone: result.phone,
-        contactEmail: result.contactEmail,
-        userId: customerSession.userId,
-      },
-      { refresh: false },
-    );
-    await customerSession?.refreshSession();
-
-    setSuccess("Perfil actualizado. Tus datos se usarán al finalizar el pedido.");
-    router.refresh();
   }
 
   async function handleSignOut() {
     setError(null);
     setSignOutPending(true);
 
-    if (customerSession) {
-      try {
-        await customerSession.signOut();
-        router.push(catalogPath);
-        return;
-      } catch {
-        // fallback abajo
+    try {
+      if (customerSession) {
+        try {
+          await customerSession.signOut();
+          router.push(catalogPath);
+          return;
+        } catch {
+          // fallback abajo
+        }
       }
+
+      const supabase = createClient();
+      const { error: signOutError } = await supabase.auth.signOut();
+
+      if (signOutError) {
+        setError(signOutError.message);
+        return;
+      }
+
+      router.push(catalogPath);
+      router.refresh();
+    } finally {
+      setSignOutPending(false);
     }
-
-    const supabase = createClient();
-    const { error: signOutError } = await supabase.auth.signOut();
-
-    setSignOutPending(false);
-
-    if (signOutError) {
-      setError(signOutError.message);
-      return;
-    }
-
-    router.push(catalogPath);
-    router.refresh();
   }
 
   async function handleChangePassword(e: React.FormEvent) {
@@ -174,28 +186,48 @@ export function CustomerProfilePanel({
     setSuccess(null);
     setPasswordPending(true);
 
-    const result = await changeCustomerPassword({
-      storeSlug,
-      currentPassword,
-      newPassword,
-      confirmPassword,
-    });
+    try {
+      const result = await changeCustomerPassword({
+        storeSlug,
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
 
-    setPasswordPending(false);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
 
-    if (!result.ok) {
-      setError(result.error);
-      return;
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setSuccess("Contraseña actualizada correctamente.");
+    } catch (passwordError) {
+      setError(
+        passwordError instanceof Error
+          ? passwordError.message
+          : "No se pudo actualizar la contraseña. Inténtalo de nuevo.",
+      );
+    } finally {
+      setPasswordPending(false);
     }
-
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setSuccess("Contraseña actualizada correctamente.");
   }
 
   return (
     <div className="space-y-6">
+      {error ? (
+        <p className="alert-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      {success ? (
+        <p className="alert-success" role="status">
+          {success}
+        </p>
+      ) : null}
+
       <form onSubmit={(e) => void handleSave(e)} className="card-panel space-y-4">
         <div>
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
@@ -218,6 +250,7 @@ export function CustomerProfilePanel({
             maxLength={120}
             autoComplete="name"
             value={name}
+            disabled={savePending}
             onChange={(e) => setName(e.target.value)}
             className="input-field"
             placeholder="Tu nombre"
@@ -238,6 +271,7 @@ export function CustomerProfilePanel({
             inputMode="tel"
             autoComplete="tel"
             value={phoneValue}
+            disabled={savePending}
             onChange={(e) => setPhoneValue(e.target.value)}
             className="input-field"
             placeholder="0412… o 412…"
@@ -274,6 +308,7 @@ export function CustomerProfilePanel({
               type="email"
               autoComplete="email"
               value={emailValue}
+              disabled={savePending}
               onChange={(e) => setEmailValue(e.target.value)}
               className="input-field"
               placeholder="tu@correo.com"
@@ -292,9 +327,10 @@ export function CustomerProfilePanel({
           <textarea
             id="customer-address"
             rows={3}
-            maxLength={500}
+            maxLength={CUSTOMER_DELIVERY_ADDRESS_MAX}
             autoComplete="street-address"
             value={addressValue}
+            disabled={savePending}
             onChange={(e) => setAddressValue(e.target.value)}
             className="input-field min-h-[5rem] resize-y"
             placeholder="Urbanización, calle, referencia…"
@@ -400,18 +436,6 @@ export function CustomerProfilePanel({
           </a>
         ) : null}
       </section>
-
-      {error ? (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
-          {error}
-        </p>
-      ) : null}
-
-      {success ? (
-        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
-          {success}
-        </p>
-      ) : null}
 
       <div className="space-y-3">
         <Link href={ordersPath} className="btn-secondary flex w-full justify-center">
