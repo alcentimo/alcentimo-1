@@ -5,6 +5,7 @@ import { CreditCard, Shield, UserRound, type LucideIcon } from "lucide-react";
 import { AccountProfileTab } from "@/components/dashboard/account/AccountProfileTab";
 import { AccountSecurityTab } from "@/components/dashboard/account/AccountSecurityTab";
 import { AccountBillingTab } from "@/components/dashboard/account/AccountBillingTab";
+import { SettingsMobileNav } from "@/components/dashboard/settings/SettingsMobileNav";
 import type { AccountSettingsTab, AccountSnapshot } from "@/lib/account/types";
 import { cn } from "@/lib/cn";
 
@@ -98,8 +99,22 @@ export function AccountSettingsPanel({
 
   return (
     <div className="settings-workspace">
+      <SettingsMobileNav
+        groups={navGroups}
+        activeId={activeTab}
+        onChange={(id) => {
+          const next = id as AccountSettingsTab;
+          setActiveTab(next);
+          onTabChange?.(next);
+        }}
+        ariaLabel="Sección de cuenta"
+      />
+
       <div className="settings-workspace-layout">
-        <aside className="settings-sidebar" aria-label="Secciones de cuenta">
+        <aside
+          className="settings-sidebar settings-sidebar--desktop"
+          aria-label="Secciones de cuenta"
+        >
           <nav className="settings-sidebar-nav">
             {navGroups.map((group) => (
               <div key={group.label} className="settings-sidebar-group">

@@ -28,6 +28,7 @@ import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursT
 import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
 import { PaymentsTab } from "@/components/dashboard/settings/PaymentsTab";
 import { PromotionsTab } from "@/components/dashboard/settings/PromotionsTab";
+import { SettingsMobileNav } from "@/components/dashboard/settings/SettingsMobileNav";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { Store } from "@/lib/database.types";
@@ -181,6 +182,14 @@ export function SettingsPanel({
   const domainLocked =
     planId == null || !planIncludesCustomDomain(planId);
 
+  const mobileNavGroups = navGroups.map((group) => ({
+    label: group.label,
+    items: group.items.map((item) => ({
+      ...item,
+      proLocked: item.id === "domains" && domainLocked,
+    })),
+  }));
+
   useEffect(() => {
     setActiveTab(resolveInitialTab(initialTab, showDropshipping));
   }, [initialTab, showDropshipping]);
@@ -304,8 +313,18 @@ export function SettingsPanel({
 
   return (
     <div className="settings-workspace">
+      <SettingsMobileNav
+        groups={mobileNavGroups}
+        activeId={activeTab}
+        onChange={(id) => setActiveTab(id as SettingsTabId)}
+        ariaLabel="Sección de configuración"
+      />
+
       <div className="settings-workspace-layout">
-        <aside className="settings-sidebar" aria-label="Secciones de configuración">
+        <aside
+          className="settings-sidebar settings-sidebar--desktop"
+          aria-label="Secciones de configuración"
+        >
           <nav className="settings-sidebar-nav">
             {navGroups.map((group) => (
               <div key={group.label} className="settings-sidebar-group">

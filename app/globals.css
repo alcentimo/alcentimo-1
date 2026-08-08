@@ -4078,38 +4078,81 @@ html:has(.landing-shell) {
   @apply grid min-w-0 grid-cols-1 lg:grid-cols-[15.5rem_minmax(0,1fr)];
 }
 
+/* Móvil: selector de sección (dropdown). Desktop: sidebar vertical. */
+.settings-mobile-nav {
+  @apply border-b border-zinc-200/70 bg-[#FAFAF9] px-3 py-3 dark:border-zinc-800/70 dark:bg-zinc-900/20;
+}
+
+.settings-mobile-nav-label {
+  @apply mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400;
+}
+
+.settings-mobile-nav-trigger {
+  @apply flex w-full min-h-11 items-center justify-between gap-3 rounded-xl border border-zinc-200/90 bg-white px-3.5 py-2.5 text-sm shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-zinc-600 dark:hover:bg-zinc-900;
+}
+
+.settings-mobile-nav-menu {
+  @apply max-h-[min(24rem,70vh)] overflow-y-auto overscroll-contain !p-0;
+}
+
+.settings-mobile-nav-menu-inner {
+  @apply py-1.5;
+}
+
+.settings-mobile-nav-group + .settings-mobile-nav-group {
+  @apply mt-1 border-t border-zinc-100 pt-1 dark:border-zinc-800;
+}
+
+.settings-mobile-nav-group-label {
+  @apply px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-500;
+}
+
+.settings-mobile-nav-list {
+  @apply m-0 list-none p-0;
+}
+
+.settings-mobile-nav-option {
+  @apply flex w-full min-h-10 items-center gap-2.5 px-3 py-2 text-left text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-50;
+}
+
+.settings-mobile-nav-option-active {
+  @apply bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300;
+}
+
+.settings-mobile-nav-pro-badge {
+  @apply inline-flex shrink-0 items-center gap-0.5 rounded-md bg-zinc-200/90 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300;
+}
+
 .settings-sidebar {
   @apply min-w-0 border-b border-zinc-200/70 bg-[#FAFAF9] dark:border-zinc-800/70 dark:bg-zinc-900/20 lg:border-b-0 lg:border-r;
 }
 
-.settings-sidebar-nav {
-  @apply flex gap-1 overflow-x-auto px-3 py-3 lg:block lg:overflow-visible lg:px-0 lg:py-4;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+.settings-sidebar--desktop {
+  @apply hidden lg:block;
 }
 
-.settings-sidebar-nav::-webkit-scrollbar {
-  display: none;
+.settings-sidebar-nav {
+  @apply flex flex-col gap-1 px-3 py-3 lg:block lg:px-0 lg:py-4;
 }
 
 .settings-sidebar-group {
-  @apply shrink-0 lg:shrink lg:px-3;
+  @apply lg:px-3;
 }
 
 .settings-sidebar-group + .settings-sidebar-group {
-  @apply lg:mt-2;
+  @apply mt-2;
 }
 
 .settings-sidebar-group-label {
-  @apply hidden px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400 lg:block;
+  @apply px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400;
 }
 
 .settings-sidebar-list {
-  @apply flex gap-1 lg:flex-col lg:gap-0.5;
+  @apply flex flex-col gap-0.5;
 }
 
 .settings-sidebar-link {
-  @apply inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-600 transition hover:bg-white hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-950/60 dark:hover:text-zinc-100 lg:w-full;
+  @apply inline-flex min-h-10 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-600 transition hover:bg-white hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-950/60 dark:hover:text-zinc-100;
 }
 
 .settings-sidebar-link-active {
