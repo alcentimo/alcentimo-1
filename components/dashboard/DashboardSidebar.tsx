@@ -61,12 +61,20 @@ interface DashboardSidebarProps {
   storeRole?: DashboardStoreRole | null;
 }
 
-function navLinkClass(active: boolean, collapsed: boolean) {
+function navLinkClass(
+  active: boolean,
+  collapsed: boolean,
+  /** Acciones inferiores del drawer móvil: menos alto/padding. */
+  dense = false,
+) {
   return cn(
-    "group relative flex w-full items-center rounded-lg border-l-[3px] text-sm font-medium transition-colors",
+    "group relative flex w-full items-center rounded-lg border-l-[3px] font-medium transition-colors",
+    dense ? "text-[13px]" : "text-sm",
     collapsed
       ? "h-10 justify-center border-transparent px-0"
-      : "min-h-10 gap-3 border-transparent px-3 py-2",
+      : dense
+        ? "min-h-8 gap-2.5 border-transparent px-3 py-1.5"
+        : "min-h-10 gap-3 border-transparent px-3 py-2",
     active
       ? "border-emerald-600 bg-emerald-50 text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
       : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
@@ -185,21 +193,26 @@ function SidebarPlanStatus({
     );
   }
 
-  return (
+      return (
     <div
       className={cn(
         "rounded-lg border border-zinc-200/90 bg-zinc-50/80 dark:border-zinc-800 dark:bg-zinc-900/50",
-        comfortable ? "px-3 py-2.5" : "px-2.5 py-2",
+        comfortable ? "px-3 py-2" : "px-2.5 py-2",
       )}
       aria-label={`Plan actual: ${summary}`}
     >
-      <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+      <p
+        className={cn(
+          "truncate font-semibold text-zinc-900 dark:text-zinc-50",
+          comfortable ? "text-[13px]" : "text-sm",
+        )}
+      >
         {resolvedPlanName ?? "Cargando plan…"}
       </p>
       {resolvedPlanName ? (
         <span
           className={cn(
-            "mt-1.5 inline-flex w-fit max-w-full truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            "mt-1 inline-flex w-fit max-w-full truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
             statusBadgeClass,
           )}
         >
@@ -384,7 +397,7 @@ export function DashboardSidebar({
               ? "min-h-0 grow-0"
               : "min-h-0 flex-1 overflow-y-auto overscroll-y-contain",
             mobileOpen && drawerExpanded
-              ? "gap-0.5 px-4 pb-1 pt-2.5"
+              ? "gap-0.5 px-4 pb-0 pt-2.5"
               : drawerExpanded
                 ? "gap-1 px-3 py-4"
                 : "gap-1 px-2 py-4",
@@ -404,13 +417,20 @@ export function DashboardSidebar({
           ))}
         </nav>
 
+        {/* Espacio obligatorio (≥2rem) entre Configuración de Tienda y Plan. */}
+        {mobileOpen ? (
+          <div
+            className="min-h-8 w-full shrink-0 grow basis-8"
+            aria-hidden="true"
+          />
+        ) : null}
+
         <div
           className={cn(
             "border-t border-zinc-200 dark:border-zinc-800",
-            mobileOpen ? "mt-auto shrink-0" : "shrink-0",
+            mobileOpen ? "mt-0 shrink-0" : "shrink-0",
             mobileOpen && drawerExpanded
-              ? // Separación limpia entre Configuración de Tienda y el bloque del plan
-                "space-y-2.5 px-4 pt-4 pb-[max(0.875rem,env(safe-area-inset-bottom))]"
+              ? "space-y-1.5 px-4 pt-3 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
               : drawerExpanded
                 ? "px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
                 : "px-2 py-3",
@@ -457,13 +477,19 @@ export function DashboardSidebar({
 
           <div
             className={cn(
-              mobileOpen && drawerExpanded ? "space-y-0.5" : "space-y-1",
+              mobileOpen && drawerExpanded ? "space-y-0" : "space-y-1",
             )}
           >
             <DashboardAccountMenu
               expanded={drawerExpanded}
               active={accountSettingsActive}
-              navLinkClass={navLinkClass}
+              navLinkClass={(active, collapsed) =>
+                navLinkClass(
+                  active,
+                  collapsed,
+                  mobileOpen && drawerExpanded,
+                )
+              }
               onOpenAccountSettings={onOpenAccountSettings}
               onPrefetchAccountSettings={onPrefetchAccountSettings}
             />
@@ -475,6 +501,7 @@ export function DashboardSidebar({
                 className={navLinkClass(
                   pathname.startsWith("/admin"),
                   !drawerExpanded,
+                  mobileOpen && drawerExpanded,
                 )}
                 onClick={onCloseMobile}
                 onMouseEnter={() => prefetchRoute("/admin/dashboard")}
@@ -501,7 +528,11 @@ export function DashboardSidebar({
                 setSupportOpen(true);
                 onCloseMobile();
               }}
-              className={navLinkClass(false, !drawerExpanded)}
+              className={navLinkClass(
+                false,
+                !drawerExpanded,
+                mobileOpen && drawerExpanded,
+              )}
               title={drawerExpanded ? undefined : t("nav.support")}
             >
               <LifeBuoy
@@ -515,7 +546,11 @@ export function DashboardSidebar({
             <button
               type="button"
               className={cn(
-                navLinkClass(false, !drawerExpanded),
+                navLinkClass(
+                  false,
+                  !drawerExpanded,
+                  mobileOpen && drawerExpanded,
+                ),
                 "touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300",
               )}
               onClick={onLogout}
@@ -524,7 +559,11 @@ export function DashboardSidebar({
               <LogOut
                 className={cn(
                   "shrink-0",
-                  !drawerExpanded ? "h-[18px] w-[18px]" : "h-4 w-4",
+                  !drawerExpanded
+                    ? "h-[18px] w-[18px]"
+                    : mobileOpen
+                      ? "h-3.5 w-3.5"
+                      : "h-4 w-4",
                 )}
                 strokeWidth={1.75}
                 aria-hidden="true"
