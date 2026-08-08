@@ -52,7 +52,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { ProductCompareAtField } from "@/components/dashboard/ProductCompareAtField";
 import { ProductWholesaleField } from "@/components/dashboard/ProductWholesaleField";
 import { ProductCopyAiFields } from "@/components/dashboard/ProductCopyAiFields";
-import { ProductFormAiStarter } from "@/components/dashboard/ProductFormAiStarter";
 import { ProductTitleAutoDetectHint } from "@/components/dashboard/ProductTitleAutoDetectHint";
 import { getProductNamePlaceholderForRubro } from "@/src/config/categories";
 import { useProductTitleAutoDetect } from "@/components/dashboard/useProductTitleAutoDetect";
@@ -77,9 +76,6 @@ interface QuickProductFormProps {
   store: Store;
   exchangeRate: number | null;
   productFormConfig: StoreProductFormConfig;
-  catalogEmpty?: boolean;
-  rubroLabel?: string | null;
-  onSamplesCreated?: () => void;
   onComplete: (result?: PublishedProductResult) => void;
   onRefresh: () => void;
   onCancel?: () => void;
@@ -113,9 +109,6 @@ function QuickProductFormSession({
   store,
   exchangeRate,
   productFormConfig,
-  catalogEmpty = false,
-  rubroLabel,
-  onSamplesCreated,
   onComplete,
   onRefresh,
   onCancel,
@@ -380,14 +373,6 @@ function QuickProductFormSession({
         className="space-y-4"
       >
       <input type="hidden" name="store_id" value={store.id} readOnly />
-
-      {catalogEmpty ? (
-        <ProductFormAiStarter
-          rubroLabel={rubroLabel ?? productFormConfig.rubroLabel}
-          disabled={isBusy}
-          onSamplesCreated={() => onSamplesCreated?.()}
-        />
-      ) : null}
 
       <ProductCopyAiFields
         idPrefix="quick"

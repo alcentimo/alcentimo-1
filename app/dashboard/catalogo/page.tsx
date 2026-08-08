@@ -18,11 +18,6 @@ import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
 import { createClient } from "@/lib/supabase/server";
 import { listPendingInventorySuggestions } from "@/lib/inventory-ai/run-scan";
-import {
-  getRubroLabel,
-  normalizeStoreRubro,
-  type StoreRubro,
-} from "@/src/config/categories";
 import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
 import { InventoryListSkeleton } from "@/components/dashboard/InventoryListSkeleton";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
@@ -134,8 +129,6 @@ export default async function CatalogoPage({
 
   const exchangeRate = exchangeRateRow?.rate ?? null;
   const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
-  const rubro = normalizeStoreRubro(store.rubro_tienda as StoreRubro);
-  const rubroLabel = getRubroLabel(rubro);
   const setupStatus = getOnboardingSetupStatus(
     productLimitContext?.currentCount ?? totalCount,
     storeSettings,
@@ -175,7 +168,6 @@ export default async function CatalogoPage({
           initialSearchQuery={searchQuery}
           initialPage={page}
           initialPageSize={pageSize}
-          rubroLabel={rubroLabel}
           setupStatus={setupStatus}
           showWelcomeFromUrl={showOnboardingSuccess}
           inventorySuggestions={inventorySuggestions}

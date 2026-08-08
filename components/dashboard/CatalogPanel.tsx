@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { InventoryPanel } from "@/components/dashboard/InventoryPanel";
 import { OnboardingExperience } from "@/components/onboarding/OnboardingExperience";
@@ -13,7 +13,6 @@ import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import type { InventoryAiSuggestionRow } from "@/lib/inventory-ai/types";
 import { InventoryAiSuggestionCards } from "@/components/dashboard/InventoryAiSuggestionCards";
-import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
 
 interface CatalogPanelProps {
   store: Store;
@@ -29,7 +28,6 @@ interface CatalogPanelProps {
   productFormConfig: StoreProductFormConfig;
   previewSettings: CatalogPreviewSettings;
   productLimitContext?: StoreProductLimitContext | null;
-  rubroLabel: string;
   setupStatus: OnboardingSetupStatus;
   showWelcomeFromUrl?: boolean;
   /** Si true, el listado se pide en el cliente al montar (página sin await de inventario). */
@@ -51,7 +49,6 @@ export function CatalogPanel({
   productFormConfig,
   previewSettings,
   productLimitContext = null,
-  rubroLabel,
   setupStatus,
   showWelcomeFromUrl = false,
   loadOnMount = false,
@@ -63,11 +60,6 @@ export function CatalogPanel({
   const [autoOpenCreate, setAutoOpenCreate] = useState(
     () => searchParams.get("nuevo") === "1",
   );
-
-  const handleSampleProductsCreated = useCallback(() => {
-    router.refresh();
-    requestDashboardShellRefresh();
-  }, [router]);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParamsKey);
@@ -131,8 +123,6 @@ export function CatalogPanel({
         initialPage={initialPage}
         initialPageSize={initialPageSize}
         productLimitContext={productLimitContext}
-        rubroLabel={rubroLabel}
-        onSampleProductsCreated={handleSampleProductsCreated}
         setupStatus={setupStatus}
         loadOnMount={loadOnMount}
       />

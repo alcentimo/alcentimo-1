@@ -1,2 +1,2 @@
-/** @deprecated Removed in favor of minimal table empty state + ProductFormAiStarter. */
+/** @deprecated Removed; empty catalog uses the minimal table empty state. */
 export {};

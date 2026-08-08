@@ -2118,22 +2118,6 @@ html:has(.landing-shell) {
   @apply border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-200;
 }
 
-.product-form-ai-starter {
-  @apply rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-3 dark:border-zinc-800 dark:bg-zinc-900/40;
-}
-
-.product-form-ai-starter-feedback {
-  @apply mt-2 rounded-lg px-2.5 py-1.5 text-[11px];
-}
-
-.product-form-ai-starter-feedback-success {
-  @apply border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-200;
-}
-
-.product-form-ai-starter-feedback-error {
-  @apply border border-red-200 bg-red-50 text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200;
-}
-
 .fx-conversion-widget {
   @apply relative overflow-hidden rounded-[12px] border border-zinc-200/70 bg-white shadow-[0_1px_3px_rgba(24,24,27,0.05)] dark:border-zinc-800/70 dark:bg-zinc-950;
 }

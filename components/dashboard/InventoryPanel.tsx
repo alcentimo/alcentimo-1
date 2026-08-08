@@ -158,8 +158,6 @@ interface InventoryPanelProps {
   initialPage?: number;
   initialPageSize?: InventoryPageSize;
   productLimitContext?: StoreProductLimitContext | null;
-  rubroLabel?: string;
-  onSampleProductsCreated?: () => void;
   setupStatus?: ProTrialSetupPick;
   /** Fuerza fetch al montar (cuando el server no hidrató inventario). */
   loadOnMount?: boolean;
@@ -602,8 +600,6 @@ export function InventoryPanel({
   initialPage = 1,
   initialPageSize = INVENTORY_PAGE_SIZE,
   productLimitContext = null,
-  rubroLabel = "",
-  onSampleProductsCreated,
   setupStatus,
   loadOnMount = false,
 }: InventoryPanelProps) {
@@ -1421,16 +1417,9 @@ export function InventoryPanel({
         productFormConfig={liveProductFormConfig}
         mode={sheetMode}
         productId={editingProductId}
-        catalogEmpty={catalogEmpty && sheetMode === "create"}
-        rubroLabel={rubroLabel}
         onSaved={handleProductSaved}
         onOptimisticCreate={handleOptimisticCreate}
         onOptimisticCreateSettled={handleOptimisticCreateSettled}
-        onSamplesCreated={() => {
-          onSampleProductsCreated?.();
-          refreshProducts();
-          setSheetOpen(false);
-        }}
         onLimitHit={() => {
           setSheetOpen(false);
           const eligible = productLimitContext?.trial.eligible ?? false;
