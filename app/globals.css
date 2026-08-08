@@ -493,6 +493,10 @@ select,
     gap: 0.375rem;
   }
 
+  .admin-dashboard-nav > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0; /* anula space-y-1 del desktop */
+  }
+
   .admin-dashboard-nav-item {
     min-height: 2.75rem;
     padding: 0.75rem 1rem;
