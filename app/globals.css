@@ -638,6 +638,22 @@ select,
   @apply inline-flex items-center gap-1 font-semibold uppercase tracking-[0.08em] text-zinc-500 transition hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200;
 }
 
+.admin-stores-sort-btn-active {
+  @apply text-zinc-900 dark:text-zinc-100;
+}
+
+.admin-stores-sort-icon {
+  @apply h-3.5 w-3.5 shrink-0;
+}
+
+.admin-stores-sort-icon-idle {
+  @apply text-zinc-400 dark:text-zinc-500;
+}
+
+.admin-stores-sort-icon-active {
+  @apply text-zinc-900 dark:text-zinc-100;
+}
+
 .admin-stores-row {
   @apply border-b border-zinc-100 transition-colors last:border-b-0 hover:bg-zinc-50/80 dark:border-zinc-800/80 dark:hover:bg-zinc-900/40;
 }

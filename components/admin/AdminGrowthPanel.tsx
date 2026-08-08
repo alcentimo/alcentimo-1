@@ -7,7 +7,15 @@ import {
   useTransition,
   type FormEvent,
 } from "react";
-import { ChevronLeft, ChevronRight, MoreHorizontal, Search } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Search,
+} from "lucide-react";
 import type { AdminUserRow } from "@/lib/admin/get-admin-users";
 import type { GrowthAuditEntry } from "@/lib/admin/growth-audit";
 import type {
@@ -152,11 +160,67 @@ function formatRegistrationDate(iso: string | null | undefined): string {
 }
 
 type UsersTableSortKey = "visits" | "registro";
+type UsersTableSortDirection = "desc" | "asc" | "none";
+
+type UsersTableSort = {
+  key: UsersTableSortKey | null;
+  direction: UsersTableSortDirection;
+};
+
+const DEFAULT_USERS_TABLE_SORT: UsersTableSort = {
+  key: null,
+  direction: "none",
+};
+
+function cycleUsersTableSort(
+  prev: UsersTableSort,
+  key: UsersTableSortKey,
+): UsersTableSort {
+  // Ciclo: default → descendente → ascendente → default.
+  if (prev.key !== key || prev.direction === "none") {
+    return { key, direction: "desc" };
+  }
+  if (prev.direction === "desc") {
+    return { key, direction: "asc" };
+  }
+  return DEFAULT_USERS_TABLE_SORT;
+}
 
 function registrationTimestamp(iso: string | null | undefined): number {
   if (!iso) return Number.NaN;
   const value = Date.parse(iso);
   return Number.isFinite(value) ? value : Number.NaN;
+}
+
+function UsersSortIcon({
+  active,
+  direction,
+}: {
+  active: boolean;
+  direction: UsersTableSortDirection;
+}) {
+  if (!active || direction === "none") {
+    return (
+      <ArrowUpDown
+        className="admin-stores-sort-icon admin-stores-sort-icon-idle"
+        aria-hidden="true"
+      />
+    );
+  }
+  if (direction === "desc") {
+    return (
+      <ArrowDown
+        className="admin-stores-sort-icon admin-stores-sort-icon-active"
+        aria-hidden="true"
+      />
+    );
+  }
+  return (
+    <ArrowUp
+      className="admin-stores-sort-icon admin-stores-sort-icon-active"
+      aria-hidden="true"
+    />
+  );
 }
 
 function formatSubscriptionStatus(status: string): string {
@@ -228,17 +292,14 @@ export function AdminGrowthPanel({
   const [grantingId, setGrantingId] = useState<string | null>(null);
   const [grantingTrialId, setGrantingTrialId] = useState<string | null>(null);
   const [closingFreeId, setClosingFreeId] = useState<string | null>(null);
-  const [tableSort, setTableSort] = useState<{
-    key: UsersTableSortKey;
-    desc: boolean;
-  }>({ key: "visits", desc: true });
+  const [tableSort, setTableSort] = useState<UsersTableSort>(
+    DEFAULT_USERS_TABLE_SORT,
+  );
   const [criticalAction, setCriticalAction] =
     useState<CriticalPlanAction | null>(null);
 
   function toggleTableSort(key: UsersTableSortKey) {
-    setTableSort((prev) =>
-      prev.key === key ? { key, desc: !prev.desc } : { key, desc: true },
-    );
+    setTableSort((prev) => cycleUsersTableSort(prev, key));
   }
 
   const filteredUsers = useMemo(() => {
@@ -271,13 +332,20 @@ export function AdminGrowthPanel({
     });
 
     return [...filtered].sort((a, b) => {
+      // Estado por defecto: sin orden de columna (solo nombre estable).
+      if (tableSort.direction === "none" || tableSort.key == null) {
+        return a.storeName.localeCompare(b.storeName, "es");
+      }
+
+      const descending = tableSort.direction === "desc";
+
       if (tableSort.key === "registro") {
         const aTime = registrationTimestamp(a.createdAt);
         const bTime = registrationTimestamp(b.createdAt);
         const aValid = Number.isFinite(aTime);
         const bValid = Number.isFinite(bTime);
         if (aValid && bValid) {
-          const cmp = tableSort.desc ? bTime - aTime : aTime - bTime;
+          const cmp = descending ? bTime - aTime : aTime - bTime;
           if (cmp !== 0) return cmp;
         } else if (aValid !== bValid) {
           // Sin fecha al final.
@@ -288,9 +356,7 @@ export function AdminGrowthPanel({
 
       const aVisits = a.catalogVisitsMonth ?? 0;
       const bVisits = b.catalogVisitsMonth ?? 0;
-      const visitsCmp = tableSort.desc
-        ? bVisits - aVisits
-        : aVisits - bVisits;
+      const visitsCmp = descending ? bVisits - aVisits : aVisits - bVisits;
       if (visitsCmp !== 0) return visitsCmp;
       return a.storeName.localeCompare(b.storeName, "es");
     });
@@ -991,52 +1057,90 @@ export function AdminGrowthPanel({
                     <th className="admin-stores-th admin-stores-th-check" />
                     <th className="admin-stores-th">Tienda</th>
                     <th className="admin-stores-th">Correo</th>
-                    <th className="admin-stores-th">
+                    <th
+                      className="admin-stores-th"
+                      aria-sort={
+                        tableSort.key === "registro" &&
+                        tableSort.direction === "desc"
+                          ? "descending"
+                          : tableSort.key === "registro" &&
+                              tableSort.direction === "asc"
+                            ? "ascending"
+                            : "none"
+                      }
+                    >
                       <button
                         type="button"
-                        className="admin-stores-sort-btn"
+                        className={cn(
+                          "admin-stores-sort-btn",
+                          tableSort.key === "registro" &&
+                            tableSort.direction !== "none" &&
+                            "admin-stores-sort-btn-active",
+                        )}
                         onClick={() => toggleTableSort("registro")}
                         title={
-                          tableSort.key === "registro"
-                            ? tableSort.desc
-                              ? "Ordenado: más reciente primero"
-                              : "Ordenado: más antiguo primero"
-                            : "Ordenar por fecha de registro"
+                          tableSort.key === "registro" &&
+                          tableSort.direction === "desc"
+                            ? "Ordenado: más reciente primero (clic: más antiguo)"
+                            : tableSort.key === "registro" &&
+                                tableSort.direction === "asc"
+                              ? "Ordenado: más antiguo primero (clic: sin orden)"
+                              : "Ordenar por fecha de registro (más reciente primero)"
                         }
                       >
                         Registro
-                        <span aria-hidden="true">
-                          {tableSort.key === "registro"
-                            ? tableSort.desc
-                              ? "↓"
-                              : "↑"
-                            : "↕"}
-                        </span>
+                        <UsersSortIcon
+                          active={tableSort.key === "registro"}
+                          direction={
+                            tableSort.key === "registro"
+                              ? tableSort.direction
+                              : "none"
+                          }
+                        />
                       </button>
                     </th>
                     <th className="admin-stores-th">WhatsApp</th>
                     <th className="admin-stores-th">Catálogo</th>
-                    <th className="admin-stores-th admin-stores-th-num">
+                    <th
+                      className="admin-stores-th admin-stores-th-num"
+                      aria-sort={
+                        tableSort.key === "visits" &&
+                        tableSort.direction === "desc"
+                          ? "descending"
+                          : tableSort.key === "visits" &&
+                              tableSort.direction === "asc"
+                            ? "ascending"
+                            : "none"
+                      }
+                    >
                       <button
                         type="button"
-                        className="admin-stores-sort-btn"
+                        className={cn(
+                          "admin-stores-sort-btn",
+                          tableSort.key === "visits" &&
+                            tableSort.direction !== "none" &&
+                            "admin-stores-sort-btn-active",
+                        )}
                         onClick={() => toggleTableSort("visits")}
                         title={
-                          tableSort.key === "visits"
-                            ? tableSort.desc
-                              ? "Ordenado: más visitas primero"
-                              : "Ordenado: menos visitas primero"
-                            : "Ordenar por visitas del mes"
+                          tableSort.key === "visits" &&
+                          tableSort.direction === "desc"
+                            ? "Ordenado: más visitas primero (clic: menos visitas)"
+                            : tableSort.key === "visits" &&
+                                tableSort.direction === "asc"
+                              ? "Ordenado: menos visitas primero (clic: sin orden)"
+                              : "Ordenar por visitas del mes (más visitas primero)"
                         }
                       >
                         Visitas
-                        <span aria-hidden="true">
-                          {tableSort.key === "visits"
-                            ? tableSort.desc
-                              ? "↓"
-                              : "↑"
-                            : "↕"}
-                        </span>
+                        <UsersSortIcon
+                          active={tableSort.key === "visits"}
+                          direction={
+                            tableSort.key === "visits"
+                              ? tableSort.direction
+                              : "none"
+                          }
+                        />
                       </button>
                     </th>
                     <th className="admin-stores-th">Plan</th>
