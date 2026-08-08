@@ -1,6 +1,13 @@
 "use client";
 
-import { useMemo, useState, useTransition, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type FormEvent,
+} from "react";
+import { ChevronLeft, ChevronRight, MoreHorizontal, Search } from "lucide-react";
 import type { AdminUserRow } from "@/lib/admin/get-admin-users";
 import type { GrowthAuditEntry } from "@/lib/admin/growth-audit";
 import type {
@@ -26,11 +33,68 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/cn";
 import { AdminCriticalConfirmDialog } from "@/components/admin/AdminCriticalConfirmDialog";
 import { formatPlanName } from "@/src/config/plans";
 
 type GrowthSubTab = "usuarios" | "cupones" | "campanas" | "historial";
+
+type UsersQuickFilter =
+  | "all"
+  | "with_store"
+  | "without_store"
+  | "plan_free"
+  | "plan_pro"
+  | "plan_business";
+
+const USERS_PAGE_SIZES = [10, 25, 50] as const;
+
+const USERS_QUICK_FILTERS: Array<{ id: UsersQuickFilter; label: string }> = [
+  { id: "all", label: "Todas" },
+  { id: "with_store", label: "Con tienda" },
+  { id: "without_store", label: "Sin tienda" },
+  { id: "plan_free", label: "Plan Gratis" },
+  { id: "plan_pro", label: "Plan Profesional" },
+  { id: "plan_business", label: "Plan Comercial" },
+];
+
+function resolveInitialQuickFilter(
+  plan?: "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE" | "all",
+): UsersQuickFilter {
+  if (plan === "FREE") return "plan_free";
+  if (plan === "PRO") return "plan_pro";
+  if (plan === "BUSINESS") return "plan_business";
+  return "all";
+}
+
+function buildPageItems(
+  current: number,
+  total: number,
+): Array<number | "ellipsis"> {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, index) => index + 1);
+  }
+
+  const pages = new Set<number>([1, total, current]);
+  for (let offset = -1; offset <= 1; offset += 1) {
+    const page = current + offset;
+    if (page > 1 && page < total) pages.add(page);
+  }
+
+  const sorted = [...pages].sort((a, b) => a - b);
+  const items: Array<number | "ellipsis"> = [];
+  for (let index = 0; index < sorted.length; index += 1) {
+    const page = sorted[index]!;
+    const prev = sorted[index - 1];
+    if (prev != null && page - prev > 1) items.push("ellipsis");
+    items.push(page);
+  }
+  return items;
+}
 
 type CriticalPlanAction =
   | {
@@ -145,14 +209,17 @@ export function AdminGrowthPanel({
   const [coupons, setCoupons] = useState(initialCoupons);
   const [campaigns, setCampaigns] = useState(initialCampaigns);
   const [auditLog, setAuditLog] = useState(initialAuditLog);
-  const [planFilter, setPlanFilter] = useState<
-    "all" | "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE"
-  >(initialPlanFilter);
+  const [quickFilter, setQuickFilter] = useState<UsersQuickFilter>(() =>
+    resolveInitialQuickFilter(initialPlanFilter),
+  );
   const [minProducts, setMinProducts] = useState(
     initialMinProducts != null ? String(initialMinProducts) : "",
   );
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [pageSize, setPageSize] =
+    useState<(typeof USERS_PAGE_SIZES)[number]>(25);
+  const [page, setPage] = useState(1);
   const [rewardType, setRewardType] =
     useState<SubscriptionCouponRewardType>("percent_discount");
   const [error, setError] = useState<string | null>(null);
@@ -178,7 +245,13 @@ export function AdminGrowthPanel({
     const min = minProducts.trim() === "" ? null : Number(minProducts);
     const q = search.trim().toLowerCase();
     const filtered = users.filter((user) => {
-      if (planFilter !== "all" && user.plan !== planFilter) return false;
+      if (quickFilter === "with_store" && !user.storeId) return false;
+      if (quickFilter === "without_store" && user.storeId) return false;
+      if (quickFilter === "plan_free" && user.plan !== "FREE") return false;
+      if (quickFilter === "plan_pro" && user.plan !== "PRO") return false;
+      if (quickFilter === "plan_business" && user.plan !== "BUSINESS") {
+        return false;
+      }
       if (min != null && Number.isFinite(min) && user.productCount < min) {
         return false;
       }
@@ -221,7 +294,24 @@ export function AdminGrowthPanel({
       if (visitsCmp !== 0) return visitsCmp;
       return a.storeName.localeCompare(b.storeName, "es");
     });
-  }, [users, planFilter, minProducts, search, tableSort]);
+  }, [users, quickFilter, minProducts, search, tableSort]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * pageSize;
+  const pagedUsers = filteredUsers.slice(pageStart, pageStart + pageSize);
+  const pageItems = buildPageItems(safePage, totalPages);
+  const rangeFrom =
+    filteredUsers.length === 0 ? 0 : pageStart + 1;
+  const rangeTo = Math.min(pageStart + pageSize, filteredUsers.length);
+
+  useEffect(() => {
+    setPage(1);
+  }, [quickFilter, minProducts, search, pageSize, tableSort]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   function markUsersAsPro(ids: string[]) {
     const idSet = new Set(ids);
@@ -742,78 +832,98 @@ export function AdminGrowthPanel({
       ) : null}
 
       {subTab === "usuarios" ? (
-        <div className="space-y-4">
-          <div className="grid gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:grid-cols-4">
-            <div>
-              <Label>Plan</Label>
-              <select
-                className="mt-1.5 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-                value={planFilter}
-                onChange={(e) =>
-                  setPlanFilter(e.target.value as typeof planFilter)
-                }
-              >
-                <option value="all">Todos</option>
-                <option value="FREE">Gratis</option>
-                <option value="PRO">Profesional</option>
-                <option value="BUSINESS">Comercial</option>
-                <option value="ENTERPRISE">Corporativo</option>
-              </select>
-            </div>
-            <div>
-              <Label>Mín. productos</Label>
-              <Input
-                className="mt-1.5"
-                type="number"
-                min={0}
-                value={minProducts}
-                onChange={(e) => setMinProducts(e.target.value)}
-                placeholder="Ej. 9"
+        <div className="admin-stores-panel space-y-4">
+          <div className="admin-stores-toolbar">
+            <div className="admin-stores-search">
+              <Search
+                className="admin-stores-search-icon"
+                aria-hidden="true"
               />
-            </div>
-            <div className="sm:col-span-2">
-              <Label htmlFor="admin-stores-search">
-                Buscar por correo, tienda o teléfono
-              </Label>
               <Input
                 id="admin-stores-search"
-                className="mt-1.5"
+                className="admin-stores-search-input"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Ej. maria@correo.com, Boutique Luna, 0412…"
+                placeholder="Buscar por tienda, correo, slug o teléfono…"
+                aria-label="Buscar tiendas y usuarios"
               />
+            </div>
+            <div
+              className="admin-stores-quick-filters"
+              role="group"
+              aria-label="Filtros rápidos"
+            >
+              {USERS_QUICK_FILTERS.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  onClick={() => setQuickFilter(filter.id)}
+                  className={cn(
+                    "admin-stores-chip",
+                    quickFilter === filter.id && "admin-stores-chip-active",
+                  )}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+            <div className="admin-stores-toolbar-meta">
+              <label className="admin-stores-min-products">
+                <span>Mín. productos</span>
+                <Input
+                  type="number"
+                  min={0}
+                  value={minProducts}
+                  onChange={(e) => setMinProducts(e.target.value)}
+                  placeholder="0"
+                  className="admin-stores-min-products-input"
+                />
+              </label>
+              <p className="admin-stores-result-count">
+                {filteredUsers.length.toLocaleString("es-VE")} resultado
+                {filteredUsers.length === 1 ? "" : "s"}
+              </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="outline" onClick={selectFiltered}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={selectFiltered}
+            >
               Seleccionar filtrados ({filteredUsers.length})
             </Button>
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => setSelected(new Set())}
             >
               Limpiar selección
             </Button>
             <Button
               type="button"
+              size="sm"
               disabled={pending || selected.size === 0}
               onClick={requestGrantSelected}
             >
-              Otorgar Profesional a seleccionados ({selected.size})
+              Otorgar Profesional ({selected.size})
             </Button>
             <Button
               type="button"
               variant="outline"
+              size="sm"
               disabled={pending || selected.size === 0}
               onClick={requestGrantTrialSelected}
             >
-              Prueba Profesional +30d a seleccionados ({selected.size})
+              Prueba +30d ({selected.size})
             </Button>
             <Button
               type="button"
               variant="outline"
+              size="sm"
               disabled={pending || selected.size === 0}
               onClick={requestCloseToFreeSelected}
             >
@@ -873,218 +983,325 @@ export function AdminGrowthPanel({
             </Button>
           </form>
 
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            {filteredUsers.length} tienda
-            {filteredUsers.length === 1 ? "" : "s"} / cliente
-            {filteredUsers.length === 1 ? "" : "s"}
-          </p>
-
-          <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
-                <tr>
-                  <th className="px-3 py-2.5" />
-                  <th className="px-3 py-2.5">Tienda</th>
-                  <th className="px-3 py-2.5">Correo</th>
-                  <th className="px-3 py-2.5">
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 font-semibold uppercase tracking-wide hover:text-zinc-800 dark:hover:text-zinc-200"
-                      onClick={() => toggleTableSort("registro")}
-                      title={
-                        tableSort.key === "registro"
-                          ? tableSort.desc
-                            ? "Ordenado: más reciente primero (clic para invertir)"
-                            : "Ordenado: más antiguo primero (clic para invertir)"
-                          : "Ordenar por fecha de registro"
-                      }
-                    >
-                      Registro
-                      <span aria-hidden="true" className="text-[10px]">
-                        {tableSort.key === "registro"
-                          ? tableSort.desc
-                            ? "↓"
-                            : "↑"
-                          : "↕"}
-                      </span>
-                    </button>
-                  </th>
-                  <th className="px-3 py-2.5">WhatsApp</th>
-                  <th className="px-3 py-2.5">Catálogo</th>
-                  <th className="px-3 py-2.5">
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 font-semibold uppercase tracking-wide hover:text-zinc-800 dark:hover:text-zinc-200"
-                      onClick={() => toggleTableSort("visits")}
-                      title={
-                        tableSort.key === "visits"
-                          ? tableSort.desc
-                            ? "Ordenado: más visitas primero (clic para invertir)"
-                            : "Ordenado: menos visitas primero (clic para invertir)"
-                          : "Ordenar por visitas del mes"
-                      }
-                    >
-                      Visitas (Mes)
-                      <span aria-hidden="true" className="text-[10px]">
-                        {tableSort.key === "visits"
-                          ? tableSort.desc
-                            ? "↓"
-                            : "↑"
-                          : "↕"}
-                      </span>
-                    </button>
-                  </th>
-                  <th className="px-3 py-2.5">Plan / estado</th>
-                  <th className="px-3 py-2.5">Productos</th>
-                  <th className="px-3 py-2.5">Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map((user) => (
-                  <tr
-                    key={user.rowKey}
-                    className="border-t border-zinc-100 dark:border-zinc-800"
-                  >
-                    <td className="px-3 py-2.5 align-top">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(user.id)}
-                        onChange={() => toggleSelect(user.id)}
-                        aria-label={`Seleccionar ${user.email ?? user.storeName}`}
-                      />
-                    </td>
-                    <td className="px-3 py-2.5 align-top">
-                      <div className="font-medium text-zinc-900 dark:text-zinc-50">
-                        {user.storeName}
-                      </div>
-                      {user.storeSlug ? (
-                        <div className="text-xs text-zinc-400">
-                          /{user.storeSlug}
-                        </div>
-                      ) : null}
-                    </td>
-                    <td className="px-3 py-2.5 align-top">
-                      <div className="break-all text-zinc-800 dark:text-zinc-200">
-                        {user.email ?? "Sin email"}
-                      </div>
-                    </td>
-                    <td
-                      className="whitespace-nowrap px-3 py-2.5 align-top text-zinc-700 dark:text-zinc-300"
-                      title={
-                        user.createdAt
-                          ? formatDate(user.createdAt)
-                          : "Sin fecha de registro"
-                      }
-                    >
-                      {formatRegistrationDate(user.createdAt)}
-                    </td>
-                    <td className="px-3 py-2.5 align-top">
-                      {user.whatsappUrl ? (
-                        <a
-                          href={user.whatsappUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
-                        >
-                          {formatWhatsAppDisplay(user.whatsappPhone)}
-                        </a>
-                      ) : user.whatsappPhone ? (
-                        <span className="text-zinc-600 dark:text-zinc-300">
-                          {user.whatsappPhone}
-                        </span>
-                      ) : (
-                        <span className="text-zinc-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5 align-top">
-                      {user.catalogUrl ? (
-                        <a
-                          href={user.catalogUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium text-teal-700 hover:underline dark:text-teal-400"
-                        >
-                          Abrir catálogo
-                        </a>
-                      ) : (
-                        <span className="text-zinc-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5 align-top tabular-nums">
-                      {user.storeId ? (
-                        <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                          {(user.catalogVisitsMonth ?? 0).toLocaleString("es-VE")}
-                        </span>
-                      ) : (
-                        <span className="text-zinc-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5 align-top">
-                      <div className="font-medium text-zinc-900 dark:text-zinc-50">
-                        {formatPlanName(user.plan)}
-                      </div>
-                      <div className="text-xs text-zinc-500">
-                        {formatSubscriptionStatus(user.subscriptionStatus)}
-                      </div>
-                      {user.periodEndsAt ? (
-                        <div className="mt-0.5 text-[11px] text-zinc-400">
-                          Hasta {formatDate(user.periodEndsAt)}
-                        </div>
-                      ) : null}
-                    </td>
-                    <td className="px-3 py-2.5 align-top tabular-nums">
-                      {user.productCount}
-                    </td>
-                    <td className="px-3 py-2.5 align-top">
-                      <div className="flex flex-wrap gap-1.5">
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={pending && grantingId === user.id}
-                          onClick={() => requestGrant(user.id)}
-                        >
-                          {grantingId === user.id ? "Otorgando…" : "Otorgar Profesional"}
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={pending && grantingTrialId === user.id}
-                          onClick={() => requestGrantTrial(user.id)}
-                          title="Activa o extiende la prueba Profesional gratis sin validación anti-abuso"
-                        >
-                          {grantingTrialId === user.id
-                            ? "Activando…"
-                            : "Prueba +30d"}
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={pending && closingFreeId === user.id}
-                          onClick={() => requestCloseToFree(user.id)}
-                          title="Cierra la prueba/prórroga y aplica Plan Gratis (solo admin)"
-                        >
-                          {closingFreeId === user.id
-                            ? "Cerrando…"
-                            : "→ Gratis"}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredUsers.length === 0 ? (
+          <div className="admin-stores-table-shell">
+            <div className="admin-stores-table-scroll">
+              <table className="admin-stores-table">
+                <thead>
                   <tr>
-                    <td
-                      colSpan={9}
-                      className="px-3 py-8 text-center text-zinc-500"
-                    >
-                      No hay tiendas o usuarios con ese filtro.
-                    </td>
+                    <th className="admin-stores-th admin-stores-th-check" />
+                    <th className="admin-stores-th">Tienda</th>
+                    <th className="admin-stores-th">Correo</th>
+                    <th className="admin-stores-th">
+                      <button
+                        type="button"
+                        className="admin-stores-sort-btn"
+                        onClick={() => toggleTableSort("registro")}
+                        title={
+                          tableSort.key === "registro"
+                            ? tableSort.desc
+                              ? "Ordenado: más reciente primero"
+                              : "Ordenado: más antiguo primero"
+                            : "Ordenar por fecha de registro"
+                        }
+                      >
+                        Registro
+                        <span aria-hidden="true">
+                          {tableSort.key === "registro"
+                            ? tableSort.desc
+                              ? "↓"
+                              : "↑"
+                            : "↕"}
+                        </span>
+                      </button>
+                    </th>
+                    <th className="admin-stores-th">WhatsApp</th>
+                    <th className="admin-stores-th">Catálogo</th>
+                    <th className="admin-stores-th admin-stores-th-num">
+                      <button
+                        type="button"
+                        className="admin-stores-sort-btn"
+                        onClick={() => toggleTableSort("visits")}
+                        title={
+                          tableSort.key === "visits"
+                            ? tableSort.desc
+                              ? "Ordenado: más visitas primero"
+                              : "Ordenado: menos visitas primero"
+                            : "Ordenar por visitas del mes"
+                        }
+                      >
+                        Visitas
+                        <span aria-hidden="true">
+                          {tableSort.key === "visits"
+                            ? tableSort.desc
+                              ? "↓"
+                              : "↑"
+                            : "↕"}
+                        </span>
+                      </button>
+                    </th>
+                    <th className="admin-stores-th">Plan</th>
+                    <th className="admin-stores-th admin-stores-th-num">
+                      Productos
+                    </th>
+                    <th className="admin-stores-th admin-stores-th-actions">
+                      Acciones
+                    </th>
                   </tr>
-                ) : null}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {pagedUsers.map((user) => {
+                    const rowBusy =
+                      pending &&
+                      (grantingId === user.id ||
+                        grantingTrialId === user.id ||
+                        closingFreeId === user.id);
+
+                    return (
+                      <tr key={user.rowKey} className="admin-stores-row">
+                        <td className="admin-stores-td admin-stores-td-check">
+                          <input
+                            type="checkbox"
+                            checked={selected.has(user.id)}
+                            onChange={() => toggleSelect(user.id)}
+                            aria-label={`Seleccionar ${user.email ?? user.storeName}`}
+                          />
+                        </td>
+                        <td className="admin-stores-td">
+                          <div className="admin-stores-store-name">
+                            {user.storeName}
+                          </div>
+                          {user.storeSlug ? (
+                            <div className="admin-stores-store-slug">
+                              /{user.storeSlug}
+                            </div>
+                          ) : (
+                            <div className="admin-stores-store-slug">
+                              Sin slug
+                            </div>
+                          )}
+                        </td>
+                        <td className="admin-stores-td">
+                          <span
+                            className="admin-stores-email"
+                            title={user.email ?? undefined}
+                          >
+                            {user.email ?? "Sin email"}
+                          </span>
+                        </td>
+                        <td
+                          className="admin-stores-td admin-stores-td-muted whitespace-nowrap"
+                          title={
+                            user.createdAt
+                              ? formatDate(user.createdAt)
+                              : "Sin fecha de registro"
+                          }
+                        >
+                          {formatRegistrationDate(user.createdAt)}
+                        </td>
+                        <td className="admin-stores-td">
+                          {user.whatsappUrl ? (
+                            <a
+                              href={user.whatsappUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="admin-stores-link"
+                            >
+                              {formatWhatsAppDisplay(user.whatsappPhone)}
+                            </a>
+                          ) : user.whatsappPhone ? (
+                            <span className="admin-stores-td-muted">
+                              {user.whatsappPhone}
+                            </span>
+                          ) : (
+                            <span className="admin-stores-empty">—</span>
+                          )}
+                        </td>
+                        <td className="admin-stores-td">
+                          {user.catalogUrl ? (
+                            <a
+                              href={user.catalogUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="admin-stores-link"
+                            >
+                              Abrir
+                            </a>
+                          ) : (
+                            <span className="admin-stores-empty">—</span>
+                          )}
+                        </td>
+                        <td className="admin-stores-td admin-stores-td-num">
+                          {user.storeId ? (
+                            (user.catalogVisitsMonth ?? 0).toLocaleString(
+                              "es-VE",
+                            )
+                          ) : (
+                            <span className="admin-stores-empty">—</span>
+                          )}
+                        </td>
+                        <td className="admin-stores-td">
+                          <div className="admin-stores-plan-name">
+                            {formatPlanName(user.plan)}
+                          </div>
+                          <div className="admin-stores-plan-meta">
+                            {formatSubscriptionStatus(user.subscriptionStatus)}
+                            {user.periodEndsAt
+                              ? ` · hasta ${formatRegistrationDate(user.periodEndsAt)}`
+                              : ""}
+                          </div>
+                        </td>
+                        <td className="admin-stores-td admin-stores-td-num">
+                          {user.productCount.toLocaleString("es-VE")}
+                        </td>
+                        <td className="admin-stores-td admin-stores-td-actions">
+                          <DropdownMenu
+                            align="end"
+                            className="inline-flex"
+                            menuClassName="admin-stores-actions-menu"
+                            trigger={
+                              <button
+                                type="button"
+                                className="admin-stores-row-menu-trigger"
+                                aria-label={`Acciones para ${user.storeName}`}
+                                disabled={rowBusy}
+                              >
+                                <MoreHorizontal
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                              </button>
+                            }
+                          >
+                            {(close) => (
+                              <>
+                                <DropdownMenuItem
+                                  disabled={pending && grantingId === user.id}
+                                  onClick={() => {
+                                    close();
+                                    requestGrant(user.id);
+                                  }}
+                                >
+                                  {grantingId === user.id
+                                    ? "Otorgando…"
+                                    : "Otorgar Profesional"}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={
+                                    pending && grantingTrialId === user.id
+                                  }
+                                  onClick={() => {
+                                    close();
+                                    requestGrantTrial(user.id);
+                                  }}
+                                >
+                                  {grantingTrialId === user.id
+                                    ? "Activando…"
+                                    : "Prueba +30d"}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  destructive
+                                  disabled={
+                                    pending && closingFreeId === user.id
+                                  }
+                                  onClick={() => {
+                                    close();
+                                    requestCloseToFree(user.id);
+                                  }}
+                                >
+                                  {closingFreeId === user.id
+                                    ? "Cerrando…"
+                                    : "Pasar a Gratis"}
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="admin-stores-empty-state">
+                        No hay tiendas o usuarios con ese filtro.
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="admin-stores-pagination">
+              <label className="admin-stores-page-size">
+                <span>Filas por página</span>
+                <select
+                  value={pageSize}
+                  onChange={(event) =>
+                    setPageSize(
+                      Number(
+                        event.target.value,
+                      ) as (typeof USERS_PAGE_SIZES)[number],
+                    )
+                  }
+                >
+                  {USERS_PAGE_SIZES.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <p className="admin-stores-page-range">
+                {rangeFrom}–{rangeTo} de{" "}
+                {filteredUsers.length.toLocaleString("es-VE")}
+              </p>
+
+              <div className="admin-stores-page-controls">
+                <button
+                  type="button"
+                  className="admin-stores-page-btn"
+                  disabled={safePage <= 1}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  aria-label="Página anterior"
+                >
+                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                </button>
+                {pageItems.map((item, index) =>
+                  item === "ellipsis" ? (
+                    <span
+                      key={`ellipsis-${index}`}
+                      className="admin-stores-page-ellipsis"
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={item}
+                      type="button"
+                      className={cn(
+                        "admin-stores-page-btn",
+                        item === safePage && "admin-stores-page-btn-active",
+                      )}
+                      onClick={() => setPage(item)}
+                      aria-current={item === safePage ? "page" : undefined}
+                    >
+                      {item}
+                    </button>
+                  ),
+                )}
+                <button
+                  type="button"
+                  className="admin-stores-page-btn"
+                  disabled={safePage >= totalPages}
+                  onClick={() =>
+                    setPage((current) => Math.min(totalPages, current + 1))
+                  }
+                  aria-label="Página siguiente"
+                >
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
