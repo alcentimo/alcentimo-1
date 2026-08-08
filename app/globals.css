@@ -7160,7 +7160,9 @@ html:has(.landing-shell) {
 }
 
 .txn-catalog--list {
+  /* Móvil: foto vertical amplia. En PC se suaviza (ver media query). */
   --pc-list-media-ratio: 4 / 5;
+  --pc-list-col-max: 100%;
 }
 
 /* Tarjeta grande: una columna con foto amplia. */
@@ -7172,14 +7174,15 @@ html:has(.landing-shell) {
 .txn-catalog--list .store-product-media-frame {
   margin: var(--pc-media-inset) var(--pc-media-inset) 0;
   width: auto;
-  max-width: none;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .txn-catalog--list .store-product-media {
-  @apply w-full max-w-none shrink-0 self-stretch;
+  @apply w-full shrink-0 self-stretch;
   width: 100%;
   min-width: 0;
-  max-width: none;
+  max-width: 100%;
   margin: 0;
   border-radius: var(--pc-media-radius);
   aspect-ratio: var(--pc-media-ratio);
@@ -7216,9 +7219,41 @@ html:has(.landing-shell) {
   display: none !important;
 }
 
+/*
+ * PC: columna centrada con ancho controlado (evita tarjeta/imagen
+ * a todo el ancho y el aspecto vacío en pantallas grandes).
+ */
 @media (min-width: 768px) {
+  .txn-catalog--list {
+    --pc-list-media-ratio: 1 / 1;
+    --pc-list-col-max: 32rem; /* ~512px */
+  }
+
+  .txn-catalog--list .txn-catalog-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .txn-catalog--list .txn-catalog-main > * {
+    width: 100%;
+    max-width: var(--pc-list-col-max);
+  }
+
   .txn-catalog--list .txn-product-list {
-    @apply mx-auto max-w-2xl;
+    width: 100%;
+    max-width: var(--pc-list-col-max);
+    margin-inline: auto;
+  }
+
+  .txn-catalog--list .store-product-media {
+    max-height: 20rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .txn-catalog--list {
+    --pc-list-col-max: 30rem; /* un poco más compacto en monitores anchos */
   }
 }
 
