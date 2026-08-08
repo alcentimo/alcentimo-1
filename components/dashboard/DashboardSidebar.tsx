@@ -227,7 +227,11 @@ export function DashboardSidebar({
   const [collapsed, setCollapsed] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [supportKey, setSupportKey] = useState(0);
-  const navItems = getDashboardNavItems({ storeRole });
+  const navItems = getDashboardNavItems({
+    storeRole,
+    // Solo admins de plataforma (p. ej. alcentimo.app@gmail.com vía SUPPORT_ADMIN_EMAILS).
+    showTeamNav: isSupportAdmin,
+  });
   const { t, navLabel } = useLocale();
   const { prefetchRoute } = useDashboardRoutePrefetch();
 

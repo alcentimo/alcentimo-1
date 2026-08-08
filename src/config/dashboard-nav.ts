@@ -95,17 +95,24 @@ export function isDashboardNavItemActive(
   return item.match?.(pathname) ?? pathname === item.href;
 }
 
+const TEAM_NAV_HREF = "/dashboard/equipo";
+
 export function getDashboardNavItems(options?: {
   storeRole?: DashboardStoreRole | null;
+  /**
+   * La opción «Equipo» solo se muestra a admins de plataforma
+   * (SUPPORT_ADMIN_EMAILS). No cambia permisos de ruta ni lógica de BD.
+   */
+  showTeamNav?: boolean;
 }): DashboardNavItem[] {
   const role = options?.storeRole ?? null;
-  if (!role) {
-    return DASHBOARD_NAV_ITEMS.filter((item) =>
-      canAccessDashboardPath("owner", item.href),
-    );
-  }
+  const showTeamNav = options?.showTeamNav === true;
 
-  return DASHBOARD_NAV_ITEMS.filter((item) =>
-    canAccessDashboardPath(role, item.href),
-  );
+  const roleForFilter = role ?? "owner";
+  return DASHBOARD_NAV_ITEMS.filter((item) => {
+    if (item.href === TEAM_NAV_HREF && !showTeamNav) {
+      return false;
+    }
+    return canAccessDashboardPath(roleForFilter, item.href);
+  });
 }
