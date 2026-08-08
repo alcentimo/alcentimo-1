@@ -3,7 +3,31 @@ import { getAdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import { normalizeDbPlan } from "@/lib/plans/plan-activation";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 import { PLAN_SETTINGS_KEYS } from "@/lib/plans/plan-settings";
-import type { AdminAssistantContext } from "@/lib/ai/admin-assistant-types";
+import type {
+  AdminAssistantContext,
+  AdminAssistantStoreRow,
+} from "@/lib/ai/admin-assistant-types";
+
+const ADMIN_ASSISTANT_TIMEZONE = "America/Caracas";
+
+function formatLocalDate(
+  date: Date,
+  timeZone = ADMIN_ASSISTANT_TIMEZONE,
+): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function shiftLocalDate(isoLocalDate: string, days: number): string {
+  const [year, month, day] = isoLocalDate.split("-").map(Number);
+  const utc = new Date(Date.UTC(year!, month! - 1, day!));
+  utc.setUTCDate(utc.getUTCDate() + days);
+  return utc.toISOString().slice(0, 10);
+}
 
 const STOP_WORDS = new Set([
   "cual",
@@ -97,12 +121,18 @@ function extractSearchTerms(question: string): string[] {
   return [...terms].slice(0, 6);
 }
 
-async function resolveOwnerEmails(
+type OwnerAuthMeta = {
+  email: string | null;
+  /** auth.users.created_at */
+  registeredAt: string | null;
+};
+
+async function resolveOwnerAuthMeta(
   ownerIds: string[],
-): Promise<Map<string, string | null>> {
+): Promise<Map<string, OwnerAuthMeta>> {
   const admin = createAdminClient();
-  const emailById = new Map<string, string | null>();
-  const unique = [...new Set(ownerIds)].slice(0, 120);
+  const metaById = new Map<string, OwnerAuthMeta>();
+  const unique = [...new Set(ownerIds)].slice(0, 200);
 
   for (let i = 0; i < unique.length; i += 30) {
     const chunk = unique.slice(i, i + 30);
@@ -110,20 +140,48 @@ async function resolveOwnerEmails(
       chunk.map(async (id) => {
         try {
           const { data } = await admin.auth.admin.getUserById(id);
-          emailById.set(id, data.user?.email?.trim().toLowerCase() ?? null);
+          metaById.set(id, {
+            email: data.user?.email?.trim().toLowerCase() ?? null,
+            registeredAt: data.user?.created_at ?? null,
+          });
         } catch {
-          emailById.set(id, null);
+          metaById.set(id, { email: null, registeredAt: null });
         }
       }),
     );
   }
 
-  return emailById;
+  return metaById;
+}
+
+function toStoreRow(input: {
+  name: string;
+  slug: string;
+  isActive: boolean;
+  rubro: string | null;
+  ownerEmail: string | null;
+  ownerPlan: string | null;
+  ownerSubscriptionStatus: string | null;
+  storeCreatedAt: string | null;
+  accountRegisteredAt: string | null;
+}): AdminAssistantStoreRow {
+  return {
+    name: input.name,
+    slug: input.slug,
+    isActive: input.isActive,
+    rubro: input.rubro,
+    ownerEmail: input.ownerEmail,
+    ownerPlan: input.ownerPlan,
+    ownerSubscriptionStatus: input.ownerSubscriptionStatus,
+    storeCreatedAt: input.storeCreatedAt,
+    accountRegisteredAt: input.accountRegisteredAt,
+  };
 }
 
 /**
  * Contexto operativo del SaaS para el asistente IA gerencial (service role).
- * Incluye métricas, planes, pagos, muestra de tiendas y búsquedas dirigidas
+ * Incluye métricas, planes, pagos, tiendas con fechas de registro
+ * (auth.users.created_at / stores.created_at) y búsquedas dirigidas
  * según la última pregunta del admin.
  */
 export async function getAdminAssistantContext(
@@ -157,7 +215,7 @@ export async function getAdminAssistantContext(
       payment.status === "pending" || payment.status === "needs_correction",
   );
   const pendingOwnerIds = pendingRows.slice(0, 40).map((p) => p.user_id);
-  const pendingEmails = await resolveOwnerEmails(pendingOwnerIds);
+  const pendingAuth = await resolveOwnerAuthMeta(pendingOwnerIds);
 
   const { data: pendingStores } = await admin
     .from("stores")
@@ -173,7 +231,7 @@ export async function getAdminAssistantContext(
 
   const pendingPaymentsSample = pendingRows.slice(0, 25).map((payment) => ({
     id: payment.id,
-    userEmail: pendingEmails.get(payment.user_id) ?? null,
+    userEmail: pendingAuth.get(payment.user_id)?.email ?? null,
     planId: String(payment.plan_id),
     status: String(payment.status),
     amountDueUsd:
@@ -186,14 +244,14 @@ export async function getAdminAssistantContext(
     .from("stores")
     .select("id, name, slug, is_active, rubro_tienda, owner_id, created_at")
     .order("created_at", { ascending: false })
-    .limit(80);
+    .limit(120);
 
   if (storesError) {
     notes.push(`Tiendas: ${storesError.message}`);
   }
 
   const ownerIds = (stores ?? []).map((store) => store.owner_id);
-  const ownerEmails = await resolveOwnerEmails(ownerIds);
+  const ownerAuth = await resolveOwnerAuthMeta(ownerIds);
 
   const { data: profiles } = await admin
     .from("profiles")
@@ -209,15 +267,63 @@ export async function getAdminAssistantContext(
 
   const storesSample = (stores ?? []).map((store) => {
     const profile = profileById.get(store.owner_id);
-    return {
+    const auth = ownerAuth.get(store.owner_id);
+    return toStoreRow({
       name: store.name,
       slug: store.slug,
       isActive: Boolean(store.is_active),
       rubro: store.rubro_tienda,
-      ownerEmail: ownerEmails.get(store.owner_id) ?? null,
+      ownerEmail: auth?.email ?? null,
       ownerPlan: profile ? normalizeDbPlan(profile.plan) : null,
       ownerSubscriptionStatus: profile?.subscription_status ?? null,
-    };
+      storeCreatedAt: store.created_at ?? null,
+      accountRegisteredAt: auth?.registeredAt ?? store.created_at ?? null,
+    });
+  });
+
+  // Altas recientes para consultas temporales (“hoy”, “esta semana”…).
+  const recentSince = new Date();
+  recentSince.setUTCDate(recentSince.getUTCDate() - 14);
+  const { data: recentStores, error: recentStoresError } = await admin
+    .from("stores")
+    .select("id, name, slug, is_active, rubro_tienda, owner_id, created_at")
+    .gte("created_at", recentSince.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (recentStoresError) {
+    notes.push(`Altas recientes: ${recentStoresError.message}`);
+  }
+
+  const recentOwnerIds = (recentStores ?? []).map((store) => store.owner_id);
+  const recentAuth = await resolveOwnerAuthMeta(recentOwnerIds);
+  const { data: recentProfiles } = await admin
+    .from("profiles")
+    .select("id, plan, subscription_status")
+    .in(
+      "id",
+      recentOwnerIds.length > 0
+        ? recentOwnerIds
+        : ["00000000-0000-0000-0000-000000000000"],
+    );
+  const recentProfileById = new Map(
+    (recentProfiles ?? []).map((profile) => [profile.id, profile] as const),
+  );
+
+  const recentRegistrations = (recentStores ?? []).map((store) => {
+    const profile = recentProfileById.get(store.owner_id);
+    const auth = recentAuth.get(store.owner_id);
+    return toStoreRow({
+      name: store.name,
+      slug: store.slug,
+      isActive: Boolean(store.is_active),
+      rubro: store.rubro_tienda,
+      ownerEmail: auth?.email ?? null,
+      ownerPlan: profile ? normalizeDbPlan(profile.plan) : null,
+      ownerSubscriptionStatus: profile?.subscription_status ?? null,
+      storeCreatedAt: store.created_at ?? null,
+      accountRegisteredAt: auth?.registeredAt ?? store.created_at ?? null,
+    });
   });
 
   // Usuarios cerca del límite de productos (aprox. con conteo activo por dueño).
@@ -262,7 +368,7 @@ export async function getAdminAssistantContext(
     .sort((a, b) => b[1] - a[1])
     .slice(0, 20)
     .map(([id]) => id);
-  const rankedEmails = await resolveOwnerEmails(rankedOwners);
+  const rankedAuth = await resolveOwnerAuthMeta(rankedOwners);
   const { data: rankedProfiles } = await admin
     .from("profiles")
     .select("id, plan, subscription_period_ends_at")
@@ -278,12 +384,14 @@ export async function getAdminAssistantContext(
 
   const usersNearProductLimit = rankedOwners.map((id) => {
     const profile = rankedProfileById.get(id);
+    const auth = rankedAuth.get(id);
     return {
-      email: rankedEmails.get(id) ?? null,
+      email: auth?.email ?? null,
       plan: profile ? normalizeDbPlan(profile.plan) : "FREE",
       productCount: productCountByOwner.get(id) ?? 0,
       storeCount: storeCountByOwner.get(id) ?? 0,
       periodEndsAt: profile?.subscription_period_ends_at ?? null,
+      accountRegisteredAt: auth?.registeredAt ?? null,
     };
   });
 
@@ -298,12 +406,14 @@ export async function getAdminAssistantContext(
 
     const { data: storeHits } = await admin
       .from("stores")
-      .select("id, name, slug, is_active, rubro_tienda, owner_id")
+      .select(
+        "id, name, slug, is_active, rubro_tienda, owner_id, created_at",
+      )
       .or(`name.ilike.%${safeTerm}%,slug.ilike.%${safeTerm}%`)
       .limit(8);
 
     if (storeHits && storeHits.length > 0) {
-      const hitEmails = await resolveOwnerEmails(
+      const hitAuth = await resolveOwnerAuthMeta(
         storeHits.map((s) => s.owner_id),
       );
       const { data: hitProfiles } = await admin
@@ -320,22 +430,25 @@ export async function getAdminAssistantContext(
 
       for (const store of storeHits) {
         const profile = hitProfileById.get(store.owner_id);
+        const auth = hitAuth.get(store.owner_id);
         matches.push({
           type: "store",
           name: store.name,
           slug: store.slug,
           isActive: Boolean(store.is_active),
           rubro: store.rubro_tienda,
-          ownerEmail: hitEmails.get(store.owner_id) ?? null,
+          ownerEmail: auth?.email ?? null,
           ownerPlan: profile ? normalizeDbPlan(profile.plan) : null,
           ownerSubscriptionStatus: profile?.subscription_status ?? null,
+          storeCreatedAt: store.created_at ?? null,
+          accountRegisteredAt: auth?.registeredAt ?? store.created_at ?? null,
         });
       }
     }
 
     if (term.includes("@")) {
-      // Búsqueda por correo: recorrer perfiles recientes + auth (limitado).
-      const emailMatches = storesSample.filter(
+      // Búsqueda por correo: sample + altas recientes.
+      const emailMatches = [...storesSample, ...recentRegistrations].filter(
         (store) => store.ownerEmail === term,
       );
       for (const store of emailMatches) {
@@ -345,6 +458,8 @@ export async function getAdminAssistantContext(
           slug: store.slug,
           ownerEmail: store.ownerEmail,
           ownerPlan: store.ownerPlan,
+          storeCreatedAt: store.storeCreatedAt,
+          accountRegisteredAt: store.accountRegisteredAt,
         });
       }
     }
@@ -354,8 +469,79 @@ export async function getAdminAssistantContext(
     }
   }
 
+  // Si preguntan por “hoy/ayer/semana”, anclar un lookup temporal explícito.
+  const questionLower = (latestQuestion ?? "").toLowerCase();
+  const asksTemporal =
+    /\b(hoy|ayer|esta semana|ultimos?\s+\d+\s+dias|últimos?\s+\d+\s+días|registrad)/i.test(
+      questionLower,
+    );
+  if (asksTemporal && recentRegistrations.length > 0) {
+    const today = formatLocalDate(new Date());
+    const yesterday = shiftLocalDate(today, -1);
+    const registeredToday = recentRegistrations.filter((store) => {
+      const accountDay = store.accountRegisteredAt
+        ? formatLocalDate(new Date(store.accountRegisteredAt))
+        : null;
+      const storeDay = store.storeCreatedAt
+        ? formatLocalDate(new Date(store.storeCreatedAt))
+        : null;
+      return accountDay === today || storeDay === today;
+    });
+    const registeredYesterday = recentRegistrations.filter((store) => {
+      const accountDay = store.accountRegisteredAt
+        ? formatLocalDate(new Date(store.accountRegisteredAt))
+        : null;
+      const storeDay = store.storeCreatedAt
+        ? formatLocalDate(new Date(store.storeCreatedAt))
+        : null;
+      return accountDay === yesterday || storeDay === yesterday;
+    });
+
+    targetedLookups.push({
+      query: "temporal_registrations",
+      matches: [
+        {
+          type: "temporal_summary",
+          timezone: ADMIN_ASSISTANT_TIMEZONE,
+          todayLocalDate: today,
+          yesterdayLocalDate: yesterday,
+          registeredTodayCount: registeredToday.length,
+          registeredYesterdayCount: registeredYesterday.length,
+          recentWindowDays: 14,
+          recentCount: recentRegistrations.length,
+        },
+        ...registeredToday.slice(0, 40).map((store) => ({
+          type: "registered_today",
+          name: store.name,
+          slug: store.slug,
+          ownerEmail: store.ownerEmail,
+          ownerPlan: store.ownerPlan,
+          ownerSubscriptionStatus: store.ownerSubscriptionStatus,
+          storeCreatedAt: store.storeCreatedAt,
+          accountRegisteredAt: store.accountRegisteredAt,
+        })),
+        ...registeredYesterday.slice(0, 20).map((store) => ({
+          type: "registered_yesterday",
+          name: store.name,
+          slug: store.slug,
+          ownerEmail: store.ownerEmail,
+          ownerPlan: store.ownerPlan,
+          storeCreatedAt: store.storeCreatedAt,
+          accountRegisteredAt: store.accountRegisteredAt,
+        })),
+      ],
+    });
+  }
+
+  const todayLocalDate = formatLocalDate(new Date());
+
   return {
     generatedAt: new Date().toISOString(),
+    calendar: {
+      timezone: ADMIN_ASSISTANT_TIMEZONE,
+      todayLocalDate,
+      yesterdayLocalDate: shiftLocalDate(todayLocalDate, -1),
+    },
     metrics: {
       totalUsers: metrics.totalUsers,
       totalStores: metrics.totalStores,
@@ -378,6 +564,7 @@ export async function getAdminAssistantContext(
     paymentStatusCounts,
     pendingPaymentsSample,
     storesSample,
+    recentRegistrations,
     usersNearProductLimit,
     targetedLookups,
     notes,

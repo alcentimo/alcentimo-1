@@ -9,8 +9,28 @@ export interface AdminAssistantRequest {
   messages: AdminAssistantMessage[];
 }
 
+export interface AdminAssistantStoreRow {
+  name: string;
+  slug: string;
+  isActive: boolean;
+  rubro: string | null;
+  ownerEmail: string | null;
+  ownerPlan: string | null;
+  ownerSubscriptionStatus: string | null;
+  /** `public.stores.created_at` */
+  storeCreatedAt: string | null;
+  /** `auth.users.created_at` del dueño (fecha de registro de la cuenta). */
+  accountRegisteredAt: string | null;
+}
+
 export interface AdminAssistantContext {
   generatedAt: string;
+  /** Zona horaria y fecha local para consultas “hoy / ayer”. */
+  calendar: {
+    timezone: string;
+    todayLocalDate: string;
+    yesterdayLocalDate: string;
+  };
   metrics: {
     totalUsers: number;
     totalStores: number;
@@ -37,21 +57,19 @@ export interface AdminAssistantContext {
     storeNames: string[];
     createdAt: string;
   }>;
-  storesSample: Array<{
-    name: string;
-    slug: string;
-    isActive: boolean;
-    rubro: string | null;
-    ownerEmail: string | null;
-    ownerPlan: string | null;
-    ownerSubscriptionStatus: string | null;
-  }>;
+  storesSample: AdminAssistantStoreRow[];
+  /**
+   * Altas recientes (últimos ~14 días) con fechas de tienda y cuenta,
+   * para consultas temporales (“registradas hoy”, “esta semana”, etc.).
+   */
+  recentRegistrations: AdminAssistantStoreRow[];
   usersNearProductLimit: Array<{
     email: string | null;
     plan: string;
     productCount: number;
     storeCount: number;
     periodEndsAt: string | null;
+    accountRegisteredAt: string | null;
   }>;
   targetedLookups: Array<{
     query: string;

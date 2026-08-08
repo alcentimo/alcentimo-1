@@ -13,6 +13,7 @@ interface AdminAiAssistantPanelProps {
 }
 
 const EXAMPLE_PROMPTS = [
+  "¿Qué tiendas se registraron hoy?",
   "¿Cuántas tiendas activas hay por plan?",
   "¿Cuántos pagos pendientes hay?",
   "Resume los pagos pendientes de revisión.",
