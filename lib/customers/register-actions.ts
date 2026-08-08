@@ -497,7 +497,7 @@ export async function quickRegisterOrSignInCustomer(input: {
 
   const validation = validateCustomerRegistrationInput({
     displayName: input.displayName,
-    method: input.method ?? "phone",
+    method: input.method ?? "email",
     phone: input.phone,
     email: input.email,
     password: input.password,
@@ -630,22 +630,36 @@ export async function quickRegisterOrSignInCustomerInline(input: {
   };
 }
 
-/** Tras Google OAuth: completa WhatsApp obligatorio antes de vincular la tienda. */
+/**
+ * Tras Google OAuth (enlaces legacy `complete=phone`): guarda WhatsApp si se
+ * indica, o continúa sin teléfono.
+ */
 export async function completeCustomerPhone(input: {
   storeSlug: string;
   nextPath?: string | null;
-  phone: string;
+  phone?: string | null;
   displayName?: string | null;
   orderId?: string | null;
+  /** Si true, vincula el perfil sin exigir teléfono. */
+  skipPhone?: boolean;
 }): Promise<LinkCustomerToStoreResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
   if (!storeSlug) {
     return { ok: false, error: "Enlace de registro inválido: falta la tienda." };
   }
 
-  const phoneValidation = validateCustomerPhoneInput(input.phone);
-  if (!phoneValidation.ok) {
-    return { ok: false, error: phoneValidation.error };
+  let phone: string | null = null;
+  if (!input.skipPhone && input.phone?.trim()) {
+    const phoneValidation = validateCustomerPhoneInput(input.phone);
+    if (!phoneValidation.ok) {
+      return { ok: false, error: phoneValidation.error };
+    }
+    phone = phoneValidation.phone;
+  } else if (!input.skipPhone && !input.phone?.trim()) {
+    return {
+      ok: false,
+      error: "Indica tu WhatsApp o continúa sin teléfono.",
+    };
   }
 
   const supabase = await createClient();
@@ -674,7 +688,7 @@ export async function completeCustomerPhone(input: {
     storeSlug,
     nextPath: input.nextPath,
     displayName: displayName.slice(0, 120),
-    phone: phoneValidation.phone,
+    phone,
     contactEmail:
       typeof metadata.contact_email === "string"
         ? metadata.contact_email
@@ -682,7 +696,7 @@ export async function completeCustomerPhone(input: {
           ? null
           : user.email,
     orderId: input.orderId,
-    requirePhone: true,
+    requirePhone: false,
   });
 }
 

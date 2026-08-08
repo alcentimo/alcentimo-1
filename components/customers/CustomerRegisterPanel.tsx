@@ -52,18 +52,6 @@ function AuthMethodToggle({
         type="button"
         disabled={disabled}
         className={
-          value === "phone"
-            ? "catalog-auth-method-btn catalog-auth-method-btn-active"
-            : "catalog-auth-method-btn"
-        }
-        onClick={() => onChange("phone")}
-      >
-        Teléfono
-      </button>
-      <button
-        type="button"
-        disabled={disabled}
-        className={
           value === "email"
             ? "catalog-auth-method-btn catalog-auth-method-btn-active"
             : "catalog-auth-method-btn"
@@ -71,6 +59,18 @@ function AuthMethodToggle({
         onClick={() => onChange("email")}
       >
         Correo
+      </button>
+      <button
+        type="button"
+        disabled={disabled}
+        className={
+          value === "phone"
+            ? "catalog-auth-method-btn catalog-auth-method-btn-active"
+            : "catalog-auth-method-btn"
+        }
+        onClick={() => onChange("phone")}
+      >
+        Teléfono
       </button>
     </div>
   );
@@ -90,7 +90,7 @@ export function CustomerRegisterPanel({
   redirectOnSuccess = true,
   onRegistered,
 }: CustomerRegisterPanelProps) {
-  const [authMethod, setAuthMethod] = useState<CustomerAuthMethod>("phone");
+  const [authMethod, setAuthMethod] = useState<CustomerAuthMethod>("email");
   const [displayName, setDisplayName] = useState(suggestedDisplayName ?? "");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -105,32 +105,42 @@ export function CustomerRegisterPanel({
     setError(null);
     setLoading(true);
 
-    const result = await quickRegisterOrSignInCustomer({
-      storeSlug,
-      nextPath,
-      displayName,
-      method: authMethod,
-      phone: authMethod === "phone" ? phone : phone.trim() || null,
-      email: authMethod === "email" ? email : email.trim() || null,
-      password,
-      orderId,
-    });
+    try {
+      const result = await quickRegisterOrSignInCustomer({
+        storeSlug,
+        nextPath,
+        displayName,
+        method: authMethod,
+        phone: authMethod === "phone" ? phone : phone.trim() || null,
+        email: authMethod === "email" ? email : email.trim() || null,
+        password,
+        orderId,
+      });
 
-    setLoading(false);
+      if (!result.ok) {
+        setError(formatAuthError(result.error));
+        return;
+      }
 
-    if (!result.ok) {
-            setError(formatAuthError(result.error));
-      return;
-    }
+      onRegistered?.({
+        displayName: result.displayName?.trim() || displayName.trim(),
+        phone: result.phone ?? null,
+        contactEmail: result.contactEmail ?? null,
+      });
 
-    onRegistered?.({
-      displayName: result.displayName?.trim() || displayName.trim(),
-      phone: result.phone ?? null,
-      contactEmail: result.contactEmail ?? null,
-    });
-
-    if (redirectOnSuccess) {
-      window.location.href = result.redirectTo;
+      if (redirectOnSuccess) {
+        window.location.href = result.redirectTo;
+      }
+    } catch (submitError) {
+      setError(
+        formatAuthError(
+          submitError instanceof Error
+            ? submitError.message
+            : "No se pudo crear la cuenta.",
+        ),
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -139,63 +149,88 @@ export function CustomerRegisterPanel({
     setError(null);
     setLoading(true);
 
-    const result = await signInCustomer({
-      storeSlug,
-      nextPath,
-      method: authMethod,
-      phone: authMethod === "phone" ? phone : null,
-      email: authMethod === "email" ? email : null,
-      password,
-      orderId,
-    });
+    try {
+      const result = await signInCustomer({
+        storeSlug,
+        nextPath,
+        method: authMethod,
+        phone: authMethod === "phone" ? phone : null,
+        email: authMethod === "email" ? email : null,
+        password,
+        orderId,
+      });
 
-    setLoading(false);
+      if (!result.ok) {
+        setError(formatAuthError(result.error));
+        return;
+      }
 
-    if (!result.ok) {
-            setError(formatAuthError(result.error));
-      return;
+      onRegistered?.({
+        displayName: result.displayName?.trim() || "Cliente",
+        phone: result.phone ?? null,
+        contactEmail: result.contactEmail ?? null,
+      });
+
+      if (redirectOnSuccess) {
+        window.location.href = result.redirectTo;
+      }
+    } catch (submitError) {
+      setError(
+        formatAuthError(
+          submitError instanceof Error
+            ? submitError.message
+            : "No se pudo iniciar sesión.",
+        ),
+      );
+    } finally {
+      setLoading(false);
     }
+  }
 
-    onRegistered?.({
-      displayName: result.displayName?.trim() || "Cliente",
-      phone: result.phone ?? null,
-      contactEmail: result.contactEmail ?? null,
-    });
+  async function finishPhoneCompletion(options?: { skipPhone?: boolean }) {
+    setError(null);
+    setLoading(true);
 
-    if (redirectOnSuccess) {
-      window.location.href = result.redirectTo;
+    try {
+      const result = await completeCustomerPhone({
+        storeSlug,
+        nextPath,
+        phone: options?.skipPhone ? null : phone,
+        displayName: displayName.trim() || suggestedDisplayName,
+        orderId,
+        skipPhone: options?.skipPhone === true,
+      });
+
+      if (!result.ok) {
+        setError(formatAuthError(result.error));
+        return;
+      }
+
+      onRegistered?.({
+        displayName: (displayName.trim() || suggestedDisplayName || "").trim(),
+        phone: options?.skipPhone ? null : phone.trim() || null,
+        contactEmail: result.contactEmail ?? null,
+      });
+
+      if (redirectOnSuccess) {
+        window.location.href = result.redirectTo;
+      }
+    } catch (submitError) {
+      setError(
+        formatAuthError(
+          submitError instanceof Error
+            ? submitError.message
+            : "No se pudo continuar.",
+        ),
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
   async function handlePhoneCompletion(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const result = await completeCustomerPhone({
-      storeSlug,
-      nextPath,
-      phone,
-      displayName: displayName.trim() || suggestedDisplayName,
-      orderId,
-    });
-
-    setLoading(false);
-
-    if (!result.ok) {
-            setError(formatAuthError(result.error));
-      return;
-    }
-
-    onRegistered?.({
-      displayName: (displayName.trim() || suggestedDisplayName || "").trim(),
-      phone: phone.trim(),
-      contactEmail: result.contactEmail ?? null,
-    });
-
-    if (redirectOnSuccess) {
-      window.location.href = result.redirectTo;
-    }
+    await finishPhoneCompletion();
   }
 
   const isBusy = loading;
@@ -210,14 +245,13 @@ export function CustomerRegisterPanel({
           {storeName}
         </p>
         <h2 className="mt-2 text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
-          Un paso más
+          ¿Agregar WhatsApp?
         </h2>
         <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-          Confirma tu WhatsApp para activar descuentos y recibir actualizaciones de
-          pedidos.
+          Es opcional. Sirve para coordinar pedidos; puedes continuar sin número.
         </p>
 
-        <form onSubmit={handlePhoneCompletion} className="mt-6 space-y-5">
+        <form onSubmit={(e) => void handlePhoneCompletion(e)} className="mt-6 space-y-5">
           {!suggestedDisplayName ? (
             <div>
               <label htmlFor="display_name_complete" className="label-field">
@@ -230,6 +264,7 @@ export function CustomerRegisterPanel({
                 required
                 minLength={2}
                 value={displayName}
+                disabled={isBusy}
                 onChange={(e) => setDisplayName(e.target.value)}
                 className="input-field"
                 placeholder="Tu nombre"
@@ -239,25 +274,40 @@ export function CustomerRegisterPanel({
 
           <div>
             <label htmlFor="phone_complete" className="label-field">
-              Teléfono (WhatsApp)
+              Teléfono / WhatsApp{" "}
+              <span className="font-normal text-zinc-400">(opcional)</span>
             </label>
             <input
               id="phone_complete"
               type="tel"
               autoComplete="tel"
-              required
-              minLength={10}
               value={phone}
+              disabled={isBusy}
               onChange={(e) => setPhone(e.target.value)}
               className="input-field"
               placeholder="0412… o 412…"
             />
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Facilita el seguimiento de tus pedidos por WhatsApp.
+            </p>
           </div>
 
-          {error ? <p className="alert-error">{error}</p> : null}
+          {error ? (
+            <p className="alert-error" role="alert">
+              {error}
+            </p>
+          ) : null}
 
           <button type="submit" disabled={isBusy} className="btn-primary w-full">
-            {loading ? "Guardando…" : "Activar mi cuenta"}
+            {loading ? "Guardando…" : "Guardar y continuar"}
+          </button>
+          <button
+            type="button"
+            disabled={isBusy}
+            onClick={() => void finishPhoneCompletion({ skipPhone: true })}
+            className="btn-secondary w-full"
+          >
+            Continuar sin teléfono
           </button>
         </form>
 
@@ -288,12 +338,12 @@ export function CustomerRegisterPanel({
               Iniciar sesión
             </h2>
             <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-              Entra con tu teléfono o correo y tu contraseña.
+              Entra con Google o con tu correo y contraseña.
             </p>
           </>
         ) : (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Entra con tu teléfono o correo y tu contraseña.
+            Entra con Google o con tu correo y contraseña.
           </p>
         )}
 
@@ -325,8 +375,25 @@ export function CustomerRegisterPanel({
           }}
         />
 
-        <form onSubmit={handleLoginSubmit} className="mt-4 space-y-4">
-          {authMethod === "phone" ? (
+        <form onSubmit={(e) => void handleLoginSubmit(e)} className="mt-4 space-y-4">
+          {authMethod === "email" ? (
+            <div>
+              <label htmlFor="email_login" className="label-field">
+                Correo electrónico
+              </label>
+              <input
+                id="email_login"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                disabled={isBusy}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input-field"
+                placeholder="tu@correo.com"
+              />
+            </div>
+          ) : (
             <div>
               <label htmlFor="phone_login" className="label-field">
                 Teléfono
@@ -338,25 +405,10 @@ export function CustomerRegisterPanel({
                 required
                 minLength={10}
                 value={phone}
+                disabled={isBusy}
                 onChange={(e) => setPhone(e.target.value)}
                 className="input-field"
                 placeholder="0412… o 412…"
-              />
-            </div>
-          ) : (
-            <div>
-              <label htmlFor="email_login" className="label-field">
-                Correo electrónico
-              </label>
-              <input
-                id="email_login"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
-                placeholder="tu@correo.com"
               />
             </div>
           )}
@@ -371,12 +423,17 @@ export function CustomerRegisterPanel({
               required
               minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
               value={password}
+              disabled={isBusy}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Tu contraseña"
             />
           </div>
 
-          {error ? <p className="alert-error">{error}</p> : null}
+          {error ? (
+            <p className="alert-error" role="alert">
+              {error}
+            </p>
+          ) : null}
 
           <button type="submit" disabled={isBusy} className="btn-primary w-full">
             {loading ? "Entrando…" : "Iniciar sesión"}
@@ -398,7 +455,7 @@ export function CustomerRegisterPanel({
             </button>
           ) : (
             <span className="font-medium text-zinc-700 dark:text-zinc-300">
-              Regístrate con teléfono o correo y una contraseña.
+              Regístrate con Google o con correo y contraseña.
             </span>
           )}
         </p>
@@ -429,12 +486,12 @@ export function CustomerRegisterPanel({
             Crea tu cuenta
           </h2>
           <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-            Elige teléfono o correo y define tu contraseña.
+            Usa Google o tu correo. El teléfono es opcional.
           </p>
         </>
       ) : (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Elige teléfono o correo y define tu contraseña.
+          Usa Google o tu correo. El teléfono es opcional.
         </p>
       )}
 
@@ -445,7 +502,7 @@ export function CustomerRegisterPanel({
         disabled={isBusy}
         className="mt-6"
         buttonClassName="rounded-[10px] border-zinc-200/80 py-3.5 font-semibold shadow-[0_1px_2px_rgba(24,24,27,0.04)] hover:bg-zinc-50 dark:hover:bg-zinc-800"
-          onError={(message) => setError(formatAuthError(message))}
+        onError={(message) => setError(formatAuthError(message))}
       />
 
       <div className="relative my-6">
@@ -453,7 +510,7 @@ export function CustomerRegisterPanel({
           <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
         </div>
         <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
-          o con contraseña
+          o con correo
         </p>
       </div>
 
@@ -466,7 +523,7 @@ export function CustomerRegisterPanel({
         }}
       />
 
-      <form onSubmit={handleQuickSubmit} className="mt-4 space-y-4">
+      <form onSubmit={(e) => void handleQuickSubmit(e)} className="mt-4 space-y-4">
         <div>
           <label htmlFor="display_name" className="label-field">
             Nombre
@@ -478,13 +535,54 @@ export function CustomerRegisterPanel({
             required
             minLength={2}
             value={displayName}
+            disabled={isBusy}
             onChange={(e) => setDisplayName(e.target.value)}
             className="input-field"
             placeholder="Tu nombre"
           />
         </div>
 
-        {authMethod === "phone" ? (
+        {authMethod === "email" ? (
+          <>
+            <div>
+              <label htmlFor="email" className="label-field">
+                Correo electrónico
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                disabled={isBusy}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input-field"
+                placeholder="tu@correo.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="phone_optional" className="label-field">
+                Teléfono / WhatsApp{" "}
+                <span className="font-normal text-zinc-400">(opcional)</span>
+              </label>
+              <input
+                id="phone_optional"
+                type="tel"
+                autoComplete="tel"
+                value={phone}
+                disabled={isBusy}
+                onChange={(e) => setPhone(e.target.value)}
+                className="input-field"
+                placeholder="0412… o 412…"
+              />
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                Opcional. Facilita tus pedidos y el contacto por WhatsApp; puedes
+                dejarlo vacío.
+              </p>
+            </div>
+          </>
+        ) : (
           <div>
             <label htmlFor="phone" className="label-field">
               Teléfono
@@ -496,46 +594,16 @@ export function CustomerRegisterPanel({
               required
               minLength={10}
               value={phone}
+              disabled={isBusy}
               onChange={(e) => setPhone(e.target.value)}
               className="input-field"
               placeholder="0412… o 412…"
             />
-          </div>
-        ) : (
-          <div>
-            <label htmlFor="email" className="label-field">
-              Correo electrónico
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input-field"
-              placeholder="tu@correo.com"
-            />
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Este número será tu usuario de acceso (junto con la contraseña).
+            </p>
           </div>
         )}
-
-        {authMethod === "email" ? (
-          <div>
-            <label htmlFor="phone_optional" className="label-field">
-              Teléfono <span className="font-normal text-zinc-400">(opcional)</span>
-            </label>
-            <input
-              id="phone_optional"
-              type="tel"
-              autoComplete="tel"
-              minLength={10}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="input-field"
-              placeholder="Para pedidos por WhatsApp"
-            />
-          </div>
-        ) : null}
 
         <div>
           <label htmlFor="password" className="label-field">
@@ -547,12 +615,17 @@ export function CustomerRegisterPanel({
             required
             minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
             value={password}
+            disabled={isBusy}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={`Mínimo ${CUSTOMER_MIN_PASSWORD_LENGTH} caracteres`}
           />
         </div>
 
-        {error ? <p className="alert-error">{error}</p> : null}
+        {error ? (
+          <p className="alert-error" role="alert">
+            {error}
+          </p>
+        ) : null}
 
         <button type="submit" disabled={isBusy} className="btn-primary w-full">
           {loading ? "Creando cuenta…" : `Unirme a ${storeName}`}
@@ -573,7 +646,7 @@ export function CustomerRegisterPanel({
             Iniciar sesión
           </button>
         ) : (
-          <span>Inicia sesión con tu teléfono o correo y contraseña.</span>
+          <span>Inicia sesión con Google o con correo y contraseña.</span>
         )}
       </p>
 

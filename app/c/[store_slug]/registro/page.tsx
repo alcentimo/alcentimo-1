@@ -112,12 +112,12 @@ export default async function CatalogRegisterPage({
     <div className="catalog-subpage txn-catalog-subpage">
       <header className="catalog-subpage-header">
         <h1 className="catalog-subpage-title">
-          {needsPhoneCompletion ? "Confirma tu WhatsApp" : "Crear cuenta"}
+          {needsPhoneCompletion ? "¿Agregar WhatsApp?" : "Crear cuenta"}
         </h1>
         <p className="catalog-subpage-desc">
           {needsPhoneCompletion
-            ? `Activa tu cuenta en ${store.name} con tu número de contacto.`
-            : `Regístrate en ${store.name} con teléfono o correo y una contraseña.`}
+            ? `Puedes agregar tu WhatsApp para pedidos en ${store.name}, o continuar sin número.`
+            : `Regístrate en ${store.name} con Google o con correo y contraseña. El teléfono es opcional.`}
         </p>
       </header>
 
