@@ -6,6 +6,7 @@ import { formatUsd } from "@/lib/format";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
+import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
 
 interface CheckoutSuccessScreenProps {
   storeSlug: string;
@@ -14,6 +15,7 @@ interface CheckoutSuccessScreenProps {
   whatsappUrl?: string | null;
   /** Si el cliente adjuntó comprobante al confirmar. */
   hasPaymentProof?: boolean;
+  /** True solo si el pedido se hizo sin sesión de cliente. */
   wasGuest: boolean;
   onClose: () => void;
 }
@@ -32,11 +34,16 @@ export function CheckoutSuccessScreen({
   onClose,
 }: CheckoutSuccessScreenProps) {
   const { accountsEnabled } = useCustomerAccountMode();
+  const customerSession = useCustomerSessionOptional();
 
   const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
   const registerBase = buildCustomerRegisterPath(storeSlug, accountPath);
   const fullRegisterPath = `${registerBase}${registerBase.includes("?") ? "&" : "?"}orderId=${encodeURIComponent(orderId)}`;
-  const showAccountLink = wasGuest && accountsEnabled;
+  const hasActiveSession = Boolean(
+    customerSession?.isAuthenticated || customerSession?.isCustomer,
+  );
+  // Solo invitados: oculta “Crear cuenta” si ya hay sesión en la tienda.
+  const showAccountLink = wasGuest && !hasActiveSession && accountsEnabled;
   const hasWhatsApp = Boolean(whatsappUrl?.trim());
   const orderRef = formatOrderRef(orderId);
 

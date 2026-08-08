@@ -849,7 +849,11 @@ export function CheckoutPanel({
         }
       }
 
-      const wasGuest = !customerProfile;
+      // Invitado = sin sesión activa. No usar !customerProfile: un cliente
+      // logueado puede completar el pedido sin tarjeta de perfil en memoria.
+      const wasGuest = !(
+        customerSession?.isAuthenticated || customerSession?.isCustomer
+      );
 
       clearCart();
       setCustomerProfile(null);
