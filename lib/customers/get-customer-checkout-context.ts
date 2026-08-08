@@ -171,38 +171,44 @@ export async function resolveOrderCustomerDetails(
     ? normalizeProfilePhone(profilePhoneRaw)
     : null;
 
-  if (
-    profileName &&
-    profileName.length >= 2 &&
-    profilePhone &&
-    isValidCustomerPhone(profilePhone)
-  ) {
-    return {
-      ok: true,
-      customerUserId: user!.id,
-      customerName: profileName,
-      customerPhone: profilePhone,
-    };
-  }
+  const formName = guestInput.customerName.trim();
+  const formPhoneValidation = guestInput.customerPhone.trim()
+    ? validateCustomerPhoneInput(guestInput.customerPhone)
+    : null;
 
-  const customerName = guestInput.customerName.trim();
-  const phoneValidation = validateCustomerPhoneInput(guestInput.customerPhone);
+  // Preferir lo que el cliente escribió en Datos (p. ej. teléfono nuevo).
+  const customerName =
+    formName.length >= 2
+      ? formName
+      : profileName && profileName.length >= 2
+        ? profileName
+        : "";
+  const customerPhone =
+    formPhoneValidation && formPhoneValidation.ok
+      ? formPhoneValidation.phone
+      : profilePhone && isValidCustomerPhone(profilePhone)
+        ? profilePhone
+        : null;
 
   if (!customerName || customerName.length < 2) {
     return { ok: false, error: "Indica tu nombre para el pedido." };
   }
 
-  if (!phoneValidation.ok) {
+  if (!customerPhone) {
     return {
       ok: false,
-      error: phoneValidation.error,
+      error:
+        formPhoneValidation && !formPhoneValidation.ok
+          ? formPhoneValidation.error
+          : "Indica un teléfono válido (mínimo 10 dígitos).",
     };
   }
 
   return {
     ok: true,
-    customerUserId: user && profile ? user.id : null,
+    // Usuario logueado siempre queda vinculado, aunque el perfil no tuviera teléfono.
+    customerUserId: user?.id ?? null,
     customerName,
-    customerPhone: phoneValidation.phone,
+    customerPhone,
   };
 }
