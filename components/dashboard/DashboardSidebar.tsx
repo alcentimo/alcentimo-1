@@ -288,7 +288,11 @@ export function DashboardSidebar({
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col border-r border-zinc-200/90 bg-white transition-[width,transform] duration-200 ease-out dark:border-zinc-800 dark:bg-zinc-950 lg:static lg:z-auto lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-zinc-200/90 bg-white transition-[width,transform] duration-200 ease-out dark:border-zinc-800 dark:bg-zinc-950 lg:static lg:z-auto lg:h-full lg:translate-x-0",
+        // Móvil: altura de viewport fija + sin scroll del documento (solo scroll interno).
+        mobileOpen
+          ? "h-dvh max-h-dvh overflow-hidden overscroll-none"
+          : "h-full",
         drawerExpanded
           ? mobileOpen
             ? "w-[min(92vw,19.5rem)] lg:w-64"
@@ -305,7 +309,7 @@ export function DashboardSidebar({
     >
       <div
         className={cn(
-          "flex items-center border-b border-zinc-200 dark:border-zinc-800",
+          "flex shrink-0 items-center border-b border-zinc-200 dark:border-zinc-800",
           drawerExpanded
             ? mobileOpen
               ? "justify-between gap-3 px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))]"
@@ -371,66 +375,61 @@ export function DashboardSidebar({
         </div>
       </div>
 
-      <nav
-        className={cn(
-          "flex flex-1 flex-col overflow-y-auto",
-          mobileOpen && drawerExpanded
-            ? "gap-2 px-5 pb-6 pt-5"
-            : drawerExpanded
-              ? "gap-1 px-3 py-4"
-              : "gap-1 px-2 py-4",
-        )}
-        aria-label="Navegación principal"
-      >
-        {mobileOpen && drawerExpanded ? (
-          <p className="mb-2.5 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-            Tienda
-          </p>
-        ) : null}
-        {navItems.map((item) => (
-          <SidebarNavLink
-            key={item.href}
-            item={item}
-            label={navLabel(item.href, item.label)}
-            active={isDashboardNavItemActive(pathname, item)}
-            collapsed={!drawerExpanded}
-            mobileDrawer={mobileOpen && drawerExpanded}
-            onNavigate={onCloseMobile}
-            onPrefetch={prefetchRoute}
-          />
-        ))}
-      </nav>
-
+      {/*
+        Móvil: un solo cuerpo con scroll interno (nav + pie) bajo cabecera fija.
+        Desktop: `contents` para que nav (flex-1) y pie (pinned) sigan el flex del aside.
+      */}
       <div
-        className={cn(
-          "shrink-0 border-t border-zinc-200 dark:border-zinc-800",
-          mobileOpen && drawerExpanded
-            ? "space-y-4 px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
-            : drawerExpanded
-              ? "px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-              : "px-2 py-3",
-        )}
+        className={
+          mobileOpen
+            ? "flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]"
+            : "contents"
+        }
       >
+        <nav
+          className={cn(
+            "flex flex-col",
+            mobileOpen
+              ? "grow-0"
+              : "min-h-0 flex-1 overflow-y-auto overscroll-y-contain",
+            mobileOpen && drawerExpanded
+              ? "gap-2 px-5 pb-4 pt-5"
+              : drawerExpanded
+                ? "gap-1 px-3 py-4"
+                : "gap-1 px-2 py-4",
+          )}
+          aria-label="Navegación principal"
+        >
+          {mobileOpen && drawerExpanded ? (
+            <p className="mb-2.5 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+              Tienda
+            </p>
+          ) : null}
+          {navItems.map((item) => (
+            <SidebarNavLink
+              key={item.href}
+              item={item}
+              label={navLabel(item.href, item.label)}
+              active={isDashboardNavItemActive(pathname, item)}
+              collapsed={!drawerExpanded}
+              mobileDrawer={mobileOpen && drawerExpanded}
+              onNavigate={onCloseMobile}
+              onPrefetch={prefetchRoute}
+            />
+          ))}
+        </nav>
+
         <div
           className={cn(
+            "border-t border-zinc-200 dark:border-zinc-800",
+            mobileOpen ? "mt-auto" : "shrink-0",
             mobileOpen && drawerExpanded
-              ? null
+              ? "space-y-4 px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
               : drawerExpanded
-                ? "mb-2"
-                : "mb-1",
+                ? "px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+                : "px-2 py-3",
           )}
         >
-          <SidebarPlanStatus
-            planName={planName}
-            subscriptionStatus={subscriptionStatus}
-            trialActive={trialActive}
-            trialPhase={trialPhase}
-            expanded={drawerExpanded}
-            comfortable={mobileOpen && drawerExpanded}
-          />
-        </div>
-
-        {proTrialSetup ? (
           <div
             className={cn(
               mobileOpen && drawerExpanded
@@ -440,101 +439,126 @@ export function DashboardSidebar({
                   : "mb-1",
             )}
           >
-            <SidebarProTrialProgress
-              setup={proTrialSetup}
-              productCount={proTrialProductCount}
-              trialEligible={trialEligible}
+            <SidebarPlanStatus
+              planName={planName}
+              subscriptionStatus={subscriptionStatus}
               trialActive={trialActive}
+              trialPhase={trialPhase}
               expanded={drawerExpanded}
+              comfortable={mobileOpen && drawerExpanded}
             />
           </div>
-        ) : null}
 
-        <div
-          className={cn(
-            mobileOpen && drawerExpanded ? "space-y-2" : "space-y-1",
-          )}
-        >
-          <DashboardAccountMenu
-            expanded={drawerExpanded}
-            active={accountSettingsActive}
-            navLinkClass={(active, collapsed) =>
-              navLinkClass(active, collapsed, mobileOpen && drawerExpanded)
-            }
-            onOpenAccountSettings={onOpenAccountSettings}
-            onPrefetchAccountSettings={onPrefetchAccountSettings}
-          />
+          {proTrialSetup ? (
+            <div
+              className={cn(
+                mobileOpen && drawerExpanded
+                  ? null
+                  : drawerExpanded
+                    ? "mb-2"
+                    : "mb-1",
+              )}
+            >
+              <SidebarProTrialProgress
+                setup={proTrialSetup}
+                productCount={proTrialProductCount}
+                trialEligible={trialEligible}
+                trialActive={trialActive}
+                expanded={drawerExpanded}
+              />
+            </div>
+          ) : null}
 
-          {isSupportAdmin ? (
-            <Link
-              href="/admin/dashboard"
-              prefetch={true}
+          <div
+            className={cn(
+              mobileOpen && drawerExpanded ? "space-y-2" : "space-y-1",
+            )}
+          >
+            <DashboardAccountMenu
+              expanded={drawerExpanded}
+              active={accountSettingsActive}
+              navLinkClass={(active, collapsed) =>
+                navLinkClass(active, collapsed, mobileOpen && drawerExpanded)
+              }
+              onOpenAccountSettings={onOpenAccountSettings}
+              onPrefetchAccountSettings={onPrefetchAccountSettings}
+            />
+
+            {isSupportAdmin ? (
+              <Link
+                href="/admin/dashboard"
+                prefetch={true}
+                className={navLinkClass(
+                  pathname.startsWith("/admin"),
+                  !drawerExpanded,
+                  mobileOpen && drawerExpanded,
+                )}
+                onClick={onCloseMobile}
+                onMouseEnter={() => prefetchRoute("/admin/dashboard")}
+                onFocus={() => prefetchRoute("/admin/dashboard")}
+                onTouchStart={() => prefetchRoute("/admin/dashboard")}
+                title={drawerExpanded ? undefined : "Panel Admin"}
+                aria-current={
+                  pathname.startsWith("/admin") ? "page" : undefined
+                }
+              >
+                <LayoutDashboard
+                  className="h-4 w-4 shrink-0"
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
+                {drawerExpanded && <span>Panel Admin</span>}
+              </Link>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={() => {
+                setSupportKey((key) => key + 1);
+                setSupportOpen(true);
+                onCloseMobile();
+              }}
               className={navLinkClass(
-                pathname.startsWith("/admin"),
+                false,
                 !drawerExpanded,
                 mobileOpen && drawerExpanded,
               )}
-              onClick={onCloseMobile}
-              onMouseEnter={() => prefetchRoute("/admin/dashboard")}
-              onFocus={() => prefetchRoute("/admin/dashboard")}
-              onTouchStart={() => prefetchRoute("/admin/dashboard")}
-              title={drawerExpanded ? undefined : "Panel Admin"}
-              aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+              title={drawerExpanded ? undefined : t("nav.support")}
             >
-              <LayoutDashboard
+              <LifeBuoy
                 className="h-4 w-4 shrink-0"
                 strokeWidth={1.75}
                 aria-hidden="true"
               />
-              {drawerExpanded && <span>Panel Admin</span>}
-            </Link>
-          ) : null}
+              {drawerExpanded && <span>{t("nav.support")}</span>}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setSupportKey((key) => key + 1);
-              setSupportOpen(true);
-              onCloseMobile();
-            }}
-            className={navLinkClass(
-              false,
-              !drawerExpanded,
-              mobileOpen && drawerExpanded,
-            )}
-            title={drawerExpanded ? undefined : t("nav.support")}
-          >
-            <LifeBuoy
-              className="h-4 w-4 shrink-0"
-              strokeWidth={1.75}
-              aria-hidden="true"
-            />
-            {drawerExpanded && <span>{t("nav.support")}</span>}
-          </button>
-
-          <button
-            type="button"
-            className={cn(
-              navLinkClass(
-                false,
-                !drawerExpanded,
-                mobileOpen && drawerExpanded,
-              ),
-              "touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300",
-            )}
-            onClick={onLogout}
-            title={drawerExpanded ? undefined : "Cerrar sesión"}
-          >
-            <LogOut
+            <button
+              type="button"
               className={cn(
-                "shrink-0",
-                !drawerExpanded ? "h-[18px] w-[18px]" : "h-4 w-4",
+                navLinkClass(
+                  false,
+                  !drawerExpanded,
+                  mobileOpen && drawerExpanded,
+                ),
+                "touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300",
               )}
-              strokeWidth={1.75}
-              aria-hidden="true"
-            />
-            {drawerExpanded && <span className="truncate">Cerrar sesión</span>}
-          </button>
+              onClick={onLogout}
+              title={drawerExpanded ? undefined : "Cerrar sesión"}
+            >
+              <LogOut
+                className={cn(
+                  "shrink-0",
+                  !drawerExpanded ? "h-[18px] w-[18px]" : "h-4 w-4",
+                )}
+                strokeWidth={1.75}
+                aria-hidden="true"
+              />
+              {drawerExpanded && (
+                <span className="truncate">Cerrar sesión</span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
