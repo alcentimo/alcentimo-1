@@ -13,7 +13,7 @@ import {
   formatCustomerOrderDate,
   formatCustomerOrderPublicId,
   type CustomerOrderSummary,
-} from "@/lib/customers/get-customer-orders";
+} from "@/lib/customers/customer-orders-shared";
 import { formatUsd } from "@/lib/format";
 import {
   formatOrderShippingSummary,

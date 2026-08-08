@@ -6,7 +6,7 @@ import {
   formatCustomerOrderDate,
   formatCustomerOrderPublicId,
   type CustomerOrderSummary,
-} from "@/lib/customers/get-customer-orders";
+} from "@/lib/customers/customer-orders-shared";
 import { isStoreOwner } from "@/lib/stores/owner-access";
 import { normalizeOrderEstado, type OrderEstado } from "@/lib/orders/order-status";
 

@@ -14,7 +14,7 @@ import {
   formatCustomerOrderDate,
   formatCustomerOrderPublicId,
   type CustomerOrderDetail as CustomerOrderDetailModel,
-} from "@/lib/customers/get-customer-orders";
+} from "@/lib/customers/customer-orders-shared";
 import { formatUsd } from "@/lib/format";
 import {
   getOrderFulfillmentDetailLabel,

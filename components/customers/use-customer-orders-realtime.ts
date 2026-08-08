@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   mapCustomerOrderSummaryFromRow,
   type CustomerOrderSummary,
-} from "@/lib/customers/get-customer-orders";
+} from "@/lib/customers/customer-orders-shared";
 import {
   normalizeOrderEstado,
   type OrderEstado,
