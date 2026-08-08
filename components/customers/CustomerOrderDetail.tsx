@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, Copy, Check } from "lucide-react";
+import { ArrowLeft, Copy, Check, MessageCircle } from "lucide-react";
 import { CustomerOrderEstadoPill } from "@/components/customers/CustomerOrderEstadoPill";
 import { CustomerOrderStatusTimeline } from "@/components/customers/CustomerOrderStatusTimeline";
 import {
@@ -16,6 +16,7 @@ import {
   type CustomerOrderDetail as CustomerOrderDetailModel,
 } from "@/lib/customers/customer-orders-shared";
 import { formatUsd } from "@/lib/format";
+import { buildCustomerOrderInquiryWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
 import {
   getOrderFulfillmentDetailLabel,
   getOrderFulfillmentLabel,
@@ -30,6 +31,7 @@ interface CustomerOrderDetailProps {
   storeId: string;
   userId: string;
   order: CustomerOrderDetailModel;
+  storeWhatsAppPhone?: string | null;
 }
 
 export function CustomerOrderDetail({
@@ -37,15 +39,18 @@ export function CustomerOrderDetail({
   storeId,
   userId,
   order: initialOrder,
+  storeWhatsAppPhone = null,
 }: CustomerOrderDetailProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [order, setOrder] = useState(initialOrder);
+  const [orderBaseline, setOrderBaseline] = useState(initialOrder);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
+  if (initialOrder !== orderBaseline) {
+    setOrderBaseline(initialOrder);
     setOrder(initialOrder);
-  }, [initialOrder]);
+  }
 
   const onUpdate = useCallback(
     (orderId: string, row: Record<string, unknown>) => {
@@ -75,6 +80,11 @@ export function CustomerOrderDetail({
   const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta", {
     pathname,
   });
+  const publicId = formatCustomerOrderPublicId(order.id);
+  const whatsappUrl = buildCustomerOrderInquiryWhatsAppUrl(
+    storeWhatsAppPhone,
+    order.id,
+  );
 
   async function copyTracking() {
     if (!order.tracking_number) return;
@@ -96,9 +106,7 @@ export function CustomerOrderDetail({
 
       <header className="customer-order-detail-header">
         <div>
-          <p className="customer-orders-id">
-            Pedido {formatCustomerOrderPublicId(order.id)}
-          </p>
+          <p className="customer-orders-id">Pedido {publicId}</p>
           <p className="customer-orders-date mt-1">
             {formatCustomerOrderDate(order.created_at)}
           </p>
@@ -108,6 +116,18 @@ export function CustomerOrderDetail({
           <CustomerOrderEstadoPill estado={order.estado} />
         </div>
       </header>
+
+      {whatsappUrl ? (
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="customer-orders-whatsapp-btn w-full sm:w-auto"
+        >
+          <MessageCircle className="h-4 w-4" aria-hidden="true" />
+          <span>Consultar pedido por WhatsApp</span>
+        </a>
+      ) : null}
 
       <section className="customer-order-section">
         <h2 className="customer-order-section-title">Seguimiento</h2>
