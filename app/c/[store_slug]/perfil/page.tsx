@@ -3,7 +3,11 @@ import { CustomerProfilePanel } from "@/components/customers/CustomerProfilePane
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
-import { resolveCustomerContactEmail, customerCanManagePassword, resolveCustomerAuthMethod } from "@/lib/customers/phone-auth";
+import {
+  resolveCustomerAuthMethod,
+  resolveCustomerContactEmail,
+} from "@/lib/customers/phone-auth";
+import { resolveCustomerPasswordCapability } from "@/lib/customers/resolve-customer-password-capability";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,7 +38,7 @@ export default async function CustomerProfilePage({
     );
   }
 
-  const [profileResult, catalogData] = await Promise.all([
+  const [profileResult, catalogData, passwordCapability] = await Promise.all([
     supabase
       .from("customer_profiles")
       .select("display_name, phone, delivery_address")
@@ -42,6 +46,7 @@ export default async function CustomerProfilePage({
       .eq("store_id", store.id)
       .maybeSingle(),
     getPublicCatalogPageData(store.slug),
+    resolveCustomerPasswordCapability(user),
   ]);
 
   const profile = profileResult.data;
@@ -62,7 +67,8 @@ export default async function CustomerProfilePage({
         storeName={store.name}
         contactEmail={resolveCustomerContactEmail(user.email, user.user_metadata)}
         loginMethod={resolveCustomerAuthMethod(user.email)}
-        canChangePassword={customerCanManagePassword(user)}
+        canChangePassword={passwordCapability.canChangePassword}
+        externalAuthProviderLabel={passwordCapability.externalProviderLabel}
         displayName={profile?.display_name ?? null}
         phone={profile?.phone ?? null}
         deliveryAddress={(profile?.delivery_address as string | null) ?? null}

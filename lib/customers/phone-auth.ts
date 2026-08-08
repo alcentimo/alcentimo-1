@@ -126,19 +126,85 @@ export function resolveCustomerPhoneFromAuth(user: {
   return resolvePhoneFromSyntheticAuthEmail(user.email);
 }
 
+function readAuthProviders(
+  appMetadata: Record<string, unknown> | null | undefined,
+): string[] {
+  if (!appMetadata) return [];
+
+  const fromList = appMetadata.providers;
+  if (Array.isArray(fromList)) {
+    return fromList
+      .filter((provider): provider is string => typeof provider === "string")
+      .map((provider) => provider.trim().toLowerCase())
+      .filter(Boolean);
+  }
+
+  const single =
+    typeof appMetadata.provider === "string"
+      ? appMetadata.provider.trim().toLowerCase()
+      : "";
+  return single ? [single] : [];
+}
+
 /**
  * True si el cliente puede gestionar contraseña (login email/teléfono+clave).
  * Falso para OAuth puro (p. ej. solo Google) sin identidad email.
+ *
+ * Importante: no asumir contraseña solo porque exista un email — las cuentas
+ * Google siempre traen correo.
  */
 export function customerCanManagePassword(user: {
   email?: string | null;
   identities?: Array<{ provider: string }> | null;
+  app_metadata?: Record<string, unknown> | null;
+  user_metadata?: Record<string, unknown> | null;
 }): boolean {
-  if (user.identities && user.identities.length > 0) {
-    return user.identities.some((identity) => identity.provider === "email");
+  const identities = user.identities ?? [];
+  if (identities.length > 0) {
+    return identities.some(
+      (identity) => identity.provider.trim().toLowerCase() === "email",
+    );
   }
 
-  return Boolean(user.email?.trim());
+  const providers = readAuthProviders(user.app_metadata);
+  if (providers.length > 0) {
+    return providers.includes("email");
+  }
+
+  // Altas por teléfono o email+clave de Alcéntimo.
+  if (isSyntheticCustomerAuthEmail(user.email)) return true;
+  if (hasCustomerPasswordSet(user.user_metadata)) return true;
+
+  return false;
+}
+
+/** Proveedor externo principal cuando no hay login por contraseña. */
+export function resolveCustomerExternalAuthProvider(user: {
+  identities?: Array<{ provider: string }> | null;
+  app_metadata?: Record<string, unknown> | null;
+}): string | null {
+  if (customerCanManagePassword(user)) return null;
+
+  const fromIdentity = (user.identities ?? [])
+    .map((identity) => identity.provider.trim().toLowerCase())
+    .find((provider) => provider && provider !== "email");
+  if (fromIdentity) return fromIdentity;
+
+  const fromMeta = readAuthProviders(user.app_metadata).find(
+    (provider) => provider !== "email",
+  );
+  return fromMeta ?? null;
+}
+
+export function formatCustomerExternalAuthProviderLabel(
+  provider: string | null | undefined,
+): string {
+  const normalized = provider?.trim().toLowerCase();
+  if (!normalized) return "un proveedor externo";
+  if (normalized === "google") return "Google";
+  if (normalized === "apple") return "Apple";
+  if (normalized === "facebook") return "Facebook";
+  return normalized;
 }
 
 export function hasCustomerPasswordSet(

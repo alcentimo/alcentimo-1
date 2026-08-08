@@ -25,6 +25,8 @@ interface CustomerProfilePanelProps {
   loginMethod?: CustomerAuthMethod;
   /** True si el cliente tiene login con contraseña (teléfono o email). */
   canChangePassword?: boolean;
+  /** Etiqueta del proveedor OAuth cuando no hay contraseña gestionable. */
+  externalAuthProviderLabel?: string;
   displayName: string | null;
   phone: string | null;
   deliveryAddress: string | null;
@@ -37,6 +39,7 @@ export function CustomerProfilePanel({
   contactEmail,
   loginMethod = "phone",
   canChangePassword = false,
+  externalAuthProviderLabel = "un proveedor externo",
   displayName,
   phone,
   deliveryAddress,
@@ -316,8 +319,9 @@ export function CustomerProfilePanel({
             className="space-y-3"
           >
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Cambia tu contraseña usando la actual. Mínimo{" "}
-              {CUSTOMER_MIN_PASSWORD_LENGTH} caracteres.
+              Tu cuenta usa correo/teléfono y contraseña. Para cambiarla,
+              confirma la clave actual y define una nueva (mínimo{" "}
+              {CUSTOMER_MIN_PASSWORD_LENGTH} caracteres).
             </p>
 
             <div>
@@ -373,10 +377,16 @@ export function CustomerProfilePanel({
             </button>
           </form>
         ) : (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Esta cuenta inicia sesión con un proveedor externo (por ejemplo
-            Google), por lo que el cambio de contraseña no aplica aquí.
-          </p>
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-xs leading-relaxed text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
+            <p className="font-medium text-zinc-800 dark:text-zinc-100">
+              Acceso con {externalAuthProviderLabel}
+            </p>
+            <p className="mt-1">
+              Esta cuenta inicia sesión con {externalAuthProviderLabel}. La
+              seguridad y el cambio de contraseña los gestiona ese proveedor; no
+              puedes definir una clave local aquí.
+            </p>
+          </div>
         )}
 
         {whatsappHelpUrl ? (

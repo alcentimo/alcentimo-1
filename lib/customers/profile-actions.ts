@@ -7,12 +7,12 @@ import { ensureCustomerProfile } from "@/lib/customers/ensure-customer-profile";
 import {
   CUSTOMER_MIN_PASSWORD_LENGTH,
   CUSTOMER_PASSWORD_SET_META_KEY,
-  customerCanManagePassword,
   isSyntheticCustomerAuthEmail,
   validateCustomerEmailInput,
   validateCustomerPasswordPair,
   validateCustomerPhoneInput,
 } from "@/lib/customers/phone-auth";
+import { resolveCustomerPasswordCapability } from "@/lib/customers/resolve-customer-password-capability";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 
 export type CustomerProfileActionError = { ok: false; error: string };
@@ -187,13 +187,15 @@ export async function changeCustomerPassword(input: {
     return { ok: false, error: "Debes iniciar sesión." };
   }
 
-  if (!customerCanManagePassword(user)) {
+  const capability = await resolveCustomerPasswordCapability(user);
+  if (!capability.canChangePassword) {
     return {
       ok: false,
-      error: "Tu cuenta no usa contraseña. Inicia sesión con Google u otro método.",
+      error: `Tu cuenta inicia sesión con ${capability.externalProviderLabel}. La contraseña la gestiona ese proveedor.`,
     };
   }
 
+  // Revalidar la clave actual contra Auth antes de actualizar.
   const { error: verifyError } = await supabase.auth.signInWithPassword({
     email: user.email,
     password: currentPassword,
@@ -212,12 +214,19 @@ export async function changeCustomerPassword(input: {
   }
 
   const admin = createAdminClient();
-  await admin.auth.admin.updateUserById(user.id, {
+  const { data: latest } = await admin.auth.admin.getUserById(user.id);
+  const latestUser = latest.user ?? user;
+
+  const { error: metaError } = await admin.auth.admin.updateUserById(user.id, {
     user_metadata: {
-      ...(user.user_metadata ?? {}),
+      ...(latestUser.user_metadata ?? {}),
       [CUSTOMER_PASSWORD_SET_META_KEY]: true,
     },
   });
+
+  if (metaError) {
+    return { ok: false, error: metaError.message };
+  }
 
   revalidatePath(getStoreCustomerAccountPath(input.storeSlug, "perfil"));
   revalidatePath(`/c/${input.storeSlug}/perfil`);
