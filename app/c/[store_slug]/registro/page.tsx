@@ -117,7 +117,7 @@ export default async function CatalogRegisterPage({
         <p className="catalog-subpage-desc">
           {needsPhoneCompletion
             ? `Puedes agregar tu WhatsApp para pedidos en ${store.name}, o continuar sin número.`
-            : `Regístrate en ${store.name} con Google o con correo y contraseña. El teléfono es opcional.`}
+            : `Regístrate en ${store.name} con Google o con correo y contraseña.`}
         </p>
       </header>
 

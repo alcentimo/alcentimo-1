@@ -110,9 +110,9 @@ export function CustomerRegisterPanel({
         storeSlug,
         nextPath,
         displayName,
-        method: authMethod,
-        phone: authMethod === "phone" ? phone : phone.trim() || null,
-        email: authMethod === "email" ? email : email.trim() || null,
+        method: "email",
+        phone: phone.trim() || null,
+        email,
         password,
         orderId,
       });
@@ -486,12 +486,12 @@ export function CustomerRegisterPanel({
             Crea tu cuenta
           </h2>
           <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-            Usa Google o tu correo. El teléfono es opcional.
+            Continúa con Google o crea tu cuenta con correo y contraseña.
           </p>
         </>
       ) : (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Usa Google o tu correo. El teléfono es opcional.
+          Continúa con Google o crea tu cuenta con correo y contraseña.
         </p>
       )}
 
@@ -514,16 +514,7 @@ export function CustomerRegisterPanel({
         </p>
       </div>
 
-      <AuthMethodToggle
-        value={authMethod}
-        disabled={isBusy}
-        onChange={(method) => {
-          setAuthMethod(method);
-          setError(null);
-        }}
-      />
-
-      <form onSubmit={(e) => void handleQuickSubmit(e)} className="mt-4 space-y-4">
+      <form onSubmit={(e) => void handleQuickSubmit(e)} className="space-y-4">
         <div>
           <label htmlFor="display_name" className="label-field">
             Nombre
@@ -542,68 +533,42 @@ export function CustomerRegisterPanel({
           />
         </div>
 
-        {authMethod === "email" ? (
-          <>
-            <div>
-              <label htmlFor="email" className="label-field">
-                Correo electrónico
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                disabled={isBusy}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
-                placeholder="tu@correo.com"
-              />
-            </div>
+        <div>
+          <label htmlFor="email" className="label-field">
+            Correo electrónico
+          </label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            disabled={isBusy}
+            onChange={(e) => setEmail(e.target.value)}
+            className="input-field"
+            placeholder="tu@correo.com"
+          />
+        </div>
 
-            <div>
-              <label htmlFor="phone_optional" className="label-field">
-                Teléfono / WhatsApp{" "}
-                <span className="font-normal text-zinc-400">(opcional)</span>
-              </label>
-              <input
-                id="phone_optional"
-                type="tel"
-                autoComplete="tel"
-                value={phone}
-                disabled={isBusy}
-                onChange={(e) => setPhone(e.target.value)}
-                className="input-field"
-                placeholder="0412… o 412…"
-              />
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                Opcional. Facilita tus pedidos y el contacto por WhatsApp; puedes
-                dejarlo vacío.
-              </p>
-            </div>
-          </>
-        ) : (
-          <div>
-            <label htmlFor="phone" className="label-field">
-              Teléfono
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              autoComplete="tel"
-              required
-              minLength={10}
-              value={phone}
-              disabled={isBusy}
-              onChange={(e) => setPhone(e.target.value)}
-              className="input-field"
-              placeholder="0412… o 412…"
-            />
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-              Este número será tu usuario de acceso (junto con la contraseña).
-            </p>
-          </div>
-        )}
+        <div>
+          <label htmlFor="phone_optional" className="label-field">
+            Teléfono / WhatsApp{" "}
+            <span className="font-normal text-zinc-400">(opcional)</span>
+          </label>
+          <input
+            id="phone_optional"
+            type="tel"
+            autoComplete="tel"
+            value={phone}
+            disabled={isBusy}
+            onChange={(e) => setPhone(e.target.value)}
+            className="input-field"
+            placeholder="0412… o 412…"
+          />
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Para facilitar tus pedidos. Puedes dejarlo vacío.
+          </p>
+        </div>
 
         <div>
           <label htmlFor="password" className="label-field">

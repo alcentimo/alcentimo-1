@@ -140,7 +140,7 @@ export default async function CustomerRegisterPage({
         description={
           needsPhoneCompletion
             ? `Puedes agregar tu WhatsApp para pedidos en ${store.name}, o continuar sin número.`
-            : `Crea tu cuenta en ${store.name} con Google o con correo y contraseña. El teléfono es opcional.`
+            : `Crea tu cuenta en ${store.name} con Google o con correo y contraseña.`
         }
         footer={
           <p className="text-center text-sm text-zinc-500">
