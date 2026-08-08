@@ -99,19 +99,15 @@ const TEAM_NAV_HREF = "/dashboard/equipo";
 
 export function getDashboardNavItems(options?: {
   storeRole?: DashboardStoreRole | null;
-  /**
-   * La opción «Equipo» solo se muestra a correos en TEAM_NAV_ALLOWED_EMAILS
-   * (p. ej. jose95jimenez95@gmail.com). No cambia permisos de ruta ni BD.
-   */
-  showTeamNav?: boolean;
 }): DashboardNavItem[] {
   const role = options?.storeRole ?? null;
-  const showTeamNav = options?.showTeamNav === true;
-
+  // Sin rol aún (carga): menú base de dueño, pero sin Equipo hasta confirmar ownership.
   const roleForFilter = role ?? "owner";
+
   return DASHBOARD_NAV_ITEMS.filter((item) => {
-    if (item.href === TEAM_NAV_HREF && !showTeamNav) {
-      return false;
+    if (item.href === TEAM_NAV_HREF) {
+      // Solo el dueño de la tienda; oculto para admin/staff invitados.
+      return role === "owner";
     }
     return canAccessDashboardPath(roleForFilter, item.href);
   });

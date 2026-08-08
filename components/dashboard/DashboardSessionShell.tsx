@@ -78,7 +78,6 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
           exchangeRate={shell?.exchangeRate ?? null}
           exchangeRateUpdatedAt={shell?.exchangeRateUpdatedAt ?? null}
           isSupportAdmin={shell?.isSupportAdmin ?? false}
-          showTeamNav={shell?.showTeamNav ?? false}
           isStoreOwner={shell?.isStoreOwner ?? false}
           storeRole={shell?.storeRole ?? null}
           canUpgradeToBusiness={shell?.canUpgradeToBusiness ?? false}

@@ -58,8 +58,6 @@ interface DashboardSidebarProps {
   onPrefetchAccountSettings?: () => void;
   accountSettingsActive?: boolean;
   isSupportAdmin?: boolean;
-  /** Visibilidad del ítem «Equipo» (allowlist propia, no SUPPORT_ADMIN). */
-  showTeamNav?: boolean;
   storeRole?: DashboardStoreRole | null;
 }
 
@@ -224,16 +222,12 @@ export function DashboardSidebar({
   onPrefetchAccountSettings,
   accountSettingsActive = false,
   isSupportAdmin = false,
-  showTeamNav = false,
   storeRole = null,
 }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [supportKey, setSupportKey] = useState(0);
-  const navItems = getDashboardNavItems({
-    storeRole,
-    showTeamNav,
-  });
+  const navItems = getDashboardNavItems({ storeRole });
   const { t, navLabel } = useLocale();
   const { prefetchRoute } = useDashboardRoutePrefetch();
 

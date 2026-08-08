@@ -5,7 +5,6 @@ import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { getUserStore } from "@/lib/stores";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
-import { canSeeTeamNav } from "@/lib/team/team-nav-access";
 import { isStoreOwner } from "@/lib/stores/owner-access";
 import {
   normalizeDbPlan,
@@ -55,8 +54,6 @@ export type DashboardShellData =
       exchangeRate: number | null;
       exchangeRateUpdatedAt: string | null;
       isSupportAdmin: boolean;
-      /** Ítem «Equipo» en menú (allowlist TEAM_NAV_ALLOWED_EMAILS). */
-      showTeamNav: boolean;
       isStoreOwner: boolean;
       storeRole: DashboardStoreRole | null;
       canUpgradeToBusiness: boolean;
@@ -187,9 +184,6 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
       exchangeRate,
       exchangeRateUpdatedAt,
       isSupportAdmin: isSupportAdmin(
-        resolveAuthEmail({ email: authUser.email, user_metadata: {} }),
-      ),
-      showTeamNav: canSeeTeamNav(
         resolveAuthEmail({ email: authUser.email, user_metadata: {} }),
       ),
       isStoreOwner: ownerFlag,
