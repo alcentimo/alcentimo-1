@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CustomerOrderDetail } from "@/components/customers/CustomerOrderDetail";
+import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
 import { getCustomerOrderForStore } from "@/lib/customers/get-customer-orders";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import {
@@ -39,8 +40,16 @@ export default async function CustomerOrderDetailPage({
     );
   }
 
-  const order = await getCustomerOrderForStore(store.id, orderId);
+  const [order, catalogData] = await Promise.all([
+    getCustomerOrderForStore(store.id, orderId),
+    getPublicCatalogPageData(store.slug),
+  ]);
   if (!order) notFound();
+
+  const storeWhatsAppPhone =
+    catalogData?.purchaseInfo.whatsappPhone?.trim() ||
+    catalogData?.purchaseInfo.whatsappPhones.find((phone) => phone.trim())?.trim() ||
+    null;
 
   return (
     <div className="catalog-subpage">
@@ -50,6 +59,7 @@ export default async function CustomerOrderDetailPage({
           storeId={store.id}
           userId={user.id}
           order={order}
+          storeWhatsAppPhone={storeWhatsAppPhone}
         />
       </div>
 

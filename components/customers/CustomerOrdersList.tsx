@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronRight, Package } from "lucide-react";
+import { ChevronRight, MessageCircle, Package } from "lucide-react";
 import { CustomerOrderEstadoPill } from "@/components/customers/CustomerOrderEstadoPill";
 import {
   patchCustomerOrderSummary,
@@ -15,6 +15,7 @@ import {
   type CustomerOrderSummary,
 } from "@/lib/customers/customer-orders-shared";
 import { formatUsd } from "@/lib/format";
+import { buildCustomerOrderInquiryWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
 import {
   formatOrderShippingSummary,
   getOrderShippingMethodLabel,
@@ -27,6 +28,8 @@ interface CustomerOrdersListProps {
   storeId: string;
   userId: string;
   orders: CustomerOrderSummary[];
+  /** WhatsApp de la tienda (contacto del cliente → comerciante). */
+  storeWhatsAppPhone?: string | null;
 }
 
 function shippingHint(order: CustomerOrderSummary): string | null {
@@ -48,14 +51,17 @@ export function CustomerOrdersList({
   storeId,
   userId,
   orders: initialOrders,
+  storeWhatsAppPhone = null,
 }: CustomerOrdersListProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [orders, setOrders] = useState(initialOrders);
+  const [ordersBaseline, setOrdersBaseline] = useState(initialOrders);
 
-  useEffect(() => {
+  if (initialOrders !== ordersBaseline) {
+    setOrdersBaseline(initialOrders);
     setOrders(initialOrders);
-  }, [initialOrders]);
+  }
 
   const onInsert = useCallback((order: CustomerOrderSummary) => {
     setOrders((current) => {
@@ -114,18 +120,21 @@ export function CustomerOrdersList({
     <ul className="customer-orders-list">
       {orders.map((order) => {
         const methodHint = shippingHint(order);
+        const publicId = formatCustomerOrderPublicId(order.id);
         const detailHref = getStoreCustomerOrderPath(storeSlug, order.id, {
           pathname,
         });
+        const whatsappUrl = buildCustomerOrderInquiryWhatsAppUrl(
+          storeWhatsAppPhone,
+          order.id,
+        );
 
         return (
-          <li key={order.id}>
+          <li key={order.id} className="customer-orders-item-row">
             <Link href={detailHref} className="customer-orders-item-link">
               <div className="customer-orders-item">
                 <div className="customer-orders-item-main">
-                  <p className="customer-orders-id">
-                    {formatCustomerOrderPublicId(order.id)}
-                  </p>
+                  <p className="customer-orders-id">{publicId}</p>
                   <p className="customer-orders-date">
                     {formatCustomerOrderDate(order.created_at)}
                     {order.item_count > 0
@@ -153,6 +162,20 @@ export function CustomerOrdersList({
                 </div>
               </div>
             </Link>
+
+            {whatsappUrl ? (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="customer-orders-whatsapp-btn"
+                aria-label={`Consultar pedido ${publicId} por WhatsApp`}
+                title="Consultar por WhatsApp"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                <span>WhatsApp</span>
+              </a>
+            ) : null}
           </li>
         );
       })}
