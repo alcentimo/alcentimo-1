@@ -127,7 +127,8 @@ export function AdminAiAssistantPanel({
               Asistente IA gerencial
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Soporte interno y consultas sobre usuarios, tiendas, planes y pagos.
+              Visibilidad en tiempo real de tiendas, pagos, soporte, cupones y
+              planes.
             </p>
           </div>
         </div>
