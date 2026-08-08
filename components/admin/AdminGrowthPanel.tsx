@@ -77,6 +77,16 @@ function formatDate(iso: string | null | undefined): string {
   }).format(new Date(iso));
 }
 
+/** Fecha de registro (día) para la columna Registro. */
+function formatRegistrationDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Intl.DateTimeFormat("es-VE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(iso));
+}
+
 function formatSubscriptionStatus(status: string): string {
   switch (status) {
     case "active":
@@ -842,6 +852,7 @@ export function AdminGrowthPanel({
                   <th className="px-3 py-2.5" />
                   <th className="px-3 py-2.5">Tienda</th>
                   <th className="px-3 py-2.5">Correo</th>
+                  <th className="px-3 py-2.5">Registro</th>
                   <th className="px-3 py-2.5">WhatsApp</th>
                   <th className="px-3 py-2.5">Catálogo</th>
                   <th className="px-3 py-2.5">
@@ -894,6 +905,16 @@ export function AdminGrowthPanel({
                       <div className="break-all text-zinc-800 dark:text-zinc-200">
                         {user.email ?? "Sin email"}
                       </div>
+                    </td>
+                    <td
+                      className="whitespace-nowrap px-3 py-2.5 align-top text-zinc-700 dark:text-zinc-300"
+                      title={
+                        user.createdAt
+                          ? formatDate(user.createdAt)
+                          : "Sin fecha de registro"
+                      }
+                    >
+                      {formatRegistrationDate(user.createdAt)}
                     </td>
                     <td className="px-3 py-2.5 align-top">
                       {user.whatsappUrl ? (

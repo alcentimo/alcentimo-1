@@ -16,6 +16,7 @@ export interface AdminUserRow {
   productCount: number;
   storeCount: number;
   periodEndsAt: string | null;
+  /** Fecha de registro de la cuenta (auth.users / profiles / store). */
   createdAt: string | null;
   storeId: string | null;
   storeName: string;
@@ -73,7 +74,9 @@ export async function getAdminUsers(
 
   const { data: profiles, error } = await admin
     .from("profiles")
-    .select("id, plan, subscription_status, subscription_period_ends_at")
+    .select(
+      "id, plan, subscription_status, subscription_period_ends_at, created_at",
+    )
     .limit(3000);
 
   if (error) throw new Error(error.message);
@@ -147,6 +150,8 @@ export async function getAdminUsers(
   }
 
   const emailById = new Map<string, string | null>();
+  /** Fecha de registro de la cuenta (auth.users.created_at). */
+  const registeredAtById = new Map<string, string | null>();
   for (let i = 0; i < profileIds.length; i += 40) {
     const chunk = profileIds.slice(i, i + 40);
     await Promise.all(
@@ -154,8 +159,10 @@ export async function getAdminUsers(
         try {
           const { data } = await admin.auth.admin.getUserById(id);
           emailById.set(id, data.user?.email ?? null);
+          registeredAtById.set(id, data.user?.created_at ?? null);
         } catch {
           emailById.set(id, null);
+          registeredAtById.set(id, null);
         }
       }),
     );
@@ -212,7 +219,12 @@ export async function getAdminUsers(
       productCount,
       storeCount: storeCountByOwner.get(store.owner_id) ?? 0,
       periodEndsAt: profile.subscription_period_ends_at ?? null,
-      createdAt: store.created_at ?? null,
+      // Registro de la cuenta; fallback a perfil / creación de tienda.
+      createdAt:
+        registeredAtById.get(store.owner_id) ??
+        profile.created_at ??
+        store.created_at ??
+        null,
       storeId: store.id,
       storeName: store.name,
       storeSlug: store.slug,
@@ -251,7 +263,8 @@ export async function getAdminUsers(
       productCount,
       storeCount: 0,
       periodEndsAt: profile.subscription_period_ends_at ?? null,
-      createdAt: null,
+      createdAt:
+        registeredAtById.get(profile.id) ?? profile.created_at ?? null,
       storeId: null,
       storeName: "Sin tienda",
       storeSlug: null,
