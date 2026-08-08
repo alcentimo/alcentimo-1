@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CheckCircle2, MessageCircle } from "lucide-react";
+import { useRef, useState, useTransition } from "react";
+import { CheckCircle2, MessageCircle, Upload } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
+import { attachOrderPaymentProof } from "@/lib/orders/actions";
+import { checkoutFileInputClass } from "@/components/catalog-transactional/CheckoutFieldFeedback";
 
 interface CheckoutSuccessScreenProps {
   storeSlug: string;
@@ -43,6 +46,10 @@ export function CheckoutSuccessScreen({
   const pathname = usePathname();
   const { accountsEnabled } = useCustomerAccountMode();
   const customerSession = useCustomerSessionOptional();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [proofAttached, setProofAttached] = useState(hasPaymentProof);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, startUploadTransition] = useTransition();
 
   const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta", {
     pathname,
@@ -56,9 +63,10 @@ export function CheckoutSuccessScreen({
   const showAccountLink = wasGuest && !hasActiveSession && accountsEnabled;
   const hasWhatsApp = Boolean(whatsappUrl?.trim());
   const orderRef = formatOrderRef(orderId);
+  const showProofUpload = expectsPaymentProof && !proofAttached;
 
   const instructions = (() => {
-    if (hasPaymentProof) {
+    if (proofAttached) {
       return {
         title: "Tu pago está siendo verificado",
         body: "La tienda ya recibió tu comprobante y está revisando el pago. Conserva el número de pedido; te contactarán para confirmar el despacho.",
@@ -69,8 +77,8 @@ export function CheckoutSuccessScreen({
       return {
         title: "Falta enviar tu comprobante",
         body: hasWhatsApp
-          ? "Tu pedido quedó registrado, pero aún no hay comprobante. Envía el archivo del pago por WhatsApp o escribe a la tienda para completar la verificación y que puedan preparar tu pedido."
-          : "Tu pedido quedó registrado, pero aún no hay comprobante. Contacta a la tienda y envía el archivo del pago (indica el número de pedido) para completar la verificación.",
+          ? "Tu pedido quedó registrado, pero aún no hay comprobante. Súbelo aquí o envíalo por WhatsApp para completar la verificación y que puedan preparar tu pedido."
+          : "Tu pedido quedó registrado, pero aún no hay comprobante. Súbelo aquí o contacta a la tienda e indica el número de pedido para completar la verificación.",
         whatsappLabel: "Enviar comprobante por WhatsApp",
       };
     }
@@ -80,6 +88,29 @@ export function CheckoutSuccessScreen({
       whatsappLabel: "Escribir a la tienda por WhatsApp",
     };
   })();
+
+  function handleProofSelected(file: File | null) {
+    setUploadError(null);
+    if (!file) return;
+
+    startUploadTransition(async () => {
+      const result = await attachOrderPaymentProof({
+        storeSlug,
+        orderId,
+        proof: file,
+      });
+
+      if (!result.ok) {
+        setUploadError(result.error);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+
+      setProofAttached(true);
+    });
+  }
 
   return (
     <div className="txn-checkout-success">
@@ -110,6 +141,50 @@ export function CheckoutSuccessScreen({
           {instructions.title}
         </p>
         <p className="mt-1">{instructions.body}</p>
+
+        {showProofUpload ? (
+          <div className="mt-3 space-y-2">
+            <label className="txn-field !mb-0">
+              <span className="sr-only">Subir comprobante de pago</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                disabled={isUploading}
+                onChange={(event) => {
+                  handleProofSelected(event.target.files?.[0] ?? null);
+                }}
+                aria-invalid={Boolean(uploadError)}
+                aria-describedby={
+                  uploadError
+                    ? "checkout-success-proof-error"
+                    : "checkout-success-proof-hint"
+                }
+                className={checkoutFileInputClass(Boolean(uploadError))}
+              />
+            </label>
+            <p
+              id="checkout-success-proof-hint"
+              className="flex items-start gap-1.5 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400"
+            >
+              <Upload className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>
+                {isUploading
+                  ? "Subiendo comprobante…"
+                  : "JPG, PNG, WebP o GIF. Máx. 5 MB."}
+              </span>
+            </p>
+            {uploadError ? (
+              <p
+                id="checkout-success-proof-error"
+                className="text-[11px] font-medium text-red-600 dark:text-red-400"
+                role="alert"
+              >
+                {uploadError}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {hasWhatsApp ? (

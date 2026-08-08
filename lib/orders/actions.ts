@@ -535,6 +535,101 @@ export async function submitTransactionalOrder(
   };
 }
 
+/**
+ * Adjunta un comprobante a un pedido recién creado (p. ej. desde la pantalla de éxito).
+ * Solo si aún no tiene comprobante y sigue en estado pendiente.
+ */
+export async function attachOrderPaymentProof(input: {
+  storeSlug: string;
+  orderId: string;
+  proof: File;
+}): Promise<{ ok: true; paymentProofUrl: string } | { ok: false; error: string }> {
+  const storeSlug = input.storeSlug.trim().toLowerCase();
+  const orderId = input.orderId.trim();
+  const proof = input.proof;
+
+  if (!storeSlug || !orderId) {
+    return { ok: false, error: "Pedido inválido." };
+  }
+
+  if (!(proof instanceof File) || proof.size <= 0) {
+    return { ok: false, error: "Selecciona una imagen del comprobante." };
+  }
+
+  const store = await getStoreBySlug(storeSlug);
+  if (!store) {
+    return { ok: false, error: "Tienda no encontrada." };
+  }
+
+  const admin = createAdminClient();
+  const { data: order, error: orderError } = await admin
+    .from("orders")
+    .select("id, store_id, payment_proof_url, estado")
+    .eq("id", orderId)
+    .eq("store_id", store.id)
+    .maybeSingle();
+
+  if (orderError) {
+    return { ok: false, error: orderError.message };
+  }
+  if (!order) {
+    return { ok: false, error: "No encontramos ese pedido." };
+  }
+
+  if (order.payment_proof_url) {
+    return {
+      ok: false,
+      error: "Este pedido ya tiene un comprobante adjunto.",
+    };
+  }
+
+  if (order.estado !== "pendiente") {
+    return {
+      ok: false,
+      error: "Este pedido ya no admite comprobante desde aquí.",
+    };
+  }
+
+  // Autorización: UUID del pedido (secreto en la pantalla de éxito / enlace).
+  // Solo se permite la primera carga mientras el pedido sigue pendiente.
+
+  const proofUpload = await uploadOrderPaymentProof(store.id, orderId, proof);
+  if (proofUpload.error || !proofUpload.url) {
+    return {
+      ok: false,
+      error: proofUpload.error ?? "No se pudo subir el comprobante.",
+    };
+  }
+
+  const { data: updated, error: updateError } = await admin
+    .from("orders")
+    .update({ payment_proof_url: proofUpload.url })
+    .eq("id", orderId)
+    .eq("store_id", store.id)
+    .is("payment_proof_url", null)
+    .eq("estado", "pendiente")
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) {
+    return { ok: false, error: updateError.message };
+  }
+  if (!updated) {
+    return {
+      ok: false,
+      error: "Este pedido ya tiene un comprobante o ya no admite adjuntos.",
+    };
+  }
+
+  revalidatePath(`/c/${storeSlug}`);
+  revalidatePath(`/c/${storeSlug}/cuenta`);
+  revalidatePath("/dashboard/pedidos");
+  revalidatePath("/dashboard");
+  revalidatePath(`/pedidos/${orderId}`);
+
+  return { ok: true, paymentProofUrl: proofUpload.url };
+}
+
 export async function fetchStoreOrdersPage(options: {
   offset: number;
   limit?: number;
