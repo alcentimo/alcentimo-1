@@ -12,6 +12,7 @@ import {
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { CATALOG_SORT_OPTIONS, type CatalogSortKey } from "@/lib/catalog/catalog-browse";
 import type { CatalogLayoutMode } from "@/lib/store-settings/types";
+import { CATALOG_DESKTOP_LAYOUT_MQ } from "@/lib/catalog/catalog-layout";
 import {
   Sheet,
   SheetContent,
@@ -66,7 +67,19 @@ export function CatalogBrowseToolbar({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const handledBuscarDeepLinkRef = useRef(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [isDesktopLayout, setIsDesktopLayout] = useState(false);
   const showCategories = showCategoryFilter && categories.length > 0;
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+    const media = window.matchMedia(CATALOG_DESKTOP_LAYOUT_MQ);
+    const sync = () => setIsDesktopLayout(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
   const activeCategoryName =
     categorySlug == null
       ? null
@@ -169,8 +182,10 @@ export function CatalogBrowseToolbar({
                 layout === "list" && "catalog-layout-toggle-btn-active",
               )}
               aria-pressed={layout === "list"}
-              aria-label="Vista de tarjeta grande"
-              title="Tarjeta grande"
+              aria-label={
+                isDesktopLayout ? "Vista de 2 columnas" : "Vista de 1 columna"
+              }
+              title={isDesktopLayout ? "2 columnas" : "1 columna"}
               onClick={() => onLayoutChange("list")}
             >
               <Rows3 className="h-4 w-4" aria-hidden="true" />
@@ -182,8 +197,10 @@ export function CatalogBrowseToolbar({
                 layout === "grid" && "catalog-layout-toggle-btn-active",
               )}
               aria-pressed={layout === "grid"}
-              aria-label="Vista de dos columnas"
-              title="Dos columnas"
+              aria-label={
+                isDesktopLayout ? "Vista de 4 columnas" : "Vista de 2 columnas"
+              }
+              title={isDesktopLayout ? "4 columnas" : "2 columnas"}
               onClick={() => onLayoutChange("grid")}
             >
               <LayoutGrid className="h-4 w-4" aria-hidden="true" />

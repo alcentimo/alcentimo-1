@@ -12,18 +12,21 @@ export const CATALOG_LAYOUT_OPTIONS: CatalogLayoutOption[] = [
   {
     id: "list",
     label: "Tarjeta grande",
-    tagline: "Lista",
+    tagline: "Compacta",
     description:
-      "Una columna con fotos amplias. Ideal para destacar cada producto.",
+      "Móvil: 1 columna. PC: 2 columnas. Ideal para destacar cada producto.",
   },
   {
     id: "grid",
-    label: "Dos columnas",
-    tagline: "Cuadrícula",
+    label: "Cuadrícula",
+    tagline: "Densa",
     description:
-      "Más productos a la vista en el móvil. Ideal para ropa y catálogos densos.",
+      "Móvil: 2 columnas. PC: 4 columnas. Ideal para catálogos densos.",
   },
 ];
+
+/** Breakpoint donde el catálogo pasa de móvil (1/2 cols) a PC (2/4 cols). */
+export const CATALOG_DESKTOP_LAYOUT_MQ = "(min-width: 1024px)";
 
 export function getCatalogLayoutOption(
   layout: CatalogLayoutMode,

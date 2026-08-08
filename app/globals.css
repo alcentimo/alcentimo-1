@@ -6521,8 +6521,13 @@ html:has(.landing-shell) {
   @apply w-full min-w-0 flex-1 px-4 py-3 sm:px-6 sm:py-4;
 }
 
+/*
+ * Cuadrícula:
+ * - Móvil/tablet: 2 columnas
+ * - PC (lg+): 4 columnas (el modo "list" aporta la opción de 2 cols en desktop)
+ */
 .txn-product-grid {
-  @apply grid w-full min-w-0 grid-cols-2 items-stretch md:grid-cols-3 xl:grid-cols-4;
+  @apply grid w-full min-w-0 grid-cols-2 items-stretch lg:grid-cols-4;
   gap: var(--pc-grid-gap);
 }
 
@@ -6532,7 +6537,7 @@ html:has(.landing-shell) {
 }
 
 .txn-product-grid--immersive {
-  @apply grid-cols-2 gap-2 sm:gap-2.5 md:grid-cols-3 xl:grid-cols-4;
+  @apply grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-4;
   gap: var(--pc-grid-gap);
 }
 
@@ -7160,12 +7165,11 @@ html:has(.landing-shell) {
 }
 
 .txn-catalog--list {
-  /* Móvil: foto vertical amplia. En PC se suaviza (ver media query). */
+  /* Móvil: 1 columna con foto vertical. En PC se convierte en 2 columnas. */
   --pc-list-media-ratio: 4 / 5;
-  --pc-list-col-max: 100%;
 }
 
-/* Tarjeta grande: una columna con foto amplia. */
+/* Tarjeta grande (móvil): una columna con foto amplia. */
 .txn-catalog--list .store-product-card {
   @apply flex w-full min-w-0 flex-col items-stretch overflow-hidden;
   --pc-media-ratio: var(--pc-list-media-ratio);
@@ -7220,40 +7224,32 @@ html:has(.landing-shell) {
 }
 
 /*
- * PC: columna centrada con ancho controlado (evita tarjeta/imagen
- * a todo el ancho y el aspecto vacío en pantallas grandes).
+ * PC (lg+): no hay vista de 1 columna.
+ * - modo list → 2 columnas
+ * - modo grid → 4 columnas (definido en .txn-product-grid)
  */
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .txn-catalog--list {
     --pc-list-media-ratio: 1 / 1;
-    --pc-list-col-max: 32rem; /* ~512px */
-  }
-
-  .txn-catalog--list .txn-catalog-main {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .txn-catalog--list .txn-catalog-main > * {
-    width: 100%;
-    max-width: var(--pc-list-col-max);
   }
 
   .txn-catalog--list .txn-product-list {
+    display: grid;
     width: 100%;
-    max-width: var(--pc-list-col-max);
-    margin-inline: auto;
+    max-width: none;
+    margin-inline: 0;
+    align-items: stretch;
+    gap: var(--pc-grid-gap);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .txn-catalog--list .txn-product-list > * {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .txn-catalog--list .store-product-media {
-    max-height: 20rem;
-  }
-}
-
-@media (min-width: 1280px) {
-  .txn-catalog--list {
-    --pc-list-col-max: 30rem; /* un poco más compacto en monitores anchos */
+    max-height: none;
   }
 }
 
@@ -7267,7 +7263,7 @@ html:has(.landing-shell) {
 
 .txn-catalog--theme-immersive .txn-product-grid,
 .txn-catalog--theme-immersive .txn-product-grid--immersive {
-  @apply grid-cols-2 md:grid-cols-3 xl:grid-cols-4;
+  @apply grid-cols-2 lg:grid-cols-4;
   gap: var(--pc-grid-gap);
 }
 
