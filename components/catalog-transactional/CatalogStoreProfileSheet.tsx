@@ -219,7 +219,7 @@ export function CatalogStoreProfileSheet({
                   onClick={onClose}
                 >
                   <UserRound className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  Mi perfil
+                  Mi perfil / Seguridad
                 </Link>
                 <button
                   type="button"

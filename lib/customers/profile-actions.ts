@@ -15,9 +15,21 @@ import {
 } from "@/lib/customers/phone-auth";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 
+export type CustomerProfileActionError = { ok: false; error: string };
+
 export type SaveCustomerProfileResult =
+  | {
+      ok: true;
+      displayName: string;
+      phone: string | null;
+      contactEmail: string | null;
+      deliveryAddress: string | null;
+    }
+  | CustomerProfileActionError;
+
+export type ChangeCustomerPasswordResult =
   | { ok: true }
-  | { ok: false; error: string };
+  | CustomerProfileActionError;
 
 export async function saveCustomerProfile(input: {
   storeSlug: string;
@@ -75,10 +87,16 @@ export async function saveCustomerProfile(input: {
     return { ok: false, error: result.error };
   }
 
+  const nextDeliveryAddress =
+    deliveryAddress.length > 0 ? deliveryAddress.slice(0, 500) : null;
+
   const { error: addressError } = await supabase
     .from("customer_profiles")
     .update({
-      delivery_address: deliveryAddress.length > 0 ? deliveryAddress.slice(0, 500) : null,
+      delivery_address: nextDeliveryAddress,
+      // Forzar los valores editados (sin fallback a metadata antigua).
+      display_name: displayName.slice(0, 120),
+      phone: phone ? phone.slice(0, 40) : null,
     })
     .eq("user_id", user.id)
     .eq("store_id", result.storeId);
@@ -87,34 +105,49 @@ export async function saveCustomerProfile(input: {
     return { ok: false, error: addressError.message };
   }
 
-  // Correo de contacto opcional: solo metadata (sin cambiar email Auth ni enviar verificación).
-  if (isSyntheticCustomerAuthEmail(user.email) || input.contactEmail !== undefined) {
-    if (isSyntheticCustomerAuthEmail(user.email)) {
-      const admin = createAdminClient();
-      const nextMetadata: Record<string, unknown> = {
-        ...(user.user_metadata ?? {}),
-      };
+  // Mantener metadata Auth alineada para checkout / autofill.
+  const admin = createAdminClient();
+  const nextMetadata: Record<string, unknown> = {
+    ...(user.user_metadata ?? {}),
+    display_name: displayName.slice(0, 120),
+  };
 
-      if (contactEmail) {
-        nextMetadata.contact_email = contactEmail;
-      } else {
-        delete nextMetadata.contact_email;
-      }
+  if (phone) {
+    nextMetadata.phone = phone;
+  } else {
+    delete nextMetadata.phone;
+  }
 
-      const { error: metaError } = await admin.auth.admin.updateUserById(user.id, {
-        user_metadata: nextMetadata,
-      });
-
-      if (metaError) {
-        return { ok: false, error: metaError.message };
-      }
+  if (isSyntheticCustomerAuthEmail(user.email)) {
+    if (contactEmail) {
+      nextMetadata.contact_email = contactEmail;
+    } else if (input.contactEmail !== undefined) {
+      delete nextMetadata.contact_email;
     }
+  }
+
+  const { error: metaError } = await admin.auth.admin.updateUserById(user.id, {
+    user_metadata: nextMetadata,
+  });
+
+  if (metaError) {
+    return { ok: false, error: metaError.message };
   }
 
   revalidatePath(getStoreCustomerAccountPath(storeSlug, "perfil"));
   revalidatePath(`/c/${storeSlug}/perfil`);
+  revalidatePath(`/c/${storeSlug}`);
+  revalidatePath(getStoreCustomerAccountPath(storeSlug, "cuenta"));
 
-  return { ok: true };
+  return {
+    ok: true,
+    displayName: displayName.slice(0, 120),
+    phone,
+    contactEmail: isSyntheticCustomerAuthEmail(user.email)
+      ? contactEmail
+      : user.email?.trim() || null,
+    deliveryAddress: nextDeliveryAddress,
+  };
 }
 
 /** Cambia la contraseña del cliente (teléfono+clave o email+clave). */
@@ -123,7 +156,7 @@ export async function changeCustomerPassword(input: {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
-}): Promise<SaveCustomerProfileResult> {
+}): Promise<ChangeCustomerPasswordResult> {
   const currentPassword = input.currentPassword;
   const passwordValidation = validateCustomerPasswordPair(
     input.newPassword,

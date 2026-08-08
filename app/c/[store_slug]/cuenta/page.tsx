@@ -55,7 +55,13 @@ export default async function CustomerAccountPage({
         />
       </div>
 
-      <p className="mt-6 text-center text-sm text-zinc-500">
+      <p className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center text-sm text-zinc-500">
+        <Link
+          href={getStoreCustomerAccountPath(store.slug, "perfil")}
+          className="link-brand"
+        >
+          Mi perfil / Seguridad
+        </Link>
         <Link href={getStoreCatalogBasePath(store.slug)} className="link-brand">
           Seguir comprando
         </Link>

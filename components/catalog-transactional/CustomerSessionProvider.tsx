@@ -36,12 +36,15 @@ interface CustomerSessionContextValue extends CustomerSessionState {
   signOut: () => Promise<void>;
   signOutPending: boolean;
   refreshSession: () => Promise<void>;
-  setSessionFromRegistration: (profile: {
-    displayName: string;
-    phone?: string | null;
-    contactEmail?: string | null;
-    userId?: string | null;
-  }) => void;
+  setSessionFromRegistration: (
+    profile: {
+      displayName: string;
+      phone?: string | null;
+      contactEmail?: string | null;
+      userId?: string | null;
+    },
+    options?: { refresh?: boolean },
+  ) => void;
 }
 
 const CustomerSessionContext = createContext<CustomerSessionContextValue | null>(
@@ -269,12 +272,15 @@ export function CustomerSessionProvider({
   }, [hydrated, refreshSession]);
 
   const setSessionFromRegistration = useCallback(
-    (profile: {
-      displayName: string;
-      phone?: string | null;
-      contactEmail?: string | null;
-      userId?: string | null;
-    }) => {
+    (
+      profile: {
+        displayName: string;
+        phone?: string | null;
+        contactEmail?: string | null;
+        userId?: string | null;
+      },
+      options?: { refresh?: boolean },
+    ) => {
       persistSession({
         isAuthenticated: true,
         isCustomer: true,
@@ -283,7 +289,9 @@ export function CustomerSessionProvider({
         phone: profile.phone?.trim() || null,
         contactEmail: profile.contactEmail?.trim() || null,
       });
-      router.refresh();
+      if (options?.refresh !== false) {
+        router.refresh();
+      }
     },
     [persistSession, router, session.userId],
   );

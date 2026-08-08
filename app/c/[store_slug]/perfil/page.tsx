@@ -50,9 +50,10 @@ export default async function CustomerProfilePage({
   return (
     <div className="catalog-subpage">
       <header className="catalog-subpage-header">
-        <h1 className="catalog-subpage-title">Perfil</h1>
+        <h1 className="catalog-subpage-title">Mi perfil</h1>
         <p className="catalog-subpage-desc">
-          Actualiza tus datos en {store.name}.
+          Actualiza tu contacto y seguridad en {store.name}. Los cambios se
+          usan al autocompletar el checkout.
         </p>
       </header>
 

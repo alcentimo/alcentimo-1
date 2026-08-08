@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   changeCustomerPassword,
@@ -10,8 +11,12 @@ import {
 } from "@/lib/customers/profile-actions";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { buildCustomerWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
-import { getStoreCatalogBasePath } from "@/lib/store-host";
+import {
+  getStoreCatalogBasePath,
+  getStoreCustomerAccountPath,
+} from "@/lib/store-host";
 import type { CustomerAuthMethod } from "@/lib/customers/phone-auth";
+import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
 
 interface CustomerProfilePanelProps {
   storeSlug: string;
@@ -38,6 +43,7 @@ export function CustomerProfilePanel({
   whatsappPhone,
 }: CustomerProfilePanelProps) {
   const router = useRouter();
+  const customerSession = useCustomerSessionOptional();
   const [name, setName] = useState(displayName ?? "");
   const [phoneValue, setPhoneValue] = useState(phone ?? "");
   const [emailValue, setEmailValue] = useState(contactEmail ?? "");
@@ -50,6 +56,13 @@ export function CustomerProfilePanel({
   const [passwordPending, setPasswordPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    setName(displayName ?? "");
+    setPhoneValue(phone ?? "");
+    setEmailValue(contactEmail ?? "");
+    setAddressValue(deliveryAddress ?? "");
+  }, [displayName, phone, contactEmail, deliveryAddress]);
 
   const phoneRequired = loginMethod === "phone";
   const canEditContactEmail = loginMethod === "phone";
@@ -67,6 +80,7 @@ export function CustomerProfilePanel({
     undefined,
     `Hola, necesito ayuda con mi cuenta en ${storeName}.`,
   );
+  const ordersPath = getStoreCustomerAccountPath(storeSlug, "cuenta");
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -90,13 +104,40 @@ export function CustomerProfilePanel({
       return;
     }
 
-    setSuccess("Perfil actualizado.");
+    setName(result.displayName);
+    setPhoneValue(result.phone ?? "");
+    setEmailValue(result.contactEmail ?? "");
+    setAddressValue(result.deliveryAddress ?? "");
+
+    // Actualiza la sesión del catálogo de inmediato para el autofill del checkout.
+    customerSession?.setSessionFromRegistration(
+      {
+        displayName: result.displayName,
+        phone: result.phone,
+        contactEmail: result.contactEmail,
+        userId: customerSession.userId,
+      },
+      { refresh: false },
+    );
+    await customerSession?.refreshSession();
+
+    setSuccess("Perfil actualizado. Tus datos se usarán al finalizar el pedido.");
     router.refresh();
   }
 
   async function handleSignOut() {
     setError(null);
     setSignOutPending(true);
+
+    if (customerSession) {
+      try {
+        await customerSession.signOut();
+        router.push(getStoreCatalogBasePath(storeSlug));
+        return;
+      } catch {
+        // fallback abajo
+      }
+    }
 
     const supabase = createClient();
     const { error: signOutError } = await supabase.auth.signOut();
@@ -146,7 +187,14 @@ export function CustomerProfilePanel({
   return (
     <div className="space-y-6">
       <form onSubmit={(e) => void handleSave(e)} className="card-panel space-y-4">
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">{loginLabel}</p>
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            Datos de contacto
+          </h2>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            {loginLabel} Estos datos se autocompletan en el checkout.
+          </p>
+        </div>
 
         <div>
           <label htmlFor="customer-name" className="label-field">
@@ -168,7 +216,7 @@ export function CustomerProfilePanel({
 
         <div>
           <label htmlFor="customer-phone" className="label-field">
-            Teléfono{" "}
+            Teléfono / WhatsApp{" "}
             {!phoneRequired ? (
               <span className="font-normal text-zinc-400">(opcional)</span>
             ) : null}
@@ -184,6 +232,9 @@ export function CustomerProfilePanel({
             className="input-field"
             placeholder="0412… o 412…"
           />
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Lo usamos para coordinar tu pedido y autocompletar el pago.
+          </p>
         </div>
 
         {loginMethod === "email" ? (
@@ -225,7 +276,8 @@ export function CustomerProfilePanel({
 
         <div>
           <label htmlFor="customer-address" className="label-field">
-            Dirección de entrega
+            Dirección de entrega{" "}
+            <span className="font-normal text-zinc-400">(opcional)</span>
           </label>
           <textarea
             id="customer-address"
@@ -247,83 +299,90 @@ export function CustomerProfilePanel({
         </button>
       </form>
 
-      {canChangePassword ? (
-        <form
-          onSubmit={(e) => void handleChangePassword(e)}
-          className="card-panel space-y-3"
-        >
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            Seguridad
-          </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Cambia tu contraseña usando la actual. Mínimo{" "}
-            {CUSTOMER_MIN_PASSWORD_LENGTH} caracteres.
-          </p>
-
-          <div>
-            <label htmlFor="current-password" className="label-field">
-              Contraseña actual
-            </label>
-            <PasswordInput
-              id="current-password"
-              autoComplete="current-password"
-              required
-              value={currentPassword}
-              disabled={passwordPending}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="new-password" className="label-field">
-              Nueva contraseña
-            </label>
-            <PasswordInput
-              id="new-password"
-              autoComplete="new-password"
-              required
-              minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
-              value={newPassword}
-              disabled={passwordPending}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="confirm-password" className="label-field">
-              Confirmar nueva contraseña
-            </label>
-            <PasswordInput
-              id="confirm-password"
-              autoComplete="new-password"
-              required
-              minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
-              value={confirmPassword}
-              disabled={passwordPending}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={passwordPending}
-            className="btn-secondary w-full"
+      <section className="card-panel space-y-3">
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          Seguridad
+        </h2>
+        {canChangePassword ? (
+          <form
+            onSubmit={(e) => void handleChangePassword(e)}
+            className="space-y-3"
           >
-            {passwordPending ? "Actualizando…" : "Cambiar contraseña"}
-          </button>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Cambia tu contraseña usando la actual. Mínimo{" "}
+              {CUSTOMER_MIN_PASSWORD_LENGTH} caracteres.
+            </p>
 
-          {whatsappHelpUrl ? (
-            <a
-              href={whatsappHelpUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="customer-profile-whatsapp-link"
+            <div>
+              <label htmlFor="current-password" className="label-field">
+                Contraseña actual
+              </label>
+              <PasswordInput
+                id="current-password"
+                autoComplete="current-password"
+                required
+                value={currentPassword}
+                disabled={passwordPending}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="new-password" className="label-field">
+                Nueva contraseña
+              </label>
+              <PasswordInput
+                id="new-password"
+                autoComplete="new-password"
+                required
+                minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
+                value={newPassword}
+                disabled={passwordPending}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="confirm-password" className="label-field">
+                Confirmar nueva contraseña
+              </label>
+              <PasswordInput
+                id="confirm-password"
+                autoComplete="new-password"
+                required
+                minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
+                value={confirmPassword}
+                disabled={passwordPending}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={passwordPending}
+              className="btn-secondary w-full"
             >
-              Ayuda por WhatsApp
-            </a>
-          ) : null}
-        </form>
-      ) : null}
+              {passwordPending ? "Actualizando…" : "Cambiar contraseña"}
+            </button>
+          </form>
+        ) : (
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Esta cuenta inicia sesión con un proveedor externo (por ejemplo
+            Google), por lo que el cambio de contraseña no aplica aquí.
+          </p>
+        )}
+
+        {whatsappHelpUrl ? (
+          <a
+            href={whatsappHelpUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="customer-profile-whatsapp-link"
+          >
+            Ayuda por WhatsApp
+          </a>
+        ) : null}
+      </section>
 
       {error ? (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
@@ -337,14 +396,21 @@ export function CustomerProfilePanel({
         </p>
       ) : null}
 
-      <button
-        type="button"
-        onClick={() => void handleSignOut()}
-        disabled={signOutPending}
-        className="btn-secondary w-full"
-      >
-        {signOutPending ? "Cerrando sesión…" : "Cerrar sesión"}
-      </button>
+      <div className="space-y-3">
+        <Link href={ordersPath} className="btn-secondary flex w-full justify-center">
+          Ver mis compras
+        </Link>
+        <button
+          type="button"
+          onClick={() => void handleSignOut()}
+          disabled={signOutPending || customerSession?.signOutPending}
+          className="btn-secondary w-full"
+        >
+          {signOutPending || customerSession?.signOutPending
+            ? "Cerrando sesión…"
+            : "Cerrar sesión"}
+        </button>
+      </div>
     </div>
   );
 }
