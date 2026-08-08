@@ -61,6 +61,7 @@ export function resolveMessageTemplateKey(
   estado: OrderEstado,
 ): OrderMessageTemplateKey {
   switch (estado) {
+    case "por_pagar":
     case "pendiente":
     case "cancelado":
       return "nuevo";

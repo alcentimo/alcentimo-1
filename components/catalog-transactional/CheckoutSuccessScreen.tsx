@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
-import { CheckCircle2, MessageCircle, Upload } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle2, MessageCircle } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
-import { attachOrderPaymentProof } from "@/lib/orders/actions";
-import { checkoutFileInputClass } from "@/components/catalog-transactional/CheckoutFieldFeedback";
+import { CustomerOrderPaymentProofUpload } from "@/components/customers/CustomerOrderPaymentProofUpload";
+import { CUSTOMER_ORDER_ESTADO_LABELS } from "@/lib/orders/order-status";
 
 interface CheckoutSuccessScreenProps {
   storeSlug: string;
@@ -46,10 +46,7 @@ export function CheckoutSuccessScreen({
   const pathname = usePathname();
   const { accountsEnabled } = useCustomerAccountMode();
   const customerSession = useCustomerSessionOptional();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [proofAttached, setProofAttached] = useState(hasPaymentProof);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [isUploading, startUploadTransition] = useTransition();
 
   const accountPath = getStoreCustomerAccountPath(storeSlug, "cuenta", {
     pathname,
@@ -64,6 +61,11 @@ export function CheckoutSuccessScreen({
   const hasWhatsApp = Boolean(whatsappUrl?.trim());
   const orderRef = formatOrderRef(orderId);
   const showProofUpload = expectsPaymentProof && !proofAttached;
+  const statusLabel = proofAttached
+    ? CUSTOMER_ORDER_ESTADO_LABELS.pendiente
+    : expectsPaymentProof
+      ? CUSTOMER_ORDER_ESTADO_LABELS.por_pagar
+      : CUSTOMER_ORDER_ESTADO_LABELS.pendiente;
 
   const instructions = (() => {
     if (proofAttached) {
@@ -89,29 +91,6 @@ export function CheckoutSuccessScreen({
     };
   })();
 
-  function handleProofSelected(file: File | null) {
-    setUploadError(null);
-    if (!file) return;
-
-    startUploadTransition(async () => {
-      const result = await attachOrderPaymentProof({
-        storeSlug,
-        orderId,
-        proof: file,
-      });
-
-      if (!result.ok) {
-        setUploadError(result.error);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-        return;
-      }
-
-      setProofAttached(true);
-    });
-  }
-
   return (
     <div className="txn-checkout-success">
       <div className="txn-checkout-success-icon" aria-hidden="true">
@@ -123,7 +102,7 @@ export function CheckoutSuccessScreen({
 
       <div className="txn-checkout-success-meta mt-4 w-full space-y-2 text-sm">
         <p className="rounded-xl border border-amber-200/80 bg-amber-50 px-3 py-2 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
-          Estado: <strong>En espera de verificación</strong>
+          Estado: <strong>{statusLabel}</strong>
         </p>
         <p className="text-zinc-600 dark:text-zinc-300">
           Número de pedido:{" "}
@@ -143,47 +122,11 @@ export function CheckoutSuccessScreen({
         <p className="mt-1">{instructions.body}</p>
 
         {showProofUpload ? (
-          <div className="mt-3 space-y-2">
-            <label className="txn-field !mb-0">
-              <span className="sr-only">Subir comprobante de pago</span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                disabled={isUploading}
-                onChange={(event) => {
-                  handleProofSelected(event.target.files?.[0] ?? null);
-                }}
-                aria-invalid={Boolean(uploadError)}
-                aria-describedby={
-                  uploadError
-                    ? "checkout-success-proof-error"
-                    : "checkout-success-proof-hint"
-                }
-                className={checkoutFileInputClass(Boolean(uploadError))}
-              />
-            </label>
-            <p
-              id="checkout-success-proof-hint"
-              className="flex items-start gap-1.5 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400"
-            >
-              <Upload className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>
-                {isUploading
-                  ? "Subiendo comprobante…"
-                  : "JPG, PNG, WebP o GIF. Máx. 5 MB."}
-              </span>
-            </p>
-            {uploadError ? (
-              <p
-                id="checkout-success-proof-error"
-                className="text-[11px] font-medium text-red-600 dark:text-red-400"
-                role="alert"
-              >
-                {uploadError}
-              </p>
-            ) : null}
-          </div>
+          <CustomerOrderPaymentProofUpload
+            storeSlug={storeSlug}
+            orderId={orderId}
+            onUploaded={() => setProofAttached(true)}
+          />
         ) : null}
       </div>
 

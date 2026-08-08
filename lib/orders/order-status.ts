@@ -1,4 +1,5 @@
 export const ORDER_ESTADOS = [
+  "por_pagar",
   "pendiente",
   "procesando",
   "enviado",
@@ -12,6 +13,7 @@ export type OrderEstado = (typeof ORDER_ESTADOS)[number];
 const LEGACY_TO_PROCESANDO = new Set(["verificando", "en_preparacion"]);
 
 export const ORDER_ESTADO_LABELS: Record<OrderEstado, string> = {
+  por_pagar: "Pendiente de pago",
   pendiente: "Pendiente de verificación",
   procesando: "Procesando",
   enviado: "Enviado",
@@ -21,6 +23,7 @@ export const ORDER_ESTADO_LABELS: Record<OrderEstado, string> = {
 
 /** Etiquetas orientadas al comprador final (catálogo / Mis compras). */
 export const CUSTOMER_ORDER_ESTADO_LABELS: Record<OrderEstado, string> = {
+  por_pagar: "Pendiente de pago",
   pendiente: "En espera de verificación",
   procesando: "En preparación",
   enviado: "Enviado",
@@ -29,6 +32,7 @@ export const CUSTOMER_ORDER_ESTADO_LABELS: Record<OrderEstado, string> = {
 };
 
 export const CUSTOMER_ORDER_ESTADO_HINTS: Record<OrderEstado, string> = {
+  por_pagar: "Sube el comprobante para que la tienda verifique tu pago.",
   pendiente: "La tienda está revisando tu pago.",
   procesando: "Pago confirmado. Están preparando tu pedido.",
   enviado: "Tu pedido ya salió. Revisa la guía si aplica.",
@@ -38,6 +42,7 @@ export const CUSTOMER_ORDER_ESTADO_HINTS: Record<OrderEstado, string> = {
 
 /** Pasos del seguimiento (sin cancelado). */
 export const CUSTOMER_ORDER_STATUS_STEPS = [
+  "por_pagar",
   "pendiente",
   "procesando",
   "enviado",
@@ -61,6 +66,7 @@ export function getCustomerOrderStatusStepIndex(estado: OrderEstado): number {
 
 /** Texto corto para el selector (gestión diaria). */
 export const ORDER_ESTADO_HINTS: Record<OrderEstado, string> = {
+  por_pagar: "Falta el comprobante del cliente",
   pendiente: "En espera de verificar el pago",
   procesando: "Pago confirmado y armado",
   enviado: "En camino (guía opcional)",
@@ -69,6 +75,8 @@ export const ORDER_ESTADO_HINTS: Record<OrderEstado, string> = {
 };
 
 export const ORDER_ESTADO_BADGE_CLASS: Record<OrderEstado, string> = {
+  por_pagar:
+    "border-orange-200 bg-orange-50 text-orange-950 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-200",
   pendiente:
     "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200",
   procesando:
@@ -82,6 +90,7 @@ export const ORDER_ESTADO_BADGE_CLASS: Record<OrderEstado, string> = {
 };
 
 export const ORDER_ESTADO_DOT_CLASS: Record<OrderEstado, string> = {
+  por_pagar: "bg-orange-500",
   pendiente: "bg-amber-500",
   procesando: "bg-blue-500",
   enviado: "bg-violet-500",
@@ -103,8 +112,39 @@ export function normalizeOrderEstado(value: unknown): OrderEstado {
   return "pendiente";
 }
 
+/**
+ * Pedido que aún espera el comprobante del cliente.
+ * - `por_pagar`: estado explícito.
+ * - `pendiente` + `payment_proof_url === null`: falta comprobante
+ *   (incl. fallback si el check de BD aún no admite por_pagar).
+ * - `payment_proof_url === ""`: método sin comprobante (efectivo, etc.).
+ */
+export function orderAwaitsPaymentProof(input: {
+  estado: OrderEstado;
+  payment_proof_url?: string | null;
+}): boolean {
+  if (input.payment_proof_url != null) return false;
+  return input.estado === "por_pagar" || input.estado === "pendiente";
+}
+
+/**
+ * Estado orientado al comprador: si falta comprobante, se muestra como
+ * Pendiente de pago aunque en BD siga en pendiente (fallback).
+ */
+export function resolveCustomerOrderDisplayEstado(input: {
+  estado: OrderEstado;
+  payment_proof_url?: string | null;
+}): OrderEstado {
+  if (orderAwaitsPaymentProof(input)) return "por_pagar";
+  return input.estado;
+}
+
 export function isDispatchPendingEstado(estado: OrderEstado): boolean {
-  return estado === "pendiente" || estado === "procesando";
+  return (
+    estado === "por_pagar" ||
+    estado === "pendiente" ||
+    estado === "procesando"
+  );
 }
 
 export function isPendingOrderEstado(estado: OrderEstado): boolean {
@@ -115,12 +155,16 @@ export function isCompletedOrderEstado(estado: OrderEstado): boolean {
   return estado === "entregado";
 }
 
-/** Pendiente y procesando — prioridad en listados. */
+/** por_pagar / pendiente / procesando — prioridad en listados. */
 export function isPriorityOrderEstado(estado: OrderEstado): boolean {
-  return estado === "pendiente" || estado === "procesando";
+  return (
+    estado === "por_pagar" ||
+    estado === "pendiente" ||
+    estado === "procesando"
+  );
 }
 
-/** ORDER BY lógico: pendiente / procesando primero; resto por fecha desc. */
+/** ORDER BY lógico: activos primero; resto por fecha desc. */
 export function sortOrdersByBusinessRules<
   T extends { estado: OrderEstado; created_at: string },
 >(orders: T[]): T[] {

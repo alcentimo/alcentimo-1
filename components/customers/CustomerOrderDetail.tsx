@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, Copy, Check, MessageCircle } from "lucide-react";
 import { CustomerOrderEstadoPill } from "@/components/customers/CustomerOrderEstadoPill";
+import { CustomerOrderPaymentProofUpload } from "@/components/customers/CustomerOrderPaymentProofUpload";
 import { CustomerOrderStatusTimeline } from "@/components/customers/CustomerOrderStatusTimeline";
 import {
   patchCustomerOrderDetail,
@@ -22,7 +23,11 @@ import {
   getOrderFulfillmentLabel,
   getOrderShippingMethodLabel,
 } from "@/lib/orders/shipping-display";
-import { CUSTOMER_ORDER_ESTADO_HINTS } from "@/lib/orders/order-status";
+import {
+  CUSTOMER_ORDER_ESTADO_HINTS,
+  orderAwaitsPaymentProof,
+  resolveCustomerOrderDisplayEstado,
+} from "@/lib/orders/order-status";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 import { isNationalCarrierKey } from "@/src/config/shipping-methods";
 
@@ -85,6 +90,8 @@ export function CustomerOrderDetail({
     storeWhatsAppPhone,
     order.id,
   );
+  const needsPaymentProof = orderAwaitsPaymentProof(order);
+  const displayEstado = resolveCustomerOrderDisplayEstado(order);
 
   async function copyTracking() {
     if (!order.tracking_number) return;
@@ -113,7 +120,10 @@ export function CustomerOrderDetail({
         </div>
         <div className="flex flex-col items-end gap-2">
           <p className="customer-orders-total">{formatUsd(order.total_usd)}</p>
-          <CustomerOrderEstadoPill estado={order.estado} />
+          <CustomerOrderEstadoPill
+            estado={order.estado}
+            paymentProofUrl={order.payment_proof_url}
+          />
         </div>
       </header>
 
@@ -132,10 +142,35 @@ export function CustomerOrderDetail({
       <section className="customer-order-section">
         <h2 className="customer-order-section-title">Seguimiento</h2>
         <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-          {CUSTOMER_ORDER_ESTADO_HINTS[order.estado]} Se actualiza en tiempo
+          {CUSTOMER_ORDER_ESTADO_HINTS[displayEstado]} Se actualiza en tiempo
           real cuando la tienda cambia el estado.
         </p>
-        <CustomerOrderStatusTimeline estado={order.estado} />
+        <CustomerOrderStatusTimeline estado={displayEstado} />
+
+        {needsPaymentProof ? (
+          <div className="mt-4 rounded-xl border border-orange-200/80 bg-orange-50/70 px-4 py-3 text-left dark:border-orange-900/40 dark:bg-orange-950/25">
+            <p className="text-sm font-medium text-orange-950 dark:text-orange-100">
+              Falta enviar tu comprobante
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-orange-950/80 dark:text-orange-100/80">
+              Sube la imagen del pago aquí para que la tienda pueda verificarlo.
+              Mientras no haya comprobante, el pedido permanece en{" "}
+              <strong>Pendiente de pago</strong>.
+            </p>
+            <CustomerOrderPaymentProofUpload
+              storeSlug={storeSlug}
+              orderId={order.id}
+              onUploaded={({ paymentProofUrl, estado }) => {
+                setOrder((current) => ({
+                  ...current,
+                  payment_proof_url: paymentProofUrl,
+                  estado,
+                }));
+                router.refresh();
+              }}
+            />
+          </div>
+        ) : null}
       </section>
 
       {order.tracking_number ? (

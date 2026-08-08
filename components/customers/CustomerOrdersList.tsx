@@ -154,7 +154,10 @@ export function CustomerOrdersList({
                   <p className="customer-orders-total">
                     {formatUsd(order.total_usd)}
                   </p>
-                  <CustomerOrderEstadoPill estado={order.estado} />
+                  <CustomerOrderEstadoPill
+                    estado={order.estado}
+                    paymentProofUrl={order.payment_proof_url}
+                  />
                   <ChevronRight
                     className="hidden h-4 w-4 text-zinc-300 sm:block dark:text-zinc-600"
                     aria-hidden="true"

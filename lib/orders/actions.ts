@@ -20,6 +20,7 @@ import {
 } from "@/lib/store-settings/delivery-zones";
 import {
   getPaymentMethod,
+  paymentMethodRequiresProof,
 } from "@/src/config/payment-methods";
 import { getShippingMethod, isNationalCarrierKey } from "@/src/config/shipping-methods";
 import { getCarrierBranchById } from "@/lib/shipping/carrier-branches";
@@ -369,7 +370,14 @@ export async function submitTransactionalOrder(
     });
   }
 
-  const { error: insertError } = await admin.from("orders").insert({
+  const expectsPaymentProof = paymentMethodRequiresProof(paymentMethodRaw);
+  const initialEstado =
+    expectsPaymentProof && !paymentProofUrl ? "por_pagar" : "pendiente";
+  // null = falta comprobante; "" = método sin comprobante (efectivo, etc.).
+  const storedProofUrl =
+    paymentProofUrl ?? (expectsPaymentProof ? null : "");
+
+  const orderInsert = {
     id: orderId,
     store_id: store.id,
     customer_user_id: customerUserId,
@@ -377,8 +385,8 @@ export async function submitTransactionalOrder(
     customer_phone: customerPhone,
     items: enrichedOrderItems,
     total_usd: orderTotalUsd,
-    payment_proof_url: paymentProofUrl,
-    estado: "pendiente",
+    payment_proof_url: storedProofUrl,
+    estado: initialEstado,
     location_id: resolvedLocationId,
     fulfillment_type: fulfillmentType,
     shipping_method: shippingMethodRaw || null,
@@ -392,7 +400,23 @@ export async function submitTransactionalOrder(
       ? shippingBranchAddress
       : null,
     delivery_address: resolvedFulfillmentAddress,
-  });
+  };
+
+  let { error: insertError } = await admin.from("orders").insert(orderInsert);
+
+  // Si la BD aún no admite por_pagar, reintenta como pendiente (mismo significado
+  // para el cliente vía payment_proof_url === null).
+  if (
+    insertError &&
+    initialEstado === "por_pagar" &&
+    (insertError.code === "23514" ||
+      /orders_estado_check|por_pagar/i.test(insertError.message))
+  ) {
+    ({ error: insertError } = await admin.from("orders").insert({
+      ...orderInsert,
+      estado: "pendiente",
+    }));
+  }
 
   if (insertError) {
     return { error: insertError.message };
@@ -536,14 +560,17 @@ export async function submitTransactionalOrder(
 }
 
 /**
- * Adjunta un comprobante a un pedido recién creado (p. ej. desde la pantalla de éxito).
- * Solo si aún no tiene comprobante y sigue en estado pendiente.
+ * Adjunta un comprobante a un pedido sin pago (éxito de checkout o Mis compras).
+ * Si estaba en por_pagar, pasa a pendiente (en verificación).
  */
 export async function attachOrderPaymentProof(input: {
   storeSlug: string;
   orderId: string;
   proof: File;
-}): Promise<{ ok: true; paymentProofUrl: string } | { ok: false; error: string }> {
+}): Promise<
+  | { ok: true; paymentProofUrl: string; estado: "pendiente" }
+  | { ok: false; error: string }
+> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
   const orderId = input.orderId.trim();
   const proof = input.proof;
@@ -583,15 +610,16 @@ export async function attachOrderPaymentProof(input: {
     };
   }
 
-  if (order.estado !== "pendiente") {
+  const canAttach =
+    order.estado === "por_pagar" || order.estado === "pendiente";
+  if (!canAttach) {
     return {
       ok: false,
       error: "Este pedido ya no admite comprobante desde aquí.",
     };
   }
 
-  // Autorización: UUID del pedido (secreto en la pantalla de éxito / enlace).
-  // Solo se permite la primera carga mientras el pedido sigue pendiente.
+  // Autorización: UUID del pedido (secreto en éxito / Mis compras).
 
   const proofUpload = await uploadOrderPaymentProof(store.id, orderId, proof);
   if (proofUpload.error || !proofUpload.url) {
@@ -603,12 +631,15 @@ export async function attachOrderPaymentProof(input: {
 
   const { data: updated, error: updateError } = await admin
     .from("orders")
-    .update({ payment_proof_url: proofUpload.url })
+    .update({
+      payment_proof_url: proofUpload.url,
+      estado: "pendiente",
+    })
     .eq("id", orderId)
     .eq("store_id", store.id)
     .is("payment_proof_url", null)
-    .eq("estado", "pendiente")
-    .select("id")
+    .in("estado", ["por_pagar", "pendiente"])
+    .select("id, estado")
     .maybeSingle();
 
   if (updateError) {
@@ -623,11 +654,16 @@ export async function attachOrderPaymentProof(input: {
 
   revalidatePath(`/c/${storeSlug}`);
   revalidatePath(`/c/${storeSlug}/cuenta`);
+  revalidatePath(`/c/${storeSlug}/cuenta/${orderId}`);
   revalidatePath("/dashboard/pedidos");
   revalidatePath("/dashboard");
   revalidatePath(`/pedidos/${orderId}`);
 
-  return { ok: true, paymentProofUrl: proofUpload.url };
+  return {
+    ok: true,
+    paymentProofUrl: proofUpload.url,
+    estado: "pendiente",
+  };
 }
 
 export async function fetchStoreOrdersPage(options: {

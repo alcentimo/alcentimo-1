@@ -57,6 +57,12 @@ export function patchCustomerOrderSummary(
       row.tracking_number !== undefined
         ? readString(row, "tracking_number")
         : current.tracking_number,
+    payment_proof_url:
+      row.payment_proof_url !== undefined
+        ? typeof row.payment_proof_url === "string"
+          ? row.payment_proof_url
+          : null
+        : current.payment_proof_url,
   };
 }
 
@@ -103,7 +109,9 @@ export function patchCustomerOrderDetail(
         : current.tracking_number,
     payment_proof_url:
       row.payment_proof_url !== undefined
-        ? readString(row, "payment_proof_url")
+        ? typeof row.payment_proof_url === "string"
+          ? row.payment_proof_url
+          : null
         : current.payment_proof_url,
   };
 }

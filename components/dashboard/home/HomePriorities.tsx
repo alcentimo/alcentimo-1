@@ -35,12 +35,17 @@ export function HomePriorities({
 
   for (const order of pendingOrders.slice(0, 6)) {
     const hasProof = Boolean(order.payment_proof_url);
+    const awaitingProof =
+      order.estado === "por_pagar" ||
+      (order.estado === "pendiente" && order.payment_proof_url == null);
     items.push({
       id: `order-${order.id}`,
       title: order.customer_name,
-      detail: hasProof
-        ? `Pedido sin confirmar · ${formatUsd(order.total_usd)} · revisar pago`
-        : `Pedido sin confirmar · ${formatUsd(order.total_usd)}`,
+      detail: awaitingProof
+        ? `Esperando comprobante · ${formatUsd(order.total_usd)}`
+        : hasProof
+          ? `Pedido sin confirmar · ${formatUsd(order.total_usd)} · revisar pago`
+          : `Pedido sin confirmar · ${formatUsd(order.total_usd)}`,
       href: "/dashboard/pedidos",
       icon: hasProof ? Receipt : CircleAlert,
     });

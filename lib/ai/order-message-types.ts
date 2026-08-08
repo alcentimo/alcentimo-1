@@ -42,6 +42,7 @@ export function suggestOrderMessageIntent(
   estado: OrderEstado,
 ): OrderMessageGoalOption["value"] {
   switch (estado) {
+    case "por_pagar":
     case "pendiente":
       return "payment_reminder";
     case "enviado":

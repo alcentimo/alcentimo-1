@@ -8,8 +8,10 @@ export function formatOrderPublicId(orderId: string): string {
 }
 
 const STATUS_UPDATE_DETAILS: Record<OrderEstado, string> = {
+  por_pagar:
+    "Tu pedido quedó registrado. Envíanos el comprobante de pago para verificarlo.",
   pendiente:
-    "Recibimos tu pedido y lo tenemos en cola para procesarlo.",
+    "Recibimos tu comprobante y lo tenemos en cola para verificar el pago.",
   procesando:
     "Confirmamos tu pago y ya estamos armando tu pedido.",
   enviado:

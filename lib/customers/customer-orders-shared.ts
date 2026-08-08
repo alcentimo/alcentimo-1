@@ -7,6 +7,8 @@ export interface CustomerOrderSummary {
   total_usd: number;
   estado: OrderEstado;
   created_at: string;
+  /** null = falta comprobante; "" = no aplica; url = adjunto. */
+  payment_proof_url: string | null;
   fulfillment_type: CatalogOrder["fulfillment_type"];
   shipping_method: string | null;
   shipping_branch_name: string | null;
@@ -83,6 +85,7 @@ export function toCustomerOrderSummary(
     total_usd: order.total_usd,
     estado: order.estado,
     created_at: order.created_at,
+    payment_proof_url: order.payment_proof_url,
     fulfillment_type: order.fulfillment_type ?? null,
     shipping_method: order.shipping_method ?? null,
     shipping_branch_name: order.shipping_branch_name ?? null,

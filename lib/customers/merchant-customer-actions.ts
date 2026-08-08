@@ -68,7 +68,7 @@ export async function fetchCustomerDetail(
     supabase
       .from("orders")
       .select(
-        "id, store_id, total_usd, estado, created_at, fulfillment_type, shipping_method, shipping_branch_name, delivery_address, tracking_number, items",
+        "id, store_id, total_usd, estado, payment_proof_url, created_at, fulfillment_type, shipping_method, shipping_branch_name, delivery_address, tracking_number, items",
       )
       .eq("store_id", store.id)
       .eq("customer_user_id", normalizedUserId)
@@ -104,6 +104,7 @@ export async function fetchCustomerDetail(
         total_usd: Number(row.total_usd) || 0,
         estado: parseOrderEstado(row.estado),
         created_at: row.created_at,
+        payment_proof_url: (row.payment_proof_url as string | null) ?? null,
         fulfillment_type:
           (row.fulfillment_type as MerchantCustomerOrderRow["fulfillment_type"]) ??
           null,
