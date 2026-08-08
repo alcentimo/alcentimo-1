@@ -12,10 +12,7 @@ import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
 import type { CatalogCustomerAuthMode } from "@/components/catalog-transactional/CatalogShellNavigation";
-import {
-  CUSTOMER_MIN_PASSWORD_LENGTH,
-  type CustomerAuthMethod,
-} from "@/lib/customers/phone-auth";
+import { CUSTOMER_MIN_PASSWORD_LENGTH } from "@/lib/customers/phone-auth";
 
 interface CustomerRegisterPanelProps {
   storeSlug: string;
@@ -37,45 +34,6 @@ interface CustomerRegisterPanelProps {
   }) => void;
 }
 
-function AuthMethodToggle({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: CustomerAuthMethod;
-  onChange: (method: CustomerAuthMethod) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <div className="catalog-auth-method-toggle" role="group" aria-label="Método de acceso">
-      <button
-        type="button"
-        disabled={disabled}
-        className={
-          value === "email"
-            ? "catalog-auth-method-btn catalog-auth-method-btn-active"
-            : "catalog-auth-method-btn"
-        }
-        onClick={() => onChange("email")}
-      >
-        Correo
-      </button>
-      <button
-        type="button"
-        disabled={disabled}
-        className={
-          value === "phone"
-            ? "catalog-auth-method-btn catalog-auth-method-btn-active"
-            : "catalog-auth-method-btn"
-        }
-        onClick={() => onChange("phone")}
-      >
-        Teléfono
-      </button>
-    </div>
-  );
-}
-
 export function CustomerRegisterPanel({
   storeSlug,
   storeName,
@@ -90,7 +48,6 @@ export function CustomerRegisterPanel({
   redirectOnSuccess = true,
   onRegistered,
 }: CustomerRegisterPanelProps) {
-  const [authMethod, setAuthMethod] = useState<CustomerAuthMethod>("email");
   const [displayName, setDisplayName] = useState(suggestedDisplayName ?? "");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -153,9 +110,8 @@ export function CustomerRegisterPanel({
       const result = await signInCustomer({
         storeSlug,
         nextPath,
-        method: authMethod,
-        phone: authMethod === "phone" ? phone : null,
-        email: authMethod === "email" ? email : null,
+        method: "email",
+        email,
         password,
         orderId,
       });
@@ -362,56 +318,27 @@ export function CustomerRegisterPanel({
             <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
           </div>
           <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
-            o con contraseña
+            o con correo
           </p>
         </div>
 
-        <AuthMethodToggle
-          value={authMethod}
-          disabled={isBusy}
-          onChange={(method) => {
-            setAuthMethod(method);
-            setError(null);
-          }}
-        />
-
-        <form onSubmit={(e) => void handleLoginSubmit(e)} className="mt-4 space-y-4">
-          {authMethod === "email" ? (
-            <div>
-              <label htmlFor="email_login" className="label-field">
-                Correo electrónico
-              </label>
-              <input
-                id="email_login"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                disabled={isBusy}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
-                placeholder="tu@correo.com"
-              />
-            </div>
-          ) : (
-            <div>
-              <label htmlFor="phone_login" className="label-field">
-                Teléfono
-              </label>
-              <input
-                id="phone_login"
-                type="tel"
-                autoComplete="tel"
-                required
-                minLength={10}
-                value={phone}
-                disabled={isBusy}
-                onChange={(e) => setPhone(e.target.value)}
-                className="input-field"
-                placeholder="0412… o 412…"
-              />
-            </div>
-          )}
+        <form onSubmit={(e) => void handleLoginSubmit(e)} className="space-y-4">
+          <div>
+            <label htmlFor="email_login" className="label-field">
+              Correo electrónico
+            </label>
+            <input
+              id="email_login"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              disabled={isBusy}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input-field"
+              placeholder="tu@correo.com"
+            />
+          </div>
 
           <div>
             <label htmlFor="password_login" className="label-field">
