@@ -7,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { usePathname } from "next/navigation";
@@ -57,48 +58,56 @@ function writeUnread(storeId: string, count: number): void {
   }
 }
 
+function detectPushSupport(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    "Notification" in window &&
+    "PushManager" in window &&
+    "serviceWorker" in navigator &&
+    window.isSecureContext
+  );
+}
+
 interface OrderNotificationsProviderProps {
   storeId: string | null;
   children: ReactNode;
 }
 
-export function OrderNotificationsProvider({
+function OrderNotificationsProviderInner({
   storeId,
   children,
-}: OrderNotificationsProviderProps) {
+}: {
+  storeId: string;
+  children: ReactNode;
+}) {
   const pathname = usePathname();
-  const [unreadCount, setUnreadCount] = useState(0);
+  const onPedidos = Boolean(pathname?.startsWith("/dashboard/pedidos"));
+  const [unreadCount, setUnreadCount] = useState(() => readUnread(storeId));
   const [recentOrders, setRecentOrders] = useState<CatalogOrder[]>([]);
   const [toastOrder, setToastOrder] = useState<CatalogOrder | null>(null);
   const [pushEnabled, setPushEnabled] = useState(false);
-  const [pushSupported, setPushSupported] = useState(false);
+  const [vapidConfigured, setVapidConfigured] = useState(true);
+  const browserPushSupported = useSyncExternalStore(
+    () => () => undefined,
+    detectPushSupport,
+    () => false,
+  );
+  const pushSupported = browserPushSupported && vapidConfigured;
 
   useEffect(() => {
-    if (!storeId) {
-      setUnreadCount(0);
-      return;
-    }
-    setUnreadCount(readUnread(storeId));
-  }, [storeId]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const supported =
-      "Notification" in window &&
-      "PushManager" in window &&
-      "serviceWorker" in navigator &&
-      window.isSecureContext;
-    setPushSupported(supported);
-    if (!supported || !storeId) return;
-
+    if (!browserPushSupported) return;
+    let cancelled = false;
     void getMyPushSubscriptionStatusAction().then((status) => {
+      if (cancelled) return;
       setPushEnabled(status.hasSubscription && status.vapidConfigured);
-      if (!status.vapidConfigured) setPushSupported(false);
+      setVapidConfigured(status.vapidConfigured);
     });
-  }, [storeId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [browserPushSupported]);
 
   const clearUnread = useCallback(() => {
-    if (!storeId) return;
     setUnreadCount(0);
     writeUnread(storeId, 0);
   }, [storeId]);
@@ -107,11 +116,11 @@ export function OrderNotificationsProvider({
     setPushEnabled(true);
   }, []);
 
+  // Persistir limpieza al visitar Pedidos (el badge se deriva a 0 en esa ruta).
   useEffect(() => {
-    if (pathname?.startsWith("/dashboard/pedidos")) {
-      clearUnread();
-    }
-  }, [clearUnread, pathname]);
+    if (!onPedidos) return;
+    writeUnread(storeId, 0);
+  }, [onPedidos, storeId]);
 
   const handleInsert = useCallback(
     (order: CatalogOrder) => {
@@ -120,11 +129,10 @@ export function OrderNotificationsProvider({
         return [order, ...current].slice(0, 8);
       });
 
-      const onPedidos = pathname?.startsWith("/dashboard/pedidos");
       if (!onPedidos) {
         setUnreadCount((count) => {
           const next = count + 1;
-          if (storeId) writeUnread(storeId, next);
+          writeUnread(storeId, next);
           return next;
         });
       }
@@ -142,7 +150,7 @@ export function OrderNotificationsProvider({
         setToastOrder((current) => (current?.id === order.id ? null : current));
       }, 8_000);
     },
-    [pathname, storeId],
+    [onPedidos, storeId],
   );
 
   const handleUpdate = useCallback(
@@ -158,15 +166,17 @@ export function OrderNotificationsProvider({
   );
 
   useStoreOrdersRealtime({
-    storeId: storeId ?? "",
-    enabled: Boolean(storeId),
+    storeId,
+    enabled: true,
     onInsert: handleInsert,
     onUpdate: handleUpdate,
   });
 
+  const displayUnread = onPedidos ? 0 : unreadCount;
+
   const value = useMemo(
     () => ({
-      unreadCount,
+      unreadCount: displayUnread,
       clearUnread,
       recentOrders,
       pushEnabled,
@@ -176,12 +186,12 @@ export function OrderNotificationsProvider({
     }),
     [
       clearUnread,
+      displayUnread,
       onPushEnabled,
       pushEnabled,
       pushSupported,
       recentOrders,
       storeId,
-      unreadCount,
     ],
   );
 
@@ -197,6 +207,35 @@ export function OrderNotificationsProvider({
         </div>
       ) : null}
     </OrderNotificationsContext.Provider>
+  );
+}
+
+export function OrderNotificationsProvider({
+  storeId,
+  children,
+}: OrderNotificationsProviderProps) {
+  if (!storeId) {
+    return (
+      <OrderNotificationsContext.Provider
+        value={{
+          unreadCount: 0,
+          clearUnread: () => undefined,
+          recentOrders: [],
+          pushEnabled: false,
+          pushSupported: false,
+          onPushEnabled: () => undefined,
+          storeId: null,
+        }}
+      >
+        {children}
+      </OrderNotificationsContext.Provider>
+    );
+  }
+
+  return (
+    <OrderNotificationsProviderInner key={storeId} storeId={storeId}>
+      {children}
+    </OrderNotificationsProviderInner>
   );
 }
 

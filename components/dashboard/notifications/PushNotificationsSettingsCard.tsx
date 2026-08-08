@@ -1,19 +1,31 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useSyncExternalStore } from "react";
 import { BellRing, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  SettingsSection,
-} from "@/components/dashboard/settings/SettingsLayout";
+import { SettingsSection } from "@/components/dashboard/settings/SettingsLayout";
 import { getMyPushSubscriptionStatusAction } from "@/lib/notifications/push-actions";
 import {
   disableMerchantPushNotifications,
   enableMerchantPushNotifications,
 } from "@/lib/notifications/subscribe-push-client";
 
+function detectPushSupport(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    "Notification" in window &&
+    "PushManager" in window &&
+    "serviceWorker" in navigator &&
+    window.isSecureContext
+  );
+}
+
 export function PushNotificationsSettingsCard() {
-  const [supported, setSupported] = useState(false);
+  const supported = useSyncExternalStore(
+    () => () => undefined,
+    detectPushSupport,
+    () => false,
+  );
   const [enabled, setEnabled] = useState(false);
   const [vapidConfigured, setVapidConfigured] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
@@ -21,20 +33,17 @@ export function PushNotificationsSettingsCard() {
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const ok =
-      "Notification" in window &&
-      "PushManager" in window &&
-      "serviceWorker" in navigator &&
-      window.isSecureContext;
-    setSupported(ok);
-    if (!ok) return;
-
+    if (!supported) return;
+    let cancelled = false;
     void getMyPushSubscriptionStatusAction().then((status) => {
+      if (cancelled) return;
       setVapidConfigured(status.vapidConfigured);
       setEnabled(status.hasSubscription && status.vapidConfigured);
     });
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [supported]);
 
   function handleEnable() {
     setError(null);
