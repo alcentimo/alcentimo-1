@@ -768,86 +768,16 @@ export function CheckoutPanel({
     // Capturar si había comprobante antes de limpiar el estado local.
     const submittedWithProof = Boolean(proofFile && proofFile.size > 0);
 
-    // Abrir pestaña en el gesto del clic (antes del await) para evitar bloqueo
-    // de popups. Si hay WhatsApp configurado, navegamos a wa.me tras confirmar.
-    let waWindow: Window | null = null;
-    if (whatsappConfigured && typeof window !== "undefined") {
-      try {
-        waWindow = window.open("about:blank", "alcentimo-wa-checkout");
-      } catch {
-        waWindow = null;
-      }
-    }
-
     startTransition(async () => {
       const result = await submitTransactionalOrder(formData);
 
       if (result.error) {
-        if (waWindow && !waWindow.closed) {
-          try {
-            waWindow.close();
-          } catch {
-            // ignore
-          }
-        }
         setError(result.error);
         return;
       }
 
+      // WhatsApp es opcional en la pantalla de éxito; no abrir ni redirigir aquí.
       const whatsappUrl = result.whatsappUrl?.trim() || null;
-      let openedWhatsApp = false;
-
-      if (whatsappUrl) {
-        if (waWindow && !waWindow.closed) {
-          try {
-            waWindow.location.href = whatsappUrl;
-            openedWhatsApp = true;
-          } catch {
-            try {
-              waWindow.close();
-            } catch {
-              // ignore
-            }
-            waWindow = null;
-          }
-        }
-
-        if (!openedWhatsApp) {
-          try {
-            const fallback = window.open(
-              whatsappUrl,
-              "alcentimo-wa-checkout",
-              "noopener,noreferrer",
-            );
-            openedWhatsApp = Boolean(fallback && !fallback.closed);
-          } catch {
-            openedWhatsApp = false;
-          }
-        }
-
-        // Último recurso en móviles que bloquean window.open tras await.
-        if (!openedWhatsApp && typeof document !== "undefined") {
-          try {
-            const link = document.createElement("a");
-            link.href = whatsappUrl;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            link.style.display = "none";
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            openedWhatsApp = true;
-          } catch {
-            openedWhatsApp = false;
-          }
-        }
-      } else if (waWindow && !waWindow.closed) {
-        try {
-          waWindow.close();
-        } catch {
-          // ignore
-        }
-      }
 
       // Invitado = sin sesión activa. No usar !customerProfile: un cliente
       // logueado puede completar el pedido sin tarjeta de perfil en memoria.
@@ -1571,7 +1501,7 @@ export function CheckoutPanel({
               <div className="txn-checkout-order-meta !pt-0">
                 <p className="txn-checkout-hint !text-left">
                   {whatsappConfigured
-                    ? "Al confirmar, se guarda el pedido y se abre WhatsApp con el resumen para coordinar el pago."
+                    ? "Al confirmar, verás el resumen del pedido. WhatsApp es opcional desde esa pantalla."
                     : "Tu pedido quedará registrado en el panel de la tienda."}
                 </p>
                 {shippingDisplayLabel || paymentLabel ? (

@@ -149,7 +149,7 @@ export function CatalogCartHost({
                     : whatsappOnly
                       ? "Tu pedido se envía por WhatsApp con el resumen del carrito."
                       : whatsappConfigured
-                        ? "Puedes finalizar en la web (abre WhatsApp al confirmar) o enviar el carrito directo por WhatsApp."
+                        ? "Puedes finalizar en la web y, si quieres, avisar por WhatsApp desde la confirmación."
                         : "Configura WhatsApp en la tienda para recibir pedidos."
                 }
               />
