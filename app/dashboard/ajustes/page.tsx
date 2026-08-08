@@ -30,8 +30,9 @@ export default async function AjustesPage({
 }) {
   const { tab, domain, mode } = await searchParams;
 
+  // Equipo oculto por ahora.
   if (tab === "team") {
-    redirect("/dashboard/equipo");
+    redirect("/dashboard/ajustes");
   }
 
   await requireDashboardRouteAccess("/dashboard/ajustes");
