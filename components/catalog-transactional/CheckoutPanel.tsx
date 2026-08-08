@@ -156,6 +156,7 @@ export function CheckoutPanel({
     totalUsd: number;
     whatsappUrl: string | null;
     hasPaymentProof: boolean;
+    expectsPaymentProof: boolean;
     wasGuest: boolean;
   } | null>(null);
   const [selectedShipping, setSelectedShipping] = useState("");
@@ -767,8 +768,9 @@ export function CheckoutPanel({
 
     if (locationId) formData.set("locationId", locationId);
 
-    // Capturar si había comprobante antes de limpiar el estado local.
+    // Capturar si había comprobante / si el método lo espera, antes de limpiar.
     const submittedWithProof = Boolean(proofFile && proofFile.size > 0);
+    const submittedExpectsProof = showsProofUpload;
 
     const submittedName = (
       customerProfile?.displayName ?? customerName
@@ -838,6 +840,7 @@ export function CheckoutPanel({
           totalUsd,
           whatsappUrl,
           hasPaymentProof: submittedWithProof,
+          expectsPaymentProof: submittedExpectsProof,
           wasGuest,
         });
         return;
@@ -856,6 +859,7 @@ export function CheckoutPanel({
           totalUsd={successOrder.totalUsd}
           whatsappUrl={successOrder.whatsappUrl}
           hasPaymentProof={successOrder.hasPaymentProof}
+          expectsPaymentProof={successOrder.expectsPaymentProof}
           wasGuest={successOrder.wasGuest}
           onClose={() => {
             setSuccessOrder(null);
