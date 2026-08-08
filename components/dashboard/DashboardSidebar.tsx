@@ -71,7 +71,7 @@ function navLinkClass(
     collapsed
       ? "h-10 justify-center border-transparent px-0"
       : mobileDrawer
-        ? "min-h-11 gap-3 border-transparent px-3.5 py-2.5"
+        ? "min-h-12 gap-3.5 border-transparent px-3.5 py-3"
         : "min-h-10 gap-3 border-transparent px-3 py-2",
     active
       ? "border-emerald-600 bg-emerald-50 text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
@@ -132,12 +132,15 @@ function SidebarPlanStatus({
   trialActive,
   trialPhase,
   expanded,
+  comfortable = false,
 }: {
   planName: string | null;
   subscriptionStatus: SubscriptionStatus | string | null | undefined;
   trialActive: boolean;
   trialPhase: ProTrialPhase;
   expanded: boolean;
+  /** Más padding interior (drawer móvil). */
+  comfortable?: boolean;
 }) {
   const status = resolveSubscriptionStatus(subscriptionStatus);
   const statusLabel = formatSubscriptionStatusLabel(subscriptionStatus, {
@@ -192,7 +195,10 @@ function SidebarPlanStatus({
 
   return (
     <div
-      className="rounded-lg border border-zinc-200/90 bg-zinc-50/80 px-2.5 py-2 dark:border-zinc-800 dark:bg-zinc-900/50"
+      className={cn(
+        "rounded-lg border border-zinc-200/90 bg-zinc-50/80 dark:border-zinc-800 dark:bg-zinc-900/50",
+        comfortable ? "px-3.5 py-3" : "px-2.5 py-2",
+      )}
       aria-label={`Plan actual: ${summary}`}
     >
       <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
@@ -201,7 +207,8 @@ function SidebarPlanStatus({
       {resolvedPlanName ? (
         <span
           className={cn(
-            "mt-1.5 inline-flex w-fit max-w-full truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            "inline-flex w-fit max-w-full truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            comfortable ? "mt-2" : "mt-1.5",
             statusBadgeClass,
           )}
         >
@@ -284,7 +291,7 @@ export function DashboardSidebar({
         "fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col border-r border-zinc-200/90 bg-white transition-[width,transform] duration-200 ease-out dark:border-zinc-800 dark:bg-zinc-950 lg:static lg:z-auto lg:translate-x-0",
         drawerExpanded
           ? mobileOpen
-            ? "w-[min(90vw,18.5rem)] lg:w-64"
+            ? "w-[min(92vw,19.5rem)] lg:w-64"
             : "w-[min(85vw,16rem)] lg:w-64"
           : "w-[4.5rem]",
         immersiveHidden
@@ -301,7 +308,7 @@ export function DashboardSidebar({
           "flex items-center border-b border-zinc-200 dark:border-zinc-800",
           drawerExpanded
             ? mobileOpen
-              ? "justify-between gap-3 px-5 pb-4 pt-[max(1.125rem,env(safe-area-inset-top))]"
+              ? "justify-between gap-3 px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))]"
               : "justify-between gap-2 px-4 py-3"
             : "flex-col gap-2 px-2 py-3",
         )}
@@ -368,7 +375,7 @@ export function DashboardSidebar({
         className={cn(
           "flex flex-1 flex-col overflow-y-auto",
           mobileOpen && drawerExpanded
-            ? "gap-1.5 px-4 py-5"
+            ? "gap-2 px-5 pb-6 pt-5"
             : drawerExpanded
               ? "gap-1 px-3 py-4"
               : "gap-1 px-2 py-4",
@@ -376,7 +383,7 @@ export function DashboardSidebar({
         aria-label="Navegación principal"
       >
         {mobileOpen && drawerExpanded ? (
-          <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+          <p className="mb-2.5 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
             Tienda
           </p>
         ) : null}
@@ -398,7 +405,7 @@ export function DashboardSidebar({
         className={cn(
           "shrink-0 border-t border-zinc-200 dark:border-zinc-800",
           mobileOpen && drawerExpanded
-            ? "px-4 py-4 pb-[max(1.125rem,env(safe-area-inset-bottom))]"
+            ? "space-y-4 px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
             : drawerExpanded
               ? "px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
               : "px-2 py-3",
@@ -406,7 +413,11 @@ export function DashboardSidebar({
       >
         <div
           className={cn(
-            mobileOpen && drawerExpanded ? "mb-3" : drawerExpanded ? "mb-2" : "mb-1",
+            mobileOpen && drawerExpanded
+              ? null
+              : drawerExpanded
+                ? "mb-2"
+                : "mb-1",
           )}
         >
           <SidebarPlanStatus
@@ -415,6 +426,7 @@ export function DashboardSidebar({
             trialActive={trialActive}
             trialPhase={trialPhase}
             expanded={drawerExpanded}
+            comfortable={mobileOpen && drawerExpanded}
           />
         </div>
 
@@ -422,7 +434,7 @@ export function DashboardSidebar({
           <div
             className={cn(
               mobileOpen && drawerExpanded
-                ? "mb-3"
+                ? null
                 : drawerExpanded
                   ? "mb-2"
                   : "mb-1",
@@ -440,7 +452,7 @@ export function DashboardSidebar({
 
         <div
           className={cn(
-            mobileOpen && drawerExpanded ? "space-y-1.5" : "space-y-1",
+            mobileOpen && drawerExpanded ? "space-y-2" : "space-y-1",
           )}
         >
           <DashboardAccountMenu
