@@ -4,7 +4,7 @@ import {
   ClipboardList,
   Settings2,
   Store,
-  UserCog,
+  // UserCog, // Equipo oculto en lanzamiento (solo gestión vía /admin)
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -49,13 +49,15 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     icon: Users,
     match: (pathname) => pathname.startsWith("/dashboard/clientes"),
   },
-  {
-    href: "/dashboard/equipo",
-    label: "Equipo",
-    description: "Invita encargados y vendedores a tu panel",
-    icon: UserCog,
-    match: (pathname) => pathname.startsWith("/dashboard/equipo"),
-  },
+  // Lanzamiento: Equipo oculto en todos los dashboards de tienda.
+  // La gestión de equipo queda fuera del menú /dashboard (solo panel SaaS /admin).
+  // {
+  //   href: "/dashboard/equipo",
+  //   label: "Equipo",
+  //   description: "Invita encargados y vendedores a tu panel",
+  //   icon: UserCog,
+  //   match: (pathname) => pathname.startsWith("/dashboard/equipo"),
+  // },
   {
     href: "/dashboard/analiticas",
     label: "Analíticas",
@@ -95,20 +97,13 @@ export function isDashboardNavItemActive(
   return item.match?.(pathname) ?? pathname === item.href;
 }
 
-const TEAM_NAV_HREF = "/dashboard/equipo";
-
 export function getDashboardNavItems(options?: {
   storeRole?: DashboardStoreRole | null;
 }): DashboardNavItem[] {
   const role = options?.storeRole ?? null;
-  // Sin rol aún (carga): menú base de dueño, pero sin Equipo hasta confirmar ownership.
   const roleForFilter = role ?? "owner";
 
-  return DASHBOARD_NAV_ITEMS.filter((item) => {
-    if (item.href === TEAM_NAV_HREF) {
-      // Solo el dueño de la tienda; oculto para admin/staff invitados.
-      return role === "owner";
-    }
-    return canAccessDashboardPath(roleForFilter, item.href);
-  });
+  return DASHBOARD_NAV_ITEMS.filter((item) =>
+    canAccessDashboardPath(roleForFilter, item.href),
+  );
 }

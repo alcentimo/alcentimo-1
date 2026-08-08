@@ -30,8 +30,9 @@ export default async function AjustesPage({
 }) {
   const { tab, domain, mode } = await searchParams;
 
+  // Lanzamiento: pestaña Equipo deshabilitada en dashboards de tienda.
   if (tab === "team") {
-    redirect("/dashboard/equipo");
+    redirect("/dashboard/ajustes");
   }
 
   await requireDashboardRouteAccess("/dashboard/ajustes");
