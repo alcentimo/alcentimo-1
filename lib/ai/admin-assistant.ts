@@ -11,7 +11,7 @@ import type {
 const MAX_USER_MESSAGE = AI_MAX_INPUT_CHARS.userMessage;
 const MAX_HISTORY = 10;
 const MAX_REPLY = 2500;
-const MAX_CONTEXT_CHARS = 14_000;
+const MAX_CONTEXT_CHARS = 18_000;
 
 function truncate(value: string, max: number): string {
   const trimmed = value.trim();

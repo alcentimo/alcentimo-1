@@ -564,7 +564,8 @@ export async function getAdminAssistantContext(
     paymentStatusCounts,
     pendingPaymentsSample,
     storesSample,
-    recentRegistrations,
+    // Limitar payload del prompt; el lookup temporal ya trae el corte de “hoy”.
+    recentRegistrations: recentRegistrations.slice(0, 100),
     usersNearProductLimit,
     targetedLookups,
     notes,
