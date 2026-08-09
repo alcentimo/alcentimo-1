@@ -45,6 +45,8 @@ interface ProductFormSheetProps {
     tempId: string,
     result: ProductFormState,
   ) => void;
+  /** Límite de fotos por producto según el plan de la tienda. */
+  maxPhotosPerProduct?: number;
 }
 
 export function ProductFormSheet({
@@ -59,6 +61,7 @@ export function ProductFormSheet({
   onLimitHit,
   onOptimisticCreate,
   onOptimisticCreateSettled,
+  maxPhotosPerProduct,
 }: ProductFormSheetProps) {
   const [editData, setEditData] = useState<ProductEditData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -155,6 +158,7 @@ export function ProductFormSheet({
             store={store}
             exchangeRate={exchangeRate}
             productFormConfig={liveFormConfig}
+            maxPhotosPerProduct={maxPhotosPerProduct}
             onComplete={handleCreateComplete}
             onRefresh={onSaved}
             onCancel={() => onOpenChange(false)}
@@ -202,6 +206,7 @@ export function ProductFormSheet({
               productFormConfig={liveFormConfig}
               mode="edit"
               initialData={editData}
+              maxPhotosPerProduct={maxPhotosPerProduct}
               onSuccess={() => {
                 onSaved();
                 onOpenChange(false);

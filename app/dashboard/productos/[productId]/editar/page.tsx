@@ -5,6 +5,7 @@ import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getProductForEdit } from "@/lib/products/actions";
 import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
+import { resolveStorePhotoLimit } from "@/lib/plans/photo-limit";
 import { ProductForm } from "@/components/dashboard/ProductForm";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { formatExchangeRate } from "@/lib/format";
@@ -29,11 +30,13 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     redirect("/dashboard/productos/nuevo");
   }
 
-  const [product, exchangeRate, productFormConfig] = await Promise.all([
-    getProductForEdit(productId),
-    getCurrentExchangeRate(),
-    getStoreProductFormConfig(store.id),
-  ]);
+  const [product, exchangeRate, productFormConfig, maxPhotosPerProduct] =
+    await Promise.all([
+      getProductForEdit(productId),
+      getCurrentExchangeRate(),
+      getStoreProductFormConfig(store.id),
+      resolveStorePhotoLimit(store.id),
+    ]);
 
   if (!product) notFound();
 
@@ -61,6 +64,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
           productFormConfig={productFormConfig}
           mode="edit"
           initialData={product}
+          maxPhotosPerProduct={maxPhotosPerProduct}
         />
       </div>
 

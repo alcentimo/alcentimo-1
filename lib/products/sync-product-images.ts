@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { uploadProductImage } from "@/lib/storage";
 import {
+  getPhotoLimitErrorMessage,
+  resolveStorePhotoLimit,
+} from "@/lib/plans/photo-limit";
+import {
   parseProductImagesFormPayload,
   type ProductImagesFormPayload,
 } from "@/lib/products/product-gallery-types";
@@ -78,6 +82,14 @@ export async function createProductImagesFromFormData(
   const files = getImageFilesFromFormData(formData);
   if (files.length === 0) {
     return { error: "Sube al menos una foto del producto.", uploadedCount: 0 };
+  }
+
+  const photoLimit = await resolveStorePhotoLimit(storeId);
+  if (files.length > photoLimit) {
+    return {
+      error: getPhotoLimitErrorMessage(photoLimit),
+      uploadedCount: 0,
+    };
   }
 
   // Subidas en paralelo: el cuello de botella suele ser storage, no el insert.
@@ -198,7 +210,18 @@ export async function syncProductImagesFromFormData(
     return { uploadedCount: 0, changed: false };
   }
 
+  const photoLimit = await resolveStorePhotoLimit(storeId);
+
   if (payload) {
+    const finalCount = payload.keep.length + newFiles.length;
+    if (finalCount > photoLimit) {
+      return {
+        error: getPhotoLimitErrorMessage(photoLimit),
+        uploadedCount: 0,
+        changed: false,
+      };
+    }
+
     const updateResult = await applyExistingImageUpdates(supabase, productId, payload);
     if (updateResult.error) {
       return { error: updateResult.error, uploadedCount: 0, changed: false };
@@ -218,6 +241,19 @@ export async function syncProductImagesFromFormData(
           }
         }),
       );
+    }
+  } else if (newFiles.length > 0) {
+    const { count: existingCount } = await supabase
+      .from("product_images")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId);
+
+    if ((existingCount ?? 0) + newFiles.length > photoLimit) {
+      return {
+        error: getPhotoLimitErrorMessage(photoLimit),
+        uploadedCount: 0,
+        changed: false,
+      };
     }
   }
 

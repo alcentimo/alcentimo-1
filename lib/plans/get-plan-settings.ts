@@ -28,11 +28,21 @@ export const fetchPlanSettings = cache(async (): Promise<PlanSettingsMap> => {
     const { data, error } = await supabase
       .from("plan_settings")
       .select(
-        "plan_key, display_name, monthly_usd, annual_usd, product_limit, user_limit, included_locations, extra_location_monthly_usd",
+        "plan_key, display_name, monthly_usd, annual_usd, product_limit, user_limit, photo_limit, included_locations, extra_location_monthly_usd",
       );
 
     if (error || !data?.length) {
-      // Fallback sin columnas nuevas (migración 063 pendiente).
+      // Fallback sin photo_limit (migración 109 pendiente).
+      const { data: withoutPhotos, error: withoutPhotosError } = await supabase
+        .from("plan_settings")
+        .select(
+          "plan_key, display_name, monthly_usd, annual_usd, product_limit, user_limit, included_locations, extra_location_monthly_usd",
+        );
+      if (!withoutPhotosError && withoutPhotos?.length) {
+        return parsePlanSettingsRows(withoutPhotos);
+      }
+
+      // Fallback sin columnas de sedes (migración 063 pendiente).
       const { data: legacy, error: legacyError } = await supabase
         .from("plan_settings")
         .select(

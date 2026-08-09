@@ -85,6 +85,8 @@ interface QuickProductFormProps {
     tempId: string,
     result: ProductFormState,
   ) => void;
+  /** Límite de fotos por producto según el plan de la tienda. */
+  maxPhotosPerProduct?: number;
 }
 
 export function QuickProductForm(props: QuickProductFormProps) {
@@ -116,6 +118,7 @@ function QuickProductFormSession({
   onLimitHit,
   onOptimisticCreate,
   onOptimisticCreateSettled,
+  maxPhotosPerProduct,
 }: QuickProductFormSessionProps) {
   const { config: countryConfig } = useCountry();
   const [priceUsd, setPriceUsd] = useState("");
@@ -440,6 +443,7 @@ function QuickProductFormSession({
         id="quick-image"
         mode="create"
         layout="compact"
+        maxImages={maxPhotosPerProduct}
         disabled={isBusy}
         onBusyChange={setGalleryBusy}
         onChange={setGalleryValue}

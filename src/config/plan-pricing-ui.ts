@@ -74,6 +74,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     productLimitLabel: "Hasta 10 productos",
     features: [
       "Hasta 10 productos",
+      "Hasta 5 fotos por producto",
       FREE_SUBDOMAIN_FEATURE,
       "Precios en USD y Bs",
       "Cupones y variantes",
@@ -90,6 +91,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     recommended: true,
     features: [
       "Hasta 150 productos",
+      "Hasta 10 fotos por producto",
       CUSTOM_DOMAIN_FEATURE,
       AI_ASSISTANT_FEATURE,
       "Precios en USD y Bs",
@@ -107,6 +109,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     features: [
       CUSTOM_DOMAIN_FEATURE_SHORT,
       "Hasta 2.000 productos",
+      "Hasta 20 fotos por producto",
       "Usuarios y colaboradores de equipo",
       AI_ASSISTANT_ADVANCED_FEATURE,
       "Soporte prioritario",
@@ -123,6 +126,7 @@ export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
     features: [
       CUSTOM_DOMAIN_FEATURE_SHORT,
       "Productos ilimitados",
+      "Fotos ilimitadas por producto",
       "Hasta 3 sucursales incluidas",
       AI_MULTISEDED_FEATURE,
     ],

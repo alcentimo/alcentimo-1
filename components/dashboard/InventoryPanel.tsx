@@ -1417,6 +1417,7 @@ export function InventoryPanel({
         productFormConfig={liveProductFormConfig}
         mode={sheetMode}
         productId={editingProductId}
+        maxPhotosPerProduct={productLimitContext?.photoLimitCap}
         onSaved={handleProductSaved}
         onOptimisticCreate={handleOptimisticCreate}
         onOptimisticCreateSettled={handleOptimisticCreateSettled}

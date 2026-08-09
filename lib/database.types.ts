@@ -286,6 +286,9 @@ export interface PlanSetting {
   annual_usd: number | null;
   product_limit: number | null;
   user_limit: number | null;
+  photo_limit: number | null;
+  included_locations?: number;
+  extra_location_monthly_usd?: number;
   updated_at: string;
   updated_by: string | null;
 }
