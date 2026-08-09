@@ -6641,14 +6641,23 @@ button.customer-promo-banner-link {
 }
 
 .txn-promo-banner {
-  @apply px-4 pt-2 sm:px-6 sm:pt-3;
+  @apply w-full px-0 pt-2 sm:pt-3;
 }
 
 .txn-promo-banner-viewport {
-  @apply relative mx-auto w-full max-w-6xl overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900;
+  @apply relative mx-auto w-full max-w-none overflow-hidden rounded-none bg-zinc-200 dark:bg-zinc-900 sm:rounded-xl;
   width: 100%;
-  /* Altura fija del carril: evita el crop/zoom de aspect-ratio + max-height. */
   height: var(--txn-promo-banner-height-mobile, 168px);
+}
+
+@media (min-width: 640px) {
+  .txn-promo-banner {
+    @apply px-4 sm:px-6;
+  }
+
+  .txn-promo-banner-viewport {
+    @apply max-w-6xl;
+  }
 }
 
 .txn-promo-banner-slide {
@@ -6672,12 +6681,38 @@ button.customer-promo-banner-link {
 }
 
 .txn-promo-banner-media {
-  @apply relative block h-full w-full overflow-hidden;
+  @apply relative isolate block h-full w-full overflow-hidden;
+}
+
+/* Misma imagen estirada + blur: llena laterales cuando la foto es vertical/cuadrada. */
+.txn-promo-banner-backdrop {
+  z-index: 0;
+  transform: scale(1.18);
+  filter: blur(28px) saturate(1.12);
+  @apply pointer-events-none absolute inset-0 h-full w-full object-cover object-center;
+  /* Evita bordes claros del blur en el recorte. */
+  will-change: transform, filter;
+}
+
+.txn-promo-banner-backdrop::after {
+  content: none;
+}
+
+.txn-promo-banner-media::after {
+  content: "";
+  @apply pointer-events-none absolute inset-0 z-[1];
+  background: linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0.04),
+    transparent 35%,
+    transparent 65%,
+    rgb(0 0 0 / 0.06)
+  );
 }
 
 .txn-promo-banner-image {
-  /* Contiene la foto completa sin recorte ni zoom excesivo; letterbox sobre el fondo. */
-  @apply h-full w-full object-contain object-center;
+  z-index: 2;
+  @apply absolute inset-0 h-full w-full object-contain object-center;
 }
 
 .txn-promo-banner-image-desktop {
