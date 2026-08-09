@@ -522,7 +522,7 @@ export function DesignTab({
               </h2>
               <p className="mt-1 text-xs leading-relaxed text-zinc-500">
                 {isFashionStore
-                  ? "Tres looks profesionales para moda. Elige uno y se aplica al instante en tu catálogo."
+                  ? "Looks profesionales para moda. Elige uno y se aplica al instante en tu catálogo."
                   : "Se guarda automáticamente al cambiar una opción."}
               </p>
             </div>
@@ -539,8 +539,8 @@ export function DesignTab({
               <div className="design-option-list">
                 {isFashionStore ? (
                   <p className="mb-1 text-xs leading-relaxed text-zinc-500">
-                    Minimalista, Neutro Cálido o Editorial Oscuro — paletas fijas
-                    con contraste automático.
+                    Minimalista, Neutro Cálido, Editorial Oscuro o Lujo
+                    Editorial — paletas fijas con contraste automático.
                   </p>
                 ) : null}
                 {availableThemeIds.map((themeId) => {

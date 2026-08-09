@@ -6426,6 +6426,12 @@ html:has(.landing-shell) {
   --txn-page-fg: #3d3429;
 }
 
+.txn-catalog-root.txn-catalog--theme-fashion-luxe,
+.txn-catalog-root:has(.txn-catalog--theme-fashion-luxe) {
+  --txn-page-bg: #f7f6f4;
+  --txn-page-fg: #1a1a1a;
+}
+
 .customer-promo-banner {
   @apply sticky top-0 z-30 flex items-start gap-3 border-b border-orange-200/90 bg-orange-50 px-4 py-3 text-orange-950 dark:border-orange-900/50 dark:bg-orange-950/30 dark:text-orange-100;
 }
@@ -7946,7 +7952,8 @@ button.customer-promo-banner-link {
 
 .txn-catalog--theme-fashion-pure .store-product-name,
 .txn-catalog--theme-fashion-nocturne .store-product-name,
-.txn-catalog--theme-fashion-editorial .store-product-name {
+.txn-catalog--theme-fashion-editorial .store-product-name,
+.txn-catalog--theme-fashion-luxe .store-product-name {
   font-size: var(--pc-title-size);
   font-weight: var(--txn-product-weight, 500);
   letter-spacing: var(--txn-product-tracking, 0.04em);
@@ -7955,9 +7962,68 @@ button.customer-promo-banner-link {
 
 .txn-catalog--theme-fashion-pure .store-product-card,
 .txn-catalog--theme-fashion-nocturne .store-product-card,
-.txn-catalog--theme-fashion-editorial .store-product-card {
+.txn-catalog--theme-fashion-editorial .store-product-card,
+.txn-catalog--theme-fashion-luxe .store-product-card {
   @apply shadow-none;
   border-radius: 0.125rem;
+}
+
+.txn-catalog--theme-fashion-luxe .store-product-card {
+  border-radius: 0;
+  border-width: 1px;
+}
+
+.txn-catalog--theme-fashion-luxe .store-product-media {
+  background-color: var(--pc-media-bg, #f0eeeb);
+}
+
+.txn-catalog--theme-fashion-luxe .store-product-pricing {
+  letter-spacing: 0.04em;
+}
+
+.txn-catalog--theme-fashion-luxe .store-product-price-usd {
+  font-weight: 400;
+  letter-spacing: 0.06em;
+}
+
+.txn-catalog--theme-fashion-luxe .store-product-pricing--sale .store-product-price-usd {
+  color: var(--txn-page-fg, #1a1a1a);
+  font-weight: 500;
+}
+
+.txn-catalog--theme-fashion-luxe .store-sale-badge {
+  background-color: transparent;
+  color: var(--txn-accent, #8a8074);
+  border: 1px solid color-mix(in srgb, var(--txn-accent, #8a8074) 55%, transparent);
+  box-shadow: none;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  border-radius: 0;
+}
+
+.txn-catalog--theme-fashion-luxe .product-detail-pricing--sale {
+  border-color: color-mix(in srgb, var(--txn-accent, #8a8074) 28%, transparent);
+  background-color: color-mix(in srgb, var(--pc-media-bg, #f0eeeb) 70%, #ffffff);
+}
+
+.txn-catalog--theme-fashion-luxe .product-detail-sale-badge {
+  background-color: transparent;
+  color: var(--txn-accent, #8a8074);
+  border: 1px solid color-mix(in srgb, var(--txn-accent, #8a8074) 55%, transparent);
+  border-radius: 0;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+}
+
+.txn-catalog--theme-fashion-luxe .product-detail-pricing--sale .product-detail-price {
+  color: var(--txn-page-fg, #1a1a1a);
+  font-weight: 500;
+}
+
+.txn-catalog--theme-fashion-luxe .store-card-add-btn-active {
+  background-color: #f0eeeb;
+  border-color: #d9d6d0;
+  color: #1a1a1a;
 }
 
 /* Shell del cat?logo ? temas de moda oscuros y c?lidos */
@@ -8000,15 +8066,25 @@ button.customer-promo-banner-link {
 }
 
 .txn-catalog-root.txn-catalog--theme-fashion-pure .catalog-category-chip,
-.txn-catalog-root.txn-catalog--theme-fashion-editorial .catalog-category-chip {
+.txn-catalog-root.txn-catalog--theme-fashion-editorial .catalog-category-chip,
+.txn-catalog-root.txn-catalog--theme-fashion-luxe .catalog-category-chip {
   border-color: var(--pc-border);
   background-color: var(--pc-surface, #ffffff);
   color: var(--pc-fg-muted);
 }
 
+.txn-catalog-root.txn-catalog--theme-fashion-luxe .catalog-category-chip {
+  border-radius: 0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  font-weight: 400;
+}
+
 .txn-catalog-root.txn-catalog--theme-fashion-pure .store-product-card,
 .txn-catalog-root.txn-catalog--theme-fashion-editorial .store-product-card,
-.txn-catalog-root.txn-catalog--theme-fashion-nocturne .store-product-card {
+.txn-catalog-root.txn-catalog--theme-fashion-nocturne .store-product-card,
+.txn-catalog-root.txn-catalog--theme-fashion-luxe .store-product-card {
   border-color: var(--pc-border);
   background-color: var(--pc-surface);
   color: var(--pc-fg);

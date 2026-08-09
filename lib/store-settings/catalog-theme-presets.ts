@@ -33,11 +33,12 @@ export const CATALOG_THEME_IDS: CatalogThemeId[] = [
   "immersive",
 ];
 
-/** Temas exclusivos para tiendas de Ropa y Moda (orden: claro → cálido → oscuro). */
+/** Temas exclusivos para tiendas de Ropa y Moda (orden: claro → cálido → oscuro → lujo). */
 export const FASHION_CATALOG_THEME_IDS: CatalogThemeId[] = [
   "fashion-pure",
   "fashion-editorial",
   "fashion-nocturne",
+  "fashion-luxe",
 ];
 
 export const CATALOG_SALE_MODE_IDS: CatalogSaleMode[] = ["quick", "showcase"];
@@ -216,6 +217,50 @@ export const CATALOG_THEME_PRESETS: Record<CatalogThemeId, CatalogThemePreset> =
       "--txn-empty-border": "#2a2a2a",
     },
   },
+  "fashion-luxe": {
+    id: "fashion-luxe",
+    label: "Lujo Editorial",
+    tagline: "Quiet Luxury",
+    description:
+      "Estética alta costura: blanco puro, grafito y marfil sobrio; tipografía espaciada y etiquetas discretas.",
+    primaryColor: "#1a1a1a",
+    /** Champagne grafito — sin naranja estridente en OFERTA. */
+    accentColor: "#8a8074",
+    layout: "grid",
+    pageBg: "#f7f6f4",
+    previewBg: "#f7f6f4",
+    previewAccent: "#1a1a1a",
+    cssVars: {
+      ...BASE_DENSITY,
+      "--txn-page-bg": "#f7f6f4",
+      "--txn-page-fg": "#1a1a1a",
+      "--txn-header-bg": "rgba(247, 246, 244, 0.96)",
+      "--txn-header-border": "#e6e4e0",
+      "--pc-surface": "#ffffff",
+      "--pc-fg": "#1a1a1a",
+      "--pc-fg-muted": "#6b6b6b",
+      "--pc-fg-meta": "#9a9a9a",
+      "--pc-border": "#e8e6e2",
+      "--pc-media-bg": "#f0eeeb",
+      "--pc-btn-radius": "0",
+      "--pc-radius": "0",
+      "--pc-body-pad": "1rem",
+      "--pc-grid-gap": "1.5rem",
+      "--pc-price-size": "0.875rem",
+      "--pc-title-size": "0.75rem",
+      "--pc-badge-bg": "rgba(255, 255, 255, 0.92)",
+      "--pc-badge-fg": "#4a4a4a",
+      "--pc-stock-low-bg": "rgba(255, 255, 255, 0.92)",
+      "--pc-stock-low-fg": "#6b6b6b",
+      "--txn-title-tracking": "0.14em",
+      "--txn-title-weight": "400",
+      "--txn-product-tracking": "0.16em",
+      "--txn-product-weight": "400",
+      "--txn-product-transform": "uppercase",
+      "--txn-empty-bg": "#ffffff",
+      "--txn-empty-border": "#e8e6e2",
+    },
+  },
 };
 
 export const CATALOG_SALE_MODE_PRESETS: Record<CatalogSaleMode, CatalogSaleModePreset> = {
@@ -233,11 +278,16 @@ export const CATALOG_SALE_MODE_PRESETS: Record<CatalogSaleMode, CatalogSaleModeP
 
 export function isFashionCatalogThemeId(
   theme: string | null | undefined,
-): theme is "fashion-pure" | "fashion-nocturne" | "fashion-editorial" {
+): theme is
+  | "fashion-pure"
+  | "fashion-nocturne"
+  | "fashion-editorial"
+  | "fashion-luxe" {
   return (
     theme === "fashion-pure" ||
     theme === "fashion-nocturne" ||
-    theme === "fashion-editorial"
+    theme === "fashion-editorial" ||
+    theme === "fashion-luxe"
   );
 }
 

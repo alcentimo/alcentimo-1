@@ -419,7 +419,8 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
               designRaw.theme === "immersive" ||
               designRaw.theme === "fashion-pure" ||
               designRaw.theme === "fashion-nocturne" ||
-              designRaw.theme === "fashion-editorial"
+              designRaw.theme === "fashion-editorial" ||
+              designRaw.theme === "fashion-luxe"
             ? designRaw.theme
             : designRaw.layout === "list"
               ? "immersive"
