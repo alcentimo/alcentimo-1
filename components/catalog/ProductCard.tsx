@@ -268,8 +268,9 @@ export const ProductCard = memo(function ProductCard({
     product.compare_at_usd,
     product.price_usd,
   );
+  /** Precio regular configurado: siempre visible en ofertas individuales. */
   const compareAtDisplayUsd =
-    product.compare_at_usd != null && product.compare_at_usd > displayPriceUsd
+    hasDiscount && product.compare_at_usd != null
       ? product.compare_at_usd
       : null;
 
@@ -352,7 +353,8 @@ export const ProductCard = memo(function ProductCard({
               ) : null}
               {hasDiscount ? (
                 <span className="store-sale-badge">
-                  Oferta{discountPercent != null ? ` −${discountPercent}%` : ""}
+                  OFERTA
+                  {discountPercent != null ? ` −${discountPercent}%` : ""}
                 </span>
               ) : null}
             </div>
@@ -432,16 +434,27 @@ export const ProductCard = memo(function ProductCard({
         {showFooter ? (
           <div className="store-product-footer w-full min-w-0">
             {showPrices ? (
-              <div className="store-product-slot store-product-slot-pricing store-product-footer-pricing w-full min-w-0">
+              <div
+                className={cn(
+                  "store-product-slot store-product-slot-pricing store-product-footer-pricing w-full min-w-0",
+                  hasDiscount && "store-product-pricing--sale",
+                )}
+              >
                 <div className="store-product-price-row min-w-0">
-                  <p className="store-product-price-usd">
+                  <p
+                    className="store-product-price-usd"
+                    aria-label={`Precio actual ${formatUsd(displayPriceUsd)}`}
+                  >
                     {formatUsd(displayPriceUsd)}
                   </p>
-                  {hasDiscount && compareAtDisplayUsd != null && (
-                    <p className="store-product-price-compare">
+                  {compareAtDisplayUsd != null ? (
+                    <p
+                      className="store-product-price-compare"
+                      aria-label={`Precio regular ${formatUsd(compareAtDisplayUsd)}`}
+                    >
                       {formatUsd(compareAtDisplayUsd)}
                     </p>
-                  )}
+                  ) : null}
                 </div>
                 {showBsConversion ? (
                   <p className="store-product-price-ves">
