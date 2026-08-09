@@ -148,6 +148,7 @@ export async function createCoupon(input: {
 
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
+  revalidatePath("/dashboard/promociones");
   return { success: true };
 }
 
@@ -169,6 +170,7 @@ export async function toggleCouponActive(
 
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
+  revalidatePath("/dashboard/promociones");
   return { success: true };
 }
 
@@ -187,6 +189,7 @@ export async function deleteCoupon(couponId: string): Promise<CouponActionResult
 
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
+  revalidatePath("/dashboard/promociones");
   return { success: true };
 }
 

@@ -39,11 +39,11 @@ export default async function ReferidosPage() {
             </h2>
             <p className="mt-1 max-w-xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
               Mientras tanto, puedes impulsar conversiones con cupones y
-              promociones desde la configuración de tu tienda.
+              promociones en el módulo Promociones.
             </p>
           </div>
         </div>
-        <Link href="/dashboard/ajustes" className="btn-brand-outline shrink-0">
+        <Link href="/dashboard/promociones" className="btn-brand-outline shrink-0">
           Ir a promociones
         </Link>
       </div>

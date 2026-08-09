@@ -47,6 +47,7 @@ const DASHBOARD_ROUTE_ACCESS: Array<{
   roles: DashboardStoreRole[];
 }> = [
   { prefix: "/dashboard/ajustes", roles: ["owner"] },
+  { prefix: "/dashboard/promociones", roles: ["owner"] },
   { prefix: "/dashboard/planes", roles: ["owner"] },
   { prefix: "/dashboard/upgrade", roles: ["owner"] },
   { prefix: "/dashboard/referidos", roles: ["owner"] },
