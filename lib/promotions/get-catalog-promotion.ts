@@ -78,6 +78,9 @@ export async function getCatalogPromotionContext(
     return { guestBanner: null, autoApply: null };
   }
 
+  const bestAutoApply =
+    activePromotions.find((promotion) => promotion.autoApply) ?? null;
+
   const registerPath = buildCustomerRegisterPath(
     normalizedSlug,
     getStoreCatalogBasePath(normalizedSlug),
@@ -92,11 +95,11 @@ export async function getCatalogPromotionContext(
           registerPath,
         },
     autoApply:
-      isCustomer && best.autoApply
+      isCustomer && bestAutoApply
         ? {
-            code: best.code,
-            name: best.name,
-            discountPercent: best.discountPercent,
+            code: bestAutoApply.code,
+            name: bestAutoApply.name,
+            discountPercent: bestAutoApply.discountPercent,
           }
         : null,
   };
