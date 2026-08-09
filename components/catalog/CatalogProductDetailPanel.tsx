@@ -16,7 +16,6 @@ import type { CatalogProductGalleryImage } from "@/lib/products/product-gallery-
 import { buildCartWhatsAppMessage } from "@/lib/catalog/cart-whatsapp-message";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import {
-  computeProductDiscountPercent,
   computeUsdToVes,
   formatWholesaleHint,
   hasWholesalePricing,

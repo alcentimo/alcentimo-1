@@ -9,7 +9,6 @@ import { getProductBodyLayoutClass } from "@/lib/store-settings/catalog-theme";
 import { formatUsd, formatApproxBs } from "@/lib/format";
 import {
   computeUsdToVes,
-  computeProductDiscountPercent,
   hasWholesalePricing,
   isProductOnSale,
   resolveUnitPriceUsd,
