@@ -6646,9 +6646,9 @@ button.customer-promo-banner-link {
 
 .txn-promo-banner-viewport {
   @apply relative mx-auto w-full max-w-6xl overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900;
-  aspect-ratio: 2.5 / 1;
   width: 100%;
-  max-height: var(--txn-promo-banner-height-mobile, 168px);
+  /* Altura fija del carril: evita el crop/zoom de aspect-ratio + max-height. */
+  height: var(--txn-promo-banner-height-mobile, 168px);
 }
 
 .txn-promo-banner-slide {
@@ -6663,7 +6663,7 @@ button.customer-promo-banner-link {
 
 @media (min-width: 768px) {
   .txn-promo-banner-viewport {
-    max-height: var(--txn-promo-banner-height-desktop, 250px);
+    height: var(--txn-promo-banner-height-desktop, 250px);
   }
 }
 
@@ -6676,7 +6676,8 @@ button.customer-promo-banner-link {
 }
 
 .txn-promo-banner-image {
-  @apply object-cover object-center;
+  /* Contiene la foto completa sin recorte ni zoom excesivo; letterbox sobre el fondo. */
+  @apply h-full w-full object-contain object-center;
 }
 
 .txn-promo-banner-image-desktop {
@@ -9138,6 +9139,7 @@ button.customer-promo-banner-link {
 }
 
 .catalog-preview-viewport--mobile .txn-promo-banner-viewport {
+  height: 140px;
   max-height: 140px;
   border-radius: 0.75rem;
 }
