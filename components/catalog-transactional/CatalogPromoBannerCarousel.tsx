@@ -56,29 +56,6 @@ function PromoBannerSlideMedia({
 
   return (
     <div className="txn-promo-banner-media">
-      {/* Fondo difuminado a ancho completo (misma imagen). */}
-      <Image
-        src={imageUrls.desktop}
-        alt=""
-        aria-hidden
-        fill
-        priority={eager}
-        loading={eager ? "eager" : "lazy"}
-        sizes="(max-width: 767px) 0px, 100vw"
-        className="txn-promo-banner-backdrop txn-promo-banner-image-desktop"
-      />
-      <Image
-        src={imageUrls.mobile}
-        alt=""
-        aria-hidden
-        fill
-        priority={eager}
-        loading={eager ? "eager" : "lazy"}
-        sizes="100vw"
-        className="txn-promo-banner-backdrop txn-promo-banner-image-mobile"
-      />
-
-      {/* Imagen principal centrada, sin deformar. */}
       <Image
         src={imageUrls.desktop}
         alt={alt}
