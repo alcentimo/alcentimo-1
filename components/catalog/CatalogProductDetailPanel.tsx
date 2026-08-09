@@ -16,7 +16,6 @@ import type { CatalogProductGalleryImage } from "@/lib/products/product-gallery-
 import { buildCartWhatsAppMessage } from "@/lib/catalog/cart-whatsapp-message";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import {
-  computeProductDiscountPercent,
   computeUsdToVes,
   formatWholesaleHint,
   hasWholesalePricing,
@@ -236,10 +235,6 @@ export function CatalogProductDetailPanel({
   const inCart = contextCartQuantity > 0;
 
   const hasDiscount = isProductOnSale(product.compare_at_usd, product.price_usd);
-  const discountPercent = computeProductDiscountPercent(
-    product.compare_at_usd,
-    product.price_usd,
-  );
   const priceVes =
     computeUsdToVes(displayPriceUsd, activeExchangeRate) ?? product.price_ves;
 
@@ -372,11 +367,7 @@ export function CatalogProductDetailPanel({
                   : "product-detail-pricing"
               }
             >
-              {hasDiscount && discountPercent != null ? (
-                <span className="product-detail-sale-badge">
-                  OFERTA −{discountPercent}%
-                </span>
-              ) : hasDiscount ? (
+              {hasDiscount ? (
                 <span className="product-detail-sale-badge">OFERTA</span>
               ) : null}
               <div className="product-detail-price-row">
