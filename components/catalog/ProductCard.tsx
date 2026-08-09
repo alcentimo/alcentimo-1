@@ -263,10 +263,6 @@ export const ProductCard = memo(function ProductCard({
       : "Añadir al carrito";
 
   const hasDiscount = isProductOnSale(product.compare_at_usd, product.price_usd);
-  const discountPercent = computeProductDiscountPercent(
-    product.compare_at_usd,
-    product.price_usd,
-  );
   /** Precio regular configurado: siempre visible en ofertas individuales. */
   const compareAtDisplayUsd =
     hasDiscount && product.compare_at_usd != null
@@ -351,10 +347,7 @@ export const ProductCard = memo(function ProductCard({
                 <span className="store-featured-badge">Destacado</span>
               ) : null}
               {hasDiscount ? (
-                <span className="store-sale-badge">
-                  OFERTA
-                  {discountPercent != null ? ` −${discountPercent}%` : ""}
-                </span>
+                <span className="store-sale-badge">OFERTA</span>
               ) : null}
             </div>
             {showStockBadge ? (
