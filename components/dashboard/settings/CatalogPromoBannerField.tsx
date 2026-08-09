@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
-import { Package, Plus, Search, Trash2, X } from "lucide-react";
+import { Package, Plus, Search, X } from "lucide-react";
 import { CatalogBannerImageUpload } from "@/components/dashboard/settings/CatalogBannerImageUpload";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import {
@@ -119,6 +119,11 @@ export function CatalogPromoBannerField({
   }
 
   function removeSlide(slideId: string) {
+    if (productPickerSlideId === slideId) {
+      setProductPickerSlideId(null);
+      setProductSearch("");
+    }
+
     emit(
       {
         ...promoBanner,
@@ -183,7 +188,8 @@ export function CatalogPromoBannerField({
         <div className="design-promo-banner-slides">
           <p className="text-xs leading-relaxed text-zinc-500">
             Usa “Cambiar imagen” para cargar una foto (sin enlace) o “Usar
-            imagen de un producto” para vincular el clic automáticamente.
+            imagen de un producto” para vincular el clic. “Eliminar” quita esa
+            imagen del carrusel.
           </p>
 
           {promoBanner.slides.length === 0 ? (
@@ -220,6 +226,8 @@ export function CatalogPromoBannerField({
                             openInventoryImagePicker(slide.id)
                           }
                           inventoryOptionLabel="Usar imagen de un producto"
+                          onRemoveSlide={() => removeSlide(slide.id)}
+                          removeSlideLabel={`Eliminar imagen ${index + 1}`}
                         />
 
                         {linkedProduct ? (
@@ -255,15 +263,6 @@ export function CatalogPromoBannerField({
                           </div>
                         ) : null}
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => removeSlide(slide.id)}
-                        className="design-promo-banner-card-delete"
-                        aria-label={`Eliminar imagen ${index + 1} del carrusel`}
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      </button>
                     </li>
                   );
                 })}

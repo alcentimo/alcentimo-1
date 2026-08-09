@@ -35,6 +35,9 @@ interface CatalogBannerImageUploadProps {
   /** Tercera opción del menú: usar imagen de un producto del inventario. */
   onPickFromInventory?: () => void;
   inventoryOptionLabel?: string;
+  /** Elimina el slide del carrusel (prioridad sobre solo vaciar la URL). */
+  onRemoveSlide?: () => void;
+  removeSlideLabel?: string;
 }
 
 export function CatalogBannerImageUpload({
@@ -49,6 +52,8 @@ export function CatalogBannerImageUpload({
   layout = "default",
   onPickFromInventory,
   inventoryOptionLabel = "Usar imagen de un producto",
+  onRemoveSlide,
+  removeSlideLabel = "Eliminar",
 }: CatalogBannerImageUploadProps) {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -136,6 +141,10 @@ export function CatalogBannerImageUpload({
   function handleRemove() {
     clearPreview();
     setUploadSuccess(false);
+    if (onRemoveSlide) {
+      onRemoveSlide();
+      return;
+    }
     onChange("");
   }
 
@@ -278,7 +287,22 @@ export function CatalogBannerImageUpload({
           </div>
 
           <div className="flex min-w-0 flex-col gap-1.5">
-            {pickButton}
+            <div className="flex flex-wrap items-center gap-2">
+              {pickButton}
+              {onRemoveSlide ? (
+                <button
+                  type="button"
+                  onClick={handleRemove}
+                  disabled={disabled || isBusy}
+                  className="design-banner-upload-delete-btn"
+                  aria-label={removeSlideLabel}
+                  title={removeSlideLabel}
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  {removeSlideLabel}
+                </button>
+              ) : null}
+            </div>
             <p className="text-[11px] leading-snug text-zinc-500">
               Galería, cámara o imagen de un producto.
             </p>
