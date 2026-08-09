@@ -128,6 +128,37 @@ function PlanCard({
         </div>
 
         <div>
+          <Label htmlFor={`${prefix}-photos`}>
+            Límite de fotos por producto
+          </Label>
+          <Input
+            id={`${prefix}-photos`}
+            name={`${prefix}_photoLimit`}
+            type="number"
+            min={1}
+            max={50}
+            step={1}
+            value={limitToInput(row.photoLimit)}
+            onChange={(e) =>
+              onChange({
+                ...row,
+                photoLimit:
+                  e.target.value.trim() === ""
+                    ? null
+                    : Number(e.target.value),
+              })
+            }
+            disabled={disabled}
+            className="mt-1.5"
+            placeholder="Vacío = ilimitado"
+          />
+          <p className="mt-1 text-xs text-zinc-400">
+            Máximo de imágenes en la galería de cada producto (1–50; vacío =
+            ilimitado).
+          </p>
+        </div>
+
+        <div>
           <Label htmlFor={`${prefix}-users`}>Límite de usuarios (opcional)</Label>
           <Input
             id={`${prefix}-users`}

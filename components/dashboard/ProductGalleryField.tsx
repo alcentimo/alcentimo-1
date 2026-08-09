@@ -30,10 +30,11 @@ import {
 } from "@/lib/product-camera";
 import type { ProductEditImage } from "@/lib/products/product-gallery-types";
 import { ProductCameraCaptureDialog } from "@/components/dashboard/ProductCameraCaptureDialog";
+import { ABSOLUTE_MAX_PHOTOS_PER_PRODUCT } from "@/lib/plans/plan-settings";
 import { cn } from "@/lib/cn";
 
-/** Tope de fotos por producto (galería). Independiente del cupo de productos del plan. */
-const MAX_GALLERY_IMAGES = 10;
+/** Fallback si el padre no pasa el límite del plan. */
+const DEFAULT_MAX_GALLERY_IMAGES = 10;
 const IMAGE_FILE_PATTERN = /\.(jpe?g|png|gif|webp|heic|heif|bmp|avif)$/i;
 
 export interface GalleryFieldItem {
@@ -55,6 +56,8 @@ interface ProductGalleryFieldProps {
   mode?: "create" | "edit";
   layout?: "stacked" | "compact";
   initialImages?: ProductEditImage[];
+  /** Límite de fotos del plan activo (tope técnico incluido). */
+  maxImages?: number;
   disabled?: boolean;
   onChange: (value: ProductGalleryFieldValue) => void;
   onError?: (message: string) => void;
@@ -123,6 +126,7 @@ export function ProductGalleryField({
   mode = "create",
   layout = "stacked",
   initialImages = [],
+  maxImages = DEFAULT_MAX_GALLERY_IMAGES,
   disabled = false,
   onChange,
   onError,
@@ -136,6 +140,10 @@ export function ProductGalleryField({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const itemsRef = useRef<GalleryFieldItem[]>([]);
   const removedDbIdsRef = useRef<string[]>([]);
+  const maxGalleryImages = Math.min(
+    Math.max(1, Math.trunc(maxImages)),
+    ABSOLUTE_MAX_PHOTOS_PER_PRODUCT,
+  );
 
   const [items, setItems] = useState<GalleryFieldItem[]>(() =>
     mapInitialImages(initialImages),
@@ -160,7 +168,7 @@ export function ProductGalleryField({
   }, []);
 
   const isBusy = processingCount > 0 || disabled;
-  const canAddMore = items.length < MAX_GALLERY_IMAGES;
+  const canAddMore = items.length < maxGalleryImages;
   const pickerDisabled = isBusy || !canAddMore;
 
   const reportError = useCallback(
@@ -212,16 +220,16 @@ export function ProductGalleryField({
         return;
       }
 
-      const availableSlots = MAX_GALLERY_IMAGES - itemsRef.current.length;
+      const availableSlots = maxGalleryImages - itemsRef.current.length;
       if (availableSlots <= 0) {
-        reportError(`Máximo ${MAX_GALLERY_IMAGES} fotos por producto.`);
+        reportError(`Máximo ${maxGalleryImages} fotos por producto.`);
         return;
       }
 
       const batch = files.slice(0, availableSlots);
       if (batch.length < files.length) {
         reportError(
-          `Solo se agregaron ${batch.length} foto(s). Máximo ${MAX_GALLERY_IMAGES} por producto.`,
+          `Solo se agregaron ${batch.length} foto(s). Máximo ${maxGalleryImages} por producto.`,
         );
       }
 
@@ -263,7 +271,7 @@ export function ProductGalleryField({
         emitChange(nextItems);
       }
     },
-    [clearError, emitChange, reportError],
+    [clearError, emitChange, maxGalleryImages, reportError],
   );
 
   function handleGalleryInputChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -394,7 +402,7 @@ export function ProductGalleryField({
               layout === "compact" ? "mt-0.5 text-[11px]" : "mt-1 text-xs",
             )}
           >
-            {PRODUCT_IMAGE_RECOMMENDED_HINT}. Hasta {MAX_GALLERY_IMAGES} fotos.
+            {PRODUCT_IMAGE_RECOMMENDED_HINT}. Hasta {maxGalleryImages} fotos.
             La primera es la portada del catálogo.
           </p>
         </div>

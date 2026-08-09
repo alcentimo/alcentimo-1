@@ -118,6 +118,19 @@ function readPlanFromForm(
     return userLimit;
   }
 
+  const photoLimit = parseOptionalLimit(
+    formData.get(`${prefix}_photoLimit`),
+    `${displayName}: límite de fotos por producto`,
+  );
+  if (photoLimit && typeof photoLimit === "object" && "error" in photoLimit) {
+    return photoLimit;
+  }
+  if (typeof photoLimit === "number" && photoLimit > 50) {
+    return {
+      error: `${displayName}: el límite de fotos por producto no puede superar 50.`,
+    };
+  }
+
   const includedLocations = parseIncludedLocations(
     formData.get(`${prefix}_includedLocations`),
     `${displayName}: sucursales incluidas`,
@@ -147,6 +160,7 @@ function readPlanFromForm(
     annualUsd,
     productLimit: (productLimit as number | null) ?? null,
     userLimit: (userLimit as number | null) ?? null,
+    photoLimit: (photoLimit as number | null) ?? null,
     includedLocations,
     extraLocationMonthlyUsd,
   };
@@ -200,6 +214,7 @@ export async function updatePlanSettings(
         annual_usd: row.annualUsd,
         product_limit: row.productLimit,
         user_limit: row.userLimit,
+        photo_limit: row.photoLimit,
         included_locations: row.includedLocations,
         extra_location_monthly_usd: row.extraLocationMonthlyUsd,
         updated_at: now,

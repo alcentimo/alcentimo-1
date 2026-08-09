@@ -66,6 +66,8 @@ interface ProductFormProps {
   productFormConfig: StoreProductFormConfig;
   mode?: "create" | "edit";
   initialData?: ProductEditData;
+  /** Límite de fotos por producto según el plan de la tienda. */
+  maxPhotosPerProduct?: number;
 }
 
 const initialState: ProductFormState = {};
@@ -88,6 +90,7 @@ export function ProductForm({
   productFormConfig,
   mode = "create",
   initialData,
+  maxPhotosPerProduct,
 }: ProductFormProps) {
   const { config: countryConfig } = useCountry();
   const action = mode === "edit" ? updateProduct : createProduct;
@@ -601,6 +604,7 @@ export function ProductForm({
         mode={mode}
         layout="stacked"
         initialImages={initialData?.images ?? []}
+        maxImages={maxPhotosPerProduct}
         disabled={pending}
         onBusyChange={setGalleryBusy}
         onChange={setGalleryValue}

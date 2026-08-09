@@ -71,6 +71,8 @@ interface ProductCatalogFormProps {
   onSuccess: () => void;
   onCancel?: () => void;
   initialLocationStocks?: Record<string, number>;
+  /** Límite de fotos por producto según el plan de la tienda. */
+  maxPhotosPerProduct?: number;
 }
 
 const initialState: ProductFormState = {};
@@ -84,6 +86,7 @@ export function ProductCatalogForm({
   onSuccess,
   onCancel,
   initialLocationStocks = {},
+  maxPhotosPerProduct,
 }: ProductCatalogFormProps) {
   const { config: countryConfig } = useCountry();
   const action = mode === "edit" ? updateProduct : createProduct;
@@ -322,6 +325,7 @@ export function ProductCatalogForm({
         mode={mode}
         layout="compact"
         initialImages={initialData?.images ?? []}
+        maxImages={maxPhotosPerProduct}
         disabled={pending}
         onBusyChange={setGalleryBusy}
         onChange={setGalleryValue}

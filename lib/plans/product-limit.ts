@@ -16,13 +16,19 @@ import {
   type ProTrialStatus,
 } from "@/lib/plans/trial";
 import {
+  getPhotoLimitFromSettings,
   getProductLimitFromSettings,
+  resolvePhotoLimitCap,
 } from "@/lib/plans/plan-settings";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 
 export interface StoreProductLimitContext extends ProductLimitCheck {
   trial: ProTrialStatus;
   effectivePlanId: PlanId;
+  /** Límite comercial de fotos por producto (null = ilimitado en settings). */
+  photoLimit: number | null;
+  /** Tope efectivo para UI y validación (nunca null). */
+  photoLimitCap: number;
 }
 
 export type AssertCanCreateProductResult =
@@ -172,6 +178,8 @@ export async function getStoreProductLimitContext(
   const currentCount = await getStoreProductCount(storeId);
   const settings = await fetchPlanSettings();
   const productLimit = getProductLimitFromSettings(effectivePlanId, settings);
+  const photoLimit = getPhotoLimitFromSettings(effectivePlanId, settings);
+  const photoLimitCap = resolvePhotoLimitCap(photoLimit);
   const check = buildProductLimitCheck(currentCount, effectivePlanId, {
     productLimit,
   });
@@ -180,6 +188,8 @@ export async function getStoreProductLimitContext(
     ...check,
     trial,
     effectivePlanId,
+    photoLimit,
+    photoLimitCap,
   };
 }
 

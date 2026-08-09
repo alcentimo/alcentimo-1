@@ -22,11 +22,16 @@ export interface PlanSettingRow {
   annualUsd: number | null;
   productLimit: number | null;
   userLimit: number | null;
+  /** Máximo de fotos por producto. null = ilimitado (tope técnico en app). */
+  photoLimit: number | null;
   /** Sucursales incluidas en el plan base. */
   includedLocations: number;
   /** Precio mensual por sede adicional (add-on). */
   extraLocationMonthlyUsd: number;
 }
+
+/** Tope técnico aunque el plan sea «ilimitado». */
+export const ABSOLUTE_MAX_PHOTOS_PER_PRODUCT = 50;
 
 export type PlanSettingsMap = Record<PlanSettingsKey, PlanSettingRow>;
 
@@ -50,6 +55,7 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
     annualUsd: null,
     productLimit: 10,
     userLimit: null,
+    photoLimit: 5,
     includedLocations: 1,
     extraLocationMonthlyUsd: 0,
   },
@@ -60,6 +66,7 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
     annualUsd: 75,
     productLimit: 150,
     userLimit: null,
+    photoLimit: 10,
     includedLocations: 1,
     extraLocationMonthlyUsd: 0,
   },
@@ -70,6 +77,7 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
     annualUsd: 144,
     productLimit: 2000,
     userLimit: null,
+    photoLimit: 20,
     includedLocations: 1,
     extraLocationMonthlyUsd: 0,
   },
@@ -80,6 +88,7 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
     annualUsd: 278,
     productLimit: null,
     userLimit: null,
+    photoLimit: null,
     includedLocations: 3,
     extraLocationMonthlyUsd: 6,
   },
@@ -136,6 +145,21 @@ export function getProductLimitFromSettings(
   return settings[planIdToSettingsKey(planId)].productLimit;
 }
 
+export function getPhotoLimitFromSettings(
+  planId: PlanId,
+  settings: PlanSettingsMap = DEFAULT_PLAN_SETTINGS,
+): number | null {
+  return settings[planIdToSettingsKey(planId)].photoLimit;
+}
+
+/** Convierte null (ilimitado) al tope técnico usable en UI/servidor. */
+export function resolvePhotoLimitCap(limit: number | null | undefined): number {
+  if (limit == null || !Number.isFinite(limit) || limit <= 0) {
+    return ABSOLUTE_MAX_PHOTOS_PER_PRODUCT;
+  }
+  return Math.min(Math.trunc(limit), ABSOLUTE_MAX_PHOTOS_PER_PRODUCT);
+}
+
 export function buildChargeTableFromSettings(
   settings: PlanSettingsMap = DEFAULT_PLAN_SETTINGS,
 ): PlanChargeTable {
@@ -181,15 +205,23 @@ function productLimitLabel(limit: number | null): string {
   return `Hasta ${formatted} productos`;
 }
 
+function photoLimitLabel(limit: number | null): string {
+  if (limit == null) return "Fotos ilimitadas por producto";
+  const formatted = limit.toLocaleString("es-VE");
+  return `Hasta ${formatted} fotos por producto`;
+}
+
 function buildTierFeatures(
   planId: PlanId,
   row: PlanSettingRow,
 ): string[] {
   const limitLabel = productLimitLabel(row.productLimit);
+  const photosLabel = photoLimitLabel(row.photoLimit);
 
   if (planId === "free") {
     return [
       limitLabel,
+      photosLabel,
       FREE_SUBDOMAIN_FEATURE,
       "Precios en USD y Bs",
       "Cupones y variantes",
@@ -199,6 +231,7 @@ function buildTierFeatures(
   if (planId === "starter" || planId === "growth") {
     return [
       limitLabel,
+      photosLabel,
       CUSTOM_DOMAIN_FEATURE,
       AI_ASSISTANT_FEATURE,
       "Precios en USD y Bs",
@@ -210,6 +243,7 @@ function buildTierFeatures(
     return [
       CUSTOM_DOMAIN_FEATURE_SHORT,
       limitLabel,
+      photosLabel,
       "Usuarios y colaboradores de equipo",
       AI_ASSISTANT_ADVANCED_FEATURE,
       "Soporte prioritario",
@@ -224,6 +258,7 @@ function buildTierFeatures(
   return [
     CUSTOM_DOMAIN_FEATURE_SHORT,
     limitLabel,
+    photosLabel,
     branches,
     AI_MULTISEDED_FEATURE,
   ];
@@ -280,6 +315,7 @@ export function parsePlanSettingsRows(
     annual_usd?: number | string | null;
     product_limit?: number | string | null;
     user_limit?: number | string | null;
+    photo_limit?: number | string | null;
     included_locations?: number | string | null;
     extra_location_monthly_usd?: number | string | null;
   }>,
@@ -295,6 +331,10 @@ export function parsePlanSettingsRows(
     const key = String(row.plan_key ?? "").toUpperCase() as PlanSettingsKey;
     if (!PLAN_SETTINGS_KEYS.includes(key)) continue;
     const defaults = DEFAULT_PLAN_SETTINGS[key];
+    const hasPhotoLimitColumn = Object.prototype.hasOwnProperty.call(
+      row,
+      "photo_limit",
+    );
     result[key] = {
       planKey: key,
       displayName: row.display_name?.trim() || defaults.displayName,
@@ -310,6 +350,13 @@ export function parsePlanSettingsRows(
             : defaults.productLimit
           : parseOptionalInt(row.product_limit),
       userLimit: parseOptionalInt(row.user_limit),
+      photoLimit: hasPhotoLimitColumn
+        ? row.photo_limit === null || row.photo_limit === undefined
+          ? row.photo_limit === null
+            ? null
+            : defaults.photoLimit
+          : parseOptionalInt(row.photo_limit)
+        : defaults.photoLimit,
       includedLocations:
         parseOptionalInt(row.included_locations) ?? defaults.includedLocations,
       extraLocationMonthlyUsd: parseMoney(
