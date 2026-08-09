@@ -100,7 +100,6 @@ export async function createPromotion(input: {
   if (error) return { error: error.message };
 
   revalidatePath("/dashboard/ajustes");
-  revalidatePath("/dashboard/promociones");
   revalidatePath(`/c/${auth.store.slug}`);
   return { success: true };
 }
@@ -122,7 +121,6 @@ export async function togglePromotionActive(
   if (error) return { error: error.message };
 
   revalidatePath("/dashboard/ajustes");
-  revalidatePath("/dashboard/promociones");
   revalidatePath(`/c/${auth.store.slug}`);
   return { success: true };
 }
@@ -143,7 +141,6 @@ export async function deletePromotion(
   if (error) return { error: error.message };
 
   revalidatePath("/dashboard/ajustes");
-  revalidatePath("/dashboard/promociones");
   revalidatePath(`/c/${auth.store.slug}`);
   return { success: true };
 }
