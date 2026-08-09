@@ -6690,12 +6690,6 @@ button.customer-promo-banner-link {
   transform: scale(1.18);
   filter: blur(28px) saturate(1.12);
   @apply pointer-events-none absolute inset-0 h-full w-full object-cover object-center;
-  /* Evita bordes claros del blur en el recorte. */
-  will-change: transform, filter;
-}
-
-.txn-promo-banner-backdrop::after {
-  content: none;
 }
 
 .txn-promo-banner-media::after {
