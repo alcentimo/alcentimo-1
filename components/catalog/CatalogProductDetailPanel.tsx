@@ -380,12 +380,6 @@ export function CatalogProductDetailPanel({
                 <span className="product-detail-sale-badge">OFERTA</span>
               ) : null}
               <div className="product-detail-price-row">
-                <p
-                  className="product-detail-price"
-                  aria-label={`Precio actual ${formatUsd(displayPriceUsd)}`}
-                >
-                  {formatUsd(displayPriceUsd)}
-                </p>
                 {hasDiscount && product.compare_at_usd != null ? (
                   <p
                     className="product-detail-price-compare"
@@ -394,6 +388,12 @@ export function CatalogProductDetailPanel({
                     {formatUsd(product.compare_at_usd)}
                   </p>
                 ) : null}
+                <p
+                  className="product-detail-price"
+                  aria-label={`Precio actual ${formatUsd(displayPriceUsd)}`}
+                >
+                  {formatUsd(displayPriceUsd)}
+                </p>
               </div>
 
               {showBsConversion && priceVes != null ? (

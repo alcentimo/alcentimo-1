@@ -441,12 +441,6 @@ export const ProductCard = memo(function ProductCard({
                 )}
               >
                 <div className="store-product-price-row min-w-0">
-                  <p
-                    className="store-product-price-usd"
-                    aria-label={`Precio actual ${formatUsd(displayPriceUsd)}`}
-                  >
-                    {formatUsd(displayPriceUsd)}
-                  </p>
                   {compareAtDisplayUsd != null ? (
                     <p
                       className="store-product-price-compare"
@@ -455,6 +449,12 @@ export const ProductCard = memo(function ProductCard({
                       {formatUsd(compareAtDisplayUsd)}
                     </p>
                   ) : null}
+                  <p
+                    className="store-product-price-usd"
+                    aria-label={`Precio actual ${formatUsd(displayPriceUsd)}`}
+                  >
+                    {formatUsd(displayPriceUsd)}
+                  </p>
                 </div>
                 {showBsConversion ? (
                   <p className="store-product-price-ves">
