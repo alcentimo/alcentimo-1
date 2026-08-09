@@ -36,8 +36,8 @@ export function CustomerPromoBanner({ promotion }: CustomerPromoBannerProps) {
     <div className="customer-promo-banner">
       <Tag className="h-4 w-4 shrink-0" aria-hidden="true" />
       <p className="min-w-0 flex-1 text-sm">
-        Opcional: <strong>{discountLabel}</strong> de descuento si creas tu
-        cuenta. {registerCta}. Puedes comprar igual sin cuenta.
+        Obtén un <strong>{discountLabel} ADICIONAL</strong> al registrarte.{" "}
+        {registerCta}. Puedes comprar igual sin cuenta.
       </p>
     </div>
   );
