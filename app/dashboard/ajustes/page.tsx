@@ -20,6 +20,8 @@ import {
   resolveProTrialStatus,
 } from "@/lib/plans/trial";
 import { isSupportAdmin } from "@/lib/support/is-support-admin";
+import { listPendingMarketingSuggestions } from "@/lib/marketing-ai/run-scan";
+import type { MarketingAiSuggestionRow } from "@/lib/marketing-ai/types";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +51,7 @@ export default async function AjustesPage({
   let settingsConfig = defaultStoreSettingsConfig();
   let coupons: Awaited<ReturnType<typeof getStoreCoupons>> = [];
   let promotions: Awaited<ReturnType<typeof getStorePromotions>> = [];
+  let aiSuggestions: MarketingAiSuggestionRow[] = [];
   let products: { id: string; name: string; categoryName: string | null; thumbUrl: string | null }[] =
     [];
   let locations: Awaited<ReturnType<typeof getStoreLocations>> = [];
@@ -74,8 +77,18 @@ export default async function AjustesPage({
   } | null = null;
 
   if (store) {
-    const [config, couponRows, promotionRows, inventory, exchangeRateRow, previewSettings, storeLocations, storeCategories, planSettings] =
-      await Promise.all([
+    const [
+      config,
+      couponRows,
+      promotionRows,
+      inventory,
+      exchangeRateRow,
+      previewSettings,
+      storeLocations,
+      storeCategories,
+      planSettings,
+      marketingSuggestions,
+    ] = await Promise.all([
       getStoreSettingsConfig(store.id),
       getStoreCoupons(store.id),
       getStorePromotions(store.id),
@@ -89,11 +102,13 @@ export default async function AjustesPage({
         store.rubro_tienda,
       ).catch(() => []),
       fetchPlanSettings().catch(() => null),
+      listPendingMarketingSuggestions(supabase, store.id).catch(() => []),
     ]);
 
     settingsConfig = config;
     coupons = couponRows;
     promotions = promotionRows;
+    aiSuggestions = marketingSuggestions;
     locations = storeLocations;
     categories = storeCategories;
     const trial = resolveProTrialStatus(authUser.profile, authUser.planId);
@@ -161,6 +176,7 @@ export default async function AjustesPage({
         initialCoupons={coupons}
         initialPromotions={promotions}
         products={products}
+        initialAiSuggestions={aiSuggestions}
         initialConfig={settingsConfig}
         designPreview={designPreview}
         initialTab={tab}

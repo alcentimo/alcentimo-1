@@ -68,7 +68,6 @@ export async function refreshMarketingAiSuggestionsAction(): Promise<MarketingSu
     auth.store.id,
   );
 
-  revalidatePath("/dashboard/promociones");
   revalidatePath("/dashboard/asistente");
   revalidatePath("/dashboard/ajustes");
 
@@ -96,8 +95,8 @@ export async function dismissMarketingSuggestionAction(
 
   if (error) return { error: error.message };
 
-  revalidatePath("/dashboard/promociones");
   revalidatePath("/dashboard/asistente");
+  revalidatePath("/dashboard/ajustes");
   return { success: true };
 }
 
@@ -185,7 +184,6 @@ export async function applyMarketingSuggestionAction(
 
   if (updateError) return { error: updateError.message };
 
-  revalidatePath("/dashboard/promociones");
   revalidatePath("/dashboard/asistente");
   revalidatePath("/dashboard/ajustes");
   revalidatePath(`/c/${auth.store.slug}`);

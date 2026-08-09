@@ -2,7 +2,6 @@ import {
   BarChart3,
   Bot,
   ClipboardList,
-  Percent,
   Settings2,
   Store,
   // UserCog, // Equipo oculto por ahora (no se usa en menú de tiendas)
@@ -64,13 +63,6 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     description: "Métricas de rendimiento",
     icon: BarChart3,
     match: (pathname) => pathname.startsWith("/dashboard/analiticas"),
-  },
-  {
-    href: "/dashboard/promociones",
-    label: "Promociones",
-    description: "Cupones, descuentos y sugerencias de IA",
-    icon: Percent,
-    match: (pathname) => pathname.startsWith("/dashboard/promociones"),
   },
   {
     href: "/dashboard/asistente",

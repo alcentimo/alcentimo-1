@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   Boxes,
@@ -28,7 +27,7 @@ import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
 import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
 import { PaymentsTab } from "@/components/dashboard/settings/PaymentsTab";
-import { PromotionsTab } from "@/components/dashboard/settings/PromotionsTab";
+import { PromotionsPanel } from "@/components/dashboard/promotions/PromotionsPanel";
 import { SettingsMobileNav } from "@/components/dashboard/settings/SettingsMobileNav";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
@@ -36,6 +35,7 @@ import type { Store } from "@/lib/database.types";
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
 import type { Coupon } from "@/lib/coupons/types";
 import type { Promotion } from "@/lib/promotions/types";
+import type { MarketingAiSuggestionRow } from "@/lib/marketing-ai/types";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
 import type { PlanId } from "@/src/config/plans";
 import { planIncludesCustomDomain } from "@/src/config/plan-pricing-ui";
@@ -147,6 +147,7 @@ interface SettingsPanelProps {
   initialCoupons: Coupon[];
   initialPromotions: Promotion[];
   products: CouponProductOption[];
+  initialAiSuggestions?: MarketingAiSuggestionRow[];
   initialConfig: StoreSettingsConfig;
   designPreview?: DesignPreviewContext | null;
   initialTab?: string;
@@ -165,6 +166,7 @@ export function SettingsPanel({
   initialCoupons,
   initialPromotions,
   products,
+  initialAiSuggestions = [],
   initialConfig,
   designPreview = null,
   initialTab = "general",
@@ -301,23 +303,12 @@ export function SettingsPanel({
         );
       case "promotions":
         return (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-950 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100">
-              El módulo completo (con sugerencias de IA) ahora vive en{" "}
-              <Link
-                href="/dashboard/promociones"
-                className="font-semibold underline underline-offset-2"
-              >
-                Promociones
-              </Link>
-              .
-            </div>
-            <PromotionsTab
-              initialCoupons={initialCoupons}
-              initialPromotions={initialPromotions}
-              products={products}
-            />
-          </div>
+          <PromotionsPanel
+            initialCoupons={initialCoupons}
+            initialPromotions={initialPromotions}
+            products={products}
+            initialAiSuggestions={initialAiSuggestions}
+          />
         );
       default:
         return null;
