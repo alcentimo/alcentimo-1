@@ -33,6 +33,9 @@ export function PlatformSettingsProvider({
       plansCouponBoxEnabled:
         settings.plansCouponBoxEnabled ??
         DEFAULT_PLATFORM_SETTINGS.plansCouponBoxEnabled,
+      bcvRateMode: settings.bcvRateMode ?? DEFAULT_PLATFORM_SETTINGS.bcvRateMode,
+      manualBcvRate:
+        settings.manualBcvRate ?? DEFAULT_PLATFORM_SETTINGS.manualBcvRate,
     }),
     [settings],
   );

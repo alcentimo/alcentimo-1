@@ -303,6 +303,9 @@ export interface PlatformSetting {
   pwa_icon_512_url: string | null;
   support_email: string | null;
   plans_coupon_box_enabled: boolean;
+  /** automatic = API BCV; manual = tasa de contingencia del admin. */
+  bcv_rate_mode: "automatic" | "manual";
+  manual_bcv_rate: number | null;
   updated_at: string;
   updated_by: string | null;
 }

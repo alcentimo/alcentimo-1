@@ -16,6 +16,8 @@ import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
 import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { DEFAULT_PLAN_SETTINGS } from "@/lib/plans/plan-settings";
 import { DEFAULT_PLATFORM_SETTINGS } from "@/lib/platform/platform-settings";
+import { getActiveGlobalExchangeRate } from "@/lib/exchange-rate/get-tasa-cambio";
+import { getSupabaseAnonClient } from "@/lib/supabase";
 import { getDefaultSubscriptionPaymentMethods } from "@/src/config/subscription-pago-movil";
 import { listAdminStoreDomains } from "@/lib/admin/custom-domain-actions";
 import {
@@ -111,6 +113,7 @@ export default async function AdminDashboardPage({
     pagoMovilResult,
     planSettingsResult,
     platformSettingsResult,
+    automaticBcvRateResult,
   ] = await Promise.all([
     safeLoad(
       () => getManualPayments({ status: "all", limit: 200 }),
@@ -155,6 +158,10 @@ export default async function AdminDashboardPage({
       () => fetchPlatformSettings(),
       "No se pudieron cargar los ajustes de plataforma.",
     ),
+    safeLoad(
+      () => getActiveGlobalExchangeRate(getSupabaseAnonClient()),
+      "No se pudo cargar la tasa BCV de referencia.",
+    ),
   ]);
 
   const payments = paymentsResult.ok ? paymentsResult.data : [];
@@ -179,6 +186,9 @@ export default async function AdminDashboardPage({
   const platformSettings = platformSettingsResult.ok
     ? platformSettingsResult.data
     : DEFAULT_PLATFORM_SETTINGS;
+  const automaticBcvRateHint = automaticBcvRateResult.ok
+    ? automaticBcvRateResult.data?.rate ?? null
+    : null;
 
   const pendingPayments = metrics?.pendingPayments ??
     payments.filter(
@@ -236,6 +246,7 @@ export default async function AdminDashboardPage({
           paymentMethods={paymentMethods}
           planSettings={planSettings}
           platformSettings={platformSettings}
+          automaticBcvRateHint={automaticBcvRateHint}
           growthUsers={growthUsers}
           growthCoupons={growthCoupons}
           growthCampaigns={growthCampaigns}

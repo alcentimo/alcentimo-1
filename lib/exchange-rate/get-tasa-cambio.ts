@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  buildManualExchangeRate,
+  isManualBcvRateActive,
+  readBcvRateModeConfig,
+} from "@/lib/exchange-rate/bcv-rate-mode";
+import {
   getVenezuelaNextBusinessDate,
   getVenezuelaSyncDate,
   isVenezuelaWeekend,
@@ -67,13 +72,18 @@ export async function getActiveGlobalExchangeRate(
 }
 
 /**
- * Última tasa usable para precios: vigencia legal en exchange_rate,
- * y si no hay filas, espejo en tasas_cambio.
+ * Última tasa usable para precios: modo manual de platform_settings,
+ * vigencia legal en exchange_rate, o espejo en tasas_cambio.
  */
 export async function getDisplayableUsdExchangeRate(
   client: SupabaseClient,
   reference = new Date(),
 ): Promise<ExchangeRate | null> {
+  const modeConfig = await readBcvRateModeConfig(client);
+  if (isManualBcvRateActive(modeConfig) && modeConfig.manualRate != null) {
+    return buildManualExchangeRate(modeConfig.manualRate, reference);
+  }
+
   const active = await getActiveGlobalExchangeRate(client, reference);
   if (active && active.rate > 0) return active;
 
