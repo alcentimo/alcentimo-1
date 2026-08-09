@@ -1,13 +1,17 @@
 "use client";
 
+import { useMemo } from "react";
 import { MessageCircle, ShoppingBag, X } from "lucide-react";
 import { buildCartWhatsAppMessage } from "@/lib/catalog/cart-whatsapp-message";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
-import { formatUsdWithApproxBs } from "@/lib/format";
+import { formatUsd, formatUsdWithApproxBs } from "@/lib/format";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import { CartLineItems } from "@/components/catalog-transactional/CartLineItems";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
+import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
+import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
+import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
 
 interface CartSummaryPanelProps {
   storeName: string;
@@ -46,6 +50,22 @@ export function CartSummaryPanel({
   const { items, subtotalUsd, updateQuantity, removeItem } = useCart();
   const { mode, selectedLocation } = useCatalogFulfillment();
   const { accountsEnabled } = useCustomerAccountMode();
+  const { autoApply } = usePromotionContext();
+  const customerSession = useCustomerSessionOptional();
+
+  const isLoggedCustomer = Boolean(customerSession?.isCustomer);
+  const appliedPromotion =
+    isLoggedCustomer && autoApply ? autoApply : null;
+
+  const discountUsd = useMemo(() => {
+    if (!appliedPromotion) return 0;
+    return calculatePromotionDiscountUsd(
+      subtotalUsd,
+      appliedPromotion.discountPercent,
+    );
+  }, [appliedPromotion, subtotalUsd]);
+
+  const merchandiseUsd = Math.max(0, subtotalUsd - discountUsd);
 
   function handleWhatsAppOrder() {
     const phone = whatsappPhone?.trim();
@@ -54,7 +74,7 @@ export function CartSummaryPanel({
     const message = buildCartWhatsAppMessage({
       storeName,
       items,
-      subtotalUsd,
+      subtotalUsd: merchandiseUsd,
       fulfillmentMode: mode,
       locationName: selectedLocation?.name ?? null,
       locationAddress: selectedLocation?.address ?? null,
@@ -113,14 +133,53 @@ export function CartSummaryPanel({
               exchangeRate={exchangeRate}
               showBsConversion={showBsConversion}
             />
+
+            {appliedPromotion && discountUsd > 0 ? (
+              <div className="txn-checkout-promo mx-4 mb-3 mt-2 sm:mx-6">
+                <div className="txn-checkout-promo-applied">
+                  <div>
+                    <p className="font-medium text-emerald-800 dark:text-emerald-300">
+                      {appliedPromotion.name}
+                    </p>
+                    <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80">
+                      {appliedPromotion.code} · -{appliedPromotion.discountPercent}% ·
+                      aplicado por ser cliente
+                    </p>
+                  </div>
+                  <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                    Aplicado
+                  </span>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <footer className="txn-checkout-footer safe-area-bottom">
+            {appliedPromotion && discountUsd > 0 ? (
+              <div className="txn-checkout-order-meta !px-0 !pt-0">
+                <div className="txn-checkout-total !border-0 !px-0 !py-0">
+                  <span>Subtotal</span>
+                  <strong className="text-right tabular-nums">
+                    {formatUsd(subtotalUsd)}
+                  </strong>
+                </div>
+                <div className="txn-checkout-total txn-checkout-total-discount !border-0 !px-0 !py-0">
+                  <span>
+                    Descuento ({appliedPromotion.code} · -
+                    {appliedPromotion.discountPercent}%)
+                  </span>
+                  <strong className="tabular-nums">
+                    -{formatUsd(discountUsd)}
+                  </strong>
+                </div>
+              </div>
+            ) : null}
+
             <div className="txn-checkout-total !border-0 !px-0 !py-0">
-              <span>Subtotal</span>
+              <span>{discountUsd > 0 ? "Total" : "Subtotal"}</span>
               <strong className="text-right tabular-nums">
                 {formatUsdWithApproxBs(
-                  subtotalUsd,
+                  merchandiseUsd,
                   exchangeRate,
                   showBsConversion,
                 )}
@@ -165,7 +224,9 @@ export function CartSummaryPanel({
                 : showFullCheckoutCta && showWhatsAppCta
                   ? whatsappHint
                   : accountsEnabled
-                    ? "Compra sin cuenta · Solo nombre y teléfono al pagar. El registro es opcional."
+                    ? discountUsd > 0
+                      ? "Descuento de cliente aplicado · Completa el pedido para confirmarlo."
+                      : "Compra sin cuenta · Solo nombre y teléfono al pagar. El registro es opcional."
                     : "Compra como invitado · Solo nombre y teléfono al pagar."}
             </p>
           </footer>

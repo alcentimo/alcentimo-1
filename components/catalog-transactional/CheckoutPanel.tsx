@@ -355,11 +355,25 @@ export function CheckoutPanel({
     setCheckoutStep(3);
   }, [customerProfile, checkoutStep, initialStep]);
 
+  const isLoggedCustomer = Boolean(
+    customerProfile ||
+      customerSession?.isCustomer ||
+      customerSession?.isAuthenticated,
+  );
+
   useEffect(() => {
-    if (!customerProfile || !autoApply) return;
-    setAppliedPromotion(autoApply);
+    if (!autoApply || !isLoggedCustomer) return;
+    setAppliedPromotion((current) => {
+      if (
+        current?.code === autoApply.code &&
+        current.discountPercent === autoApply.discountPercent
+      ) {
+        return current;
+      }
+      return autoApply;
+    });
     setPromotionInput(autoApply.code);
-  }, [customerProfile, autoApply]);
+  }, [autoApply, isLoggedCustomer]);
 
   const discountUsd = useMemo(() => {
     if (!appliedPromotion) return 0;
@@ -954,7 +968,7 @@ export function CheckoutPanel({
                   className="!pt-3"
                 />
 
-                {(customerProfile || autoApply) && (
+                {(isLoggedCustomer || autoApply) && (
                   <div className="txn-checkout-promo">
                     <p className="txn-checkout-section-title">
                       Código de promoción
@@ -969,13 +983,19 @@ export function CheckoutPanel({
                             {appliedPromotion.code} · -{appliedPromotion.discountPercent}%
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleRemovePromotion}
-                          className="text-xs font-medium text-zinc-500 hover:text-zinc-800"
-                        >
-                          Quitar
-                        </button>
+                        {autoApply?.code === appliedPromotion.code ? (
+                          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                            Aplicado
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleRemovePromotion}
+                            className="text-xs font-medium text-zinc-500 hover:text-zinc-800"
+                          >
+                            Quitar
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <div className="flex gap-2">
@@ -1482,18 +1502,31 @@ export function CheckoutPanel({
               </section>
             ) : null}
 
-            {checkoutStep >= 3 &&
-            ((discountUsd > 0 && appliedPromotion) ||
-              (selectedShipping && shippingQuote.appliesPaidShipping) ||
-              (shippingHint && selectedShipping)) ? (
+            {(discountUsd > 0 && appliedPromotion) ||
+            (checkoutStep >= 3 &&
+              ((selectedShipping && shippingQuote.appliesPaidShipping) ||
+                (shippingHint && selectedShipping))) ? (
               <div className="txn-checkout-order-meta">
                 {discountUsd > 0 && appliedPromotion ? (
-                  <div className="txn-checkout-total txn-checkout-total-discount !border-0 !px-0 !py-0">
-                    <span>Descuento ({appliedPromotion.code})</span>
-                    <strong>-{formatUsd(discountUsd)}</strong>
-                  </div>
+                  <>
+                    {checkoutStep === 1 ? (
+                      <div className="txn-checkout-total !border-0 !px-0 !py-0">
+                        <span>Subtotal</span>
+                        <strong>{formatUsd(subtotalUsd)}</strong>
+                      </div>
+                    ) : null}
+                    <div className="txn-checkout-total txn-checkout-total-discount !border-0 !px-0 !py-0">
+                      <span>
+                        Descuento ({appliedPromotion.code} · -
+                        {appliedPromotion.discountPercent}%)
+                      </span>
+                      <strong>-{formatUsd(discountUsd)}</strong>
+                    </div>
+                  </>
                 ) : null}
-                {selectedShipping && shippingQuote.appliesPaidShipping ? (
+                {checkoutStep >= 3 &&
+                selectedShipping &&
+                shippingQuote.appliesPaidShipping ? (
                   <div className="txn-checkout-total !border-0 !px-0 !py-0">
                     <span>Envío</span>
                     <strong
@@ -1507,7 +1540,7 @@ export function CheckoutPanel({
                     </strong>
                   </div>
                 ) : null}
-                {shippingHint && selectedShipping ? (
+                {checkoutStep >= 3 && shippingHint && selectedShipping ? (
                   <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                     {shippingHint}
                   </p>
@@ -1573,11 +1606,17 @@ export function CheckoutPanel({
 
             <div className="txn-checkout-footer-bar">
               <div className="txn-checkout-footer-total">
-                <span>{checkoutStep === 1 ? "Subtotal" : "Total"}</span>
+                <span>
+                  {checkoutStep === 1
+                    ? discountUsd > 0
+                      ? "Total"
+                      : "Subtotal"
+                    : "Total"}
+                </span>
                 <strong className="tabular-nums">
                   {checkoutStep === 1
                     ? formatUsdWithApproxBs(
-                        subtotalUsd,
+                        merchandiseUsd,
                         exchangeRate,
                         showBsConversion,
                       )
