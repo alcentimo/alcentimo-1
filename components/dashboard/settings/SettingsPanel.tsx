@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   Boxes,
@@ -300,11 +301,23 @@ export function SettingsPanel({
         );
       case "promotions":
         return (
-          <PromotionsTab
-            initialCoupons={initialCoupons}
-            initialPromotions={initialPromotions}
-            products={products}
-          />
+          <div className="space-y-4">
+            <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-950 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100">
+              El módulo completo (con sugerencias de IA) ahora vive en{" "}
+              <Link
+                href="/dashboard/promociones"
+                className="font-semibold underline underline-offset-2"
+              >
+                Promociones
+              </Link>
+              .
+            </div>
+            <PromotionsTab
+              initialCoupons={initialCoupons}
+              initialPromotions={initialPromotions}
+              products={products}
+            />
+          </div>
         );
       default:
         return null;

@@ -28,6 +28,8 @@ export const AI_MAX_TOKENS = {
   adminChat: 550,
   /** Sugerencias de inventario estancado (JSON corto) */
   inventorySuggestions: 350,
+  /** Sugerencias de marketing / cupones (JSON corto) */
+  marketingRecommendations: 400,
 } as const;
 
 /** Longitud máxima de texto de entrada enviado al modelo (caracteres). */
