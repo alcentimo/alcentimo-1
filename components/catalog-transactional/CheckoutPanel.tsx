@@ -356,9 +356,7 @@ export function CheckoutPanel({
   }, [customerProfile, checkoutStep, initialStep]);
 
   const isLoggedCustomer = Boolean(
-    customerProfile ||
-      customerSession?.isCustomer ||
-      customerSession?.isAuthenticated,
+    customerProfile || customerSession?.isCustomer,
   );
 
   useEffect(() => {
