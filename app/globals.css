@@ -3468,6 +3468,12 @@ html:has(.landing-shell) {
 }
 
 /* Oferta individual: precio actual grande + regular tachado siempre legible */
+.store-product-pricing--sale {
+  min-height: calc(
+    var(--pc-price-size) * 1.3 + var(--pc-price-sub-size) * 2.2 + 0.25rem
+  );
+}
+
 .store-product-pricing--sale .store-product-price-row {
   @apply items-baseline gap-x-2.5;
 }
@@ -3480,6 +3486,10 @@ html:has(.landing-shell) {
 .store-product-pricing--sale .store-product-price-compare {
   font-size: max(0.75rem, calc(var(--pc-price-sub-size) * 1.05));
   color: color-mix(in srgb, var(--pc-fg-meta) 88%, var(--pc-fg) 12%);
+}
+
+.txn-catalog--list .store-product-pricing--sale .store-product-price-usd {
+  font-size: calc(var(--pc-price-size) * 1.18);
 }
 
 .store-product-price-ves {
