@@ -18,28 +18,26 @@ export function CustomerPromoBanner({ promotion }: CustomerPromoBannerProps) {
     ? `${promotion.discountPercent}%`
     : `${promotion.discountPercent.toFixed(1)}%`;
 
+  const registerCta = shellNav ? (
+    <button
+      type="button"
+      className="customer-promo-banner-link"
+      onClick={() => shellNav.openRegister("register")}
+    >
+      Regístrate aquí
+    </button>
+  ) : (
+    <Link href={promotion.registerPath} className="customer-promo-banner-link">
+      Regístrate aquí
+    </Link>
+  );
+
   return (
     <div className="customer-promo-banner">
       <Tag className="h-4 w-4 shrink-0" aria-hidden="true" />
       <p className="min-w-0 flex-1 text-sm">
-        Opcional: <strong>{discountLabel}</strong> de descuento si te{" "}
-        {shellNav ? (
-          <button
-            type="button"
-            className="customer-promo-banner-link"
-            onClick={() => shellNav.openRegister("register")}
-          >
-            registras
-          </button>
-        ) : (
-          <Link
-            href={promotion.registerPath}
-            className="customer-promo-banner-link"
-          >
-            registras
-          </Link>
-        )}
-        . Puedes comprar igual sin cuenta.
+        Opcional: <strong>{discountLabel}</strong> de descuento si creas tu
+        cuenta. {registerCta}. Puedes comprar igual sin cuenta.
       </p>
     </div>
   );

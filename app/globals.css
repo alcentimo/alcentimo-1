@@ -6366,7 +6366,8 @@ html:has(.landing-shell) {
 }
 
 button.customer-promo-banner-link {
-  @apply inline cursor-pointer border-0 bg-transparent p-0 font-inherit;
+  @apply inline cursor-pointer border-0 bg-transparent p-0;
+  font: inherit;
 }
 
 .install-pwa-banner {
