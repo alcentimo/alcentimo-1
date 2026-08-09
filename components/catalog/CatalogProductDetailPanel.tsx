@@ -365,13 +365,33 @@ export function CatalogProductDetailPanel({
               <StationeryBadges product={product} />
             ) : null}
 
-            <div className="product-detail-pricing">
+            <div
+              className={
+                hasDiscount
+                  ? "product-detail-pricing product-detail-pricing--sale"
+                  : "product-detail-pricing"
+              }
+            >
+              {hasDiscount && discountPercent != null ? (
+                <span className="product-detail-sale-badge">
+                  OFERTA −{discountPercent}%
+                </span>
+              ) : hasDiscount ? (
+                <span className="product-detail-sale-badge">OFERTA</span>
+              ) : null}
               <div className="product-detail-price-row">
-                <p className="product-detail-price">{formatUsd(displayPriceUsd)}</p>
+                <p
+                  className="product-detail-price"
+                  aria-label={`Precio actual ${formatUsd(displayPriceUsd)}`}
+                >
+                  {formatUsd(displayPriceUsd)}
+                </p>
                 {hasDiscount && product.compare_at_usd != null ? (
-                  <p className="product-detail-price-compare">
+                  <p
+                    className="product-detail-price-compare"
+                    aria-label={`Precio regular ${formatUsd(product.compare_at_usd)}`}
+                  >
                     {formatUsd(product.compare_at_usd)}
-                    {discountPercent != null ? ` · −${discountPercent}%` : ""}
                   </p>
                 ) : null}
               </div>

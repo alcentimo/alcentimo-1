@@ -2669,16 +2669,33 @@ html:has(.landing-shell) {
   @apply rounded-xl border border-zinc-100 bg-zinc-50/80 p-4;
 }
 
+.product-detail-pricing--sale {
+  @apply border-orange-200/80 bg-orange-50/50;
+}
+
+.product-detail-sale-badge {
+  @apply mb-2 inline-flex rounded-full bg-orange-600 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white;
+}
+
 .product-detail-price-row {
-  @apply flex flex-wrap items-baseline gap-x-2 gap-y-1;
+  @apply flex flex-wrap items-baseline gap-x-2.5 gap-y-1;
 }
 
 .product-detail-price {
   @apply text-2xl font-semibold text-zinc-900;
 }
 
+.product-detail-pricing--sale .product-detail-price {
+  @apply text-3xl font-extrabold tracking-tight text-zinc-950;
+}
+
 .product-detail-price-compare {
   @apply text-sm text-zinc-500 line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.product-detail-pricing--sale .product-detail-price-compare {
+  @apply text-base text-zinc-500;
 }
 
 .product-detail-price-ves {
@@ -2873,7 +2890,7 @@ html:has(.landing-shell) {
   font-size: var(--pc-badge-size);
   background-color: var(--txn-accent, #ea580c);
   color: var(--txn-accent-fg, #ffffff);
-  @apply font-semibold uppercase tracking-wide shadow-sm backdrop-blur-sm;
+  @apply font-bold uppercase tracking-wide shadow-sm backdrop-blur-sm;
 }
 
 .store-stock-badge {
@@ -2984,6 +3001,10 @@ html:has(.landing-shell) {
   min-width: 0;
   flex: 1 1 auto;
   overflow: hidden;
+}
+
+.store-product-footer-pricing.store-product-pricing--sale {
+  overflow: visible;
 }
 
 .store-product-footer-pricing-spacer {
@@ -3234,9 +3255,17 @@ html:has(.landing-shell) {
     font-size: 0.8125rem; /* text-sm */
   }
 
+  .store-product-pricing--sale .store-product-price-usd {
+    font-size: 0.9375rem;
+  }
+
   .store-product-price-compare,
   .store-product-price-ves {
     font-size: 0.625rem; /* text-xs */
+  }
+
+  .store-product-pricing--sale .store-product-price-compare {
+    font-size: 0.6875rem;
   }
 
   .store-card-add-btn {
@@ -3434,7 +3463,23 @@ html:has(.landing-shell) {
 .store-product-price-compare {
   font-size: var(--pc-price-sub-size);
   color: var(--pc-fg-meta);
-  @apply min-w-0 shrink overflow-hidden text-ellipsis whitespace-nowrap line-through;
+  text-decoration-thickness: 1.5px;
+  @apply min-w-0 shrink-0 whitespace-nowrap line-through;
+}
+
+/* Oferta individual: precio actual grande + regular tachado siempre legible */
+.store-product-pricing--sale .store-product-price-row {
+  @apply items-baseline gap-x-2.5;
+}
+
+.store-product-pricing--sale .store-product-price-usd {
+  font-size: calc(var(--pc-price-size) * 1.14);
+  @apply font-extrabold tracking-tight;
+}
+
+.store-product-pricing--sale .store-product-price-compare {
+  font-size: max(0.75rem, calc(var(--pc-price-sub-size) * 1.05));
+  color: color-mix(in srgb, var(--pc-fg-meta) 88%, var(--pc-fg) 12%);
 }
 
 .store-product-price-ves {
@@ -6945,6 +6990,14 @@ button.customer-promo-banner-link {
   @apply font-bold leading-none tracking-tight text-neutral-900;
 }
 
+.txn-catalog .store-product-pricing--sale .store-product-price-usd {
+  @apply font-extrabold text-neutral-950;
+}
+
+.txn-catalog .store-product-price-compare {
+  @apply text-neutral-500 line-through;
+}
+
 .txn-catalog .store-product-price-ves {
   @apply mt-0.5 font-normal leading-tight text-neutral-500;
 }
@@ -7661,9 +7714,15 @@ button.customer-promo-banner-link {
   @apply font-bold leading-none;
 }
 
+.txn-catalog--theme-immersive .store-product-pricing--sale .store-product-price-usd {
+  font-size: calc(var(--pc-price-size) * 1.14);
+  @apply font-extrabold;
+}
+
 .txn-catalog--theme-immersive .store-product-price-compare {
-  color: rgb(255 255 255 / 0.58);
+  color: rgb(255 255 255 / 0.72);
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+  text-decoration-thickness: 1.5px;
   @apply text-xs line-through;
 }
 
@@ -7733,9 +7792,14 @@ button.customer-promo-banner-link {
   color: var(--txn-primary-fg, #ffffff) !important;
 }
 
-.txn-catalog--theme-immersive .store-featured-badge,
-.txn-catalog--theme-immersive .store-sale-badge {
+.txn-catalog--theme-immersive .store-featured-badge {
   @apply border-0 bg-black/45 text-white backdrop-blur-md;
+}
+
+.txn-catalog--theme-immersive .store-sale-badge {
+  background-color: var(--txn-accent, #ea580c);
+  color: var(--txn-accent-fg, #ffffff);
+  @apply border-0 font-bold backdrop-blur-md;
 }
 
 .txn-catalog--theme-immersive .store-stock-badge-low {
@@ -7783,13 +7847,22 @@ button.customer-promo-banner-link {
 }
 
 .txn-catalog--sale-showcase .store-product-price-usd {
-  font-size: calc(var(--pc-price-size) * 0.92);
-  @apply font-semibold;
+  font-size: calc(var(--pc-price-size) * 1.05);
+  @apply font-bold;
+}
+
+.txn-catalog--sale-showcase .store-product-pricing--sale .store-product-price-usd {
+  font-size: calc(var(--pc-price-size) * 1.16);
+  @apply font-extrabold;
 }
 
 .txn-catalog--sale-quick .store-product-price-usd {
   font-size: calc(var(--pc-price-size) * 1.1);
   @apply font-extrabold;
+}
+
+.txn-catalog--sale-quick .store-product-pricing--sale .store-product-price-usd {
+  font-size: calc(var(--pc-price-size) * 1.18);
 }
 
 .txn-catalog--sale-showcase .store-product-action,
