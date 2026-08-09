@@ -4,16 +4,19 @@ import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { updatePlatformSettings } from "@/lib/admin/platform-settings-actions";
 import type { PlatformSettings } from "@/lib/platform/platform-settings";
+import { BcvRateConfigPanel } from "@/components/admin/BcvRateConfigPanel";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 interface PlatformSettingsConfigPanelProps {
   initialSettings: PlatformSettings;
+  automaticRateHint?: number | null;
 }
 
 export function PlatformSettingsConfigPanel({
   initialSettings,
+  automaticRateHint = null,
 }: PlatformSettingsConfigPanelProps) {
   const router = useRouter();
   const [platformName, setPlatformName] = useState(initialSettings.platformName);
@@ -53,6 +56,11 @@ export function PlatformSettingsConfigPanel({
 
   return (
     <div className="space-y-6">
+      <BcvRateConfigPanel
+        initialSettings={initialSettings}
+        automaticRateHint={automaticRateHint}
+      />
+
       <div className="max-w-2xl rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
           Identidad de la plataforma

@@ -1,4 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  isManualBcvRateActive,
+  readBcvRateModeConfig,
+} from "@/lib/exchange-rate/bcv-rate-mode";
 import { getVenezuelaSyncDate } from "@/lib/exchange-rate/sync-date";
 import { syncBcvTasaToDatabase } from "@/lib/exchange-rate/sync-bcv-tasa";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
@@ -129,6 +133,25 @@ export async function runBcvSyncAttempt(
 
   logBcvSync("attempt_start", { slot, syncDate });
 
+  const modeConfig = await readBcvRateModeConfig(admin);
+  if (modeConfig.mode === "manual") {
+    logBcvSync("attempt_skipped_manual_mode", {
+      slot,
+      syncDate,
+      manualRate: modeConfig.manualRate,
+    });
+    return {
+      success: true,
+      action: "success",
+      slot,
+      syncDate,
+      rate: modeConfig.manualRate ?? undefined,
+      effectiveDate: syncDate,
+      activatedNow: isManualBcvRateActive(modeConfig),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
   const result = await syncBcvTasaToDatabase(admin, { slot });
 
   await logSyncAttempt(admin, {
@@ -220,6 +243,26 @@ export async function runManualBcvSync(
   logBcvSync(slot === "autoheal" ? "autoheal_sync_start" : "manual_sync_start", {
     syncDate,
   });
+
+  const modeConfig = await readBcvRateModeConfig(admin);
+  if (modeConfig.mode === "manual") {
+    logBcvSync(
+      slot === "autoheal"
+        ? "autoheal_skipped_manual_mode"
+        : "manual_sync_skipped_manual_mode",
+      { syncDate, manualRate: modeConfig.manualRate },
+    );
+    return {
+      success: true,
+      action: "success",
+      slot,
+      syncDate,
+      rate: modeConfig.manualRate ?? undefined,
+      effectiveDate: syncDate,
+      activatedNow: isManualBcvRateActive(modeConfig),
+      updatedAt: new Date().toISOString(),
+    };
+  }
 
   const result = await syncBcvTasaToDatabase(admin, { slot });
 

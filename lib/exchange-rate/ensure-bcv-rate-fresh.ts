@@ -1,5 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logBcvSync } from "@/lib/exchange-rate/bcv-sync-log";
+import {
+  isManualBcvRateActive,
+  readBcvRateModeConfig,
+} from "@/lib/exchange-rate/bcv-rate-mode";
 import { getActiveGlobalExchangeRate } from "@/lib/exchange-rate/get-tasa-cambio";
 import {
   isBcvRateBehindCalendarDay,
@@ -43,6 +47,17 @@ async function wasAutohealAttemptedRecently(
 export async function ensureBcvRateFreshForToday(
   currentRate: ExchangeRate | null,
 ): Promise<ExchangeRate | null> {
+  try {
+    const adminProbe = createAdminClient();
+    const modeConfig = await readBcvRateModeConfig(adminProbe);
+    if (isManualBcvRateActive(modeConfig) || modeConfig.mode === "manual") {
+      // Contingencia: no autoheal contra la API mientras el admin fija la tasa.
+      return currentRate;
+    }
+  } catch {
+    // Si no se puede leer el modo, continuar con autoheal habitual.
+  }
+
   const effectiveDate = currentRate?.effective_date ?? null;
   const behindDay = isBcvRateBehindCalendarDay(effectiveDate);
 

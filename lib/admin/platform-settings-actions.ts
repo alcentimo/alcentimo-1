@@ -4,11 +4,15 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
+import { applyManualBcvRateToDatabase } from "@/lib/exchange-rate/sync-bcv-tasa";
+import { roundExchangeRate } from "@/lib/format";
 import {
   DEFAULT_PLATFORM_SETTINGS,
   parsePlatformSettingsRow,
   PLATFORM_SETTINGS_ID,
+  type BcvRateMode,
   type PlatformSettings,
+  type PlatformSettingsRow,
 } from "@/lib/platform/platform-settings";
 import {
   removePlatformLogoAsset,
@@ -21,6 +25,9 @@ export type UpdatePlatformSettingsResult = {
   settings?: PlatformSettings;
 };
 
+const PLATFORM_SETTINGS_SELECT =
+  "id, platform_name, tagline, logo_url, pwa_icon_192_url, pwa_icon_512_url, support_email, plans_coupon_box_enabled, bcv_rate_mode, manual_bcv_rate, updated_at, updated_by";
+
 function revalidatePlatformBranding() {
   revalidatePath("/", "layout");
   revalidatePath("/manifest.json");
@@ -31,6 +38,13 @@ function revalidatePlatformBranding() {
   revalidatePath("/register");
   revalidatePath("/activar");
   revalidatePath("/onboarding");
+}
+
+function revalidateExchangeRateSurfaces() {
+  revalidatePlatformBranding();
+  revalidatePath("/dashboard/catalogo");
+  revalidatePath("/c", "layout");
+  revalidatePath("/tienda", "layout");
 }
 
 async function requirePlatformAdmin() {
@@ -54,6 +68,51 @@ function parseEmail(value: FormDataEntryValue | null): string | null {
     return null;
   }
   return trimmed.slice(0, 120);
+}
+
+async function loadPlatformSettingsRow(
+  admin: ReturnType<typeof createAdminClient>,
+): Promise<PlatformSettingsRow | null> {
+  const { data, error } = await admin
+    .from("platform_settings")
+    .select(PLATFORM_SETTINGS_SELECT)
+    .eq("id", PLATFORM_SETTINGS_ID)
+    .maybeSingle();
+
+  if (!error && data) {
+    return data as PlatformSettingsRow;
+  }
+
+  const { data: legacy } = await admin
+    .from("platform_settings")
+    .select(
+      "id, platform_name, tagline, logo_url, pwa_icon_192_url, pwa_icon_512_url, support_email, plans_coupon_box_enabled, updated_at, updated_by",
+    )
+    .eq("id", PLATFORM_SETTINGS_ID)
+    .maybeSingle();
+
+  return (legacy as PlatformSettingsRow | null) ?? null;
+}
+
+function toUpsertPayload(
+  settings: PlatformSettings,
+  updatedBy: string,
+  updatedAt: string,
+) {
+  return {
+    id: PLATFORM_SETTINGS_ID,
+    platform_name: settings.platformName,
+    tagline: settings.tagline,
+    support_email: settings.supportEmail,
+    logo_url: settings.logoUrl,
+    pwa_icon_192_url: settings.pwaIcon192Url,
+    pwa_icon_512_url: settings.pwaIcon512Url,
+    plans_coupon_box_enabled: settings.plansCouponBoxEnabled,
+    bcv_rate_mode: settings.bcvRateMode,
+    manual_bcv_rate: settings.manualBcvRate,
+    updated_at: updatedAt,
+    updated_by: updatedBy,
+  };
 }
 
 export async function updatePlatformSettings(
@@ -87,34 +146,19 @@ export async function updatePlatformSettings(
 
   const admin = createAdminClient();
   const now = new Date().toISOString();
+  const existing = await loadPlatformSettingsRow(admin);
+  const current = parsePlatformSettingsRow(existing);
 
-  const { data: existing, error: readError } = await admin
+  const next: PlatformSettings = {
+    ...current,
+    platformName,
+    tagline,
+    supportEmail,
+  };
+
+  const { error } = await admin
     .from("platform_settings")
-    .select(
-      "logo_url, pwa_icon_192_url, pwa_icon_512_url, plans_coupon_box_enabled",
-    )
-    .eq("id", PLATFORM_SETTINGS_ID)
-    .maybeSingle();
-
-  if (readError) {
-    return { error: readError.message };
-  }
-
-  const { error } = await admin.from("platform_settings").upsert(
-    {
-      id: PLATFORM_SETTINGS_ID,
-      platform_name: platformName,
-      tagline,
-      support_email: supportEmail,
-      logo_url: existing?.logo_url ?? null,
-      pwa_icon_192_url: existing?.pwa_icon_192_url ?? null,
-      pwa_icon_512_url: existing?.pwa_icon_512_url ?? null,
-      plans_coupon_box_enabled: existing?.plans_coupon_box_enabled ?? true,
-      updated_at: now,
-      updated_by: auth.user.id,
-    },
-    { onConflict: "id" },
-  );
+    .upsert(toUpsertPayload(next, auth.user.id, now), { onConflict: "id" });
 
   if (error) {
     return { error: error.message };
@@ -124,15 +168,7 @@ export async function updatePlatformSettings(
 
   return {
     success: true,
-    settings: {
-      platformName,
-      tagline,
-      logoUrl: existing?.logo_url ?? null,
-      pwaIcon192Url: existing?.pwa_icon_192_url ?? null,
-      pwaIcon512Url: existing?.pwa_icon_512_url ?? null,
-      supportEmail,
-      plansCouponBoxEnabled: existing?.plans_coupon_box_enabled ?? true,
-    },
+    settings: next,
   };
 }
 
@@ -144,62 +180,15 @@ export async function updatePlansCouponBoxEnabled(
 
   const admin = createAdminClient();
   const now = new Date().toISOString();
+  const existing = await loadPlatformSettingsRow(admin);
+  const next: PlatformSettings = {
+    ...parsePlatformSettingsRow(existing),
+    plansCouponBoxEnabled: enabled,
+  };
 
-  const { data: existing, error: readError } = await admin
+  const { error } = await admin
     .from("platform_settings")
-    .select(
-      "platform_name, tagline, support_email, logo_url, pwa_icon_192_url, pwa_icon_512_url, plans_coupon_box_enabled",
-    )
-    .eq("id", PLATFORM_SETTINGS_ID)
-    .maybeSingle();
-
-  if (readError) {
-    return { error: readError.message };
-  }
-
-  const parsed = parsePlatformSettingsRow(
-    existing
-      ? {
-          id: PLATFORM_SETTINGS_ID,
-          platform_name: existing.platform_name,
-          tagline: existing.tagline,
-          logo_url: existing.logo_url,
-          pwa_icon_192_url: existing.pwa_icon_192_url,
-          pwa_icon_512_url: existing.pwa_icon_512_url,
-          support_email: existing.support_email,
-          plans_coupon_box_enabled: enabled,
-          updated_at: now,
-          updated_by: auth.user.id,
-        }
-      : {
-          id: PLATFORM_SETTINGS_ID,
-          platform_name: DEFAULT_PLATFORM_SETTINGS.platformName,
-          tagline: DEFAULT_PLATFORM_SETTINGS.tagline,
-          logo_url: null,
-          pwa_icon_192_url: null,
-          pwa_icon_512_url: null,
-          support_email: null,
-          plans_coupon_box_enabled: enabled,
-          updated_at: now,
-          updated_by: auth.user.id,
-        },
-  );
-
-  const { error } = await admin.from("platform_settings").upsert(
-    {
-      id: PLATFORM_SETTINGS_ID,
-      platform_name: parsed.platformName,
-      tagline: parsed.tagline,
-      support_email: parsed.supportEmail,
-      logo_url: parsed.logoUrl,
-      pwa_icon_192_url: parsed.pwaIcon192Url,
-      pwa_icon_512_url: parsed.pwaIcon512Url,
-      plans_coupon_box_enabled: enabled,
-      updated_at: now,
-      updated_by: auth.user.id,
-    },
-    { onConflict: "id" },
-  );
+    .upsert(toUpsertPayload(next, auth.user.id, now), { onConflict: "id" });
 
   if (error) {
     return { error: error.message };
@@ -209,7 +198,75 @@ export async function updatePlansCouponBoxEnabled(
 
   return {
     success: true,
-    settings: parsed,
+    settings: next,
+  };
+}
+
+/**
+ * Activa tasa automática (API) o manual de contingencia.
+ * En modo manual exige una tasa > 0 y la publica en exchange_rate / tasas_cambio.
+ */
+export async function updateBcvRateSettings(input: {
+  mode: BcvRateMode;
+  manualRate?: number | null;
+}): Promise<UpdatePlatformSettingsResult> {
+  const auth = await requirePlatformAdmin();
+  if ("error" in auth) return auth;
+
+  const mode: BcvRateMode = input.mode === "manual" ? "manual" : "automatic";
+  const admin = createAdminClient();
+  const now = new Date().toISOString();
+  const existing = await loadPlatformSettingsRow(admin);
+  const current = parsePlatformSettingsRow(existing);
+
+  let manualBcvRate = current.manualBcvRate;
+  if (input.manualRate !== undefined) {
+    if (input.manualRate == null) {
+      manualBcvRate = null;
+    } else {
+      const parsed = Number(input.manualRate);
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        return { error: "Ingresa una tasa válida mayor que 0." };
+      }
+      if (parsed > 1_000_000) {
+        return { error: "La tasa manual es demasiado alta." };
+      }
+      manualBcvRate = roundExchangeRate(parsed);
+    }
+  }
+
+  if (mode === "manual") {
+    if (manualBcvRate == null || manualBcvRate <= 0) {
+      return {
+        error: "Para usar tasa manual debes ingresar un valor mayor que 0.",
+      };
+    }
+
+    const applied = await applyManualBcvRateToDatabase(admin, manualBcvRate);
+    if (!applied.success) {
+      return { error: applied.error ?? "No se pudo publicar la tasa manual." };
+    }
+  }
+
+  const next: PlatformSettings = {
+    ...current,
+    bcvRateMode: mode,
+    manualBcvRate,
+  };
+
+  const { error } = await admin
+    .from("platform_settings")
+    .upsert(toUpsertPayload(next, auth.user.id, now), { onConflict: "id" });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidateExchangeRateSurfaces();
+
+  return {
+    success: true,
+    settings: next,
   };
 }
 
@@ -231,48 +288,17 @@ export async function uploadPlatformLogo(
   }
 
   const now = new Date().toISOString();
-  const { data: existing, error: readError } = await admin
+  const existing = await loadPlatformSettingsRow(admin);
+  const next: PlatformSettings = {
+    ...parsePlatformSettingsRow(existing),
+    logoUrl: upload.url,
+    pwaIcon192Url: upload.pwaIcon192Url ?? null,
+    pwaIcon512Url: upload.pwaIcon512Url ?? null,
+  };
+
+  const { error: updateError } = await admin
     .from("platform_settings")
-    .select("platform_name, tagline, support_email, plans_coupon_box_enabled")
-    .eq("id", PLATFORM_SETTINGS_ID)
-    .maybeSingle();
-
-  if (readError) {
-    return { error: readError.message };
-  }
-
-  const parsed = parsePlatformSettingsRow(
-    existing
-      ? {
-          id: PLATFORM_SETTINGS_ID,
-          platform_name: existing.platform_name,
-          tagline: existing.tagline,
-          logo_url: upload.url,
-          pwa_icon_192_url: upload.pwaIcon192Url ?? null,
-          pwa_icon_512_url: upload.pwaIcon512Url ?? null,
-          support_email: existing.support_email,
-          plans_coupon_box_enabled: existing.plans_coupon_box_enabled ?? true,
-          updated_at: now,
-          updated_by: auth.user.id,
-        }
-      : undefined,
-  );
-
-  const { error: updateError } = await admin.from("platform_settings").upsert(
-    {
-      id: PLATFORM_SETTINGS_ID,
-      platform_name: parsed.platformName,
-      tagline: parsed.tagline,
-      support_email: parsed.supportEmail,
-      logo_url: upload.url,
-      pwa_icon_192_url: upload.pwaIcon192Url ?? null,
-      pwa_icon_512_url: upload.pwaIcon512Url ?? null,
-      plans_coupon_box_enabled: parsed.plansCouponBoxEnabled,
-      updated_at: now,
-      updated_by: auth.user.id,
-    },
-    { onConflict: "id" },
-  );
+    .upsert(toUpsertPayload(next, auth.user.id, now), { onConflict: "id" });
 
   if (updateError) {
     return { error: updateError.message };
@@ -282,7 +308,7 @@ export async function uploadPlatformLogo(
 
   return {
     url: upload.url,
-    settings: { ...parsed, logoUrl: upload.url },
+    settings: next,
   };
 }
 
@@ -299,48 +325,17 @@ export async function clearPlatformLogo(): Promise<UpdatePlatformSettingsResult>
   }
 
   const now = new Date().toISOString();
-  const { data: existing, error: readError } = await admin
+  const existing = await loadPlatformSettingsRow(admin);
+  const next: PlatformSettings = {
+    ...parsePlatformSettingsRow(existing),
+    logoUrl: null,
+    pwaIcon192Url: null,
+    pwaIcon512Url: null,
+  };
+
+  const { error } = await admin
     .from("platform_settings")
-    .select("platform_name, tagline, support_email, plans_coupon_box_enabled")
-    .eq("id", PLATFORM_SETTINGS_ID)
-    .maybeSingle();
-
-  if (readError) {
-    return { error: readError.message };
-  }
-
-  const parsed = parsePlatformSettingsRow(
-    existing
-      ? {
-          id: PLATFORM_SETTINGS_ID,
-          platform_name: existing.platform_name,
-          tagline: existing.tagline,
-          logo_url: null,
-          pwa_icon_192_url: null,
-          pwa_icon_512_url: null,
-          support_email: existing.support_email,
-          plans_coupon_box_enabled: existing.plans_coupon_box_enabled ?? true,
-          updated_at: now,
-          updated_by: auth.user.id,
-        }
-      : undefined,
-  );
-
-  const { error } = await admin.from("platform_settings").upsert(
-    {
-      id: PLATFORM_SETTINGS_ID,
-      platform_name: parsed.platformName,
-      tagline: parsed.tagline,
-      support_email: parsed.supportEmail,
-      logo_url: null,
-      pwa_icon_192_url: null,
-      pwa_icon_512_url: null,
-      plans_coupon_box_enabled: parsed.plansCouponBoxEnabled,
-      updated_at: now,
-      updated_by: auth.user.id,
-    },
-    { onConflict: "id" },
-  );
+    .upsert(toUpsertPayload(next, auth.user.id, now), { onConflict: "id" });
 
   if (error) {
     return { error: error.message };
@@ -350,6 +345,6 @@ export async function clearPlatformLogo(): Promise<UpdatePlatformSettingsResult>
 
   return {
     success: true,
-    settings: { ...parsed, logoUrl: null },
+    settings: next,
   };
 }

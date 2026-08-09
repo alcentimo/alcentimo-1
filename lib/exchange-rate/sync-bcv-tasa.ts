@@ -26,8 +26,10 @@ async function upsertExchangeRateForDate(
     rate: number;
     effectiveDate: string;
     notes: string;
+    source?: "bcv" | "manual";
   },
 ): Promise<{ error?: string }> {
+  const source = input.source ?? "bcv";
   const { data: existingRate } = await admin
     .from("exchange_rate")
     .select("id")
@@ -40,7 +42,7 @@ async function upsertExchangeRateForDate(
       .from("exchange_rate")
       .update({
         rate: input.rate,
-        source: "bcv",
+        source,
         notes: input.notes,
       })
       .eq("id", existingRate.id);
@@ -49,12 +51,58 @@ async function upsertExchangeRateForDate(
 
   const { error } = await admin.from("exchange_rate").insert({
     rate: input.rate,
-    source: "bcv",
+    source,
     effective_date: input.effectiveDate,
     store_id: null,
     notes: input.notes,
   });
   return error ? { error: error.message } : {};
+}
+
+/**
+ * Publica una tasa manual en exchange_rate (hoy VE) y el espejo tasas_cambio
+ * para que vistas SQL y la app usen el mismo valor de contingencia.
+ */
+export async function applyManualBcvRateToDatabase(
+  admin: SupabaseClient,
+  rateInput: number,
+): Promise<SyncBcvTasaResult> {
+  const rate = roundExchangeRate(rateInput);
+  if (!Number.isFinite(rate) || rate <= 0) {
+    return { success: false, error: "La tasa manual debe ser mayor que 0." };
+  }
+
+  const effectiveDate = getVenezuelaSyncDate();
+  const updatedAt = new Date().toISOString();
+  const write = await upsertExchangeRateForDate(admin, {
+    rate,
+    effectiveDate,
+    source: "manual",
+    notes: "Tasa BCV manual (contingencia admin)",
+  });
+  if (write.error) {
+    return { success: false, error: write.error };
+  }
+
+  const { error: mirrorError } = await admin.from("tasas_cambio").upsert(
+    {
+      moneda: "USD",
+      tasa: rate,
+      ultima_actualizacion: updatedAt,
+    },
+    { onConflict: "moneda" },
+  );
+  if (mirrorError) {
+    return { success: false, error: mirrorError.message };
+  }
+
+  return {
+    success: true,
+    rate,
+    effectiveDate,
+    activatedNow: true,
+    updatedAt,
+  };
 }
 
 /**

@@ -137,6 +137,8 @@ interface AdminDashboardTabsProps {
   paymentMethods: SubscriptionPaymentMethod[];
   planSettings: PlanSettingsMap;
   platformSettings: PlatformSettings;
+  /** Última tasa BCV sincronizada (sin override manual), solo referencia en admin. */
+  automaticBcvRateHint?: number | null;
   growthUsers: AdminUserRow[];
   growthCoupons: SubscriptionCoupon[];
   growthCampaigns: SubscriptionCampaign[];
@@ -170,6 +172,7 @@ export function AdminDashboardTabs({
   paymentMethods,
   planSettings,
   platformSettings,
+  automaticBcvRateHint = null,
   growthUsers,
   growthCoupons,
   growthCampaigns,
@@ -307,7 +310,10 @@ export function AdminDashboardTabs({
             <PaymentMethodsConfigPanel initialMethods={paymentMethods} />
           }
           plataformaPanel={
-            <PlatformSettingsConfigPanel initialSettings={platformSettings} />
+            <PlatformSettingsConfigPanel
+              initialSettings={platformSettings}
+              automaticRateHint={automaticBcvRateHint}
+            />
           }
         />
       ) : null}

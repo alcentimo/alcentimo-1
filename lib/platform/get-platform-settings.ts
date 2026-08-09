@@ -17,16 +17,29 @@ export const fetchPlatformSettings = cache(async (): Promise<PlatformSettings> =
     const { data, error } = await supabase
       .from("platform_settings")
       .select(
+        "id, platform_name, tagline, logo_url, pwa_icon_192_url, pwa_icon_512_url, support_email, plans_coupon_box_enabled, bcv_rate_mode, manual_bcv_rate, updated_at, updated_by",
+      )
+      .eq("id", PLATFORM_SETTINGS_ID)
+      .maybeSingle();
+
+    if (!error && data) {
+      return parsePlatformSettingsRow(data);
+    }
+
+    // Fallback si la migración 110 aún no está aplicada.
+    const { data: legacy, error: legacyError } = await supabase
+      .from("platform_settings")
+      .select(
         "id, platform_name, tagline, logo_url, pwa_icon_192_url, pwa_icon_512_url, support_email, plans_coupon_box_enabled, updated_at, updated_by",
       )
       .eq("id", PLATFORM_SETTINGS_ID)
       .maybeSingle();
 
-    if (error || !data) {
+    if (legacyError || !legacy) {
       return { ...DEFAULT_PLATFORM_SETTINGS };
     }
 
-    return parsePlatformSettingsRow(data);
+    return parsePlatformSettingsRow(legacy);
   } catch {
     return { ...DEFAULT_PLATFORM_SETTINGS };
   }
