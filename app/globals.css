@@ -6681,32 +6681,12 @@ button.customer-promo-banner-link {
 }
 
 .txn-promo-banner-media {
-  @apply relative isolate block h-full w-full overflow-hidden;
-}
-
-/* Misma imagen estirada + blur: llena laterales cuando la foto es vertical/cuadrada. */
-.txn-promo-banner-backdrop {
-  z-index: 0;
-  transform: scale(1.18);
-  filter: blur(28px) saturate(1.12);
-  @apply pointer-events-none absolute inset-0 h-full w-full object-cover object-center;
-}
-
-.txn-promo-banner-media::after {
-  content: "";
-  @apply pointer-events-none absolute inset-0 z-[1];
-  background: linear-gradient(
-    to bottom,
-    rgb(0 0 0 / 0.04),
-    transparent 35%,
-    transparent 65%,
-    rgb(0 0 0 / 0.06)
-  );
+  @apply relative block h-full w-full overflow-hidden;
 }
 
 .txn-promo-banner-image {
-  z-index: 2;
-  @apply absolute inset-0 h-full w-full object-contain object-center;
+  /* Llena ancho y alto del banner de forma uniforme, sin bandas laterales. */
+  @apply absolute inset-0 h-full w-full object-cover object-center;
 }
 
 .txn-promo-banner-image-desktop {
