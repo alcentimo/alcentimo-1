@@ -40,12 +40,16 @@ const LEGACY_TO_FASHION: Record<"minimal" | "impact" | "immersive", CatalogTheme
 };
 
 const FASHION_TO_LEGACY: Record<
-  "fashion-pure" | "fashion-nocturne" | "fashion-editorial",
+  | "fashion-pure"
+  | "fashion-nocturne"
+  | "fashion-editorial"
+  | "fashion-luxe",
   CatalogThemeId
 > = {
   "fashion-pure": "minimal",
   "fashion-nocturne": "impact",
   "fashion-editorial": "immersive",
+  "fashion-luxe": "minimal",
 };
 
 export function normalizeCatalogPrimaryColor(value: string | undefined): string {
@@ -71,7 +75,8 @@ export function normalizeCatalogTheme(value: unknown): CatalogThemeId | null {
     value === "immersive" ||
     value === "fashion-pure" ||
     value === "fashion-nocturne" ||
-    value === "fashion-editorial"
+    value === "fashion-editorial" ||
+    value === "fashion-luxe"
   ) {
     return value;
   }

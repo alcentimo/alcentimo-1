@@ -198,7 +198,8 @@ export type CatalogThemeId =
   | "immersive"
   | "fashion-pure"
   | "fashion-nocturne"
-  | "fashion-editorial";
+  | "fashion-editorial"
+  | "fashion-luxe";
 
 export type CatalogSaleMode = "quick" | "showcase";
 
