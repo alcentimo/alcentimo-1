@@ -6365,6 +6365,10 @@ html:has(.landing-shell) {
   @apply font-semibold text-orange-800 underline underline-offset-2 hover:text-orange-900 dark:text-orange-200 dark:hover:text-orange-100;
 }
 
+button.customer-promo-banner-link {
+  @apply inline cursor-pointer border-0 bg-transparent p-0 font-inherit;
+}
+
 .install-pwa-banner {
   @apply sticky top-0 z-40 flex flex-wrap items-center gap-2 border-b border-teal-200/70 bg-teal-50/95 px-3 py-2 text-teal-950 backdrop-blur-sm dark:border-teal-900/40 dark:bg-teal-950/80 dark:text-teal-50;
 }
