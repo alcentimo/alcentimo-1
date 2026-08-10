@@ -16,6 +16,7 @@ export function mapStoreCustomerSummaryFromProfileRow(
     orderCount?: number;
     totalSpentUsd?: number;
     lastOrderAt?: string | null;
+    lastCatalogVisitAt?: string | null;
   },
 ): StoreCustomerSummary | null {
   const id = typeof row.id === "string" ? row.id : null;
@@ -34,6 +35,7 @@ export function mapStoreCustomerSummaryFromProfileRow(
     orderCount: stats?.orderCount ?? 0,
     totalSpentUsd: stats?.totalSpentUsd ?? 0,
     lastOrderAt: stats?.lastOrderAt ?? null,
+    lastCatalogVisitAt: stats?.lastCatalogVisitAt ?? null,
   };
 }
 

@@ -3,6 +3,11 @@
 import { useEffect, useState, useTransition } from "react";
 import { Loader2, X } from "lucide-react";
 import type { StoreCustomerSummary } from "@/lib/customers/get-store-customers";
+import { formatCatalogVisitLabel } from "@/lib/customers/customer-activity";
+import {
+  isInactiveCustomer,
+  isVipCustomer,
+} from "@/lib/customers/customer-segments";
 import { formatUsd } from "@/lib/format";
 import { ORDER_ESTADO_LABELS } from "@/lib/orders/order-status";
 import {
@@ -89,6 +94,9 @@ export function CustomerDetailSlideOver({
     customer.orderCount > 0
       ? customer.totalSpentUsd / customer.orderCount
       : 0;
+  const visitLabel = formatCatalogVisitLabel(customer.lastCatalogVisitAt);
+  const vip = isVipCustomer(customer);
+  const inactive = isInactiveCustomer(customer);
 
   function handleSaveNotes() {
     if (!customer) return;
@@ -138,6 +146,16 @@ export function CustomerDetailSlideOver({
             <p className="mt-0.5 truncate text-sm text-zinc-500">
               {customer.phone?.trim() || "Sin teléfono"}
             </p>
+            <div className="customers-activity-meta mt-2">
+              {vip ? (
+                <span className="customers-chip customers-chip-vip">VIP</span>
+              ) : null}
+              {inactive ? (
+                <span className="customers-chip customers-chip-inactive">
+                  Inactivo
+                </span>
+              ) : null}
+            </div>
           </div>
           <button
             type="button"
@@ -170,9 +188,16 @@ export function CustomerDetailSlideOver({
                 <dd>{formatUsd(averageTicket)}</dd>
               </div>
             </dl>
-            <p className="mt-3 text-xs text-zinc-500">
-              Última compra: {formatCustomerDate(customer.lastOrderAt)}
-            </p>
+            <div className="customers-slideover-activity">
+              <p>
+                Última compra:{" "}
+                <span>{formatCustomerDate(customer.lastOrderAt)}</span>
+              </p>
+              <p>
+                Actividad en catálogo:{" "}
+                <span>{visitLabel ?? "Sin visita registrada"}</span>
+              </p>
+            </div>
           </section>
 
           <section className="orders-slideover-section">
