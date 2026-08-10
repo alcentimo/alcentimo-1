@@ -102,6 +102,11 @@ export async function ensureCustomerProfile(
     phone?: string | null;
     requireDisplayName?: boolean;
     requirePhone?: boolean;
+    /**
+     * Si true, `phone: null` limpia el teléfono en lugar de reusar metadata Auth.
+     * Útil al editar el perfil con teléfono opcional.
+     */
+    honorExplicitPhone?: boolean;
   },
 ): Promise<EnsureCustomerProfileResult> {
   const normalizedSlug = storeSlug.trim().toLowerCase();
@@ -112,7 +117,10 @@ export async function ensureCustomerProfile(
   }
 
   const displayName = resolveDisplayName(options?.displayName, user);
-  const phone = resolvePhone(options?.phone, user);
+  const phone =
+    options?.honorExplicitPhone && options.phone === null
+      ? null
+      : resolvePhone(options?.phone, user);
 
   if (options?.requireDisplayName && (!displayName || displayName.length < 2)) {
     return { ok: false, error: "Indica tu nombre (mínimo 2 caracteres)." };
