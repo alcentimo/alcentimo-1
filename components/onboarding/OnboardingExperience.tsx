@@ -3,6 +3,7 @@
 import { useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProTrialActivationWatcher } from "@/components/onboarding/ProTrialActivationWatcher";
+import { trackMetaCompleteRegistrationOnce } from "@/lib/analytics/meta-pixel";
 import { isWelcomeSeen, markWelcomeSeen } from "@/lib/onboarding/client-storage";
 
 interface OnboardingExperienceProps {
@@ -14,6 +15,7 @@ interface OnboardingExperienceProps {
 /**
  * Onboarding ligero del catálogo: limpia ?onboarded= y observa activación Pro.
  * El progreso de "Primeros pasos" vive en la sidebar (SidebarProTrialProgress).
+ * También dispara CompleteRegistration (Meta Pixel) en el primer ingreso al panel.
  */
 export function OnboardingExperience({
   storeId,
@@ -35,6 +37,13 @@ export function OnboardingExperience({
 
   useEffect(() => {
     if (!showWelcomeFromUrl) return;
+
+    // Primer ingreso al panel tras completar el alta (no se dispara en logins posteriores).
+    trackMetaCompleteRegistrationOnce({
+      content_name: "merchant_onboarding",
+      status: true,
+    });
+
     if (!isWelcomeSeen(storeId)) {
       markWelcomeSeen(storeId);
     }
