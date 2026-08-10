@@ -92,13 +92,6 @@ export default async function RootLayout({
         <link rel="icon" type="image/png" href={BRAND_FAVICON_PNG_PATH} sizes="32x32" />
         <link rel="icon" type="image/png" href={BRAND_FAVICON_32_PATH} sizes="32x32" />
         <link rel="apple-touch-icon" href={BRAND_APPLE_TOUCH_ICON_PATH} sizes="180x180" />
-        <Script
-          id="meta-pixel"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: META_PIXEL_SCRIPT,
-          }}
-        />
       </head>
       <body className="min-h-full flex flex-col font-sans">
         <noscript>
@@ -113,6 +106,18 @@ export default async function RootLayout({
         <PlatformSettingsProvider settings={platformSettings}>
           <GoogleOAuthProvider>{children}</GoogleOAuthProvider>
         </PlatformSettingsProvider>
+        {/*
+          Meta Pixel: next/script afterInteractive inyecta el snippet en el cliente
+          tras la hidratación (sin bloquear el render SSR). No usar beforeInteractive
+          ni <script> síncrono en <head>.
+        */}
+        <Script
+          id="meta-pixel"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: META_PIXEL_SCRIPT,
+          }}
+        />
       </body>
     </html>
   );
