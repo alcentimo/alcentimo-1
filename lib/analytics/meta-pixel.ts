@@ -1,25 +1,48 @@
 /**
  * Meta Pixel (Conjunto de datos) — tracking de visitas y conversiones.
- * ID fijo del pixel de Alcéntimo.
+ * ID fijo del pixel de Alcéntimo (sin espacios ni guiones).
  */
 export const META_PIXEL_ID = "2966164503744998" as const;
 
-export const META_PIXEL_SCRIPT = `
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '${META_PIXEL_ID}');
-fbq('track', 'PageView');
+/**
+ * Bootstrap oficial de Meta, endurecido para App Router:
+ * - Define `window.fbq` de inmediato (cola de eventos).
+ * - Carga `fbevents.js` de forma asíncrona.
+ * - Hace append seguro si aún no hay `<script>` en el documento.
+ */
+export const META_PIXEL_BOOTSTRAP_SCRIPT = `
+(function(){
+  if (typeof window === 'undefined') return;
+  var f = window;
+  var b = document;
+  var e = 'script';
+  var v = 'https://connect.facebook.net/en_US/fbevents.js';
+  if (f.fbq) return;
+  var n = f.fbq = function(){
+    n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+  };
+  if (!f._fbq) f._fbq = n;
+  n.push = n;
+  n.loaded = true;
+  n.version = '2.0';
+  n.queue = [];
+  var t = b.createElement(e);
+  t.async = true;
+  t.src = v;
+  var s = b.getElementsByTagName(e)[0];
+  if (s && s.parentNode) {
+    s.parentNode.insertBefore(t, s);
+  } else {
+    (b.head || b.body || b.documentElement).appendChild(t);
+  }
+  f.fbq('init', '${META_PIXEL_ID}');
+  f.fbq('track', 'PageView');
+})();
 `.trim();
 
 type FbqCommand = "init" | "track" | "trackCustom" | "consent";
 
-interface FbqFunction {
+export interface FbqFunction {
   (...args: unknown[]): void;
   callMethod?: (...args: unknown[]) => void;
   queue: unknown[];
@@ -35,12 +58,18 @@ declare global {
   }
 }
 
-function getFbq(): FbqFunction | null {
+/** Devuelve fbq solo en cliente cuando ya está definido globalmente. */
+export function getFbq(): FbqFunction | null {
   if (typeof window === "undefined") return null;
   return typeof window.fbq === "function" ? window.fbq : null;
 }
 
-/** Dispara un evento estándar del Píxel de Meta (p. ej. CompleteRegistration). */
+/** True cuando `window.fbq` está listo para recibir track(). */
+export function isMetaPixelReady(): boolean {
+  return getFbq() !== null;
+}
+
+/** Dispara un evento estándar del Píxel de Meta (p. ej. PageView, CompleteRegistration). */
 export function trackMetaPixelEvent(
   eventName: string,
   params?: Record<string, unknown>,
@@ -58,6 +87,10 @@ export function trackMetaPixelEvent(
   } catch {
     return false;
   }
+}
+
+export function trackMetaPageView(): boolean {
+  return trackMetaPixelEvent("PageView");
 }
 
 export function trackMetaCompleteRegistration(
@@ -88,8 +121,7 @@ export function markMetaCompleteRegistrationTracked(): void {
 }
 
 /**
- * Dispara CompleteRegistration una sola vez por navegador
- * (primer ingreso al panel tras completar el alta).
+ * Dispara CompleteRegistration una sola vez por navegador.
  * Reintenta brevemente si el script del píxel aún no cargó.
  */
 export function trackMetaCompleteRegistrationOnce(
@@ -106,16 +138,17 @@ export function trackMetaCompleteRegistrationOnce(
   };
 
   if (attempt()) return true;
-
   if (typeof window === "undefined") return false;
 
-  // El bootstrap de fbq suele estar listo en afterInteractive; reintentar un momento.
   const startedAt = Date.now();
   const intervalId = window.setInterval(() => {
-    if (attempt() || Date.now() - startedAt > 4_000) {
+    if (attempt() || Date.now() - startedAt > 5_000) {
       window.clearInterval(intervalId);
     }
   }, 200);
 
   return false;
 }
+
+/** @deprecated Usar META_PIXEL_BOOTSTRAP_SCRIPT */
+export const META_PIXEL_SCRIPT = META_PIXEL_BOOTSTRAP_SCRIPT;

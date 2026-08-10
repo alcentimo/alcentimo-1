@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import { Geist } from "next/font/google";
 import { getAdminManifestPath } from "@/lib/pwa/build-admin-manifest";
 import {
@@ -14,10 +13,7 @@ import {
 import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { PlatformSettingsProvider } from "@/components/providers/PlatformSettingsProvider";
 import { GoogleOAuthProvider } from "@/components/providers/GoogleOAuthProvider";
-import {
-  META_PIXEL_ID,
-  META_PIXEL_SCRIPT,
-} from "@/lib/analytics/meta-pixel";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -94,30 +90,16 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href={BRAND_APPLE_TOUCH_ICON_PATH} sizes="180x180" />
       </head>
       <body className="min-h-full flex flex-col font-sans">
-        <noscript>
-          <img
-            height="1"
-            width="1"
-            style={{ display: "none" }}
-            src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
-            alt=""
-          />
-        </noscript>
+        {/*
+          Píxel Meta (2966164503744998):
+          - Configuración: components/analytics/MetaPixel.tsx
+          - ID / bootstrap: lib/analytics/meta-pixel.ts
+          - next/script strategy=afterInteractive → cliente, sin bloquear
+        */}
+        <MetaPixel />
         <PlatformSettingsProvider settings={platformSettings}>
           <GoogleOAuthProvider>{children}</GoogleOAuthProvider>
         </PlatformSettingsProvider>
-        {/*
-          Meta Pixel: next/script afterInteractive inyecta el snippet en el cliente
-          tras la hidratación (sin bloquear el render SSR). No usar beforeInteractive
-          ni <script> síncrono en <head>.
-        */}
-        <Script
-          id="meta-pixel"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: META_PIXEL_SCRIPT,
-          }}
-        />
       </body>
     </html>
   );
