@@ -8,6 +8,10 @@ import {
   type CustomerMessageGoal,
 } from "@/lib/ai/customer-message-types";
 import { suggestCustomerMessageGoal } from "@/lib/customers/customer-segments";
+import {
+  buildCustomerWhatsAppTemplate,
+  getCustomerWhatsAppActionLabel,
+} from "@/lib/customers/customer-whatsapp-templates";
 import { buildCustomerWhatsAppUrl } from "@/lib/orders/customer-whatsapp";
 import { DashboardWhatsAppWidget } from "@/components/dashboard/whatsapp/DashboardWhatsAppWidget";
 import { cn } from "@/lib/cn";
@@ -29,25 +33,38 @@ export function CustomerWhatsAppButton({
   const [activeGoal, setActiveGoal] = useState<CustomerMessageGoal | null>(null);
 
   const displayName = customer.displayName?.trim() || "cliente";
-  const defaultMessage = useMemo(
-    () => `Hola ${displayName}, te escribo desde ${storeName}.`,
-    [displayName, storeName],
-  );
-  const [message, setMessage] = useState(defaultMessage);
   const suggestedGoal = useMemo(
     () => suggestCustomerMessageGoal(customer),
     [customer],
   );
+  const defaultMessage = useMemo(
+    () => buildCustomerWhatsAppTemplate(customer, storeName, suggestedGoal),
+    [customer, storeName, suggestedGoal],
+  );
+  const actionLabel = useMemo(
+    () => getCustomerWhatsAppActionLabel(customer),
+    [customer],
+  );
+  const [message, setMessage] = useState(defaultMessage);
 
   const canOpen = Boolean(buildCustomerWhatsAppUrl(customer.phone));
 
   useEffect(() => {
     if (!open) return;
     setMessage(defaultMessage);
-    setActiveGoal(null);
+    setActiveGoal(suggestedGoal);
     setError(null);
     setLoading(false);
-  }, [open, defaultMessage]);
+  }, [open, defaultMessage, suggestedGoal]);
+
+  const applyTemplate = useCallback(
+    (goal: CustomerMessageGoal) => {
+      setActiveGoal(goal);
+      setError(null);
+      setMessage(buildCustomerWhatsAppTemplate(customer, storeName, goal));
+    },
+    [customer, storeName],
+  );
 
   const generateWithAi = useCallback(
     async (goal: CustomerMessageGoal) => {
@@ -81,6 +98,8 @@ export function CustomerWhatsAppButton({
 
         setMessage(payload.message.trim());
       } catch (generateError) {
+        // Si la IA falla, conservar/aplicar plantilla estratégica.
+        setMessage(buildCustomerWhatsAppTemplate(customer, storeName, goal));
         setError(
           generateError instanceof Error
             ? generateError.message
@@ -90,23 +109,23 @@ export function CustomerWhatsAppButton({
         setLoading(false);
       }
     },
-    [customer.userId],
+    [customer, storeName],
   );
 
   if (!canOpen) {
-    return <span className="text-xs text-zinc-400">Sin teléfono</span>;
+    return <span className="customers-wa-missing">Sin teléfono</span>;
   }
 
   const toolbar = (
     <div className="dashboard-wa-ai-row">
       <span className="dashboard-wa-ai-label">
-        <Sparkles className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />
-        IA
+        <Sparkles className="h-3.5 w-3.5 text-zinc-500" aria-hidden="true" />
+        Mensaje
       </span>
       <div
         className="dashboard-wa-ai-chips"
         role="tablist"
-        aria-label="Objetivos de mensaje con IA"
+        aria-label="Plantillas de mensaje"
       >
         {CUSTOMER_MESSAGE_GOAL_OPTIONS.map((option) => {
           const selected = activeGoal === option.value;
@@ -120,7 +139,7 @@ export function CustomerWhatsAppButton({
               aria-selected={selected}
               disabled={loading}
               title={option.description}
-              onClick={() => void generateWithAi(option.value)}
+              onClick={() => applyTemplate(option.value)}
               className={cn(
                 "dashboard-wa-ai-chip",
                 selected && "dashboard-wa-ai-chip-active",
@@ -135,6 +154,22 @@ export function CustomerWhatsAppButton({
           );
         })}
       </div>
+      <button
+        type="button"
+        disabled={loading || !activeGoal}
+        onClick={() => {
+          if (activeGoal) void generateWithAi(activeGoal);
+        }}
+        className="dashboard-wa-ai-chip dashboard-wa-ai-chip-suggested"
+        title="Mejorar el mensaje con IA"
+      >
+        {loading ? (
+          <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+        ) : (
+          <Sparkles className="h-3 w-3" aria-hidden="true" />
+        )}
+        IA
+      </button>
     </div>
   );
 
@@ -146,15 +181,12 @@ export function CustomerWhatsAppButton({
           event.stopPropagation();
           setOpen(true);
         }}
-        className={cn(
-          "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-200/80 bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300",
-          className,
-        )}
+        className={cn("customers-wa-btn", className)}
         aria-label={`WhatsApp con ${displayName}`}
         aria-expanded={open}
       >
         <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        WhatsApp
+        <span>{actionLabel}</span>
       </button>
 
       <DashboardWhatsAppWidget
@@ -168,7 +200,7 @@ export function CustomerWhatsAppButton({
         loading={loading}
         error={error}
         primaryLabel="Continuar"
-        hint="Usa IA para reactivación o agradecimiento, edita si quieres y pulsa Continuar para abrir WhatsApp."
+        hint="Plantilla lista para reenganche o VIP. Puedes editarla o pulsar IA para refinarla antes de abrir WhatsApp."
       />
     </>
   );

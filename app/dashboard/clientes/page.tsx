@@ -33,12 +33,12 @@ export default async function ClientesPage() {
 
   return (
     <PageContainer as="div" className="py-6 sm:py-8">
-      <header className="page-header">
+      <header className="page-header customers-page-header">
         <p className="section-label">Relación con clientes</p>
         <h1 className="page-header-title">Mis Clientes</h1>
         <p className="page-header-desc">
-          Personas registradas en el catálogo de {store.name}. Los totales incluyen
-          pedidos vinculados a su cuenta.
+          Retención y rescate de compradores de {store.name}. Revisa actividad,
+          identifica inactivos y reengancha por WhatsApp.
         </p>
       </header>
 

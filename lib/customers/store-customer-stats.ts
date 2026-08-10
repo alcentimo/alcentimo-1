@@ -7,6 +7,8 @@ export interface StoreCustomerSummary {
   orderCount: number;
   totalSpentUsd: number;
   lastOrderAt: string | null;
+  /** Última visita al catálogo (`catalog_visits.last_seen_at`); solo display. */
+  lastCatalogVisitAt: string | null;
 }
 
 interface OrderAggregateRow {

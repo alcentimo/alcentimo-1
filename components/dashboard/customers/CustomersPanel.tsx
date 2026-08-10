@@ -11,9 +11,15 @@ import {
 import { formatUsd } from "@/lib/format";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import {
+  formatCatalogVisitLabel,
+  isCatalogVisitStale,
+} from "@/lib/customers/customer-activity";
+import {
   CUSTOMER_SEGMENT_TABS,
   computeCustomerMetrics,
   groupCustomersByActivityMonth,
+  isInactiveCustomer,
+  isVipCustomer,
   matchesCustomerSegment,
   type CustomerSegment,
 } from "@/lib/customers/customer-segments";
@@ -61,7 +67,37 @@ function customerMatchesSearch(
 }
 
 function CustomerMonthLabel({ label }: { label: string }) {
-  return <p className="orders-ops-section-label">{label}</p>;
+  return <p className="customers-group-label">{label}</p>;
+}
+
+function CustomerActivityMeta({ customer }: { customer: StoreCustomerSummary }) {
+  const visitLabel = formatCatalogVisitLabel(customer.lastCatalogVisitAt);
+  const visitStale = isCatalogVisitStale(customer.lastCatalogVisitAt);
+  const vip = isVipCustomer(customer);
+  const inactive = isInactiveCustomer(customer);
+
+  return (
+    <div className="customers-activity-meta">
+      {vip ? <span className="customers-chip customers-chip-vip">VIP</span> : null}
+      {inactive ? (
+        <span className="customers-chip customers-chip-inactive">Inactivo</span>
+      ) : null}
+      {visitLabel ? (
+        <span
+          className={cn(
+            "customers-visit-label",
+            visitStale && "customers-visit-label-stale",
+          )}
+        >
+          {visitLabel}
+        </span>
+      ) : (
+        <span className="customers-visit-label customers-visit-label-stale">
+          Sin visita al catálogo
+        </span>
+      )}
+    </div>
+  );
 }
 
 interface CustomerTableRowProps {
@@ -89,6 +125,7 @@ function CustomerTableRow({
           <p className="customers-table-meta truncate">
             Registrado {formatCustomerDate(customer.registeredAt)}
           </p>
+          <CustomerActivityMeta customer={customer} />
         </div>
       </td>
       <td className="customers-table-cell">
@@ -152,6 +189,7 @@ function CustomerMobileCard({
           <p className="customers-table-meta truncate">
             {customer.phone?.trim() || "Sin teléfono"}
           </p>
+          <CustomerActivityMeta customer={customer} />
         </div>
         <div
           className="flex shrink-0 flex-col items-end gap-1.5"
@@ -325,11 +363,11 @@ export function CustomersPanel({
 
   return (
     <>
-      <div className="customers-panel space-y-5">
+      <div className="customers-panel">
         <div className="customers-toolbar">
           <div className="relative w-full sm:max-w-md">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
               aria-hidden="true"
             />
             <input
@@ -337,11 +375,11 @@ export function CustomersPanel({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Buscar por nombre o teléfono…"
-              className="inventory-search-input"
+              className="customers-search-input"
               aria-label="Buscar clientes"
             />
           </div>
-          <p className="text-sm text-zinc-500">
+          <p className="customers-toolbar-count">
             {filteredCustomers.length} cliente
             {filteredCustomers.length === 1 ? "" : "s"}
             {search.trim() || segment !== "all" ? " en vista" : " registrados"}
@@ -349,7 +387,7 @@ export function CustomersPanel({
         </div>
 
         {!emptyStore ? (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="customers-segment-tabs" role="tablist" aria-label="Segmentos">
             {CUSTOMER_SEGMENT_TABS.map((tab) => {
               const isActive = segment === tab.id;
               const count = segmentCounts[tab.id];
@@ -358,16 +396,16 @@ export function CustomersPanel({
                 <button
                   key={tab.id}
                   type="button"
+                  role="tab"
+                  aria-selected={isActive}
                   onClick={() => setSegment(tab.id)}
                   className={cn(
-                    "min-h-9 rounded-full border px-3.5 text-xs font-medium transition-colors",
-                    isActive
-                      ? "border-emerald-600 bg-emerald-600 text-white"
-                      : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300",
+                    "customers-segment-tab",
+                    isActive && "customers-segment-tab-active",
                   )}
                 >
                   {tab.label}
-                  <span className="ml-1.5 tabular-nums opacity-80">({count})</span>
+                  <span className="customers-segment-count">{count}</span>
                 </button>
               );
             })}
@@ -375,18 +413,18 @@ export function CustomersPanel({
         ) : null}
 
         {emptyStore ? (
-          <div className="card-panel flex flex-col items-center px-6 py-14 text-center">
-            <Users className="h-10 w-10 text-zinc-300" aria-hidden="true" />
-            <p className="mt-4 text-sm font-medium text-zinc-800 dark:text-zinc-100">
+          <div className="customers-empty">
+            <Users className="h-9 w-9 text-zinc-300" aria-hidden="true" />
+            <p className="customers-empty-title">
               Aún no tienes clientes registrados
             </p>
-            <p className="mt-1 max-w-sm text-sm text-zinc-500">
+            <p className="customers-empty-desc">
               Cuando alguien cree una cuenta en tu catálogo, aparecerá aquí con su
-              historial de compras.
+              historial y actividad para reenganche.
             </p>
           </div>
         ) : emptyFilter ? (
-          <div className="card-panel px-6 py-10 text-center text-sm text-zinc-500">
+          <div className="customers-empty customers-empty-compact">
             {search.trim()
               ? `No hay clientes que coincidan con "${search.trim()}" en este segmento.`
               : "No hay clientes en este segmento."}
@@ -416,7 +454,7 @@ export function CustomersPanel({
 
             <div className="customers-mobile-list lg:hidden">
               {groupedCustomers.map((group) => (
-                <div key={group.key} className="orders-ops-day-group">
+                <div key={group.key} className="customers-group">
                   <CustomerMonthLabel label={group.label} />
                   {group.customers.map((customer) => (
                     <CustomerMobileCard
@@ -459,7 +497,7 @@ export function CustomersPanel({
                 <tbody>
                   {groupedCustomers.map((group) => (
                     <Fragment key={group.key}>
-                      <tr className="orders-ops-section-row">
+                      <tr className="customers-section-row">
                         <td colSpan={6}>{group.label}</td>
                       </tr>
                       {group.customers.map((customer) => (
