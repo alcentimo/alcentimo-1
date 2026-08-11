@@ -21,7 +21,7 @@ export function HeroCatalogStaticPreview({
   const floatingLabels = [
     {
       id: "bcv",
-      text: rateLabel ? `Tasa BCV · ${rateLabel}` : "Tasa BCV",
+      text: rateLabel ? `BCV · ${rateLabel}` : "Tasa BCV",
       className: "landing-hero-phone-float landing-hero-phone-float-bcv",
     },
     {
@@ -31,7 +31,7 @@ export function HeroCatalogStaticPreview({
     },
     {
       id: "wa",
-      text: "Conexión WhatsApp",
+      text: "WhatsApp",
       className: "landing-hero-phone-float landing-hero-phone-float-wa",
     },
   ] as const;
@@ -39,12 +39,6 @@ export function HeroCatalogStaticPreview({
   return (
     <div className={cn("landing-hero-phone", className)}>
       <div className="landing-hero-phone-stage">
-        {floatingLabels.map((label) => (
-          <span key={label.id} className={label.className}>
-            {label.text}
-          </span>
-        ))}
-
         <div className="landing-hero-phone-device">
           <div className="landing-hero-phone-notch" aria-hidden="true" />
           <div className="landing-hero-phone-screen">
@@ -71,6 +65,15 @@ export function HeroCatalogStaticPreview({
               </div>
             ) : null}
           </div>
+        </div>
+
+        {/* Capa de chips anclada al marco del teléfono (inset = padding del device) */}
+        <div className="landing-hero-phone-floats" aria-hidden="true">
+          {floatingLabels.map((label) => (
+            <span key={label.id} className={label.className}>
+              {label.text}
+            </span>
+          ))}
         </div>
       </div>
 
