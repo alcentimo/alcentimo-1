@@ -3,13 +3,19 @@ import { HeroCatalogStaticPreview } from "@/components/landing/HeroCatalogStatic
 
 interface HeroCompositeMockupProps {
   className?: string;
-  /** @deprecated Ya no se usa: la vista previa es estática. */
+  /** Tasa BCV vigente para la vista previa. */
   exchangeRate?: number | null;
 }
 
 /** Vista previa estática del catálogo para el hero y demos ligeras. */
 export function HeroCompositeMockup({
   className,
+  exchangeRate = null,
 }: HeroCompositeMockupProps) {
-  return <HeroCatalogStaticPreview className={cn(className)} />;
+  return (
+    <HeroCatalogStaticPreview
+      className={cn(className)}
+      exchangeRate={exchangeRate}
+    />
+  );
 }
