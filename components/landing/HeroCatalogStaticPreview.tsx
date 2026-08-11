@@ -54,8 +54,6 @@ export function HeroCatalogStaticPreview({
                 fetchPriority="high"
                 sizes="(max-width: 1024px) 72vw, 340px"
                 className="landing-hero-phone-image"
-                // Recorta el padding vacío superior del screenshot (~3.2%).
-                style={{ top: "-3.25%", height: "103.25%" }}
               />
               {rateLabel ? (
                 <div
