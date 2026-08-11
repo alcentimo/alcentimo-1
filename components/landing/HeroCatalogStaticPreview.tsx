@@ -40,34 +40,41 @@ export function HeroCatalogStaticPreview({
     <div className={cn("landing-hero-phone", className)}>
       <div className="landing-hero-phone-stage">
         <div className="landing-hero-phone-device">
-          <div className="landing-hero-phone-notch" aria-hidden="true" />
           <div className="landing-hero-phone-screen">
-            <Image
-              src="/images/landing/catalog-phone-preview.webp"
-              alt="Vista previa del catálogo público de Alcentimo en un teléfono"
-              width={780}
-              height={1648}
-              loading="eager"
-              fetchPriority="high"
-              sizes="(max-width: 1024px) 72vw, 340px"
-              className="landing-hero-phone-image"
-            />
-            {rateLabel ? (
-              <div
-                className="landing-hero-phone-rate-overlay"
-                aria-live="polite"
-                aria-label={`Tasa BCV vigente: 1 USD = ${rateLabel}`}
-              >
-                <span className="landing-hero-phone-rate-overlay-label">BCV</span>
-                <span className="landing-hero-phone-rate-overlay-value">
-                  1 USD = {rateLabel}
-                </span>
-              </div>
-            ) : null}
+            <div className="landing-hero-phone-status" aria-hidden="true">
+              <span className="landing-hero-phone-notch" />
+            </div>
+
+            <div className="landing-hero-phone-viewport">
+              <Image
+                src="/images/landing/catalog-phone-preview.webp"
+                alt="Vista previa del catálogo público de Alcentimo en un teléfono"
+                fill
+                loading="eager"
+                fetchPriority="high"
+                sizes="(max-width: 1024px) 72vw, 340px"
+                className="landing-hero-phone-image"
+                // Recorta el padding vacío superior del screenshot (~3.2%).
+                style={{ top: "-3.25%", height: "103.25%" }}
+              />
+              {rateLabel ? (
+                <div
+                  className="landing-hero-phone-rate-overlay"
+                  aria-live="polite"
+                  aria-label={`Tasa BCV vigente: 1 USD = ${rateLabel}`}
+                >
+                  <span className="landing-hero-phone-rate-overlay-label">
+                    BCV
+                  </span>
+                  <span className="landing-hero-phone-rate-overlay-value">
+                    1 USD = {rateLabel}
+                  </span>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 
-        {/* Capa de chips anclada al marco del teléfono (inset = padding del device) */}
         <div className="landing-hero-phone-floats" aria-hidden="true">
           {floatingLabels.map((label) => (
             <span key={label.id} className={label.className}>
