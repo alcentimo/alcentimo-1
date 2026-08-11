@@ -1240,29 +1240,27 @@ html:has(.landing-shell) {
   width: 100%;
   min-width: 0;
   justify-content: center;
-  /* Evita que las etiquetas flotantes se corten por el overflow del section */
   overflow: visible;
-  padding-inline: 0.5rem;
 }
 
 .landing-hero-phone {
   display: flex;
   width: 100%;
-  max-width: 24rem;
+  max-width: min(21rem, 100%);
   flex-direction: column;
   align-items: center;
 }
 
 .landing-hero-phone-stage {
   position: relative;
-  /* Ancho + padding lateral para que los chips no salgan del contenedor */
   box-sizing: border-box;
-  width: min(21rem, 100%);
-  padding-inline: 1.15rem;
+  width: 100%;
+  overflow: visible;
 }
 
 .landing-hero-phone-device {
   position: relative;
+  z-index: 1;
   width: 100%;
   overflow: hidden;
   border-radius: 2rem;
@@ -1307,6 +1305,19 @@ html:has(.landing-shell) {
   display: block;
   width: 100%;
   height: auto;
+}
+
+/*
+ * Capa de etiquetas: mismo tamaño que la pantalla (inset = padding del device).
+ * overflow:hidden garantiza que ningún chip se salga del marco visible.
+ */
+.landing-hero-phone-floats {
+  position: absolute;
+  inset: 0.55rem;
+  z-index: 3;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  pointer-events: none;
 }
 
 /* Cubre la tarjeta BCV incrustada en el webp (esquina superior derecha). */
@@ -1364,8 +1375,8 @@ html:has(.landing-shell) {
 
 .landing-hero-phone-float {
   position: absolute;
-  z-index: 3;
-  max-width: calc(100% - 0.5rem);
+  box-sizing: border-box;
+  max-width: calc(100% - 1rem);
   overflow: hidden;
   text-overflow: ellipsis;
   border-radius: 999px;
@@ -1388,20 +1399,20 @@ html:has(.landing-shell) {
   color: rgb(244 244 245);
 }
 
-/* Por defecto: chips dentro del stage (seguro en sm/md) */
+/* Chips anclados DENTRO del área de pantalla (nunca fuera del marco) */
 .landing-hero-phone-float-bcv {
-  top: 12%;
-  left: 0.15rem;
+  top: 10%;
+  left: 0.5rem;
 }
 
 .landing-hero-phone-float-ai {
-  top: 38%;
-  right: 0.15rem;
+  top: 36%;
+  right: 0.5rem;
 }
 
 .landing-hero-phone-float-wa {
-  bottom: 18%;
-  left: 0.15rem;
+  bottom: 14%;
+  left: 0.5rem;
   color: #128c7e;
 }
 
@@ -1423,29 +1434,24 @@ html:has(.landing-shell) {
   color: rgb(161 161 170);
 }
 
-/* En pantallas angostas, chips aún más contenidos */
 @media (max-width: 640px) {
-  .landing-hero-phone-host {
-    padding-inline: 0.25rem;
-  }
-
-  .landing-hero-phone-stage {
-    width: min(19.5rem, 100%);
-    padding-inline: 0.85rem;
+  .landing-hero-phone {
+    max-width: min(19.5rem, 100%);
   }
 
   .landing-hero-phone-float {
     font-size: 0.625rem;
     padding: 0.35rem 0.55rem;
+    max-width: calc(100% - 0.75rem);
   }
 
   .landing-hero-phone-float-bcv,
   .landing-hero-phone-float-wa {
-    left: 0.35rem;
+    left: 0.4rem;
   }
 
   .landing-hero-phone-float-ai {
-    right: 0.35rem;
+    right: 0.4rem;
   }
 
   .landing-hero-phone-rate-overlay {
@@ -1460,23 +1466,9 @@ html:has(.landing-shell) {
   }
 }
 
-/* Desktop amplio: ligero solape decorativo sin salirse del host */
 @media (min-width: 1024px) {
-  .landing-hero-phone-stage {
-    width: min(21.5rem, 100%);
-    padding-inline: 1.35rem;
-  }
-
-  .landing-hero-phone-float-bcv {
-    left: 0;
-  }
-
-  .landing-hero-phone-float-ai {
-    right: 0;
-  }
-
-  .landing-hero-phone-float-wa {
-    left: 0;
+  .landing-hero-phone {
+    max-width: min(21.5rem, 100%);
   }
 }
 
