@@ -1240,23 +1240,30 @@ html:has(.landing-shell) {
   width: 100%;
   min-width: 0;
   justify-content: center;
+  /* Evita que las etiquetas flotantes se corten por el overflow del section */
+  overflow: visible;
+  padding-inline: 0.5rem;
 }
 
 .landing-hero-phone {
   display: flex;
   width: 100%;
-  max-width: 22rem;
+  max-width: 24rem;
   flex-direction: column;
   align-items: center;
 }
 
 .landing-hero-phone-stage {
   position: relative;
-  width: min(18.5rem, 78vw);
+  /* Ancho + padding lateral para que los chips no salgan del contenedor */
+  box-sizing: border-box;
+  width: min(21rem, 100%);
+  padding-inline: 1.15rem;
 }
 
 .landing-hero-phone-device {
   position: relative;
+  width: 100%;
   overflow: hidden;
   border-radius: 2rem;
   border: 1px solid rgb(228 228 231 / 0.95);
@@ -1289,6 +1296,7 @@ html:has(.landing-shell) {
 }
 
 .landing-hero-phone-screen {
+  position: relative;
   overflow: hidden;
   border-radius: 1.5rem;
   background: #fafafa;
@@ -1301,9 +1309,65 @@ html:has(.landing-shell) {
   height: auto;
 }
 
+/* Cubre la tarjeta BCV incrustada en el webp (esquina superior derecha). */
+.landing-hero-phone-rate-overlay {
+  position: absolute;
+  top: 3.2%;
+  right: 3.2%;
+  z-index: 2;
+  display: flex;
+  width: min(42%, 8.75rem);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.08rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgb(228 228 231 / 0.85);
+  background: rgb(250 250 249 / 0.98);
+  padding: 0.4rem 0.55rem 0.45rem;
+  box-shadow: 0 6px 16px -12px rgb(15 23 42 / 0.35);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+.landing-hero-phone-rate-overlay-label {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgb(16 185 129);
+}
+
+.landing-hero-phone-rate-overlay-value {
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: rgb(24 24 27);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+:is(.dark) .landing-hero-phone-rate-overlay {
+  border-color: rgb(63 63 70 / 0.95);
+  background: rgb(24 24 27 / 0.94);
+}
+
+:is(.dark) .landing-hero-phone-rate-overlay-label {
+  color: rgb(161 161 170);
+}
+
+:is(.dark) .landing-hero-phone-rate-overlay-value {
+  color: rgb(250 250 250);
+}
+
 .landing-hero-phone-float {
   position: absolute;
   z-index: 3;
+  max-width: calc(100% - 0.5rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
   border-radius: 999px;
   border: 1px solid rgb(228 228 231 / 0.9);
   background: rgb(255 255 255 / 0.94);
@@ -1324,19 +1388,20 @@ html:has(.landing-shell) {
   color: rgb(244 244 245);
 }
 
+/* Por defecto: chips dentro del stage (seguro en sm/md) */
 .landing-hero-phone-float-bcv {
   top: 12%;
-  left: -0.75rem;
+  left: 0.15rem;
 }
 
 .landing-hero-phone-float-ai {
   top: 38%;
-  right: -1rem;
+  right: 0.15rem;
 }
 
 .landing-hero-phone-float-wa {
   bottom: 18%;
-  left: -1.1rem;
+  left: 0.15rem;
   color: #128c7e;
 }
 
@@ -1346,7 +1411,8 @@ html:has(.landing-shell) {
 
 .landing-hero-phone-caption {
   margin-top: 1rem;
-  max-width: 18rem;
+  max-width: 20rem;
+  padding-inline: 0.5rem;
   text-align: center;
   font-size: 0.75rem;
   line-height: 1.4;
@@ -1357,7 +1423,50 @@ html:has(.landing-shell) {
   color: rgb(161 161 170);
 }
 
+/* En pantallas angostas, chips aún más contenidos */
 @media (max-width: 640px) {
+  .landing-hero-phone-host {
+    padding-inline: 0.25rem;
+  }
+
+  .landing-hero-phone-stage {
+    width: min(19.5rem, 100%);
+    padding-inline: 0.85rem;
+  }
+
+  .landing-hero-phone-float {
+    font-size: 0.625rem;
+    padding: 0.35rem 0.55rem;
+  }
+
+  .landing-hero-phone-float-bcv,
+  .landing-hero-phone-float-wa {
+    left: 0.35rem;
+  }
+
+  .landing-hero-phone-float-ai {
+    right: 0.35rem;
+  }
+
+  .landing-hero-phone-rate-overlay {
+    top: 3%;
+    right: 2.8%;
+    width: min(44%, 7.75rem);
+    padding: 0.32rem 0.45rem 0.38rem;
+  }
+
+  .landing-hero-phone-rate-overlay-value {
+    font-size: 0.5625rem;
+  }
+}
+
+/* Desktop amplio: ligero solape decorativo sin salirse del host */
+@media (min-width: 1024px) {
+  .landing-hero-phone-stage {
+    width: min(21.5rem, 100%);
+    padding-inline: 1.35rem;
+  }
+
   .landing-hero-phone-float-bcv {
     left: 0;
   }

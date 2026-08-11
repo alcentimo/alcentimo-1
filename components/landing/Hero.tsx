@@ -9,7 +9,12 @@ const heroHighlights = [
   "Atiende dudas de clientes en tu catálogo con asistencia inteligente.",
 ] as const;
 
-export function Hero() {
+interface HeroProps {
+  /** Tasa BCV vigente para la vista previa del catálogo. */
+  exchangeRate?: number | null;
+}
+
+export function Hero({ exchangeRate = null }: HeroProps) {
   return (
     <section className="relative overflow-hidden border-b border-zinc-200/60 bg-[#FAFAF9] pt-28 sm:pt-32 lg:pt-36 dark:border-zinc-800/60 dark:bg-zinc-950">
       <div
@@ -68,7 +73,7 @@ export function Hero() {
           </div>
 
           <div className="landing-hero-phone-host w-full lg:justify-self-end">
-            <HeroCatalogStaticPreview />
+            <HeroCatalogStaticPreview exchangeRate={exchangeRate} />
           </div>
         </div>
       </div>
