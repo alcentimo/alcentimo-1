@@ -431,6 +431,7 @@ function TransactionalCatalogContent({
         locationHours={purchaseInfo.locationHours}
         showOfficialRate={showOfficialRate}
         exchangeRate={exchangeRate?.rate ?? null}
+        header={effectiveDesign.header ?? catalogDesign.header}
       />
 
       <CatalogPromoBannerCarousel

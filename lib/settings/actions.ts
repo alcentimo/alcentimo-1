@@ -11,6 +11,7 @@ import { normalizeHex6 } from "@/lib/store-settings/color-contrast";
 import { normalizeCatalogLayout } from "@/lib/store-settings/catalog-theme";
 import { sanitizePromoBannerForStorage } from "@/lib/store-settings/promo-banner";
 import { normalizeCatalogFaqDraft } from "@/lib/store-settings/catalog-faq";
+import { sanitizeCatalogHeaderForStorage } from "@/lib/store-settings/catalog-header";
 import { sanitizeAssistantAvatarForStorage } from "@/lib/store-settings/assistant-avatar";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { uploadCatalogBannerAssetImage, uploadStoreAssetImage, uploadStoreLogoImage, removeStoreLogoAssets } from "@/lib/storage";
@@ -142,6 +143,9 @@ export async function saveCatalogDesignSettings(
     ),
     faq: normalizeCatalogFaqDraft(
       design.faq ?? normalized.catalogDesign.faq,
+    ),
+    header: sanitizeCatalogHeaderForStorage(
+      design.header ?? normalized.catalogDesign.header,
     ),
     // El avatar se administra en Asistente IA; no sobrescribirlo desde Diseño.
     assistantAvatar: sanitizeAssistantAvatarForStorage(

@@ -300,6 +300,7 @@ function CatalogCategoriesPageContent({
         locationHours={purchaseInfo.locationHours}
         showOfficialRate={showOfficialRate}
         exchangeRate={exchangeRate?.rate ?? null}
+        header={catalogDesign.header}
       />
       <CatalogLocationPicker />
 

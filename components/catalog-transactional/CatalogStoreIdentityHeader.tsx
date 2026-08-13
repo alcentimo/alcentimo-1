@@ -1,12 +1,20 @@
 "use client";
 
 import Image from "next/image";
+import { isGifImageUrl } from "@/lib/media/is-gif-url";
 import { Sparkles } from "lucide-react";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { formatExchangeRate } from "@/lib/format";
-import { isGifImageUrl } from "@/lib/media/is-gif-url";
-import type { LocationHoursSettings } from "@/lib/store-settings/types";
+import {
+  defaultCatalogHeaderSettings,
+  normalizeCatalogHeaderSettings,
+} from "@/lib/store-settings/catalog-header";
+import type {
+  CatalogHeaderSettings,
+  LocationHoursSettings,
+} from "@/lib/store-settings/types";
+import { cn } from "@/lib/cn";
 
 interface CatalogStoreIdentityHeaderProps {
   storeName: string;
@@ -17,6 +25,7 @@ interface CatalogStoreIdentityHeaderProps {
   locationHours?: LocationHoursSettings | null;
   showOfficialRate?: boolean;
   exchangeRate?: number | null;
+  header?: CatalogHeaderSettings | null;
 }
 
 function getStoreInitials(name: string): string {
@@ -41,7 +50,7 @@ function WhatsAppGlyph({ className }: { className?: string }) {
 
 /**
  * Cabecera de identidad del catálogo público (`/c/...`).
- * Misma tarjeta para todas las tiendas: nombre, descripción y tasa BCV.
+ * Respeta personalización de fondo, portada y alineación desde Diseño.
  */
 export function CatalogStoreIdentityHeader({
   storeName,
@@ -51,6 +60,7 @@ export function CatalogStoreIdentityHeader({
   locationHours = null,
   showOfficialRate = false,
   exchangeRate = null,
+  header: headerProp = null,
 }: CatalogStoreIdentityHeaderProps) {
   const shellNav = useCatalogShellNavigationOptional();
   const showAssistant = Boolean(shellNav?.assistantAvailable);
@@ -62,9 +72,33 @@ export function CatalogStoreIdentityHeader({
     exchangeRate != null &&
     Number.isFinite(exchangeRate) &&
     exchangeRate > 0;
+  const header = normalizeCatalogHeaderSettings(
+    headerProp ?? defaultCatalogHeaderSettings(),
+  );
+  const hasCover = Boolean(header.coverImageUrl?.startsWith("http"));
+  const stacked = header.alignment === "stacked";
 
   return (
-    <header className="txn-catalog-header">
+    <header
+      className={cn(
+        "txn-catalog-header",
+        stacked && "txn-catalog-header--stacked",
+        hasCover && "txn-catalog-header--has-cover",
+        header.bgMode !== "theme" && "txn-catalog-header--custom-bg",
+      )}
+    >
+      {hasCover ? (
+        <div className="txn-catalog-header-cover" aria-hidden="true">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={header.coverImageUrl}
+            alt=""
+            className="txn-catalog-header-cover-image"
+          />
+          <div className="txn-catalog-header-cover-scrim" />
+        </div>
+      ) : null}
+
       <div className="txn-catalog-header-inner">
         <div className="txn-catalog-identity-card">
           <div className="txn-catalog-brand">

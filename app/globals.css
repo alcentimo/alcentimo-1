@@ -7032,13 +7032,130 @@ button.customer-promo-banner-link {
 
 .txn-catalog-header {
   @apply sticky top-0 z-20;
+  position: sticky;
   background: color-mix(in srgb, var(--txn-page-bg, #fafafa) 88%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
+.txn-catalog-header--custom-bg {
+  background: color-mix(in srgb, var(--txn-header-bg, #ffffff) 94%, transparent);
+}
+
+.txn-catalog-header--has-cover {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow: hidden;
+  isolation: isolate;
+  min-height: 7.5rem;
+}
+
+.txn-catalog-header-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.txn-catalog-header-cover-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.txn-catalog-header-cover-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0.28) 0%,
+      rgb(0 0 0 / 0.42) 55%,
+      rgb(0 0 0 / 0.55) 100%
+    );
+}
+
+.txn-catalog-header--has-cover .txn-catalog-header-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.txn-catalog-header--has-cover .txn-catalog-identity-card {
+  border-color: rgb(255 255 255 / 0.22);
+  background-color: rgb(255 255 255 / 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.35);
+}
+
+.txn-catalog-header--has-cover .txn-catalog-eyebrow,
+.txn-catalog-header--has-cover .txn-catalog-title,
+.txn-catalog-header--has-cover .txn-catalog-desc,
+.txn-catalog-header--has-cover .txn-catalog-rate-badge-label,
+.txn-catalog-header--has-cover .txn-catalog-rate-badge-value {
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}
+
+.txn-catalog-header--has-cover .txn-store-logo,
+.txn-catalog-header--has-cover .txn-store-logo-fallback {
+  border-color: rgb(255 255 255 / 0.45);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+}
+
+.txn-catalog-header--custom-bg:not(.txn-catalog-header--has-cover) .txn-catalog-identity-card {
+  border-color: color-mix(in srgb, var(--txn-header-border, #e5e5e5) 70%, transparent);
+  background-color: color-mix(in srgb, var(--txn-header-bg, #ffffff) 92%, transparent);
+}
+
+.txn-catalog-header--custom-bg:not(.txn-catalog-header--has-cover) .txn-catalog-title,
+.txn-catalog-header--custom-bg:not(.txn-catalog-header--has-cover) .txn-catalog-desc,
+.txn-catalog-header--custom-bg:not(.txn-catalog-header--has-cover) .txn-catalog-eyebrow {
+  color: var(--txn-header-fg, var(--txn-page-fg, #171717));
+}
+
+.txn-catalog-header--stacked .txn-catalog-identity-card {
+  @apply flex-col items-center gap-3 text-center;
+}
+
+.txn-catalog-header--stacked .txn-catalog-brand {
+  @apply flex-col items-center gap-3;
+}
+
+.txn-catalog-header--stacked .txn-catalog-identity-copy {
+  @apply flex w-full flex-col items-center;
+}
+
+.txn-catalog-header--stacked .txn-catalog-identity-meta {
+  @apply justify-center;
+}
+
+.txn-catalog-header--stacked .txn-catalog-title,
+.txn-catalog-header--stacked .txn-catalog-desc {
+  @apply text-center;
+}
+
+.txn-catalog-header--stacked .txn-catalog-header-actions {
+  @apply mt-0 w-full flex-row flex-wrap items-center justify-center;
+}
+
+.txn-catalog-header--stacked .txn-store-logo,
+.txn-catalog-header--stacked .txn-store-logo-fallback {
+  @apply mt-0;
+}
+
+/* Profile theme keeps its circular logo look even with custom header options */
+.txn-catalog--theme-profile .txn-catalog-header:not(.txn-catalog-header--stacked) .txn-catalog-identity-card {
+  @apply flex-col items-center gap-3 px-4 py-4 text-center sm:px-5 sm:py-5;
+}
+
 .txn-catalog-header-inner {
-  @apply px-3 pb-1.5 pt-2 sm:px-6 sm:pb-2 sm:pt-2.5;
+  @apply relative px-3 pb-1.5 pt-2 sm:px-6 sm:pb-2 sm:pt-2.5;
 }
 
 .txn-catalog-identity-card {

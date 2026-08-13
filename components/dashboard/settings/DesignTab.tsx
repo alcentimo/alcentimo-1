@@ -14,6 +14,7 @@ import { ArrowLeft, Check, ChevronDown, Maximize2, Palette, Save } from "lucide-
 import { CatalogPrimaryColorField } from "@/components/dashboard/settings/CatalogPrimaryColorField";
 import { CatalogPromoBannerField } from "@/components/dashboard/settings/CatalogPromoBannerField";
 import { CatalogFaqField } from "@/components/dashboard/settings/CatalogFaqField";
+import { CatalogHeaderField } from "@/components/dashboard/settings/CatalogHeaderField";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import { SettingsTabShell } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
@@ -33,6 +34,7 @@ import type { Store } from "@/lib/database.types";
 import type {
   CatalogDesignSettings,
   CatalogFaqSettings,
+  CatalogHeaderSettings,
   CatalogPromoBannerSettings,
   CatalogThemeId,
   CatalogVisibilitySettings,
@@ -47,6 +49,11 @@ import {
   defaultCatalogFaqSettings,
   normalizeCatalogFaqDraft,
 } from "@/lib/store-settings/catalog-faq";
+import {
+  catalogHeaderSummary,
+  defaultCatalogHeaderSettings,
+  normalizeCatalogHeaderDraft,
+} from "@/lib/store-settings/catalog-header";
 import { cn } from "@/lib/cn";
 import {
   DEFAULT_STORE_RUBRO,
@@ -79,6 +86,7 @@ type SavingField =
   | "primaryColor"
   | "promoBanner"
   | "faq"
+  | "header"
   | "checkout"
   | "manual"
   | null;
@@ -86,6 +94,7 @@ type SavingField =
 type AccordionSection =
   | "theme"
   | "brandColor"
+  | "header"
   | "promoBanner"
   | "faq"
   | "visibility"
@@ -248,6 +257,7 @@ export function DesignTab({
   const colorSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const promoBannerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const faqSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const headerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const designRef = useRef(design);
   const checkoutTypeRef = useRef(checkoutType);
@@ -306,6 +316,10 @@ export function DesignTab({
       clearTimeout(faqSaveTimerRef.current);
       faqSaveTimerRef.current = null;
     }
+    if (headerSaveTimerRef.current) {
+      clearTimeout(headerSaveTimerRef.current);
+      headerSaveTimerRef.current = null;
+    }
   }
 
   function updateDesign(
@@ -320,6 +334,7 @@ export function DesignTab({
         : design.visibility,
       promoBanner: patch.promoBanner ?? design.promoBanner,
       faq: patch.faq ?? design.faq,
+      header: patch.header ?? design.header,
     };
     setDesign(nextDesign);
     persist(nextDesign, field);
@@ -412,6 +427,28 @@ export function DesignTab({
     setDesign(nextDesign);
     if (shouldSave) {
       scheduleFaqSave(nextDesign);
+    }
+  }
+
+  function scheduleHeaderSave(nextDesign: CatalogDesignSettings) {
+    if (headerSaveTimerRef.current) {
+      clearTimeout(headerSaveTimerRef.current);
+    }
+
+    headerSaveTimerRef.current = setTimeout(() => {
+      persist(nextDesign, "header");
+    }, 400);
+  }
+
+  function setHeader(next: CatalogHeaderSettings, shouldSave = true) {
+    const draft = normalizeCatalogHeaderDraft(next);
+    const nextDesign: CatalogDesignSettings = {
+      ...design,
+      header: draft,
+    };
+    setDesign(nextDesign);
+    if (shouldSave) {
+      scheduleHeaderSave(nextDesign);
     }
   }
 
@@ -533,6 +570,10 @@ export function DesignTab({
   const brandColorSummary = design.primaryColor
     ? design.primaryColor.toUpperCase()
     : `Rubro ${rubroPalette.label}`;
+  const headerSettings = normalizeCatalogHeaderDraft(
+    design.header ?? defaultCatalogHeaderSettings(),
+  );
+  const headerSummary = catalogHeaderSummary(headerSettings);
   const promoBannerSettings = normalizePromoBannerDraft(
     design.promoBanner ?? defaultPromoBannerSettings(),
   );
@@ -617,6 +658,20 @@ export function DesignTab({
           disabled={isSaving && savingField === "primaryColor"}
           onPick={setPrimaryColor}
           onReset={resetPrimaryColor}
+        />
+      </DesignAccordion>
+
+      <DesignAccordion
+        title="Cabecera"
+        summary={headerSummary}
+        open={openSection === "header"}
+        onToggle={() => toggleSection("header")}
+      >
+        <CatalogHeaderField
+          value={design.header}
+          brandColor={resolvedDesign.primaryColor}
+          disabled={isSaving && savingField === "header"}
+          onChange={setHeader}
         />
       </DesignAccordion>
 

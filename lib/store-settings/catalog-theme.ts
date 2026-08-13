@@ -21,6 +21,10 @@ import {
   defaultAssistantAvatarSettings,
   normalizeAssistantAvatarSettings,
 } from "@/lib/store-settings/assistant-avatar";
+import {
+  normalizeCatalogHeaderSettings,
+  resolveCatalogHeaderBackground,
+} from "@/lib/store-settings/catalog-header";
 import type {
   CatalogDesignSettings,
   CatalogLayoutMode,
@@ -208,6 +212,7 @@ export function resolveCatalogDesign(
     layout,
     promoBanner: normalizePromoBannerSettings(design?.promoBanner),
     faq: normalizeCatalogFaqDraft(design?.faq),
+    header: normalizeCatalogHeaderSettings(design?.header),
     assistantAvatar: normalizeAssistantAvatarSettings(
       design?.assistantAvatar ?? defaultAssistantAvatarSettings(),
     ),
@@ -250,11 +255,35 @@ export function getCatalogThemeStyle(
     includeButtonVars: !(fashionPalette && presetOverridesButtonColors),
   });
 
-  return {
+  const header = normalizeCatalogHeaderSettings(resolved.header);
+  const themeHeaderBg =
+    (preset.cssVars["--txn-header-bg"] as string | undefined) ?? undefined;
+  const headerBg = resolveCatalogHeaderBackground(
+    header,
+    accentPrimary,
+    themeHeaderBg,
+  );
+
+  const style: Record<string, string> = {
     ...preset.cssVars,
     ...accentVars,
-    ["--txn-page-bg" as string]: pageBg,
-  } as CSSProperties;
+    ["--txn-page-bg"]: pageBg,
+  };
+
+  if (headerBg.isCustom) {
+    style["--txn-header-bg"] = headerBg.background;
+    style["--txn-header-border"] = headerBg.background;
+    if (headerBg.foreground) {
+      style["--txn-header-fg"] = headerBg.foreground;
+      style["--txn-page-fg-header"] = headerBg.foreground;
+    }
+  }
+
+  if (header.coverImageUrl) {
+    style["--txn-header-cover"] = `url(${JSON.stringify(header.coverImageUrl)})`;
+  }
+
+  return style as CSSProperties;
 }
 
 export function getCatalogDesignClasses(
@@ -262,11 +291,15 @@ export function getCatalogDesignClasses(
   storeRubro?: string | null,
 ): string {
   const resolved = resolveCatalogDesign(design, storeRubro);
+  const header = normalizeCatalogHeaderSettings(resolved.header);
 
   return cn(
     getCatalogRubroClass(storeRubro),
     `txn-catalog--theme-${resolved.theme}`,
     `txn-catalog--sale-${resolved.saleMode}`,
+    `txn-catalog--header-${header.alignment}`,
+    header.bgMode !== "theme" && "txn-catalog--header-custom-bg",
+    Boolean(header.coverImageUrl) && "txn-catalog--header-cover",
     resolved.layout === "list" && "txn-catalog--list",
     !resolved.visibility.showDescription && "txn-catalog--hide-desc",
     !resolved.visibility.showPrices && "txn-catalog--hide-prices",
