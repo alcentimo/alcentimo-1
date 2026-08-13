@@ -4617,6 +4617,76 @@ html:has(.landing-shell) {
   @apply grid min-w-0 grid-cols-1 lg:grid-cols-[15.5rem_minmax(0,1fr)];
 }
 
+/* Menú maestro móvil: oculto en desktop; en móvil solo con data-mobile-view=menu */
+.settings-mobile-master {
+  display: none;
+}
+
+.settings-mobile-master-header {
+  @apply space-y-1 border-b border-zinc-200/70 px-4 pb-4 pt-4 dark:border-zinc-800/70;
+}
+
+.settings-mobile-master-eyebrow {
+  @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400;
+}
+
+.settings-mobile-master-title {
+  @apply text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+}
+
+.settings-mobile-master-desc {
+  @apply text-sm text-zinc-500 dark:text-zinc-400;
+}
+
+.settings-mobile-detail-chrome {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .settings-workspace[data-mobile-view="menu"] {
+    @apply border-0 bg-transparent shadow-none;
+  }
+
+  .settings-workspace[data-mobile-view="menu"] .settings-mobile-master {
+    display: block;
+  }
+
+  /* Evita que display:grid del layout anule utilidades Tailwind hidden */
+  .settings-workspace[data-mobile-view="menu"] .settings-workspace-layout {
+    display: none !important;
+  }
+
+  .settings-workspace[data-mobile-view="detail"] .settings-mobile-master {
+    display: none !important;
+  }
+
+  .settings-workspace[data-mobile-view="detail"] {
+    @apply min-h-[70vh] rounded-none border-0 bg-white shadow-none dark:bg-zinc-950;
+  }
+
+  .settings-workspace[data-mobile-view="detail"] .settings-workspace-layout {
+    display: block !important;
+  }
+
+  .settings-workspace[data-mobile-view="detail"] .settings-mobile-detail-chrome {
+    display: block;
+  }
+
+  .settings-workspace[data-mobile-view="detail"] .settings-workspace-body {
+    @apply px-3 pb-8 pt-0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .settings-mobile-master {
+    display: none !important;
+  }
+
+  .settings-mobile-detail-chrome {
+    display: none !important;
+  }
+}
+
 /* Móvil: selector dropdown (cuenta) o menú lista (tienda). Desktop: sidebar. */
 .settings-mobile-nav {
   @apply border-b border-zinc-200/70 bg-[#FAFAF9] px-3 py-3 dark:border-zinc-800/70 dark:bg-zinc-900/20;
@@ -4664,7 +4734,7 @@ html:has(.landing-shell) {
 
 /* Menú móvil tipo ajustes nativos (Configuración de Tienda) */
 .settings-mobile-menu {
-  @apply space-y-5 bg-[#FAFAF9] px-3 py-4 dark:bg-zinc-900/20 sm:px-4;
+  @apply space-y-5 bg-transparent px-0 py-4;
 }
 
 .settings-mobile-menu-group-label {
@@ -4688,15 +4758,15 @@ html:has(.landing-shell) {
 }
 
 .settings-mobile-detail-header {
-  @apply mb-4 flex flex-col gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-800;
+  @apply sticky top-0 z-20 -mx-3 mb-4 flex flex-col gap-1 border-b border-zinc-200/80 bg-white/95 px-3 py-3 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/95;
 }
 
 .settings-mobile-detail-back {
-  @apply inline-flex w-fit items-center gap-1 rounded-lg px-1 py-1 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50 hover:text-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300;
+  @apply inline-flex min-h-10 w-fit items-center gap-1 rounded-lg px-1.5 py-1.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 hover:text-emerald-800 active:bg-emerald-100 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300;
 }
 
 .settings-mobile-detail-title {
-  @apply text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+  @apply px-1.5 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
 }
 
 .settings-sidebar {

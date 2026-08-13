@@ -289,11 +289,23 @@ export function SettingsPanel({
   function openSettingsTab(id: SettingsTabId) {
     setActiveTab(id);
     setMobileMenuOpen(false);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document
+        .querySelector(".dashboard-main")
+        ?.scrollTo({ top: 0, behavior: "smooth" });
+    }
     router.replace(`/dashboard/ajustes?tab=${id}`, { scroll: false });
   }
 
   function backToMobileMenu() {
     setMobileMenuOpen(true);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document
+        .querySelector(".dashboard-main")
+        ?.scrollTo({ top: 0, behavior: "smooth" });
+    }
     router.replace("/dashboard/ajustes", { scroll: false });
   }
 
@@ -414,8 +426,23 @@ export function SettingsPanel({
   }
 
   return (
-    <div className="settings-workspace">
-      <div className={cn("lg:hidden", mobileMenuOpen ? "block" : "hidden")}>
+    <div
+      className="settings-workspace"
+      data-mobile-view={mobileMenuOpen ? "menu" : "detail"}
+    >
+      {/* Solo móvil: menú maestro (categorías + opciones). */}
+      <div className="settings-mobile-master">
+        <header className="settings-mobile-master-header">
+          <p className="settings-mobile-master-eyebrow">Administración</p>
+          <h1 className="settings-mobile-master-title">
+            Configuración de Tienda
+          </h1>
+          <p className="settings-mobile-master-desc">
+            {store?.name
+              ? `Elige una sección para editar · ${store.name}`
+              : "Elige una sección para editar tu tienda"}
+          </p>
+        </header>
         <SettingsMobileNav
           groups={mobileNavGroups}
           onSelect={(id) => openSettingsTab(id as SettingsTabId)}
@@ -423,12 +450,8 @@ export function SettingsPanel({
         />
       </div>
 
-      <div
-        className={cn(
-          "settings-workspace-layout",
-          mobileMenuOpen ? "hidden lg:grid" : "grid",
-        )}
-      >
+      {/* Desktop: sidebar + contenido. Móvil: solo sub-vista cuando data-mobile-view=detail. */}
+      <div className="settings-workspace-layout">
         <aside
           className="settings-sidebar settings-sidebar--desktop"
           aria-label="Secciones de configuración"
@@ -483,7 +506,7 @@ export function SettingsPanel({
           role="region"
           aria-label="Contenido de configuración"
         >
-          <div className="lg:hidden">
+          <div className="settings-mobile-detail-chrome">
             <SettingsMobileDetailHeader
               title={activeLabel}
               onBack={backToMobileMenu}

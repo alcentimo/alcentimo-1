@@ -106,7 +106,7 @@ export function SettingsMobileDetailHeader({
         aria-label={`Volver a ${backLabel}`}
       >
         <ChevronRight
-          className="h-4 w-4 shrink-0 -scale-x-100"
+          className="h-5 w-5 shrink-0 -scale-x-100"
           aria-hidden="true"
         />
         <span>{backLabel}</span>

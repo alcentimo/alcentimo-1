@@ -148,15 +148,17 @@ export default async function AjustesPage({
 
   return (
     <div className="settings-page-shell mx-auto max-w-6xl space-y-6 md:space-y-8">
-      <DashboardPageHeader
-        sectionLabel="Administración"
-        title="Configuración de Tienda"
-        description={
-          store
-            ? `Marca, envíos, pagos y presencia en línea · ${store.name}.`
-            : "Marca, envíos, pagos y presencia en línea."
-        }
-      />
+      <div className="hidden lg:block">
+        <DashboardPageHeader
+          sectionLabel="Administración"
+          title="Configuración de Tienda"
+          description={
+            store
+              ? `Marca, envíos, pagos y presencia en línea · ${store.name}.`
+              : "Marca, envíos, pagos y presencia en línea."
+          }
+        />
+      </div>
 
       <SettingsPanel
         store={
