@@ -40,6 +40,7 @@ interface DashboardLayoutProps {
   trialGraceEndsAt?: string | null;
   proTrialSetup?: ProTrialSetupPick | null;
   proTrialProductCount?: number;
+  pendingOrdersCount?: number;
   exchangeRate?: number | null;
   exchangeRateUpdatedAt?: string | null;
   isSupportAdmin?: boolean;
@@ -70,6 +71,7 @@ function DashboardShell({
   trialGraceEndsAt = null,
   proTrialSetup = null,
   proTrialProductCount = 0,
+  pendingOrdersCount = 0,
   exchangeRate = null,
   exchangeRateUpdatedAt = null,
   isSupportAdmin = false,
@@ -182,6 +184,7 @@ function DashboardShell({
         trialPhase={trialPhase}
         proTrialSetup={proTrialSetup}
         proTrialProductCount={proTrialProductCount}
+        pendingOrdersCount={pendingOrdersCount}
         mobileOpen={sidebarOpen}
         immersiveHidden={false}
         onCloseMobile={closeSidebar}
