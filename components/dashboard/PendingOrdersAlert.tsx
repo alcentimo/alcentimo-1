@@ -1,16 +1,27 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, ClipboardList } from "lucide-react";
 import { useDashboardShellMetrics } from "@/components/dashboard/DashboardShellMetrics";
+import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
 
 /**
- * Alerta en el panel principal (catálogo) cuando hay pedidos por atender.
+ * Alerta en el catálogo solo cuando hay pedidos por atender.
+ * Si el conteo es 0, no renderiza nada (no ocupa espacio).
+ * Comparte el mismo pendingOrdersCount que el badge de Órdenes en el sidebar.
  */
 export function PendingOrdersAlert() {
   const { pendingOrdersCount } = useDashboardShellMetrics();
 
-  if (pendingOrdersCount <= 0) return null;
+  // Re-sincroniza al montar el catálogo (p. ej. tras atender pedidos).
+  useEffect(() => {
+    requestDashboardShellRefresh();
+  }, []);
+
+  if (pendingOrdersCount <= 0) {
+    return null;
+  }
 
   const label =
     pendingOrdersCount === 1
