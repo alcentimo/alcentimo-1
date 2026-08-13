@@ -391,7 +391,7 @@ function SuccessView({
       <div className="mt-8 flex flex-col gap-2 sm:flex-row">
         {planIncludesCustomDomain(tier.planId) ? (
           <Link
-            href="/dashboard/ajustes/dominio"
+            href="/dashboard/ajustes?tab=domains"
             className="btn-brand inline-flex min-w-[10rem] items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold"
             onClick={onClose}
           >
