@@ -23,6 +23,7 @@ import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { SignupEmailVerificationPanel } from "@/components/dashboard/SignupEmailVerificationPanel";
 import { DashboardPostAuthLoading } from "@/components/dashboard/DashboardPostAuthLoading";
+import { markPostLoginNotify } from "@/lib/dashboard/post-login-notify";
 
 const devSkipEmailConfirmation =
   process.env.NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION === "true";
@@ -67,6 +68,7 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
   const [redirecting, setRedirecting] = useState(false);
 
   function navigateAfterAuth(path: string) {
+    markPostLoginNotify();
     setRedirecting(true);
     window.location.assign(path);
   }

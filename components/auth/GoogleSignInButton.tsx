@@ -10,6 +10,7 @@ import { getGoogleClientId } from "@/lib/auth/google-client-id";
 import { generateGoogleNoncePair } from "@/lib/auth/google-nonce";
 import { shouldUseCentralizedGoogleAuth } from "@/lib/auth/google-oauth-origin";
 import { cn } from "@/lib/cn";
+import { markPostLoginNotify } from "@/lib/dashboard/post-login-notify";
 
 function GoogleIcon() {
   return (
@@ -104,6 +105,7 @@ export function GoogleSignInButton({
         throw new Error(result.error);
       }
 
+      markPostLoginNotify();
       window.location.assign(result.redirectTo);
     } catch (error) {
       const message = formatAuthError(
@@ -129,6 +131,7 @@ export function GoogleSignInButton({
     setBusy(true);
     setLocalError(null);
 
+    markPostLoginNotify();
     window.location.assign(
       buildCentralizedGoogleAuthUrl({
         postAuthPath,
