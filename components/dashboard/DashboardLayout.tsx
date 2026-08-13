@@ -50,7 +50,8 @@ interface DashboardLayoutProps {
   accountSnapshot?: AccountSnapshot | null;
 }
 
-function isStandaloneAuthPath(pathname: string): boolean {
+/** Rutas de auth sin chrome del panel (login, invitación, recuperar clave). */
+export function isStandaloneAuthPath(pathname: string): boolean {
   return (
     pathname === "/dashboard/login" ||
     pathname === "/dashboard/invitacion" ||

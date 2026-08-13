@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import {
+  DashboardLayout,
+  isStandaloneAuthPath,
+} from "@/components/dashboard/DashboardLayout";
 import { CountryProvider } from "@/components/providers/CountryProvider";
 import { UiPreferencesProvider } from "@/components/providers/UiPreferencesProvider";
 import {
@@ -25,6 +28,7 @@ type ShellOk = Extract<DashboardShellData, { ok: true }>;
  */
 export function DashboardSessionShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const isAuthPath = isStandaloneAuthPath(pathname);
   const [shell, setShell] = useState<ShellOk | null>(null);
   const [shellError, setShellError] = useState<string | null>(null);
   const [shellLoading, setShellLoading] = useState(true);
@@ -49,10 +53,18 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // En login / auth no hay sesión: no pedimos el shell ni mostramos el aviso.
+    if (isAuthPath) {
+      setShellError(null);
+      setShellLoading(false);
+      return;
+    }
     refreshShell();
-  }, [refreshShell, pathname]);
+  }, [refreshShell, pathname, isAuthPath]);
 
   useEffect(() => {
+    if (isAuthPath) return;
+
     function onFocus() {
       refreshShell();
     }
@@ -70,7 +82,7 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener(DASHBOARD_SHELL_REFRESH_EVENT, onShellRefresh);
     };
-  }, [refreshShell]);
+  }, [refreshShell, isAuthPath]);
 
   const accountSnapshot: AccountSnapshot | null = shell?.accountSnapshot ?? null;
 
@@ -103,7 +115,7 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
             canUpgradeToBusiness={shell?.canUpgradeToBusiness ?? false}
             accountSnapshot={accountSnapshot}
           >
-            {shellError && !shell ? (
+            {shellError && !shell && !isAuthPath ? (
               <div
                 className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100"
                 role="status"
