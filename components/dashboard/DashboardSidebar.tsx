@@ -141,7 +141,7 @@ function SidebarNavLink({
         />
         {collapsed && showBadge ? (
           <span
-            className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-0.5 text-[9px] font-bold leading-none text-white"
+            className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold leading-none text-white"
             aria-hidden="true"
           >
             {badgeCount > 9 ? "9+" : badgeCount}
@@ -443,7 +443,9 @@ export function DashboardSidebar({
               active={isDashboardNavItemActive(pathname, item)}
               collapsed={!drawerExpanded}
               badgeCount={
-                item.href === "/dashboard/pedidos" ? pendingOrdersCount : 0
+                item.href === "/dashboard/pedidos"
+                  ? Math.max(0, pendingOrdersCount)
+                  : 0
               }
               onNavigate={onCloseMobile}
               onPrefetch={prefetchRoute}

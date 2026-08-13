@@ -2152,7 +2152,7 @@ html:has(.landing-shell) {
 }
 
 .dashboard-nav-badge {
-  @apply inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold tabular-nums text-white;
+  @apply inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold tabular-nums text-white;
 }
 
 .dashboard-header {
