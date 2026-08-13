@@ -17,8 +17,7 @@ import {
   resolvePeriodEndsAtFromStart,
   type BillingPeriod,
 } from "@/lib/plans/proration";
-import { formatPlanLabel, type PlanId } from "@/src/config/plans";
-
+import type { PlanId } from "@/src/config/plans";
 export type PlanChangeActionResult = {
   error?: string;
   success?: boolean;
@@ -182,10 +181,4 @@ export async function cancelScheduledPlanDowngrade(): Promise<PlanChangeActionRe
 
   revalidatePlanChangePaths();
   return { success: true };
-}
-
-export function formatPendingPlanLabel(
-  pendingPlan: string | null | undefined,
-): string {
-  return formatPlanLabel(normalizeDbPlan(pendingPlan));
 }
