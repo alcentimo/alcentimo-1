@@ -18,18 +18,32 @@ const withPWA = require("next-pwa")({
   fallbacks: {
     document: "/offline.html",
   },
-  // Network-First en navegación HTML; si la red falla o tarda, usa caché/offline shell.
+  // Navegación del panel: NetworkOnly — evita HTML cacheado (timeout 8s) que
+  // apunta a chunks /_next obsoletos y produce "This page couldn't load" tras login.
+  // Login / rutas públicas: NetworkFirst con timeout amplio; offline → offline.html.
   runtimeCaching: [
+    {
+      urlPattern: ({ request, url }: { request: Request; url: URL }) =>
+        request.mode === "navigate" &&
+        url.pathname.startsWith("/dashboard") &&
+        !url.pathname.startsWith("/dashboard/login") &&
+        !url.pathname.startsWith("/dashboard/reset"),
+      handler: "NetworkOnly",
+      options: {
+        cacheName: "alcentimo-admin-dashboard-navigations",
+      },
+    },
     {
       urlPattern: ({ request }: { request: Request }) =>
         request.mode === "navigate",
       handler: "NetworkFirst",
       options: {
         cacheName: "alcentimo-admin-navigations",
-        networkTimeoutSeconds: 8,
+        // Evitar caer a HTML stale si el SSR tarda un poco (antes: 8s).
+        networkTimeoutSeconds: 30,
         expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 24 * 60 * 60,
+          maxEntries: 16,
+          maxAgeSeconds: 60 * 60,
         },
       },
     },

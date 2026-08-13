@@ -1,6 +1,11 @@
 export default function DashboardLoading() {
   return (
-    <div className="mx-auto max-w-6xl animate-pulse space-y-6 px-1 py-2">
+    <div
+      className="mx-auto max-w-6xl animate-pulse space-y-6 px-1 py-2"
+      role="status"
+      aria-live="polite"
+      aria-label="Cargando panel"
+    >
       <div className="space-y-2">
         <div className="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-800" />
         <div className="h-8 w-48 rounded bg-zinc-200 dark:bg-zinc-800" />
@@ -15,6 +20,7 @@ export default function DashboardLoading() {
           />
         ))}
       </div>
+      <p className="sr-only">Cargando el panel…</p>
     </div>
   );
 }

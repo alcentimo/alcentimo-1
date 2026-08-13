@@ -80,37 +80,71 @@ export default async function CatalogoPage({
   );
   const offset = getInventoryPageOffset(requestedPage, pageSize);
 
-  const [
-    inventory,
-    exchangeRateRow,
-    productFormConfig,
-    previewSettings,
-    productLimitContext,
-    criticalStockCount,
-    storeSettings,
-    inventorySuggestions,
-  ] = await Promise.all([
-    getStoreInventory(store.slug, {
-      limit: pageSize,
-      offset,
-      stockFilter,
-      search: searchQuery,
-    }),
-    getCurrentExchangeRate(),
-    getStoreProductFormConfig(store.id),
-    getCatalogPreviewSettings(store),
-    getStoreProductLimitContext(store.id),
-    getCriticalStockCount(store.slug),
-    getStoreSettingsConfig(store.id),
-    (async () => {
-      try {
-        const supabase = await createClient();
-        return await listPendingInventorySuggestions(supabase, store.id);
-      } catch {
-        return [];
-      }
-    })(),
-  ]);
+  let inventory: Awaited<ReturnType<typeof getStoreInventory>>;
+  let exchangeRateRow: Awaited<ReturnType<typeof getCurrentExchangeRate>>;
+  let productFormConfig: Awaited<ReturnType<typeof getStoreProductFormConfig>>;
+  let previewSettings: Awaited<ReturnType<typeof getCatalogPreviewSettings>>;
+  let productLimitContext: Awaited<ReturnType<typeof getStoreProductLimitContext>>;
+  let criticalStockCount: number;
+  let storeSettings: Awaited<ReturnType<typeof getStoreSettingsConfig>>;
+  let inventorySuggestions: Awaited<
+    ReturnType<typeof listPendingInventorySuggestions>
+  >;
+
+  try {
+    [
+      inventory,
+      exchangeRateRow,
+      productFormConfig,
+      previewSettings,
+      productLimitContext,
+      criticalStockCount,
+      storeSettings,
+      inventorySuggestions,
+    ] = await Promise.all([
+      getStoreInventory(store.slug, {
+        limit: pageSize,
+        offset,
+        stockFilter,
+        search: searchQuery,
+      }),
+      getCurrentExchangeRate(),
+      getStoreProductFormConfig(store.id),
+      getCatalogPreviewSettings(store),
+      getStoreProductLimitContext(store.id),
+      getCriticalStockCount(store.slug),
+      getStoreSettingsConfig(store.id),
+      (async () => {
+        try {
+          const supabase = await createClient();
+          return await listPendingInventorySuggestions(supabase, store.id);
+        } catch {
+          return [];
+        }
+      })(),
+    ]);
+  } catch (error) {
+    console.error("[dashboard/catalogo] initial load failed", error);
+    return (
+      <div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center px-4 py-12 text-center">
+        <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+          El catálogo tarda en responder
+        </h1>
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          No pudimos completar la carga inicial. Reintenta; tu sesión sigue
+          activa.
+        </p>
+        <div className="mt-6 flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
+          <Link href="/dashboard/catalogo" className="btn-primary">
+            Reintentar
+          </Link>
+          <Link href="/dashboard/login" className="btn-brand-outline">
+            Volver al acceso
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   let { products, totalCount } = inventory;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize) || 1);

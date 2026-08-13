@@ -1,5 +1,5 @@
 /** Incrementar tras cambios de estrategia SW admin. */
-export const PWA_ADMIN_RESET_VERSION = "2";
+export const PWA_ADMIN_RESET_VERSION = "3";
 
 /** Incrementar tras cambios de estrategia SW catálogo cliente. */
 export const PWA_CATALOG_RESET_VERSION = "10";
