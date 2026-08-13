@@ -26,6 +26,8 @@ interface DesignCatalogInlinePreviewProps {
   baseSettings: CatalogPreviewSettings;
   design: CatalogDesignSettings;
   checkoutType?: CheckoutType;
+  /** Compact chrome for the fullscreen design editor. */
+  variant?: "inline" | "immersive";
 }
 
 const CHECKOUT_PREVIEW_LABEL: Record<CheckoutType, string> = {
@@ -41,6 +43,7 @@ export function DesignCatalogInlinePreview({
   baseSettings,
   design,
   checkoutType = "both",
+  variant = "inline",
 }: DesignCatalogInlinePreviewProps) {
   const storeRubro = normalizeStoreRubro(store.rubro_tienda);
   const { isPrefetching } = useSmartPreviewRubro(storeRubro);
@@ -84,18 +87,27 @@ export function DesignCatalogInlinePreview({
     checkoutType,
   ].join("-");
 
+  const immersive = variant === "immersive";
+
   return (
-    <div className="design-studio-preview">
+    <div
+      className={cn(
+        "design-studio-preview",
+        immersive && "design-studio-preview--immersive",
+      )}
+    >
       <div className="design-studio-preview-meta">
-        <p className="design-studio-preview-eyebrow">Vista previa inteligente</p>
+        <p className="design-studio-preview-eyebrow">Vista previa</p>
         <p className="design-studio-preview-caption">
           {themeLabel} · {referenceCatalog.rubroLabel} ·{" "}
           {CHECKOUT_PREVIEW_LABEL[checkoutType]}
         </p>
-        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-          Mockup estático según el rubro configurado en Identidad. Tus productos
-          reales no se muestran aquí.
-        </p>
+        {!immersive ? (
+          <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+            Mockup estático según el rubro configurado en Identidad. Tus productos
+            reales no se muestran aquí.
+          </p>
+        ) : null}
       </div>
 
       <div className="design-studio-preview-frame">
