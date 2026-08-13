@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { finalizeAuthSessionRedirect } from "@/lib/auth/finalize-auth-session";
 import { logAuthEvent } from "@/lib/auth/auth-log";
+import { DEFAULT_POST_AUTH_PATH } from "@/lib/auth/post-auth-redirect";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
   const siteUrl = getSiteUrl();
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/onboarding";
+  const next = searchParams.get("next") ?? DEFAULT_POST_AUTH_PATH;
   const storeSlug = searchParams.get("store");
   const orderId = searchParams.get("orderId");
 

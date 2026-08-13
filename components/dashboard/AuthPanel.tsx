@@ -22,6 +22,7 @@ import { ensureBrowserSessionReady } from "@/lib/auth/ensure-browser-session";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { SignupEmailVerificationPanel } from "@/components/dashboard/SignupEmailVerificationPanel";
+import { DashboardPostAuthLoading } from "@/components/dashboard/DashboardPostAuthLoading";
 
 const devSkipEmailConfirmation =
   process.env.NEXT_PUBLIC_DEV_SKIP_EMAIL_CONFIRMATION === "true";
@@ -63,6 +64,12 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
   const [signupNotice, setSignupNotice] = useState<string | null>(null);
   const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false);
   const [existingAccountNotice, setExistingAccountNotice] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+
+  function navigateAfterAuth(path: string) {
+    setRedirecting(true);
+    window.location.assign(path);
+  }
 
   useEffect(() => {
     if (!urlError && !urlErrorDescription) return;
@@ -134,7 +141,7 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
           return;
         }
 
-        window.location.assign(postAuthPath);
+        navigateAfterAuth(postAuthPath);
       } catch (caught) {
         setLoading(false);
         const message = getAuthCaughtMessage(caught);
@@ -247,7 +254,7 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
       }
 
       logAuthEvent("signin_success", { hasUser: Boolean(result.data.user) });
-      window.location.assign(postAuthPath);
+      navigateAfterAuth(postAuthPath);
     } catch (caught) {
       setLoading(false);
       const message = getAuthCaughtMessage(caught);
@@ -273,6 +280,10 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
         onBackToLogin={() => switchMode("login")}
       />
     );
+  }
+
+  if (redirecting) {
+    return <DashboardPostAuthLoading />;
   }
 
   const isBusy = loading;

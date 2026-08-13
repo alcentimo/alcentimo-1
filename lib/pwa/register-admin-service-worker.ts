@@ -34,6 +34,9 @@ async function runAdminRegistration(): Promise<void> {
   const needsReset = storedVersion !== PWA_ADMIN_RESET_VERSION;
 
   if (needsReset) {
+    // Forzar SW fresco tras cambio de estrategia (p. ej. NetworkOnly en /dashboard).
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map((registration) => registration.unregister()));
     await deleteAdminLegacyCaches();
     localStorage.setItem(ADMIN_PWA_RESET_STORAGE_KEY, PWA_ADMIN_RESET_VERSION);
   }
@@ -42,6 +45,9 @@ async function runAdminRegistration(): Promise<void> {
     .register(PWA_SW_URL, {
       scope: PWA_SW_SCOPE,
       updateViaCache: "none",
+    })
+    .then((registration) => {
+      void registration.update();
     })
     .catch(() => {
       // El panel funciona sin SW.

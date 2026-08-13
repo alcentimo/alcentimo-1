@@ -25,12 +25,26 @@ type ShellOk = Extract<DashboardShellData, { ok: true }>;
 export function DashboardSessionShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [shell, setShell] = useState<ShellOk | null>(null);
+  const [shellError, setShellError] = useState<string | null>(null);
+  const [shellLoading, setShellLoading] = useState(true);
 
   const refreshShell = useCallback(() => {
-    void fetchDashboardShellData().then((result) => {
-      if (!result.ok) return;
-      setShell(result);
-    });
+    setShellLoading(true);
+    void fetchDashboardShellData()
+      .then((result) => {
+        if (!result.ok) {
+          setShellError(result.error || "No se pudo cargar la sesión del panel.");
+          return;
+        }
+        setShellError(null);
+        setShell(result);
+      })
+      .catch(() => {
+        setShellError("No se pudo cargar la sesión del panel. Revisa tu conexión.");
+      })
+      .finally(() => {
+        setShellLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -88,6 +102,25 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
             canUpgradeToBusiness={shell?.canUpgradeToBusiness ?? false}
             accountSnapshot={accountSnapshot}
           >
+            {shellError && !shell ? (
+              <div
+                className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100"
+                role="status"
+              >
+                <p className="font-medium">El menú del panel tarda en cargar</p>
+                <p className="mt-1 text-amber-800/90 dark:text-amber-200/80">
+                  {shellError}
+                </p>
+                <button
+                  type="button"
+                  className="mt-2 text-sm font-semibold underline underline-offset-2"
+                  onClick={() => refreshShell()}
+                  disabled={shellLoading}
+                >
+                  {shellLoading ? "Reintentando…" : "Reintentar"}
+                </button>
+              </div>
+            ) : null}
             {children}
           </DashboardLayout>
         </DashboardShellMetricsProvider>

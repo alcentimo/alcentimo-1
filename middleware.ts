@@ -578,7 +578,7 @@ export async function middleware(request: NextRequest) {
               next.startsWith(DASHBOARD_INVITATION_PATH))
             ? next
             : null,
-          "/dashboard",
+          "/dashboard/catalogo",
         );
       } else if (next?.startsWith(DASHBOARD_INVITATION_PATH)) {
         applySafeInternalNextRedirect(redirectUrl, next, DASHBOARD_INVITATION_PATH);

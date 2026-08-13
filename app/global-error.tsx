@@ -24,8 +24,8 @@ export default function GlobalError({
           justifyContent: "center",
           fontFamily:
             "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-          background: "#fafafa",
-          color: "#18181b",
+          background: "#0f172a",
+          color: "#fafafa",
           padding: "1.5rem",
         }}
       >
@@ -34,13 +34,13 @@ export default function GlobalError({
             maxWidth: "22rem",
             width: "100%",
             textAlign: "center",
-            border: "1px solid #e4e4e7",
+            border: "1px solid #1e293b",
             borderRadius: "1rem",
             padding: "1.5rem",
-            background: "#fff",
+            background: "#111827",
           }}
         >
-          <p style={{ margin: 0, fontSize: "0.75rem", color: "#71717a" }}>
+          <p style={{ margin: 0, fontSize: "0.75rem", color: "#94a3b8" }}>
             Error crítico
           </p>
           <h1
@@ -52,13 +52,15 @@ export default function GlobalError({
           >
             No pudimos cargar la aplicación
           </h1>
-          <p style={{ margin: "0.75rem 0 0", fontSize: "0.875rem", color: "#52525b" }}>
-            Recarga la página para continuar. Si el problema persiste, vuelve
-            más tarde.
+          <p style={{ margin: "0.75rem 0 0", fontSize: "0.875rem", color: "#a1a1aa" }}>
+            Recarga para continuar. Si el problema persiste, vuelve a iniciar
+            sesión.
           </p>
           <button
             type="button"
-            onClick={reset}
+            onClick={() => {
+              window.location.assign("/dashboard/catalogo");
+            }}
             style={{
               marginTop: "1.25rem",
               width: "100%",
@@ -71,7 +73,24 @@ export default function GlobalError({
               cursor: "pointer",
             }}
           >
-            Recargar
+            Ir al catálogo
+          </button>
+          <button
+            type="button"
+            onClick={reset}
+            style={{
+              marginTop: "0.5rem",
+              width: "100%",
+              border: "1px solid #334155",
+              borderRadius: "0.75rem",
+              padding: "0.75rem 1rem",
+              background: "transparent",
+              color: "#fafafa",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Reintentar
           </button>
         </div>
       </body>
