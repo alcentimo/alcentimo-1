@@ -13,6 +13,7 @@ import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import type { InventoryAiSuggestionRow } from "@/lib/inventory-ai/types";
 import { InventoryAiSuggestionCards } from "@/components/dashboard/InventoryAiSuggestionCards";
+import { PendingOrdersAlert } from "@/components/dashboard/PendingOrdersAlert";
 
 interface CatalogPanelProps {
   store: Store;
@@ -105,6 +106,8 @@ export function CatalogPanel({
         initialSuggestions={inventorySuggestions}
         variant="compact"
       />
+
+      <PendingOrdersAlert />
 
       <InventoryPanel
         key={`catalog-${productFormConfig.rubroTienda}`}

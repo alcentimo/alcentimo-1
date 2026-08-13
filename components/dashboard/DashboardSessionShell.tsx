@@ -12,6 +12,7 @@ import {
 import { DASHBOARD_SHELL_REFRESH_EVENT } from "@/lib/dashboard/shell-refresh";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import type { AccountSnapshot } from "@/lib/account/types";
+import { DashboardShellMetricsProvider } from "@/components/dashboard/DashboardShellMetrics";
 
 const defaultPrefs = defaultStoreSettingsConfig().interfacePreferences;
 
@@ -63,28 +64,33 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
       initialPreferences={shell?.interfacePreferences ?? defaultPrefs}
     >
       <CountryProvider country={shell?.storeCountry ?? null}>
-        <DashboardLayout
-          storeName={shell?.storeName ?? null}
-          userEmail={shell?.userEmail ?? null}
-          planName={shell?.planName ?? null}
-          subscriptionStatus={shell?.subscriptionStatus ?? "none"}
-          trialActive={shell?.trialActive ?? false}
-          trialEligible={shell?.trialEligible ?? false}
-          trialPhase={shell?.trialPhase ?? "none"}
-          trialEndsAt={shell?.trialEndsAt ?? null}
-          trialGraceEndsAt={shell?.trialGraceEndsAt ?? null}
-          proTrialSetup={shell?.proTrialSetup ?? null}
-          proTrialProductCount={shell?.proTrialProductCount ?? 0}
-          exchangeRate={shell?.exchangeRate ?? null}
-          exchangeRateUpdatedAt={shell?.exchangeRateUpdatedAt ?? null}
-          isSupportAdmin={shell?.isSupportAdmin ?? false}
-          isStoreOwner={shell?.isStoreOwner ?? false}
-          storeRole={shell?.storeRole ?? null}
-          canUpgradeToBusiness={shell?.canUpgradeToBusiness ?? false}
-          accountSnapshot={accountSnapshot}
+        <DashboardShellMetricsProvider
+          value={{ pendingOrdersCount: shell?.pendingOrdersCount ?? 0 }}
         >
-          {children}
-        </DashboardLayout>
+          <DashboardLayout
+            storeName={shell?.storeName ?? null}
+            userEmail={shell?.userEmail ?? null}
+            planName={shell?.planName ?? null}
+            subscriptionStatus={shell?.subscriptionStatus ?? "none"}
+            trialActive={shell?.trialActive ?? false}
+            trialEligible={shell?.trialEligible ?? false}
+            trialPhase={shell?.trialPhase ?? "none"}
+            trialEndsAt={shell?.trialEndsAt ?? null}
+            trialGraceEndsAt={shell?.trialGraceEndsAt ?? null}
+            proTrialSetup={shell?.proTrialSetup ?? null}
+            proTrialProductCount={shell?.proTrialProductCount ?? 0}
+            pendingOrdersCount={shell?.pendingOrdersCount ?? 0}
+            exchangeRate={shell?.exchangeRate ?? null}
+            exchangeRateUpdatedAt={shell?.exchangeRateUpdatedAt ?? null}
+            isSupportAdmin={shell?.isSupportAdmin ?? false}
+            isStoreOwner={shell?.isStoreOwner ?? false}
+            storeRole={shell?.storeRole ?? null}
+            canUpgradeToBusiness={shell?.canUpgradeToBusiness ?? false}
+            accountSnapshot={accountSnapshot}
+          >
+            {children}
+          </DashboardLayout>
+        </DashboardShellMetricsProvider>
       </CountryProvider>
     </UiPreferencesProvider>
   );

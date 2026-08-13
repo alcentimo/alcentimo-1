@@ -32,6 +32,7 @@ import {
   type ProTrialSetupPick,
 } from "@/lib/onboarding/setup-status";
 import { scheduleStoreSubdomainProvision } from "@/lib/domains/provision-store-subdomain";
+import { getPendingOrdersCount } from "@/lib/orders/get-pending-orders-count";
 
 const SHELL_QUERY_TIMEOUT_MS = 8_000;
 
@@ -51,6 +52,8 @@ export type DashboardShellData =
       proTrialSetup: ProTrialSetupPick | null;
       /** Productos activos (para contador N/10 en Primeros pasos). */
       proTrialProductCount: number;
+      /** Pedidos por atender (por_pagar | pendiente | procesando). */
+      pendingOrdersCount: number;
       exchangeRate: number | null;
       exchangeRateUpdatedAt: string | null;
       isSupportAdmin: boolean;
@@ -130,7 +133,8 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
     const displayPlan = getDisplayPlanForProfile(authUser.profile);
     const trial = resolveProTrialStatus(authUser.profile, displayPlan.planId);
 
-    const [exchangeRateRow, settingsConfig, productCount] = await Promise.all([
+    const [exchangeRateRow, settingsConfig, productCount, pendingOrdersCount] =
+      await Promise.all([
       withTimeoutFallback(
         getCurrentExchangeRate(),
         SHELL_QUERY_TIMEOUT_MS,
@@ -151,6 +155,14 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
             SHELL_QUERY_TIMEOUT_MS,
             0,
             "shell:getStoreProductCount",
+          )
+        : Promise.resolve(0),
+      store
+        ? withTimeoutFallback(
+            getPendingOrdersCount(store.id),
+            SHELL_QUERY_TIMEOUT_MS,
+            0,
+            "shell:getPendingOrdersCount",
           )
         : Promise.resolve(0),
     ]);
@@ -185,6 +197,7 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
       trialGraceEndsAt: trial.graceEndsAt,
       proTrialSetup,
       proTrialProductCount: store ? productCount : 0,
+      pendingOrdersCount: store ? pendingOrdersCount : 0,
       exchangeRate,
       exchangeRateUpdatedAt,
       isSupportAdmin: isSupportAdmin(

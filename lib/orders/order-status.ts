@@ -147,6 +147,13 @@ export function isDispatchPendingEstado(estado: OrderEstado): boolean {
   );
 }
 
+/** Estados que requieren atención del comercio (badge / alertas). */
+export const PRIORITY_ORDER_ESTADOS = [
+  "por_pagar",
+  "pendiente",
+  "procesando",
+] as const satisfies readonly OrderEstado[];
+
 export function isPendingOrderEstado(estado: OrderEstado): boolean {
   return estado !== "entregado" && estado !== "cancelado";
 }

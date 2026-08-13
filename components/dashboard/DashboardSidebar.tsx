@@ -50,6 +50,7 @@ interface DashboardSidebarProps {
   trialPhase?: ProTrialPhase;
   proTrialSetup?: ProTrialSetupPick | null;
   proTrialProductCount?: number;
+  pendingOrdersCount?: number;
   mobileOpen: boolean;
   immersiveHidden: boolean;
   onCloseMobile: () => void;
@@ -81,11 +82,17 @@ function navLinkClass(
   );
 }
 
+function formatNavBadgeCount(count: number): string {
+  if (count > 99) return "99+";
+  return String(count);
+}
+
 function SidebarNavLink({
   item,
   label,
   active,
   collapsed,
+  badgeCount = 0,
   onNavigate,
   onPrefetch,
 }: {
@@ -93,10 +100,13 @@ function SidebarNavLink({
   label: string;
   active: boolean;
   collapsed: boolean;
+  badgeCount?: number;
   onNavigate: () => void;
   onPrefetch: (href: string) => void;
 }) {
   const Icon = item.icon;
+  const showBadge = badgeCount > 0;
+  const badgeLabel = showBadge ? formatNavBadgeCount(badgeCount) : null;
 
   function handlePrefetch() {
     if (!active) {
@@ -113,15 +123,35 @@ function SidebarNavLink({
       onMouseEnter={handlePrefetch}
       onFocus={handlePrefetch}
       onTouchStart={handlePrefetch}
-      title={collapsed ? `${label} — ${item.description}` : item.description}
+      title={
+        collapsed
+          ? `${label}${showBadge ? ` (${badgeCount})` : ""} — ${item.description}`
+          : item.description
+      }
       aria-current={active ? "page" : undefined}
+      aria-label={
+        showBadge ? `${label}, ${badgeCount} pendientes` : undefined
+      }
     >
-      <Icon
-        className={cn("shrink-0", collapsed ? "h-[18px] w-[18px]" : "h-4 w-4")}
-        strokeWidth={active ? 2 : 1.75}
-        aria-hidden="true"
-      />
-      {!collapsed && <span className="truncate">{label}</span>}
+      <span className="relative shrink-0">
+        <Icon
+          className={cn(collapsed ? "h-[18px] w-[18px]" : "h-4 w-4")}
+          strokeWidth={active ? 2 : 1.75}
+          aria-hidden="true"
+        />
+        {collapsed && showBadge ? (
+          <span
+            className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-0.5 text-[9px] font-bold leading-none text-white"
+            aria-hidden="true"
+          >
+            {badgeCount > 9 ? "9+" : badgeCount}
+          </span>
+        ) : null}
+      </span>
+      {!collapsed && <span className="min-w-0 flex-1 truncate">{label}</span>}
+      {!collapsed && showBadge && badgeLabel ? (
+        <span className="dashboard-nav-badge ml-auto shrink-0">{badgeLabel}</span>
+      ) : null}
     </Link>
   );
 }
@@ -233,6 +263,7 @@ export function DashboardSidebar({
   trialPhase = "none",
   proTrialSetup = null,
   proTrialProductCount = 0,
+  pendingOrdersCount = 0,
   mobileOpen,
   immersiveHidden,
   onCloseMobile,
@@ -411,6 +442,9 @@ export function DashboardSidebar({
               label={navLabel(item.href, item.label)}
               active={isDashboardNavItemActive(pathname, item)}
               collapsed={!drawerExpanded}
+              badgeCount={
+                item.href === "/dashboard/pedidos" ? pendingOrdersCount : 0
+              }
               onNavigate={onCloseMobile}
               onPrefetch={prefetchRoute}
             />

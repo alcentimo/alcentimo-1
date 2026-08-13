@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Check, Loader2, Truck } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { updateOrderEstado } from "@/lib/orders/update-order-estado";
+import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
 import { OrderEstadoPill } from "@/components/dashboard/orders/OrderEstadoPill";
 import {
   ORDER_ESTADO_HINTS,
@@ -113,6 +114,7 @@ export function OrderStatusSelect({
         return;
       }
 
+      requestDashboardShellRefresh();
       onEstadoUpdated?.(orderId, nextEstado, {
         previousEstado: previous,
         trackingNumber:
