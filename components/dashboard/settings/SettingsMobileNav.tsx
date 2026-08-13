@@ -1,13 +1,13 @@
 "use client";
 
-import { ChevronDown, Lock, type LucideIcon } from "lucide-react";
-import { DropdownMenu } from "@/components/ui/dropdown-menu";
+import { ChevronRight, Lock, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export type SettingsMobileNavItem = {
   id: string;
   label: string;
   icon: LucideIcon;
+  description?: string;
   /** Badge Pro (p. ej. Dominio bloqueado). */
   proLocked?: boolean;
 };
@@ -19,104 +19,99 @@ export type SettingsMobileNavGroup = {
 
 interface SettingsMobileNavProps {
   groups: SettingsMobileNavGroup[];
-  activeId: string;
-  onChange: (id: string) => void;
+  onSelect: (id: string) => void;
   ariaLabel?: string;
 }
 
+/**
+ * Menú móvil tipo ajustes nativos: lista agrupada.
+ * Al tocar una opción, el padre navega a la sub-vista.
+ */
 export function SettingsMobileNav({
   groups,
-  activeId,
-  onChange,
-  ariaLabel = "Sección de configuración",
+  onSelect,
+  ariaLabel = "Menú de configuración",
 }: SettingsMobileNavProps) {
-  const activeItem =
-    groups.flatMap((group) => group.items).find((item) => item.id === activeId) ??
-    groups[0]?.items[0];
-  const ActiveIcon = activeItem?.icon;
-
   return (
-    <div className="settings-mobile-nav lg:hidden">
-      <p className="settings-mobile-nav-label">{ariaLabel}</p>
-      <DropdownMenu
-        className="w-full"
-        align="start"
-        menuClassName="settings-mobile-nav-menu"
-        trigger={
-          <button
-            type="button"
-            className="settings-mobile-nav-trigger"
-            aria-label={`${ariaLabel}: ${activeItem?.label ?? ""}`}
-            aria-haspopup="menu"
-          >
-            <span className="flex min-w-0 items-center gap-2.5">
-              {ActiveIcon ? (
-                <ActiveIcon
-                  className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
-                  aria-hidden="true"
-                />
-              ) : null}
-              <span className="truncate font-medium text-zinc-900 dark:text-zinc-50">
-                {activeItem?.label ?? "Elegir sección"}
-              </span>
-              {activeItem?.proLocked ? (
-                <span className="settings-mobile-nav-pro-badge">
-                  <Lock className="h-3 w-3" aria-hidden="true" />
-                  Pro
-                </span>
-              ) : null}
-            </span>
-            <ChevronDown
-              className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500"
-              aria-hidden="true"
-            />
-          </button>
-        }
+    <nav className="settings-mobile-menu" aria-label={ariaLabel}>
+      {groups.map((group) => (
+        <section key={group.label} className="settings-mobile-menu-group">
+          <h2 className="settings-mobile-menu-group-label">{group.label}</h2>
+          <ul className="settings-mobile-menu-list">
+            {group.items.map((item, index) => {
+              const Icon = item.icon;
+              const isLast = index === group.items.length - 1;
+              return (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    className={cn(
+                      "settings-mobile-menu-row",
+                      !isLast && "settings-mobile-menu-row-divider",
+                    )}
+                    onClick={() => onSelect(item.id)}
+                  >
+                    <span className="settings-mobile-menu-icon" aria-hidden="true">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0 flex-1 text-left">
+                      <span className="block truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                        {item.label}
+                      </span>
+                      {item.description ? (
+                        <span className="mt-0.5 block truncate text-xs text-zinc-500 dark:text-zinc-400">
+                          {item.description}
+                        </span>
+                      ) : null}
+                    </span>
+                    {item.proLocked ? (
+                      <span className="settings-mobile-nav-pro-badge">
+                        <Lock className="h-3 w-3" aria-hidden="true" />
+                        Pro
+                      </span>
+                    ) : null}
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0 text-zinc-300 dark:text-zinc-600"
+                      aria-hidden="true"
+                    />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </nav>
+  );
+}
+
+interface SettingsMobileDetailHeaderProps {
+  title: string;
+  onBack: () => void;
+  backLabel?: string;
+}
+
+/** Cabecera de sub-vista móvil con volver al menú de ajustes. */
+export function SettingsMobileDetailHeader({
+  title,
+  onBack,
+  backLabel = "Ajustes",
+}: SettingsMobileDetailHeaderProps) {
+  return (
+    <header className="settings-mobile-detail-header">
+      <button
+        type="button"
+        onClick={onBack}
+        className="settings-mobile-detail-back"
+        aria-label={`Volver a ${backLabel}`}
       >
-        {(close) => (
-          <div className="settings-mobile-nav-menu-inner">
-            {groups.map((group) => (
-              <div key={group.label} className="settings-mobile-nav-group">
-                <p className="settings-mobile-nav-group-label">{group.label}</p>
-                <ul className="settings-mobile-nav-list">
-                  {group.items.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = item.id === activeId;
-                    return (
-                      <li key={item.id}>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          aria-current={isActive ? "page" : undefined}
-                          className={cn(
-                            "settings-mobile-nav-option",
-                            isActive && "settings-mobile-nav-option-active",
-                          )}
-                          onClick={() => {
-                            onChange(item.id);
-                            close();
-                          }}
-                        >
-                          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                          <span className="min-w-0 flex-1 truncate text-left">
-                            {item.label}
-                          </span>
-                          {item.proLocked ? (
-                            <span className="settings-mobile-nav-pro-badge">
-                              <Lock className="h-3 w-3" aria-hidden="true" />
-                              Pro
-                            </span>
-                          ) : null}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
-      </DropdownMenu>
-    </div>
+        <ChevronRight
+          className="h-4 w-4 shrink-0 -scale-x-100"
+          aria-hidden="true"
+        />
+        <span>{backLabel}</span>
+      </button>
+      <h2 className="settings-mobile-detail-title">{title}</h2>
+    </header>
   );
 }

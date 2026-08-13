@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Boxes,
   Clock,
@@ -28,7 +29,10 @@ import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursT
 import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
 import { PaymentsTab } from "@/components/dashboard/settings/PaymentsTab";
 import { PromotionsPanel } from "@/components/dashboard/promotions/PromotionsPanel";
-import { SettingsMobileNav } from "@/components/dashboard/settings/SettingsMobileNav";
+import {
+  SettingsMobileDetailHeader,
+  SettingsMobileNav,
+} from "@/components/dashboard/settings/SettingsMobileNav";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { Store } from "@/lib/database.types";
@@ -74,22 +78,30 @@ const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
   "branches",
 ]);
 
+function resolveExplicitTab(
+  tab: string | undefined,
+  showDropshipping: boolean,
+): SettingsTabId | null {
+  if (!tab || !VALID_SETTINGS_TABS.has(tab as SettingsTabId)) {
+    return null;
+  }
+  if (tab === "dropship" && !showDropshipping) {
+    return null;
+  }
+  return tab as SettingsTabId;
+}
+
 function resolveInitialTab(
   tab: string | undefined,
   showDropshipping: boolean,
 ): SettingsTabId {
-  if (tab === "dropship" && !showDropshipping) {
-    return "general";
-  }
-  if (tab && VALID_SETTINGS_TABS.has(tab as SettingsTabId)) {
-    return tab as SettingsTabId;
-  }
-  return "general";
+  return resolveExplicitTab(tab, showDropshipping) ?? "general";
 }
 
 type NavItem = {
   id: SettingsTabId;
   label: string;
+  description: string;
   icon: typeof Settings2;
 };
 
@@ -101,14 +113,44 @@ function buildSettingsNavGroups(showDropshipping: boolean): {
     {
       label: "Tienda",
       items: [
-        { id: "general", label: "Identidad", icon: Settings2 },
-        { id: "categories", label: "Categorías", icon: FolderTree },
-        { id: "location", label: "Horarios y contacto", icon: Clock },
-        { id: "currency", label: "Moneda", icon: Coins },
-        { id: "wholesale", label: "Venta al mayor", icon: Boxes },
+        {
+          id: "general",
+          label: "Identidad",
+          description: "Nombre, logo y rubro",
+          icon: Settings2,
+        },
+        {
+          id: "categories",
+          label: "Categorías",
+          description: "Organiza tu catálogo",
+          icon: FolderTree,
+        },
+        {
+          id: "location",
+          label: "Horarios y contacto",
+          description: "WhatsApp, horario y ubicación",
+          icon: Clock,
+        },
+        {
+          id: "currency",
+          label: "Moneda",
+          description: "Precios y moneda del catálogo",
+          icon: Coins,
+        },
+        {
+          id: "wholesale",
+          label: "Venta al mayor",
+          description: "Precios y pedidos mayoristas",
+          icon: Boxes,
+        },
         ...(showDropshipping
           ? ([
-              { id: "dropship", label: "Dropshipping", icon: Workflow },
+              {
+                id: "dropship",
+                label: "Dropshipping",
+                description: "Margen y precios de proveedor",
+                icon: Workflow,
+              },
             ] as NavItem[])
           : []),
       ],
@@ -116,21 +158,53 @@ function buildSettingsNavGroups(showDropshipping: boolean): {
     {
       label: "Operación",
       items: [
-        { id: "shipping", label: "Envíos", icon: Truck },
-        { id: "payments", label: "Pagos", icon: CreditCard },
-        { id: "branches", label: "Sucursales", icon: MapPin },
+        {
+          id: "shipping",
+          label: "Envíos",
+          description: "Zonas, costos y retiro",
+          icon: Truck,
+        },
+        {
+          id: "payments",
+          label: "Pagos",
+          description: "Métodos de cobro",
+          icon: CreditCard,
+        },
+        {
+          id: "branches",
+          label: "Sucursales",
+          description: "Locales y stock por sede",
+          icon: MapPin,
+        },
       ],
     },
     {
       label: "Presencia",
       items: [
-        { id: "domains", label: "Dominio", icon: Globe },
-        { id: "design", label: "Diseño del catálogo", icon: Palette },
+        {
+          id: "domains",
+          label: "Dominio",
+          description: "Tu enlace y dominio propio",
+          icon: Globe,
+        },
+        {
+          id: "design",
+          label: "Diseño del catálogo",
+          description: "Colores, banners y estilo",
+          icon: Palette,
+        },
       ],
     },
     {
       label: "Clientes",
-      items: [{ id: "promotions", label: "Promociones", icon: Tag }],
+      items: [
+        {
+          id: "promotions",
+          label: "Promociones",
+          description: "Cupones y ofertas",
+          icon: Tag,
+        },
+      ],
     },
   ];
 }
@@ -169,7 +243,7 @@ export function SettingsPanel({
   initialAiSuggestions = [],
   initialConfig,
   designPreview = null,
-  initialTab = "general",
+  initialTab,
   planId,
   initialLocations = [],
   locationLimit = null,
@@ -178,10 +252,17 @@ export function SettingsPanel({
   initialDomainMode = null,
   showDropshipping = false,
 }: SettingsPanelProps) {
+  const router = useRouter();
   const navGroups = buildSettingsNavGroups(showDropshipping);
+  const explicitTab = useMemo(
+    () => resolveExplicitTab(initialTab, showDropshipping),
+    [initialTab, showDropshipping],
+  );
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() =>
     resolveInitialTab(initialTab, showDropshipping),
   );
+  /** En móvil: menú de lista vs sub-vista. Desktop ignora este estado. */
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(() => !explicitTab);
   const domainLocked =
     planId == null || !planIncludesCustomDomain(planId);
 
@@ -193,11 +274,28 @@ export function SettingsPanel({
     })),
   }));
 
+  const activeLabel =
+    navGroups.flatMap((group) => group.items).find((item) => item.id === activeTab)
+      ?.label ?? "Ajustes";
+
   useEffect(() => {
+    const nextExplicit = resolveExplicitTab(initialTab, showDropshipping);
     setActiveTab(resolveInitialTab(initialTab, showDropshipping));
+    setMobileMenuOpen(!nextExplicit);
   }, [initialTab, showDropshipping]);
 
   const storeSlug = store?.slug ?? "mi-tienda";
+
+  function openSettingsTab(id: SettingsTabId) {
+    setActiveTab(id);
+    setMobileMenuOpen(false);
+    router.replace(`/dashboard/ajustes?tab=${id}`, { scroll: false });
+  }
+
+  function backToMobileMenu() {
+    setMobileMenuOpen(true);
+    router.replace("/dashboard/ajustes", { scroll: false });
+  }
 
   function renderActivePanel() {
     switch (activeTab) {
@@ -317,14 +415,20 @@ export function SettingsPanel({
 
   return (
     <div className="settings-workspace">
-      <SettingsMobileNav
-        groups={mobileNavGroups}
-        activeId={activeTab}
-        onChange={(id) => setActiveTab(id as SettingsTabId)}
-        ariaLabel="Sección de configuración"
-      />
+      <div className={cn("lg:hidden", mobileMenuOpen ? "block" : "hidden")}>
+        <SettingsMobileNav
+          groups={mobileNavGroups}
+          onSelect={(id) => openSettingsTab(id as SettingsTabId)}
+          ariaLabel="Menú de configuración de tienda"
+        />
+      </div>
 
-      <div className="settings-workspace-layout">
+      <div
+        className={cn(
+          "settings-workspace-layout",
+          mobileMenuOpen ? "hidden lg:grid" : "grid",
+        )}
+      >
         <aside
           className="settings-sidebar settings-sidebar--desktop"
           aria-label="Secciones de configuración"
@@ -344,7 +448,7 @@ export function SettingsPanel({
                       <li key={item.id}>
                         <button
                           type="button"
-                          onClick={() => setActiveTab(item.id)}
+                          onClick={() => openSettingsTab(item.id)}
                           aria-current={isActive ? "page" : undefined}
                           className={cn(
                             "settings-sidebar-link",
@@ -379,6 +483,12 @@ export function SettingsPanel({
           role="region"
           aria-label="Contenido de configuración"
         >
+          <div className="lg:hidden">
+            <SettingsMobileDetailHeader
+              title={activeLabel}
+              onBack={backToMobileMenu}
+            />
+          </div>
           {renderActivePanel()}
         </div>
       </div>
