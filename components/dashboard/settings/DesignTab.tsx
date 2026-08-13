@@ -9,15 +9,8 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import { ChevronDown, Eye } from "lucide-react";
-import {
-  Sheet,
-  SheetBody,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { createPortal } from "react-dom";
+import { ArrowLeft, Check, ChevronDown, Maximize2, Palette, Save } from "lucide-react";
 import { CatalogPrimaryColorField } from "@/components/dashboard/settings/CatalogPrimaryColorField";
 import { CatalogPromoBannerField } from "@/components/dashboard/settings/CatalogPromoBannerField";
 import { CatalogFaqField } from "@/components/dashboard/settings/CatalogFaqField";
@@ -87,6 +80,7 @@ type SavingField =
   | "promoBanner"
   | "faq"
   | "checkout"
+  | "manual"
   | null;
 
 type AccordionSection =
@@ -247,11 +241,19 @@ export function DesignTab({
   const [error, setError] = useState<string | null>(null);
   const [savingField, setSavingField] = useState<SavingField>(null);
   const [openSection, setOpenSection] = useState<AccordionSection | null>("theme");
-  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
+  const [studioOpen, setStudioOpen] = useState(true);
+  const [portalReady, setPortalReady] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
   const [isSaving, startSave] = useTransition();
   const colorSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const promoBannerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const faqSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const designRef = useRef(design);
+  const checkoutTypeRef = useRef(checkoutType);
+
+  designRef.current = design;
+  checkoutTypeRef.current = checkoutType;
 
   const storeRubro = normalizeStoreRubro(
     storeRubroProp ?? preview?.store.rubro_tienda ?? DEFAULT_STORE_RUBRO,
@@ -266,6 +268,10 @@ export function DesignTab({
     () => getCatalogThemeIdsForRubro(storeRubro),
     [storeRubro],
   );
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
 
   const persist = useCallback(
     (nextDesign: CatalogDesignSettings, field: SavingField) => {
@@ -286,6 +292,21 @@ export function DesignTab({
     },
     [initialDesign],
   );
+
+  function clearPendingTimers() {
+    if (colorSaveTimerRef.current) {
+      clearTimeout(colorSaveTimerRef.current);
+      colorSaveTimerRef.current = null;
+    }
+    if (promoBannerSaveTimerRef.current) {
+      clearTimeout(promoBannerSaveTimerRef.current);
+      promoBannerSaveTimerRef.current = null;
+    }
+    if (faqSaveTimerRef.current) {
+      clearTimeout(faqSaveTimerRef.current);
+      faqSaveTimerRef.current = null;
+    }
+  }
 
   function updateDesign(
     patch: Partial<CatalogDesignSettings>,
@@ -407,17 +428,32 @@ export function DesignTab({
 
   useEffect(() => {
     return () => {
-      if (colorSaveTimerRef.current) {
-        clearTimeout(colorSaveTimerRef.current);
-      }
-      if (promoBannerSaveTimerRef.current) {
-        clearTimeout(promoBannerSaveTimerRef.current);
-      }
-      if (faqSaveTimerRef.current) {
-        clearTimeout(faqSaveTimerRef.current);
+      clearPendingTimers();
+      if (savedFlashTimerRef.current) {
+        clearTimeout(savedFlashTimerRef.current);
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!studioOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [studioOpen]);
+
+  useEffect(() => {
+    if (!studioOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setStudioOpen(false);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [studioOpen]);
 
   function setCheckoutMode(nextType: CheckoutType) {
     if (nextType === checkoutType) return;
@@ -442,6 +478,55 @@ export function DesignTab({
 
   function toggleSection(section: AccordionSection) {
     setOpenSection((current) => (current === section ? null : section));
+  }
+
+  function flashSaved() {
+    setSavedFlash(true);
+    if (savedFlashTimerRef.current) {
+      clearTimeout(savedFlashTimerRef.current);
+    }
+    savedFlashTimerRef.current = setTimeout(() => {
+      setSavedFlash(false);
+    }, 1800);
+  }
+
+  function handleManualSave() {
+    clearPendingTimers();
+    const nextDesign = designRef.current;
+    const nextCheckout = checkoutTypeRef.current;
+    setError(null);
+    setSavingField("manual");
+
+    startSave(async () => {
+      try {
+        const [designResult, checkoutResult] = await Promise.all([
+          saveCatalogDesignSettings(nextDesign),
+          saveCheckoutSettings({
+            accountMode: "hibrido",
+            checkoutType: nextCheckout,
+          }),
+        ]);
+        if (designResult.error) {
+          setError(designResult.error);
+          setDesign(initialDesign);
+          return;
+        }
+        if (checkoutResult.error) {
+          setError(checkoutResult.error);
+          setCheckoutType(normalizeCheckoutType(initialCheckout.checkoutType));
+          return;
+        }
+        flashSaved();
+      } finally {
+        setSavingField(null);
+      }
+    });
+  }
+
+  function closeStudio() {
+    clearPendingTimers();
+    persist(designRef.current, "manual");
+    setStudioOpen(false);
   }
 
   const themeSummary = CATALOG_THEME_PRESETS[design.theme]?.label ?? "Tema";
@@ -481,6 +566,170 @@ export function DesignTab({
     CHECKOUT_MODE_OPTIONS.find((option) => option.value === checkoutType)
       ?.label ?? "Ambas opciones";
 
+  const controlsPanel = (
+    <div className="design-studio-accordions">
+      <DesignAccordion
+        title="Tema visual"
+        summary={themeSummary}
+        open={openSection === "theme"}
+        onToggle={() => toggleSection("theme")}
+      >
+        <div className="design-option-list">
+          {isFashionStore ? (
+            <p className="mb-1 text-xs leading-relaxed text-zinc-500">
+              Paletas de moda y layouts Boutique, Carril o Mosaico — el
+              diseño actual se mantiene si no cambias de opción.
+            </p>
+          ) : (
+            <p className="mb-1 text-xs leading-relaxed text-zinc-500">
+              Conserva Minimalista, Impacto o Inmersivo, o prueba Boutique,
+              Carril y Mosaico con estructuras distintas.
+            </p>
+          )}
+          {availableThemeIds.map((themeId) => {
+            const preset = CATALOG_THEME_PRESETS[themeId];
+            return (
+              <DesignOption
+                key={themeId}
+                label={preset.label}
+                tagline={preset.tagline}
+                description={preset.description}
+                selected={design.theme === themeId}
+                accent={preset.previewAccent}
+                disabled={isSaving && savingField === themeId}
+                onClick={() => setTheme(themeId)}
+              />
+            );
+          })}
+        </div>
+      </DesignAccordion>
+
+      <DesignAccordion
+        title="Color de marca"
+        summary={brandColorSummary}
+        open={openSection === "brandColor"}
+        onToggle={() => toggleSection("brandColor")}
+      >
+        <CatalogPrimaryColorField
+          color={design.primaryColor}
+          effectiveColor={resolvedDesign.primaryColor}
+          rubroLabel={rubroPalette.label}
+          disabled={isSaving && savingField === "primaryColor"}
+          onPick={setPrimaryColor}
+          onReset={resetPrimaryColor}
+        />
+      </DesignAccordion>
+
+      <DesignAccordion
+        title="Banner promocional"
+        summary={promoBannerSummary}
+        open={openSection === "promoBanner"}
+        onToggle={() => toggleSection("promoBanner")}
+      >
+        <CatalogPromoBannerField
+          value={design.promoBanner}
+          onChange={setPromoBanner}
+          products={products}
+        />
+      </DesignAccordion>
+
+      <DesignAccordion
+        title="Preguntas frecuentes"
+        summary={faqSummary}
+        open={openSection === "faq"}
+        onToggle={() => toggleSection("faq")}
+      >
+        <CatalogFaqField value={design.faq} onChange={setFaq} />
+      </DesignAccordion>
+
+      <DesignAccordion
+        title="Visibilidad"
+        summary={visibilitySummary}
+        open={openSection === "visibility"}
+        onToggle={() => toggleSection("visibility")}
+      >
+        <div className="design-visibility-list">
+          <div className="design-visibility-row">
+            <div>
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                Stock
+              </p>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                Disponibilidad y agotado
+              </p>
+            </div>
+            <SettingsSwitch
+              id="visibility-stock"
+              label="Mostrar stock"
+              checked={design.visibility.showStock}
+              onChange={(value) => setVisibility("showStock", value)}
+              disabled={isSaving && savingField === "showStock"}
+            />
+          </div>
+          <div className="design-visibility-row">
+            <div>
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                Descripción
+              </p>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                Texto bajo el nombre
+              </p>
+            </div>
+            <SettingsSwitch
+              id="visibility-description"
+              label="Mostrar descripción"
+              checked={design.visibility.showDescription}
+              onChange={(value) => setVisibility("showDescription", value)}
+              disabled={isSaving && savingField === "showDescription"}
+            />
+          </div>
+          <div className="design-visibility-row">
+            <div>
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                Precios
+              </p>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                USD y conversión a Bs
+              </p>
+            </div>
+            <SettingsSwitch
+              id="visibility-prices"
+              label="Mostrar precios"
+              checked={design.visibility.showPrices}
+              onChange={(value) => setVisibility("showPrices", value)}
+              disabled={isSaving && savingField === "showPrices"}
+            />
+          </div>
+        </div>
+      </DesignAccordion>
+
+      <DesignAccordion
+        title="Modo de checkout y pedidos"
+        summary={checkoutSummary}
+        open={openSection === "checkout"}
+        onToggle={() => toggleSection("checkout")}
+      >
+        <div className="design-option-list">
+          <p className="mb-1 text-xs leading-relaxed text-zinc-500">
+            Define cómo confirman el pedido tus clientes en el carrito del
+            catálogo.
+          </p>
+          {CHECKOUT_MODE_OPTIONS.map((option) => (
+            <DesignOption
+              key={option.value}
+              label={option.label}
+              tagline={option.tagline}
+              description={option.description}
+              selected={checkoutType === option.value}
+              disabled={isSaving && savingField === "checkout"}
+              onClick={() => setCheckoutMode(option.value)}
+            />
+          ))}
+        </div>
+      </DesignAccordion>
+    </div>
+  );
+
   const previewPanel = preview ? (
     <DesignCatalogInlinePreview
       store={preview.store}
@@ -489,6 +738,7 @@ export function DesignTab({
       baseSettings={preview.baseSettings}
       design={design}
       checkoutType={checkoutType}
+      variant="immersive"
     />
   ) : (
     <div className="design-studio-preview-empty">
@@ -501,8 +751,90 @@ export function DesignTab({
     </div>
   );
 
+  const immersiveStudio =
+    portalReady && studioOpen
+      ? createPortal(
+          <div
+            className="design-studio-immersive"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="design-studio-immersive-title"
+          >
+            <header className="design-studio-immersive-header">
+              <div className="design-studio-immersive-header-start">
+                <button
+                  type="button"
+                  className="design-studio-immersive-exit"
+                  onClick={closeStudio}
+                >
+                  <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>Volver al panel</span>
+                </button>
+                <div className="min-w-0">
+                  <h2
+                    id="design-studio-immersive-title"
+                    className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50 sm:text-base"
+                  >
+                    Diseño del catálogo
+                  </h2>
+                  <p className="mt-0.5 hidden truncate text-xs text-zinc-500 sm:block">
+                    Editor a pantalla completa · los cambios se aplican al instante
+                  </p>
+                </div>
+              </div>
+
+              <div className="design-studio-immersive-header-actions">
+                <SavingHint visible={isSaving && !savedFlash} />
+                {savedFlash ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                    Guardado
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  className="design-studio-immersive-save"
+                  onClick={handleManualSave}
+                  disabled={isSaving}
+                >
+                  <Save className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  Guardar
+                </button>
+              </div>
+            </header>
+
+            {error ? (
+              <div className="design-studio-immersive-error" role="alert">
+                {error}
+              </div>
+            ) : null}
+
+            <div className="design-studio-immersive-body">
+              <aside className="design-studio-immersive-sidebar">
+                <div className="design-studio-immersive-sidebar-intro">
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                    Estilo y opciones
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                    {isFashionStore
+                      ? "Elige plantillas, colores y visibilidad con espacio amplio."
+                      : "Plantillas, color de marca y checkout en un panel cómodo."}
+                  </p>
+                </div>
+                {controlsPanel}
+              </aside>
+
+              <main className="design-studio-immersive-preview">
+                {previewPanel}
+              </main>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
-    <SettingsTabShell error={error} hideSaveBar>
+    <SettingsTabShell error={studioOpen ? null : error} hideSaveBar>
       {catalogLink ? (
         <div className="mb-5 overflow-hidden rounded-xl border border-zinc-200/70 dark:border-zinc-800/70">
           <StorePublicLinkBar
@@ -513,224 +845,45 @@ export function DesignTab({
           />
         </div>
       ) : null}
-      <div className="design-studio">
-        <aside className="design-studio-sidebar">
-          <div className="design-studio-sidebar-header">
+
+      <section className="design-studio-entry">
+        <div className="design-studio-entry-icon" aria-hidden="true">
+          <Palette className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            Editor de diseño del catálogo
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-zinc-500">
+            Abre el estudio a pantalla completa para elegir plantillas, colores y
+            opciones con una vista previa móvil grande, sin el menú lateral.
+          </p>
+          <dl className="design-studio-entry-meta">
             <div>
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                Estilo del catálogo
-              </h2>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                {isFashionStore
-                  ? "Looks de moda y plantillas de layout. Elige uno y se aplica al instante en tu catálogo."
-                  : "Temas clásicos y plantillas de layout. Se guarda automáticamente al cambiar."}
-              </p>
+              <dt>Plantilla</dt>
+              <dd>{themeSummary}</dd>
             </div>
-            <SavingHint visible={isSaving} />
-          </div>
-
-          <div className="design-studio-accordions">
-            <DesignAccordion
-              title="Tema visual"
-              summary={themeSummary}
-              open={openSection === "theme"}
-              onToggle={() => toggleSection("theme")}
-            >
-              <div className="design-option-list">
-                {isFashionStore ? (
-                  <p className="mb-1 text-xs leading-relaxed text-zinc-500">
-                    Paletas de moda y layouts Boutique, Carril o Mosaico — el
-                    diseño actual se mantiene si no cambias de opción.
-                  </p>
-                ) : (
-                  <p className="mb-1 text-xs leading-relaxed text-zinc-500">
-                    Conserva Minimalista, Impacto o Inmersivo, o prueba Boutique,
-                    Carril y Mosaico con estructuras distintas.
-                  </p>
-                )}
-                {availableThemeIds.map((themeId) => {
-                  const preset = CATALOG_THEME_PRESETS[themeId];
-                  return (
-                    <DesignOption
-                      key={themeId}
-                      label={preset.label}
-                      tagline={preset.tagline}
-                      description={preset.description}
-                      selected={design.theme === themeId}
-                      accent={preset.previewAccent}
-                      disabled={isSaving && savingField === themeId}
-                      onClick={() => setTheme(themeId)}
-                    />
-                  );
-                })}
-              </div>
-            </DesignAccordion>
-
-            <DesignAccordion
-              title="Color de marca"
-              summary={brandColorSummary}
-              open={openSection === "brandColor"}
-              onToggle={() => toggleSection("brandColor")}
-            >
-              <CatalogPrimaryColorField
-                color={design.primaryColor}
-                effectiveColor={resolvedDesign.primaryColor}
-                rubroLabel={rubroPalette.label}
-                disabled={isSaving && savingField === "primaryColor"}
-                onPick={setPrimaryColor}
-                onReset={resetPrimaryColor}
-              />
-            </DesignAccordion>
-
-            <DesignAccordion
-              title="Banner promocional"
-              summary={promoBannerSummary}
-              open={openSection === "promoBanner"}
-              onToggle={() => toggleSection("promoBanner")}
-            >
-              <CatalogPromoBannerField
-                value={design.promoBanner}
-                onChange={setPromoBanner}
-                products={products}
-              />
-            </DesignAccordion>
-
-            <DesignAccordion
-              title="Preguntas frecuentes"
-              summary={faqSummary}
-              open={openSection === "faq"}
-              onToggle={() => toggleSection("faq")}
-            >
-              <CatalogFaqField value={design.faq} onChange={setFaq} />
-            </DesignAccordion>
-
-            <DesignAccordion
-              title="Visibilidad"
-              summary={visibilitySummary}
-              open={openSection === "visibility"}
-              onToggle={() => toggleSection("visibility")}
-            >
-              <div className="design-visibility-list">
-                <div className="design-visibility-row">
-                  <div>
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                      Stock
-                    </p>
-                    <p className="mt-0.5 text-xs text-zinc-500">
-                      Disponibilidad y agotado
-                    </p>
-                  </div>
-                  <SettingsSwitch
-                    id="visibility-stock"
-                    label="Mostrar stock"
-                    checked={design.visibility.showStock}
-                    onChange={(value) => setVisibility("showStock", value)}
-                    disabled={isSaving && savingField === "showStock"}
-                  />
-                </div>
-                <div className="design-visibility-row">
-                  <div>
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                      Descripción
-                    </p>
-                    <p className="mt-0.5 text-xs text-zinc-500">
-                      Texto bajo el nombre
-                    </p>
-                  </div>
-                  <SettingsSwitch
-                    id="visibility-description"
-                    label="Mostrar descripción"
-                    checked={design.visibility.showDescription}
-                    onChange={(value) => setVisibility("showDescription", value)}
-                    disabled={isSaving && savingField === "showDescription"}
-                  />
-                </div>
-                <div className="design-visibility-row">
-                  <div>
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                      Precios
-                    </p>
-                    <p className="mt-0.5 text-xs text-zinc-500">
-                      USD y conversión a Bs
-                    </p>
-                  </div>
-                  <SettingsSwitch
-                    id="visibility-prices"
-                    label="Mostrar precios"
-                    checked={design.visibility.showPrices}
-                    onChange={(value) => setVisibility("showPrices", value)}
-                    disabled={isSaving && savingField === "showPrices"}
-                  />
-                </div>
-              </div>
-            </DesignAccordion>
-
-            <DesignAccordion
-              title="Modo de checkout y pedidos"
-              summary={checkoutSummary}
-              open={openSection === "checkout"}
-              onToggle={() => toggleSection("checkout")}
-            >
-              <div className="design-option-list">
-                <p className="mb-1 text-xs leading-relaxed text-zinc-500">
-                  Define cómo confirman el pedido tus clientes en el carrito del
-                  catálogo.
-                </p>
-                {CHECKOUT_MODE_OPTIONS.map((option) => (
-                  <DesignOption
-                    key={option.value}
-                    label={option.label}
-                    tagline={option.tagline}
-                    description={option.description}
-                    selected={checkoutType === option.value}
-                    disabled={isSaving && savingField === "checkout"}
-                    onClick={() => setCheckoutMode(option.value)}
-                  />
-                ))}
-              </div>
-            </DesignAccordion>
-          </div>
-        </aside>
-
-        {preview ? (
-          <>
-            <button
-              type="button"
-              className="design-studio-preview-fab"
-              aria-haspopup="dialog"
-              onClick={() => setPreviewSheetOpen(true)}
-            >
-              <Eye className="h-4 w-4 shrink-0" aria-hidden="true" />
-              Ver vista previa
-            </button>
-
-            <Sheet open={previewSheetOpen} onOpenChange={setPreviewSheetOpen}>
-              <SheetContent
-                className="design-studio-preview-sheet"
-                onClose={() => setPreviewSheetOpen(false)}
-              >
-                <SheetHeader className="design-studio-preview-sheet-header">
-                  <SheetTitle>Vista previa del catálogo</SheetTitle>
-                  <SheetDescription>
-                    Vista previa según el rubro de tu tienda en Identidad. Los
-                    cambios de diseño se reflejan al instante.
-                  </SheetDescription>
-                </SheetHeader>
-                <SheetBody className="design-studio-preview-sheet-body">
-                  {previewPanel}
-                </SheetBody>
-              </SheetContent>
-            </Sheet>
-          </>
-        ) : null}
-
-        <main
-          id="design-studio-preview-panel"
-          className="design-studio-main design-studio-main--desktop"
+            <div>
+              <dt>Color</dt>
+              <dd>{brandColorSummary}</dd>
+            </div>
+            <div>
+              <dt>Checkout</dt>
+              <dd>{checkoutSummary}</dd>
+            </div>
+          </dl>
+        </div>
+        <button
+          type="button"
+          className="design-studio-entry-cta"
+          onClick={() => setStudioOpen(true)}
         >
-          {previewPanel}
-        </main>
-      </div>
+          <Maximize2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+          Abrir editor a pantalla completa
+        </button>
+      </section>
+
+      {immersiveStudio}
     </SettingsTabShell>
   );
 }
