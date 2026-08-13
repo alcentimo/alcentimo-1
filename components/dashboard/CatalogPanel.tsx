@@ -13,7 +13,7 @@ import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import type { InventoryAiSuggestionRow } from "@/lib/inventory-ai/types";
 import { InventoryAiSuggestionCards } from "@/components/dashboard/InventoryAiSuggestionCards";
-import { PendingOrdersAlert } from "@/components/dashboard/PendingOrdersAlert";
+import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
 
 interface CatalogPanelProps {
   store: Store;
@@ -63,6 +63,11 @@ export function CatalogPanel({
   );
 
   useEffect(() => {
+    // Mantiene el badge de Órdenes al día al abrir el catálogo.
+    requestDashboardShellRefresh();
+  }, []);
+
+  useEffect(() => {
     const params = new URLSearchParams(searchParamsKey);
     let changed = false;
 
@@ -106,8 +111,6 @@ export function CatalogPanel({
         initialSuggestions={inventorySuggestions}
         variant="compact"
       />
-
-      <PendingOrdersAlert />
 
       <InventoryPanel
         key={`catalog-${productFormConfig.rubroTienda}`}

@@ -13,6 +13,7 @@ import { DASHBOARD_SHELL_REFRESH_EVENT } from "@/lib/dashboard/shell-refresh";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import type { AccountSnapshot } from "@/lib/account/types";
 import { DashboardShellMetricsProvider } from "@/components/dashboard/DashboardShellMetrics";
+import { PendingOrdersLoginToast } from "@/components/dashboard/PendingOrdersLoginToast";
 
 const defaultPrefs = defaultStoreSettingsConfig().interfacePreferences;
 
@@ -123,6 +124,10 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
             ) : null}
             {children}
           </DashboardLayout>
+          <PendingOrdersLoginToast
+            pendingOrdersCount={shell?.pendingOrdersCount ?? 0}
+            shellReady={Boolean(shell)}
+          />
         </DashboardShellMetricsProvider>
       </CountryProvider>
     </UiPreferencesProvider>
