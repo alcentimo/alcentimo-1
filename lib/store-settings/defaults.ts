@@ -23,6 +23,10 @@ import {
   normalizeCatalogFaqDraft,
 } from "@/lib/store-settings/catalog-faq";
 import {
+  defaultCatalogHeaderSettings,
+  normalizeCatalogHeaderSettings,
+} from "@/lib/store-settings/catalog-header";
+import {
   defaultAssistantAvatarSettings,
   normalizeAssistantAvatarSettings,
 } from "@/lib/store-settings/assistant-avatar";
@@ -213,6 +217,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       },
       promoBanner: defaultPromoBannerSettings(),
       faq: defaultCatalogFaqSettings(),
+      header: defaultCatalogHeaderSettings(),
       assistantAvatar: defaultAssistantAvatarSettings(),
     },
     catalogCurrency: {
@@ -462,6 +467,9 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
       ),
       faq: normalizeCatalogFaqDraft(
         designRaw.faq ?? defaults.catalogDesign.faq,
+      ),
+      header: normalizeCatalogHeaderSettings(
+        designRaw.header ?? defaults.catalogDesign.header,
       ),
       assistantAvatar: normalizeAssistantAvatarSettings(
         designRaw.assistantAvatar ?? defaults.catalogDesign.assistantAvatar,

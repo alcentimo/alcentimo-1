@@ -252,6 +252,21 @@ export interface CatalogFaqSettings {
   items: CatalogFaqItem[];
 }
 
+/** Fondo de la cabecera del catálogo público. */
+export type CatalogHeaderBgMode = "theme" | "brand" | "solid";
+
+/** Alineación de logo, nombre y acciones en la cabecera. */
+export type CatalogHeaderAlignment = "split" | "stacked";
+
+export interface CatalogHeaderSettings {
+  bgMode: CatalogHeaderBgMode;
+  /** Hex #rrggbb cuando bgMode === "solid". */
+  bgColor?: string;
+  /** Imagen horizontal opcional detrás del logo y el nombre. */
+  coverImageUrl?: string;
+  alignment: CatalogHeaderAlignment;
+}
+
 export interface CatalogDesignSettings {
   theme: CatalogThemeId;
   saleMode: CatalogSaleMode;
@@ -262,6 +277,8 @@ export interface CatalogDesignSettings {
   promoBanner?: CatalogPromoBannerSettings;
   /** Preguntas frecuentes opcionales al final del catálogo. */
   faq?: CatalogFaqSettings;
+  /** Personalización de la cabecera (logo, fondo, alineación). */
+  header?: CatalogHeaderSettings;
   /** Avatar del asistente de IA en el widget flotante y chat del catálogo. */
   assistantAvatar?: CatalogAssistantAvatarSettings;
   /** Derivado del tema al renderizar; opcional en almacenamiento legacy. */
