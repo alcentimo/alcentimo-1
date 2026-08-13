@@ -7,6 +7,7 @@ import {
   CATALOG_THEME_PRESETS,
   FASHION_CATALOG_THEME_IDS,
   isFashionCatalogThemeId,
+  isStructuralCatalogThemeId,
 } from "@/lib/store-settings/catalog-theme-presets";
 import {
   buildCatalogAccentCssVars,
@@ -73,6 +74,9 @@ export function normalizeCatalogTheme(value: unknown): CatalogThemeId | null {
     value === "minimal" ||
     value === "impact" ||
     value === "immersive" ||
+    value === "boutique" ||
+    value === "rail" ||
+    value === "mosaic" ||
     value === "fashion-pure" ||
     value === "fashion-nocturne" ||
     value === "fashion-editorial" ||
@@ -142,7 +146,7 @@ export function coerceThemeForRubro(
   const rubro = normalizeStoreRubro(storeRubro);
 
   if (rubro === "ropa-moda") {
-    if (isFashionCatalogThemeId(theme)) {
+    if (isFashionCatalogThemeId(theme) || isStructuralCatalogThemeId(theme)) {
       return theme;
     }
     if (theme === "minimal" || theme === "impact" || theme === "immersive") {
@@ -281,6 +285,18 @@ export function getCatalogProductGridClassName(
 
   if (resolved.theme === "immersive") {
     return cn("txn-product-grid txn-product-grid--immersive", extra);
+  }
+
+  if (resolved.theme === "boutique") {
+    return cn("txn-product-grid txn-product-grid--boutique", extra);
+  }
+
+  if (resolved.theme === "rail") {
+    return cn("txn-product-grid txn-product-grid--rail", extra);
+  }
+
+  if (resolved.theme === "mosaic") {
+    return cn("txn-product-grid txn-product-grid--mosaic", extra);
   }
 
   return cn("txn-product-grid", extra);

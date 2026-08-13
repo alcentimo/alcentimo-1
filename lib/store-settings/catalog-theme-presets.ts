@@ -33,6 +33,16 @@ export const CATALOG_THEME_IDS: CatalogThemeId[] = [
   "immersive",
 ];
 
+/**
+ * Plantillas estructurales (layouts distintos): se ofrecen a todos los rubros
+ * sin alterar el tema por defecto (`minimal` / fashion-pure).
+ */
+export const STRUCTURAL_CATALOG_THEME_IDS: CatalogThemeId[] = [
+  "boutique",
+  "rail",
+  "mosaic",
+];
+
 /** Temas exclusivos para tiendas de Ropa y Moda (orden: claro → cálido → oscuro → lujo). */
 export const FASHION_CATALOG_THEME_IDS: CatalogThemeId[] = [
   "fashion-pure",
@@ -101,6 +111,75 @@ export const CATALOG_THEME_PRESETS: Record<CatalogThemeId, CatalogThemePreset> =
       "--pc-title-size": "0.875rem",
       "--pc-radius": "1rem",
       "--pc-media-ratio": "4 / 5",
+    },
+  },
+  boutique: {
+    id: "boutique",
+    label: "Boutique",
+    tagline: "1 columna",
+    description:
+      "Tarjetas amplias a una columna en móvil, foto vertical y botón de compra a lo ancho.",
+    primaryColor: "#0f766e",
+    layout: "grid",
+    pageBg: "#fafafa",
+    previewBg: "#fafafa",
+    previewAccent: "#0f766e",
+    cssVars: {
+      "--pc-body-pad": "1rem",
+      "--pc-grid-gap": "1.25rem",
+      "--pc-btn-radius": "0.75rem",
+      "--pc-btn-min-h": "2.75rem",
+      "--pc-price-size": "1.125rem",
+      "--pc-title-size": "1rem",
+      "--pc-radius": "1.125rem",
+      "--pc-media-ratio": "3 / 4",
+      "--pc-media-inset": "0px",
+    },
+  },
+  rail: {
+    id: "rail",
+    label: "Carril",
+    tagline: "Horizontal",
+    description:
+      "Filas horizontales: imagen a la izquierda e info + botón a la derecha, tipo listado.",
+    primaryColor: "#0369a1",
+    layout: "grid",
+    pageBg: "#ffffff",
+    previewBg: "#f8fafc",
+    previewAccent: "#0369a1",
+    cssVars: {
+      "--pc-body-pad": "0.75rem",
+      "--pc-grid-gap": "0.75rem",
+      "--pc-btn-radius": "0.625rem",
+      "--pc-btn-min-h": "2.375rem",
+      "--pc-price-size": "1rem",
+      "--pc-title-size": "0.9375rem",
+      "--pc-radius": "0.875rem",
+      "--pc-media-ratio": "1 / 1",
+      "--pc-media-inset": "0px",
+    },
+  },
+  mosaic: {
+    id: "mosaic",
+    label: "Mosaico",
+    tagline: "Destacados",
+    description:
+      "Cuadrícula asimétrica: cada tercer producto se amplía a dos columnas para resaltar.",
+    primaryColor: "#b45309",
+    layout: "grid",
+    pageBg: "#fffbeb",
+    previewBg: "#fffbeb",
+    previewAccent: "#b45309",
+    cssVars: {
+      "--pc-body-pad": "0.75rem",
+      "--pc-grid-gap": "0.75rem",
+      "--pc-btn-radius": "0.5rem",
+      "--pc-btn-min-h": "2.5rem",
+      "--pc-price-size": "0.9375rem",
+      "--pc-title-size": "0.8125rem",
+      "--pc-radius": "0.75rem",
+      "--pc-media-ratio": "1 / 1",
+      "--pc-media-inset": "0px",
     },
   },
   "fashion-pure": {
@@ -291,8 +370,16 @@ export function isFashionCatalogThemeId(
   );
 }
 
+export function isStructuralCatalogThemeId(
+  theme: string | null | undefined,
+): theme is "boutique" | "rail" | "mosaic" {
+  return theme === "boutique" || theme === "rail" || theme === "mosaic";
+}
+
 export function getCatalogThemeIdsForRubro(
   rubro: string | null | undefined,
 ): CatalogThemeId[] {
-  return rubro === "ropa-moda" ? FASHION_CATALOG_THEME_IDS : CATALOG_THEME_IDS;
+  const base =
+    rubro === "ropa-moda" ? FASHION_CATALOG_THEME_IDS : CATALOG_THEME_IDS;
+  return [...base, ...STRUCTURAL_CATALOG_THEME_IDS];
 }
