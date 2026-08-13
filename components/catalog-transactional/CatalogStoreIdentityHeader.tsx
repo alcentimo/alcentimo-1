@@ -74,7 +74,7 @@ export function CatalogStoreIdentityHeader({
                   src={logoUrl}
                   alt={`Logo de ${storeName}`}
                   fill
-                  sizes="40px"
+                  sizes="80px"
                   className="object-cover"
                   unoptimized={isGifImageUrl(logoUrl)}
                 />
