@@ -75,6 +75,10 @@ function toOwnerProfile(
     billing_period: ownerPlan.billing_period,
     subscription_period_started_at: ownerPlan.subscription_period_started_at,
     subscription_period_ends_at: ownerPlan.subscription_period_ends_at,
+    pending_plan: ownerPlan.pending_plan ?? null,
+    pending_billing_period: ownerPlan.pending_billing_period ?? null,
+    pending_plan_effective_at: ownerPlan.pending_plan_effective_at ?? null,
+    pending_plan_requested_at: ownerPlan.pending_plan_requested_at ?? null,
     extra_locations_authorized: ownerPlan.extra_locations_authorized ?? 0,
   };
 }

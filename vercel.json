@@ -15,6 +15,9 @@
     },
     "app/api/cron/purge-order-payment-proofs/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/cron/apply-pending-plan-changes/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -61,6 +64,10 @@
     {
       "path": "/api/cron/purge-order-payment-proofs",
       "schedule": "15 6 * * *"
+    },
+    {
+      "path": "/api/cron/apply-pending-plan-changes",
+      "schedule": "10 * * * *"
     }
   ],
   "headers": [

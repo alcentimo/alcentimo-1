@@ -8,6 +8,16 @@ import {
 
 export type SubscriptionStatus = "none" | "provisional" | "active";
 
+export type PlanChangeDirection = "upgrade" | "downgrade" | "same";
+
+/** Ranking comercial para upgrades/downgrades (FREE < PRO < BUSINESS < ENTERPRISE). */
+export const DB_PLAN_RANK: Record<ProfilePlanDb, number> = {
+  FREE: 0,
+  PRO: 1,
+  BUSINESS: 2,
+  ENTERPRISE: 3,
+};
+
 /** IDs internos del checkout → valores persistidos en profiles.plan */
 const PLAN_ID_TO_DB: Record<ManualPaymentPlanId, ProfilePlanDb> = {
   starter: "PRO",
@@ -32,6 +42,34 @@ export function normalizeDbPlan(value: string | null | undefined): ProfilePlanDb
     return "ENTERPRISE";
   }
   return "FREE";
+}
+
+export function planIdToDbPlan(planId: PlanId): ProfilePlanDb {
+  if (planId === "starter" || planId === "growth") return "PRO";
+  if (planId === "premium") return "BUSINESS";
+  if (planId === "enterprise") return "ENTERPRISE";
+  return "FREE";
+}
+
+export function compareDbPlans(
+  fromPlan: string | null | undefined,
+  toPlan: string | null | undefined,
+): PlanChangeDirection {
+  const from = normalizeDbPlan(fromPlan);
+  const to = normalizeDbPlan(toPlan);
+  if (DB_PLAN_RANK[to] > DB_PLAN_RANK[from]) return "upgrade";
+  if (DB_PLAN_RANK[to] < DB_PLAN_RANK[from]) return "downgrade";
+  return "same";
+}
+
+/** Limpia un downgrade programado (p. ej. tras un upgrade). */
+export function clearPendingPlanFields() {
+  return {
+    pending_plan: null,
+    pending_billing_period: null,
+    pending_plan_effective_at: null,
+    pending_plan_requested_at: null,
+  };
 }
 
 export function resolveSubscriptionStatus(
@@ -115,6 +153,7 @@ export function buildPaidProfilePatch(
       billing_period: null,
       subscription_period_started_at: null,
       subscription_period_ends_at: null,
+      ...clearPendingPlanFields(),
     };
   }
 
@@ -132,6 +171,7 @@ export function buildPaidProfilePatch(
     billing_period: billingPeriod,
     subscription_period_started_at: startedAt.toISOString(),
     subscription_period_ends_at: endsAt.toISOString(),
+    ...clearPendingPlanFields(),
   };
 }
 

@@ -21,6 +21,7 @@ import {
   resolvePhotoLimitCap,
 } from "@/lib/plans/plan-settings";
 import { fetchPlanSettings } from "@/lib/plans/get-plan-settings";
+import { syncDuePendingPlanForUser } from "@/lib/plans/pending-plan";
 
 export interface StoreProductLimitContext extends ProductLimitCheck {
   trial: ProTrialStatus;
@@ -82,19 +83,29 @@ async function getStoreOwnerProfile(
   | "billing_period"
   | "subscription_period_started_at"
   | "subscription_period_ends_at"
+  | "pending_plan"
+  | "pending_billing_period"
+  | "pending_plan_effective_at"
+  | "pending_plan_requested_at"
   | "extra_locations_authorized"
 > | null> {
+  try {
+    await syncDuePendingPlanForUser(ownerId);
+  } catch {
+    // Continuar con el perfil actual si el lazy-apply falla.
+  }
+
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("profiles")
     .select(
-      "plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, pro_trial_closed_at, billing_period, subscription_period_started_at, subscription_period_ends_at, extra_locations_authorized",
+      "plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, pro_trial_closed_at, billing_period, subscription_period_started_at, subscription_period_ends_at, pending_plan, pending_billing_period, pending_plan_effective_at, pending_plan_requested_at, extra_locations_authorized",
     )
     .eq("id", ownerId)
     .maybeSingle();
 
   if (error) {
-    // Fallback si la migración 100 / 063 aún no está aplicada.
+    // Fallback si la migración 111 / 100 / 063 aún no está aplicada.
     const { data: fallback, error: fallbackError } = await admin
       .from("profiles")
       .select(
@@ -108,6 +119,10 @@ async function getStoreOwnerProfile(
     return {
       ...fallback,
       pro_trial_closed_at: null,
+      pending_plan: null,
+      pending_billing_period: null,
+      pending_plan_effective_at: null,
+      pending_plan_requested_at: null,
       extra_locations_authorized: 0,
     };
   }
@@ -129,6 +144,10 @@ export async function getStoreOwnerPlanProfile(
       | "billing_period"
       | "subscription_period_started_at"
       | "subscription_period_ends_at"
+      | "pending_plan"
+      | "pending_billing_period"
+      | "pending_plan_effective_at"
+      | "pending_plan_requested_at"
       | "extra_locations_authorized"
     > & { ownerId: string })
   | null

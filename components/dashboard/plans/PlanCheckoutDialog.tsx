@@ -27,6 +27,7 @@ import {
 import type { SubscriptionPaymentMethod } from "@/src/config/subscription-pago-movil";
 import { calculateUpgradeProration } from "@/lib/plans/proration";
 import { buildChargeTableFromTiers } from "@/lib/plans/plan-settings";
+import { planIdToDbPlan } from "@/lib/plans/plan-activation";
 import type { PlanId } from "@/src/config/plans";
 
 const MIN_SUBMIT_DURATION_MS = 5000;
@@ -145,18 +146,8 @@ export function PlanCheckoutDialog({
   if (!tier || tier.monthlyUsd <= 0) return null;
 
   const chargeUsd = getTierChargeUsd(tier, billing);
-  const fromDbPlan =
-    currentPlanId === "starter" || currentPlanId === "growth"
-      ? "PRO"
-      : currentPlanId === "premium"
-        ? "BUSINESS"
-        : "FREE";
-  const toDbPlan =
-    tier.planId === "starter"
-      ? "PRO"
-      : tier.planId === "premium"
-        ? "BUSINESS"
-        : "FREE";
+  const fromDbPlan = planIdToDbPlan(currentPlanId);
+  const toDbPlan = planIdToDbPlan(tier.planId);
   const proration = calculateUpgradeProration({
     fromPlan: fromDbPlan,
     toPlan: toDbPlan,
@@ -183,8 +174,9 @@ export function PlanCheckoutDialog({
             <DialogHeader className="mb-6">
               <DialogTitle className="text-xl">Completa tu suscripción</DialogTitle>
               <DialogDescription>
-                Realiza el pago, sube tu captura y obtén acceso de inmediato
-                mientras verificamos el comprobante.
+                {proration.isUpgradeWithCredit
+                  ? `Paga la diferencia prorrateada ($${proration.amountDueUsd.toFixed(2)}), sube tu captura y activa el plan de inmediato. El próximo corte se reinicia un ciclo completo.`
+                  : "Realiza el pago, sube tu captura y obtén acceso de inmediato mientras verificamos el comprobante."}
               </DialogDescription>
             </DialogHeader>
 

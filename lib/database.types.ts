@@ -20,6 +20,11 @@ export interface Profile {
   billing_period?: "monthly" | "annual" | string | null;
   subscription_period_started_at?: string | null;
   subscription_period_ends_at?: string | null;
+  /** Plan inferior programado; no reduce límites hasta pending_plan_effective_at. */
+  pending_plan?: ProfilePlanDb | string | null;
+  pending_billing_period?: "monthly" | "annual" | string | null;
+  pending_plan_effective_at?: string | null;
+  pending_plan_requested_at?: string | null;
   pro_trial_started_at?: string | null;
   pro_trial_ends_at?: string | null;
   /** Cierre manual por admin: corta beneficios Pro (gracia/revisión). */

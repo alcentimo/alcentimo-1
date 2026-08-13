@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
 import {
@@ -31,11 +30,15 @@ import {
   isBillingPeriod,
   resolvePeriodEndsAtFromStart,
 } from "@/lib/plans/proration";
+import {
+  normalizeDbPlan,
+} from "@/lib/plans/plan-activation";
+import { getPendingPlanSummary } from "@/lib/plans/pending-plan";
+import { formatPlanLabel } from "@/src/config/plans";
 
 export const dynamic = "force-dynamic";
 
 export default async function PlanesPage() {
-  const supabase = await createClient();
   const session = await getDashboardSession();
 
   if (!session) {
@@ -55,6 +58,10 @@ export default async function PlanesPage() {
     currentBillingPeriod,
     authUser.profile?.subscription_period_ends_at,
   );
+  const pendingSummary = getPendingPlanSummary(authUser.profile);
+  const pendingPlanName = pendingSummary
+    ? formatPlanLabel(normalizeDbPlan(pendingSummary.pendingPlan))
+    : null;
   const [
     productLimitContext,
     exchangeRateRow,
@@ -159,6 +166,8 @@ export default async function PlanesPage() {
         paymentMethods={paymentMethods}
         pricingTiers={pricingTiers}
         showCouponField={platformSettings.plansCouponBoxEnabled}
+        pendingPlanName={pendingPlanName}
+        pendingPlanEffectiveAt={pendingSummary?.effectiveAt ?? null}
       />
     </PageContainer>
   );

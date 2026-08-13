@@ -12,6 +12,7 @@ import {
 } from "@/src/config/plans";
 import { getDisplayPlanForProfile } from "@/lib/plans/trial";
 import { getStoreOwnerPlanProfile } from "@/lib/plans/product-limit";
+import { syncDuePendingPlanForUser } from "@/lib/plans/pending-plan";
 import { getStoreMemberRole } from "@/lib/team/access";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
 
@@ -47,14 +48,23 @@ export const getDashboardSession = cache(
     const authUser = await getAuthUserWithPlan(client);
     if (!authUser) return null;
 
-    const store = await getUserStore(client, authUser.id);
+    try {
+      await syncDuePendingPlanForUser(authUser.id);
+    } catch {
+      // No bloquear el dashboard si falla el lazy-apply del downgrade.
+    }
+
+    const refreshedUser = await getAuthUserWithPlan(client);
+    const sessionBase = refreshedUser ?? authUser;
+
+    const store = await getUserStore(client, sessionBase.id);
     const sessionUser = store
-      ? await applyStoreOwnerPlanToUser(authUser, store.id)
-      : authUser;
+      ? await applyStoreOwnerPlanToUser(sessionBase, store.id)
+      : sessionBase;
 
     let storeRole: DashboardStoreRole | null = null;
     if (store) {
-      storeRole = await getStoreMemberRole(client, store.id, authUser.id);
+      storeRole = await getStoreMemberRole(client, store.id, sessionBase.id);
     }
 
     return { authUser: sessionUser, store, storeRole };
@@ -78,6 +88,10 @@ async function applyStoreOwnerPlanToUser(
     billing_period: ownerPlan.billing_period,
     subscription_period_started_at: ownerPlan.subscription_period_started_at,
     subscription_period_ends_at: ownerPlan.subscription_period_ends_at,
+    pending_plan: ownerPlan.pending_plan ?? null,
+    pending_billing_period: ownerPlan.pending_billing_period ?? null,
+    pending_plan_effective_at: ownerPlan.pending_plan_effective_at ?? null,
+    pending_plan_requested_at: ownerPlan.pending_plan_requested_at ?? null,
     extra_locations_authorized: ownerPlan.extra_locations_authorized ?? 0,
   };
 
@@ -97,7 +111,7 @@ export async function getUserProfile(
   userId: string,
 ): Promise<Profile | null> {
   const fullSelect =
-    "id, plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, pro_trial_closed_at, billing_period, subscription_period_started_at, subscription_period_ends_at, extra_locations_authorized, created_at, updated_at";
+    "id, plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, pro_trial_closed_at, billing_period, subscription_period_started_at, subscription_period_ends_at, pending_plan, pending_billing_period, pending_plan_effective_at, pending_plan_requested_at, extra_locations_authorized, created_at, updated_at";
 
   const { data, error } = await client
     .from("profiles")
@@ -110,6 +124,24 @@ export async function getUserProfile(
   }
 
   // Fallback si columnas nuevas aún no existen en el proyecto remoto.
+  const { data: withPeriod, error: periodError } = await client
+    .from("profiles")
+    .select(
+      "id, plan, subscription_status, pro_trial_started_at, pro_trial_ends_at, pro_trial_closed_at, billing_period, subscription_period_started_at, subscription_period_ends_at, extra_locations_authorized, created_at, updated_at",
+    )
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!periodError && withPeriod) {
+    return {
+      ...withPeriod,
+      pending_plan: null,
+      pending_billing_period: null,
+      pending_plan_effective_at: null,
+      pending_plan_requested_at: null,
+    };
+  }
+
   const { data: fallback, error: fallbackError } = await client
     .from("profiles")
     .select(
@@ -125,6 +157,10 @@ export async function getUserProfile(
       billing_period: null,
       subscription_period_started_at: null,
       subscription_period_ends_at: null,
+      pending_plan: null,
+      pending_billing_period: null,
+      pending_plan_effective_at: null,
+      pending_plan_requested_at: null,
       extra_locations_authorized: 0,
     };
   }
@@ -147,6 +183,10 @@ export async function getUserProfile(
     billing_period: null,
     subscription_period_started_at: null,
     subscription_period_ends_at: null,
+    pending_plan: null,
+    pending_billing_period: null,
+    pending_plan_effective_at: null,
+    pending_plan_requested_at: null,
   };
 }
 

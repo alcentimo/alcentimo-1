@@ -7,6 +7,7 @@ import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import type { ManualPaymentPlanId } from "@/lib/database.types";
 import {
   buildPaidProfilePatch,
+  compareDbPlans,
   isManualPaymentPlanId,
   manualPaymentPlanToDbPlan,
 } from "@/lib/plans/plan-activation";
@@ -138,6 +139,13 @@ export async function submitManualPayment(
     auth.authUser.id,
     currentProfile,
   );
+
+  if (compareDbPlans(period.fromPlan, planDb) === "downgrade") {
+    return {
+      error:
+        "Las bajadas de plan no se pagan por este flujo. Programalas desde Planes: el plan actual sigue activo hasta tu fecha de corte.",
+    };
+  }
 
   const proration = calculateUpgradeProration({
     fromPlan: period.fromPlan,

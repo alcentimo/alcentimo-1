@@ -5,6 +5,10 @@ import { useState } from "react";
 import { Check, Globe } from "lucide-react";
 import { PlanCheckoutDialog } from "@/components/dashboard/plans/PlanCheckoutDialog";
 import {
+  PendingDowngradeBanner,
+  PlanDowngradeDialog,
+} from "@/components/dashboard/plans/PlanDowngradeDialog";
+import {
   formatAnnualSavingsLabel,
   formatPlanPriceForTier,
   getRecommendedAnnualSavingsLabel,
@@ -17,6 +21,10 @@ import {
 import { formatProductLimit, type PlanId } from "@/src/config/plans";
 import type { SubscriptionPaymentMethod } from "@/src/config/subscription-pago-movil";
 import { formatProTrialEndsAt } from "@/lib/plans/trial";
+import {
+  compareDbPlans,
+  planIdToDbPlan,
+} from "@/lib/plans/plan-activation";
 import { cn } from "@/lib/cn";
 
 interface PlansPanelProps {
@@ -37,6 +45,8 @@ interface PlansPanelProps {
   showCouponField?: boolean;
   /** Vista limpia de activación: sin bloques auxiliares encima de las tarjetas. */
   variant?: "default" | "activation";
+  pendingPlanName?: string | null;
+  pendingPlanEffectiveAt?: string | null;
 }
 
 function formatSubscriptionDate(value: string | null | undefined): string | null {
@@ -48,8 +58,16 @@ function formatSubscriptionDate(value: string | null | undefined): string | null
 
 function isCurrentTier(tierPlanId: PlanId, currentPlanId: PlanId): boolean {
   if (tierPlanId === currentPlanId) return true;
+  if (tierPlanId === "starter" && currentPlanId === "growth") return true;
   if (tierPlanId === "premium" && currentPlanId === "growth") return true;
   return false;
+}
+
+function isDowngradeTier(tierPlanId: PlanId, currentPlanId: PlanId): boolean {
+  return (
+    compareDbPlans(planIdToDbPlan(currentPlanId), planIdToDbPlan(tierPlanId)) ===
+    "downgrade"
+  );
 }
 
 function PlanCtaButton({
@@ -57,13 +75,17 @@ function PlanCtaButton({
   isCurrent,
   currentPlanId,
   trialActive = false,
+  subscriptionStatus = null,
   onCheckout,
+  onDowngrade,
 }: {
   tier: PlanPricingTier;
   isCurrent: boolean;
   currentPlanId: PlanId;
   trialActive?: boolean;
+  subscriptionStatus?: string | null;
   onCheckout: (tier: PlanPricingTier) => void;
+  onDowngrade: (tier: PlanPricingTier) => void;
 }) {
   if (isCurrent) {
     return (
@@ -73,6 +95,26 @@ function PlanCtaButton({
         className="mt-6 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400"
       >
         Plan actual
+      </button>
+    );
+  }
+
+  const canScheduleDowngrade =
+    !trialActive &&
+    subscriptionStatus === "active" &&
+    currentPlanId !== "free" &&
+    isDowngradeTier(tier.planId, currentPlanId);
+
+  if (canScheduleDowngrade) {
+    return (
+      <button
+        type="button"
+        onClick={() => onDowngrade(tier)}
+        className="mt-6 w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900"
+      >
+        {tier.planId === "free"
+          ? "Programar bajada a Gratis"
+          : `Programar cambio a ${tier.displayName}`}
       </button>
     );
   }
@@ -174,11 +216,15 @@ export function PlansPanel({
   pricingTiers = PLAN_PRICING_TIERS,
   showCouponField = true,
   variant = "default",
+  pendingPlanName = null,
+  pendingPlanEffectiveAt = null,
 }: PlansPanelProps) {
   const isActivation = variant === "activation";
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutTier, setCheckoutTier] = useState<PlanPricingTier | null>(null);
+  const [downgradeOpen, setDowngradeOpen] = useState(false);
+  const [downgradeTier, setDowngradeTier] = useState<PlanPricingTier | null>(null);
 
   const recommendedSavings = (() => {
     const recommended = pricingTiers.find((tier) => tier.recommended);
@@ -216,6 +262,11 @@ export function PlansPanel({
   function openCheckout(tier: PlanPricingTier) {
     setCheckoutTier(tier);
     setCheckoutOpen(true);
+  }
+
+  function openDowngrade(tier: PlanPricingTier) {
+    setDowngradeTier(tier);
+    setDowngradeOpen(true);
   }
 
   return (
@@ -292,6 +343,13 @@ export function PlansPanel({
         </section>
       ) : null}
 
+      {!isActivation && pendingPlanName && pendingPlanEffectiveAt ? (
+        <PendingDowngradeBanner
+          pendingPlanName={pendingPlanName}
+          effectiveAt={pendingPlanEffectiveAt}
+        />
+      ) : null}
+
       {isActivation ? (
         <section className="rounded-xl border border-violet-200/80 bg-violet-50/40 px-5 py-4 dark:border-violet-900/40 dark:bg-violet-950/20">
           <div className="flex items-start gap-3">
@@ -346,7 +404,9 @@ export function PlansPanel({
               isCurrent={isCurrentTier(tier.planId, currentPlanId)}
               currentPlanId={currentPlanId}
               trialActive={trialActive}
+              subscriptionStatus={subscriptionStatus}
               onCheckout={openCheckout}
+              onDowngrade={openDowngrade}
             />
           ))}
         </div>
@@ -364,6 +424,16 @@ export function PlansPanel({
         paymentMethods={paymentMethods}
         pricingTiers={pricingTiers}
         showCouponField={showCouponField}
+      />
+
+      <PlanDowngradeDialog
+        open={downgradeOpen}
+        onOpenChange={setDowngradeOpen}
+        targetPlanId={downgradeTier?.planId ?? "free"}
+        targetPlanName={downgradeTier?.displayName ?? "Gratis"}
+        currentPlanName={currentPlanName}
+        effectiveAt={subscriptionPeriodEndsAt}
+        billingPeriod={billing}
       />
     </div>
   );
@@ -419,14 +489,18 @@ function PricingCard({
   isCurrent,
   currentPlanId,
   trialActive = false,
+  subscriptionStatus = null,
   onCheckout,
+  onDowngrade,
 }: {
   tier: PlanPricingTier;
   billing: BillingPeriod;
   isCurrent: boolean;
   currentPlanId: PlanId;
   trialActive?: boolean;
+  subscriptionStatus?: string | null;
   onCheckout: (tier: PlanPricingTier) => void;
+  onDowngrade: (tier: PlanPricingTier) => void;
 }) {
   const priceLabel = formatPlanPriceForTier(tier, billing);
   const isFree = tier.monthlyUsd === 0;
@@ -506,7 +580,9 @@ function PricingCard({
         isCurrent={isCurrent}
         currentPlanId={currentPlanId}
         trialActive={trialActive}
+        subscriptionStatus={subscriptionStatus}
         onCheckout={onCheckout}
+        onDowngrade={onDowngrade}
       />
     </article>
   );
