@@ -18,12 +18,15 @@ interface SubscriptionPaymentDetailsProps {
   paymentMethods?: SubscriptionPaymentMethod[];
   /** Texto auxiliar debajo del título. */
   hint?: string;
+  /** Monto destacado a transferir (p. ej. "$6.73 / Bs. 5.160,97"). */
+  transferAmount?: string | null;
   className?: string;
 }
 
 export function SubscriptionPaymentDetails({
   paymentMethods: paymentMethodsProp,
   hint = "Realiza el pago a la tasa BCV del día antes de confirmar.",
+  transferAmount = null,
   className,
 }: SubscriptionPaymentDetailsProps) {
   const paymentMethods = useMemo(
@@ -67,8 +70,25 @@ export function SubscriptionPaymentDetails({
           />
           Datos de pago
         </div>
+        {transferAmount ? (
+          <div className="mt-3 rounded-lg border border-teal-200 bg-teal-50/80 px-3 py-2.5 dark:border-teal-900/50 dark:bg-teal-950/30">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+              Transfiere exactamente
+            </p>
+            <p className="mt-1 text-base font-bold tracking-tight text-teal-950 dark:text-teal-50">
+              {transferAmount}
+            </p>
+          </div>
+        ) : null}
         {hint ? (
-          <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">{hint}</p>
+          <p
+            className={cn(
+              "mt-2 text-neutral-600 dark:text-neutral-400",
+              transferAmount ? "text-sm font-medium text-neutral-700 dark:text-neutral-300" : "text-xs",
+            )}
+          >
+            {hint}
+          </p>
         ) : null}
 
         {paymentMethods.length > 1 ? (
