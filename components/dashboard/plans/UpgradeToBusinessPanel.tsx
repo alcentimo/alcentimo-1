@@ -177,6 +177,15 @@ export function UpgradeToBusinessPanel({
           <strong className="text-zinc-950 dark:text-white">
             {formatUsd(amountDue)}
           </strong>
+          {vesEquivalent != null ? (
+            <>
+              {" "}
+              /{" "}
+              <strong className="text-zinc-950 dark:text-white">
+                {formatVes(vesEquivalent)}
+              </strong>
+            </>
+          ) : null}
           .
         </p>
         <dl className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -196,18 +205,26 @@ export function UpgradeToBusinessPanel({
               {formatUsd(listPrice)}
             </dd>
           </div>
-          <div className="rounded-lg bg-teal-50 px-3 py-2 dark:bg-teal-950/40">
-            <dt className="text-xs text-teal-700 dark:text-teal-300">
+          <div className="rounded-lg bg-teal-50 px-3 py-2.5 dark:bg-teal-950/40 sm:col-span-1">
+            <dt className="text-xs font-medium text-teal-700 dark:text-teal-300">
               Monto a pagar
             </dt>
-            <dd className="mt-1 text-lg font-semibold text-teal-900 dark:text-teal-100">
-              {formatUsd(amountDue)}
+            <dd className="mt-1">
+              <p className="text-xl font-bold tracking-tight text-teal-950 dark:text-teal-50">
+                {formatUsd(amountDue)}
+              </p>
+              {vesEquivalent != null ? (
+                <p className="mt-0.5 text-base font-semibold text-teal-800 dark:text-teal-200">
+                  {formatVes(vesEquivalent)}
+                </p>
+              ) : null}
             </dd>
           </div>
         </dl>
         {vesEquivalent != null ? (
-          <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
-            Equivalente referencial: {formatVes(vesEquivalent)}
+          <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+            Equivalente a la tasa BCV del día. Envía exactamente este monto por
+            Pago Móvil.
           </p>
         ) : null}
       </div>
@@ -215,7 +232,16 @@ export function UpgradeToBusinessPanel({
       <div className="grid gap-6 md:grid-cols-2">
         <SubscriptionPaymentDetails
           paymentMethods={paymentMethods}
-          hint={`Transfiere exactamente ${formatUsd(amountDue)} (a la tasa BCV del día) y sube el comprobante.`}
+          hint={
+            vesEquivalent != null
+              ? `Transfiere exactamente ${formatUsd(amountDue)} / ${formatVes(vesEquivalent)} (tasa BCV del día) y sube el comprobante.`
+              : `Transfiere exactamente ${formatUsd(amountDue)} (a la tasa BCV del día) y sube el comprobante.`
+          }
+          transferAmount={
+            vesEquivalent != null
+              ? `${formatUsd(amountDue)} / ${formatVes(vesEquivalent)}`
+              : formatUsd(amountDue)
+          }
           className="border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
         />
 
@@ -223,7 +249,10 @@ export function UpgradeToBusinessPanel({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                Reporta tu pago de {formatUsd(amountDue)}
+                Reporta tu pago
+                {vesEquivalent != null
+                  ? ` de ${formatUsd(amountDue)} / ${formatVes(vesEquivalent)}`
+                  : ` de ${formatUsd(amountDue)}`}
               </p>
               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                 Acceso Comercial provisional al enviar el comprobante.
@@ -307,7 +336,9 @@ export function UpgradeToBusinessPanel({
             >
               {submitting
                 ? "Procesando…"
-                : `Confirmar pago de ${formatUsd(amountDue)}`}
+                : vesEquivalent != null
+                  ? `Confirmar pago de ${formatUsd(amountDue)} / ${formatVes(vesEquivalent)}`
+                  : `Confirmar pago de ${formatUsd(amountDue)}`}
             </Button>
           </form>
         </section>
