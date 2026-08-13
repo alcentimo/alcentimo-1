@@ -154,6 +154,7 @@ export async function submitBusinessUpgradePayment(
     .eq("status", "pending")
     .neq("id", payment.id);
 
+  // Activa Comercial de inmediato (provisional), reinicia el ciclo y cancela downgrades.
   const { error: profileError } = await admin
     .from("profiles")
     .update(

@@ -8,6 +8,7 @@ import type { ManualPayment } from "@/lib/database.types";
 import {
   buildPaidProfilePatch,
   buildRevokedProfilePatch,
+  clearPendingPlanFields,
   manualPaymentPlanToDbPlan,
   normalizeDbPlan,
 } from "@/lib/plans/plan-activation";
@@ -203,13 +204,32 @@ export async function verifyManualPayment(
 
   if (paymentError) return { error: paymentError.message };
 
+  const { data: currentProfile } = await admin
+    .from("profiles")
+    .select(
+      "plan, subscription_status, billing_period, subscription_period_started_at, subscription_period_ends_at",
+    )
+    .eq("id", ownerId)
+    .maybeSingle();
+
+  const alreadyProvisionalSamePlan =
+    currentProfile?.subscription_status === "provisional" &&
+    normalizeDbPlan(currentProfile.plan) === planDb &&
+    Boolean(currentProfile.subscription_period_started_at) &&
+    Boolean(currentProfile.subscription_period_ends_at);
+
   const { error: profileError } = await admin
     .from("profiles")
     .update(
-      buildPaidProfilePatch(planDb, "active", {
-        billingPeriod,
-        periodStartedAt: now,
-      }),
+      alreadyProvisionalSamePlan
+        ? {
+            subscription_status: "active",
+            ...clearPendingPlanFields(),
+          }
+        : buildPaidProfilePatch(planDb, "active", {
+            billingPeriod,
+            periodStartedAt: now,
+          }),
     )
     .eq("id", ownerId);
 
