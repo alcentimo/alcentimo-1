@@ -4075,6 +4075,67 @@ html:has(.landing-shell) {
   @apply overflow-hidden rounded-xl border border-zinc-200/90 bg-white py-1 shadow-lg ring-1 ring-black/5 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-white/10;
 }
 
+/* Estados de pedido: colores distintos para identificación rápida. */
+.order-estado-pill {
+  @apply inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold leading-tight tracking-tight;
+}
+
+.order-estado-dot {
+  @apply h-2 w-2 shrink-0 rounded-full;
+}
+
+.order-estado-pill-chevron {
+  @apply opacity-70;
+}
+
+.order-estado-pill--por_pagar {
+  @apply border-yellow-300 bg-yellow-100 text-yellow-950 dark:border-yellow-700/70 dark:bg-yellow-950/55 dark:text-yellow-100;
+}
+
+.order-estado-dot--por_pagar {
+  @apply bg-yellow-500 dark:bg-yellow-400;
+}
+
+.order-estado-pill--pendiente {
+  @apply border-amber-300 bg-amber-100 text-amber-950 dark:border-amber-700/70 dark:bg-amber-950/55 dark:text-amber-100;
+}
+
+.order-estado-dot--pendiente {
+  @apply bg-amber-500 dark:bg-amber-400;
+}
+
+.order-estado-pill--procesando {
+  @apply border-sky-300 bg-sky-100 text-sky-950 dark:border-sky-700/70 dark:bg-sky-950/55 dark:text-sky-100;
+}
+
+.order-estado-dot--procesando {
+  @apply bg-sky-500 dark:bg-sky-400;
+}
+
+.order-estado-pill--enviado {
+  @apply border-purple-300 bg-purple-100 text-purple-950 dark:border-purple-700/70 dark:bg-purple-950/55 dark:text-purple-100;
+}
+
+.order-estado-dot--enviado {
+  @apply bg-purple-500 dark:bg-purple-400;
+}
+
+.order-estado-pill--entregado {
+  @apply border-green-300 bg-green-100 text-green-950 dark:border-green-700/70 dark:bg-green-950/55 dark:text-green-100;
+}
+
+.order-estado-dot--entregado {
+  @apply bg-green-500 dark:bg-green-400;
+}
+
+.order-estado-pill--cancelado {
+  @apply border-red-300 bg-red-100 text-red-950 dark:border-red-800/70 dark:bg-red-950/55 dark:text-red-100;
+}
+
+.order-estado-dot--cancelado {
+  @apply bg-red-500 dark:bg-red-400;
+}
+
 .orders-status-menu-item {
   @apply hover:bg-zinc-50 dark:hover:bg-zinc-900/70;
 }
