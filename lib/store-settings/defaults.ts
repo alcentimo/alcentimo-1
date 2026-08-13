@@ -417,6 +417,9 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           : designRaw.theme === "minimal" ||
               designRaw.theme === "impact" ||
               designRaw.theme === "immersive" ||
+              designRaw.theme === "boutique" ||
+              designRaw.theme === "rail" ||
+              designRaw.theme === "mosaic" ||
               designRaw.theme === "fashion-pure" ||
               designRaw.theme === "fashion-nocturne" ||
               designRaw.theme === "fashion-editorial" ||

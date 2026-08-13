@@ -522,8 +522,8 @@ export function DesignTab({
               </h2>
               <p className="mt-1 text-xs leading-relaxed text-zinc-500">
                 {isFashionStore
-                  ? "Looks profesionales para moda. Elige uno y se aplica al instante en tu catálogo."
-                  : "Se guarda automáticamente al cambiar una opción."}
+                  ? "Looks de moda y plantillas de layout. Elige uno y se aplica al instante en tu catálogo."
+                  : "Temas clásicos y plantillas de layout. Se guarda automáticamente al cambiar."}
               </p>
             </div>
             <SavingHint visible={isSaving} />
@@ -539,10 +539,15 @@ export function DesignTab({
               <div className="design-option-list">
                 {isFashionStore ? (
                   <p className="mb-1 text-xs leading-relaxed text-zinc-500">
-                    Minimalista, Neutro Cálido, Editorial Oscuro o Lujo
-                    Editorial — paletas fijas con contraste automático.
+                    Paletas de moda y layouts Boutique, Carril o Mosaico — el
+                    diseño actual se mantiene si no cambias de opción.
                   </p>
-                ) : null}
+                ) : (
+                  <p className="mb-1 text-xs leading-relaxed text-zinc-500">
+                    Conserva Minimalista, Impacto o Inmersivo, o prueba Boutique,
+                    Carril y Mosaico con estructuras distintas.
+                  </p>
+                )}
                 {availableThemeIds.map((themeId) => {
                   const preset = CATALOG_THEME_PRESETS[themeId];
                   return (
