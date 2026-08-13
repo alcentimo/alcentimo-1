@@ -77,6 +77,8 @@ export function normalizeCatalogTheme(value: unknown): CatalogThemeId | null {
     value === "boutique" ||
     value === "rail" ||
     value === "mosaic" ||
+    value === "profile" ||
+    value === "compact" ||
     value === "fashion-pure" ||
     value === "fashion-nocturne" ||
     value === "fashion-editorial" ||
@@ -297,6 +299,14 @@ export function getCatalogProductGridClassName(
 
   if (resolved.theme === "mosaic") {
     return cn("txn-product-grid txn-product-grid--mosaic", extra);
+  }
+
+  if (resolved.theme === "profile") {
+    return cn("txn-product-grid txn-product-grid--profile", extra);
+  }
+
+  if (resolved.theme === "compact") {
+    return cn("txn-product-grid txn-product-grid--compact", extra);
   }
 
   return cn("txn-product-grid", extra);

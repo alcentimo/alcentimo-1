@@ -575,17 +575,17 @@ export function DesignTab({
         onToggle={() => toggleSection("theme")}
       >
         <div className="design-option-list">
-          {isFashionStore ? (
-            <p className="mb-1 text-xs leading-relaxed text-zinc-500">
-              Paletas de moda y layouts Boutique, Carril o Mosaico — el
-              diseño actual se mantiene si no cambias de opción.
-            </p>
-          ) : (
-            <p className="mb-1 text-xs leading-relaxed text-zinc-500">
-              Conserva Minimalista, Impacto o Inmersivo, o prueba Boutique,
-              Carril y Mosaico con estructuras distintas.
-            </p>
-          )}
+                {isFashionStore ? (
+                  <p className="mb-1 text-xs leading-relaxed text-zinc-500">
+                    Paletas de moda y layouts estructurales — el diseño actual
+                    se mantiene si no cambias de opción.
+                  </p>
+                ) : (
+                  <p className="mb-1 text-xs leading-relaxed text-zinc-500">
+                    Conserva los temas actuales o prueba layouts como Boutique,
+                    Foto circular y Compacta con estructuras distintas.
+                  </p>
+                )}
           {availableThemeIds.map((themeId) => {
             const preset = CATALOG_THEME_PRESETS[themeId];
             return (

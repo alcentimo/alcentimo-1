@@ -420,6 +420,8 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
               designRaw.theme === "boutique" ||
               designRaw.theme === "rail" ||
               designRaw.theme === "mosaic" ||
+              designRaw.theme === "profile" ||
+              designRaw.theme === "compact" ||
               designRaw.theme === "fashion-pure" ||
               designRaw.theme === "fashion-nocturne" ||
               designRaw.theme === "fashion-editorial" ||

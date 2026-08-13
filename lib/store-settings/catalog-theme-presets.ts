@@ -41,6 +41,8 @@ export const STRUCTURAL_CATALOG_THEME_IDS: CatalogThemeId[] = [
   "boutique",
   "rail",
   "mosaic",
+  "profile",
+  "compact",
 ];
 
 /** Temas exclusivos para tiendas de Ropa y Moda (orden: claro → cálido → oscuro → lujo). */
@@ -180,6 +182,53 @@ export const CATALOG_THEME_PRESETS: Record<CatalogThemeId, CatalogThemePreset> =
       "--pc-radius": "0.75rem",
       "--pc-media-ratio": "1 / 1",
       "--pc-media-inset": "0px",
+    },
+  },
+  profile: {
+    id: "profile",
+    label: "Foto circular",
+    tagline: "Estilo perfil",
+    description:
+      "Logo o foto de la tienda en círculo destacado, tipo perfil de mensajería, junto al nombre.",
+    primaryColor: "#0e7490",
+    layout: "grid",
+    pageBg: "#f8fafc",
+    previewBg: "#f8fafc",
+    previewAccent: "#0e7490",
+    cssVars: {
+      "--pc-body-pad": "0.75rem",
+      "--pc-grid-gap": "0.875rem",
+      "--pc-btn-radius": "9999px",
+      "--pc-btn-min-h": "2.375rem",
+      "--pc-price-size": "0.9375rem",
+      "--pc-title-size": "0.8125rem",
+      "--pc-radius": "1rem",
+      "--pc-media-ratio": "1 / 1",
+      "--pc-media-inset": "0px",
+    },
+  },
+  compact: {
+    id: "compact",
+    label: "Compacta",
+    tagline: "Más productos",
+    description:
+      "Tarjetas ultra reducidas y más columnas para ver muchos productos de un vistazo.",
+    primaryColor: "#334155",
+    layout: "grid",
+    pageBg: "#ffffff",
+    previewBg: "#f1f5f9",
+    previewAccent: "#334155",
+    cssVars: {
+      "--pc-body-pad": "0.4rem",
+      "--pc-grid-gap": "0.5rem",
+      "--pc-btn-radius": "0.375rem",
+      "--pc-btn-min-h": "1.875rem",
+      "--pc-price-size": "0.75rem",
+      "--pc-title-size": "0.6875rem",
+      "--pc-radius": "0.5rem",
+      "--pc-media-ratio": "1 / 1",
+      "--pc-media-inset": "0px",
+      "--pc-gap": "0.15rem",
     },
   },
   "fashion-pure": {
@@ -372,8 +421,14 @@ export function isFashionCatalogThemeId(
 
 export function isStructuralCatalogThemeId(
   theme: string | null | undefined,
-): theme is "boutique" | "rail" | "mosaic" {
-  return theme === "boutique" || theme === "rail" || theme === "mosaic";
+): theme is "boutique" | "rail" | "mosaic" | "profile" | "compact" {
+  return (
+    theme === "boutique" ||
+    theme === "rail" ||
+    theme === "mosaic" ||
+    theme === "profile" ||
+    theme === "compact"
+  );
 }
 
 export function getCatalogThemeIdsForRubro(

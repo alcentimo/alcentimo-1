@@ -199,6 +199,8 @@ export type CatalogThemeId =
   | "boutique"
   | "rail"
   | "mosaic"
+  | "profile"
+  | "compact"
   | "fashion-pure"
   | "fashion-nocturne"
   | "fashion-editorial"
