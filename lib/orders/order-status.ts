@@ -75,27 +75,21 @@ export const ORDER_ESTADO_HINTS: Record<OrderEstado, string> = {
 };
 
 export const ORDER_ESTADO_BADGE_CLASS: Record<OrderEstado, string> = {
-  por_pagar:
-    "border-orange-200 bg-orange-50 text-orange-950 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-200",
-  pendiente:
-    "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200",
-  procesando:
-    "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200",
-  enviado:
-    "border-violet-200 bg-violet-50 text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-200",
-  entregado:
-    "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200",
-  cancelado:
-    "border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-400",
+  por_pagar: "order-estado-pill--por_pagar",
+  pendiente: "order-estado-pill--pendiente",
+  procesando: "order-estado-pill--procesando",
+  enviado: "order-estado-pill--enviado",
+  entregado: "order-estado-pill--entregado",
+  cancelado: "order-estado-pill--cancelado",
 };
 
 export const ORDER_ESTADO_DOT_CLASS: Record<OrderEstado, string> = {
-  por_pagar: "bg-orange-500",
-  pendiente: "bg-amber-500",
-  procesando: "bg-blue-500",
-  enviado: "bg-violet-500",
-  entregado: "bg-emerald-500",
-  cancelado: "bg-zinc-400",
+  por_pagar: "order-estado-dot--por_pagar",
+  pendiente: "order-estado-dot--pendiente",
+  procesando: "order-estado-dot--procesando",
+  enviado: "order-estado-dot--enviado",
+  entregado: "order-estado-dot--entregado",
+  cancelado: "order-estado-dot--cancelado",
 };
 
 export type OrderFilterId = "all" | "today" | "dispatch" | "pending" | "completed";

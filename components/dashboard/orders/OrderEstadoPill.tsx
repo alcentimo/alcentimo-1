@@ -20,19 +20,23 @@ export function OrderEstadoPill({
 }: OrderEstadoPillProps) {
   return (
     <span
+      data-order-estado={estado}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold leading-tight",
+        "order-estado-pill",
         ORDER_ESTADO_BADGE_CLASS[estado],
         className,
       )}
     >
       <span
-        className={cn("h-1.5 w-1.5 shrink-0 rounded-full", ORDER_ESTADO_DOT_CLASS[estado])}
+        className={cn("order-estado-dot", ORDER_ESTADO_DOT_CLASS[estado])}
         aria-hidden="true"
       />
-      {ORDER_ESTADO_LABELS[estado]}
+      <span className="truncate">{ORDER_ESTADO_LABELS[estado]}</span>
       {showChevron ? (
-        <ChevronDown className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
+        <ChevronDown
+          className="order-estado-pill-chevron h-3 w-3 shrink-0"
+          aria-hidden="true"
+        />
       ) : null}
     </span>
   );

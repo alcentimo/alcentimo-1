@@ -9,7 +9,7 @@ import {
   isVipCustomer,
 } from "@/lib/customers/customer-segments";
 import { formatUsd } from "@/lib/format";
-import { ORDER_ESTADO_LABELS } from "@/lib/orders/order-status";
+import { OrderEstadoPill } from "@/components/dashboard/orders/OrderEstadoPill";
 import {
   fetchCustomerDetail,
   saveCustomerMerchantNotes,
@@ -229,9 +229,9 @@ export function CustomerDetailSlideOver({
                       <p className="text-sm font-semibold tabular-nums">
                         {formatUsd(order.total_usd)}
                       </p>
-                      <p className="mt-0.5 text-[11px] text-zinc-500">
-                        {ORDER_ESTADO_LABELS[order.estado]}
-                      </p>
+                      <div className="mt-1 flex justify-end">
+                        <OrderEstadoPill estado={order.estado} />
+                      </div>
                     </div>
                   </li>
                 ))}

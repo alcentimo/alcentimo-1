@@ -29,20 +29,23 @@ export function CustomerOrderEstadoPill({
 
   return (
     <span
+      data-order-estado={displayEstado}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold leading-tight",
+        "order-estado-pill",
         ORDER_ESTADO_BADGE_CLASS[displayEstado],
         className,
       )}
     >
       <span
         className={cn(
-          "h-1.5 w-1.5 shrink-0 rounded-full",
+          "order-estado-dot",
           ORDER_ESTADO_DOT_CLASS[displayEstado],
         )}
         aria-hidden="true"
       />
-      {CUSTOMER_ORDER_ESTADO_LABELS[displayEstado]}
+      <span className="truncate">
+        {CUSTOMER_ORDER_ESTADO_LABELS[displayEstado]}
+      </span>
     </span>
   );
 }
