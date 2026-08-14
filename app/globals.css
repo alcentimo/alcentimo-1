@@ -3996,10 +3996,8 @@ html:has(.landing-shell) {
 
 .orders-mobile-card {
   @apply flex w-full min-w-0 max-w-full cursor-pointer flex-col gap-3 rounded-xl border border-zinc-200/80 bg-white p-4 transition-colors hover:bg-zinc-50 active:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900/60 dark:active:bg-zinc-900;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 10rem;
-  /* No paint containment: status menus must not be clipped */
-  contain: layout style;
+  /* No overflow/contain clipping — status menus render in a portal/sheet */
+  overflow: visible;
 }
 
 .orders-mobile-card-header {
@@ -4054,13 +4052,6 @@ html:has(.landing-shell) {
   @apply max-w-full;
 }
 
-.orders-mobile-status-select .orders-status-menu {
-  left: 0;
-  right: auto;
-  width: min(16.5rem, calc(100vw - 2rem));
-  max-width: min(16.5rem, calc(100vw - 2rem));
-}
-
 .orders-mobile-card-wa {
   @apply shrink-0;
 }
@@ -4110,13 +4101,13 @@ html:has(.landing-shell) {
 }
 
 .orders-ops-table-shell {
-  @apply overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
+  @apply rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
+  overflow: visible;
 }
 
-@media (max-width: 767px) {
+@media (min-width: 768px) {
   .orders-ops-table-shell {
-    /* Visible so status dropdowns are not clipped; cards use min-w-0 to avoid page overflow */
-    overflow: visible;
+    overflow: hidden;
   }
 }
 
@@ -4196,6 +4187,20 @@ html:has(.landing-shell) {
 
 .orders-status-menu {
   @apply overflow-hidden rounded-xl border border-zinc-200/90 bg-white py-1 shadow-lg ring-1 ring-black/5 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-white/10;
+}
+
+.orders-status-menu--portal {
+  z-index: 90;
+  max-width: calc(100vw - 1rem);
+}
+
+.orders-status-sheet {
+  @apply max-h-[min(88dvh,36rem)] w-full max-w-none overflow-hidden rounded-t-2xl border-0 bg-white shadow-2xl dark:bg-zinc-950;
+}
+
+.orders-status-sheet-body {
+  @apply max-h-[min(60dvh,28rem)] overflow-y-auto overscroll-contain px-2 pb-4 pt-1;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Estados de pedido: colores distintos para identificación rápida. */
