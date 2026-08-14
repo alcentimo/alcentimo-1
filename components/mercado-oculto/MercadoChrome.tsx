@@ -3,23 +3,27 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Search } from "lucide-react";
+import { Search, ShoppingCart } from "lucide-react";
 import { SUPPLIER_PRODUCT_CATEGORIES } from "@/lib/supplier/categories";
 import { cn } from "@/lib/cn";
+import { MercadoCartProvider, useMercadoCart } from "@/components/mercado-oculto/MercadoCartProvider";
 
 interface MercadoChromeProps {
   email: string | null;
   children: React.ReactNode;
 }
 
-export function MercadoChrome({ email, children }: MercadoChromeProps) {
+function MercadoChromeInner({ email, children }: MercadoChromeProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
+  const { itemCount, ready } = useMercadoCart();
+
   const onDirectory =
     pathname === "/mercado-oculto" || pathname === "/mercado-oculto/";
   const onChats = pathname.startsWith("/mercado-oculto/conversaciones");
+  const onCart = pathname.startsWith("/mercado-oculto/carrito");
   const activeCategory = searchParams.get("category") ?? "";
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
 
@@ -46,41 +50,37 @@ export function MercadoChrome({ email, children }: MercadoChromeProps) {
             </span>
           </Link>
 
-          {onDirectory ? (
-            <form
-              className="mercado-mp-search"
-              onSubmit={(event) => {
-                event.preventDefault();
-                navigateWithParams((params) => {
-                  const next = query.trim();
-                  if (next) params.set("q", next);
-                  else params.delete("q");
-                });
-              }}
+          <form
+            className="mercado-mp-search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              navigateWithParams((params) => {
+                const next = query.trim();
+                if (next) params.set("q", next);
+                else params.delete("q");
+              });
+            }}
+          >
+            <span className="mercado-mp-search-icon" aria-hidden="true">
+              <Search className="h-5 w-5" />
+            </span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar productos, marcas y más…"
+              aria-label="Buscar en el mercado oculto"
+              className="mercado-mp-search-input"
+              disabled={pending}
+            />
+            <button
+              type="submit"
+              className="mercado-mp-search-btn"
+              disabled={pending}
             >
-              <span className="mercado-mp-search-icon" aria-hidden="true">
-                <Search className="h-5 w-5" />
-              </span>
-              <input
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar productos mayoristas, categorías…"
-                aria-label="Buscar en el mercado oculto"
-                className="mercado-mp-search-input"
-                disabled={pending}
-              />
-              <button
-                type="submit"
-                className="mercado-mp-search-btn"
-                disabled={pending}
-              >
-                Buscar
-              </button>
-            </form>
-          ) : (
-            <div className="flex-1" />
-          )}
+              Buscar
+            </button>
+          </form>
 
           <nav className="mercado-mp-nav">
             {email ? (
@@ -105,6 +105,24 @@ export function MercadoChrome({ email, children }: MercadoChromeProps) {
               )}
             >
               Chats
+            </Link>
+            <Link
+              href="/mercado-oculto/carrito"
+              className={cn(
+                "mercado-nav-link mercado-mp-cart-link",
+                onCart && "mercado-nav-link-active",
+              )}
+              aria-label={
+                ready
+                  ? `Carrito, ${itemCount} artículos`
+                  : "Carrito de compras"
+              }
+            >
+              <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+              Carrito
+              {ready && itemCount > 0 ? (
+                <span className="mercado-mp-cart-badge">{itemCount}</span>
+              ) : null}
             </Link>
             <Link href="/admin/dashboard" className="mercado-nav-link">
               Admin
@@ -158,5 +176,13 @@ export function MercadoChrome({ email, children }: MercadoChromeProps) {
       </header>
       <main className="mercado-main mercado-mp-main">{children}</main>
     </div>
+  );
+}
+
+export function MercadoChrome({ email, children }: MercadoChromeProps) {
+  return (
+    <MercadoCartProvider>
+      <MercadoChromeInner email={email}>{children}</MercadoChromeInner>
+    </MercadoCartProvider>
   );
 }
