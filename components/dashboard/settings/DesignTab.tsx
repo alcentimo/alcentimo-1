@@ -209,7 +209,7 @@ function DesignOption({
       >
         {selected ? <span className="design-option-radio-dot" /> : null}
       </span>
-      <span className="flex min-w-0 flex-1 items-start gap-2.5">
+      <span className="flex min-w-0 flex-1 items-start gap-2">
         {accent ? (
           <span
             className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/5 dark:ring-white/10"
@@ -217,16 +217,16 @@ function DesignOption({
             aria-hidden="true"
           />
         ) : null}
-        <span className="min-w-0 text-left">
-          <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">
+        <span className="min-w-0 max-w-full flex-1 text-left">
+          <span className="block break-words text-sm font-medium text-zinc-900 dark:text-zinc-50">
             {label}
             {tagline ? (
-              <span className="ml-1.5 text-xs font-normal text-zinc-500">
+              <span className="ml-1.5 inline text-xs font-normal text-zinc-500">
                 ({tagline})
               </span>
             ) : null}
           </span>
-          <span className="mt-1 block text-xs leading-relaxed text-zinc-500">
+          <span className="mt-1 block break-words text-xs leading-relaxed text-zinc-500">
             {description}
           </span>
         </span>
