@@ -13362,9 +13362,10 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-categories {
-  @apply flex gap-0.5 overflow-x-auto border-t border-teal-100/80 px-4 scrollbar-thin dark:border-teal-900/40 sm:px-6 lg:px-7;
+  @apply flex gap-0.5 overflow-x-auto border-t border-teal-100/80 px-4 dark:border-teal-900/40 sm:px-6 lg:px-7;
   max-width: 80rem;
   margin-inline: auto;
+  scrollbar-width: thin;
 }
 
 .mercado-mp-category {

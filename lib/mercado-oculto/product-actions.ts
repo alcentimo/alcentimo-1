@@ -10,7 +10,6 @@ import {
 import { getSupplierAllowlist } from "@/lib/supplier/access";
 import {
   isSupplierProductCategory,
-  supplierCategoryLabel,
   SUPPLIER_PRODUCT_CATEGORIES,
 } from "@/lib/supplier/categories";
 import {
@@ -323,11 +322,4 @@ export async function getMercadoProduct(
     sellerUserId: product.seller_user_id,
     sellerStoreName: product.supplier_label,
   };
-}
-
-export function listMercadoCategoryOptions() {
-  return SUPPLIER_PRODUCT_CATEGORIES.map((item) => ({
-    value: item.value,
-    label: supplierCategoryLabel(item.value),
-  }));
 }
