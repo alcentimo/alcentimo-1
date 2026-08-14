@@ -12,6 +12,11 @@ export interface MercadoProductCard {
   product_name: string;
   short_description: string | null;
   price_usd: number;
+  /** Precio de lista para tachado; null si no hay promo. */
+  compare_at_usd: number | null;
+  /** Porcentaje de descuento entero (1–99) cuando compare_at > price. */
+  discount_percent: number | null;
+  free_shipping: boolean;
   thumb_url: string | null;
   category: SupplierProductCategory;
   category_name: string;
@@ -23,11 +28,38 @@ export interface MercadoProductCard {
   variants: SupplierProductVariants;
 }
 
+export function computeDiscountPercent(
+  priceUsd: number,
+  compareAtUsd: number | null,
+): number | null {
+  if (
+    compareAtUsd == null ||
+    !Number.isFinite(compareAtUsd) ||
+    !Number.isFinite(priceUsd) ||
+    compareAtUsd <= priceUsd ||
+    priceUsd < 0
+  ) {
+    return null;
+  }
+  const pct = Math.round((1 - priceUsd / compareAtUsd) * 100);
+  if (pct < 1 || pct > 99) return null;
+  return pct;
+}
+
 export function mapSupplierRowToMercadoCard(
   row: Record<string, unknown>,
   supplierLabel = "Mayorista Oficial Alcéntimo",
 ): MercadoProductCard {
   const category = normalizeSupplierProductCategory(row.category);
+  const priceUsd = Number(row.base_price_usd) || 0;
+  const compareRaw = row.compare_at_usd;
+  const compareAtUsd =
+    compareRaw == null || compareRaw === ""
+      ? null
+      : Number.isFinite(Number(compareRaw))
+        ? Number(compareRaw)
+        : null;
+
   return {
     product_id: String(row.id),
     product_name: String(row.title ?? ""),
@@ -35,7 +67,10 @@ export function mapSupplierRowToMercadoCard(
       typeof row.description === "string" && row.description.trim()
         ? row.description.trim()
         : null,
-    price_usd: Number(row.base_price_usd) || 0,
+    price_usd: priceUsd,
+    compare_at_usd: compareAtUsd,
+    discount_percent: computeDiscountPercent(priceUsd, compareAtUsd),
+    free_shipping: Boolean(row.free_shipping),
     thumb_url:
       typeof row.image_url === "string" && row.image_url.trim()
         ? row.image_url.trim()
@@ -68,4 +103,5 @@ export interface MercadoCatalogFacets {
   suppliers: MercadoSupplierFacet[];
   priceMin: number;
   priceMax: number;
+  freeShippingCount: number;
 }

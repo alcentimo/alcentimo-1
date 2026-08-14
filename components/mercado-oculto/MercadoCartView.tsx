@@ -19,7 +19,10 @@ export function MercadoCartView() {
       <div className="mercado-ml-cart-empty">
         <ShoppingBag className="h-10 w-10 text-[#125699]/70" aria-hidden="true" />
         <h1>Tu carrito está vacío</h1>
-        <p>Explorá el catálogo mayorista y agregá productos para negociar o comprar.</p>
+        <p>
+          ¡Aprovechá el envío a nivel nacional! Explorá ofertas mayoristas y
+          agregá productos con compra protegida.
+        </p>
         <Link href="/mercado-oculto" className="mercado-ml-btn-primary">
           Ir al catálogo
         </Link>

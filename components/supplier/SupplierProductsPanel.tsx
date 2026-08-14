@@ -54,6 +54,8 @@ type ProductFormState = {
   variants: SupplierProductVariants;
   stock: string;
   basePriceUsd: string;
+  compareAtUsd: string;
+  freeShipping: boolean;
   imageFile: File | null;
   imageKey: number;
 };
@@ -65,6 +67,8 @@ const EMPTY_FORM: Omit<ProductFormState, "imageKey"> = {
   variants: emptySupplierVariants(),
   stock: "0",
   basePriceUsd: "",
+  compareAtUsd: "",
+  freeShipping: false,
   imageFile: null,
 };
 
@@ -76,6 +80,9 @@ function formFromProduct(product: SupplierProduct): ProductFormState {
     variants: product.variants ?? emptySupplierVariants(),
     stock: String(product.stock),
     basePriceUsd: String(product.basePriceUsd),
+    compareAtUsd:
+      product.compareAtUsd != null ? String(product.compareAtUsd) : "",
+    freeShipping: Boolean(product.freeShipping),
     imageFile: null,
     imageKey: Date.now(),
   };
@@ -89,6 +96,8 @@ function buildFormData(form: ProductFormState): FormData {
   formData.set("variants", serializeSupplierVariants(form.variants));
   formData.set("stock", form.stock);
   formData.set("basePriceUsd", form.basePriceUsd);
+  formData.set("compareAtUsd", form.compareAtUsd);
+  if (form.freeShipping) formData.set("freeShipping", "true");
   if (form.imageFile) {
     formData.set("image", form.imageFile);
   }
@@ -226,6 +235,44 @@ function ProductFields({
                   disabled={pending}
                 />
               </div>
+            </div>
+            <div>
+              <label htmlFor={`${idPrefix}-compare`} className="label-field">
+                Precio anterior / lista (USD)
+              </label>
+              <div className="relative mt-1.5">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-zinc-400">
+                  $
+                </span>
+                <input
+                  id={`${idPrefix}-compare`}
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  inputMode="decimal"
+                  value={form.compareAtUsd}
+                  onChange={(event) =>
+                    onChange({ ...form, compareAtUsd: event.target.value })
+                  }
+                  className="input-field !mt-0 pl-7"
+                  placeholder="Opcional · tachado en vitrina"
+                  disabled={pending}
+                />
+              </div>
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 pb-2 text-sm text-zinc-700">
+                <input
+                  type="checkbox"
+                  checked={form.freeShipping}
+                  onChange={(event) =>
+                    onChange({ ...form, freeShipping: event.target.checked })
+                  }
+                  disabled={pending}
+                  className="h-4 w-4 rounded border-zinc-300"
+                />
+                Envío gratis (marketplace)
+              </label>
             </div>
           </div>
         </div>

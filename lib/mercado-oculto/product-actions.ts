@@ -25,7 +25,7 @@ type ActionResult<T extends object = object> = {
 } & Partial<T>;
 
 const SUPPLIER_PRODUCT_SELECT =
-  "id, title, description, category, variants, stock, base_price_usd, image_url, created_by, created_at, is_active";
+  "id, title, description, category, variants, stock, base_price_usd, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active";
 
 async function requireMercadoSuperAdmin() {
   const supabase = await createClient();
@@ -114,6 +114,7 @@ function buildFacets(
   const supplierCounts = new Map<string, number>();
   let priceMin = Number.POSITIVE_INFINITY;
   let priceMax = 0;
+  let freeShippingCount = 0;
 
   for (const row of rows) {
     const category = String(row.category ?? "otros");
@@ -127,6 +128,8 @@ function buildFacets(
     const price = Number(row.base_price_usd) || 0;
     if (price < priceMin) priceMin = price;
     if (price > priceMax) priceMax = price;
+
+    if (row.free_shipping) freeShippingCount += 1;
   }
 
   if (!Number.isFinite(priceMin)) priceMin = 0;
@@ -152,6 +155,7 @@ function buildFacets(
     suppliers,
     priceMin,
     priceMax,
+    freeShippingCount,
   };
 }
 
@@ -161,6 +165,7 @@ export type ListMercadoProductsInput = {
   minPrice?: number;
   maxPrice?: number;
   supplierUserId?: string;
+  freeShippingOnly?: boolean;
   limit?: number;
 };
 
@@ -177,7 +182,13 @@ export async function listMercadoProducts(
   if (creatorIds.length === 0) {
     return {
       products: [],
-      facets: { categories: [], suppliers: [], priceMin: 0, priceMax: 0 },
+      facets: {
+        categories: [],
+        suppliers: [],
+        priceMin: 0,
+        priceMax: 0,
+        freeShippingCount: 0,
+      },
     };
   }
 
@@ -187,7 +198,7 @@ export async function listMercadoProducts(
   // Facets over the full official catalog (before search/price filters).
   const { data: facetRows, error: facetError } = await admin
     .from("supplier_products")
-    .select("category, created_by, base_price_usd")
+    .select("category, created_by, base_price_usd, free_shipping")
     .eq("is_active", true)
     .in("created_by", creatorIds)
     .limit(500);
@@ -223,6 +234,10 @@ export async function listMercadoProducts(
   const supplierUserId = options?.supplierUserId?.trim();
   if (supplierUserId && creatorIds.includes(supplierUserId)) {
     request = request.eq("created_by", supplierUserId);
+  }
+
+  if (options?.freeShippingOnly) {
+    request = request.eq("free_shipping", true);
   }
 
   if (
