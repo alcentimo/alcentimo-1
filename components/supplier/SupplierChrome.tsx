@@ -14,9 +14,10 @@ export function SupplierChrome({ email, children }: SupplierChromeProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
-  const onPedidos =
-    pathname.startsWith("/proveedor") && tab === "pedidos";
-  const onProductos = pathname.startsWith("/proveedor") && !onPedidos;
+  const onPedidos = pathname.startsWith("/proveedor") && tab === "pedidos";
+  const onPagos = pathname.startsWith("/proveedor") && tab === "pagos";
+  const onProductos =
+    pathname.startsWith("/proveedor") && !onPedidos && !onPagos;
 
   return (
     <div className="supplier-hub-shell">
@@ -54,6 +55,15 @@ export function SupplierChrome({ email, children }: SupplierChromeProps) {
               )}
             >
               Pedidos
+            </Link>
+            <Link
+              href="/proveedor/dashboard?tab=pagos"
+              className={cn(
+                "supplier-hub-nav-link",
+                onPagos && "supplier-hub-nav-link-active",
+              )}
+            >
+              Pagos
             </Link>
           </div>
         </div>

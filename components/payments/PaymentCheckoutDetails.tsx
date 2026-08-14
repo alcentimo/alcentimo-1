@@ -44,7 +44,7 @@ export function PaymentCheckoutDetails({
         Datos para pagar con {meta.label}
       </p>
       <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-        Usa estos datos para completar tu pago antes de confirmar el pedido.
+        Usa estos datos para completar el pago directo.
       </p>
       <dl className="mt-3 space-y-3">
         {visibleFields.map((field) => {

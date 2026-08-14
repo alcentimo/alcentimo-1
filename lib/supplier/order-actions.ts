@@ -14,6 +14,10 @@ import {
   type SupplierOrderItem,
   type SupplierOrderStatus,
 } from "@/lib/supplier/order-types";
+import {
+  isSupplierOrderPaymentStatus,
+  type SupplierOrderPaymentStatus,
+} from "@/lib/supplier/payment-types";
 
 type ActionResult<T extends object = object> = {
   error?: string;
@@ -69,6 +73,11 @@ function mapOrder(
   const status: SupplierOrderStatus = isSupplierOrderStatus(statusRaw)
     ? statusRaw
     : "pendiente";
+  const paymentStatusRaw = String(row.payment_status ?? "pendiente");
+  const paymentStatus: SupplierOrderPaymentStatus =
+    isSupplierOrderPaymentStatus(paymentStatusRaw)
+      ? paymentStatusRaw
+      : "pendiente";
 
   return {
     id: String(row.id),
@@ -105,6 +114,33 @@ function mapOrder(
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
     items,
+    sourceCatalogOrderId:
+      typeof row.source_catalog_order_id === "string" &&
+      row.source_catalog_order_id
+        ? row.source_catalog_order_id
+        : null,
+    paymentStatus,
+    paymentMethod:
+      typeof row.payment_method === "string" && row.payment_method.trim()
+        ? row.payment_method.trim()
+        : null,
+    paymentReference:
+      typeof row.payment_reference === "string" && row.payment_reference.trim()
+        ? row.payment_reference.trim()
+        : null,
+    paymentProofUrl:
+      typeof row.payment_proof_url === "string" && row.payment_proof_url.trim()
+        ? row.payment_proof_url.trim()
+        : null,
+    paymentNotes: String(row.payment_notes ?? ""),
+    paymentNotifiedAt:
+      typeof row.payment_notified_at === "string"
+        ? row.payment_notified_at
+        : null,
+    paymentReportedAt:
+      typeof row.payment_reported_at === "string"
+        ? row.payment_reported_at
+        : null,
   };
 }
 
@@ -120,7 +156,7 @@ export async function listSupplierOrders(): Promise<
   const { data: orderRows, error } = await admin
     .from("supplier_orders")
     .select(
-      "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at",
+      "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at",
     )
     .eq("supplier_user_id", auth.user.id)
     .order("created_at", { ascending: false });
@@ -273,7 +309,7 @@ export async function createSupplierOrder(input: {
       total_usd: totalUsd,
     })
     .select(
-      "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at",
+      "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at",
     )
     .single();
 
@@ -365,7 +401,7 @@ export async function updateSupplierOrderDispatch(input: {
     .eq("id", orderId)
     .eq("supplier_user_id", auth.user.id)
     .select(
-      "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at",
+      "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at",
     )
     .maybeSingle();
 

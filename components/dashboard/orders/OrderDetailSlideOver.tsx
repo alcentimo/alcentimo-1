@@ -11,6 +11,7 @@ import { OrderStatusWhatsAppPrompt } from "@/components/dashboard/orders/OrderSt
 import { OrderShippingDetails } from "@/components/dashboard/orders/OrderShippingDetails";
 import { OrderWhatsAppButton } from "@/components/dashboard/orders/OrderWhatsAppButton";
 import { OrderCustomerKindBadge } from "@/components/dashboard/orders/OrderCustomerKindBadge";
+import { OrderDropshipSupplierPaymentPanel } from "@/components/dashboard/orders/OrderDropshipSupplierPaymentPanel";
 import { ORDER_PAYMENT_PROOF_RETENTION_NOTICE } from "@/lib/orders/payment-proof-policy";
 
 function formatOrderDate(value: string): string {
@@ -179,6 +180,8 @@ export function OrderDetailSlideOver({
               <span>{formatUsd(order.total_usd)}</span>
             </div>
           </section>
+
+          <OrderDropshipSupplierPaymentPanel order={order} />
 
           <section className="orders-slideover-section">
             <p className="orders-slideover-label">Comprobante de pago</p>
