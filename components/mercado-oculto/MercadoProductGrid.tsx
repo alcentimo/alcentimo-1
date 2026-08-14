@@ -14,8 +14,9 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
   if (products.length === 0) {
     return (
       <p className="mercado-empty">
-        Aún no hay productos de suscriptores en la vitrina. Cuando una tienda
-        con plan activo publique productos, aparecerán aquí.
+        Aún no hay productos de dropshipping en la vitrina. Cuando un
+        suscriptor integre productos de los mayoristas oficiales de Alcéntimo,
+        aparecerán aquí.
       </p>
     );
   }

@@ -12,7 +12,7 @@ type ActionResult<T extends object = object> = {
  * Destino al pulsar «Publicar producto»:
  * - sin sesión → login
  * - sin suscripción → planes
- * - suscriptor → catálogo del dashboard (productos activos se reflejan aquí)
+ * - suscriptor → ajustes de dropshipping (integrar mayoristas oficiales)
  */
 export async function resolveMercadoPublishDestination(): Promise<
   ActionResult<{ href: string }>
@@ -30,5 +30,5 @@ export async function resolveMercadoPublishDestination(): Promise<
     return { href: "/dashboard/planes?mercado_denied=1" };
   }
 
-  return { href: "/dashboard/catalogo?mercado_publish=1" };
+  return { href: "/dashboard/ajustes?tab=dropship" };
 }

@@ -44,7 +44,8 @@ export function MercadoPublishButton() {
         </p>
       ) : (
         <p className="text-[11px] text-zinc-500">
-          Requiere cuenta y suscripción activa.{" "}
+          Requiere cuenta y suscripción. Integra productos de mayoristas
+          oficiales.{" "}
           <Link href="/dashboard/planes" className="underline">
             Ver planes
           </Link>
