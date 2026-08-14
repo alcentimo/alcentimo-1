@@ -2,19 +2,55 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
-import { Bell, Search, ShoppingBag, ShoppingCart, UserRound } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import {
+  Baby,
+  Bell,
+  Car,
+  Cpu,
+  HeartPulse,
+  Home,
+  NotebookPen,
+  Package,
+  Percent,
+  Search,
+  Shirt,
+  ShoppingBag,
+  ShoppingCart,
+  Sparkles,
+  UserRound,
+  Utensils,
+  Watch,
+} from "lucide-react";
 import { SUPPLIER_PRODUCT_CATEGORIES } from "@/lib/supplier/categories";
 import { cn } from "@/lib/cn";
 import {
   MercadoCartProvider,
   useMercadoCart,
 } from "@/components/mercado-oculto/MercadoCartProvider";
+import { MercadoBottomNav } from "@/components/mercado-oculto/MercadoBottomNav";
 
 interface MercadoChromeProps {
   email: string | null;
   children: React.ReactNode;
 }
+
+const CATEGORY_ICONS: Record<
+  string,
+  React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" }>
+> = {
+  electronica: Cpu,
+  hogar: Home,
+  belleza: Sparkles,
+  accesorios: Watch,
+  alimentos: Utensils,
+  ropa: Shirt,
+  salud: HeartPulse,
+  juguetes: Baby,
+  papeleria: NotebookPen,
+  automotriz: Car,
+  otros: Package,
+};
 
 function MercadoChromeInner({ email, children }: MercadoChromeProps) {
   const pathname = usePathname();
@@ -30,6 +66,19 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
   const activeCategory = searchParams.get("category") ?? "";
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
 
+  useEffect(() => {
+    setQuery(searchParams.get("q") ?? "");
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash === "#mercado-categorias") {
+      document
+        .getElementById("mercado-categorias")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [pathname]);
+
   function navigateWithParams(mutate: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
     mutate(params);
@@ -39,59 +88,50 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
     });
   }
 
+  const searchForm = (
+    <form
+      className="mercado-mp-search"
+      onSubmit={(event) => {
+        event.preventDefault();
+        navigateWithParams((params) => {
+          const next = query.trim();
+          if (next) params.set("q", next);
+          else params.delete("q");
+        });
+      }}
+    >
+      <span className="mercado-mp-search-icon" aria-hidden="true">
+        <Search className="h-5 w-5" />
+      </span>
+      <input
+        type="search"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder="Buscar productos, marcas y más…"
+        aria-label="Buscar productos"
+        className="mercado-mp-search-input"
+        disabled={pending}
+      />
+      <button type="submit" className="mercado-mp-search-btn" disabled={pending}>
+        Buscar
+      </button>
+    </form>
+  );
+
   return (
     <div className="mercado-shell">
       <header className="mercado-mp-header">
-        <div className="mercado-mp-trustbar">
-          <span>Envío a nivel nacional</span>
-          <span aria-hidden="true">·</span>
-          <span>Compra protegida</span>
-          <span aria-hidden="true">·</span>
-          <span>Mayorista Oficial Alcéntimo</span>
-        </div>
-
         <div className="mercado-mp-header-top">
           <Link href="/mercado-oculto" className="mercado-mp-brand">
             <span className="mercado-brand-mark" aria-hidden="true">
               a
             </span>
-            <span className="min-w-0">
-              <span className="mercado-eyebrow">Alcéntimo</span>
-              <span className="mercado-title block">Mercado oculto</span>
+            <span className="mercado-mp-brand-text">
+              <span className="mercado-title">Mercado oculto</span>
             </span>
           </Link>
 
-          <form
-            className="mercado-mp-search"
-            onSubmit={(event) => {
-              event.preventDefault();
-              navigateWithParams((params) => {
-                const next = query.trim();
-                if (next) params.set("q", next);
-                else params.delete("q");
-              });
-            }}
-          >
-            <span className="mercado-mp-search-icon" aria-hidden="true">
-              <Search className="h-5 w-5" />
-            </span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar productos, marcas y más…"
-              aria-label="Buscar productos"
-              className="mercado-mp-search-input"
-              disabled={pending}
-            />
-            <button
-              type="submit"
-              className="mercado-mp-search-btn"
-              disabled={pending}
-            >
-              Buscar
-            </button>
-          </form>
+          <div className="mercado-mp-search-wrap">{searchForm}</div>
 
           <nav className="mercado-mp-nav" aria-label="Cuenta y compras">
             <Link
@@ -102,7 +142,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
               )}
             >
               <ShoppingBag className="h-4 w-4" aria-hidden="true" />
-              Mis Compras
+              <span className="mercado-nav-label">Mis Compras</span>
             </Link>
             <Link
               href="/mercado-oculto/conversaciones"
@@ -110,7 +150,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
               aria-label="Notificaciones"
             >
               <Bell className="h-4 w-4" aria-hidden="true" />
-              Notificaciones
+              <span className="mercado-nav-label">Notificaciones</span>
             </Link>
             <Link
               href="/mercado-oculto/carrito"
@@ -125,7 +165,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
               }
             >
               <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-              Carrito
+              <span className="mercado-nav-label">Carrito</span>
               {ready && itemCount > 0 ? (
                 <span className="mercado-mp-cart-badge">{itemCount}</span>
               ) : null}
@@ -137,7 +177,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
                 title={email}
               >
                 <UserRound className="h-4 w-4" aria-hidden="true" />
-                Mi cuenta
+                <span className="mercado-nav-label">Mi cuenta</span>
               </Link>
             ) : (
               <Link
@@ -145,57 +185,74 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
                 className="mercado-nav-link mercado-mp-auth-link"
               >
                 <UserRound className="h-4 w-4" aria-hidden="true" />
-                Crea tu cuenta / Ingresa
+                <span className="mercado-nav-label">Crea tu cuenta / Ingresa</span>
               </Link>
             )}
           </nav>
         </div>
+      </header>
 
-        {onDirectory ? (
-          <div
-            className="mercado-mp-categories"
-            role="tablist"
-            aria-label="Categorías"
-          >
+      {onDirectory ? (
+        <div
+          id="mercado-categorias"
+          className="mercado-mp-cat-strip"
+          role="tablist"
+          aria-label="Categorías"
+        >
+          <div className="mercado-mp-cat-scroll">
             <button
               type="button"
               role="tab"
-              aria-selected={!activeCategory}
+              aria-selected={!activeCategory && !searchParams.get("ship")}
               className={cn(
-                "mercado-mp-category",
-                !activeCategory && "mercado-mp-category-active",
+                "mercado-mp-cat-chip",
+                !activeCategory &&
+                  !searchParams.get("ship") &&
+                  "mercado-mp-cat-chip-active",
               )}
               onClick={() =>
                 navigateWithParams((params) => {
                   params.delete("category");
+                  params.delete("ship");
                 })
               }
             >
-              Todas
+              <span className="mercado-mp-cat-icon" aria-hidden="true">
+                <Percent className="h-5 w-5" />
+              </span>
+              <span>Ofertas</span>
             </button>
-            {SUPPLIER_PRODUCT_CATEGORIES.map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                role="tab"
-                aria-selected={activeCategory === item.value}
-                className={cn(
-                  "mercado-mp-category",
-                  activeCategory === item.value && "mercado-mp-category-active",
-                )}
-                onClick={() =>
-                  navigateWithParams((params) => {
-                    params.set("category", item.value);
-                  })
-                }
-              >
-                {item.label}
-              </button>
-            ))}
+            {SUPPLIER_PRODUCT_CATEGORIES.map((item) => {
+              const Icon = CATEGORY_ICONS[item.value] ?? Package;
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeCategory === item.value}
+                  className={cn(
+                    "mercado-mp-cat-chip",
+                    activeCategory === item.value && "mercado-mp-cat-chip-active",
+                  )}
+                  onClick={() =>
+                    navigateWithParams((params) => {
+                      params.set("category", item.value);
+                    })
+                  }
+                >
+                  <span className="mercado-mp-cat-icon" aria-hidden="true">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
           </div>
-        ) : null}
-      </header>
+        </div>
+      ) : null}
+
       <main className="mercado-main mercado-mp-main">{children}</main>
+      <MercadoBottomNav />
     </div>
   );
 }
