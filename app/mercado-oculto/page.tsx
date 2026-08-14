@@ -1,7 +1,9 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { resolveMercadoOcultoDenial } from "@/lib/mercado-oculto/access";
 import { listMercadoProducts } from "@/lib/mercado-oculto/product-actions";
 import { MercadoProductGrid } from "@/components/mercado-oculto/MercadoProductGrid";
 import { MercadoSearchForm } from "@/components/mercado-oculto/MercadoSearchForm";
-import { MercadoPublishButton } from "@/components/mercado-oculto/MercadoPublishButton";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,19 @@ export default async function MercadoOcultoPage({
 }: {
   searchParams: Promise<{ q?: string | string[] }>;
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const denial = resolveMercadoOcultoDenial(user);
+  if (denial === "unauthenticated") {
+    redirect("/dashboard/login?next=/mercado-oculto");
+  }
+  if (denial) {
+    redirect(`/dashboard/catalogo?mercado_denied=${denial}`);
+  }
+
   const params = await searchParams;
   const qRaw = Array.isArray(params.q) ? params.q[0] : params.q;
   const query = qRaw?.trim() || undefined;
@@ -18,18 +33,13 @@ export default async function MercadoOcultoPage({
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <p className="mercado-section-label">Vitrina abierta</p>
-          <h1 className="mercado-heading">Mercado oculto</h1>
-          <p className="mercado-subheading">
-            Catálogo público de productos de dropshipping que los suscriptores
-            integraron desde los mayoristas oficiales de Alcéntimo. Ver es
-            gratis; para chatear o publicar necesitas cuenta y suscripción
-            activa. El pago y el envío se coordinan fuera de la plataforma.
-          </p>
-        </div>
-        <MercadoPublishButton />
+      <header className="space-y-2">
+        <p className="mercado-section-label">Solo Super Admin</p>
+        <h1 className="mercado-heading">Mercado oculto</h1>
+        <p className="mercado-subheading">
+          Vista interna de productos de dropshipping integrados desde mayoristas
+          oficiales. Inaccesible para suscriptores y clientes.
+        </p>
       </header>
 
       <MercadoSearchForm initialQuery={query ?? ""} />
