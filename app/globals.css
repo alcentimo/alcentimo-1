@@ -3989,28 +3989,100 @@ html:has(.landing-shell) {
 }
 
 .orders-mobile-list {
-  @apply flex flex-col gap-2 p-2 md:hidden;
+  @apply flex w-full min-w-0 flex-col gap-3 p-3 md:hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
 
 .orders-mobile-card {
-  @apply cursor-pointer rounded-xl border border-zinc-200/80 bg-white p-3.5 transition-colors hover:bg-zinc-50 active:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900/60 dark:active:bg-zinc-900;
+  @apply flex w-full min-w-0 max-w-full cursor-pointer flex-col gap-3 rounded-xl border border-zinc-200/80 bg-white p-4 transition-colors hover:bg-zinc-50 active:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900/60 dark:active:bg-zinc-900;
   content-visibility: auto;
-  contain-intrinsic-size: auto 8.5rem;
-  contain: layout style paint;
+  contain-intrinsic-size: auto 10rem;
+  /* No paint containment: status menus must not be clipped */
+  contain: layout style;
+}
+
+.orders-mobile-card-header {
+  @apply flex min-w-0 items-start justify-between gap-3;
+}
+
+.orders-mobile-card-identity {
+  @apply min-w-0 flex-1;
+}
+
+.orders-mobile-card-name-row {
+  @apply flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5;
+}
+
+.orders-mobile-card-name {
+  @apply min-w-0 max-w-full break-words text-sm font-semibold leading-snug text-zinc-900 dark:text-zinc-50;
+}
+
+.orders-mobile-card-meta {
+  @apply mt-1.5 break-words text-[11px] leading-relaxed text-zinc-500;
+}
+
+.orders-mobile-card-location {
+  @apply mt-1 break-words text-[11px] font-medium leading-relaxed text-teal-700 dark:text-teal-400;
+}
+
+.orders-mobile-card-total {
+  @apply flex shrink-0 flex-col items-end gap-1 pt-0.5;
+}
+
+.orders-mobile-card-amount {
+  @apply text-sm font-semibold tabular-nums leading-none text-zinc-900 dark:text-zinc-50;
+}
+
+.orders-mobile-card-chevron {
+  @apply h-4 w-4 text-zinc-400;
+}
+
+.orders-mobile-card-status-row {
+  @apply flex min-w-0 max-w-full flex-wrap items-center gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800;
+}
+
+.orders-mobile-status-select {
+  @apply min-w-0 max-w-full flex-1;
+}
+
+.orders-mobile-status-select > button {
+  @apply max-w-full;
+}
+
+.orders-mobile-status-select .order-estado-pill {
+  @apply max-w-full;
+}
+
+.orders-mobile-status-select .orders-status-menu {
+  left: 0;
+  right: auto;
+  width: min(16.5rem, calc(100vw - 2rem));
+  max-width: min(16.5rem, calc(100vw - 2rem));
+}
+
+.orders-mobile-card-wa {
+  @apply shrink-0;
+}
+
+.orders-mobile-card-notify {
+  @apply min-w-0 max-w-full;
+}
+
+.orders-mobile-card-items {
+  @apply line-clamp-3 break-words text-xs leading-relaxed text-zinc-600 dark:text-zinc-300;
 }
 
 .orders-ops-day-group {
-  @apply flex flex-col gap-2;
+  @apply flex min-w-0 flex-col gap-3;
 }
 
 .orders-ops-day-group + .orders-ops-day-group {
-  @apply mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800;
+  @apply mt-2 border-t border-zinc-100 pt-4 dark:border-zinc-800;
 }
 
 .orders-ops-section-label {
-  @apply px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400;
+  @apply px-0.5 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400;
 }
 
 .orders-ops-section-row td {
@@ -4022,7 +4094,7 @@ html:has(.landing-shell) {
 }
 
 .orders-ops-kpi-card {
-  @apply flex min-h-[7.25rem] w-full flex-col rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
+  @apply flex min-h-[7.25rem] w-full min-w-0 flex-col rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
 }
 
 .orders-ops-kpi-card-active {
@@ -4039,6 +4111,13 @@ html:has(.landing-shell) {
 
 .orders-ops-table-shell {
   @apply overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
+}
+
+@media (max-width: 767px) {
+  .orders-ops-table-shell {
+    /* Visible so status dropdowns are not clipped; cards use min-w-0 to avoid page overflow */
+    overflow: visible;
+  }
 }
 
 .orders-ops-table {
@@ -4121,7 +4200,7 @@ html:has(.landing-shell) {
 
 /* Estados de pedido: colores distintos para identificación rápida. */
 .order-estado-pill {
-  @apply inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold leading-tight tracking-tight;
+  @apply inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold leading-tight tracking-tight;
 }
 
 .order-estado-dot {

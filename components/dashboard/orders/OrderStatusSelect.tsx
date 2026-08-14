@@ -143,7 +143,7 @@ export function OrderStatusSelect({
   return (
     <div
       ref={rootRef}
-      className={cn("relative inline-flex flex-col gap-1", className)}
+      className={cn("relative inline-flex max-w-full flex-col gap-1", className)}
       onClick={(event) => event.stopPropagation()}
     >
       <button
@@ -162,7 +162,7 @@ export function OrderStatusSelect({
           setOpen((value) => !value);
         }}
         className={cn(
-          "inline-flex min-h-8 items-center rounded-full transition-opacity",
+          "inline-flex min-h-8 max-w-full items-center rounded-full transition-opacity",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30",
           pending && "cursor-wait opacity-70",
         )}
@@ -187,7 +187,7 @@ export function OrderStatusSelect({
           role="listbox"
           aria-label="Estados del pedido"
           className={cn(
-            "orders-status-menu absolute top-full z-40 mt-1.5 w-[15.5rem]",
+            "orders-status-menu absolute top-full z-40 mt-1.5 w-[min(15.5rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]",
             align === "end" ? "right-0" : "left-0",
           )}
         >
@@ -229,7 +229,7 @@ export function OrderStatusSelect({
       {awaitingGuide ? (
         <div
           className={cn(
-            "orders-status-menu absolute top-full z-40 mt-1.5 w-[16.5rem] space-y-2 p-3",
+            "orders-status-menu absolute top-full z-40 mt-1.5 w-[min(16.5rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] space-y-2 p-3",
             align === "end" ? "right-0" : "left-0",
           )}
           onClick={(event) => event.stopPropagation()}
