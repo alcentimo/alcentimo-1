@@ -1,0 +1,209 @@
+import { unstable_cache } from "next/cache";
+import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  getSupportAdminAllowlist,
+  normalizeSupportEmail,
+} from "@/lib/support/admin-access";
+import { getSupplierAllowlist } from "@/lib/supplier/access";
+import { SUPPLIER_PRODUCT_CATEGORIES } from "@/lib/supplier/categories";
+import {
+  mapSupplierRowToMercadoCard,
+  type MercadoCatalogFacets,
+  type MercadoCategoryFacet,
+  type MercadoProductCard,
+  type MercadoSupplierFacet,
+} from "@/lib/mercado-oculto/types";
+
+export const MERCADO_CATALOG_CACHE_TAG = "mercado-catalog";
+
+const SUPPLIER_PRODUCT_SELECT =
+  "id, title, description, category, variants, stock, base_price_usd, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active";
+
+export type MercadoCatalogSnapshot = {
+  products: MercadoProductCard[];
+  facets: MercadoCatalogFacets;
+  fetchedAt: string;
+};
+
+async function listOfficialMayoristaUserIdsUncached(): Promise<string[]> {
+  const allowedEmails = new Set(
+    [...getSupportAdminAllowlist(), ...getSupplierAllowlist()].map((email) =>
+      email.toLowerCase(),
+    ),
+  );
+  if (allowedEmails.size === 0) return [];
+
+  const admin = createAdminClient();
+  const ids: string[] = [];
+  let page = 1;
+
+  while (page <= 50) {
+    const { data, error } = await admin.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
+    if (error || !data?.users?.length) break;
+
+    for (const user of data.users) {
+      const email = normalizeSupportEmail(user.email);
+      if (email && allowedEmails.has(email)) {
+        ids.push(user.id);
+      }
+    }
+
+    if (data.users.length < 200) break;
+    page += 1;
+  }
+
+  return [...new Set(ids)];
+}
+
+const getCachedMayoristaUserIds = unstable_cache(
+  async () => listOfficialMayoristaUserIdsUncached(),
+  ["mercado-official-mayorista-ids"],
+  { revalidate: 120, tags: [MERCADO_CATALOG_CACHE_TAG] },
+);
+
+async function mapCreatorLabels(
+  creatorIds: string[],
+): Promise<Map<string, string>> {
+  const labels = new Map<string, string>();
+  if (creatorIds.length === 0) return labels;
+
+  const admin = createAdminClient();
+  const adminEmails = new Set(getSupportAdminAllowlist());
+
+  await Promise.all(
+    creatorIds.map(async (id) => {
+      const { data } = await admin.auth.admin.getUserById(id);
+      const email = normalizeSupportEmail(data.user?.email);
+      if (!email) {
+        labels.set(id, "Mayorista Oficial Alcéntimo");
+        return;
+      }
+      if (adminEmails.has(email)) {
+        labels.set(id, "Alcéntimo · Super Admin");
+        return;
+      }
+      const local = email.split("@")[0] ?? email;
+      labels.set(id, `Mayorista · ${local}`);
+    }),
+  );
+
+  return labels;
+}
+
+function buildFacets(
+  rows: Record<string, unknown>[],
+  labels: Map<string, string>,
+): MercadoCatalogFacets {
+  const categoryCounts = new Map<string, number>();
+  const supplierCounts = new Map<string, number>();
+  let priceMin = Number.POSITIVE_INFINITY;
+  let priceMax = 0;
+  let freeShippingCount = 0;
+
+  for (const row of rows) {
+    const category = String(row.category ?? "otros");
+    categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
+
+    const creator = String(row.created_by ?? "");
+    if (creator) {
+      supplierCounts.set(creator, (supplierCounts.get(creator) ?? 0) + 1);
+    }
+
+    const price = Number(row.base_price_usd) || 0;
+    if (price < priceMin) priceMin = price;
+    if (price > priceMax) priceMax = price;
+    if (row.free_shipping) freeShippingCount += 1;
+  }
+
+  if (!Number.isFinite(priceMin)) priceMin = 0;
+
+  const categories: MercadoCategoryFacet[] = SUPPLIER_PRODUCT_CATEGORIES.map(
+    (item) => ({
+      value: item.value,
+      label: item.label,
+      count: categoryCounts.get(item.value) ?? 0,
+    }),
+  ).filter((item) => item.count > 0);
+
+  const suppliers: MercadoSupplierFacet[] = [...supplierCounts.entries()]
+    .map(([id, count]) => ({
+      id,
+      label: labels.get(id) ?? "Mayorista Oficial Alcéntimo",
+      count,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    categories,
+    suppliers,
+    priceMin,
+    priceMax,
+    freeShippingCount,
+  };
+}
+
+async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
+  const empty: MercadoCatalogSnapshot = {
+    products: [],
+    facets: {
+      categories: [],
+      suppliers: [],
+      priceMin: 0,
+      priceMax: 0,
+      freeShippingCount: 0,
+    },
+    fetchedAt: new Date().toISOString(),
+  };
+
+  const creatorIds = await getCachedMayoristaUserIds();
+  if (creatorIds.length === 0) return empty;
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("supplier_products")
+    .select(SUPPLIER_PRODUCT_SELECT)
+    .eq("is_active", true)
+    .in("created_by", creatorIds)
+    .order("created_at", { ascending: false })
+    .limit(160);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const rows = (data as Record<string, unknown>[] | null) ?? [];
+  const creatorSet = [
+    ...new Set(rows.map((row) => String(row.created_by ?? "")).filter(Boolean)),
+  ];
+  const labels = await mapCreatorLabels(creatorSet);
+  const facets = buildFacets(rows, labels);
+  const products = rows.map((row) =>
+    mapSupplierRowToMercadoCard(
+      row,
+      labels.get(String(row.created_by ?? "")) ??
+        "Mayorista Oficial Alcéntimo",
+    ),
+  );
+
+  return {
+    products,
+    facets,
+    fetchedAt: new Date().toISOString(),
+  };
+}
+
+/** Catálogo completo cacheado (~60s) para navegación SPA sin pegarle a la DB. */
+export const getCachedMercadoCatalog = unstable_cache(
+  async () => loadMercadoCatalogUncached(),
+  ["mercado-oculto-catalog-v1"],
+  { revalidate: 60, tags: [MERCADO_CATALOG_CACHE_TAG] },
+);
+
+export async function getCachedOfficialMayoristaUserIds(): Promise<string[]> {
+  return getCachedMayoristaUserIds();
+}
+
+export { SUPPLIER_PRODUCT_SELECT };

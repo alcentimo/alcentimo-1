@@ -1,17 +1,22 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { hasMercadoOcultoSuperAdminUser } from "@/lib/mercado-oculto/access";
-import { listMercadoProducts } from "@/lib/mercado-oculto/product-actions";
-import { MercadoProductGrid } from "@/components/mercado-oculto/MercadoProductGrid";
-import { MercadoFiltersPanel } from "@/components/mercado-oculto/MercadoFiltersPanel";
-import { isSupplierProductCategory } from "@/lib/supplier/categories";
+import { getCachedMercadoCatalog } from "@/lib/mercado-oculto/catalog-cache";
+import {
+  emptyMercadoFacets,
+  type MercadoCatalogFilters,
+} from "@/lib/mercado-oculto/filter-catalog";
+import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
+import { MercadoCatalogProvider } from "@/components/mercado-oculto/MercadoCatalogProvider";
+import { MercadoCatalogView } from "@/components/mercado-oculto/MercadoCatalogView";
 
 export const dynamic = "force-dynamic";
 
-function parseNumberParam(value: string | undefined): number | undefined {
-  if (!value?.trim()) return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
+function pick(
+  value: string | string[] | undefined,
+): string {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return raw?.trim() ?? "";
 }
 
 export default async function MercadoOcultoPage({
@@ -39,69 +44,35 @@ export default async function MercadoOcultoPage({
   }
 
   const params = await searchParams;
-  const pick = (value: string | string[] | undefined) =>
-    Array.isArray(value) ? value[0] : value;
-
-  const query = pick(params.q)?.trim() || undefined;
-  const categoryRaw = pick(params.category)?.trim();
-  const category =
-    categoryRaw && isSupplierProductCategory(categoryRaw)
-      ? categoryRaw
-      : undefined;
-  const minPrice = parseNumberParam(pick(params.min));
-  const maxPrice = parseNumberParam(pick(params.max));
-  const supplierUserId = pick(params.supplier)?.trim() || undefined;
-  const freeShippingOnly = pick(params.ship)?.trim() === "free";
-
-  const listed = await listMercadoProducts({
-    query,
-    category,
-    minPrice,
-    maxPrice,
-    supplierUserId,
-    freeShippingOnly,
-    limit: 96,
-  });
-
-  const products = listed.products ?? [];
-  const facets = listed.facets ?? {
-    categories: [],
-    suppliers: [],
-    priceMin: 0,
-    priceMax: 0,
-    freeShippingCount: 0,
+  const initialFilters: MercadoCatalogFilters = {
+    q: pick(params.q),
+    category: pick(params.category),
+    min: pick(params.min),
+    max: pick(params.max),
+    supplier: pick(params.supplier),
+    ship: pick(params.ship),
   };
 
+  let products: MercadoProductCard[] = [];
+  let facets = emptyMercadoFacets();
+  let error: string | null = null;
+
+  try {
+    const catalog = await getCachedMercadoCatalog();
+    products = catalog.products;
+    facets = catalog.facets;
+  } catch (err) {
+    error = err instanceof Error ? err.message : "Error al cargar el catálogo.";
+  }
+
   return (
-    <div className="mercado-mp-layout">
-      <MercadoFiltersPanel facets={facets} resultCount={products.length} />
-
-      <div className="mercado-mp-results">
-        <div className="mercado-mp-results-head">
-          <div>
-            <h1 className="mercado-heading text-lg sm:text-xl">
-              {query ? `Resultados para “${query}”` : "Productos destacados"}
-            </h1>
-            <p className="mercado-subheading mt-0.5">
-              Envío a nivel nacional · Compra protegida
-            </p>
-          </div>
-          <p className="text-sm text-zinc-500">
-            <strong className="font-semibold text-zinc-800">
-              {products.length}
-            </strong>{" "}
-            resultado{products.length === 1 ? "" : "s"}
-          </p>
-        </div>
-
-        {listed.error ? (
-          <p className="mercado-alert" role="alert">
-            No se pudo cargar la vitrina ({listed.error}).
-          </p>
-        ) : (
-          <MercadoProductGrid products={products} />
-        )}
-      </div>
-    </div>
+    <MercadoCatalogProvider
+      products={products}
+      facets={facets}
+      error={error}
+      initialFilters={initialFilters}
+    >
+      <MercadoCatalogView />
+    </MercadoCatalogProvider>
   );
 }

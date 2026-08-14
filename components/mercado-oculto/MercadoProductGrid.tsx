@@ -40,10 +40,11 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
         return (
           <li key={product.product_id}>
             <article className="group mercado-mp-card">
-              <Link
-                href={`/mercado-oculto/producto/${product.product_id}`}
-                className="mercado-mp-card-media"
-              >
+            <Link
+              href={`/mercado-oculto/producto/${product.product_id}`}
+              className="mercado-mp-card-media"
+              prefetch
+            >
                 {product.thumb_url ? (
                   <Image
                     src={product.thumb_url}
@@ -69,10 +70,11 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
               </Link>
 
               <div className="mercado-mp-card-body">
-                <Link
-                  href={`/mercado-oculto/producto/${product.product_id}`}
-                  className="mercado-mp-card-title"
-                >
+              <Link
+                href={`/mercado-oculto/producto/${product.product_id}`}
+                className="mercado-mp-card-title"
+                prefetch
+              >
                   {product.product_name}
                 </Link>
 

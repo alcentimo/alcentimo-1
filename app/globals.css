@@ -13947,3 +13947,50 @@ button.catalog-profile-footer-link {
 .mercado-ml-cart-summary-note {
   @apply m-0 text-xs leading-relaxed text-[var(--ml-muted)];
 }
+
+.mercado-shell-pending .mercado-mp-cat-chip {
+  @apply opacity-80;
+}
+
+.mercado-mp-results-body {
+  @apply relative transition-opacity duration-150;
+}
+
+.mercado-mp-results-pending {
+  @apply opacity-70;
+}
+
+.mercado-mp-results-pending .mercado-mp-grid {
+  @apply pointer-events-none;
+}
+
+.mercado-mp-skeleton-overlay {
+  @apply pointer-events-none absolute inset-x-0 top-0 z-10 h-1 overflow-hidden rounded-full bg-transparent;
+}
+
+.mercado-mp-skeleton-overlay::after {
+  content: "";
+  @apply absolute inset-y-0 left-0 w-1/3 bg-[var(--ml-blue)];
+  animation: mercado-mp-indeterminate 0.9s ease-in-out infinite;
+}
+
+@keyframes mercado-mp-indeterminate {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+.mercado-mp-skeleton-card {
+  @apply flex flex-col gap-2 rounded-lg bg-white p-2.5 shadow-sm;
+}
+
+.mercado-mp-skeleton-media {
+  @apply aspect-square animate-pulse rounded-md bg-zinc-200/80;
+}
+
+.mercado-mp-skeleton-line {
+  @apply h-3 animate-pulse rounded bg-zinc-200/80;
+}
