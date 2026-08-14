@@ -137,11 +137,11 @@ export function CatalogHeaderField({
                   <span className="design-option-radio-dot" />
                 ) : null}
               </span>
-              <span className="min-w-0 text-left">
-                <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">
+              <span className="min-w-0 max-w-full flex-1 text-left">
+                <span className="block break-words text-sm font-medium text-zinc-900 dark:text-zinc-50">
                   {option.label}
                 </span>
-                <span className="mt-1 block text-xs leading-relaxed text-zinc-500">
+                <span className="mt-1 block break-words text-xs leading-relaxed text-zinc-500">
                   {option.description}
                 </span>
               </span>
@@ -196,9 +196,9 @@ export function CatalogHeaderField({
         ) : null}
 
         {header.bgMode === "brand" ? (
-          <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
+          <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2 text-xs text-zinc-500">
             <span
-              className="h-3.5 w-3.5 rounded-full ring-1 ring-black/10"
+              className="h-3.5 w-3.5 shrink-0 rounded-full ring-1 ring-black/10"
               style={{ backgroundColor: brandColor }}
               aria-hidden="true"
             />
@@ -261,11 +261,11 @@ export function CatalogHeaderField({
                   <span className="design-option-radio-dot" />
                 ) : null}
               </span>
-              <span className="min-w-0 text-left">
-                <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">
+              <span className="min-w-0 max-w-full flex-1 text-left">
+                <span className="block break-words text-sm font-medium text-zinc-900 dark:text-zinc-50">
                   {option.label}
                 </span>
-                <span className="mt-1 block text-xs leading-relaxed text-zinc-500">
+                <span className="mt-1 block break-words text-xs leading-relaxed text-zinc-500">
                   {option.description}
                 </span>
               </span>

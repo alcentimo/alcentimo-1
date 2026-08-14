@@ -107,7 +107,7 @@ export function DesignCatalogInlinePreview({
           {CHECKOUT_PREVIEW_LABEL[checkoutType]}
         </p>
         {!immersive ? (
-          <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+          <p className="mt-1 break-words text-xs leading-relaxed text-zinc-500">
             Mockup estático según el rubro configurado en Identidad. Tus productos
             reales no se muestran aquí.
           </p>
