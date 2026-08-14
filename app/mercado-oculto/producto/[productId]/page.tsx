@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUserWithPlan } from "@/lib/auth/get-user-profile";
-import { resolveMercadoOcultoDenial } from "@/lib/mercado-oculto/access";
+import { hasMercadoOcultoSuperAdminUser } from "@/lib/mercado-oculto/access";
 import { getMercadoProduct } from "@/lib/mercado-oculto/product-actions";
 import { MercadoChatPanel } from "@/components/mercado-oculto/MercadoChatPanel";
 import { formatUsd } from "@/lib/format";
@@ -22,12 +22,11 @@ export default async function MercadoProductoPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const denial = resolveMercadoOcultoDenial(user);
-  if (denial === "unauthenticated") {
+  if (!user) {
     redirect("/dashboard/login?next=/mercado-oculto");
   }
-  if (denial) {
-    redirect(`/dashboard/catalogo?mercado_denied=${denial}`);
+  if (!hasMercadoOcultoSuperAdminUser(user)) {
+    notFound();
   }
 
   const authUser = await getAuthUserWithPlan(supabase);
@@ -107,9 +106,8 @@ export default async function MercadoProductoPage({
             <p className="pt-1 text-lg font-semibold tabular-nums text-teal-800 dark:text-teal-300">
               {formatUsd(product.price_usd)}
             </p>
-            <p className="text-xs leading-relaxed text-zinc-500">
-              Vista interna Super Admin. Producto dropshipping integrado desde
-              mayoristas oficiales.
+            <p className="text-xs text-zinc-500">
+              Stock: {product.available_stock} · Costo base mayorista
             </p>
           </div>
         </section>

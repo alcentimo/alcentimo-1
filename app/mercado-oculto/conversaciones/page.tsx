@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { resolveMercadoOcultoDenial } from "@/lib/mercado-oculto/access";
+import { hasMercadoOcultoSuperAdminUser } from "@/lib/mercado-oculto/access";
 import { listMyMercadoConversations } from "@/lib/mercado-oculto/chat-actions";
 
 export const dynamic = "force-dynamic";
@@ -20,12 +20,11 @@ export default async function MercadoConversacionesPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const denial = resolveMercadoOcultoDenial(user);
-  if (denial === "unauthenticated") {
+  if (!user) {
     redirect("/dashboard/login?next=/mercado-oculto/conversaciones");
   }
-  if (denial) {
-    redirect(`/dashboard/catalogo?mercado_denied=${denial}`);
+  if (!hasMercadoOcultoSuperAdminUser(user)) {
+    notFound();
   }
 
   const listed = await listMyMercadoConversations();
@@ -36,8 +35,7 @@ export default async function MercadoConversacionesPage() {
         <p className="mercado-section-label">Solo Super Admin</p>
         <h1 className="mercado-heading">Chats del mercado</h1>
         <p className="mercado-subheading">
-          Conversaciones internas asociadas a esta vista. No disponible para
-          suscriptores ni clientes.
+          Conversaciones internas sobre productos mayoristas oficiales.
         </p>
       </header>
 
@@ -68,7 +66,7 @@ export default async function MercadoConversacionesPage() {
                     {conversation.productName ?? "Producto"}
                   </p>
                   <p className="mt-0.5 truncate text-xs text-zinc-500">
-                    {conversation.storeName ?? "Tienda"} ·{" "}
+                    {conversation.storeName ?? "Mayorista"} ·{" "}
                     {conversation.role === "seller" ? "Vendedor" : "Interesado"}
                   </p>
                   {conversation.lastMessagePreview ? (

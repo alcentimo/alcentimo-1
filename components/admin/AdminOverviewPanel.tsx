@@ -53,6 +53,18 @@ export function AdminOverviewPanel({
 
   return (
     <div className="space-y-6">
+      <Link
+        href="/mercado-oculto"
+        className="flex flex-col gap-1 rounded-2xl border border-teal-200 bg-teal-50/80 px-4 py-3 transition hover:border-teal-300 hover:bg-teal-50 dark:border-teal-900/50 dark:bg-teal-950/30 dark:hover:border-teal-800"
+      >
+        <span className="text-sm font-semibold text-teal-900 dark:text-teal-100">
+          Mercado oculto
+        </span>
+        <span className="text-xs text-teal-800/80 dark:text-teal-200/80">
+          Abrir la vitrina interna de productos mayoristas (Super Admin).
+        </span>
+      </Link>
+
       <div className="admin-kpi-grid">
         <article className="admin-kpi-card">
           <div className="admin-kpi-card-icon admin-kpi-card-icon-emerald">

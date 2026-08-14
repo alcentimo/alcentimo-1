@@ -22,7 +22,6 @@ export interface MercadoMessage {
 export interface MercadoConversationSummary {
   id: string;
   productId: string;
-  storeId: string;
   sellerUserId: string;
   buyerUserId: string;
   createdAt: string;
@@ -66,7 +65,11 @@ export async function getOrCreateMercadoConversation(
   const { user } = gate;
 
   const productResult = await getMercadoProduct(productId);
-  if (productResult.error || !productResult.product || !productResult.sellerUserId) {
+  if (
+    productResult.error ||
+    !productResult.product ||
+    !productResult.sellerUserId
+  ) {
     return { error: productResult.error ?? "Producto no disponible." };
   }
 
@@ -79,7 +82,7 @@ export async function getOrCreateMercadoConversation(
   const { data: existing } = await admin
     .from("mercado_conversations")
     .select("id")
-    .eq("product_id", productId)
+    .eq("supplier_product_id", productId)
     .eq("buyer_user_id", user.id)
     .maybeSingle();
 
@@ -90,8 +93,9 @@ export async function getOrCreateMercadoConversation(
   const { data: created, error } = await admin
     .from("mercado_conversations")
     .insert({
-      product_id: productId,
-      store_id: productResult.product.store_id,
+      supplier_product_id: productId,
+      product_id: null,
+      store_id: null,
       seller_user_id: sellerUserId,
       buyer_user_id: user.id,
     })
@@ -124,7 +128,9 @@ export async function listMercadoMessages(
   if (convError) return { error: convError.message };
   if (!conversation) return { error: "Conversación no encontrada." };
 
-  const buyerId = String((conversation as { buyer_user_id: string }).buyer_user_id);
+  const buyerId = String(
+    (conversation as { buyer_user_id: string }).buyer_user_id,
+  );
   const sellerId = String(
     (conversation as { seller_user_id: string }).seller_user_id,
   );
@@ -161,14 +167,16 @@ export async function sendMercadoMessage(input: {
   const admin = createAdminClient();
   const { data: conversation, error: convError } = await admin
     .from("mercado_conversations")
-    .select("id, buyer_user_id, seller_user_id, product_id")
+    .select("id, buyer_user_id, seller_user_id, supplier_product_id, product_id")
     .eq("id", input.conversationId)
     .maybeSingle();
 
   if (convError) return { error: convError.message };
   if (!conversation) return { error: "Conversación no encontrada." };
 
-  const buyerId = String((conversation as { buyer_user_id: string }).buyer_user_id);
+  const buyerId = String(
+    (conversation as { buyer_user_id: string }).buyer_user_id,
+  );
   const sellerId = String(
     (conversation as { seller_user_id: string }).seller_user_id,
   );
@@ -196,11 +204,16 @@ export async function sendMercadoMessage(input: {
     .update({ updated_at: now })
     .eq("id", input.conversationId);
 
-  const productId = String(
-    (conversation as { product_id: string }).product_id,
-  );
+  const supplierProductId =
+    typeof (conversation as { supplier_product_id?: string }).supplier_product_id ===
+    "string"
+      ? String((conversation as { supplier_product_id: string }).supplier_product_id)
+      : String((conversation as { product_id?: string }).product_id ?? "");
+
   revalidatePath("/mercado-oculto");
-  revalidatePath(`/mercado-oculto/producto/${productId}`);
+  if (supplierProductId) {
+    revalidatePath(`/mercado-oculto/producto/${supplierProductId}`);
+  }
   revalidatePath("/mercado-oculto/conversaciones");
 
   return { message: mapMessage(inserted as Record<string, unknown>) };
@@ -217,7 +230,7 @@ export async function listMyMercadoConversations(): Promise<
   const { data, error } = await admin
     .from("mercado_conversations")
     .select(
-      "id, product_id, store_id, seller_user_id, buyer_user_id, created_at, updated_at",
+      "id, product_id, supplier_product_id, seller_user_id, buyer_user_id, created_at, updated_at",
     )
     .or(`buyer_user_id.eq.${user.id},seller_user_id.eq.${user.id}`)
     .order("updated_at", { ascending: false })
@@ -228,29 +241,36 @@ export async function listMyMercadoConversations(): Promise<
   const rows = (data as Record<string, unknown>[] | null) ?? [];
   if (rows.length === 0) return { conversations: [] };
 
-  const productIds = [...new Set(rows.map((row) => String(row.product_id)))];
-  const storeIds = [...new Set(rows.map((row) => String(row.store_id)))];
+  const supplierProductIds = [
+    ...new Set(
+      rows
+        .map((row) =>
+          typeof row.supplier_product_id === "string"
+            ? row.supplier_product_id
+            : null,
+        )
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
   const conversationIds = rows.map((row) => String(row.id));
 
-  const [{ data: products }, { data: stores }, { data: messages }] =
-    await Promise.all([
-      admin.from("products").select("id, name").in("id", productIds),
-      admin.from("stores").select("id, name").in("id", storeIds),
-      admin
-        .from("mercado_messages")
-        .select("conversation_id, body, created_at")
-        .in("conversation_id", conversationIds)
-        .order("created_at", { ascending: false }),
-    ]);
+  const [{ data: products }, { data: messages }] = await Promise.all([
+    supplierProductIds.length
+      ? admin
+          .from("supplier_products")
+          .select("id, title")
+          .in("id", supplierProductIds)
+      : Promise.resolve({ data: [] }),
+    admin
+      .from("mercado_messages")
+      .select("conversation_id, body, created_at")
+      .in("conversation_id", conversationIds)
+      .order("created_at", { ascending: false }),
+  ]);
 
   const productNameById = new Map(
-    ((products as Array<{ id: string; name: string }> | null) ?? []).map(
-      (row) => [row.id, row.name],
-    ),
-  );
-  const storeNameById = new Map(
-    ((stores as Array<{ id: string; name: string }> | null) ?? []).map(
-      (row) => [row.id, row.name],
+    ((products as Array<{ id: string; title: string }> | null) ?? []).map(
+      (row) => [row.id, row.title],
     ),
   );
 
@@ -269,16 +289,19 @@ export async function listMyMercadoConversations(): Promise<
     const role: "buyer" | "seller" =
       sellerUserId === user.id ? "seller" : "buyer";
     const id = String(row.id);
+    const productId =
+      typeof row.supplier_product_id === "string" && row.supplier_product_id
+        ? row.supplier_product_id
+        : String(row.product_id ?? "");
     return {
       id,
-      productId: String(row.product_id),
-      storeId: String(row.store_id),
+      productId,
       sellerUserId,
       buyerUserId: String(row.buyer_user_id),
       createdAt: String(row.created_at ?? ""),
       updatedAt: String(row.updated_at ?? ""),
-      productName: productNameById.get(String(row.product_id)) ?? null,
-      storeName: storeNameById.get(String(row.store_id)) ?? null,
+      productName: productNameById.get(productId) ?? null,
+      storeName: "Mayorista Alcéntimo",
       role,
       lastMessagePreview: lastByConversation.get(id) ?? null,
     };
