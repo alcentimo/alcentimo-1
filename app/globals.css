@@ -9097,8 +9097,7 @@ button.customer-promo-banner-link {
 .design-studio-immersive-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  /* Preview row must fit the phone mockup; keep sidebar scrollable below. */
-  grid-template-rows: minmax(14rem, min(46dvh, 22rem)) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 0;
   min-height: 0;
   width: 100%;
@@ -9107,19 +9106,14 @@ button.customer-promo-banner-link {
   overflow: hidden;
 }
 
-@media (max-width: 1023px) {
-  .design-studio-immersive-preview {
-    order: -1;
-    min-height: 0;
-    min-width: 0;
-    max-width: 100%;
-  }
+.design-studio-immersive--compact .design-studio-immersive-body {
+  grid-template-rows: minmax(0, 1fr);
+}
 
-  .design-studio-immersive-sidebar {
-    min-height: 0;
-    min-width: 0;
-    max-width: 100%;
-  }
+.design-studio-immersive--compact .design-studio-immersive-sidebar {
+  @apply border-b-0;
+  /* Leave room for the floating preview CTA */
+  padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 1024px) {
@@ -9134,13 +9128,14 @@ button.customer-promo-banner-link {
 }
 
 .design-studio-immersive-sidebar {
-  @apply flex min-h-0 min-w-0 max-w-full flex-col gap-4 overflow-x-hidden overflow-y-auto border-b border-zinc-200/90 bg-white px-3 py-4 sm:px-5 dark:border-zinc-800 dark:bg-zinc-950;
+  @apply flex min-h-0 min-w-0 max-w-full flex-col gap-4 overflow-x-hidden overflow-y-auto overscroll-contain border-b border-zinc-200/90 bg-white px-3 py-4 sm:px-5 dark:border-zinc-800 dark:bg-zinc-950;
 }
 
 @media (min-width: 1024px) {
   .design-studio-immersive-sidebar {
     @apply border-b-0 border-r px-5;
     max-height: none;
+    padding-bottom: 1rem;
   }
 }
 
@@ -9186,32 +9181,6 @@ button.customer-promo-banner-link {
   min-height: 0;
 }
 
-/* Mobile / tablet: keep mockup fully inside the preview pane */
-@media (max-width: 1023px) {
-  .design-studio-immersive .design-studio-preview-meta {
-    @apply px-3 py-2;
-  }
-
-  .design-studio-immersive .design-studio-preview-frame {
-    padding: 0.5rem 0.75rem 0.75rem;
-  }
-
-  .design-studio-immersive .design-studio-phone {
-    width: auto;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    aspect-ratio: 9 / 19;
-    flex-shrink: 1;
-    min-width: 0;
-    min-height: 0;
-  }
-
-  .design-studio-immersive .design-reference-badge {
-    @apply right-2 top-2 px-2 py-0.5 text-[9px];
-  }
-}
-
 @media (min-width: 1024px) {
   .design-studio-immersive .design-studio-preview-frame {
     padding: 1.5rem 1.75rem 1.75rem;
@@ -9232,6 +9201,93 @@ button.customer-promo-banner-link {
     height: min(86dvh, 920px);
     max-height: min(100%, 920px);
   }
+}
+
+/* Floating CTA: open client preview on compact / phone layouts */
+.design-studio-preview-fab {
+  display: none;
+}
+
+.design-studio-immersive--compact .design-studio-preview-fab {
+  position: absolute;
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  display: inline-flex;
+  max-width: calc(100% - 1.5rem);
+  transform: translateX(-50%);
+  @apply items-center justify-center gap-2 rounded-full border border-emerald-600/20 bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/25 transition dark:border-emerald-500/30 dark:bg-emerald-600 dark:hover:bg-emerald-500;
+}
+
+.design-studio-immersive--compact .design-studio-preview-fab:active {
+  transform: translateX(-50%) scale(0.98);
+}
+
+.design-studio-immersive--preview-open .design-studio-preview-fab {
+  display: none;
+}
+
+/* Fullscreen client preview modal (compact layout) */
+.design-studio-mobile-preview-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f4f4f5;
+}
+
+:is(.dark) .design-studio-mobile-preview-modal {
+  background: #09090b;
+}
+
+.design-studio-mobile-preview-modal-header {
+  @apply flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200/90 bg-white/95 px-3 py-3 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/95;
+  padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+}
+
+.design-studio-mobile-preview-modal-close {
+  @apply inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800;
+}
+
+.design-studio-mobile-preview-modal-body {
+  @apply flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden;
+}
+
+.design-studio-mobile-preview-modal-body .design-studio-preview--immersive {
+  @apply flex h-full min-h-0 min-w-0 flex-col rounded-none border-0 bg-transparent;
+}
+
+.design-studio-mobile-preview-modal-body .design-studio-preview-meta {
+  @apply px-3 py-2;
+}
+
+.design-studio-mobile-preview-modal-body .design-studio-preview-frame {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  padding: 0.75rem 0.75rem 1rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.design-studio-mobile-preview-modal-body .design-studio-phone {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 9 / 19;
+  flex-shrink: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.design-studio-mobile-preview-modal-body .design-reference-badge {
+  @apply right-2 top-2 px-2 py-0.5 text-[9px];
 }
 
 .design-studio {
@@ -9267,15 +9323,7 @@ button.customer-promo-banner-link {
   display: none;
 }
 
-.design-studio-preview-fab {
-  display: none;
-}
-
 @media (max-width: 767px) {
-  .design-studio-preview-fab {
-    @apply fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-1/2 z-40 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-emerald-600/20 bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition active:scale-[0.98] dark:border-emerald-500/30 dark:bg-emerald-600;
-  }
-
   .design-studio-main--desktop {
     display: none;
   }

@@ -10,7 +10,16 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, Check, ChevronDown, Maximize2, Palette, Save } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  Eye,
+  Maximize2,
+  Palette,
+  Save,
+  X,
+} from "lucide-react";
 import { CatalogPrimaryColorField } from "@/components/dashboard/settings/CatalogPrimaryColorField";
 import { CatalogPromoBannerField } from "@/components/dashboard/settings/CatalogPromoBannerField";
 import { CatalogFaqField } from "@/components/dashboard/settings/CatalogFaqField";
@@ -252,6 +261,12 @@ export function DesignTab({
   const [openSection, setOpenSection] = useState<AccordionSection | null>("theme");
   const [studioOpen, setStudioOpen] = useState(true);
   const [portalReady, setPortalReady] = useState(false);
+  const [compactLayout, setCompactLayout] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(max-width: 1023px)").matches
+      : false,
+  );
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [isSaving, startSave] = useTransition();
   const colorSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -281,6 +296,20 @@ export function DesignTab({
 
   useEffect(() => {
     setPortalReady(true);
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 1023px)");
+    const sync = () => {
+      const compact = media.matches;
+      setCompactLayout(compact);
+      if (!compact) {
+        setMobilePreviewOpen(false);
+      }
+    };
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
   }, []);
 
   const persist = useCallback(
@@ -484,13 +513,16 @@ export function DesignTab({
   useEffect(() => {
     if (!studioOpen) return;
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setStudioOpen(false);
+      if (event.key !== "Escape") return;
+      if (mobilePreviewOpen) {
+        setMobilePreviewOpen(false);
+        return;
       }
+      setStudioOpen(false);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [studioOpen]);
+  }, [studioOpen, mobilePreviewOpen]);
 
   function setCheckoutMode(nextType: CheckoutType) {
     if (nextType === checkoutType) return;
@@ -563,6 +595,7 @@ export function DesignTab({
   function closeStudio() {
     clearPendingTimers();
     persist(designRef.current, "manual");
+    setMobilePreviewOpen(false);
     setStudioOpen(false);
   }
 
@@ -810,7 +843,11 @@ export function DesignTab({
     portalReady && studioOpen
       ? createPortal(
           <div
-            className="design-studio-immersive"
+            className={cn(
+              "design-studio-immersive",
+              compactLayout && "design-studio-immersive--compact",
+              mobilePreviewOpen && "design-studio-immersive--preview-open",
+            )}
             role="dialog"
             aria-modal="true"
             aria-labelledby="design-studio-immersive-title"
@@ -871,18 +908,71 @@ export function DesignTab({
                     Estilo y opciones
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                    {isFashionStore
-                      ? "Elige plantillas, colores y visibilidad con espacio amplio."
-                      : "Plantillas, color de marca y checkout en un panel cómodo."}
+                    {compactLayout
+                      ? "Ajusta plantillas, colores y visibilidad. Usa el botón de abajo para ver cómo queda el catálogo."
+                      : isFashionStore
+                        ? "Elige plantillas, colores y visibilidad con espacio amplio."
+                        : "Plantillas, color de marca y checkout en un panel cómodo."}
                   </p>
                 </div>
                 {controlsPanel}
               </aside>
 
-              <main className="design-studio-immersive-preview">
-                {previewPanel}
-              </main>
+              {!compactLayout ? (
+                <main className="design-studio-immersive-preview">
+                  {previewPanel}
+                </main>
+              ) : null}
             </div>
+
+            {compactLayout ? (
+              <>
+                <button
+                  type="button"
+                  className="design-studio-preview-fab"
+                  onClick={() => setMobilePreviewOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={mobilePreviewOpen}
+                >
+                  <Eye className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  Ver vista previa del cliente
+                </button>
+
+                {mobilePreviewOpen ? (
+                  <div
+                    className="design-studio-mobile-preview-modal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="design-studio-mobile-preview-title"
+                  >
+                    <header className="design-studio-mobile-preview-modal-header">
+                      <div className="min-w-0 flex-1">
+                        <h3
+                          id="design-studio-mobile-preview-title"
+                          className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50"
+                        >
+                          Vista previa del cliente
+                        </h3>
+                        <p className="mt-0.5 truncate text-xs text-zinc-500">
+                          Así verán el catálogo en el celular
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="design-studio-mobile-preview-modal-close"
+                        onClick={() => setMobilePreviewOpen(false)}
+                      >
+                        <X className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        Cerrar
+                      </button>
+                    </header>
+                    <div className="design-studio-mobile-preview-modal-body">
+                      {previewPanel}
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
           </div>,
           document.body,
         )
@@ -911,7 +1001,8 @@ export function DesignTab({
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-500">
             Abre el estudio a pantalla completa para elegir plantillas, colores y
-            opciones con una vista previa móvil grande, sin el menú lateral.
+            opciones. En el celular, la vista previa del cliente se abre cuando la
+            necesites, sin ocupar el panel de ajustes.
           </p>
           <dl className="design-studio-entry-meta">
             <div>
