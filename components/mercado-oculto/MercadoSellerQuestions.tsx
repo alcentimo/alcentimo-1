@@ -33,17 +33,20 @@ function saveQuestions(productId: string, questions: Question[]) {
   );
 }
 
-const AUTO_REPLY =
-  "Gracias por tu pregunta. Como Super Admin / Mayorista Oficial Alcéntimo te responderemos a la brevedad con disponibilidad, precios por volumen y condiciones de envío.";
+function buildAutoReply(supplierLabel: string) {
+  return `Gracias por tu pregunta. Como ${supplierLabel} te responderemos a la brevedad con disponibilidad, precios por volumen y condiciones de envío.`;
+}
 
 interface MercadoSellerQuestionsProps {
   productId: string;
   productName: string;
+  supplierLabel?: string;
 }
 
 export function MercadoSellerQuestions({
   productId,
   productName,
+  supplierLabel = "Mayorista Oficial Alcéntimo",
 }: MercadoSellerQuestionsProps) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [draft, setDraft] = useState("");
@@ -76,7 +79,7 @@ export function MercadoSellerQuestions({
     window.setTimeout(() => {
       const answered: Question = {
         ...question,
-        answer: AUTO_REPLY,
+        answer: buildAutoReply(supplierLabel),
         answeredAt: new Date().toISOString(),
       };
       setQuestions((prev) => {
@@ -96,8 +99,8 @@ export function MercadoSellerQuestions({
         <div>
           <h2 id="preguntas-vendedor">Preguntas al vendedor</h2>
           <p>
-            Consultá al Mayorista Oficial Alcéntimo sobre «{productName}». Las
-            respuestas se simulan en esta sesión para el Super Admin.
+            Consultá a {supplierLabel} sobre «{productName}». Las respuestas se
+            simulan en esta sesión para el Super Admin.
           </p>
         </div>
       </div>

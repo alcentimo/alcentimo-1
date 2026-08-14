@@ -9,6 +9,7 @@ import {
   SUPPLIER_PRODUCT_SELECT,
 } from "@/lib/mercado-oculto/catalog-cache";
 import { filterMercadoProducts } from "@/lib/mercado-oculto/filter-catalog";
+import { resolveMayoristaDisplayName } from "@/lib/mercado-oculto/supplier-labels";
 import { mapSupplierRowToMercadoCard, type MercadoProductCard } from "@/lib/mercado-oculto/types";
 import {
   getSupportAdminAllowlist,
@@ -96,10 +97,9 @@ async function mapCreatorLabel(userId: string): Promise<string> {
   const adminEmails = new Set(getSupportAdminAllowlist());
   const { data } = await admin.auth.admin.getUserById(userId);
   const email = normalizeSupportEmail(data.user?.email);
-  if (!email) return "Mayorista Oficial Alcéntimo";
-  if (adminEmails.has(email)) return "Alcéntimo · Super Admin";
-  const local = email.split("@")[0] ?? email;
-  return `Mayorista · ${local}`;
+  return resolveMayoristaDisplayName(data.user, {
+    isSupportAdmin: Boolean(email && adminEmails.has(email)),
+  });
 }
 
 /** Detalle de un producto mayorista oficial (Super Admin). */

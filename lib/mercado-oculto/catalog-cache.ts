@@ -6,6 +6,7 @@ import {
 } from "@/lib/support/admin-access";
 import { getSupplierAllowlist } from "@/lib/supplier/access";
 import { SUPPLIER_PRODUCT_CATEGORIES } from "@/lib/supplier/categories";
+import { resolveMayoristaDisplayName } from "@/lib/mercado-oculto/supplier-labels";
 import {
   mapSupplierRowToMercadoCard,
   type MercadoCatalogFacets,
@@ -77,16 +78,12 @@ async function mapCreatorLabels(
     creatorIds.map(async (id) => {
       const { data } = await admin.auth.admin.getUserById(id);
       const email = normalizeSupportEmail(data.user?.email);
-      if (!email) {
-        labels.set(id, "Mayorista Oficial Alcéntimo");
-        return;
-      }
-      if (adminEmails.has(email)) {
-        labels.set(id, "Alcéntimo · Super Admin");
-        return;
-      }
-      const local = email.split("@")[0] ?? email;
-      labels.set(id, `Mayorista · ${local}`);
+      labels.set(
+        id,
+        resolveMayoristaDisplayName(data.user, {
+          isSupportAdmin: Boolean(email && adminEmails.has(email)),
+        }),
+      );
     }),
   );
 
@@ -128,13 +125,17 @@ function buildFacets(
     }),
   ).filter((item) => item.count > 0);
 
+  // Todos los mayoristas con productos activos, ordenados por volumen.
   const suppliers: MercadoSupplierFacet[] = [...supplierCounts.entries()]
     .map(([id, count]) => ({
       id,
       label: labels.get(id) ?? "Mayorista Oficial Alcéntimo",
       count,
     }))
-    .sort((a, b) => b.count - a.count);
+    .sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.label.localeCompare(b.label, "es");
+    });
 
   return {
     categories,
@@ -180,13 +181,11 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
   ];
   const labels = await mapCreatorLabels(creatorSet);
   const facets = buildFacets(rows, labels);
-  const products = rows.map((row) =>
-    mapSupplierRowToMercadoCard(
-      row,
-      labels.get(String(row.created_by ?? "")) ??
-        "Mayorista Oficial Alcéntimo",
-    ),
-  );
+  const products = rows.map((row) => {
+    const createdBy = String(row.created_by ?? "");
+    const label = labels.get(createdBy) ?? "Mayorista Oficial Alcéntimo";
+    return mapSupplierRowToMercadoCard(row, label);
+  });
 
   return {
     products,
@@ -198,7 +197,7 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
 /** Catálogo completo cacheado (~60s) para navegación SPA sin pegarle a la DB. */
 export const getCachedMercadoCatalog = unstable_cache(
   async () => loadMercadoCatalogUncached(),
-  ["mercado-oculto-catalog-v1"],
+  ["mercado-oculto-catalog-v2"],
   { revalidate: 60, tags: [MERCADO_CATALOG_CACHE_TAG] },
 );
 

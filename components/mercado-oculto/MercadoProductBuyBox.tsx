@@ -15,6 +15,7 @@ interface MercadoProductBuyBoxProps {
   freeShipping?: boolean;
   availableStock: number;
   thumbUrl: string | null;
+  supplierUserId: string;
   supplierLabel: string;
 }
 
@@ -27,6 +28,7 @@ export function MercadoProductBuyBox({
   freeShipping = false,
   availableStock,
   thumbUrl,
+  supplierUserId,
   supplierLabel,
 }: MercadoProductBuyBoxProps) {
   const router = useRouter();
@@ -51,6 +53,7 @@ export function MercadoProductBuyBox({
       priceUsd,
       quantity,
       thumbUrl,
+      supplierUserId,
       supplierLabel,
       availableStock,
     });
@@ -65,6 +68,7 @@ export function MercadoProductBuyBox({
       priceUsd,
       quantity,
       thumbUrl,
+      supplierUserId,
       supplierLabel,
       availableStock,
     });

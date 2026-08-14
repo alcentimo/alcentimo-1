@@ -80,7 +80,7 @@ export function mapSupplierRowToMercadoCard(
     available_stock: Number(row.stock) || 0,
     created_at: String(row.created_at ?? ""),
     seller_user_id: String(row.created_by ?? ""),
-    store_name: "Mayorista Oficial Alcéntimo",
+    store_name: supplierLabel,
     supplier_label: supplierLabel,
     variants: normalizeSupplierProductVariants(row.variants),
   };

@@ -188,7 +188,15 @@ export function MercadoFiltersPanel({
             ))}
           </ul>
         </details>
-      ) : null}
+      ) : (
+        <details className="mercado-mp-filter-block" open>
+          <summary className="mercado-mp-filter-title">Proveedor</summary>
+          <p className="pt-2 text-xs text-zinc-500">
+            Los mayoristas aparecerán aquí automáticamente al publicar
+            productos activos.
+          </p>
+        </details>
+      )}
 
       {hasActive ? (
         <button
