@@ -8,7 +8,7 @@ type ActionResult<T extends object = object> = {
 } & Partial<T>;
 
 /**
- * Destino de gestión (solo Super Admin): ajustes de dropshipping.
+ * Destino de gestión (solo Super Admin): hub de proveedores mayoristas.
  */
 export async function resolveMercadoPublishDestination(): Promise<
   ActionResult<{ href: string }>
@@ -25,8 +25,8 @@ export async function resolveMercadoPublishDestination(): Promise<
   }
 
   if (!hasMercadoOcultoSuperAdminUser(user)) {
-    return { href: "/dashboard/catalogo?mercado_denied=not_listed" };
+    return { href: "/" };
   }
 
-  return { href: "/dashboard/ajustes?tab=dropship" };
+  return { href: "/proveedor/dashboard" };
 }

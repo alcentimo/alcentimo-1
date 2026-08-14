@@ -10,6 +10,7 @@ import {
   Store,
   Tag,
 } from "lucide-react";
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import type { AdminDashboardTab } from "@/lib/admin/dashboard-nav";
 import { cn } from "@/lib/cn";
@@ -116,7 +117,13 @@ export function AdminDashboardShell({
           })}
         </nav>
 
-        <div className="admin-dashboard-sidebar-footer">
+        <div className="admin-dashboard-sidebar-footer space-y-3">
+          <Link
+            href="/mercado-oculto"
+            className="flex w-full items-center justify-center rounded-xl bg-teal-700 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800"
+          >
+            Mercado oculto
+          </Link>
           <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
             <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" />
             Gestión centralizada

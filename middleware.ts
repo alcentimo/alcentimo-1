@@ -426,11 +426,9 @@ export async function middleware(request: NextRequest) {
       });
 
       const dashboardUrl = request.nextUrl.clone();
-      dashboardUrl.pathname = "/dashboard/catalogo";
-      dashboardUrl.searchParams.set(
-        "mercado_denied",
-        mercadoAccess.reason ?? "denied",
-      );
+      // Ruta oculta: no revelar el módulo a no-admins.
+      dashboardUrl.pathname = "/";
+      dashboardUrl.search = "";
       return NextResponse.redirect(dashboardUrl);
     }
 

@@ -14,9 +14,9 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
   if (products.length === 0) {
     return (
       <p className="mercado-empty">
-        Aún no hay productos de dropshipping en la vitrina. Cuando un
-        suscriptor integre productos de los mayoristas oficiales, aparecerán
-        aquí para revisión del Super Admin.
+        Aún no hay productos mayoristas. Carga productos desde el hub de
+        proveedores con la cuenta Super Admin o un mayorista asociado
+        (`SUPPLIER_EMAILS`).
       </p>
     );
   }
@@ -57,7 +57,7 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
                 </span>
                 <span className="mercado-card-cta">
                   <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                  Negociar
+                  Ver
                 </span>
               </div>
             </div>

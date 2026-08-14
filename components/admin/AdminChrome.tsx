@@ -32,6 +32,12 @@ export function AdminChrome({ email, children }: AdminChromeProps) {
               Resumen
             </Link>
             <Link
+              href="/mercado-oculto"
+              className="rounded-lg bg-teal-700 px-2.5 py-1.5 font-medium text-white hover:bg-teal-800"
+            >
+              Mercado oculto
+            </Link>
+            <Link
               href="/dashboard/catalogo"
               className="font-medium text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
             >

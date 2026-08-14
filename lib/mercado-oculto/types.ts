@@ -1,53 +1,40 @@
-import type { CatalogListItem } from "@/lib/database.types";
-import { PUBLIC_CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
-import {
-  normalizeDbPlan,
-  resolveSubscriptionStatus,
-} from "@/lib/plans/plan-activation";
+import { supplierCategoryLabel } from "@/lib/supplier/categories";
 
-export type MercadoProductCard = Pick<
-  CatalogListItem,
-  | "store_id"
-  | "store_slug"
-  | "store_name"
-  | "product_id"
-  | "product_slug"
-  | "product_name"
-  | "short_description"
-  | "price_usd"
-  | "thumb_url"
-  | "category_name"
-  | "available_stock"
-  | "created_at"
->;
-
-export function mapMercadoProductCard(
-  row: CatalogListItem,
-): MercadoProductCard {
-  return {
-    store_id: row.store_id,
-    store_slug: row.store_slug,
-    store_name: row.store_name,
-    product_id: row.product_id,
-    product_slug: row.product_slug,
-    product_name: row.product_name,
-    short_description: row.short_description,
-    price_usd: row.price_usd,
-    thumb_url: row.thumb_url,
-    category_name: row.category_name,
-    available_stock: row.available_stock,
-    created_at: row.created_at,
-  };
+/** Tarjeta de la vitrina interna (producto mayorista oficial). */
+export interface MercadoProductCard {
+  product_id: string;
+  product_name: string;
+  short_description: string | null;
+  price_usd: number;
+  thumb_url: string | null;
+  category_name: string;
+  available_stock: number;
+  created_at: string;
+  seller_user_id: string;
+  store_name: string;
 }
 
-export const MERCADO_CATALOG_SELECT = PUBLIC_CATALOG_LIST_SELECT;
-
-export function isPaidSubscriberProfile(row: {
-  plan?: string | null;
-  subscription_status?: string | null;
-}): boolean {
-  const plan = normalizeDbPlan(row.plan);
-  if (plan === "FREE") return false;
-  const status = resolveSubscriptionStatus(row.subscription_status);
-  return status === "active" || status === "provisional";
+export function mapSupplierRowToMercadoCard(
+  row: Record<string, unknown>,
+): MercadoProductCard {
+  return {
+    product_id: String(row.id),
+    product_name: String(row.title ?? ""),
+    short_description:
+      typeof row.description === "string" && row.description.trim()
+        ? row.description.trim()
+        : null,
+    price_usd: Number(row.base_price_usd) || 0,
+    thumb_url:
+      typeof row.image_url === "string" && row.image_url.trim()
+        ? row.image_url.trim()
+        : null,
+    category_name: supplierCategoryLabel(
+      typeof row.category === "string" ? row.category : null,
+    ),
+    available_stock: Number(row.stock) || 0,
+    created_at: String(row.created_at ?? ""),
+    seller_user_id: String(row.created_by ?? ""),
+    store_name: "Mayorista Alcéntimo",
+  };
 }
