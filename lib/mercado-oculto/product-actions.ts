@@ -1,6 +1,8 @@
 "use server";
 
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hasMercadoOcultoSuperAdminUser } from "@/lib/mercado-oculto/access";
 import {
   isPaidSubscriberProfile,
   mapMercadoProductCard,
@@ -13,6 +15,22 @@ type ActionResult<T extends object = object> = {
   error?: string;
 } & Partial<T>;
 
+async function requireMercadoSuperAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Debes iniciar sesión." } as const;
+  }
+  if (!hasMercadoOcultoSuperAdminUser(user)) {
+    return {
+      error:
+        "El mercado oculto es exclusivo del Administrador General de Alcéntimo.",
+    } as const;
+  }
+  return { user } as const;
+}
 /** Tiendas cuyo dueño tiene suscripción de pago (active/provisional). */
 export async function listPaidSubscriberStoreIds(): Promise<string[]> {
   const admin = createAdminClient();
@@ -126,11 +144,14 @@ async function assertMercadoDropshipProduct(
   return Boolean(supplierProduct);
 }
 
-/** Listado público: solo dropshipping integrado de suscriptores (sin login). */
+/** Listado interno: solo dropshipping integrado (Super Admin). */
 export async function listMercadoProducts(options?: {
   query?: string;
   limit?: number;
 }): Promise<ActionResult<{ products: MercadoProductCard[] }>> {
+  const gate = await requireMercadoSuperAdmin();
+  if ("error" in gate) return { error: gate.error };
+
   const storeIds = await listPaidSubscriberStoreIds();
   if (storeIds.length === 0) {
     return { products: [] };
@@ -170,7 +191,7 @@ export async function listMercadoProducts(options?: {
   return { products };
 }
 
-/** Detalle público de un producto dropshipping del mercado (sin login). */
+/** Detalle interno de un producto dropshipping (Super Admin). */
 export async function getMercadoProduct(
   productId: string,
 ): Promise<
@@ -180,6 +201,9 @@ export async function getMercadoProduct(
     sellerStoreName: string;
   }>
 > {
+  const gate = await requireMercadoSuperAdmin();
+  if ("error" in gate) return { error: gate.error };
+
   if (!productId.trim()) return { error: "Producto inválido." };
 
   const admin = createAdminClient();

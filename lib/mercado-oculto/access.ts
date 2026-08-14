@@ -1,35 +1,45 @@
-import type { Profile } from "@/lib/database.types";
 import {
-  normalizeDbPlan,
-  resolveSubscriptionStatus,
-} from "@/lib/plans/plan-activation";
+  checkSupportAdminAccess,
+  resolveAuthEmail,
+  type SupportAdminDenyReason,
+} from "@/lib/support/admin-access";
+import type { User } from "@supabase/supabase-js";
 
 /**
- * Acceso al mercado oculto: suscripción de pago activa o provisional
- * (PRO / BUSINESS / ENTERPRISE). No incluye FREE ni solo trial.
+ * Acceso exclusivo al mercado oculto: Administrador General (Super Admin)
+ * vía allowlist SUPPORT_ADMIN_EMAILS. No disponible para suscriptores ni clientes.
  */
-export function hasMercadoOcultoSubscription(
-  profile: Pick<Profile, "plan" | "subscription_status"> | null | undefined,
+export function hasMercadoOcultoSuperAdminAccess(
+  email: string | null | undefined,
 ): boolean {
-  if (!profile) return false;
-  const plan = normalizeDbPlan(profile.plan);
-  if (plan === "FREE") return false;
-  const status = resolveSubscriptionStatus(profile.subscription_status);
-  return status === "active" || status === "provisional";
+  return checkSupportAdminAccess(email).ok;
+}
+
+export function hasMercadoOcultoSuperAdminUser(
+  user:
+    | Pick<User, "email" | "user_metadata">
+    | { email?: string | null }
+    | null
+    | undefined,
+): boolean {
+  if (!user) return false;
+  if ("user_metadata" in user) {
+    return hasMercadoOcultoSuperAdminAccess(
+      resolveAuthEmail(user as Pick<User, "email" | "user_metadata">),
+    );
+  }
+  return hasMercadoOcultoSuperAdminAccess(user.email);
 }
 
 export type MercadoAccessDenialReason =
   | "unauthenticated"
-  | "no_subscription"
-  | "free_plan";
+  | SupportAdminDenyReason;
 
 export function resolveMercadoOcultoDenial(
-  profile: Pick<Profile, "plan" | "subscription_status"> | null | undefined,
-  authenticated: boolean,
+  user: Pick<User, "email" | "user_metadata"> | null | undefined,
 ): MercadoAccessDenialReason | null {
-  if (!authenticated) return "unauthenticated";
-  if (!profile) return "no_subscription";
-  if (normalizeDbPlan(profile.plan) === "FREE") return "free_plan";
-  if (!hasMercadoOcultoSubscription(profile)) return "no_subscription";
-  return null;
+  if (!user) return "unauthenticated";
+  const check = checkSupportAdminAccess(resolveAuthEmail(user));
+  if (check.ok) return null;
+  return check.reason ?? "not_listed";
 }

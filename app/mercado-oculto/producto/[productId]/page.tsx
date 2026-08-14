@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUserWithPlan } from "@/lib/auth/get-user-profile";
-import { hasMercadoOcultoSubscription } from "@/lib/mercado-oculto/access";
+import { resolveMercadoOcultoDenial } from "@/lib/mercado-oculto/access";
 import { getMercadoProduct } from "@/lib/mercado-oculto/product-actions";
 import { MercadoChatPanel } from "@/components/mercado-oculto/MercadoChatPanel";
 import { formatUsd } from "@/lib/format";
@@ -18,7 +18,22 @@ export default async function MercadoProductoPage({
   searchParams: Promise<{ c?: string | string[] }>;
 }) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const denial = resolveMercadoOcultoDenial(user);
+  if (denial === "unauthenticated") {
+    redirect("/dashboard/login?next=/mercado-oculto");
+  }
+  if (denial) {
+    redirect(`/dashboard/catalogo?mercado_denied=${denial}`);
+  }
+
   const authUser = await getAuthUserWithPlan(supabase);
+  if (!authUser) {
+    redirect("/dashboard/login?next=/mercado-oculto");
+  }
 
   const { productId } = await params;
   const search = await searchParams;
@@ -45,17 +60,7 @@ export default async function MercadoProductoPage({
   }
 
   const product = result.product;
-  const isOwnProduct = Boolean(
-    authUser && result.sellerUserId === authUser.id,
-  );
-  const canChat = Boolean(
-    authUser && hasMercadoOcultoSubscription(authUser.profile),
-  );
-  const accessMode = !authUser
-    ? "anonymous"
-    : canChat
-      ? "subscriber"
-      : "no_subscription";
+  const isOwnProduct = result.sellerUserId === authUser.id;
 
   return (
     <div className="space-y-6">
@@ -103,18 +108,17 @@ export default async function MercadoProductoPage({
               {formatUsd(product.price_usd)}
             </p>
             <p className="text-xs leading-relaxed text-zinc-500">
-              Referencia de precio de la tienda. El acuerdo final (pago y envío)
-              se coordina entre ustedes por el chat; Alcéntimo no intermedia
-              fondos.
+              Vista interna Super Admin. Producto dropshipping integrado desde
+              mayoristas oficiales.
             </p>
           </div>
         </section>
 
         <MercadoChatPanel
           productId={product.product_id}
-          currentUserId={authUser?.id ?? null}
+          currentUserId={authUser.id}
           isOwnProduct={isOwnProduct}
-          accessMode={accessMode}
+          accessMode="subscriber"
           initialConversationId={conversationId}
         />
       </div>

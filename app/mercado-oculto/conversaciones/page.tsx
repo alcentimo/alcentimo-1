@@ -1,11 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getAuthUserWithPlan } from "@/lib/auth/get-user-profile";
-import {
-  hasMercadoOcultoSubscription,
-  resolveMercadoOcultoDenial,
-} from "@/lib/mercado-oculto/access";
+import { resolveMercadoOcultoDenial } from "@/lib/mercado-oculto/access";
 import { listMyMercadoConversations } from "@/lib/mercado-oculto/chat-actions";
 
 export const dynamic = "force-dynamic";
@@ -20,15 +16,16 @@ function formatDate(value: string): string {
 
 export default async function MercadoConversacionesPage() {
   const supabase = await createClient();
-  const authUser = await getAuthUserWithPlan(supabase);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!authUser) {
+  const denial = resolveMercadoOcultoDenial(user);
+  if (denial === "unauthenticated") {
     redirect("/dashboard/login?next=/mercado-oculto/conversaciones");
   }
-
-  const denial = resolveMercadoOcultoDenial(authUser.profile, true);
-  if (denial || !hasMercadoOcultoSubscription(authUser.profile)) {
-    redirect("/dashboard/planes?mercado_denied=1");
+  if (denial) {
+    redirect(`/dashboard/catalogo?mercado_denied=${denial}`);
   }
 
   const listed = await listMyMercadoConversations();
@@ -36,11 +33,11 @@ export default async function MercadoConversacionesPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <p className="mercado-section-label">Negociación</p>
-        <h1 className="mercado-heading">Tus chats</h1>
+        <p className="mercado-section-label">Solo Super Admin</p>
+        <h1 className="mercado-heading">Chats del mercado</h1>
         <p className="mercado-subheading">
-          Conversaciones como interesado o como dueño de tienda. Sin pagos ni
-          carrito en la plataforma.
+          Conversaciones internas asociadas a esta vista. No disponible para
+          suscriptores ni clientes.
         </p>
       </header>
 
@@ -52,11 +49,11 @@ export default async function MercadoConversacionesPage() {
 
       {(listed.conversations ?? []).length === 0 && !listed.error ? (
         <p className="mercado-empty">
-          Todavía no tienes chats. Abre un producto en la{" "}
+          Todavía no hay chats. Abre un producto en la{" "}
           <Link href="/mercado-oculto" className="font-medium underline">
             vitrina
-          </Link>{" "}
-          para iniciar una negociación.
+          </Link>
+          .
         </p>
       ) : (
         <ul className="mercado-chat-list">
@@ -72,7 +69,7 @@ export default async function MercadoConversacionesPage() {
                   </p>
                   <p className="mt-0.5 truncate text-xs text-zinc-500">
                     {conversation.storeName ?? "Tienda"} ·{" "}
-                    {conversation.role === "seller" ? "Tu producto" : "Interesado"}
+                    {conversation.role === "seller" ? "Vendedor" : "Interesado"}
                   </p>
                   {conversation.lastMessagePreview ? (
                     <p className="mt-1 truncate text-sm text-zinc-600 dark:text-zinc-300">
