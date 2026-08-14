@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Package } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
 
@@ -13,30 +13,35 @@ interface MercadoProductGridProps {
 export function MercadoProductGrid({ products }: MercadoProductGridProps) {
   if (products.length === 0) {
     return (
-      <p className="mercado-empty">
-        Aún no hay productos mayoristas. Carga productos desde el hub de
-        proveedores con la cuenta Super Admin o un mayorista asociado
-        (`SUPPLIER_EMAILS`).
-      </p>
+      <div className="mercado-mp-empty">
+        <Package className="h-8 w-8 text-teal-700/70" aria-hidden="true" />
+        <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
+          No hay productos con estos filtros
+        </p>
+        <p className="mt-1 max-w-md text-sm text-zinc-500">
+          Prueba otra categoría o carga productos desde el hub de proveedores
+          con la cuenta Super Admin / mayorista asociado.
+        </p>
+      </div>
     );
   }
 
   return (
-    <ul className="mercado-grid">
+    <ul className="mercado-mp-grid">
       {products.map((product) => (
         <li key={product.product_id}>
-          <Link
-            href={`/mercado-oculto/producto/${product.product_id}`}
-            className="mercado-card"
-          >
-            <div className="mercado-card-media">
+          <article className="mercado-mp-card">
+            <Link
+              href={`/mercado-oculto/producto/${product.product_id}`}
+              className="mercado-mp-card-media"
+            >
               {product.thumb_url ? (
                 <Image
                   src={product.thumb_url}
                   alt={product.product_name}
                   fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 50vw, 220px"
+                  className="object-cover transition duration-300 group-hover:scale-[1.04]"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
                   unoptimized
                 />
               ) : (
@@ -44,24 +49,43 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
                   {product.product_name.slice(0, 1).toUpperCase()}
                 </div>
               )}
-            </div>
-            <div className="mercado-card-body">
-              <p className="mercado-card-store">{product.store_name}</p>
-              <h2 className="mercado-card-title">{product.product_name}</h2>
-              {product.category_name ? (
-                <p className="mercado-card-meta">{product.category_name}</p>
-              ) : null}
-              <div className="mercado-card-footer">
-                <span className="mercado-card-price">
-                  {formatUsd(product.price_usd)}
-                </span>
-                <span className="mercado-card-cta">
+              <span className="mercado-mp-badge">Mayorista Oficial Alcéntimo</span>
+            </Link>
+
+            <div className="mercado-mp-card-body">
+              <p className="mercado-mp-card-meta">
+                {product.category_name}
+                <span aria-hidden="true"> · </span>
+                Stock {product.available_stock}
+              </p>
+              <Link
+                href={`/mercado-oculto/producto/${product.product_id}`}
+                className="mercado-mp-card-title"
+              >
+                {product.product_name}
+              </Link>
+              <p className="mercado-mp-card-supplier">{product.supplier_label}</p>
+              <p className="mercado-mp-card-price">
+                <span className="mercado-mp-card-price-label">Mayorista</span>
+                {formatUsd(product.price_usd)}
+              </p>
+              <div className="mercado-mp-card-actions">
+                <Link
+                  href={`/mercado-oculto/producto/${product.product_id}`}
+                  className="mercado-mp-card-btn"
+                >
+                  Ver detalles
+                </Link>
+                <Link
+                  href={`/mercado-oculto/producto/${product.product_id}#negociar`}
+                  className="mercado-mp-card-btn-secondary"
+                >
                   <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                  Ver
-                </span>
+                  Contactar
+                </Link>
               </div>
             </div>
-          </Link>
+          </article>
         </li>
       ))}
     </ul>
