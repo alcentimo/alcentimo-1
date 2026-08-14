@@ -15,8 +15,8 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
     return (
       <p className="mercado-empty">
         Aún no hay productos de dropshipping en la vitrina. Cuando un
-        suscriptor integre productos de los mayoristas oficiales de Alcéntimo,
-        aparecerán aquí.
+        suscriptor integre productos de los mayoristas oficiales, aparecerán
+        aquí para revisión del Super Admin.
       </p>
     );
   }

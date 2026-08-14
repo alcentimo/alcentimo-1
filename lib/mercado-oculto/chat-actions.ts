@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUserWithPlan } from "@/lib/auth/get-user-profile";
-import { hasMercadoOcultoSubscription } from "@/lib/mercado-oculto/access";
+import { hasMercadoOcultoSuperAdminUser } from "@/lib/mercado-oculto/access";
 import { getMercadoProduct } from "@/lib/mercado-oculto/product-actions";
 
 type ActionResult<T extends object = object> = {
@@ -39,10 +39,10 @@ async function requireMercadoUser() {
   if (!authUser) {
     return { error: "Debes iniciar sesión." } as const;
   }
-  if (!hasMercadoOcultoSubscription(authUser.profile)) {
+  if (!hasMercadoOcultoSuperAdminUser(authUser)) {
     return {
       error:
-        "Para chatear o publicar en el mercado oculto necesitas una suscripción activa de Alcéntimo.",
+        "El mercado oculto es exclusivo del Administrador General de Alcéntimo.",
     } as const;
   }
   return { user: authUser } as const;
