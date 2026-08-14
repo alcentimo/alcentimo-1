@@ -44,6 +44,7 @@ import { normalizeCustomDomain, isPlatformCatalogHost } from "@/lib/domains/cust
 const DASHBOARD_PREFIX = "/dashboard";
 const ADMIN_PREFIX = "/admin";
 const PROVEEDOR_PREFIX = "/proveedor";
+const MERCADO_OCULTO_PREFIX = "/mercado-oculto";
 const DASHBOARD_LOGIN = "/dashboard/login";
 const REGISTER_PATH = "/register";
 const RECOVER_PASSWORD_PATH = "/dashboard/recuperar-contrasena";
@@ -248,6 +249,7 @@ export async function middleware(request: NextRequest) {
   const isDashboard = pathname.startsWith(DASHBOARD_PREFIX);
   const isAdminRoute = pathname.startsWith(ADMIN_PREFIX);
   const isProveedorRoute = pathname.startsWith(PROVEEDOR_PREFIX);
+  const isMercadoOcultoRoute = pathname.startsWith(MERCADO_OCULTO_PREFIX);
   const isRegisterRoute = pathname === REGISTER_PATH;
   const customerAccountPath = parseCustomerAccountPath(pathname, effectiveStoreSlug);
   const isCustomerAccountRoute = Boolean(customerAccountPath);
@@ -435,6 +437,17 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
+  if (isMercadoOcultoRoute) {
+    if (!authenticatedUser) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = DASHBOARD_LOGIN;
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    return supabaseResponse;
+  }
+
   if (isActivar && authenticatedUser) {
     const role = await getMerchantStoreRole(supabase, authenticatedUser.id);
     if (role && role !== "owner") {
@@ -563,6 +576,11 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(redirectUrl);
       }
 
+      if (next?.startsWith(MERCADO_OCULTO_PREFIX)) {
+        applySafeInternalNextRedirect(redirectUrl, next, "/mercado-oculto");
+        return NextResponse.redirect(redirectUrl);
+      }
+
       const hasMerchantStore = await userHasMerchantStore(
         supabase,
         authenticatedUser.id,
@@ -575,6 +593,7 @@ export async function middleware(request: NextRequest) {
             (next.startsWith(DASHBOARD_PREFIX) ||
               next.startsWith(ADMIN_PREFIX) ||
               next.startsWith(PROVEEDOR_PREFIX) ||
+              next.startsWith(MERCADO_OCULTO_PREFIX) ||
               next.startsWith(DASHBOARD_INVITATION_PATH))
             ? next
             : null,
