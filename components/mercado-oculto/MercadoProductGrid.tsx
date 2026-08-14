@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { MessageCircle, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
 
@@ -14,13 +14,13 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
   if (products.length === 0) {
     return (
       <div className="mercado-mp-empty">
-        <Package className="h-8 w-8 text-teal-700/70" aria-hidden="true" />
-        <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
+        <Package className="h-8 w-8 text-[#125699]/70" aria-hidden="true" />
+        <p className="mt-3 text-sm font-medium text-zinc-800">
           No hay productos con estos filtros
         </p>
         <p className="mt-1 max-w-md text-sm text-zinc-500">
-          Prueba otra categoría o carga productos desde el hub de proveedores
-          con la cuenta Super Admin / mayorista asociado.
+          Probá otra categoría o cargá productos desde el hub de proveedores con
+          la cuenta Super Admin / mayorista asociado.
         </p>
       </div>
     );
@@ -65,23 +65,13 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
                 {product.product_name}
               </Link>
               <p className="mercado-mp-card-supplier">{product.supplier_label}</p>
-              <p className="mercado-mp-card-price">
-                <span className="mercado-mp-card-price-label">Mayorista</span>
-                {formatUsd(product.price_usd)}
-              </p>
+              <p className="mercado-mp-card-price">{formatUsd(product.price_usd)}</p>
               <div className="mercado-mp-card-actions">
                 <Link
                   href={`/mercado-oculto/producto/${product.product_id}`}
                   className="mercado-mp-card-btn"
                 >
                   Ver detalles
-                </Link>
-                <Link
-                  href={`/mercado-oculto/producto/${product.product_id}#negociar`}
-                  className="mercado-mp-card-btn-secondary"
-                >
-                  <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                  Contactar
                 </Link>
               </div>
             </div>

@@ -75,13 +75,13 @@ export default async function MercadoOcultoPage({
       <div className="mercado-mp-results">
         <div className="mercado-mp-results-head">
           <div>
-            <p className="mercado-section-label">Marketplace B2B</p>
+            <p className="mercado-section-label">Marketplace mayorista</p>
             <h1 className="mercado-heading text-xl sm:text-2xl">
-              Catálogo mayorista
+              Resultados
             </h1>
             <p className="mercado-subheading mt-1">
-              Precios B2B del Mayorista Oficial Alcéntimo. Filtrá por categoría,
-              proveedor o rango de precio.
+              Comprá al Mayorista Oficial Alcéntimo con la experiencia de un
+              marketplace familiar: filtrá, compará y agregá al carrito.
             </p>
           </div>
           <p className="text-sm text-zinc-500">

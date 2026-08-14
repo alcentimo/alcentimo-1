@@ -7,6 +7,8 @@ import { getAuthUserWithPlan } from "@/lib/auth/get-user-profile";
 import { hasMercadoOcultoSuperAdminUser } from "@/lib/mercado-oculto/access";
 import { getMercadoProduct } from "@/lib/mercado-oculto/product-actions";
 import { MercadoChatPanel } from "@/components/mercado-oculto/MercadoChatPanel";
+import { MercadoProductBuyBox } from "@/components/mercado-oculto/MercadoProductBuyBox";
+import { MercadoSellerQuestions } from "@/components/mercado-oculto/MercadoSellerQuestions";
 import { formatUsd } from "@/lib/format";
 import { supplierVariantAttributeLabel } from "@/lib/supplier/variants";
 
@@ -66,9 +68,13 @@ export default async function MercadoProductoPage({
 
   return (
     <div className="mercado-mp-detail">
-      <Link href="/mercado-oculto" className="mercado-back-link">
-        ← Volver al catálogo
-      </Link>
+      <nav className="mercado-ml-breadcrumb" aria-label="Navegación">
+        <Link href="/mercado-oculto">Catálogo</Link>
+        <span aria-hidden="true">›</span>
+        <span>{product.category_name}</span>
+        <span aria-hidden="true">›</span>
+        <span className="truncate">{product.product_name}</span>
+      </nav>
 
       <div className="mercado-mp-detail-grid">
         <section className="mercado-mp-detail-gallery">
@@ -117,25 +123,25 @@ export default async function MercadoProductoPage({
             {product.category_name} · {product.supplier_label}
           </p>
           <h1 className="mercado-mp-detail-title">{product.product_name}</h1>
-          <p className="mercado-mp-detail-price">{formatUsd(product.price_usd)}</p>
-          <p className="text-sm text-zinc-500">Precio mayorista (costo base)</p>
 
           <div className="mercado-mp-detail-stock">
-            <Boxes className="h-4 w-4 text-teal-700" aria-hidden="true" />
+            <Boxes className="h-4 w-4 text-[#125699]" aria-hidden="true" />
             <span>
               Stock disponible:{" "}
-              <strong className="tabular-nums text-zinc-900 dark:text-zinc-50">
+              <strong className="tabular-nums text-zinc-900">
                 {product.available_stock}
               </strong>
             </span>
           </div>
 
-          {product.short_description ? (
-            <div className="mercado-mp-detail-block">
-              <h2>Descripción</h2>
-              <p>{product.short_description}</p>
-            </div>
-          ) : null}
+          <MercadoProductBuyBox
+            productId={product.product_id}
+            productName={product.product_name}
+            priceUsd={product.price_usd}
+            availableStock={product.available_stock}
+            thumbUrl={product.thumb_url}
+            supplierLabel={product.supplier_label}
+          />
 
           {product.variants.options.length > 0 ? (
             <div className="mercado-mp-detail-block">
@@ -161,14 +167,29 @@ export default async function MercadoProductoPage({
             </div>
           ) : null}
 
-          <a href="#negociar" className="mercado-mp-detail-cta">
+          <a href="#preguntas" className="mercado-mp-detail-cta-secondary">
             <MessageCircle className="h-4 w-4" aria-hidden="true" />
-            Iniciar chat / negociación
+            Preguntar al vendedor
           </a>
         </section>
       </div>
 
+      {product.short_description ? (
+        <div className="mercado-mp-detail-block mercado-ml-description">
+          <h2>Descripción</h2>
+          <p>{product.short_description}</p>
+        </div>
+      ) : null}
+
+      <div id="preguntas" className="scroll-mt-28">
+        <MercadoSellerQuestions
+          productId={product.product_id}
+          productName={product.product_name}
+        />
+      </div>
+
       <div id="negociar" className="mercado-mp-detail-chat">
+        <h2 className="mercado-ml-chat-heading">Chat / negociación directa</h2>
         <MercadoChatPanel
           productId={product.product_id}
           currentUserId={authUser.id}

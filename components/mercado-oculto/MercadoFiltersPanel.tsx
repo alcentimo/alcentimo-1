@@ -38,15 +38,13 @@ export function MercadoFiltersPanel({
   return (
     <aside className="mercado-mp-filters" aria-label="Filtros del catálogo">
       <div className="mercado-mp-filters-head">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-          Filtros
-        </h2>
-        <p className="text-xs text-zinc-500">{resultCount} productos</p>
+        <h2>Filtros</h2>
+        <p>{resultCount} productos</p>
       </div>
 
-      <section className="mercado-mp-filter-block">
-        <h3 className="mercado-mp-filter-title">Precio (USD)</h3>
-        <div className="grid grid-cols-2 gap-2">
+      <details className="mercado-mp-filter-block" open>
+        <summary className="mercado-mp-filter-title">Precio (USD)</summary>
+        <div className="grid grid-cols-2 gap-2 pt-2">
           <label className="mercado-mp-filter-field">
             <span>Mín.</span>
             <input
@@ -85,13 +83,13 @@ export function MercadoFiltersPanel({
             })
           }
         >
-          Aplicar precio
+          Aplicar
         </button>
-      </section>
+      </details>
 
-      <section className="mercado-mp-filter-block">
-        <h3 className="mercado-mp-filter-title">Categoría</h3>
-        <ul className="mercado-mp-filter-list">
+      <details className="mercado-mp-filter-block" open>
+        <summary className="mercado-mp-filter-title">Categorías</summary>
+        <ul className="mercado-mp-filter-list pt-1">
           <li>
             <button
               type="button"
@@ -131,12 +129,12 @@ export function MercadoFiltersPanel({
             </li>
           ))}
         </ul>
-      </section>
+      </details>
 
       {facets.suppliers.length > 0 ? (
-        <section className="mercado-mp-filter-block">
-          <h3 className="mercado-mp-filter-title">Proveedor mayorista</h3>
-          <ul className="mercado-mp-filter-list">
+        <details className="mercado-mp-filter-block" open>
+          <summary className="mercado-mp-filter-title">Proveedor</summary>
+          <ul className="mercado-mp-filter-list pt-1">
             <li>
               <button
                 type="button"
@@ -176,7 +174,7 @@ export function MercadoFiltersPanel({
               </li>
             ))}
           </ul>
-        </section>
+        </details>
       ) : null}
 
       {(currentMin ||

@@ -13168,13 +13168,21 @@ button.catalog-profile-footer-link {
   @apply mt-0.5 text-base font-semibold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50;
 }
 
-/* ——— Mercado oculto (directorio privado de suscriptores) ——— */
+/* ——— Mercado oculto (directorio privado · estilo marketplace) ——— */
 .mercado-shell {
-  @apply min-h-dvh bg-[linear-gradient(165deg,#f0fdfa_0%,#f8fafc_34%,#f1f5f9_100%)] dark:bg-[linear-gradient(165deg,#134e4a22_0%,#09090b_36%,#09090b_100%)];
+  --ml-blue: #125699;
+  --ml-blue-hover: #0e4780;
+  --ml-blue-soft: #e8f1f8;
+  --ml-ink: #333333;
+  --ml-muted: #666666;
+  --ml-border: #e6e6e6;
+  --ml-page: #ededed;
+  @apply min-h-dvh text-[var(--ml-ink)];
+  background: var(--ml-page);
 }
 
 .mercado-header {
-  @apply sticky top-0 z-30 border-b border-teal-200/70 bg-white/90 backdrop-blur-md dark:border-teal-900/40 dark:bg-zinc-950/90;
+  @apply sticky top-0 z-30 border-b border-[var(--ml-border)] bg-white;
 }
 
 .mercado-header-inner {
@@ -13182,23 +13190,23 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-brand-mark {
-  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-700 text-sm font-bold text-white shadow-md shadow-teal-600/20;
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[var(--ml-blue)] text-sm font-bold text-white shadow-sm;
 }
 
 .mercado-eyebrow {
-  @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-800 dark:text-teal-400;
+  @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ml-blue)];
 }
 
 .mercado-title {
-  @apply truncate text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+  @apply truncate text-sm font-semibold tracking-tight text-[var(--ml-ink)];
 }
 
 .mercado-nav-link {
-  @apply inline-flex items-center rounded-lg px-2.5 py-1.5 text-sm font-medium text-zinc-600 transition hover:bg-teal-50 hover:text-teal-900 dark:text-zinc-400 dark:hover:bg-teal-950/40 dark:hover:text-teal-200;
+  @apply inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-[var(--ml-muted)] transition hover:bg-[var(--ml-blue-soft)] hover:text-[var(--ml-blue)];
 }
 
 .mercado-nav-link-active {
-  @apply bg-teal-50 text-teal-900 dark:bg-teal-950/50 dark:text-teal-200;
+  @apply bg-[var(--ml-blue-soft)] text-[var(--ml-blue)];
 }
 
 .mercado-main {
@@ -13206,23 +13214,23 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-section-label {
-  @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-800 dark:text-teal-400;
+  @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ml-blue)];
 }
 
 .mercado-heading {
-  @apply text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+  @apply text-2xl font-semibold tracking-tight text-[var(--ml-ink)];
 }
 
 .mercado-subheading {
-  @apply max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-300;
+  @apply max-w-2xl text-sm leading-relaxed text-[var(--ml-muted)];
 }
 
 .mercado-search {
-  @apply flex items-center gap-2 rounded-2xl border border-teal-200/80 bg-white/95 px-3 py-2 shadow-sm dark:border-teal-900/40 dark:bg-zinc-950;
+  @apply flex items-center gap-2 rounded-md border border-[var(--ml-border)] bg-white px-3 py-2 shadow-sm;
 }
 
 .mercado-search-input {
-  @apply min-w-0 flex-1 border-0 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-50;
+  @apply min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--ml-ink)] outline-none placeholder:text-zinc-400;
 }
 
 .mercado-grid {
@@ -13230,15 +13238,15 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-card {
-  @apply flex h-full flex-col overflow-hidden rounded-2xl border border-teal-100/90 bg-white/95 shadow-[0_8px_24px_rgba(15,118,110,0.06)] transition hover:-translate-y-0.5 hover:border-teal-300/80 dark:border-teal-900/40 dark:bg-zinc-950 dark:hover:border-teal-700/50;
+  @apply flex h-full flex-col overflow-hidden rounded-md border border-[var(--ml-border)] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08)];
 }
 
 .mercado-card-media {
-  @apply relative aspect-[4/3] overflow-hidden bg-teal-50 dark:bg-teal-950/30;
+  @apply relative aspect-[4/3] overflow-hidden bg-zinc-100;
 }
 
 .mercado-card-media-fallback {
-  @apply flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#ccfbf1,#e2e8f0)] text-2xl font-semibold text-teal-800 dark:bg-[linear-gradient(135deg,#134e4a55,#27272a)] dark:text-teal-200;
+  @apply flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#dbeafe,#e5e7eb)] text-2xl font-semibold text-[var(--ml-blue)];
 }
 
 .mercado-card-body {
@@ -13246,15 +13254,15 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-card-store {
-  @apply truncate text-[11px] font-medium uppercase tracking-wide text-teal-800/80 dark:text-teal-400/90;
+  @apply truncate text-[11px] font-medium uppercase tracking-wide text-[var(--ml-blue)];
 }
 
 .mercado-card-title {
-  @apply line-clamp-2 text-sm font-semibold leading-snug text-zinc-900 dark:text-zinc-50;
+  @apply line-clamp-2 text-sm font-semibold leading-snug text-[var(--ml-ink)];
 }
 
 .mercado-card-meta {
-  @apply truncate text-xs text-zinc-500;
+  @apply truncate text-xs text-[var(--ml-muted)];
 }
 
 .mercado-card-footer {
@@ -13262,41 +13270,41 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-card-price {
-  @apply text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50;
+  @apply text-sm font-semibold tabular-nums text-[var(--ml-ink)];
 }
 
 .mercado-card-cta {
-  @apply inline-flex items-center gap-1 text-[11px] font-semibold text-teal-800 dark:text-teal-300;
+  @apply inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--ml-blue)];
 }
 
 .mercado-empty,
 .mercado-alert,
 .mercado-card-static {
-  @apply rounded-2xl border border-teal-200/80 bg-white/90 px-4 py-5 text-sm text-zinc-600 dark:border-teal-900/40 dark:bg-zinc-950 dark:text-zinc-300;
+  @apply rounded-md border border-[var(--ml-border)] bg-white px-4 py-5 text-sm text-[var(--ml-muted)];
 }
 
 .mercado-alert {
-  @apply border-amber-200/80 bg-amber-50/80 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100;
+  @apply border-amber-200 bg-amber-50 text-amber-950;
 }
 
 .mercado-back-link {
-  @apply inline-flex text-sm font-medium text-teal-800 hover:underline dark:text-teal-300;
+  @apply inline-flex text-sm font-medium text-[var(--ml-blue)] hover:underline;
 }
 
 .mercado-detail-card {
-  @apply overflow-hidden rounded-2xl border border-teal-100/90 bg-white/95 shadow-sm dark:border-teal-900/40 dark:bg-zinc-950;
+  @apply overflow-hidden rounded-md border border-[var(--ml-border)] bg-white shadow-sm;
 }
 
 .mercado-detail-media {
-  @apply relative aspect-[16/11] overflow-hidden bg-teal-50 dark:bg-teal-950/30;
+  @apply relative aspect-[16/11] overflow-hidden bg-zinc-100;
 }
 
 .mercado-chat-panel {
-  @apply flex min-h-[28rem] flex-col overflow-hidden rounded-2xl border border-teal-100/90 bg-white/95 shadow-sm dark:border-teal-900/40 dark:bg-zinc-950;
+  @apply flex min-h-[28rem] flex-col overflow-hidden rounded-md border border-[var(--ml-border)] bg-white shadow-sm;
 }
 
 .mercado-chat-header {
-  @apply border-b border-teal-100/80 px-4 py-3 dark:border-teal-900/40;
+  @apply border-b border-[var(--ml-border)] px-4 py-3;
 }
 
 .mercado-chat-thread {
@@ -13308,33 +13316,33 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-chat-bubble-mine {
-  @apply ml-auto bg-teal-700 text-white;
+  @apply ml-auto bg-[var(--ml-blue)] text-white;
 }
 
 .mercado-chat-bubble-theirs {
-  @apply mr-auto bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50;
+  @apply mr-auto bg-zinc-100 text-[var(--ml-ink)];
 }
 
 .mercado-chat-composer {
-  @apply flex items-center gap-2 border-t border-teal-100/80 p-3 dark:border-teal-900/40;
+  @apply flex items-center gap-2 border-t border-[var(--ml-border)] p-3;
 }
 
 .mercado-chat-list {
-  @apply divide-y divide-teal-100/80 overflow-hidden rounded-2xl border border-teal-100/90 bg-white/95 dark:divide-teal-900/40 dark:border-teal-900/40 dark:bg-zinc-950;
+  @apply divide-y divide-[var(--ml-border)] overflow-hidden rounded-md border border-[var(--ml-border)] bg-white;
 }
 
 .mercado-chat-list-item {
-  @apply flex items-start justify-between gap-3 px-4 py-3 transition hover:bg-teal-50/60 dark:hover:bg-teal-950/20;
+  @apply flex items-start justify-between gap-3 px-4 py-3 transition hover:bg-[var(--ml-blue-soft)];
 }
 
-/* ——— Mercado oculto · marketplace B2B ——— */
+/* ——— Mercado oculto · marketplace ML-inspired ——— */
 
 .mercado-mp-header {
-  @apply sticky top-0 z-40 border-b border-teal-200/70 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-md dark:border-teal-900/40 dark:bg-zinc-950/95;
+  @apply sticky top-0 z-40 border-b border-[var(--ml-border)] bg-white shadow-[0_1px_0_rgba(0,0,0,0.04)];
 }
 
 .mercado-mp-header-top {
-  @apply mx-auto grid max-w-7xl grid-cols-1 items-center gap-3 px-4 py-3 sm:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-4 lg:px-7;
+  @apply mx-auto grid max-w-7xl grid-cols-1 items-center gap-3 px-4 py-3.5 sm:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-4 lg:px-7;
 }
 
 .mercado-mp-brand {
@@ -13342,38 +13350,48 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-search {
-  @apply mx-auto flex w-full max-w-2xl items-stretch overflow-hidden rounded-xl border-2 border-teal-700 bg-white shadow-[0_8px_24px_rgba(15,118,110,0.1)] dark:border-teal-500 dark:bg-zinc-950;
+  @apply mx-auto flex w-full max-w-3xl items-stretch overflow-hidden rounded-sm border border-[#ccc] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08)];
+  min-height: 3rem;
 }
 
 .mercado-mp-search-icon {
-  @apply flex w-11 shrink-0 items-center justify-center text-zinc-400;
+  @apply flex w-12 shrink-0 items-center justify-center text-zinc-400;
 }
 
 .mercado-mp-search-input {
-  @apply min-w-0 flex-1 border-0 bg-transparent px-2 py-2.5 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-50;
+  @apply min-w-0 flex-1 border-0 bg-transparent px-1 py-3 text-[15px] text-[var(--ml-ink)] outline-none placeholder:text-zinc-400;
 }
 
 .mercado-mp-search-btn {
-  @apply shrink-0 border-0 bg-teal-700 px-4 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:opacity-60;
+  @apply shrink-0 rounded-none border-0 bg-[var(--ml-blue)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--ml-blue-hover)] disabled:opacity-60;
 }
 
 .mercado-mp-nav {
   @apply flex flex-wrap items-center justify-end gap-1;
 }
 
+.mercado-mp-cart-link {
+  @apply relative;
+}
+
+.mercado-mp-cart-badge {
+  @apply ml-0.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[var(--ml-blue)] px-1.5 text-[10px] font-bold text-white;
+}
+
 .mercado-mp-categories {
-  @apply flex gap-0.5 overflow-x-auto border-t border-teal-100/80 px-4 dark:border-teal-900/40 sm:px-6 lg:px-7;
+  @apply flex gap-0.5 overflow-x-auto border-t border-[var(--ml-border)] px-4 sm:px-6 lg:px-7;
   max-width: 80rem;
   margin-inline: auto;
   scrollbar-width: thin;
+  background: #fafafa;
 }
 
 .mercado-mp-category {
-  @apply shrink-0 border-b-2 border-transparent px-3.5 py-2.5 text-sm font-semibold text-zinc-500 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100;
+  @apply shrink-0 border-b-2 border-transparent px-3.5 py-2.5 text-sm font-medium text-[var(--ml-muted)] transition hover:text-[var(--ml-ink)];
 }
 
 .mercado-mp-category-active {
-  @apply border-teal-700 text-teal-800 dark:border-teal-400 dark:text-teal-300;
+  @apply border-[var(--ml-blue)] text-[var(--ml-blue)];
 }
 
 .mercado-mp-main {
@@ -13381,35 +13399,47 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-layout {
-  @apply grid gap-5 lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start;
+  @apply grid gap-5 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start;
 }
 
 .mercado-mp-filters {
-  @apply rounded-2xl border border-teal-100/90 bg-white/95 p-4 shadow-[0_6px_20px_rgba(15,23,42,0.04)] dark:border-teal-900/40 dark:bg-zinc-950 lg:sticky lg:top-28;
+  @apply rounded-md border border-[var(--ml-border)] bg-white p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.06)] lg:sticky lg:top-28;
 }
 
 .mercado-mp-filters-head {
-  @apply mb-3 flex items-center justify-between gap-2;
+  @apply mb-2 flex items-center justify-between gap-2;
+}
+
+.mercado-mp-filters-head h2 {
+  @apply m-0 text-sm font-semibold text-[var(--ml-ink)];
+}
+
+.mercado-mp-filters-head p {
+  @apply m-0 text-[11px] text-[var(--ml-muted)];
 }
 
 .mercado-mp-filter-block {
-  @apply border-t border-teal-100/80 py-3 first:border-t-0 first:pt-0 dark:border-teal-900/40;
+  @apply border-t border-[var(--ml-border)] py-2.5 first:border-t-0 first:pt-0;
 }
 
 .mercado-mp-filter-title {
-  @apply mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500;
+  @apply cursor-pointer list-none text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ml-muted)];
+}
+
+.mercado-mp-filter-title::-webkit-details-marker {
+  display: none;
 }
 
 .mercado-mp-filter-field {
-  @apply flex flex-col gap-1 text-[11px] font-medium text-zinc-500;
+  @apply flex flex-col gap-1 text-[11px] font-medium text-[var(--ml-muted)];
 }
 
 .mercado-mp-filter-field input {
-  @apply h-9 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 text-sm text-zinc-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50;
+  @apply h-8 rounded-sm border border-[#ccc] bg-white px-2 text-sm text-[var(--ml-ink)] outline-none focus:border-[var(--ml-blue)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--ml-blue)_25%,transparent)];
 }
 
 .mercado-mp-filter-apply {
-  @apply mt-2 inline-flex h-9 w-full items-center justify-center rounded-lg bg-zinc-900 text-xs font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white;
+  @apply mt-2 inline-flex h-8 w-full items-center justify-center rounded-sm bg-[var(--ml-blue)] text-xs font-semibold text-white transition hover:bg-[var(--ml-blue-hover)] disabled:opacity-60;
 }
 
 .mercado-mp-filter-list {
@@ -13417,15 +13447,15 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-filter-option {
-  @apply flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-zinc-700 transition hover:bg-teal-50 dark:text-zinc-300 dark:hover:bg-teal-950/30;
+  @apply flex w-full items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-left text-[13px] font-medium text-[var(--ml-ink)] transition hover:bg-[var(--ml-blue-soft)];
 }
 
 .mercado-mp-filter-option-active {
-  @apply bg-teal-50 text-teal-900 dark:bg-teal-950/40 dark:text-teal-200;
+  @apply bg-[var(--ml-blue-soft)] text-[var(--ml-blue)];
 }
 
 .mercado-mp-filter-clear {
-  @apply mt-2 w-full text-center text-xs font-semibold text-teal-800 underline-offset-2 hover:underline dark:text-teal-300;
+  @apply mt-2 w-full text-center text-xs font-semibold text-[var(--ml-blue)] underline-offset-2 hover:underline;
 }
 
 .mercado-mp-results {
@@ -13437,7 +13467,7 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-empty {
-  @apply flex flex-col items-center rounded-2xl border border-dashed border-teal-200/80 bg-white/80 px-5 py-10 text-center dark:border-teal-900/40 dark:bg-zinc-950/80;
+  @apply flex flex-col items-center rounded-md border border-dashed border-[var(--ml-border)] bg-white px-5 py-10 text-center;
 }
 
 .mercado-mp-grid {
@@ -13445,35 +13475,35 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-card {
-  @apply flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-teal-300/80 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-teal-700/50;
+  @apply flex h-full flex-col overflow-hidden rounded-md border border-[var(--ml-border)] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_2px_6px_rgba(0,0,0,0.12),0_8px_20px_rgba(0,0,0,0.06)];
 }
 
 .mercado-mp-card-media {
-  @apply relative aspect-square overflow-hidden bg-zinc-100 no-underline dark:bg-zinc-900;
+  @apply relative aspect-square overflow-hidden bg-zinc-100 no-underline;
 }
 
 .mercado-mp-badge {
-  @apply absolute bottom-2 left-2 max-w-[calc(100%-1rem)] rounded-md bg-teal-800/95 px-2 py-1 text-[10px] font-bold leading-tight tracking-wide text-white;
+  @apply absolute bottom-2 left-2 max-w-[calc(100%-1rem)] rounded-sm bg-[var(--ml-blue)] px-2 py-1 text-[10px] font-bold leading-tight tracking-wide text-white;
 }
 
 .mercado-mp-card-body {
-  @apply flex flex-1 flex-col gap-1.5 p-3;
+  @apply flex flex-1 flex-col gap-1 p-3;
 }
 
 .mercado-mp-card-meta {
-  @apply text-[11px] font-medium text-zinc-500;
+  @apply text-[11px] font-medium text-[var(--ml-muted)];
 }
 
 .mercado-mp-card-title {
-  @apply line-clamp-2 text-sm font-semibold leading-snug text-zinc-900 no-underline transition hover:text-teal-800 dark:text-zinc-50 dark:hover:text-teal-300;
+  @apply line-clamp-2 text-sm font-medium leading-snug text-[var(--ml-ink)] no-underline transition hover:text-[var(--ml-blue)];
 }
 
 .mercado-mp-card-supplier {
-  @apply truncate text-[11px] text-zinc-500;
+  @apply truncate text-[11px] text-[var(--ml-muted)];
 }
 
 .mercado-mp-card-price {
-  @apply mt-0.5 text-lg font-extrabold tabular-nums tracking-tight text-teal-800 dark:text-teal-300;
+  @apply mt-1 text-[1.35rem] font-light tabular-nums tracking-tight text-[var(--ml-ink)];
 }
 
 .mercado-mp-card-price-label {
@@ -13485,27 +13515,35 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-card-btn {
-  @apply inline-flex h-9 items-center justify-center rounded-lg bg-teal-700 px-3 text-xs font-semibold text-white no-underline transition hover:bg-teal-600;
+  @apply inline-flex h-9 items-center justify-center rounded-sm bg-[var(--ml-blue)] px-3 text-xs font-semibold text-white no-underline transition hover:bg-[var(--ml-blue-hover)];
 }
 
 .mercado-mp-card-btn-secondary {
-  @apply inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-800 no-underline transition hover:border-teal-300 hover:text-teal-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:border-teal-700 dark:hover:text-teal-300;
+  @apply inline-flex h-9 items-center justify-center gap-1.5 rounded-sm border border-[var(--ml-border)] bg-white px-3 text-xs font-semibold text-[var(--ml-ink)] no-underline transition hover:border-[var(--ml-blue)] hover:text-[var(--ml-blue)];
 }
 
 .mercado-mp-detail {
   @apply space-y-5;
 }
 
+.mercado-ml-breadcrumb {
+  @apply flex flex-wrap items-center gap-1.5 text-xs text-[var(--ml-muted)];
+}
+
+.mercado-ml-breadcrumb a {
+  @apply text-[var(--ml-blue)] no-underline hover:underline;
+}
+
 .mercado-mp-detail-grid {
-  @apply grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start;
+  @apply grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)] lg:items-start;
 }
 
 .mercado-mp-detail-gallery {
-  @apply space-y-3;
+  @apply space-y-3 rounded-md border border-[var(--ml-border)] bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.06)];
 }
 
 .mercado-mp-detail-hero {
-  @apply relative aspect-square overflow-hidden rounded-2xl border border-zinc-200/90 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900;
+  @apply relative aspect-square overflow-hidden rounded-sm bg-zinc-50;
 }
 
 .mercado-mp-detail-thumbs {
@@ -13513,43 +13551,43 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-detail-thumb {
-  @apply relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700;
+  @apply relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-sm border border-[var(--ml-border)];
 }
 
 .mercado-mp-detail-thumb-active {
-  @apply border-teal-600 ring-2 ring-teal-500/30;
+  @apply border-[var(--ml-blue)] ring-2 ring-[color-mix(in_srgb,var(--ml-blue)_30%,transparent)];
 }
 
 .mercado-mp-detail-info {
-  @apply space-y-3;
+  @apply space-y-3 rounded-md border border-[var(--ml-border)] bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.06)];
 }
 
 .mercado-mp-official-pill {
-  @apply inline-flex items-center gap-1.5 rounded-md bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-800 dark:bg-teal-950/40 dark:text-teal-300;
+  @apply inline-flex items-center gap-1.5 rounded-sm bg-[var(--ml-blue-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--ml-blue)];
 }
 
 .mercado-mp-detail-title {
-  @apply text-2xl font-extrabold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50;
+  @apply text-xl font-normal tracking-tight text-[var(--ml-ink)] sm:text-2xl;
 }
 
 .mercado-mp-detail-price {
-  @apply text-3xl font-extrabold tabular-nums tracking-tight text-teal-800 dark:text-teal-300;
+  @apply text-3xl font-light tabular-nums tracking-tight text-[var(--ml-ink)];
 }
 
 .mercado-mp-detail-stock {
-  @apply inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300;
+  @apply inline-flex items-center gap-2 rounded-sm border border-[var(--ml-border)] bg-[#fafafa] px-3 py-2 text-sm text-[var(--ml-ink)];
 }
 
 .mercado-mp-detail-block {
-  @apply space-y-2 rounded-2xl border border-zinc-200/90 bg-white/95 p-4 dark:border-zinc-800 dark:bg-zinc-950;
+  @apply space-y-2 rounded-md border border-[var(--ml-border)] bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)];
 }
 
 .mercado-mp-detail-block h2 {
-  @apply text-sm font-semibold text-zinc-900 dark:text-zinc-50;
+  @apply text-sm font-semibold text-[var(--ml-ink)];
 }
 
 .mercado-mp-detail-block p {
-  @apply whitespace-pre-wrap text-sm leading-relaxed text-zinc-600 dark:text-zinc-300;
+  @apply whitespace-pre-wrap text-sm leading-relaxed text-[var(--ml-muted)];
 }
 
 .mercado-mp-specs {
@@ -13561,17 +13599,237 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-specs dt {
-  @apply font-medium text-zinc-500;
+  @apply font-medium text-[var(--ml-muted)];
 }
 
 .mercado-mp-specs dd {
-  @apply m-0 text-right font-semibold text-zinc-900 dark:text-zinc-50;
+  @apply m-0 text-right font-semibold text-[var(--ml-ink)];
 }
 
 .mercado-mp-detail-cta {
-  @apply inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-teal-700 px-5 text-sm font-bold text-white no-underline shadow-lg shadow-teal-700/20 transition hover:bg-teal-600 sm:w-auto;
+  @apply inline-flex h-12 w-full items-center justify-center gap-2 rounded-sm bg-[var(--ml-blue)] px-5 text-sm font-bold text-white no-underline transition hover:bg-[var(--ml-blue-hover)];
+}
+
+.mercado-mp-detail-cta-secondary {
+  @apply inline-flex h-10 w-full items-center justify-center gap-2 rounded-sm border border-[var(--ml-blue)] bg-white px-4 text-sm font-semibold text-[var(--ml-blue)] no-underline transition hover:bg-[var(--ml-blue-soft)];
 }
 
 .mercado-mp-detail-chat {
   @apply scroll-mt-28;
+}
+
+.mercado-ml-chat-heading {
+  @apply mb-3 text-base font-semibold text-[var(--ml-ink)];
+}
+
+.mercado-ml-buybox {
+  @apply space-y-3 rounded-md border border-[var(--ml-border)] bg-[#fafafa] p-4;
+}
+
+.mercado-ml-buybox-price {
+  @apply m-0 text-[2rem] font-light tabular-nums leading-none text-[var(--ml-ink)];
+}
+
+.mercado-ml-buybox-hint {
+  @apply m-0 text-xs text-[var(--ml-muted)];
+}
+
+.mercado-ml-qty {
+  @apply space-y-1.5;
+}
+
+.mercado-ml-qty label {
+  @apply text-xs font-semibold text-[var(--ml-muted)];
+}
+
+.mercado-ml-qty-controls {
+  @apply inline-flex items-stretch overflow-hidden rounded-sm border border-[#ccc] bg-white;
+}
+
+.mercado-ml-qty-controls button {
+  @apply h-10 w-10 border-0 bg-white text-lg font-semibold text-[var(--ml-ink)] transition hover:bg-zinc-50;
+}
+
+.mercado-ml-qty-controls input {
+  @apply h-10 w-14 border-x border-[#ccc] bg-white text-center text-sm tabular-nums outline-none;
+}
+
+.mercado-ml-qty-stock {
+  @apply block text-xs text-[var(--ml-muted)];
+}
+
+.mercado-ml-btn-primary {
+  @apply inline-flex h-11 w-full items-center justify-center gap-2 rounded-sm border-0 bg-[var(--ml-blue)] px-4 text-sm font-semibold text-white no-underline transition hover:bg-[var(--ml-blue-hover)] disabled:opacity-50;
+}
+
+.mercado-ml-btn-secondary {
+  @apply inline-flex h-11 w-full items-center justify-center gap-2 rounded-sm border border-[var(--ml-blue)] bg-white px-4 text-sm font-semibold text-[var(--ml-blue)] transition hover:bg-[var(--ml-blue-soft)];
+}
+
+.mercado-ml-btn-ghost {
+  @apply inline-flex h-11 w-full items-center justify-center rounded-sm border border-[var(--ml-border)] bg-white px-4 text-sm font-semibold text-[var(--ml-ink)] no-underline transition hover:bg-zinc-50;
+}
+
+.mercado-ml-buybox-feedback {
+  @apply m-0 rounded-sm bg-[var(--ml-blue-soft)] px-3 py-2 text-xs font-semibold text-[var(--ml-blue)];
+}
+
+.mercado-ml-questions {
+  @apply space-y-4 rounded-md border border-[var(--ml-border)] bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)];
+}
+
+.mercado-ml-questions-head {
+  @apply flex items-start gap-3 text-[var(--ml-blue)];
+}
+
+.mercado-ml-questions-head h2 {
+  @apply m-0 text-base font-semibold text-[var(--ml-ink)];
+}
+
+.mercado-ml-questions-head p {
+  @apply mt-1 text-sm text-[var(--ml-muted)];
+}
+
+.mercado-ml-questions-form {
+  @apply grid gap-2;
+}
+
+.mercado-ml-questions-form textarea {
+  @apply w-full resize-y rounded-sm border border-[#ccc] bg-white px-3 py-2 text-sm text-[var(--ml-ink)] outline-none focus:border-[var(--ml-blue)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--ml-blue)_25%,transparent)];
+}
+
+.mercado-ml-questions-form .mercado-ml-btn-primary {
+  @apply w-auto justify-self-start px-6;
+}
+
+.mercado-ml-questions-empty {
+  @apply m-0 text-sm text-[var(--ml-muted)];
+}
+
+.mercado-ml-questions-list {
+  @apply m-0 flex list-none flex-col gap-3 p-0;
+}
+
+.mercado-ml-questions-list li {
+  @apply rounded-sm border border-[var(--ml-border)] bg-[#fafafa] p-3;
+}
+
+.mercado-ml-q {
+  @apply m-0 text-sm font-medium text-[var(--ml-ink)];
+}
+
+.mercado-ml-a {
+  @apply mt-2 m-0 text-sm leading-relaxed text-[var(--ml-muted)];
+}
+
+.mercado-ml-a span {
+  @apply font-semibold text-[var(--ml-blue)];
+}
+
+.mercado-ml-a-pending {
+  @apply mt-2 m-0 text-xs font-medium text-amber-700;
+}
+
+.mercado-ml-cart {
+  @apply grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start;
+}
+
+.mercado-ml-cart-empty {
+  @apply flex flex-col items-center gap-3 rounded-md border border-[var(--ml-border)] bg-white px-6 py-12 text-center shadow-sm;
+}
+
+.mercado-ml-cart-empty h1 {
+  @apply m-0 text-xl font-semibold text-[var(--ml-ink)];
+}
+
+.mercado-ml-cart-empty p {
+  @apply m-0 max-w-md text-sm text-[var(--ml-muted)];
+}
+
+.mercado-ml-cart-empty .mercado-ml-btn-primary {
+  @apply mt-2 w-auto px-6;
+}
+
+.mercado-ml-cart-main {
+  @apply rounded-md border border-[var(--ml-border)] bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.06)];
+}
+
+.mercado-ml-cart-head {
+  @apply mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ml-border)] pb-3;
+}
+
+.mercado-ml-cart-head h1 {
+  @apply m-0 text-xl font-semibold text-[var(--ml-ink)];
+}
+
+.mercado-ml-cart-head span {
+  @apply font-normal text-[var(--ml-muted)];
+}
+
+.mercado-ml-link-btn {
+  @apply border-0 bg-transparent text-sm font-semibold text-[var(--ml-blue)] hover:underline;
+}
+
+.mercado-ml-cart-list {
+  @apply m-0 flex list-none flex-col gap-4 p-0;
+}
+
+.mercado-ml-cart-row {
+  @apply grid grid-cols-[88px_minmax(0,1fr)] gap-3 border-b border-[var(--ml-border)] pb-4 last:border-b-0 last:pb-0 sm:grid-cols-[88px_minmax(0,1fr)_auto];
+}
+
+.mercado-ml-cart-thumb {
+  @apply relative block h-[88px] w-[88px] overflow-hidden rounded-sm border border-[var(--ml-border)] bg-zinc-50 no-underline;
+}
+
+.mercado-ml-cart-thumb span {
+  @apply flex h-full w-full items-center justify-center text-lg font-semibold text-[var(--ml-blue)];
+}
+
+.mercado-ml-cart-info a {
+  @apply text-sm font-medium text-[var(--ml-ink)] no-underline hover:text-[var(--ml-blue)];
+}
+
+.mercado-ml-cart-info > p {
+  @apply mt-0.5 text-xs text-[var(--ml-muted)];
+}
+
+.mercado-ml-cart-actions {
+  @apply mt-2 flex flex-wrap items-center gap-3;
+}
+
+.mercado-ml-cart-actions label {
+  @apply flex items-center gap-2 text-xs text-[var(--ml-muted)];
+}
+
+.mercado-ml-cart-actions input {
+  @apply h-8 w-16 rounded-sm border border-[#ccc] px-2 text-sm outline-none focus:border-[var(--ml-blue)];
+}
+
+.mercado-ml-cart-actions button {
+  @apply inline-flex items-center gap-1 border-0 bg-transparent text-xs font-semibold text-[var(--ml-muted)] hover:text-red-600;
+}
+
+.mercado-ml-cart-line-price {
+  @apply m-0 text-right text-base font-semibold tabular-nums text-[var(--ml-ink)];
+}
+
+.mercado-ml-cart-summary {
+  @apply space-y-3 rounded-md border border-[var(--ml-border)] bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.06)] lg:sticky lg:top-28;
+}
+
+.mercado-ml-cart-summary h2 {
+  @apply m-0 text-base font-semibold text-[var(--ml-ink)];
+}
+
+.mercado-ml-cart-summary-row {
+  @apply flex items-center justify-between gap-3 text-sm text-[var(--ml-muted)];
+}
+
+.mercado-ml-cart-summary-row strong {
+  @apply text-lg font-semibold text-[var(--ml-ink)];
+}
+
+.mercado-ml-cart-summary-note {
+  @apply m-0 text-xs leading-relaxed text-[var(--ml-muted)];
 }
