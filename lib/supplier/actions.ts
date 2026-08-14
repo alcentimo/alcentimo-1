@@ -28,6 +28,8 @@ export interface SupplierProduct {
   variants: SupplierProductVariants;
   stock: number;
   basePriceUsd: number;
+  compareAtUsd: number | null;
+  freeShipping: boolean;
   imageUrl: string | null;
   createdAt: string;
   updatedAt: string;
@@ -61,9 +63,17 @@ async function requireSupplierUser(): Promise<{
 }
 
 const PRODUCT_SELECT =
-  "id, title, description, category, variants, stock, base_price_usd, image_url, created_at, updated_at";
+  "id, title, description, category, variants, stock, base_price_usd, compare_at_usd, free_shipping, image_url, created_at, updated_at";
 
 function mapRow(row: Record<string, unknown>): SupplierProduct {
+  const compareRaw = row.compare_at_usd;
+  const compareAtUsd =
+    compareRaw == null || compareRaw === ""
+      ? null
+      : Number.isFinite(Number(compareRaw))
+        ? Number(compareRaw)
+        : null;
+
   return {
     id: String(row.id),
     title: String(row.title ?? ""),
@@ -72,6 +82,8 @@ function mapRow(row: Record<string, unknown>): SupplierProduct {
     variants: normalizeSupplierProductVariants(row.variants),
     stock: Number(row.stock) || 0,
     basePriceUsd: Number(row.base_price_usd) || 0,
+    compareAtUsd,
+    freeShipping: Boolean(row.free_shipping),
     imageUrl:
       typeof row.image_url === "string" && row.image_url.trim()
         ? row.image_url
@@ -89,6 +101,8 @@ function parseProductFields(formData: FormData): {
   variants?: SupplierProductVariants;
   stock?: number;
   basePriceUsd?: number;
+  compareAtUsd?: number | null;
+  freeShipping?: boolean;
   image?: FormDataEntryValue | null;
 } {
   const title = String(formData.get("title") ?? "").trim();
@@ -97,6 +111,11 @@ function parseProductFields(formData: FormData): {
   const variants = parseSupplierVariantsFromForm(formData.get("variants"));
   const stockRaw = String(formData.get("stock") ?? "0").trim();
   const priceRaw = String(formData.get("basePriceUsd") ?? "0").trim();
+  const compareRaw = String(formData.get("compareAtUsd") ?? "").trim();
+  const freeShipping =
+    formData.get("freeShipping") === "on" ||
+    formData.get("freeShipping") === "true" ||
+    formData.get("freeShipping") === "1";
   const image = formData.get("image");
 
   if (title.length < 2) {
@@ -113,6 +132,15 @@ function parseProductFields(formData: FormData): {
     return { error: "Indica un precio base válido en USD." };
   }
 
+  let compareAtUsd: number | null = null;
+  if (compareRaw) {
+    const parsedCompare = Number(compareRaw.replace(",", "."));
+    if (!Number.isFinite(parsedCompare) || parsedCompare < 0) {
+      return { error: "El precio anterior (tachado) debe ser válido en USD." };
+    }
+    compareAtUsd = Math.round(parsedCompare * 100) / 100;
+  }
+
   for (const option of variants.options) {
     if (!option.label.trim()) {
       return { error: "Cada variante debe tener un nombre." };
@@ -126,6 +154,8 @@ function parseProductFields(formData: FormData): {
     variants: normalizeSupplierProductVariants(variants),
     stock,
     basePriceUsd: Math.round(basePriceUsd * 100) / 100,
+    compareAtUsd,
+    freeShipping,
     image,
   };
 }
@@ -188,6 +218,8 @@ export async function createSupplierProduct(
       variants: parsed.variants ?? normalizeSupplierProductVariants(null),
       stock: parsed.stock,
       base_price_usd: parsed.basePriceUsd,
+      compare_at_usd: parsed.compareAtUsd ?? null,
+      free_shipping: parsed.freeShipping ?? false,
       image_url: imageUrl,
       is_active: true,
     })
@@ -208,6 +240,7 @@ export async function createSupplierProduct(
   });
 
   revalidatePath("/proveedor/dashboard");
+  revalidatePath("/mercado-oculto");
   return { product: created };
 }
 
@@ -248,6 +281,8 @@ export async function updateSupplierProduct(
     variants: parsed.variants ?? normalizeSupplierProductVariants(null),
     stock: parsed.stock,
     base_price_usd: nextPrice,
+    compare_at_usd: parsed.compareAtUsd ?? null,
+    free_shipping: parsed.freeShipping ?? false,
     updated_at: new Date().toISOString(),
   };
 
@@ -290,6 +325,7 @@ export async function updateSupplierProduct(
   revalidatePath("/proveedor/dashboard");
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
+  revalidatePath("/mercado-oculto");
   return { product: updated };
 }
 

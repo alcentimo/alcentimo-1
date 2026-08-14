@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Search, ShoppingCart } from "lucide-react";
+import { Bell, Search, ShoppingBag, ShoppingCart, UserRound } from "lucide-react";
 import { SUPPLIER_PRODUCT_CATEGORIES } from "@/lib/supplier/categories";
 import { cn } from "@/lib/cn";
-import { MercadoCartProvider, useMercadoCart } from "@/components/mercado-oculto/MercadoCartProvider";
+import {
+  MercadoCartProvider,
+  useMercadoCart,
+} from "@/components/mercado-oculto/MercadoCartProvider";
 
 interface MercadoChromeProps {
   email: string | null;
@@ -22,7 +25,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
 
   const onDirectory =
     pathname === "/mercado-oculto" || pathname === "/mercado-oculto/";
-  const onChats = pathname.startsWith("/mercado-oculto/conversaciones");
+  const onPurchases = pathname.startsWith("/mercado-oculto/conversaciones");
   const onCart = pathname.startsWith("/mercado-oculto/carrito");
   const activeCategory = searchParams.get("category") ?? "";
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
@@ -39,13 +42,21 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
   return (
     <div className="mercado-shell">
       <header className="mercado-mp-header">
+        <div className="mercado-mp-trustbar">
+          <span>Envío a nivel nacional</span>
+          <span aria-hidden="true">·</span>
+          <span>Compra protegida</span>
+          <span aria-hidden="true">·</span>
+          <span>Mayorista Oficial Alcéntimo</span>
+        </div>
+
         <div className="mercado-mp-header-top">
           <Link href="/mercado-oculto" className="mercado-mp-brand">
             <span className="mercado-brand-mark" aria-hidden="true">
               a
             </span>
             <span className="min-w-0">
-              <span className="mercado-eyebrow">Alcéntimo · B2B</span>
+              <span className="mercado-eyebrow">Alcéntimo</span>
               <span className="mercado-title block">Mercado oculto</span>
             </span>
           </Link>
@@ -69,7 +80,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar productos, marcas y más…"
-              aria-label="Buscar en el mercado oculto"
+              aria-label="Buscar productos"
               className="mercado-mp-search-input"
               disabled={pending}
             />
@@ -82,29 +93,24 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
             </button>
           </form>
 
-          <nav className="mercado-mp-nav">
-            {email ? (
-              <span className="hidden max-w-[10rem] truncate text-xs text-zinc-500 lg:inline">
-                {email}
-              </span>
-            ) : null}
-            <Link
-              href="/mercado-oculto"
-              className={cn(
-                "mercado-nav-link",
-                onDirectory && "mercado-nav-link-active",
-              )}
-            >
-              Catálogo
-            </Link>
+          <nav className="mercado-mp-nav" aria-label="Cuenta y compras">
             <Link
               href="/mercado-oculto/conversaciones"
               className={cn(
                 "mercado-nav-link",
-                onChats && "mercado-nav-link-active",
+                onPurchases && "mercado-nav-link-active",
               )}
             >
-              Chats
+              <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+              Mis Compras
+            </Link>
+            <Link
+              href="/mercado-oculto/conversaciones"
+              className="mercado-nav-link"
+              aria-label="Notificaciones"
+            >
+              <Bell className="h-4 w-4" aria-hidden="true" />
+              Notificaciones
             </Link>
             <Link
               href="/mercado-oculto/carrito"
@@ -124,9 +130,24 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
                 <span className="mercado-mp-cart-badge">{itemCount}</span>
               ) : null}
             </Link>
-            <Link href="/admin/dashboard" className="mercado-nav-link">
-              Admin
-            </Link>
+            {email ? (
+              <Link
+                href="/admin/dashboard"
+                className="mercado-nav-link"
+                title={email}
+              >
+                <UserRound className="h-4 w-4" aria-hidden="true" />
+                Mi cuenta
+              </Link>
+            ) : (
+              <Link
+                href="/dashboard/login?next=/mercado-oculto"
+                className="mercado-nav-link mercado-mp-auth-link"
+              >
+                <UserRound className="h-4 w-4" aria-hidden="true" />
+                Crea tu cuenta / Ingresa
+              </Link>
+            )}
           </nav>
         </div>
 

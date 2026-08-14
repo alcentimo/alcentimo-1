@@ -138,6 +138,9 @@ export default async function MercadoProductoPage({
             productId={product.product_id}
             productName={product.product_name}
             priceUsd={product.price_usd}
+            compareAtUsd={product.compare_at_usd}
+            discountPercent={product.discount_percent}
+            freeShipping={product.free_shipping}
             availableStock={product.available_stock}
             thumbUrl={product.thumb_url}
             supplierLabel={product.supplier_label}

@@ -22,6 +22,7 @@ export function MercadoFiltersPanel({
   const currentMax = searchParams.get("max") ?? "";
   const currentSupplier = searchParams.get("supplier") ?? "";
   const currentCategory = searchParams.get("category") ?? "";
+  const freeShippingOnly = searchParams.get("ship") === "free";
 
   const [minPrice, setMinPrice] = useState(currentMin);
   const [maxPrice, setMaxPrice] = useState(currentMax);
@@ -41,6 +42,26 @@ export function MercadoFiltersPanel({
         <h2>Filtros</h2>
         <p>{resultCount} productos</p>
       </div>
+
+      <label className="mercado-mp-ship-toggle">
+        <input
+          type="checkbox"
+          checked={freeShippingOnly}
+          disabled={pending}
+          onChange={(event) =>
+            pushParams((params) => {
+              if (event.target.checked) params.set("ship", "free");
+              else params.delete("ship");
+            })
+          }
+        />
+        <span>
+          Envío gratis
+          {facets.freeShippingCount > 0 ? (
+            <em>({facets.freeShippingCount})</em>
+          ) : null}
+        </span>
+      </label>
 
       <details className="mercado-mp-filter-block" open>
         <summary className="mercado-mp-filter-title">Precio (USD)</summary>
@@ -181,6 +202,7 @@ export function MercadoFiltersPanel({
         currentMax ||
         currentSupplier ||
         currentCategory ||
+        freeShippingOnly ||
         searchParams.get("q")) && (
         <button
           type="button"

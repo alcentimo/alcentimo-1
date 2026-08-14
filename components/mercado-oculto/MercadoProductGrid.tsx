@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Package } from "lucide-react";
+import { Package, Truck } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
 
@@ -16,11 +16,11 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
       <div className="mercado-mp-empty">
         <Package className="h-8 w-8 text-[#125699]/70" aria-hidden="true" />
         <p className="mt-3 text-sm font-medium text-zinc-800">
-          No hay productos con estos filtros
+          No encontramos productos
         </p>
         <p className="mt-1 max-w-md text-sm text-zinc-500">
-          Probá otra categoría o cargá productos desde el hub de proveedores con
-          la cuenta Super Admin / mayorista asociado.
+          Probá otras palabras o quitá filtros. Hay miles de ofertas mayoristas
+          esperándote.
         </p>
       </div>
     );
@@ -28,56 +28,93 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
 
   return (
     <ul className="mercado-mp-grid">
-      {products.map((product) => (
-        <li key={product.product_id}>
-          <article className="group mercado-mp-card">
-            <Link
-              href={`/mercado-oculto/producto/${product.product_id}`}
-              className="mercado-mp-card-media"
-            >
-              {product.thumb_url ? (
-                <Image
-                  src={product.thumb_url}
-                  alt={product.product_name}
-                  fill
-                  className="object-cover transition duration-300 group-hover:scale-[1.04]"
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
-                  unoptimized
-                />
-              ) : (
-                <div className="mercado-card-media-fallback" aria-hidden="true">
-                  {product.product_name.slice(0, 1).toUpperCase()}
-                </div>
-              )}
-              <span className="mercado-mp-badge">Mayorista Oficial Alcéntimo</span>
-            </Link>
+      {products.map((product) => {
+        const inStock = product.available_stock > 0;
+        const showDiscount =
+          inStock &&
+          product.discount_percent != null &&
+          product.compare_at_usd != null &&
+          product.compare_at_usd > product.price_usd;
+        const showFreeShipping = inStock && product.free_shipping;
 
-            <div className="mercado-mp-card-body">
-              <p className="mercado-mp-card-meta">
-                {product.category_name}
-                <span aria-hidden="true"> · </span>
-                Stock {product.available_stock}
-              </p>
+        return (
+          <li key={product.product_id}>
+            <article className="group mercado-mp-card">
               <Link
                 href={`/mercado-oculto/producto/${product.product_id}`}
-                className="mercado-mp-card-title"
+                className="mercado-mp-card-media"
               >
-                {product.product_name}
+                {product.thumb_url ? (
+                  <Image
+                    src={product.thumb_url}
+                    alt={product.product_name}
+                    fill
+                    className="object-cover transition duration-300 group-hover:scale-[1.04]"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
+                    unoptimized
+                  />
+                ) : (
+                  <div
+                    className="mercado-card-media-fallback"
+                    aria-hidden="true"
+                  >
+                    {product.product_name.slice(0, 1).toUpperCase()}
+                  </div>
+                )}
+                {showDiscount ? (
+                  <span className="mercado-mp-discount-badge">
+                    {product.discount_percent}% OFF
+                  </span>
+                ) : null}
               </Link>
-              <p className="mercado-mp-card-supplier">{product.supplier_label}</p>
-              <p className="mercado-mp-card-price">{formatUsd(product.price_usd)}</p>
-              <div className="mercado-mp-card-actions">
+
+              <div className="mercado-mp-card-body">
                 <Link
                   href={`/mercado-oculto/producto/${product.product_id}`}
-                  className="mercado-mp-card-btn"
+                  className="mercado-mp-card-title"
                 >
-                  Ver detalles
+                  {product.product_name}
                 </Link>
+
+                <div className="mercado-mp-card-pricing">
+                  {showDiscount ? (
+                    <p className="mercado-mp-card-compare">
+                      {formatUsd(product.compare_at_usd)}
+                    </p>
+                  ) : null}
+                  <p className="mercado-mp-card-price">
+                    {formatUsd(product.price_usd)}
+                  </p>
+                </div>
+
+                {showFreeShipping ? (
+                  <p className="mercado-mp-free-ship">
+                    <Truck className="h-3.5 w-3.5" aria-hidden="true" />
+                    Envío gratis
+                  </p>
+                ) : inStock ? (
+                  <p className="mercado-mp-card-meta">Envío a nivel nacional</p>
+                ) : (
+                  <p className="mercado-mp-card-meta">Sin stock por ahora</p>
+                )}
+
+                <p className="mercado-mp-card-supplier">
+                  por {product.supplier_label}
+                </p>
+
+                <div className="mercado-mp-card-actions">
+                  <Link
+                    href={`/mercado-oculto/producto/${product.product_id}`}
+                    className="mercado-mp-card-btn"
+                  >
+                    Ver detalles
+                  </Link>
+                </div>
               </div>
-            </div>
-          </article>
-        </li>
-      ))}
+            </article>
+          </li>
+        );
+      })}
     </ul>
   );
 }

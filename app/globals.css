@@ -13370,6 +13370,14 @@ button.catalog-profile-footer-link {
   @apply flex flex-wrap items-center justify-end gap-1;
 }
 
+.mercado-mp-trustbar {
+  @apply flex flex-wrap items-center justify-center gap-x-2 gap-y-1 border-b border-[var(--ml-border)] bg-[#f5f5f5] px-4 py-1.5 text-[11px] font-medium text-[var(--ml-muted)] sm:px-6 lg:px-7;
+}
+
+.mercado-mp-auth-link {
+  @apply max-w-[11rem] text-left leading-tight;
+}
+
 .mercado-mp-cart-link {
   @apply relative;
 }
@@ -13418,6 +13426,18 @@ button.catalog-profile-footer-link {
   @apply m-0 text-[11px] text-[var(--ml-muted)];
 }
 
+.mercado-mp-ship-toggle {
+  @apply mb-2 flex cursor-pointer items-center gap-2 rounded-sm border border-[var(--ml-border)] bg-[#fafafa] px-2.5 py-2 text-[13px] font-semibold text-[var(--ml-ink)];
+}
+
+.mercado-mp-ship-toggle input {
+  @apply h-4 w-4 accent-[var(--ml-blue)];
+}
+
+.mercado-mp-ship-toggle em {
+  @apply ml-1 font-normal not-italic text-[var(--ml-muted)];
+}
+
 .mercado-mp-filter-block {
   @apply border-t border-[var(--ml-border)] py-2.5 first:border-t-0 first:pt-0;
 }
@@ -13463,7 +13483,15 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-results-head {
-  @apply mb-4 flex flex-wrap items-end justify-between gap-2;
+  @apply mb-3 flex flex-wrap items-end justify-between gap-2;
+}
+
+.mercado-mp-trust-chips {
+  @apply mb-4 flex flex-wrap gap-2;
+}
+
+.mercado-mp-trust-chips span {
+  @apply rounded-full border border-[var(--ml-border)] bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--ml-muted)];
 }
 
 .mercado-mp-empty {
@@ -13486,6 +13514,14 @@ button.catalog-profile-footer-link {
   @apply absolute bottom-2 left-2 max-w-[calc(100%-1rem)] rounded-sm bg-[var(--ml-blue)] px-2 py-1 text-[10px] font-bold leading-tight tracking-wide text-white;
 }
 
+.mercado-mp-discount-badge {
+  @apply absolute left-2 top-2 rounded-sm bg-[#3483fa] px-1.5 py-0.5 text-[11px] font-bold text-white;
+}
+
+.mercado-mp-discount-badge.static {
+  @apply relative left-auto top-auto inline-flex;
+}
+
 .mercado-mp-card-body {
   @apply flex flex-1 flex-col gap-1 p-3;
 }
@@ -13502,12 +13538,24 @@ button.catalog-profile-footer-link {
   @apply truncate text-[11px] text-[var(--ml-muted)];
 }
 
+.mercado-mp-card-pricing {
+  @apply mt-1 space-y-0.5;
+}
+
+.mercado-mp-card-compare {
+  @apply m-0 text-xs text-[#999] line-through;
+}
+
 .mercado-mp-card-price {
-  @apply mt-1 text-[1.35rem] font-light tabular-nums tracking-tight text-[var(--ml-ink)];
+  @apply m-0 text-[1.35rem] font-light tabular-nums tracking-tight text-[var(--ml-ink)];
 }
 
 .mercado-mp-card-price-label {
   @apply mr-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400;
+}
+
+.mercado-mp-free-ship {
+  @apply m-0 inline-flex items-center gap-1 text-[12px] font-semibold text-[#00a650];
 }
 
 .mercado-mp-card-actions {
@@ -13628,6 +13676,10 @@ button.catalog-profile-footer-link {
 
 .mercado-ml-buybox-price {
   @apply m-0 text-[2rem] font-light tabular-nums leading-none text-[var(--ml-ink)];
+}
+
+.mercado-ml-buybox-promo {
+  @apply flex flex-wrap items-center gap-2;
 }
 
 .mercado-ml-buybox-hint {

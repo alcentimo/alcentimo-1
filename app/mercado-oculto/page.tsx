@@ -23,6 +23,7 @@ export default async function MercadoOcultoPage({
     min?: string | string[];
     max?: string | string[];
     supplier?: string | string[];
+    ship?: string | string[];
   }>;
 }) {
   const supabase = await createClient();
@@ -50,6 +51,7 @@ export default async function MercadoOcultoPage({
   const minPrice = parseNumberParam(pick(params.min));
   const maxPrice = parseNumberParam(pick(params.max));
   const supplierUserId = pick(params.supplier)?.trim() || undefined;
+  const freeShippingOnly = pick(params.ship)?.trim() === "free";
 
   const listed = await listMercadoProducts({
     query,
@@ -57,6 +59,7 @@ export default async function MercadoOcultoPage({
     minPrice,
     maxPrice,
     supplierUserId,
+    freeShippingOnly,
     limit: 96,
   });
 
@@ -66,6 +69,7 @@ export default async function MercadoOcultoPage({
     suppliers: [],
     priceMin: 0,
     priceMax: 0,
+    freeShippingCount: 0,
   };
 
   return (
@@ -75,22 +79,26 @@ export default async function MercadoOcultoPage({
       <div className="mercado-mp-results">
         <div className="mercado-mp-results-head">
           <div>
-            <p className="mercado-section-label">Marketplace mayorista</p>
+            <p className="mercado-section-label">Ofertas del día</p>
             <h1 className="mercado-heading text-xl sm:text-2xl">
-              Resultados
+              {query ? `Resultados para “${query}”` : "Productos destacados"}
             </h1>
             <p className="mercado-subheading mt-1">
-              Comprá al Mayorista Oficial Alcéntimo con la experiencia de un
-              marketplace familiar: filtrá, compará y agregá al carrito.
+              Envío a nivel nacional · Compra protegida · Precios mayoristas
             </p>
           </div>
           <p className="text-sm text-zinc-500">
-            <strong className="font-semibold text-zinc-800 dark:text-zinc-100">
+            <strong className="font-semibold text-zinc-800">
               {products.length}
             </strong>{" "}
             resultado{products.length === 1 ? "" : "s"}
-            {query ? ` para “${query}”` : ""}
           </p>
+        </div>
+
+        <div className="mercado-mp-trust-chips" aria-hidden="true">
+          <span>Compra protegida</span>
+          <span>Envío a nivel nacional</span>
+          <span>Devolución fácil</span>
         </div>
 
         {listed.error ? (
