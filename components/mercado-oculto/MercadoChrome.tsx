@@ -24,7 +24,7 @@ export function MercadoChrome({ email, children }: MercadoChromeProps) {
               m
             </span>
             <div className="min-w-0">
-              <p className="mercado-eyebrow">Alcéntimo · Suscriptores</p>
+              <p className="mercado-eyebrow">Alcéntimo</p>
               <p className="mercado-title">Mercado oculto</p>
             </div>
           </div>
@@ -52,9 +52,18 @@ export function MercadoChrome({ email, children }: MercadoChromeProps) {
             >
               Chats
             </Link>
-            <Link href="/dashboard/catalogo" className="mercado-nav-link">
-              Volver al dashboard
-            </Link>
+            {email ? (
+              <Link href="/dashboard/catalogo" className="mercado-nav-link">
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/dashboard/login?next=%2Fmercado-oculto"
+                className="mercado-nav-link"
+              >
+                Iniciar sesión
+              </Link>
+            )}
           </div>
         </div>
       </header>

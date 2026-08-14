@@ -1,12 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUserWithPlan } from "@/lib/auth/get-user-profile";
-import {
-  hasMercadoOcultoSubscription,
-  resolveMercadoOcultoDenial,
-} from "@/lib/mercado-oculto/access";
+import { hasMercadoOcultoSubscription } from "@/lib/mercado-oculto/access";
 import { getMercadoProduct } from "@/lib/mercado-oculto/product-actions";
 import { MercadoChatPanel } from "@/components/mercado-oculto/MercadoChatPanel";
 import { formatUsd } from "@/lib/format";
@@ -22,15 +19,6 @@ export default async function MercadoProductoPage({
 }) {
   const supabase = await createClient();
   const authUser = await getAuthUserWithPlan(supabase);
-
-  if (!authUser) {
-    redirect("/dashboard/login?next=/mercado-oculto");
-  }
-
-  const denial = resolveMercadoOcultoDenial(authUser.profile, true);
-  if (denial || !hasMercadoOcultoSubscription(authUser.profile)) {
-    redirect("/dashboard/planes?mercado_denied=1");
-  }
 
   const { productId } = await params;
   const search = await searchParams;
@@ -57,7 +45,17 @@ export default async function MercadoProductoPage({
   }
 
   const product = result.product;
-  const isOwnProduct = result.sellerUserId === authUser.id;
+  const isOwnProduct = Boolean(
+    authUser && result.sellerUserId === authUser.id,
+  );
+  const canChat = Boolean(
+    authUser && hasMercadoOcultoSubscription(authUser.profile),
+  );
+  const accessMode = !authUser
+    ? "anonymous"
+    : canChat
+      ? "subscriber"
+      : "no_subscription";
 
   return (
     <div className="space-y-6">
@@ -78,7 +76,10 @@ export default async function MercadoProductoPage({
                 unoptimized
               />
             ) : (
-              <div className="mercado-card-media-fallback text-3xl" aria-hidden="true">
+              <div
+                className="mercado-card-media-fallback text-3xl"
+                aria-hidden="true"
+              >
                 {product.product_name.slice(0, 1).toUpperCase()}
               </div>
             )}
@@ -111,8 +112,9 @@ export default async function MercadoProductoPage({
 
         <MercadoChatPanel
           productId={product.product_id}
-          currentUserId={authUser.id}
+          currentUserId={authUser?.id ?? null}
           isOwnProduct={isOwnProduct}
+          accessMode={accessMode}
           initialConversationId={conversationId}
         />
       </div>

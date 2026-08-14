@@ -42,7 +42,7 @@ async function requireMercadoUser() {
   if (!hasMercadoOcultoSubscription(authUser.profile)) {
     return {
       error:
-        "El mercado oculto es exclusivo para suscriptores activos de Alcéntimo.",
+        "Para chatear o publicar en el mercado oculto necesitas una suscripción activa de Alcéntimo.",
     } as const;
   }
   return { user: authUser } as const;

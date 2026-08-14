@@ -1,13 +1,7 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { getAuthUserWithPlan } from "@/lib/auth/get-user-profile";
-import {
-  hasMercadoOcultoSubscription,
-  resolveMercadoOcultoDenial,
-} from "@/lib/mercado-oculto/access";
 import { listMercadoProducts } from "@/lib/mercado-oculto/product-actions";
 import { MercadoProductGrid } from "@/components/mercado-oculto/MercadoProductGrid";
 import { MercadoSearchForm } from "@/components/mercado-oculto/MercadoSearchForm";
+import { MercadoPublishButton } from "@/components/mercado-oculto/MercadoPublishButton";
 
 export const dynamic = "force-dynamic";
 
@@ -16,18 +10,6 @@ export default async function MercadoOcultoPage({
 }: {
   searchParams: Promise<{ q?: string | string[] }>;
 }) {
-  const supabase = await createClient();
-  const authUser = await getAuthUserWithPlan(supabase);
-
-  if (!authUser) {
-    redirect("/dashboard/login?next=/mercado-oculto");
-  }
-
-  const denial = resolveMercadoOcultoDenial(authUser.profile, true);
-  if (denial || !hasMercadoOcultoSubscription(authUser.profile)) {
-    redirect("/dashboard/planes?mercado_denied=1");
-  }
-
   const params = await searchParams;
   const qRaw = Array.isArray(params.q) ? params.q[0] : params.q;
   const query = qRaw?.trim() || undefined;
@@ -36,13 +18,17 @@ export default async function MercadoOcultoPage({
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <p className="mercado-section-label">Directorio privado</p>
-        <h1 className="mercado-heading">Vitrina de suscriptores</h1>
-        <p className="mercado-subheading">
-          Productos activos de tiendas con suscripción Alcéntimo. Negocia por
-          chat interno; el pago y el envío se coordinan fuera de la plataforma.
-        </p>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
+          <p className="mercado-section-label">Vitrina abierta</p>
+          <h1 className="mercado-heading">Mercado oculto</h1>
+          <p className="mercado-subheading">
+            Explora productos de tiendas con suscripción Alcéntimo. Ver es
+            gratis; para publicar o chatear necesitas cuenta y suscripción
+            activa. El pago y el envío se coordinan fuera de la plataforma.
+          </p>
+        </div>
+        <MercadoPublishButton />
       </header>
 
       <MercadoSearchForm initialQuery={query ?? ""} />
