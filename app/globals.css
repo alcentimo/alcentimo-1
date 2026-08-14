@@ -13108,6 +13108,38 @@ button.catalog-profile-footer-link {
   @apply bg-emerald-50/80 dark:bg-emerald-950/35;
 }
 
+.supplier-hub-orders-toolbar {
+  @apply flex flex-col gap-3 rounded-2xl border border-emerald-100/90 bg-white/95 p-3 shadow-[0_6px_20px_rgba(5,150,105,0.04)] dark:border-emerald-900/40 dark:bg-zinc-950 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-3.5;
+}
+
+.supplier-hub-orders-filters {
+  @apply flex min-w-0 flex-wrap items-center gap-1.5;
+}
+
+.supplier-hub-filter-chip {
+  @apply inline-flex min-h-9 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-600 transition hover:border-emerald-300 hover:text-emerald-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-emerald-700 dark:hover:text-emerald-200;
+}
+
+.supplier-hub-filter-chip-active {
+  @apply border-emerald-600 bg-emerald-600 text-white hover:border-emerald-600 hover:text-white dark:border-emerald-500 dark:bg-emerald-600 dark:text-white dark:hover:border-emerald-500 dark:hover:text-white;
+}
+
+.supplier-hub-filter-chip-count {
+  @apply inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-black/5 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums dark:bg-white/10;
+}
+
+.supplier-hub-filter-chip-active .supplier-hub-filter-chip-count {
+  @apply bg-white/20 text-white;
+}
+
+.supplier-hub-orders-search {
+  @apply flex min-h-10 w-full min-w-0 max-w-full items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 dark:border-zinc-700 dark:bg-zinc-900/50 sm:max-w-xs;
+}
+
+.supplier-hub-orders-search-input {
+  @apply min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100;
+}
+
 .supplier-hub-success {
   @apply text-sm font-medium text-emerald-700 dark:text-emerald-400;
 }
