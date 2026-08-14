@@ -7,6 +7,8 @@ import {
 } from "@/lib/supplier/access";
 import { listSupplierProducts } from "@/lib/supplier/actions";
 import { listSupplierOrders } from "@/lib/supplier/order-actions";
+import { getSupplierPaymentConfig } from "@/lib/supplier/payment-actions";
+import { defaultSupplierPaymentConfig } from "@/lib/supplier/payment-types";
 
 export const dynamic = "force-dynamic";
 
@@ -31,19 +33,25 @@ export default async function ProveedorDashboardPage({
 
   const params = await searchParams;
   const tabRaw = Array.isArray(params.tab) ? params.tab[0] : params.tab;
-  const initialTab = tabRaw === "pedidos" ? "pedidos" : "productos";
+  const initialTab =
+    tabRaw === "pedidos" || tabRaw === "pagos" ? tabRaw : "productos";
 
-  const [listedProducts, listedOrders] = await Promise.all([
+  const [listedProducts, listedOrders, paymentConfigResult] = await Promise.all([
     listSupplierProducts(),
     listSupplierOrders(),
+    getSupplierPaymentConfig(),
   ]);
 
   return (
     <SupplierDashboard
       initialProducts={listedProducts.products ?? []}
       initialOrders={listedOrders.orders ?? []}
+      initialPaymentConfig={
+        paymentConfigResult.config ?? defaultSupplierPaymentConfig()
+      }
       productsError={listedProducts.error ?? null}
       ordersError={listedOrders.error ?? null}
+      paymentConfigError={paymentConfigResult.error ?? null}
       initialTab={initialTab}
     />
   );

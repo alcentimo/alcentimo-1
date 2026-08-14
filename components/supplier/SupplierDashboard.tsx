@@ -2,28 +2,34 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Package, ShoppingBag } from "lucide-react";
+import { Package, ShoppingBag, Wallet } from "lucide-react";
 import { SupplierProductsPanel } from "@/components/supplier/SupplierProductsPanel";
 import { SupplierOrdersPanel } from "@/components/supplier/SupplierOrdersPanel";
+import { SupplierPaymentsPanel } from "@/components/supplier/SupplierPaymentsPanel";
 import type { SupplierProduct } from "@/lib/supplier/actions";
 import type { SupplierOrder } from "@/lib/supplier/order-types";
+import type { SupplierPaymentConfig } from "@/lib/supplier/payment-types";
 import { cn } from "@/lib/cn";
 
-type SupplierTab = "productos" | "pedidos";
+type SupplierTab = "productos" | "pedidos" | "pagos";
 
 interface SupplierDashboardProps {
   initialProducts: SupplierProduct[];
   initialOrders: SupplierOrder[];
+  initialPaymentConfig: SupplierPaymentConfig;
   productsError?: string | null;
   ordersError?: string | null;
+  paymentConfigError?: string | null;
   initialTab?: SupplierTab;
 }
 
 export function SupplierDashboard({
   initialProducts,
   initialOrders,
+  initialPaymentConfig,
   productsError = null,
   ordersError = null,
+  paymentConfigError = null,
   initialTab = "productos",
 }: SupplierDashboardProps) {
   const router = useRouter();
@@ -34,9 +40,9 @@ export function SupplierDashboard({
     setTab(next);
     startTransition(() => {
       const href =
-        next === "pedidos"
-          ? "/proveedor/dashboard?tab=pedidos"
-          : "/proveedor/dashboard";
+        next === "productos"
+          ? "/proveedor/dashboard"
+          : `/proveedor/dashboard?tab=${next}`;
       router.replace(href, { scroll: false });
     });
   }
@@ -77,6 +83,19 @@ export function SupplierDashboard({
             <span className="supplier-hub-tab-badge">{initialOrders.length}</span>
           ) : null}
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "pagos"}
+          onClick={() => selectTab("pagos")}
+          className={cn(
+            "supplier-hub-tab",
+            tab === "pagos" && "supplier-hub-tab-active",
+          )}
+        >
+          <Wallet className="h-4 w-4" aria-hidden="true" />
+          Pagos
+        </button>
       </div>
 
       {tab === "productos" ? (
@@ -88,7 +107,9 @@ export function SupplierDashboard({
           ) : null}
           <SupplierProductsPanel initialProducts={initialProducts} />
         </div>
-      ) : (
+      ) : null}
+
+      {tab === "pedidos" ? (
         <div className="space-y-4">
           {ordersError ? (
             <p className="supplier-hub-alert">
@@ -105,7 +126,23 @@ export function SupplierDashboard({
             products={initialProducts}
           />
         </div>
-      )}
+      ) : null}
+
+      {tab === "pagos" ? (
+        <div className="space-y-4">
+          {paymentConfigError ? (
+            <p className="supplier-hub-alert">
+              No se pudieron cargar los datos de pago ({paymentConfigError}).
+              Aplica la migración{" "}
+              <code className="rounded bg-white/70 px-1 dark:bg-zinc-900/50">
+                112_supplier_b2b_payments
+              </code>
+              .
+            </p>
+          ) : null}
+          <SupplierPaymentsPanel initialConfig={initialPaymentConfig} />
+        </div>
+      ) : null}
     </div>
   );
 }

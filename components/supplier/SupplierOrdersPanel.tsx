@@ -23,6 +23,8 @@ import {
   type SupplierOrder,
   type SupplierOrderStatus,
 } from "@/lib/supplier/order-types";
+import { SUPPLIER_ORDER_PAYMENT_STATUS_LABELS } from "@/lib/supplier/payment-types";
+import { getPaymentMethod } from "@/src/config/payment-methods";
 
 interface SupplierOrdersPanelProps {
   initialOrders: SupplierOrder[];
@@ -97,6 +99,8 @@ function buildOrdersCsv(orders: SupplierOrder[]): string {
     "comerciante",
     "telefono",
     "estado",
+    "pago",
+    "referencia_pago",
     "total_usd",
     "agencia",
     "guia",
@@ -116,6 +120,8 @@ function buildOrdersCsv(orders: SupplierOrder[]): string {
         order.buyerName,
         order.buyerPhone ?? "",
         SUPPLIER_ORDER_STATUS_LABELS[order.status],
+        SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[order.paymentStatus],
+        order.paymentReference ?? "",
         order.totalUsd.toFixed(2),
         supplierCarrierLabel(order.shippingCarrier),
         order.trackingNumber ?? "",
@@ -654,13 +660,25 @@ export function SupplierOrdersPanel({
                         {formatOrderDate(order.createdAt)} ·{" "}
                         {formatUsd(order.totalUsd)}
                       </span>
-                      <span
-                        className={cn(
-                          "mt-1 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                          statusBadgeClass(order.status),
-                        )}
-                      >
-                        {SUPPLIER_ORDER_STATUS_LABELS[order.status]}
+                      <span className="mt-1 flex flex-wrap gap-1">
+                        <span
+                          className={cn(
+                            "inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                            statusBadgeClass(order.status),
+                          )}
+                        >
+                          {SUPPLIER_ORDER_STATUS_LABELS[order.status]}
+                        </span>
+                        {order.paymentStatus !== "pendiente" ||
+                        order.paymentReference ? (
+                          <span className="inline-flex w-fit rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                            {
+                              SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[
+                                order.paymentStatus
+                              ]
+                            }
+                          </span>
+                        ) : null}
                       </span>
                     </button>
                   </li>
@@ -719,6 +737,50 @@ export function SupplierOrdersPanel({
                         {selected.shippingBranchAddress ?? "—"}
                       </p>
                     </div>
+                  </div>
+
+                  <div className="supplier-hub-soft-panel mt-4">
+                    <p className="supplier-hub-section-label">
+                      Pago B2B (directo)
+                    </p>
+                    <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      {
+                        SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[
+                          selected.paymentStatus
+                        ]
+                      }
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                      Método:{" "}
+                      {selected.paymentMethod
+                        ? (getPaymentMethod(selected.paymentMethod as never)
+                            ?.label ?? selected.paymentMethod)
+                        : "—"}
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                      Referencia: {selected.paymentReference ?? "—"}
+                    </p>
+                    {selected.paymentNotes.trim() ? (
+                      <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                        Notas: {selected.paymentNotes}
+                      </p>
+                    ) : null}
+                    {selected.paymentNotifiedAt ? (
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Notificado por WhatsApp:{" "}
+                        {formatOrderDate(selected.paymentNotifiedAt)}
+                      </p>
+                    ) : null}
+                    {selected.sourceCatalogOrderId ? (
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Vinculado a pedido de catálogo #
+                        {formatOrderCode(selected.sourceCatalogOrderId)}
+                      </p>
+                    ) : null}
+                    <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
+                      Alcéntimo no verifica ni mueve estos fondos; el pago es
+                      directo del comerciante a ti.
+                    </p>
                   </div>
 
                   <div className="mt-5">

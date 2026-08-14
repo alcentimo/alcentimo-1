@@ -1,4 +1,5 @@
 import { NATIONAL_CARRIER_METHODS } from "@/src/config/shipping-methods";
+import type { SupplierOrderPaymentStatus } from "@/lib/supplier/payment-types";
 
 export const SUPPLIER_ORDER_STATUSES = [
   "pendiente",
@@ -69,6 +70,15 @@ export interface SupplierOrder {
   createdAt: string;
   updatedAt: string;
   items: SupplierOrderItem[];
+  /** Pedido del catálogo (cliente final) vinculado, si aplica. */
+  sourceCatalogOrderId: string | null;
+  paymentStatus: SupplierOrderPaymentStatus;
+  paymentMethod: string | null;
+  paymentReference: string | null;
+  paymentProofUrl: string | null;
+  paymentNotes: string;
+  paymentNotifiedAt: string | null;
+  paymentReportedAt: string | null;
 }
 
 export interface CreateSupplierOrderItemInput {
