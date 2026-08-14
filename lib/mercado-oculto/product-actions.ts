@@ -53,7 +53,80 @@ export async function listPaidSubscriberStoreIds(): Promise<string[]> {
     .map((store) => store.id);
 }
 
-/** Listado público de la vitrina (sin login). */
+/**
+ * Productos de tienda integrados desde el catálogo mayorista oficial
+ * (`store_dropship_links` → `supplier_products` activos).
+ */
+export async function listMercadoDropshipProductIds(
+  storeIds: string[],
+): Promise<string[]> {
+  if (storeIds.length === 0) return [];
+
+  const admin = createAdminClient();
+  const { data: links, error } = await admin
+    .from("store_dropship_links")
+    .select("product_id, supplier_product_id")
+    .in("store_id", storeIds);
+
+  if (error || !links?.length) return [];
+
+  const supplierIds = [
+    ...new Set(
+      (links as Array<{ supplier_product_id: string }>).map(
+        (row) => row.supplier_product_id,
+      ),
+    ),
+  ];
+
+  const { data: supplierProducts, error: supplierError } = await admin
+    .from("supplier_products")
+    .select("id")
+    .in("id", supplierIds)
+    .eq("is_active", true);
+
+  if (supplierError || !supplierProducts?.length) return [];
+
+  const activeSupplierIds = new Set(
+    (supplierProducts as Array<{ id: string }>).map((row) => row.id),
+  );
+
+  return [
+    ...new Set(
+      (links as Array<{ product_id: string; supplier_product_id: string }>)
+        .filter((row) => activeSupplierIds.has(row.supplier_product_id))
+        .map((row) => row.product_id),
+    ),
+  ];
+}
+
+async function assertMercadoDropshipProduct(
+  productId: string,
+  storeId: string,
+): Promise<boolean> {
+  const admin = createAdminClient();
+  const { data: link } = await admin
+    .from("store_dropship_links")
+    .select("supplier_product_id")
+    .eq("product_id", productId)
+    .eq("store_id", storeId)
+    .maybeSingle();
+
+  if (!link) return false;
+
+  const supplierProductId = String(
+    (link as { supplier_product_id: string }).supplier_product_id,
+  );
+  const { data: supplierProduct } = await admin
+    .from("supplier_products")
+    .select("id")
+    .eq("id", supplierProductId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  return Boolean(supplierProduct);
+}
+
+/** Listado público: solo dropshipping integrado de suscriptores (sin login). */
 export async function listMercadoProducts(options?: {
   query?: string;
   limit?: number;
@@ -63,12 +136,18 @@ export async function listMercadoProducts(options?: {
     return { products: [] };
   }
 
+  const dropshipProductIds = await listMercadoDropshipProductIds(storeIds);
+  if (dropshipProductIds.length === 0) {
+    return { products: [] };
+  }
+
   const limit = Math.min(Math.max(options?.limit ?? 60, 1), 120);
   const admin = createAdminClient();
   let request = admin
     .from("catalog_list_view")
     .select(MERCADO_CATALOG_SELECT)
     .in("store_id", storeIds)
+    .in("product_id", dropshipProductIds)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -91,7 +170,7 @@ export async function listMercadoProducts(options?: {
   return { products };
 }
 
-/** Detalle público de un producto del mercado (sin login). */
+/** Detalle público de un producto dropshipping del mercado (sin login). */
 export async function getMercadoProduct(
   productId: string,
 ): Promise<
@@ -114,6 +193,17 @@ export async function getMercadoProduct(
   if (!data) return { error: "Producto no encontrado o inactivo." };
 
   const product = mapMercadoProductCard(data as unknown as CatalogListItem);
+
+  const isDropship = await assertMercadoDropshipProduct(
+    product.product_id,
+    product.store_id,
+  );
+  if (!isDropship) {
+    return {
+      error:
+        "Este producto no está publicado en el mercado (no es dropshipping de mayoristas oficiales).",
+    };
+  }
 
   const { data: store, error: storeError } = await admin
     .from("stores")

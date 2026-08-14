@@ -23,8 +23,9 @@ export default async function MercadoOcultoPage({
           <p className="mercado-section-label">Vitrina abierta</p>
           <h1 className="mercado-heading">Mercado oculto</h1>
           <p className="mercado-subheading">
-            Explora productos de tiendas con suscripción Alcéntimo. Ver es
-            gratis; para publicar o chatear necesitas cuenta y suscripción
+            Catálogo público de productos de dropshipping que los suscriptores
+            integraron desde los mayoristas oficiales de Alcéntimo. Ver es
+            gratis; para chatear o publicar necesitas cuenta y suscripción
             activa. El pago y el envío se coordinan fuera de la plataforma.
           </p>
         </div>
