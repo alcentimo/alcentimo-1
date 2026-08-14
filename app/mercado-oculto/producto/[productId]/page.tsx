@@ -117,7 +117,7 @@ export default async function MercadoProductoPage({
         <section className="mercado-mp-detail-info">
           <div className="mercado-mp-official-pill">
             <BadgeCheck className="h-4 w-4" aria-hidden="true" />
-            Mayorista Oficial Alcéntimo
+            {product.supplier_label}
           </div>
           <p className="mercado-mp-card-meta mt-3">
             {product.category_name} · {product.supplier_label}
@@ -143,6 +143,7 @@ export default async function MercadoProductoPage({
             freeShipping={product.free_shipping}
             availableStock={product.available_stock}
             thumbUrl={product.thumb_url}
+            supplierUserId={product.seller_user_id}
             supplierLabel={product.supplier_label}
           />
 
@@ -188,6 +189,7 @@ export default async function MercadoProductoPage({
         <MercadoSellerQuestions
           productId={product.product_id}
           productName={product.product_name}
+          supplierLabel={product.supplier_label}
         />
       </div>
 

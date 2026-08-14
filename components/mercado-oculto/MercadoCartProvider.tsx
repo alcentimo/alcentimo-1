@@ -10,12 +10,16 @@ import {
   useSyncExternalStore,
 } from "react";
 import {
+  buildMercadoSupplierOrderDrafts,
   clearMercadoCart,
+  groupMercadoCartBySupplier,
   mercadoCartItemCount,
   mercadoCartSubtotal,
   readMercadoCart,
   writeMercadoCart,
   type MercadoCartItem,
+  type MercadoCartSupplierGroup,
+  type MercadoSupplierOrderDraft,
 } from "@/lib/mercado-oculto/cart";
 
 type AddInput = {
@@ -24,15 +28,19 @@ type AddInput = {
   priceUsd: number;
   quantity?: number;
   thumbUrl?: string | null;
+  supplierUserId: string;
   supplierLabel?: string;
   availableStock?: number;
 };
 
 type MercadoCartContextValue = {
   items: MercadoCartItem[];
+  groups: MercadoCartSupplierGroup[];
+  orderDrafts: MercadoSupplierOrderDraft[];
   ready: boolean;
   itemCount: number;
   subtotalUsd: number;
+  supplierCount: number;
   addItem: (input: AddInput) => void;
   setQuantity: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => void;
@@ -88,6 +96,12 @@ export function MercadoCartProvider({
     [snapshot],
   );
 
+  const groups = useMemo(() => groupMercadoCartBySupplier(items), [items]);
+  const orderDrafts = useMemo(
+    () => buildMercadoSupplierOrderDrafts(items),
+    [items],
+  );
+
   const persist = useCallback((next: MercadoCartItem[]) => {
     writeMercadoCart(next);
     emitCartChange();
@@ -97,6 +111,7 @@ export function MercadoCartProvider({
     (input: AddInput) => {
       const qty = Math.max(1, Math.floor(input.quantity ?? 1));
       const stock = Math.max(0, Math.floor(input.availableStock ?? 0));
+      const supplierUserId = input.supplierUserId.trim();
       const current = readMercadoCart();
       const existing = current.find((item) => item.productId === input.productId);
       let nextQty = (existing?.quantity ?? 0) + qty;
@@ -108,6 +123,7 @@ export function MercadoCartProvider({
         priceUsd: input.priceUsd,
         quantity: nextQty,
         thumbUrl: input.thumbUrl ?? null,
+        supplierUserId,
         supplierLabel: input.supplierLabel ?? "Mayorista Oficial Alcéntimo",
         availableStock: stock,
       };
@@ -156,15 +172,27 @@ export function MercadoCartProvider({
   const value = useMemo<MercadoCartContextValue>(
     () => ({
       items,
+      groups,
+      orderDrafts,
       ready,
       itemCount: mercadoCartItemCount(items),
       subtotalUsd: mercadoCartSubtotal(items),
+      supplierCount: groups.length,
       addItem,
       setQuantity,
       removeItem,
       clear,
     }),
-    [items, ready, addItem, setQuantity, removeItem, clear],
+    [
+      items,
+      groups,
+      orderDrafts,
+      ready,
+      addItem,
+      setQuantity,
+      removeItem,
+      clear,
+    ],
   );
 
   return (
