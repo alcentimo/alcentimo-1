@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Lock, Send } from "lucide-react";
 import {
   getOrCreateMercadoConversation,
   listMercadoMessages,
@@ -11,10 +11,13 @@ import {
 } from "@/lib/mercado-oculto/chat-actions";
 import { cn } from "@/lib/cn";
 
+type ChatAccessMode = "anonymous" | "no_subscription" | "subscriber";
+
 interface MercadoChatPanelProps {
   productId: string;
-  currentUserId: string;
+  currentUserId: string | null;
   isOwnProduct: boolean;
+  accessMode: ChatAccessMode;
   /** Conversación concreta (p. ej. vendedor respondiendo desde Chats). */
   initialConversationId?: string | null;
 }
@@ -23,6 +26,7 @@ export function MercadoChatPanel({
   productId,
   currentUserId,
   isOwnProduct,
+  accessMode,
   initialConversationId = null,
 }: MercadoChatPanelProps) {
   const [conversationId, setConversationId] = useState<string | null>(
@@ -31,11 +35,22 @@ export function MercadoChatPanel({
   const [messages, setMessages] = useState<MercadoMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(accessMode === "subscriber");
   const [pending, startTransition] = useTransition();
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
+  const loginNext = encodeURIComponent(
+    `/mercado-oculto/producto/${productId}${
+      initialConversationId ? `?c=${initialConversationId}` : ""
+    }`,
+  );
+
   useEffect(() => {
+    if (accessMode !== "subscriber") {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     async function boot() {
@@ -84,10 +99,10 @@ export function MercadoChatPanel({
     return () => {
       cancelled = true;
     };
-  }, [productId, isOwnProduct, initialConversationId]);
+  }, [productId, isOwnProduct, initialConversationId, accessMode]);
 
   useEffect(() => {
-    if (!conversationId) return;
+    if (accessMode !== "subscriber" || !conversationId) return;
 
     const timer = window.setInterval(() => {
       void listMercadoMessages(conversationId).then((result) => {
@@ -98,16 +113,69 @@ export function MercadoChatPanel({
     }, 5000);
 
     return () => window.clearInterval(timer);
-  }, [conversationId]);
+  }, [conversationId, accessMode]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
+  if (accessMode === "anonymous") {
+    return (
+      <div className="mercado-chat-panel">
+        <div className="mercado-chat-header">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            Chat de negociación
+          </p>
+          <p className="text-xs text-zinc-500">
+            Inicia sesión para conversar con el dueño de la tienda.
+          </p>
+        </div>
+        <div className="flex flex-1 flex-col items-start justify-center gap-3 px-4 py-8">
+          <p className="inline-flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+            <Lock className="h-4 w-4 shrink-0 text-teal-700" aria-hidden="true" />
+            La vitrina es pública; el chat requiere cuenta.
+          </p>
+          <Link
+            href={`/dashboard/login?next=${loginNext}`}
+            className="btn-brand !min-h-10 !text-sm"
+          >
+            Iniciar sesión para chatear
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (accessMode === "no_subscription") {
+    return (
+      <div className="mercado-chat-panel">
+        <div className="mercado-chat-header">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            Chat de negociación
+          </p>
+          <p className="text-xs text-zinc-500">
+            Necesitas una suscripción activa de Alcéntimo para negociar.
+          </p>
+        </div>
+        <div className="flex flex-1 flex-col items-start justify-center gap-3 px-4 py-8">
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">
+            Ya iniciaste sesión, pero el chat interno es solo para suscriptores.
+          </p>
+          <Link
+            href="/dashboard/planes?mercado_denied=1"
+            className="btn-brand !min-h-10 !text-sm"
+          >
+            Ver planes
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (isOwnProduct && !conversationId && !loading) {
     return (
       <div className="mercado-chat-panel">
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+        <p className="p-4 text-sm text-zinc-600 dark:text-zinc-300">
           Este es un producto de tu tienda. Abre un chat desde{" "}
           <Link
             href="/mercado-oculto/conversaciones"
@@ -163,7 +231,9 @@ export function MercadoChatPanel({
           </p>
         ) : null}
         {messages.map((message) => {
-          const mine = message.senderUserId === currentUserId;
+          const mine = Boolean(
+            currentUserId && message.senderUserId === currentUserId,
+          );
           return (
             <div
               key={message.id}

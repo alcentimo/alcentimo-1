@@ -1,9 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthUserWithPlan } from "@/lib/auth/get-user-profile";
-import { hasMercadoOcultoSubscription } from "@/lib/mercado-oculto/access";
 import {
   isPaidSubscriberProfile,
   mapMercadoProductCard,
@@ -15,21 +12,6 @@ import type { CatalogListItem } from "@/lib/database.types";
 type ActionResult<T extends object = object> = {
   error?: string;
 } & Partial<T>;
-
-async function requireMercadoUser() {
-  const supabase = await createClient();
-  const authUser = await getAuthUserWithPlan(supabase);
-  if (!authUser) {
-    return { error: "Debes iniciar sesión." } as const;
-  }
-  if (!hasMercadoOcultoSubscription(authUser.profile)) {
-    return {
-      error:
-        "El mercado oculto es exclusivo para suscriptores activos de Alcéntimo.",
-    } as const;
-  }
-  return { user: authUser, supabase } as const;
-}
 
 /** Tiendas cuyo dueño tiene suscripción de pago (active/provisional). */
 export async function listPaidSubscriberStoreIds(): Promise<string[]> {
@@ -71,13 +53,11 @@ export async function listPaidSubscriberStoreIds(): Promise<string[]> {
     .map((store) => store.id);
 }
 
+/** Listado público de la vitrina (sin login). */
 export async function listMercadoProducts(options?: {
   query?: string;
   limit?: number;
 }): Promise<ActionResult<{ products: MercadoProductCard[] }>> {
-  const gate = await requireMercadoUser();
-  if ("error" in gate) return { error: gate.error };
-
   const storeIds = await listPaidSubscriberStoreIds();
   if (storeIds.length === 0) {
     return { products: [] };
@@ -111,6 +91,7 @@ export async function listMercadoProducts(options?: {
   return { products };
 }
 
+/** Detalle público de un producto del mercado (sin login). */
 export async function getMercadoProduct(
   productId: string,
 ): Promise<
@@ -120,9 +101,6 @@ export async function getMercadoProduct(
     sellerStoreName: string;
   }>
 > {
-  const gate = await requireMercadoUser();
-  if ("error" in gate) return { error: gate.error };
-
   if (!productId.trim()) return { error: "Producto inválido." };
 
   const admin = createAdminClient();
