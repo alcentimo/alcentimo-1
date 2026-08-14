@@ -79,12 +79,11 @@ export default async function MercadoOcultoPage({
       <div className="mercado-mp-results">
         <div className="mercado-mp-results-head">
           <div>
-            <p className="mercado-section-label">Ofertas del día</p>
-            <h1 className="mercado-heading text-xl sm:text-2xl">
+            <h1 className="mercado-heading text-lg sm:text-xl">
               {query ? `Resultados para “${query}”` : "Productos destacados"}
             </h1>
-            <p className="mercado-subheading mt-1">
-              Envío a nivel nacional · Compra protegida · Precios mayoristas
+            <p className="mercado-subheading mt-0.5">
+              Envío a nivel nacional · Compra protegida
             </p>
           </div>
           <p className="text-sm text-zinc-500">
@@ -93,12 +92,6 @@ export default async function MercadoOcultoPage({
             </strong>{" "}
             resultado{products.length === 1 ? "" : "s"}
           </p>
-        </div>
-
-        <div className="mercado-mp-trust-chips" aria-hidden="true">
-          <span>Compra protegida</span>
-          <span>Envío a nivel nacional</span>
-          <span>Devolución fácil</span>
         </div>
 
         {listed.error ? (
