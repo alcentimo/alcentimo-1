@@ -13167,3 +13167,162 @@ button.catalog-profile-footer-link {
 .supplier-hub-metric-value {
   @apply mt-0.5 text-base font-semibold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50;
 }
+
+/* ——— Mercado oculto (directorio privado de suscriptores) ——— */
+.mercado-shell {
+  @apply min-h-dvh bg-[linear-gradient(165deg,#f0fdfa_0%,#f8fafc_34%,#f1f5f9_100%)] dark:bg-[linear-gradient(165deg,#134e4a22_0%,#09090b_36%,#09090b_100%)];
+}
+
+.mercado-header {
+  @apply sticky top-0 z-30 border-b border-teal-200/70 bg-white/90 backdrop-blur-md dark:border-teal-900/40 dark:bg-zinc-950/90;
+}
+
+.mercado-header-inner {
+  @apply mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3.5 sm:px-7;
+}
+
+.mercado-brand-mark {
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-700 text-sm font-bold text-white shadow-md shadow-teal-600/20;
+}
+
+.mercado-eyebrow {
+  @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-800 dark:text-teal-400;
+}
+
+.mercado-title {
+  @apply truncate text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+}
+
+.mercado-nav-link {
+  @apply inline-flex items-center rounded-lg px-2.5 py-1.5 text-sm font-medium text-zinc-600 transition hover:bg-teal-50 hover:text-teal-900 dark:text-zinc-400 dark:hover:bg-teal-950/40 dark:hover:text-teal-200;
+}
+
+.mercado-nav-link-active {
+  @apply bg-teal-50 text-teal-900 dark:bg-teal-950/50 dark:text-teal-200;
+}
+
+.mercado-main {
+  @apply mx-auto max-w-6xl px-5 py-6 sm:px-7 sm:py-8;
+}
+
+.mercado-section-label {
+  @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-800 dark:text-teal-400;
+}
+
+.mercado-heading {
+  @apply text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+}
+
+.mercado-subheading {
+  @apply max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-300;
+}
+
+.mercado-search {
+  @apply flex items-center gap-2 rounded-2xl border border-teal-200/80 bg-white/95 px-3 py-2 shadow-sm dark:border-teal-900/40 dark:bg-zinc-950;
+}
+
+.mercado-search-input {
+  @apply min-w-0 flex-1 border-0 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-50;
+}
+
+.mercado-grid {
+  @apply grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4;
+}
+
+.mercado-card {
+  @apply flex h-full flex-col overflow-hidden rounded-2xl border border-teal-100/90 bg-white/95 shadow-[0_8px_24px_rgba(15,118,110,0.06)] transition hover:-translate-y-0.5 hover:border-teal-300/80 dark:border-teal-900/40 dark:bg-zinc-950 dark:hover:border-teal-700/50;
+}
+
+.mercado-card-media {
+  @apply relative aspect-[4/3] overflow-hidden bg-teal-50 dark:bg-teal-950/30;
+}
+
+.mercado-card-media-fallback {
+  @apply flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#ccfbf1,#e2e8f0)] text-2xl font-semibold text-teal-800 dark:bg-[linear-gradient(135deg,#134e4a55,#27272a)] dark:text-teal-200;
+}
+
+.mercado-card-body {
+  @apply flex flex-1 flex-col gap-1 p-3;
+}
+
+.mercado-card-store {
+  @apply truncate text-[11px] font-medium uppercase tracking-wide text-teal-800/80 dark:text-teal-400/90;
+}
+
+.mercado-card-title {
+  @apply line-clamp-2 text-sm font-semibold leading-snug text-zinc-900 dark:text-zinc-50;
+}
+
+.mercado-card-meta {
+  @apply truncate text-xs text-zinc-500;
+}
+
+.mercado-card-footer {
+  @apply mt-auto flex items-center justify-between gap-2 pt-2;
+}
+
+.mercado-card-price {
+  @apply text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50;
+}
+
+.mercado-card-cta {
+  @apply inline-flex items-center gap-1 text-[11px] font-semibold text-teal-800 dark:text-teal-300;
+}
+
+.mercado-empty,
+.mercado-alert,
+.mercado-card-static {
+  @apply rounded-2xl border border-teal-200/80 bg-white/90 px-4 py-5 text-sm text-zinc-600 dark:border-teal-900/40 dark:bg-zinc-950 dark:text-zinc-300;
+}
+
+.mercado-alert {
+  @apply border-amber-200/80 bg-amber-50/80 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100;
+}
+
+.mercado-back-link {
+  @apply inline-flex text-sm font-medium text-teal-800 hover:underline dark:text-teal-300;
+}
+
+.mercado-detail-card {
+  @apply overflow-hidden rounded-2xl border border-teal-100/90 bg-white/95 shadow-sm dark:border-teal-900/40 dark:bg-zinc-950;
+}
+
+.mercado-detail-media {
+  @apply relative aspect-[16/11] overflow-hidden bg-teal-50 dark:bg-teal-950/30;
+}
+
+.mercado-chat-panel {
+  @apply flex min-h-[28rem] flex-col overflow-hidden rounded-2xl border border-teal-100/90 bg-white/95 shadow-sm dark:border-teal-900/40 dark:bg-zinc-950;
+}
+
+.mercado-chat-header {
+  @apply border-b border-teal-100/80 px-4 py-3 dark:border-teal-900/40;
+}
+
+.mercado-chat-thread {
+  @apply flex flex-1 flex-col gap-2 overflow-y-auto px-3 py-3;
+}
+
+.mercado-chat-bubble {
+  @apply max-w-[85%] rounded-2xl px-3 py-2;
+}
+
+.mercado-chat-bubble-mine {
+  @apply ml-auto bg-teal-700 text-white;
+}
+
+.mercado-chat-bubble-theirs {
+  @apply mr-auto bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50;
+}
+
+.mercado-chat-composer {
+  @apply flex items-center gap-2 border-t border-teal-100/80 p-3 dark:border-teal-900/40;
+}
+
+.mercado-chat-list {
+  @apply divide-y divide-teal-100/80 overflow-hidden rounded-2xl border border-teal-100/90 bg-white/95 dark:divide-teal-900/40 dark:border-teal-900/40 dark:bg-zinc-950;
+}
+
+.mercado-chat-list-item {
+  @apply flex items-start justify-between gap-3 px-4 py-3 transition hover:bg-teal-50/60 dark:hover:bg-teal-950/20;
+}
