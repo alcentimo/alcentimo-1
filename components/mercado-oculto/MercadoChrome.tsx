@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import {
   Baby,
@@ -29,6 +29,7 @@ import {
   useMercadoCart,
 } from "@/components/mercado-oculto/MercadoCartProvider";
 import { MercadoBottomNav } from "@/components/mercado-oculto/MercadoBottomNav";
+import { useMercadoCatalogOptional } from "@/components/mercado-oculto/MercadoCatalogProvider";
 
 interface MercadoChromeProps {
   email: string | null;
@@ -55,20 +56,20 @@ const CATEGORY_ICONS: Record<
 function MercadoChromeInner({ email, children }: MercadoChromeProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [pending, startTransition] = useTransition();
+  const [navPending, startNavTransition] = useTransition();
   const { itemCount, ready } = useMercadoCart();
+  const catalog = useMercadoCatalogOptional();
 
   const onDirectory =
     pathname === "/mercado-oculto" || pathname === "/mercado-oculto/";
   const onPurchases = pathname.startsWith("/mercado-oculto/conversaciones");
   const onCart = pathname.startsWith("/mercado-oculto/carrito");
-  const activeCategory = searchParams.get("category") ?? "";
-  const [query, setQuery] = useState(searchParams.get("q") ?? "");
+  const activeCategory = catalog?.filters.category ?? "";
+  const [query, setQuery] = useState(catalog?.filters.q ?? "");
 
   useEffect(() => {
-    setQuery(searchParams.get("q") ?? "");
-  }, [searchParams]);
+    setQuery(catalog?.filters.q ?? "");
+  }, [catalog?.filters.q]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -79,25 +80,29 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
     }
   }, [pathname]);
 
-  function navigateWithParams(mutate: (params: URLSearchParams) => void) {
-    const params = new URLSearchParams(searchParams.toString());
-    mutate(params);
-    const qs = params.toString();
-    startTransition(() => {
-      router.push(qs ? `/mercado-oculto?${qs}` : "/mercado-oculto");
+  function goDirectorySearch() {
+    const next = query.trim();
+    if (catalog && onDirectory) {
+      catalog.setFilters((current) => ({ ...current, q: next }));
+      return;
+    }
+    startNavTransition(() => {
+      router.push(
+        next
+          ? `/mercado-oculto?q=${encodeURIComponent(next)}`
+          : "/mercado-oculto",
+      );
     });
   }
+
+  const pending = Boolean(catalog?.pending) || navPending;
 
   const searchForm = (
     <form
       className="mercado-mp-search"
       onSubmit={(event) => {
         event.preventDefault();
-        navigateWithParams((params) => {
-          const next = query.trim();
-          if (next) params.set("q", next);
-          else params.delete("q");
-        });
+        goDirectorySearch();
       }}
     >
       <span className="mercado-mp-search-icon" aria-hidden="true">
@@ -119,10 +124,10 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
   );
 
   return (
-    <div className="mercado-shell">
+    <div className={cn("mercado-shell", pending && "mercado-shell-pending")}>
       <header className="mercado-mp-header">
         <div className="mercado-mp-header-top">
-          <Link href="/mercado-oculto" className="mercado-mp-brand">
+          <Link href="/mercado-oculto" className="mercado-mp-brand" prefetch>
             <span className="mercado-brand-mark" aria-hidden="true">
               a
             </span>
@@ -136,6 +141,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
           <nav className="mercado-mp-nav" aria-label="Cuenta y compras">
             <Link
               href="/mercado-oculto/conversaciones"
+              prefetch
               className={cn(
                 "mercado-nav-link",
                 onPurchases && "mercado-nav-link-active",
@@ -146,6 +152,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
             </Link>
             <Link
               href="/mercado-oculto/conversaciones"
+              prefetch
               className="mercado-nav-link"
               aria-label="Notificaciones"
             >
@@ -154,6 +161,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
             </Link>
             <Link
               href="/mercado-oculto/carrito"
+              prefetch
               className={cn(
                 "mercado-nav-link mercado-mp-cart-link",
                 onCart && "mercado-nav-link-active",
@@ -203,18 +211,16 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
             <button
               type="button"
               role="tab"
-              aria-selected={!activeCategory && !searchParams.get("ship")}
+              aria-selected={!activeCategory}
               className={cn(
                 "mercado-mp-cat-chip",
-                !activeCategory &&
-                  !searchParams.get("ship") &&
-                  "mercado-mp-cat-chip-active",
+                !activeCategory && "mercado-mp-cat-chip-active",
               )}
               onClick={() =>
-                navigateWithParams((params) => {
-                  params.delete("category");
-                  params.delete("ship");
-                })
+                catalog?.setFilters((current) => ({
+                  ...current,
+                  category: "",
+                }))
               }
             >
               <span className="mercado-mp-cat-icon" aria-hidden="true">
@@ -235,9 +241,10 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
                     activeCategory === item.value && "mercado-mp-cat-chip-active",
                   )}
                   onClick={() =>
-                    navigateWithParams((params) => {
-                      params.set("category", item.value);
-                    })
+                    catalog?.setFilters((current) => ({
+                      ...current,
+                      category: item.value,
+                    }))
                   }
                 >
                   <span className="mercado-mp-cat-icon" aria-hidden="true">

@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState } from "react";
+import { useMercadoCatalog } from "@/components/mercado-oculto/MercadoCatalogProvider";
 import type { MercadoCatalogFacets } from "@/lib/mercado-oculto/types";
 import { cn } from "@/lib/cn";
 
@@ -14,27 +14,22 @@ export function MercadoFiltersPanel({
   facets,
   resultCount,
 }: MercadoFiltersPanelProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [pending, startTransition] = useTransition();
+  const { filters, setFilters, clearFilters, pending } = useMercadoCatalog();
+  const [minPrice, setMinPrice] = useState(filters.min);
+  const [maxPrice, setMaxPrice] = useState(filters.max);
 
-  const currentMin = searchParams.get("min") ?? "";
-  const currentMax = searchParams.get("max") ?? "";
-  const currentSupplier = searchParams.get("supplier") ?? "";
-  const currentCategory = searchParams.get("category") ?? "";
-  const freeShippingOnly = searchParams.get("ship") === "free";
+  useEffect(() => {
+    setMinPrice(filters.min);
+    setMaxPrice(filters.max);
+  }, [filters.min, filters.max]);
 
-  const [minPrice, setMinPrice] = useState(currentMin);
-  const [maxPrice, setMaxPrice] = useState(currentMax);
-
-  function pushParams(mutate: (params: URLSearchParams) => void) {
-    const params = new URLSearchParams(searchParams.toString());
-    mutate(params);
-    const qs = params.toString();
-    startTransition(() => {
-      router.push(qs ? `/mercado-oculto?${qs}` : "/mercado-oculto");
-    });
-  }
+  const hasActive =
+    Boolean(filters.q) ||
+    Boolean(filters.category) ||
+    Boolean(filters.min) ||
+    Boolean(filters.max) ||
+    Boolean(filters.supplier) ||
+    filters.ship === "free";
 
   return (
     <aside className="mercado-mp-filters" aria-label="Filtros del catálogo">
@@ -46,13 +41,13 @@ export function MercadoFiltersPanel({
       <label className="mercado-mp-ship-toggle">
         <input
           type="checkbox"
-          checked={freeShippingOnly}
+          checked={filters.ship === "free"}
           disabled={pending}
           onChange={(event) =>
-            pushParams((params) => {
-              if (event.target.checked) params.set("ship", "free");
-              else params.delete("ship");
-            })
+            setFilters((current) => ({
+              ...current,
+              ship: event.target.checked ? "free" : "",
+            }))
           }
         />
         <span>
@@ -96,12 +91,11 @@ export function MercadoFiltersPanel({
           className="mercado-mp-filter-apply"
           disabled={pending}
           onClick={() =>
-            pushParams((params) => {
-              if (minPrice.trim()) params.set("min", minPrice.trim());
-              else params.delete("min");
-              if (maxPrice.trim()) params.set("max", maxPrice.trim());
-              else params.delete("max");
-            })
+            setFilters((current) => ({
+              ...current,
+              min: minPrice.trim(),
+              max: maxPrice.trim(),
+            }))
           }
         >
           Aplicar
@@ -116,12 +110,10 @@ export function MercadoFiltersPanel({
               type="button"
               className={cn(
                 "mercado-mp-filter-option",
-                !currentCategory && "mercado-mp-filter-option-active",
+                !filters.category && "mercado-mp-filter-option-active",
               )}
               onClick={() =>
-                pushParams((params) => {
-                  params.delete("category");
-                })
+                setFilters((current) => ({ ...current, category: "" }))
               }
             >
               Todas
@@ -133,13 +125,14 @@ export function MercadoFiltersPanel({
                 type="button"
                 className={cn(
                   "mercado-mp-filter-option",
-                  currentCategory === category.value &&
+                  filters.category === category.value &&
                     "mercado-mp-filter-option-active",
                 )}
                 onClick={() =>
-                  pushParams((params) => {
-                    params.set("category", category.value);
-                  })
+                  setFilters((current) => ({
+                    ...current,
+                    category: category.value,
+                  }))
                 }
               >
                 <span>{category.label}</span>
@@ -161,12 +154,10 @@ export function MercadoFiltersPanel({
                 type="button"
                 className={cn(
                   "mercado-mp-filter-option",
-                  !currentSupplier && "mercado-mp-filter-option-active",
+                  !filters.supplier && "mercado-mp-filter-option-active",
                 )}
                 onClick={() =>
-                  pushParams((params) => {
-                    params.delete("supplier");
-                  })
+                  setFilters((current) => ({ ...current, supplier: "" }))
                 }
               >
                 Todos
@@ -178,13 +169,14 @@ export function MercadoFiltersPanel({
                   type="button"
                   className={cn(
                     "mercado-mp-filter-option",
-                    currentSupplier === supplier.id &&
+                    filters.supplier === supplier.id &&
                       "mercado-mp-filter-option-active",
                   )}
                   onClick={() =>
-                    pushParams((params) => {
-                      params.set("supplier", supplier.id);
-                    })
+                    setFilters((current) => ({
+                      ...current,
+                      supplier: supplier.id,
+                    }))
                   }
                 >
                   <span className="truncate">{supplier.label}</span>
@@ -198,24 +190,15 @@ export function MercadoFiltersPanel({
         </details>
       ) : null}
 
-      {(currentMin ||
-        currentMax ||
-        currentSupplier ||
-        currentCategory ||
-        freeShippingOnly ||
-        searchParams.get("q")) && (
+      {hasActive ? (
         <button
           type="button"
           className="mercado-mp-filter-clear"
-          onClick={() => {
-            startTransition(() => {
-              router.push("/mercado-oculto");
-            });
-          }}
+          onClick={clearFilters}
         >
           Limpiar filtros
         </button>
-      )}
+      ) : null}
     </aside>
   );
 }

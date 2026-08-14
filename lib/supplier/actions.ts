@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -19,6 +19,12 @@ import {
   parseSupplierVariantsFromForm,
   type SupplierProductVariants,
 } from "@/lib/supplier/variants";
+import { MERCADO_CATALOG_CACHE_TAG } from "@/lib/mercado-oculto/catalog-cache";
+
+function bustMercadoCatalogCache() {
+  revalidateTag(MERCADO_CATALOG_CACHE_TAG, "max");
+  revalidatePath("/mercado-oculto");
+}
 
 export interface SupplierProduct {
   id: string;
@@ -240,7 +246,7 @@ export async function createSupplierProduct(
   });
 
   revalidatePath("/proveedor/dashboard");
-  revalidatePath("/mercado-oculto");
+  bustMercadoCatalogCache();
   return { product: created };
 }
 
@@ -325,7 +331,7 @@ export async function updateSupplierProduct(
   revalidatePath("/proveedor/dashboard");
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
-  revalidatePath("/mercado-oculto");
+  bustMercadoCatalogCache();
   return { product: updated };
 }
 
@@ -351,5 +357,6 @@ export async function archiveSupplierProduct(
   if (error) return { error: error.message };
 
   revalidatePath("/proveedor/dashboard");
+  bustMercadoCatalogCache();
   return {};
 }
