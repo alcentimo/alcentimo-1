@@ -30,7 +30,7 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
     <ul className="mercado-mp-grid">
       {products.map((product) => (
         <li key={product.product_id}>
-          <article className="mercado-mp-card">
+          <article className="group mercado-mp-card">
             <Link
               href={`/mercado-oculto/producto/${product.product_id}`}
               className="mercado-mp-card-media"

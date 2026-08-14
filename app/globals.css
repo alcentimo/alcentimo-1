@@ -13445,7 +13445,7 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-card {
-  @apply group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-teal-300/80 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-teal-700/50;
+  @apply flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-teal-300/80 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-teal-700/50;
 }
 
 .mercado-mp-card-media {
