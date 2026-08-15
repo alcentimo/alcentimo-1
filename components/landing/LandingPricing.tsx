@@ -46,22 +46,19 @@ export function LandingPricing({
     >
       <div className="page-container">
         <div className="mx-auto max-w-3xl text-center">
-          <Badge variant="success" className="mb-4">
-            Planes mensuales simples
-          </Badge>
+          <p className="section-label">Precios</p>
           <h2 className="section-title">
-            Elige el plan con el que quieres empezar
+            Planes simples para empezar
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Tres opciones claras. Sin comisiones por venta. Crece cuando lo
-            necesites.
+          <p className="section-subtitle mx-auto">
+            Tres opciones claras. Sin comisiones por venta.
           </p>
           <p className="landing-pricing-disclaimer mt-5 text-left sm:text-center">
             {PRICING_DOMAIN_DISCLAIMER}
           </p>
         </div>
 
-        <ul className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+        <ul className="mx-auto mt-14 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3 lg:gap-8">
           {visibleTiers.map((tier) => {
             const { price, period } = formatLandingPrice(tier);
             const ctaHref =
@@ -74,8 +71,8 @@ export function LandingPricing({
                 <Card
                   className={`flex h-full w-full flex-col ${
                     tier.recommended
-                      ? "border-emerald-300/80 shadow-lg shadow-emerald-500/15 ring-1 ring-emerald-500/20 dark:border-emerald-700/60 dark:ring-emerald-500/30"
-                      : "border-zinc-200/80 shadow-md shadow-emerald-500/5 dark:border-zinc-800/80"
+                      ? "border-emerald-300/70 shadow-sm ring-1 ring-emerald-500/15 dark:border-emerald-700/60 dark:ring-emerald-500/25"
+                      : "border-zinc-200/80 shadow-none dark:border-zinc-800/80"
                   }`}
                 >
                   <CardHeader className="pb-2 pt-6 sm:px-6">
@@ -87,7 +84,7 @@ export function LandingPricing({
                     {planIncludesCustomDomain(tier.planId) ? (
                       <Badge
                         variant="outline"
-                        className="mb-3 w-fit border-violet-200 text-violet-800 dark:border-violet-800 dark:text-violet-200"
+                        className="mb-3 w-fit border-emerald-200 text-emerald-800 dark:border-emerald-800 dark:text-emerald-200"
                       >
                         <Globe className="mr-1 h-3 w-3" aria-hidden="true" />
                         Dominio .com
@@ -131,10 +128,10 @@ export function LandingPricing({
                       href={ctaHref}
                       className={`mt-8 inline-flex justify-center gap-2 ${
                         tier.recommended ? "btn-brand" : "btn-brand-outline"
-                      } shadow-lg shadow-emerald-500/10`}
+                      }`}
                     >
                       {tier.planId === "free"
-                        ? "Crear mi tienda gratis"
+                        ? "Crear tienda gratis"
                         : "Elegir plan"}
                     </Link>
                   </CardContent>

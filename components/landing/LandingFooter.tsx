@@ -9,8 +9,8 @@ export function LandingFooter() {
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="max-w-xs text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-              Tu propio negocio digital en minutos: elige productos listos para
-              vender, arma tu tienda y vende por WhatsApp sin inventario.
+              Dropshipping automatizado: catálogo listo, tu tienda y ventas por
+              WhatsApp — sin inventario.
             </p>
           </div>
 
@@ -19,10 +19,10 @@ export function LandingFooter() {
             aria-label="Enlaces del pie de página"
           >
             <Link href={MERCHANT_SIGNUP_HREF} className="link-brand">
-              Crear mi tienda gratis
+              Crear tienda gratis
             </Link>
             <Link href={SUPPLIER_ZONE_HREF} className="link-brand">
-              Zona de Proveedores
+              Proveedores
             </Link>
             <Link href="/dashboard/login" className="link-brand">
               Iniciar sesión

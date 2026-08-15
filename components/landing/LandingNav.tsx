@@ -9,11 +9,10 @@ import { SUPPLIER_ZONE_HREF } from "@/lib/landing/supplier-zone-href";
 import { scrollToLandingHash } from "@/lib/landing/scroll-to-hash";
 
 const navLinks = [
-  { href: "#experiencia", label: "Cómo funciona" },
-  { href: "#marca-blanca", label: "Tu marca" },
+  { href: "#experiencia", label: "¿Cómo funciona" },
   { href: "#precios", label: "Precios" },
-  { href: SUPPLIER_ZONE_HREF, label: "Zona de Proveedores" },
-];
+  { href: SUPPLIER_ZONE_HREF, label: "Proveedores" },
+] as const;
 
 export function LandingNav() {
   const [open, setOpen] = useState(false);
@@ -55,7 +54,6 @@ export function LandingNav() {
 
     if (closeMenu && open) {
       setOpen(false);
-      // Esperar a que el menú se desmonte para no calcular mal el offset.
       window.setTimeout(runScroll, 60);
       return;
     }
@@ -75,7 +73,7 @@ export function LandingNav() {
         <LandingHeaderLogo />
 
         <nav
-          className="hidden items-center gap-0.5 md:flex"
+          className="hidden items-center gap-1 md:flex"
           aria-label="Navegación principal"
         >
           {navLinks.map((link) =>
@@ -101,27 +99,13 @@ export function LandingNav() {
           )}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <Link
-            href={SUPPLIER_ZONE_HREF}
-            prefetch={true}
-            className="landing-nav-link hidden lg:inline-flex"
-          >
-            Vender al por mayor
-          </Link>
-          <Link
-            href="/dashboard/login"
-            prefetch={true}
-            className="landing-nav-link"
-          >
-            Iniciar sesión
-          </Link>
+        <div className="hidden items-center md:flex">
           <Link
             href={MERCHANT_SIGNUP_HREF}
             prefetch={true}
-            className="btn-brand ml-1 gap-2 px-4 touch-manipulation"
+            className="btn-brand ml-2 gap-2 px-4 touch-manipulation"
           >
-            Crear mi tienda gratis
+            Crear tienda gratis
           </Link>
         </div>
 
@@ -163,30 +147,13 @@ export function LandingNav() {
                 </Link>
               ),
             )}
-            <hr className="my-2 border-zinc-200/70 dark:border-zinc-800/70" />
-            <Link
-              href={SUPPLIER_ZONE_HREF}
-              prefetch={true}
-              onClick={() => setOpen(false)}
-              className="landing-nav-link touch-manipulation justify-start px-2 py-3 text-base"
-            >
-              Vender al por mayor
-            </Link>
-            <Link
-              href="/dashboard/login"
-              prefetch={true}
-              onClick={() => setOpen(false)}
-              className="landing-nav-link touch-manipulation justify-start px-2 py-3 text-base"
-            >
-              Iniciar sesión
-            </Link>
             <Link
               href={MERCHANT_SIGNUP_HREF}
               prefetch={true}
               onClick={() => setOpen(false)}
-              className="btn-brand mt-2 gap-2 touch-manipulation"
+              className="btn-brand mt-3 gap-2 touch-manipulation"
             >
-              Crear mi tienda gratis
+              Crear tienda gratis
             </Link>
           </nav>
         </div>

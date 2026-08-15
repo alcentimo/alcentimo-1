@@ -164,7 +164,7 @@ select,
 /* ?? SaaS design tokens ?? */
 
 .section-padding {
-  @apply py-16 sm:py-20 lg:py-24;
+  @apply py-20 sm:py-24 lg:py-28;
 }
 
 .section-label {
@@ -183,6 +183,10 @@ select,
 
 .landing-hero-title {
   @apply text-[2rem] font-extrabold leading-[1.08] tracking-[-0.03em] text-zinc-900 sm:text-5xl sm:leading-[1.05] lg:text-[3.5rem] xl:text-[3.75rem] dark:text-zinc-50;
+}
+
+.landing-hero-brand {
+  @apply mb-4 text-sm font-semibold tracking-[0.18em] text-emerald-800 uppercase dark:text-emerald-300;
 }
 
 .landing-hero-badge {
@@ -211,6 +215,65 @@ select,
 
 .landing-hero-highlight-icon {
   @apply mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400;
+}
+
+.landing-hero-copy {
+  animation: landing-fade-up 0.55s ease-out both;
+}
+
+.landing-hero-media {
+  animation: landing-fade-up 0.7s ease-out 0.12s both;
+}
+
+.landing-audience-path {
+  animation: landing-fade-up 0.55s ease-out 0.18s both;
+}
+
+.landing-audience-label {
+  @apply text-xs font-semibold tracking-[0.14em] text-emerald-700 uppercase dark:text-emerald-400;
+}
+
+.landing-audience-title {
+  @apply mt-3 text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+}
+
+.landing-audience-copy {
+  @apply mt-3 max-w-sm text-sm leading-relaxed text-zinc-600 dark:text-zinc-400;
+}
+
+.landing-audience-link {
+  @apply mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 transition-colors hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300;
+}
+
+.landing-step-number {
+  @apply relative z-10 flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-sm font-semibold text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100;
+}
+
+.landing-step-icon {
+  @apply mt-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400;
+}
+
+.landing-benefit-icon {
+  @apply inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400;
+}
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-hero-copy,
+  .landing-hero-media,
+  .landing-audience-path {
+    animation: none;
+  }
 }
 
 .landing-assistant-fab {
@@ -971,14 +1034,16 @@ html:has(.landing-shell) {
 
 #precios,
 #experiencia,
-#marca-blanca {
+#marca-blanca,
+#para-quien {
   scroll-margin-top: 6rem;
 }
 
 @media (min-width: 1024px) {
   #precios,
   #experiencia,
-  #marca-blanca {
+  #marca-blanca,
+  #para-quien {
     scroll-margin-top: 6.5rem;
   }
 }

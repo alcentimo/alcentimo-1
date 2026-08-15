@@ -1,11 +1,4 @@
-import {
-  ArrowRight,
-  Globe,
-  ImageIcon,
-  Sparkles,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { ArrowRight, Globe, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const benefits = [
@@ -13,16 +6,13 @@ const benefits = [
     icon: ImageIcon,
     title: "Tu propio logo",
     description:
-      "Tu tienda se ve con tu nombre y tu imagen. Quien compra siente que entra a tu negocio, no a una plataforma genérica.",
-    accent: "emerald",
+      "Tu tienda se ve con tu nombre y tu imagen. Quien compra siente que entra a tu negocio.",
   },
   {
     icon: Globe,
-    title: "Tu propio enlace o dominio",
+    title: "Tu enlace o dominio",
     description:
-      "Comparte un enlace fácil de recordar. En los planes de pago puedes conectar tu dominio .com (lo compras tú; nosotros te ayudamos a conectarlo).",
-    accent: "violet",
-    badge: "Planes de pago",
+      "Comparte un enlace fácil de recordar. En planes de pago puedes conectar tu dominio .com.",
   },
 ] as const;
 
@@ -100,78 +90,41 @@ export function LandingWhiteLabel() {
       className="section-padding relative overflow-hidden border-b border-zinc-200/60 bg-white dark:border-zinc-800/60 dark:bg-zinc-950"
     >
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,rgba(139,92,246,0.08),transparent)] dark:bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,rgba(139,92,246,0.06),transparent)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,rgba(16,185,129,0.06),transparent)]"
         aria-hidden="true"
       />
 
       <div className="page-container relative">
         <div className="mx-auto max-w-2xl text-center">
-          <Badge variant="success" className="mb-4 gap-1.5">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            Tu marca
-          </Badge>
+          <p className="section-label">Tu marca</p>
           <h2 className="section-title text-balance">
             Tu negocio, con{" "}
             <span className="text-emerald-600 dark:text-emerald-400">
               tu nombre
             </span>
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            No necesitas saber de diseño ni contratar un desarrollador. Tu
-            tienda se ve profesional con tu logo y tu identidad desde el primer
-            día.
+          <p className="section-subtitle mx-auto">
+            Sin diseño ni desarrollo: tu logo y tu identidad desde el primer día.
           </p>
         </div>
 
-        <div className="mx-auto mt-14 grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2">
-          {benefits.map(({ icon: Icon, title, description, accent, ...rest }) => {
-            const badge = "badge" in rest ? rest.badge : undefined;
-            return (
-            <Card
-              key={title}
-              className={cn(
-                "h-full border-zinc-200/70 bg-[#FAFAF9] shadow-sm dark:border-zinc-800/70 dark:bg-zinc-900/40",
-                accent === "violet" &&
-                  "ring-1 ring-violet-200/60 dark:ring-violet-900/40",
-              )}
-            >
-              <CardContent className="px-6 py-8 sm:px-8 sm:py-10">
-                <div className="mb-5 flex items-start justify-between gap-3">
-                  <div
-                    className={cn(
-                      "inline-flex h-11 w-11 items-center justify-center rounded-xl",
-                      accent === "emerald"
-                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                        : "bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400",
-                    )}
-                  >
-                    <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
-                  </div>
-                  {badge ? (
-                    <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-800 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-200">
-                      {badge}
-                    </span>
-                  ) : null}
-                </div>
-                <h3 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                  {title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                  {description}
-                </p>
-              </CardContent>
-            </Card>
-            );
-          })}
-        </div>
+        <ul className="mx-auto mt-14 grid max-w-3xl grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-12">
+          {benefits.map(({ icon: Icon, title, description }) => (
+            <li key={title} className="text-center sm:text-left">
+              <div className="landing-benefit-icon mx-auto sm:mx-0">
+                <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
+              </div>
+              <h3 className="mt-5 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                {title}
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                {description}
+              </p>
+            </li>
+          ))}
+        </ul>
 
         <div className="landing-whitelabel-showcase mx-auto mt-16 max-w-5xl">
-          <div className="landing-whitelabel-showcase-header">
-            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              De genérico a 100% profesional
-            </p>
-          </div>
-
           <div className="landing-whitelabel-showcase-grid">
             <div className="landing-whitelabel-showcase-col">
               <span className="landing-whitelabel-showcase-label landing-whitelabel-showcase-label-before">
@@ -179,7 +132,7 @@ export function LandingWhiteLabel() {
               </span>
               <StorePreview variant="generic" />
               <p className="landing-whitelabel-showcase-caption">
-                Subdominio de plataforma · identidad genérica
+                Subdominio de plataforma
               </p>
             </div>
 
@@ -193,16 +146,16 @@ export function LandingWhiteLabel() {
               </span>
               <StorePreview variant="branded" />
               <p className="landing-whitelabel-showcase-caption">
-                Logo propio · dominio .com · imagen profesional
+                Logo propio · dominio .com
               </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-12 text-center">
+        <div className="mt-14 text-center">
           <a
             href="#precios"
-            className="btn-brand inline-flex gap-2 px-6 py-2.5 text-sm shadow-md shadow-emerald-500/15"
+            className="btn-brand-outline inline-flex gap-2 px-6 py-2.5 text-sm"
           >
             Ver planes
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
