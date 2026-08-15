@@ -173,7 +173,7 @@ export default async function CatalogoPage({
     <div className="mx-auto max-w-6xl space-y-6">
       <DashboardPageHeader
         title="Catálogo"
-        description={`Gestiona lo que vendes: productos, fotos, precios y stock de ${store.name}.`}
+        description="Añade productos listos para vender o gestiona lo que ya está en tu tienda."
         actions={
           <CatalogPublicLinkMenu
             storeSlug={store.slug}

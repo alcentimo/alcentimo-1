@@ -7,9 +7,13 @@ import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import {
   applyRetailPriceToProduct,
 } from "@/lib/dropship/price-change";
-import { suggestRetailFromWholesaleCost } from "@/lib/dropship/margin";
+import {
+  defaultDropshipPricingSettings,
+  normalizeDropshipPricingSettings,
+  suggestRetailFromWholesaleCost,
+} from "@/lib/dropship/margin";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
-import { normalizeDropshipPricingSettings } from "@/lib/dropship/margin";
+import { mergeStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { requireDropshipFeatureAccess } from "@/lib/dropship/feature-access";
 import {
   allocateUniqueProductSlug,
@@ -222,6 +226,10 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   const admin = createAdminClient();
   const settings = await getStoreSettingsConfig(auth.store.id);
   const dropship = normalizeDropshipPricingSettings(settings.dropshipPricing);
+  /** En Productos disponibles mostramos precio sugerido aunque aún no hayan tocado Ajustes. */
+  const pricingForSuggest = dropship.enabled
+    ? dropship
+    : { ...defaultDropshipPricingSettings(), enabled: true };
 
   const [{ data, error }, { data: links }] = await Promise.all([
     admin
@@ -265,7 +273,10 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
         title: String(row.title ?? ""),
         description: String(row.description ?? ""),
         basePriceUsd: cost,
-        suggestedRetailUsd: suggestRetailFromWholesaleCost(cost, dropship),
+        suggestedRetailUsd: suggestRetailFromWholesaleCost(
+          cost,
+          pricingForSuggest,
+        ),
         stock: Number(row.stock) || 0,
         category: normalizeSupplierProductCategory(row.category),
         imageUrl,
@@ -303,15 +314,31 @@ export async function importSupplierProductToStoreCatalog(
     }
 
     const settings = await getStoreSettingsConfig(auth.store.id);
-    const dropship = normalizeDropshipPricingSettings(settings.dropshipPricing);
-    if (!dropship.enabled) {
-      return {
-        error:
-          "Activa la regla de margen en esta misma pestaña antes de importar productos.",
-      };
-    }
-
+    let dropship = normalizeDropshipPricingSettings(settings.dropshipPricing);
     const admin = createAdminClient();
+
+    if (!dropship.enabled) {
+      dropship = {
+        ...defaultDropshipPricingSettings(),
+        enabled: true,
+        marginType: dropship.marginType || "percent",
+        marginValue:
+          dropship.marginValue > 0
+            ? dropship.marginValue
+            : defaultDropshipPricingSettings().marginValue,
+        autoApplyOnCostChange: dropship.autoApplyOnCostChange,
+      };
+      const merged = mergeStoreSettingsConfig(settings, {
+        dropshipPricing: dropship,
+      });
+      const { error: settingsError } = await admin
+        .from("store_settings")
+        .upsert(
+          { store_id: auth.store.id, config: merged },
+          { onConflict: "store_id" },
+        );
+      if (settingsError) return { error: settingsError.message };
+    }
 
     const { data: existingLink } = await admin
       .from("store_dropship_links")

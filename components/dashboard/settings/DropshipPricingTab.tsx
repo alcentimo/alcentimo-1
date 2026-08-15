@@ -301,9 +301,9 @@ export function DropshipPricingTab({
         variant="payments"
       >
         {!settings.enabled ? (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
-            Activa la regla de margen arriba para poder importar con el precio de
-            venta calculado.
+          <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
+            Al añadir un producto activamos un margen del 30% por defecto. Puedes
+            ajustarlo arriba cuando quieras.
           </p>
         ) : null}
 
@@ -337,9 +337,7 @@ export function DropshipPricingTab({
                 {filteredCatalog.map((product) => {
                   const isImporting = importingId === product.id;
                   const canImport =
-                    settings.enabled &&
-                    !product.alreadyImported &&
-                    importingId === null;
+                    !product.alreadyImported && importingId === null;
 
                   return (
                     <li
@@ -423,7 +421,7 @@ export function DropshipPricingTab({
                                 aria-hidden="true"
                               />
                             )}
-                            Agregar a mi catálogo
+                            Añadir a mi tienda
                           </button>
                         )}
                       </div>
@@ -444,7 +442,7 @@ export function DropshipPricingTab({
         {storeProducts.length === 0 || supplierProducts.length === 0 ? (
           <p className="text-sm text-zinc-500">
             {storeProducts.length === 0
-              ? "Importa desde el catálogo mayorista o crea productos en tu tienda."
+              ? "Añade productos desde Catálogo → Productos disponibles, o crea uno en tu tienda."
               : "Aún no hay productos en el hub de proveedores."}
           </p>
         ) : (

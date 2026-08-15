@@ -80,11 +80,11 @@ export function DashboardHomePanel({
       <section aria-label="Acceso rápido">
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link
-            href="/dashboard/productos/nuevo"
+            href="/dashboard/catalogo?vista=disponibles"
             className="btn-brand inline-flex min-h-12 flex-1 items-center justify-center gap-2 px-5 text-base font-semibold"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Nuevo producto
+            Añadir productos
           </Link>
           <Link
             href="/dashboard/pedidos"

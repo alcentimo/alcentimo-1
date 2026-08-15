@@ -161,6 +161,9 @@ interface InventoryPanelProps {
   setupStatus?: ProTrialSetupPick;
   /** Fuerza fetch al montar (cuando el server no hidrató inventario). */
   loadOnMount?: boolean;
+  /** CTA cuando la tienda aún no tiene productos. */
+  emptyBrowseHref?: string | null;
+  emptyBrowseLabel?: string;
 }
 
 const StockBadge = memo(function StockBadge({
@@ -602,6 +605,8 @@ export function InventoryPanel({
   productLimitContext = null,
   setupStatus,
   loadOnMount = false,
+  emptyBrowseHref = null,
+  emptyBrowseLabel = "Ver productos disponibles",
 }: InventoryPanelProps) {
   const [products, setProducts] = useState(initialProducts);
   const [totalCount, setTotalCount] = useState(
@@ -680,7 +685,7 @@ export function InventoryPanel({
     if (stockFilter === "out") {
       return "No hay productos agotados.";
     }
-    return "Sin productos.";
+    return "Tu tienda aún no tiene productos.";
   }, [searchQuery, stockFilter]);
 
   const productById = useMemo(() => {
@@ -1135,6 +1140,24 @@ export function InventoryPanel({
 
   const catalogEmpty = products.length === 0 && !hasActiveQuery && !filterLoading;
 
+  const emptyState = catalogEmpty ? (
+    <div className="my-6 rounded-2xl border border-dashed border-zinc-200 px-6 py-14 text-center dark:border-zinc-800">
+      <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+        Tu tienda aún no tiene productos
+      </p>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">
+        Elige del catálogo listo para vender y añádelos en un clic. No necesitas
+        subir fotos ni escribir descripciones.
+      </p>
+      {emptyBrowseHref ? (
+        <a href={emptyBrowseHref} className="btn-brand mt-5 inline-flex gap-2">
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          {emptyBrowseLabel}
+        </a>
+      ) : null}
+    </div>
+  ) : null;
+
   return (
     <>
       {productLimitContext &&
@@ -1150,10 +1173,23 @@ export function InventoryPanel({
 
       <div className="inventory-catalog-header">
         <div className="flex flex-wrap items-center gap-2">
+          {emptyBrowseHref ? (
+            <a
+              href={emptyBrowseHref}
+              className="btn-brand inventory-primary-cta inventory-primary-cta-toolbar inline-flex items-center gap-2"
+            >
+              <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
+              Añadir productos
+            </a>
+          ) : null}
           <Button
             type="button"
             onClick={openCreate}
-            className="btn-brand inventory-primary-cta inventory-primary-cta-toolbar"
+            className={
+              emptyBrowseHref
+                ? "btn-brand-outline inventory-primary-cta inventory-primary-cta-toolbar"
+                : "btn-brand inventory-primary-cta inventory-primary-cta-toolbar"
+            }
           >
             <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
             Nuevo producto
@@ -1282,6 +1318,8 @@ export function InventoryPanel({
         </p>
       )}
 
+      {emptyState}
+
       {reorderEnabled && products.length > 1 ? (
         <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
           Arrastra o cambia la posición numérica para definir el orden del catálogo
@@ -1296,6 +1334,7 @@ export function InventoryPanel({
         </p>
       ) : null}
 
+      {!catalogEmpty ? (
       <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950">
           <div className="inventory-mobile-list" aria-label="Lista de productos">
             {inventoryList}
