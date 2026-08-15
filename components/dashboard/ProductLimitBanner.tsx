@@ -33,7 +33,7 @@ function resolveTrialCta(setupStatus?: ProTrialSetupPick): {
   }
 
   if (!setupStatus.hasMinProductsForProTrial) {
-    return { href: "/dashboard/catalogo?nuevo=1", label: "Seguir sumando" };
+    return { href: "/dashboard/catalogo?vista=disponibles", label: "Seguir sumando" };
   }
 
   if (!setupStatus.hasPaymentsConfigured) {

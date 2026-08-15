@@ -25,7 +25,7 @@ interface SidebarProTrialProgressProps {
 const STEPS = [
   {
     key: "products" as const,
-    href: "/dashboard/catalogo?nuevo=1",
+    href: "/dashboard/catalogo?vista=disponibles",
   },
   {
     key: "payments" as const,

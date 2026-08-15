@@ -80,9 +80,6 @@ export function CatalogPanel({
   const [view, setView] = useState<CatalogView>(() =>
     resolveCatalogView(searchParams.get("vista"), storeProductCount > 0),
   );
-  const [autoOpenCreate, setAutoOpenCreate] = useState(
-    () => searchParams.get("nuevo") === "1",
-  );
   const [inventoryRefreshKey, setInventoryRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -105,9 +102,9 @@ export function CatalogPanel({
     }
 
     if (params.get("nuevo") === "1") {
-      setView("tienda");
-      setAutoOpenCreate(true);
+      setView("disponibles");
       params.delete("nuevo");
+      params.set("vista", "disponibles");
       changed = true;
     }
 
@@ -212,8 +209,6 @@ export function CatalogPanel({
           initialCriticalStockCount={initialCriticalStockCount}
           productFormConfig={productFormConfig}
           previewSettings={previewSettings}
-          autoOpenCreate={autoOpenCreate}
-          onAutoOpenCreateHandled={() => setAutoOpenCreate(false)}
           initialStockFilter={initialStockFilter}
           initialSearchQuery={initialSearchQuery}
           initialPage={initialPage}

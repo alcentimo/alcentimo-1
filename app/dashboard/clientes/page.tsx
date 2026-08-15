@@ -21,7 +21,7 @@ export default async function ClientesPage() {
           </p>
         </header>
         <div className="card-panel">
-          <Link href="/dashboard/productos/nuevo" className="btn-brand gap-2 shadow-sm">
+          <Link href="/dashboard/catalogo?vista=disponibles" className="btn-brand gap-2 shadow-sm">
             Configurar mi tienda
           </Link>
         </div>

@@ -59,11 +59,11 @@ export default async function CatalogoPage({
           <p className="section-label">Catálogo</p>
           <h1 className="page-header-title">Tu vitrina</h1>
           <p className="page-header-desc">
-            Crea tu tienda para gestionar productos desde un solo lugar.
+            Crea tu tienda para empezar a añadir productos listos para vender.
           </p>
         </header>
         <div className="card-panel">
-          <Link href="/dashboard/productos/nuevo">
+          <Link href="/onboarding">
             <Button className="btn-brand">Configurar mi tienda</Button>
           </Link>
         </div>
@@ -173,7 +173,7 @@ export default async function CatalogoPage({
     <div className="mx-auto max-w-6xl space-y-6">
       <DashboardPageHeader
         title="Catálogo"
-        description="Añade productos listos para vender o gestiona lo que ya está en tu tienda."
+        description="Añade productos listos para vender o revisa lo que ya está en tu tienda."
         actions={
           <CatalogPublicLinkMenu
             storeSlug={store.slug}

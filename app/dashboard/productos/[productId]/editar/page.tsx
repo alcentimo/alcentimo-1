@@ -27,7 +27,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
 
   const { store } = session;
   if (!store) {
-    redirect("/dashboard/productos/nuevo");
+    redirect("/dashboard/catalogo?vista=disponibles");
   }
 
   const [product, exchangeRate, productFormConfig, maxPhotosPerProduct] =

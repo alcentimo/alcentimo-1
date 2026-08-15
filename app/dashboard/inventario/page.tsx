@@ -9,7 +9,7 @@ export default async function InventarioRedirectPage({
 }) {
   const params = await searchParams;
   if (params.nuevo === "1") {
-    redirect("/dashboard/catalogo?nuevo=1");
+    redirect("/dashboard/catalogo?vista=disponibles");
   }
   redirect("/dashboard/catalogo");
 }

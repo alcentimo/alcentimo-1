@@ -19,7 +19,7 @@ export default async function AsistentePage() {
   const { store } = session;
 
   if (!store) {
-    redirect("/dashboard/productos/nuevo");
+    redirect("/dashboard/catalogo?vista=disponibles");
   }
 
   const assistantEnabled = Boolean(getOpenAiApiKey());

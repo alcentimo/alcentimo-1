@@ -61,7 +61,6 @@ import {
   InventoryProductOrderCell,
   reorderProductIds,
 } from "@/components/dashboard/InventoryProductOrderCell";
-import { PCBuilderInventoryBanner } from "@/components/dashboard/PCBuilderInventoryBanner";
 import { isProductOnSale } from "@/lib/catalog/pricing";
 import {
   INVENTORY_PAGE_SIZE,
@@ -896,26 +895,10 @@ export function InventoryPanel({
     [refreshProducts],
   );
 
-  const openCreate = useCallback(() => {
-    if (productLimitContext?.hasReachedLimit) {
-      setTrialDialogOpen(true);
-      return;
-    }
-    setSheetMode("create");
-    setEditingProductId(undefined);
-    setSheetOpen(true);
-  }, [productLimitContext?.hasReachedLimit]);
-
   useEffect(() => {
     if (!autoOpenCreate) return;
-    if (productLimitContext?.hasReachedLimit) {
-      setTrialDialogOpen(true);
-      onAutoOpenCreateHandled?.();
-      return;
-    }
-    openCreate();
     onAutoOpenCreateHandled?.();
-  }, [autoOpenCreate, openCreate, onAutoOpenCreateHandled, productLimitContext?.hasReachedLimit]);
+  }, [autoOpenCreate, onAutoOpenCreateHandled]);
 
   const openEdit = useCallback((productId: string) => {
     setSheetMode("edit");
@@ -1169,8 +1152,6 @@ export function InventoryPanel({
         />
       ) : null}
 
-      {pcBuilderEnabled ? <PCBuilderInventoryBanner /> : null}
-
       <div className="inventory-catalog-header">
         <div className="flex flex-wrap items-center gap-2">
           {emptyBrowseHref ? (
@@ -1182,18 +1163,6 @@ export function InventoryPanel({
               Añadir productos
             </a>
           ) : null}
-          <Button
-            type="button"
-            onClick={openCreate}
-            className={
-              emptyBrowseHref
-                ? "btn-brand-outline inventory-primary-cta inventory-primary-cta-toolbar"
-                : "btn-brand inventory-primary-cta inventory-primary-cta-toolbar"
-            }
-          >
-            <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
-            Nuevo producto
-          </Button>
           <CatalogPreviewTrigger onClick={() => setPreviewOpen(true)} />
         </div>
       </div>
@@ -1212,11 +1181,11 @@ export function InventoryPanel({
             type="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Buscar por nombre o SKU…"
+            placeholder="Buscar por nombre…"
             className="inventory-search-input pr-10"
             autoComplete="off"
             enterKeyHint="search"
-            aria-label="Buscar productos por nombre o SKU"
+            aria-label="Buscar productos por nombre"
           />
           {searchInput ? (
             <button

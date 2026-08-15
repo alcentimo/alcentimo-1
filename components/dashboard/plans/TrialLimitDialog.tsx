@@ -81,7 +81,7 @@ export function TrialLimitDialog({
             <>
               {!setupStatus.hasMinProductsForProTrial ? (
                 <Link
-                  href="/dashboard/catalogo?nuevo=1"
+                  href="/dashboard/catalogo?vista=disponibles"
                   className="btn-primary w-full text-center"
                   onClick={() => handleClose(false)}
                 >

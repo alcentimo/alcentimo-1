@@ -299,7 +299,7 @@ export function ProductForm({
           </Link>
           {mode === "create" ? (
             <Link
-              href="/dashboard/productos/nuevo"
+              href="/dashboard/catalogo?vista=disponibles"
               className="btn-secondary w-full sm:w-auto"
             >
               Agregar otro

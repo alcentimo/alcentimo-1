@@ -132,7 +132,7 @@ export function ProTrialBanner({
 
         <div className="pro-trial-banner-actions">
           {!setupStatus.hasMinProductsForProTrial ? (
-            <Link href="/dashboard/catalogo?nuevo=1" className="pro-trial-banner-link">
+            <Link href="/dashboard/catalogo?vista=disponibles" className="pro-trial-banner-link">
               Añadir productos
             </Link>
           ) : null}
@@ -169,7 +169,7 @@ export function ProTrialBanner({
 
         <div className="mt-3 flex flex-wrap gap-3">
           {!setupStatus.hasMinProductsForProTrial ? (
-            <Link href="/dashboard/catalogo?nuevo=1" className="pro-trial-banner-link">
+            <Link href="/dashboard/catalogo?vista=disponibles" className="pro-trial-banner-link">
               Añadir productos
             </Link>
           ) : null}

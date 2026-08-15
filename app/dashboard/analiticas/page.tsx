@@ -26,7 +26,7 @@ export default async function AnaliticasPage({
   const { store } = session;
 
   if (!store) {
-    redirect("/dashboard/productos/nuevo");
+    redirect("/dashboard/catalogo?vista=disponibles");
   }
 
   const params = await searchParams;
