@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { createClient } from "@/lib/supabase/client";
+import { SUPPLIER_LOGIN_PATH } from "@/lib/landing/supplier-zone-href";
 
 interface SupplierChromeProps {
   email: string | null;
@@ -13,11 +17,24 @@ interface SupplierChromeProps {
 export function SupplierChrome({ email, children }: SupplierChromeProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [signingOut, setSigningOut] = useState(false);
   const tab = searchParams.get("tab");
   const onPedidos = pathname.startsWith("/proveedor") && tab === "pedidos";
   const onPagos = pathname.startsWith("/proveedor") && tab === "pagos";
   const onProductos =
     pathname.startsWith("/proveedor") && !onPedidos && !onPagos;
+
+  async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut({ scope: "global" });
+    } catch {
+      // Aun si falla el signOut remoto, limpiar la vista local.
+    }
+    window.location.replace(SUPPLIER_LOGIN_PATH);
+  }
 
   return (
     <div className="supplier-hub-shell">
@@ -65,6 +82,16 @@ export function SupplierChrome({ email, children }: SupplierChromeProps) {
             >
               Pagos
             </Link>
+            <button
+              type="button"
+              className="supplier-hub-logout"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              aria-label="Cerrar sesión"
+            >
+              <LogOut className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>{signingOut ? "Saliendo…" : "Cerrar sesión"}</span>
+            </button>
           </div>
         </div>
       </header>
