@@ -13,13 +13,11 @@ import {
   Settings2,
   Tag,
   Truck,
-  Workflow,
 } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
 import { DomainsTab } from "@/components/dashboard/settings/DomainsTab";
 import { CategoriesTab } from "@/components/dashboard/settings/CategoriesTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
-import { DropshipPricingTab } from "@/components/dashboard/settings/DropshipPricingTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
 import { ShippingTab } from "@/components/dashboard/settings/ShippingTab";
@@ -78,9 +76,8 @@ function resolveExplicitTab(tab: string | undefined): SettingsTabId | null {
   if (!tab || !VALID_SETTINGS_TABS.has(tab as SettingsTabId)) {
     return null;
   }
-  // En dropshipping ocultamos venta al mayor y sucursales del menú;
-  // URLs antiguas caen en pestañas útiles.
-  if (tab === "wholesale") return "dropship";
+  // Pestañas retiradas del menú dropshipping → destinos útiles.
+  if (tab === "wholesale" || tab === "dropship") return "currency";
   if (tab === "branches") return "location";
   return tab as SettingsTabId;
 }
@@ -111,12 +108,6 @@ function buildSettingsNavGroups(): {
           icon: Settings2,
         },
         {
-          id: "dropship",
-          label: "Dropshipping",
-          description: "Catálogo de proveedores y tu ganancia",
-          icon: Workflow,
-        },
-        {
           id: "categories",
           label: "Categorías",
           description: "Organiza tu catálogo",
@@ -130,8 +121,8 @@ function buildSettingsNavGroups(): {
         },
         {
           id: "currency",
-          label: "Moneda",
-          description: "Precios y moneda del catálogo",
+          label: "Moneda y precios",
+          description: "Tu ganancia, moneda y precios del catálogo",
           icon: Coins,
         },
       ],
@@ -307,18 +298,12 @@ export function SettingsPanel({
           />
         );
       case "currency":
-        return (
-          <CatalogCurrencyTab initialSettings={initialConfig.catalogCurrency} />
-        );
       case "wholesale":
       case "dropship":
         return (
-          <DropshipPricingTab
-            initialSettings={initialConfig.dropshipPricing}
-            storeProducts={products.map((product) => ({
-              id: product.id,
-              name: product.name,
-            }))}
+          <CatalogCurrencyTab
+            initialSettings={initialConfig.catalogCurrency}
+            initialDropshipPricing={initialConfig.dropshipPricing}
           />
         );
       case "location":
