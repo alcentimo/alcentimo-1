@@ -1428,6 +1428,7 @@ export function InventoryPanel({
             />
           ) : null}
         </div>
+      ) : null}
 
       {stockFilter === "all" &&
       !searchQuery &&
