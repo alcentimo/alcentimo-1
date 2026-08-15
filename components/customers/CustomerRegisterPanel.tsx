@@ -63,9 +63,10 @@ export function CustomerRegisterPanel({
 
   const isLogin = mode === "login";
   const catalogUrl = getStoreCatalogBasePath(storeSlug);
-  const googleCompletionPath = `${catalogUrl}/registro?complete=phone&next=${encodeURIComponent(nextPath)}${
-    orderId ? `&orderId=${encodeURIComponent(orderId)}` : ""
-  }`;
+  const googleCompletionBase = buildCustomerRegisterPath(storeSlug, nextPath);
+  const googleCompletionPath = `${googleCompletionBase}${
+    googleCompletionBase.includes("?") ? "&" : "?"
+  }complete=phone${orderId ? `&orderId=${encodeURIComponent(orderId)}` : ""}`;
 
   async function handleQuickSubmit(e: React.FormEvent) {
     e.preventDefault();
