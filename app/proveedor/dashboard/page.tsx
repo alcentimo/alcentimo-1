@@ -23,7 +23,7 @@ export default async function ProveedorDashboardPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/dashboard/login?next=/proveedor/dashboard");
+    redirect("/proveedor/login");
   }
 
   const access = await resolveSupplierAccess({

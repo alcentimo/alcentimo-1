@@ -5,7 +5,10 @@ import { useState, type FormEvent } from "react";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { SUPPLIER_PRODUCT_CATEGORIES } from "@/lib/supplier/categories";
 import { registerSupplierAction } from "@/lib/supplier/register-actions";
-import { SUPPLIER_DASHBOARD_PATH } from "@/lib/landing/supplier-zone-href";
+import {
+  SUPPLIER_DASHBOARD_PATH,
+  SUPPLIER_LOGIN_PATH,
+} from "@/lib/landing/supplier-zone-href";
 
 export function SupplierRegisterPanel() {
   const [companyName, setCompanyName] = useState("");
@@ -211,10 +214,7 @@ export function SupplierRegisterPanel() {
 
       <p className="mt-5 text-center text-sm text-zinc-500 dark:text-zinc-400">
         ¿Ya tienes cuenta?{" "}
-        <Link
-          href={`/dashboard/login?next=${encodeURIComponent(SUPPLIER_DASHBOARD_PATH)}`}
-          className="link-brand"
-        >
+        <Link href={SUPPLIER_LOGIN_PATH} className="link-brand">
           Iniciar sesión
         </Link>
       </p>

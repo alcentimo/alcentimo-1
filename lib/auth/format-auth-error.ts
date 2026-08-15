@@ -118,7 +118,7 @@ export function formatAuthError(message: string | null | undefined): string {
   }
 
   if (lower.includes("unexpected response was received from the server")) {
-    return "Error al procesar la sesión con Google. Intenta de nuevo.";
+    return "Error al procesar la sesión. Intenta de nuevo desde el panel de proveedores.";
   }
 
   if (

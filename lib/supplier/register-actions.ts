@@ -1,15 +1,17 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
-import { ensureUserProfile } from "@/lib/auth/ensure-profile";
-import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { SUPPLIER_POST_AUTH_PATH } from "@/lib/auth/post-auth-redirect";
+import {
+  ensureAuthUserForSupplier,
+  establishSupplierSessionForEmail,
+} from "@/lib/supplier/auth-session";
 import { userHasActiveSupplierProfile } from "@/lib/supplier/access";
 import {
   isSupplierProductCategory,
   type SupplierProductCategory,
 } from "@/lib/supplier/categories";
+import { hashSupplierPassword } from "@/lib/supplier/password";
 
 /** Metadata que marca la sesión como mayorista (no cliente de tienda). */
 const SUPPLIER_AUTH_METADATA = {
@@ -36,16 +38,6 @@ function normalizePhone(value: string): string {
 function isValidCommercialPhone(value: string): boolean {
   const digits = value.replace(/\D/g, "");
   return digits.length >= 7 && digits.length <= 15;
-}
-
-function isExistingUserError(message: string): boolean {
-  const normalized = message.toLowerCase();
-  return (
-    normalized.includes("already") ||
-    normalized.includes("registered") ||
-    normalized.includes("exists") ||
-    normalized.includes("duplicate")
-  );
 }
 
 export interface SupplierRegisterInput {
@@ -122,6 +114,30 @@ function validateSupplierRegisterInput(input: SupplierRegisterInput):
   };
 }
 
+async function findSupplierProfileByEmail(email: string): Promise<{
+  userId: string;
+  status: string;
+} | null> {
+  const admin = createAdminClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (admin as any)
+    .from("supplier_profiles")
+    .select("user_id, status")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("[supplier-register-lookup]", error.message);
+    return null;
+  }
+
+  if (!data?.user_id) return null;
+  return {
+    userId: String(data.user_id),
+    status: typeof data.status === "string" ? data.status : "active",
+  };
+}
+
 async function upsertSupplierProfile(input: {
   userId: string;
   companyName: string;
@@ -129,6 +145,7 @@ async function upsertSupplierProfile(input: {
   email: string;
   phone: string;
   productCategory: SupplierProductCategory;
+  passwordHash: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const admin = createAdminClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,6 +157,7 @@ async function upsertSupplierProfile(input: {
       email: input.email,
       phone: input.phone,
       product_category: input.productCategory,
+      password_hash: input.passwordHash,
       status: "active",
       updated_at: new Date().toISOString(),
     },
@@ -148,10 +166,21 @@ async function upsertSupplierProfile(input: {
 
   if (error) {
     console.error("[supplier-register-profile]", error.message);
+    // Conflicto de email único con otro user_id
+    if (
+      error.message.toLowerCase().includes("unique") ||
+      error.code === "23505"
+    ) {
+      return {
+        ok: false,
+        error:
+          "Ya existe una cuenta de proveedor con este correo. Inicia sesión en el panel de proveedores.",
+      };
+    }
     return {
       ok: false,
       error:
-        "Tu cuenta se creó, pero no pudimos guardar el perfil de proveedor. Contacta soporte.",
+        "No pudimos guardar el perfil de proveedor. Intenta de nuevo o contacta soporte.",
     };
   }
 
@@ -159,8 +188,9 @@ async function upsertSupplierProfile(input: {
 }
 
 /**
- * Registro de proveedor/mayorista: crea cuenta, perfil y sesión,
- * luego redirige a /proveedor/dashboard.
+ * Registro de proveedor/mayorista.
+ * Si el correo ya existe como cliente/tienda, reutiliza auth.users y crea
+ * credenciales propias en supplier_profiles (sin bloquear por el email).
  */
 export async function registerSupplierAction(
   input: SupplierRegisterInput,
@@ -178,76 +208,19 @@ export async function registerSupplierAction(
   } = validated;
 
   try {
-    const admin = createAdminClient();
-    const { data: created, error: createError } =
-      await admin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          display_name: contactName,
-          company_name: companyName,
-          phone,
-          product_category: productCategory,
-          ...SUPPLIER_AUTH_METADATA,
-        },
-      });
-
-    let userId = created.user?.id ?? null;
-
-    if (createError) {
-      if (!isExistingUserError(createError.message)) {
-        return { ok: false, error: formatAuthError(createError.message) };
-      }
-
+    const existingSupplier = await findSupplierProfileByEmail(email);
+    if (existingSupplier?.status === "active") {
       return {
         ok: false,
         error:
-          "Ya existe una cuenta con este correo. Inicia sesión para acceder al panel de proveedores.",
+          "Ya tienes cuenta de proveedor con este correo. Inicia sesión en el panel de proveedores.",
       };
     }
 
-    if (!userId) {
-      return {
-        ok: false,
-        error: "No se pudo crear la cuenta. Intenta de nuevo.",
-      };
-    }
-
-    const supabase = await createClient();
-    const { data: sessionData, error: signInError } =
-      await supabase.auth.signInWithPassword({ email, password });
-
-    if (signInError || !sessionData.session) {
-      return {
-        ok: false,
-        error:
-          "La cuenta se creó, pero no pudimos iniciar sesión. Prueba desde Iniciar sesión.",
-      };
-    }
-
-    userId = sessionData.user.id;
-
-    try {
-      await ensureUserProfile(supabase);
-    } catch {
-      // El trigger suele crear el perfil; no bloquear el registro.
-    }
-
-    const profileResult = await upsertSupplierProfile({
-      userId,
-      companyName,
-      contactName,
+    const authUser = await ensureAuthUserForSupplier({
       email,
-      phone,
-      productCategory,
-    });
-
-    if (!profileResult.ok) return profileResult;
-
-    // Asegura metadata de mayorista en la sesión activa (evita rutas de cliente).
-    await supabase.auth.updateUser({
-      data: {
+      password,
+      metadata: {
         display_name: contactName,
         company_name: companyName,
         phone,
@@ -256,16 +229,32 @@ export async function registerSupplierAction(
       },
     });
 
-    const profileReady = await userHasActiveSupplierProfile(userId);
+    if (!authUser.ok) return authUser;
+
+    const profileResult = await upsertSupplierProfile({
+      userId: authUser.userId,
+      companyName,
+      contactName,
+      email,
+      phone,
+      productCategory,
+      passwordHash: hashSupplierPassword(password),
+    });
+
+    if (!profileResult.ok) return profileResult;
+
+    const session = await establishSupplierSessionForEmail(email);
+    if (!session.ok) return session;
+
+    const profileReady = await userHasActiveSupplierProfile(authUser.userId);
     if (!profileReady) {
       return {
         ok: false,
         error:
-          "Tu cuenta se creó, pero el perfil de proveedor aún no está listo. Inicia sesión de nuevo.",
+          "Tu cuenta de proveedor se creó, pero el perfil aún no está listo. Inicia sesión de nuevo.",
       };
     }
 
-    // Destino exclusivo del panel mayorista (nunca onboarding ni /dashboard).
     return { ok: true, redirectTo: SUPPLIER_POST_AUTH_PATH };
   } catch (caught) {
     console.error("[registerSupplierAction]", caught);

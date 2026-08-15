@@ -49,6 +49,7 @@ const DASHBOARD_PREFIX = "/dashboard";
 const ADMIN_PREFIX = "/admin";
 const PROVEEDOR_PREFIX = "/proveedor";
 const PROVEEDOR_REGISTRO_PATH = "/proveedor/registro";
+const PROVEEDOR_LOGIN_PATH = "/proveedor/login";
 const MERCADO_OCULTO_PREFIX = "/mercado-oculto";
 const DASHBOARD_LOGIN = "/dashboard/login";
 const REGISTER_PATH = "/register";
@@ -257,6 +258,10 @@ export async function middleware(request: NextRequest) {
   const isProveedorRegistro =
     pathname === PROVEEDOR_REGISTRO_PATH ||
     pathname.startsWith(`${PROVEEDOR_REGISTRO_PATH}/`);
+  const isProveedorLogin =
+    pathname === PROVEEDOR_LOGIN_PATH ||
+    pathname.startsWith(`${PROVEEDOR_LOGIN_PATH}/`);
+  const isProveedorPublicAuth = isProveedorRegistro || isProveedorLogin;
   const isMercadoOcultoRoute = pathname.startsWith(MERCADO_OCULTO_PREFIX);
   const isRegisterRoute = pathname === REGISTER_PATH;
   const customerAccountPath = parseCustomerAccountPath(pathname, effectiveStoreSlug);
@@ -444,8 +449,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isProveedorRoute) {
-    // Registro público de mayoristas (no requiere sesión ni allowlist).
-    if (isProveedorRegistro) {
+    // Registro / login públicos de mayoristas (no requieren sesión ni allowlist).
+    if (isProveedorPublicAuth) {
       if (authenticatedUser) {
         const supplierAccess = await resolveSupplierAccess({
           email: resolveAuthEmail(authenticatedUser),
@@ -464,8 +469,8 @@ export async function middleware(request: NextRequest) {
 
     if (!authenticatedUser) {
       const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = DASHBOARD_LOGIN;
-      loginUrl.searchParams.set("next", pathname);
+      loginUrl.pathname = PROVEEDOR_LOGIN_PATH;
+      loginUrl.search = "";
       return NextResponse.redirect(loginUrl);
     }
 
