@@ -17,7 +17,7 @@ import {
   checkSupportAdminAccess,
   resolveAuthEmail,
 } from "@/lib/support/admin-access";
-import { resolveSupplierAccess } from "@/lib/supplier/access";
+import { resolveSupplierAccess, shouldForceSupplierPostAuthRedirect } from "@/lib/supplier/access";
 import {
   canAccessDashboardPath,
   DASHBOARD_INVITATION_PATH,
@@ -526,14 +526,14 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
+    // Solo proveedores sin tienda saltan onboarding → hub mayorista.
+    const forceSupplierHub = await shouldForceSupplierPostAuthRedirect({
+      email: resolveAuthEmail(authenticatedUser),
+      userId: authenticatedUser.id,
+    });
     if (
-      (
-        await resolveSupplierAccess({
-          email: resolveAuthEmail(authenticatedUser),
-          userId: authenticatedUser.id,
-          user: authenticatedUser,
-        })
-      ).ok
+      forceSupplierHub &&
+      !(await userHasMerchantStore(supabase, authenticatedUser.id))
     ) {
       const supplierUrl = request.nextUrl.clone();
       supplierUrl.pathname = SUPPLIER_POST_AUTH_PATH;
@@ -575,25 +575,24 @@ export async function middleware(request: NextRequest) {
         return supabaseResponse;
       }
 
-      // Mayoristas nunca caen en onboarding ni en cuentas de cliente de tienda.
-      const supplierOnDashboard = await resolveSupplierAccess({
-        email: resolveAuthEmail(authenticatedUser),
-        userId: authenticatedUser.id,
-        user: authenticatedUser,
-      });
-      if (supplierOnDashboard.ok) {
-        const supplierUrl = request.nextUrl.clone();
-        supplierUrl.pathname = SUPPLIER_POST_AUTH_PATH;
-        supplierUrl.search = "";
-        return NextResponse.redirect(supplierUrl);
-      }
-
       const hasMerchantStore = await userHasMerchantStore(
         supabase,
         authenticatedUser.id,
       );
 
+      // Tiendas con panel de dropshipping: nunca forzar /proveedor.
       if (!hasMerchantStore) {
+        const forceSupplierHub = await shouldForceSupplierPostAuthRedirect({
+          email: resolveAuthEmail(authenticatedUser),
+          userId: authenticatedUser.id,
+        });
+        if (forceSupplierHub) {
+          const supplierUrl = request.nextUrl.clone();
+          supplierUrl.pathname = SUPPLIER_POST_AUTH_PATH;
+          supplierUrl.search = "";
+          return NextResponse.redirect(supplierUrl);
+        }
+
         const customerStore = await getPrimaryCustomerStore(
           supabase,
           authenticatedUser.id,
@@ -641,13 +640,13 @@ export async function middleware(request: NextRequest) {
       const next = request.nextUrl.searchParams.get("next");
       const redirectUrl = request.nextUrl.clone();
       const authEmail = resolveAuthEmail(authenticatedUser);
-      const isSupplier = (
-        await resolveSupplierAccess({
+      const wantsSupplierHub = Boolean(next?.startsWith(PROVEEDOR_PREFIX));
+      const forceSupplierHub =
+        wantsSupplierHub &&
+        (await shouldForceSupplierPostAuthRedirect({
           email: authEmail,
           userId: authenticatedUser.id,
-          user: authenticatedUser,
-        })
-      ).ok;
+        }));
 
       if (
         next?.startsWith(ADMIN_PREFIX) &&
@@ -657,14 +656,11 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(redirectUrl);
       }
 
-      if (isSupplier) {
-        const supplierDestination = resolvePostAuthPathForUser({
-          next,
-          isSupplier: true,
-        });
+      // Solo si el login pide explícitamente el hub de proveedores.
+      if (forceSupplierHub) {
         applySafeInternalNextRedirect(
           redirectUrl,
-          supplierDestination,
+          SUPPLIER_POST_AUTH_PATH,
           SUPPLIER_POST_AUTH_PATH,
         );
         return NextResponse.redirect(redirectUrl);
@@ -689,7 +685,6 @@ export async function middleware(request: NextRequest) {
           next &&
             (next.startsWith(DASHBOARD_PREFIX) ||
               next.startsWith(ADMIN_PREFIX) ||
-              next.startsWith(PROVEEDOR_PREFIX) ||
               next.startsWith(MERCADO_OCULTO_PREFIX) ||
               next.startsWith(DASHBOARD_INVITATION_PATH))
             ? next
@@ -699,17 +694,29 @@ export async function middleware(request: NextRequest) {
       } else if (next?.startsWith(DASHBOARD_INVITATION_PATH)) {
         applySafeInternalNextRedirect(redirectUrl, next, DASHBOARD_INVITATION_PATH);
       } else {
-        const customerStore = await getPrimaryCustomerStore(
-          supabase,
-          authenticatedUser.id,
-        );
-
-        if (customerStore) {
-          redirectUrl.pathname = buildCustomerAccountPath(customerStore.storeSlug);
+        // Proveedor puro (sin tienda) → hub; cliente → cuenta; resto → onboarding.
+        const supplierOnly = await shouldForceSupplierPostAuthRedirect({
+          email: authEmail,
+          userId: authenticatedUser.id,
+        });
+        if (supplierOnly) {
+          redirectUrl.pathname = SUPPLIER_POST_AUTH_PATH;
           redirectUrl.search = "";
         } else {
-          redirectUrl.pathname = ONBOARDING_PATH;
-          redirectUrl.search = "";
+          const customerStore = await getPrimaryCustomerStore(
+            supabase,
+            authenticatedUser.id,
+          );
+
+          if (customerStore) {
+            redirectUrl.pathname = buildCustomerAccountPath(
+              customerStore.storeSlug,
+            );
+            redirectUrl.search = "";
+          } else {
+            redirectUrl.pathname = ONBOARDING_PATH;
+            redirectUrl.search = "";
+          }
         }
       }
 

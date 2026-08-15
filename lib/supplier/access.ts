@@ -143,7 +143,8 @@ export async function userHasActiveSupplierProfile(
 }
 
 /**
- * Acceso completo: allowlist/admin, perfil activo o metadata de registro proveedor.
+ * Acceso completo al hub /proveedor: allowlist, admin o perfil activo.
+ * No usa solo metadata (evita falsos positivos en login de clientes/tiendas).
  */
 export async function resolveSupplierAccess(input: {
   email?: string | null;
@@ -166,16 +167,6 @@ export async function resolveSupplierAccess(input: {
     }
   }
 
-  if (isSupplierRoleMetadata(input.user)) {
-    return {
-      ok: true,
-      normalizedEmail: emailCheck.normalizedEmail,
-      allowlistConfigured: emailCheck.allowlistConfigured,
-      allowlistCount: emailCheck.allowlistCount,
-      via: "metadata",
-    };
-  }
-
   if (emailCheck.reason === "empty_allowlist" && input.userId) {
     return {
       ...emailCheck,
@@ -184,6 +175,29 @@ export async function resolveSupplierAccess(input: {
   }
 
   return emailCheck;
+}
+
+/**
+ * ¿Debe el post-login forzar /proveedor/dashboard?
+ * Solo allowlist o perfil activo — nunca admin genérico ni metadata suelta,
+ * para no mezclar login de clientes/tiendas con el hub mayorista.
+ */
+export async function shouldForceSupplierPostAuthRedirect(input: {
+  email?: string | null;
+  userId?: string | null;
+}): Promise<boolean> {
+  const normalizedEmail = normalizeSupportEmail(input.email);
+  const supplierList = getSupplierAllowlist();
+
+  if (normalizedEmail && supplierList.includes(normalizedEmail)) {
+    return true;
+  }
+
+  if (input.userId) {
+    return userHasActiveSupplierProfile(input.userId);
+  }
+
+  return false;
 }
 
 export function isSupplierUser(email: string | null | undefined): boolean {

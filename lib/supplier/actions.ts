@@ -174,13 +174,14 @@ export async function listSupplierProducts(): Promise<
   ActionResult<{ products: SupplierProduct[] }>
 > {
   const auth = await requireSupplierUser();
-  if (auth.error) return { error: auth.error };
+  if (auth.error || !auth.user) return { error: auth.error ?? "Sin sesión." };
 
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("supplier_products")
     .select(PRODUCT_SELECT)
     .eq("is_active", true)
+    .eq("created_by", auth.user.id)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -275,6 +276,7 @@ export async function updateSupplierProduct(
     .from("supplier_products")
     .select("id, base_price_usd, title")
     .eq("id", id)
+    .eq("created_by", auth.user.id)
     .eq("is_active", true)
     .maybeSingle();
 
@@ -312,6 +314,7 @@ export async function updateSupplierProduct(
     .from("supplier_products")
     .update(patch)
     .eq("id", id)
+    .eq("created_by", auth.user.id)
     .eq("is_active", true)
     .select(PRODUCT_SELECT)
     .maybeSingle();
@@ -343,7 +346,7 @@ export async function archiveSupplierProduct(
   productId: string,
 ): Promise<ActionResult> {
   const auth = await requireSupplierUser();
-  if (auth.error) return { error: auth.error };
+  if (auth.error || !auth.user) return { error: auth.error ?? "Sin sesión." };
 
   const id = productId.trim();
   if (!id) return { error: "Producto inválido." };
@@ -356,6 +359,7 @@ export async function archiveSupplierProduct(
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
+    .eq("created_by", auth.user.id)
     .eq("is_active", true);
 
   if (error) return { error: error.message };

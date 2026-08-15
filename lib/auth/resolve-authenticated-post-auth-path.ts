@@ -3,15 +3,17 @@
 import { createClient } from "@/lib/supabase/server";
 import {
   resolvePostAuthPath,
-  resolvePostAuthPathForUser,
   SUPPLIER_POST_AUTH_PATH,
 } from "@/lib/auth/post-auth-redirect";
-import { resolveSupplierAccess } from "@/lib/supplier/access";
+import { shouldForceSupplierPostAuthRedirect } from "@/lib/supplier/access";
 import { resolveAuthEmail } from "@/lib/support/admin-access";
 
 /**
  * Destino post-auth con sesión ya establecida (login, signup, OAuth).
- * Los proveedores/mayoristas van a /proveedor/dashboard por defecto.
+ *
+ * Login de clientes/tiendas (/dashboard/login): panel de dropshipping.
+ * Solo fuerza /proveedor/dashboard si `next` apunta al hub mayorista
+ * y el usuario es proveedor real (perfil o allowlist).
  */
 export async function resolveAuthenticatedPostAuthPath(
   next?: string | null,
@@ -24,23 +26,21 @@ export async function resolveAuthenticatedPostAuthPath(
 
     if (!user) return resolvePostAuthPath(next);
 
-    const isSupplier = (
-      await resolveSupplierAccess({
+    const nextPath = next?.trim() || null;
+    const wantsSupplierHub = Boolean(
+      nextPath?.startsWith("/proveedor"),
+    );
+
+    if (wantsSupplierHub) {
+      const isSupplier = await shouldForceSupplierPostAuthRedirect({
         email: resolveAuthEmail(user),
         userId: user.id,
-        user,
-      })
-    ).ok;
-
-    // Mayoristas: destino estricto al hub de proveedores.
-    if (isSupplier) {
-      return SUPPLIER_POST_AUTH_PATH;
+      });
+      if (isSupplier) return SUPPLIER_POST_AUTH_PATH;
     }
 
-    return resolvePostAuthPathForUser({
-      next,
-      isSupplier: false,
-    });
+    // Login de tienda/cliente: nunca redirigir al hub de proveedores.
+    return resolvePostAuthPath(nextPath);
   } catch {
     return resolvePostAuthPath(next);
   }

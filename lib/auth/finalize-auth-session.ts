@@ -1,7 +1,6 @@
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import {
   resolvePostAuthPath,
-  resolvePostAuthPathForUser,
   SUPPLIER_POST_AUTH_PATH,
 } from "@/lib/auth/post-auth-redirect";
 import { sanitizeAuthReturnUrl } from "@/lib/auth/validate-auth-return-url";
@@ -11,7 +10,7 @@ import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
-import { resolveSupplierAccess } from "@/lib/supplier/access";
+import { shouldForceSupplierPostAuthRedirect } from "@/lib/supplier/access";
 import { resolveAuthEmail } from "@/lib/support/admin-access";
 
 function resolveAuthRedirectTarget(
@@ -58,29 +57,23 @@ export async function finalizeAuthSessionRedirect(
 
   const siteUrl = getSiteUrl();
   const normalizedStoreSlug = input.storeSlug?.trim().toLowerCase() || null;
-  const isSupplier = (
-    await resolveSupplierAccess({
+  const nextPath = input.nextPath?.trim() || null;
+  const wantsSupplierHub = Boolean(nextPath?.startsWith("/proveedor"));
+
+  // Solo forzar hub mayorista cuando el flujo lo pide explícitamente.
+  if (wantsSupplierHub && !normalizedStoreSlug) {
+    const isSupplier = await shouldForceSupplierPostAuthRedirect({
       email: resolveAuthEmail(user),
       userId: user.id,
-      user,
-    })
-  ).ok;
-
-  // Mayoristas: destino exclusivo al panel de proveedores (nunca cliente/tienda).
-  if (isSupplier) {
-    return resolveAuthRedirectTarget(
-      SUPPLIER_POST_AUTH_PATH,
-      siteUrl,
-      null,
-    );
+    });
+    if (isSupplier) {
+      return resolveAuthRedirectTarget(SUPPLIER_POST_AUTH_PATH, siteUrl, null);
+    }
   }
 
   const resolvedNext = normalizedStoreSlug
-    ? resolvePostAuthPath(input.nextPath)
-    : resolvePostAuthPathForUser({
-        next: input.nextPath,
-        isSupplier: false,
-      });
+    ? resolvePostAuthPath(nextPath)
+    : resolvePostAuthPath(nextPath);
   const safeNext = resolveAuthRedirectTarget(
     resolvedNext,
     siteUrl,
