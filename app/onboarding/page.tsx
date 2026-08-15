@@ -20,6 +20,14 @@ export default async function OnboardingPage() {
     redirect("/dashboard");
   }
 
+  const metadata = user.user_metadata ?? {};
+  const initialStoreName =
+    (typeof metadata.business_name === "string" && metadata.business_name.trim()) ||
+    (typeof metadata.store_name === "string" && metadata.store_name.trim()) ||
+    "";
+  const initialWhatsapp =
+    typeof metadata.phone === "string" ? metadata.phone.trim() : "";
+
   return (
     <main className="page-shell-auth flex min-h-dvh flex-col justify-center safe-area-inset">
       <div
@@ -39,7 +47,10 @@ export default async function OnboardingPage() {
           </p>
         </div>
 
-        <OnboardingForm />
+        <OnboardingForm
+          initialStoreName={initialStoreName}
+          initialWhatsapp={initialWhatsapp}
+        />
       </PageContainer>
     </main>
   );

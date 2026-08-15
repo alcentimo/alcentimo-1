@@ -23,14 +23,20 @@ import {
 
 const initialState: OnboardingFormState = {};
 
-export function OnboardingForm() {
+export function OnboardingForm({
+  initialStoreName = "",
+  initialWhatsapp = "",
+}: {
+  initialStoreName?: string;
+  initialWhatsapp?: string;
+} = {}) {
   const [state, formAction, pending] = useActionState(
     completeOnboarding,
     initialState,
   );
-  const [storeName, setStoreName] = useState("");
+  const [storeName, setStoreName] = useState(initialStoreName);
   const [rubroTienda, setRubroTienda] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
+  const [whatsapp, setWhatsapp] = useState(initialWhatsapp);
   const [landingProductsJson, setLandingProductsJson] = useState("");
   const [landingDraftIntro, setLandingDraftIntro] = useState<string | null>(null);
 

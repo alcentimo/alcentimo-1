@@ -192,6 +192,7 @@ async function generateAuthLink(input: {
   email: string;
   password?: string;
   redirectTo?: string;
+  data?: Record<string, unknown>;
 }) {
   const admin = createAdminClient();
 
@@ -200,7 +201,10 @@ async function generateAuthLink(input: {
       type: "signup",
       email: input.email,
       password: input.password ?? "",
-      options: input.redirectTo ? { redirectTo: input.redirectTo } : undefined,
+      options: {
+        ...(input.redirectTo ? { redirectTo: input.redirectTo } : {}),
+        ...(input.data ? { data: input.data } : {}),
+      },
     });
   }
 
@@ -580,12 +584,14 @@ async function createFreshSignupConfirmation(input: {
   postAuthPath: string;
   redirectTo: string;
   wasResent: boolean;
+  userMetadata?: Record<string, unknown>;
 }): Promise<AuthEmailActionResult> {
   const { data, error } = await generateAuthLink({
     type: "signup",
     email: input.email,
     password: input.password,
     redirectTo: input.redirectTo,
+    data: input.userMetadata,
   });
 
   if (error) {
@@ -595,6 +601,21 @@ async function createFreshSignupConfirmation(input: {
   const { tokenHash, emailOtp } = extractLinkProperties(data?.properties);
   if (!tokenHash) {
     return { ok: false, error: "No se pudo generar el enlace de confirmación." };
+  }
+
+  // generateLink crea el usuario; reforzar metadata si se envió.
+  if (input.userMetadata && data?.user?.id) {
+    try {
+      const admin = createAdminClient();
+      await admin.auth.admin.updateUserById(data.user.id, {
+        user_metadata: {
+          ...(data.user.user_metadata ?? {}),
+          ...input.userMetadata,
+        },
+      });
+    } catch {
+      // No bloquear el registro si falla el refuerzo de metadata.
+    }
   }
 
   const delivered = await deliverSignupConfirmationEmail({
@@ -626,6 +647,14 @@ export async function signUpWithConfirmationEmailAction(input: {
   email: string;
   password: string;
   nextPath?: string | null;
+  displayName?: string | null;
+  documentId?: string | null;
+  phone?: string | null;
+  businessName?: string | null;
+  city?: string | null;
+  state?: string | null;
+  socialUrl?: string | null;
+  requireVerificationFields?: boolean;
 }): Promise<AuthEmailActionResult> {
   const email = normalizeEmail(input.email);
   if (!isValidEmail(email)) {
@@ -633,6 +662,49 @@ export async function signUpWithConfirmationEmailAction(input: {
   }
   if (!input.password || input.password.length < 6) {
     return { ok: false, error: "La contraseña debe tener al menos 6 caracteres." };
+  }
+
+  let userMetadata: Record<string, unknown> | undefined;
+  if (input.requireVerificationFields) {
+    const { validateCustomerPhoneInput, validateCustomerVerificationFields } =
+      await import("@/lib/customers/phone-auth");
+
+    const displayName = input.displayName?.trim() ?? "";
+    if (displayName.length < 2) {
+      return {
+        ok: false,
+        error: "Indica tu nombre y apellido (mínimo 2 caracteres).",
+      };
+    }
+
+    const phoneValidation = validateCustomerPhoneInput(input.phone ?? "");
+    if (!phoneValidation.ok) {
+      return { ok: false, error: phoneValidation.error };
+    }
+
+    const verification = validateCustomerVerificationFields({
+      documentId: input.documentId ?? "",
+      businessName: input.businessName ?? "",
+      city: input.city ?? "",
+      state: input.state ?? "",
+      socialUrl: input.socialUrl ?? "",
+    });
+    if (!verification.ok) {
+      return { ok: false, error: verification.error };
+    }
+
+    userMetadata = {
+      display_name: displayName.slice(0, 120),
+      full_name: displayName.slice(0, 120),
+      phone: phoneValidation.phone,
+      document_id: verification.documentId,
+      business_name: verification.businessName,
+      store_name: verification.businessName,
+      city: verification.city,
+      state: verification.state,
+      social_url: verification.socialUrl,
+      registration_verified: true,
+    };
   }
 
   const postAuthPath = resolvePostAuthPath(input.nextPath);
@@ -687,6 +759,7 @@ export async function signUpWithConfirmationEmailAction(input: {
       postAuthPath,
       redirectTo,
       wasResent,
+      userMetadata,
     });
 
     // 3) Si Auth aún reporta duplicado, limpiar otra vez y reintentar una vez.
@@ -709,6 +782,7 @@ export async function signUpWithConfirmationEmailAction(input: {
           postAuthPath,
           redirectTo,
           wasResent: true,
+          userMetadata,
         });
       } else {
         return resendActivationForExistingEmail({
