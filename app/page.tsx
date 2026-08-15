@@ -1,6 +1,7 @@
 import { AdminPwaServiceWorkerRegister } from "@/components/dashboard/AdminPwaServiceWorkerRegister";
 import { RecoveryUrlRedirect } from "@/components/auth/RecoveryUrlRedirect";
 import { Hero } from "@/components/landing/Hero";
+import { LandingAudiencePaths } from "@/components/landing/LandingAudiencePaths";
 import { LandingCustomerExperience } from "@/components/landing/LandingCustomerExperience";
 import { LandingBenefits } from "@/components/landing/LandingBenefits";
 import { LandingWhiteLabel } from "@/components/landing/LandingWhiteLabel";
@@ -38,6 +39,7 @@ export default async function Home() {
 
       <main className="landing-shell">
         <Hero exchangeRate={exchangeRate?.rate ?? null} />
+        <LandingAudiencePaths />
         <LandingCustomerExperience />
         <LandingBenefits />
         <LandingWhiteLabel />
