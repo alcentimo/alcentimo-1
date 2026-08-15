@@ -3,13 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Boxes,
   Clock,
   Coins,
   CreditCard,
   Globe,
   Lock,
-  MapPin,
   Palette,
   FolderTree,
   Settings2,
@@ -19,10 +17,8 @@ import {
 } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
 import { DomainsTab } from "@/components/dashboard/settings/DomainsTab";
-import { LocationsTab } from "@/components/dashboard/settings/LocationsTab";
 import { CategoriesTab } from "@/components/dashboard/settings/CategoriesTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
-import { WholesaleTab } from "@/components/dashboard/settings/WholesaleTab";
 import { DropshipPricingTab } from "@/components/dashboard/settings/DropshipPricingTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
@@ -82,6 +78,10 @@ function resolveExplicitTab(tab: string | undefined): SettingsTabId | null {
   if (!tab || !VALID_SETTINGS_TABS.has(tab as SettingsTabId)) {
     return null;
   }
+  // En dropshipping ocultamos venta al mayor y sucursales del menú;
+  // URLs antiguas caen en pestañas útiles.
+  if (tab === "wholesale") return "dropship";
+  if (tab === "branches") return "location";
   return tab as SettingsTabId;
 }
 
@@ -111,6 +111,12 @@ function buildSettingsNavGroups(): {
           icon: Settings2,
         },
         {
+          id: "dropship",
+          label: "Dropshipping",
+          description: "Catálogo de proveedores y tu ganancia",
+          icon: Workflow,
+        },
+        {
           id: "categories",
           label: "Categorías",
           description: "Organiza tu catálogo",
@@ -119,7 +125,7 @@ function buildSettingsNavGroups(): {
         {
           id: "location",
           label: "Horarios y contacto",
-          description: "WhatsApp, horario y ubicación",
+          description: "WhatsApp para pedidos, horario y ciudad",
           icon: Clock,
         },
         {
@@ -127,18 +133,6 @@ function buildSettingsNavGroups(): {
           label: "Moneda",
           description: "Precios y moneda del catálogo",
           icon: Coins,
-        },
-        {
-          id: "wholesale",
-          label: "Venta al mayor",
-          description: "Precios y pedidos mayoristas",
-          icon: Boxes,
-        },
-        {
-          id: "dropship",
-          label: "Dropshipping",
-          description: "Margen y precios de proveedor",
-          icon: Workflow,
         },
       ],
     },
@@ -148,20 +142,14 @@ function buildSettingsNavGroups(): {
         {
           id: "shipping",
           label: "Envíos",
-          description: "Zonas, costos y retiro",
+          description: "Cómo llega el pedido a tu cliente",
           icon: Truck,
         },
         {
           id: "payments",
           label: "Pagos",
-          description: "Métodos de cobro",
+          description: "Cómo te pagan tus clientes",
           icon: CreditCard,
-        },
-        {
-          id: "branches",
-          label: "Sucursales",
-          description: "Locales y stock por sede",
-          icon: MapPin,
         },
       ],
     },
@@ -323,11 +311,6 @@ export function SettingsPanel({
           <CatalogCurrencyTab initialSettings={initialConfig.catalogCurrency} />
         );
       case "wholesale":
-        return (
-          <WholesaleTab
-            initialEnabled={initialConfig.catalogCurrency.wholesaleEnabled}
-          />
-        );
       case "dropship":
         return (
           <DropshipPricingTab
@@ -339,6 +322,7 @@ export function SettingsPanel({
           />
         );
       case "location":
+      case "branches":
         return (
           <LocationHoursTab
             initialLocationHours={initialConfig.locationHours}
@@ -349,13 +333,6 @@ export function SettingsPanel({
         return <ShippingTab initialSettings={initialConfig.shipping} />;
       case "payments":
         return <PaymentsTab initialSettings={initialConfig.payments} />;
-      case "branches":
-        return (
-          <LocationsTab
-            initialLocations={initialLocations}
-            locationLimit={locationLimit}
-          />
-        );
       case "domains":
         return (
           <DomainsTab

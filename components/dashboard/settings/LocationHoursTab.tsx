@@ -158,19 +158,114 @@ export function LocationHoursTab({
   return (
     <SettingsTabShell
       error={error}
-      saveLabel="Guardar ubicación y horario"
+      saveLabel="Guardar contacto y horario"
       saving={saving}
       onSave={handleSave}
-      saveHint="Esta información se muestra en tu catálogo y checkout."
+      saveHint="El WhatsApp es lo más importante: ahí recibes los pedidos."
     >
       {success && (
         <p
           className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
           role="status"
         >
-          Ubicación y horario guardados correctamente.
+          Contacto y horario guardados correctamente.
         </p>
       )}
+
+      <SettingsSection
+        title="WhatsApp para pedidos"
+        description={`Lo esencial para dropshipping: aquí te escriben cuando compran. Hasta ${MAX_WHATSAPP_PHONES} números; el primero es el principal.`}
+        variant="payments"
+      >
+        <div className="general-settings-card space-y-3">
+          <ChannelLogo provider="whatsapp" className="h-7 w-7" />
+
+          {whatsappPhones.map((phone, index) => {
+            const normalized = normalizeWhatsAppPhone(phone);
+            return (
+              <div key={`wa-${index}`} className="space-y-1.5">
+                <div className="flex items-end gap-2">
+                  <div className="min-w-0 flex-1">
+                    <Label
+                      htmlFor={`store-whatsapp-${index}`}
+                      className="payment-field-label"
+                    >
+                      {index === 0
+                        ? "WhatsApp principal"
+                        : `WhatsApp adicional ${index}`}
+                    </Label>
+                    <Input
+                      id={`store-whatsapp-${index}`}
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      value={phone}
+                      onChange={(e) => setPhoneAt(index, e.target.value)}
+                      placeholder="Ej: 0414-1234567"
+                      className="payment-field-input mt-1.5"
+                    />
+                  </div>
+                  {whatsappPhones.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => removePhone(index)}
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-200 text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-red-600 dark:border-zinc-800 dark:hover:bg-zinc-900 dark:hover:text-red-400"
+                      aria-label={`Eliminar WhatsApp ${index + 1}`}
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  ) : null}
+                </div>
+                {phone.trim() ? (
+                  <p className="text-[11px] text-zinc-400">
+                    {normalized
+                      ? `Formato internacional: +${normalized}`
+                      : "Revisa el número — debe tener al menos 10 dígitos."}
+                  </p>
+                ) : null}
+              </div>
+            );
+          })}
+
+          {whatsappPhones.length < MAX_WHATSAPP_PHONES ? (
+            <button
+              type="button"
+              onClick={addPhone}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 transition-colors hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              Agregar otro WhatsApp
+            </button>
+          ) : null}
+
+          <div className="space-y-1.5 border-t border-zinc-200/80 pt-3 dark:border-zinc-800">
+            <Label
+              htmlFor="whatsapp-chat-welcome"
+              className="payment-field-label"
+            >
+              Mensaje de bienvenida del chat rápido
+            </Label>
+            <Textarea
+              id="whatsapp-chat-welcome"
+              value={whatsappChatWelcome}
+              onChange={(e) => {
+                setWhatsappChatWelcome(
+                  e.target.value.slice(0, WHATSAPP_CHAT_WELCOME_MAX_LENGTH),
+                );
+                setSuccess(false);
+              }}
+              rows={3}
+              maxLength={WHATSAPP_CHAT_WELCOME_MAX_LENGTH}
+              placeholder={DEFAULT_WHATSAPP_CHAT_WELCOME}
+              className="payment-field-input mt-1.5"
+            />
+            <p className="text-[11px] text-zinc-400">
+              Aparece en la burbuja de WhatsApp del catálogo.{" "}
+              {whatsappChatWelcome.length}/{WHATSAPP_CHAT_WELCOME_MAX_LENGTH}
+            </p>
+          </div>
+        </div>
+      </SettingsSection>
 
       <SettingsSection
         title="País de operación"
@@ -193,8 +288,8 @@ export function LocationHoursTab({
       </SettingsSection>
 
       <SettingsSection
-        title="Ubicación"
-        description="Opcional para negocios 100% online. Ciudad y referencia que verán tus clientes; no es obligatoria para configurar entregas en zonas."
+        title="Ciudad (opcional)"
+        description="Si vendes 100% online no es obligatoria. Sirve como referencia para tus clientes."
         variant="payments"
       >
         <div className="general-settings-card space-y-3">
@@ -310,106 +405,6 @@ export function LocationHoursTab({
         </div>
       </SettingsSection>
 
-      <SettingsSection
-        title="WhatsApp para pedidos"
-        description={`Hasta ${MAX_WHATSAPP_PHONES} números. El primero se usa como principal en el catálogo y checkout.`}
-        variant="payments"
-      >
-        <div className="general-settings-card space-y-3">
-          <ChannelLogo provider="whatsapp" className="h-7 w-7" />
-
-          {whatsappPhones.map((phone, index) => {
-            const normalized = normalizeWhatsAppPhone(phone);
-            return (
-              <div key={`wa-${index}`} className="space-y-1.5">
-                <div className="flex items-end gap-2">
-                  <div className="min-w-0 flex-1">
-                    <Label
-                      htmlFor={`store-whatsapp-${index}`}
-                      className="payment-field-label"
-                    >
-                      {index === 0
-                        ? "WhatsApp principal"
-                        : `WhatsApp adicional ${index}`}
-                    </Label>
-                    <Input
-                      id={`store-whatsapp-${index}`}
-                      type="tel"
-                      inputMode="tel"
-                      autoComplete="tel"
-                      value={phone}
-                      onChange={(e) => setPhoneAt(index, e.target.value)}
-                      placeholder="Ej: 0414-1234567"
-                      className="payment-field-input mt-1.5"
-                    />
-                  </div>
-                  {whatsappPhones.length > 1 ? (
-                    <button
-                      type="button"
-                      onClick={() => removePhone(index)}
-                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-200 text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-red-600 dark:border-zinc-800 dark:hover:bg-zinc-900 dark:hover:text-red-400"
-                      aria-label={`Eliminar WhatsApp ${index + 1}`}
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  ) : null}
-                </div>
-                {phone.trim() ? (
-                  <p className="text-[11px] text-zinc-400">
-                    {normalized
-                      ? `Formato internacional: +${normalized}`
-                      : "Revisa el número — debe tener al menos 10 dígitos."}
-                  </p>
-                ) : null}
-              </div>
-            );
-          })}
-
-          {whatsappPhones.length < MAX_WHATSAPP_PHONES ? (
-            <button
-              type="button"
-              onClick={addPhone}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 transition-colors hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
-            >
-              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              Agregar otro WhatsApp
-            </button>
-          ) : null}
-
-          <div className="space-y-1.5 border-t border-zinc-200/80 pt-3 dark:border-zinc-800">
-            <Label
-              htmlFor="whatsapp-chat-welcome"
-              className="payment-field-label"
-            >
-              Mensaje de bienvenida del chat rápido
-            </Label>
-            <Textarea
-              id="whatsapp-chat-welcome"
-              value={whatsappChatWelcome}
-              onChange={(e) => {
-                setWhatsappChatWelcome(
-                  e.target.value.slice(0, WHATSAPP_CHAT_WELCOME_MAX_LENGTH),
-                );
-                setSuccess(false);
-              }}
-              rows={3}
-              maxLength={WHATSAPP_CHAT_WELCOME_MAX_LENGTH}
-              placeholder={DEFAULT_WHATSAPP_CHAT_WELCOME}
-              className="payment-field-input mt-1.5"
-            />
-            <p className="text-[11px] text-zinc-400">
-              Aparece en la burbuja de WhatsApp del catálogo.{" "}
-              {whatsappChatWelcome.length}/{WHATSAPP_CHAT_WELCOME_MAX_LENGTH}
-            </p>
-          </div>
-        </div>
-      </SettingsSection>
-
-      {saving && (
-        <div className="mt-2">
-          <SavingHint visible />
-        </div>
-      )}
     </SettingsTabShell>
   );
 }

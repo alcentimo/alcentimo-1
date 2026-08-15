@@ -740,15 +740,15 @@ export function DesignTab({
           <div className="design-visibility-row">
             <div>
               <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                Stock
+                Disponibilidad
               </p>
               <p className="mt-0.5 text-xs text-zinc-500">
-                Disponibilidad y agotado
+                Mostrar si hay unidades o está agotado
               </p>
             </div>
             <SettingsSwitch
               id="visibility-stock"
-              label="Mostrar stock"
+              label="Mostrar disponibilidad"
               checked={design.visibility.showStock}
               onChange={(value) => setVisibility("showStock", value)}
               disabled={isSaving && savingField === "showStock"}

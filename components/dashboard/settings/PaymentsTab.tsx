@@ -347,7 +347,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
 
       <SettingsSection
         title="Métodos de pago"
-        description="Activa los métodos que aceptas y completa los datos para el checkout."
+        description="Elige cómo te pagan tus clientes. Empieza con lo simple: transferencia o pago móvil."
         variant="payments"
       >
         <div className="flex flex-col gap-6">

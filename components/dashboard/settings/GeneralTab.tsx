@@ -510,7 +510,7 @@ export function GeneralTab({ store }: GeneralTabProps) {
           <SettingsOptionCard
             id="enable-pc-builder"
             label="Activar Arma tu PC"
-            description="Los compradores podrán elegir componentes con stock real y enviar la cotización por WhatsApp. Clasifica tus productos con el slot de PC Builder en inventario."
+            description="Los compradores podrán elegir componentes disponibles en tu catálogo y enviar la cotización por WhatsApp. Clasifica tus productos con el slot de PC Builder."
             checked={enablePcBuilder}
             onChange={(checked) => {
               setEnablePcBuilder(checked);

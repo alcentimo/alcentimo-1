@@ -262,8 +262,8 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
       onSave={handleSaveForm}
     >
       <SettingsSection
-        title="Cómo cobras el envío"
-        description="El cliente paga el flete en la agencia al retirar. Puedes combinarlo con envío gratis condicionado."
+        title="Cómo llega el pedido a tu cliente"
+        description="En dropshipping el envío suele ir por el proveedor. Aquí defines qué opciones ve tu cliente al comprar (cobro a destino, agencias o entrega local)."
         variant="payments"
       >
         <div className="rounded-xl border border-teal-500 bg-teal-50/70 p-4 ring-1 ring-teal-500/30 dark:border-teal-400 dark:bg-teal-950/30">
@@ -276,8 +276,8 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
             </ShippingHelpHint>
           </p>
           <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-            Ideal en Venezuela: el flete lo paga el comprador en la oficina de
-            la encomienda. En el checkout verá “Cobro a destino”.
+            Ideal para empezar: el comprador paga el flete en la oficina de
+            encomienda. En el checkout verá “Cobro a destino”.
           </p>
         </div>
       </SettingsSection>

@@ -93,7 +93,7 @@ export function CouponProductPicker({
 
       {products.length === 0 ? (
         <p className="rounded-lg border border-dashed border-zinc-200 px-3 py-4 text-sm text-zinc-500 dark:border-zinc-700">
-          No hay productos en tu inventario. Publica productos primero.
+          No hay productos en tu tienda. Añade productos desde el catálogo primero.
         </p>
       ) : filtered.length === 0 ? (
         <p className="text-sm text-zinc-500">No hay productos que coincidan con la búsqueda.</p>
