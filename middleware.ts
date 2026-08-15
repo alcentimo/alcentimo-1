@@ -28,7 +28,6 @@ import {
 import { getMerchantStoreRole } from "@/lib/team/store-context";
 import {
   applySafeInternalNextRedirect,
-  resolvePostAuthPathForUser,
   SUPPLIER_POST_AUTH_PATH,
 } from "@/lib/auth/post-auth-redirect";
 import { shouldRedirectGoogleAuthToApex } from "@/lib/auth/google-oauth-origin";

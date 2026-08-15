@@ -19,7 +19,7 @@ export interface SupplierAccessCheck {
   normalizedEmail: string | null;
   allowlistConfigured: boolean;
   allowlistCount: number;
-  via?: "allowlist" | "admin" | "profile" | "metadata";
+  via?: "allowlist" | "admin" | "profile";
 }
 
 /** Parsea SUPPLIER_EMAILS (coma o punto y coma). */
