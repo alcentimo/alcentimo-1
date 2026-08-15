@@ -50,8 +50,8 @@ export function CatalogCustomerRegisterSheet({
             </h2>
             <p className="txn-checkout-subtitle">
               {isLogin
-                ? `Entra a ${storeName} con teléfono o correo y tu contraseña.`
-                : `Regístrate en ${storeName} con teléfono o correo y una contraseña.`}
+                ? `Entra a ${storeName} con tu correo y contraseña.`
+                : `Regístrate en ${storeName} con tus datos de verificación.`}
             </p>
           </div>
           <button
