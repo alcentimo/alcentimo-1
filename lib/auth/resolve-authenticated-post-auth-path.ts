@@ -5,7 +5,7 @@ import {
   resolvePostAuthPath,
   resolvePostAuthPathForUser,
 } from "@/lib/auth/post-auth-redirect";
-import { checkSupplierAccess } from "@/lib/supplier/access";
+import { resolveSupplierAccess } from "@/lib/supplier/access";
 import { resolveAuthEmail } from "@/lib/support/admin-access";
 
 /**
@@ -23,9 +23,17 @@ export async function resolveAuthenticatedPostAuthPath(
 
     if (!user) return resolvePostAuthPath(next);
 
+    const isSupplier = (
+      await resolveSupplierAccess({
+        email: resolveAuthEmail(user),
+        userId: user.id,
+        client: supabase,
+      })
+    ).ok;
+
     return resolvePostAuthPathForUser({
       next,
-      isSupplier: checkSupplierAccess(resolveAuthEmail(user)).ok,
+      isSupplier,
     });
   } catch {
     return resolvePostAuthPath(next);

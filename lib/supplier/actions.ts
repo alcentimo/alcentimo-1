@@ -4,7 +4,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  checkSupplierAccess,
+  resolveSupplierAccess,
   resolveSupplierAuthEmail,
 } from "@/lib/supplier/access";
 import { uploadSupplierProductImage } from "@/lib/supplier/storage";
@@ -60,7 +60,10 @@ async function requireSupplierUser(): Promise<{
   }
 
   const email = resolveSupplierAuthEmail(user);
-  const access = checkSupplierAccess(email);
+  const access = await resolveSupplierAccess({
+    email,
+    userId: user.id,
+  });
   if (!access.ok) {
     return { error: "No tienes acceso al panel de proveedores." };
   }

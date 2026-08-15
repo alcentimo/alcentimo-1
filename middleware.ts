@@ -17,7 +17,7 @@ import {
   checkSupportAdminAccess,
   resolveAuthEmail,
 } from "@/lib/support/admin-access";
-import { checkSupplierAccess } from "@/lib/supplier/access";
+import { resolveSupplierAccess } from "@/lib/supplier/access";
 import {
   canAccessDashboardPath,
   DASHBOARD_INVITATION_PATH,
@@ -48,6 +48,7 @@ import { normalizeCustomDomain, isPlatformCatalogHost } from "@/lib/domains/cust
 const DASHBOARD_PREFIX = "/dashboard";
 const ADMIN_PREFIX = "/admin";
 const PROVEEDOR_PREFIX = "/proveedor";
+const PROVEEDOR_REGISTRO_PATH = "/proveedor/registro";
 const MERCADO_OCULTO_PREFIX = "/mercado-oculto";
 const DASHBOARD_LOGIN = "/dashboard/login";
 const REGISTER_PATH = "/register";
@@ -253,6 +254,9 @@ export async function middleware(request: NextRequest) {
   const isDashboard = pathname.startsWith(DASHBOARD_PREFIX);
   const isAdminRoute = pathname.startsWith(ADMIN_PREFIX);
   const isProveedorRoute = pathname.startsWith(PROVEEDOR_PREFIX);
+  const isProveedorRegistro =
+    pathname === PROVEEDOR_REGISTRO_PATH ||
+    pathname.startsWith(`${PROVEEDOR_REGISTRO_PATH}/`);
   const isMercadoOcultoRoute = pathname.startsWith(MERCADO_OCULTO_PREFIX);
   const isRegisterRoute = pathname === REGISTER_PATH;
   const customerAccountPath = parseCustomerAccountPath(pathname, effectiveStoreSlug);
@@ -440,6 +444,24 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isProveedorRoute) {
+    // Registro público de mayoristas (no requiere sesión ni allowlist).
+    if (isProveedorRegistro) {
+      if (authenticatedUser) {
+        const supplierAccess = await resolveSupplierAccess({
+          email: resolveAuthEmail(authenticatedUser),
+          userId: authenticatedUser.id,
+          client: supabase,
+        });
+        if (supplierAccess.ok) {
+          const dashboardUrl = request.nextUrl.clone();
+          dashboardUrl.pathname = SUPPLIER_POST_AUTH_PATH;
+          dashboardUrl.search = "";
+          return NextResponse.redirect(dashboardUrl);
+        }
+      }
+      return supabaseResponse;
+    }
+
     if (!authenticatedUser) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = DASHBOARD_LOGIN;
@@ -448,7 +470,11 @@ export async function middleware(request: NextRequest) {
     }
 
     const supplierEmail = resolveAuthEmail(authenticatedUser);
-    const supplierAccess = checkSupplierAccess(supplierEmail);
+    const supplierAccess = await resolveSupplierAccess({
+      email: supplierEmail,
+      userId: authenticatedUser.id,
+      client: supabase,
+    });
 
     if (!supplierAccess.ok) {
       console.warn("[supplier-access-denied]", {
@@ -493,7 +519,15 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    if (checkSupplierAccess(resolveAuthEmail(authenticatedUser)).ok) {
+    if (
+      (
+        await resolveSupplierAccess({
+          email: resolveAuthEmail(authenticatedUser),
+          userId: authenticatedUser.id,
+          client: supabase,
+        })
+      ).ok
+    ) {
       const supplierUrl = request.nextUrl.clone();
       supplierUrl.pathname = SUPPLIER_POST_AUTH_PATH;
       supplierUrl.search = "";
@@ -587,7 +621,13 @@ export async function middleware(request: NextRequest) {
       const next = request.nextUrl.searchParams.get("next");
       const redirectUrl = request.nextUrl.clone();
       const authEmail = resolveAuthEmail(authenticatedUser);
-      const isSupplier = checkSupplierAccess(authEmail).ok;
+      const isSupplier = (
+        await resolveSupplierAccess({
+          email: authEmail,
+          userId: authenticatedUser.id,
+          client: supabase,
+        })
+      ).ok;
 
       if (
         next?.startsWith(ADMIN_PREFIX) &&

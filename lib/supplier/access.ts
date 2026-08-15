@@ -5,11 +5,14 @@ import {
   parseSupportAdminEmails,
   resolveAuthEmail,
 } from "@/lib/support/admin-access";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseServerClient } from "@/lib/supabase/server";
 
 export type SupplierDenyReason =
   | "missing_email"
   | "empty_allowlist"
-  | "not_listed";
+  | "not_listed"
+  | "no_profile";
 
 export interface SupplierAccessCheck {
   ok: boolean;
@@ -17,6 +20,7 @@ export interface SupplierAccessCheck {
   normalizedEmail: string | null;
   allowlistConfigured: boolean;
   allowlistCount: number;
+  via?: "allowlist" | "admin" | "profile";
 }
 
 /** Parsea SUPPLIER_EMAILS (coma o punto y coma). */
@@ -25,8 +29,8 @@ export function getSupplierAllowlist(): string[] {
 }
 
 /**
- * Acceso al hub oculto `/proveedor`.
- * Incluye SUPPLIER_EMAILS y, por comodidad de prueba, SUPPORT_ADMIN_EMAILS.
+ * Acceso por allowlist de email (SUPPLIER_EMAILS) o support-admin.
+ * No contempla perfiles self-serve; usa `resolveSupplierAccess` para eso.
  */
 export function checkSupplierAccess(
   email: string | null | undefined,
@@ -49,6 +53,26 @@ export function checkSupplierAccess(
     };
   }
 
+  if (isAdmin) {
+    return {
+      ok: true,
+      normalizedEmail,
+      allowlistConfigured: true,
+      allowlistCount,
+      via: "admin",
+    };
+  }
+
+  if (supplierList.includes(normalizedEmail)) {
+    return {
+      ok: true,
+      normalizedEmail,
+      allowlistConfigured: true,
+      allowlistCount,
+      via: "allowlist",
+    };
+  }
+
   if (!allowlistConfigured) {
     return {
       ok: false,
@@ -59,22 +83,83 @@ export function checkSupplierAccess(
     };
   }
 
-  if (!supplierList.includes(normalizedEmail) && !isAdmin) {
-    return {
-      ok: false,
-      reason: "not_listed",
-      normalizedEmail,
-      allowlistConfigured: true,
-      allowlistCount,
-    };
-  }
-
   return {
-    ok: true,
+    ok: false,
+    reason: "not_listed",
     normalizedEmail,
     allowlistConfigured: true,
     allowlistCount,
   };
+}
+
+/** ¿Tiene fila activa en supplier_profiles? */
+export async function userHasActiveSupplierProfile(
+  userId: string,
+  client?: Pick<SupabaseServerClient, "from">,
+): Promise<boolean> {
+  if (!userId.trim()) return false;
+
+  try {
+    // Tabla nueva: tipado Database puede no incluirla aún.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = (client ?? createAdminClient()) as any;
+    const { data, error } = await db
+      .from("supplier_profiles")
+      .select("user_id")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (error) {
+      console.warn("[supplier-profile-lookup]", error.message);
+      return false;
+    }
+
+    return Boolean(data?.user_id);
+  } catch (caught) {
+    console.warn(
+      "[supplier-profile-lookup]",
+      caught instanceof Error ? caught.message : caught,
+    );
+    return false;
+  }
+}
+
+/**
+ * Acceso completo: allowlist/admin o perfil de proveedor activo.
+ */
+export async function resolveSupplierAccess(input: {
+  email?: string | null;
+  userId?: string | null;
+  client?: Pick<SupabaseServerClient, "from">;
+}): Promise<SupplierAccessCheck> {
+  const emailCheck = checkSupplierAccess(input.email);
+  if (emailCheck.ok) return emailCheck;
+
+  if (input.userId) {
+    const hasProfile = await userHasActiveSupplierProfile(
+      input.userId,
+      input.client,
+    );
+    if (hasProfile) {
+      return {
+        ok: true,
+        normalizedEmail: emailCheck.normalizedEmail,
+        allowlistConfigured: emailCheck.allowlistConfigured,
+        allowlistCount: emailCheck.allowlistCount,
+        via: "profile",
+      };
+    }
+  }
+
+  if (emailCheck.reason === "empty_allowlist" && input.userId) {
+    return {
+      ...emailCheck,
+      reason: "no_profile",
+    };
+  }
+
+  return emailCheck;
 }
 
 export function isSupplierUser(email: string | null | undefined): boolean {

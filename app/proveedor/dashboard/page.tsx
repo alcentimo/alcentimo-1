@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SupplierDashboard } from "@/components/supplier/SupplierDashboard";
 import {
-  checkSupplierAccess,
+  resolveSupplierAccess,
   resolveSupplierAuthEmail,
 } from "@/lib/supplier/access";
 import { listSupplierProducts } from "@/lib/supplier/actions";
@@ -26,7 +26,11 @@ export default async function ProveedorDashboardPage({
     redirect("/dashboard/login?next=/proveedor/dashboard");
   }
 
-  const access = checkSupplierAccess(resolveSupplierAuthEmail(user));
+  const access = await resolveSupplierAccess({
+    email: resolveSupplierAuthEmail(user),
+    userId: user.id,
+    client: supabase,
+  });
   if (!access.ok) {
     redirect(`/dashboard/catalogo?proveedor_denied=${access.reason ?? "denied"}`);
   }

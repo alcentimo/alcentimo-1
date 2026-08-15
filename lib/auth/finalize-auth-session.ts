@@ -10,7 +10,7 @@ import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
-import { checkSupplierAccess } from "@/lib/supplier/access";
+import { resolveSupplierAccess } from "@/lib/supplier/access";
 import { resolveAuthEmail } from "@/lib/support/admin-access";
 
 function resolveAuthRedirectTarget(
@@ -57,7 +57,13 @@ export async function finalizeAuthSessionRedirect(
 
   const siteUrl = getSiteUrl();
   const normalizedStoreSlug = input.storeSlug?.trim().toLowerCase() || null;
-  const isSupplier = checkSupplierAccess(resolveAuthEmail(user)).ok;
+  const isSupplier = (
+    await resolveSupplierAccess({
+      email: resolveAuthEmail(user),
+      userId: user.id,
+      client: supabase,
+    })
+  ).ok;
   const resolvedNext = normalizedStoreSlug
     ? resolvePostAuthPath(input.nextPath)
     : resolvePostAuthPathForUser({
