@@ -5,6 +5,11 @@ ALTER TABLE public.supplier_profiles
 COMMENT ON COLUMN public.supplier_profiles.password_hash IS
   'Hash scrypt de la contraseña del panel /proveedor. Aislada de auth.users de clientes/tiendas.';
 
+-- Normaliza correos antes del índice único.
+UPDATE public.supplier_profiles
+SET email = lower(trim(email))
+WHERE email IS DISTINCT FROM lower(trim(email));
+
 -- Un correo = una cuenta de proveedor (login aislado).
 CREATE UNIQUE INDEX IF NOT EXISTS supplier_profiles_email_unique_idx
   ON public.supplier_profiles (lower(email));
