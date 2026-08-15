@@ -75,6 +75,7 @@ export function AvailableProductsPanel({
         return;
       }
       if (result.ok && result.productId) {
+        const linkedProductId = result.productId;
         setMessage(`“${result.productName}” ya está en tu tienda.`);
         setProducts((prev) =>
           prev.map((product) =>
@@ -82,12 +83,12 @@ export function AvailableProductsPanel({
               ? {
                   ...product,
                   alreadyImported: true,
-                  linkedProductId: result.productId,
+                  linkedProductId,
                 }
               : product,
           ),
         );
-        onImported?.(result.productId);
+        onImported?.(linkedProductId);
       }
     });
   }
