@@ -8,7 +8,7 @@ interface CatalogUploadCtaCardProps {
 }
 
 export function CatalogUploadCtaCard({
-  href = "/dashboard/productos/nuevo",
+  href = "/dashboard/catalogo?vista=disponibles",
   className,
 }: CatalogUploadCtaCardProps) {
   return (
