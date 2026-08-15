@@ -95,9 +95,28 @@ export function getCustomDomainApexATarget(): string {
   return "76.76.21.21";
 }
 
+/**
+ * Despliegues efímeros (preview/dev de Vercel): no son dominios de tienda.
+ * Evita el 404 "Tienda no encontrada" en URLs *.vercel.app.
+ */
+export function isEphemeralDeploymentHost(hostname: string): boolean {
+  const host = hostname.split(":")[0]?.trim().toLowerCase() ?? "";
+  if (!host) return false;
+  return host === "vercel.app" || host.endsWith(".vercel.app");
+}
+
 export function isPlatformCatalogHost(hostname: string): boolean {
   const host = hostname.split(":")[0]?.trim().toLowerCase() ?? "";
   if (!host) return true;
+
+  // Preview/dev de Vercel: servir landing/app, no buscar tienda por host.
+  if (isEphemeralDeploymentHost(host)) return true;
+  if (
+    process.env.VERCEL_ENV === "preview" ||
+    process.env.VERCEL_ENV === "development"
+  ) {
+    return true;
+  }
 
   const apexHost = getApexSiteHost();
   if (host === apexHost || host === `www.${apexHost}`) return true;

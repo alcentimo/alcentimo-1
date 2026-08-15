@@ -1,6 +1,7 @@
 import { getApexSiteHost, getSiteUrl } from "@/lib/site-url";
 import {
   buildVerifiedCustomDomainOrigin,
+  isEphemeralDeploymentHost,
   type StoreCustomDomainInfo,
 } from "@/lib/domains/custom-domain";
 
@@ -36,6 +37,11 @@ export function isStoreSubdomainCatalogEnabled(): boolean {
 export function parseStoreSlugFromHost(host: string): string | null {
   const hostname = host.split(":")[0]?.trim().toLowerCase();
   if (!hostname) return null;
+
+  // Preview/dev de Vercel nunca es un subdominio de tienda.
+  if (isEphemeralDeploymentHost(hostname)) {
+    return null;
+  }
 
   const apexHost = getApexSiteHost();
 
