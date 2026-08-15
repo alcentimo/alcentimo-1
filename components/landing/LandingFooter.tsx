@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
+import { SUPPLIER_ZONE_HREF } from "@/lib/landing/supplier-zone-href";
 
 export function LandingFooter() {
   return (
@@ -19,6 +20,9 @@ export function LandingFooter() {
           >
             <Link href={MERCHANT_SIGNUP_HREF} className="link-brand">
               Crear mi tienda gratis
+            </Link>
+            <Link href={SUPPLIER_ZONE_HREF} className="link-brand">
+              Zona de Proveedores
             </Link>
             <Link href="/dashboard/login" className="link-brand">
               Iniciar sesión

@@ -5,12 +5,14 @@ import { useEffect, useState, type MouseEvent } from "react";
 import { Menu, X } from "lucide-react";
 import { LandingHeaderLogo } from "@/components/landing/LandingHeaderLogo";
 import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
+import { SUPPLIER_ZONE_HREF } from "@/lib/landing/supplier-zone-href";
 import { scrollToLandingHash } from "@/lib/landing/scroll-to-hash";
 
 const navLinks = [
   { href: "#experiencia", label: "Cómo funciona" },
   { href: "#marca-blanca", label: "Tu marca" },
   { href: "#precios", label: "Precios" },
+  { href: SUPPLIER_ZONE_HREF, label: "Zona de Proveedores" },
 ];
 
 export function LandingNav() {
@@ -76,19 +78,37 @@ export function LandingNav() {
           className="hidden items-center gap-0.5 md:flex"
           aria-label="Navegación principal"
         >
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              onClick={(event) => handleHashClick(event, link.href)}
-              className="landing-nav-link"
-            >
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link) =>
+            link.href.startsWith("#") ? (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={(event) => handleHashClick(event, link.href)}
+                className="landing-nav-link"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                prefetch={true}
+                className="landing-nav-link"
+              >
+                {link.label}
+              </Link>
+            ),
+          )}
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <Link
+            href={SUPPLIER_ZONE_HREF}
+            prefetch={true}
+            className="landing-nav-link hidden lg:inline-flex"
+          >
+            Vender al por mayor
+          </Link>
           <Link
             href="/dashboard/login"
             prefetch={true}
@@ -119,19 +139,39 @@ export function LandingNav() {
       {open && (
         <div className="border-t border-zinc-200/70 bg-white px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-0.5" aria-label="Menú móvil">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={(event) =>
-                  handleHashClick(event, link.href, { closeMenu: true })
-                }
-                className="landing-nav-link justify-start px-2 py-3 text-base"
-              >
-                {link.label}
-              </a>
-            ))}
+            {navLinks.map((link) =>
+              link.href.startsWith("#") ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={(event) =>
+                    handleHashClick(event, link.href, { closeMenu: true })
+                  }
+                  className="landing-nav-link justify-start px-2 py-3 text-base"
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  prefetch={true}
+                  onClick={() => setOpen(false)}
+                  className="landing-nav-link touch-manipulation justify-start px-2 py-3 text-base"
+                >
+                  {link.label}
+                </Link>
+              ),
+            )}
             <hr className="my-2 border-zinc-200/70 dark:border-zinc-800/70" />
+            <Link
+              href={SUPPLIER_ZONE_HREF}
+              prefetch={true}
+              onClick={() => setOpen(false)}
+              className="landing-nav-link touch-manipulation justify-start px-2 py-3 text-base"
+            >
+              Vender al por mayor
+            </Link>
             <Link
               href="/dashboard/login"
               prefetch={true}

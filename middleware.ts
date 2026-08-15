@@ -26,7 +26,11 @@ import {
   isDashboardPublicAuthPath,
 } from "@/lib/team/permissions";
 import { getMerchantStoreRole } from "@/lib/team/store-context";
-import { applySafeInternalNextRedirect } from "@/lib/auth/post-auth-redirect";
+import {
+  applySafeInternalNextRedirect,
+  resolvePostAuthPathForUser,
+  SUPPLIER_POST_AUTH_PATH,
+} from "@/lib/auth/post-auth-redirect";
 import { shouldRedirectGoogleAuthToApex } from "@/lib/auth/google-oauth-origin";
 import { getCatalogVisitorCookieName } from "@/lib/analytics/track-catalog-visit";
 import { LANDING_VISITOR_COOKIE } from "@/lib/analytics/page-visit-keys";
@@ -489,6 +493,13 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
+    if (checkSupplierAccess(resolveAuthEmail(authenticatedUser)).ok) {
+      const supplierUrl = request.nextUrl.clone();
+      supplierUrl.pathname = SUPPLIER_POST_AUTH_PATH;
+      supplierUrl.search = "";
+      return NextResponse.redirect(supplierUrl);
+    }
+
     if (await userHasMerchantStore(supabase, authenticatedUser.id)) {
       const dashboardUrl = request.nextUrl.clone();
       dashboardUrl.pathname = "/dashboard/catalogo";
@@ -575,30 +586,33 @@ export async function middleware(request: NextRequest) {
 
       const next = request.nextUrl.searchParams.get("next");
       const redirectUrl = request.nextUrl.clone();
+      const authEmail = resolveAuthEmail(authenticatedUser);
+      const isSupplier = checkSupplierAccess(authEmail).ok;
 
       if (
         next?.startsWith(ADMIN_PREFIX) &&
-        checkSupportAdminAccess(resolveAuthEmail(authenticatedUser)).ok
+        checkSupportAdminAccess(authEmail).ok
       ) {
         applySafeInternalNextRedirect(redirectUrl, next, "/admin/dashboard");
         return NextResponse.redirect(redirectUrl);
       }
 
-      if (
-        next?.startsWith(PROVEEDOR_PREFIX) &&
-        checkSupplierAccess(resolveAuthEmail(authenticatedUser)).ok
-      ) {
+      if (isSupplier) {
+        const supplierDestination = resolvePostAuthPathForUser({
+          next,
+          isSupplier: true,
+        });
         applySafeInternalNextRedirect(
           redirectUrl,
-          next,
-          "/proveedor/dashboard",
+          supplierDestination,
+          SUPPLIER_POST_AUTH_PATH,
         );
         return NextResponse.redirect(redirectUrl);
       }
 
       if (
         next?.startsWith(MERCADO_OCULTO_PREFIX) &&
-        checkSupportAdminAccess(resolveAuthEmail(authenticatedUser)).ok
+        checkSupportAdminAccess(authEmail).ok
       ) {
         applySafeInternalNextRedirect(redirectUrl, next, "/mercado-oculto");
         return NextResponse.redirect(redirectUrl);

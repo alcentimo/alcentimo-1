@@ -17,6 +17,7 @@ import {
   isInvitationNextPath,
   resolvePostAuthPath,
 } from "@/lib/auth/post-auth-redirect";
+import { resolveAuthenticatedPostAuthPath } from "@/lib/auth/resolve-authenticated-post-auth-path";
 import { createClient } from "@/lib/supabase/client";
 import { ensureBrowserSessionReady } from "@/lib/auth/ensure-browser-session";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
@@ -143,7 +144,8 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
           return;
         }
 
-        navigateAfterAuth(postAuthPath);
+        const destination = await resolveAuthenticatedPostAuthPath(nextParam);
+        navigateAfterAuth(destination);
       } catch (caught) {
         setLoading(false);
         const message = getAuthCaughtMessage(caught);
@@ -256,7 +258,8 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
       }
 
       logAuthEvent("signin_success", { hasUser: Boolean(result.data.user) });
-      navigateAfterAuth(postAuthPath);
+      const destination = await resolveAuthenticatedPostAuthPath(nextParam);
+      navigateAfterAuth(destination);
     } catch (caught) {
       setLoading(false);
       const message = getAuthCaughtMessage(caught);

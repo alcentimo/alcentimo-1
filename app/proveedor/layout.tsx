@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { SupplierChrome } from "@/components/supplier/SupplierChrome";
 import { resolveSupplierAuthEmail } from "@/lib/supplier/access";
 
+/**
+ * Hub de proveedores (`/proveedor`): carga y gestión de productos del catálogo global.
+ * Acceso vía allowlist (SUPPLIER_EMAILS) o support-admin.
+ * Enlazado desde la landing como «Zona de Proveedores».
+ */
 export const metadata = {
   title: "Hub de proveedores",
   robots: {

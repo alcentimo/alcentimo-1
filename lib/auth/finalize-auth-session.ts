@@ -1,5 +1,8 @@
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
-import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
+import {
+  resolvePostAuthPath,
+  resolvePostAuthPathForUser,
+} from "@/lib/auth/post-auth-redirect";
 import { sanitizeAuthReturnUrl } from "@/lib/auth/validate-auth-return-url";
 import { resolveCustomerNextDestination } from "@/lib/customers/middleware-access";
 import { ensureCustomerProfileAfterAuth } from "@/lib/customers/ensure-customer-profile";
@@ -7,6 +10,8 @@ import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
+import { checkSupplierAccess } from "@/lib/supplier/access";
+import { resolveAuthEmail } from "@/lib/support/admin-access";
 
 function resolveAuthRedirectTarget(
   next: string,
@@ -52,8 +57,15 @@ export async function finalizeAuthSessionRedirect(
 
   const siteUrl = getSiteUrl();
   const normalizedStoreSlug = input.storeSlug?.trim().toLowerCase() || null;
+  const isSupplier = checkSupplierAccess(resolveAuthEmail(user)).ok;
+  const resolvedNext = normalizedStoreSlug
+    ? resolvePostAuthPath(input.nextPath)
+    : resolvePostAuthPathForUser({
+        next: input.nextPath,
+        isSupplier,
+      });
   const safeNext = resolveAuthRedirectTarget(
-    resolvePostAuthPath(input.nextPath),
+    resolvedNext,
     siteUrl,
     normalizedStoreSlug,
   );
