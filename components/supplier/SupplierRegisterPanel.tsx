@@ -13,9 +13,7 @@ export function SupplierRegisterPanel() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
-  const [productCategory, setProductCategory] = useState(
-    SUPPLIER_PRODUCT_CATEGORIES[0]?.value ?? "otros",
-  );
+  const [productCategory, setProductCategory] = useState<string>("electronica");
   const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
