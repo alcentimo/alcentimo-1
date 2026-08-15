@@ -4,9 +4,9 @@ import { HeroCatalogStaticPreview } from "@/components/landing/HeroCatalogStatic
 import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 
 const heroHighlights = [
-  "IA que te ayuda a controlar inventario y anticipar faltantes.",
-  "Redacta descripciones de productos en segundos, listas para publicar.",
-  "Atiende dudas de clientes en tu catálogo con asistencia inteligente.",
+  "Acceso a un catálogo de productos listos para vender.",
+  "Tu tienda online lista para compartir por WhatsApp.",
+  "IA que te ayuda a vender más, sin ser experto.",
 ] as const;
 
 interface HeroProps {
@@ -30,18 +30,17 @@ export function Hero({ exchangeRate = null }: HeroProps) {
         <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-12 xl:gap-16">
           <div className="max-w-xl lg:max-w-none">
             <p className="landing-hero-ai-pill">
-              ✨ Automatiza tu negocio con Inteligencia Artificial
+              Empieza tu negocio de dropshipping hoy
             </p>
 
             <h1 className="landing-hero-title text-balance">
-              Tu gestor de ventas y e-commerce con{" "}
-              <span className="landing-hero-accent">marca blanca</span>.
+              Tu propio negocio digital{" "}
+              <span className="landing-hero-accent">en minutos</span>.
             </h1>
 
             <p className="landing-hero-lead">
-              Controla tu inventario, sincroniza tasas de cambio en tiempo real y
-              lanza tu catálogo online con tu propio dominio y logo. Recibe pedidos
-              organizados directamente en WhatsApp, sin depender de intermediarios.
+              Elige productos, agrégalos a tu tienda y empieza a vender hoy sin
+              inventario ni costos de logística.
             </p>
 
             <ul className="landing-hero-highlights">
@@ -62,13 +61,13 @@ export function Hero({ exchangeRate = null }: HeroProps) {
                 prefetch={true}
                 className="btn-brand inline-flex gap-2 px-7 py-3 text-base shadow-lg shadow-emerald-500/20 touch-manipulation"
               >
-                Comenzar gratis
+                Crear mi tienda gratis
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
 
             <p className="mt-5 text-sm text-zinc-500 dark:text-zinc-500">
-              Sin tarjeta de crédito · Configura tu tienda en minutos
+              Sin tarjeta · Sin inventario · Empieza en minutos
             </p>
           </div>
 

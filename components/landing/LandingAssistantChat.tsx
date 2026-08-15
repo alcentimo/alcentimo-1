@@ -13,7 +13,7 @@ const QUICK_PROMPTS = [
 ];
 
 const WELCOME_MESSAGE =
-  "¡Hola! Soy el asistente de Alcentimo. Puedo contarte cómo la plataforma te ayuda a vender online, controlar inventario con IA y lanzar tu catálogo con marca blanca. ¿En qué te ayudo?";
+  "¡Hola! Soy el asistente de Alcentimo. Te ayudo a entender cómo crear tu tienda, elegir productos listos para vender y empezar tu negocio de dropshipping sin inventario. ¿En qué te ayudo?";
 
 function createMessage(
   role: LandingAssistantMessage["role"],
@@ -211,7 +211,7 @@ export function LandingAssistantChat() {
                 rows={1}
                 maxLength={500}
                 disabled={loading}
-                placeholder="Pregunta sobre planes, IA, inventario o marca blanca…"
+                placeholder="Pregunta sobre planes, dropshipping o cómo empezar…"
                 className="landing-assistant-input"
                 aria-label="Mensaje para el asistente de Alcentimo"
               />

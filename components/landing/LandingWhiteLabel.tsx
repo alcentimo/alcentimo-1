@@ -13,14 +13,14 @@ const benefits = [
     icon: ImageIcon,
     title: "Tu propio logo",
     description:
-      "Personaliza tu catálogo y panel con la imagen de tu marca. Tus clientes ven tu negocio, no una plataforma genérica.",
+      "Tu tienda se ve con tu nombre y tu imagen. Quien compra siente que entra a tu negocio, no a una plataforma genérica.",
     accent: "emerald",
   },
   {
     icon: Globe,
-    title: "Dominio propio (.com)",
+    title: "Tu propio enlace o dominio",
     description:
-      "Conecta tu dirección web personalizada para que tus clientes te recuerden siempre. Disponible en todos los planes de pago (dominio a tu cargo).",
+      "Comparte un enlace fácil de recordar. En los planes de pago puedes conectar tu dominio .com (lo compras tú; nosotros te ayudamos a conectarlo).",
     accent: "violet",
     badge: "Planes de pago",
   },
@@ -108,18 +108,18 @@ export function LandingWhiteLabel() {
         <div className="mx-auto max-w-2xl text-center">
           <Badge variant="success" className="mb-4 gap-1.5">
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            Marca blanca
+            Tu marca
           </Badge>
           <h2 className="section-title text-balance">
-            Vende con{" "}
+            Tu negocio, con{" "}
             <span className="text-emerald-600 dark:text-emerald-400">
-              tu propia identidad digital
+              tu nombre
             </span>
           </h2>
           <p className="mt-4 text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Con Alcentimo tu tienda deja de verse genérica. Tus clientes entran a
-            un catálogo con tu logo, tus colores y tu dominio — como si hubieras
-            contratado un desarrollo a medida.
+            No necesitas saber de diseño ni contratar un desarrollador. Tu
+            tienda se ve profesional con tu logo y tu identidad desde el primer
+            día.
           </p>
         </div>
 
@@ -204,7 +204,7 @@ export function LandingWhiteLabel() {
             href="#precios"
             className="btn-brand inline-flex gap-2 px-6 py-2.5 text-sm shadow-md shadow-emerald-500/15"
           >
-            Ver planes con marca blanca
+            Ver planes
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </a>
         </div>

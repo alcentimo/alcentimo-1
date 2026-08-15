@@ -3,15 +3,18 @@ import {
   AI_ASSISTANT_ADVANCED_FEATURE,
   AI_ASSISTANT_FEATURE,
   AI_MULTISEDED_FEATURE,
+  CATALOG_READY_FEATURE,
   CUSTOM_DOMAIN_FEATURE,
   CUSTOM_DOMAIN_FEATURE_SHORT,
   FREE_SUBDOMAIN_FEATURE,
+  NO_COMMISSION_FEATURE,
   PAID_PLAN_CTA,
+  WHATSAPP_SUPPORT_FEATURE,
   type BillingPeriod,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
 import type { PlanId } from "@/src/config/plans";
-import { formatPlanName, formatProductLimit } from "@/src/config/plans";
+import { formatPlanName } from "@/src/config/plans";
 
 export type PlanSettingsKey = "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE";
 
@@ -50,7 +53,7 @@ export const PLAN_SETTINGS_KEYS: PlanSettingsKey[] = [
 export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
   FREE: {
     planKey: "FREE",
-    displayName: "Gratis",
+    displayName: "Principiante",
     monthlyUsd: 0,
     annualUsd: null,
     productLimit: 10,
@@ -61,7 +64,7 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
   },
   PRO: {
     planKey: "PRO",
-    displayName: "Pro",
+    displayName: "Emprendedor",
     monthlyUsd: 8,
     annualUsd: 75,
     productLimit: 150,
@@ -72,7 +75,7 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
   },
   BUSINESS: {
     planKey: "BUSINESS",
-    displayName: "Business",
+    displayName: "Pro",
     monthlyUsd: 15,
     annualUsd: 144,
     productLimit: 2000,
@@ -83,7 +86,7 @@ export const DEFAULT_PLAN_SETTINGS: PlanSettingsMap = {
   },
   ENTERPRISE: {
     planKey: "ENTERPRISE",
-    displayName: "Enterprise",
+    displayName: "Corporativo",
     monthlyUsd: 29,
     annualUsd: 278,
     productLimit: null,
@@ -102,24 +105,24 @@ const TIER_STATIC: Record<
   >
 > = {
   free: {
-    tagline: "Ideal para empezar",
-    cta: "Continuar gratis",
+    tagline: "Para dar el primer paso",
+    cta: "Crear mi tienda gratis",
   },
   starter: {
-    tagline: "Para negocios en crecimiento",
+    tagline: "Para vender en serio",
     cta: PAID_PLAN_CTA,
     recommended: true,
   },
   growth: {
-    tagline: "Para negocios en crecimiento",
+    tagline: "Para vender en serio",
     cta: PAID_PLAN_CTA,
   },
   premium: {
-    tagline: "Para marcas establecidas",
+    tagline: "Para hacer crecer tu negocio",
     cta: PAID_PLAN_CTA,
   },
   enterprise: {
-    tagline: "Multi-sucursal y operaciones avanzadas",
+    tagline: "Para operaciones avanzadas",
     cta: PAID_PLAN_CTA,
   },
 };
@@ -205,48 +208,44 @@ function productLimitLabel(limit: number | null): string {
   return `Hasta ${formatted} productos`;
 }
 
-function photoLimitLabel(limit: number | null): string {
-  if (limit == null) return "Fotos ilimitadas por producto";
-  const formatted = limit.toLocaleString("es-VE");
-  return `Hasta ${formatted} fotos por producto`;
-}
-
 function buildTierFeatures(
   planId: PlanId,
   row: PlanSettingRow,
 ): string[] {
-  const limitLabel = productLimitLabel(row.productLimit);
-  const photosLabel = photoLimitLabel(row.photoLimit);
+  const limitLabel =
+    row.productLimit == null
+      ? "Productos ilimitados en tu tienda"
+      : `Hasta ${row.productLimit.toLocaleString("es-VE")} productos en tu tienda`;
 
   if (planId === "free") {
     return [
+      CATALOG_READY_FEATURE,
       limitLabel,
-      photosLabel,
+      WHATSAPP_SUPPORT_FEATURE,
+      NO_COMMISSION_FEATURE,
       FREE_SUBDOMAIN_FEATURE,
-      "Precios en USD y Bs",
-      "Cupones y variantes",
     ];
   }
 
   if (planId === "starter" || planId === "growth") {
     return [
+      CATALOG_READY_FEATURE,
       limitLabel,
-      photosLabel,
-      CUSTOM_DOMAIN_FEATURE,
       AI_ASSISTANT_FEATURE,
-      "Precios en USD y Bs",
-      "Cupones, variantes y alertas de stock",
+      CUSTOM_DOMAIN_FEATURE,
+      WHATSAPP_SUPPORT_FEATURE,
+      NO_COMMISSION_FEATURE,
     ];
   }
 
   if (planId === "premium") {
     return [
-      CUSTOM_DOMAIN_FEATURE_SHORT,
+      CATALOG_READY_FEATURE,
       limitLabel,
-      photosLabel,
-      "Usuarios y colaboradores de equipo",
       AI_ASSISTANT_ADVANCED_FEATURE,
+      CUSTOM_DOMAIN_FEATURE_SHORT,
       "Soporte prioritario",
+      NO_COMMISSION_FEATURE,
     ];
   }
 
@@ -256,11 +255,12 @@ function buildTierFeatures(
       : "Hasta 3 sucursales incluidas";
 
   return [
-    CUSTOM_DOMAIN_FEATURE_SHORT,
+    CATALOG_READY_FEATURE,
     limitLabel,
-    photosLabel,
+    CUSTOM_DOMAIN_FEATURE_SHORT,
     branches,
     AI_MULTISEDED_FEATURE,
+    NO_COMMISSION_FEATURE,
   ];
 }
 
@@ -281,7 +281,7 @@ export function buildPlanPricingTiers(
 
     return {
       planId,
-      displayName: formatPlanName(row.displayName || planId),
+      displayName: formatPlanName(planId),
       tagline: staticMeta.tagline,
       monthlyUsd: row.monthlyUsd,
       annualUsd: row.annualUsd,

@@ -26,10 +26,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const platformSettings = await fetchPlatformSettings();
 
   return {
-    title: `${platformSettings.platformName.toLowerCase()} — Inventario y catálogo digital`,
+    title: `${platformSettings.platformName.toLowerCase()} — Tu negocio digital de dropshipping`,
     description:
       platformSettings.tagline ||
-      "Software de gestión de inventario y catálogo digital para comerciantes venezolanos. Precios en USD con conversión automática a bolívares.",
+      "Elige productos listos para vender, crea tu tienda en minutos y vende por WhatsApp sin inventario ni logística.",
     applicationName: `${platformSettings.platformName} Admin`,
     manifest: getAdminManifestPath(),
     appleWebApp: {

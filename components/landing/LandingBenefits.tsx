@@ -1,29 +1,29 @@
 import {
-  LineChart,
   MessageCircle,
-  ShieldCheck,
+  PackageOpen,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
 const benefits = [
   {
+    icon: PackageOpen,
+    title: "Sin inventario ni logística",
+    description:
+      "Accede a nuestro catálogo de productos listos para vender. Tú te enfocas en conseguir clientes; el stock y el envío no son tu problema.",
+  },
+  {
     icon: MessageCircle,
-    title: "Vende donde ya conversas",
+    title: "Vende por WhatsApp",
     description:
-      "Tu catálogo se comparte por WhatsApp o redes. Los pedidos llegan organizados al mismo número que usas hoy.",
+      "Comparte tu tienda y atiende pedidos desde el chat que ya usas todos los días. Cercano, directo y sin fricciones.",
   },
   {
-    icon: LineChart,
-    title: "Precios claros, siempre al día",
+    icon: Sparkles,
+    title: "IA para vender más",
     description:
-      "Publica en dólares y muestra bolívares con la tasa actualizada. Tus clientes entienden cuánto pagan sin dudas.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Control sin complicaciones",
-    description:
-      "Inventario, pedidos y clientes en un solo lugar, con IA para detectar faltantes y responder dudas en tu catálogo.",
+      "Te ayuda a presentar productos y responder dudas en tu catálogo, aunque no seas experto en ventas online.",
   },
 ] as const;
 
@@ -39,10 +39,10 @@ export function LandingBenefits() {
             Beneficios
           </Badge>
           <h2 className="section-title text-balance">
-            Hecho para dueños de negocio, no para técnicos
+            Emprender no tiene que ser complicado
           </h2>
           <p className="mt-4 text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Menos fricción en el día a día. Más tiempo vendiendo.
+            Menos tecnicismos. Más claridad para empezar a vender.
           </p>
         </div>
 

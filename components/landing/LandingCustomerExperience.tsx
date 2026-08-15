@@ -7,23 +7,23 @@ const steps = [
   {
     step: 1,
     icon: Package,
-    title: "Configuras tu inventario",
+    title: "Elige productos listos para vender",
     description:
-      "Sube productos, fotos y precios en USD. La IA te ayuda a redactar descripciones mientras Alcentimo muestra el equivalente en bolívares.",
+      "Explora nuestro catálogo y agrega a tu tienda lo que quieras ofrecer. Sin comprar stock ni preocuparte por la logística.",
   },
   {
     step: 2,
     icon: ShoppingBag,
-    title: "Tu cliente navega y compra con facilidad",
+    title: "Activa tu tienda en minutos",
     description:
-      "Los dueños de tienda pueden incentivar el registro de sus compradores o permitirles realizar pedidos de forma rápida y flexible sin fricciones.",
+      "Ponle tu nombre, tu logo y comparte el enlace. Tu negocio digital queda listo para que cualquiera te compre.",
   },
   {
     step: 3,
     icon: Users,
-    title: "Gestionas pedidos y fidelizas clientes",
+    title: "Vende y cobra por WhatsApp",
     description:
-      "Recibe pedidos en WhatsApp, actualiza estados, conoce a tus compradores frecuentes y haz que vuelvan.",
+      "Recibe pedidos organizados y atiende a tus clientes donde ya conversan. Simple, cercano y sin complicaciones.",
   },
 ] as const;
 
@@ -36,14 +36,14 @@ export function LandingCustomerExperience() {
       <div className="page-container">
         <div className="mx-auto max-w-2xl text-center">
           <Badge variant="success" className="mb-4">
-            Experiencia del cliente
+            Así de simple
           </Badge>
           <h2 className="section-title text-balance">
-            De tu inventario al pedido confirmado, en tres pasos
+            De cero a tu primera venta, en tres pasos
           </h2>
           <p className="mt-4 text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Un flujo pensado para que tú vendas mejor y tus clientes compren
-            con confianza.
+            Pensado para cualquiera que quiera emprender, aunque nunca haya
+            vendido online.
           </p>
         </div>
 

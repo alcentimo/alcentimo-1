@@ -7,6 +7,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import {
+  LANDING_PLAN_IDS,
   planIncludesCustomDomain,
   PRICING_DOMAIN_DISCLAIMER,
   type PlanPricingTier,
@@ -34,6 +35,10 @@ interface LandingPricingProps {
 export function LandingPricing({
   pricingTiers = PLAN_PRICING_TIERS,
 }: LandingPricingProps) {
+  const visibleTiers = pricingTiers.filter((tier) =>
+    LANDING_PLAN_IDS.includes(tier.planId),
+  );
+
   return (
     <section
       id="precios"
@@ -42,20 +47,22 @@ export function LandingPricing({
       <div className="page-container">
         <div className="mx-auto max-w-3xl text-center">
           <Badge variant="success" className="mb-4">
-            Precios simples
+            Planes mensuales simples
           </Badge>
-          <h2 className="section-title">Empieza gratis, crece cuando quieras</h2>
+          <h2 className="section-title">
+            Elige el plan con el que quieres empezar
+          </h2>
           <p className="mt-4 text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Planes claros para cada etapa de tu negocio. Escala tu catálogo, activa
-            tu marca y conecta tu dominio cuando lo necesites.
+            Tres opciones claras. Sin comisiones por venta. Crece cuando lo
+            necesites.
           </p>
           <p className="landing-pricing-disclaimer mt-5 text-left sm:text-center">
             {PRICING_DOMAIN_DISCLAIMER}
           </p>
         </div>
 
-        <ul className="mx-auto mt-12 grid max-w-6xl grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
-          {pricingTiers.map((tier) => {
+        <ul className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+          {visibleTiers.map((tier) => {
             const { price, period } = formatLandingPrice(tier);
             const ctaHref =
               tier.planId === "free"
@@ -126,7 +133,9 @@ export function LandingPricing({
                         tier.recommended ? "btn-brand" : "btn-brand-outline"
                       } shadow-lg shadow-emerald-500/10`}
                     >
-                      {tier.planId === "free" ? "Comenzar gratis" : "Elegir plan"}
+                      {tier.planId === "free"
+                        ? "Crear mi tienda gratis"
+                        : "Elegir plan"}
                     </Link>
                   </CardContent>
                 </Card>

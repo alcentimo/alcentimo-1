@@ -4,25 +4,35 @@ export type BillingPeriod = "monthly" | "annual";
 
 export const PAID_PLAN_CTA = "Empezar ahora";
 
+/** Planes visibles en la landing (3 tarjetas mensuales simples). */
+export const LANDING_PLAN_IDS: PlanId[] = ["free", "starter", "premium"];
+
 /** Aclaratoria legal sobre dominios en la sección de precios. */
 export const PRICING_DOMAIN_DISCLAIMER =
   "Nota: Todos los planes de pago permiten conectar tu propio dominio (.com). El dominio no viene incluido con la suscripción; debes adquirirlo y registrarlo por tu cuenta con tu proveedor preferido (GoDaddy, Namecheap, etc.) y nosotros te guiamos en la conexión.";
 
-/** Beneficio de conexión DNS en planes de pago (Pro). */
+/** Beneficio de conexión DNS en planes de pago. */
 export const CUSTOM_DOMAIN_FEATURE =
   "Conexión de dominio propio (.com, etc.)";
 
-/** Beneficio de conexión DNS en Business / Enterprise. */
+/** Beneficio de conexión DNS en planes superiores. */
 export const CUSTOM_DOMAIN_FEATURE_SHORT = "Conexión de dominio propio";
 
-/** Enlace en subdominio de plataforma (plan Gratis). */
+/** Enlace en subdominio de plataforma (plan Principiante). */
 export const FREE_SUBDOMAIN_FEATURE = "Subdominio alcentimo.com";
 
-export const AI_ASSISTANT_FEATURE = "Asistente IA integrado";
+export const AI_ASSISTANT_FEATURE = "IA para vender más";
 
-export const AI_ASSISTANT_ADVANCED_FEATURE = "Asistente IA avanzado";
+export const AI_ASSISTANT_ADVANCED_FEATURE = "IA avanzada para vender más";
 
 export const AI_MULTISEDED_FEATURE = "Asistente IA Multisede";
+
+export const CATALOG_READY_FEATURE =
+  "Acceso a nuestro catálogo de productos listos para vender";
+
+export const WHATSAPP_SUPPORT_FEATURE = "Atención por WhatsApp";
+
+export const NO_COMMISSION_FEATURE = "Sin comisiones por venta";
 
 /** Nota corta junto al selector Mensual/Anual en /dashboard/planes. */
 export const PRICING_DOMAIN_TOGGLE_HINT =
@@ -67,68 +77,69 @@ export interface PlanPricingTier {
 export const PLAN_PRICING_TIERS: PlanPricingTier[] = [
   {
     planId: "free",
-    displayName: "Gratis",
-    tagline: "Ideal para empezar",
+    displayName: "Principiante",
+    tagline: "Para dar el primer paso",
     monthlyUsd: 0,
     annualUsd: null,
     productLimitLabel: "Hasta 10 productos",
     features: [
-      "Hasta 10 productos",
-      "Hasta 5 fotos por producto",
+      CATALOG_READY_FEATURE,
+      "Hasta 10 productos en tu tienda",
+      WHATSAPP_SUPPORT_FEATURE,
+      NO_COMMISSION_FEATURE,
       FREE_SUBDOMAIN_FEATURE,
-      "Precios en USD y Bs",
-      "Cupones y variantes",
     ],
-    cta: "Continuar gratis",
+    cta: "Crear mi tienda gratis",
   },
   {
     planId: "starter",
-    displayName: "Profesional",
-    tagline: "Para negocios en crecimiento",
+    displayName: "Emprendedor",
+    tagline: "Para vender en serio",
     monthlyUsd: 8,
     annualUsd: 75,
     productLimitLabel: "Hasta 150 productos",
     recommended: true,
     features: [
-      "Hasta 150 productos",
-      "Hasta 10 fotos por producto",
-      CUSTOM_DOMAIN_FEATURE,
+      CATALOG_READY_FEATURE,
+      "Hasta 150 productos en tu tienda",
       AI_ASSISTANT_FEATURE,
-      "Precios en USD y Bs",
-      "Cupones, variantes y alertas de stock",
+      CUSTOM_DOMAIN_FEATURE,
+      WHATSAPP_SUPPORT_FEATURE,
+      NO_COMMISSION_FEATURE,
     ],
     cta: PAID_PLAN_CTA,
   },
   {
     planId: "premium",
-    displayName: "Comercial",
-    tagline: "Para marcas establecidas",
+    displayName: "Pro",
+    tagline: "Para hacer crecer tu negocio",
     monthlyUsd: 15,
     annualUsd: 144,
     productLimitLabel: "Hasta 2.000 productos",
     features: [
-      CUSTOM_DOMAIN_FEATURE_SHORT,
-      "Hasta 2.000 productos",
-      "Hasta 20 fotos por producto",
-      "Usuarios y colaboradores de equipo",
+      CATALOG_READY_FEATURE,
+      "Hasta 2.000 productos en tu tienda",
       AI_ASSISTANT_ADVANCED_FEATURE,
+      CUSTOM_DOMAIN_FEATURE_SHORT,
       "Soporte prioritario",
+      NO_COMMISSION_FEATURE,
     ],
     cta: PAID_PLAN_CTA,
   },
   {
     planId: "enterprise",
     displayName: "Corporativo",
-    tagline: "Multi-sucursal y operaciones avanzadas",
+    tagline: "Para operaciones avanzadas",
     monthlyUsd: 29,
     annualUsd: 278,
     productLimitLabel: "Productos ilimitados",
     features: [
-      CUSTOM_DOMAIN_FEATURE_SHORT,
+      CATALOG_READY_FEATURE,
       "Productos ilimitados",
-      "Fotos ilimitadas por producto",
+      CUSTOM_DOMAIN_FEATURE_SHORT,
       "Hasta 3 sucursales incluidas",
       AI_MULTISEDED_FEATURE,
+      NO_COMMISSION_FEATURE,
     ],
     cta: PAID_PLAN_CTA,
   },
@@ -199,7 +210,7 @@ export function formatPlanCheckoutSummary(
   return `${planLabel} — $${equivLabel}/mes ($${annualTotal} al año)`;
 }
 
-/** Ahorro destacado del plan recomendado (Profesional) para el toggle anual. */
+/** Ahorro destacado del plan recomendado (Emprendedor) para el toggle anual. */
 export function getRecommendedAnnualSavingsLabel(): string | null {
   const recommended = PLAN_PRICING_TIERS.find((tier) => tier.recommended);
   return recommended ? formatAnnualSavingsLabel(recommended) : null;

@@ -21,7 +21,7 @@ export interface PlatformSettings {
 
 export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   platformName: "Alcentimo",
-  tagline: "Inventario y catálogo digital",
+  tagline: "Tu propio negocio digital en minutos",
   logoUrl: null,
   pwaIcon192Url: null,
   pwaIcon512Url: null,

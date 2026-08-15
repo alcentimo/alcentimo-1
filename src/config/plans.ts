@@ -3,7 +3,7 @@ export type PlanId = "free" | "starter" | "growth" | "premium" | "enterprise";
 export interface PlanDefinition {
   id: PlanId;
   name: string;
-  /** `null` = productos ilimitados (Comercial / Corporativo) */
+  /** `null` = productos ilimitados */
   productLimit: number | null;
   priceUsdYearly: number;
 }
@@ -12,35 +12,35 @@ export const DEFAULT_PLAN_ID: PlanId = "free";
 
 /** Nombre comercial corto (solo UI; no altera ids de BD ni PlanId). */
 export const PLAN_SHORT_DISPLAY_NAMES: Record<PlanId, string> = {
-  free: "Gratis",
-  starter: "Profesional",
-  growth: "Profesional",
-  premium: "Comercial",
+  free: "Principiante",
+  starter: "Emprendedor",
+  growth: "Emprendedor",
+  premium: "Pro",
   enterprise: "Corporativo",
 };
 
 export const PLANS: Record<PlanId, PlanDefinition> = {
   free: {
     id: "free",
-    name: "Plan Gratis",
+    name: "Plan Principiante",
     productLimit: 10,
     priceUsdYearly: 0,
   },
   starter: {
     id: "starter",
-    name: "Plan Profesional",
+    name: "Plan Emprendedor",
     productLimit: 150,
     priceUsdYearly: 39,
   },
   growth: {
     id: "growth",
-    name: "Plan Profesional",
+    name: "Plan Emprendedor",
     productLimit: 1000,
     priceUsdYearly: 99,
   },
   premium: {
     id: "premium",
-    name: "Plan Comercial",
+    name: "Plan Pro",
     productLimit: 2000,
     priceUsdYearly: 199,
   },
@@ -70,9 +70,9 @@ export const DASHBOARD_PLANS_HREF = "/dashboard/planes";
 export const PRODUCT_LIMIT_NEAR_REMAINING = 3;
 
 const NEXT_PLAN_DISPLAY_NAME: Record<PlanId, string | null> = {
-  free: "Profesional",
-  starter: "Comercial",
-  growth: "Comercial",
+  free: "Emprendedor",
+  starter: "Pro",
+  growth: "Pro",
   premium: "Corporativo",
   enterprise: null,
 };
@@ -154,13 +154,15 @@ export function resolvePlanIdFromLabel(
   const labelAliases: Record<string, PlanId> = {
     free: "free",
     gratis: "free",
-    pro: "starter",
+    principiante: "free",
+    emprendedor: "starter",
     profesional: "starter",
     starter: "starter",
     growth: "growth",
     business: "premium",
     comercial: "premium",
     premium: "premium",
+    pro: "premium",
     enterprise: "enterprise",
     corporativo: "enterprise",
   };
@@ -173,7 +175,7 @@ export function resolvePlanIdFromLabel(
  * NO cambia ids internos (`free`/`starter`/`premium`/`enterprise`),
  * ni códigos de BD (`FREE`/`PRO`/`BUSINESS`/`ENTERPRISE`), ni validaciones.
  *
- * Ej.: `pro` | `PRO` | `starter` | `Plan Pro` → `Profesional`
+ * Ej.: `starter` | `emprendedor` | `PRO` → `Emprendedor`
  */
 export function formatPlanDisplayName(
   value: string | PlanId | null | undefined,
@@ -190,15 +192,15 @@ export function formatPlanDisplayName(
   return known ?? withoutPlan;
 }
 
-/** Alias preferido para UI: formatPlanName(plan) → Gratis | Profesional | Comercial | Corporativo. */
+/** Alias preferido para UI: formatPlanName(plan) → Principiante | Emprendedor | Pro | Corporativo. */
 export const formatPlanName = formatPlanDisplayName;
 
-/** Etiqueta con prefijo Plan: «Plan Profesional», «Plan Gratis», etc. (solo UI). */
+/** Etiqueta con prefijo Plan: «Plan Emprendedor», «Plan Principiante», etc. (solo UI). */
 export function formatPlanLabel(
   value: string | PlanId | null | undefined,
 ): string {
   const short = formatPlanDisplayName(value);
-  return short === "Gratis" ? "Plan Gratis" : `Plan ${short}`;
+  return `Plan ${short}`;
 }
 
 export function getPlanById(planId: PlanId): PlanDefinition {
@@ -313,7 +315,7 @@ export function getProductLimitErrorMessage(
         : getPlanById("starter").productLimit;
     const trialLabel =
       trialLimit == null ? "productos ilimitados" : `${trialLimit} productos`;
-    return `Completa tu catálogo y configura métodos de pago para activar 30 días gratis del Plan Profesional (${trialLabel})`;
+    return `Completa tu catálogo y configura métodos de pago para activar 30 días gratis del Plan Emprendedor (${trialLabel})`;
   }
 
   if (isUnlimitedProductLimit(check.productLimit)) {

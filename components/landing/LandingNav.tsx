@@ -8,8 +8,8 @@ import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 import { scrollToLandingHash } from "@/lib/landing/scroll-to-hash";
 
 const navLinks = [
-  { href: "#experiencia", label: "Producto" },
-  { href: "#marca-blanca", label: "Marca blanca" },
+  { href: "#experiencia", label: "Cómo funciona" },
+  { href: "#marca-blanca", label: "Tu marca" },
   { href: "#precios", label: "Precios" },
 ];
 
@@ -101,7 +101,7 @@ export function LandingNav() {
             prefetch={true}
             className="btn-brand ml-1 gap-2 px-4 touch-manipulation"
           >
-            Comenzar gratis
+            Crear mi tienda gratis
           </Link>
         </div>
 
@@ -146,7 +146,7 @@ export function LandingNav() {
               onClick={() => setOpen(false)}
               className="btn-brand mt-2 gap-2 touch-manipulation"
             >
-              Comenzar gratis
+              Crear mi tienda gratis
             </Link>
           </nav>
         </div>
