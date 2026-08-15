@@ -6,7 +6,6 @@ import {
   resolveAuthEmail,
 } from "@/lib/support/admin-access";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { SupabaseServerClient } from "@/lib/supabase/server";
 
 export type SupplierDenyReason =
   | "missing_email"
@@ -20,12 +19,32 @@ export interface SupplierAccessCheck {
   normalizedEmail: string | null;
   allowlistConfigured: boolean;
   allowlistCount: number;
-  via?: "allowlist" | "admin" | "profile";
+  via?: "allowlist" | "admin" | "profile" | "metadata";
 }
 
 /** Parsea SUPPLIER_EMAILS (coma o punto y coma). */
 export function getSupplierAllowlist(): string[] {
   return parseSupportAdminEmails(process.env.SUPPLIER_EMAILS);
+}
+
+/** Rol de mayorista declarado en user_metadata (registro self-serve). */
+export function isSupplierRoleMetadata(
+  user?: Pick<User, "user_metadata"> | null,
+): boolean {
+  const metadata = user?.user_metadata ?? {};
+  const role =
+    typeof metadata.role === "string" ? metadata.role.trim().toLowerCase() : "";
+  const registrationType =
+    typeof metadata.registration_type === "string"
+      ? metadata.registration_type.trim().toLowerCase()
+      : "";
+  return (
+    role === "supplier" ||
+    role === "mayorista" ||
+    role === "proveedor" ||
+    registrationType === "supplier" ||
+    registrationType === "proveedor"
+  );
 }
 
 /**
@@ -92,17 +111,15 @@ export function checkSupplierAccess(
   };
 }
 
-/** ¿Tiene fila activa en supplier_profiles? */
+/** ¿Tiene fila activa en supplier_profiles? (siempre vía admin, sin depender de RLS). */
 export async function userHasActiveSupplierProfile(
   userId: string,
-  client?: Pick<SupabaseServerClient, "from">,
 ): Promise<boolean> {
   if (!userId.trim()) return false;
 
   try {
-    // Tabla nueva: tipado Database puede no incluirla aún.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = (client ?? createAdminClient()) as any;
+    const db = createAdminClient() as any;
     const { data, error } = await db
       .from("supplier_profiles")
       .select("user_id")
@@ -126,21 +143,18 @@ export async function userHasActiveSupplierProfile(
 }
 
 /**
- * Acceso completo: allowlist/admin o perfil de proveedor activo.
+ * Acceso completo: allowlist/admin, perfil activo o metadata de registro proveedor.
  */
 export async function resolveSupplierAccess(input: {
   email?: string | null;
   userId?: string | null;
-  client?: Pick<SupabaseServerClient, "from">;
+  user?: Pick<User, "user_metadata"> | null;
 }): Promise<SupplierAccessCheck> {
   const emailCheck = checkSupplierAccess(input.email);
   if (emailCheck.ok) return emailCheck;
 
   if (input.userId) {
-    const hasProfile = await userHasActiveSupplierProfile(
-      input.userId,
-      input.client,
-    );
+    const hasProfile = await userHasActiveSupplierProfile(input.userId);
     if (hasProfile) {
       return {
         ok: true,
@@ -150,6 +164,16 @@ export async function resolveSupplierAccess(input: {
         via: "profile",
       };
     }
+  }
+
+  if (isSupplierRoleMetadata(input.user)) {
+    return {
+      ok: true,
+      normalizedEmail: emailCheck.normalizedEmail,
+      allowlistConfigured: emailCheck.allowlistConfigured,
+      allowlistCount: emailCheck.allowlistCount,
+      via: "metadata",
+    };
   }
 
   if (emailCheck.reason === "empty_allowlist" && input.userId) {

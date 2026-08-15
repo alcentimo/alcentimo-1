@@ -2,6 +2,7 @@ import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import {
   resolvePostAuthPath,
   resolvePostAuthPathForUser,
+  SUPPLIER_POST_AUTH_PATH,
 } from "@/lib/auth/post-auth-redirect";
 import { sanitizeAuthReturnUrl } from "@/lib/auth/validate-auth-return-url";
 import { resolveCustomerNextDestination } from "@/lib/customers/middleware-access";
@@ -61,14 +62,24 @@ export async function finalizeAuthSessionRedirect(
     await resolveSupplierAccess({
       email: resolveAuthEmail(user),
       userId: user.id,
-      client: supabase,
+      user,
     })
   ).ok;
+
+  // Mayoristas: destino exclusivo al panel de proveedores (nunca cliente/tienda).
+  if (isSupplier) {
+    return resolveAuthRedirectTarget(
+      SUPPLIER_POST_AUTH_PATH,
+      siteUrl,
+      null,
+    );
+  }
+
   const resolvedNext = normalizedStoreSlug
     ? resolvePostAuthPath(input.nextPath)
     : resolvePostAuthPathForUser({
         next: input.nextPath,
-        isSupplier,
+        isSupplier: false,
       });
   const safeNext = resolveAuthRedirectTarget(
     resolvedNext,

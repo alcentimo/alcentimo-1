@@ -40,7 +40,8 @@ export function SupplierRegisterPanel() {
         return;
       }
 
-      window.location.assign(result.redirectTo || SUPPLIER_DASHBOARD_PATH);
+      // Redirección dura y exclusiva al panel mayorista (sin historial a registro).
+      window.location.replace(SUPPLIER_DASHBOARD_PATH);
     } catch {
       setError("No se pudo completar el registro. Intenta de nuevo.");
       setLoading(false);

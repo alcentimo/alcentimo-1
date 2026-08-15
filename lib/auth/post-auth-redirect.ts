@@ -63,9 +63,8 @@ export function resolvePostAuthPath(next: string | null | undefined): string {
 }
 
 /**
- * Destino post-login considerando rol de proveedor (allowlist).
- * Los mayoristas van al panel de carga de productos, salvo que pidan
- * explícitamente otra ruta válida (invitación, admin, /proveedor, /c/).
+ * Destino post-login para proveedores/mayoristas.
+ * Destino exclusivo: /proveedor/dashboard (salvo admin / mercado oculto).
  */
 export function resolvePostAuthPathForUser(input: {
   next?: string | null;
@@ -76,14 +75,10 @@ export function resolvePostAuthPathForUser(input: {
 
   if (!input.isSupplier) return resolved;
 
-  if (resolved.startsWith("/proveedor")) return resolved;
-  if (isInvitationNextPath(next) || isInvitationNextPath(resolved)) {
-    return resolved;
-  }
+  if (resolved.startsWith("/proveedor")) return SUPPLIER_POST_AUTH_PATH;
   if (
     resolved.startsWith("/admin") ||
-    resolved.startsWith("/mercado-oculto") ||
-    resolved.startsWith("/c/")
+    resolved.startsWith("/mercado-oculto")
   ) {
     return resolved;
   }

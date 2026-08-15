@@ -450,7 +450,7 @@ export async function middleware(request: NextRequest) {
         const supplierAccess = await resolveSupplierAccess({
           email: resolveAuthEmail(authenticatedUser),
           userId: authenticatedUser.id,
-          client: supabase,
+          user: authenticatedUser,
         });
         if (supplierAccess.ok) {
           const dashboardUrl = request.nextUrl.clone();
@@ -473,7 +473,7 @@ export async function middleware(request: NextRequest) {
     const supplierAccess = await resolveSupplierAccess({
       email: supplierEmail,
       userId: authenticatedUser.id,
-      client: supabase,
+      user: authenticatedUser,
     });
 
     if (!supplierAccess.ok) {
@@ -486,13 +486,15 @@ export async function middleware(request: NextRequest) {
         envVarPresent: Boolean(process.env.SUPPLIER_EMAILS?.trim()),
       });
 
-      const dashboardUrl = request.nextUrl.clone();
-      dashboardUrl.pathname = "/dashboard/catalogo";
-      dashboardUrl.searchParams.set(
-        "proveedor_denied",
+      // No enviar a /dashboard (onboarding o clientes de tienda): registro proveedor.
+      const registroUrl = request.nextUrl.clone();
+      registroUrl.pathname = "/proveedor/registro";
+      registroUrl.search = "";
+      registroUrl.searchParams.set(
+        "error",
         supplierAccess.reason ?? "denied",
       );
-      return NextResponse.redirect(dashboardUrl);
+      return NextResponse.redirect(registroUrl);
     }
 
     return supabaseResponse;
@@ -524,7 +526,7 @@ export async function middleware(request: NextRequest) {
         await resolveSupplierAccess({
           email: resolveAuthEmail(authenticatedUser),
           userId: authenticatedUser.id,
-          client: supabase,
+          user: authenticatedUser,
         })
       ).ok
     ) {
@@ -566,6 +568,19 @@ export async function middleware(request: NextRequest) {
     if (authenticatedUser && !isLoginPage && !isResetPasswordFlow) {
       if (isInvitationPage) {
         return supabaseResponse;
+      }
+
+      // Mayoristas nunca caen en onboarding ni en cuentas de cliente de tienda.
+      const supplierOnDashboard = await resolveSupplierAccess({
+        email: resolveAuthEmail(authenticatedUser),
+        userId: authenticatedUser.id,
+        user: authenticatedUser,
+      });
+      if (supplierOnDashboard.ok) {
+        const supplierUrl = request.nextUrl.clone();
+        supplierUrl.pathname = SUPPLIER_POST_AUTH_PATH;
+        supplierUrl.search = "";
+        return NextResponse.redirect(supplierUrl);
       }
 
       const hasMerchantStore = await userHasMerchantStore(
@@ -625,7 +640,7 @@ export async function middleware(request: NextRequest) {
         await resolveSupplierAccess({
           email: authEmail,
           userId: authenticatedUser.id,
-          client: supabase,
+          user: authenticatedUser,
         })
       ).ok;
 

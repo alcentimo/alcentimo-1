@@ -29,10 +29,10 @@ export default async function ProveedorDashboardPage({
   const access = await resolveSupplierAccess({
     email: resolveSupplierAuthEmail(user),
     userId: user.id,
-    client: supabase,
+    user,
   });
   if (!access.ok) {
-    redirect(`/dashboard/catalogo?proveedor_denied=${access.reason ?? "denied"}`);
+    redirect(`/proveedor/registro?error=${access.reason ?? "denied"}`);
   }
 
   const params = await searchParams;

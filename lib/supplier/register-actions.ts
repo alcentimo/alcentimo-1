@@ -5,10 +5,17 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { SUPPLIER_POST_AUTH_PATH } from "@/lib/auth/post-auth-redirect";
+import { userHasActiveSupplierProfile } from "@/lib/supplier/access";
 import {
   isSupplierProductCategory,
   type SupplierProductCategory,
 } from "@/lib/supplier/categories";
+
+/** Metadata que marca la sesión como mayorista (no cliente de tienda). */
+const SUPPLIER_AUTH_METADATA = {
+  role: "supplier",
+  registration_type: "supplier",
+} as const;
 
 export type SupplierRegisterResult =
   | { ok: true; redirectTo: string }
@@ -182,7 +189,7 @@ export async function registerSupplierAction(
           company_name: companyName,
           phone,
           product_category: productCategory,
-          role: "supplier",
+          ...SUPPLIER_AUTH_METADATA,
         },
       });
 
@@ -238,6 +245,27 @@ export async function registerSupplierAction(
 
     if (!profileResult.ok) return profileResult;
 
+    // Asegura metadata de mayorista en la sesión activa (evita rutas de cliente).
+    await supabase.auth.updateUser({
+      data: {
+        display_name: contactName,
+        company_name: companyName,
+        phone,
+        product_category: productCategory,
+        ...SUPPLIER_AUTH_METADATA,
+      },
+    });
+
+    const profileReady = await userHasActiveSupplierProfile(userId);
+    if (!profileReady) {
+      return {
+        ok: false,
+        error:
+          "Tu cuenta se creó, pero el perfil de proveedor aún no está listo. Inicia sesión de nuevo.",
+      };
+    }
+
+    // Destino exclusivo del panel mayorista (nunca onboarding ni /dashboard).
     return { ok: true, redirectTo: SUPPLIER_POST_AUTH_PATH };
   } catch (caught) {
     console.error("[registerSupplierAction]", caught);

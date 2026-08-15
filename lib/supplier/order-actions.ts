@@ -40,6 +40,7 @@ async function requireSupplierUser(): Promise<{
   const access = await resolveSupplierAccess({
     email,
     userId: user.id,
+    user,
   });
   if (!access.ok) {
     return { error: "No tienes acceso al panel de proveedores." };

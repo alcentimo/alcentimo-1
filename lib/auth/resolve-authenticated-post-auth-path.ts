@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   resolvePostAuthPath,
   resolvePostAuthPathForUser,
+  SUPPLIER_POST_AUTH_PATH,
 } from "@/lib/auth/post-auth-redirect";
 import { resolveSupplierAccess } from "@/lib/supplier/access";
 import { resolveAuthEmail } from "@/lib/support/admin-access";
@@ -27,13 +28,18 @@ export async function resolveAuthenticatedPostAuthPath(
       await resolveSupplierAccess({
         email: resolveAuthEmail(user),
         userId: user.id,
-        client: supabase,
+        user,
       })
     ).ok;
 
+    // Mayoristas: destino estricto al hub de proveedores.
+    if (isSupplier) {
+      return SUPPLIER_POST_AUTH_PATH;
+    }
+
     return resolvePostAuthPathForUser({
       next,
-      isSupplier,
+      isSupplier: false,
     });
   } catch {
     return resolvePostAuthPath(next);
