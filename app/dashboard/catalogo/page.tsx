@@ -2,17 +2,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
-import { getCurrentExchangeRate } from "@/lib/catalog";
-import { getCatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
-import {
-  getInventoryPageOffset,
-  getStoreInventory,
-} from "@/lib/inventory";
-import { parseInventoryPageSize } from "@/lib/inventory/constants";
-import { getCriticalStockCount } from "@/lib/inventory/get-critical-stock-count";
-import { sanitizeInventorySearch } from "@/lib/inventory/search";
-import { parseCatalogStockFilter } from "@/lib/inventory/stock-status";
-import { getStoreProductFormConfig } from "@/lib/products/store-field-config";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
@@ -32,10 +21,6 @@ export default async function CatalogoPage({
   searchParams: Promise<{
     onboarded?: string;
     tab?: string;
-    stock?: string;
-    q?: string;
-    page?: string;
-    per?: string;
   }>;
 }) {
   const session = await getDashboardSession();
@@ -59,7 +44,7 @@ export default async function CatalogoPage({
           <p className="section-label">Catálogo</p>
           <h1 className="page-header-title">Tu vitrina</h1>
           <p className="page-header-desc">
-            Crea tu tienda para empezar a añadir productos listos para vender.
+            Crea tu tienda para conectar productos del catálogo mayorista.
           </p>
         </header>
         <div className="card-panel">
@@ -71,58 +56,28 @@ export default async function CatalogoPage({
     );
   }
 
-  const stockFilter = parseCatalogStockFilter(params.stock);
-  const searchQuery = sanitizeInventorySearch(params.q ?? "");
-  const pageSize = parseInventoryPageSize(params.per);
-  const requestedPage = Math.max(
-    1,
-    Number.parseInt(params.page ?? "1", 10) || 1,
-  );
-  const offset = getInventoryPageOffset(requestedPage, pageSize);
-
-  let inventory: Awaited<ReturnType<typeof getStoreInventory>>;
-  let exchangeRateRow: Awaited<ReturnType<typeof getCurrentExchangeRate>>;
-  let productFormConfig: Awaited<ReturnType<typeof getStoreProductFormConfig>>;
-  let previewSettings: Awaited<ReturnType<typeof getCatalogPreviewSettings>>;
-  let productLimitContext: Awaited<ReturnType<typeof getStoreProductLimitContext>>;
-  let criticalStockCount: number;
+  let productLimitContext: Awaited<
+    ReturnType<typeof getStoreProductLimitContext>
+  >;
   let storeSettings: Awaited<ReturnType<typeof getStoreSettingsConfig>>;
   let inventorySuggestions: Awaited<
     ReturnType<typeof listPendingInventorySuggestions>
   >;
 
   try {
-    [
-      inventory,
-      exchangeRateRow,
-      productFormConfig,
-      previewSettings,
-      productLimitContext,
-      criticalStockCount,
-      storeSettings,
-      inventorySuggestions,
-    ] = await Promise.all([
-      getStoreInventory(store.slug, {
-        limit: pageSize,
-        offset,
-        stockFilter,
-        search: searchQuery,
-      }),
-      getCurrentExchangeRate(),
-      getStoreProductFormConfig(store.id),
-      getCatalogPreviewSettings(store),
-      getStoreProductLimitContext(store.id),
-      getCriticalStockCount(store.slug),
-      getStoreSettingsConfig(store.id),
-      (async () => {
-        try {
-          const supabase = await createClient();
-          return await listPendingInventorySuggestions(supabase, store.id);
-        } catch {
-          return [];
-        }
-      })(),
-    ]);
+    [productLimitContext, storeSettings, inventorySuggestions] =
+      await Promise.all([
+        getStoreProductLimitContext(store.id),
+        getStoreSettingsConfig(store.id),
+        (async () => {
+          try {
+            const supabase = await createClient();
+            return await listPendingInventorySuggestions(supabase, store.id);
+          } catch {
+            return [];
+          }
+        })(),
+      ]);
   } catch (error) {
     console.error("[dashboard/catalogo] initial load failed", error);
     return (
@@ -146,25 +101,8 @@ export default async function CatalogoPage({
     );
   }
 
-  let { products, totalCount } = inventory;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize) || 1);
-  const page = Math.min(requestedPage, totalPages);
-
-  if (page !== requestedPage && totalCount > 0) {
-    const corrected = await getStoreInventory(store.slug, {
-      limit: pageSize,
-      offset: getInventoryPageOffset(page, pageSize),
-      stockFilter,
-      search: searchQuery,
-    });
-    products = corrected.products;
-    totalCount = corrected.totalCount;
-  }
-
-  const exchangeRate = exchangeRateRow?.rate ?? null;
-  const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
   const setupStatus = getOnboardingSetupStatus(
-    productLimitContext?.currentCount ?? totalCount,
+    productLimitContext?.currentCount ?? 0,
     storeSettings,
     store.slug,
   );
@@ -173,7 +111,7 @@ export default async function CatalogoPage({
     <div className="mx-auto max-w-6xl space-y-6">
       <DashboardPageHeader
         title="Catálogo"
-        description="Añade productos listos para vender o revisa lo que ya está en tu tienda."
+        description="Conecta productos del hub mayorista. Tu vitrina pública solo muestra lo que selecciones aquí."
         actions={
           <CatalogPublicLinkMenu
             storeSlug={store.slug}
@@ -190,18 +128,7 @@ export default async function CatalogoPage({
       >
         <CatalogPanel
           store={store}
-          exchangeRate={exchangeRate}
-          exchangeRateUpdatedAt={exchangeRateUpdatedAt}
-          initialProducts={products}
-          initialTotalCount={totalCount}
-          initialCriticalStockCount={criticalStockCount}
-          productFormConfig={productFormConfig}
-          previewSettings={previewSettings}
           productLimitContext={productLimitContext}
-          initialStockFilter={stockFilter}
-          initialSearchQuery={searchQuery}
-          initialPage={page}
-          initialPageSize={pageSize}
           setupStatus={setupStatus}
           showWelcomeFromUrl={showOnboardingSuccess}
           inventorySuggestions={inventorySuggestions}

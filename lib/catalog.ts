@@ -8,6 +8,7 @@ import { roundExchangeRate } from "@/lib/format";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 import { sortCatalogProducts } from "@/lib/catalog/catalog-browse";
 import { parseCatalogGalleryImages } from "@/lib/products/product-gallery-types";
+import { listDropshipLinkedProductIdsForStoreSlug } from "@/lib/dropship/linked-catalog";
 
 export interface CatalogPageData {
   products: CatalogListItem[];
@@ -171,7 +172,7 @@ export const getCurrentExchangeRate = cache(
   },
 );
 
-/** Catálogo filtrado estrictamente por tienda (vista catalog_list_view). */
+/** Catálogo filtrado: solo productos importados del hub mayorista (dropshipping puro). */
 export async function getCatalogProducts(
   options: GetCatalogOptions,
 ): Promise<CatalogPageData> {
@@ -184,6 +185,32 @@ export async function getCatalogProducts(
     productIds,
   } = options;
   const normalizedSlug = storeSlug.trim().toLowerCase();
+  const linkedProductIds =
+    await listDropshipLinkedProductIdsForStoreSlug(normalizedSlug);
+
+  if (linkedProductIds.length === 0) {
+    return {
+      products: [],
+      exchangeRate: await getCurrentExchangeRate(),
+      totalCount: 0,
+      hasMore: false,
+    };
+  }
+
+  const allowedProductIds = productIds?.length
+    ? productIds.filter((id) => linkedProductIds.includes(id))
+    : linkedProductIds;
+
+  if (allowedProductIds.length === 0) {
+    return {
+      products: [],
+      exchangeRate: await getCurrentExchangeRate(),
+      totalCount: 0,
+      hasMore: false,
+    };
+  }
+
+  // Paginación solo en listados; las hidrataciones por IDs traen el set completo.
   const paginated = limit != null && productIds == null;
   const searchOr = buildInventorySearchOrFilter(search ?? "") || null;
 
@@ -194,10 +221,9 @@ export async function getCatalogProducts(
       offset,
       limit,
       categorySlug,
-      productIds,
+      productIds: allowedProductIds,
       searchOr,
     };
-
   let queryMode: CatalogProductsQueryMode = "ranked";
   let selectColumns = PUBLIC_CATALOG_LIST_SELECT;
   const exchangeRatePromise = getCurrentExchangeRate();

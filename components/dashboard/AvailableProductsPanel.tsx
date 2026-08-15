@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { Check, Loader2, Package, PackagePlus, Search } from "lucide-react";
+import { Check, Loader2, Package, PackagePlus, Search, X } from "lucide-react";
 import {
   importSupplierProductToStoreCatalog,
   listActiveSupplierCatalogForMerchant,
+  removeSupplierProductFromStoreCatalog,
   type MerchantSupplierCatalogProduct,
 } from "@/lib/dropship/actions";
 import { formatUsd } from "@/lib/format";
@@ -13,7 +14,6 @@ import { supplierCategoryLabel } from "@/lib/supplier/categories";
 import { cn } from "@/lib/cn";
 
 interface AvailableProductsPanelProps {
-  /** Se llama tras añadir un producto (p. ej. refrescar “Mi tienda”). */
   onImported?: (productId: string) => void;
   className?: string;
 }
@@ -30,6 +30,7 @@ export function AvailableProductsPanel({
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [importingId, setImportingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const loadCatalog = useCallback(() => {
@@ -76,7 +77,7 @@ export function AvailableProductsPanel({
       }
       if (result.ok && result.productId) {
         const linkedProductId = result.productId;
-        setMessage(`“${result.productName}” ya está en tu tienda.`);
+        setMessage(`“${result.productName}” añadido al catálogo de tu tienda.`);
         setProducts((prev) =>
           prev.map((product) =>
             product.id === productId
@@ -93,15 +94,42 @@ export function AvailableProductsPanel({
     });
   }
 
+  function handleRemove(productId: string) {
+    setRemovingId(productId);
+    setError(null);
+    setMessage(null);
+    startTransition(async () => {
+      const result = await removeSupplierProductFromStoreCatalog(productId);
+      setRemovingId(null);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setMessage("Producto quitado del catálogo de tu tienda.");
+      setProducts((prev) =>
+        prev.map((product) =>
+          product.id === productId
+            ? {
+                ...product,
+                alreadyImported: false,
+                linkedProductId: null,
+              }
+            : product,
+        ),
+      );
+      onImported?.(productId);
+    });
+  }
+
   return (
     <div className={cn("space-y-5", className)}>
       <div className="max-w-2xl">
         <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Productos disponibles
+          Catálogo mayorista
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Elige del catálogo y añádelos a tu tienda en un clic. Fotos, nombre y
-          descripción se copian solos — sin inventarios complicados.
+          Selecciona productos del hub de proveedores. Solo lo que añadas aquí
+          aparece en la vitrina pública de tu tienda — sin inventario manual.
         </p>
       </div>
 
@@ -113,10 +141,10 @@ export function AvailableProductsPanel({
         <input
           type="search"
           className="input-field !pl-9"
-          placeholder="Buscar productos…"
+          placeholder="Buscar en el catálogo mayorista…"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          aria-label="Buscar productos disponibles"
+          aria-label="Buscar productos mayoristas"
         />
       </div>
 
@@ -137,7 +165,7 @@ export function AvailableProductsPanel({
       {loading && products.length === 0 ? (
         <div className="flex items-center gap-2 py-16 text-sm text-zinc-500">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-          Cargando productos…
+          Cargando catálogo mayorista…
         </div>
       ) : products.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-200 px-6 py-16 text-center dark:border-zinc-800">
@@ -146,10 +174,11 @@ export function AvailableProductsPanel({
             aria-hidden="true"
           />
           <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Aún no hay productos para añadir
+            Aún no hay productos publicados por proveedores
           </p>
           <p className="mt-1 text-sm text-zinc-500">
-            Cuando el catálogo esté listo, aparecerán aquí.
+            Cuando publiquen en el hub, aparecerán aquí para añadirlos a tu
+            tienda.
           </p>
         </div>
       ) : filtered.length === 0 ? (
@@ -160,7 +189,8 @@ export function AvailableProductsPanel({
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((product) => {
             const isImporting = importingId === product.id;
-            const busy = importingId != null;
+            const isRemoving = removingId === product.id;
+            const busy = importingId != null || removingId != null;
 
             return (
               <li
@@ -212,10 +242,28 @@ export function AvailableProductsPanel({
                   </div>
 
                   {product.alreadyImported ? (
-                    <span className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200">
-                      <Check className="h-4 w-4" aria-hidden="true" />
-                      Ya en tu tienda
-                    </span>
+                    <div className="flex flex-col gap-2">
+                      <span className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200">
+                        <Check className="h-4 w-4" aria-hidden="true" />
+                        En el catálogo de tu tienda
+                      </span>
+                      <button
+                        type="button"
+                        className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 px-3 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                        onClick={() => handleRemove(product.id)}
+                        disabled={busy}
+                      >
+                        {isRemoving ? (
+                          <Loader2
+                            className="h-4 w-4 animate-spin"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <X className="h-4 w-4" aria-hidden="true" />
+                        )}
+                        Quitar del catálogo
+                      </button>
+                    </div>
                   ) : (
                     <button
                       type="button"
@@ -231,7 +279,7 @@ export function AvailableProductsPanel({
                       ) : (
                         <PackagePlus className="h-4 w-4" aria-hidden="true" />
                       )}
-                      Añadir a mi tienda
+                      Añadir al catálogo de mi tienda
                     </button>
                   )}
                 </div>

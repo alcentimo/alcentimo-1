@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 import { getCurrentExchangeRate } from "@/lib/catalog";
+import { listDropshipLinkedProductIdsForStoreSlug } from "@/lib/dropship/linked-catalog";
 import {
   CATALOG_LIST_SELECT,
   INVENTORY_PAGE_SIZE,
@@ -65,11 +66,25 @@ export async function getStoreInventory(
 
   try {
     const supabase = await createClient();
+    const linkedProductIds =
+      await listDropshipLinkedProductIdsForStoreSlug(storeSlug);
+
+    // Dropshipping puro: sin vínculos mayoristas → catálogo vacío.
+    if (linkedProductIds.length === 0) {
+      const exchangeRate = await getCurrentExchangeRate().catch(() => null);
+      return {
+        products: [],
+        exchangeRate,
+        totalCount: 0,
+        hasMore: false,
+      };
+    }
 
     let productsQuery = supabase
       .from("catalog_list_view")
       .select(CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
       .eq("store_slug", storeSlug)
+      .in("product_id", linkedProductIds)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
 

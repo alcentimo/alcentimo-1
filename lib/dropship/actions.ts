@@ -683,16 +683,71 @@ export async function unlinkStoreDropshipProduct(
   const { auth } = gate;
 
   const admin = createAdminClient();
+  const { data: link, error: linkError } = await admin
+    .from("store_dropship_links")
+    .select("id, product_id")
+    .eq("id", linkId.trim())
+    .eq("store_id", auth.store.id)
+    .maybeSingle();
+
+  if (linkError) return { error: linkError.message };
+  if (!link) return { error: "Vínculo no encontrado." };
+
+  const productId =
+    typeof link.product_id === "string" ? link.product_id : null;
+
   const { error } = await admin
     .from("store_dropship_links")
     .delete()
-    .eq("id", linkId.trim())
+    .eq("id", String(link.id))
     .eq("store_id", auth.store.id);
 
   if (error) return { error: error.message };
 
+  if (productId) {
+    await admin
+      .from("products")
+      .update({
+        is_active: false,
+        is_deleted: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", productId)
+      .eq("store_id", auth.store.id);
+  }
+
   revalidatePath("/dashboard/ajustes");
+  revalidatePath("/dashboard/catalogo");
+  revalidatePath(`/c/${auth.store.slug}`);
   return {};
+}
+
+/** Quita del catálogo de la tienda un producto importado del hub mayorista. */
+export async function removeSupplierProductFromStoreCatalog(
+  supplierProductId: string,
+): Promise<ActionResult<{ ok: true }>> {
+  const gate = await requireDropshipStore();
+  if ("error" in gate) return { error: gate.error };
+  const { auth } = gate;
+
+  const supplierId = supplierProductId.trim();
+  if (!supplierId) return { error: "Producto inválido." };
+
+  const admin = createAdminClient();
+  const { data: link, error: linkError } = await admin
+    .from("store_dropship_links")
+    .select("id, product_id")
+    .eq("store_id", auth.store.id)
+    .eq("supplier_product_id", supplierId)
+    .maybeSingle();
+
+  if (linkError) return { error: linkError.message };
+  if (!link) return { error: "Este producto no está en tu catálogo." };
+
+  const unlink = await unlinkStoreDropshipProduct(String(link.id));
+  if (unlink.error) return { error: unlink.error };
+
+  return { ok: true };
 }
 
 export async function listUnreadSupplierPriceAlerts(): Promise<
