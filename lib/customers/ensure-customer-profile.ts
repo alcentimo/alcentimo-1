@@ -7,6 +7,8 @@ import { parseStoreSlugFromHost } from "@/lib/store-host";
 import {
   isValidCustomerPhone,
   normalizeCustomerPhone,
+  validateCustomerVerificationFields,
+  type CustomerVerificationFields,
 } from "@/lib/customers/phone-auth";
 
 export type EnsureCustomerProfileResult =
@@ -102,6 +104,12 @@ export async function ensureCustomerProfile(
     phone?: string | null;
     requireDisplayName?: boolean;
     requirePhone?: boolean;
+    requireVerificationFields?: boolean;
+    documentId?: string | null;
+    businessName?: string | null;
+    city?: string | null;
+    state?: string | null;
+    socialUrl?: string | null;
   },
 ): Promise<EnsureCustomerProfileResult> {
   const normalizedSlug = storeSlug.trim().toLowerCase();
@@ -115,7 +123,10 @@ export async function ensureCustomerProfile(
   const phone = resolvePhone(options?.phone, user);
 
   if (options?.requireDisplayName && (!displayName || displayName.length < 2)) {
-    return { ok: false, error: "Indica tu nombre (mínimo 2 caracteres)." };
+    return {
+      ok: false,
+      error: "Indica tu nombre y apellido (mínimo 2 caracteres).",
+    };
   }
 
   if (options?.requirePhone) {
@@ -128,12 +139,52 @@ export async function ensureCustomerProfile(
     }
   }
 
-  const payload = {
+  let verification: CustomerVerificationFields | null = null;
+  if (options?.requireVerificationFields) {
+    const verified = validateCustomerVerificationFields({
+      documentId: options.documentId ?? "",
+      businessName: options.businessName ?? "",
+      city: options.city ?? "",
+      state: options.state ?? "",
+      socialUrl: options.socialUrl ?? "",
+    });
+    if (!verified.ok) {
+      return { ok: false, error: verified.error };
+    }
+    verification = verified;
+  } else if (
+    options?.documentId ||
+    options?.businessName ||
+    options?.city ||
+    options?.state ||
+    options?.socialUrl
+  ) {
+    const verified = validateCustomerVerificationFields({
+      documentId: options.documentId ?? "",
+      businessName: options.businessName ?? "",
+      city: options.city ?? "",
+      state: options.state ?? "",
+      socialUrl: options.socialUrl ?? "",
+    });
+    if (verified.ok) {
+      verification = verified;
+    }
+  }
+
+  const payload: Record<string, unknown> = {
     user_id: user.id,
     store_id: store.id,
     display_name: displayName,
     phone: phone ? phone.slice(0, 40) : null,
   };
+
+  if (verification) {
+    payload.document_id = verification.documentId;
+    payload.business_name = verification.businessName;
+    payload.city = verification.city;
+    payload.state = verification.state;
+    payload.social_url = verification.socialUrl;
+  }
 
   const { error } = await supabase.from("customer_profiles").upsert(payload, {
     onConflict: "user_id,store_id",

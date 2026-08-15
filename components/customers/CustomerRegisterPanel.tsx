@@ -11,6 +11,7 @@ import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
+import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import type { CatalogCustomerAuthMode } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { CUSTOMER_MIN_PASSWORD_LENGTH } from "@/lib/customers/phone-auth";
 
@@ -49,13 +50,22 @@ export function CustomerRegisterPanel({
   onRegistered,
 }: CustomerRegisterPanelProps) {
   const [displayName, setDisplayName] = useState(suggestedDisplayName ?? "");
+  const [documentId, setDocumentId] = useState("");
   const [phone, setPhone] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [city, setCity] = useState("");
+  const [stateRegion, setStateRegion] = useState("");
+  const [socialUrl, setSocialUrl] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const isLogin = mode === "login";
+  const catalogUrl = getStoreCatalogBasePath(storeSlug);
+  const googleCompletionPath = `${catalogUrl}/registro?complete=phone&next=${encodeURIComponent(nextPath)}${
+    orderId ? `&orderId=${encodeURIComponent(orderId)}` : ""
+  }`;
 
   async function handleQuickSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,10 +78,16 @@ export function CustomerRegisterPanel({
         nextPath,
         displayName,
         method: "email",
-        phone: phone.trim() || null,
+        phone,
         email,
         password,
         orderId,
+        requireVerificationFields: true,
+        documentId,
+        businessName,
+        city,
+        state: stateRegion,
+        socialUrl,
       });
 
       if (!result.ok) {
@@ -143,7 +159,8 @@ export function CustomerRegisterPanel({
     }
   }
 
-  async function finishPhoneCompletion(options?: { skipPhone?: boolean }) {
+  async function handlePhoneCompletion(e: React.FormEvent) {
+    e.preventDefault();
     setError(null);
     setLoading(true);
 
@@ -151,10 +168,14 @@ export function CustomerRegisterPanel({
       const result = await completeCustomerPhone({
         storeSlug,
         nextPath,
-        phone: options?.skipPhone ? null : phone,
+        phone,
         displayName: displayName.trim() || suggestedDisplayName,
         orderId,
-        skipPhone: options?.skipPhone === true,
+        documentId,
+        businessName,
+        city,
+        state: stateRegion,
+        socialUrl,
       });
 
       if (!result.ok) {
@@ -164,7 +185,7 @@ export function CustomerRegisterPanel({
 
       onRegistered?.({
         displayName: (displayName.trim() || suggestedDisplayName || "").trim(),
-        phone: options?.skipPhone ? null : phone.trim() || null,
+        phone: phone.trim() || null,
         contactEmail: result.contactEmail ?? null,
       });
 
@@ -184,15 +205,124 @@ export function CustomerRegisterPanel({
     }
   }
 
-  async function handlePhoneCompletion(e: React.FormEvent) {
-    e.preventDefault();
-    await finishPhoneCompletion();
-  }
-
   const isBusy = loading;
-  const catalogUrl = getStoreCatalogBasePath(storeSlug);
   const isCatalog = variant === "catalog";
-  const shellClass = isCatalog ? "catalog-register-panel" : "card-panel mx-auto w-full max-w-md";
+  const shellClass = isCatalog
+    ? "catalog-register-panel"
+    : "card-panel mx-auto w-full max-w-lg";
+
+  const verificationFields = (
+    <>
+      <div>
+        <label htmlFor="document_id" className="label-field">
+          Cédula de Identidad / RIF
+        </label>
+        <input
+          id="document_id"
+          type="text"
+          autoComplete="off"
+          required
+          value={documentId}
+          disabled={isBusy}
+          onChange={(e) => setDocumentId(e.target.value)}
+          className="input-field"
+          placeholder="V-12345678 o J-123456789"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="phone_required" className="label-field">
+          Número de WhatsApp / Teléfono
+        </label>
+        <input
+          id="phone_required"
+          type="tel"
+          autoComplete="tel"
+          required
+          value={phone}
+          disabled={isBusy}
+          onChange={(e) => setPhone(e.target.value)}
+          className="input-field"
+          placeholder="0412… o 412…"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="business_name" className="label-field">
+          Nombre de la tienda
+        </label>
+        <input
+          id="business_name"
+          type="text"
+          autoComplete="organization"
+          required
+          minLength={2}
+          value={businessName}
+          disabled={isBusy}
+          onChange={(e) => setBusinessName(e.target.value)}
+          className="input-field"
+          placeholder="Tu tienda o negocio"
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="city" className="label-field">
+            Ciudad
+          </label>
+          <input
+            id="city"
+            type="text"
+            autoComplete="address-level2"
+            required
+            minLength={2}
+            value={city}
+            disabled={isBusy}
+            onChange={(e) => setCity(e.target.value)}
+            className="input-field"
+            placeholder="Caracas"
+          />
+        </div>
+        <div>
+          <label htmlFor="state_region" className="label-field">
+            Estado
+          </label>
+          <input
+            id="state_region"
+            type="text"
+            autoComplete="address-level1"
+            required
+            minLength={2}
+            value={stateRegion}
+            disabled={isBusy}
+            onChange={(e) => setStateRegion(e.target.value)}
+            className="input-field"
+            placeholder="Distrito Capital"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="social_url" className="label-field">
+          Enlace de red social
+        </label>
+        <input
+          id="social_url"
+          type="text"
+          autoComplete="url"
+          required
+          value={socialUrl}
+          disabled={isBusy}
+          onChange={(e) => setSocialUrl(e.target.value)}
+          className="input-field"
+          placeholder="@tu.tienda o instagram.com/tu.tienda"
+        />
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          Instagram u otro perfil comercial para verificar tu identidad.
+        </p>
+      </div>
+    </>
+  );
 
   if (needsPhoneCompletion) {
     return (
@@ -201,52 +331,36 @@ export function CustomerRegisterPanel({
           {storeName}
         </p>
         <h2 className="mt-2 text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
-          ¿Agregar WhatsApp?
+          Completa tu verificación
         </h2>
         <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-          Es opcional. Sirve para coordinar pedidos; puedes continuar sin número.
+          Necesitamos estos datos para proteger la tienda de registros
+          fraudulentos.
         </p>
 
-        <form onSubmit={(e) => void handlePhoneCompletion(e)} className="mt-6 space-y-5">
-          {!suggestedDisplayName ? (
-            <div>
-              <label htmlFor="display_name_complete" className="label-field">
-                Nombre
-              </label>
-              <input
-                id="display_name_complete"
-                type="text"
-                autoComplete="name"
-                required
-                minLength={2}
-                value={displayName}
-                disabled={isBusy}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="input-field"
-                placeholder="Tu nombre"
-              />
-            </div>
-          ) : null}
-
+        <form
+          onSubmit={(e) => void handlePhoneCompletion(e)}
+          className="mt-6 space-y-4"
+        >
           <div>
-            <label htmlFor="phone_complete" className="label-field">
-              Teléfono / WhatsApp{" "}
-              <span className="font-normal text-zinc-400">(opcional)</span>
+            <label htmlFor="display_name_complete" className="label-field">
+              Nombre y Apellido
             </label>
             <input
-              id="phone_complete"
-              type="tel"
-              autoComplete="tel"
-              value={phone}
+              id="display_name_complete"
+              type="text"
+              autoComplete="name"
+              required
+              minLength={2}
+              value={displayName}
               disabled={isBusy}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setDisplayName(e.target.value)}
               className="input-field"
-              placeholder="0412… o 412…"
+              placeholder="Nombre y apellido"
             />
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-              Facilita el seguimiento de tus pedidos por WhatsApp.
-            </p>
           </div>
+
+          {verificationFields}
 
           {error ? (
             <p className="alert-error" role="alert">
@@ -256,14 +370,6 @@ export function CustomerRegisterPanel({
 
           <button type="submit" disabled={isBusy} className="btn-primary w-full">
             {loading ? "Guardando…" : "Guardar y continuar"}
-          </button>
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() => void finishPhoneCompletion({ skipPhone: true })}
-            className="btn-secondary w-full"
-          >
-            Continuar sin teléfono
           </button>
         </form>
 
@@ -413,17 +519,17 @@ export function CustomerRegisterPanel({
             Crea tu cuenta
           </h2>
           <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-            Continúa con Google o crea tu cuenta con correo y contraseña.
+            Completa tus datos de verificación para unirte a {storeName}.
           </p>
         </>
       ) : (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Continúa con Google o crea tu cuenta con correo y contraseña.
+          Completa tus datos de verificación para crear tu cuenta.
         </p>
       )}
 
       <GoogleSignInButton
-        postAuthPath={nextPath}
+        postAuthPath={googleCompletionPath}
         storeSlug={storeSlug}
         orderId={orderId ?? undefined}
         disabled={isBusy}
@@ -444,7 +550,7 @@ export function CustomerRegisterPanel({
       <form onSubmit={(e) => void handleQuickSubmit(e)} className="space-y-4">
         <div>
           <label htmlFor="display_name" className="label-field">
-            Nombre
+            Nombre y Apellido
           </label>
           <input
             id="display_name"
@@ -456,9 +562,11 @@ export function CustomerRegisterPanel({
             disabled={isBusy}
             onChange={(e) => setDisplayName(e.target.value)}
             className="input-field"
-            placeholder="Tu nombre"
+            placeholder="Nombre y apellido"
           />
         </div>
+
+        {verificationFields}
 
         <div>
           <label htmlFor="email" className="label-field">
@@ -475,26 +583,6 @@ export function CustomerRegisterPanel({
             className="input-field"
             placeholder="tu@correo.com"
           />
-        </div>
-
-        <div>
-          <label htmlFor="phone_optional" className="label-field">
-            Teléfono / WhatsApp{" "}
-            <span className="font-normal text-zinc-400">(opcional)</span>
-          </label>
-          <input
-            id="phone_optional"
-            type="tel"
-            autoComplete="tel"
-            value={phone}
-            disabled={isBusy}
-            onChange={(e) => setPhone(e.target.value)}
-            className="input-field"
-            placeholder="0412… o 412…"
-          />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Para facilitar tus pedidos. Puedes dejarlo vacío.
-          </p>
         </div>
 
         <div>

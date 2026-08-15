@@ -23,6 +23,7 @@ import {
   validateCustomerPassword,
   validateCustomerPhoneInput,
   validateCustomerRegistrationInput,
+  validateCustomerVerificationFields,
 } from "@/lib/customers/phone-auth";
 import { markCatalogVisitRegistered } from "@/lib/analytics/track-catalog-visit";
 import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
@@ -232,6 +233,12 @@ async function finalizeLinkedCustomer(input: {
   orderId?: string | null;
   markPasswordSet?: boolean;
   requirePhone?: boolean;
+  requireVerificationFields?: boolean;
+  documentId?: string | null;
+  businessName?: string | null;
+  city?: string | null;
+  state?: string | null;
+  socialUrl?: string | null;
 }): Promise<LinkCustomerToStoreResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
   const supabase = await createClient();
@@ -259,6 +266,12 @@ async function finalizeLinkedCustomer(input: {
     metadata.contact_email = input.contactEmail;
   }
 
+  if (input.documentId) metadata.document_id = input.documentId;
+  if (input.businessName) metadata.business_name = input.businessName;
+  if (input.city) metadata.city = input.city;
+  if (input.state) metadata.state = input.state;
+  if (input.socialUrl) metadata.social_url = input.socialUrl;
+
   if (input.markPasswordSet) {
     metadata[CUSTOMER_PASSWORD_SET_META_KEY] = true;
   }
@@ -277,6 +290,12 @@ async function finalizeLinkedCustomer(input: {
     phone: input.phone,
     requireDisplayName: true,
     requirePhone,
+    requireVerificationFields: input.requireVerificationFields,
+    documentId: input.documentId,
+    businessName: input.businessName,
+    city: input.city,
+    state: input.state,
+    socialUrl: input.socialUrl,
   });
 
   if (!result.ok) {
@@ -489,11 +508,19 @@ export async function quickRegisterOrSignInCustomer(input: {
   password: string;
   confirmPassword?: string;
   orderId?: string | null;
+  requireVerificationFields?: boolean;
+  documentId?: string | null;
+  businessName?: string | null;
+  city?: string | null;
+  state?: string | null;
+  socialUrl?: string | null;
 }): Promise<LinkCustomerToStoreResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
   if (!storeSlug) {
     return { ok: false, error: "Enlace de registro inválido: falta la tienda." };
   }
+
+  const requireVerificationFields = input.requireVerificationFields !== false;
 
   const validation = validateCustomerRegistrationInput({
     displayName: input.displayName,
@@ -503,6 +530,12 @@ export async function quickRegisterOrSignInCustomer(input: {
     password: input.password,
     confirmPassword: input.confirmPassword ?? input.password,
     requirePassword: true,
+    requireVerificationFields,
+    documentId: input.documentId,
+    businessName: input.businessName,
+    city: input.city,
+    state: input.state,
+    socialUrl: input.socialUrl,
   });
   if (!validation.ok) {
     return { ok: false, error: validation.error };
@@ -537,7 +570,13 @@ export async function quickRegisterOrSignInCustomer(input: {
       contactEmail: validation.contactEmail,
       orderId: input.orderId,
       markPasswordSet: true,
-      requirePhone: validation.method === "phone",
+      requirePhone: requireVerificationFields || validation.method === "phone",
+      requireVerificationFields,
+      documentId: validation.documentId,
+      businessName: validation.businessName,
+      city: validation.city,
+      state: validation.state,
+      socialUrl: validation.socialUrl,
     });
   } catch (err) {
     const message =
@@ -578,6 +617,7 @@ export async function quickRegisterOrSignInCustomerInline(input: {
     password: input.password,
     confirmPassword: input.confirmPassword ?? input.password,
     orderId: input.orderId,
+    requireVerificationFields: false,
   });
 
   if (!result.ok) {
@@ -631,8 +671,8 @@ export async function quickRegisterOrSignInCustomerInline(input: {
 }
 
 /**
- * Tras Google OAuth (enlaces legacy `complete=phone`): guarda WhatsApp si se
- * indica, o continúa sin teléfono.
+ * Tras Google OAuth (`complete=phone`): completa verificación anti-fraude
+ * (WhatsApp + cédula/RIF + tienda + ciudad/estado + red social).
  */
 export async function completeCustomerPhone(input: {
   storeSlug: string;
@@ -640,7 +680,12 @@ export async function completeCustomerPhone(input: {
   phone?: string | null;
   displayName?: string | null;
   orderId?: string | null;
-  /** Si true, vincula el perfil sin exigir teléfono. */
+  documentId?: string | null;
+  businessName?: string | null;
+  city?: string | null;
+  state?: string | null;
+  socialUrl?: string | null;
+  /** @deprecated Ya no se permite omitir la verificación. */
   skipPhone?: boolean;
 }): Promise<LinkCustomerToStoreResult> {
   const storeSlug = input.storeSlug.trim().toLowerCase();
@@ -648,18 +693,20 @@ export async function completeCustomerPhone(input: {
     return { ok: false, error: "Enlace de registro inválido: falta la tienda." };
   }
 
-  let phone: string | null = null;
-  if (!input.skipPhone && input.phone?.trim()) {
-    const phoneValidation = validateCustomerPhoneInput(input.phone);
-    if (!phoneValidation.ok) {
-      return { ok: false, error: phoneValidation.error };
-    }
-    phone = phoneValidation.phone;
-  } else if (!input.skipPhone && !input.phone?.trim()) {
-    return {
-      ok: false,
-      error: "Indica tu WhatsApp o continúa sin teléfono.",
-    };
+  const phoneValidation = validateCustomerPhoneInput(input.phone ?? "");
+  if (!phoneValidation.ok) {
+    return { ok: false, error: phoneValidation.error };
+  }
+
+  const verification = validateCustomerVerificationFields({
+    documentId: input.documentId ?? "",
+    businessName: input.businessName ?? "",
+    city: input.city ?? "",
+    state: input.state ?? "",
+    socialUrl: input.socialUrl ?? "",
+  });
+  if (!verification.ok) {
+    return { ok: false, error: verification.error };
   }
 
   const supabase = await createClient();
@@ -678,17 +725,20 @@ export async function completeCustomerPhone(input: {
     (typeof metadata.display_name === "string" ? metadata.display_name.trim() : "") ||
     (typeof metadata.full_name === "string" ? metadata.full_name.trim() : "") ||
     user.email?.split("@")[0]?.trim() ||
-    "Cliente";
+    "";
 
   if (displayName.length < 2) {
-    return { ok: false, error: "Indica tu nombre (mínimo 2 caracteres)." };
+    return {
+      ok: false,
+      error: "Indica tu nombre y apellido (mínimo 2 caracteres).",
+    };
   }
 
   return finalizeLinkedCustomer({
     storeSlug,
     nextPath: input.nextPath,
     displayName: displayName.slice(0, 120),
-    phone,
+    phone: phoneValidation.phone,
     contactEmail:
       typeof metadata.contact_email === "string"
         ? metadata.contact_email
@@ -696,7 +746,13 @@ export async function completeCustomerPhone(input: {
           ? null
           : user.email,
     orderId: input.orderId,
-    requirePhone: false,
+    requirePhone: true,
+    requireVerificationFields: true,
+    documentId: verification.documentId,
+    businessName: verification.businessName,
+    city: verification.city,
+    state: verification.state,
+    socialUrl: verification.socialUrl,
   });
 }
 

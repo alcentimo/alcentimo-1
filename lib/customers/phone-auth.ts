@@ -335,6 +335,13 @@ export function validateCustomerRegistrationInput(input: {
   password?: string;
   confirmPassword?: string;
   requirePassword?: boolean;
+  /** Si true, exige teléfono + datos anti-fraude del registro de tienda. */
+  requireVerificationFields?: boolean;
+  documentId?: string | null;
+  businessName?: string | null;
+  city?: string | null;
+  state?: string | null;
+  socialUrl?: string | null;
 }):
   | {
       ok: true;
@@ -344,14 +351,23 @@ export function validateCustomerRegistrationInput(input: {
       phone: string | null;
       contactEmail: string | null;
       password: string | null;
+      documentId: string | null;
+      businessName: string | null;
+      city: string | null;
+      state: string | null;
+      socialUrl: string | null;
     }
   | { ok: false; error: string } {
   const displayName = input.displayName.trim();
   const method = input.method ?? "email";
   const requirePassword = input.requirePassword !== false;
+  const requireVerificationFields = input.requireVerificationFields === true;
 
   if (!displayName || displayName.length < 2) {
-    return { ok: false, error: "Indica tu nombre (mínimo 2 caracteres)." };
+    return {
+      ok: false,
+      error: "Indica tu nombre y apellido (mínimo 2 caracteres).",
+    };
   }
 
   const credentials = resolveCustomerAuthCredentials({
@@ -360,6 +376,51 @@ export function validateCustomerRegistrationInput(input: {
     email: input.email,
   });
   if (!credentials.ok) return credentials;
+
+  if (requireVerificationFields) {
+    if (!credentials.phone) {
+      return {
+        ok: false,
+        error: "Indica un número de WhatsApp / teléfono válido.",
+      };
+    }
+
+    const verification = validateCustomerVerificationFields({
+      documentId: input.documentId ?? "",
+      businessName: input.businessName ?? "",
+      city: input.city ?? "",
+      state: input.state ?? "",
+      socialUrl: input.socialUrl ?? "",
+    });
+    if (!verification.ok) return verification;
+
+    let password: string | null = null;
+    if (requirePassword) {
+      const passwordValidation = validateCustomerPasswordPair(
+        input.password ?? "",
+        input.confirmPassword ?? input.password ?? "",
+      );
+      if (!passwordValidation.ok) {
+        return passwordValidation;
+      }
+      password = passwordValidation.password;
+    }
+
+    return {
+      ok: true,
+      displayName: displayName.slice(0, 120),
+      method: credentials.method,
+      authEmail: credentials.authEmail,
+      phone: credentials.phone,
+      contactEmail: credentials.contactEmail,
+      password,
+      documentId: verification.documentId,
+      businessName: verification.businessName,
+      city: verification.city,
+      state: verification.state,
+      socialUrl: verification.socialUrl,
+    };
+  }
 
   let password: string | null = null;
   if (requirePassword) {
@@ -381,5 +442,151 @@ export function validateCustomerRegistrationInput(input: {
     phone: credentials.phone,
     contactEmail: credentials.contactEmail,
     password,
+    documentId: null,
+    businessName: null,
+    city: null,
+    state: null,
+    socialUrl: null,
   };
 }
+
+export type CustomerVerificationFields = {
+  documentId: string;
+  businessName: string;
+  city: string;
+  state: string;
+  socialUrl: string;
+};
+
+function normalizeDocumentId(value: string): string {
+  return value.trim().toUpperCase().replace(/\s+/g, "");
+}
+
+function normalizeSocialUrl(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("@")) {
+    return `https://instagram.com/${trimmed.slice(1).replace(/^@+/, "")}`;
+  }
+  if (/^instagram\.com\//i.test(trimmed) || /^www\.instagram\.com\//i.test(trimmed)) {
+    return `https://${trimmed.replace(/^www\./i, "")}`;
+  }
+  return trimmed;
+}
+
+export function validateCustomerDocumentId(value: string):
+  | { ok: true; documentId: string }
+  | { ok: false; error: string } {
+  const documentId = normalizeDocumentId(value);
+  if (documentId.length < 5 || documentId.length > 32) {
+    return {
+      ok: false,
+      error: "Indica una cédula o RIF válido (ej. V-12345678 o J-123456789).",
+    };
+  }
+  if (!/^[A-Z0-9.-]+$/.test(documentId)) {
+    return {
+      ok: false,
+      error: "La cédula o RIF solo puede incluir letras, números, puntos o guiones.",
+    };
+  }
+  return { ok: true, documentId };
+}
+
+export function validateCustomerBusinessName(value: string):
+  | { ok: true; businessName: string }
+  | { ok: false; error: string } {
+  const businessName = value.trim();
+  if (businessName.length < 2) {
+    return { ok: false, error: "Indica el nombre de tu tienda o negocio." };
+  }
+  return { ok: true, businessName: businessName.slice(0, 120) };
+}
+
+export function validateCustomerCity(value: string):
+  | { ok: true; city: string }
+  | { ok: false; error: string } {
+  const city = value.trim();
+  if (city.length < 2) {
+    return { ok: false, error: "Indica tu ciudad." };
+  }
+  return { ok: true, city: city.slice(0, 80) };
+}
+
+export function validateCustomerState(value: string):
+  | { ok: true; state: string }
+  | { ok: false; error: string } {
+  const state = value.trim();
+  if (state.length < 2) {
+    return { ok: false, error: "Indica tu estado." };
+  }
+  return { ok: true, state: state.slice(0, 80) };
+}
+
+export function validateCustomerSocialUrl(value: string):
+  | { ok: true; socialUrl: string }
+  | { ok: false; error: string } {
+  const socialUrl = normalizeSocialUrl(value);
+  if (socialUrl.length < 2) {
+    return {
+      ok: false,
+      error: "Indica tu Instagram (@usuario) o el enlace de tu perfil comercial.",
+    };
+  }
+  if (socialUrl.length > 200) {
+    return { ok: false, error: "El enlace de red social es demasiado largo." };
+  }
+  const looksLikeHandleOrUrl =
+    socialUrl.startsWith("http://") ||
+    socialUrl.startsWith("https://") ||
+    socialUrl.startsWith("@") ||
+    /^[\w.]+$/.test(socialUrl);
+  if (!looksLikeHandleOrUrl) {
+    return {
+      ok: false,
+      error: "Usa un @usuario de Instagram o una URL válida.",
+    };
+  }
+  if (
+    !socialUrl.startsWith("http://") &&
+    !socialUrl.startsWith("https://") &&
+    /^[\w.]+$/.test(socialUrl)
+  ) {
+    return {
+      ok: true,
+      socialUrl: `https://instagram.com/${socialUrl}`.slice(0, 200),
+    };
+  }
+  return { ok: true, socialUrl: socialUrl.slice(0, 200) };
+}
+
+export function validateCustomerVerificationFields(input: {
+  documentId: string;
+  businessName: string;
+  city: string;
+  state: string;
+  socialUrl: string;
+}):
+  | { ok: true } & CustomerVerificationFields
+  | { ok: false; error: string } {
+  const document = validateCustomerDocumentId(input.documentId);
+  if (!document.ok) return document;
+  const business = validateCustomerBusinessName(input.businessName);
+  if (!business.ok) return business;
+  const city = validateCustomerCity(input.city);
+  if (!city.ok) return city;
+  const state = validateCustomerState(input.state);
+  if (!state.ok) return state;
+  const social = validateCustomerSocialUrl(input.socialUrl);
+  if (!social.ok) return social;
+
+  return {
+    ok: true,
+    documentId: document.documentId,
+    businessName: business.businessName,
+    city: city.city,
+    state: state.state,
+    socialUrl: social.socialUrl,
+  };
+}
+

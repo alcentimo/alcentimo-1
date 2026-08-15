@@ -98,12 +98,20 @@ export default async function CatalogRegisterPage({
 
     const { data: profile } = await supabase
       .from("customer_profiles")
-      .select("phone")
+      .select("phone, document_id, business_name, city, state, social_url")
       .eq("user_id", user.id)
       .eq("store_id", store.id)
       .maybeSingle();
 
-    if (profile?.phone && isValidCustomerPhone(profile.phone)) {
+    const verificationComplete =
+      Boolean(profile?.phone && isValidCustomerPhone(profile.phone)) &&
+      Boolean(profile?.document_id?.trim()) &&
+      Boolean(profile?.business_name?.trim()) &&
+      Boolean(profile?.city?.trim()) &&
+      Boolean(profile?.state?.trim()) &&
+      Boolean(profile?.social_url?.trim());
+
+    if (verificationComplete) {
       redirect(nextPath);
     }
   }
@@ -112,12 +120,12 @@ export default async function CatalogRegisterPage({
     <div className="catalog-subpage txn-catalog-subpage">
       <header className="catalog-subpage-header">
         <h1 className="catalog-subpage-title">
-          {needsPhoneCompletion ? "¿Agregar WhatsApp?" : "Crear cuenta"}
+          {needsPhoneCompletion ? "Completa tu verificación" : "Crear cuenta"}
         </h1>
         <p className="catalog-subpage-desc">
           {needsPhoneCompletion
-            ? `Puedes agregar tu WhatsApp para pedidos en ${store.name}, o continuar sin número.`
-            : `Regístrate en ${store.name} con Google o con correo y contraseña.`}
+            ? `Confirma tus datos para proteger tu cuenta en ${store.name}.`
+            : `Regístrate en ${store.name} con datos de verificación, Google o correo.`}
         </p>
       </header>
 

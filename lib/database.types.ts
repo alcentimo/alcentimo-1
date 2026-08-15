@@ -98,6 +98,16 @@ export interface CustomerProfile {
   store_id: string;
   display_name: string | null;
   phone: string | null;
+  delivery_address?: string | null;
+  preferred_shipping_method?: string | null;
+  preferred_shipping_branch_code?: string | null;
+  preferred_shipping_branch_name?: string | null;
+  preferred_shipping_branch_address?: string | null;
+  document_id?: string | null;
+  business_name?: string | null;
+  city?: string | null;
+  state?: string | null;
+  social_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -864,6 +874,12 @@ export interface Database {
           id?: string;
           display_name?: string | null;
           phone?: string | null;
+          delivery_address?: string | null;
+          document_id?: string | null;
+          business_name?: string | null;
+          city?: string | null;
+          state?: string | null;
+          social_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
