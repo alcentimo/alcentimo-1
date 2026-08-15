@@ -78,24 +78,15 @@ const VALID_SETTINGS_TABS = new Set<SettingsTabId>([
   "branches",
 ]);
 
-function resolveExplicitTab(
-  tab: string | undefined,
-  showDropshipping: boolean,
-): SettingsTabId | null {
+function resolveExplicitTab(tab: string | undefined): SettingsTabId | null {
   if (!tab || !VALID_SETTINGS_TABS.has(tab as SettingsTabId)) {
-    return null;
-  }
-  if (tab === "dropship" && !showDropshipping) {
     return null;
   }
   return tab as SettingsTabId;
 }
 
-function resolveInitialTab(
-  tab: string | undefined,
-  showDropshipping: boolean,
-): SettingsTabId {
-  return resolveExplicitTab(tab, showDropshipping) ?? "general";
+function resolveInitialTab(tab: string | undefined): SettingsTabId {
+  return resolveExplicitTab(tab) ?? "general";
 }
 
 type NavItem = {
@@ -105,7 +96,7 @@ type NavItem = {
   icon: typeof Settings2;
 };
 
-function buildSettingsNavGroups(showDropshipping: boolean): {
+function buildSettingsNavGroups(): {
   label: string;
   items: NavItem[];
 }[] {
@@ -143,16 +134,12 @@ function buildSettingsNavGroups(showDropshipping: boolean): {
           description: "Precios y pedidos mayoristas",
           icon: Boxes,
         },
-        ...(showDropshipping
-          ? ([
-              {
-                id: "dropship",
-                label: "Dropshipping",
-                description: "Margen y precios de proveedor",
-                icon: Workflow,
-              },
-            ] as NavItem[])
-          : []),
+        {
+          id: "dropship",
+          label: "Dropshipping",
+          description: "Margen y precios de proveedor",
+          icon: Workflow,
+        },
       ],
     },
     {
@@ -231,8 +218,6 @@ interface SettingsPanelProps {
   initialCategories?: StoreCategoryRow[];
   initialDomain?: string | null;
   initialDomainMode?: "connect" | "purchase" | null;
-  /** Solo el admin de soporte del sistema ve Dropshipping. */
-  showDropshipping?: boolean;
 }
 
 export function SettingsPanel({
@@ -250,16 +235,15 @@ export function SettingsPanel({
   initialCategories = [],
   initialDomain = null,
   initialDomainMode = null,
-  showDropshipping = false,
 }: SettingsPanelProps) {
   const router = useRouter();
-  const navGroups = buildSettingsNavGroups(showDropshipping);
+  const navGroups = buildSettingsNavGroups();
   const explicitTab = useMemo(
-    () => resolveExplicitTab(initialTab, showDropshipping),
-    [initialTab, showDropshipping],
+    () => resolveExplicitTab(initialTab),
+    [initialTab],
   );
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() =>
-    resolveInitialTab(initialTab, showDropshipping),
+    resolveInitialTab(initialTab),
   );
   /** En móvil: menú de lista vs sub-vista. Desktop ignora este estado. */
   const [mobileMenuOpen, setMobileMenuOpen] = useState(() => !explicitTab);
@@ -279,10 +263,10 @@ export function SettingsPanel({
       ?.label ?? "Ajustes";
 
   useEffect(() => {
-    const nextExplicit = resolveExplicitTab(initialTab, showDropshipping);
-    setActiveTab(resolveInitialTab(initialTab, showDropshipping));
+    const nextExplicit = resolveExplicitTab(initialTab);
+    setActiveTab(resolveInitialTab(initialTab));
     setMobileMenuOpen(!nextExplicit);
-  }, [initialTab, showDropshipping]);
+  }, [initialTab]);
 
   const storeSlug = store?.slug ?? "mi-tienda";
 
@@ -345,13 +329,6 @@ export function SettingsPanel({
           />
         );
       case "dropship":
-        if (!showDropshipping) {
-          return (
-            <p className="text-sm text-zinc-500">
-              Dropshipping no está disponible en esta fase.
-            </p>
-          );
-        }
         return (
           <DropshipPricingTab
             initialSettings={initialConfig.dropshipPricing}

@@ -19,7 +19,6 @@ import {
   getEffectivePlanIdForLimits,
   resolveProTrialStatus,
 } from "@/lib/plans/trial";
-import { isSupportAdmin } from "@/lib/support/is-support-admin";
 import { listPendingMarketingSuggestions } from "@/lib/marketing-ai/run-scan";
 import type { MarketingAiSuggestionRow } from "@/lib/marketing-ai/types";
 
@@ -190,7 +189,6 @@ export default async function AjustesPage({
         initialDomainMode={
           mode === "connect" || mode === "purchase" ? mode : null
         }
-        showDropshipping={isSupportAdmin(session.authUser.email)}
       />
     </div>
   );
