@@ -10,6 +10,7 @@ import {
 import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { CustomerVerificationFields } from "@/components/customers/CustomerVerificationFields";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import type { CatalogCustomerAuthMode } from "@/components/catalog-transactional/CatalogShellNavigation";
@@ -67,6 +68,22 @@ export function CustomerRegisterPanel({
   const googleCompletionPath = `${googleCompletionBase}${
     googleCompletionBase.includes("?") ? "&" : "?"
   }complete=phone${orderId ? `&orderId=${encodeURIComponent(orderId)}` : ""}`;
+
+  const verificationFieldProps = {
+    documentId,
+    phone,
+    businessName,
+    city,
+    stateRegion,
+    socialUrl,
+    disabled: loading,
+    onDocumentIdChange: setDocumentId,
+    onPhoneChange: setPhone,
+    onBusinessNameChange: setBusinessName,
+    onCityChange: setCity,
+    onStateRegionChange: setStateRegion,
+    onSocialUrlChange: setSocialUrl,
+  };
 
   async function handleQuickSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -212,119 +229,6 @@ export function CustomerRegisterPanel({
     ? "catalog-register-panel"
     : "card-panel mx-auto w-full max-w-lg";
 
-  const verificationFields = (
-    <>
-      <div>
-        <label htmlFor="document_id" className="label-field">
-          Cédula de Identidad / RIF
-        </label>
-        <input
-          id="document_id"
-          type="text"
-          autoComplete="off"
-          required
-          value={documentId}
-          disabled={isBusy}
-          onChange={(e) => setDocumentId(e.target.value)}
-          className="input-field"
-          placeholder="V-12345678 o J-123456789"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="phone_required" className="label-field">
-          Número de WhatsApp / Teléfono
-        </label>
-        <input
-          id="phone_required"
-          type="tel"
-          autoComplete="tel"
-          required
-          value={phone}
-          disabled={isBusy}
-          onChange={(e) => setPhone(e.target.value)}
-          className="input-field"
-          placeholder="0412… o 412…"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="business_name" className="label-field">
-          Nombre de la tienda
-        </label>
-        <input
-          id="business_name"
-          type="text"
-          autoComplete="organization"
-          required
-          minLength={2}
-          value={businessName}
-          disabled={isBusy}
-          onChange={(e) => setBusinessName(e.target.value)}
-          className="input-field"
-          placeholder="Tu tienda o negocio"
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="city" className="label-field">
-            Ciudad
-          </label>
-          <input
-            id="city"
-            type="text"
-            autoComplete="address-level2"
-            required
-            minLength={2}
-            value={city}
-            disabled={isBusy}
-            onChange={(e) => setCity(e.target.value)}
-            className="input-field"
-            placeholder="Caracas"
-          />
-        </div>
-        <div>
-          <label htmlFor="state_region" className="label-field">
-            Estado
-          </label>
-          <input
-            id="state_region"
-            type="text"
-            autoComplete="address-level1"
-            required
-            minLength={2}
-            value={stateRegion}
-            disabled={isBusy}
-            onChange={(e) => setStateRegion(e.target.value)}
-            className="input-field"
-            placeholder="Distrito Capital"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="social_url" className="label-field">
-          Enlace de red social
-        </label>
-        <input
-          id="social_url"
-          type="text"
-          autoComplete="url"
-          required
-          value={socialUrl}
-          disabled={isBusy}
-          onChange={(e) => setSocialUrl(e.target.value)}
-          className="input-field"
-          placeholder="@tu.tienda o instagram.com/tu.tienda"
-        />
-        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-          Instagram u otro perfil comercial para verificar tu identidad.
-        </p>
-      </div>
-    </>
-  );
-
   if (needsPhoneCompletion) {
     return (
       <div className={shellClass}>
@@ -344,11 +248,12 @@ export function CustomerRegisterPanel({
           className="mt-6 space-y-4"
         >
           <div>
-            <label htmlFor="display_name_complete" className="label-field">
+            <label htmlFor="register_display_name_complete" className="label-field">
               Nombre y Apellido
             </label>
             <input
-              id="display_name_complete"
+              id="register_display_name_complete"
+              name="displayName"
               type="text"
               autoComplete="name"
               required
@@ -361,7 +266,10 @@ export function CustomerRegisterPanel({
             />
           </div>
 
-          {verificationFields}
+          <CustomerVerificationFields
+            {...verificationFieldProps}
+            idPrefix="register_complete"
+          />
 
           {error ? (
             <p className="alert-error" role="alert">
@@ -489,7 +397,7 @@ export function CustomerRegisterPanel({
             </button>
           ) : (
             <span className="font-medium text-zinc-700 dark:text-zinc-300">
-              Regístrate con Google o con correo y contraseña.
+              Regístrate con correo y datos de verificación.
             </span>
           )}
         </p>
@@ -529,32 +437,14 @@ export function CustomerRegisterPanel({
         </p>
       )}
 
-      <GoogleSignInButton
-        postAuthPath={googleCompletionPath}
-        storeSlug={storeSlug}
-        orderId={orderId ?? undefined}
-        disabled={isBusy}
-        className="mt-6"
-        buttonClassName="rounded-[10px] border-zinc-200/80 py-3.5 font-semibold shadow-[0_1px_2px_rgba(24,24,27,0.04)] hover:bg-zinc-50 dark:hover:bg-zinc-800"
-        onError={(message) => setError(formatAuthError(message))}
-      />
-
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
-        </div>
-        <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
-          o con correo
-        </p>
-      </div>
-
-      <form onSubmit={(e) => void handleQuickSubmit(e)} className="space-y-4">
+      <form onSubmit={(e) => void handleQuickSubmit(e)} className="mt-6 space-y-4">
         <div>
-          <label htmlFor="display_name" className="label-field">
+          <label htmlFor="register_display_name" className="label-field">
             Nombre y Apellido
           </label>
           <input
-            id="display_name"
+            id="register_display_name"
+            name="displayName"
             type="text"
             autoComplete="name"
             required
@@ -567,14 +457,22 @@ export function CustomerRegisterPanel({
           />
         </div>
 
-        {verificationFields}
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          Datos de verificación
+        </p>
+
+        <CustomerVerificationFields
+          {...verificationFieldProps}
+          idPrefix="register"
+        />
 
         <div>
-          <label htmlFor="email" className="label-field">
+          <label htmlFor="register_email" className="label-field">
             Correo electrónico
           </label>
           <input
-            id="email"
+            id="register_email"
+            name="email"
             type="email"
             autoComplete="email"
             required
@@ -587,11 +485,12 @@ export function CustomerRegisterPanel({
         </div>
 
         <div>
-          <label htmlFor="password" className="label-field">
+          <label htmlFor="register_password" className="label-field">
             Contraseña
           </label>
           <PasswordInput
-            id="password"
+            id="register_password"
+            name="password"
             autoComplete="new-password"
             required
             minLength={CUSTOMER_MIN_PASSWORD_LENGTH}
@@ -612,6 +511,27 @@ export function CustomerRegisterPanel({
           {loading ? "Creando cuenta…" : `Unirme a ${storeName}`}
         </button>
       </form>
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+          <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
+        </div>
+        <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
+          o continúa con
+        </p>
+      </div>
+
+      <GoogleSignInButton
+        postAuthPath={googleCompletionPath}
+        storeSlug={storeSlug}
+        orderId={orderId ?? undefined}
+        disabled={isBusy}
+        buttonClassName="rounded-[10px] border-zinc-200/80 py-3.5 font-semibold shadow-[0_1px_2px_rgba(24,24,27,0.04)] hover:bg-zinc-50 dark:hover:bg-zinc-800"
+        onError={(message) => setError(formatAuthError(message))}
+      />
+      <p className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
+        Con Google te pediremos completar la verificación después.
+      </p>
 
       <p className="mt-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
         ¿Ya tienes cuenta?{" "}
