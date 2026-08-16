@@ -4,23 +4,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import {
-  Baby,
+  ArrowUpRight,
   Bell,
-  Car,
-  Cpu,
-  HeartPulse,
-  Home,
-  NotebookPen,
-  Package,
-  Percent,
   Search,
-  Shirt,
   ShoppingBag,
   ShoppingCart,
-  Sparkles,
   UserRound,
-  Utensils,
-  Watch,
 } from "lucide-react";
 import { SUPPLIER_PRODUCT_CATEGORIES } from "@/lib/supplier/categories";
 import { cn } from "@/lib/cn";
@@ -35,23 +24,6 @@ interface MercadoChromeProps {
   email: string | null;
   children: React.ReactNode;
 }
-
-const CATEGORY_ICONS: Record<
-  string,
-  React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" }>
-> = {
-  electronica: Cpu,
-  hogar: Home,
-  belleza: Sparkles,
-  accesorios: Watch,
-  alimentos: Utensils,
-  ropa: Shirt,
-  salud: HeartPulse,
-  juguetes: Baby,
-  papeleria: NotebookPen,
-  automotriz: Car,
-  otros: Package,
-};
 
 function MercadoChromeInner({ email, children }: MercadoChromeProps) {
   const pathname = usePathname();
@@ -73,9 +45,12 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.location.hash === "#mercado-categorias") {
+    if (
+      window.location.hash === "#mercado-categorias" ||
+      window.location.hash === "#mercado-colecciones"
+    ) {
       document
-        .getElementById("mercado-categorias")
+        .getElementById("mercado-colecciones")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [pathname]);
@@ -97,32 +72,6 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
 
   const pending = Boolean(catalog?.pending) || navPending;
 
-  const searchForm = (
-    <form
-      className="mercado-mp-search"
-      onSubmit={(event) => {
-        event.preventDefault();
-        goDirectorySearch();
-      }}
-    >
-      <span className="mercado-mp-search-icon" aria-hidden="true">
-        <Search className="h-5 w-5" />
-      </span>
-      <input
-        type="search"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder="Buscar en la vitrina Moriche…"
-        aria-label="Buscar productos"
-        className="mercado-mp-search-input"
-        disabled={pending}
-      />
-      <button type="submit" className="mercado-mp-search-btn" disabled={pending}>
-        Buscar
-      </button>
-    </form>
-  );
-
   return (
     <div className={cn("mercado-shell", pending && "mercado-shell-pending")}>
       <header className="mercado-mp-header">
@@ -132,12 +81,10 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
               M
             </span>
             <span className="mercado-mp-brand-text">
-              <span className="mercado-mp-brand-kicker">Curaduría B2B</span>
-              <span className="mercado-title">Mercado Moriche</span>
+              <span className="mercado-mp-brand-kicker">Curaduría mayorista</span>
+              <span className="mercado-title">Moriche</span>
             </span>
           </Link>
-
-          <div className="mercado-mp-search-wrap">{searchForm}</div>
 
           <nav className="mercado-mp-nav" aria-label="Cuenta y compras">
             <Link
@@ -149,7 +96,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
               )}
             >
               <ShoppingBag className="h-4 w-4" aria-hidden="true" />
-              <span className="mercado-nav-label">Mis Compras</span>
+              <span className="mercado-nav-label">Pedidos</span>
             </Link>
             <Link
               href="/mercado-oculto/conversaciones"
@@ -158,7 +105,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
               aria-label="Notificaciones"
             >
               <Bell className="h-4 w-4" aria-hidden="true" />
-              <span className="mercado-nav-label">Notificaciones</span>
+              <span className="mercado-nav-label">Alertas</span>
             </Link>
             <Link
               href="/mercado-oculto/carrito"
@@ -186,7 +133,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
                 title={email}
               >
                 <UserRound className="h-4 w-4" aria-hidden="true" />
-                <span className="mercado-nav-label">Mi cuenta</span>
+                <span className="mercado-nav-label">Cuenta</span>
               </Link>
             ) : (
               <Link
@@ -194,7 +141,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
                 className="mercado-nav-link mercado-mp-auth-link"
               >
                 <UserRound className="h-4 w-4" aria-hidden="true" />
-                <span className="mercado-nav-label">Crea tu cuenta / Ingresa</span>
+                <span className="mercado-nav-label">Entrar</span>
               </Link>
             )}
           </nav>
@@ -202,44 +149,80 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
       </header>
 
       {onDirectory ? (
-        <div
-          id="mercado-categorias"
-          className="mercado-mp-cat-strip"
-          role="tablist"
-          aria-label="Categorías"
-        >
-          <div className="mercado-mp-cat-scroll">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={!activeCategory}
-              className={cn(
-                "mercado-mp-cat-chip",
-                !activeCategory && "mercado-mp-cat-chip-active",
-              )}
-              onClick={() =>
-                catalog?.setFilters((current) => ({
-                  ...current,
-                  category: "",
-                }))
-              }
+        <section className="mercado-hero" aria-labelledby="moriche-hero-title">
+          <div className="mercado-hero-glow" aria-hidden="true" />
+          <div className="mercado-hero-inner">
+            <p className="mercado-hero-kicker">Mercado Moriche</p>
+            <h1 id="moriche-hero-title" className="mercado-hero-title">
+              La vitrina mayorista
+              <span className="mercado-hero-title-accent"> que se siente exclusiva.</span>
+            </h1>
+            <p className="mercado-hero-lead">
+              Curaduría B2B para dropshippers: productos listos, márgenes claros
+              y una experiencia de compra que no parece un mercado masivo.
+            </p>
+
+            <form
+              className="mercado-hero-search"
+              onSubmit={(event) => {
+                event.preventDefault();
+                goDirectorySearch();
+              }}
             >
-              <span className="mercado-mp-cat-icon" aria-hidden="true">
-                <Percent className="h-5 w-5" />
+              <span className="mercado-hero-search-icon" aria-hidden="true">
+                <Search className="h-5 w-5" />
               </span>
-              <span>Ofertas</span>
-            </button>
-            {SUPPLIER_PRODUCT_CATEGORIES.map((item) => {
-              const Icon = CATEGORY_ICONS[item.value] ?? Package;
-              return (
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Buscar por producto, categoría o proveedor…"
+                aria-label="Buscar en Mercado Moriche"
+                className="mercado-hero-search-input"
+                disabled={pending}
+              />
+              <button
+                type="submit"
+                className="mercado-hero-search-btn"
+                disabled={pending}
+              >
+                Explorar
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </form>
+
+            <div
+              id="mercado-colecciones"
+              className="mercado-hero-collections"
+              role="tablist"
+              aria-label="Colecciones"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!activeCategory}
+                className={cn(
+                  "mercado-hero-collection",
+                  !activeCategory && "is-active",
+                )}
+                onClick={() =>
+                  catalog?.setFilters((current) => ({
+                    ...current,
+                    category: "",
+                  }))
+                }
+              >
+                Toda la vitrina
+              </button>
+              {SUPPLIER_PRODUCT_CATEGORIES.map((item) => (
                 <button
                   key={item.value}
                   type="button"
                   role="tab"
                   aria-selected={activeCategory === item.value}
                   className={cn(
-                    "mercado-mp-cat-chip",
-                    activeCategory === item.value && "mercado-mp-cat-chip-active",
+                    "mercado-hero-collection",
+                    activeCategory === item.value && "is-active",
                   )}
                   onClick={() =>
                     catalog?.setFilters((current) => ({
@@ -248,15 +231,12 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
                     }))
                   }
                 >
-                  <span className="mercado-mp-cat-icon" aria-hidden="true">
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <span>{item.label}</span>
+                  {item.label}
                 </button>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
       ) : null}
 
       <main className="mercado-main mercado-mp-main">{children}</main>

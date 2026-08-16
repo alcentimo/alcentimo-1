@@ -20,11 +20,11 @@ const ITEMS = [
       path === "/mercado-oculto" || path === "/mercado-oculto/",
   },
   {
-    href: "/mercado-oculto?focus=categorias",
-    label: "Categorías",
+    href: "/mercado-oculto#mercado-colecciones",
+    label: "Colecciones",
     icon: Grid2x2,
     match: (path: string) => false,
-    scrollTo: "mercado-categorias",
+    scrollTo: "mercado-colecciones",
   },
   {
     href: "/mercado-oculto/conversaciones",
@@ -71,7 +71,7 @@ export function MercadoBottomNav() {
                     .getElementById(item.scrollTo)
                     ?.scrollIntoView({ behavior: "smooth", block: "start" });
                 } else {
-                  router.push("/mercado-oculto#mercado-categorias");
+                  router.push("/mercado-oculto#mercado-colecciones");
                 }
               }
             }}

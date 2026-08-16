@@ -17,20 +17,24 @@ export function MercadoCatalogView() {
       <div className="mercado-mp-results">
         <div className="mercado-mp-results-head">
           <div>
-            <h1 className="mercado-heading text-lg sm:text-xl">
+            <p className="mercado-section-label">Colección activa</p>
+            <h2 className="mercado-heading text-xl sm:text-2xl">
               {filters.q
                 ? `Resultados para “${filters.q}”`
-                : "Selección curada"}
-            </h1>
-            <p className="mercado-subheading mt-0.5">
-              Vitrina mayorista · Envío nacional · Compra protegida
+                : filters.category
+                  ? "Selección filtrada"
+                  : "Piezas destacadas"}
+            </h2>
+            <p className="mercado-subheading mt-1">
+              Márgenes claros · Fichas listas · Compra protegida
             </p>
           </div>
-          <p className="text-sm text-[var(--mo-muted)]" aria-live="polite">
-            <strong className="font-semibold text-[var(--mo-ink)]">
-              {filteredProducts.length}
-            </strong>{" "}
-            resultado{filteredProducts.length === 1 ? "" : "s"}
+          <p className="mercado-mp-results-count" aria-live="polite">
+            <strong>{filteredProducts.length}</strong>
+            <span>
+              {" "}
+              pieza{filteredProducts.length === 1 ? "" : "s"}
+            </span>
           </p>
         </div>
 
