@@ -172,7 +172,7 @@ function TransactionalCatalogInner({
       exchangeRate={liveExchangeRate}
       showBsConversion={showBsConversion}
       storeRubro={store.rubro_tienda}
-      wholesaleEnabled={wholesaleEnabled}
+      wholesaleEnabled={false}
       checkoutType={purchaseInfo.checkoutType}
       whatsappPhone={purchaseInfo.whatsappPhone}
       onAddToCart={referenceMode ? undefined : addItem}

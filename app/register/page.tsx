@@ -1,15 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
-import { StoreWhitelabelRoot } from "@/components/catalog/StoreWhitelabelRoot";
-import { CustomerRegisterPanel } from "@/components/customers/CustomerRegisterPanel";
-import { getPublicCatalogThemeContext } from "@/lib/catalog/get-public-catalog-theme";
 import {
   buildCustomerAccountPath,
   buildCustomerRegisterPath,
 } from "@/lib/customers/middleware-access";
 import { resolveCustomerStoreSlugFromNext } from "@/lib/customers/ensure-customer-profile";
-import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,22 +32,6 @@ function resolveNextPath(storeSlug: string, nextParam?: string): string {
   }
 
   return nextParam.split("?")[0] ?? fallback;
-}
-
-function resolveSuggestedDisplayName(
-  metadata: Record<string, unknown> | undefined,
-): string | null {
-  if (metadata && typeof metadata.display_name === "string") {
-    const value = metadata.display_name.trim();
-    if (value.length >= 2) return value;
-  }
-
-  if (metadata && typeof metadata.full_name === "string") {
-    const value = metadata.full_name.trim();
-    if (value.length >= 2) return value;
-  }
-
-  return null;
 }
 
 export default async function CustomerRegisterPage({
@@ -92,82 +72,22 @@ export default async function CustomerRegisterPage({
   const needsPhoneCompletion = params.complete === "phone";
   const orderId = params.orderId?.trim() || null;
 
-  if (!needsPhoneCompletion) {
-    let catalogRegisterPath = buildCustomerRegisterPath(store.slug, nextPath);
-    if (orderId) {
-      catalogRegisterPath += `${catalogRegisterPath.includes("?") ? "&" : "?"}orderId=${encodeURIComponent(orderId)}`;
-    }
-    redirect(catalogRegisterPath);
-  }
-
-  const themeContext = await getPublicCatalogThemeContext(store.slug);
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let suggestedDisplayName: string | null = null;
-
+  // Always send store buyers to the catalog register flow.
+  // Legacy `?complete=phone` links go straight to the account destination.
   if (needsPhoneCompletion) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       redirect(buildCustomerRegisterPath(store.slug, nextPath));
     }
-
-    suggestedDisplayName = resolveSuggestedDisplayName(user.user_metadata);
-
-    const { data: profile } = await supabase
-      .from("customer_profiles")
-      .select("phone, document_id, business_name, city, state, social_url")
-      .eq("user_id", user.id)
-      .eq("store_id", store.id)
-      .maybeSingle();
-
-    const verificationComplete =
-      Boolean(profile?.phone && isValidCustomerPhone(profile.phone)) &&
-      Boolean(profile?.document_id?.trim()) &&
-      Boolean(profile?.business_name?.trim()) &&
-      Boolean(profile?.city?.trim()) &&
-      Boolean(profile?.state?.trim()) &&
-      Boolean(profile?.social_url?.trim());
-
-    if (verificationComplete) {
-      redirect(nextPath);
-    }
+    redirect(nextPath);
   }
 
-  return (
-    <StoreWhitelabelRoot themeContext={themeContext}>
-      <AuthPageShell
-        sectionLabel="Cuenta de cliente"
-        title={
-          needsPhoneCompletion
-            ? "Completa tu verificación"
-            : "Regístrate y compra más rápido"
-        }
-        description={
-          needsPhoneCompletion
-            ? `Confirma tus datos para proteger tu cuenta en ${store.name}.`
-            : `Crea tu cuenta en ${store.name} con datos de verificación.`
-        }
-        footer={
-          <p className="text-center text-sm text-zinc-500">
-            ¿Vendes productos?{" "}
-            <Link href="/dashboard/login" className="link-brand">
-              Accede al panel del negocio
-            </Link>
-          </p>
-        }
-      >
-        <CustomerRegisterPanel
-          storeSlug={store.slug}
-          storeName={store.name}
-          nextPath={nextPath}
-          needsPhoneCompletion={needsPhoneCompletion}
-          suggestedDisplayName={suggestedDisplayName}
-          orderId={orderId}
-        />
-      </AuthPageShell>
-    </StoreWhitelabelRoot>
-  );
+  let catalogRegisterPath = buildCustomerRegisterPath(store.slug, nextPath);
+  if (orderId) {
+    catalogRegisterPath += `${catalogRegisterPath.includes("?") ? "&" : "?"}orderId=${encodeURIComponent(orderId)}`;
+  }
+  redirect(catalogRegisterPath);
 }

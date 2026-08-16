@@ -8,7 +8,6 @@ import {
   userIsMerchantOfStoreSlug,
 } from "@/lib/customers/middleware-access";
 import { resolveCustomerStoreSlugFromNext } from "@/lib/customers/ensure-customer-profile";
-import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { getPublicCatalogThemeContext } from "@/lib/catalog/get-public-catalog-theme";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
 import { getPublicStoreBySlug } from "@/lib/stores";
@@ -76,46 +75,30 @@ export default async function CatalogRegisterPage({
 
   let suggestedDisplayName: string | null = null;
 
+  // Buyers no longer complete dropshipper-style verification on the storefront.
+  // Legacy Google links with `?complete=phone` go straight to the account.
+  if (needsPhoneCompletion) {
+    if (!user) {
+      redirect(`${getStoreCatalogBasePath(store.slug)}/registro`);
+    }
+    redirect(nextPath);
+  }
+
   if (user) {
     const [isCustomer, isMerchant] = await Promise.all([
       userIsCustomerOfStoreId(supabase, user.id, store.id),
       userIsMerchantOfStoreSlug(supabase, user.id, store.slug),
     ]);
 
-    if (isCustomer && !needsPhoneCompletion) {
+    if (isCustomer) {
       redirect(nextPath);
     }
 
-    if (isMerchant && !needsPhoneCompletion) {
+    if (isMerchant) {
       redirect(getStoreCatalogBasePath(store.slug));
-    }
-  }
-
-  if (needsPhoneCompletion) {
-    if (!user) {
-      redirect(`${getStoreCatalogBasePath(store.slug)}/registro`);
     }
 
     suggestedDisplayName = resolveSuggestedDisplayName(user.user_metadata);
-
-    const { data: profile } = await supabase
-      .from("customer_profiles")
-      .select("phone, document_id, business_name, city, state, social_url")
-      .eq("user_id", user.id)
-      .eq("store_id", store.id)
-      .maybeSingle();
-
-    const verificationComplete =
-      Boolean(profile?.phone && isValidCustomerPhone(profile.phone)) &&
-      Boolean(profile?.document_id?.trim()) &&
-      Boolean(profile?.business_name?.trim()) &&
-      Boolean(profile?.city?.trim()) &&
-      Boolean(profile?.state?.trim()) &&
-      Boolean(profile?.social_url?.trim());
-
-    if (verificationComplete) {
-      redirect(nextPath);
-    }
   }
 
   const themeContext = await getPublicCatalogThemeContext(store.slug);
@@ -126,19 +109,15 @@ export default async function CatalogRegisterPage({
       storeName={store.name}
       logoUrl={store.logo_url}
       primaryColor={themeContext?.catalogDesign.primaryColor ?? null}
-      eyebrow={needsPhoneCompletion ? "Verificación" : "Crear cuenta"}
+      eyebrow="Crear cuenta"
       className="txn-catalog txn-catalog--moriche-native"
       style={themeContext?.style}
     >
       <div className="catalog-subpage txn-catalog-subpage !px-0 !py-0">
         <header className="catalog-subpage-header !px-0">
-          <h1 className="catalog-subpage-title">
-            {needsPhoneCompletion ? "Completa tu verificación" : "Crear cuenta"}
-          </h1>
+          <h1 className="catalog-subpage-title">Crear cuenta</h1>
           <p className="catalog-subpage-desc">
-            {needsPhoneCompletion
-              ? `Confirma tus datos para proteger tu cuenta en ${store.name}.`
-              : `Regístrate en ${store.name} con datos de verificación, Google o correo.`}
+            Regístrate en {store.name} con tu nombre, correo y contraseña.
           </p>
         </header>
 
@@ -146,7 +125,6 @@ export default async function CatalogRegisterPage({
           storeSlug={store.slug}
           storeName={store.name}
           nextPath={nextPath}
-          needsPhoneCompletion={needsPhoneCompletion}
           suggestedDisplayName={suggestedDisplayName}
           orderId={orderId}
           variant="catalog"
