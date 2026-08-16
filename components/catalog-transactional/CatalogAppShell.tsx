@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import { CatalogShellNavigationProvider } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { CatalogCustomerRegisterSheet } from "@/components/catalog-transactional/CatalogCustomerRegisterSheet";
 import { CatalogStoreProfileSheet } from "@/components/catalog-transactional/CatalogStoreProfileSheet";
-import { CatalogTabBar } from "@/components/catalog-transactional/CatalogTabBar";
 import { CatalogChatWidget } from "@/components/catalog-transactional/CatalogChatWidget";
 import { CatalogWhatsAppQuickChat } from "@/components/catalog-transactional/CatalogWhatsAppQuickChat";
 import { CustomerPromoBanner } from "@/components/catalog-transactional/CustomerPromoBanner";
@@ -13,7 +12,6 @@ import { InstallPwaBanner } from "@/components/catalog-transactional/InstallPwaB
 import { PwaServiceWorkerRegister } from "@/components/catalog-transactional/PwaServiceWorkerRegister";
 import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
 import { CustomerAccountModeProvider } from "@/components/catalog-transactional/CustomerAccountModeContext";
-import { storeHasPCBuilder } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import type {
   CustomerAccountMode,
   LocationHoursSettings,
@@ -38,6 +36,10 @@ interface CatalogAppShellProps {
   children: ReactNode;
 }
 
+/**
+ * Shell del catálogo público. Sin tab bar inferior (Inicio/Buscar/Perfil):
+ * la navegación vive en la cabecera Moriche, igual que Mercado Oculto.
+ */
 export function CatalogAppShell({
   storeSlug,
   storeName,
@@ -48,8 +50,8 @@ export function CatalogAppShell({
   supportAvatarAnimation = null,
   supportAvatarAnimated = false,
   supportMerchantName = null,
-  storeRubro = null,
-  enablePcBuilder = false,
+  storeRubro: _storeRubro = null,
+  enablePcBuilder: _enablePcBuilder = false,
   assistantEnabled = false,
   whatsappPhone = null,
   whatsappChatWelcome = null,
@@ -57,7 +59,6 @@ export function CatalogAppShell({
   children,
 }: CatalogAppShellProps) {
   const { guestBanner } = usePromotionContext();
-  const pcBuilderEnabled = storeHasPCBuilder(storeRubro, enablePcBuilder);
 
   return (
     <CustomerAccountModeProvider accountMode="hibrido">
@@ -70,7 +71,9 @@ export function CatalogAppShell({
             storeLogoUrl={storeLogoUrl}
           />
           <CustomerPromoBanner promotion={guestBanner} />
-          <div className="catalog-shell-content">{children}</div>
+          <div className="catalog-shell-content catalog-shell-content--moriche">
+            {children}
+          </div>
           {assistantEnabled ? (
             <CatalogChatWidget
               storeSlug={storeSlug}
@@ -101,7 +104,6 @@ export function CatalogAppShell({
             storeSlug={storeSlug}
             storeName={storeName}
           />
-          <CatalogTabBar storeSlug={storeSlug} pcBuilderEnabled={pcBuilderEnabled} />
         </CatalogStoreBrandingProvider>
       </CatalogShellNavigationProvider>
     </CustomerAccountModeProvider>
