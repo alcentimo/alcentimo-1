@@ -1,41 +1,18 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hasMercadoOcultoSuperAdminUser } from "@/lib/mercado-oculto/access";
 import {
   getCachedMercadoCatalog,
   getCachedOfficialMayoristaUserIds,
   SUPPLIER_PRODUCT_SELECT,
 } from "@/lib/mercado-oculto/catalog-cache";
 import { filterMercadoProducts } from "@/lib/mercado-oculto/filter-catalog";
-import { resolveMayoristaDisplayName } from "@/lib/mercado-oculto/supplier-labels";
+import { MORICHE_BRAND_LABEL } from "@/lib/mercado-oculto/access";
 import { mapSupplierRowToMercadoCard, type MercadoProductCard } from "@/lib/mercado-oculto/types";
-import {
-  getSupportAdminAllowlist,
-  normalizeSupportEmail,
-} from "@/lib/support/admin-access";
 
 type ActionResult<T extends object = object> = {
   error?: string;
 } & Partial<T>;
-
-async function requireMercadoSuperAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: "Debes iniciar sesión." } as const;
-  }
-  if (!hasMercadoOcultoSuperAdminUser(user)) {
-    return {
-      error:
-        "El mercado oculto es exclusivo del Administrador General de Alcéntimo.",
-    } as const;
-  }
-  return { user } as const;
-}
 
 export async function listOfficialMayoristaUserIds(): Promise<string[]> {
   return getCachedOfficialMayoristaUserIds();
@@ -51,7 +28,7 @@ export type ListMercadoProductsInput = {
   limit?: number;
 };
 
-/** Vitrina B2B: usa catálogo cacheado y filtra en memoria. */
+/** Vitrina B2B pública: catálogo cacheado (sin sesión). */
 export async function listMercadoProducts(
   options?: ListMercadoProductsInput,
 ): Promise<
@@ -60,9 +37,6 @@ export async function listMercadoProducts(
     facets: Awaited<ReturnType<typeof getCachedMercadoCatalog>>["facets"];
   }>
 > {
-  const gate = await requireMercadoSuperAdmin();
-  if ("error" in gate) return { error: gate.error };
-
   try {
     const catalog = await getCachedMercadoCatalog();
     const filtered = filterMercadoProducts(catalog.products, {
@@ -92,17 +66,7 @@ export async function listMercadoProducts(
   }
 }
 
-async function mapCreatorLabel(userId: string): Promise<string> {
-  const admin = createAdminClient();
-  const adminEmails = new Set(getSupportAdminAllowlist());
-  const { data } = await admin.auth.admin.getUserById(userId);
-  const email = normalizeSupportEmail(data.user?.email);
-  return resolveMayoristaDisplayName(data.user, {
-    isSupportAdmin: Boolean(email && adminEmails.has(email)),
-  });
-}
-
-/** Detalle de un producto mayorista oficial (Super Admin). */
+/** Detalle público de un producto de la vitrina Moriche. */
 export async function getMercadoProduct(
   productId: string,
 ): Promise<
@@ -112,9 +76,6 @@ export async function getMercadoProduct(
     sellerStoreName: string;
   }>
 > {
-  const gate = await requireMercadoSuperAdmin();
-  if ("error" in gate) return { error: gate.error };
-
   if (!productId.trim()) return { error: "Producto inválido." };
 
   // Prefer cache hit for fast back/forward navigation.
@@ -155,15 +116,14 @@ export async function getMercadoProduct(
   if (!creatorIds.includes(createdBy)) {
     return {
       error:
-        "Este producto no pertenece al catálogo del Administrador General ni a mayoristas asociados.",
+        "Este producto no pertenece al catálogo de Mercado Moriche.",
     };
   }
 
-  const label = await mapCreatorLabel(createdBy);
-  const product = mapSupplierRowToMercadoCard(row, label);
+  const product = mapSupplierRowToMercadoCard(row, MORICHE_BRAND_LABEL);
   return {
     product,
     sellerUserId: product.seller_user_id,
-    sellerStoreName: product.supplier_label,
+    sellerStoreName: MORICHE_BRAND_LABEL,
   };
 }

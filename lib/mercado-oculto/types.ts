@@ -5,6 +5,7 @@ import {
 } from "@/lib/supplier/categories";
 import type { SupplierProductVariants } from "@/lib/supplier/variants";
 import { normalizeSupplierProductVariants } from "@/lib/supplier/variants";
+import { MORICHE_BRAND_LABEL } from "@/lib/mercado-oculto/access";
 
 /** Tarjeta / detalle de la vitrina mayorista B2B. */
 export interface MercadoProductCard {
@@ -48,7 +49,7 @@ export function computeDiscountPercent(
 
 export function mapSupplierRowToMercadoCard(
   row: Record<string, unknown>,
-  supplierLabel = "Mayorista Oficial Alcéntimo",
+  supplierLabel = MORICHE_BRAND_LABEL,
 ): MercadoProductCard {
   const category = normalizeSupplierProductCategory(row.category);
   const priceUsd = Number(row.base_price_usd) || 0;

@@ -145,59 +145,6 @@ export function MercadoFiltersPanel({
         </ul>
       </details>
 
-      {facets.suppliers.length > 0 ? (
-        <details className="mercado-mp-filter-block" open>
-          <summary className="mercado-mp-filter-title">Proveedor</summary>
-          <ul className="mercado-mp-filter-list pt-1">
-            <li>
-              <button
-                type="button"
-                className={cn(
-                  "mercado-mp-filter-option",
-                  !filters.supplier && "mercado-mp-filter-option-active",
-                )}
-                onClick={() =>
-                  setFilters((current) => ({ ...current, supplier: "" }))
-                }
-              >
-                Todos
-              </button>
-            </li>
-            {facets.suppliers.map((supplier) => (
-              <li key={supplier.id}>
-                <button
-                  type="button"
-                  className={cn(
-                    "mercado-mp-filter-option",
-                    filters.supplier === supplier.id &&
-                      "mercado-mp-filter-option-active",
-                  )}
-                  onClick={() =>
-                    setFilters((current) => ({
-                      ...current,
-                      supplier: supplier.id,
-                    }))
-                  }
-                >
-                  <span className="truncate">{supplier.label}</span>
-                  <span className="tabular-nums text-zinc-400">
-                    {supplier.count}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : (
-        <details className="mercado-mp-filter-block" open>
-          <summary className="mercado-mp-filter-title">Proveedor</summary>
-          <p className="pt-2 text-xs text-zinc-500">
-            Los mayoristas aparecerán aquí automáticamente al publicar
-            productos activos.
-          </p>
-        </details>
-      )}
-
       {hasActive ? (
         <button
           type="button"

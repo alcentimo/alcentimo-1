@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { BadgeCheck, Boxes, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUserWithPlan } from "@/lib/auth/get-user-profile";
-import { hasMercadoOcultoSuperAdminUser } from "@/lib/mercado-oculto/access";
+import { MORICHE_BRAND_LABEL } from "@/lib/mercado-oculto/access";
 import { getMercadoProduct } from "@/lib/mercado-oculto/product-actions";
 import { MercadoChatPanel } from "@/components/mercado-oculto/MercadoChatPanel";
 import { MercadoProductBuyBox } from "@/components/mercado-oculto/MercadoProductBuyBox";
@@ -22,21 +22,11 @@ export default async function MercadoProductoPage({
   searchParams: Promise<{ c?: string | string[] }>;
 }) {
   const supabase = await createClient();
+  const authUser = await getAuthUserWithPlan(supabase);
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/dashboard/login?next=/mercado-oculto");
-  }
-  if (!hasMercadoOcultoSuperAdminUser(user)) {
-    notFound();
-  }
-
-  const authUser = await getAuthUserWithPlan(supabase);
-  if (!authUser) {
-    redirect("/dashboard/login?next=/mercado-oculto");
-  }
+  const isAuthenticated = Boolean(user ?? authUser);
 
   const { productId } = await params;
   const search = await searchParams;
@@ -63,8 +53,12 @@ export default async function MercadoProductoPage({
   }
 
   const product = result.product;
-  const isOwnProduct = result.sellerUserId === authUser.id;
+  const brandLabel = MORICHE_BRAND_LABEL;
+  const isOwnProduct = Boolean(
+    authUser && result.sellerUserId === authUser.id,
+  );
   const variantAttr = supplierVariantAttributeLabel(product.variants);
+  const chatAccessMode = isAuthenticated ? "subscriber" : "anonymous";
 
   return (
     <div className="mercado-mp-detail">
@@ -117,10 +111,10 @@ export default async function MercadoProductoPage({
         <section className="mercado-mp-detail-info">
           <div className="mercado-mp-official-pill">
             <BadgeCheck className="h-4 w-4" aria-hidden="true" />
-            {product.supplier_label}
+            {brandLabel}
           </div>
           <p className="mercado-mp-card-meta mt-3">
-            {product.category_name} · {product.supplier_label}
+            {product.category_name} · Vendido por {brandLabel}
           </p>
           <h1 className="mercado-mp-detail-title">{product.product_name}</h1>
 
@@ -144,12 +138,13 @@ export default async function MercadoProductoPage({
             availableStock={product.available_stock}
             thumbUrl={product.thumb_url}
             supplierUserId={product.seller_user_id}
-            supplierLabel={product.supplier_label}
+            supplierLabel={brandLabel}
+            isAuthenticated={isAuthenticated}
           />
 
           {product.variants.options.length > 0 ? (
             <div className="mercado-mp-detail-block">
-              <h2>Especificaciones del mayorista</h2>
+              <h2>Especificaciones</h2>
               <dl className="mercado-mp-specs">
                 {variantAttr ? (
                   <div>
@@ -173,7 +168,7 @@ export default async function MercadoProductoPage({
 
           <a href="#preguntas" className="mercado-mp-detail-cta-secondary">
             <MessageCircle className="h-4 w-4" aria-hidden="true" />
-            Preguntar al vendedor
+            Preguntar a {brandLabel}
           </a>
         </section>
       </div>
@@ -189,17 +184,17 @@ export default async function MercadoProductoPage({
         <MercadoSellerQuestions
           productId={product.product_id}
           productName={product.product_name}
-          supplierLabel={product.supplier_label}
+          supplierLabel={brandLabel}
         />
       </div>
 
       <div id="negociar" className="mercado-mp-detail-chat">
-        <h2 className="mercado-ml-chat-heading">Chat / negociación directa</h2>
+        <h2 className="mercado-ml-chat-heading">Chat / negociación con {brandLabel}</h2>
         <MercadoChatPanel
           productId={product.product_id}
-          currentUserId={authUser.id}
+          currentUserId={authUser?.id ?? null}
           isOwnProduct={isOwnProduct}
-          accessMode="subscriber"
+          accessMode={chatAccessMode}
           initialConversationId={conversationId}
         />
       </div>

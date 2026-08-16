@@ -46,7 +46,7 @@ interface MercadoSellerQuestionsProps {
 export function MercadoSellerQuestions({
   productId,
   productName,
-  supplierLabel = "Mayorista Oficial Alcéntimo",
+  supplierLabel = "Moriche",
 }: MercadoSellerQuestionsProps) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [draft, setDraft] = useState("");

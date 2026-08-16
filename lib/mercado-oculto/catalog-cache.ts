@@ -6,6 +6,7 @@ import {
 } from "@/lib/support/admin-access";
 import { getSupplierAllowlist } from "@/lib/supplier/access";
 import { SUPPLIER_PRODUCT_CATEGORIES } from "@/lib/supplier/categories";
+import { MORICHE_BRAND_LABEL } from "@/lib/mercado-oculto/access";
 import { resolveMayoristaDisplayName } from "@/lib/mercado-oculto/supplier-labels";
 import {
   mapSupplierRowToMercadoCard,
@@ -129,7 +130,7 @@ function buildFacets(
   const suppliers: MercadoSupplierFacet[] = [...supplierCounts.entries()]
     .map(([id, count]) => ({
       id,
-      label: labels.get(id) ?? "Mayorista Oficial Alcéntimo",
+      label: labels.get(id) ?? MORICHE_BRAND_LABEL,
       count,
     }))
     .sort((a, b) => {
@@ -181,11 +182,9 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
   ];
   const labels = await mapCreatorLabels(creatorSet);
   const facets = buildFacets(rows, labels);
-  const products = rows.map((row) => {
-    const createdBy = String(row.created_by ?? "");
-    const label = labels.get(createdBy) ?? "Mayorista Oficial Alcéntimo";
-    return mapSupplierRowToMercadoCard(row, label);
-  });
+  const products = rows.map((row) =>
+    mapSupplierRowToMercadoCard(row, MORICHE_BRAND_LABEL),
+  );
 
   return {
     products,
@@ -197,7 +196,7 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
 /** Catálogo completo cacheado (~60s) para navegación SPA sin pegarle a la DB. */
 export const getCachedMercadoCatalog = unstable_cache(
   async () => loadMercadoCatalogUncached(),
-  ["mercado-oculto-catalog-v2"],
+  ["mercado-oculto-catalog-v3"],
   { revalidate: 60, tags: [MERCADO_CATALOG_CACHE_TAG] },
 );
 

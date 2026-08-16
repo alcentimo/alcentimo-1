@@ -44,6 +44,10 @@ import {
   toInternalCatalogPath,
 } from "@/lib/store-host";
 import { normalizeCustomDomain, isPlatformCatalogHost } from "@/lib/domains/custom-domain";
+import {
+  isMercadoPublicBrowsePath,
+  isMercadoPurchaseAuthPath,
+} from "@/lib/mercado-oculto/access";
 
 const DASHBOARD_PREFIX = "/dashboard";
 const ADMIN_PREFIX = "/admin";
@@ -298,7 +302,7 @@ export async function middleware(request: NextRequest) {
       isActivar ||
       (isProveedorRoute && !isProveedorPublicAuth) ||
       isAdminRoute ||
-      isMercadoOcultoRoute)
+      isMercadoPurchaseAuthPath(pathname))
   ) {
     const verifyUrl = request.nextUrl.clone();
     verifyUrl.pathname = VERIFY_ACCOUNT_PATH;
@@ -452,31 +456,17 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isMercadoOcultoRoute) {
+    // Vitrina pública (estilo MercadoLibre): catálogo, ficha y carrito sin sesión.
+    if (isMercadoPublicBrowsePath(pathname)) {
+      return supabaseResponse;
+    }
+
+    // Compra / pedidos / chat: cualquier cuenta autenticada.
     if (!authenticatedUser) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = DASHBOARD_LOGIN;
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
-    }
-
-    const mercadoEmail = resolveAuthEmail(authenticatedUser);
-    const mercadoAccess = checkSupportAdminAccess(mercadoEmail);
-
-    if (!mercadoAccess.ok) {
-      console.warn("[mercado-oculto-access-denied]", {
-        path: pathname,
-        reason: mercadoAccess.reason,
-        sessionEmail: authenticatedUser.email ?? null,
-        resolvedEmail: mercadoEmail,
-        allowlistCount: mercadoAccess.allowlistCount,
-        envVarPresent: Boolean(process.env.SUPPORT_ADMIN_EMAILS?.trim()),
-      });
-
-      const dashboardUrl = request.nextUrl.clone();
-      // Ruta oculta: no revelar el módulo a no-admins.
-      dashboardUrl.pathname = "/";
-      dashboardUrl.search = "";
-      return NextResponse.redirect(dashboardUrl);
     }
 
     return supabaseResponse;
@@ -700,10 +690,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(redirectUrl);
       }
 
-      if (
-        next?.startsWith(MERCADO_OCULTO_PREFIX) &&
-        checkSupportAdminAccess(authEmail).ok
-      ) {
+      if (next?.startsWith(MERCADO_OCULTO_PREFIX)) {
         applySafeInternalNextRedirect(redirectUrl, next, "/mercado-oculto");
         return NextResponse.redirect(redirectUrl);
       }

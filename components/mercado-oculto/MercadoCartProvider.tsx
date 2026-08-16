@@ -124,7 +124,7 @@ export function MercadoCartProvider({
         quantity: nextQty,
         thumbUrl: input.thumbUrl ?? null,
         supplierUserId,
-        supplierLabel: input.supplierLabel ?? "Mayorista Oficial Alcéntimo",
+        supplierLabel: input.supplierLabel ?? "Moriche",
         availableStock: stock,
       };
 

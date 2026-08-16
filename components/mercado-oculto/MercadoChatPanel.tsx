@@ -127,7 +127,7 @@ export function MercadoChatPanel({
             Chat de negociación
           </p>
           <p className="text-xs text-zinc-500">
-            Inicia sesión para conversar con el dueño de la tienda.
+            Inicia sesión para conversar con Moriche.
           </p>
         </div>
         <div className="flex flex-1 flex-col items-start justify-center gap-3 px-4 py-8">

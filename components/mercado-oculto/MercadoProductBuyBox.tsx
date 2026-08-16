@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ShoppingCart, Truck } from "lucide-react";
 import { useMercadoCart } from "@/components/mercado-oculto/MercadoCartProvider";
+import { buildMercadoLoginHref } from "@/lib/mercado-oculto/access";
 import { formatUsd } from "@/lib/format";
 
 interface MercadoProductBuyBoxProps {
@@ -17,6 +18,7 @@ interface MercadoProductBuyBoxProps {
   thumbUrl: string | null;
   supplierUserId: string;
   supplierLabel: string;
+  isAuthenticated: boolean;
 }
 
 export function MercadoProductBuyBox({
@@ -30,6 +32,7 @@ export function MercadoProductBuyBox({
   thumbUrl,
   supplierUserId,
   supplierLabel,
+  isAuthenticated,
 }: MercadoProductBuyBoxProps) {
   const router = useRouter();
   const { addItem } = useMercadoCart();
@@ -46,7 +49,7 @@ export function MercadoProductBuyBox({
     return Math.min(maxQty, Math.max(1, value));
   }
 
-  function handleAdd() {
+  function pushItemToCart() {
     addItem({
       productId,
       productName,
@@ -57,21 +60,20 @@ export function MercadoProductBuyBox({
       supplierLabel,
       availableStock,
     });
+  }
+
+  function handleAdd() {
+    pushItemToCart();
     setFeedback(`¡Listo! Agregaste ${quantity} al carrito`);
     window.setTimeout(() => setFeedback(null), 2200);
   }
 
   function handleBuyNow() {
-    addItem({
-      productId,
-      productName,
-      priceUsd,
-      quantity,
-      thumbUrl,
-      supplierUserId,
-      supplierLabel,
-      availableStock,
-    });
+    pushItemToCart();
+    if (!isAuthenticated) {
+      router.push(buildMercadoLoginHref("/mercado-oculto/carrito"));
+      return;
+    }
     router.push("/mercado-oculto/carrito");
   }
 
@@ -150,6 +152,13 @@ export function MercadoProductBuyBox({
         <ShoppingCart className="h-4 w-4" aria-hidden="true" />
         Agregar al carrito
       </button>
+
+      {!isAuthenticated ? (
+        <p className="mercado-ml-buybox-hint">
+          Podés armar el carrito sin cuenta. Para comprar o finalizar el pedido
+          te pediremos crear una cuenta o iniciar sesión.
+        </p>
+      ) : null}
 
       {feedback ? (
         <p className="mercado-ml-buybox-feedback" role="status">

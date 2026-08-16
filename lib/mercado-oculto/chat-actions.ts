@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUserWithPlan } from "@/lib/auth/get-user-profile";
-import { hasMercadoOcultoSuperAdminUser } from "@/lib/mercado-oculto/access";
+import { MORICHE_BRAND_LABEL } from "@/lib/mercado-oculto/access";
 import { getMercadoProduct } from "@/lib/mercado-oculto/product-actions";
 
 type ActionResult<T extends object = object> = {
@@ -36,13 +36,7 @@ async function requireMercadoUser() {
   const supabase = await createClient();
   const authUser = await getAuthUserWithPlan(supabase);
   if (!authUser) {
-    return { error: "Debes iniciar sesión." } as const;
-  }
-  if (!hasMercadoOcultoSuperAdminUser(authUser)) {
-    return {
-      error:
-        "El mercado oculto es exclusivo del Administrador General de Alcéntimo.",
-    } as const;
+    return { error: "Debes iniciar sesión para continuar con la compra." } as const;
   }
   return { user: authUser } as const;
 }
@@ -301,7 +295,7 @@ export async function listMyMercadoConversations(): Promise<
       createdAt: String(row.created_at ?? ""),
       updatedAt: String(row.updated_at ?? ""),
       productName: productNameById.get(productId) ?? null,
-      storeName: "Mayorista Alcéntimo",
+      storeName: MORICHE_BRAND_LABEL,
       role,
       lastMessagePreview: lastByConversation.get(id) ?? null,
     };

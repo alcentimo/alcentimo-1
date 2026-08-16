@@ -1,11 +1,8 @@
-import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { hasMercadoOcultoSuperAdminUser } from "@/lib/mercado-oculto/access";
-import { getCachedMercadoCatalog } from "@/lib/mercado-oculto/catalog-cache";
 import {
   emptyMercadoFacets,
   type MercadoCatalogFilters,
 } from "@/lib/mercado-oculto/filter-catalog";
+import { getCachedMercadoCatalog } from "@/lib/mercado-oculto/catalog-cache";
 import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
 import { MercadoCatalogProvider } from "@/components/mercado-oculto/MercadoCatalogProvider";
 import { MercadoCatalogView } from "@/components/mercado-oculto/MercadoCatalogView";
@@ -31,18 +28,6 @@ export default async function MercadoOcultoPage({
     ship?: string | string[];
   }>;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/dashboard/login?next=/mercado-oculto");
-  }
-  if (!hasMercadoOcultoSuperAdminUser(user)) {
-    notFound();
-  }
-
   const params = await searchParams;
   const initialFilters: MercadoCatalogFilters = {
     q: pick(params.q),

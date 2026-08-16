@@ -80,7 +80,7 @@ export function sanitizeMercadoCartItems(raw: unknown): MercadoCartItem[] {
       supplierLabel:
         typeof row.supplierLabel === "string" && row.supplierLabel.trim()
           ? row.supplierLabel.trim()
-          : "Mayorista Oficial Alcéntimo",
+          : "Moriche",
       availableStock,
     });
   }

@@ -176,7 +176,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar por producto, categoría o proveedor…"
+                placeholder="Buscar por producto o categoría…"
                 aria-label="Buscar en Mercado Moriche"
                 className="mercado-hero-search-input"
                 disabled={pending}
