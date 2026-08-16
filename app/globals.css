@@ -14244,12 +14244,14 @@ button.catalog-profile-footer-link {
 }
 
 
-/* ——— Storefront marketplace unificado (línea visual Moriche + marca de tienda) ——— */
+/* ——— Storefront marketplace = estructura Moriche + branding de tienda ——— */
 
 .txn-catalog--marketplace {
   --sf-brand: var(--txn-primary, #0e5c42);
+  --sf-brand-deep: color-mix(in srgb, var(--sf-brand) 72%, #031812);
   --sf-brand-soft: color-mix(in srgb, var(--sf-brand) 12%, white);
   --sf-brand-ink: color-mix(in srgb, var(--sf-brand) 78%, #0a0a0a);
+  --sf-warm: color-mix(in srgb, var(--sf-brand) 35%, #c4a574);
   --pc-media-ratio: 4 / 5;
   --pc-media-inset: 0;
   --pc-media-radius: 0;
@@ -14261,15 +14263,28 @@ button.catalog-profile-footer-link {
       color-mix(in srgb, var(--sf-brand) 10%, transparent),
       transparent 55%
     ),
-    var(--txn-page-bg, #f4f6f5);
+    var(--txn-page-bg, #eef3f0);
+}
+
+/* Neutraliza overrides de rubro para un solo sistema visual */
+.txn-catalog--marketplace.txn-catalog--food-menu .store-product-card,
+.txn-catalog--marketplace.txn-catalog--tech .store-product-card,
+.txn-catalog--marketplace.txn-catalog--collectibles .store-product-card,
+.txn-catalog--marketplace.txn-catalog--beauty .store-product-card,
+.txn-catalog--marketplace.txn-catalog--stationery .store-product-card {
+  border-radius: var(--pc-radius);
 }
 
 .txn-catalog--marketplace .txn-catalog-header--marketplace {
-  @apply sticky top-0 z-30 border-b border-black/5;
-  background: color-mix(in srgb, var(--txn-header-bg, #ffffff) 92%, transparent);
+  @apply sticky top-0 z-30 border-b border-white/10;
+  background: color-mix(in srgb, var(--txn-header-bg, var(--sf-brand-deep)) 92%, transparent);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 8px 24px -18px rgb(15 23 42 / 0.35);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--sf-brand-deep) 28%, transparent);
+}
+
+.txn-catalog--marketplace .txn-catalog-header--marketplace:not(.txn-catalog-header--custom-bg):not(.txn-catalog-header--has-cover) {
+  background: color-mix(in srgb, var(--sf-brand-deep) 92%, transparent);
 }
 
 .txn-catalog--marketplace .txn-catalog-header-inner {
@@ -14286,71 +14301,140 @@ button.catalog-profile-footer-link {
 
 .txn-catalog--marketplace .txn-store-logo,
 .txn-catalog--marketplace .txn-store-logo-fallback {
-  @apply h-11 w-11 rounded-2xl shadow-[0_1px_2px_rgba(15,23,42,0.12)];
+  @apply h-10 w-10 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.2)];
 }
 
-.txn-catalog--marketplace .txn-catalog-eyebrow {
-  @apply text-[10px] font-semibold uppercase tracking-[0.16em];
-  color: color-mix(in srgb, var(--sf-brand) 70%, #71717a);
+.txn-catalog--marketplace
+  .txn-catalog-header--marketplace:not(.txn-catalog-header--has-cover)
+  .txn-catalog-eyebrow {
+  @apply text-[9px] font-semibold uppercase tracking-[0.18em] text-white/55;
 }
 
-.txn-catalog--marketplace .txn-catalog-title {
-  @apply truncate text-lg font-semibold tracking-tight text-neutral-900 sm:text-xl;
+.txn-catalog--marketplace
+  .txn-catalog-header--marketplace:not(.txn-catalog-header--has-cover)
+  .txn-catalog-title {
+  @apply truncate text-base font-semibold tracking-tight text-white sm:text-lg;
 }
 
-.txn-catalog--marketplace .txn-catalog-desc {
-  @apply line-clamp-1 text-sm text-neutral-500;
+.txn-catalog--marketplace
+  .txn-catalog-header--marketplace:not(.txn-catalog-header--has-cover)
+  .txn-catalog-desc,
+.txn-catalog--marketplace
+  .txn-catalog-header--marketplace:not(.txn-catalog-header--has-cover)
+  .txn-catalog-rate-badge {
+  @apply hidden;
 }
 
 .txn-catalog--marketplace .txn-catalog-header-actions {
   @apply shrink-0 gap-1.5;
 }
 
-.txn-catalog--marketplace .txn-catalog-assistant-btn,
-.txn-catalog--marketplace .txn-catalog-whatsapp-btn {
-  @apply rounded-full px-3 py-2 text-xs font-semibold;
+.txn-catalog--marketplace .txn-catalog-assistant-btn {
+  @apply rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-white/90;
 }
 
 .txn-catalog--marketplace .txn-catalog-whatsapp-btn {
-  background: var(--sf-brand);
-  color: white;
-  border-color: transparent;
+  @apply rounded-full border-0 px-3 py-2 text-xs font-semibold;
+  background: var(--sf-warm);
+  color: var(--sf-brand-deep);
 }
 
 .txn-catalog--marketplace .txn-catalog-whatsapp-btn:hover {
-  background: color-mix(in srgb, var(--sf-brand) 88%, black);
+  filter: brightness(1.05);
 }
 
 .txn-catalog--marketplace .txn-promo-banner {
-  @apply mx-auto max-w-7xl px-4 pt-3 sm:px-6 lg:px-8;
+  @apply mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8;
 }
 
 .catalog-browse-toolbar--marketplace {
-  @apply sticky top-[3.75rem] z-20 space-y-3 border-b border-neutral-200/80 bg-white/96 px-4 py-4 backdrop-blur-md sm:px-6 lg:px-8;
+  @apply space-y-0 border-0 bg-transparent p-0;
 }
 
-.catalog-browse-hero-band {
-  @apply mx-auto flex w-full max-w-7xl flex-col items-center gap-3;
+.catalog-mp-hero {
+  @apply relative isolate overflow-hidden border-b border-white/5;
+  background:
+    radial-gradient(
+      ellipse 70% 80% at 15% 20%,
+      color-mix(in srgb, var(--sf-warm) 22%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse 60% 70% at 90% 10%,
+      color-mix(in srgb, var(--sf-brand) 45%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--sf-brand-deep) 100%, black) 0%,
+      var(--sf-brand-deep) 42%,
+      color-mix(in srgb, var(--sf-brand) 70%, #0a3d2e) 100%
+    );
+  color: #f4faf7;
+}
+
+.catalog-mp-hero-glow {
+  @apply pointer-events-none absolute inset-0 opacity-35;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+.catalog-mp-hero-inner {
+  @apply relative mx-auto flex max-w-7xl flex-col items-start px-4 pb-8 pt-8 sm:px-6 sm:pb-10 sm:pt-10 lg:px-8;
+}
+
+.catalog-mp-hero-kicker {
+  @apply mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-[color-mix(in_srgb,var(--sf-warm)_88%,white)];
+  animation: catalog-mp-hero-rise 0.55s ease-out both;
+}
+
+.catalog-mp-hero-title {
+  @apply max-w-3xl text-[1.85rem] font-semibold leading-[1.1] tracking-[-0.02em] text-white sm:text-4xl;
+  animation: catalog-mp-hero-rise 0.65s ease-out 0.05s both;
+}
+
+.catalog-mp-hero-title-accent {
+  @apply text-[color-mix(in_srgb,var(--sf-warm)_88%,white)];
+}
+
+.catalog-mp-hero-lead {
+  @apply mt-3 max-w-xl line-clamp-2 text-sm leading-relaxed text-white/70 sm:text-base;
+  animation: catalog-mp-hero-rise 0.7s ease-out 0.1s both;
 }
 
 .catalog-browse-search-hero {
-  @apply flex w-full max-w-2xl justify-center;
+  @apply mt-7 flex w-full max-w-2xl items-center gap-1 rounded-2xl border border-white/15 bg-white/10 p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.25)] backdrop-blur-xl;
+  animation: catalog-mp-hero-rise 0.75s ease-out 0.14s both;
 }
 
-.txn-catalog--marketplace .catalog-browse-search {
-  @apply min-h-12 w-full rounded-2xl border border-neutral-200/90 bg-white px-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)] transition focus-within:border-[color-mix(in_srgb,var(--sf-brand)_45%,#e5e5e5)] focus-within:ring-2 focus-within:ring-[color-mix(in_srgb,var(--sf-brand)_22%,transparent)];
+.catalog-mp-search-icon {
+  @apply flex h-11 w-11 shrink-0 items-center justify-center text-white/55;
 }
 
 .txn-catalog--marketplace .catalog-browse-search-input {
-  @apply text-[15px];
+  @apply min-w-0 flex-1 border-0 bg-transparent py-2.5 text-[15px] text-white outline-none placeholder:text-white/40;
 }
 
-.txn-catalog--marketplace .catalog-browse-filters-btn {
-  @apply h-9 rounded-full px-2.5;
+.txn-catalog--marketplace .catalog-browse-search-clear {
+  @apply text-white/55 hover:bg-white/10 hover:text-white;
+}
+
+.catalog-mp-search-btn {
+  @apply inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl px-4 text-sm font-semibold transition disabled:opacity-60;
+  background: var(--sf-warm);
+  color: var(--sf-brand-deep);
+}
+
+.catalog-mp-search-btn:hover {
+  filter: brightness(1.06);
 }
 
 .catalog-browse-collections {
-  @apply flex w-full max-w-7xl justify-start gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:justify-center sm:flex-wrap sm:overflow-visible;
+  @apply mt-6 flex max-w-full flex-wrap gap-2;
+  animation: catalog-mp-hero-rise 0.8s ease-out 0.18s both;
 }
 
 .catalog-browse-collections::-webkit-scrollbar {
@@ -14358,14 +14442,30 @@ button.catalog-profile-footer-link {
 }
 
 .catalog-browse-collection {
-  @apply shrink-0 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-neutral-700 transition duration-200 hover:border-neutral-300 hover:bg-neutral-50;
+  @apply shrink-0 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[12px] font-medium text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition duration-300 hover:border-white/55 hover:bg-white/18 hover:text-white;
 }
 
 .catalog-browse-collection.is-active {
-  border-color: color-mix(in srgb, var(--sf-brand) 55%, white);
-  background: color-mix(in srgb, var(--sf-brand) 12%, white);
-  color: var(--sf-brand-ink);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55);
+  border-color: color-mix(in srgb, var(--sf-warm) 65%, white);
+  background: color-mix(in srgb, var(--sf-warm) 22%, transparent);
+  color: color-mix(in srgb, var(--sf-warm) 70%, white);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sf-warm) 35%, transparent);
+}
+
+.catalog-mp-results-bar {
+  @apply mx-auto flex max-w-7xl flex-wrap items-end justify-between gap-3 border-b border-neutral-200/70 bg-transparent px-4 py-3 sm:px-6 lg:px-8;
+}
+
+.catalog-mp-results-copy {
+  @apply min-w-0;
+}
+
+.catalog-mp-results-label {
+  @apply m-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-500;
+}
+
+.txn-catalog--marketplace .catalog-browse-filters-btn {
+  @apply h-9 rounded-full px-2.5;
 }
 
 .txn-catalog--marketplace .catalog-browse-meta {
@@ -14381,7 +14481,7 @@ button.catalog-profile-footer-link {
 }
 
 .txn-catalog--marketplace .store-product-card {
-  @apply overflow-hidden rounded-[1.35rem] border border-neutral-200/70 bg-white shadow-[0_8px_28px_rgba(15,23,42,0.05)] transition duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_22px_44px_rgba(15,23,42,0.1)];
+  @apply overflow-hidden rounded-[1.35rem] border border-neutral-200/70 bg-white shadow-[0_8px_28px_rgba(15,23,42,0.05)] transition duration-300 ease-out hover:-translate-y-1.5 hover:shadow-[0_22px_44px_rgba(15,23,42,0.1)];
 }
 
 .txn-catalog--marketplace .store-product-media-frame {
@@ -14444,17 +14544,37 @@ button.catalog-profile-footer-link {
   box-shadow: none;
 }
 
+@keyframes catalog-mp-hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 640px) {
-  .txn-catalog--marketplace .txn-catalog-desc {
-    @apply hidden;
+  .catalog-mp-hero-title {
+    @apply text-[1.55rem];
   }
 
-  .catalog-browse-toolbar--marketplace {
-    top: 3.5rem;
+  .catalog-mp-search-btn span,
+  .catalog-mp-search-btn {
+    @apply px-3 text-[13px];
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .catalog-mp-hero-kicker,
+  .catalog-mp-hero-title,
+  .catalog-mp-hero-lead,
+  .catalog-browse-search-hero,
+  .catalog-browse-collections {
+    animation: none;
+  }
+
   .txn-catalog--marketplace .store-product-card {
     transition: none;
   }

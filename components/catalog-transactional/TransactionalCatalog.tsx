@@ -42,7 +42,6 @@ import { CatalogFaqSection } from "@/components/catalog-transactional/CatalogFaq
 import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
-import { groupProductsByFoodMenu } from "@/lib/rubros/modules/alimentos";
 import { cn } from "@/lib/cn";
 
 interface TransactionalCatalogProps {
@@ -283,10 +282,6 @@ function TransactionalCatalogContent({
     store.rubro_tienda,
     "coleccionables",
   );
-  const isBeautyCatalog = storeUsesRubroProductModule(
-    store.rubro_tienda,
-    "salud-belleza",
-  );
   const isStationeryCatalog = storeUsesRubroProductModule(
     store.rubro_tienda,
     "papeleria-libreria-oficina",
@@ -332,14 +327,6 @@ function TransactionalCatalogContent({
   });
 
   const effectiveDesign = catalogDesign;
-
-  const useFlatBrowseLayout =
-    !isFoodMenu || browse.hasActiveFilters || catalogProducts.length > 20;
-
-  const menuSections = useMemo(() => {
-    if (!isFoodMenu || useFlatBrowseLayout) return [];
-    return groupProductsByFoodMenu(browse.filteredProducts);
-  }, [browse.filteredProducts, isFoodMenu, useFlatBrowseLayout]);
 
   const identityEyebrow = isFoodMenu
     ? "Menú"
@@ -401,11 +388,6 @@ function TransactionalCatalogContent({
       className={cn(
         "txn-catalog",
         getCatalogDesignClasses(effectiveDesign, store.rubro_tienda),
-        isFoodMenu && "txn-catalog--food-menu",
-        isTechCatalog && "txn-catalog--tech",
-        isCollectiblesCatalog && "txn-catalog--collectibles",
-        isBeautyCatalog && "txn-catalog--beauty",
-        isStationeryCatalog && "txn-catalog--stationery",
         previewMode && "txn-catalog--preview",
         previewMode && referenceMode && "txn-catalog--reference-mode",
       )}
@@ -413,7 +395,7 @@ function TransactionalCatalogContent({
     >
       <CatalogStoreIdentityHeader
         storeName={store.name}
-        storeDescription={store.description}
+        storeDescription={null}
         logoUrl={store.logo_url}
         eyebrow={identityEyebrow}
         locationHours={purchaseInfo.locationHours}
@@ -421,15 +403,6 @@ function TransactionalCatalogContent({
         exchangeRate={exchangeRate?.rate ?? null}
         header={effectiveDesign.header ?? catalogDesign.header}
       />
-
-      <CatalogPromoBannerCarousel
-        promoBanner={catalogDesign.promoBanner}
-        storeName={store.name}
-        storeSlug={store.slug}
-        onOpenProduct={previewMode ? undefined : openProductById}
-      />
-
-      {!previewMode ? <CatalogLocationPicker /> : null}
 
       {catalogProducts.length > 0 ? (
         <CatalogBrowseToolbar
@@ -444,8 +417,20 @@ function TransactionalCatalogContent({
           filteredCount={browse.totalCount}
           hasActiveFilters={browse.hasActiveFilters}
           onClearFilters={browse.clearFilters}
+          storeEyebrow={identityEyebrow}
+          storeName={store.name}
+          storeDescription={store.description}
         />
       ) : null}
+
+      <CatalogPromoBannerCarousel
+        promoBanner={catalogDesign.promoBanner}
+        storeName={store.name}
+        storeSlug={store.slug}
+        onOpenProduct={previewMode ? undefined : openProductById}
+      />
+
+      {!previewMode ? <CatalogLocationPicker /> : null}
 
       <main className="txn-catalog-main">
         {products.length === 0 ? (
@@ -466,7 +451,7 @@ function TransactionalCatalogContent({
               Prueba otra búsqueda o limpia los filtros.
             </p>
           </div>
-        ) : useFlatBrowseLayout ? (
+        ) : (
           <>
             <CatalogBrowseStatus
               loading={browse.loadingFilter}
@@ -507,39 +492,6 @@ function TransactionalCatalogContent({
               onRetry={browse.retryFetch}
             />
           </>
-        ) : (
-          <div className="food-menu">
-            {menuSections.map((section) => (
-              <section
-                key={section.slug}
-                className="food-menu-section"
-                aria-labelledby={`food-section-${section.slug}`}
-              >
-                <div className="food-menu-section-header">
-                  <h2
-                    id={`food-section-${section.slug}`}
-                    className="food-menu-section-title"
-                  >
-                    {section.name}
-                  </h2>
-                </div>
-                <div
-                  className={getCatalogProductGridClassName(
-                    effectiveDesign,
-                    store.rubro_tienda,
-                    "food-menu-grid",
-                  )}
-                >
-                  {section.products.map((product, index) =>
-                    renderProductCard(product, index),
-                  )}
-                </div>
-              </section>
-            ))}
-            {previewMode && referenceMode && showReferenceCta ? (
-              <CatalogUploadCtaCard />
-            ) : null}
-          </div>
         )}
       </main>
 

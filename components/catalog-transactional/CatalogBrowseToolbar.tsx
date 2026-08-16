@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowUpRight, Search, SlidersHorizontal, X } from "lucide-react";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { CATALOG_SORT_OPTIONS, type CatalogSortKey } from "@/lib/catalog/catalog-browse";
 import {
@@ -32,6 +32,10 @@ interface CatalogBrowseToolbarProps {
   hasActiveFilters: boolean;
   onClearFilters?: () => void;
   showCategoryFilter?: boolean;
+  /** Kicker del hero marketplace (p. ej. Catálogo / Menú). */
+  storeEyebrow?: string;
+  storeName?: string;
+  storeDescription?: string | null;
 }
 
 export function CatalogBrowseToolbar({
@@ -47,6 +51,9 @@ export function CatalogBrowseToolbar({
   hasActiveFilters,
   onClearFilters,
   showCategoryFilter = true,
+  storeEyebrow = "Catálogo",
+  storeName,
+  storeDescription = null,
 }: CatalogBrowseToolbarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -56,6 +63,7 @@ export function CatalogBrowseToolbar({
   const handledBuscarDeepLinkRef = useRef(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const showCategories = showCategoryFilter && categories.length > 0;
+  const lead = storeDescription?.trim() || null;
 
   const activeCategoryName =
     categorySlug == null
@@ -95,22 +103,35 @@ export function CatalogBrowseToolbar({
       className="catalog-browse-toolbar catalog-browse-toolbar--marketplace"
       aria-label="Buscar y filtrar productos"
     >
-      <div className="catalog-browse-hero-band">
-        <form
-          className="catalog-browse-search-hero"
-          onSubmit={(event) => {
-            event.preventDefault();
-            focusSearchInput();
-          }}
-        >
-          <label
-            className="catalog-browse-search"
-            htmlFor="catalog-browse-search"
+      <div className="catalog-mp-hero">
+        <div className="catalog-mp-hero-glow" aria-hidden="true" />
+        <div className="catalog-mp-hero-inner">
+          <p className="catalog-mp-hero-kicker">{storeEyebrow}</p>
+          <h2 className="catalog-mp-hero-title">
+            {storeName ? (
+              <>
+                La vitrina de{" "}
+                <span className="catalog-mp-hero-title-accent">{storeName}</span>
+              </>
+            ) : (
+              <>
+                Encuentra lo que{" "}
+                <span className="catalog-mp-hero-title-accent">buscas</span>
+              </>
+            )}
+          </h2>
+          {lead ? <p className="catalog-mp-hero-lead">{lead}</p> : null}
+
+          <form
+            className="catalog-browse-search-hero"
+            onSubmit={(event) => {
+              event.preventDefault();
+              focusSearchInput();
+            }}
           >
-            <Search
-              className="h-5 w-5 shrink-0 text-neutral-400"
-              aria-hidden="true"
-            />
+            <span className="catalog-mp-search-icon" aria-hidden="true">
+              <Search className="h-5 w-5" />
+            </span>
             <input
               ref={searchInputRef}
               id="catalog-browse-search"
@@ -124,10 +145,11 @@ export function CatalogBrowseToolbar({
                   shellNav?.clearSearchActive();
                 }, 200);
               }}
-              placeholder="Buscar productos…"
+              placeholder="Buscar productos o categorías…"
               className="catalog-browse-search-input"
               autoComplete="off"
               enterKeyHint="search"
+              aria-label="Buscar productos"
             />
             {searchQuery ? (
               <button
@@ -139,47 +161,51 @@ export function CatalogBrowseToolbar({
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
             ) : null}
-          </label>
-        </form>
-
-        {showCategories ? (
-          <div
-            className="catalog-browse-collections"
-            role="tablist"
-            aria-label="Categorías"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={categorySlug == null}
-              className={cn(
-                "catalog-browse-collection",
-                categorySlug == null && "is-active",
-              )}
-              onClick={() => onCategorySlugChange(null)}
-            >
-              Todas
+            <button type="submit" className="catalog-mp-search-btn">
+              Explorar
+              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
             </button>
-            {categories.map((category) => (
+          </form>
+
+          {showCategories ? (
+            <div
+              className="catalog-browse-collections"
+              role="tablist"
+              aria-label="Categorías"
+            >
               <button
-                key={category.slug}
                 type="button"
                 role="tab"
-                aria-selected={categorySlug === category.slug}
+                aria-selected={categorySlug == null}
                 className={cn(
                   "catalog-browse-collection",
-                  categorySlug === category.slug && "is-active",
+                  categorySlug == null && "is-active",
                 )}
-                onClick={() => onCategorySlugChange(category.slug)}
+                onClick={() => onCategorySlugChange(null)}
               >
-                {category.name}
+                Todas
               </button>
-            ))}
-          </div>
-        ) : null}
+              {categories.map((category) => (
+                <button
+                  key={category.slug}
+                  type="button"
+                  role="tab"
+                  aria-selected={categorySlug === category.slug}
+                  className={cn(
+                    "catalog-browse-collection",
+                    categorySlug === category.slug && "is-active",
+                  )}
+                  onClick={() => onCategorySlugChange(category.slug)}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      <div className="catalog-browse-meta">
+      <div className="catalog-browse-meta catalog-mp-results-bar">
         <div className="catalog-browse-meta-left">
           <button
             type="button"
@@ -201,25 +227,28 @@ export function CatalogBrowseToolbar({
               />
             ) : null}
           </button>
-          <p className="catalog-browse-count">
-            {hasActiveFilters ? (
-              <>
-                Mostrando <strong>{filteredCount}</strong> de{" "}
-                <strong>{totalCount}</strong>
-                {activeCategoryName ? (
-                  <>
-                    {" "}
-                    en <strong>{activeCategoryName}</strong>
-                  </>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <strong>{totalCount}</strong> producto
-                {totalCount === 1 ? "" : "s"}
-              </>
-            )}
-          </p>
+          <div className="catalog-mp-results-copy">
+            <p className="catalog-mp-results-label">Colección activa</p>
+            <p className="catalog-browse-count">
+              {hasActiveFilters ? (
+                <>
+                  Mostrando <strong>{filteredCount}</strong> de{" "}
+                  <strong>{totalCount}</strong>
+                  {activeCategoryName ? (
+                    <>
+                      {" "}
+                      en <strong>{activeCategoryName}</strong>
+                    </>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <strong>{totalCount}</strong> producto
+                  {totalCount === 1 ? "" : "s"}
+                </>
+              )}
+            </p>
+          </div>
           {hasActiveFilters && onClearFilters ? (
             <button
               type="button"

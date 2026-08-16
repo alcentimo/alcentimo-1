@@ -276,21 +276,13 @@ function CatalogCategoriesPageContent({
     >
       <CatalogStoreIdentityHeader
         storeName={store.name}
-        storeDescription={store.description}
+        storeDescription={null}
         logoUrl={store.logo_url}
         eyebrow="Categorías"
         locationHours={purchaseInfo.locationHours}
         showOfficialRate={showOfficialRate}
         exchangeRate={exchangeRate?.rate ?? null}
         header={catalogDesign.header}
-      />
-      <CatalogLocationPicker />
-
-      <CatalogPromoBannerCarousel
-        promoBanner={catalogDesign.promoBanner}
-        storeName={store.name}
-        storeSlug={store.slug}
-        onOpenProduct={openProductById}
       />
 
       {catalogProducts.length > 0 ? (
@@ -306,8 +298,20 @@ function CatalogCategoriesPageContent({
           filteredCount={browse.totalCount}
           hasActiveFilters={browse.hasActiveFilters}
           onClearFilters={browse.clearFilters}
+          storeEyebrow="Categorías"
+          storeName={store.name}
+          storeDescription={store.description}
         />
       ) : null}
+
+      <CatalogPromoBannerCarousel
+        promoBanner={catalogDesign.promoBanner}
+        storeName={store.name}
+        storeSlug={store.slug}
+        onOpenProduct={openProductById}
+      />
+
+      <CatalogLocationPicker />
 
       <main className="txn-catalog-main">
         {products.length === 0 ? (
