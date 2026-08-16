@@ -95,105 +95,112 @@ export function CatalogBrowseToolbar({
       className="catalog-browse-toolbar catalog-browse-toolbar--marketplace"
       aria-label="Buscar y filtrar productos"
     >
-      <form
-        className="catalog-browse-search-hero"
-        onSubmit={(event) => {
-          event.preventDefault();
-          focusSearchInput();
-        }}
-      >
-        <label className="catalog-browse-search" htmlFor="catalog-browse-search">
-          <Search
-            className="h-5 w-5 shrink-0 text-neutral-400"
-            aria-hidden="true"
-          />
-          <input
-            ref={searchInputRef}
-            id="catalog-browse-search"
-            type="search"
-            value={searchQuery}
-            onChange={(event) => onSearchQueryChange(event.target.value)}
-            onFocus={() => shellNav?.focusSearch()}
-            onBlur={() => {
-              window.setTimeout(() => {
-                if (document.activeElement === searchInputRef.current) return;
-                shellNav?.clearSearchActive();
-              }, 200);
-            }}
-            placeholder="Buscar productos…"
-            className="catalog-browse-search-input"
-            autoComplete="off"
-            enterKeyHint="search"
-          />
-          {searchQuery ? (
-            <button
-              type="button"
-              onClick={() => onSearchQueryChange("")}
-              className="catalog-browse-search-clear"
-              aria-label="Limpiar búsqueda"
-            >
-              <X className="h-4 w-4" aria-hidden="true" />
-            </button>
-          ) : null}
-        </label>
-
-        <button
-          type="button"
-          className={cn(
-            "catalog-browse-filters-btn",
-            hasActiveFilters && "catalog-browse-filters-btn-active",
-          )}
-          aria-label="Abrir filtros"
-          aria-expanded={filtersOpen}
-          aria-haspopup="dialog"
-          onClick={() => setFiltersOpen(true)}
+      <div className="catalog-browse-hero-band">
+        <form
+          className="catalog-browse-search-hero"
+          onSubmit={(event) => {
+            event.preventDefault();
+            focusSearchInput();
+          }}
         >
-          <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span className="catalog-browse-filters-btn-label">Filtros</span>
-          {hasActiveFilters ? (
-            <span className="catalog-browse-filters-btn-dot" aria-hidden="true" />
-          ) : null}
-        </button>
-      </form>
-
-      {showCategories ? (
-        <div
-          className="catalog-browse-collections"
-          role="tablist"
-          aria-label="Categorías"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={categorySlug == null}
-            className={cn(
-              "catalog-browse-collection",
-              categorySlug == null && "is-active",
-            )}
-            onClick={() => onCategorySlugChange(null)}
+          <label
+            className="catalog-browse-search"
+            htmlFor="catalog-browse-search"
           >
-            Todas
-          </button>
-          {categories.map((category) => (
+            <Search
+              className="h-5 w-5 shrink-0 text-neutral-400"
+              aria-hidden="true"
+            />
+            <input
+              ref={searchInputRef}
+              id="catalog-browse-search"
+              type="search"
+              value={searchQuery}
+              onChange={(event) => onSearchQueryChange(event.target.value)}
+              onFocus={() => shellNav?.focusSearch()}
+              onBlur={() => {
+                window.setTimeout(() => {
+                  if (document.activeElement === searchInputRef.current) return;
+                  shellNav?.clearSearchActive();
+                }, 200);
+              }}
+              placeholder="Buscar productos…"
+              className="catalog-browse-search-input"
+              autoComplete="off"
+              enterKeyHint="search"
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => onSearchQueryChange("")}
+                className="catalog-browse-search-clear"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            ) : null}
+          </label>
+        </form>
+
+        {showCategories ? (
+          <div
+            className="catalog-browse-collections"
+            role="tablist"
+            aria-label="Categorías"
+          >
             <button
-              key={category.slug}
               type="button"
               role="tab"
-              aria-selected={categorySlug === category.slug}
+              aria-selected={categorySlug == null}
               className={cn(
                 "catalog-browse-collection",
-                categorySlug === category.slug && "is-active",
+                categorySlug == null && "is-active",
               )}
-              onClick={() => onCategorySlugChange(category.slug)}
+              onClick={() => onCategorySlugChange(null)}
             >
-              {category.name}
+              Todas
             </button>
-          ))}
-        </div>
-      ) : null}
+            {categories.map((category) => (
+              <button
+                key={category.slug}
+                type="button"
+                role="tab"
+                aria-selected={categorySlug === category.slug}
+                className={cn(
+                  "catalog-browse-collection",
+                  categorySlug === category.slug && "is-active",
+                )}
+                onClick={() => onCategorySlugChange(category.slug)}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       <div className="catalog-browse-meta">
         <div className="catalog-browse-meta-left">
+          <button
+            type="button"
+            className={cn(
+              "catalog-browse-filters-btn",
+              hasActiveFilters && "catalog-browse-filters-btn-active",
+            )}
+            aria-label="Abrir filtros"
+            aria-expanded={filtersOpen}
+            aria-haspopup="dialog"
+            onClick={() => setFiltersOpen(true)}
+          >
+            <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="catalog-browse-filters-btn-label">Filtros</span>
+            {hasActiveFilters ? (
+              <span
+                className="catalog-browse-filters-btn-dot"
+                aria-hidden="true"
+              />
+            ) : null}
+          </button>
           <p className="catalog-browse-count">
             {hasActiveFilters ? (
               <>
