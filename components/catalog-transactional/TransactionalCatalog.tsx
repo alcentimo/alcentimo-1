@@ -12,10 +12,8 @@ import {
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
 import {
   getCatalogDesignClasses,
-  getCatalogProductGridClassName,
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
-import { ProductCard } from "@/components/catalog/ProductCard";
 import {
   CatalogProductDetailHost,
   useCatalogProductDetail,
@@ -27,7 +25,6 @@ import {
   useCatalogShellNavigationOptional,
   useRegisterCatalogCartController,
 } from "@/components/catalog-transactional/CatalogShellNavigation";
-import { CatalogBrowseToolbar } from "@/components/catalog-transactional/CatalogBrowseToolbar";
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
 import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
 import { useCatalogBrowse } from "@/components/catalog-transactional/useCatalogBrowse";
@@ -37,12 +34,16 @@ import {
 } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
 import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
-import { CatalogStoreIdentityHeader } from "@/components/catalog-transactional/CatalogStoreIdentityHeader";
+import { StorefrontMoricheChrome } from "@/components/catalog-transactional/StorefrontMoricheChrome";
 import { CatalogFaqSection } from "@/components/catalog-transactional/CatalogFaqSection";
 import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
+import { MercadoProductGrid } from "@/components/mercado-oculto/MercadoProductGrid";
+import { mapCatalogListItemToMercadoCard } from "@/lib/catalog/map-catalog-to-mercado-card";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
+import { normalizeCatalogHeaderSettings } from "@/lib/store-settings/catalog-header";
 import { cn } from "@/lib/cn";
+import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
 
 interface TransactionalCatalogProps {
   store: Store;
@@ -210,7 +211,7 @@ function TransactionalCatalogContent({
   exchangeRate,
   purchaseInfo,
   catalogDesign,
-  catalogCurrency,
+  catalogCurrency: _catalogCurrency,
   openCheckoutInitially = false,
   openCartInitially = false,
   initialProductId = null,
@@ -223,8 +224,8 @@ function TransactionalCatalogContent({
   liveExchangeRate,
   showOfficialRate,
   showBsConversion,
-  wholesaleEnabled,
-  addItem,
+  wholesaleEnabled: _wholesaleEnabled,
+  addItem: _addItem,
 }: Omit<TransactionalCatalogProps, "locations" | "locationStocks"> & {
   liveExchangeRate: number | null;
   showOfficialRate: boolean;
@@ -338,167 +339,181 @@ function TransactionalCatalogContent({
           ? "Papelería"
           : "Catálogo";
 
-  const renderProductCard = useCallback(
-    (product: CatalogListItem, index: number) => (
-      <div
-        key={product.product_id}
-        className={cn(
-          "w-full min-w-0",
-          referenceMode && previewMode && "catalog-preview-product-enter",
-        )}
-        style={
-          referenceMode && previewMode
-            ? { animationDelay: `${index * 40}ms` }
-            : undefined
-        }
-      >
-        <ProductCard
-          product={product}
-          exchangeRate={liveExchangeRate}
-          showBsConversion={showBsConversion}
-          catalogVisibility={catalogDesign.visibility}
-          referenceCatalog={referenceMode && previewMode}
-          storeRubro={store.rubro_tienda}
-          wholesaleEnabled={wholesaleEnabled}
-          onAddToCart={referenceMode ? undefined : addItem}
-          onOpenDetail={openProduct}
-        />
-      </div>
-    ),
-    [
-      addItem,
-      catalogDesign.visibility,
-      liveExchangeRate,
-      previewMode,
-      referenceMode,
-      showBsConversion,
-      store.rubro_tienda,
-      wholesaleEnabled,
-      openProduct,
-    ],
+  const heroCategories = useMemo(
+    () =>
+      categoryOptions.map((category) => ({
+        id: category.slug,
+        label: category.name,
+      })),
+    [categoryOptions],
   );
 
-  const gridClassName = getCatalogProductGridClassName(
-    effectiveDesign,
-    store.rubro_tienda,
+  const mercadoCards = useMemo(
+    () =>
+      browse.visibleProducts.map((product) =>
+        mapCatalogListItemToMercadoCard(product, store.name),
+      ),
+    [browse.visibleProducts, store.name],
   );
+
+  const productById = useMemo(() => {
+    const map = new Map<string, CatalogListItem>();
+    for (const product of catalogProducts) {
+      map.set(product.product_id, product);
+    }
+    return map;
+  }, [catalogProducts]);
+
+  const handleActivateProduct = useCallback(
+    (card: MercadoProductCard) => {
+      const product = productById.get(card.product_id);
+      if (product) openProduct(product);
+    },
+    [openProduct, productById],
+  );
+
+  const header = normalizeCatalogHeaderSettings(
+    effectiveDesign.header ?? catalogDesign.header,
+  );
+  const coverUrl = header.coverImageUrl?.startsWith("http")
+    ? header.coverImageUrl
+    : null;
+
+  const resultsTitle = browse.searchQuery.trim()
+    ? `Resultados para “${browse.searchQuery.trim()}”`
+    : browse.categorySlug
+      ? "Selección filtrada"
+      : "Piezas destacadas";
 
   return (
     <div
       className={cn(
-        "txn-catalog",
+        "txn-catalog txn-catalog--moriche-native",
         getCatalogDesignClasses(effectiveDesign, store.rubro_tienda),
         previewMode && "txn-catalog--preview",
         previewMode && referenceMode && "txn-catalog--reference-mode",
       )}
       style={getCatalogThemeStyle(effectiveDesign, store.rubro_tienda)}
     >
-      <CatalogStoreIdentityHeader
-        storeName={store.name}
-        storeDescription={null}
-        logoUrl={store.logo_url}
-        eyebrow={identityEyebrow}
-        locationHours={purchaseInfo.locationHours}
-        showOfficialRate={showOfficialRate}
-        exchangeRate={exchangeRate?.rate ?? null}
-        header={effectiveDesign.header ?? catalogDesign.header}
-      />
-
-      {catalogProducts.length > 0 ? (
-        <CatalogBrowseToolbar
-          searchQuery={browse.searchQuery}
-          onSearchQueryChange={browse.setSearchQuery}
-          categorySlug={browse.categorySlug}
-          onCategorySlugChange={browse.setCategorySlug}
-          sortKey={browse.sortKey}
-          onSortKeyChange={browse.setSortKey}
-          categories={categoryOptions}
-          totalCount={catalogProducts.length}
-          filteredCount={browse.totalCount}
-          hasActiveFilters={browse.hasActiveFilters}
-          onClearFilters={browse.clearFilters}
-          storeEyebrow={identityEyebrow}
-          storeName={store.name}
-          storeDescription={store.description}
-        />
-      ) : null}
-
-      <CatalogPromoBannerCarousel
-        promoBanner={catalogDesign.promoBanner}
-        storeName={store.name}
+      <StorefrontMoricheChrome
         storeSlug={store.slug}
-        onOpenProduct={previewMode ? undefined : openProductById}
-      />
-
-      {!previewMode ? <CatalogLocationPicker /> : null}
-
-      <main className="txn-catalog-main">
-        {products.length === 0 ? (
-          <div className="txn-catalog-empty">
-            <p className="text-sm font-medium text-neutral-800">
-              No hay productos disponibles
-            </p>
-            <p className="mt-1.5 text-xs text-neutral-500">
-              Vuelve pronto para ver el catálogo actualizado.
-            </p>
-          </div>
-        ) : browse.totalCount === 0 && !browse.loadingFilter ? (
-          <div className="txn-catalog-empty">
-            <p className="text-sm font-medium text-neutral-800">
-              No encontramos productos con esos filtros
-            </p>
-            <p className="mt-1.5 text-xs text-neutral-500">
-              Prueba otra búsqueda o limpia los filtros.
-            </p>
-          </div>
-        ) : (
-          <>
-            <CatalogBrowseStatus
-              loading={browse.loadingFilter}
-              error={
-                browse.fetchErrorSource === "filter" ? browse.fetchError : null
-              }
-              onRetry={browse.retryFetch}
-            />
-            <div
-              className={cn(
-                gridClassName,
-                browse.loadingFilter && "catalog-product-grid-updating",
-              )}
-            >
-              {browse.visibleProducts.map((product, index) =>
-                renderProductCard(product, index),
-              )}
-              {previewMode && referenceMode && showReferenceCta ? (
-                <div
-                  className="catalog-preview-product-enter"
-                  style={{
-                    animationDelay: `${browse.visibleProducts.length * 40}ms`,
-                  }}
-                >
-                  <CatalogUploadCtaCard />
-                </div>
-              ) : null}
-            </div>
-            <CatalogBrowseLoadMore
-              visibleCount={browse.visibleCount}
-              totalCount={browse.totalCount}
-              hasMore={browse.hasMore}
-              loading={browse.loadingMore}
-              error={
-                browse.fetchErrorSource === "more" ? browse.fetchError : null
-              }
-              onLoadMore={browse.loadMore}
-              onRetry={browse.retryFetch}
-            />
-          </>
-        )}
-      </main>
-
-      <CatalogFaqSection
-        faq={effectiveDesign.faq ?? catalogDesign.faq}
         storeName={store.name}
-      />
+        storeDescription={store.description}
+        logoUrl={store.logo_url}
+        primaryColor={effectiveDesign.primaryColor}
+        eyebrow={identityEyebrow}
+        searchQuery={browse.searchQuery}
+        onSearchQueryChange={browse.setSearchQuery}
+        categories={heroCategories}
+        activeCategoryId={browse.categorySlug}
+        onSelectCategory={browse.setCategorySlug}
+        pending={browse.loadingFilter}
+        banner={
+          <>
+            {coverUrl ? (
+              <div className="storefront-mo-cover-banner">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={coverUrl} alt="" className="storefront-mo-cover-img" />
+              </div>
+            ) : null}
+            <CatalogPromoBannerCarousel
+              promoBanner={catalogDesign.promoBanner}
+              storeName={store.name}
+              storeSlug={store.slug}
+              onOpenProduct={previewMode ? undefined : openProductById}
+            />
+            {!previewMode ? <CatalogLocationPicker /> : null}
+          </>
+        }
+      >
+        <div className="mercado-mp-results">
+          <div className="mercado-mp-results-head">
+            <div>
+              <p className="mercado-section-label">Colección activa</p>
+              <h2 className="mercado-heading text-xl sm:text-2xl">
+                {resultsTitle}
+              </h2>
+              <p className="mercado-subheading mt-1">
+                {showOfficialRate && exchangeRate?.rate
+                  ? `Tasa de referencia · ${exchangeRate.rate.toLocaleString("es-VE")}`
+                  : "Catálogo listo · Compra protegida"}
+              </p>
+            </div>
+            <p className="mercado-mp-results-count" aria-live="polite">
+              <strong>{browse.totalCount}</strong>
+              <span>
+                {" "}
+                producto{browse.totalCount === 1 ? "" : "s"}
+              </span>
+            </p>
+          </div>
+
+          {products.length === 0 ? (
+            <MercadoProductGrid
+              products={[]}
+              emptyTitle="No hay productos disponibles"
+              emptyDescription="Vuelve pronto para ver el catálogo actualizado."
+            />
+          ) : browse.totalCount === 0 && !browse.loadingFilter ? (
+            <MercadoProductGrid
+              products={[]}
+              emptyTitle="No encontramos productos con esos filtros"
+              emptyDescription="Prueba otra búsqueda o limpia los filtros."
+            />
+          ) : (
+            <>
+              <CatalogBrowseStatus
+                loading={browse.loadingFilter}
+                error={
+                  browse.fetchErrorSource === "filter"
+                    ? browse.fetchError
+                    : null
+                }
+                onRetry={browse.retryFetch}
+              />
+              <div
+                className={cn(
+                  browse.loadingFilter && "catalog-product-grid-updating",
+                )}
+              >
+                <MercadoProductGrid
+                  products={mercadoCards}
+                  onProductActivate={handleActivateProduct}
+                  priceLabel="Precio"
+                  ctaLabel="Ver producto"
+                  metaInStock="Listo para pedir"
+                  metaOutOfStock="Sin stock por ahora"
+                  emptyTitle="Nada en esta vitrina"
+                  emptyDescription="Probá otra colección o limpiá la búsqueda."
+                />
+                {previewMode && referenceMode && showReferenceCta ? (
+                  <div className="mt-4">
+                    <CatalogUploadCtaCard />
+                  </div>
+                ) : null}
+              </div>
+              <CatalogBrowseLoadMore
+                visibleCount={browse.visibleCount}
+                totalCount={browse.totalCount}
+                hasMore={browse.hasMore}
+                loading={browse.loadingMore}
+                error={
+                  browse.fetchErrorSource === "more"
+                    ? browse.fetchError
+                    : null
+                }
+                onLoadMore={browse.loadMore}
+                onRetry={browse.retryFetch}
+              />
+            </>
+          )}
+        </div>
+
+        <CatalogFaqSection
+          faq={effectiveDesign.faq ?? catalogDesign.faq}
+          storeName={store.name}
+        />
+      </StorefrontMoricheChrome>
 
       {!previewMode || enableCart ? (
         <CatalogCartHost

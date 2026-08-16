@@ -4,9 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import {
-  ArrowUpRight,
   Bell,
-  Search,
   ShoppingBag,
   ShoppingCart,
   UserRound,
@@ -18,6 +16,8 @@ import {
   useMercadoCart,
 } from "@/components/mercado-oculto/MercadoCartProvider";
 import { MercadoBottomNav } from "@/components/mercado-oculto/MercadoBottomNav";
+import { MercadoBrandHeader } from "@/components/mercado-oculto/MercadoBrandHeader";
+import { MercadoBrowseHero } from "@/components/mercado-oculto/MercadoBrowseHero";
 import { useMercadoCatalogOptional } from "@/components/mercado-oculto/MercadoCatalogProvider";
 
 interface MercadoChromeProps {
@@ -74,19 +74,13 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
 
   return (
     <div className={cn("mercado-shell", pending && "mercado-shell-pending")}>
-      <header className="mercado-mp-header">
-        <div className="mercado-mp-header-top">
-          <Link href="/mercado-oculto" className="mercado-mp-brand" prefetch>
-            <span className="mercado-brand-mark" aria-hidden="true">
-              M
-            </span>
-            <span className="mercado-mp-brand-text">
-              <span className="mercado-mp-brand-kicker">Curaduría mayorista</span>
-              <span className="mercado-title">Moriche</span>
-            </span>
-          </Link>
-
-          <nav className="mercado-mp-nav" aria-label="Cuenta y compras">
+      <MercadoBrandHeader
+        brandHref="/mercado-oculto"
+        brandMarkText="M"
+        brandKicker="Curaduría mayorista"
+        brandTitle="Moriche"
+        nav={
+          <>
             <Link
               href="/mercado-oculto/conversaciones"
               prefetch
@@ -144,99 +138,41 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
                 <span className="mercado-nav-label">Entrar</span>
               </Link>
             )}
-          </nav>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {onDirectory ? (
-        <section className="mercado-hero" aria-labelledby="moriche-hero-title">
-          <div className="mercado-hero-glow" aria-hidden="true" />
-          <div className="mercado-hero-inner">
-            <p className="mercado-hero-kicker">Mercado Moriche</p>
-            <h1 id="moriche-hero-title" className="mercado-hero-title">
+        <MercadoBrowseHero
+          kicker="Mercado Moriche"
+          title={
+            <>
               La vitrina mayorista
-              <span className="mercado-hero-title-accent"> que se siente exclusiva.</span>
-            </h1>
-            <p className="mercado-hero-lead">
-              Curaduría B2B para dropshippers: productos listos, márgenes claros
-              y una experiencia de compra que no parece un mercado masivo.
-            </p>
-
-            <form
-              className="mercado-hero-search"
-              onSubmit={(event) => {
-                event.preventDefault();
-                goDirectorySearch();
-              }}
-            >
-              <span className="mercado-hero-search-icon" aria-hidden="true">
-                <Search className="h-5 w-5" />
+              <span className="mercado-hero-title-accent">
+                {" "}
+                que se siente exclusiva.
               </span>
-              <input
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar por producto o categoría…"
-                aria-label="Buscar en Mercado Moriche"
-                className="mercado-hero-search-input"
-                disabled={pending}
-              />
-              <button
-                type="submit"
-                className="mercado-hero-search-btn"
-                disabled={pending}
-              >
-                Explorar
-                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </form>
-
-            <div
-              id="mercado-colecciones"
-              className="mercado-hero-collections"
-              role="tablist"
-              aria-label="Colecciones"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={!activeCategory}
-                className={cn(
-                  "mercado-hero-collection",
-                  !activeCategory && "is-active",
-                )}
-                onClick={() =>
-                  catalog?.setFilters((current) => ({
-                    ...current,
-                    category: "",
-                  }))
-                }
-              >
-                Toda la vitrina
-              </button>
-              {SUPPLIER_PRODUCT_CATEGORIES.map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeCategory === item.value}
-                  className={cn(
-                    "mercado-hero-collection",
-                    activeCategory === item.value && "is-active",
-                  )}
-                  onClick={() =>
-                    catalog?.setFilters((current) => ({
-                      ...current,
-                      category: item.value,
-                    }))
-                  }
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
+            </>
+          }
+          titleId="moriche-hero-title"
+          lead="Curaduría B2B para dropshippers: productos listos, márgenes claros y una experiencia de compra que no parece un mercado masivo."
+          searchQuery={query}
+          onSearchQueryChange={setQuery}
+          onSearchSubmit={goDirectorySearch}
+          searchAriaLabel="Buscar en Mercado Moriche"
+          pending={pending}
+          categories={SUPPLIER_PRODUCT_CATEGORIES.map((item) => ({
+            id: item.value,
+            label: item.label,
+          }))}
+          activeCategoryId={activeCategory || null}
+          onSelectCategory={(id) =>
+            catalog?.setFilters((current) => ({
+              ...current,
+              category: id ?? "",
+            }))
+          }
+        />
       ) : null}
 
       <main className="mercado-main mercado-mp-main">{children}</main>

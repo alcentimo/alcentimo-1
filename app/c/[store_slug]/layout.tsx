@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { DM_Sans, Fraunces } from "next/font/google";
 import { CartProvider } from "@/components/catalog-transactional/CartProvider";
 import { CatalogAppShell } from "@/components/catalog-transactional/CatalogAppShell";
 import { CustomerSessionProvider } from "@/components/catalog-transactional/CustomerSessionProvider";
@@ -21,6 +22,18 @@ import { getPublicStoreBySlug } from "@/lib/stores";
 import { getOpenAiApiKey } from "@/lib/env/server";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { getStorefrontSupportBranding } from "@/lib/catalog/get-storefront-support-branding";
+
+const moricheDisplay = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-moriche-display",
+  display: "swap",
+});
+
+const moricheSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-moriche-sans",
+  display: "swap",
+});
 
 interface TransactionalCatalogLayoutProps {
   children: ReactNode;
@@ -143,10 +156,16 @@ export default async function TransactionalCatalogLayout({
     <div
       className={cn(
         "txn-catalog-root",
+        moricheDisplay.variable,
+        moricheSans.variable,
         themeContext?.rubroClass,
         themeContext?.designClasses,
       )}
-      style={themeContext?.style}
+      style={{
+        ...themeContext?.style,
+        fontFamily:
+          "var(--font-moriche-sans), ui-sans-serif, system-ui, sans-serif",
+      }}
     >
       <CatalogPwaHeadLinks
         manifestAbsoluteUrl={manifestAbsoluteUrl}
