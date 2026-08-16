@@ -45,22 +45,34 @@ export async function sendSignupConfirmationEmailForPath(input: {
   let otpType: EmailOtpType = "signup";
 
   for (const attempt of attempts) {
-    const { data, error } = await admin.auth.admin.generateLink({
-      type: attempt.type,
-      email,
-      ...(attempt.type === "signup"
-        ? { password: attempt.password ?? "" }
-        : {}),
-      options: { redirectTo },
-    });
+    // Separar por tipo: GenerateLinkParams es un union discriminado estricto.
+    const linkResult =
+      attempt.type === "signup"
+        ? await admin.auth.admin.generateLink({
+            type: "signup",
+            email,
+            password: attempt.password ?? "",
+            options: { redirectTo },
+          })
+        : attempt.type === "invite"
+          ? await admin.auth.admin.generateLink({
+              type: "invite",
+              email,
+              options: { redirectTo },
+            })
+          : await admin.auth.admin.generateLink({
+              type: "magiclink",
+              email,
+              options: { redirectTo },
+            });
 
-    if (error) continue;
+    if (linkResult.error) continue;
 
-    const hash = data.properties?.hashed_token?.trim() || null;
+    const hash = linkResult.data.properties?.hashed_token?.trim() || null;
     if (!hash) continue;
 
     tokenHash = hash;
-    emailOtp = data.properties?.email_otp?.trim() || null;
+    emailOtp = linkResult.data.properties?.email_otp?.trim() || null;
     otpType = attempt.type === "signup" ? "signup" : attempt.type;
     break;
   }
