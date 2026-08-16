@@ -10862,10 +10862,13 @@ button.customer-promo-banner-link {
   @apply rounded-lg;
 }
 
-/* Shell con tab bar inferior */
+/* Shell del catálogo público (vitrina Moriche: sin tab bar inferior) */
 .catalog-shell-content {
   min-height: 100dvh;
-  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+
+.catalog-shell-content--moriche {
+  padding-bottom: 0;
 }
 
 .catalog-tab-bar {
@@ -13715,6 +13718,11 @@ button.mercado-mp-card-btn {
 
 .mercado-mp-main {
   @apply max-w-7xl pb-20 lg:pb-8;
+}
+
+/* Tienda pública: sin bottom nav de Mercado Oculto */
+.storefront-moriche-shell .mercado-mp-main {
+  @apply pb-8;
 }
 
 .mercado-mp-layout {
