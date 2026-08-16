@@ -462,8 +462,9 @@ export function SupplierProductsPanel({
             <p className="supplier-hub-section-label">Catálogo mayorista</p>
             <h1 className="supplier-hub-heading">Cargar producto</h1>
             <p className="supplier-hub-subheading">
-              Clasifica por categoría y, si aplica, añade variantes (color,
-              modelo o presentación) en una sola ficha.
+              Sube la foto directo del teléfono: la estandarizamos a cuadrado
+              1080×1080 para redes y a WebP liviano para el catálogo. Añade
+              categoría y, si aplica, variantes (color, modelo o presentación).
             </p>
           </div>
         </div>

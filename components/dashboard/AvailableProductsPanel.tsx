@@ -9,6 +9,7 @@ import {
   removeSupplierProductFromStoreCatalog,
   type MerchantSupplierCatalogProduct,
 } from "@/lib/dropship/actions";
+import { SocialImageDownloadButton } from "@/components/dashboard/SocialImageDownloadButton";
 import { formatUsd } from "@/lib/format";
 import { supplierCategoryLabel } from "@/lib/supplier/categories";
 import { cn } from "@/lib/cn";
@@ -130,6 +131,8 @@ export function AvailableProductsPanel({
         <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
           Selecciona productos del hub de proveedores. Solo lo que añadas aquí
           aparece en la vitrina pública de tu tienda — sin inventario manual.
+          Las fotos ya vienen optimizadas: descárgalas listas para Instagram,
+          Facebook o WhatsApp.
         </p>
       </div>
 
@@ -247,6 +250,12 @@ export function AvailableProductsPanel({
                         <Check className="h-4 w-4" aria-hidden="true" />
                         En el catálogo de tu tienda
                       </span>
+                      {product.imageUrl ? (
+                        <SocialImageDownloadButton
+                          imageUrl={product.imageUrl}
+                          productTitle={product.title}
+                        />
+                      ) : null}
                       <button
                         type="button"
                         className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 px-3 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
@@ -265,22 +274,30 @@ export function AvailableProductsPanel({
                       </button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      className="btn-brand inline-flex min-h-10 items-center justify-center gap-2 !text-sm"
-                      onClick={() => handleAdd(product.id)}
-                      disabled={busy}
-                    >
-                      {isImporting ? (
-                        <Loader2
-                          className="h-4 w-4 animate-spin"
-                          aria-hidden="true"
+                    <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        className="btn-brand inline-flex min-h-10 items-center justify-center gap-2 !text-sm"
+                        onClick={() => handleAdd(product.id)}
+                        disabled={busy}
+                      >
+                        {isImporting ? (
+                          <Loader2
+                            className="h-4 w-4 animate-spin"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <PackagePlus className="h-4 w-4" aria-hidden="true" />
+                        )}
+                        Añadir al catálogo de mi tienda
+                      </button>
+                      {product.imageUrl ? (
+                        <SocialImageDownloadButton
+                          imageUrl={product.imageUrl}
+                          productTitle={product.title}
                         />
-                      ) : (
-                        <PackagePlus className="h-4 w-4" aria-hidden="true" />
-                      )}
-                      Añadir al catálogo de mi tienda
-                    </button>
+                      ) : null}
+                    </div>
                   )}
                 </div>
               </li>
