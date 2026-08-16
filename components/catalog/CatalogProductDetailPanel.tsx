@@ -7,18 +7,12 @@ import type { CatalogVariantOption } from "@/lib/products/variants";
 import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
 import { RubroCatalogVariantSlot } from "@/components/rubros/RubroCatalogVariantSlot";
-import {
-  WholesaleCatalogHint,
-  WholesalePriceBadge,
-} from "@/components/catalog/WholesalePriceBadge";
 import { fetchCatalogProductDetail } from "@/lib/catalog/fetch-catalog-product-detail";
 import type { CatalogProductGalleryImage } from "@/lib/products/product-gallery-types";
 import { buildCartWhatsAppMessage } from "@/lib/catalog/cart-whatsapp-message";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import {
   computeUsdToVes,
-  formatWholesaleHint,
-  hasWholesalePricing,
   isProductOnSale,
   resolveUnitPriceUsd,
 } from "@/lib/catalog/pricing";
@@ -49,6 +43,7 @@ import {
   resolvePublicCategoryLabel,
 } from "@/src/config/categories";
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
+import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/cn";
 
@@ -115,10 +110,15 @@ export function CatalogProductDetailPanel({
   onAddToCart,
 }: CatalogProductDetailPanelProps) {
   const cartContext = useCartOptional();
+  const shellNav = useCatalogShellNavigationOptional();
   const activeExchangeRate = exchangeRate ?? product.exchange_rate_used;
+  // Buyer PDP: cart is the primary path. WhatsApp only when the store is
+  // WhatsApp-only (or cart is unavailable, e.g. reference/preview mode).
+  const cartAvailable = Boolean(onAddToCart);
   const showWhatsAppOrder =
-    checkoutType === "direct_whatsapp" || checkoutType === "both";
-  const whatsappPrimary = checkoutType === "direct_whatsapp";
+    checkoutType === "direct_whatsapp" ||
+    (checkoutType === "both" && !cartAvailable);
+  const whatsappPrimary = !cartAvailable;
   const whatsappReady = Boolean(whatsappPhone?.trim());
 
   const [detailDescription, setDetailDescription] = useState<string | null>(null);
@@ -192,13 +192,6 @@ export function CatalogProductDetailPanel({
   );
 
   const modifiersExtra = sumModifiersExtraUsd(selectedModifiers);
-  const retailDisplayUsd =
-    (selectedVariant?.priceUsd ?? product.price_usd ?? 0) + modifiersExtra;
-  const wholesaleConfigured = hasWholesalePricing(
-    product.wholesale_price_usd,
-    product.wholesale_min_qty,
-    wholesaleEnabled,
-  );
 
   const contextCartQuantity =
     cartContext?.items.find(
@@ -267,6 +260,17 @@ export function CatalogProductDetailPanel({
     setJustAdded(true);
     if (justAddedTimerRef.current) clearTimeout(justAddedTimerRef.current);
     justAddedTimerRef.current = setTimeout(() => setJustAdded(false), 420);
+  }
+
+  function handleBuyNow() {
+    if (!selectedVariant || outOfStock) return;
+    if (canAddMore) {
+      onAddToCart?.(product, selectedVariant, selectedModifiers);
+    } else if (!inCart) {
+      return;
+    }
+    onClose();
+    shellNav?.openCart();
   }
 
   function handleWhatsAppOrder() {
@@ -390,32 +394,6 @@ export function CatalogProductDetailPanel({
               {showBsConversion && priceVes != null ? (
                 <p className="product-detail-price-ves">{formatApproxBs(priceVes)}</p>
               ) : null}
-
-              {wholesaleConfigured &&
-              product.wholesale_price_usd != null &&
-              product.wholesale_min_qty != null ? (
-                <div className="product-detail-wholesale">
-                  <p className="product-detail-wholesale-retail">
-                    Detal: {formatUsd(retailDisplayUsd)}/u
-                  </p>
-                  <p className="product-detail-wholesale-tier">
-                    {formatWholesaleHint(
-                      product.wholesale_price_usd,
-                      product.wholesale_min_qty,
-                    )}
-                  </p>
-                </div>
-              ) : null}
-
-              {activePricing.wholesaleApplied ? (
-                <WholesalePriceBadge className="mt-2" />
-              ) : wholesaleConfigured ? (
-                <WholesaleCatalogHint
-                  wholesalePriceUsd={product.wholesale_price_usd as number}
-                  wholesaleMinQty={product.wholesale_min_qty as number}
-                  className="mt-2"
-                />
-              ) : null}
             </div>
 
             {attributeEntries.length > 0 ? (
@@ -469,53 +447,50 @@ export function CatalogProductDetailPanel({
 
         {showFooter ? (
           <footer className="product-detail-footer safe-area-bottom space-y-2">
-            {showWhatsAppOrder && whatsappReady && whatsappPrimary ? (
-              <button
-                type="button"
-                onClick={handleWhatsAppOrder}
-                disabled={!canWhatsAppOrder}
-                className="txn-whatsapp-primary-btn flex w-full touch-manipulation items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                Pedir por WhatsApp
-              </button>
-            ) : null}
-
             {onAddToCart ? (
-              <button
-                type="button"
-                onClick={handleAdd}
-                disabled={!canAddMore && inCart}
-                className={cn(
-                  "touch-manipulation",
-                  whatsappPrimary
-                    ? "txn-whatsapp-outline-btn !mt-0"
-                    : cn(
-                        "product-detail-add-btn",
-                        inCart && canAddMore && "product-detail-add-btn-in-cart",
-                        justAdded && "store-add-btn-just-added",
-                      ),
-                )}
-              >
-                {inCart || justAdded ? (
-                  <Check className="h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                )}
-                {inCart
-                  ? canAddMore
-                    ? `En carrito (${contextCartQuantity}) · Añadir otro`
-                    : `En carrito (${contextCartQuantity})`
-                  : "Agregar al carrito"}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={handleBuyNow}
+                  disabled={outOfStock || (!canAddMore && !inCart)}
+                  className="product-detail-add-btn touch-manipulation"
+                >
+                  Comprar ahora
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  disabled={!canAddMore && inCart}
+                  className={cn(
+                    "txn-whatsapp-outline-btn !mt-0 touch-manipulation",
+                    justAdded && "store-add-btn-just-added",
+                  )}
+                >
+                  {inCart || justAdded ? (
+                    <Check className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  {inCart
+                    ? canAddMore
+                      ? `En carrito (${contextCartQuantity}) · Añadir otro`
+                      : `En carrito (${contextCartQuantity})`
+                    : "Agregar al carrito"}
+                </button>
+              </>
             ) : null}
 
-            {showWhatsAppOrder && whatsappReady && !whatsappPrimary ? (
+            {showWhatsAppOrder && whatsappReady ? (
               <button
                 type="button"
                 onClick={handleWhatsAppOrder}
                 disabled={!canWhatsAppOrder}
-                className="txn-whatsapp-outline-btn !mt-0"
+                className={cn(
+                  "flex w-full touch-manipulation items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60",
+                  whatsappPrimary || !onAddToCart
+                    ? "txn-whatsapp-primary-btn"
+                    : "txn-whatsapp-outline-btn !mt-0",
+                )}
               >
                 <MessageCircle className="h-4 w-4" aria-hidden="true" />
                 Pedir por WhatsApp

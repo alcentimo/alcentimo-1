@@ -3,16 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
-  completeCustomerPhone,
   quickRegisterOrSignInCustomer,
   signInCustomer,
 } from "@/lib/customers/register-actions";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import { CustomerVerificationFields } from "@/components/customers/CustomerVerificationFields";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
-import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import type { CatalogCustomerAuthMode } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { CUSTOMER_MIN_PASSWORD_LENGTH } from "@/lib/customers/phone-auth";
 
@@ -20,6 +17,7 @@ interface CustomerRegisterPanelProps {
   storeSlug: string;
   storeName: string;
   nextPath: string;
+  /** @deprecated Customer storefront no longer requires phone/verification completion. */
   needsPhoneCompletion?: boolean;
   suggestedDisplayName?: string | null;
   orderId?: string | null;
@@ -51,12 +49,6 @@ export function CustomerRegisterPanel({
   onRegistered,
 }: CustomerRegisterPanelProps) {
   const [displayName, setDisplayName] = useState(suggestedDisplayName ?? "");
-  const [documentId, setDocumentId] = useState("");
-  const [phone, setPhone] = useState("");
-  const [businessName, setBusinessName] = useState("");
-  const [city, setCity] = useState("");
-  const [stateRegion, setStateRegion] = useState("");
-  const [socialUrl, setSocialUrl] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -64,26 +56,28 @@ export function CustomerRegisterPanel({
 
   const isLogin = mode === "login";
   const catalogUrl = getStoreCatalogBasePath(storeSlug);
-  const googleCompletionBase = buildCustomerRegisterPath(storeSlug, nextPath);
-  const googleCompletionPath = `${googleCompletionBase}${
-    googleCompletionBase.includes("?") ? "&" : "?"
-  }complete=phone${orderId ? `&orderId=${encodeURIComponent(orderId)}` : ""}`;
+  const isBusy = loading;
+  const isCatalog = variant === "catalog";
+  const shellClass = isCatalog
+    ? "catalog-register-panel"
+    : "card-panel mx-auto w-full max-w-lg";
 
-  const verificationFieldProps = {
-    documentId,
-    phone,
-    businessName,
-    city,
-    stateRegion,
-    socialUrl,
-    disabled: loading,
-    onDocumentIdChange: setDocumentId,
-    onPhoneChange: setPhone,
-    onBusinessNameChange: setBusinessName,
-    onCityChange: setCity,
-    onStateRegionChange: setStateRegion,
-    onSocialUrlChange: setSocialUrl,
-  };
+  // Legacy `?complete=phone` is handled by the registro page (server redirect).
+  // Keep a soft fallback if the prop is still passed from an old client path.
+  if (needsPhoneCompletion) {
+    return (
+      <div className={shellClass}>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          Tu cuenta ya está lista.
+        </p>
+        <p className="mt-4 text-center text-sm text-zinc-500">
+          <Link href={nextPath} className="link-brand">
+            Continuar
+          </Link>
+        </p>
+      </div>
+    );
+  }
 
   async function handleQuickSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -96,16 +90,10 @@ export function CustomerRegisterPanel({
         nextPath,
         displayName,
         method: "email",
-        phone,
         email,
         password,
         orderId,
-        requireVerificationFields: true,
-        documentId,
-        businessName,
-        city,
-        state: stateRegion,
-        socialUrl,
+        requireVerificationFields: false,
       });
 
       if (!result.ok) {
@@ -175,126 +163,6 @@ export function CustomerRegisterPanel({
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handlePhoneCompletion(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      const result = await completeCustomerPhone({
-        storeSlug,
-        nextPath,
-        phone,
-        displayName: displayName.trim() || suggestedDisplayName,
-        orderId,
-        documentId,
-        businessName,
-        city,
-        state: stateRegion,
-        socialUrl,
-      });
-
-      if (!result.ok) {
-        setError(formatAuthError(result.error));
-        return;
-      }
-
-      onRegistered?.({
-        displayName: (displayName.trim() || suggestedDisplayName || "").trim(),
-        phone: phone.trim() || null,
-        contactEmail: result.contactEmail ?? null,
-      });
-
-      if (redirectOnSuccess) {
-        window.location.href = result.redirectTo;
-      }
-    } catch (submitError) {
-      setError(
-        formatAuthError(
-          submitError instanceof Error
-            ? submitError.message
-            : "No se pudo continuar.",
-        ),
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const isBusy = loading;
-  const isCatalog = variant === "catalog";
-  const shellClass = isCatalog
-    ? "catalog-register-panel"
-    : "card-panel mx-auto w-full max-w-lg";
-
-  if (needsPhoneCompletion) {
-    return (
-      <div className={shellClass}>
-        <p className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-          {storeName}
-        </p>
-        <h2 className="mt-2 text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
-          Completa tu verificación
-        </h2>
-        <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-          Necesitamos estos datos para proteger la tienda de registros
-          fraudulentos.
-        </p>
-
-        <form
-          onSubmit={(e) => void handlePhoneCompletion(e)}
-          className="mt-6 space-y-4"
-        >
-          <div>
-            <label htmlFor="register_display_name_complete" className="label-field">
-              Nombre y Apellido
-            </label>
-            <input
-              id="register_display_name_complete"
-              name="displayName"
-              type="text"
-              autoComplete="name"
-              required
-              minLength={2}
-              value={displayName}
-              disabled={isBusy}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="input-field"
-              placeholder="Nombre y apellido"
-            />
-          </div>
-
-          <CustomerVerificationFields
-            {...verificationFieldProps}
-            idPrefix="register_complete"
-          />
-
-          {error ? (
-            <p className="alert-error" role="alert">
-              {error}
-            </p>
-          ) : null}
-
-          <button type="submit" disabled={isBusy} className="btn-primary w-full">
-            {loading ? "Guardando…" : "Guardar y continuar"}
-          </button>
-        </form>
-
-        <p className="mt-4 text-center text-sm text-zinc-500">
-          {onCancel ? (
-            <button type="button" onClick={onCancel} className="link-brand">
-              ← Volver al catálogo
-            </button>
-          ) : (
-            <Link href={catalogUrl} className="link-brand">
-              ← Volver al catálogo
-            </Link>
-          )}
-        </p>
-      </div>
-    );
   }
 
   if (isLogin) {
@@ -397,7 +265,7 @@ export function CustomerRegisterPanel({
             </button>
           ) : (
             <span className="font-medium text-zinc-700 dark:text-zinc-300">
-              Regístrate con correo y datos de verificación.
+              Regístrate con tu nombre, correo y contraseña.
             </span>
           )}
         </p>
@@ -428,19 +296,39 @@ export function CustomerRegisterPanel({
             Crea tu cuenta
           </h2>
           <p className="mt-1 text-base text-zinc-500 sm:text-sm dark:text-zinc-400">
-            Completa tus datos de verificación para unirte a {storeName}.
+            Regístrate con tu nombre, correo y contraseña para comprar en{" "}
+            {storeName}.
           </p>
         </>
       ) : (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Completa tus datos de verificación para crear tu cuenta.
+          Solo necesitas nombre, correo y contraseña.
         </p>
       )}
 
-      <form onSubmit={(e) => void handleQuickSubmit(e)} className="mt-6 space-y-4">
+      <GoogleSignInButton
+        postAuthPath={nextPath}
+        storeSlug={storeSlug}
+        orderId={orderId ?? undefined}
+        disabled={isBusy}
+        className="mt-6"
+        buttonClassName="rounded-[10px] border-zinc-200/80 py-3.5 font-semibold shadow-[0_1px_2px_rgba(24,24,27,0.04)] hover:bg-zinc-50 dark:hover:bg-zinc-800"
+        onError={(message) => setError(formatAuthError(message))}
+      />
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+          <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
+        </div>
+        <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
+          o con correo
+        </p>
+      </div>
+
+      <form onSubmit={(e) => void handleQuickSubmit(e)} className="space-y-4">
         <div>
           <label htmlFor="register_display_name" className="label-field">
-            Nombre y Apellido
+            Nombre
           </label>
           <input
             id="register_display_name"
@@ -453,18 +341,9 @@ export function CustomerRegisterPanel({
             disabled={isBusy}
             onChange={(e) => setDisplayName(e.target.value)}
             className="input-field"
-            placeholder="Nombre y apellido"
+            placeholder="Tu nombre"
           />
         </div>
-
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-          Datos de verificación
-        </p>
-
-        <CustomerVerificationFields
-          {...verificationFieldProps}
-          idPrefix="register"
-        />
 
         <div>
           <label htmlFor="register_email" className="label-field">
@@ -508,30 +387,9 @@ export function CustomerRegisterPanel({
         ) : null}
 
         <button type="submit" disabled={isBusy} className="btn-primary w-full">
-          {loading ? "Creando cuenta…" : `Unirme a ${storeName}`}
+          {loading ? "Creando cuenta…" : "Crear cuenta"}
         </button>
       </form>
-
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
-        </div>
-        <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
-          o continúa con
-        </p>
-      </div>
-
-      <GoogleSignInButton
-        postAuthPath={googleCompletionPath}
-        storeSlug={storeSlug}
-        orderId={orderId ?? undefined}
-        disabled={isBusy}
-        buttonClassName="rounded-[10px] border-zinc-200/80 py-3.5 font-semibold shadow-[0_1px_2px_rgba(24,24,27,0.04)] hover:bg-zinc-50 dark:hover:bg-zinc-800"
-        onError={(message) => setError(formatAuthError(message))}
-      />
-      <p className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
-        Con Google te pediremos completar la verificación después.
-      </p>
 
       <p className="mt-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
         ¿Ya tienes cuenta?{" "}
