@@ -13725,6 +13725,14 @@ button.mercado-mp-card-btn {
   @apply pb-8;
 }
 
+.storefront-moriche-shell--account .storefront-account-main {
+  @apply pb-10 pt-6;
+}
+
+.storefront-moriche-shell .mercado-mp-nav {
+  @apply flex-wrap justify-end gap-0.5;
+}
+
 .mercado-mp-layout {
   @apply grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start lg:gap-5;
 }

@@ -421,6 +421,7 @@ function CatalogCategoriesPageContent({
         showBsConversion={showBsConversion}
         panelView={cartPanelView}
         onPanelViewChange={handleCartPanelViewChange}
+        showFab={false}
       />
     </div>
   );
