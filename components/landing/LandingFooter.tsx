@@ -1,6 +1,12 @@
 import Link from "next/link";
-import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
-import { SUPPLIER_ZONE_HREF } from "@/lib/landing/supplier-zone-href";
+import {
+  MERCHANT_LOGIN_HREF,
+  MERCHANT_SIGNUP_HREF,
+} from "@/lib/landing/merchant-signup-href";
+import {
+  SUPPLIER_DASHBOARD_PATH,
+  SUPPLIER_ZONE_HREF,
+} from "@/lib/landing/supplier-zone-href";
 
 export function LandingFooter() {
   return (
@@ -22,10 +28,13 @@ export function LandingFooter() {
               Crear tienda gratis
             </Link>
             <Link href={SUPPLIER_ZONE_HREF} className="link-brand">
-              Proveedores
+              Registro proveedores
             </Link>
-            <Link href="/dashboard/login" className="link-brand">
-              Iniciar sesión
+            <Link href={MERCHANT_LOGIN_HREF} className="link-brand">
+              Acceso tienda
+            </Link>
+            <Link href={SUPPLIER_DASHBOARD_PATH} className="link-brand">
+              Acceso proveedores
             </Link>
             <a href="#precios" className="link-brand">
               Precios

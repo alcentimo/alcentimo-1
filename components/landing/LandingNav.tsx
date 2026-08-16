@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useEffect, useState, type MouseEvent } from "react";
 import { Menu, X } from "lucide-react";
 import { LandingHeaderLogo } from "@/components/landing/LandingHeaderLogo";
+import { LandingLoginMenu } from "@/components/landing/LandingLoginMenu";
 import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 import { SUPPLIER_ZONE_HREF } from "@/lib/landing/supplier-zone-href";
 import { scrollToLandingHash } from "@/lib/landing/scroll-to-hash";
 
 const navLinks = [
   { href: "#experiencia", label: "¿Cómo funciona" },
+  { href: "#para-quien", label: "Empezar" },
   { href: "#precios", label: "Precios" },
   { href: SUPPLIER_ZONE_HREF, label: "Proveedores" },
 ] as const;
@@ -99,7 +101,8 @@ export function LandingNav() {
           )}
         </nav>
 
-        <div className="hidden items-center md:flex">
+        <div className="hidden items-center gap-1 md:flex">
+          <LandingLoginMenu variant="desktop" />
           <Link
             href={MERCHANT_SIGNUP_HREF}
             prefetch={true}
@@ -147,6 +150,10 @@ export function LandingNav() {
                 </Link>
               ),
             )}
+            <LandingLoginMenu
+              variant="mobile"
+              onNavigate={() => setOpen(false)}
+            />
             <Link
               href={MERCHANT_SIGNUP_HREF}
               prefetch={true}

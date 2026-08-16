@@ -245,6 +245,42 @@ select,
   @apply mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 transition-colors hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300;
 }
 
+.landing-audience-card {
+  @apply flex h-full flex-col rounded-[14px] border border-zinc-200/90 bg-[#FAFAF9] p-6 transition-all duration-200 touch-manipulation sm:p-7 dark:border-zinc-800 dark:bg-zinc-900/50;
+}
+
+.landing-audience-card:hover {
+  @apply border-emerald-300/80 bg-white shadow-[0_8px_24px_rgba(16,185,129,0.08)] dark:border-emerald-800/60 dark:bg-zinc-900;
+}
+
+.landing-audience-card:focus-visible {
+  @apply outline-2 outline-offset-2 outline-emerald-600;
+}
+
+.landing-audience-card-icon {
+  @apply inline-flex h-11 w-11 items-center justify-center rounded-xl;
+}
+
+.landing-audience-card-icon-merchant {
+  @apply bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400;
+}
+
+.landing-audience-card-icon-supplier {
+  @apply bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200;
+}
+
+.landing-audience-card-title {
+  @apply mt-2 text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50;
+}
+
+.landing-audience-card-copy {
+  @apply mt-3 flex-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400;
+}
+
+.landing-audience-card-cta {
+  @apply mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400;
+}
+
 .landing-step-number {
   @apply relative z-10 flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-sm font-semibold text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100;
 }

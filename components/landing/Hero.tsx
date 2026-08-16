@@ -41,7 +41,7 @@ export function Hero({ exchangeRate = null }: HeroProps) {
                 prefetch={true}
                 className="btn-brand inline-flex gap-2 px-7 py-3 text-base touch-manipulation"
               >
-                Crear tienda gratis
+                Quiero vender
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
@@ -49,7 +49,7 @@ export function Hero({ exchangeRate = null }: HeroProps) {
                 prefetch={true}
                 className="btn-brand-outline inline-flex gap-2 px-6 py-3 text-base touch-manipulation"
               >
-                Soy proveedor
+                Soy Proveedor / Mayorista
               </Link>
             </div>
 
