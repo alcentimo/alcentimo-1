@@ -111,13 +111,7 @@ export function resolveCatalogHeaderBackground(
 }
 
 export function catalogHeaderSummary(header: CatalogHeaderSettings): string {
-  const bgLabel =
-    header.bgMode === "brand"
-      ? "Color de marca"
-      : header.bgMode === "solid"
-        ? header.bgColor?.toUpperCase() ?? "Color sólido"
-        : "Marketplace";
-  const alignLabel = header.alignment === "stacked" ? "Centrada" : "Clásica";
-  const coverLabel = header.coverImageUrl?.startsWith("http") ? " · Portada" : "";
-  return `${bgLabel} · ${alignLabel}${coverLabel}`;
+  return header.coverImageUrl?.startsWith("http")
+    ? "Portada cargada"
+    : "Sin portada";
 }

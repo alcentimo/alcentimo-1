@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { DM_Sans, Fraunces, Geist } from "next/font/google";
 import { getAdminManifestPath } from "@/lib/pwa/build-admin-manifest";
 import {
   BRAND_APPLE_TOUCH_ICON_PATH,
@@ -19,6 +19,18 @@ import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const moricheDisplay = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-moriche-display",
+  display: "swap",
+});
+
+const moricheSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-moriche-sans",
   display: "swap",
 });
 
@@ -80,7 +92,11 @@ export default async function RootLayout({
   const platformSettings = await fetchPlatformSettings();
 
   return (
-    <html lang="es" suppressHydrationWarning className={`${geistSans.variable} h-full antialiased`}>
+    <html
+      lang="es"
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${moricheDisplay.variable} ${moricheSans.variable} h-full antialiased`}
+    >
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#0f172a" />

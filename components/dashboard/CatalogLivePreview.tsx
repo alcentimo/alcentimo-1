@@ -134,7 +134,7 @@ export function CatalogLivePreview({
                 showReferenceCta={showReferenceCta}
               />
             </div>
-            {assistantEnabled ? (
+            {interactive && assistantEnabled ? (
               <CatalogChatWidget
                 storeSlug={store.slug}
                 storeName={store.name}
@@ -143,7 +143,7 @@ export function CatalogLivePreview({
                 demoMode={assistantDemoMode}
               />
             ) : null}
-            {phone ? (
+            {interactive && phone ? (
               <CatalogWhatsAppQuickChat
                 storeName={store.name}
                 whatsappPhone={phone}
@@ -153,18 +153,16 @@ export function CatalogLivePreview({
                 }
               />
             ) : null}
-            <div
-              className={cn(
-                "catalog-live-preview-tab-bar",
-                interactive && "catalog-live-preview-tab-bar--interactive",
-              )}
-              aria-hidden={interactive ? undefined : true}
-            >
-              <CatalogTabBar
-                storeSlug={store.slug}
-                pcBuilderEnabled={storeHasPCBuilderFromStore(store)}
-              />
-            </div>
+            {interactive ? (
+              <div
+                className="catalog-live-preview-tab-bar catalog-live-preview-tab-bar--interactive"
+              >
+                <CatalogTabBar
+                  storeSlug={store.slug}
+                  pcBuilderEnabled={storeHasPCBuilderFromStore(store)}
+                />
+              </div>
+            ) : null}
           </CatalogStoreBrandingProvider>
         </CatalogPreviewPortalProvider>
       </CartProvider>
