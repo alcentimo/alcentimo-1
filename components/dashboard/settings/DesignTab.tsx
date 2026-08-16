@@ -31,10 +31,6 @@ import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { DesignCatalogInlinePreview } from "@/components/dashboard/settings/DesignCatalogInlinePreview";
 import { StorePublicLinkBar } from "@/components/dashboard/settings/StorePublicLinkBar";
 import { saveCatalogDesignSettings, saveCheckoutSettings } from "@/lib/settings/actions";
-import {
-  CATALOG_THEME_PRESETS,
-  getCatalogThemeIdsForRubro,
-} from "@/lib/store-settings/catalog-theme-presets";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import { getRubroPalette } from "@/lib/store-settings/rubro-palettes";
 import { normalizeCheckoutType } from "@/lib/store-settings/defaults";
@@ -45,7 +41,6 @@ import type {
   CatalogFaqSettings,
   CatalogHeaderSettings,
   CatalogPromoBannerSettings,
-  CatalogThemeId,
   CatalogVisibilitySettings,
   CheckoutSettings,
   CheckoutType,
@@ -90,7 +85,6 @@ interface DesignTabProps {
 }
 
 type SavingField =
-  | CatalogThemeId
   | keyof CatalogVisibilitySettings
   | "primaryColor"
   | "promoBanner"
@@ -101,7 +95,6 @@ type SavingField =
   | null;
 
 type AccordionSection =
-  | "theme"
   | "brandColor"
   | "header"
   | "promoBanner"
@@ -258,7 +251,9 @@ export function DesignTab({
   );
   const [error, setError] = useState<string | null>(null);
   const [savingField, setSavingField] = useState<SavingField>(null);
-  const [openSection, setOpenSection] = useState<AccordionSection | null>("theme");
+  const [openSection, setOpenSection] = useState<AccordionSection | null>(
+    "brandColor",
+  );
   const [studioOpen, setStudioOpen] = useState(true);
   const [portalReady, setPortalReady] = useState(false);
   const [compactLayout, setCompactLayout] = useState(() =>
@@ -287,11 +282,6 @@ export function DesignTab({
   const resolvedDesign = useMemo(
     () => resolveCatalogDesign(design, storeRubro),
     [design, storeRubro],
-  );
-  const isFashionStore = storeRubro === "ropa-moda";
-  const availableThemeIds = useMemo(
-    () => getCatalogThemeIdsForRubro(storeRubro),
-    [storeRubro],
   );
 
   useEffect(() => {
@@ -368,19 +358,6 @@ export function DesignTab({
     setDesign(nextDesign);
     persist(nextDesign, field);
   }
-
-  function setTheme(theme: CatalogThemeId) {
-    if (theme === design.theme) return;
-    updateDesign({ theme }, theme);
-  }
-
-  useEffect(() => {
-    if (!availableThemeIds.includes(design.theme)) {
-      setTheme(availableThemeIds[0]);
-    }
-    // Solo al montar / cambiar rubro de tienda: alinea tema guardado al set permitido.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intencional
-  }, [storeRubro]);
 
   function setVisibility(
     key: keyof CatalogVisibilitySettings,
@@ -599,7 +576,6 @@ export function DesignTab({
     setStudioOpen(false);
   }
 
-  const themeSummary = CATALOG_THEME_PRESETS[design.theme]?.label ?? "Tema";
   const brandColorSummary = design.primaryColor
     ? design.primaryColor.toUpperCase()
     : `Rubro ${rubroPalette.label}`;
@@ -642,42 +618,6 @@ export function DesignTab({
 
   const controlsPanel = (
     <div className="design-studio-accordions">
-      <DesignAccordion
-        title="Tema visual"
-        summary={themeSummary}
-        open={openSection === "theme"}
-        onToggle={() => toggleSection("theme")}
-      >
-        <div className="design-option-list">
-                {isFashionStore ? (
-                  <p className="mb-1 text-xs leading-relaxed text-zinc-500">
-                    Paletas de moda y layouts estructurales — el diseño actual
-                    se mantiene si no cambias de opción.
-                  </p>
-                ) : (
-                  <p className="mb-1 text-xs leading-relaxed text-zinc-500">
-                    Conserva los temas actuales o prueba layouts como Boutique,
-                    Foto circular y Compacta con estructuras distintas.
-                  </p>
-                )}
-          {availableThemeIds.map((themeId) => {
-            const preset = CATALOG_THEME_PRESETS[themeId];
-            return (
-              <DesignOption
-                key={themeId}
-                label={preset.label}
-                tagline={preset.tagline}
-                description={preset.description}
-                selected={design.theme === themeId}
-                accent={preset.previewAccent}
-                disabled={isSaving && savingField === themeId}
-                onClick={() => setTheme(themeId)}
-              />
-            );
-          })}
-        </div>
-      </DesignAccordion>
-
       <DesignAccordion
         title="Color de marca"
         summary={brandColorSummary}
@@ -909,10 +849,8 @@ export function DesignTab({
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-zinc-500">
                     {compactLayout
-                      ? "Ajusta plantillas, colores y visibilidad. Usa el botón de abajo para ver cómo queda el catálogo."
-                      : isFashionStore
-                        ? "Elige plantillas, colores y visibilidad con espacio amplio."
-                        : "Plantillas, color de marca y checkout en un panel cómodo."}
+                      ? "Ajusta color de marca, cabecera y visibilidad. Usa el botón de abajo para ver cómo queda el catálogo."
+                      : "Color de marca, cabecera y checkout en un panel cómodo. El layout del catálogo es el modelo estándar marketplace."}
                   </p>
                 </div>
                 {controlsPanel}
@@ -1000,14 +938,15 @@ export function DesignTab({
             Editor de diseño del catálogo
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-500">
-            Abre el estudio a pantalla completa para elegir plantillas, colores y
-            opciones. En el celular, la vista previa del cliente se abre cuando la
-            necesites, sin ocupar el panel de ajustes.
+            Abre el estudio a pantalla completa para personalizar el color de
+            marca, la cabecera y las opciones del catálogo. En el celular, la vista
+            previa del cliente se abre cuando la necesites, sin ocupar el panel
+            de ajustes.
           </p>
           <dl className="design-studio-entry-meta">
             <div>
-              <dt>Plantilla</dt>
-              <dd>{themeSummary}</dd>
+              <dt>Modelo</dt>
+              <dd>Marketplace</dd>
             </div>
             <div>
               <dt>Color</dt>

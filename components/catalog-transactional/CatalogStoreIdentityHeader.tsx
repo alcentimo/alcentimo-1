@@ -50,7 +50,7 @@ function WhatsAppGlyph({ className }: { className?: string }) {
 
 /**
  * Cabecera de identidad del catálogo público (`/c/...`).
- * Respeta personalización de fondo, portada y alineación desde Diseño.
+ * Modelo marketplace unificado; respeta logo, portada y color de marca.
  */
 export function CatalogStoreIdentityHeader({
   storeName,
@@ -81,7 +81,7 @@ export function CatalogStoreIdentityHeader({
   return (
     <header
       className={cn(
-        "txn-catalog-header",
+        "txn-catalog-header txn-catalog-header--marketplace",
         stacked && "txn-catalog-header--stacked",
         hasCover && "txn-catalog-header--has-cover",
         header.bgMode !== "theme" && "txn-catalog-header--custom-bg",

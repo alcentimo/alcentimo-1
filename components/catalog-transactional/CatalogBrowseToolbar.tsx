@@ -2,17 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutGrid,
-  Rows3,
-  Search,
-  SlidersHorizontal,
-  X,
-} from "lucide-react";
+import { Search, SlidersHorizontal, X } from "lucide-react";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { CATALOG_SORT_OPTIONS, type CatalogSortKey } from "@/lib/catalog/catalog-browse";
-import type { CatalogLayoutMode } from "@/lib/store-settings/types";
-import { CATALOG_DESKTOP_LAYOUT_MQ } from "@/lib/catalog/catalog-layout";
 import {
   Sheet,
   SheetContent,
@@ -40,8 +32,6 @@ interface CatalogBrowseToolbarProps {
   hasActiveFilters: boolean;
   onClearFilters?: () => void;
   showCategoryFilter?: boolean;
-  layout?: CatalogLayoutMode;
-  onLayoutChange?: (layout: CatalogLayoutMode) => void;
 }
 
 export function CatalogBrowseToolbar({
@@ -57,8 +47,6 @@ export function CatalogBrowseToolbar({
   hasActiveFilters,
   onClearFilters,
   showCategoryFilter = true,
-  layout,
-  onLayoutChange,
 }: CatalogBrowseToolbarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -67,19 +55,8 @@ export function CatalogBrowseToolbar({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const handledBuscarDeepLinkRef = useRef(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [isDesktopLayout, setIsDesktopLayout] = useState(false);
   const showCategories = showCategoryFilter && categories.length > 0;
 
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-      return;
-    }
-    const media = window.matchMedia(CATALOG_DESKTOP_LAYOUT_MQ);
-    const sync = () => setIsDesktopLayout(media.matches);
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
   const activeCategoryName =
     categorySlug == null
       ? null
@@ -115,10 +92,51 @@ export function CatalogBrowseToolbar({
 
   return (
     <section
-      className="catalog-browse-toolbar"
+      className="catalog-browse-toolbar catalog-browse-toolbar--marketplace"
       aria-label="Buscar y filtrar productos"
     >
-      <div className="catalog-browse-toolbar-row">
+      <form
+        className="catalog-browse-search-hero"
+        onSubmit={(event) => {
+          event.preventDefault();
+          focusSearchInput();
+        }}
+      >
+        <label className="catalog-browse-search" htmlFor="catalog-browse-search">
+          <Search
+            className="h-5 w-5 shrink-0 text-neutral-400"
+            aria-hidden="true"
+          />
+          <input
+            ref={searchInputRef}
+            id="catalog-browse-search"
+            type="search"
+            value={searchQuery}
+            onChange={(event) => onSearchQueryChange(event.target.value)}
+            onFocus={() => shellNav?.focusSearch()}
+            onBlur={() => {
+              window.setTimeout(() => {
+                if (document.activeElement === searchInputRef.current) return;
+                shellNav?.clearSearchActive();
+              }, 200);
+            }}
+            placeholder="Buscar productos…"
+            className="catalog-browse-search-input"
+            autoComplete="off"
+            enterKeyHint="search"
+          />
+          {searchQuery ? (
+            <button
+              type="button"
+              onClick={() => onSearchQueryChange("")}
+              className="catalog-browse-search-clear"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          ) : null}
+        </label>
+
         <button
           type="button"
           className={cn(
@@ -136,78 +154,43 @@ export function CatalogBrowseToolbar({
             <span className="catalog-browse-filters-btn-dot" aria-hidden="true" />
           ) : null}
         </button>
+      </form>
 
-        <label className="catalog-browse-search" htmlFor="catalog-browse-search">
-          <Search className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden="true" />
-          <input
-            ref={searchInputRef}
-            id="catalog-browse-search"
-            type="search"
-            value={searchQuery}
-            onChange={(event) => onSearchQueryChange(event.target.value)}
-            onFocus={() => shellNav?.focusSearch()}
-            onBlur={() => {
-              window.setTimeout(() => {
-                if (document.activeElement === searchInputRef.current) return;
-                shellNav?.clearSearchActive();
-              }, 200);
-            }}
-            placeholder="Buscar productos..."
-            className="catalog-browse-search-input"
-            autoComplete="off"
-            enterKeyHint="search"
-          />
-          {searchQuery ? (
-            <button
-              type="button"
-              onClick={() => onSearchQueryChange("")}
-              className="catalog-browse-search-clear"
-              aria-label="Limpiar búsqueda"
-            >
-              <X className="h-4 w-4" aria-hidden="true" />
-            </button>
-          ) : null}
-        </label>
-
-        {layout && onLayoutChange ? (
-          <div
-            className="catalog-layout-toggle"
-            role="group"
-            aria-label="Vista del catálogo"
+      {showCategories ? (
+        <div
+          className="catalog-browse-collections"
+          role="tablist"
+          aria-label="Categorías"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={categorySlug == null}
+            className={cn(
+              "catalog-browse-collection",
+              categorySlug == null && "is-active",
+            )}
+            onClick={() => onCategorySlugChange(null)}
           >
+            Todas
+          </button>
+          {categories.map((category) => (
             <button
+              key={category.slug}
               type="button"
+              role="tab"
+              aria-selected={categorySlug === category.slug}
               className={cn(
-                "catalog-layout-toggle-btn",
-                layout === "list" && "catalog-layout-toggle-btn-active",
+                "catalog-browse-collection",
+                categorySlug === category.slug && "is-active",
               )}
-              aria-pressed={layout === "list"}
-              aria-label={
-                isDesktopLayout ? "Vista de 2 columnas" : "Vista de 1 columna"
-              }
-              title={isDesktopLayout ? "2 columnas" : "1 columna"}
-              onClick={() => onLayoutChange("list")}
+              onClick={() => onCategorySlugChange(category.slug)}
             >
-              <Rows3 className="h-4 w-4" aria-hidden="true" />
+              {category.name}
             </button>
-            <button
-              type="button"
-              className={cn(
-                "catalog-layout-toggle-btn",
-                layout === "grid" && "catalog-layout-toggle-btn-active",
-              )}
-              aria-pressed={layout === "grid"}
-              aria-label={
-                isDesktopLayout ? "Vista de 4 columnas" : "Vista de 2 columnas"
-              }
-              title={isDesktopLayout ? "4 columnas" : "2 columnas"}
-              onClick={() => onLayoutChange("grid")}
-            >
-              <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
-        ) : null}
-      </div>
+          ))}
+        </div>
+      ) : null}
 
       <div className="catalog-browse-meta">
         <div className="catalog-browse-meta-left">
