@@ -1,40 +1,35 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import {
   resolvePostAuthPath,
   SUPPLIER_POST_AUTH_PATH,
 } from "@/lib/auth/post-auth-redirect";
 import { shouldForceSupplierPostAuthRedirect } from "@/lib/supplier/access";
-import { resolveAuthEmail } from "@/lib/support/admin-access";
+
+export type PostAuthIdentity = {
+  userId: string;
+  email?: string | null;
+};
 
 /**
- * Destino post-auth con sesión ya establecida (login, signup, OAuth).
+ * Destino post-auth sin tocar cookies de Supabase (evita
+ * "Unexpected response was received from the server" en Server Actions).
  *
- * Login de clientes/tiendas (/dashboard/login): panel de dropshipping.
- * Solo fuerza /proveedor/dashboard si `next` apunta al hub mayorista
- * y el usuario es proveedor real (perfil o allowlist).
+ * Login de tienda/cliente: panel dropshipping, salvo que `next` pida
+ * explícitamente /proveedor y el usuario sea proveedor real.
  */
 export async function resolveAuthenticatedPostAuthPath(
   next?: string | null,
+  identity?: PostAuthIdentity | null,
 ): Promise<string> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return resolvePostAuthPath(next);
-
     const nextPath = next?.trim() || null;
-    const wantsSupplierHub = Boolean(
-      nextPath?.startsWith("/proveedor"),
-    );
+    const wantsSupplierHub = Boolean(nextPath?.startsWith("/proveedor"));
 
-    if (wantsSupplierHub) {
+    if (wantsSupplierHub && identity?.userId) {
       const isSupplier = await shouldForceSupplierPostAuthRedirect({
-        email: resolveAuthEmail(user),
-        userId: user.id,
+        email: identity.email ?? null,
+        userId: identity.userId,
       });
       if (isSupplier) return SUPPLIER_POST_AUTH_PATH;
     }

@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import { createClient } from "@/lib/supabase/client";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
-import { loginSupplierAction } from "@/lib/supplier/login-actions";
+import { getAuthCaughtMessage } from "@/lib/auth/auth-log";
 import {
   SUPPLIER_DASHBOARD_PATH,
   SUPPLIER_REGISTER_PATH,
@@ -17,74 +16,44 @@ export function SupplierLoginPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function establishClientSession(tokenHash: string): Promise<
-    { ok: true } | { ok: false; error: string }
-  > {
-    const supabase = createClient();
-
-    // Evitar colisión con una sesión previa de tienda/cliente.
-    try {
-      await supabase.auth.signOut();
-    } catch {
-      // ignore
-    }
-
-    const otpTypes = ["magiclink", "email"] as const;
-    let lastMessage: string | null = null;
-
-    for (const type of otpTypes) {
-      const { data, error: otpError } = await supabase.auth.verifyOtp({
-        token_hash: tokenHash,
-        type,
-      });
-
-      if (!otpError && data.session && data.user) {
-        return { ok: true };
-      }
-
-      lastMessage = otpError?.message ?? null;
-    }
-
-    return {
-      ok: false,
-      error: formatAuthError(
-        lastMessage ??
-          "Error al procesar la sesión de proveedor. Intenta de nuevo.",
-      ),
-    };
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const result = await loginSupplierAction({ email, password });
+      const response = await fetch("/api/proveedor/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (!result.ok) {
-        setError(result.error);
+      let payload: { ok?: boolean; redirectTo?: string; error?: string } = {};
+      try {
+        payload = (await response.json()) as typeof payload;
+      } catch {
+        payload = {};
+      }
+
+      if (!response.ok || payload.error) {
+        setError(
+          formatAuthError(
+            payload.error ||
+              "No se pudo iniciar sesión como proveedor. Intenta de nuevo.",
+          ),
+        );
         setLoading(false);
         return;
       }
 
-      if (result.sessionTokenHash) {
-        const session = await establishClientSession(result.sessionTokenHash);
-        if (!session.ok) {
-          setError(session.error);
-          setLoading(false);
-          return;
-        }
-      }
-
-      window.location.replace(result.redirectTo || SUPPLIER_DASHBOARD_PATH);
+      window.location.replace(payload.redirectTo || SUPPLIER_DASHBOARD_PATH);
     } catch (caught) {
-      const message =
-        caught instanceof Error ? caught.message : String(caught ?? "");
+      const message = getAuthCaughtMessage(caught);
       setError(
         formatAuthError(
           message ||
-            "Error al procesar la sesión de proveedor. Intenta de nuevo.",
+            "No se pudo iniciar sesión como proveedor. Intenta de nuevo.",
         ),
       );
       setLoading(false);

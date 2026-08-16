@@ -163,7 +163,16 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
           return;
         }
 
-        const destination = await resolveAuthenticatedPostAuthPath(nextParam);
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const destination = user
+          ? await resolveAuthenticatedPostAuthPath(nextParam, {
+              userId: user.id,
+              email: user.email ?? null,
+            })
+          : resolvePostAuthPath(nextParam);
         navigateAfterAuth(destination);
       } catch (caught) {
         setLoading(false);
@@ -294,7 +303,17 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
       }
 
       logAuthEvent("signin_success", { hasUser: Boolean(result.data.user) });
-      const destination = await resolveAuthenticatedPostAuthPath(nextParam);
+      // Evitar Server Action que lea/escriba cookies tras signIn (rompe con
+      // "Unexpected response"). Destino de tienda es local; solo consultamos
+      // servidor si next pide explícitamente /proveedor.
+      const nextPath = nextParam?.trim() || null;
+      let destination = resolvePostAuthPath(nextPath);
+      if (nextPath?.startsWith("/proveedor") && result.data.user) {
+        destination = await resolveAuthenticatedPostAuthPath(nextPath, {
+          userId: result.data.user.id,
+          email: result.data.user.email ?? null,
+        }).catch(() => resolvePostAuthPath(nextPath));
+      }
       navigateAfterAuth(destination);
     } catch (caught) {
       setLoading(false);

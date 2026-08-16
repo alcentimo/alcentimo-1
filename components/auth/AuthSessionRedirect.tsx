@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { resolveAuthenticatedPostAuthPath } from "@/lib/auth/resolve-authenticated-post-auth-path";
+import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
 import { createClient } from "@/lib/supabase/client";
 import { DashboardPostAuthLoading } from "@/components/dashboard/DashboardPostAuthLoading";
 
@@ -27,7 +28,10 @@ export function AuthSessionRedirect() {
         if (cancelled || !user) return;
 
         const next = searchParams.get("next");
-        const destination = await resolveAuthenticatedPostAuthPath(next);
+        const destination = await resolveAuthenticatedPostAuthPath(next, {
+          userId: user.id,
+          email: user.email ?? null,
+        }).catch(() => resolvePostAuthPath(next));
         if (cancelled) return;
         setRedirecting(true);
         window.location.replace(destination);
