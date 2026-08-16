@@ -13720,6 +13720,11 @@ button.mercado-mp-card-btn {
   @apply max-w-7xl pb-20 lg:pb-8;
 }
 
+/* Tienda pública: sin bottom nav de Mercado Oculto */
+.storefront-moriche-shell .mercado-mp-main {
+  @apply pb-8;
+}
+
 .mercado-mp-layout {
   @apply grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start lg:gap-5;
 }
