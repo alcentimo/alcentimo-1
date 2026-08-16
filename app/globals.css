@@ -13589,11 +13589,11 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-hero-collection {
-  @apply rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[12px] font-medium text-white/75 transition hover:border-white/30 hover:bg-white/10 hover:text-white;
+  @apply rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[12px] font-medium text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition duration-300 hover:border-white/55 hover:bg-white/18 hover:text-white hover:shadow-[0_0_0_1px_rgba(255,255,255,0.28),inset_0_1px_0_rgba(255,255,255,0.22)];
 }
 
 .mercado-hero-collection.is-active {
-  @apply border-[var(--mo-warm)]/50 bg-[var(--mo-warm)]/15 text-[var(--mo-warm)];
+  @apply border-[color-mix(in_srgb,var(--mo-warm)_65%,white)] bg-[color-mix(in_srgb,var(--mo-warm)_22%,transparent)] text-[color-mix(in_srgb,var(--mo-warm)_70%,white)] shadow-[0_0_0_1px_rgba(184,137,93,0.35),inset_0_1px_0_rgba(255,255,255,0.18)];
 }
 
 @keyframes mercado-hero-rise {
@@ -13626,7 +13626,7 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-filters {
-  @apply rounded-[1.35rem] border border-[var(--mo-border)]/80 bg-white/75 p-4 shadow-[0_10px_30px_rgba(20,32,28,0.05)] backdrop-blur-md lg:sticky lg:top-24;
+  @apply rounded-[1.5rem] border border-white/70 bg-[color-mix(in_srgb,var(--mo-surface)_82%,transparent)] p-4 shadow-[0_12px_36px_rgba(20,32,28,0.06),0_1px_0_rgba(255,255,255,0.65)_inset] backdrop-blur-xl lg:sticky lg:top-24;
 }
 
 .mercado-mp-filters-head {
@@ -13642,7 +13642,7 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-ship-toggle {
-  @apply mb-2 flex cursor-pointer items-center gap-2 rounded-xl bg-[var(--mo-page)] px-3 py-2.5 text-[13px] font-semibold text-[var(--mo-ink)] transition hover:bg-[var(--mo-emerald-soft)];
+  @apply mb-2 flex cursor-pointer items-center gap-2 rounded-2xl bg-[color-mix(in_srgb,var(--mo-page)_70%,white)] px-3 py-2.5 text-[13px] font-semibold text-[var(--mo-ink)] transition hover:bg-[var(--mo-emerald-soft)];
 }
 
 .mercado-mp-ship-toggle input {
@@ -13654,7 +13654,7 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-mp-filter-block {
-  @apply border-t border-[var(--mo-border)] py-2.5 first:border-t-0 first:pt-0;
+  @apply border-t border-[var(--mo-border)]/50 py-2.5 first:border-t-0 first:pt-0;
 }
 
 .mercado-mp-filter-title {
