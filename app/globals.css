@@ -13524,6 +13524,66 @@ button.mercado-mp-card-btn {
   @apply h-36 w-full rounded-2xl object-cover shadow-[0_12px_32px_rgba(6,40,31,0.12)] sm:h-48;
 }
 
+.storefront-moriche-shell .mercado-mp-brand-text {
+  display: flex !important;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.storefront-moriche-shell .mercado-nav-label {
+  display: inline !important;
+}
+
+.storefront-moriche-shell .mercado-hero,
+.storefront-moriche-shell .mercado-hero-search,
+.storefront-moriche-shell .mercado-hero-collections,
+.storefront-moriche-shell .mercado-mp-grid {
+  @apply block;
+}
+
+.storefront-moriche-shell .mercado-hero-collections {
+  @apply flex;
+}
+
+.storefront-moriche-shell .mercado-mp-grid {
+  @apply grid;
+}
+
+/* Preview phone: force mobile-scale Moriche (ignore viewport sm/lg of dashboard) */
+.design-studio-phone--moriche {
+  width: min(100%, 24.5rem);
+}
+
+.design-studio-phone--moriche .mercado-mp-brand-text {
+  @apply flex flex-col;
+}
+
+.design-studio-phone--moriche .mercado-nav-label {
+  @apply inline;
+}
+
+.design-studio-phone--moriche .mercado-hero-title {
+  font-size: 1.85rem !important;
+  line-height: 1.12 !important;
+}
+
+.design-studio-phone--moriche .mercado-mp-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.design-studio-phone--moriche .mercado-hero-search {
+  @apply flex-col items-stretch;
+}
+
+.design-studio-phone--moriche .mercado-hero-search-btn {
+  @apply w-full justify-center;
+}
+
+.design-studio-preview-frame--moriche .design-reference-badge,
+.design-studio-phone--moriche .design-checkout-preview-mock {
+  display: none !important;
+}
+
 .txn-catalog--moriche-native > .mercado-shell {
   @apply min-h-0;
 }

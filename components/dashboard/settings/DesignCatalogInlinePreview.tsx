@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { MessageCircle } from "lucide-react";
-import type { Store } from "@/lib/database.types";
+import type { CatalogListItem, Store } from "@/lib/database.types";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import {
   getReferenceCatalogForStore,
@@ -11,10 +10,7 @@ import {
 } from "@/lib/catalog/smart-preview-engine";
 import { CatalogLivePreview } from "@/components/dashboard/CatalogLivePreview";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
-import type {
-  CatalogDesignSettings,
-  CheckoutType,
-} from "@/lib/store-settings/types";
+import type { CatalogDesignSettings } from "@/lib/store-settings/types";
 import { normalizeStoreRubro } from "@/src/config/categories";
 import { cn } from "@/lib/cn";
 
@@ -24,16 +20,11 @@ interface DesignCatalogInlinePreviewProps {
   exchangeRateUpdatedAt?: string | null;
   baseSettings: CatalogPreviewSettings;
   design: CatalogDesignSettings;
-  checkoutType?: CheckoutType;
+  /** Productos reales de la tienda (misma fuente que el catálogo público). */
+  storeProducts?: CatalogListItem[];
   /** Compact chrome for the fullscreen design editor. */
   variant?: "inline" | "immersive";
 }
-
-const CHECKOUT_PREVIEW_LABEL: Record<CheckoutType, string> = {
-  both: "Ambas opciones",
-  full_checkout: "Solo checkout web",
-  direct_whatsapp: "Solo WhatsApp",
-};
 
 export function DesignCatalogInlinePreview({
   store,
@@ -41,7 +32,7 @@ export function DesignCatalogInlinePreview({
   exchangeRateUpdatedAt = null,
   baseSettings,
   design,
-  checkoutType = "both",
+  storeProducts = [],
   variant = "inline",
 }: DesignCatalogInlinePreviewProps) {
   const storeRubro = normalizeStoreRubro(store.rubro_tienda);
@@ -57,35 +48,27 @@ export function DesignCatalogInlinePreview({
     [store, exchangeRate],
   );
 
+  const usingRealProducts = storeProducts.length > 0;
+  const previewProducts = usingRealProducts
+    ? storeProducts
+    : referenceCatalog.products;
+
   const settings = useMemo((): CatalogPreviewSettings => {
     return {
       ...baseSettings,
       catalogDesign: resolvedDesign,
-      purchaseInfo: {
-        ...baseSettings.purchaseInfo,
-        checkoutType,
-      },
     };
-  }, [baseSettings, resolvedDesign, checkoutType]);
-
-  const showFullCheckout =
-    checkoutType === "both" || checkoutType === "full_checkout";
-  const showWhatsApp =
-    checkoutType === "both" || checkoutType === "direct_whatsapp";
+  }, [baseSettings, resolvedDesign]);
 
   const previewStageKey = [
-    "marketplace",
+    "moriche",
     resolvedDesign.primaryColor,
     resolvedDesign.promoBanner?.enabled,
     resolvedDesign.promoBanner?.slides.length,
-    resolvedDesign.header?.bgMode,
-    resolvedDesign.header?.bgColor,
-    resolvedDesign.header?.alignment,
     resolvedDesign.header?.coverImageUrl,
-    resolvedDesign.visibility.showStock,
-    resolvedDesign.visibility.showDescription,
-    resolvedDesign.visibility.showPrices,
-    checkoutType,
+    store.logo_url,
+    usingRealProducts ? "live-products" : "reference",
+    previewProducts.length,
   ].join("-");
 
   const immersive = variant === "immersive";
@@ -100,20 +83,25 @@ export function DesignCatalogInlinePreview({
       <div className="design-studio-preview-meta">
         <p className="design-studio-preview-eyebrow">Vista previa</p>
         <p className="design-studio-preview-caption">
-          Marketplace · {referenceCatalog.rubroLabel} ·{" "}
-          {CHECKOUT_PREVIEW_LABEL[checkoutType]}
+          Misma vitrina Moriche que tu tienda pública
+          {usingRealProducts
+            ? ` · ${previewProducts.length} producto${previewProducts.length === 1 ? "" : "s"}`
+            : ` · demo ${referenceCatalog.rubroLabel}`}
         </p>
         {!immersive ? (
           <p className="mt-1 break-words text-xs leading-relaxed text-zinc-500">
-            Mockup estático según el rubro configurado en Identidad. Tus productos
-            reales no se muestran aquí.
+            {usingRealProducts
+              ? "Renderiza el mismo componente TransactionalCatalog que /c/[slug]."
+              : "Sin productos aún: se muestra una demo del rubro. Al publicar productos, verás los reales."}
           </p>
         ) : null}
       </div>
 
-      <div className="design-studio-preview-frame">
-        <span className="design-reference-badge">Diseño de Referencia</span>
-        <div className="design-studio-phone" aria-label="Mockup del catálogo en móvil">
+      <div className="design-studio-preview-frame design-studio-preview-frame--moriche">
+        <div
+          className="design-studio-phone design-studio-phone--moriche"
+          aria-label="Vista previa del catálogo"
+        >
           <div className="design-studio-phone-bezel">
             <div
               key={storeRubro}
@@ -128,40 +116,14 @@ export function DesignCatalogInlinePreview({
               <div key={previewStageKey} className="design-preview-stage">
                 <CatalogLivePreview
                   store={store}
-                  products={referenceCatalog.products}
+                  products={previewProducts}
                   exchangeRate={exchangeRate}
                   exchangeRateUpdatedAt={exchangeRateUpdatedAt}
                   settings={settings}
-                  referenceMode
+                  referenceMode={!usingRealProducts}
+                  showReferenceCta={!usingRealProducts}
                 />
               </div>
-            </div>
-
-            <div
-              className="design-checkout-preview-mock"
-              aria-label="Simulación de botones del carrito"
-            >
-              <p className="design-checkout-preview-mock-label">Tu carrito</p>
-              {showFullCheckout ? (
-                <div className="design-checkout-preview-btn design-checkout-preview-btn-primary">
-                  Finalizar pedido
-                </div>
-              ) : null}
-              {showWhatsApp ? (
-                <div
-                  className={cn(
-                    "design-checkout-preview-btn",
-                    showFullCheckout
-                      ? "design-checkout-preview-btn-whatsapp-outline"
-                      : "design-checkout-preview-btn-whatsapp",
-                  )}
-                >
-                  <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  {checkoutType === "both"
-                    ? "Pedir directo por WhatsApp"
-                    : "Pedir por WhatsApp"}
-                </div>
-              ) : null}
             </div>
           </div>
         </div>

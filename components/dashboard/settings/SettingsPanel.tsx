@@ -180,6 +180,7 @@ interface DesignPreviewContext {
   exchangeRate: number | null;
   exchangeRateUpdatedAt?: string | null;
   baseSettings: CatalogPreviewSettings;
+  catalogProducts?: import("@/lib/database.types").CatalogListItem[];
 }
 
 interface SettingsPanelProps {

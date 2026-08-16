@@ -73,6 +73,7 @@ export default async function AjustesPage({
     exchangeRate: number | null;
     exchangeRateUpdatedAt: string | null;
     baseSettings: Awaited<ReturnType<typeof getCatalogPreviewSettings>>;
+    catalogProducts: Awaited<ReturnType<typeof getStoreInventory>>["products"];
   } | null = null;
 
   if (store) {
@@ -122,6 +123,7 @@ export default async function AjustesPage({
       exchangeRate: exchangeRateRow?.rate ?? null,
       exchangeRateUpdatedAt: exchangeRateRow?.created_at ?? null,
       baseSettings: previewSettings,
+      catalogProducts: inventory.products,
     };
 
     const effectivePlanId = getEffectivePlanIdForLimits(authUser.planId, trial);

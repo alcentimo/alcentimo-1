@@ -22,37 +22,28 @@ import {
 } from "lucide-react";
 import { CatalogPrimaryColorField } from "@/components/dashboard/settings/CatalogPrimaryColorField";
 import { CatalogPromoBannerField } from "@/components/dashboard/settings/CatalogPromoBannerField";
-import { CatalogFaqField } from "@/components/dashboard/settings/CatalogFaqField";
 import { CatalogHeaderField } from "@/components/dashboard/settings/CatalogHeaderField";
+import { StoreLogoUploadField } from "@/components/dashboard/settings/StoreLogoUploadField";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
 import { SettingsTabShell } from "@/components/dashboard/settings/SettingsLayout";
 import { SavingHint } from "@/components/dashboard/settings/SavingHint";
-import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { DesignCatalogInlinePreview } from "@/components/dashboard/settings/DesignCatalogInlinePreview";
 import { StorePublicLinkBar } from "@/components/dashboard/settings/StorePublicLinkBar";
-import { saveCatalogDesignSettings, saveCheckoutSettings } from "@/lib/settings/actions";
+import { saveCatalogDesignSettings } from "@/lib/settings/actions";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import { getRubroPalette } from "@/lib/store-settings/rubro-palettes";
-import { normalizeCheckoutType } from "@/lib/store-settings/defaults";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
-import type { Store } from "@/lib/database.types";
+import type { CatalogListItem, Store } from "@/lib/database.types";
 import type {
   CatalogDesignSettings,
-  CatalogFaqSettings,
   CatalogHeaderSettings,
   CatalogPromoBannerSettings,
-  CatalogVisibilitySettings,
   CheckoutSettings,
-  CheckoutType,
 } from "@/lib/store-settings/types";
 import {
   defaultPromoBannerSettings,
   normalizePromoBannerDraft,
 } from "@/lib/store-settings/promo-banner";
-import {
-  defaultCatalogFaqSettings,
-  normalizeCatalogFaqDraft,
-} from "@/lib/store-settings/catalog-faq";
 import {
   catalogHeaderSummary,
   defaultCatalogHeaderSettings,
@@ -69,10 +60,12 @@ interface DesignTabPreviewContext {
   exchangeRate: number | null;
   exchangeRateUpdatedAt?: string | null;
   baseSettings: CatalogPreviewSettings;
+  catalogProducts?: CatalogListItem[];
 }
 
 interface DesignTabProps {
   initialDesign: CatalogDesignSettings;
+  /** Conservado por compatibilidad con SettingsPanel; el checkout ya no se edita aquí. */
   initialCheckout: CheckoutSettings;
   storeRubro?: string | null;
   preview?: DesignTabPreviewContext | null;
@@ -84,50 +77,8 @@ interface DesignTabProps {
   } | null;
 }
 
-type SavingField =
-  | keyof CatalogVisibilitySettings
-  | "primaryColor"
-  | "promoBanner"
-  | "faq"
-  | "header"
-  | "checkout"
-  | "manual"
-  | null;
-
-type AccordionSection =
-  | "brandColor"
-  | "header"
-  | "promoBanner"
-  | "faq"
-  | "visibility"
-  | "checkout";
-
-const CHECKOUT_MODE_OPTIONS: {
-  value: CheckoutType;
-  label: string;
-  tagline?: string;
-  description: string;
-}[] = [
-  {
-    value: "both",
-    label: "Ambas opciones",
-    tagline: "Predeterminado",
-    description:
-      'El cliente elige en el carrito entre "Finalizar pedido" (web) y "Pedir directo por WhatsApp".',
-  },
-  {
-    value: "full_checkout",
-    label: "Solo Checkout Completo",
-    description:
-      "Muestra únicamente el botón para llenar datos de envío y pago en la web.",
-  },
-  {
-    value: "direct_whatsapp",
-    label: "Solo WhatsApp Directo",
-    description:
-      "Muestra únicamente el botón para enviar el pedido directo a WhatsApp sin pedir formularios.",
-  },
-];
+type SavingField = "primaryColor" | "promoBanner" | "header" | "logo" | "manual" | null;
+type AccordionSection = "brandColor" | "logo" | "banner";
 
 interface DesignAccordionProps {
   title: string;
@@ -175,79 +126,17 @@ function DesignAccordion({
   );
 }
 
-interface DesignOptionProps {
-  label: string;
-  tagline?: string;
-  description: string;
-  selected: boolean;
-  disabled?: boolean;
-  accent?: string;
-  onClick: () => void;
-}
-
-function DesignOption({
-  label,
-  tagline,
-  description,
-  selected,
-  disabled = false,
-  accent,
-  onClick,
-}: DesignOptionProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-pressed={selected}
-      className={cn("design-option", selected && "design-option-selected")}
-    >
-      <span
-        className={cn(
-          "design-option-radio",
-          selected && "design-option-radio-selected",
-        )}
-        aria-hidden="true"
-      >
-        {selected ? <span className="design-option-radio-dot" /> : null}
-      </span>
-      <span className="flex min-w-0 flex-1 items-start gap-2">
-        {accent ? (
-          <span
-            className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/5 dark:ring-white/10"
-            style={{ backgroundColor: accent }}
-            aria-hidden="true"
-          />
-        ) : null}
-        <span className="min-w-0 max-w-full flex-1 text-left">
-          <span className="block break-words text-sm font-medium text-zinc-900 dark:text-zinc-50">
-            {label}
-            {tagline ? (
-              <span className="ml-1.5 inline text-xs font-normal text-zinc-500">
-                ({tagline})
-              </span>
-            ) : null}
-          </span>
-          <span className="mt-1 block break-words text-xs leading-relaxed text-zinc-500">
-            {description}
-          </span>
-        </span>
-      </span>
-    </button>
-  );
-}
-
 export function DesignTab({
   initialDesign,
-  initialCheckout,
+  initialCheckout: _initialCheckout,
   storeRubro: storeRubroProp = null,
   preview = null,
   products = [],
   catalogLink = null,
 }: DesignTabProps) {
   const [design, setDesign] = useState(initialDesign);
-  const [checkoutType, setCheckoutType] = useState<CheckoutType>(() =>
-    normalizeCheckoutType(initialCheckout.checkoutType),
+  const [logoUrl, setLogoUrl] = useState<string | null>(
+    preview?.store.logo_url ?? null,
   );
   const [error, setError] = useState<string | null>(null);
   const [savingField, setSavingField] = useState<SavingField>(null);
@@ -265,15 +154,14 @@ export function DesignTab({
   const [savedFlash, setSavedFlash] = useState(false);
   const [isSaving, startSave] = useTransition();
   const colorSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const promoBannerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const faqSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const promoBannerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const headerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const designRef = useRef(design);
-  const checkoutTypeRef = useRef(checkoutType);
 
   designRef.current = design;
-  checkoutTypeRef.current = checkoutType;
 
   const storeRubro = normalizeStoreRubro(
     storeRubroProp ?? preview?.store.rubro_tienda ?? DEFAULT_STORE_RUBRO,
@@ -283,6 +171,15 @@ export function DesignTab({
     () => resolveCatalogDesign(design, storeRubro),
     [design, storeRubro],
   );
+
+  const previewStore = useMemo(() => {
+    if (!preview?.store) return null;
+    return { ...preview.store, logo_url: logoUrl };
+  }, [preview?.store, logoUrl]);
+
+  useEffect(() => {
+    setLogoUrl(preview?.store.logo_url ?? null);
+  }, [preview?.store.logo_url]);
 
   useEffect(() => {
     setPortalReady(true);
@@ -331,50 +228,16 @@ export function DesignTab({
       clearTimeout(promoBannerSaveTimerRef.current);
       promoBannerSaveTimerRef.current = null;
     }
-    if (faqSaveTimerRef.current) {
-      clearTimeout(faqSaveTimerRef.current);
-      faqSaveTimerRef.current = null;
-    }
     if (headerSaveTimerRef.current) {
       clearTimeout(headerSaveTimerRef.current);
       headerSaveTimerRef.current = null;
     }
   }
 
-  function updateDesign(
-    patch: Partial<CatalogDesignSettings>,
-    field: SavingField,
-  ) {
-    const nextDesign: CatalogDesignSettings = {
-      ...design,
-      ...patch,
-      visibility: patch.visibility
-        ? { ...design.visibility, ...patch.visibility }
-        : design.visibility,
-      promoBanner: patch.promoBanner ?? design.promoBanner,
-      faq: patch.faq ?? design.faq,
-      header: patch.header ?? design.header,
-    };
-    setDesign(nextDesign);
-    persist(nextDesign, field);
-  }
-
-  function setVisibility(
-    key: keyof CatalogVisibilitySettings,
-    value: boolean,
-  ) {
-    if (design.visibility[key] === value) return;
-    updateDesign(
-      { visibility: { ...design.visibility, [key]: value } },
-      key,
-    );
-  }
-
   function schedulePrimaryColorSave(nextDesign: CatalogDesignSettings) {
     if (colorSaveTimerRef.current) {
       clearTimeout(colorSaveTimerRef.current);
     }
-
     colorSaveTimerRef.current = setTimeout(() => {
       persist(nextDesign, "primaryColor");
     }, 400);
@@ -393,7 +256,6 @@ export function DesignTab({
     if (promoBannerSaveTimerRef.current) {
       clearTimeout(promoBannerSaveTimerRef.current);
     }
-
     promoBannerSaveTimerRef.current = setTimeout(() => {
       persist(nextDesign, "promoBanner");
     }, 400);
@@ -414,33 +276,10 @@ export function DesignTab({
     }
   }
 
-  function scheduleFaqSave(nextDesign: CatalogDesignSettings) {
-    if (faqSaveTimerRef.current) {
-      clearTimeout(faqSaveTimerRef.current);
-    }
-
-    faqSaveTimerRef.current = setTimeout(() => {
-      persist(nextDesign, "faq");
-    }, 400);
-  }
-
-  function setFaq(next: CatalogFaqSettings, shouldSave = true) {
-    const draft = normalizeCatalogFaqDraft(next);
-    const nextDesign: CatalogDesignSettings = {
-      ...design,
-      faq: draft,
-    };
-    setDesign(nextDesign);
-    if (shouldSave) {
-      scheduleFaqSave(nextDesign);
-    }
-  }
-
   function scheduleHeaderSave(nextDesign: CatalogDesignSettings) {
     if (headerSaveTimerRef.current) {
       clearTimeout(headerSaveTimerRef.current);
     }
-
     headerSaveTimerRef.current = setTimeout(() => {
       persist(nextDesign, "header");
     }, 400);
@@ -462,7 +301,6 @@ export function DesignTab({
     if (colorSaveTimerRef.current) {
       clearTimeout(colorSaveTimerRef.current);
     }
-
     const nextDesign = { ...design };
     delete nextDesign.primaryColor;
     setDesign(nextDesign);
@@ -501,27 +339,6 @@ export function DesignTab({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [studioOpen, mobilePreviewOpen]);
 
-  function setCheckoutMode(nextType: CheckoutType) {
-    if (nextType === checkoutType) return;
-    setError(null);
-    setCheckoutType(nextType);
-    setSavingField("checkout");
-    startSave(async () => {
-      try {
-        const result = await saveCheckoutSettings({
-          accountMode: "hibrido",
-          checkoutType: nextType,
-        });
-        if (result.error) {
-          setError(result.error);
-          setCheckoutType(normalizeCheckoutType(initialCheckout.checkoutType));
-        }
-      } finally {
-        setSavingField(null);
-      }
-    });
-  }
-
   function toggleSection(section: AccordionSection) {
     setOpenSection((current) => (current === section ? null : section));
   }
@@ -539,27 +356,15 @@ export function DesignTab({
   function handleManualSave() {
     clearPendingTimers();
     const nextDesign = designRef.current;
-    const nextCheckout = checkoutTypeRef.current;
     setError(null);
     setSavingField("manual");
 
     startSave(async () => {
       try {
-        const [designResult, checkoutResult] = await Promise.all([
-          saveCatalogDesignSettings(nextDesign),
-          saveCheckoutSettings({
-            accountMode: "hibrido",
-            checkoutType: nextCheckout,
-          }),
-        ]);
+        const designResult = await saveCatalogDesignSettings(nextDesign);
         if (designResult.error) {
           setError(designResult.error);
           setDesign(initialDesign);
-          return;
-        }
-        if (checkoutResult.error) {
-          setError(checkoutResult.error);
-          setCheckoutType(normalizeCheckoutType(initialCheckout.checkoutType));
           return;
         }
         flashSaved();
@@ -586,9 +391,6 @@ export function DesignTab({
   const promoBannerSettings = normalizePromoBannerDraft(
     design.promoBanner ?? defaultPromoBannerSettings(),
   );
-  const faqSettings = normalizeCatalogFaqDraft(
-    design.faq ?? defaultCatalogFaqSettings(),
-  );
   const savedSlideCount = promoBannerSettings.slides.filter((slide) =>
     slide.mobileImageUrl.startsWith("http"),
   ).length;
@@ -599,33 +401,20 @@ export function DesignTab({
         : `${promoBannerSettings.slides.length} borrador(es)`
       : "Activado · sin imágenes"
     : "Desactivado";
-  const faqSummary = faqSettings.enabled
-    ? faqSettings.items.filter((item) => item.question.trim()).length > 0
-      ? `${faqSettings.items.filter((item) => item.question.trim()).length} pregunta(s)`
-      : "Activado · sin preguntas"
-    : "Desactivado";
-  const visibilitySummary =
-    [
-      design.visibility.showStock && "Stock",
-      design.visibility.showDescription && "Descripción",
-      design.visibility.showPrices && "Precios",
-    ]
-      .filter(Boolean)
-      .join(", ") || "Oculto";
-  const checkoutSummary =
-    CHECKOUT_MODE_OPTIONS.find((option) => option.value === checkoutType)
-      ?.label ?? "Ambas opciones";
+  const bannerSummary = [headerSummary, promoBannerSummary]
+    .filter(Boolean)
+    .join(" · ");
+  const logoSummary = logoUrl ? "Logo cargado" : "Sin logo";
 
   const controlsPanel = (
     <div className="design-studio-accordions">
       <div className="design-marketplace-lock mb-3 rounded-xl border border-emerald-200/80 bg-emerald-50/70 px-3 py-2.5 dark:border-emerald-900/50 dark:bg-emerald-950/30">
         <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
-          Modelo fijo: Marketplace
+          Vitrina fija: Mercado Oculto
         </p>
         <p className="mt-0.5 text-xs leading-relaxed text-emerald-800/80 dark:text-emerald-200/80">
-          Todas las tiendas usan el mismo layout estilo vitrina. Personaliza solo
-          color de marca, cabecera/portada y banner. El logo se gestiona en
-          Identidad / General.
+          Todas las tiendas usan el mismo layout Moriche. Solo personalizas
+          color, logo y banner.
         </p>
       </div>
 
@@ -646,149 +435,78 @@ export function DesignTab({
       </DesignAccordion>
 
       <DesignAccordion
-        title="Cabecera"
-        summary={headerSummary}
-        open={openSection === "header"}
-        onToggle={() => toggleSection("header")}
+        title="Logo"
+        summary={logoSummary}
+        open={openSection === "logo"}
+        onToggle={() => toggleSection("logo")}
       >
-        <CatalogHeaderField
-          value={design.header}
-          brandColor={resolvedDesign.primaryColor}
-          disabled={isSaving && savingField === "header"}
-          onChange={setHeader}
-        />
-      </DesignAccordion>
-
-      <DesignAccordion
-        title="Banner promocional"
-        summary={promoBannerSummary}
-        open={openSection === "promoBanner"}
-        onToggle={() => toggleSection("promoBanner")}
-      >
-        <CatalogPromoBannerField
-          value={design.promoBanner}
-          onChange={setPromoBanner}
-          products={products}
-        />
-      </DesignAccordion>
-
-      <DesignAccordion
-        title="Preguntas frecuentes"
-        summary={faqSummary}
-        open={openSection === "faq"}
-        onToggle={() => toggleSection("faq")}
-      >
-        <CatalogFaqField value={design.faq} onChange={setFaq} />
-      </DesignAccordion>
-
-      <DesignAccordion
-        title="Visibilidad"
-        summary={visibilitySummary}
-        open={openSection === "visibility"}
-        onToggle={() => toggleSection("visibility")}
-      >
-        <div className="design-visibility-list">
-          <div className="design-visibility-row">
-            <div>
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                Disponibilidad
-              </p>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                Mostrar si hay unidades o está agotado
-              </p>
-            </div>
-            <SettingsSwitch
-              id="visibility-stock"
-              label="Mostrar disponibilidad"
-              checked={design.visibility.showStock}
-              onChange={(value) => setVisibility("showStock", value)}
-              disabled={isSaving && savingField === "showStock"}
-            />
-          </div>
-          <div className="design-visibility-row">
-            <div>
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                Descripción
-              </p>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                Texto bajo el nombre
-              </p>
-            </div>
-            <SettingsSwitch
-              id="visibility-description"
-              label="Mostrar descripción"
-              checked={design.visibility.showDescription}
-              onChange={(value) => setVisibility("showDescription", value)}
-              disabled={isSaving && savingField === "showDescription"}
-            />
-          </div>
-          <div className="design-visibility-row">
-            <div>
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                Precios
-              </p>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                USD y conversión a Bs
-              </p>
-            </div>
-            <SettingsSwitch
-              id="visibility-prices"
-              label="Mostrar precios"
-              checked={design.visibility.showPrices}
-              onChange={(value) => setVisibility("showPrices", value)}
-              disabled={isSaving && savingField === "showPrices"}
-            />
-          </div>
-        </div>
-      </DesignAccordion>
-
-      <DesignAccordion
-        title="Modo de checkout y pedidos"
-        summary={checkoutSummary}
-        open={openSection === "checkout"}
-        onToggle={() => toggleSection("checkout")}
-      >
-        <div className="design-option-list">
-          <p className="mb-1 text-xs leading-relaxed text-zinc-500">
-            Define cómo confirman el pedido tus clientes en el carrito del
-            catálogo.
+        {previewStore ? (
+          <StoreLogoUploadField
+            logoUrl={logoUrl}
+            storeName={previewStore.name}
+            disabled={isSaving && savingField === "logo"}
+            onLogoChange={(url) => {
+              setLogoUrl(url);
+              setSavingField("logo");
+              setTimeout(() => setSavingField(null), 400);
+            }}
+          />
+        ) : (
+          <p className="text-xs text-zinc-500">
+            Abre Identidad si aún no tienes tienda cargada.
           </p>
-          {CHECKOUT_MODE_OPTIONS.map((option) => (
-            <DesignOption
-              key={option.value}
-              label={option.label}
-              tagline={option.tagline}
-              description={option.description}
-              selected={checkoutType === option.value}
-              disabled={isSaving && savingField === "checkout"}
-              onClick={() => setCheckoutMode(option.value)}
+        )}
+      </DesignAccordion>
+
+      <DesignAccordion
+        title="Banner"
+        summary={bannerSummary}
+        open={openSection === "banner"}
+        onToggle={() => toggleSection("banner")}
+      >
+        <div className="space-y-5">
+          <CatalogHeaderField
+            value={design.header}
+            brandColor={resolvedDesign.primaryColor}
+            disabled={isSaving && savingField === "header"}
+            onChange={setHeader}
+          />
+          <div className="border-t border-zinc-200/80 pt-4 dark:border-zinc-800">
+            <p className="mb-2 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+              Carrusel promocional
+            </p>
+            <CatalogPromoBannerField
+              value={design.promoBanner}
+              onChange={setPromoBanner}
+              products={products}
             />
-          ))}
+          </div>
         </div>
       </DesignAccordion>
     </div>
   );
 
-  const previewPanel = preview ? (
-    <DesignCatalogInlinePreview
-      store={preview.store}
-      exchangeRate={preview.exchangeRate}
-      exchangeRateUpdatedAt={preview.exchangeRateUpdatedAt}
-      baseSettings={preview.baseSettings}
-      design={design}
-      checkoutType={checkoutType}
-      variant="immersive"
-    />
-  ) : (
-    <div className="design-studio-preview-empty">
-      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-        Vista previa no disponible
-      </p>
-      <p className="mt-1 text-xs text-zinc-500">
-        Configura tu tienda para ver cómo se verá el catálogo.
-      </p>
-    </div>
-  );
+  const previewPanel =
+    preview && previewStore ? (
+      <DesignCatalogInlinePreview
+        store={previewStore}
+        exchangeRate={preview.exchangeRate}
+        exchangeRateUpdatedAt={preview.exchangeRateUpdatedAt}
+        baseSettings={preview.baseSettings}
+        design={design}
+        storeProducts={preview.catalogProducts ?? []}
+        variant="immersive"
+      />
+    ) : (
+      <div className="design-studio-preview-empty">
+        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+          Vista previa no disponible
+        </p>
+        <p className="mt-1 text-xs text-zinc-500">
+          Configura tu tienda para ver cómo se verá el catálogo.
+        </p>
+      </div>
+    );
 
   const immersiveStudio =
     portalReady && studioOpen
@@ -821,7 +539,7 @@ export function DesignTab({
                     Diseño del catálogo
                   </h2>
                   <p className="mt-0.5 hidden truncate text-xs text-zinc-500 sm:block">
-                    Editor a pantalla completa · los cambios se aplican al instante
+                    Misma vitrina que tu tienda pública · cambios al instante
                   </p>
                 </div>
               </div>
@@ -856,12 +574,10 @@ export function DesignTab({
               <aside className="design-studio-immersive-sidebar">
                 <div className="design-studio-immersive-sidebar-intro">
                   <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                    Estilo y opciones
+                    Branding
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                    {compactLayout
-                      ? "Marketplace fijo. Ajusta color, cabecera y banner; usa el botón de abajo para previsualizar."
-                      : "Layout Marketplace fijo. Solo personalizas color de marca, cabecera/banner y checkout."}
+                    Color, logo y banner. La estructura visual es fija (Moriche).
                   </p>
                 </div>
                 {controlsPanel}
@@ -903,7 +619,7 @@ export function DesignTab({
                           Vista previa del cliente
                         </h3>
                         <p className="mt-0.5 truncate text-xs text-zinc-500">
-                          Así verán el catálogo en el celular
+                          Igual que tu tienda pública en móvil
                         </p>
                       </div>
                       <button
@@ -949,32 +665,31 @@ export function DesignTab({
             Editor de diseño del catálogo
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-500">
-            El catálogo público usa un único modelo Marketplace. Aquí personalizas
-            color de marca, cabecera y banner; el logo se configura en Identidad.
-            En el celular, la vista previa se abre cuando la necesites.
+            Vitrina Moriche fija. Personaliza color de marca, logo y banner; la
+            vista previa usa el mismo componente que tu tienda pública.
           </p>
-          <dl className="design-studio-entry-meta">
+          <dl className="design-studio-entry-meta mt-3">
             <div>
               <dt>Modelo</dt>
-              <dd>Marketplace</dd>
+              <dd>Mercado Oculto</dd>
             </div>
             <div>
               <dt>Color</dt>
               <dd>{brandColorSummary}</dd>
             </div>
             <div>
-              <dt>Checkout</dt>
-              <dd>{checkoutSummary}</dd>
+              <dt>Logo</dt>
+              <dd>{logoSummary}</dd>
             </div>
           </dl>
         </div>
         <button
           type="button"
-          className="design-studio-entry-cta"
+          className="design-studio-entry-open"
           onClick={() => setStudioOpen(true)}
         >
           <Maximize2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-          Abrir editor a pantalla completa
+          Abrir editor
         </button>
       </section>
 
