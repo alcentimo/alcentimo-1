@@ -108,7 +108,7 @@ export function LandingNav() {
             prefetch={true}
             className="btn-brand ml-2 gap-2 px-4 touch-manipulation"
           >
-            Crear tienda gratis
+            Quiero vender
           </Link>
         </div>
 
@@ -160,7 +160,7 @@ export function LandingNav() {
               onClick={() => setOpen(false)}
               className="btn-brand mt-3 gap-2 touch-manipulation"
             >
-              Crear tienda gratis
+              Quiero vender
             </Link>
           </nav>
         </div>

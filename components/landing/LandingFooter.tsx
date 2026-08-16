@@ -25,7 +25,7 @@ export function LandingFooter() {
             aria-label="Enlaces del pie de página"
           >
             <Link href={MERCHANT_SIGNUP_HREF} className="link-brand">
-              Crear tienda gratis
+              Quiero vender
             </Link>
             <Link href={SUPPLIER_ZONE_HREF} className="link-brand">
               Registro proveedores

@@ -22,7 +22,7 @@ export function LandingCta() {
               prefetch={true}
               className="btn-brand inline-flex gap-2 px-6 touch-manipulation"
             >
-              Crear tienda gratis
+              Quiero vender
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
             <Link

@@ -131,7 +131,7 @@ export function LandingPricing({
                       }`}
                     >
                       {tier.planId === "free"
-                        ? "Crear tienda gratis"
+                        ? "Quiero vender"
                         : "Elegir plan"}
                     </Link>
                   </CardContent>
