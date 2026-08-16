@@ -218,7 +218,6 @@ export function getCatalogDesignClasses(
   return cn(
     getCatalogRubroClass(storeRubro),
     "txn-catalog--marketplace",
-    `txn-catalog--theme-${STANDARD_CATALOG_THEME_ID}`,
     "txn-catalog--sale-quick",
     `txn-catalog--header-${header.alignment}`,
     header.bgMode !== "theme" && "txn-catalog--header-custom-bg",

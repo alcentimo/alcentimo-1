@@ -618,6 +618,17 @@ export function DesignTab({
 
   const controlsPanel = (
     <div className="design-studio-accordions">
+      <div className="design-marketplace-lock mb-3 rounded-xl border border-emerald-200/80 bg-emerald-50/70 px-3 py-2.5 dark:border-emerald-900/50 dark:bg-emerald-950/30">
+        <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
+          Modelo fijo: Marketplace
+        </p>
+        <p className="mt-0.5 text-xs leading-relaxed text-emerald-800/80 dark:text-emerald-200/80">
+          Todas las tiendas usan el mismo layout estilo vitrina. Personaliza solo
+          color de marca, cabecera/portada y banner. El logo se gestiona en
+          Identidad / General.
+        </p>
+      </div>
+
       <DesignAccordion
         title="Color de marca"
         summary={brandColorSummary}
@@ -849,8 +860,8 @@ export function DesignTab({
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-zinc-500">
                     {compactLayout
-                      ? "Ajusta color de marca, cabecera y visibilidad. Usa el botón de abajo para ver cómo queda el catálogo."
-                      : "Color de marca, cabecera y checkout en un panel cómodo. El layout del catálogo es el modelo estándar marketplace."}
+                      ? "Marketplace fijo. Ajusta color, cabecera y banner; usa el botón de abajo para previsualizar."
+                      : "Layout Marketplace fijo. Solo personalizas color de marca, cabecera/banner y checkout."}
                   </p>
                 </div>
                 {controlsPanel}
@@ -938,10 +949,9 @@ export function DesignTab({
             Editor de diseño del catálogo
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-500">
-            Abre el estudio a pantalla completa para personalizar el color de
-            marca, la cabecera y las opciones del catálogo. En el celular, la vista
-            previa del cliente se abre cuando la necesites, sin ocupar el panel
-            de ajustes.
+            El catálogo público usa un único modelo Marketplace. Aquí personalizas
+            color de marca, cabecera y banner; el logo se configura en Identidad.
+            En el celular, la vista previa se abre cuando la necesites.
           </p>
           <dl className="design-studio-entry-meta">
             <div>

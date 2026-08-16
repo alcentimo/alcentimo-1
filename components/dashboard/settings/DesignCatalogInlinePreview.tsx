@@ -74,7 +74,7 @@ export function DesignCatalogInlinePreview({
     checkoutType === "both" || checkoutType === "direct_whatsapp";
 
   const previewStageKey = [
-    resolvedDesign.theme,
+    "marketplace",
     resolvedDesign.primaryColor,
     resolvedDesign.promoBanner?.enabled,
     resolvedDesign.promoBanner?.slides.length,

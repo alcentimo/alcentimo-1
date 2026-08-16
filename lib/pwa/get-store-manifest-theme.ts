@@ -4,8 +4,10 @@ import {
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
-import { getDefaultPrimaryColorForRubro } from "@/lib/store-settings/rubro-palettes";
-import { CATALOG_THEME_PRESETS } from "@/lib/store-settings/catalog-theme-presets";
+import {
+  getDefaultPrimaryColorForRubro,
+  getRubroPalette,
+} from "@/lib/store-settings/rubro-palettes";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
 
 export interface StoreManifestTheme {
@@ -27,11 +29,11 @@ export async function getStoreManifestTheme(store: Store): Promise<StoreManifest
       : defaultStoreSettingsConfig();
 
     const design = resolveCatalogDesign(config.catalogDesign, store.rubro_tienda);
-    const preset = CATALOG_THEME_PRESETS[design.theme];
+    const palette = getRubroPalette(store.rubro_tienda);
 
     return {
       theme_color: design.primaryColor,
-      background_color: preset.pageBg,
+      background_color: palette.pageBg,
     };
   } catch {
     return {
