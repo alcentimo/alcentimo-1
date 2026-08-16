@@ -116,7 +116,7 @@ export function catalogHeaderSummary(header: CatalogHeaderSettings): string {
       ? "Color de marca"
       : header.bgMode === "solid"
         ? header.bgColor?.toUpperCase() ?? "Color sólido"
-        : "Tema";
+        : "Marketplace";
   const alignLabel = header.alignment === "stacked" ? "Centrada" : "Clásica";
   const coverLabel = header.coverImageUrl?.startsWith("http") ? " · Portada" : "";
   return `${bgLabel} · ${alignLabel}${coverLabel}`;

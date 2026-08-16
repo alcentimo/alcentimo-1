@@ -34,8 +34,9 @@ export const CATALOG_THEME_IDS: CatalogThemeId[] = [
 ];
 
 /**
- * Plantillas estructurales (layouts distintos): se ofrecen a todos los rubros
- * sin alterar el tema por defecto (`minimal` / fashion-pure).
+ * Presets históricos de plantillas. El catálogo público ya no ofrece selector:
+ * siempre se resuelve al modelo Marketplace (`minimal` + clase `txn-catalog--marketplace`).
+ * Se conservan los datos para leer CSS vars base y migraciones de config JSON.
  */
 export const STRUCTURAL_CATALOG_THEME_IDS: CatalogThemeId[] = [
   "boutique",
@@ -432,9 +433,8 @@ export function isStructuralCatalogThemeId(
 }
 
 export function getCatalogThemeIdsForRubro(
-  rubro: string | null | undefined,
+  _rubro: string | null | undefined,
 ): CatalogThemeId[] {
-  const base =
-    rubro === "ropa-moda" ? FASHION_CATALOG_THEME_IDS : CATALOG_THEME_IDS;
-  return [...base, ...STRUCTURAL_CATALOG_THEME_IDS];
+  // Único layout público: Marketplace (id canónico `minimal` en storage).
+  return ["minimal"];
 }

@@ -28,8 +28,8 @@ const BG_MODE_OPTIONS: {
 }[] = [
   {
     value: "theme",
-    label: "Tema",
-    description: "Usa el fondo del tema visual seleccionado.",
+    label: "Marketplace",
+    description: "Fondo claro del modelo estándar (estilo vitrina).",
   },
   {
     value: "brand",
