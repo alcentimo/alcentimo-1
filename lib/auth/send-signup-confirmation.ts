@@ -94,8 +94,9 @@ export async function sendSignupConfirmationEmailForPath(input: {
     return {
       ok: false,
       error:
-        delivered.error ||
-        "No pudimos enviar el correo de confirmación. Intenta de nuevo.",
+        "error" in delivered && delivered.error
+          ? delivered.error
+          : "No pudimos enviar el correo de confirmación. Intenta de nuevo.",
     };
   }
 
