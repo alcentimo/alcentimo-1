@@ -3,12 +3,7 @@ import {
   DEFAULT_STORE_RUBRO,
   normalizeStoreRubro,
 } from "@/src/config/categories";
-import {
-  CATALOG_THEME_PRESETS,
-  FASHION_CATALOG_THEME_IDS,
-  isFashionCatalogThemeId,
-  isStructuralCatalogThemeId,
-} from "@/lib/store-settings/catalog-theme-presets";
+import { CATALOG_THEME_PRESETS } from "@/lib/store-settings/catalog-theme-presets";
 import {
   buildCatalogAccentCssVars,
   getDefaultPrimaryColorForRubro,
@@ -37,25 +32,6 @@ import { cn } from "@/lib/cn";
 export { getDefaultPrimaryColorForRubro } from "@/lib/store-settings/rubro-palettes";
 
 const HEX_COLOR_PATTERN = /^#([0-9a-fA-F]{6})$/;
-
-const LEGACY_TO_FASHION: Record<"minimal" | "impact" | "immersive", CatalogThemeId> = {
-  minimal: "fashion-pure",
-  impact: "fashion-nocturne",
-  immersive: "fashion-editorial",
-};
-
-const FASHION_TO_LEGACY: Record<
-  | "fashion-pure"
-  | "fashion-nocturne"
-  | "fashion-editorial"
-  | "fashion-luxe",
-  CatalogThemeId
-> = {
-  "fashion-pure": "minimal",
-  "fashion-nocturne": "impact",
-  "fashion-editorial": "immersive",
-  "fashion-luxe": "minimal",
-};
 
 export function normalizeCatalogPrimaryColor(value: string | undefined): string {
   const trimmed = value?.trim() ?? "";
@@ -125,47 +101,18 @@ export function normalizeCatalogVisibility(
   };
 }
 
-function inferThemeFromLegacy(
-  design: Partial<CatalogDesignSettings> | undefined,
-): CatalogThemeId {
-  if (design?.layout === "list") {
-    return "immersive";
-  }
-  return "minimal";
-}
-
-function usesFashionThemePalette(
-  storeRubro: string | null | undefined,
-  theme: CatalogThemeId,
-): boolean {
-  return (
-    normalizeStoreRubro(storeRubro) === "ropa-moda" &&
-    isFashionCatalogThemeId(theme)
-  );
-}
+/**
+ * Catálogo público unificado: un solo layout marketplace (estilo Moriche).
+ * Los ids históricos se normalizan a `minimal` para no romper datos guardados.
+ */
+export const STANDARD_CATALOG_THEME_ID: CatalogThemeId = "minimal";
 
 /** Ajusta el tema al conjunto permitido por el rubro de la tienda. */
 export function coerceThemeForRubro(
-  theme: CatalogThemeId,
-  storeRubro: string | null | undefined,
+  _theme: CatalogThemeId,
+  _storeRubro: string | null | undefined,
 ): CatalogThemeId {
-  const rubro = normalizeStoreRubro(storeRubro);
-
-  if (rubro === "ropa-moda") {
-    if (isFashionCatalogThemeId(theme) || isStructuralCatalogThemeId(theme)) {
-      return theme;
-    }
-    if (theme === "minimal" || theme === "impact" || theme === "immersive") {
-      return LEGACY_TO_FASHION[theme];
-    }
-    return FASHION_CATALOG_THEME_IDS[0];
-  }
-
-  if (isFashionCatalogThemeId(theme)) {
-    return FASHION_TO_LEGACY[theme];
-  }
-
-  return theme;
+  return STANDARD_CATALOG_THEME_ID;
 }
 
 export function resolveCatalogDesign(
@@ -173,13 +120,9 @@ export function resolveCatalogDesign(
   storeRubro: string | null | undefined,
 ): Required<Pick<CatalogDesignSettings, "primaryColor" | "layout">> &
   CatalogDesignSettings {
-  const rawTheme =
-    normalizeCatalogTheme(design?.theme) ?? inferThemeFromLegacy(design);
-  const theme = coerceThemeForRubro(rawTheme, storeRubro);
-  const preset = CATALOG_THEME_PRESETS[theme];
+  const theme = STANDARD_CATALOG_THEME_ID;
   const palette = getRubroPalette(storeRubro);
-  const fashionPalette = usesFashionThemePalette(storeRubro, theme);
-  const saleMode = normalizeCatalogSaleMode(design?.saleMode);
+  const saleMode: CatalogSaleMode = "quick";
   const visibility = normalizeCatalogVisibility(design?.visibility);
 
   const legacyColor =
@@ -187,22 +130,8 @@ export function resolveCatalogDesign(
       ? design.primaryColor.toLowerCase()
       : null;
 
-  let primaryColor: string;
-  if (legacyColor) {
-    primaryColor = legacyColor;
-  } else if (fashionPalette) {
-    primaryColor =
-      design?.theme != null
-        ? preset.primaryColor
-        : (legacyColor ?? preset.primaryColor);
-  } else {
-    primaryColor = palette.primary;
-  }
-
-  const layout =
-    design?.layout === "list" || design?.layout === "grid"
-      ? design.layout
-      : normalizeCatalogLayout(preset.layout);
+  const primaryColor = legacyColor ?? palette.primary;
+  const layout: CatalogLayoutMode = "grid";
 
   return {
     theme,
@@ -231,28 +160,18 @@ export function getCatalogThemeStyle(
   const resolved = resolveCatalogDesign(design, storeRubro);
   const preset = CATALOG_THEME_PRESETS[resolved.theme];
   const palette = getRubroPalette(storeRubro);
-  const fashionPalette = usesFashionThemePalette(storeRubro, resolved.theme);
 
   const accentPrimary =
     normalizeHex6(resolved.primaryColor) ?? palette.primary;
 
-  const accent = fashionPalette
-    ? normalizeHex6(preset.accentColor ?? preset.previewAccent) ?? palette.accent
-    : palette.accent;
-  const pageBg = fashionPalette
-    ? (preset.cssVars["--txn-page-bg"] ?? preset.pageBg)
-    : palette.pageBg;
-
-  const presetOverridesButtonColors = Boolean(
-    preset.cssVars["--pc-btn-mobile-bg"] ||
-      preset.cssVars["--pc-btn-desktop-bg"],
-  );
+  const accent = palette.accent;
+  const pageBg = palette.pageBg;
 
   const accentVars = buildCatalogAccentCssVars({
     primary: accentPrimary,
     accent,
     pageBg,
-    includeButtonVars: !(fashionPalette && presetOverridesButtonColors),
+    includeButtonVars: true,
   });
 
   const header = normalizeCatalogHeaderSettings(resolved.header);
@@ -268,6 +187,9 @@ export function getCatalogThemeStyle(
     ...preset.cssVars,
     ...accentVars,
     ["--txn-page-bg"]: pageBg,
+    ["--sf-brand"]: accentPrimary,
+    ["--sf-brand-soft"]: `color-mix(in srgb, ${accentPrimary} 14%, white)`,
+    ["--sf-brand-ink"]: `color-mix(in srgb, ${accentPrimary} 72%, #0a0a0a)`,
   };
 
   if (headerBg.isCustom) {
@@ -295,12 +217,12 @@ export function getCatalogDesignClasses(
 
   return cn(
     getCatalogRubroClass(storeRubro),
-    `txn-catalog--theme-${resolved.theme}`,
-    `txn-catalog--sale-${resolved.saleMode}`,
+    "txn-catalog--marketplace",
+    `txn-catalog--theme-${STANDARD_CATALOG_THEME_ID}`,
+    "txn-catalog--sale-quick",
     `txn-catalog--header-${header.alignment}`,
     header.bgMode !== "theme" && "txn-catalog--header-custom-bg",
     Boolean(header.coverImageUrl) && "txn-catalog--header-cover",
-    resolved.layout === "list" && "txn-catalog--list",
     !resolved.visibility.showDescription && "txn-catalog--hide-desc",
     !resolved.visibility.showPrices && "txn-catalog--hide-prices",
     !resolved.visibility.showStock && "txn-catalog--hide-stock",
@@ -308,41 +230,11 @@ export function getCatalogDesignClasses(
 }
 
 export function getCatalogProductGridClassName(
-  design: CatalogDesignSettings,
-  storeRubro?: string | null,
+  _design: CatalogDesignSettings,
+  _storeRubro?: string | null,
   extra?: string,
 ): string {
-  const resolved = resolveCatalogDesign(design, storeRubro);
-
-  if (resolved.layout === "list") {
-    return cn("txn-product-list", extra);
-  }
-
-  if (resolved.theme === "immersive") {
-    return cn("txn-product-grid txn-product-grid--immersive", extra);
-  }
-
-  if (resolved.theme === "boutique") {
-    return cn("txn-product-grid txn-product-grid--boutique", extra);
-  }
-
-  if (resolved.theme === "rail") {
-    return cn("txn-product-grid txn-product-grid--rail", extra);
-  }
-
-  if (resolved.theme === "mosaic") {
-    return cn("txn-product-grid txn-product-grid--mosaic", extra);
-  }
-
-  if (resolved.theme === "profile") {
-    return cn("txn-product-grid txn-product-grid--profile", extra);
-  }
-
-  if (resolved.theme === "compact") {
-    return cn("txn-product-grid txn-product-grid--compact", extra);
-  }
-
-  return cn("txn-product-grid", extra);
+  return cn("txn-product-grid txn-product-grid--marketplace", extra);
 }
 
 export function getProductBodyLayoutClass(

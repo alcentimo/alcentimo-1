@@ -14,7 +14,6 @@ import {
   getCatalogDesignClasses,
   getCatalogProductGridClassName,
   getCatalogThemeStyle,
-  resolveCatalogDesign,
 } from "@/lib/store-settings/catalog-theme";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import {
@@ -32,7 +31,6 @@ import { CatalogBrowseToolbar } from "@/components/catalog-transactional/Catalog
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
 import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
 import { useCatalogBrowse } from "@/components/catalog-transactional/useCatalogBrowse";
-import { useCatalogLayoutPreference } from "@/components/catalog-transactional/useCatalogLayoutPreference";
 import {
   CatalogFulfillmentProvider,
   useCatalogFulfillment,
@@ -333,17 +331,7 @@ function TransactionalCatalogContent({
     serverPagination: browseServerPagination,
   });
 
-  const storeDefaultLayout = resolveCatalogDesign(
-    catalogDesign,
-    store.rubro_tienda,
-  ).layout;
-  const { layout: preferredLayout, setLayout: setPreferredLayout } =
-    useCatalogLayoutPreference(store.slug, storeDefaultLayout);
-
-  const effectiveDesign = useMemo(
-    () => ({ ...catalogDesign, layout: preferredLayout }),
-    [catalogDesign, preferredLayout],
-  );
+  const effectiveDesign = catalogDesign;
 
   const useFlatBrowseLayout =
     !isFoodMenu || browse.hasActiveFilters || catalogProducts.length > 20;
@@ -456,8 +444,6 @@ function TransactionalCatalogContent({
           filteredCount={browse.totalCount}
           hasActiveFilters={browse.hasActiveFilters}
           onClearFilters={browse.clearFilters}
-          layout={preferredLayout}
-          onLayoutChange={setPreferredLayout}
         />
       ) : null}
 
