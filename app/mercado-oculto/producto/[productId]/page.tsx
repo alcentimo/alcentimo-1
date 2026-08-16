@@ -125,7 +125,7 @@ export default async function MercadoProductoPage({
           <h1 className="mercado-mp-detail-title">{product.product_name}</h1>
 
           <div className="mercado-mp-detail-stock">
-            <Boxes className="h-4 w-4 text-[#125699]" aria-hidden="true" />
+            <Boxes className="h-4 w-4 text-emerald-700" aria-hidden="true" />
             <span>
               Stock disponible:{" "}
               <strong className="tabular-nums text-zinc-900">

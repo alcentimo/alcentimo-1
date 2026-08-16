@@ -112,7 +112,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Buscar productos, marcas y más…"
+        placeholder="Buscar en la vitrina Moriche…"
         aria-label="Buscar productos"
         className="mercado-mp-search-input"
         disabled={pending}
@@ -129,10 +129,11 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
         <div className="mercado-mp-header-top">
           <Link href="/mercado-oculto" className="mercado-mp-brand" prefetch>
             <span className="mercado-brand-mark" aria-hidden="true">
-              a
+              M
             </span>
             <span className="mercado-mp-brand-text">
-              <span className="mercado-title">Mercado oculto</span>
+              <span className="mercado-mp-brand-kicker">Curaduría B2B</span>
+              <span className="mercado-title">Mercado Moriche</span>
             </span>
           </Link>
 

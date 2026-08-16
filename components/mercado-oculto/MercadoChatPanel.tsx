@@ -132,7 +132,7 @@ export function MercadoChatPanel({
         </div>
         <div className="flex flex-1 flex-col items-start justify-center gap-3 px-4 py-8">
           <p className="inline-flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-            <Lock className="h-4 w-4 shrink-0 text-[#125699]" aria-hidden="true" />
+            <Lock className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" />
             La vitrina es pública; el chat requiere cuenta.
           </p>
           <Link

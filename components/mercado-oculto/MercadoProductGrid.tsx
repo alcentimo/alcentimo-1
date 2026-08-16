@@ -14,13 +14,13 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
   if (products.length === 0) {
     return (
       <div className="mercado-mp-empty">
-        <Package className="h-8 w-8 text-[#125699]/70" aria-hidden="true" />
-        <p className="mt-3 text-sm font-medium text-zinc-800">
+        <Package className="h-8 w-8 text-emerald-700/70" aria-hidden="true" />
+        <p className="mt-3 text-sm font-medium text-[var(--mo-ink)]">
           No encontramos productos
         </p>
-        <p className="mt-1 max-w-md text-sm text-zinc-500">
-          Probá otras palabras o quitá filtros. Hay miles de ofertas mayoristas
-          esperándote.
+        <p className="mt-1 max-w-md text-sm text-[var(--mo-muted)]">
+          Probá otras palabras o quitá filtros. La vitrina Moriche se actualiza
+          con nuevas curadurías mayoristas.
         </p>
       </div>
     );

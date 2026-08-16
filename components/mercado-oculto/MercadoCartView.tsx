@@ -25,7 +25,7 @@ export function MercadoCartView() {
   if (groups.length === 0) {
     return (
       <div className="mercado-ml-cart-empty">
-        <ShoppingBag className="h-10 w-10 text-[#125699]/70" aria-hidden="true" />
+        <ShoppingBag className="h-10 w-10 text-emerald-700/70" aria-hidden="true" />
         <h1>Tu carrito está vacío</h1>
         <p>
           ¡Aprovechá el envío a nivel nacional! Explorá ofertas mayoristas y

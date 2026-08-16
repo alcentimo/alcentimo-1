@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MercadoChrome } from "@/components/mercado-oculto/MercadoChrome";
 
 export const metadata = {
-  title: "Mercado oculto",
+  title: "Mercado Moriche",
   robots: {
     index: false,
     follow: false,
@@ -25,8 +25,8 @@ export default async function MercadoOcultoLayout({
       fallback={
         <div className="mercado-shell">
           <main className="mercado-main">
-            <div className="mercado-card-static text-sm text-zinc-500">
-              Cargando mercado…
+            <div className="mercado-card-static text-sm text-[var(--mo-muted)]">
+              Cargando Mercado Moriche…
             </div>
           </main>
         </div>

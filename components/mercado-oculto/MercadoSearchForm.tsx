@@ -33,11 +33,11 @@ export function MercadoSearchForm({ initialQuery }: MercadoSearchFormProps) {
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Buscar producto, tienda o categoría…"
-        aria-label="Buscar en el mercado oculto"
+        placeholder="Buscar en la vitrina Moriche…"
+        aria-label="Buscar en Mercado Moriche"
         className="mercado-search-input"
       />
-      <button type="submit" className="btn-brand-outline !min-h-9 !px-3 !text-xs">
+      <button type="submit" className="btn-brand-outline !min-h-9 !rounded-xl !px-3 !text-xs">
         Buscar
       </button>
     </form>

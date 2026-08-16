@@ -20,14 +20,14 @@ export function MercadoCatalogView() {
             <h1 className="mercado-heading text-lg sm:text-xl">
               {filters.q
                 ? `Resultados para “${filters.q}”`
-                : "Productos destacados"}
+                : "Selección curada"}
             </h1>
             <p className="mercado-subheading mt-0.5">
-              Envío a nivel nacional · Compra protegida
+              Vitrina mayorista · Envío nacional · Compra protegida
             </p>
           </div>
-          <p className="text-sm text-zinc-500" aria-live="polite">
-            <strong className="font-semibold text-zinc-800">
+          <p className="text-sm text-[var(--mo-muted)]" aria-live="polite">
+            <strong className="font-semibold text-[var(--mo-ink)]">
               {filteredProducts.length}
             </strong>{" "}
             resultado{filteredProducts.length === 1 ? "" : "s"}
