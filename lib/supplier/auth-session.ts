@@ -3,6 +3,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
+import {
+  EMAIL_VERIFICATION_REQUIRED_MESSAGE,
+  isAuthEmailVerified,
+} from "@/lib/auth/email-verified";
 
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
@@ -37,7 +41,7 @@ export async function lookupAuthUserByEmail(
 
 /**
  * Abre sesión Supabase para el email Auth sin exigir la contraseña de auth.users.
- * Permite que la clave de proveedor viva solo en supplier_profiles.
+ * Requiere correo confirmado.
  */
 export async function establishSupplierSessionForEmail(
   email: string,
@@ -58,6 +62,10 @@ export async function establishSupplierSessionForEmail(
         linkError?.message ?? "No se pudo preparar la sesión de proveedor.",
       ),
     };
+  }
+
+  if (!isAuthEmailVerified(linkData.user)) {
+    return { ok: false, error: EMAIL_VERIFICATION_REQUIRED_MESSAGE };
   }
 
   const tokenHash = linkData.properties?.hashed_token?.trim();
@@ -93,12 +101,15 @@ export async function establishSupplierSessionForEmail(
   return { ok: true, user: otpData.user };
 }
 
-/** Crea usuario Auth si no existe; si existe, lo reutiliza sin tocar su contraseña. */
+/** Crea usuario Auth sin confirmar email; si existe, lo reutiliza sin auto-confirmar. */
 export async function ensureAuthUserForSupplier(input: {
   email: string;
   password: string;
   metadata: Record<string, unknown>;
-}): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
+}): Promise<
+  | { ok: true; userId: string; emailConfirmed: boolean }
+  | { ok: false; error: string }
+> {
   const email = normalizeEmail(input.email);
   const admin = createAdminClient();
 
@@ -106,12 +117,16 @@ export async function ensureAuthUserForSupplier(input: {
     await admin.auth.admin.createUser({
       email,
       password: input.password,
-      email_confirm: true,
+      email_confirm: false,
       user_metadata: input.metadata,
     });
 
   if (!createError && created.user?.id) {
-    return { ok: true, userId: created.user.id };
+    return {
+      ok: true,
+      userId: created.user.id,
+      emailConfirmed: isAuthEmailVerified(created.user),
+    };
   }
 
   if (createError && !isExistingUserError(createError.message)) {
@@ -132,17 +147,27 @@ export async function ensureAuthUserForSupplier(input: {
     ...input.metadata,
   };
 
+  const emailConfirmed = isAuthEmailVerified(existing);
+
+  // No sobrescribir la contraseña Auth de una cuenta ya verificada (tienda/cliente).
+  // La clave del panel proveedor vive en supplier_profiles.password_hash.
   const { error: updateError } = await admin.auth.admin.updateUserById(
     existing.id,
-    {
-      email_confirm: true,
-      user_metadata: mergedMetadata,
-    },
+    emailConfirmed
+      ? { user_metadata: mergedMetadata }
+      : {
+          password: input.password,
+          user_metadata: mergedMetadata,
+        },
   );
 
   if (updateError) {
     console.warn("[supplier-auth-metadata]", updateError.message);
   }
 
-  return { ok: true, userId: existing.id };
+  return {
+    ok: true,
+    userId: existing.id,
+    emailConfirmed,
+  };
 }

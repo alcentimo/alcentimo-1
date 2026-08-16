@@ -17,6 +17,7 @@ import {
   checkSupportAdminAccess,
   resolveAuthEmail,
 } from "@/lib/support/admin-access";
+import { isAuthEmailVerified } from "@/lib/auth/email-verified";
 import { resolveSupplierAccess, shouldForceSupplierPostAuthRedirect } from "@/lib/supplier/access";
 import {
   canAccessDashboardPath,
@@ -55,6 +56,7 @@ const REGISTER_PATH = "/register";
 const RECOVER_PASSWORD_PATH = "/dashboard/recuperar-contrasena";
 const RESET_PASSWORD_PATH = "/dashboard/restablecer-contrasena";
 const RESET_PASSWORD_SUCCESS_PATH = "/dashboard/restablecer-contrasena/exito";
+const VERIFY_ACCOUNT_PATH = "/dashboard/verificar-cuenta";
 const ONBOARDING_PATH = "/onboarding";
 const ACTIVAR_PATH = "/activar";
 const AUTH_CONFIRM_PATH = "/auth/confirm";
@@ -269,17 +271,50 @@ export async function middleware(request: NextRequest) {
   const isRecoverPasswordPage = pathname === RECOVER_PASSWORD_PATH;
   const isResetPasswordPage = pathname === RESET_PASSWORD_PATH;
   const isResetPasswordSuccessPage = pathname === RESET_PASSWORD_SUCCESS_PATH;
+  const isVerifyAccountPage =
+    pathname === VERIFY_ACCOUNT_PATH ||
+    pathname.startsWith(`${VERIFY_ACCOUNT_PATH}/`);
   const isResetPasswordFlow =
     isResetPasswordPage || isResetPasswordSuccessPage;
   const isPublicAuthPage =
     isLoginPage ||
     isRecoverPasswordPage ||
-    isResetPasswordFlow;
+    isResetPasswordFlow ||
+    isVerifyAccountPage;
   const isOnboarding = pathname === ONBOARDING_PATH;
   const isActivar = pathname === ACTIVAR_PATH;
   const isInvitationPage = isDashboardInvitationPath(pathname);
 
   const authenticatedUser = user ?? null;
+
+  // Sin correo verificado no hay acceso a paneles (tienda, onboarding, proveedor).
+  if (
+    authenticatedUser &&
+    !isAuthEmailVerified(authenticatedUser) &&
+    !isPublicAuthPage &&
+    !isProveedorPublicAuth &&
+    (isDashboard ||
+      isOnboarding ||
+      isActivar ||
+      (isProveedorRoute && !isProveedorPublicAuth) ||
+      isAdminRoute ||
+      isMercadoOcultoRoute)
+  ) {
+    const verifyUrl = request.nextUrl.clone();
+    verifyUrl.pathname = VERIFY_ACCOUNT_PATH;
+    verifyUrl.search = "";
+    const email = resolveAuthEmail(authenticatedUser);
+    if (email) {
+      verifyUrl.searchParams.set("email", email);
+    }
+    const nextTarget = isProveedorRoute
+      ? SUPPLIER_POST_AUTH_PATH
+      : isOnboarding
+        ? ONBOARDING_PATH
+        : "/dashboard/catalogo";
+    verifyUrl.searchParams.set("next", nextTarget);
+    return NextResponse.redirect(verifyUrl);
+  }
 
   // Cookie de sesión para visitas a la landing (alcentimo.com).
   if (pathname === "/" && !request.cookies.get(LANDING_VISITOR_COOKIE)?.value) {

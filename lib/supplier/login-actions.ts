@@ -4,8 +4,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { SUPPLIER_POST_AUTH_PATH } from "@/lib/auth/post-auth-redirect";
 import {
+  EMAIL_VERIFICATION_REQUIRED_MESSAGE,
+  isAuthEmailVerified,
+} from "@/lib/auth/email-verified";
+import {
   ensureAuthUserForSupplier,
   establishSupplierSessionForEmail,
+  lookupAuthUserByEmail,
 } from "@/lib/supplier/auth-session";
 import { resolveSupplierAccess } from "@/lib/supplier/access";
 import { verifySupplierPassword } from "@/lib/supplier/password";
@@ -103,21 +108,27 @@ export async function loginSupplierAction(input: {
       } else {
         // Perfil legacy (allowlist) sin hash: probar contraseña Auth una vez.
         const supabase = await createClient();
-        const { error: authError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (authError) {
-          return { ok: false, error: "Correo o contraseña incorrectos." };
+        const { data: authData, error: authError } =
+          await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+        if (authError || !authData.user) {
+          return {
+            ok: false,
+            error: formatAuthError(
+              authError?.message ?? "Correo o contraseña incorrectos.",
+            ),
+          };
         }
-        // Sesión Auth ya abierta; confirmar acceso proveedor.
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        if (!isAuthEmailVerified(authData.user)) {
+          await supabase.auth.signOut();
+          return { ok: false, error: EMAIL_VERIFICATION_REQUIRED_MESSAGE };
+        }
         const access = await resolveSupplierAccess({
           email,
-          userId: user?.id ?? profile.user_id,
-          user,
+          userId: authData.user.id,
+          user: authData.user,
         });
         if (!access.ok) {
           await supabase.auth.signOut();
@@ -127,6 +138,11 @@ export async function loginSupplierAction(input: {
           };
         }
         return { ok: true, redirectTo: SUPPLIER_POST_AUTH_PATH };
+      }
+
+      const authUser = await lookupAuthUserByEmail(profile.email || email);
+      if (authUser && !isAuthEmailVerified(authUser)) {
+        return { ok: false, error: EMAIL_VERIFICATION_REQUIRED_MESSAGE };
       }
 
       const ensured = await ensureAuthUserForSupplier({
@@ -140,6 +156,9 @@ export async function loginSupplierAction(input: {
         },
       });
       if (!ensured.ok) return ensured;
+      if (!ensured.emailConfirmed) {
+        return { ok: false, error: EMAIL_VERIFICATION_REQUIRED_MESSAGE };
+      }
 
       const session = await establishSupplierSessionForEmail(
         profile.email || email,
@@ -161,6 +180,11 @@ export async function loginSupplierAction(input: {
           authError?.message ?? "Correo o contraseña incorrectos.",
         ),
       };
+    }
+
+    if (!isAuthEmailVerified(authData.user)) {
+      await supabase.auth.signOut();
+      return { ok: false, error: EMAIL_VERIFICATION_REQUIRED_MESSAGE };
     }
 
     const access = await resolveSupplierAccess({

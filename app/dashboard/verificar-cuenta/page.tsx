@@ -19,7 +19,16 @@ export default async function VerifyAccountPage({
 }) {
   const params = await searchParams;
   const email = params.email?.trim().toLowerCase() ?? "";
-  const nextPath = resolvePostAuthPath(params.next);
+  // Conserva next internos (p. ej. /proveedor/dashboard); no forzar solo catálogo.
+  const rawNext = params.next?.trim() || null;
+  const nextPath =
+    rawNext &&
+    rawNext.startsWith("/") &&
+    !rawNext.startsWith("//") &&
+    !rawNext.startsWith("http://") &&
+    !rawNext.startsWith("https://")
+      ? rawNext
+      : resolvePostAuthPath(params.next);
   const initialError = params.error?.trim() || null;
   const isInvitationFlow = isInvitationNextPath(params.next);
 

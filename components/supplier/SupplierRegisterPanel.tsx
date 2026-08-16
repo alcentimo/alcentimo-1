@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { SignupEmailVerificationPanel } from "@/components/dashboard/SignupEmailVerificationPanel";
 import { SUPPLIER_PRODUCT_CATEGORIES } from "@/lib/supplier/categories";
 import { registerSupplierAction } from "@/lib/supplier/register-actions";
 import {
@@ -20,6 +21,15 @@ export function SupplierRegisterPanel() {
   const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(
+    null,
+  );
+  const [confirmationNotice, setConfirmationNotice] = useState<string | null>(
+    null,
+  );
+  const [requiresLoginNotice, setRequiresLoginNotice] = useState<string | null>(
+    null,
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,12 +53,56 @@ export function SupplierRegisterPanel() {
         return;
       }
 
-      // Redirección dura y exclusiva al panel mayorista (sin historial a registro).
-      window.location.replace(SUPPLIER_DASHBOARD_PATH);
+      if (result.needsEmailConfirmation) {
+        setConfirmationEmail(result.email);
+        setConfirmationNotice(result.notice);
+        setLoading(false);
+        return;
+      }
+
+      if (result.requiresLogin) {
+        setRequiresLoginNotice(result.notice);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(false);
     } catch {
       setError("No se pudo completar el registro. Intenta de nuevo.");
       setLoading(false);
     }
+  }
+
+  if (confirmationEmail) {
+    return (
+      <div className="card-panel mx-auto w-full max-w-lg">
+        <SignupEmailVerificationPanel
+          email={confirmationEmail}
+          nextPath={SUPPLIER_DASHBOARD_PATH}
+          notice={confirmationNotice}
+          freshSignup
+          signupPassword={password}
+        />
+        <p className="mt-5 text-center text-sm text-zinc-500 dark:text-zinc-400">
+          <Link href={SUPPLIER_LOGIN_PATH} className="link-brand">
+            Ir a iniciar sesión
+          </Link>
+        </p>
+      </div>
+    );
+  }
+
+  if (requiresLoginNotice) {
+    return (
+      <div className="card-panel mx-auto w-full max-w-lg space-y-4">
+        <p className="alert-success text-sm" role="status">
+          {requiresLoginNotice}
+        </p>
+        <Link href={SUPPLIER_LOGIN_PATH} className="btn-primary inline-flex w-full justify-center">
+          Iniciar sesión en el panel de proveedores
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -121,7 +175,6 @@ export function SupplierRegisterPanel() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className="input-field"
-            placeholder="Mínimo 6 caracteres"
             disabled={loading}
           />
         </div>
@@ -139,7 +192,7 @@ export function SupplierRegisterPanel() {
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
             className="input-field"
-            placeholder="0412 000 0000"
+            placeholder="0412-1234567"
             disabled={loading}
           />
         </div>
@@ -165,32 +218,22 @@ export function SupplierRegisterPanel() {
           </select>
         </div>
 
-        <label className="flex items-start gap-2.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+        <label className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-300">
           <input
-            id="supplier_accept_legal"
             type="checkbox"
+            className="mt-1"
             checked={acceptedLegalTerms}
             onChange={(event) => setAcceptedLegalTerms(event.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-zinc-600"
             disabled={loading}
+            required
           />
           <span>
             Acepto los{" "}
-            <Link
-              href="/terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="link-brand"
-            >
+            <Link href="/terminos" className="link-brand" target="_blank">
               Términos y Condiciones
             </Link>{" "}
             y la{" "}
-            <Link
-              href="/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="link-brand"
-            >
+            <Link href="/privacidad" className="link-brand" target="_blank">
               Política de Privacidad
             </Link>
             .

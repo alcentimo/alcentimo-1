@@ -3,10 +3,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SUPPLIER_POST_AUTH_PATH } from "@/lib/auth/post-auth-redirect";
 import {
-  ensureAuthUserForSupplier,
-  establishSupplierSessionForEmail,
-} from "@/lib/supplier/auth-session";
-import { userHasActiveSupplierProfile } from "@/lib/supplier/access";
+  EMAIL_VERIFICATION_SENT_MESSAGE,
+} from "@/lib/auth/email-verified";
+import { sendSignupConfirmationEmailForPath } from "@/lib/auth/send-signup-confirmation";
+import { ensureAuthUserForSupplier } from "@/lib/supplier/auth-session";
 import {
   isSupplierProductCategory,
   type SupplierProductCategory,
@@ -20,7 +20,21 @@ const SUPPLIER_AUTH_METADATA = {
 } as const;
 
 export type SupplierRegisterResult =
-  | { ok: true; redirectTo: string }
+  | {
+      ok: true;
+      needsEmailConfirmation: true;
+      email: string;
+      notice: string;
+      redirectTo?: undefined;
+    }
+  | {
+      ok: true;
+      needsEmailConfirmation?: false;
+      requiresLogin: true;
+      email: string;
+      notice: string;
+      redirectTo?: undefined;
+    }
   | { ok: false; error: string };
 
 function normalizeEmail(value: string): string {
@@ -166,7 +180,6 @@ async function upsertSupplierProfile(input: {
 
   if (error) {
     console.error("[supplier-register-profile]", error.message);
-    // Conflicto de email único con otro user_id
     if (
       error.message.toLowerCase().includes("unique") ||
       error.code === "23505"
@@ -188,9 +201,9 @@ async function upsertSupplierProfile(input: {
 }
 
 /**
- * Registro de proveedor/mayorista.
- * Si el correo ya existe como cliente/tienda, reutiliza auth.users y crea
- * credenciales propias en supplier_profiles (sin bloquear por el email).
+ * Registro de proveedor/mayorista con verificación obligatoria de correo.
+ * No abre sesión: envía enlace de confirmación o pide iniciar sesión si ya
+ * estaba verificado.
  */
 export async function registerSupplierAction(
   input: SupplierRegisterInput,
@@ -243,19 +256,35 @@ export async function registerSupplierAction(
 
     if (!profileResult.ok) return profileResult;
 
-    const session = await establishSupplierSessionForEmail(email);
-    if (!session.ok) return session;
-
-    const profileReady = await userHasActiveSupplierProfile(authUser.userId);
-    if (!profileReady) {
+    if (authUser.emailConfirmed) {
       return {
-        ok: false,
-        error:
-          "Tu cuenta de proveedor se creó, pero el perfil aún no está listo. Inicia sesión de nuevo.",
+        ok: true,
+        requiresLogin: true,
+        email,
+        notice:
+          "Tu cuenta de proveedor está lista. Confirma el acceso iniciando sesión (el correo ya estaba verificado).",
       };
     }
 
-    return { ok: true, redirectTo: SUPPLIER_POST_AUTH_PATH };
+    const confirmation = await sendSignupConfirmationEmailForPath({
+      email,
+      password,
+      postAuthPath: SUPPLIER_POST_AUTH_PATH,
+    });
+
+    if (!confirmation.ok) {
+      return {
+        ok: false,
+        error: confirmation.error,
+      };
+    }
+
+    return {
+      ok: true,
+      needsEmailConfirmation: true,
+      email,
+      notice: EMAIL_VERIFICATION_SENT_MESSAGE,
+    };
   } catch (caught) {
     console.error("[registerSupplierAction]", caught);
     return {

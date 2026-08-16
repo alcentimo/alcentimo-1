@@ -271,6 +271,15 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
         return;
       }
 
+      if (!result.data.user?.email_confirmed_at) {
+        setLoading(false);
+        await supabase.auth.signOut();
+        setError(
+          "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja y spam.",
+        );
+        return;
+      }
+
       const sessionReady = await ensureBrowserSessionReady(
         supabase,
         result.data.session,
