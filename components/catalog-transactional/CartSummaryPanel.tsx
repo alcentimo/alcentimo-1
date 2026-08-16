@@ -10,6 +10,7 @@ import { CartLineItems } from "@/components/catalog-transactional/CartLineItems"
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
+import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
 import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
 
@@ -52,8 +53,11 @@ export function CartSummaryPanel({
   const { accountsEnabled } = useCustomerAccountMode();
   const { autoApply } = usePromotionContext();
   const customerSession = useCustomerSessionOptional();
+  const shellNav = useCatalogShellNavigationOptional();
 
-  const isLoggedCustomer = Boolean(customerSession?.isCustomer);
+  const isLoggedCustomer = Boolean(
+    customerSession?.isAuthenticated && customerSession?.isCustomer,
+  );
   const appliedPromotion =
     isLoggedCustomer && autoApply ? autoApply : null;
 
@@ -229,6 +233,27 @@ export function CartSummaryPanel({
                       : "Compra sin cuenta · Solo nombre y teléfono al pagar. El registro es opcional."
                     : "Compra como invitado · Solo nombre y teléfono al pagar."}
             </p>
+
+            {accountsEnabled && !isLoggedCustomer ? (
+              <p className="mt-2 text-center text-xs text-zinc-500">
+                <button
+                  type="button"
+                  className="font-semibold text-[var(--mo-emerald,var(--txn-primary,#0e5c42))] underline-offset-2 hover:underline"
+                  onClick={() => shellNav?.openRegister("login")}
+                >
+                  Entrar
+                </button>
+                {" · "}
+                <button
+                  type="button"
+                  className="font-semibold text-[var(--mo-emerald,var(--txn-primary,#0e5c42))] underline-offset-2 hover:underline"
+                  onClick={() => shellNav?.openRegister("register")}
+                >
+                  Crea tu cuenta
+                </button>
+                {" para guardar tus pedidos"}
+              </p>
+            ) : null}
           </footer>
         </>
       )}

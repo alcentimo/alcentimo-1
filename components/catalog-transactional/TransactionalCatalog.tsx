@@ -525,6 +525,7 @@ function TransactionalCatalogContent({
           panelView={cartPanelView}
           onPanelViewChange={handleCartPanelViewChange}
           sandboxMode={enableCart && previewMode}
+          showFab={false}
         />
       ) : null}
     </div>

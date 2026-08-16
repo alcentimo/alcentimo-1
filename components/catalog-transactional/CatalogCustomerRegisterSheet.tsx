@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { CustomerRegisterPanel } from "@/components/customers/CustomerRegisterPanel";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
@@ -18,6 +18,7 @@ export function CatalogCustomerRegisterSheet({
   orderId = null,
 }: CatalogCustomerRegisterSheetProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const shellNav = useCatalogShellNavigationOptional();
   const customerSession = useCustomerSessionOptional();
   const open = shellNav?.registerOpen ?? false;
@@ -50,8 +51,8 @@ export function CatalogCustomerRegisterSheet({
             </h2>
             <p className="txn-checkout-subtitle">
               {isLogin
-                ? `Entra a ${storeName} con tu correo y contraseña.`
-                : `Regístrate en ${storeName} con tus datos de verificación.`}
+                ? `Entra a ${storeName} para ver tus pedidos y perfil.`
+                : `Crea tu cuenta en ${storeName} y guarda tus compras.`}
             </p>
           </div>
           <button
@@ -79,7 +80,7 @@ export function CatalogCustomerRegisterSheet({
               customerSession?.setSessionFromRegistration(profile);
               void customerSession?.refreshSession();
               onClose();
-              shellNav.openProfile();
+              router.push(nextPath);
             }}
           />
         </div>
