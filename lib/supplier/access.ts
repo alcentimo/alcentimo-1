@@ -142,9 +142,48 @@ export async function userHasActiveSupplierProfile(
   }
 }
 
+/** Perfil activo por correo (case-insensitive), independiente del user_id Auth. */
+export async function emailHasActiveSupplierProfile(
+  email: string | null | undefined,
+): Promise<boolean> {
+  const normalizedEmail = normalizeSupportEmail(email);
+  if (!normalizedEmail) return false;
+
+  const escaped = normalizedEmail
+    .replace(/\\/g, "\\\\")
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_");
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = createAdminClient() as any;
+    const { data, error } = await db
+      .from("supplier_profiles")
+      .select("user_id")
+      .ilike("email", escaped)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("[supplier-profile-email-lookup]", error.message);
+      return false;
+    }
+
+    return Boolean(data?.user_id);
+  } catch (caught) {
+    console.warn(
+      "[supplier-profile-email-lookup]",
+      caught instanceof Error ? caught.message : caught,
+    );
+    return false;
+  }
+}
+
 /**
  * Acceso completo al hub /proveedor: allowlist, admin o perfil activo.
  * No usa solo metadata (evita falsos positivos en login de clientes/tiendas).
+ * El perfil se acepta por user_id o por email (roles cruzados tienda/proveedor).
  */
 export async function resolveSupplierAccess(input: {
   email?: string | null;
@@ -157,6 +196,23 @@ export async function resolveSupplierAccess(input: {
   if (input.userId) {
     const hasProfile = await userHasActiveSupplierProfile(input.userId);
     if (hasProfile) {
+      return {
+        ok: true,
+        normalizedEmail: emailCheck.normalizedEmail,
+        allowlistConfigured: emailCheck.allowlistConfigured,
+        allowlistCount: emailCheck.allowlistCount,
+        via: "profile",
+      };
+    }
+  }
+
+  // Misma persona con cuenta de tienda/cliente: el perfil puede vivir por email
+  // aunque el user_id Auth se haya realineado.
+  if (emailCheck.normalizedEmail) {
+    const hasEmailProfile = await emailHasActiveSupplierProfile(
+      emailCheck.normalizedEmail,
+    );
+    if (hasEmailProfile) {
       return {
         ok: true,
         normalizedEmail: emailCheck.normalizedEmail,
@@ -193,8 +249,12 @@ export async function shouldForceSupplierPostAuthRedirect(input: {
     return true;
   }
 
-  if (input.userId) {
-    return userHasActiveSupplierProfile(input.userId);
+  if (input.userId && (await userHasActiveSupplierProfile(input.userId))) {
+    return true;
+  }
+
+  if (normalizedEmail) {
+    return emailHasActiveSupplierProfile(normalizedEmail);
   }
 
   return false;

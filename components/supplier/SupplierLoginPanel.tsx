@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { createClient } from "@/lib/supabase/client";
+import { formatAuthError } from "@/lib/auth/format-auth-error";
 import { loginSupplierAction } from "@/lib/supplier/login-actions";
 import {
   SUPPLIER_DASHBOARD_PATH,
@@ -14,6 +16,43 @@ export function SupplierLoginPanel() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function establishClientSession(tokenHash: string): Promise<
+    { ok: true } | { ok: false; error: string }
+  > {
+    const supabase = createClient();
+
+    // Evitar colisión con una sesión previa de tienda/cliente.
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // ignore
+    }
+
+    const otpTypes = ["magiclink", "email"] as const;
+    let lastMessage: string | null = null;
+
+    for (const type of otpTypes) {
+      const { data, error: otpError } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type,
+      });
+
+      if (!otpError && data.session && data.user) {
+        return { ok: true };
+      }
+
+      lastMessage = otpError?.message ?? null;
+    }
+
+    return {
+      ok: false,
+      error: formatAuthError(
+        lastMessage ??
+          "Error al procesar la sesión de proveedor. Intenta de nuevo.",
+      ),
+    };
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -29,9 +68,25 @@ export function SupplierLoginPanel() {
         return;
       }
 
+      if (result.sessionTokenHash) {
+        const session = await establishClientSession(result.sessionTokenHash);
+        if (!session.ok) {
+          setError(session.error);
+          setLoading(false);
+          return;
+        }
+      }
+
       window.location.replace(result.redirectTo || SUPPLIER_DASHBOARD_PATH);
-    } catch {
-      setError("Error al procesar la sesión de proveedor. Intenta de nuevo.");
+    } catch (caught) {
+      const message =
+        caught instanceof Error ? caught.message : String(caught ?? "");
+      setError(
+        formatAuthError(
+          message ||
+            "Error al procesar la sesión de proveedor. Intenta de nuevo.",
+        ),
+      );
       setLoading(false);
     }
   }

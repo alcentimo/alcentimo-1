@@ -133,11 +133,16 @@ async function findSupplierProfileByEmail(email: string): Promise<{
   status: string;
 } | null> {
   const admin = createAdminClient();
+  const escaped = email
+    .replace(/\\/g, "\\\\")
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (admin as any)
     .from("supplier_profiles")
     .select("user_id, status")
-    .eq("email", email)
+    .ilike("email", escaped)
+    .limit(1)
     .maybeSingle();
 
   if (error) {

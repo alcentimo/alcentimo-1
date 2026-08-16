@@ -9,19 +9,29 @@ import {
 } from "@/lib/auth/email-verified";
 import {
   ensureAuthUserForSupplier,
-  establishSupplierSessionForEmail,
-  lookupAuthUserByEmail,
+  prepareSupplierSessionToken,
+  resolveAuthUserForSupplierProfile,
 } from "@/lib/supplier/auth-session";
 import { resolveSupplierAccess } from "@/lib/supplier/access";
 import { verifySupplierPassword } from "@/lib/supplier/password";
 import { createClient } from "@/lib/supabase/server";
 
 export type SupplierLoginResult =
-  | { ok: true; redirectTo: string }
+  | {
+      ok: true;
+      redirectTo: string;
+      /** Token para verifyOtp en el cliente (evita setear cookies en el Server Action). */
+      sessionTokenHash?: string;
+    }
   | { ok: false; error: string };
 
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
+}
+
+/** Escape LIKE wildcards for case-insensitive email match. */
+function escapeIlikeExact(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }
 
 function isValidEmail(value: string): boolean {
@@ -42,12 +52,16 @@ async function findSupplierCredentialsByEmail(
 ): Promise<SupplierCredentialRow | null> {
   const admin = createAdminClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (admin as any)
+  const db = admin as any;
+
+  // Match case-insensitive: el índice único es lower(email).
+  const { data, error } = await db
     .from("supplier_profiles")
     .select(
       "user_id, email, status, password_hash, contact_name, company_name",
     )
-    .eq("email", email)
+    .ilike("email", escapeIlikeExact(email))
+    .limit(1)
     .maybeSingle();
 
   if (error) {
@@ -72,8 +86,8 @@ async function findSupplierCredentialsByEmail(
 
 /**
  * Login aislado del panel mayorista.
- * Valida email+contraseña contra supplier_profiles y abre sesión limpia
- * hacia /proveedor/dashboard (sin pasar por AuthPanel de clientes/tiendas).
+ * Valida email+contraseña contra supplier_profiles (independiente de tienda/cliente)
+ * y devuelve un token de sesión para abrir cookies en el navegador.
  */
 export async function loginSupplierAction(input: {
   email: string;
@@ -137,17 +151,24 @@ export async function loginSupplierAction(input: {
             error: "No tienes acceso al panel de proveedores.",
           };
         }
+        // Sesión ya abierta vía Auth password (mismo cookie path que tienda).
         return { ok: true, redirectTo: SUPPLIER_POST_AUTH_PATH };
       }
 
-      const authUser = await lookupAuthUserByEmail(profile.email || email);
-      if (authUser && !isAuthEmailVerified(authUser)) {
+      const resolved = await resolveAuthUserForSupplierProfile({
+        profileUserId: profile.user_id,
+        email: profile.email || email,
+      });
+      if (!resolved.ok) return resolved;
+
+      if (!isAuthEmailVerified(resolved.user)) {
         return { ok: false, error: EMAIL_VERIFICATION_REQUIRED_MESSAGE };
       }
 
       const ensured = await ensureAuthUserForSupplier({
         email: profile.email || email,
         password,
+        existingUser: resolved.user,
         metadata: {
           display_name: profile.contact_name ?? undefined,
           company_name: profile.company_name ?? undefined,
@@ -160,12 +181,30 @@ export async function loginSupplierAction(input: {
         return { ok: false, error: EMAIL_VERIFICATION_REQUIRED_MESSAGE };
       }
 
-      const session = await establishSupplierSessionForEmail(
-        profile.email || email,
-      );
+      // Confirmar acceso por perfil (tras posible repair de user_id).
+      const access = await resolveSupplierAccess({
+        email: profile.email || email,
+        userId: ensured.userId,
+        user: resolved.user,
+      });
+      if (!access.ok) {
+        return {
+          ok: false,
+          error: "No tienes acceso al panel de proveedores.",
+        };
+      }
+
+      const session = await prepareSupplierSessionToken({
+        email: profile.email || email,
+        redirectTo: SUPPLIER_POST_AUTH_PATH,
+      });
       if (!session.ok) return session;
 
-      return { ok: true, redirectTo: SUPPLIER_POST_AUTH_PATH };
+      return {
+        ok: true,
+        redirectTo: session.redirectTo,
+        sessionTokenHash: session.tokenHash,
+      };
     }
 
     // Sin fila en supplier_profiles: allowlist / admin vía Auth.
