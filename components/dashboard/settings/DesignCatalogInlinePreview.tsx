@@ -15,7 +15,6 @@ import type {
   CatalogDesignSettings,
   CheckoutType,
 } from "@/lib/store-settings/types";
-import { CATALOG_THEME_PRESETS } from "@/lib/store-settings/catalog-theme-presets";
 import { normalizeStoreRubro } from "@/src/config/categories";
 import { cn } from "@/lib/cn";
 
@@ -52,8 +51,6 @@ export function DesignCatalogInlinePreview({
     () => resolveCatalogDesign(design, storeRubro),
     [design, storeRubro],
   );
-
-  const themeLabel = CATALOG_THEME_PRESETS[resolvedDesign.theme].label;
 
   const referenceCatalog = useMemo(
     () => getReferenceCatalogForStore(store, exchangeRate),
@@ -103,7 +100,7 @@ export function DesignCatalogInlinePreview({
       <div className="design-studio-preview-meta">
         <p className="design-studio-preview-eyebrow">Vista previa</p>
         <p className="design-studio-preview-caption">
-          {themeLabel} · {referenceCatalog.rubroLabel} ·{" "}
+          Marketplace · {referenceCatalog.rubroLabel} ·{" "}
           {CHECKOUT_PREVIEW_LABEL[checkoutType]}
         </p>
         {!immersive ? (
