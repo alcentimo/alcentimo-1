@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
-import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
+import type {
+  CatalogDesignSettings,
+  CatalogCurrencySettings,
+} from "@/lib/store-settings/types";
 import {
   resolveStorefrontCatalogCategories,
   extractCatalogCategories,
@@ -12,21 +15,21 @@ import {
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
 import {
   getCatalogDesignClasses,
-  getCatalogProductGridClassName,
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
-import { ProductCard } from "@/components/catalog/ProductCard";
 import {
   CatalogProductDetailHost,
   useCatalogProductDetail,
 } from "@/components/catalog/CatalogProductDetailHost";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
-import { CatalogCartHost, type CartPanelView } from "@/components/catalog-transactional/CatalogCartHost";
+import {
+  CatalogCartHost,
+  type CartPanelView,
+} from "@/components/catalog-transactional/CatalogCartHost";
 import {
   useCatalogShellNavigationOptional,
   useRegisterCatalogCartController,
 } from "@/components/catalog-transactional/CatalogShellNavigation";
-import { CatalogBrowseToolbar } from "@/components/catalog-transactional/CatalogBrowseToolbar";
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
 import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
 import { useCatalogBrowse } from "@/components/catalog-transactional/useCatalogBrowse";
@@ -36,10 +39,14 @@ import {
 } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
 import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
-import { CatalogStoreIdentityHeader } from "@/components/catalog-transactional/CatalogStoreIdentityHeader";
+import { StorefrontMoricheChrome } from "@/components/catalog-transactional/StorefrontMoricheChrome";
 import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
+import { MercadoProductGrid } from "@/components/mercado-oculto/MercadoProductGrid";
+import { mapCatalogListItemToMercadoCard } from "@/lib/catalog/map-catalog-to-mercado-card";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
+import { normalizeCatalogHeaderSettings } from "@/lib/store-settings/catalog-header";
 import { cn } from "@/lib/cn";
+import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
 
 interface CatalogCategoriesViewProps {
   store: Store;
@@ -109,7 +116,8 @@ function CatalogCategoriesViewInner({
   initialProductId = null,
 }: Omit<CatalogCategoriesViewProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
-  const { showOfficialRate, showBsConversion, wholesaleEnabled } = catalogCurrency;
+  const { showOfficialRate, showBsConversion, wholesaleEnabled } =
+    catalogCurrency;
   const { addItem } = useCart();
   const { getAvailableStock } = useCatalogFulfillment();
 
@@ -121,24 +129,21 @@ function CatalogCategoriesViewInner({
     [products, getAvailableStock],
   );
 
-  const categoryOptions = useMemo(
-    () => {
-      if (storeCategories.length > 0) {
-        return resolveStorefrontCatalogCategories(
-          storeCategories,
-          storeCategories,
-          store.rubro_tienda,
-        );
-      }
+  const categoryOptions = useMemo(() => {
+    if (storeCategories.length > 0) {
       return resolveStorefrontCatalogCategories(
-        [],
-        extractCatalogCategories(catalogProducts),
+        storeCategories,
+        storeCategories,
         store.rubro_tienda,
-        catalogProducts,
       );
-    },
-    [storeCategories, catalogProducts, store.rubro_tienda],
-  );
+    }
+    return resolveStorefrontCatalogCategories(
+      [],
+      extractCatalogCategories(catalogProducts),
+      store.rubro_tienda,
+      catalogProducts,
+    );
+  }, [storeCategories, catalogProducts, store.rubro_tienda]);
 
   const browseServerPagination = useMemo(
     () =>
@@ -161,13 +166,6 @@ function CatalogCategoriesViewInner({
     serverPagination: browseServerPagination,
   });
 
-  const effectiveDesign = catalogDesign;
-
-  const gridClassName = getCatalogProductGridClassName(
-    effectiveDesign,
-    store.rubro_tienda,
-  );
-
   return (
     <CatalogProductDetailHost
       storeId={store.id}
@@ -184,18 +182,15 @@ function CatalogCategoriesViewInner({
         store={store}
         products={products}
         purchaseInfo={purchaseInfo}
-        catalogDesign={effectiveDesign}
+        catalogDesign={catalogDesign}
         catalogCurrency={catalogCurrency}
         exchangeRate={exchangeRate}
         showOfficialRate={showOfficialRate}
         showBsConversion={showBsConversion}
-        wholesaleEnabled={wholesaleEnabled}
         liveExchangeRate={liveExchangeRate}
         catalogProducts={catalogProducts}
         categoryOptions={categoryOptions}
         browse={browse}
-        gridClassName={gridClassName}
-        addItem={addItem}
         initialProductId={initialProductId}
       />
     </CatalogProductDetailHost>
@@ -211,13 +206,10 @@ interface CatalogCategoriesPageContentProps {
   exchangeRate: ExchangeRate | null;
   showOfficialRate: boolean;
   showBsConversion: boolean;
-  wholesaleEnabled: boolean;
   liveExchangeRate: number | null;
   catalogProducts: CatalogListItem[];
   categoryOptions: CatalogCategoryOption[];
   browse: ReturnType<typeof useCatalogBrowse>;
-  gridClassName: string;
-  addItem: ReturnType<typeof useCart>["addItem"];
   initialProductId?: string | null;
 }
 
@@ -230,13 +222,10 @@ function CatalogCategoriesPageContent({
   exchangeRate,
   showOfficialRate,
   showBsConversion,
-  wholesaleEnabled,
   liveExchangeRate,
   catalogProducts,
   categoryOptions,
   browse,
-  gridClassName,
-  addItem,
   initialProductId = null,
 }: CatalogCategoriesPageContentProps) {
   const { openProduct } = useCatalogProductDetail();
@@ -266,122 +255,170 @@ function CatalogCategoriesPageContent({
     setCartPanelView(view);
   }, []);
 
+  const heroCategories = useMemo(
+    () =>
+      categoryOptions.map((category) => ({
+        id: category.slug,
+        label: category.name,
+      })),
+    [categoryOptions],
+  );
+
+  const mercadoCards = useMemo(
+    () =>
+      browse.visibleProducts.map((product) =>
+        mapCatalogListItemToMercadoCard(product, store.name),
+      ),
+    [browse.visibleProducts, store.name],
+  );
+
+  const productById = useMemo(() => {
+    const map = new Map<string, CatalogListItem>();
+    for (const product of catalogProducts) {
+      map.set(product.product_id, product);
+    }
+    return map;
+  }, [catalogProducts]);
+
+  const handleActivateProduct = useCallback(
+    (card: MercadoProductCard) => {
+      const product = productById.get(card.product_id);
+      if (product) openProduct(product);
+    },
+    [openProduct, productById],
+  );
+
+  const header = normalizeCatalogHeaderSettings(catalogDesign.header);
+  const coverUrl = header.coverImageUrl?.startsWith("http")
+    ? header.coverImageUrl
+    : null;
+
+  const resultsTitle = browse.searchQuery.trim()
+    ? `Resultados para “${browse.searchQuery.trim()}”`
+    : browse.categorySlug
+      ? "Selección filtrada"
+      : "Piezas destacadas";
+
   return (
     <div
       className={cn(
-        "txn-catalog",
+        "txn-catalog txn-catalog--moriche-native",
         getCatalogDesignClasses(catalogDesign, store.rubro_tienda),
       )}
       style={getCatalogThemeStyle(catalogDesign, store.rubro_tienda)}
     >
-      <CatalogStoreIdentityHeader
-        storeName={store.name}
-        storeDescription={null}
-        logoUrl={store.logo_url}
-        eyebrow="Categorías"
-        locationHours={purchaseInfo.locationHours}
-        showOfficialRate={showOfficialRate}
-        exchangeRate={exchangeRate?.rate ?? null}
-        header={catalogDesign.header}
-      />
-
-      {catalogProducts.length > 0 ? (
-        <CatalogBrowseToolbar
-          searchQuery={browse.searchQuery}
-          onSearchQueryChange={browse.setSearchQuery}
-          categorySlug={browse.categorySlug}
-          onCategorySlugChange={browse.setCategorySlug}
-          sortKey={browse.sortKey}
-          onSortKeyChange={browse.setSortKey}
-          categories={categoryOptions}
-          totalCount={catalogProducts.length}
-          filteredCount={browse.totalCount}
-          hasActiveFilters={browse.hasActiveFilters}
-          onClearFilters={browse.clearFilters}
-          storeEyebrow="Categorías"
-          storeName={store.name}
-          storeDescription={store.description}
-        />
-      ) : null}
-
-      <CatalogPromoBannerCarousel
-        promoBanner={catalogDesign.promoBanner}
-        storeName={store.name}
+      <StorefrontMoricheChrome
         storeSlug={store.slug}
-        onOpenProduct={openProductById}
-      />
-
-      <CatalogLocationPicker />
-
-      <main className="txn-catalog-main">
-        {products.length === 0 ? (
-          <div className="txn-catalog-empty">
-            <p className="text-sm font-medium text-neutral-800">
-              No hay productos disponibles
-            </p>
-            <p className="mt-1.5 text-xs text-neutral-500">
-              Vuelve pronto para ver el catálogo actualizado.
-            </p>
-          </div>
-        ) : browse.totalCount === 0 && !browse.loadingFilter ? (
-          <div className="txn-catalog-empty">
-            <p className="text-sm font-medium text-neutral-800">
-              No hay productos en esta categoría
-            </p>
-            <p className="mt-1.5 text-xs text-neutral-500">
-              Prueba otra categoría o limpia los filtros.
-            </p>
-          </div>
-        ) : (
+        storeName={store.name}
+        storeDescription={store.description}
+        logoUrl={store.logo_url}
+        primaryColor={catalogDesign.primaryColor}
+        eyebrow="Categorías"
+        searchQuery={browse.searchQuery}
+        onSearchQueryChange={browse.setSearchQuery}
+        categories={heroCategories}
+        activeCategoryId={browse.categorySlug}
+        onSelectCategory={browse.setCategorySlug}
+        pending={browse.loadingFilter}
+        banner={
           <>
-            <CatalogBrowseStatus
-              loading={browse.loadingFilter}
-              error={
-                browse.fetchErrorSource === "filter" ? browse.fetchError : null
-              }
-              onRetry={browse.retryFetch}
+            {coverUrl ? (
+              <div className="storefront-mo-cover-banner">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={coverUrl} alt="" className="storefront-mo-cover-img" />
+              </div>
+            ) : null}
+            <CatalogPromoBannerCarousel
+              promoBanner={catalogDesign.promoBanner}
+              storeName={store.name}
+              storeSlug={store.slug}
+              onOpenProduct={openProductById}
             />
-            <div
-              className={cn(
-                gridClassName,
-                browse.loadingFilter && "catalog-product-grid-updating",
-              )}
-            >
-              {browse.visibleProducts.map((product) => (
-                <ProductCard
-                  key={product.product_id}
-                  product={product}
-                  exchangeRate={liveExchangeRate}
-                  showBsConversion={showBsConversion}
-                  catalogVisibility={catalogDesign.visibility}
-                  storeRubro={store.rubro_tienda}
-                  wholesaleEnabled={wholesaleEnabled}
-                  onAddToCart={addItem}
-                  onOpenDetail={openProduct}
-                />
-              ))}
-            </div>
-            <CatalogBrowseLoadMore
-              visibleCount={browse.visibleCount}
-              totalCount={browse.totalCount}
-              hasMore={browse.hasMore}
-              loading={browse.loadingMore}
-              error={
-                browse.fetchErrorSource === "more" ? browse.fetchError : null
-              }
-              onLoadMore={browse.loadMore}
-              onRetry={browse.retryFetch}
-            />
+            <CatalogLocationPicker />
           </>
-        )}
-      </main>
+        }
+      >
+        <div className="mercado-mp-results">
+          <div className="mercado-mp-results-head">
+            <div>
+              <p className="mercado-section-label">Colección activa</p>
+              <h2 className="mercado-heading text-xl sm:text-2xl">
+                {resultsTitle}
+              </h2>
+              <p className="mercado-subheading mt-1">
+                {showOfficialRate && exchangeRate?.rate
+                  ? `Tasa de referencia · ${exchangeRate.rate.toLocaleString("es-VE")}`
+                  : "Catálogo listo · Compra protegida"}
+              </p>
+            </div>
+            <p className="mercado-mp-results-count" aria-live="polite">
+              <strong>{browse.totalCount}</strong>
+              <span>
+                {" "}
+                producto{browse.totalCount === 1 ? "" : "s"}
+              </span>
+            </p>
+          </div>
+
+          {products.length === 0 ? (
+            <MercadoProductGrid
+              products={[]}
+              emptyTitle="No hay productos disponibles"
+              emptyDescription="Vuelve pronto para ver el catálogo actualizado."
+            />
+          ) : browse.totalCount === 0 && !browse.loadingFilter ? (
+            <MercadoProductGrid
+              products={[]}
+              emptyTitle="No hay productos en esta categoría"
+              emptyDescription="Prueba otra categoría o limpia los filtros."
+            />
+          ) : (
+            <>
+              <CatalogBrowseStatus
+                loading={browse.loadingFilter}
+                error={
+                  browse.fetchErrorSource === "filter"
+                    ? browse.fetchError
+                    : null
+                }
+                onRetry={browse.retryFetch}
+              />
+              <div
+                className={cn(
+                  browse.loadingFilter && "catalog-product-grid-updating",
+                )}
+              >
+                <MercadoProductGrid
+                  products={mercadoCards}
+                  onProductActivate={handleActivateProduct}
+                  priceLabel="Precio"
+                  ctaLabel="Ver producto"
+                  metaInStock="Listo para pedir"
+                  metaOutOfStock="Sin stock por ahora"
+                />
+              </div>
+              <CatalogBrowseLoadMore
+                visibleCount={browse.visibleCount}
+                totalCount={browse.totalCount}
+                hasMore={browse.hasMore}
+                loading={browse.loadingMore}
+                error={
+                  browse.fetchErrorSource === "more" ? browse.fetchError : null
+                }
+                onLoadMore={browse.loadMore}
+                onRetry={browse.retryFetch}
+              />
+            </>
+          )}
+        </div>
+      </StorefrontMoricheChrome>
 
       <CatalogCartHost
         store={store}
         purchaseInfo={purchaseInfo}
         exchangeRate={liveExchangeRate}
         showOfficialRate={catalogCurrency.showOfficialRate}
-        showBsConversion={catalogCurrency.showBsConversion}
+        showBsConversion={showBsConversion}
         panelView={cartPanelView}
         onPanelViewChange={handleCartPanelViewChange}
       />

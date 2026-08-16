@@ -9,19 +9,45 @@ import { cn } from "@/lib/cn";
 
 interface MercadoProductGridProps {
   products: MercadoProductCard[];
+  /** Por defecto: ficha de Mercado Oculto. */
+  getProductHref?: (product: MercadoProductCard) => string;
+  /**
+   * Si se define, media/título/CTA disparan esta acción en lugar de navegar
+   * (p. ej. abrir ficha en el catálogo público).
+   */
+  onProductActivate?: (product: MercadoProductCard) => void;
+  priceLabel?: string;
+  ctaLabel?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  metaInStock?: string;
+  metaOutOfStock?: string;
 }
 
-export function MercadoProductGrid({ products }: MercadoProductGridProps) {
+function defaultProductHref(product: MercadoProductCard): string {
+  return `/mercado-oculto/producto/${product.product_id}`;
+}
+
+export function MercadoProductGrid({
+  products,
+  getProductHref = defaultProductHref,
+  onProductActivate,
+  priceLabel = "Mayorista",
+  ctaLabel = "Ver ficha",
+  emptyTitle = "Nada en esta curaduría",
+  emptyDescription = "Probá otra colección o limpiá la búsqueda. La vitrina se actualiza con nuevos mayoristas.",
+  metaInStock = "Listo para tu catálogo",
+  metaOutOfStock = "Reposición pendiente",
+}: MercadoProductGridProps) {
   if (products.length === 0) {
     return (
       <div className="mercado-mp-empty">
         <Package className="h-8 w-8 text-emerald-800/60" aria-hidden="true" />
         <p className="mt-3 text-sm font-medium text-[var(--mo-ink)]">
-          Nada en esta curaduría
+          {emptyTitle}
         </p>
         <p className="mt-1 max-w-md text-sm text-[var(--mo-muted)]">
-          Probá otra colección o limpiá la búsqueda. La vitrina se actualiza con
-          nuevos mayoristas.
+          {emptyDescription}
         </p>
       </div>
     );
@@ -37,62 +63,46 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
           product.compare_at_usd != null &&
           product.compare_at_usd > product.price_usd;
         const showFreeShipping = inStock && product.free_shipping;
+        const href = getProductHref(product);
+        const activate = onProductActivate
+          ? () => onProductActivate(product)
+          : null;
 
         return (
           <li key={product.product_id}>
             <article className="group mercado-mp-card">
-              <Link
-                href={`/mercado-oculto/producto/${product.product_id}`}
-                className="mercado-mp-card-media"
-                prefetch
-              >
-                {product.thumb_url ? (
-                  <Image
-                    src={product.thumb_url}
-                    alt={product.product_name}
-                    fill
-                    className="object-cover transition duration-500 ease-out group-hover:scale-[1.05]"
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 260px"
-                    unoptimized
-                  />
-                ) : (
-                  <div
-                    className="mercado-card-media-fallback"
-                    aria-hidden="true"
-                  >
-                    {product.product_name.slice(0, 1).toUpperCase()}
-                  </div>
-                )}
-                <div className="mercado-mp-card-status-row">
-                  {showDiscount ? (
-                    <span className="mercado-mp-status mercado-mp-status-promo">
-                      −{product.discount_percent}%
-                    </span>
-                  ) : null}
-                  <span
-                    className={cn(
-                      "mercado-mp-status",
-                      inStock
-                        ? "mercado-mp-status-stock"
-                        : "mercado-mp-status-out",
-                    )}
-                  >
-                    {inStock ? "Disponible" : "Sin stock"}
-                  </span>
-                </div>
-              </Link>
+              {activate ? (
+                <button
+                  type="button"
+                  className="mercado-mp-card-media"
+                  onClick={activate}
+                  aria-label={`Ver ${product.product_name}`}
+                >
+                  <MercadoCardMedia product={product} />
+                </button>
+              ) : (
+                <Link href={href} className="mercado-mp-card-media" prefetch>
+                  <MercadoCardMedia product={product} />
+                </Link>
+              )}
 
               <div className="mercado-mp-card-body">
                 <p className="mercado-mp-card-supplier">
                   {product.supplier_label}
                 </p>
-                <Link
-                  href={`/mercado-oculto/producto/${product.product_id}`}
-                  className="mercado-mp-card-title"
-                  prefetch
-                >
-                  {product.product_name}
-                </Link>
+                {activate ? (
+                  <button
+                    type="button"
+                    className="mercado-mp-card-title text-left"
+                    onClick={activate}
+                  >
+                    {product.product_name}
+                  </button>
+                ) : (
+                  <Link href={href} className="mercado-mp-card-title" prefetch>
+                    {product.product_name}
+                  </Link>
+                )}
 
                 <div className="mercado-mp-card-pricing">
                   {showDiscount ? (
@@ -101,7 +111,9 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
                     </p>
                   ) : null}
                   <p className="mercado-mp-card-price">
-                    <span className="mercado-mp-card-price-label">Mayorista</span>
+                    <span className="mercado-mp-card-price-label">
+                      {priceLabel}
+                    </span>
                     {formatUsd(product.price_usd)}
                   </p>
                 </div>
@@ -113,18 +125,32 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
                   </p>
                 ) : (
                   <p className="mercado-mp-card-meta">
-                    {inStock ? "Listo para tu catálogo" : "Reposición pendiente"}
+                    {inStock ? metaInStock : metaOutOfStock}
                   </p>
                 )}
 
                 <div className="mercado-mp-card-actions">
-                  <Link
-                    href={`/mercado-oculto/producto/${product.product_id}`}
-                    className="mercado-mp-card-btn"
-                  >
-                    Ver ficha
-                    <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-                  </Link>
+                  {activate ? (
+                    <button
+                      type="button"
+                      className="mercado-mp-card-btn"
+                      onClick={activate}
+                    >
+                      {ctaLabel}
+                      <ArrowUpRight
+                        className="h-3.5 w-3.5"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  ) : (
+                    <Link href={href} className="mercado-mp-card-btn">
+                      {ctaLabel}
+                      <ArrowUpRight
+                        className="h-3.5 w-3.5"
+                        aria-hidden="true"
+                      />
+                    </Link>
+                  )}
                 </div>
               </div>
             </article>
@@ -132,5 +158,48 @@ export function MercadoProductGrid({ products }: MercadoProductGridProps) {
         );
       })}
     </ul>
+  );
+}
+
+function MercadoCardMedia({ product }: { product: MercadoProductCard }) {
+  const inStock = product.available_stock > 0;
+  const showDiscount =
+    inStock &&
+    product.discount_percent != null &&
+    product.compare_at_usd != null &&
+    product.compare_at_usd > product.price_usd;
+
+  return (
+    <>
+      {product.thumb_url ? (
+        <Image
+          src={product.thumb_url}
+          alt={product.product_name}
+          fill
+          className="object-cover transition duration-500 ease-out group-hover:scale-[1.05]"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 260px"
+          unoptimized
+        />
+      ) : (
+        <div className="mercado-card-media-fallback" aria-hidden="true">
+          {product.product_name.slice(0, 1).toUpperCase()}
+        </div>
+      )}
+      <div className="mercado-mp-card-status-row">
+        {showDiscount ? (
+          <span className="mercado-mp-status mercado-mp-status-promo">
+            −{product.discount_percent}%
+          </span>
+        ) : null}
+        <span
+          className={cn(
+            "mercado-mp-status",
+            inStock ? "mercado-mp-status-stock" : "mercado-mp-status-out",
+          )}
+        >
+          {inStock ? "Disponible" : "Sin stock"}
+        </span>
+      </div>
+    </>
   );
 }
