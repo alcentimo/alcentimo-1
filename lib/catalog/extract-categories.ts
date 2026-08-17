@@ -1,4 +1,5 @@
 import type { CatalogListItem } from "@/lib/database.types";
+import { supplierCategorySortOrder } from "@/lib/supplier/categories";
 import {
   getProductCategoriesForRubro,
   isCategoryAlignedWithRubro,
@@ -9,7 +10,7 @@ import {
 export interface CatalogCategoryOption {
   slug: string;
   name: string;
-  /** Orden definido por el dueño en Ajustes → Categorías. */
+  /** Orden del catálogo mayorista (Mercado Oculto). */
   sortOrder?: number;
 }
 
@@ -17,10 +18,28 @@ function compareCatalogCategories(
   a: CatalogCategoryOption,
   b: CatalogCategoryOption,
 ): number {
+  const supplierA = supplierCategorySortOrder(a.slug);
+  const supplierB = supplierCategorySortOrder(b.slug);
+  if (supplierA !== supplierB) return supplierA - supplierB;
+
   const orderA = a.sortOrder ?? Number.MAX_SAFE_INTEGER;
   const orderB = b.sortOrder ?? Number.MAX_SAFE_INTEGER;
   if (orderA !== orderB) return orderA - orderB;
   return a.name.localeCompare(b.name, "es");
+}
+
+/**
+ * Píldoras del catálogo público: categorías automáticas del inventario mayorista.
+ * No se filtran por rubro ni por la gestión manual retirada de Ajustes.
+ */
+export function resolveAutomaticStorefrontCategories(
+  storeCategories: CatalogCategoryOption[],
+  products: CatalogListItem[] = [],
+): CatalogCategoryOption[] {
+  if (storeCategories.length > 0) {
+    return [...storeCategories].sort(compareCatalogCategories);
+  }
+  return extractCatalogCategories(products);
 }
 
 export function extractCatalogCategories(

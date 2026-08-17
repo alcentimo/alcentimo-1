@@ -24,20 +24,16 @@ import { assertCanCreateProduct } from "@/lib/plans/product-limit";
 import { buildProductMetadata } from "@/lib/products/extra-fields";
 import {
   buildImportCategoryCache,
-  resolveOrCreateImportCategory,
+  resolveOrCreateSupplierStoreCategory,
 } from "@/lib/products/import-category";
 import type { ProductVariantJson } from "@/lib/products/variants";
 import { syncProductVariants } from "@/lib/products/sync-variants";
-import {
-  normalizeSupplierProductCategory,
-  supplierCategoryLabel,
-} from "@/lib/supplier/categories";
+import { normalizeSupplierProductCategory } from "@/lib/supplier/categories";
 import {
   normalizeSupplierProductVariants,
   supplierVariantAttributeLabel,
   type SupplierProductVariants,
 } from "@/lib/supplier/variants";
-import { normalizeStoreRubro } from "@/src/config/categories";
 import { syncDefaultLocationStockFromVariant } from "@/lib/locations/sync-stock";
 import { mirrorSupplierStockToLinkedStores } from "@/lib/dropship/supplier-stock";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -380,8 +376,8 @@ export async function importSupplierProductToStoreCatalog(
       return { error: productLimitCheck.error };
     }
 
-    const categoryLabel = supplierCategoryLabel(
-      normalizeSupplierProductCategory(supplierRow.category),
+    const supplierCategory = normalizeSupplierProductCategory(
+      supplierRow.category,
     );
     const { data: storeCategories, error: categoriesError } = await admin
       .from("categories")
@@ -393,12 +389,11 @@ export async function importSupplierProductToStoreCatalog(
     const categoryCache = buildImportCategoryCache(
       (storeCategories ?? []) as { id: string; name: string; slug: string }[],
     );
-    const categoryResolved = await resolveOrCreateImportCategory(
+    const categoryResolved = await resolveOrCreateSupplierStoreCategory(
       admin,
       auth.store.id,
-      categoryLabel,
+      supplierCategory,
       categoryCache,
-      normalizeStoreRubro(auth.store.rubro_tienda),
     );
     if (categoryResolved.error || !categoryResolved.categoryId) {
       return {

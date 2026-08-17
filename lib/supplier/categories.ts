@@ -39,3 +39,16 @@ export function supplierCategoryLabel(
   const found = SUPPLIER_PRODUCT_CATEGORIES.find((item) => item.value === value);
   return found?.label ?? "Otros";
 }
+
+const SUPPLIER_CATEGORY_ORDER = new Map(
+  SUPPLIER_PRODUCT_CATEGORIES.map((item, index) => [item.value, index]),
+);
+
+export function supplierCategorySortOrder(
+  value: string | null | undefined,
+): number {
+  if (!isSupplierProductCategory(value)) {
+    return SUPPLIER_PRODUCT_CATEGORIES.length + 1;
+  }
+  return SUPPLIER_CATEGORY_ORDER.get(value) ?? SUPPLIER_PRODUCT_CATEGORIES.length;
+}

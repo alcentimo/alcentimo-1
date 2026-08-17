@@ -5,6 +5,10 @@ import {
   normalizeProductNameKey,
 } from "@/lib/products/import-sanitize";
 import {
+  normalizeSupplierProductCategory,
+  supplierCategoryLabel,
+} from "@/lib/supplier/categories";
+import {
   normalizeStoreRubro,
   resolveImportCategoryForRubro,
   type StoreRubro,
@@ -148,5 +152,90 @@ export async function resolveOrCreateImportCategory(
   cache.set(normalizedName, categoryId);
   cache.set(createdSlug, categoryId);
 
+  return { categoryId };
+}
+
+/**
+ * Crea o reutiliza la categoría de tienda que corresponde 1:1 a la del mayorista.
+ * No remapea al rubro del dropshipper: el catálogo público usa este slug.
+ */
+export async function resolveOrCreateSupplierStoreCategory(
+  supabase: SupabaseClient,
+  storeId: string,
+  supplierCategoryInput: unknown,
+  cache: ImportCategoryCache,
+): Promise<{ categoryId?: string; error?: string }> {
+  const supplierCategory = normalizeSupplierProductCategory(supplierCategoryInput);
+  const slug = supplierCategory;
+  const name = supplierCategoryLabel(supplierCategory);
+  const normalizedName = normalizeImportCategoryName(name);
+
+  const cached =
+    cache.get(slug) ?? (normalizedName ? cache.get(normalizedName) : undefined);
+  if (cached) {
+    return { categoryId: cached };
+  }
+
+  const { data: existing, error: lookupError } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("store_id", storeId)
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (lookupError) {
+    return { error: lookupError.message };
+  }
+
+  if (existing?.id) {
+    const categoryId = existing.id as string;
+    cache.set(slug, categoryId);
+    if (normalizedName) cache.set(normalizedName, categoryId);
+    await supabase
+      .from("categories")
+      .update({
+        name,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", categoryId)
+      .eq("store_id", storeId);
+    return { categoryId };
+  }
+
+  const { data: created, error: insertError } = await supabase
+    .from("categories")
+    .insert({
+      store_id: storeId,
+      name,
+      slug,
+      is_active: true,
+    })
+    .select("id")
+    .single();
+
+  if (insertError) {
+    if (insertError.code === "23505") {
+      const { data: raced } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("store_id", storeId)
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (raced?.id) {
+        const categoryId = raced.id as string;
+        cache.set(slug, categoryId);
+        if (normalizedName) cache.set(normalizedName, categoryId);
+        return { categoryId };
+      }
+    }
+
+    return { error: insertError.message };
+  }
+
+  const categoryId = created.id as string;
+  cache.set(slug, categoryId);
+  if (normalizedName) cache.set(normalizedName, categoryId);
   return { categoryId };
 }

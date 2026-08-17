@@ -90,7 +90,7 @@ export function ProductCategorySelector({
       ) : null}
 
       <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-        Tú defines las categorías principales de tu tienda. También puedes gestionarlas en Ajustes → Categorías.
+        En el catálogo público las categorías se actualizan solas según los productos que agregues desde Mercado Oculto.
       </p>
     </div>
   );
