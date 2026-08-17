@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import {
   Check,
@@ -19,7 +18,9 @@ import {
 } from "@/lib/dropship/actions";
 import { importSupplierProductsBulkToStore } from "@/lib/dropship/bulk-import";
 import { SocialImageDownloadButton } from "@/components/dashboard/SocialImageDownloadButton";
+import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
 import { formatUsd } from "@/lib/format";
+import { urlsToCatalogGalleryImages } from "@/lib/products/product-gallery-types";
 import {
   SUPPLIER_PRODUCT_CATEGORIES,
   normalizeSupplierProductCategory,
@@ -43,49 +44,17 @@ function SupplierCatalogCardMedia({
 }: {
   product: MerchantSupplierCatalogProduct;
 }) {
-  const urls = catalogImageUrls(product);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const activeUrl = urls[activeIndex] ?? urls[0] ?? null;
+  const images = urlsToCatalogGalleryImages(catalogImageUrls(product));
 
   return (
-    <div className="relative aspect-[4/3] bg-zinc-50 dark:bg-zinc-900">
-      {activeUrl ? (
-        <Image
-          src={activeUrl}
-          alt={product.title}
-          fill
-          className="object-cover"
-          sizes="(max-width: 640px) 100vw, 33vw"
-        />
-      ) : (
-        <div className="flex h-full items-center justify-center text-zinc-300 dark:text-zinc-600">
-          <Package className="h-10 w-10" aria-hidden="true" />
-        </div>
-      )}
-      {urls.length > 1 ? (
-        <div className="absolute inset-x-0 bottom-0 flex gap-1.5 overflow-x-auto bg-gradient-to-t from-black/55 to-transparent px-2 pb-2 pt-6">
-          {urls.map((url, index) => (
-            <button
-              key={`${url}-${index}`}
-              type="button"
-              className={cn(
-                "relative h-10 w-10 shrink-0 overflow-hidden rounded-lg ring-2 ring-white/20",
-                index === activeIndex && "ring-white",
-              )}
-              onClick={() => setActiveIndex(index)}
-              aria-label={`Ver foto ${index + 1} de ${urls.length}`}
-            >
-              <Image
-                src={url}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="40px"
-              />
-            </button>
-          ))}
-        </div>
-      ) : null}
+    <div className="relative aspect-[4/3] overflow-hidden bg-zinc-50 dark:bg-zinc-900">
+      <ProductImageGallery
+        product={{ product_name: product.title }}
+        images={images.length > 0 ? images : undefined}
+        imageClassName="object-cover"
+        fallbackClassName="absolute inset-0"
+        sizes="(max-width: 640px) 100vw, 33vw"
+      />
     </div>
   );
 }

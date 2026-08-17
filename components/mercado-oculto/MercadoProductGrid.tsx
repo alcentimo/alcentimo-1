@@ -1,10 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowUpRight, Package, Truck } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
+import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
+import { urlsToCatalogGalleryImages } from "@/lib/products/product-gallery-types";
 import { cn } from "@/lib/cn";
 
 interface MercadoProductGridProps {
@@ -39,6 +41,8 @@ export function MercadoProductGrid({
   metaInStock = "Listo para tu catálogo",
   metaOutOfStock = "Reposición pendiente",
 }: MercadoProductGridProps) {
+  const router = useRouter();
+
   if (products.length === 0) {
     return (
       <div className="mercado-mp-empty">
@@ -46,7 +50,7 @@ export function MercadoProductGrid({
         <p className="mt-3 text-sm font-medium text-[var(--mo-ink)]">
           {emptyTitle}
         </p>
-        <p className="mt-1 max-w-md text-sm text-[var(--mo-muted)]">
+        <p className="mt-1 max-w-md text-[var(--mo-muted)] text-sm">
           {emptyDescription}
         </p>
       </div>
@@ -66,31 +70,20 @@ export function MercadoProductGrid({
         const href = getProductHref(product);
         const activate = onProductActivate
           ? () => onProductActivate(product)
-          : null;
+          : () => router.push(href);
 
         return (
           <li key={product.product_id}>
             <article className="group mercado-mp-card">
-              {activate ? (
-                <button
-                  type="button"
-                  className="mercado-mp-card-media"
-                  onClick={activate}
-                  aria-label={`Ver ${product.product_name}`}
-                >
-                  <MercadoCardMedia product={product} />
-                </button>
-              ) : (
-                <Link href={href} className="mercado-mp-card-media" prefetch>
-                  <MercadoCardMedia product={product} />
-                </Link>
-              )}
+              <div className="mercado-mp-card-media">
+                <MercadoCardMedia product={product} onOpen={activate} />
+              </div>
 
               <div className="mercado-mp-card-body">
                 <p className="mercado-mp-card-supplier">
                   {product.supplier_label}
                 </p>
-                {activate ? (
+                {onProductActivate ? (
                   <button
                     type="button"
                     className="mercado-mp-card-title text-left"
@@ -130,7 +123,7 @@ export function MercadoProductGrid({
                 )}
 
                 <div className="mercado-mp-card-actions">
-                  {activate ? (
+                  {onProductActivate ? (
                     <button
                       type="button"
                       className="mercado-mp-card-btn"
@@ -161,30 +154,40 @@ export function MercadoProductGrid({
   );
 }
 
-function MercadoCardMedia({ product }: { product: MercadoProductCard }) {
+function MercadoCardMedia({
+  product,
+  onOpen,
+}: {
+  product: MercadoProductCard;
+  onOpen: () => void;
+}) {
   const inStock = product.available_stock > 0;
   const showDiscount =
     inStock &&
     product.discount_percent != null &&
     product.compare_at_usd != null &&
     product.compare_at_usd > product.price_usd;
+  const images = urlsToCatalogGalleryImages(
+    product.gallery_urls?.length
+      ? product.gallery_urls
+      : product.thumb_url
+        ? [product.thumb_url]
+        : [],
+  );
 
   return (
     <>
-      {product.thumb_url ? (
-        <Image
-          src={product.thumb_url}
-          alt={product.product_name}
-          fill
-          className="object-cover transition duration-500 ease-out group-hover:scale-[1.05]"
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 260px"
-          unoptimized
-        />
-      ) : (
-        <div className="mercado-card-media-fallback" aria-hidden="true">
-          {product.product_name.slice(0, 1).toUpperCase()}
-        </div>
-      )}
+      <ProductImageGallery
+        product={{
+          product_name: product.product_name,
+          thumb_url: product.thumb_url,
+        }}
+        images={images.length > 0 ? images : undefined}
+        imageClassName="object-cover transition duration-500 ease-out group-hover:scale-[1.05]"
+        fallbackClassName="mercado-card-media-fallback"
+        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 260px"
+        onMediaClick={onOpen}
+      />
       <div className="mercado-mp-card-status-row">
         {showDiscount ? (
           <span className="mercado-mp-status mercado-mp-status-promo">

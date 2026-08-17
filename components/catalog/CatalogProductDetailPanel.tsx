@@ -8,7 +8,10 @@ import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
 import { RubroCatalogVariantSlot } from "@/components/rubros/RubroCatalogVariantSlot";
 import { fetchCatalogProductDetail } from "@/lib/catalog/fetch-catalog-product-detail";
-import type { CatalogProductGalleryImage } from "@/lib/products/product-gallery-types";
+import {
+  resolveCatalogProductImages,
+  type CatalogProductGalleryImage,
+} from "@/lib/products/product-gallery-types";
 import { buildCartWhatsAppMessage } from "@/lib/catalog/cart-whatsapp-message";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import {
@@ -123,7 +126,7 @@ export function CatalogProductDetailPanel({
 
   const [detailDescription, setDetailDescription] = useState<string | null>(null);
   const [detailImages, setDetailImages] = useState<CatalogProductGalleryImage[]>(
-    [],
+    () => resolveCatalogProductImages(product),
   );
   const [detailLoading, setDetailLoading] = useState(true);
 
@@ -151,7 +154,7 @@ export function CatalogProductDetailPanel({
     let cancelled = false;
     setDetailLoading(true);
     setDetailDescription(null);
-    setDetailImages([]);
+    setDetailImages(resolveCatalogProductImages(product));
 
     void fetchCatalogProductDetail(product.store_slug, product.product_slug).then(
       (result) => {
@@ -159,7 +162,9 @@ export function CatalogProductDetailPanel({
         setDetailLoading(false);
         if (result.detail) {
           setDetailDescription(result.detail.description);
-          setDetailImages(result.detail.images);
+          if (result.detail.images.length > 0) {
+            setDetailImages(result.detail.images);
+          }
         }
       },
     );

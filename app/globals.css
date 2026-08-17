@@ -2843,6 +2843,39 @@ html:has(.landing-shell) {
   @apply w-5 bg-white;
 }
 
+.product-image-gallery-card.product-image-gallery-multi .product-image-gallery-stage::after {
+  content: "";
+  @apply pointer-events-none absolute inset-x-0 bottom-0 z-[15] h-16 bg-gradient-to-t from-black/50 to-transparent;
+}
+
+.product-image-gallery-card .product-image-gallery-nav {
+  @apply h-8 w-8 border-white/50 bg-white/90 text-zinc-800 shadow-sm;
+}
+
+.product-image-gallery-card .product-image-gallery-nav-prev {
+  @apply left-2;
+}
+
+.product-image-gallery-card .product-image-gallery-nav-next {
+  @apply right-2;
+}
+
+.product-image-gallery-card .product-image-gallery-count {
+  @apply right-2 top-2;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .product-image-gallery-card .product-image-gallery-nav {
+    opacity: 0;
+  }
+
+  .product-image-gallery-card:hover .product-image-gallery-nav,
+  .product-image-gallery-card:focus-within .product-image-gallery-nav,
+  .group:hover .product-image-gallery-card .product-image-gallery-nav {
+    opacity: 1;
+  }
+}
+
 .product-image-gallery-thumbs-detail {
   @apply gap-2 px-3 py-2;
 }
@@ -13838,7 +13871,7 @@ button.mercado-mp-card-btn {
 }
 
 .mercado-mp-card-status-row {
-  @apply absolute left-3 top-3 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-1.5;
+  @apply pointer-events-none absolute left-3 top-3 z-[12] flex max-w-[calc(100%-1.5rem)] flex-wrap gap-1.5;
 }
 
 .mercado-mp-status {
