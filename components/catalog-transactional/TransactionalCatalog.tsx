@@ -5,8 +5,7 @@ import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types"
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
 import {
-  resolveStorefrontCatalogCategories,
-  extractCatalogCategories,
+  resolveAutomaticStorefrontCategories,
   type CatalogCategoryOption,
 } from "@/lib/catalog/extract-categories";
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
@@ -70,28 +69,6 @@ interface TransactionalCatalogProps {
   /** Total de productos en BD (catálogo público paginado). */
   catalogTotalCount?: number;
   enableServerPagination?: boolean;
-}
-
-function resolveCategoryOptions(
-  storeCategories: CatalogCategoryOption[],
-  products: CatalogListItem[],
-  storeRubro: string | null | undefined,
-): CatalogCategoryOption[] {
-  // Confiar en la lista del servidor (ya filtrada por rubro). No usar la 1ª
-  // página de productos como fuente de chips — reintroduce ropa/muebles huérfanos.
-  if (storeCategories.length > 0) {
-    return resolveStorefrontCatalogCategories(
-      storeCategories,
-      storeCategories,
-      storeRubro,
-    );
-  }
-  return resolveStorefrontCatalogCategories(
-    [],
-    extractCatalogCategories(products),
-    storeRubro,
-    products,
-  );
 }
 
 export function TransactionalCatalog({
@@ -297,13 +274,8 @@ function TransactionalCatalogContent({
   );
 
   const categoryOptions = useMemo(
-    () =>
-      resolveCategoryOptions(
-        storeCategories,
-        catalogProducts,
-        store.rubro_tienda,
-      ),
-    [storeCategories, catalogProducts, store.rubro_tienda],
+    () => resolveAutomaticStorefrontCategories(storeCategories, catalogProducts),
+    [storeCategories, catalogProducts],
   );
 
   const browseServerPagination = useMemo(

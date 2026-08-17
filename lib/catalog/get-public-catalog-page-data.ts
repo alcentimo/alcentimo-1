@@ -9,14 +9,8 @@ import {
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
-import {
-  resolveStorefrontCatalogCategories,
-  type CatalogCategoryOption,
-} from "@/lib/catalog/extract-categories";
-import {
-  getPublicStoreCategories,
-  getPublicStoreCategorySlugsWithProducts,
-} from "@/lib/catalog/get-public-store-categories";
+import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
+import { getPublicStoreCategories } from "@/lib/catalog/get-public-store-categories";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogPageData } from "@/lib/catalog";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
@@ -98,22 +92,16 @@ export async function getPublicCatalogPageData(
   const [
     settingsConfig,
     storeCategories,
-    categoriesWithProducts,
     locations,
     locationStocks,
   ] = await Promise.all([
     fetchStoreSettingsConfig(store.id),
-    getPublicStoreCategories(store.id, rubro),
-    getPublicStoreCategorySlugsWithProducts(store.slug, rubro),
+    getPublicStoreCategories(store.id),
     getPublicStoreLocations(store.id).catch(() => []),
     getVariantLocationStocksForStore(store.id).catch(() => []),
   ]);
 
-  const visibleStoreCategories = resolveStorefrontCatalogCategories(
-    storeCategories,
-    categoriesWithProducts,
-    rubro,
-  );
+  const visibleStoreCategories = storeCategories;
 
   let selectedCategorySlug: string | null = null;
 
@@ -145,7 +133,6 @@ export async function getPublicCatalogPageData(
 
   return {
     store,
-    // Lista completa filtrada por rubro — no reconstruir solo desde la 1ª página.
     storeCategories: visibleStoreCategories,
     selectedCategorySlug,
     ...catalogData,

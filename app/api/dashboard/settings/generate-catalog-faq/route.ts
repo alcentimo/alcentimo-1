@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import { generateCatalogFaq } from "@/lib/ai/generate-catalog-faq";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
+import { getPublicStoreCategories } from "@/lib/catalog/get-public-store-categories";
 import { getPaymentMethod } from "@/src/config/payment-methods";
 import { getShippingMethod } from "@/src/config/shipping-methods";
 import {
@@ -23,7 +24,7 @@ export async function POST() {
   }
 
   try {
-    const [settings, productsResult, categoriesResult] = await Promise.all([
+    const [settings, productsResult, storeCategories] = await Promise.all([
       getStoreSettingsConfig(auth.store.id),
       supabase
         .from("products")
@@ -33,20 +34,11 @@ export async function POST() {
         .eq("is_deleted", false)
         .order("updated_at", { ascending: false })
         .limit(12),
-      supabase
-        .from("categories")
-        .select("name")
-        .eq("store_id", auth.store.id)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true })
-        .limit(12),
+      getPublicStoreCategories(auth.store.id),
     ]);
 
     if (productsResult.error) {
       throw new Error(productsResult.error.message);
-    }
-    if (categoriesResult.error) {
-      throw new Error(categoriesResult.error.message);
     }
 
     const rubro = normalizeStoreRubro(auth.store.rubro_tienda);
@@ -74,8 +66,8 @@ export async function POST() {
       .map(([key]) => getShippingMethod(key)?.label ?? null)
       .filter((label): label is string => Boolean(label));
 
-    const categoryLabels = (categoriesResult.data ?? [])
-      .map((row) => (typeof row.name === "string" ? row.name.trim() : ""))
+    const categoryLabels = storeCategories
+      .map((row) => row.name.trim())
       .filter(Boolean);
 
     const productNames = (productsResult.data ?? [])

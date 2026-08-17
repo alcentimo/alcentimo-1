@@ -9,14 +9,12 @@ import {
   Globe,
   Lock,
   Palette,
-  FolderTree,
   Settings2,
   Tag,
   Truck,
 } from "lucide-react";
 import { GeneralTab } from "@/components/dashboard/settings/GeneralTab";
 import { DomainsTab } from "@/components/dashboard/settings/DomainsTab";
-import { CategoriesTab } from "@/components/dashboard/settings/CategoriesTab";
 import { CatalogCurrencyTab } from "@/components/dashboard/settings/CatalogCurrencyTab";
 import { DesignTab } from "@/components/dashboard/settings/DesignTab";
 import { LocationHoursTab } from "@/components/dashboard/settings/LocationHoursTab";
@@ -39,8 +37,6 @@ import type { PlanId } from "@/src/config/plans";
 import { planIncludesCustomDomain } from "@/src/config/plan-pricing-ui";
 import type { StoreLocation } from "@/lib/locations/types";
 import type { LocationLimitSummary } from "@/components/dashboard/settings/LocationsTab";
-import type { StoreCategoryRow } from "@/lib/categories/types";
-import { getProductCategoriesForRubro, normalizeStoreRubro } from "@/src/config/categories";
 import { cn } from "@/lib/cn";
 
 type SettingsTabId =
@@ -77,6 +73,7 @@ function resolveExplicitTab(tab: string | undefined): SettingsTabId | null {
     return null;
   }
   // Pestañas retiradas del menú dropshipping → destinos útiles.
+  if (tab === "categories") return "general";
   if (tab === "wholesale" || tab === "dropship") return "currency";
   if (tab === "branches") return "location";
   return tab as SettingsTabId;
@@ -106,12 +103,6 @@ function buildSettingsNavGroups(): {
           label: "Identidad",
           description: "Nombre, logo y rubro",
           icon: Settings2,
-        },
-        {
-          id: "categories",
-          label: "Categorías",
-          description: "Organiza tu catálogo",
-          icon: FolderTree,
         },
         {
           id: "location",
@@ -195,7 +186,6 @@ interface SettingsPanelProps {
   planId?: PlanId;
   initialLocations?: StoreLocation[];
   locationLimit?: LocationLimitSummary | null;
-  initialCategories?: StoreCategoryRow[];
   initialDomain?: string | null;
   initialDomainMode?: "connect" | "purchase" | null;
 }
@@ -212,7 +202,6 @@ export function SettingsPanel({
   planId,
   initialLocations: _initialLocations = [],
   locationLimit: _locationLimit = null,
-  initialCategories = [],
   initialDomain = null,
   initialDomainMode = null,
 }: SettingsPanelProps) {
@@ -276,6 +265,7 @@ export function SettingsPanel({
   function renderActivePanel() {
     switch (activeTab) {
       case "general":
+      case "categories":
         return (
           <GeneralTab
             store={
@@ -287,15 +277,6 @@ export function SettingsPanel({
                 rubro_tienda: "ropa-moda",
               }
             }
-          />
-        );
-      case "categories":
-        return (
-          <CategoriesTab
-            initialCategories={initialCategories}
-            suggestedNames={getProductCategoriesForRubro(
-              normalizeStoreRubro(store?.rubro_tienda),
-            ).map((category) => category.label)}
           />
         );
       case "currency":

@@ -8,8 +8,7 @@ import type {
   CatalogCurrencySettings,
 } from "@/lib/store-settings/types";
 import {
-  resolveStorefrontCatalogCategories,
-  extractCatalogCategories,
+  resolveAutomaticStorefrontCategories,
   type CatalogCategoryOption,
 } from "@/lib/catalog/extract-categories";
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
@@ -129,21 +128,10 @@ function CatalogCategoriesViewInner({
     [products, getAvailableStock],
   );
 
-  const categoryOptions = useMemo(() => {
-    if (storeCategories.length > 0) {
-      return resolveStorefrontCatalogCategories(
-        storeCategories,
-        storeCategories,
-        store.rubro_tienda,
-      );
-    }
-    return resolveStorefrontCatalogCategories(
-      [],
-      extractCatalogCategories(catalogProducts),
-      store.rubro_tienda,
-      catalogProducts,
-    );
-  }, [storeCategories, catalogProducts, store.rubro_tienda]);
+  const categoryOptions = useMemo(
+    () => resolveAutomaticStorefrontCategories(storeCategories, catalogProducts),
+    [storeCategories, catalogProducts],
+  );
 
   const browseServerPagination = useMemo(
     () =>

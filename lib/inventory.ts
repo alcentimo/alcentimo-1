@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 import { getCurrentExchangeRate } from "@/lib/catalog";
-import { listDropshipLinkedProductIdsForStoreSlug } from "@/lib/dropship/linked-catalog";
+import { listDropshipLinkedCatalogEntriesForStoreSlug } from "@/lib/dropship/linked-catalog";
+import { applySupplierCategoriesToCatalogItems } from "@/lib/catalog/apply-supplier-categories";
 import {
   CATALOG_LIST_SELECT,
   INVENTORY_PAGE_SIZE,
@@ -66,8 +67,9 @@ export async function getStoreInventory(
 
   try {
     const supabase = await createClient();
-    const linkedProductIds =
-      await listDropshipLinkedProductIdsForStoreSlug(storeSlug);
+    const linkedEntries =
+      await listDropshipLinkedCatalogEntriesForStoreSlug(storeSlug);
+    const linkedProductIds = linkedEntries.map((entry) => entry.productId);
 
     // Dropshipping puro: sin vínculos mayoristas → catálogo vacío.
     if (linkedProductIds.length === 0) {
@@ -123,8 +125,11 @@ export async function getStoreInventory(
       };
     }
 
-    const products = (productsResult.data ?? []).map((row) =>
-      normalizeCatalogItem(row as unknown as CatalogListItem),
+    const products = applySupplierCategoriesToCatalogItems(
+      (productsResult.data ?? []).map((row) =>
+        normalizeCatalogItem(row as unknown as CatalogListItem),
+      ),
+      linkedEntries,
     );
     const totalCount = paginated
       ? productsResult.count ?? products.length

@@ -8,7 +8,8 @@ import { roundExchangeRate } from "@/lib/format";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 import { sortCatalogProducts } from "@/lib/catalog/catalog-browse";
 import { parseCatalogGalleryImages } from "@/lib/products/product-gallery-types";
-import { listDropshipLinkedProductIdsForStoreSlug } from "@/lib/dropship/linked-catalog";
+import { listDropshipLinkedCatalogEntriesForStoreSlug } from "@/lib/dropship/linked-catalog";
+import { applySupplierCategoriesToCatalogItems } from "@/lib/catalog/apply-supplier-categories";
 
 export interface CatalogPageData {
   products: CatalogListItem[];
@@ -69,7 +70,6 @@ interface CatalogProductsQueryOptions {
   paginated: boolean;
   offset: number;
   limit: number;
-  categorySlug?: string;
   productIds?: string[];
   searchOr: string | null;
   mode: CatalogProductsQueryMode;
@@ -85,7 +85,6 @@ function buildCatalogProductsQuery(
     paginated,
     offset,
     limit,
-    categorySlug,
     productIds,
     searchOr,
     mode,
@@ -100,10 +99,6 @@ function buildCatalogProductsQuery(
     mode === "ranked"
       ? applyPublicCatalogProductOrder(baseQuery)
       : applyLegacyCatalogProductOrder(baseQuery);
-
-  if (categorySlug) {
-    query = query.eq("category_slug", categorySlug);
-  }
 
   if (productIds?.length) {
     query = query.in("product_id", productIds);
@@ -185,8 +180,9 @@ export async function getCatalogProducts(
     productIds,
   } = options;
   const normalizedSlug = storeSlug.trim().toLowerCase();
-  const linkedProductIds =
-    await listDropshipLinkedProductIdsForStoreSlug(normalizedSlug);
+  const linkedEntries =
+    await listDropshipLinkedCatalogEntriesForStoreSlug(normalizedSlug);
+  const linkedProductIds = linkedEntries.map((entry) => entry.productId);
 
   if (linkedProductIds.length === 0) {
     return {
@@ -197,9 +193,16 @@ export async function getCatalogProducts(
     };
   }
 
-  const allowedProductIds = productIds?.length
-    ? productIds.filter((id) => linkedProductIds.includes(id))
+  const requestedCategory = categorySlug?.trim().toLowerCase() ?? "";
+  const categoryProductIds = requestedCategory
+    ? linkedEntries
+        .filter((entry) => entry.supplierCategory === requestedCategory)
+        .map((entry) => entry.productId)
     : linkedProductIds;
+
+  const allowedProductIds = productIds?.length
+    ? productIds.filter((id) => categoryProductIds.includes(id))
+    : categoryProductIds;
 
   if (allowedProductIds.length === 0) {
     return {
@@ -220,7 +223,6 @@ export async function getCatalogProducts(
       paginated,
       offset,
       limit,
-      categorySlug,
       productIds: allowedProductIds,
       searchOr,
     };
@@ -263,8 +265,11 @@ export async function getCatalogProducts(
     }
   }
 
-  let products = (productsResult.data ?? []).map((row) =>
-    normalizeCatalogItem(row as unknown as CatalogListItem),
+  let products = applySupplierCategoriesToCatalogItems(
+    (productsResult.data ?? []).map((row) =>
+      normalizeCatalogItem(row as unknown as CatalogListItem),
+    ),
+    linkedEntries,
   );
 
   if (queryMode === "legacy") {

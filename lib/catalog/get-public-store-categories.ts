@@ -1,70 +1,38 @@
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
-import { isCategoryAlignedWithRubro, normalizeStoreRubro } from "@/src/config/categories";
-import { getPublicServerClient } from "@/lib/supabase/public-server";
+import { listDropshipLinkedCatalogEntriesForStoreId } from "@/lib/dropship/linked-catalog";
+import {
+  SUPPLIER_PRODUCT_CATEGORIES,
+  normalizeSupplierProductCategory,
+  supplierCategoryLabel,
+} from "@/lib/supplier/categories";
 
-/** Categorías activas configuradas para la tienda (público), filtradas por rubro. */
+/**
+ * Categorías del catálogo público: se generan solas a partir de los productos
+ * mayoristas (Mercado Oculto) que el dropshipper tiene en su inventario.
+ */
 export async function getPublicStoreCategories(
   storeId: string,
-  rubroInput?: string | null,
 ): Promise<CatalogCategoryOption[]> {
-  const client = getPublicServerClient();
-  const rubro = normalizeStoreRubro(rubroInput);
+  const entries = await listDropshipLinkedCatalogEntriesForStoreId(storeId, {
+    publicOnly: true,
+  });
 
-  const { data, error } = await client
-    .from("categories")
-    .select("slug, name, sort_order")
-    .eq("store_id", storeId)
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true })
-    .order("name", { ascending: true });
+  const present = new Set(
+    entries.map((entry) => normalizeSupplierProductCategory(entry.supplierCategory)),
+  );
 
-  if (error) {
-    throw new Error(
-      `No se pudieron cargar las categorías públicas: ${error.message}`,
-    );
-  }
-
-  return (data ?? [])
-    .map((item) => ({
-      slug: item.slug as string,
-      name: item.name as string,
-      sortOrder: Number(item.sort_order ?? 0),
-    }))
-    .filter((category) =>
-      isCategoryAlignedWithRubro(category.slug, category.name, rubro),
-    );
+  return SUPPLIER_PRODUCT_CATEGORIES.filter((item) => present.has(item.value)).map(
+    (item, index) => ({
+      slug: item.value,
+      name: supplierCategoryLabel(item.value),
+      sortOrder: index,
+    }),
+  );
 }
 
-/** Slugs de categorías que tienen al menos un producto activo en el catálogo público. */
+/** @deprecated Usar getPublicStoreCategories — ya solo incluye categorías con productos. */
 export async function getPublicStoreCategorySlugsWithProducts(
-  storeSlug: string,
-  rubroInput?: string | null,
+  storeId: string,
 ): Promise<CatalogCategoryOption[]> {
-  const client = getPublicServerClient();
-  const normalizedSlug = storeSlug.trim().toLowerCase();
-  const rubro = normalizeStoreRubro(rubroInput);
-
-  const { data, error } = await client
-    .from("catalog_list_view")
-    .select("category_slug, category_name")
-    .eq("store_slug", normalizedSlug);
-
-  if (error) {
-    throw new Error(
-      `No se pudieron cargar las categorías con productos: ${error.message}`,
-    );
-  }
-
-  const map = new Map<string, CatalogCategoryOption>();
-  for (const row of data ?? []) {
-    const slug = row.category_slug as string | null;
-    const name = row.category_name as string | null;
-    if (!slug || !name) continue;
-    if (!isCategoryAlignedWithRubro(slug, name, rubro)) continue;
-    map.set(slug, { slug, name });
-  }
-
-  return Array.from(map.values()).sort((a, b) =>
-    a.name.localeCompare(b.name, "es"),
-  );
+  return getPublicStoreCategories(storeId);
 }
