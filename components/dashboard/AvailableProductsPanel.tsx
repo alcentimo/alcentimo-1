@@ -2,17 +2,34 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { Check, Loader2, Package, PackagePlus, Search, X } from "lucide-react";
+import {
+  Check,
+  FolderPlus,
+  Loader2,
+  Package,
+  PackagePlus,
+  Search,
+  X,
+} from "lucide-react";
 import {
   importSupplierProductToStoreCatalog,
   listActiveSupplierCatalogForMerchant,
   removeSupplierProductFromStoreCatalog,
   type MerchantSupplierCatalogProduct,
 } from "@/lib/dropship/actions";
+import { importSupplierProductsBulkToStore } from "@/lib/dropship/bulk-import";
 import { SocialImageDownloadButton } from "@/components/dashboard/SocialImageDownloadButton";
 import { formatUsd } from "@/lib/format";
-import { supplierCategoryLabel } from "@/lib/supplier/categories";
+import {
+  SUPPLIER_PRODUCT_CATEGORIES,
+  normalizeSupplierProductCategory,
+  supplierCategoryLabel,
+  type SupplierProductCategory,
+} from "@/lib/supplier/categories";
 import { cn } from "@/lib/cn";
+
+type CategoryFilter = "all" | SupplierProductCategory;
+type BulkMode = "all" | "category" | null;
 
 interface AvailableProductsPanelProps {
   onImported?: (productId: string) => void;
@@ -27,11 +44,13 @@ export function AvailableProductsPanel({
     [],
   );
   const [query, setQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [importingId, setImportingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [bulkMode, setBulkMode] = useState<BulkMode>(null);
   const [, startTransition] = useTransition();
 
   const loadCatalog = useCallback(() => {
@@ -52,10 +71,44 @@ export function AvailableProductsPanel({
     loadCatalog();
   }, [loadCatalog]);
 
+  const categoryFacets = useMemo(() => {
+    const counts = new Map<SupplierProductCategory, { total: number; pending: number }>();
+    for (const product of products) {
+      const category = normalizeSupplierProductCategory(product.category);
+      const current = counts.get(category) ?? { total: 0, pending: 0 };
+      current.total += 1;
+      if (!product.alreadyImported) current.pending += 1;
+      counts.set(category, current);
+    }
+    return SUPPLIER_PRODUCT_CATEGORIES.filter((item) =>
+      counts.has(item.value),
+    ).map((item) => ({
+      ...item,
+      count: counts.get(item.value)?.total ?? 0,
+      pending: counts.get(item.value)?.pending ?? 0,
+    }));
+  }, [products]);
+
+  const pendingAllCount = useMemo(
+    () => products.filter((product) => !product.alreadyImported).length,
+    [products],
+  );
+
+  const selectedCategoryMeta =
+    categoryFilter === "all"
+      ? null
+      : categoryFacets.find((item) => item.value === categoryFilter) ?? null;
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return products;
     return products.filter((product) => {
+      if (
+        categoryFilter !== "all" &&
+        normalizeSupplierProductCategory(product.category) !== categoryFilter
+      ) {
+        return false;
+      }
+      if (!q) return true;
       const category = supplierCategoryLabel(product.category).toLowerCase();
       return (
         product.title.toLowerCase().includes(q) ||
@@ -63,7 +116,47 @@ export function AvailableProductsPanel({
         category.includes(q)
       );
     });
-  }, [products, query]);
+  }, [products, query, categoryFilter]);
+
+  function markImported(supplierIds: string[]) {
+    const imported = new Set(supplierIds);
+    setProducts((prev) =>
+      prev.map((product) =>
+        imported.has(product.id)
+          ? {
+              ...product,
+              alreadyImported: true,
+            }
+          : product,
+      ),
+    );
+  }
+
+  function handleBulk(mode: Exclude<BulkMode, null>) {
+    if (mode === "category" && categoryFilter === "all") return;
+    setBulkMode(mode);
+    setError(null);
+    setMessage(null);
+    startTransition(async () => {
+      const result = await importSupplierProductsBulkToStore(
+        mode === "category" ? { category: categoryFilter } : {},
+      );
+      setBulkMode(null);
+      if (result.error) {
+        setError(result.error);
+        if (result.importedSupplierIds?.length) {
+          markImported(result.importedSupplierIds);
+          onImported?.(result.importedSupplierIds[0]);
+        }
+        return;
+      }
+      if (result.importedSupplierIds?.length) {
+        markImported(result.importedSupplierIds);
+        onImported?.(result.importedSupplierIds[0]);
+      }
+      setMessage(result.message ?? "Productos añadidos a tu tienda.");
+    });
+  }
 
   function handleAdd(productId: string) {
     setImportingId(productId);
@@ -122,18 +215,41 @@ export function AvailableProductsPanel({
     });
   }
 
+  const bulkBusy = bulkMode != null;
+
   return (
     <div className={cn("space-y-5", className)}>
-      <div className="max-w-2xl">
-        <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Catálogo mayorista
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Selecciona productos del hub de proveedores. Solo lo que añadas aquí
-          aparece en la vitrina pública de tu tienda — sin inventario manual.
-          Las fotos ya vienen optimizadas: descárgalas listas para Instagram,
-          Facebook o WhatsApp.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="max-w-2xl">
+          <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Catálogo mayorista
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+            Selecciona productos del hub de proveedores. Solo lo que añadas aquí
+            aparece en la vitrina pública de tu tienda — sin inventario manual.
+            Las fotos ya vienen optimizadas: descárgalas listas para Instagram,
+            Facebook o WhatsApp.
+          </p>
+        </div>
+        {products.length > 0 ? (
+          <button
+            type="button"
+            className="btn-brand inline-flex min-h-11 shrink-0 items-center justify-center gap-2 !text-sm"
+            onClick={() => handleBulk("all")}
+            disabled={loading || bulkBusy || importingId != null || removingId != null || pendingAllCount === 0}
+          >
+            {bulkMode === "all" ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <PackagePlus className="h-4 w-4" aria-hidden="true" />
+            )}
+            {pendingAllCount === 0
+              ? "Todo el catálogo ya está en tu tienda"
+              : bulkMode === "all"
+                ? "Cargando productos…"
+                : `Cargar todos los productos${pendingAllCount > 0 ? ` (${pendingAllCount})` : ""}`}
+          </button>
+        ) : null}
       </div>
 
       <div className="relative max-w-md">
@@ -151,6 +267,83 @@ export function AvailableProductsPanel({
         />
       </div>
 
+      {categoryFacets.length > 0 ? (
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div
+            className="flex flex-wrap gap-2"
+            role="group"
+            aria-label="Filtrar por categoría"
+          >
+            <button
+              type="button"
+              className={cn(
+                "rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                categoryFilter === "all"
+                  ? "border-teal-600 bg-teal-50 text-teal-800 dark:border-teal-500 dark:bg-teal-950/40 dark:text-teal-200"
+                  : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900",
+              )}
+              onClick={() => setCategoryFilter("all")}
+            >
+              Todas
+              <span className="ml-1 tabular-nums text-zinc-400">
+                {products.length}
+              </span>
+            </button>
+            {categoryFacets.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                  categoryFilter === item.value
+                    ? "border-teal-600 bg-teal-50 text-teal-800 dark:border-teal-500 dark:bg-teal-950/40 dark:text-teal-200"
+                    : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900",
+                )}
+                onClick={() => setCategoryFilter(item.value)}
+              >
+                {item.label}
+                <span className="ml-1 tabular-nums text-zinc-400">
+                  {item.count}
+                </span>
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="btn-brand-outline inline-flex min-h-10 shrink-0 items-center justify-center gap-2 !text-sm"
+            onClick={() => handleBulk("category")}
+            disabled={
+              loading ||
+              bulkBusy ||
+              importingId != null ||
+              removingId != null ||
+              categoryFilter === "all" ||
+              (selectedCategoryMeta?.pending ?? 0) === 0
+            }
+            title={
+              categoryFilter === "all"
+                ? "Elige una categoría para cargarla completa"
+                : undefined
+            }
+          >
+            {bulkMode === "category" ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <FolderPlus className="h-4 w-4" aria-hidden="true" />
+            )}
+            {categoryFilter === "all"
+              ? "Cargar por categoría"
+              : bulkMode === "category"
+                ? `Cargando ${supplierCategoryLabel(categoryFilter)}…`
+                : `Cargar ${supplierCategoryLabel(categoryFilter)}${
+                    selectedCategoryMeta
+                      ? ` (${selectedCategoryMeta.pending})`
+                      : ""
+                  }`}
+          </button>
+        </div>
+      ) : null}
+
       {error ? (
         <p className="text-sm text-red-600 dark:text-red-400" role="alert">
           {error}
@@ -158,7 +351,7 @@ export function AvailableProductsPanel({
       ) : null}
       {message ? (
         <p
-          className="text-sm font-medium text-emerald-700 dark:text-emerald-400"
+          className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200"
           role="status"
         >
           {message}
@@ -186,14 +379,17 @@ export function AvailableProductsPanel({
         </div>
       ) : filtered.length === 0 ? (
         <p className="py-10 text-center text-sm text-zinc-500">
-          No hay coincidencias para “{query.trim()}”.
+          {query.trim()
+            ? `No hay coincidencias para “${query.trim()}”.`
+            : "No hay productos en esta categoría."}
         </p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((product) => {
             const isImporting = importingId === product.id;
             const isRemoving = removingId === product.id;
-            const busy = importingId != null || removingId != null;
+            const busy =
+              importingId != null || removingId != null || bulkBusy;
 
             return (
               <li

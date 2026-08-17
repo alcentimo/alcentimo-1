@@ -227,22 +227,29 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
     ? dropship
     : { ...defaultDropshipPricingSettings(), enabled: true };
 
-  const [{ data, error }, { data: links }] = await Promise.all([
-    admin
+  const pageSize = 500;
+  const catalogRows: Record<string, unknown>[] = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await admin
       .from("supplier_products")
       .select(
         "id, title, description, base_price_usd, stock, category, image_url, variants",
       )
       .eq("is_active", true)
-      .order("title", { ascending: true })
-      .limit(200),
-    admin
-      .from("store_dropship_links")
-      .select("supplier_product_id, product_id")
-      .eq("store_id", auth.store.id),
-  ]);
+      .order("id", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) return { error: error.message };
+    const chunk = (data as Record<string, unknown>[] | null) ?? [];
+    catalogRows.push(...chunk);
+    if (chunk.length < pageSize) break;
+    from += pageSize;
+  }
 
-  if (error) return { error: error.message };
+  const { data: links } = await admin
+    .from("store_dropship_links")
+    .select("supplier_product_id, product_id")
+    .eq("store_id", auth.store.id);
 
   const linkedBySupplier = new Map<string, string>();
   for (const row of (links as Record<string, unknown>[] | null) ?? []) {
@@ -254,33 +261,35 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   }
 
   return {
-    products: ((data as Record<string, unknown>[] | null) ?? []).map((row) => {
-      const id = String(row.id);
-      const cost = Number(row.base_price_usd) || 0;
-      const variants = normalizeSupplierProductVariants(row.variants);
-      const linkedProductId = linkedBySupplier.get(id) ?? null;
-      const imageUrl =
-        typeof row.image_url === "string" && row.image_url.trim()
-          ? row.image_url.trim()
-          : null;
+    products: catalogRows
+      .map((row) => {
+        const id = String(row.id);
+        const cost = Number(row.base_price_usd) || 0;
+        const variants = normalizeSupplierProductVariants(row.variants);
+        const linkedProductId = linkedBySupplier.get(id) ?? null;
+        const imageUrl =
+          typeof row.image_url === "string" && row.image_url.trim()
+            ? row.image_url.trim()
+            : null;
 
-      return {
-        id,
-        title: String(row.title ?? ""),
-        description: String(row.description ?? ""),
-        basePriceUsd: cost,
-        suggestedRetailUsd: suggestRetailFromWholesaleCost(
-          cost,
-          pricingForSuggest,
-        ),
-        stock: Number(row.stock) || 0,
-        category: normalizeSupplierProductCategory(row.category),
-        imageUrl,
-        variantCount: variants.options.length,
-        alreadyImported: linkedProductId != null,
-        linkedProductId,
-      };
-    }),
+        return {
+          id,
+          title: String(row.title ?? ""),
+          description: String(row.description ?? ""),
+          basePriceUsd: cost,
+          suggestedRetailUsd: suggestRetailFromWholesaleCost(
+            cost,
+            pricingForSuggest,
+          ),
+          stock: Number(row.stock) || 0,
+          category: normalizeSupplierProductCategory(row.category),
+          imageUrl,
+          variantCount: variants.options.length,
+          alreadyImported: linkedProductId != null,
+          linkedProductId,
+        };
+      })
+      .sort((a, b) => a.title.localeCompare(b.title, "es")),
   };
 }
 
