@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { Banknote, ShieldCheck } from "lucide-react";
 import { catalogOrderHasDropshipLines } from "@/lib/dropship/catalog-order-dropship";
 import { DROPSHIP_CENTRAL_PAYMENT_NOTICE } from "@/lib/dropship/settlement-types";
@@ -30,13 +31,13 @@ export function OrderDropshipSupplierPaymentPanel({
         />
         <span>{DROPSHIP_CENTRAL_PAYMENT_NOTICE}</span>
       </p>
-      <a
-        href="#daily-dropship-settlement"
+      <Link
+        href="/dashboard/liquidacion"
         className="btn-brand-outline mt-3 inline-flex items-center justify-center gap-2 !min-h-10 !text-xs"
       >
         <Banknote className="h-4 w-4" aria-hidden="true" />
-        Ir al cierre diario
-      </a>
+        Ir a Reportar Pago
+      </Link>
     </section>
   );
 }

@@ -30,6 +30,7 @@ import { cn } from "@/lib/cn";
 interface DailyDropshipSettlementCardProps {
   summary: DropshipDailySettlementSummary;
   paymentMethods: SubscriptionPaymentMethod[];
+  variant?: "card" | "page";
 }
 
 function statusClass(status: string): string {
@@ -45,14 +46,16 @@ function statusClass(status: string): string {
 export function DailyDropshipSettlementCard({
   summary,
   paymentMethods,
+  variant = "card",
 }: DailyDropshipSettlementCardProps) {
   const router = useRouter();
   const existing = summary.existing;
   const isApproved = existing?.status === "approved";
   const isReported = existing?.status === "reported";
   const canReport = !isApproved && summary.amountDueUsd > 0;
+  const isPage = variant === "page";
 
-  const [openForm, setOpenForm] = useState(isReported);
+  const [openForm, setOpenForm] = useState(isPage || isReported);
   const [paymentMethod, setPaymentMethod] = useState<SupplierB2bPaymentMethodKey>(
     existing?.paymentMethod && isSupplierB2bPaymentMethodKey(existing.paymentMethod)
       ? existing.paymentMethod
@@ -97,31 +100,54 @@ export function DailyDropshipSettlementCard({
   return (
     <section
       id="daily-dropship-settlement"
-      className="card-panel mb-6 scroll-mt-24"
+      className={cn(
+        "scroll-mt-24",
+        isPage ? "space-y-5" : "card-panel mb-6",
+      )}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="section-label">Cierre diario dropshipping</p>
-          <h2 className="mt-1 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Liquidación del {dateLabel}
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-            {DROPSHIP_CENTRAL_PAYMENT_NOTICE}
-          </p>
+      {isPage ? null : (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="section-label">Cierre diario dropshipping</p>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+              Liquidación del {dateLabel}
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+              {DROPSHIP_CENTRAL_PAYMENT_NOTICE}
+            </p>
+          </div>
+          {existing ? (
+            <span
+              className={cn(
+                "inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-semibold",
+                statusClass(existing.status),
+              )}
+            >
+              {DROPSHIP_SETTLEMENT_STATUS_LABELS[existing.status]}
+            </span>
+          ) : null}
         </div>
-        {existing ? (
-          <span
-            className={cn(
-              "inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-semibold",
-              statusClass(existing.status),
-            )}
-          >
-            {DROPSHIP_SETTLEMENT_STATUS_LABELS[existing.status]}
-          </span>
-        ) : null}
-      </div>
+      )}
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      {isPage ? (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Cierre del {dateLabel} · markup operativo {summary.markupPercent}%
+          </p>
+          {existing ? (
+            <span
+              className={cn(
+                "inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-semibold",
+                statusClass(existing.status),
+              )}
+            >
+              {DROPSHIP_SETTLEMENT_STATUS_LABELS[existing.status]}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className={cn("mt-4 grid gap-3 sm:grid-cols-3", isPage && "mt-0")}>
         <article className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 px-3 py-3 dark:border-zinc-800 dark:bg-zinc-900/40">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
             Ventas mayoristas
@@ -158,6 +184,58 @@ export function DailyDropshipSettlementCard({
           </p>
         </article>
       </div>
+
+      {summary.lines.length > 0 ? (
+        <div className={cn(isPage && "card-panel")}>
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            Ventas pendientes de liquidación
+          </p>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            Costo mayorista más markup operativo de Alcéntimo, por producto.
+          </p>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[520px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-zinc-200 text-[11px] uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+                  <th className="py-2 pr-3 font-semibold">Producto</th>
+                  <th className="py-2 pr-3 font-semibold">Pedido</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Cant.</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Costo</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Markup</th>
+                  <th className="py-2 text-right font-semibold">A pagar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary.lines.map((line, index) => (
+                  <tr
+                    key={`${line.catalogOrderId}-${line.supplierProductId ?? index}`}
+                    className="border-b border-zinc-100 last:border-0 dark:border-zinc-800/80"
+                  >
+                    <td className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-50">
+                      {line.productTitle}
+                    </td>
+                    <td className="py-2 pr-3 font-mono text-xs text-zinc-500">
+                      #{line.catalogOrderId.slice(0, 8).toUpperCase()}
+                    </td>
+                    <td className="py-2 pr-3 text-right tabular-nums">
+                      {line.quantity}
+                    </td>
+                    <td className="py-2 pr-3 text-right tabular-nums text-zinc-600 dark:text-zinc-300">
+                      {formatUsd(line.supplierPayoutUsd)}
+                    </td>
+                    <td className="py-2 pr-3 text-right tabular-nums text-zinc-600 dark:text-zinc-300">
+                      {formatUsd(line.platformMarkupUsd)}
+                    </td>
+                    <td className="py-2 text-right font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
+                      {formatUsd(line.lineDueUsd)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
 
       {existing?.status === "rejected" && existing.reviewNotes ? (
         <p
@@ -198,7 +276,7 @@ export function DailyDropshipSettlementCard({
       ) : null}
 
       {canReport ? (
-        <div className="mt-5 space-y-4">
+        <div className={cn("mt-5 space-y-4", isPage && "card-panel")}>
           {!openForm ? (
             <button
               type="button"
@@ -209,7 +287,18 @@ export function DailyDropshipSettlementCard({
               Reportar Pago Diario
             </button>
           ) : (
-            <div className="space-y-4 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+            <div className={cn(!isPage && "space-y-4 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800", isPage && "space-y-4")}>
+              {isPage ? (
+                <div>
+                  <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                    Datos del pago único
+                  </h2>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Transfiere el consolidado a las cuentas de Alcéntimo y
+                    adjunta el comprobante.
+                  </p>
+                </div>
+              ) : null}
               <div className="flex items-start gap-2 text-xs leading-relaxed text-zinc-500">
                 <ShieldCheck
                   className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600"
@@ -331,7 +420,7 @@ export function DailyDropshipSettlementCard({
                   )}
                   {isReported ? "Actualizar reporte diario" : "Enviar reporte de pago"}
                 </button>
-                {!isReported ? (
+                {!isReported && !isPage ? (
                   <button
                     type="button"
                     className="btn-brand-outline !min-h-10"
@@ -346,7 +435,7 @@ export function DailyDropshipSettlementCard({
           )}
         </div>
       ) : !isApproved ? (
-        <p className="mt-4 text-sm text-zinc-500">
+        <p className={cn("mt-4 text-sm text-zinc-500", isPage && "card-panel")}>
           No hay ventas confirmadas de productos mayoristas pendientes de
           liquidar hoy.
         </p>

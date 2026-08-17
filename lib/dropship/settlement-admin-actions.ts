@@ -132,6 +132,7 @@ export async function approveDropshipDailySettlement(input: {
 
   revalidatePath("/admin/dashboard");
   revalidatePath("/dashboard/pedidos");
+  revalidatePath("/dashboard/liquidacion");
   revalidatePath("/proveedor/dashboard");
 
   const { data: payoutRows } = await client
@@ -199,6 +200,7 @@ export async function rejectDropshipDailySettlement(input: {
 
   revalidatePath("/admin/dashboard");
   revalidatePath("/dashboard/pedidos");
+  revalidatePath("/dashboard/liquidacion");
 
   return {
     settlement: mapSettlementRecord(updated as Record<string, unknown>),

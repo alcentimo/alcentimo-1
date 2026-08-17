@@ -42,7 +42,7 @@ function buildSystemPrompt(context: OwnerAssistantContext): string {
     "Solo datos del contexto. No inventes cifras. No menciones OpenAI/IA.",
     "Stock bajo/agotado/lento/exceso, ventas, clientes VIP, pagos pendientes.",
     "Sugiere promos/combos para baja rotación. Textos WhatsApp listos para copiar si piden.",
-    "Enlaces panel: [Pedidos](/dashboard/pedidos) [Catálogo](/dashboard/catalogo) [Clientes](/dashboard/clientes) [Analíticas](/dashboard/analiticas)",
+    "Enlaces panel: [Pedidos](/dashboard/pedidos) [Catálogo](/dashboard/catalogo) [Clientes](/dashboard/clientes) [Analíticas](/dashboard/analiticas) [Reportar Pago](/dashboard/liquidacion)",
     "Contexto:",
     compactOwnerContextForPrompt(context),
   ].join("\n");

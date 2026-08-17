@@ -5,7 +5,8 @@ export type DashboardPrefetchRoute =
   | "clientes"
   | "equipo"
   | "analiticas"
-  | "ajustes";
+  | "ajustes"
+  | "liquidacion";
 
 const ROUTE_PREFIXES: Array<{ prefix: string; route: DashboardPrefetchRoute }> = [
   { prefix: "/dashboard/catalogo", route: "catalogo" },
@@ -14,6 +15,7 @@ const ROUTE_PREFIXES: Array<{ prefix: string; route: DashboardPrefetchRoute }> =
   { prefix: "/dashboard/equipo", route: "equipo" },
   { prefix: "/dashboard/analiticas", route: "analiticas" },
   { prefix: "/dashboard/ajustes", route: "ajustes" },
+  { prefix: "/dashboard/liquidacion", route: "liquidacion" },
 ];
 
 /** Resuelve un href del menú lateral a la clave de prefetch, si aplica. */
@@ -40,6 +42,7 @@ export function isDashboardPrefetchRoute(
     value === "clientes" ||
     value === "equipo" ||
     value === "analiticas" ||
-    value === "ajustes"
+    value === "ajustes" ||
+    value === "liquidacion"
   );
 }
