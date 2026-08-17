@@ -31,6 +31,65 @@ import { cn } from "@/lib/cn";
 type CategoryFilter = "all" | SupplierProductCategory;
 type BulkMode = "all" | "category" | null;
 
+function catalogImageUrls(product: MerchantSupplierCatalogProduct): string[] {
+  if (product.imageUrls && product.imageUrls.length > 0) {
+    return product.imageUrls;
+  }
+  return product.imageUrl ? [product.imageUrl] : [];
+}
+
+function SupplierCatalogCardMedia({
+  product,
+}: {
+  product: MerchantSupplierCatalogProduct;
+}) {
+  const urls = catalogImageUrls(product);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeUrl = urls[activeIndex] ?? urls[0] ?? null;
+
+  return (
+    <div className="relative aspect-[4/3] bg-zinc-50 dark:bg-zinc-900">
+      {activeUrl ? (
+        <Image
+          src={activeUrl}
+          alt={product.title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 100vw, 33vw"
+        />
+      ) : (
+        <div className="flex h-full items-center justify-center text-zinc-300 dark:text-zinc-600">
+          <Package className="h-10 w-10" aria-hidden="true" />
+        </div>
+      )}
+      {urls.length > 1 ? (
+        <div className="absolute inset-x-0 bottom-0 flex gap-1.5 overflow-x-auto bg-gradient-to-t from-black/55 to-transparent px-2 pb-2 pt-6">
+          {urls.map((url, index) => (
+            <button
+              key={`${url}-${index}`}
+              type="button"
+              className={cn(
+                "relative h-10 w-10 shrink-0 overflow-hidden rounded-lg ring-2 ring-white/20",
+                index === activeIndex && "ring-white",
+              )}
+              onClick={() => setActiveIndex(index)}
+              aria-label={`Ver foto ${index + 1} de ${urls.length}`}
+            >
+              <Image
+                src={url}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="40px"
+              />
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 interface AvailableProductsPanelProps {
   onImported?: (productId: string) => void;
   className?: string;
@@ -396,21 +455,7 @@ export function AvailableProductsPanel({
                 key={product.id}
                 className="flex flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950"
               >
-                <div className="relative aspect-[4/3] bg-zinc-50 dark:bg-zinc-900">
-                  {product.imageUrl ? (
-                    <Image
-                      src={product.imageUrl}
-                      alt={product.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 100vw, 33vw"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-zinc-300 dark:text-zinc-600">
-                      <Package className="h-10 w-10" aria-hidden="true" />
-                    </div>
-                  )}
-                </div>
+                <SupplierCatalogCardMedia product={product} />
 
                 <div className="flex flex-1 flex-col gap-3 p-4">
                   <div className="min-w-0">

@@ -27,6 +27,8 @@ export interface MercadoProductCard {
   store_name: string;
   supplier_label: string;
   variants: SupplierProductVariants;
+  /** Galería completa; thumb_url es la portada (primera). */
+  gallery_urls: string[];
 }
 
 export function computeDiscountPercent(
@@ -50,6 +52,7 @@ export function computeDiscountPercent(
 export function mapSupplierRowToMercadoCard(
   row: Record<string, unknown>,
   supplierLabel = MORICHE_BRAND_LABEL,
+  galleryUrls?: string[],
 ): MercadoProductCard {
   const category = normalizeSupplierProductCategory(row.category);
   const priceUsd = Number(row.base_price_usd) || 0;
@@ -60,6 +63,16 @@ export function mapSupplierRowToMercadoCard(
       : Number.isFinite(Number(compareRaw))
         ? Number(compareRaw)
         : null;
+  const coverFromRow =
+    typeof row.image_url === "string" && row.image_url.trim()
+      ? row.image_url.trim()
+      : null;
+  const urls =
+    galleryUrls && galleryUrls.length > 0
+      ? galleryUrls
+      : coverFromRow
+        ? [coverFromRow]
+        : [];
 
   return {
     product_id: String(row.id),
@@ -72,10 +85,8 @@ export function mapSupplierRowToMercadoCard(
     compare_at_usd: compareAtUsd,
     discount_percent: computeDiscountPercent(priceUsd, compareAtUsd),
     free_shipping: Boolean(row.free_shipping),
-    thumb_url:
-      typeof row.image_url === "string" && row.image_url.trim()
-        ? row.image_url.trim()
-        : null,
+    thumb_url: urls[0] ?? null,
+    gallery_urls: urls,
     category,
     category_name: supplierCategoryLabel(category),
     available_stock: Number(row.stock) || 0,

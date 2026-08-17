@@ -5,6 +5,7 @@ import { useMemo, useState, useTransition } from "react";
 import {
   Boxes,
   CircleAlert,
+  Images,
   Loader2,
   Package,
   Pencil,
@@ -12,7 +13,11 @@ import {
   Trash2,
   Wallet,
 } from "lucide-react";
-import { ProductImageField } from "@/components/dashboard/ProductImageField";
+import {
+  buildProductImagesFormPayload,
+  ProductGalleryField,
+  type ProductGalleryFieldValue,
+} from "@/components/dashboard/ProductGalleryField";
 import { SupplierVariantsEditor } from "@/components/supplier/SupplierVariantsEditor";
 import {
   Dialog,
@@ -27,6 +32,10 @@ import {
   updateSupplierProduct,
   type SupplierProduct,
 } from "@/lib/supplier/actions";
+import {
+  SUPPLIER_GALLERY_MAX_IMAGES,
+  supplierImagesToEditImages,
+} from "@/lib/supplier/product-images";
 import {
   SUPPLIER_PRODUCT_CATEGORIES,
   normalizeSupplierProductCategory,
@@ -54,22 +63,23 @@ type ProductFormState = {
   variants: SupplierProductVariants;
   stock: string;
   basePriceUsd: string;
-  compareAtUsd: string;
-  freeShipping: boolean;
-  imageFile: File | null;
-  imageKey: number;
+  gallery: ProductGalleryFieldValue;
+  galleryKey: number;
 };
 
-const EMPTY_FORM: Omit<ProductFormState, "imageKey"> = {
+const EMPTY_GALLERY: ProductGalleryFieldValue = {
+  items: [],
+  removedDbIds: [],
+};
+
+const EMPTY_FORM: Omit<ProductFormState, "galleryKey"> = {
   title: "",
   description: "",
   category: "otros",
   variants: emptySupplierVariants(),
   stock: "0",
   basePriceUsd: "",
-  compareAtUsd: "",
-  freeShipping: false,
-  imageFile: null,
+  gallery: EMPTY_GALLERY,
 };
 
 function formFromProduct(product: SupplierProduct): ProductFormState {
@@ -80,11 +90,8 @@ function formFromProduct(product: SupplierProduct): ProductFormState {
     variants: product.variants ?? emptySupplierVariants(),
     stock: String(product.stock),
     basePriceUsd: String(product.basePriceUsd),
-    compareAtUsd:
-      product.compareAtUsd != null ? String(product.compareAtUsd) : "",
-    freeShipping: Boolean(product.freeShipping),
-    imageFile: null,
-    imageKey: Date.now(),
+    gallery: EMPTY_GALLERY,
+    galleryKey: Date.now(),
   };
 }
 
@@ -96,10 +103,13 @@ function buildFormData(form: ProductFormState): FormData {
   formData.set("variants", serializeSupplierVariants(form.variants));
   formData.set("stock", form.stock);
   formData.set("basePriceUsd", form.basePriceUsd);
-  formData.set("compareAtUsd", form.compareAtUsd);
-  if (form.freeShipping) formData.set("freeShipping", "true");
-  if (form.imageFile) {
-    formData.set("image", form.imageFile);
+
+  const { json, files } = buildProductImagesFormPayload(form.gallery);
+  formData.set("product_images_json", json);
+  formData.delete("images");
+  formData.delete("image");
+  for (const file of files) {
+    formData.append("images", file);
   }
   return formData;
 }
@@ -109,170 +119,130 @@ function ProductFields({
   form,
   pending,
   onChange,
-  onImageReady,
-  onImageError,
-  initialPreviewUrl,
+  onGalleryError,
+  onGalleryBusy,
+  initialImages,
   imageMode,
 }: {
   idPrefix: string;
   form: ProductFormState;
   pending: boolean;
   onChange: (next: ProductFormState) => void;
-  onImageReady: (file: File) => void;
-  onImageError: (msg: string) => void;
-  initialPreviewUrl: string | null;
+  onGalleryError: (msg: string) => void;
+  onGalleryBusy: (busy: boolean) => void;
+  initialImages: ReturnType<typeof supplierImagesToEditImages>;
   imageMode: "create" | "edit";
 }) {
   return (
     <>
-      <div className="grid gap-5 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
-        <ProductImageField
-          key={form.imageKey}
-          id={`${idPrefix}-image`}
-          mode={imageMode}
-          layout="compact"
-          initialPreviewUrl={initialPreviewUrl}
-          disabled={pending}
-          onImageReady={({ file }) => onImageReady(file)}
-          onError={onImageError}
-        />
+      <ProductGalleryField
+        key={form.galleryKey}
+        id={`${idPrefix}-image`}
+        mode={imageMode}
+        layout="stacked"
+        initialImages={initialImages}
+        maxImages={SUPPLIER_GALLERY_MAX_IMAGES}
+        disabled={pending}
+        onChange={(gallery) => onChange({ ...form, gallery })}
+        onError={onGalleryError}
+        onBusyChange={onGalleryBusy}
+      />
 
-        <div className="space-y-3">
+      <div className="mt-5 space-y-3">
+        <div>
+          <label htmlFor={`${idPrefix}-title`} className="label-field">
+            Título
+          </label>
+          <input
+            id={`${idPrefix}-title`}
+            value={form.title}
+            onChange={(event) =>
+              onChange({ ...form, title: event.target.value })
+            }
+            className="input-field"
+            placeholder="Ej: Caja mayorista de snacks"
+            disabled={pending}
+          />
+        </div>
+        <div>
+          <label htmlFor={`${idPrefix}-category`} className="label-field">
+            Categoría
+          </label>
+          <select
+            id={`${idPrefix}-category`}
+            className="input-field"
+            value={form.category}
+            disabled={pending}
+            onChange={(event) =>
+              onChange({
+                ...form,
+                category: normalizeSupplierProductCategory(event.target.value),
+              })
+            }
+          >
+            {SUPPLIER_PRODUCT_CATEGORIES.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor={`${idPrefix}-description`} className="label-field">
+            Descripción
+          </label>
+          <textarea
+            id={`${idPrefix}-description`}
+            rows={4}
+            value={form.description}
+            onChange={(event) =>
+              onChange({ ...form, description: event.target.value })
+            }
+            className="input-field resize-none"
+            placeholder="Detalles para el comerciante (contenido, presentación, condiciones…)"
+            disabled={pending}
+          />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label htmlFor={`${idPrefix}-title`} className="label-field">
-              Título
+            <label htmlFor={`${idPrefix}-stock`} className="label-field">
+              Stock
             </label>
             <input
-              id={`${idPrefix}-title`}
-              value={form.title}
+              id={`${idPrefix}-stock`}
+              type="number"
+              min={0}
+              step={1}
+              value={form.stock}
               onChange={(event) =>
-                onChange({ ...form, title: event.target.value })
+                onChange({ ...form, stock: event.target.value })
               }
               className="input-field"
-              placeholder="Ej: Caja mayorista de snacks"
               disabled={pending}
             />
           </div>
           <div>
-            <label htmlFor={`${idPrefix}-category`} className="label-field">
-              Categoría
+            <label htmlFor={`${idPrefix}-price`} className="label-field">
+              Precio base (USD)
             </label>
-            <select
-              id={`${idPrefix}-category`}
-              className="input-field"
-              value={form.category}
-              disabled={pending}
-              onChange={(event) =>
-                onChange({
-                  ...form,
-                  category: normalizeSupplierProductCategory(
-                    event.target.value,
-                  ),
-                })
-              }
-            >
-              {SUPPLIER_PRODUCT_CATEGORIES.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor={`${idPrefix}-description`} className="label-field">
-              Descripción
-            </label>
-            <textarea
-              id={`${idPrefix}-description`}
-              rows={4}
-              value={form.description}
-              onChange={(event) =>
-                onChange({ ...form, description: event.target.value })
-              }
-              className="input-field resize-none"
-              placeholder="Detalles para el comerciante (contenido, presentación, condiciones…)"
-              disabled={pending}
-            />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label htmlFor={`${idPrefix}-stock`} className="label-field">
-                Stock
-              </label>
+            <div className="relative mt-1.5">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-zinc-400">
+                $
+              </span>
               <input
-                id={`${idPrefix}-stock`}
+                id={`${idPrefix}-price`}
                 type="number"
                 min={0}
-                step={1}
-                value={form.stock}
+                step="0.01"
+                inputMode="decimal"
+                value={form.basePriceUsd}
                 onChange={(event) =>
-                  onChange({ ...form, stock: event.target.value })
+                  onChange({ ...form, basePriceUsd: event.target.value })
                 }
-                className="input-field"
+                className="input-field !mt-0 pl-7"
+                placeholder="0.00"
                 disabled={pending}
               />
-            </div>
-            <div>
-              <label htmlFor={`${idPrefix}-price`} className="label-field">
-                Precio base (USD)
-              </label>
-              <div className="relative mt-1.5">
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-zinc-400">
-                  $
-                </span>
-                <input
-                  id={`${idPrefix}-price`}
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  inputMode="decimal"
-                  value={form.basePriceUsd}
-                  onChange={(event) =>
-                    onChange({ ...form, basePriceUsd: event.target.value })
-                  }
-                  className="input-field !mt-0 pl-7"
-                  placeholder="0.00"
-                  disabled={pending}
-                />
-              </div>
-            </div>
-            <div>
-              <label htmlFor={`${idPrefix}-compare`} className="label-field">
-                Precio anterior / lista (USD)
-              </label>
-              <div className="relative mt-1.5">
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-zinc-400">
-                  $
-                </span>
-                <input
-                  id={`${idPrefix}-compare`}
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  inputMode="decimal"
-                  value={form.compareAtUsd}
-                  onChange={(event) =>
-                    onChange({ ...form, compareAtUsd: event.target.value })
-                  }
-                  className="input-field !mt-0 pl-7"
-                  placeholder="Opcional · tachado en vitrina"
-                  disabled={pending}
-                />
-              </div>
-            </div>
-            <div className="flex items-end">
-              <label className="flex items-center gap-2 pb-2 text-sm text-zinc-700">
-                <input
-                  type="checkbox"
-                  checked={form.freeShipping}
-                  onChange={(event) =>
-                    onChange({ ...form, freeShipping: event.target.checked })
-                  }
-                  disabled={pending}
-                  className="h-4 w-4 rounded border-zinc-300"
-                />
-                Envío gratis (marketplace)
-              </label>
             </div>
           </div>
         </div>
@@ -297,7 +267,7 @@ export function SupplierProductsPanel({
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [createForm, setCreateForm] = useState<ProductFormState>({
     ...EMPTY_FORM,
-    imageKey: 0,
+    galleryKey: 0,
   });
   const [editingProduct, setEditingProduct] = useState<SupplierProduct | null>(
     null,
@@ -307,6 +277,8 @@ export function SupplierProductsPanel({
   const [createMessage, setCreateMessage] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [listMessage, setListMessage] = useState<string | null>(null);
+  const [createGalleryBusy, setCreateGalleryBusy] = useState(false);
+  const [editGalleryBusy, setEditGalleryBusy] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const metrics = useMemo(() => {
@@ -331,15 +303,18 @@ export function SupplierProductsPanel({
     setCreateForm({
       ...EMPTY_FORM,
       variants: emptySupplierVariants(),
-      imageKey: Date.now(),
+      gallery: EMPTY_GALLERY,
+      galleryKey: Date.now(),
     });
     setCreateError(null);
+    setCreateGalleryBusy(false);
   }
 
   function closeEditModal() {
     setEditingProduct(null);
     setEditForm(null);
     setEditError(null);
+    setEditGalleryBusy(false);
   }
 
   function startEdit(product: SupplierProduct) {
@@ -462,9 +437,10 @@ export function SupplierProductsPanel({
             <p className="supplier-hub-section-label">Catálogo mayorista</p>
             <h1 className="supplier-hub-heading">Cargar producto</h1>
             <p className="supplier-hub-subheading">
-              Sube la foto directo del teléfono: la estandarizamos a cuadrado
-              1080×1080 para redes y a WebP liviano para el catálogo. Añade
-              categoría y, si aplica, variantes (color, modelo o presentación).
+              Sube varias fotos (galería o cámara del teléfono). La primera es
+              la portada; las estandarizamos a cuadrado 1080×1080 para redes y a
+              WebP liviano para el catálogo. Añade categoría y, si aplica,
+              variantes (color, modelo o presentación).
             </p>
           </div>
         </div>
@@ -475,11 +451,9 @@ export function SupplierProductsPanel({
             form={createForm}
             pending={pending}
             onChange={setCreateForm}
-            onImageReady={(file) =>
-              setCreateForm((current) => ({ ...current, imageFile: file }))
-            }
-            onImageError={setCreateError}
-            initialPreviewUrl={null}
+            onGalleryError={setCreateError}
+            onGalleryBusy={setCreateGalleryBusy}
+            initialImages={[]}
             imageMode="create"
           />
         </div>
@@ -498,7 +472,7 @@ export function SupplierProductsPanel({
             type="button"
             className="btn-brand"
             onClick={handleCreate}
-            disabled={pending}
+            disabled={pending || createGalleryBusy}
           >
             {pending && !editOpen ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
@@ -551,6 +525,10 @@ export function SupplierProductsPanel({
           <ul className="supplier-hub-list mt-3">
             {filteredProducts.map((product) => {
               const variantCount = countSupplierVariantOptions(product.variants);
+              const photoCount = Math.max(
+                product.gallery?.length ?? 0,
+                product.imageUrl ? 1 : 0,
+              );
               return (
                 <li
                   key={product.id}
@@ -574,6 +552,12 @@ export function SupplierProductsPanel({
                         Sin foto
                       </span>
                     )}
+                    {photoCount > 1 ? (
+                      <span className="absolute bottom-1 right-1 inline-flex items-center gap-0.5 rounded-md bg-black/65 px-1 py-0.5 text-[9px] font-semibold text-white">
+                        <Images className="h-2.5 w-2.5" aria-hidden="true" />
+                        {photoCount}
+                      </span>
+                    ) : null}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-zinc-900 dark:text-zinc-50">
@@ -628,7 +612,7 @@ export function SupplierProductsPanel({
         onOpenChange={(open) => {
           if (!open) closeEditModal();
         }}
-        containerClassName="max-w-2xl"
+        containerClassName="max-w-3xl"
       >
         <DialogContent
           className="relative max-h-[90vh] overflow-y-auto border-emerald-200/70 p-5 shadow-[0_16px_48px_rgba(5,150,105,0.12)] sm:p-6 dark:border-emerald-900/40"
@@ -638,8 +622,8 @@ export function SupplierProductsPanel({
             <p className="supplier-hub-section-label">Edición</p>
             <DialogTitle>Editar producto</DialogTitle>
             <DialogDescription>
-              Actualiza categoría, variantes, stock o precio. Las órdenes ya
-              emitidas conservan el costo anterior.
+              Actualiza fotos, categoría, variantes, stock o precio. Las órdenes
+              ya emitidas conservan el costo anterior.
             </DialogDescription>
           </DialogHeader>
 
@@ -650,13 +634,11 @@ export function SupplierProductsPanel({
                 form={editForm}
                 pending={pending}
                 onChange={(next) => setEditForm(next)}
-                onImageReady={(file) =>
-                  setEditForm((current) =>
-                    current ? { ...current, imageFile: file } : current,
-                  )
-                }
-                onImageError={setEditError}
-                initialPreviewUrl={editingProduct.imageUrl}
+                onGalleryError={setEditError}
+                onGalleryBusy={setEditGalleryBusy}
+                initialImages={supplierImagesToEditImages(
+                  editingProduct.gallery ?? [],
+                )}
                 imageMode="edit"
               />
 
@@ -679,7 +661,7 @@ export function SupplierProductsPanel({
                   type="button"
                   className="btn-brand !min-h-10"
                   onClick={handleSaveEdit}
-                  disabled={pending}
+                  disabled={pending || editGalleryBusy}
                 >
                   {pending ? (
                     <Loader2

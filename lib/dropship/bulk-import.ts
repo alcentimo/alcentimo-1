@@ -37,6 +37,10 @@ import {
   supplierVariantAttributeLabel,
   type SupplierProductVariants,
 } from "@/lib/supplier/variants";
+import {
+  listSupplierProductImages,
+  supplierImageUrls,
+} from "@/lib/supplier/product-images";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
@@ -65,6 +69,7 @@ type SupplierCatalogRow = {
   stock: number;
   category: SupplierProductCategory;
   imageUrl: string | null;
+  imageUrls: string[];
   variants: SupplierProductVariants;
 };
 
@@ -162,12 +167,26 @@ async function fetchAllActiveSupplierProducts(
         stock: Math.max(0, Math.floor(Number(row.stock) || 0)),
         category: normalizeSupplierProductCategory(row.category),
         imageUrl,
+        imageUrls: imageUrl ? [imageUrl] : [],
         variants: normalizeSupplierProductVariants(row.variants),
       });
     }
 
     if (chunk.length < SUPPLIER_PAGE_SIZE) break;
     from += SUPPLIER_PAGE_SIZE;
+  }
+
+  const galleryByProduct = await listSupplierProductImages(
+    admin,
+    rows.map((row) => row.id),
+  );
+  for (const row of rows) {
+    const urls = supplierImageUrls(
+      galleryByProduct.get(row.id) ?? [],
+      row.imageUrl,
+    );
+    row.imageUrls = urls;
+    row.imageUrl = urls[0] ?? null;
   }
 
   return { rows };
@@ -499,24 +518,28 @@ export async function importSupplierProductsBulkToStore(input?: {
         }
       }
 
-      const images = prepared
-        .filter((item) => item.supplier.imageUrl)
-        .map((item) => ({
+      const images = prepared.flatMap((item) =>
+        item.supplier.imageUrls.map((imageUrl, index) => ({
           product_id: item.productId,
-          thumb_url: item.supplier.imageUrl,
-          medium_url: item.supplier.imageUrl,
-          full_url: item.supplier.imageUrl,
-          is_primary: true,
+          thumb_url: imageUrl,
+          medium_url: imageUrl,
+          full_url: imageUrl,
+          is_primary: index === 0,
           alt_text: item.supplier.title,
           mime_type: "image/webp",
-          sort_order: 0,
-        }));
+          sort_order: index,
+        })),
+      );
       if (images.length > 0) {
-        const { error: imageError } = await admin
-          .from("product_images")
-          .insert(images);
-        if (imageError) {
-          console.error("[dropship-bulk-import] imágenes", imageError.message);
+        for (let offset = 0; offset < images.length; offset += INSERT_CHUNK_SIZE) {
+          const chunk = images.slice(offset, offset + INSERT_CHUNK_SIZE);
+          const { error: imageError } = await admin
+            .from("product_images")
+            .insert(chunk);
+          if (imageError) {
+            console.error("[dropship-bulk-import] imágenes", imageError.message);
+            break;
+          }
         }
       }
 

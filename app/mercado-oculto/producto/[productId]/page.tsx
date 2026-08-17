@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Boxes, MessageCircle } from "lucide-react";
@@ -8,6 +7,7 @@ import { MORICHE_BRAND_LABEL } from "@/lib/mercado-oculto/access";
 import { getMercadoProduct } from "@/lib/mercado-oculto/product-actions";
 import { MercadoChatPanel } from "@/components/mercado-oculto/MercadoChatPanel";
 import { MercadoProductBuyBox } from "@/components/mercado-oculto/MercadoProductBuyBox";
+import { MercadoProductGallery } from "@/components/mercado-oculto/MercadoProductGallery";
 import { MercadoSellerQuestions } from "@/components/mercado-oculto/MercadoSellerQuestions";
 import { formatUsd } from "@/lib/format";
 import { supplierVariantAttributeLabel } from "@/lib/supplier/variants";
@@ -71,42 +71,16 @@ export default async function MercadoProductoPage({
       </nav>
 
       <div className="mercado-mp-detail-grid">
-        <section className="mercado-mp-detail-gallery">
-          <div className="mercado-mp-detail-hero">
-            {product.thumb_url ? (
-              <Image
-                src={product.thumb_url}
-                alt={product.product_name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 560px"
-                unoptimized
-                priority
-              />
-            ) : (
-              <div
-                className="mercado-card-media-fallback text-4xl"
-                aria-hidden="true"
-              >
-                {product.product_name.slice(0, 1).toUpperCase()}
-              </div>
-            )}
-          </div>
-          {product.thumb_url ? (
-            <div className="mercado-mp-detail-thumbs">
-              <div className="mercado-mp-detail-thumb mercado-mp-detail-thumb-active">
-                <Image
-                  src={product.thumb_url}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="72px"
-                  unoptimized
-                />
-              </div>
-            </div>
-          ) : null}
-        </section>
+        <MercadoProductGallery
+          productName={product.product_name}
+          imageUrls={
+            (product.gallery_urls?.length ?? 0) > 0
+              ? product.gallery_urls
+              : product.thumb_url
+                ? [product.thumb_url]
+                : []
+          }
+        />
 
         <section className="mercado-mp-detail-info">
           <div className="mercado-mp-official-pill">
