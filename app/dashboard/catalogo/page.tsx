@@ -14,6 +14,7 @@ import { CatalogPublicLinkMenu } from "@/components/dashboard/CatalogPublicLinkM
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export default async function CatalogoPage({
   searchParams,
