@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowUpRight, Package, Truck } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
-import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
-import { urlsToCatalogGalleryImages } from "@/lib/products/product-gallery-types";
+import { MercadoProductGallery } from "@/components/mercado-oculto/MercadoProductGallery";
 import { cn } from "@/lib/cn";
 
 interface MercadoProductGridProps {
@@ -167,25 +166,19 @@ function MercadoCardMedia({
     product.discount_percent != null &&
     product.compare_at_usd != null &&
     product.compare_at_usd > product.price_usd;
-  const images = urlsToCatalogGalleryImages(
+  const imageUrls =
     product.gallery_urls?.length
       ? product.gallery_urls
       : product.thumb_url
         ? [product.thumb_url]
-        : [],
-  );
+        : [];
 
   return (
     <>
-      <ProductImageGallery
-        product={{
-          product_name: product.product_name,
-          thumb_url: product.thumb_url,
-        }}
-        images={images.length > 0 ? images : undefined}
-        imageClassName="object-cover transition duration-500 ease-out group-hover:scale-[1.05]"
-        fallbackClassName="mercado-card-media-fallback"
-        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 260px"
+      <MercadoProductGallery
+        productName={product.product_name}
+        imageUrls={imageUrls}
+        mode="card"
         onMediaClick={onOpen}
       />
       <div className="mercado-mp-card-status-row">

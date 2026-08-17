@@ -80,6 +80,7 @@ export default async function MercadoProductoPage({
                 ? [product.thumb_url]
                 : []
           }
+          mode="detail"
         />
 
         <section className="mercado-mp-detail-info">

@@ -5,7 +5,7 @@ import { Check, Loader2, MessageCircle, Plus, X } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import type { CartModifierSelection } from "@/lib/catalog/cart-types";
-import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
+import { MercadoProductGallery } from "@/components/mercado-oculto/MercadoProductGallery";
 import { RubroCatalogVariantSlot } from "@/components/rubros/RubroCatalogVariantSlot";
 import { fetchCatalogProductDetail } from "@/lib/catalog/fetch-catalog-product-detail";
 import {
@@ -337,13 +337,17 @@ export function CatalogProductDetailPanel({
 
         <div className="product-detail-scroll">
           <div className="product-detail-media">
-            <ProductImageGallery
-              product={product}
-              images={detailImages.length > 0 ? detailImages : undefined}
+            <MercadoProductGallery
+              productName={product.product_name}
+              product={{
+                thumb_url: product.thumb_url,
+                image_alt: product.image_alt,
+                gallery_images:
+                  detailImages.length > 0
+                    ? detailImages
+                    : product.gallery_images,
+              }}
               mode="detail"
-              className="product-detail-gallery"
-              imageClassName="product-detail-gallery-image"
-              fallbackClassName="product-detail-gallery-fallback"
               loading="eager"
               sizes="(max-width: 768px) 100vw, 560px"
             />

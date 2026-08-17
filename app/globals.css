@@ -2948,6 +2948,14 @@ html:has(.landing-shell) {
   @apply bg-zinc-50 p-3 sm:p-4;
 }
 
+.product-detail-media .mercado-mp-detail-gallery {
+  @apply mx-auto w-full max-w-xl;
+}
+
+.product-detail-media .mercado-mp-detail-gallery .product-image-gallery-detail {
+  @apply w-full;
+}
+
 .product-detail-gallery {
   @apply relative mx-auto w-full max-w-xl;
 }
