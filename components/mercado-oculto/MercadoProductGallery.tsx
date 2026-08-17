@@ -1,74 +1,108 @@
 "use client";
 
-import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
+import {
+  resolveCatalogProductImages,
+  urlsToCatalogGalleryImages,
+  type CatalogProductGalleryImage,
+} from "@/lib/products/product-gallery-types";
 import { cn } from "@/lib/cn";
 
-interface MercadoProductGalleryProps {
+export interface MercadoProductGalleryProps {
   productName: string;
-  imageUrls: string[];
+  /** URLs planas (p. ej. galería mayorista). */
+  imageUrls?: string[];
+  /** Filas ya resueltas (`product_images` / detalle). */
+  images?: CatalogProductGalleryImage[];
+  product?: {
+    thumb_url?: string | null;
+    gallery_images?: unknown;
+    image_alt?: string | null;
+  };
+  mode?: "card" | "detail";
+  className?: string;
+  imageClassName?: string;
+  fallbackClassName?: string;
+  sizes?: string;
+  loading?: "lazy" | "eager";
+  /** En tarjetas: abrir ficha al tocar la foto (no las flechas). */
+  onMediaClick?: () => void;
 }
 
 export function MercadoProductGallery({
   productName,
   imageUrls,
+  images: imagesOverride,
+  product,
+  mode = "detail",
+  className,
+  imageClassName,
+  fallbackClassName,
+  sizes,
+  loading,
+  onMediaClick,
 }: MercadoProductGalleryProps) {
-  const urls = useMemo(
-    () => [...new Set(imageUrls.map((url) => url.trim()).filter(Boolean))],
-    [imageUrls],
+  const resolvedImages = useMemo(() => {
+    if (imagesOverride && imagesOverride.length > 0) return imagesOverride;
+    if (product) {
+      const fromProduct = resolveCatalogProductImages(product);
+      if (fromProduct.length > 0) return fromProduct;
+    }
+    if (imageUrls && imageUrls.length > 0) {
+      return urlsToCatalogGalleryImages(imageUrls);
+    }
+    return [];
+  }, [imagesOverride, product, imageUrls]);
+
+  const galleryProduct = useMemo(
+    () => ({
+      product_name: productName,
+      image_alt: product?.image_alt ?? null,
+      thumb_url: product?.thumb_url ?? resolvedImages[0]?.thumb_url ?? null,
+      gallery_images: resolvedImages,
+    }),
+    [productName, product?.image_alt, product?.thumb_url, resolvedImages],
   );
-  const [activeIndex, setActiveIndex] = useState(0);
-  const activeUrl = urls[activeIndex] ?? urls[0] ?? null;
+
+  if (mode === "detail") {
+    return (
+      <section className={cn("mercado-mp-detail-gallery", className)}>
+        <ProductImageGallery
+          product={galleryProduct}
+          images={resolvedImages.length > 0 ? resolvedImages : undefined}
+          mode="detail"
+          className="product-detail-gallery !rounded-none !border-0 !bg-transparent !shadow-none"
+          imageClassName={
+            imageClassName ?? "product-detail-gallery-image"
+          }
+          fallbackClassName={
+            fallbackClassName ??
+            "product-detail-gallery-fallback mercado-card-media-fallback text-4xl"
+          }
+          sizes={sizes ?? "(max-width: 768px) 100vw, 560px"}
+          loading={loading ?? "eager"}
+        />
+      </section>
+    );
+  }
 
   return (
-    <section className="mercado-mp-detail-gallery">
-      <div className="mercado-mp-detail-hero">
-        {activeUrl ? (
-          <Image
-            src={activeUrl}
-            alt={productName}
-            fill
-            className="object-cover"
-            sizes="(max-width: 1024px) 100vw, 560px"
-            unoptimized
-            priority
-          />
-        ) : (
-          <div
-            className="mercado-card-media-fallback text-4xl"
-            aria-hidden="true"
-          >
-            {productName.slice(0, 1).toUpperCase()}
-          </div>
-        )}
-      </div>
-      {urls.length > 0 ? (
-        <div className="mercado-mp-detail-thumbs" role="list">
-          {urls.map((url, index) => (
-            <button
-              key={`${url}-${index}`}
-              type="button"
-              role="listitem"
-              className={cn(
-                "mercado-mp-detail-thumb p-0",
-                index === activeIndex && "mercado-mp-detail-thumb-active",
-              )}
-              onClick={() => setActiveIndex(index)}
-              aria-label={`Foto ${index + 1} de ${urls.length}`}
-              aria-current={index === activeIndex ? "true" : undefined}
-            >
-              <Image
-                src={url}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="72px"
-                unoptimized
-              />
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </section>
+    <ProductImageGallery
+      product={galleryProduct}
+      images={resolvedImages.length > 0 ? resolvedImages : undefined}
+      mode="card"
+      className={className}
+      imageClassName={
+        imageClassName ??
+        "object-cover transition duration-500 ease-out group-hover:scale-[1.05]"
+      }
+      fallbackClassName={fallbackClassName ?? "mercado-card-media-fallback"}
+      sizes={
+        sizes ?? "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 260px"
+      }
+      loading={loading ?? "lazy"}
+      onMediaClick={onMediaClick}
+    />
   );
 }
