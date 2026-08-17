@@ -14,6 +14,7 @@ import {
   type PlatformSettings,
   type PlatformSettingsRow,
 } from "@/lib/platform/platform-settings";
+import { normalizeMarkupPercent } from "@/lib/dropship/settlement-math";
 import {
   removePlatformLogoAsset,
   uploadPlatformLogoImage,
@@ -26,6 +27,9 @@ export type UpdatePlatformSettingsResult = {
 };
 
 const PLATFORM_SETTINGS_SELECT =
+  "id, platform_name, tagline, logo_url, pwa_icon_192_url, pwa_icon_512_url, support_email, plans_coupon_box_enabled, bcv_rate_mode, manual_bcv_rate, dropship_platform_markup_percent, updated_at, updated_by";
+
+const PLATFORM_SETTINGS_SELECT_BCV =
   "id, platform_name, tagline, logo_url, pwa_icon_192_url, pwa_icon_512_url, support_email, plans_coupon_box_enabled, bcv_rate_mode, manual_bcv_rate, updated_at, updated_by";
 
 function revalidatePlatformBranding() {
@@ -83,6 +87,16 @@ async function loadPlatformSettingsRow(
     return data as PlatformSettingsRow;
   }
 
+  const { data: bcvOnly, error: bcvError } = await admin
+    .from("platform_settings")
+    .select(PLATFORM_SETTINGS_SELECT_BCV)
+    .eq("id", PLATFORM_SETTINGS_ID)
+    .maybeSingle();
+
+  if (!bcvError && bcvOnly) {
+    return bcvOnly as PlatformSettingsRow;
+  }
+
   const { data: legacy } = await admin
     .from("platform_settings")
     .select(
@@ -110,6 +124,7 @@ function toUpsertPayload(
     plans_coupon_box_enabled: settings.plansCouponBoxEnabled,
     bcv_rate_mode: settings.bcvRateMode,
     manual_bcv_rate: settings.manualBcvRate,
+    dropship_platform_markup_percent: settings.dropshipPlatformMarkupPercent,
     updated_at: updatedAt,
     updated_by: updatedBy,
   };
@@ -149,11 +164,18 @@ export async function updatePlatformSettings(
   const existing = await loadPlatformSettingsRow(admin);
   const current = parsePlatformSettingsRow(existing);
 
+  const markupRaw = formData.get("dropshipPlatformMarkupPercent");
+  const dropshipPlatformMarkupPercent =
+    markupRaw == null || String(markupRaw).trim() === ""
+      ? current.dropshipPlatformMarkupPercent
+      : normalizeMarkupPercent(markupRaw);
+
   const next: PlatformSettings = {
     ...current,
     platformName,
     tagline,
     supportEmail,
+    dropshipPlatformMarkupPercent,
   };
 
   const { error } = await admin

@@ -1,0 +1,139 @@
+import type { SupplierB2bPaymentMethodKey } from "@/lib/supplier/payment-types";
+
+export const DROPSHIP_SETTLEMENT_STATUSES = [
+  "reported",
+  "approved",
+  "rejected",
+] as const;
+
+export type DropshipSettlementStatus =
+  (typeof DROPSHIP_SETTLEMENT_STATUSES)[number];
+
+export const DROPSHIP_SETTLEMENT_STATUS_LABELS: Record<
+  DropshipSettlementStatus,
+  string
+> = {
+  reported: "Pago reportado",
+  approved: "Aprobado",
+  rejected: "Rechazado",
+};
+
+export function isDropshipSettlementStatus(
+  value: unknown,
+): value is DropshipSettlementStatus {
+  return (
+    value === "reported" || value === "approved" || value === "rejected"
+  );
+}
+
+export const SUPPLIER_PAYOUT_STATUSES = [
+  "pending",
+  "scheduled",
+  "paid",
+] as const;
+
+export type SupplierPayoutStatus = (typeof SUPPLIER_PAYOUT_STATUSES)[number];
+
+export const SUPPLIER_PAYOUT_STATUS_LABELS: Record<SupplierPayoutStatus, string> =
+  {
+    pending: "Pendiente",
+    scheduled: "Programado D+1",
+    paid: "Pagado",
+  };
+
+export function isSupplierPayoutStatus(
+  value: unknown,
+): value is SupplierPayoutStatus {
+  return value === "pending" || value === "scheduled" || value === "paid";
+}
+
+/** Pedidos del catálogo cuyo cobro al cliente ya está confirmado. */
+export const SETTLEMENT_ELIGIBLE_ORDER_ESTADOS = [
+  "procesando",
+  "enviado",
+  "entregado",
+] as const;
+
+export type SettlementEligibleOrderEstado =
+  (typeof SETTLEMENT_ELIGIBLE_ORDER_ESTADOS)[number];
+
+export function isSettlementEligibleOrderEstado(
+  value: unknown,
+): value is SettlementEligibleOrderEstado {
+  return (
+    value === "procesando" || value === "enviado" || value === "entregado"
+  );
+}
+
+export interface DropshipSettlementLineView {
+  catalogOrderId: string;
+  supplierUserId: string;
+  supplierProductId: string | null;
+  productTitle: string;
+  quantity: number;
+  unitCostUsd: number;
+  platformMarkupUsd: number;
+  lineDueUsd: number;
+  supplierPayoutUsd: number;
+}
+
+export interface DropshipSettlementSupplierBreakdown {
+  supplierUserId: string;
+  wholesaleCostUsd: number;
+  lineCount: number;
+  orderCount: number;
+}
+
+export interface DropshipDailySettlementSummary {
+  businessDate: string;
+  storeId: string;
+  storeName: string;
+  markupPercent: number;
+  orderCount: number;
+  lineCount: number;
+  wholesaleCostUsd: number;
+  platformMarkupUsd: number;
+  amountDueUsd: number;
+  lines: DropshipSettlementLineView[];
+  suppliers: DropshipSettlementSupplierBreakdown[];
+  existing: DropshipSettlementRecord | null;
+}
+
+export interface DropshipSettlementRecord {
+  id: string;
+  storeId: string;
+  storeName: string;
+  merchantUserId: string;
+  merchantEmail: string | null;
+  businessDate: string;
+  orderCount: number;
+  wholesaleCostUsd: number;
+  platformMarkupUsd: number;
+  markupPercent: number;
+  amountDueUsd: number;
+  status: DropshipSettlementStatus;
+  paymentMethod: SupplierB2bPaymentMethodKey | string | null;
+  paymentReference: string | null;
+  paymentProofUrl: string | null;
+  paymentNotes: string;
+  reportedAt: string;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  reviewNotes: string;
+  payouts: SupplierPayoutObligationView[];
+}
+
+export interface SupplierPayoutObligationView {
+  id: string;
+  settlementId: string;
+  supplierUserId: string;
+  businessDate: string;
+  shipOn: string;
+  amountUsd: number;
+  orderCount: number;
+  lineCount: number;
+  status: SupplierPayoutStatus;
+}
+
+export const DROPSHIP_CENTRAL_PAYMENT_NOTICE =
+  "El costo de los productos mayoristas más el markup operativo de Alcéntimo se paga en un solo reporte diario. Al aprobarlo, cada mayorista recibe sus órdenes para despacho al día siguiente (D+1).";

@@ -9,6 +9,7 @@ import { SupplierPaymentsPanel } from "@/components/supplier/SupplierPaymentsPan
 import type { SupplierProduct } from "@/lib/supplier/actions";
 import type { SupplierOrder } from "@/lib/supplier/order-types";
 import type { SupplierPaymentConfig } from "@/lib/supplier/payment-types";
+import type { SupplierPayoutObligationView } from "@/lib/dropship/settlement-types";
 import { cn } from "@/lib/cn";
 
 type SupplierTab = "productos" | "pedidos" | "pagos";
@@ -20,6 +21,8 @@ interface SupplierDashboardProps {
   productsError?: string | null;
   ordersError?: string | null;
   paymentConfigError?: string | null;
+  payouts?: SupplierPayoutObligationView[];
+  payoutsError?: string | null;
   initialTab?: SupplierTab;
 }
 
@@ -30,6 +33,8 @@ export function SupplierDashboard({
   productsError = null,
   ordersError = null,
   paymentConfigError = null,
+  payouts = [],
+  payoutsError = null,
   initialTab = "productos",
 }: SupplierDashboardProps) {
   const router = useRouter();
@@ -140,7 +145,20 @@ export function SupplierDashboard({
               .
             </p>
           ) : null}
-          <SupplierPaymentsPanel initialConfig={initialPaymentConfig} />
+          {payoutsError ? (
+            <p className="supplier-hub-alert">
+              No se pudieron cargar las liquidaciones ({payoutsError}). Aplica
+              la migración{" "}
+              <code className="rounded bg-white/70 px-1 dark:bg-zinc-900/50">
+                121_dropship_daily_settlements
+              </code>
+              .
+            </p>
+          ) : null}
+          <SupplierPaymentsPanel
+            initialConfig={initialPaymentConfig}
+            payouts={payouts}
+          />
         </div>
       ) : null}
     </div>

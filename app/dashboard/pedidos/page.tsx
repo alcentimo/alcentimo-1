@@ -9,6 +9,9 @@ import { getStoreLocations } from "@/lib/locations/get-store-locations";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { OrdersPanel } from "@/components/dashboard/orders/OrdersPanel";
+import { DailyDropshipSettlementCard } from "@/components/dashboard/orders/DailyDropshipSettlementCard";
+import { getDropshipDailySettlementSummary } from "@/lib/dropship/get-daily-settlement";
+import { fetchActiveSubscriptionPaymentMethods } from "@/lib/plans/get-subscription-pago-movil";
 
 export const dynamic = "force-dynamic";
 
@@ -41,10 +44,18 @@ export default async function PedidosPage() {
     );
   }
 
-  const [{ orders, totalCount, hasMore }, settingsConfig, storeLocations] = await Promise.all([
+  const [
+    { orders, totalCount, hasMore },
+    settingsConfig,
+    storeLocations,
+    settlementResult,
+    paymentMethods,
+  ] = await Promise.all([
     getStoreOrders(store.id, { limit: ORDERS_PAGE_SIZE, offset: 0 }),
     getStoreSettingsConfig(store.id),
     getStoreLocations(store.id).catch(() => []),
+    getDropshipDailySettlementSummary(),
+    fetchActiveSubscriptionPaymentMethods(),
   ]);
 
   const messageTemplates =
@@ -60,6 +71,13 @@ export default async function PedidosPage() {
           Toca un pedido para ver el detalle sin salir de la lista.
         </p>
       </header>
+
+      {settlementResult.summary ? (
+        <DailyDropshipSettlementCard
+          summary={settlementResult.summary}
+          paymentMethods={paymentMethods}
+        />
+      ) : null}
 
       <OrdersPanel
         orders={orders}

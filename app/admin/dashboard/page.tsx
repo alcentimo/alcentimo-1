@@ -25,6 +25,7 @@ import {
   listSubscriptionCoupons,
 } from "@/lib/admin/subscription-promo-actions";
 import { getOpenAiApiKey } from "@/lib/env/server";
+import { listDropshipDailySettlements } from "@/lib/dropship/settlement-admin-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +115,7 @@ export default async function AdminDashboardPage({
     planSettingsResult,
     platformSettingsResult,
     automaticBcvRateResult,
+    dropshipSettlementsResult,
   ] = await Promise.all([
     safeLoad(
       () => getManualPayments({ status: "all", limit: 200 }),
@@ -162,6 +164,14 @@ export default async function AdminDashboardPage({
       () => getActiveGlobalExchangeRate(getSupabaseAnonClient()),
       "No se pudo cargar la tasa BCV de referencia.",
     ),
+    safeLoad(
+      () =>
+        listDropshipDailySettlements({ limit: 80 }).then((result) => {
+          if (result.error) throw new Error(result.error);
+          return result.settlements ?? [];
+        }),
+      "No se pudieron cargar las liquidaciones dropship.",
+    ),
   ]);
 
   const payments = paymentsResult.ok ? paymentsResult.data : [];
@@ -189,6 +199,12 @@ export default async function AdminDashboardPage({
   const automaticBcvRateHint = automaticBcvRateResult.ok
     ? automaticBcvRateResult.data?.rate ?? null
     : null;
+  const dropshipSettlements = dropshipSettlementsResult.ok
+    ? dropshipSettlementsResult.data
+    : [];
+  const dropshipSettlementsError = dropshipSettlementsResult.ok
+    ? null
+    : dropshipSettlementsResult.error;
 
   const pendingPayments = metrics?.pendingPayments ??
     payments.filter(
@@ -197,6 +213,9 @@ export default async function AdminDashboardPage({
     ).length;
   const pendingMessages = messages.filter((item) => item.status === "pendiente")
     .length;
+  const pendingDropshipSettlements = dropshipSettlements.filter(
+    (item) => item.status === "reported",
+  ).length;
 
   return (
     <div className="admin-dashboard-page">
@@ -216,6 +235,10 @@ export default async function AdminDashboardPage({
           <div className="admin-dashboard-quick-stat">
             <span className="admin-dashboard-quick-stat-label">Soporte</span>
             <strong>{pendingMessages}</strong>
+          </div>
+          <div className="admin-dashboard-quick-stat">
+            <span className="admin-dashboard-quick-stat-label">Dropship</span>
+            <strong>{pendingDropshipSettlements}</strong>
           </div>
           {metrics ? (
             <>
@@ -260,6 +283,8 @@ export default async function AdminDashboardPage({
           storeDomains={storeDomains}
           storeDomainsError={storeDomainsError}
           assistantEnabled={Boolean(getOpenAiApiKey())}
+          dropshipSettlements={dropshipSettlements}
+          dropshipSettlementsError={dropshipSettlementsError}
           initialTab={initialTab}
           legacyTabParam={legacyTabParam}
           initialPlansSubTab={initialPlansSubTab}

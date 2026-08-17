@@ -145,6 +145,14 @@ function mapOrder(
       typeof row.payment_reported_at === "string"
         ? row.payment_reported_at
         : null,
+    settlementId:
+      typeof row.settlement_id === "string" && row.settlement_id
+        ? row.settlement_id
+        : null,
+    shipOn:
+      typeof row.ship_on === "string" && row.ship_on
+        ? String(row.ship_on).slice(0, 10)
+        : null,
   };
 }
 
@@ -160,7 +168,7 @@ export async function listSupplierOrders(): Promise<
   const { data: orderRows, error } = await admin
     .from("supplier_orders")
     .select(
-      "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at",
+      "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at, settlement_id, ship_on",
     )
     .eq("supplier_user_id", auth.user.id)
     .order("created_at", { ascending: false });
@@ -313,7 +321,7 @@ export async function createSupplierOrder(input: {
       total_usd: totalUsd,
     })
     .select(
-      "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at",
+      "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at, settlement_id, ship_on",
     )
     .single();
 
@@ -405,7 +413,7 @@ export async function updateSupplierOrderDispatch(input: {
     .eq("id", orderId)
     .eq("supplier_user_id", auth.user.id)
     .select(
-      "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at",
+      "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at, settlement_id, ship_on",
     )
     .maybeSingle();
 

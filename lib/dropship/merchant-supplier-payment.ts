@@ -141,6 +141,14 @@ function mapOrder(
       typeof row.payment_reported_at === "string"
         ? row.payment_reported_at
         : null,
+    settlementId:
+      typeof row.settlement_id === "string" && row.settlement_id
+        ? row.settlement_id
+        : null,
+    shipOn:
+      typeof row.ship_on === "string" && row.ship_on
+        ? String(row.ship_on).slice(0, 10)
+        : null,
   };
 }
 

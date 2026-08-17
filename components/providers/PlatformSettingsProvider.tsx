@@ -36,6 +36,9 @@ export function PlatformSettingsProvider({
       bcvRateMode: settings.bcvRateMode ?? DEFAULT_PLATFORM_SETTINGS.bcvRateMode,
       manualBcvRate:
         settings.manualBcvRate ?? DEFAULT_PLATFORM_SETTINGS.manualBcvRate,
+      dropshipPlatformMarkupPercent:
+        settings.dropshipPlatformMarkupPercent ??
+        DEFAULT_PLATFORM_SETTINGS.dropshipPlatformMarkupPercent,
     }),
     [settings],
   );

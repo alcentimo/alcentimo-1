@@ -1,0 +1,376 @@
+"use client";
+
+import { useMemo, useState, useTransition } from "react";
+import Image from "next/image";
+import { ExternalLink } from "lucide-react";
+import { AdminCriticalConfirmDialog } from "@/components/admin/AdminCriticalConfirmDialog";
+import {
+  approveDropshipDailySettlement,
+  rejectDropshipDailySettlement,
+} from "@/lib/dropship/settlement-admin-actions";
+import { formatBusinessDateEs } from "@/lib/dropship/settlement-date";
+import {
+  DROPSHIP_SETTLEMENT_STATUS_LABELS,
+  SUPPLIER_PAYOUT_STATUS_LABELS,
+  type DropshipSettlementRecord,
+  type DropshipSettlementStatus,
+} from "@/lib/dropship/settlement-types";
+import { formatUsd } from "@/lib/format";
+import { getPaymentMethod } from "@/src/config/payment-methods";
+import { cn } from "@/lib/cn";
+
+type SettlementFilter = "all" | "reported" | "approved" | "rejected";
+
+const FILTERS: Array<{ key: SettlementFilter; label: string }> = [
+  { key: "reported", label: "Pendientes" },
+  { key: "approved", label: "Aprobados" },
+  { key: "rejected", label: "Rechazados" },
+  { key: "all", label: "Todos" },
+];
+
+const STATUS_CLASS: Record<DropshipSettlementStatus, string> = {
+  reported:
+    "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/50",
+  approved:
+    "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/50",
+  rejected:
+    "bg-red-50 text-red-800 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-900/50",
+};
+
+function formatReportedAt(iso: string): string {
+  if (!iso) return "—";
+  return new Intl.DateTimeFormat("es-VE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(iso));
+}
+
+interface DropshipSettlementsPanelProps {
+  initialSettlements: DropshipSettlementRecord[];
+}
+
+export function DropshipSettlementsPanel({
+  initialSettlements,
+}: DropshipSettlementsPanelProps) {
+  const [settlements, setSettlements] = useState(initialSettlements);
+  const [filter, setFilter] = useState<SettlementFilter>("reported");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const [rejectId, setRejectId] = useState<string | null>(null);
+  const [rejectNotes, setRejectNotes] = useState("");
+  const [approveId, setApproveId] = useState<string | null>(null);
+
+  const filtered = useMemo(
+    () =>
+      settlements.filter((item) =>
+        filter === "all" ? true : item.status === filter,
+      ),
+    [filter, settlements],
+  );
+
+  const counts = useMemo(
+    () => ({
+      all: settlements.length,
+      reported: settlements.filter((item) => item.status === "reported").length,
+      approved: settlements.filter((item) => item.status === "approved").length,
+      rejected: settlements.filter((item) => item.status === "rejected").length,
+    }),
+    [settlements],
+  );
+
+  const approveTarget = settlements.find((item) => item.id === approveId);
+
+  function replaceSettlement(next: DropshipSettlementRecord) {
+    setSettlements((current) =>
+      current.map((item) => (item.id === next.id ? next : item)),
+    );
+  }
+
+  function handleApprove() {
+    if (!approveId) return;
+    setError(null);
+    setSuccess(null);
+    setUpdatingId(approveId);
+    startTransition(async () => {
+      const result = await approveDropshipDailySettlement({
+        settlementId: approveId,
+      });
+      setUpdatingId(null);
+      setApproveId(null);
+      if (result.error || !result.settlement) {
+        setError(result.error ?? "No se pudo aprobar el reporte.");
+        return;
+      }
+      replaceSettlement(result.settlement);
+      setSuccess(
+        "Pago aprobado. Se registraron las obligaciones a mayoristas y se habilitó el despacho D+1.",
+      );
+    });
+  }
+
+  function handleReject() {
+    if (!rejectId) return;
+    setError(null);
+    setSuccess(null);
+    setUpdatingId(rejectId);
+    startTransition(async () => {
+      const result = await rejectDropshipDailySettlement({
+        settlementId: rejectId,
+        reviewNotes: rejectNotes,
+      });
+      setUpdatingId(null);
+      if (result.error || !result.settlement) {
+        setError(result.error ?? "No se pudo rechazar el reporte.");
+        return;
+      }
+      replaceSettlement(result.settlement);
+      setRejectId(null);
+      setRejectNotes("");
+      setSuccess("Reporte rechazado. El dropshipper puede volver a liquidar esas ventas.");
+    });
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Cada dropshipper reporta un pago único por el costo mayorista más el
+        markup operativo. Al aprobarlo, el sistema crea la obligación de pago a
+        cada mayorista y habilita las órdenes para despacho al día siguiente.
+      </p>
+
+      <div className="flex flex-wrap gap-2">
+        {FILTERS.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => setFilter(item.key)}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-xs font-medium transition",
+              filter === item.key
+                ? "border-teal-600 bg-teal-600 text-white"
+                : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200",
+            )}
+          >
+            {item.label}
+            <span className="ml-1.5 tabular-nums opacity-80">{counts[item.key]}</span>
+          </button>
+        ))}
+      </div>
+
+      {error ? (
+        <p
+          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
+          role="alert"
+        >
+          {error}
+        </p>
+      ) : null}
+      {success ? (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+          {success}
+        </p>
+      ) : null}
+
+      {filtered.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+          No hay reportes en este filtro.
+        </p>
+      ) : (
+        <ul className="space-y-4">
+          {filtered.map((settlement) => (
+            <li
+              key={settlement.id}
+              className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                    {settlement.storeName || "Tienda"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    {settlement.merchantEmail ?? "Sin correo"} ·{" "}
+                    {formatBusinessDateEs(settlement.businessDate)} · reportado{" "}
+                    {formatReportedAt(settlement.reportedAt)}
+                  </p>
+                </div>
+                <span
+                  className={cn(
+                    "inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-semibold",
+                    STATUS_CLASS[settlement.status],
+                  )}
+                >
+                  {DROPSHIP_SETTLEMENT_STATUS_LABELS[settlement.status]}
+                </span>
+              </div>
+
+              <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                <div>
+                  <dt className="text-xs text-zinc-500">Pedidos</dt>
+                  <dd className="font-medium tabular-nums">{settlement.orderCount}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-zinc-500">Costo + markup</dt>
+                  <dd className="font-medium tabular-nums">
+                    {formatUsd(settlement.wholesaleCostUsd)} +{" "}
+                    {formatUsd(settlement.platformMarkupUsd)} ({settlement.markupPercent}%)
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-zinc-500">Total a Alcéntimo</dt>
+                  <dd className="font-semibold tabular-nums text-teal-800 dark:text-teal-200">
+                    {formatUsd(settlement.amountDueUsd)}
+                  </dd>
+                </div>
+              </dl>
+
+              <p className="mt-2 text-xs text-zinc-500">
+                Método:{" "}
+                {settlement.paymentMethod
+                  ? (getPaymentMethod(settlement.paymentMethod as never)?.label ??
+                    settlement.paymentMethod)
+                  : "—"}
+                {settlement.paymentReference
+                  ? ` · Ref. ${settlement.paymentReference}`
+                  : ""}
+              </p>
+              {settlement.paymentNotes ? (
+                <p className="mt-1 text-xs text-zinc-500">
+                  Notas: {settlement.paymentNotes}
+                </p>
+              ) : null}
+              {settlement.reviewNotes ? (
+                <p className="mt-1 text-xs text-zinc-500">
+                  Revisión: {settlement.reviewNotes}
+                </p>
+              ) : null}
+
+              {settlement.paymentProofUrl ? (
+                <a
+                  href={settlement.paymentProofUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 flex max-w-xs items-center gap-2 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800"
+                >
+                  <span className="relative block h-20 w-20 shrink-0 bg-zinc-100 dark:bg-zinc-900">
+                    <Image
+                      src={settlement.paymentProofUrl}
+                      alt="Comprobante de liquidación diaria"
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </span>
+                  <span className="inline-flex items-center gap-1 pr-3 text-xs font-medium text-teal-700 dark:text-teal-300">
+                    Ver comprobante
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                </a>
+              ) : (
+                <p className="mt-3 text-xs text-amber-700">Sin comprobante adjunto.</p>
+              )}
+
+              {settlement.payouts.length > 0 ? (
+                <div className="mt-3 rounded-xl bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-900/50">
+                  <p className="font-semibold text-zinc-700 dark:text-zinc-200">
+                    Obligaciones a mayoristas
+                  </p>
+                  <ul className="mt-1 space-y-1">
+                    {settlement.payouts.map((payout) => (
+                      <li key={payout.id} className="flex justify-between gap-3">
+                        <span>
+                          {formatUsd(payout.amountUsd)} · {payout.orderCount} pedido
+                          {payout.orderCount === 1 ? "" : "s"} · despacho{" "}
+                          {formatBusinessDateEs(payout.shipOn)}
+                        </span>
+                        <span className="shrink-0 text-zinc-500">
+                          {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {settlement.status === "reported" ? (
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    className="btn-brand inline-flex flex-1 items-center justify-center !min-h-10 !text-xs"
+                    disabled={pending && updatingId === settlement.id}
+                    onClick={() => setApproveId(settlement.id)}
+                  >
+                    Verificar y aprobar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-brand-outline inline-flex flex-1 items-center justify-center !min-h-10 !text-xs"
+                    disabled={pending && updatingId === settlement.id}
+                    onClick={() => {
+                      setRejectId(settlement.id);
+                      setRejectNotes("");
+                    }}
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              ) : null}
+
+              {rejectId === settlement.id ? (
+                <div className="mt-3 space-y-2 rounded-xl border border-red-200 bg-red-50/60 p-3 dark:border-red-900/50 dark:bg-red-950/20">
+                  <label className="label-field" htmlFor={`reject-notes-${settlement.id}`}>
+                    Motivo del rechazo
+                  </label>
+                  <textarea
+                    id={`reject-notes-${settlement.id}`}
+                    rows={2}
+                    className="input-field resize-none"
+                    value={rejectNotes}
+                    onChange={(event) => setRejectNotes(event.target.value)}
+                    disabled={pending}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="btn-brand inline-flex items-center justify-center !min-h-9 !bg-red-600 !text-xs hover:!bg-red-700"
+                      disabled={pending}
+                      onClick={handleReject}
+                    >
+                      Confirmar rechazo
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-brand-outline !min-h-9 !text-xs"
+                      disabled={pending}
+                      onClick={() => setRejectId(null)}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <AdminCriticalConfirmDialog
+        open={Boolean(approveId)}
+        onOpenChange={(open) => {
+          if (!open) setApproveId(null);
+        }}
+        title="Aprobar liquidación diaria"
+        impact={
+          approveTarget
+            ? `Vas a verificar el pago de ${approveTarget.storeName} por ${formatUsd(approveTarget.amountDueUsd)}. Se crearán las obligaciones a cada mayorista y se habilitarán las órdenes para despacho D+1.`
+            : "Vas a aprobar este reporte diario."
+        }
+        confirmLabel="Aprobar y habilitar D+1"
+        loading={pending && updatingId === approveId}
+        onConfirm={handleApprove}
+      />
+    </div>
+  );
+}

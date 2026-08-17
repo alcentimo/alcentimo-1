@@ -79,6 +79,9 @@ export interface SupplierOrder {
   paymentNotes: string;
   paymentNotifiedAt: string | null;
   paymentReportedAt: string | null;
+  settlementId: string | null;
+  /** Fecha civil America/Caracas a partir de la cual aplica el despacho D+1. */
+  shipOn: string | null;
 }
 
 export interface CreateSupplierOrderItemInput {
