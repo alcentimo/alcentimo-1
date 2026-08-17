@@ -34,6 +34,10 @@ import {
   supplierVariantAttributeLabel,
   type SupplierProductVariants,
 } from "@/lib/supplier/variants";
+import {
+  listSupplierProductImages,
+  supplierImageUrls,
+} from "@/lib/supplier/product-images";
 import { syncDefaultLocationStockFromVariant } from "@/lib/locations/sync-stock";
 import { mirrorSupplierStockToLinkedStores } from "@/lib/dropship/supplier-stock";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -79,25 +83,35 @@ function mapSupplierVariantsToCatalog(
   }));
 }
 
-async function upsertCatalogProductImage(
+async function upsertCatalogProductImages(
   client: SupabaseClient,
   productId: string,
   name: string,
-  imageUrl: string,
+  imageUrls: string[],
 ): Promise<string | undefined> {
   await client.from("product_images").delete().eq("product_id", productId);
 
-  const { error } = await client.from("product_images").insert({
-    product_id: productId,
-    thumb_url: imageUrl,
-    medium_url: imageUrl,
-    full_url: imageUrl,
-    is_primary: true,
-    alt_text: name,
-    // mime_type es NOT NULL con default image/webp; no enviar null.
-    mime_type: "image/webp",
-    sort_order: 0,
-  });
+  const urls = [
+    ...new Set(
+      imageUrls
+        .map((url) => url.trim())
+        .filter((url) => url.length > 0),
+    ),
+  ];
+  if (urls.length === 0) return undefined;
+
+  const { error } = await client.from("product_images").insert(
+    urls.map((imageUrl, index) => ({
+      product_id: productId,
+      thumb_url: imageUrl,
+      medium_url: imageUrl,
+      full_url: imageUrl,
+      is_primary: index === 0,
+      alt_text: name,
+      mime_type: "image/webp",
+      sort_order: index,
+    })),
+  );
 
   return error?.message;
 }
@@ -207,6 +221,7 @@ export type MerchantSupplierCatalogProduct = {
   stock: number;
   category: string;
   imageUrl: string | null;
+  imageUrls: string[];
   variantCount: number;
   alreadyImported: boolean;
   linkedProductId: string | null;
@@ -260,6 +275,11 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
     }
   }
 
+  const galleryByProduct = await listSupplierProductImages(
+    admin,
+    catalogRows.map((row) => String(row.id)),
+  );
+
   return {
     products: catalogRows
       .map((row) => {
@@ -267,10 +287,14 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
         const cost = Number(row.base_price_usd) || 0;
         const variants = normalizeSupplierProductVariants(row.variants);
         const linkedProductId = linkedBySupplier.get(id) ?? null;
-        const imageUrl =
+        const coverUrl =
           typeof row.image_url === "string" && row.image_url.trim()
             ? row.image_url.trim()
             : null;
+        const imageUrls = supplierImageUrls(
+          galleryByProduct.get(id) ?? [],
+          coverUrl,
+        );
 
         return {
           id,
@@ -283,7 +307,8 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
           ),
           stock: Number(row.stock) || 0,
           category: normalizeSupplierProductCategory(row.category),
-          imageUrl,
+          imageUrl: imageUrls[0] ?? null,
+          imageUrls,
           variantCount: variants.options.length,
           alreadyImported: linkedProductId != null,
           linkedProductId,
@@ -417,10 +442,15 @@ export async function importSupplierProductToStoreCatalog(
         ? supplierRow.description.trim().slice(0, 2000) || null
         : null;
     const stock = Math.max(0, Math.floor(Number(supplierRow.stock) || 0));
-    const imageUrl =
+    const coverUrl =
       typeof supplierRow.image_url === "string" && supplierRow.image_url.trim()
         ? supplierRow.image_url.trim()
         : null;
+    const galleryByProduct = await listSupplierProductImages(admin, [supplierId]);
+    const imageUrls = supplierImageUrls(
+      galleryByProduct.get(supplierId) ?? [],
+      coverUrl,
+    );
     const supplierVariants = normalizeSupplierProductVariants(
       supplierRow.variants,
     );
@@ -554,12 +584,12 @@ export async function importSupplierProductToStoreCatalog(
       );
     }
 
-    if (imageUrl) {
-      const imageError = await upsertCatalogProductImage(
+    if (imageUrls.length > 0) {
+      const imageError = await upsertCatalogProductImages(
         admin,
         productId,
         title,
-        imageUrl,
+        imageUrls,
       );
       if (imageError) {
         // No revertir el producto por la foto: el catálogo queda usable.

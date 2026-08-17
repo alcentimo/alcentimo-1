@@ -7,13 +7,18 @@ import {
   resolveSupplierAccess,
   resolveSupplierAuthEmail,
 } from "@/lib/supplier/access";
-import { uploadSupplierProductImage } from "@/lib/supplier/storage";
 import { recordSupplierPriceChangeAndNotify } from "@/lib/dropship/price-change";
 import { mirrorSupplierStockToLinkedStores } from "@/lib/dropship/supplier-stock";
 import {
   normalizeSupplierProductCategory,
   type SupplierProductCategory,
 } from "@/lib/supplier/categories";
+import {
+  listSupplierProductImages,
+  supplierImageUrls,
+  syncSupplierProductGalleryFromFormData,
+  type SupplierProductImage,
+} from "@/lib/supplier/product-images";
 import {
   normalizeSupplierProductVariants,
   parseSupplierVariantsFromForm,
@@ -34,9 +39,8 @@ export interface SupplierProduct {
   variants: SupplierProductVariants;
   stock: number;
   basePriceUsd: number;
-  compareAtUsd: number | null;
-  freeShipping: boolean;
   imageUrl: string | null;
+  gallery: SupplierProductImage[];
   createdAt: string;
   updatedAt: string;
 }
@@ -73,16 +77,17 @@ async function requireSupplierUser(): Promise<{
 }
 
 const PRODUCT_SELECT =
-  "id, title, description, category, variants, stock, base_price_usd, compare_at_usd, free_shipping, image_url, created_at, updated_at";
+  "id, title, description, category, variants, stock, base_price_usd, image_url, created_at, updated_at";
 
-function mapRow(row: Record<string, unknown>): SupplierProduct {
-  const compareRaw = row.compare_at_usd;
-  const compareAtUsd =
-    compareRaw == null || compareRaw === ""
-      ? null
-      : Number.isFinite(Number(compareRaw))
-        ? Number(compareRaw)
-        : null;
+function mapRow(
+  row: Record<string, unknown>,
+  gallery: SupplierProductImage[] = [],
+): SupplierProduct {
+  const coverFromRow =
+    typeof row.image_url === "string" && row.image_url.trim()
+      ? row.image_url.trim()
+      : null;
+  const urls = supplierImageUrls(gallery, coverFromRow);
 
   return {
     id: String(row.id),
@@ -92,15 +97,31 @@ function mapRow(row: Record<string, unknown>): SupplierProduct {
     variants: normalizeSupplierProductVariants(row.variants),
     stock: Number(row.stock) || 0,
     basePriceUsd: Number(row.base_price_usd) || 0,
-    compareAtUsd,
-    freeShipping: Boolean(row.free_shipping),
-    imageUrl:
-      typeof row.image_url === "string" && row.image_url.trim()
-        ? row.image_url
-        : null,
+    imageUrl: urls[0] ?? null,
+    gallery,
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
   };
+}
+
+async function mapRowsWithGallery(
+  admin: ReturnType<typeof createAdminClient>,
+  rows: Record<string, unknown>[],
+): Promise<SupplierProduct[]> {
+  const products = rows.map((row) => mapRow(row));
+  const galleryByProduct = await listSupplierProductImages(
+    admin,
+    products.map((product) => product.id),
+  );
+  return products.map((product) => {
+    const gallery = galleryByProduct.get(product.id) ?? [];
+    const urls = supplierImageUrls(gallery, product.imageUrl);
+    return {
+      ...product,
+      gallery,
+      imageUrl: urls[0] ?? null,
+    };
+  });
 }
 
 function parseProductFields(formData: FormData): {
@@ -111,9 +132,6 @@ function parseProductFields(formData: FormData): {
   variants?: SupplierProductVariants;
   stock?: number;
   basePriceUsd?: number;
-  compareAtUsd?: number | null;
-  freeShipping?: boolean;
-  image?: FormDataEntryValue | null;
 } {
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -121,12 +139,6 @@ function parseProductFields(formData: FormData): {
   const variants = parseSupplierVariantsFromForm(formData.get("variants"));
   const stockRaw = String(formData.get("stock") ?? "0").trim();
   const priceRaw = String(formData.get("basePriceUsd") ?? "0").trim();
-  const compareRaw = String(formData.get("compareAtUsd") ?? "").trim();
-  const freeShipping =
-    formData.get("freeShipping") === "on" ||
-    formData.get("freeShipping") === "true" ||
-    formData.get("freeShipping") === "1";
-  const image = formData.get("image");
 
   if (title.length < 2) {
     return { error: "Indica un título de al menos 2 caracteres." };
@@ -142,15 +154,6 @@ function parseProductFields(formData: FormData): {
     return { error: "Indica un precio base válido en USD." };
   }
 
-  let compareAtUsd: number | null = null;
-  if (compareRaw) {
-    const parsedCompare = Number(compareRaw.replace(",", "."));
-    if (!Number.isFinite(parsedCompare) || parsedCompare < 0) {
-      return { error: "El precio anterior (tachado) debe ser válido en USD." };
-    }
-    compareAtUsd = Math.round(parsedCompare * 100) / 100;
-  }
-
   for (const option of variants.options) {
     if (!option.label.trim()) {
       return { error: "Cada variante debe tener un nombre." };
@@ -164,9 +167,6 @@ function parseProductFields(formData: FormData): {
     variants: normalizeSupplierProductVariants(variants),
     stock,
     basePriceUsd: Math.round(basePriceUsd * 100) / 100,
-    compareAtUsd,
-    freeShipping,
-    image,
   };
 }
 
@@ -189,7 +189,10 @@ export async function listSupplierProducts(): Promise<
   }
 
   return {
-    products: ((data as Record<string, unknown>[] | null) ?? []).map(mapRow),
+    products: await mapRowsWithGallery(
+      admin,
+      (data as Record<string, unknown>[] | null) ?? [],
+    ),
   };
 }
 
@@ -205,19 +208,6 @@ export async function createSupplierProduct(
   }
 
   const admin = createAdminClient();
-  let imageUrl: string | null = null;
-
-  if (parsed.image instanceof File && parsed.image.size > 0) {
-    const uploaded = await uploadSupplierProductImage(
-      admin,
-      auth.user.id,
-      parsed.image,
-    );
-    if (uploaded.error || !uploaded.publicUrl) {
-      return { error: uploaded.error ?? "No se pudo subir la foto." };
-    }
-    imageUrl = uploaded.publicUrl;
-  }
 
   const { data, error } = await admin
     .from("supplier_products")
@@ -229,9 +219,7 @@ export async function createSupplierProduct(
       variants: parsed.variants ?? normalizeSupplierProductVariants(null),
       stock: parsed.stock,
       base_price_usd: parsed.basePriceUsd,
-      compare_at_usd: parsed.compareAtUsd ?? null,
-      free_shipping: parsed.freeShipping ?? false,
-      image_url: imageUrl,
+      image_url: null,
       is_active: true,
     })
     .select(PRODUCT_SELECT)
@@ -241,7 +229,26 @@ export async function createSupplierProduct(
     return { error: error?.message ?? "No se pudo crear el producto." };
   }
 
-  const created = mapRow(data as Record<string, unknown>);
+  const createdRow = data as Record<string, unknown>;
+  const gallery = await syncSupplierProductGalleryFromFormData(
+    admin,
+    auth.user.id,
+    String(createdRow.id),
+    formData,
+  );
+  if (gallery.error) {
+    await admin
+      .from("supplier_products")
+      .update({
+        is_active: false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", createdRow.id)
+      .eq("created_by", auth.user.id);
+    return { error: gallery.error };
+  }
+
+  const created = mapRow(createdRow, gallery.images);
   await admin.from("supplier_product_price_history").insert({
     supplier_product_id: created.id,
     old_price_usd: null,
@@ -293,22 +300,8 @@ export async function updateSupplierProduct(
     variants: parsed.variants ?? normalizeSupplierProductVariants(null),
     stock: parsed.stock,
     base_price_usd: nextPrice,
-    compare_at_usd: parsed.compareAtUsd ?? null,
-    free_shipping: parsed.freeShipping ?? false,
     updated_at: new Date().toISOString(),
   };
-
-  if (parsed.image instanceof File && parsed.image.size > 0) {
-    const uploaded = await uploadSupplierProductImage(
-      admin,
-      auth.user.id,
-      parsed.image,
-    );
-    if (uploaded.error || !uploaded.publicUrl) {
-      return { error: uploaded.error ?? "No se pudo subir la foto." };
-    }
-    patch.image_url = uploaded.publicUrl;
-  }
 
   const { data, error } = await admin
     .from("supplier_products")
@@ -322,7 +315,17 @@ export async function updateSupplierProduct(
   if (error) return { error: error.message };
   if (!data) return { error: "Producto no encontrado." };
 
-  const updated = mapRow(data as Record<string, unknown>);
+  const gallery = await syncSupplierProductGalleryFromFormData(
+    admin,
+    auth.user.id,
+    id,
+    formData,
+  );
+  if (gallery.error) {
+    return { error: gallery.error };
+  }
+
+  const updated = mapRow(data as Record<string, unknown>, gallery.images);
 
   await recordSupplierPriceChangeAndNotify({
     admin,

@@ -9,6 +9,10 @@ import { SUPPLIER_PRODUCT_CATEGORIES } from "@/lib/supplier/categories";
 import { MORICHE_BRAND_LABEL } from "@/lib/mercado-oculto/access";
 import { resolveMayoristaDisplayName } from "@/lib/mercado-oculto/supplier-labels";
 import {
+  listSupplierProductImages,
+  supplierImageUrls,
+} from "@/lib/supplier/product-images";
+import {
   mapSupplierRowToMercadoCard,
   type MercadoCatalogFacets,
   type MercadoCategoryFacet,
@@ -182,9 +186,19 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
   ];
   const labels = await mapCreatorLabels(creatorSet);
   const facets = buildFacets(rows, labels);
-  const products = rows.map((row) =>
-    mapSupplierRowToMercadoCard(row, MORICHE_BRAND_LABEL),
+  const galleryByProduct = await listSupplierProductImages(
+    admin,
+    rows.map((row) => String(row.id)),
   );
+  const products = rows.map((row) => {
+    const id = String(row.id);
+    const cover =
+      typeof row.image_url === "string" && row.image_url.trim()
+        ? row.image_url.trim()
+        : null;
+    const urls = supplierImageUrls(galleryByProduct.get(id) ?? [], cover);
+    return mapSupplierRowToMercadoCard(row, MORICHE_BRAND_LABEL, urls);
+  });
 
   return {
     products,
@@ -196,7 +210,7 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
 /** Catálogo completo cacheado (~60s) para navegación SPA sin pegarle a la DB. */
 export const getCachedMercadoCatalog = unstable_cache(
   async () => loadMercadoCatalogUncached(),
-  ["mercado-oculto-catalog-v3"],
+  ["mercado-oculto-catalog-v4"],
   { revalidate: 60, tags: [MERCADO_CATALOG_CACHE_TAG] },
 );
 

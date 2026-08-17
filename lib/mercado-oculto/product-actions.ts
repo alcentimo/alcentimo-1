@@ -9,6 +9,10 @@ import {
 import { filterMercadoProducts } from "@/lib/mercado-oculto/filter-catalog";
 import { MORICHE_BRAND_LABEL } from "@/lib/mercado-oculto/access";
 import { mapSupplierRowToMercadoCard, type MercadoProductCard } from "@/lib/mercado-oculto/types";
+import {
+  listSupplierProductImages,
+  supplierImageUrls,
+} from "@/lib/supplier/product-images";
 
 type ActionResult<T extends object = object> = {
   error?: string;
@@ -120,7 +124,14 @@ export async function getMercadoProduct(
     };
   }
 
-  const product = mapSupplierRowToMercadoCard(row, MORICHE_BRAND_LABEL);
+  const product = mapSupplierRowToMercadoCard(
+    row,
+    MORICHE_BRAND_LABEL,
+    supplierImageUrls(
+      (await listSupplierProductImages(admin, [productId])).get(productId) ?? [],
+      typeof row.image_url === "string" ? row.image_url : null,
+    ),
+  );
   return {
     product,
     sellerUserId: product.seller_user_id,

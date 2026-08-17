@@ -19,6 +19,17 @@ export function mapCatalogListItemToMercadoCard(
       ? Number(product.compare_at_usd)
       : null;
 
+  const galleryUrls = [
+    ...new Set(
+      (product.gallery_images ?? [])
+        .map((image) => image.thumb_url?.trim())
+        .filter((url): url is string => Boolean(url)),
+    ),
+  ];
+  if (galleryUrls.length === 0 && product.thumb_url) {
+    galleryUrls.push(product.thumb_url);
+  }
+
   return {
     product_id: product.product_id,
     product_name: product.product_name,
@@ -27,7 +38,7 @@ export function mapCatalogListItemToMercadoCard(
     compare_at_usd: compareAtUsd,
     discount_percent: computeDiscountPercent(priceUsd, compareAtUsd),
     free_shipping: false,
-    thumb_url: product.thumb_url,
+    thumb_url: galleryUrls[0] ?? product.thumb_url,
     category: normalizeSupplierProductCategory(product.category_slug),
     category_name: product.category_name || "Catálogo",
     available_stock: product.available_stock,
@@ -39,5 +50,6 @@ export function mapCatalogListItemToMercadoCard(
       product.category_name?.trim() ||
       storeName,
     variants: emptySupplierVariants(),
+    gallery_urls: galleryUrls,
   };
 }
