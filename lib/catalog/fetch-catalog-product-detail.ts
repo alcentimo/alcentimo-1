@@ -1,5 +1,9 @@
 "use server";
 
+import {
+  pickGalleryImages,
+  resolveSupplierGalleryForProductId,
+} from "@/lib/catalog/resolve-supplier-gallery";
 import { getSupabaseAnonClient } from "@/lib/supabase";
 import type { CatalogProductGalleryImage } from "@/lib/products/product-gallery-types";
 
@@ -9,40 +13,14 @@ export interface CatalogProductDetailExtra {
 }
 
 interface CatalogProductDetailRow {
+  id: string;
   description: string | null;
   images: unknown;
 }
 
-export async function fetchCatalogProductDetail(
-  storeSlug: string,
-  productSlug: string,
-): Promise<{ detail?: CatalogProductDetailExtra; error?: string }> {
-  const normalizedStore = storeSlug.trim().toLowerCase();
-  const normalizedProduct = productSlug.trim().toLowerCase();
-
-  if (!normalizedStore || !normalizedProduct) {
-    return { error: "Producto no válido." };
-  }
-
-  const supabase = getSupabaseAnonClient();
-  const { data, error } = await supabase
-    .from("catalog_product_detail_view")
-    .select("description, images")
-    .eq("store_slug", normalizedStore)
-    .eq("slug", normalizedProduct)
-    .maybeSingle();
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  if (!data) {
-    return { error: "Producto no encontrado." };
-  }
-
-  const row = data as unknown as CatalogProductDetailRow;
-  const rawImages = Array.isArray(row.images) ? row.images : [];
-  const images: CatalogProductGalleryImage[] = rawImages
+function parseCatalogDetailImages(raw: unknown): CatalogProductGalleryImage[] {
+  const rawImages = Array.isArray(raw) ? raw : [];
+  return rawImages
     .filter(
       (item): item is Record<string, unknown> =>
         typeof item === "object" && item != null,
@@ -61,6 +39,42 @@ export async function fetchCatalogProductDetail(
       if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
       return a.sort_order - b.sort_order || a.id.localeCompare(b.id);
     });
+}
+
+export async function fetchCatalogProductDetail(
+  storeSlug: string,
+  productSlug: string,
+): Promise<{ detail?: CatalogProductDetailExtra; error?: string }> {
+  const normalizedStore = storeSlug.trim().toLowerCase();
+  const normalizedProduct = productSlug.trim().toLowerCase();
+
+  if (!normalizedStore || !normalizedProduct) {
+    return { error: "Producto no válido." };
+  }
+
+  const supabase = getSupabaseAnonClient();
+  const { data, error } = await supabase
+    .from("catalog_product_detail_view")
+    .select("id, description, images")
+    .eq("store_slug", normalizedStore)
+    .eq("slug", normalizedProduct)
+    .maybeSingle();
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (!data) {
+    return { error: "Producto no encontrado." };
+  }
+
+  const row = data as unknown as CatalogProductDetailRow;
+  const productId = typeof row.id === "string" ? row.id : "";
+  const catalogImages = parseCatalogDetailImages(row.images);
+  const supplierImages = productId
+    ? await resolveSupplierGalleryForProductId(productId)
+    : [];
+  const images = pickGalleryImages(catalogImages, supplierImages);
 
   return {
     detail: {

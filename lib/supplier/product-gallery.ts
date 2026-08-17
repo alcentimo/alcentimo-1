@@ -1,4 +1,7 @@
-import type { ProductEditImage } from "@/lib/products/product-gallery-types";
+import type {
+  CatalogProductGalleryImage,
+  ProductEditImage,
+} from "@/lib/products/product-gallery-types";
 
 /** Límite de fotos por producto en el hub de proveedores (client-safe). */
 export const SUPPLIER_GALLERY_MAX_IMAGES = 10;
@@ -48,4 +51,18 @@ export function supplierImageUrls(
   if (images.length > 0) return images.map((image) => image.imageUrl);
   const fallback = fallbackUrl?.trim();
   return fallback ? [fallback] : [];
+}
+
+/** Mapea filas de `supplier_product_images` al shape del carrusel público. */
+export function supplierImagesToCatalogGalleryImages(
+  images: SupplierProductImage[],
+): CatalogProductGalleryImage[] {
+  return images.map((image, index) => ({
+    id: image.id,
+    thumb_url: image.imageUrl,
+    medium_url: image.imageUrl,
+    full_url: image.imageUrl,
+    sort_order: image.sortOrder ?? index,
+    is_primary: image.isPrimary,
+  }));
 }
