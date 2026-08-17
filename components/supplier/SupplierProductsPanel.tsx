@@ -35,7 +35,7 @@ import {
 import {
   SUPPLIER_GALLERY_MAX_IMAGES,
   supplierImagesToEditImages,
-} from "@/lib/supplier/product-images";
+} from "@/lib/supplier/product-gallery";
 import {
   SUPPLIER_PRODUCT_CATEGORIES,
   normalizeSupplierProductCategory,
