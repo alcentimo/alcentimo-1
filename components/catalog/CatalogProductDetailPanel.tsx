@@ -339,13 +339,11 @@ export function CatalogProductDetailPanel({
           <div className="product-detail-media">
             <MercadoProductGallery
               productName={product.product_name}
+              images={detailImages.length > 0 ? detailImages : undefined}
               product={{
                 thumb_url: product.thumb_url,
                 image_alt: product.image_alt,
-                gallery_images:
-                  detailImages.length > 0
-                    ? detailImages
-                    : product.gallery_images,
+                gallery_images: product.gallery_images,
               }}
               mode="detail"
               loading="eager"

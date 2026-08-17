@@ -10,6 +10,10 @@ import { sortCatalogProducts } from "@/lib/catalog/catalog-browse";
 import { parseCatalogGalleryImages } from "@/lib/products/product-gallery-types";
 import { listDropshipLinkedCatalogEntriesForStoreSlug } from "@/lib/dropship/linked-catalog";
 import { applySupplierCategoriesToCatalogItems } from "@/lib/catalog/apply-supplier-categories";
+import {
+  applySupplierGalleryToCatalogItems,
+  resolveSupplierGalleryForProductIds,
+} from "@/lib/catalog/resolve-supplier-gallery";
 
 export interface CatalogPageData {
   products: CatalogListItem[];
@@ -270,6 +274,14 @@ export async function getCatalogProducts(
       normalizeCatalogItem(row as unknown as CatalogListItem),
     ),
     linkedEntries,
+  );
+
+  const supplierGalleryByProductId = await resolveSupplierGalleryForProductIds(
+    products.map((product) => product.product_id),
+  );
+  products = applySupplierGalleryToCatalogItems(
+    products,
+    supplierGalleryByProductId,
   );
 
   if (queryMode === "legacy") {
