@@ -8,6 +8,7 @@ import {
   type DropshipSettlementLineView,
   type DropshipSettlementRecord,
   type DropshipSettlementSupplierBreakdown,
+  type SettlementBalanceEntryView,
   type SupplierPayoutObligationView,
 } from "@/lib/dropship/settlement-types";
 import type { SupplierB2bPaymentMethodKey } from "@/lib/supplier/payment-types";
@@ -15,6 +16,7 @@ import type { SupplierB2bPaymentMethodKey } from "@/lib/supplier/payment-types";
 export function mapSettlementRecord(
   row: Record<string, unknown>,
   payouts: SupplierPayoutObligationView[] = [],
+  ledger: SettlementBalanceEntryView[] = [],
 ): DropshipSettlementRecord {
   const statusRaw = String(row.status ?? "reported");
   return {
@@ -53,6 +55,7 @@ export function mapSettlementRecord(
       typeof row.reviewed_by === "string" ? row.reviewed_by : null,
     reviewNotes: String(row.review_notes ?? ""),
     payouts,
+    ledger,
   };
 }
 
@@ -117,14 +120,16 @@ export async function listLockedCatalogOrderIds(
 export function extractDropshipLinesFromOrderItems(
   items: unknown,
 ): Array<{
-  supplierProductId: string;
+  supplierProductId: string | null;
+  productId: string | null;
   productTitle: string;
   quantity: number;
   unitCostUsd: number | null;
 }> {
   if (!Array.isArray(items)) return [];
   const lines: Array<{
-    supplierProductId: string;
+    supplierProductId: string | null;
+    productId: string | null;
     productTitle: string;
     quantity: number;
     unitCostUsd: number | null;
@@ -137,7 +142,9 @@ export function extractDropshipLinesFromOrderItems(
       typeof row.supplier_product_id === "string"
         ? row.supplier_product_id.trim()
         : "";
-    if (!supplierProductId) continue;
+    const productId =
+      typeof row.product_id === "string" ? row.product_id.trim() : "";
+    if (!supplierProductId && !productId) continue;
     const quantity = Math.floor(Number(row.quantity) || 0);
     if (quantity <= 0) continue;
     const unitCost =
@@ -145,7 +152,8 @@ export function extractDropshipLinesFromOrderItems(
         ? Number(row.unit_cost_usd)
         : null;
     lines.push({
-      supplierProductId,
+      supplierProductId: supplierProductId || null,
+      productId: productId || null,
       productTitle: String(row.product_name ?? "Producto").slice(0, 200),
       quantity,
       unitCostUsd: unitCost,
@@ -211,13 +219,69 @@ export async function buildSettlementLinesForStore(input: {
     };
   }
 
-  const supplierProductIds = [
+  const unresolvedProductIds = [
     ...new Set(
       candidateOrders.flatMap((order) =>
-        order.dropshipLines.map((line) => line.supplierProductId),
+        order.dropshipLines
+          .filter((line) => !line.supplierProductId && line.productId)
+          .map((line) => line.productId as string),
       ),
     ),
   ];
+
+  const linkByProductId = new Map<string, string>();
+  if (unresolvedProductIds.length > 0) {
+    const { data: linkRows, error: linkError } = await client
+      .from("store_dropship_links")
+      .select("product_id, supplier_product_id")
+      .eq("store_id", input.storeId)
+      .in("product_id", unresolvedProductIds);
+    if (linkError) {
+      throw new Error(linkError.message);
+    }
+    for (const row of (linkRows as Array<{
+      product_id?: string;
+      supplier_product_id?: string;
+    }> | null) ?? []) {
+      if (
+        typeof row.product_id === "string" &&
+        typeof row.supplier_product_id === "string" &&
+        row.supplier_product_id
+      ) {
+        linkByProductId.set(row.product_id, row.supplier_product_id);
+      }
+    }
+  }
+
+  for (const order of candidateOrders) {
+    for (const line of order.dropshipLines) {
+      if (line.supplierProductId) continue;
+      if (!line.productId) continue;
+      const linked = linkByProductId.get(line.productId);
+      if (linked) line.supplierProductId = linked;
+    }
+  }
+
+  const supplierProductIds = [
+    ...new Set(
+      candidateOrders.flatMap((order) =>
+        order.dropshipLines
+          .map((line) => line.supplierProductId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ),
+  ];
+
+  if (supplierProductIds.length === 0) {
+    return {
+      lines: [],
+      suppliers: [],
+      orderCount: 0,
+      wholesaleCostUsd: 0,
+      platformMarkupUsd: 0,
+      amountDueUsd: 0,
+    };
+  }
 
   const { data: products, error: productsError } = await client
     .from("supplier_products")
@@ -253,6 +317,7 @@ export async function buildSettlementLinesForStore(input: {
 
   for (const order of candidateOrders) {
     for (const raw of order.dropshipLines) {
+      if (!raw.supplierProductId) continue;
       const product = productById.get(raw.supplierProductId);
       if (!product) continue;
       const unitCost = roundMoneyDisplay(

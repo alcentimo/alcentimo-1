@@ -82,6 +82,7 @@ function orderMatchesQuery(order: SupplierOrder, query: string): boolean {
   const code = formatOrderCode(order.id).toLowerCase();
   const haystack = [
     order.buyerName,
+    order.senderName ?? "",
     order.id,
     code,
     order.buyerPhone ?? "",
@@ -97,7 +98,8 @@ function buildOrdersCsv(orders: SupplierOrder[]): string {
   const headers = [
     "codigo",
     "id",
-    "comerciante",
+    "remitente_tienda",
+    "destinatario",
     "telefono",
     "estado",
     "pago",
@@ -119,6 +121,7 @@ function buildOrdersCsv(orders: SupplierOrder[]): string {
       [
         formatOrderCode(order.id),
         order.id,
+        order.senderName ?? "",
         order.buyerName,
         order.buyerPhone ?? "",
         SUPPLIER_ORDER_STATUS_LABELS[order.status],
@@ -662,6 +665,9 @@ export function SupplierOrdersPanel({
                       <span className="text-[11px] text-zinc-500">
                         {formatOrderDate(order.createdAt)} ·{" "}
                         {formatUsd(order.totalUsd)}
+                        {order.senderName
+                          ? ` · ${order.senderName}`
+                          : ""}
                       </span>
                       <span className="mt-1 flex flex-wrap gap-1">
                         <span
@@ -716,20 +722,71 @@ export function SupplierOrdersPanel({
                   </div>
 
                   <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                    <div className="supplier-hub-soft-panel">
-                      <p className="supplier-hub-section-label">Comprador</p>
-                      <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                        {selected.buyerName}
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                        {selected.buyerPhone ?? "Sin teléfono"}
-                      </p>
-                      <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                        {selected.buyerAddress ?? "Sin dirección"}
-                      </p>
-                    </div>
+                    {selected.senderName ? (
+                      <div className="supplier-hub-soft-panel">
+                        <p className="supplier-hub-section-label">
+                          Remitente (etiqueta)
+                        </p>
+                        <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                          {selected.senderName}
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                          Imprime este nombre de tienda en el paquete. No uses
+                          datos de tu empresa ni del mayorista.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="supplier-hub-soft-panel">
+                        <p className="supplier-hub-section-label">Comprador</p>
+                        <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                          {selected.buyerName}
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                          {selected.buyerPhone ?? "Sin teléfono"}
+                        </p>
+                        <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                          {selected.buyerAddress ?? "Sin dirección"}
+                        </p>
+                      </div>
+                    )}
 
-                    <div className="supplier-hub-soft-panel">
+                    {selected.senderName ? (
+                      <div className="supplier-hub-soft-panel">
+                        <p className="supplier-hub-section-label">
+                          Destinatario (cliente final)
+                        </p>
+                        <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                          {selected.buyerName}
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                          {selected.buyerPhone ?? "Sin teléfono"}
+                        </p>
+                        <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                          {selected.buyerAddress ?? "Sin dirección"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="supplier-hub-soft-panel">
+                        <p className="supplier-hub-section-label">Envío</p>
+                        <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                          <Truck
+                            className="h-3.5 w-3.5 text-emerald-600"
+                            aria-hidden="true"
+                          />
+                          {supplierCarrierLabel(selected.shippingCarrier)}
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                          {selected.shippingBranchName ?? "Sin sucursal indicada"}
+                        </p>
+                        <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                          {selected.shippingBranchAddress ?? "—"}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {selected.senderName ? (
+                    <div className="supplier-hub-soft-panel mt-4">
                       <p className="supplier-hub-section-label">Envío</p>
                       <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
                         <Truck
@@ -745,7 +802,7 @@ export function SupplierOrdersPanel({
                         {selected.shippingBranchAddress ?? "—"}
                       </p>
                     </div>
-                  </div>
+                  ) : null}
 
                   <div className="supplier-hub-soft-panel mt-4">
                     <p className="supplier-hub-section-label">
@@ -781,7 +838,12 @@ export function SupplierOrdersPanel({
                         Notas: {selected.paymentNotes}
                       </p>
                     ) : null}
-                    {selected.paymentNotifiedAt ? (
+                    {selected.dispatchNotifiedAt ? (
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Te enviamos la orden detallada:{" "}
+                        {formatOrderDate(selected.dispatchNotifiedAt)}
+                      </p>
+                    ) : selected.paymentNotifiedAt ? (
                       <p className="mt-1 text-xs text-zinc-500">
                         Notificado por WhatsApp:{" "}
                         {formatOrderDate(selected.paymentNotifiedAt)}
@@ -794,8 +856,9 @@ export function SupplierOrdersPanel({
                       </p>
                     ) : null}
                     <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
-                      Alcéntimo no verifica ni mueve estos fondos; el pago es
-                      directo del comerciante a ti.
+                      {selected.settlementId
+                        ? "Alcéntimo acreditó el costo de producto en tu saldo al aprobar el pago único del dropshipper. En la etiqueta usa el nombre de la tienda como remitente."
+                        : "Este pedido no viene de una liquidación diaria."}
                     </p>
                   </div>
 

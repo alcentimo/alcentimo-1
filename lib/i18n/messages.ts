@@ -22,6 +22,7 @@ const MESSAGES = {
     "nav.analytics": "Analíticas",
     "nav.assistant": "Asistente IA",
     "nav.settings": "Configuración de Tienda",
+    "nav.settlement": "Reportar Pago",
     "nav.logout": "Cerrar sesión",
     "nav.support": "Soporte",
     "nav.openMenu": "Abrir menú",
@@ -58,6 +59,7 @@ const MESSAGES = {
     "nav.analytics": "Analytics",
     "nav.assistant": "AI Assistant",
     "nav.settings": "Store Settings",
+    "nav.settlement": "Report payment",
     "nav.logout": "Log out",
     "nav.support": "Support",
     "nav.openMenu": "Open menu",
@@ -89,4 +91,5 @@ export const NAV_LABEL_KEYS: Record<string, MessageKey> = {
   "/dashboard/analiticas": "nav.analytics",
   "/dashboard/asistente": "nav.assistant",
   "/dashboard/ajustes": "nav.settings",
+  "/dashboard/liquidacion": "nav.settlement",
 };

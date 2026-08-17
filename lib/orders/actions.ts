@@ -545,6 +545,7 @@ export async function submitTransactionalOrder(
   revalidatePath(`/c/${storeSlug}`);
   revalidatePath(`/c/${storeSlug}/perfil`);
   revalidatePath("/dashboard/pedidos");
+  revalidatePath("/dashboard/liquidacion");
   revalidatePath("/dashboard/clientes");
   revalidatePath("/dashboard/analiticas");
   revalidatePath("/dashboard/catalogo");
@@ -656,6 +657,7 @@ export async function attachOrderPaymentProof(input: {
   revalidatePath(`/c/${storeSlug}/cuenta`);
   revalidatePath(`/c/${storeSlug}/cuenta/${orderId}`);
   revalidatePath("/dashboard/pedidos");
+  revalidatePath("/dashboard/liquidacion");
   revalidatePath("/dashboard");
   revalidatePath(`/pedidos/${orderId}`);
 

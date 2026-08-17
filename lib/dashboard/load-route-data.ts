@@ -17,6 +17,8 @@ import { getStoreAnalyticsPanel } from "@/lib/analytics/get-store-analytics";
 import { getStoreCoupons } from "@/lib/coupons/actions";
 import { getStorePromotions } from "@/lib/promotions/actions";
 import { isStoreOwner } from "@/lib/stores/owner-access";
+import { getDropshipDailySettlementSummary } from "@/lib/dropship/get-daily-settlement";
+import { fetchActiveSubscriptionPaymentMethods } from "@/lib/plans/get-subscription-pago-movil";
 import {
   isDashboardPrefetchRoute,
   type DashboardPrefetchRoute,
@@ -88,6 +90,14 @@ export async function loadDashboardRoutePrefetchData(
         getStoreInventory(store.slug),
         getCurrentExchangeRate(),
         getCatalogPreviewSettings(store),
+      ]);
+      break;
+    }
+    case "liquidacion": {
+      if (!store) break;
+      await Promise.all([
+        getDropshipDailySettlementSummary(),
+        fetchActiveSubscriptionPaymentMethods(),
       ]);
       break;
     }

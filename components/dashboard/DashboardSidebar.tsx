@@ -453,7 +453,7 @@ export function DashboardSidebar({
           ))}
         </nav>
 
-        {/* Espacio obligatorio (≥2rem) entre Configuración de Tienda y Plan. */}
+        {/* Espacio obligatorio (≥2rem) entre Reportar Pago y Plan. */}
         {mobileOpen ? (
           <div
             className="min-h-8 w-full shrink-0 grow basis-8"

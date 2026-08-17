@@ -198,6 +198,7 @@ export async function reportDropshipDailyPayment(formData: FormData): Promise<
     }
 
     revalidatePath("/dashboard/pedidos");
+    revalidatePath("/dashboard/liquidacion");
     revalidatePath("/admin/dashboard");
 
     return {

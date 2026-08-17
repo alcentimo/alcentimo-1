@@ -7,11 +7,13 @@ import {
   resolveSupplierAuthEmail,
 } from "@/lib/supplier/access";
 import { mapPayoutRow } from "@/lib/dropship/settlement-shared";
+import { getSupplierCreditedBalanceUsd } from "@/lib/dropship/settlement-ledger";
 import type { SupplierPayoutObligationView } from "@/lib/dropship/settlement-types";
 
 export async function listMySupplierPayoutObligations(): Promise<{
   error?: string;
   payouts?: SupplierPayoutObligationView[];
+  creditedBalanceUsd?: number;
 }> {
   const supabase = await createClient();
   const {
@@ -40,7 +42,9 @@ export async function listMySupplierPayoutObligations(): Promise<{
     .limit(40);
 
   if (error) return { error: error.message };
+  const creditedBalanceUsd = await getSupplierCreditedBalanceUsd(user.id);
   return {
     payouts: ((data as Record<string, unknown>[] | null) ?? []).map(mapPayoutRow),
+    creditedBalanceUsd,
   };
 }

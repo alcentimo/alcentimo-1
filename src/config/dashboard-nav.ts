@@ -1,4 +1,5 @@
 import {
+  Banknote,
   BarChart3,
   Bot,
   ClipboardList,
@@ -77,6 +78,13 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     description: "Cómo se ve tu negocio: marca, pagos y horarios",
     icon: Settings2,
     match: (pathname) => pathname.startsWith("/dashboard/ajustes"),
+  },
+  {
+    href: "/dashboard/liquidacion",
+    label: "Reportar Pago",
+    description: "Cierre diario y pago único a Alcéntimo",
+    icon: Banknote,
+    match: (pathname) => pathname.startsWith("/dashboard/liquidacion"),
   },
 ];
 

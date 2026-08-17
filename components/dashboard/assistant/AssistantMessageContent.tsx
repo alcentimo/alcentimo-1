@@ -17,6 +17,7 @@ const ALLOWED_LINK_PREFIXES = [
   "/dashboard/analiticas",
   "/dashboard/asistente",
   "/dashboard/ajustes",
+  "/dashboard/liquidacion",
   "/dashboard/productos",
   "/dashboard/inventario",
 ];

@@ -9,6 +9,7 @@ import {
   mapPayoutRow,
   mapSettlementRecord,
 } from "@/lib/dropship/settlement-shared";
+import { listSettlementBalanceEntries } from "@/lib/dropship/settlement-ledger";
 import type { DropshipSettlementRecord } from "@/lib/dropship/settlement-types";
 
 type ActionResult<T extends object = object> = {
@@ -51,6 +52,7 @@ export async function listDropshipDailySettlements(options?: {
   const rows = (data as Record<string, unknown>[] | null) ?? [];
   const settlementIds = rows.map((row) => String(row.id));
   const payoutsBySettlement = new Map<string, ReturnType<typeof mapPayoutRow>[]>();
+  const ledgerBySettlement = await listSettlementBalanceEntries(settlementIds);
 
   if (settlementIds.length > 0) {
     const { data: payoutRows } = await client
@@ -70,7 +72,11 @@ export async function listDropshipDailySettlements(options?: {
 
   return {
     settlements: rows.map((row) =>
-      mapSettlementRecord(row, payoutsBySettlement.get(String(row.id)) ?? []),
+      mapSettlementRecord(
+        row,
+        payoutsBySettlement.get(String(row.id)) ?? [],
+        ledgerBySettlement.get(String(row.id)) ?? [],
+      ),
     ),
   };
 }
@@ -132,6 +138,7 @@ export async function approveDropshipDailySettlement(input: {
 
   revalidatePath("/admin/dashboard");
   revalidatePath("/dashboard/pedidos");
+  revalidatePath("/dashboard/liquidacion");
   revalidatePath("/proveedor/dashboard");
 
   const { data: payoutRows } = await client
@@ -141,10 +148,13 @@ export async function approveDropshipDailySettlement(input: {
     )
     .eq("settlement_id", settlementId);
 
+  const ledgerBySettlement = await listSettlementBalanceEntries([settlementId]);
+
   return {
     settlement: mapSettlementRecord(
       updated as Record<string, unknown>,
       ((payoutRows as Record<string, unknown>[] | null) ?? []).map(mapPayoutRow),
+      ledgerBySettlement.get(settlementId) ?? [],
     ),
   };
 }
@@ -199,6 +209,7 @@ export async function rejectDropshipDailySettlement(input: {
 
   revalidatePath("/admin/dashboard");
   revalidatePath("/dashboard/pedidos");
+  revalidatePath("/dashboard/liquidacion");
 
   return {
     settlement: mapSettlementRecord(updated as Record<string, unknown>),

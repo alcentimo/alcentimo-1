@@ -22,6 +22,7 @@ interface SupplierDashboardProps {
   ordersError?: string | null;
   paymentConfigError?: string | null;
   payouts?: SupplierPayoutObligationView[];
+  creditedBalanceUsd?: number;
   payoutsError?: string | null;
   initialTab?: SupplierTab;
 }
@@ -34,6 +35,7 @@ export function SupplierDashboard({
   ordersError = null,
   paymentConfigError = null,
   payouts = [],
+  creditedBalanceUsd = 0,
   payoutsError = null,
   initialTab = "productos",
 }: SupplierDashboardProps) {
@@ -158,6 +160,7 @@ export function SupplierDashboard({
           <SupplierPaymentsPanel
             initialConfig={initialPaymentConfig}
             payouts={payouts}
+            creditedBalanceUsd={creditedBalanceUsd}
           />
         </div>
       ) : null}
