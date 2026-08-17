@@ -7,7 +7,13 @@ import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { saveSupplierPaymentConfig } from "@/lib/supplier/payment-actions";
 import {
-  DROPSHIP_NO_INTERMEDIATION_NOTICE,
+  DROPSHIP_CENTRAL_PAYMENT_NOTICE,
+  SUPPLIER_PAYOUT_STATUS_LABELS,
+  type SupplierPayoutObligationView,
+} from "@/lib/dropship/settlement-types";
+import { formatBusinessDateEs } from "@/lib/dropship/settlement-date";
+import { formatUsd } from "@/lib/format";
+import {
   SUPPLIER_B2B_PAYMENT_METHOD_KEYS,
   type SupplierB2bPaymentMethodKey,
   type SupplierPaymentConfig,
@@ -17,10 +23,12 @@ import { cn } from "@/lib/cn";
 
 interface SupplierPaymentsPanelProps {
   initialConfig: SupplierPaymentConfig;
+  payouts?: SupplierPayoutObligationView[];
 }
 
 export function SupplierPaymentsPanel({
   initialConfig,
+  payouts = [],
 }: SupplierPaymentsPanelProps) {
   const [config, setConfig] = useState(initialConfig);
   const [error, setError] = useState<string | null>(null);
@@ -88,10 +96,11 @@ export function SupplierPaymentsPanel({
       <div className="supplier-hub-card-header">
         <div>
           <p className="supplier-hub-section-label">Cobros B2B</p>
-          <h1 className="supplier-hub-heading">Datos de pago</h1>
+          <h1 className="supplier-hub-heading">Liquidaciones y datos de cobro</h1>
           <p className="supplier-hub-subheading">
-            Los comerciantes te pagan el costo base de forma directa. Publica
-            aquí tus métodos para Pago Móvil, transferencia o Zelle.
+            Alcéntimo te liquida el costo mayorista cuando aprueba el cierre
+            diario del dropshipper. Publica aquí tus datos para recibir esas
+            transferencias.
           </p>
         </div>
       </div>
@@ -102,7 +111,7 @@ export function SupplierPaymentsPanel({
           aria-hidden="true"
         />
         <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-          {DROPSHIP_NO_INTERMEDIATION_NOTICE}
+          {DROPSHIP_CENTRAL_PAYMENT_NOTICE}
         </p>
       </div>
 
@@ -112,6 +121,46 @@ export function SupplierPaymentsPanel({
         </p>
       ) : null}
       {message ? <p className="supplier-hub-success">{message}</p> : null}
+
+      {payouts.length > 0 ? (
+        <section className="supplier-hub-card space-y-3">
+          <div>
+            <p className="supplier-hub-section-label">Obligaciones de Alcéntimo</p>
+            <h2 className="supplier-hub-heading text-base">
+              Pagos programados D+1
+            </h2>
+          </div>
+          <ul className="space-y-2">
+            {payouts.map((payout) => (
+              <li
+                key={payout.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm dark:border-zinc-800"
+              >
+                <div>
+                  <p className="font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
+                    {formatUsd(payout.amountUsd)}
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    {payout.orderCount} pedido{payout.orderCount === 1 ? "" : "s"}{" "}
+                    · {payout.lineCount} línea
+                    {payout.lineCount === 1 ? "" : "s"} · venta{" "}
+                    {formatBusinessDateEs(payout.businessDate)} · despacho{" "}
+                    {formatBusinessDateEs(payout.shipOn)}
+                  </p>
+                </div>
+                <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-800 dark:bg-teal-950/40 dark:text-teal-200">
+                  {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <p className="text-sm text-zinc-500">
+          Aún no hay obligaciones de pago. Aparecerán aquí cuando Alcéntimo
+          apruebe el cierre diario de un dropshipper que vendió tus productos.
+        </p>
+      )}
 
       <section className="supplier-hub-card space-y-5">
         <div>
@@ -132,7 +181,8 @@ export function SupplierPaymentsPanel({
             disabled={pending}
           />
           <p className="mt-1 text-xs text-zinc-500">
-            Los comerciantes usarán este número en «Notificar pago por WhatsApp».
+            Los comerciantes usarán este número si Alcéntimo o el equipo de
+            liquidación necesitan coordinar el pago.
           </p>
         </div>
 

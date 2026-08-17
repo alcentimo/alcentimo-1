@@ -21,6 +21,7 @@ import type { SubscriptionPaymentMethod } from "@/src/config/subscription-pago-m
 import type { PlanSettingsMap } from "@/lib/plans/plan-settings";
 import type { PlatformSettings } from "@/lib/platform/platform-settings";
 import type { AdminStoreDomainRow } from "@/lib/admin/custom-domain-actions";
+import type { DropshipSettlementRecord } from "@/lib/dropship/settlement-types";
 import {
   resolveAdminDashboardTab,
   resolveAdminPlansSubTab,
@@ -130,6 +131,20 @@ const AdminStoreLocationsPanel = dynamic(
   },
 );
 
+const DropshipSettlementsPanel = dynamic(
+  () =>
+    import("@/components/admin/DropshipSettlementsPanel").then((m) => ({
+      default: m.DropshipSettlementsPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Cargando liquidaciones dropship…
+      </p>
+    ),
+  },
+);
+
 interface AdminDashboardTabsProps {
   payments: ManualPaymentWithEmail[];
   messages: SupportMessage[];
@@ -152,6 +167,8 @@ interface AdminDashboardTabsProps {
   storeDomains?: AdminStoreDomainRow[];
   storeDomainsError?: string | null;
   assistantEnabled?: boolean;
+  dropshipSettlements?: DropshipSettlementRecord[];
+  dropshipSettlementsError?: string | null;
   initialTab?: AdminDashboardTab | string;
   legacyTabParam?: string | null;
   initialPlansSubTab?: string | null;
@@ -186,6 +203,8 @@ export function AdminDashboardTabs({
   storeDomains = [],
   storeDomainsError = null,
   assistantEnabled = false,
+  dropshipSettlements = [],
+  dropshipSettlementsError = null,
   initialTab = "resumen",
   legacyTabParam = null,
   initialPlansSubTab = null,
@@ -209,8 +228,14 @@ export function AdminDashboardTabs({
     [messages],
   );
 
+  const pendingSettlements = useMemo(
+    () => dropshipSettlements.filter((item) => item.status === "reported").length,
+    [dropshipSettlements],
+  );
+
   const badgeCounts = {
     pagos: pendingPayments,
+    dropship: pendingSettlements,
     soporte: pendingMessages,
   };
 
@@ -244,6 +269,7 @@ export function AdminDashboardTabs({
           <AdminOverviewPanel
             metrics={metrics}
             pendingMessages={pendingMessages}
+            pendingDropshipSettlements={pendingSettlements}
             assistantEnabled={assistantEnabled}
           />
         ) : (
@@ -258,6 +284,14 @@ export function AdminDashboardTabs({
           <ErrorBanner message={paymentsError} />
         ) : (
           <ManualPaymentsPanel initialPayments={payments} />
+        )
+      ) : null}
+
+      {activeTab === "dropship" ? (
+        dropshipSettlementsError ? (
+          <ErrorBanner message={dropshipSettlementsError} />
+        ) : (
+          <DropshipSettlementsPanel initialSettlements={dropshipSettlements} />
         )
       ) : null}
 

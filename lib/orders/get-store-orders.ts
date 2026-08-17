@@ -17,7 +17,7 @@ function parseOrderItems(value: unknown): OrderLineItem[] {
   if (!Array.isArray(value)) return [];
 
   return value
-    .map((item) => {
+    .map((item): OrderLineItem | null => {
       if (!item || typeof item !== "object") return null;
       const row = item as Record<string, unknown>;
       return {
@@ -28,6 +28,17 @@ function parseOrderItems(value: unknown): OrderLineItem[] {
         quantity: Number(row.quantity) || 0,
         unit_price_usd: Number(row.unit_price_usd) || 0,
         line_total_usd: Number(row.line_total_usd) || 0,
+        supplier_product_id:
+          typeof row.supplier_product_id === "string" &&
+          row.supplier_product_id.trim()
+            ? row.supplier_product_id.trim()
+            : null,
+        unit_cost_usd:
+          row.unit_cost_usd != null && Number.isFinite(Number(row.unit_cost_usd))
+            ? Number(row.unit_cost_usd)
+            : undefined,
+        cost_locked_at:
+          typeof row.cost_locked_at === "string" ? row.cost_locked_at : undefined,
       };
     })
     .filter((item): item is OrderLineItem => Boolean(item?.product_id));

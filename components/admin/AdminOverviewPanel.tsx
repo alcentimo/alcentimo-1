@@ -22,12 +22,14 @@ const PLAN_ROWS: Array<{
 interface AdminOverviewPanelProps {
   metrics: AdminPlanMetrics;
   pendingMessages: number;
+  pendingDropshipSettlements?: number;
   assistantEnabled?: boolean;
 }
 
 export function AdminOverviewPanel({
   metrics,
   pendingMessages,
+  pendingDropshipSettlements = 0,
   assistantEnabled = false,
 }: AdminOverviewPanelProps) {
   const alerts = [
@@ -35,6 +37,13 @@ export function AdminOverviewPanel({
       ? {
           label: `${metrics.pendingPayments} pago(s) pendiente(s) de revisión`,
           href: "/admin/dashboard?tab=pagos",
+          tone: "amber" as const,
+        }
+      : null,
+    pendingDropshipSettlements > 0
+      ? {
+          label: `${pendingDropshipSettlements} liquidación(es) dropship por verificar`,
+          href: "/admin/dashboard?tab=dropship",
           tone: "amber" as const,
         }
       : null,

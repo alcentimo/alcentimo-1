@@ -1,4 +1,5 @@
 import { roundExchangeRate } from "@/lib/format";
+import { normalizeMarkupPercent } from "@/lib/dropship/settlement-math";
 
 export const PLATFORM_SETTINGS_ID = "default" as const;
 
@@ -17,6 +18,8 @@ export interface PlatformSettings {
   bcvRateMode: BcvRateMode;
   /** Tasa manual de contingencia (null si no configurada). */
   manualBcvRate: number | null;
+  /** Markup operativo (%) sobre el costo mayorista en el cierre diario dropship. */
+  dropshipPlatformMarkupPercent: number;
 }
 
 export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
@@ -29,6 +32,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   plansCouponBoxEnabled: true,
   bcvRateMode: "automatic",
   manualBcvRate: null,
+  dropshipPlatformMarkupPercent: 5,
 };
 
 export interface PlatformSettingsRow {
@@ -42,6 +46,7 @@ export interface PlatformSettingsRow {
   plans_coupon_box_enabled: boolean;
   bcv_rate_mode?: string | null;
   manual_bcv_rate?: number | string | null;
+  dropship_platform_markup_percent?: number | string | null;
   updated_at: string;
   updated_by: string | null;
 }
@@ -55,6 +60,10 @@ function parseManualBcvRate(value: unknown): number | null {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return null;
   return roundExchangeRate(n);
+}
+
+function parseMarkupPercent(value: unknown): number {
+  return normalizeMarkupPercent(value);
 }
 
 export function parsePlatformSettingsRow(
@@ -72,5 +81,8 @@ export function parsePlatformSettingsRow(
     plansCouponBoxEnabled: row.plans_coupon_box_enabled ?? true,
     bcvRateMode: parseBcvRateMode(row.bcv_rate_mode),
     manualBcvRate: parseManualBcvRate(row.manual_bcv_rate),
+    dropshipPlatformMarkupPercent: parseMarkupPercent(
+      row.dropship_platform_markup_percent,
+    ),
   };
 }

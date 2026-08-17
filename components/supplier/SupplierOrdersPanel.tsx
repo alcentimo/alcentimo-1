@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { formatBusinessDateEs } from "@/lib/dropship/settlement-date";
 import type { SupplierProduct } from "@/lib/supplier/actions";
 import {
   createSupplierOrder,
@@ -102,6 +103,7 @@ function buildOrdersCsv(orders: SupplierOrder[]): string {
     "pago",
     "referencia_pago",
     "total_usd",
+    "despacho_d1",
     "agencia",
     "guia",
     "creado_en",
@@ -123,6 +125,7 @@ function buildOrdersCsv(orders: SupplierOrder[]): string {
         SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[order.paymentStatus],
         order.paymentReference ?? "",
         order.totalUsd.toFixed(2),
+        order.shipOn ?? "",
         supplierCarrierLabel(order.shippingCarrier),
         order.trackingNumber ?? "",
         order.createdAt,
@@ -679,6 +682,11 @@ export function SupplierOrdersPanel({
                             }
                           </span>
                         ) : null}
+                        {order.shipOn ? (
+                          <span className="inline-flex w-fit rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-800 dark:bg-teal-950/40 dark:text-teal-200">
+                            D+1 {formatBusinessDateEs(order.shipOn)}
+                          </span>
+                        ) : null}
                       </span>
                     </button>
                   </li>
@@ -741,7 +749,7 @@ export function SupplierOrdersPanel({
 
                   <div className="supplier-hub-soft-panel mt-4">
                     <p className="supplier-hub-section-label">
-                      Pago B2B (directo)
+                      Liquidación Alcéntimo
                     </p>
                     <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
                       {
@@ -750,12 +758,20 @@ export function SupplierOrdersPanel({
                         ]
                       }
                     </p>
+                    {selected.shipOn ? (
+                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                        Despacho D+1 a partir del{" "}
+                        {formatBusinessDateEs(selected.shipOn)}.
+                      </p>
+                    ) : null}
                     <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
                       Método:{" "}
                       {selected.paymentMethod
                         ? (getPaymentMethod(selected.paymentMethod as never)
                             ?.label ?? selected.paymentMethod)
-                        : "—"}
+                        : selected.settlementId
+                          ? "Pago único del dropshipper a Alcéntimo"
+                          : "—"}
                     </p>
                     <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
                       Referencia: {selected.paymentReference ?? "—"}

@@ -321,6 +321,8 @@ export interface PlatformSetting {
   /** automatic = API BCV; manual = tasa de contingencia del admin. */
   bcv_rate_mode: "automatic" | "manual";
   manual_bcv_rate: number | null;
+  /** Markup operativo (%) sobre el costo mayorista en el cierre diario dropship. */
+  dropship_platform_markup_percent?: number | null;
   updated_at: string;
   updated_by: string | null;
 }

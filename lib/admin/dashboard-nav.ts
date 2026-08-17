@@ -1,6 +1,7 @@
 export type AdminDashboardTab =
   | "resumen"
   | "pagos"
+  | "dropship"
   | "tiendas"
   | "cupones"
   | "planes"
@@ -10,6 +11,9 @@ export type AdminDashboardTab =
 const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
   resumen: "resumen",
   pagos: "pagos",
+  dropship: "dropship",
+  liquidaciones: "dropship",
+  "liquidaciones-dropship": "dropship",
   tiendas: "tiendas",
   cupones: "cupones",
   promociones: "cupones",

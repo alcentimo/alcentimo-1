@@ -9,6 +9,7 @@ import {
   Settings2,
   Store,
   Tag,
+  Truck,
 } from "lucide-react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
@@ -37,6 +38,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Pagos y activaciones",
     description: "Comprobantes pendientes, aprobados y rechazados.",
     icon: CreditCard,
+    showBadge: true,
+  },
+  {
+    id: "dropship",
+    label: "Liquidaciones dropship",
+    description: "Cierres diarios, verificación de pago único y despacho D+1.",
+    icon: Truck,
     showBadge: true,
   },
   {

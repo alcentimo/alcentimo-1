@@ -24,6 +24,9 @@ export function PlatformSettingsConfigPanel({
   const [supportEmail, setSupportEmail] = useState(
     initialSettings.supportEmail ?? "",
   );
+  const [dropshipMarkup, setDropshipMarkup] = useState(
+    String(initialSettings.dropshipPlatformMarkupPercent),
+  );
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -37,6 +40,7 @@ export function PlatformSettingsConfigPanel({
     formData.set("platformName", platformName);
     formData.set("tagline", tagline);
     formData.set("supportEmail", supportEmail);
+    formData.set("dropshipPlatformMarkupPercent", dropshipMarkup);
 
     startTransition(async () => {
       const result = await updatePlatformSettings(formData);
@@ -48,6 +52,7 @@ export function PlatformSettingsConfigPanel({
         setPlatformName(result.settings.platformName);
         setTagline(result.settings.tagline);
         setSupportEmail(result.settings.supportEmail ?? "");
+        setDropshipMarkup(String(result.settings.dropshipPlatformMarkupPercent));
       }
       setSuccess("Datos de la plataforma guardados.");
       router.refresh();
@@ -105,6 +110,31 @@ export function PlatformSettingsConfigPanel({
             />
             <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
               Aparece como subtítulo en el panel y en metadatos del sitio.
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="platform-dropship-markup">
+              Markup operativo dropship (%)
+            </Label>
+            <Input
+              id="platform-dropship-markup"
+              name="dropshipPlatformMarkupPercent"
+              type="number"
+              min={0}
+              max={100}
+              step="0.01"
+              value={dropshipMarkup}
+              onChange={(e) => setDropshipMarkup(e.target.value)}
+              required
+              disabled={pending}
+              className="mt-1.5"
+              inputMode="decimal"
+            />
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Porcentaje que Alcéntimo suma al costo mayorista en el cierre
+              diario del dropshipper (0–100). El mayorista recibe solo el costo
+              mayorista; el markup queda en la plataforma.
             </p>
           </div>
 
