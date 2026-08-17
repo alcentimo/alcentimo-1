@@ -82,6 +82,9 @@ export interface SupplierOrder {
   settlementId: string | null;
   /** Fecha civil America/Caracas a partir de la cual aplica el despacho D+1. */
   shipOn: string | null;
+  /** Nombre de la tienda del dropshipper para la etiqueta (remitente). */
+  senderName: string | null;
+  dispatchNotifiedAt: string | null;
 }
 
 export interface CreateSupplierOrderItemInput {

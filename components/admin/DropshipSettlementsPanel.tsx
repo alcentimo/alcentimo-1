@@ -105,7 +105,7 @@ export function DropshipSettlementsPanel({
       }
       replaceSettlement(result.settlement);
       setSuccess(
-        "Pago aprobado. Se registraron las obligaciones a mayoristas y se habilitó el despacho D+1.",
+        "Pago aprobado. Se dividió el monto en saldos (mayoristas y comisión Alcéntimo), se notificó a cada proveedor y se habilitó el despacho D+1 con el nombre de la tienda como remitente.",
       );
     });
   }
@@ -136,8 +136,10 @@ export function DropshipSettlementsPanel({
     <div className="space-y-4">
       <p className="text-sm text-zinc-500 dark:text-zinc-400">
         Cada dropshipper reporta un pago único por el costo mayorista más el
-        markup operativo. Al aprobarlo, el sistema crea la obligación de pago a
-        cada mayorista y habilita las órdenes para despacho al día siguiente.
+        markup operativo. Al aprobarlo, el sistema divide el monto en el saldo
+        de cada mayorista y la comisión de Alcéntimo, notifica a cada proveedor
+        la orden de despacho D+1 y etiqueta el paquete con el nombre de la
+        tienda del dropshipper.
       </p>
 
       <div className="flex flex-wrap gap-2">
@@ -272,27 +274,74 @@ export function DropshipSettlementsPanel({
                 <p className="mt-3 text-xs text-amber-700">Sin comprobante adjunto.</p>
               )}
 
-              {settlement.payouts.length > 0 ? (
-                <div className="mt-3 rounded-xl bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-900/50">
-                  <p className="font-semibold text-zinc-700 dark:text-zinc-200">
-                    Obligaciones a mayoristas
-                  </p>
-                  <ul className="mt-1 space-y-1">
-                    {settlement.payouts.map((payout) => (
-                      <li key={payout.id} className="flex justify-between gap-3">
-                        <span>
-                          {formatUsd(payout.amountUsd)} · {payout.orderCount} pedido
-                          {payout.orderCount === 1 ? "" : "s"} · despacho{" "}
-                          {formatBusinessDateEs(payout.shipOn)}
-                        </span>
-                        <span className="shrink-0 text-zinc-500">
-                          {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
+              <div className="mt-3 rounded-xl bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-900/50">
+                <p className="font-semibold text-zinc-700 dark:text-zinc-200">
+                  División del pago recibido
+                </p>
+                <ul className="mt-1 space-y-1">
+                  <li className="flex justify-between gap-3">
+                    <span>Costo a mayoristas</span>
+                    <span className="tabular-nums font-medium">
+                      {formatUsd(settlement.wholesaleCostUsd)}
+                    </span>
+                  </li>
+                  <li className="flex justify-between gap-3">
+                    <span>Comisión Alcéntimo</span>
+                    <span className="tabular-nums font-medium">
+                      {formatUsd(settlement.platformMarkupUsd)}
+                    </span>
+                  </li>
+                </ul>
+                {settlement.payouts.length > 0 ? (
+                  <>
+                    <p className="mt-2 font-semibold text-zinc-700 dark:text-zinc-200">
+                      Obligaciones a mayoristas
+                    </p>
+                    <ul className="mt-1 space-y-1">
+                      {settlement.payouts.map((payout) => (
+                        <li
+                          key={payout.id}
+                          className="flex justify-between gap-3"
+                        >
+                          <span>
+                            {formatUsd(payout.amountUsd)} · {payout.orderCount}{" "}
+                            pedido
+                            {payout.orderCount === 1 ? "" : "s"} · despacho{" "}
+                            {formatBusinessDateEs(payout.shipOn)}
+                          </span>
+                          <span className="shrink-0 text-zinc-500">
+                            {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
+                {settlement.ledger.length > 0 ? (
+                  <>
+                    <p className="mt-2 font-semibold text-zinc-700 dark:text-zinc-200">
+                      Saldos registrados
+                    </p>
+                    <ul className="mt-1 space-y-1">
+                      {settlement.ledger.map((entry) => (
+                        <li
+                          key={entry.id}
+                          className="flex justify-between gap-3"
+                        >
+                          <span>
+                            {entry.partyKind === "platform"
+                              ? "Alcéntimo (comisión)"
+                              : "Mayorista (costo)"}
+                          </span>
+                          <span className="tabular-nums font-medium">
+                            {formatUsd(entry.amountUsd)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
+              </div>
 
               {settlement.status === "reported" ? (
                 <div className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -364,7 +413,7 @@ export function DropshipSettlementsPanel({
         title="Aprobar liquidación diaria"
         impact={
           approveTarget
-            ? `Vas a verificar el pago de ${approveTarget.storeName} por ${formatUsd(approveTarget.amountDueUsd)}. Se crearán las obligaciones a cada mayorista y se habilitarán las órdenes para despacho D+1.`
+            ? `Vas a verificar el pago de ${approveTarget.storeName} por ${formatUsd(approveTarget.amountDueUsd)}. Se acreditará el costo a cada mayorista, la comisión a Alcéntimo, se enviará la orden de despacho a los proveedores y el remitente será el nombre de la tienda.`
             : "Vas a aprobar este reporte diario."
         }
         confirmLabel="Aprobar y habilitar D+1"

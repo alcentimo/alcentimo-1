@@ -8,6 +8,7 @@ import {
   type DropshipSettlementLineView,
   type DropshipSettlementRecord,
   type DropshipSettlementSupplierBreakdown,
+  type SettlementBalanceEntryView,
   type SupplierPayoutObligationView,
 } from "@/lib/dropship/settlement-types";
 import type { SupplierB2bPaymentMethodKey } from "@/lib/supplier/payment-types";
@@ -15,6 +16,7 @@ import type { SupplierB2bPaymentMethodKey } from "@/lib/supplier/payment-types";
 export function mapSettlementRecord(
   row: Record<string, unknown>,
   payouts: SupplierPayoutObligationView[] = [],
+  ledger: SettlementBalanceEntryView[] = [],
 ): DropshipSettlementRecord {
   const statusRaw = String(row.status ?? "reported");
   return {
@@ -53,6 +55,7 @@ export function mapSettlementRecord(
       typeof row.reviewed_by === "string" ? row.reviewed_by : null,
     reviewNotes: String(row.review_notes ?? ""),
     payouts,
+    ledger,
   };
 }
 

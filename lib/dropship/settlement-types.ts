@@ -99,6 +99,19 @@ export interface DropshipDailySettlementSummary {
   existing: DropshipSettlementRecord | null;
 }
 
+export type SettlementLedgerPartyKind = "platform" | "supplier";
+
+export interface SettlementBalanceEntryView {
+  id: string;
+  settlementId: string;
+  accountKey: string;
+  partyKind: SettlementLedgerPartyKind;
+  partyUserId: string | null;
+  amountUsd: number;
+  description: string;
+  createdAt: string;
+}
+
 export interface DropshipSettlementRecord {
   id: string;
   storeId: string;
@@ -121,6 +134,7 @@ export interface DropshipSettlementRecord {
   reviewedBy: string | null;
   reviewNotes: string;
   payouts: SupplierPayoutObligationView[];
+  ledger: SettlementBalanceEntryView[];
 }
 
 export interface SupplierPayoutObligationView {

@@ -149,11 +149,19 @@ function mapOrder(
       typeof row.ship_on === "string" && row.ship_on
         ? String(row.ship_on).slice(0, 10)
         : null,
+    senderName:
+      typeof row.sender_name === "string" && row.sender_name.trim()
+        ? row.sender_name.trim()
+        : null,
+    dispatchNotifiedAt:
+      typeof row.dispatch_notified_at === "string"
+        ? row.dispatch_notified_at
+        : null,
   };
 }
 
 const ORDER_SELECT =
-  "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at, supplier_user_id";
+  "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at, supplier_user_id, settlement_id, ship_on, sender_name, dispatch_notified_at";
 
 export type DropshipSupplierPaymentContext = {
   supplierUserId: string;

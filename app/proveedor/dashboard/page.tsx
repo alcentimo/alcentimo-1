@@ -60,6 +60,7 @@ export default async function ProveedorDashboardPage({
       ordersError={listedOrders.error ?? null}
       paymentConfigError={paymentConfigResult.error ?? null}
       payouts={payoutsResult.payouts ?? []}
+      creditedBalanceUsd={payoutsResult.creditedBalanceUsd ?? 0}
       payoutsError={payoutsResult.error ?? null}
       initialTab={initialTab}
     />

@@ -24,11 +24,13 @@ import { cn } from "@/lib/cn";
 interface SupplierPaymentsPanelProps {
   initialConfig: SupplierPaymentConfig;
   payouts?: SupplierPayoutObligationView[];
+  creditedBalanceUsd?: number;
 }
 
 export function SupplierPaymentsPanel({
   initialConfig,
   payouts = [],
+  creditedBalanceUsd = 0,
 }: SupplierPaymentsPanelProps) {
   const [config, setConfig] = useState(initialConfig);
   const [error, setError] = useState<string | null>(null);
@@ -122,38 +124,47 @@ export function SupplierPaymentsPanel({
       ) : null}
       {message ? <p className="supplier-hub-success">{message}</p> : null}
 
-      {payouts.length > 0 ? (
+      {payouts.length > 0 || creditedBalanceUsd > 0 ? (
         <section className="supplier-hub-card space-y-3">
           <div>
-            <p className="supplier-hub-section-label">Obligaciones de Alcéntimo</p>
+            <p className="supplier-hub-section-label">Saldo acreditado</p>
             <h2 className="supplier-hub-heading text-base">
-              Pagos programados D+1
+              {formatUsd(creditedBalanceUsd)}
             </h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              Costo de producto registrado en tu saldo cuando Alcéntimo aprueba
+              el pago único del dropshipper.
+            </p>
           </div>
-          <ul className="space-y-2">
-            {payouts.map((payout) => (
-              <li
-                key={payout.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm dark:border-zinc-800"
-              >
-                <div>
-                  <p className="font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
-                    {formatUsd(payout.amountUsd)}
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    {payout.orderCount} pedido{payout.orderCount === 1 ? "" : "s"}{" "}
-                    · {payout.lineCount} línea
-                    {payout.lineCount === 1 ? "" : "s"} · venta{" "}
-                    {formatBusinessDateEs(payout.businessDate)} · despacho{" "}
-                    {formatBusinessDateEs(payout.shipOn)}
-                  </p>
-                </div>
-                <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-800 dark:bg-teal-950/40 dark:text-teal-200">
-                  {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
-                </span>
-              </li>
-            ))}
-          </ul>
+          {payouts.length > 0 ? (
+            <>
+              <p className="supplier-hub-section-label">Obligaciones de Alcéntimo</p>
+              <ul className="space-y-2">
+                {payouts.map((payout) => (
+                  <li
+                    key={payout.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm dark:border-zinc-800"
+                  >
+                    <div>
+                      <p className="font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
+                        {formatUsd(payout.amountUsd)}
+                      </p>
+                      <p className="text-xs text-zinc-500">
+                        {payout.orderCount} pedido{payout.orderCount === 1 ? "" : "s"}{" "}
+                        · {payout.lineCount} línea
+                        {payout.lineCount === 1 ? "" : "s"} · venta{" "}
+                        {formatBusinessDateEs(payout.businessDate)} · despacho{" "}
+                        {formatBusinessDateEs(payout.shipOn)}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-800 dark:bg-teal-950/40 dark:text-teal-200">
+                      {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
         </section>
       ) : (
         <p className="text-sm text-zinc-500">
