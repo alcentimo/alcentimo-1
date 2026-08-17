@@ -24,6 +24,8 @@ interface ProductImageGalleryProps {
   fallbackClassName?: string;
   sizes?: string;
   loading?: "lazy" | "eager";
+  /** Click en la foto (no en flechas/puntos) para abrir ficha o navegar. */
+  onMediaClick?: () => void;
 }
 
 function galleryDisplayUrl(
@@ -45,6 +47,7 @@ export function ProductImageGallery({
   fallbackClassName,
   sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
   loading = "lazy",
+  onMediaClick,
 }: ProductImageGalleryProps) {
   const images = useMemo(() => {
     if (imagesOverride && imagesOverride.length > 0) {
@@ -61,6 +64,7 @@ export function ProductImageGallery({
   const alt = product.image_alt ?? product.product_name;
   const isDetail = mode === "detail";
   const hasMultiple = images.length > 1;
+  const showThumbs = isDetail && hasMultiple;
 
   const goTo = useCallback(
     (index: number) => {
@@ -104,13 +108,27 @@ export function ProductImageGallery({
       className={cn(
         "product-image-gallery",
         isDetail && "product-image-gallery-detail",
+        !isDetail && "product-image-gallery-card",
         hasMultiple && "product-image-gallery-multi",
         className,
       )}
-      onTouchStart={isDetail ? handleTouchStart : undefined}
-      onTouchEnd={isDetail ? handleTouchEnd : undefined}
+      onTouchStart={hasMultiple ? handleTouchStart : undefined}
+      onTouchEnd={hasMultiple ? handleTouchEnd : undefined}
     >
-      <div className="product-image-gallery-stage">
+      <div
+        className={cn(
+          "product-image-gallery-stage",
+          onMediaClick && "cursor-pointer",
+        )}
+        onClick={
+          onMediaClick
+            ? (event) => {
+                if ((event.target as HTMLElement).closest("button")) return;
+                onMediaClick();
+              }
+            : undefined
+        }
+      >
         <CatalogProductImage
           src={galleryDisplayUrl(activeImage, mode)}
           alt={alt}
@@ -125,65 +143,63 @@ export function ProductImageGallery({
               {activeIndex + 1}/{images.length}
             </span>
 
-            {isDetail ? (
-              <>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                goPrev();
+              }}
+              className="product-image-gallery-nav product-image-gallery-nav-prev"
+              aria-label="Foto anterior"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                goNext();
+              }}
+              className="product-image-gallery-nav product-image-gallery-nav-next"
+              aria-label="Foto siguiente"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+            <div
+              className="product-image-gallery-dots"
+              role="tablist"
+              aria-label="Fotos del producto"
+            >
+              {images.map((image, index) => (
                 <button
+                  key={image.id}
                   type="button"
+                  role="tab"
+                  aria-selected={index === activeIndex}
+                  aria-label={`Ver foto ${index + 1}`}
                   onClick={(event) => {
+                    event.preventDefault();
                     event.stopPropagation();
-                    goPrev();
+                    goTo(index);
                   }}
-                  className="product-image-gallery-nav product-image-gallery-nav-prev"
-                  aria-label="Foto anterior"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    goNext();
-                  }}
-                  className="product-image-gallery-nav product-image-gallery-nav-next"
-                  aria-label="Foto siguiente"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-                <div
-                  className="product-image-gallery-dots"
-                  role="tablist"
-                  aria-label="Fotos del producto"
-                >
-                  {images.map((image, index) => (
-                    <button
-                      key={image.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={index === activeIndex}
-                      aria-label={`Ver foto ${index + 1}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        goTo(index);
-                      }}
-                      className={cn(
-                        "product-image-gallery-dot",
-                        index === activeIndex &&
-                          "product-image-gallery-dot-active",
-                      )}
-                    />
-                  ))}
-                </div>
-              </>
-            ) : null}
+                  className={cn(
+                    "product-image-gallery-dot",
+                    index === activeIndex && "product-image-gallery-dot-active",
+                  )}
+                />
+              ))}
+            </div>
           </>
         ) : null}
       </div>
 
-      {hasMultiple ? (
+      {showThumbs ? (
         <div
           className={cn(
             "product-image-gallery-thumbs",
-            isDetail && "product-image-gallery-thumbs-detail",
+            "product-image-gallery-thumbs-detail",
           )}
           role="tablist"
           aria-label="Miniaturas del producto"
@@ -206,7 +222,7 @@ export function ProductImageGallery({
                 className={cn(
                   "product-image-gallery-thumb",
                   selected && "product-image-gallery-thumb-active",
-                  isDetail && "product-image-gallery-thumb-lg",
+                  "product-image-gallery-thumb-lg",
                 )}
               >
                 <CatalogProductImage

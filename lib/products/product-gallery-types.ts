@@ -76,6 +76,9 @@ export function parseCatalogGalleryImages(
     .map((item) => ({
       id: item.id,
       thumb_url: item.thumb_url,
+      medium_url:
+        typeof item.medium_url === "string" ? item.medium_url : undefined,
+      full_url: typeof item.full_url === "string" ? item.full_url : undefined,
       sort_order: Number(item.sort_order) || 0,
       is_primary: Boolean(item.is_primary),
     }))
@@ -104,4 +107,25 @@ export function resolveCatalogProductImages(product: {
   }
 
   return [];
+}
+
+export function urlsToCatalogGalleryImages(
+  urls: Array<string | null | undefined>,
+): CatalogProductGalleryImage[] {
+  const unique = [
+    ...new Set(
+      urls
+        .map((url) => (typeof url === "string" ? url.trim() : ""))
+        .filter((url) => url.length > 0),
+    ),
+  ];
+
+  return unique.map((url, index) => ({
+    id: `gallery-${index}`,
+    thumb_url: url,
+    medium_url: url,
+    full_url: url,
+    sort_order: index,
+    is_primary: index === 0,
+  }));
 }
