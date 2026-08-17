@@ -1,5 +1,6 @@
 import type { ProductEditImage } from "@/lib/products/product-gallery-types";
 
+/** Límite de fotos por producto en el hub de proveedores (client-safe). */
 export const SUPPLIER_GALLERY_MAX_IMAGES = 10;
 
 export type SupplierProductImage = {
