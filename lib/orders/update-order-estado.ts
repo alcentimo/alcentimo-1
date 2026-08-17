@@ -25,6 +25,7 @@ export interface UpdateOrderEstadoResult {
 
 function revalidateOrderPaths(storeSlug: string, orderId: string) {
   revalidatePath("/dashboard/pedidos");
+  revalidatePath("/dashboard/liquidacion");
   revalidatePath("/dashboard/analiticas");
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");

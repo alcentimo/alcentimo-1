@@ -45,8 +45,7 @@ export default async function LiquidacionPage() {
         description={
           <>
             Revisa las ventas mayoristas pendientes, transfiere el consolidado a
-            Alcéntimo y adjunta un solo comprobante. Al aprobarlo, los mayoristas
-            despachan al día siguiente (D+1).
+            Alcéntimo y adjunta un solo comprobante.
           </>
         }
       />

@@ -136,4 +136,4 @@ export interface SupplierPayoutObligationView {
 }
 
 export const DROPSHIP_CENTRAL_PAYMENT_NOTICE =
-  "El costo de los productos mayoristas más el markup operativo de Alcéntimo se paga en un solo reporte diario. Al aprobarlo, cada mayorista recibe sus órdenes para despacho al día siguiente (D+1).";
+  "Las ventas de productos mayoristas se liquidan en un solo pago diario a Alcéntimo. Al aprobarlo, cada mayorista recibe sus órdenes para despacho al día siguiente (D+1).";
