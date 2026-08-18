@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/sheet";
 import {
   DROPSHIPPER_STATUS_OPTIONS,
-  ORDER_ESTADO_HINTS,
   ORDER_ESTADO_LABELS,
   isDropshipperStatusOption,
   resolveDropshipperDisplayEstado,
@@ -278,21 +277,14 @@ export function OrderStatusSelect({
               if (isDropshipperStatusOption(option)) handleSelect(option);
             }}
             className={cn(
-              "orders-status-menu-item flex w-full items-start gap-2 px-2.5 py-2.5 text-left transition-colors",
+              "orders-status-menu-item flex w-full items-center gap-2 px-2.5 py-2 text-left transition-colors",
               isSelected && "orders-status-menu-item-active",
             )}
           >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <OrderEstadoPill estado={option} />
-                {isSelected ? (
-                  <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                ) : null}
-              </div>
-              <p className="mt-1 text-[10px] leading-snug text-zinc-500 dark:text-zinc-400">
-                {ORDER_ESTADO_HINTS[option]}
-              </p>
-            </div>
+            <OrderEstadoPill estado={option} />
+            {isSelected ? (
+              <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            ) : null}
           </button>
         );
       })}
@@ -459,7 +451,7 @@ export function OrderStatusSelect({
                 <SheetHeader className="pr-12">
                   <SheetTitle>Estado del pedido</SheetTitle>
                   <SheetDescription>
-                    Elige el nuevo estado. Quedará visible por encima de la lista.
+                    Por verificar pago, pago aprobado, en preparación o enviado.
                   </SheetDescription>
                 </SheetHeader>
                 <SheetBody className="orders-status-sheet-body">
