@@ -8,7 +8,7 @@ import type { SupplierOrderStatus } from "@/lib/supplier/order-types";
 
 /**
  * Cuando el proveedor aparta el stock o lo deja listo para recolección,
- * el pedido del catálogo avanza a «En preparación logística».
+ * el pedido del catálogo avanza a «En preparación».
  * No marca Enviado: eso lo hace Alcéntimo al despachar al cliente.
  */
 export async function syncCatalogOrderFromSupplierHold(input: {

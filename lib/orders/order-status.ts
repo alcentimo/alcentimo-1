@@ -14,16 +14,17 @@ export type OrderEstado = (typeof ORDER_ESTADOS)[number];
 const LEGACY_TO_PROCESANDO = new Set(["verificando", "en_preparacion"]);
 
 /**
- * Pipeline visible del dropshipper (más cancelado).
+ * Único ciclo visible en el selector de Órdenes:
+ * Por verificar pago → Pago aprobado → En preparación → Enviado.
  * `por_pagar` se muestra como el mismo paso que `pendiente`.
  * `entregado` se muestra como `enviado`.
+ * `cancelado` no es parte del ciclo (solo se muestra si el pedido ya está anulado).
  */
 export const DROPSHIPPER_STATUS_OPTIONS = [
   "pendiente",
   "procesando",
   "preparacion_logistica",
   "enviado",
-  "cancelado",
 ] as const satisfies readonly OrderEstado[];
 
 export type DropshipperStatusOption =
@@ -32,8 +33,8 @@ export type DropshipperStatusOption =
 export const ORDER_ESTADO_LABELS: Record<OrderEstado, string> = {
   por_pagar: "Por verificar pago",
   pendiente: "Por verificar pago",
-  procesando: "Pago aprobado / Procesando",
-  preparacion_logistica: "En preparación logística",
+  procesando: "Pago aprobado",
+  preparacion_logistica: "En preparación",
   enviado: "Enviado",
   entregado: "Enviado",
   cancelado: "Cancelado",
@@ -103,8 +104,7 @@ export const ORDER_ESTADO_HINTS: Record<OrderEstado, string> = {
   por_pagar: "Revisa el comprobante del cliente final",
   pendiente: "Revisa el comprobante del cliente final",
   procesando: "Pago aprobado. La orden pasó al centro de acopio",
-  preparacion_logistica:
-    "El proveedor apartó el stock. Alcéntimo recogerá el producto",
+  preparacion_logistica: "Alcéntimo prepara el envío al cliente",
   enviado: "Alcéntimo despachó el paquete al cliente",
   entregado: "Alcéntimo despachó el paquete al cliente",
   cancelado: "Pedido anulado",
@@ -162,6 +162,7 @@ export function normalizeOrderEstado(value: unknown): OrderEstado {
 /**
  * Estado que el dropshipper ve y elige en el selector.
  * Agrupa por_pagar→pendiente y entregado→enviado.
+ * Cancelado se conserva en la pastilla si el pedido ya está anulado.
  */
 export function resolveDropshipperDisplayEstado(
   estado: OrderEstado,

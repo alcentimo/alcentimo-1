@@ -37,8 +37,8 @@ type OrderWhatsAppSession = {
 const FILTER_TABS: { id: OrderFilterId; label: string }[] = [
   { id: "all", label: "Todos" },
   { id: "verify", label: "Por verificar pago" },
-  { id: "processing", label: "Procesando" },
-  { id: "logistics", label: "Logística" },
+  { id: "processing", label: "Pago aprobado" },
+  { id: "logistics", label: "En preparación" },
   { id: "shipped", label: "Enviados" },
 ];
 
