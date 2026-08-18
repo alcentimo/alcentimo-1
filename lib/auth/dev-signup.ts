@@ -3,10 +3,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
-import {
-  validateCustomerPhoneInput,
-  validateCustomerVerificationFields,
-} from "@/lib/customers/phone-auth";
 
 function isDevBypassEnabled(): boolean {
   return (
@@ -19,15 +15,8 @@ export type DevSignUpResult =
   | { ok: true }
   | { ok: false; error: string };
 
-export type DevSignUpVerificationInput = {
-  requireVerificationFields?: boolean;
+export type DevSignUpInput = {
   displayName?: string;
-  documentId?: string;
-  phone?: string;
-  businessName?: string;
-  city?: string;
-  state?: string;
-  socialUrl?: string;
 };
 
 /**
@@ -37,7 +26,7 @@ export type DevSignUpVerificationInput = {
 export async function devSignUpAndSignIn(
   email: string,
   password: string,
-  verification?: DevSignUpVerificationInput,
+  extra?: DevSignUpInput,
 ): Promise<DevSignUpResult> {
   if (!isDevBypassEnabled()) {
     return {
@@ -48,46 +37,18 @@ export async function devSignUpAndSignIn(
   }
 
   try {
-    let userMetadata: Record<string, unknown> | undefined;
-
-    if (verification?.requireVerificationFields) {
-      const displayName = verification.displayName?.trim() ?? "";
-      if (displayName.length < 2) {
-        return {
-          ok: false,
-          error: "Indica tu nombre y apellido (mínimo 2 caracteres).",
-        };
-      }
-
-      const phoneValidation = validateCustomerPhoneInput(verification.phone ?? "");
-      if (!phoneValidation.ok) {
-        return { ok: false, error: phoneValidation.error };
-      }
-
-      const verified = validateCustomerVerificationFields({
-        documentId: verification.documentId ?? "",
-        businessName: verification.businessName ?? "",
-        city: verification.city ?? "",
-        state: verification.state ?? "",
-        socialUrl: verification.socialUrl ?? "",
-      });
-      if (!verified.ok) {
-        return { ok: false, error: verified.error };
-      }
-
-      userMetadata = {
-        display_name: displayName.slice(0, 120),
-        full_name: displayName.slice(0, 120),
-        phone: phoneValidation.phone,
-        document_id: verified.documentId,
-        business_name: verified.businessName,
-        store_name: verified.businessName,
-        city: verified.city,
-        state: verified.state,
-        social_url: verified.socialUrl,
-        registration_verified: true,
+    const displayName = extra?.displayName?.trim() ?? "";
+    if (displayName.length < 2) {
+      return {
+        ok: false,
+        error: "Indica tu nombre y apellido (mínimo 2 caracteres).",
       };
     }
+
+    const userMetadata = {
+      display_name: displayName.slice(0, 120),
+      full_name: displayName.slice(0, 120),
+    };
 
     const admin = createAdminClient();
 
@@ -95,7 +56,7 @@ export async function devSignUpAndSignIn(
       email,
       password,
       email_confirm: true,
-      ...(userMetadata ? { user_metadata: userMetadata } : {}),
+      user_metadata: userMetadata,
     });
 
     if (

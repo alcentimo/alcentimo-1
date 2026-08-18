@@ -22,7 +22,6 @@ import { createClient } from "@/lib/supabase/client";
 import { ensureBrowserSessionReady } from "@/lib/auth/ensure-browser-session";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import { CustomerVerificationFields } from "@/components/customers/CustomerVerificationFields";
 import { SignupEmailVerificationPanel } from "@/components/dashboard/SignupEmailVerificationPanel";
 import { DashboardPostAuthLoading } from "@/components/dashboard/DashboardPostAuthLoading";
 import { markPostLoginNotify } from "@/lib/dashboard/post-login-notify";
@@ -56,12 +55,6 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
       : "login",
   );
   const [displayName, setDisplayName] = useState("");
-  const [documentId, setDocumentId] = useState("");
-  const [phone, setPhone] = useState("");
-  const [businessName, setBusinessName] = useState("");
-  const [city, setCity] = useState("");
-  const [stateRegion, setStateRegion] = useState("");
-  const [socialUrl, setSocialUrl] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(() => {
@@ -75,8 +68,6 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
   const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false);
   const [existingAccountNotice, setExistingAccountNotice] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-
-  const requireVerificationFields = mode === "signup" && !isInvitationFlow;
 
   function navigateAfterAuth(path: string) {
     markPostLoginNotify();
@@ -143,14 +134,7 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
     if (mode === "signup" && devSkipEmailConfirmation) {
       try {
         const devResult = await devSignUpAndSignIn(email, password, {
-          requireVerificationFields,
           displayName,
-          documentId,
-          phone,
-          businessName,
-          city,
-          state: stateRegion,
-          socialUrl,
         });
         setLoading(false);
 
@@ -189,14 +173,7 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
           email,
           password,
           nextPath: nextParam,
-          requireVerificationFields,
           displayName,
-          documentId,
-          phone,
-          businessName,
-          city,
-          state: stateRegion,
-          socialUrl,
         });
         const signupResult = parseAuthEmailActionResult(rawResult);
         setLoading(false);
@@ -348,11 +325,7 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
   const isBusy = loading;
 
   return (
-    <div
-      className={`card-panel mx-auto w-full ${
-        requireVerificationFields ? "max-w-lg" : "max-w-md"
-      }`}
-    >
+    <div className="card-panel mx-auto w-full max-w-md">
       <h2 className="text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-50">
         {mode === "login" ? "Iniciar sesión" : "Crear cuenta"}
       </h2>
@@ -360,7 +333,7 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
         {isInvitationFlow
           ? "Crea tu cuenta o inicia sesión para aceptar la invitación al equipo."
           : mode === "signup"
-            ? "Completa tus datos de verificación para registrar tu tienda."
+            ? "Regístrate con tu nombre, correo y una contraseña. La tienda se configura después."
             : "Accede al panel para gestionar tu catálogo."}
       </p>
 
@@ -376,77 +349,47 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
         </p>
       ) : null}
 
-      {/* En registro verificado evitamos Google para no saltarse los campos. */}
-      {!requireVerificationFields ? (
-        <>
-          <GoogleSignInButton
-            postAuthPath={postAuthPath}
-            disabled={isBusy}
-            className="mt-6"
-            buttonClassName="rounded-xl border-zinc-300 bg-white py-3.5 text-base font-semibold shadow-md shadow-zinc-900/10 ring-1 ring-zinc-900/5 hover:bg-zinc-50 hover:shadow-lg dark:border-zinc-600 dark:shadow-black/30 dark:ring-white/10 dark:hover:bg-zinc-800"
-            onError={(message) => {
-              logAuthEvent("google_signin_error", { message }, "warn");
-              setError(formatAuthError(message));
-            }}
-          />
+      <GoogleSignInButton
+        postAuthPath={postAuthPath}
+        disabled={isBusy}
+        className="mt-6"
+        buttonClassName="rounded-xl border-zinc-300 bg-white py-3.5 text-base font-semibold shadow-md shadow-zinc-900/10 ring-1 ring-zinc-900/5 hover:bg-zinc-50 hover:shadow-lg dark:border-zinc-600 dark:shadow-black/30 dark:ring-white/10 dark:hover:bg-zinc-800"
+        onError={(message) => {
+          logAuthEvent("google_signin_error", { message }, "warn");
+          setError(formatAuthError(message));
+        }}
+      />
 
-          <div className="relative my-6">
-            <div
-              className="absolute inset-x-0 top-1/2 border-t border-zinc-200 dark:border-zinc-700"
-              aria-hidden="true"
-            />
-            <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
-              o con tu correo
-            </p>
-          </div>
-        </>
-      ) : (
-        <div className="mt-6" />
-      )}
+      <div className="relative my-6">
+        <div
+          className="absolute inset-x-0 top-1/2 border-t border-zinc-200 dark:border-zinc-700"
+          aria-hidden="true"
+        />
+        <p className="relative mx-auto w-fit bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
+          o con tu correo
+        </p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {requireVerificationFields ? (
-          <>
-            <div>
-              <label htmlFor="signup_display_name" className="label-field">
-                Nombre y Apellido
-              </label>
-              <input
-                id="signup_display_name"
-                name="displayName"
-                type="text"
-                required
-                minLength={2}
-                autoComplete="name"
-                value={displayName}
-                disabled={isBusy}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="input-field"
-                placeholder="Nombre y apellido"
-              />
-            </div>
-
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              Datos de verificación
-            </p>
-
-            <CustomerVerificationFields
-              idPrefix="signup"
-              documentId={documentId}
-              phone={phone}
-              businessName={businessName}
-              city={city}
-              stateRegion={stateRegion}
-              socialUrl={socialUrl}
+        {mode === "signup" ? (
+          <div>
+            <label htmlFor="signup_display_name" className="label-field">
+              Nombre y Apellido
+            </label>
+            <input
+              id="signup_display_name"
+              name="displayName"
+              type="text"
+              required
+              minLength={2}
+              autoComplete="name"
+              value={displayName}
               disabled={isBusy}
-              onDocumentIdChange={setDocumentId}
-              onPhoneChange={setPhone}
-              onBusinessNameChange={setBusinessName}
-              onCityChange={setCity}
-              onStateRegionChange={setStateRegion}
-              onSocialUrlChange={setSocialUrl}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="input-field"
+              placeholder="Nombre y apellido"
             />
-          </>
+          </div>
         ) : null}
 
         <div>
