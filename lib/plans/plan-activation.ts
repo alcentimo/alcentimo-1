@@ -100,7 +100,8 @@ export function formatSubscriptionStatusLabel(
 
 /**
  * ¿Puede reclamar la prueba Pro gratis?
- * Solo plan FREE en BD y subscription_status = none. No valida conteo de productos.
+ * Solo plan FREE en BD y subscription_status = none.
+ * No exige productos, pagos ni envíos.
  */
 export function isEligiblePlanForProTrial(
   profile: Pick<

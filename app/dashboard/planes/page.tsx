@@ -5,8 +5,6 @@ import {
   resolveProTrialStatus,
   shouldShowProTrialBanner,
 } from "@/lib/plans/trial";
-import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
-import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import {
   getLatestPermanentRejection,
@@ -71,7 +69,6 @@ export default async function PlanesPage() {
     planSettings,
     promoOffers,
     platformSettings,
-    storeSettings,
   ] = await Promise.all([
       store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
       getCurrentExchangeRate(),
@@ -81,23 +78,9 @@ export default async function PlanesPage() {
       fetchPlanSettings(),
       getOpenPromoOffersForUser(authUser.id),
       fetchPlatformSettings(),
-      store ? getStoreSettingsConfig(store.id) : Promise.resolve(null),
     ]);
   const exchangeRate = exchangeRateRow?.rate ?? null;
   const pricingTiers = buildPlanPricingTiers(planSettings);
-  const trialSetupStatus =
-    store && storeSettings
-      ? getOnboardingSetupStatus(
-          productLimitContext?.currentCount ?? 0,
-          storeSettings,
-          store.slug,
-        )
-      : {
-          hasProducts: false,
-          hasMinProductsForProTrial: false,
-          hasPaymentsConfigured: false,
-          hasShippingConfigured: false,
-        };
 
   return (
     <PageContainer as="div" className="mx-auto max-w-6xl py-6 sm:py-8">
@@ -141,7 +124,6 @@ export default async function PlanesPage() {
             trialEligible={trial.eligible}
             trialActive={trial.benefitsActive}
             trialEndsAt={trial.endsAt}
-            setupStatus={trialSetupStatus}
             proProductLimit={
               productLimitContext?.productLimit ?? planSettings.PRO.productLimit
             }

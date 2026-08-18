@@ -41,12 +41,10 @@ import { InventoryPagination } from "@/components/dashboard/InventoryPagination"
 import type { StoreProductFormConfig } from "@/lib/products/store-field-config";
 import { fetchStoreProductFormConfig } from "@/lib/products/fetch-store-product-form-config";
 import type { StoreProductLimitContext } from "@/lib/plans/product-limit";
-import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 import { shouldShowProductLimitBanner } from "@/src/config/plans";
 import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
 import { TrialLimitDialog } from "@/components/dashboard/plans/TrialLimitDialog";
 import { ProTrialClaimModal } from "@/components/dashboard/plans/ProTrialClaimModal";
-import { isProTrialUnlockReady } from "@/lib/plans/trial-unlock";
 import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
 import type { PublishedProductResult } from "@/components/dashboard/QuickProductForm";
 import {
@@ -157,7 +155,6 @@ interface InventoryPanelProps {
   initialPage?: number;
   initialPageSize?: InventoryPageSize;
   productLimitContext?: StoreProductLimitContext | null;
-  setupStatus?: ProTrialSetupPick;
   /** Fuerza fetch al montar (cuando el server no hidrató inventario). */
   loadOnMount?: boolean;
   /** CTA cuando la tienda aún no tiene productos. */
@@ -602,7 +599,6 @@ export function InventoryPanel({
   initialPage = 1,
   initialPageSize = INVENTORY_PAGE_SIZE,
   productLimitContext = null,
-  setupStatus,
   loadOnMount = false,
   emptyBrowseHref = null,
   emptyBrowseLabel = "Ver productos disponibles",
@@ -1148,7 +1144,6 @@ export function InventoryPanel({
         <ProductLimitBanner
           productLimit={productLimitContext}
           trial={productLimitContext.trial}
-          setupStatus={setupStatus}
         />
       ) : null}
 
@@ -1432,16 +1427,7 @@ export function InventoryPanel({
         onOptimisticCreateSettled={handleOptimisticCreateSettled}
         onLimitHit={() => {
           setSheetOpen(false);
-          const eligible = productLimitContext?.trial.eligible ?? false;
-          if (
-            eligible &&
-            setupStatus &&
-            isProTrialUnlockReady(setupStatus)
-          ) {
-            setClaimModalOpen(true);
-          } else {
-            setTrialDialogOpen(true);
-          }
+          setTrialDialogOpen(true);
         }}
       />
 
@@ -1449,7 +1435,6 @@ export function InventoryPanel({
         open={trialDialogOpen}
         onOpenChange={setTrialDialogOpen}
         trialEligible={productLimitContext?.trial.eligible ?? false}
-        setupStatus={setupStatus}
         proProductLimit={productLimitContext?.productLimit ?? null}
         onOpenClaimModal={() => setClaimModalOpen(true)}
       />

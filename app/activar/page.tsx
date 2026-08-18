@@ -10,8 +10,6 @@ import {
   resolveProTrialStatus,
   shouldShowProTrialOnActivar,
 } from "@/lib/plans/trial";
-import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
-import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import {
   getLatestPermanentRejection,
   getUserPaymentReview,
@@ -86,7 +84,7 @@ export default async function ActivarPage() {
     );
   }
 
-  const [productLimitStatus, exchangeRateRow, permanentRejection, paymentMethods, planSettings, platformSettings, storeSettings] =
+  const [productLimitStatus, exchangeRateRow, permanentRejection, paymentMethods, planSettings, platformSettings] =
     await Promise.all([
       store ? getStoreProductLimitContext(store.id) : Promise.resolve(null),
       getCurrentExchangeRate(),
@@ -94,7 +92,6 @@ export default async function ActivarPage() {
       fetchActiveSubscriptionPaymentMethods(),
       fetchPlanSettings(),
       fetchPlatformSettings(),
-      store ? getStoreSettingsConfig(store.id) : Promise.resolve(null),
     ]);
   const pricingTiers = buildPlanPricingTiers(planSettings);
   const freeProductLimit = planSettings.FREE.productLimit ?? 10;
@@ -103,16 +100,7 @@ export default async function ActivarPage() {
   const trial = resolveProTrialStatus(authUser.profile);
   const trialEligible = isEligiblePlanForProTrial(authUser.profile);
   const showProTrialSection = shouldShowProTrialOnActivar(authUser.profile);
-  const currentCount = productLimitStatus?.currentCount ?? 0;
   const atProductLimit = productLimitStatus?.hasReachedLimit ?? false;
-  const trialSetupStatus = store && storeSettings
-    ? getOnboardingSetupStatus(currentCount, storeSettings, store.slug)
-    : {
-        hasProducts: false,
-        hasMinProductsForProTrial: false,
-        hasPaymentsConfigured: false,
-        hasShippingConfigured: false,
-      };
 
   const proLimitLabel =
     proProductLimit == null ? "productos ilimitados" : `${proProductLimit} productos`;
@@ -142,8 +130,8 @@ export default async function ActivarPage() {
           <p className="page-header-desc">
             {showProTrialSection && !trial.benefitsActive
               ? atProductLimit
-                ? `Has alcanzado el límite de ${freeProductLimit} productos. Configura pagos y envíos, y escribe ALCENTIMO para reclamar 30 días gratis del Plan Profesional (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
-                : `Publica al menos ${freeProductLimit} productos activos, configura pagos y envíos, y escribe ALCENTIMO para reclamar 30 días gratis del Plan Profesional (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
+                ? `Has alcanzado el límite de ${freeProductLimit} productos. Escribe ALCENTIMO para reclamar 30 días gratis del Plan Profesional (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
+                : `Escribe ALCENTIMO para reclamar 30 días gratis del Plan Profesional (${proLimitLabel}) o elige un plan de pago${store ? ` para ${store.name}` : ""}.`
               : `Elige el plan que mejor se adapte a tu negocio${store ? ` · ${store.name}` : ""}.`}
           </p>
         </header>
@@ -155,7 +143,6 @@ export default async function ActivarPage() {
               trialEligible={trialEligible}
               trialActive={trial.benefitsActive}
               trialEndsAt={trial.endsAt}
-              setupStatus={trialSetupStatus}
               proProductLimit={
                 productLimitStatus?.productLimit ?? proProductLimit
               }

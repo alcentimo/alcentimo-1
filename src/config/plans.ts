@@ -315,7 +315,7 @@ export function getProductLimitErrorMessage(
         : getPlanById("starter").productLimit;
     const trialLabel =
       trialLimit == null ? "productos ilimitados" : `${trialLimit} productos`;
-    return `Completa tu catálogo y configura métodos de pago para activar 30 días gratis del Plan Emprendedor (${trialLabel})`;
+    return `Has alcanzado el límite de productos del plan Gratis. Reclama 30 días gratis del Plan Profesional (${trialLabel}) o elige un plan de pago.`;
   }
 
   if (isUnlimitedProductLimit(check.productLimit)) {

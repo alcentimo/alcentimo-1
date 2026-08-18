@@ -11,52 +11,15 @@ import {
   shouldPromoteProTrialAtLimit,
   type ProTrialStatus,
 } from "@/lib/plans/trial";
-import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
-import { isProTrialUnlockReady } from "@/lib/plans/trial-unlock";
 
 interface ProductLimitBannerProps {
   productLimit: ProductLimitCheck;
   trial?: ProTrialStatus;
-  setupStatus?: ProTrialSetupPick;
-}
-
-function resolveTrialCta(setupStatus?: ProTrialSetupPick): {
-  href: string;
-  label: string;
-} {
-  if (!setupStatus) {
-    return { href: "/dashboard/ajustes", label: "Completar requisitos" };
-  }
-
-  if (isProTrialUnlockReady(setupStatus)) {
-    return { href: "/dashboard/catalogo", label: "Reclamar mes gratis" };
-  }
-
-  if (!setupStatus.hasMinProductsForProTrial) {
-    return { href: "/dashboard/catalogo?vista=disponibles", label: "Seguir sumando" };
-  }
-
-  if (!setupStatus.hasPaymentsConfigured) {
-    return {
-      href: "/dashboard/ajustes?tab=payments",
-      label: "Configurar pagos",
-    };
-  }
-
-  if (!setupStatus.hasShippingConfigured) {
-    return {
-      href: "/dashboard/ajustes?tab=shipping",
-      label: "Configurar envíos",
-    };
-  }
-
-  return { href: "/dashboard/ajustes", label: "Completar requisitos" };
 }
 
 export function ProductLimitBanner({
   productLimit,
   trial,
-  setupStatus,
 }: ProductLimitBannerProps) {
   const atLimit = productLimit.hasReachedLimit;
   const nearLimit = isNearProductLimit(productLimit);
@@ -73,9 +36,8 @@ export function ProductLimitBanner({
       ? getProductLimitErrorMessage(productLimit, trial)
       : "Estás cerca de tu límite de productos.";
 
-  const trialCta = promoteProTrial ? resolveTrialCta(setupStatus) : null;
-  const ctaHref = trialCta?.href ?? "/dashboard/planes";
-  const ctaLabel = trialCta?.label ?? "Ver planes";
+  const ctaHref = promoteProTrial ? "/activar" : "/dashboard/planes";
+  const ctaLabel = "Ver planes";
   const Icon = promoteProTrial ? Sparkles : PackagePlus;
 
   return (
