@@ -64,7 +64,7 @@ export function isSafeAuthReturnUrl(
 export function sanitizeAuthReturnUrl(
   next: string | null | undefined,
   storeSlug?: string | null,
-  fallback = "/onboarding",
+  fallback = "/dashboard",
 ): string {
   if (isSafeAuthReturnUrl(next, storeSlug)) {
     return next!.trim();
@@ -74,6 +74,6 @@ export function sanitizeAuthReturnUrl(
     return getStoreCatalogOrigin(storeSlug.trim());
   }
 
-  const safeFallback = isSafeRelativePath(fallback) ? fallback : "/onboarding";
+  const safeFallback = isSafeRelativePath(fallback) ? fallback : "/dashboard";
   return `${getSiteUrl()}${safeFallback}`;
 }

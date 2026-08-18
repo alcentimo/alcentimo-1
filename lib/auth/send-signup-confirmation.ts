@@ -11,7 +11,7 @@ function buildRedirectUrl(nextPath: string): string {
   const safeNext =
     nextPath.startsWith("/") && !nextPath.startsWith("//")
       ? nextPath
-      : "/onboarding";
+      : "/dashboard";
   return `${siteUrl}${safeNext}`;
 }
 
@@ -25,7 +25,7 @@ export async function sendSignupConfirmationEmailForPath(input: {
   postAuthPath: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const email = input.email.trim().toLowerCase();
-  const postAuthPath = input.postAuthPath.trim() || "/onboarding";
+  const postAuthPath = input.postAuthPath.trim() || "/dashboard";
   const redirectTo = buildRedirectUrl(postAuthPath);
   const admin = createAdminClient();
 

@@ -71,7 +71,7 @@ export function getApexSiteUrl(): string {
 
 /** Callback OAuth/email: p. ej. https://alcentimo.com/auth/callback?next=...&store=mi-tienda */
 export function getAuthCallbackUrl(
-  next = "/onboarding",
+  next = "/dashboard",
   extraParams?: Record<string, string | undefined>,
 ): string {
   const siteUrl = getSiteUrl();
@@ -80,7 +80,7 @@ export function getAuthCallbackUrl(
     next.startsWith("https://") ||
     (next.startsWith("/") && !next.startsWith("//"))
       ? next
-      : "/onboarding";
+      : "/dashboard";
   const params = new URLSearchParams({ next: safeNext });
 
   if (extraParams) {

@@ -1,6 +1,8 @@
 import type { Store } from "@/lib/database.types";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { getUserStore } from "@/lib/stores";
+import { ensureDefaultMerchantStore } from "@/lib/stores/ensure-default-merchant-store";
+import { getOptionalAuthUser } from "@/lib/auth/optional-auth";
 import {
   getAuthUserWithPlan,
   type UserWithPlan,
@@ -34,7 +36,13 @@ export async function requireAuthStore(
     return { ok: false, error: "Debes iniciar sesión." };
   }
 
-  const store = await getUserStore(client, authUser.id);
+  let store = await getUserStore(client, authUser.id);
+  if (!store) {
+    const user = await getOptionalAuthUser(client);
+    if (user) {
+      store = await ensureDefaultMerchantStore(client, user);
+    }
+  }
   if (!store) {
     return { ok: false, error: "No tienes una tienda asociada." };
   }

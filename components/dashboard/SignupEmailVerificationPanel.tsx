@@ -78,6 +78,7 @@ function VerificationPanelBody({
     const result = await verifySignupOtpAction({
       email,
       token: code,
+      nextPath,
     });
 
     setLoading(false);

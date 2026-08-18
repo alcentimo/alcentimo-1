@@ -1,5 +1,7 @@
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
+import { ensureDefaultMerchantStore } from "@/lib/stores/ensure-default-merchant-store";
 import {
+  isInvitationNextPath,
   resolvePostAuthPath,
   SUPPLIER_POST_AUTH_PATH,
 } from "@/lib/auth/post-auth-redirect";
@@ -19,7 +21,7 @@ function resolveAuthRedirectTarget(
   storeSlug?: string | null,
 ): string {
   if (next.startsWith("http://") || next.startsWith("https://")) {
-    return sanitizeAuthReturnUrl(next, storeSlug, "/onboarding");
+    return sanitizeAuthReturnUrl(next, storeSlug, "/dashboard");
   }
 
   const normalizedStoreSlug = storeSlug?.trim().toLowerCase();
@@ -28,7 +30,7 @@ function resolveAuthRedirectTarget(
   }
 
   const safeNext =
-    next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding";
+    next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
   return `${siteUrl}${safeNext}`;
 }
 
@@ -59,6 +61,18 @@ export async function finalizeAuthSessionRedirect(
   const normalizedStoreSlug = input.storeSlug?.trim().toLowerCase() || null;
   const nextPath = input.nextPath?.trim() || null;
   const wantsSupplierHub = Boolean(nextPath?.startsWith("/proveedor"));
+
+  if (
+    !normalizedStoreSlug &&
+    !wantsSupplierHub &&
+    !isInvitationNextPath(nextPath)
+  ) {
+    try {
+      await ensureDefaultMerchantStore(supabase, user);
+    } catch {
+      // El panel reintenta crear la tienda si aún no existe.
+    }
+  }
 
   // Solo forzar hub mayorista cuando el flujo lo pide explícitamente.
   if (wantsSupplierHub && !normalizedStoreSlug) {

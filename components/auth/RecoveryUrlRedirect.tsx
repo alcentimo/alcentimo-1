@@ -31,7 +31,7 @@ export function RecoveryUrlRedirect() {
           "next",
           type === "recovery"
             ? "/dashboard/restablecer-contrasena"
-            : "/onboarding",
+            : "/dashboard",
         );
       }
       window.location.replace(`/auth/confirm?${params.toString()}`);

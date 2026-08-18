@@ -1,7 +1,7 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 
 export const AUTH_CONFIRM_RESET_NEXT = "/dashboard/restablecer-contrasena";
-export const AUTH_CONFIRM_SIGNUP_NEXT = "/onboarding";
+export const AUTH_CONFIRM_SIGNUP_NEXT = "/dashboard";
 
 export function resolveAuthConfirmNext(
   type: EmailOtpType | null | undefined,
@@ -14,6 +14,9 @@ export function resolveAuthConfirmNext(
   if (nextParam?.trim()) {
     const trimmed = nextParam.trim();
     if (trimmed.startsWith("/") && !trimmed.startsWith("//")) {
+      if (trimmed === "/onboarding" || trimmed === "/onboarding/") {
+        return AUTH_CONFIRM_SIGNUP_NEXT;
+      }
       return trimmed;
     }
   }
