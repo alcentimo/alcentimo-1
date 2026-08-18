@@ -422,6 +422,8 @@ export async function submitTransactionalOrder(
     return { error: insertError.message };
   }
 
+  // Congela el stock del Hub en el momento exacto en que la orden se crea
+  // con éxito, para evitar sobreventa entre dropshippers.
   const dropshipStock = await consumeDropshipStockForOrderLines(
     admin,
     store.id,

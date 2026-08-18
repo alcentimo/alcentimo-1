@@ -11,9 +11,9 @@ export type SupplierOrderStatus = (typeof SUPPLIER_ORDER_STATUSES)[number];
 
 export const SUPPLIER_ORDER_STATUS_LABELS: Record<SupplierOrderStatus, string> =
   {
-    pendiente: "Pendiente",
-    preparando: "Preparando",
-    despachado: "Despachado",
+    pendiente: "Apartar stock",
+    preparando: "Listo para recolección",
+    despachado: "Recolectado por Alcéntimo",
   };
 
 export function isSupplierOrderStatus(
@@ -27,6 +27,7 @@ export function isSupplierOrderStatus(
 }
 
 export const SUPPLIER_SHIPPING_CARRIER_OPTIONS = [
+  { value: "acopio_alcentimo", label: "Recolección Alcéntimo" },
   ...NATIONAL_CARRIER_METHODS.map((method) => ({
     value: method.key,
     label: method.label,

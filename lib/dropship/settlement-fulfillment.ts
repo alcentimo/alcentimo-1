@@ -6,6 +6,11 @@ import {
   notifySuppliersOfDispatchOrders,
   type SupplierDispatchNotifyPayload,
 } from "@/lib/dropship/notify-supplier-dispatch";
+import {
+  HUB_COLLECTION_BUYER_NAME,
+  HUB_COLLECTION_CARRIER,
+  HUB_COLLECTION_NOTES,
+} from "@/lib/dropship/hub-collection";
 
 type SettlementLineRow = {
   catalog_order_id: string | null;
@@ -25,8 +30,8 @@ function optionalText(value: unknown, max: number): string | null {
 }
 
 /**
- * Crea obligaciones de pago a mayoristas, registra saldos y habilita pedidos B2B
- * para despacho D+1 con remitente = tienda del dropshipper.
+ * Crea obligaciones de pago a mayoristas, registra saldos y avisa al proveedor
+ * para apartar stock (recolección Alcéntimo). Sin datos del cliente final.
  */
 export async function fulfillApprovedDailySettlement(input: {
   settlementId: string;
@@ -72,31 +77,8 @@ export async function fulfillApprovedDailySettlement(input: {
     platform_markup_usd: Number(row.platform_markup_usd) || 0,
   }));
 
-  const orderIds = [
-    ...new Set(
-      lines
-        .map((line) => line.catalog_order_id)
-        .filter((id): id is string => Boolean(id)),
-    ),
-  ];
-
-  const catalogById = new Map<string, Record<string, unknown>>();
-  if (orderIds.length > 0) {
-    const { data: catalogRows, error: catalogError } = await client
-      .from("orders")
-      .select(
-        "id, customer_name, customer_phone, delivery_address, shipping_method, shipping_branch_name, shipping_branch_address",
-      )
-      .in("id", orderIds);
-    if (catalogError) return { error: catalogError.message };
-    for (const row of (catalogRows as Record<string, unknown>[] | null) ?? []) {
-      catalogById.set(String(row.id), row);
-    }
-  }
-
-  type GroupKey = string;
   const groups = new Map<
-    GroupKey,
+    string,
     {
       catalogOrderId: string;
       supplierUserId: string;
@@ -121,21 +103,15 @@ export async function fulfillApprovedDailySettlement(input: {
   const notifyPayloads: SupplierDispatchNotifyPayload[] = [];
 
   for (const group of groups.values()) {
-    const catalog = catalogById.get(group.catalogOrderId);
     const totalUsd = roundMoneyDisplay(
       group.lines.reduce((sum, line) => sum + line.supplier_payout_usd, 0),
     );
-    const customerName = optionalText(catalog?.customer_name, 160) ?? "Cliente";
-    const customerPhone = optionalText(catalog?.customer_phone, 40);
-    const customerAddress =
-      optionalText(catalog?.delivery_address, 500) ??
-      optionalText(catalog?.shipping_branch_address, 500);
-    const shippingCarrier = optionalText(catalog?.shipping_method, 60);
-    const shippingBranchName = optionalText(catalog?.shipping_branch_name, 160);
-    const shippingBranchAddress = optionalText(
-      catalog?.shipping_branch_address,
-      320,
-    );
+    const customerName = HUB_COLLECTION_BUYER_NAME;
+    const customerPhone = null;
+    const customerAddress = null;
+    const shippingCarrier = HUB_COLLECTION_CARRIER;
+    const shippingBranchName = null;
+    const shippingBranchAddress = null;
 
     const { data: existing } = await client
       .from("supplier_orders")
@@ -156,7 +132,7 @@ export async function fulfillApprovedDailySettlement(input: {
       shipping_carrier: shippingCarrier,
       shipping_branch_name: shippingBranchName,
       shipping_branch_address: shippingBranchAddress,
-      notes: `Habilitado por liquidación diaria ${input.businessDate}. Despacho D+1 (${shipOn}). Remitente: ${senderName}.`,
+      notes: `${HUB_COLLECTION_NOTES} Liquidación ${input.businessDate}. Recolección a partir del ${shipOn}.`,
       updated_at: now,
     };
 

@@ -11,13 +11,15 @@ const STATUS_UPDATE_DETAILS: Record<OrderEstado, string> = {
   por_pagar:
     "Tu pedido quedó registrado. Envíanos el comprobante de pago para verificarlo.",
   pendiente:
-    "Recibimos tu comprobante y lo tenemos en cola para verificar el pago.",
+    "Recibimos tu comprobante y lo estamos verificando.",
   procesando:
-    "Confirmamos tu pago y ya estamos armando tu pedido.",
+    "Confirmamos tu pago. Tu pedido ya está en el centro de acopio.",
+  preparacion_logistica:
+    "Tu pedido está listo en el centro de acopio y se prepara el envío.",
   enviado:
     "¡Tu pedido ya va en camino! Pronto deberías recibirlo.",
   entregado:
-    "Tu pedido fue entregado. ¡Gracias por confiar en nosotros!",
+    "¡Tu pedido ya va en camino! Pronto deberías recibirlo.",
   cancelado:
     "Tu pedido fue cancelado. Si tienes dudas, escríbenos por este chat.",
 };

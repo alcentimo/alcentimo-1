@@ -13,12 +13,6 @@ export function buildSupplierPaymentWhatsAppMessage(options: {
   order: Pick<
     SupplierOrder,
     | "id"
-    | "buyerName"
-    | "buyerPhone"
-    | "buyerAddress"
-    | "shippingCarrier"
-    | "shippingBranchName"
-    | "shippingBranchAddress"
     | "totalUsd"
     | "items"
     | "paymentMethod"
@@ -26,9 +20,6 @@ export function buildSupplierPaymentWhatsAppMessage(options: {
     | "paymentStatus"
   >;
   paymentMethodLabel?: string | null;
-  finalCustomerName?: string | null;
-  finalCustomerPhone?: string | null;
-  finalCustomerAddress?: string | null;
 }): string {
   const code = options.order.id.slice(0, 8).toUpperCase();
   const methodLabel =
@@ -37,7 +28,7 @@ export function buildSupplierPaymentWhatsAppMessage(options: {
       ? getPaymentMethod(options.order.paymentMethod as never)?.label
       : null) ||
     options.order.paymentMethod ||
-    "Pago directo";
+    "Pago mayorista";
 
   const productLines = options.order.items.map(
     (item) =>
@@ -45,41 +36,23 @@ export function buildSupplierPaymentWhatsAppMessage(options: {
   );
 
   const lines = [
-    `Hola, te notifico el pago de un pedido dropshipping desde ${options.merchantStoreName}.`,
+    `Hola, el dropshipper ${options.merchantStoreName} liquidó el costo mayorista hacia Alcéntimo.`,
     "",
-    `📦 Pedido proveedor #${code}`,
-    `Estado de pago: ${SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[options.order.paymentStatus]}`,
+    `📦 Apartar stock #${code}`,
+    `Estado de liquidación: ${SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[options.order.paymentStatus]}`,
     `Método: ${methodLabel}`,
     options.order.paymentReference?.trim()
       ? `Referencia: ${options.order.paymentReference.trim()}`
-      : "Referencia: (pendiente de indicar)",
-    `Total costo: ${formatUsd(options.order.totalUsd)}`,
+      : null,
+    `Costo mayorista: ${formatUsd(options.order.totalUsd)}`,
     "",
-    "🛒 Productos:",
+    "🛒 Productos a apartar:",
     ...productLines,
     "",
-    "🚚 Datos de envío del cliente final:",
-    `Nombre: ${options.finalCustomerName?.trim() || options.order.buyerName}`,
-    `Teléfono: ${options.finalCustomerPhone?.trim() || options.order.buyerPhone || "—"}`,
-    `Dirección: ${options.finalCustomerAddress?.trim() || options.order.buyerAddress || "—"}`,
+    "Espera la recolección y el pago de Alcéntimo. No incluye datos del cliente final.",
   ];
 
-  if (options.order.shippingCarrier || options.order.shippingBranchName) {
-    lines.push(
-      `Agencia: ${options.order.shippingCarrier ?? "—"}`,
-      `Sucursal: ${options.order.shippingBranchName ?? "—"}`,
-    );
-    if (options.order.shippingBranchAddress) {
-      lines.push(`Dir. agencia: ${options.order.shippingBranchAddress}`);
-    }
-  }
-
-  lines.push(
-    "",
-    "Este pago es directo emprendedor → proveedor. Alcéntimo no intermedia fondos.",
-  );
-
-  return lines.join("\n");
+  return lines.filter((line): line is string => line != null).join("\n");
 }
 
 export function buildSupplierPaymentWhatsAppUrl(options: {

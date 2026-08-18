@@ -1,5 +1,3 @@
-import { formatBusinessDateEs } from "@/lib/dropship/settlement-date";
-
 export type DispatchOrderLine = {
   productTitle: string;
   quantity: number;
@@ -19,10 +17,10 @@ export type DispatchOrderDetails = {
   dashboardUrl?: string | null;
 };
 
-function formatCarrier(value: string | null): string {
-  return value?.trim() || "—";
-}
-
+/**
+ * Aviso al proveedor del centro de acopio: solo productos a apartar.
+ * Sin datos de pago ni PII del cliente final.
+ */
 export function buildDispatchOrderText(details: DispatchOrderDetails): string {
   const productLines =
     details.items.length > 0
@@ -32,41 +30,15 @@ export function buildDispatchOrderText(details: DispatchOrderDetails): string {
       : ["• (sin líneas)"];
 
   const lines = [
-    `Nueva orden de despacho D+1 #${details.orderCode}`,
-    `Prepara el envío para el ${formatBusinessDateEs(details.shipOn)}.`,
+    `Alcéntimo · Apartar stock #${details.orderCode}`,
+    "El dropshipper ya aprobó el pago de su cliente. Aparta estos productos y espera la recolección de Alcéntimo.",
     "",
-    "📦 Productos:",
+    "📦 Productos a apartar:",
     ...productLines,
     "",
-    "👤 Cliente final:",
-    `Nombre: ${details.customerName}`,
-    `Teléfono: ${details.customerPhone?.trim() || "—"}`,
-    `Dirección: ${details.customerAddress?.trim() || "—"}`,
+    "No hace falta despachar al cliente final ni revisar su comprobante de pago.",
+    "Alcéntimo recogerá el paquete en el centro de acopio y lo enviará.",
   ];
-
-  if (
-    details.shippingCarrier ||
-    details.shippingBranchName ||
-    details.shippingBranchAddress
-  ) {
-    lines.push(
-      "",
-      "🚚 Agencia:",
-      `Método: ${formatCarrier(details.shippingCarrier)}`,
-      `Sucursal: ${formatCarrier(details.shippingBranchName)}`,
-    );
-    if (details.shippingBranchAddress?.trim()) {
-      lines.push(`Dir. agencia: ${details.shippingBranchAddress.trim()}`);
-    }
-  }
-
-  lines.push(
-    "",
-    "🏷️ Etiqueta de despacho (remitente visible):",
-    `Remitente: ${details.senderName}`,
-    "Destinatario: el cliente final de arriba.",
-    "No uses el nombre de tu empresa ni datos del mayorista en el paquete.",
-  );
 
   if (details.dashboardUrl?.trim()) {
     lines.push("", `Ver en el panel: ${details.dashboardUrl.trim()}`);

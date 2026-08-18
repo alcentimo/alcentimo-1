@@ -30,14 +30,14 @@ export function OrdersKpiRow({
       />
 
       <DashboardKpiCard
-        label="Pendientes de despacho"
+        label="Por verificar pago"
         value={String(kpis.pendingDispatch)}
         icon={Package}
         interactive
-        isActive={activeFilter === "dispatch"}
-        onClick={() => onFilterChange("dispatch")}
-        tone={kpis.pendingDispatch > 0 && activeFilter !== "dispatch" ? "warning" : "default"}
-        emptyHint="Todo al día — nada pendiente"
+        isActive={activeFilter === "verify"}
+        onClick={() => onFilterChange("verify")}
+        tone={kpis.pendingDispatch > 0 && activeFilter !== "verify" ? "warning" : "default"}
+        emptyHint="Sin comprobantes pendientes"
       />
 
       <DashboardKpiCard

@@ -774,6 +774,7 @@ export type OrderEstadoDb =
   | "por_pagar"
   | "pendiente"
   | "procesando"
+  | "preparacion_logistica"
   | "enviado"
   | "entregado"
   | "cancelado";

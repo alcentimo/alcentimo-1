@@ -31,15 +31,15 @@ function truncateMessage(value: string): string {
 function estadoHint(estado: OrderEstado): string {
   switch (estado) {
     case "por_pagar":
-      return "falta comprobante de pago";
     case "pendiente":
-      return "confirmar recepción / verificar pago";
+      return "verificar pago del cliente";
     case "procesando":
-      return "pago confirmado, armando pedido";
+      return "pago aprobado, en centro de acopio";
+    case "preparacion_logistica":
+      return "producto apartado, Alcéntimo prepara el envío";
     case "entregado":
-      return "entregado, agradecer";
     case "enviado":
-      return "en camino";
+      return "en camino, incluir guía si hay";
     case "cancelado":
       return "cancelado";
     default:

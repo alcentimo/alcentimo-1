@@ -11,6 +11,7 @@ import {
 } from "@/lib/orders/order-status";
 import type { OrderLineItem } from "@/lib/orders/types";
 import { restoreDropshipStockForOrderLines } from "@/lib/dropship/supplier-stock";
+import { ensureHubHoldOrdersForCatalogOrder } from "@/lib/dropship/ensure-hub-hold-orders";
 
 export interface UpdateOrderEstadoOptions {
   /** Número de guía de encomienda (opcional al marcar Enviado). */
@@ -64,17 +65,16 @@ export async function updateOrderEstado(
 
   let previousEstado: string | null = null;
   let orderItems: OrderLineItem[] = [];
+  let storeName = auth.store.name;
 
-  if (estado === "cancelado") {
-    const { data: existingOrder } = await supabase
-      .from("orders")
-      .select("estado, items")
-      .eq("id", trimmedId)
-      .eq("store_id", auth.store.id)
-      .maybeSingle();
-    previousEstado = (existingOrder?.estado as string | undefined) ?? null;
-    orderItems = parseOrderItems(existingOrder?.items);
-  }
+  const { data: existingOrder } = await supabase
+    .from("orders")
+    .select("estado, items")
+    .eq("id", trimmedId)
+    .eq("store_id", auth.store.id)
+    .maybeSingle();
+  previousEstado = (existingOrder?.estado as string | undefined) ?? null;
+  orderItems = parseOrderItems(existingOrder?.items);
 
   const result = await updateOrderEstadoWithInventory(
     supabase,
@@ -93,6 +93,23 @@ export async function updateOrderEstado(
   ) {
     const admin = createAdminClient();
     await restoreDropshipStockForOrderLines(admin, orderItems);
+  }
+
+  if (
+    estado === "procesando" &&
+    previousEstado !== "procesando" &&
+    orderItems.some((item) => item.supplier_product_id)
+  ) {
+    const hubHold = await ensureHubHoldOrdersForCatalogOrder({
+      catalogOrderId: trimmedId,
+      storeId: auth.store.id,
+      merchantUserId: auth.authUser.id,
+      storeName,
+      items: orderItems,
+    });
+    if (hubHold.error) {
+      console.error("[updateOrderEstado] hub hold", hubHold.error);
+    }
   }
 
   let trackingNumber: string | null | undefined = undefined;

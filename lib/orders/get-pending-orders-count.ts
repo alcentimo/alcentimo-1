@@ -2,8 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { PRIORITY_ORDER_ESTADOS } from "@/lib/orders/order-status";
 
 /**
- * Cuenta pedidos que requieren atención del comercio
- * (por_pagar | pendiente | procesando).
+ * Cuenta pedidos que requieren atención del dropshipper
+ * (por verificar pago: por_pagar | pendiente).
  */
 export async function getPendingOrdersCount(storeId: string): Promise<number> {
   if (!storeId.trim()) return 0;

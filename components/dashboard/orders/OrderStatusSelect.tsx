@@ -24,10 +24,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import {
+  DROPSHIPPER_STATUS_OPTIONS,
   ORDER_ESTADO_HINTS,
   ORDER_ESTADO_LABELS,
-  ORDER_ESTADOS,
-  isValidOrderEstado,
+  isDropshipperStatusOption,
+  resolveDropshipperDisplayEstado,
   type OrderEstado,
 } from "@/lib/orders/order-status";
 
@@ -202,13 +203,15 @@ export function OrderStatusSelect({
     };
   }, [menuOpen, compact]);
 
+  const displayEstado = resolveDropshipperDisplayEstado(currentEstado);
+
   function closeMenus() {
     setOpen(false);
     setAwaitingGuide(false);
   }
 
   function applyEstado(nextEstado: OrderEstado, nextTracking?: string | null) {
-    if (nextEstado === currentEstado && nextTracking === undefined) {
+    if (nextEstado === displayEstado && nextTracking === undefined) {
       closeMenus();
       return;
     }
@@ -261,8 +264,8 @@ export function OrderStatusSelect({
 
   const statusOptions = (
     <div role="listbox" aria-label="Estados del pedido" className="min-w-0">
-      {ORDER_ESTADOS.map((option) => {
-        const isSelected = option === currentEstado;
+      {DROPSHIPPER_STATUS_OPTIONS.map((option) => {
+        const isSelected = option === displayEstado;
 
         return (
           <button
@@ -272,7 +275,7 @@ export function OrderStatusSelect({
             aria-selected={isSelected}
             onClick={(event) => {
               event.stopPropagation();
-              if (isValidOrderEstado(option)) handleSelect(option);
+              if (isDropshipperStatusOption(option)) handleSelect(option);
             }}
             className={cn(
               "orders-status-menu-item flex w-full items-start gap-2 px-2.5 py-2.5 text-left transition-colors",
@@ -394,7 +397,7 @@ export function OrderStatusSelect({
         disabled={pending}
         aria-haspopup={compact ? "dialog" : "listbox"}
         aria-expanded={menuOpen}
-        aria-label={`Estado del pedido: ${ORDER_ESTADO_LABELS[currentEstado]}. Cambiar estado`}
+        aria-label={`Estado del pedido: ${ORDER_ESTADO_LABELS[displayEstado]}. Cambiar estado`}
         onClick={(event) => {
           event.stopPropagation();
           if (pending) return;
@@ -410,7 +413,7 @@ export function OrderStatusSelect({
           pending && "cursor-wait opacity-70",
         )}
       >
-        <OrderEstadoPill estado={currentEstado} showChevron />
+        <OrderEstadoPill estado={displayEstado} showChevron />
         {pending ? (
           <Loader2
             className="ml-1 h-3 w-3 shrink-0 animate-spin text-zinc-500"
@@ -419,7 +422,7 @@ export function OrderStatusSelect({
         ) : null}
       </button>
 
-      {currentEstado === "enviado" && currentTracking.trim() ? (
+      {displayEstado === "enviado" && currentTracking.trim() ? (
         <span className="max-w-[14rem] truncate text-[10px] leading-tight text-zinc-500 dark:text-zinc-400">
           Guía: {currentTracking.trim()}
         </span>

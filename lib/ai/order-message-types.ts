@@ -49,6 +49,7 @@ export function suggestOrderMessageIntent(
     case "entregado":
       return "shipping_notice";
     case "procesando":
+    case "preparacion_logistica":
     case "cancelado":
     default:
       return "order_confirmation";

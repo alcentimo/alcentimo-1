@@ -50,6 +50,7 @@ export function isSupplierPayoutStatus(
 /** Pedidos del catálogo cuyo cobro al cliente ya está confirmado. */
 export const SETTLEMENT_ELIGIBLE_ORDER_ESTADOS = [
   "procesando",
+  "preparacion_logistica",
   "enviado",
   "entregado",
 ] as const;
@@ -61,7 +62,10 @@ export function isSettlementEligibleOrderEstado(
   value: unknown,
 ): value is SettlementEligibleOrderEstado {
   return (
-    value === "procesando" || value === "enviado" || value === "entregado"
+    value === "procesando" ||
+    value === "preparacion_logistica" ||
+    value === "enviado" ||
+    value === "entregado"
   );
 }
 
@@ -150,4 +154,4 @@ export interface SupplierPayoutObligationView {
 }
 
 export const DROPSHIP_CENTRAL_PAYMENT_NOTICE =
-  "Las ventas de productos mayoristas se liquidan en un solo pago diario a Alcéntimo. Al aprobarlo, cada mayorista recibe sus órdenes para despacho al día siguiente (D+1).";
+  "El dropshipper liquida a Alcéntimo el costo mayorista. El proveedor solo aparta el stock y espera la recolección de Alcéntimo; no ve el pago del cliente final.";

@@ -20,6 +20,7 @@ import {
 } from "@/lib/inventory/stock-status";
 import type { CatalogOrder } from "@/lib/orders/types";
 import { getStoreOrders } from "@/lib/orders/get-store-orders";
+import { isPriorityOrderEstado } from "@/lib/orders/order-status";
 import { getStoreSales } from "@/lib/sales/get-store-sales";
 import { createClient } from "@/lib/supabase/server";
 
@@ -132,12 +133,7 @@ function computeSlowMovingAndExcess(
 }
 
 function buildPendingAccounts(orders: CatalogOrder[]): OwnerAssistantPendingAccount[] {
-  const pending = orders.filter(
-    (order) =>
-      order.estado === "por_pagar" ||
-      order.estado === "pendiente" ||
-      order.estado === "procesando",
-  );
+  const pending = orders.filter((order) => isPriorityOrderEstado(order.estado));
 
   const byCustomer = new Map<string, OwnerAssistantPendingAccount>();
 
@@ -231,11 +227,8 @@ export async function getOwnerAssistantContext(input: {
     unitsSoldMap,
   );
 
-  const pendingOrders = ordersResult.orders.filter(
-    (order) =>
-      order.estado === "por_pagar" ||
-      order.estado === "pendiente" ||
-      order.estado === "procesando",
+  const pendingOrders = ordersResult.orders.filter((order) =>
+    isPriorityOrderEstado(order.estado),
   );
 
   const ordersAwaitingPayment = pendingOrders

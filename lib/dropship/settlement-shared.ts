@@ -2,8 +2,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { roundMoneyDisplay } from "@/lib/format";
 import { computeAmountDueUsd } from "@/lib/dropship/settlement-math";
 import {
-  isDropshipSettlementStatus,
   isSettlementEligibleOrderEstado,
+  SETTLEMENT_ELIGIBLE_ORDER_ESTADOS,
+  isDropshipSettlementStatus,
   isSupplierPayoutStatus,
   type DropshipSettlementLineView,
   type DropshipSettlementRecord,
@@ -183,7 +184,7 @@ export async function buildSettlementLinesForStore(input: {
     .from("orders")
     .select("id, items, estado")
     .eq("store_id", input.storeId)
-    .in("estado", ["procesando", "enviado", "entregado"]);
+    .in("estado", [...SETTLEMENT_ELIGIBLE_ORDER_ESTADOS]);
 
   if (error) {
     throw new Error(error.message);

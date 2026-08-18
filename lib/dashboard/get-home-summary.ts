@@ -3,6 +3,7 @@ import { getStoreInventory } from "@/lib/inventory";
 import { countOutOfStock } from "@/lib/inventory/stock-status";
 import { getStoreOrders } from "@/lib/orders/get-store-orders";
 import { getStoreSales } from "@/lib/sales/get-store-sales";
+import { isPriorityOrderEstado } from "@/lib/orders/order-status";
 
 export interface HomeSummary {
   productCount: number;
@@ -38,9 +39,7 @@ export async function getHomeSummary(
   );
 
   const pendingCatalogOrders = orders.filter((order) =>
-    order.estado === "por_pagar" ||
-    order.estado === "pendiente" ||
-    order.estado === "procesando",
+    isPriorityOrderEstado(order.estado),
   ).length;
 
   return {

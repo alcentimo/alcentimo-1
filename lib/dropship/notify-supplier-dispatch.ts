@@ -2,7 +2,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/send-email";
 import { escapeHtml } from "@/lib/email/escape-html";
 import { getPublicSiteUrl } from "@/lib/env/server";
-import { formatBusinessDateEs } from "@/lib/dropship/settlement-date";
 import {
   buildDispatchOrderText,
   type DispatchOrderDetails,
@@ -47,31 +46,18 @@ function buildDispatchHtml(details: DispatchOrderDetails): string {
 
   return `
     <div style="font-family:Arial,sans-serif;line-height:1.5;color:#18181b;max-width:560px;margin:0 auto;padding:24px;">
-      <p style="margin:0 0 12px;font-size:14px;color:#52525b;">Alcéntimo · Despacho D+1</p>
-      <h1 style="margin:0 0 12px;font-size:22px;">Orden #${escapeHtml(details.orderCode)} lista para despachar</h1>
+      <p style="margin:0 0 12px;font-size:14px;color:#52525b;">Alcéntimo · Centro de acopio</p>
+      <h1 style="margin:0 0 12px;font-size:22px;">Apartar stock #${escapeHtml(details.orderCode)}</h1>
       <p style="margin:0 0 16px;">
-        El pago único del dropshipper ya fue aprobado. Prepara el envío para el
-        <strong>${escapeHtml(formatBusinessDateEs(details.shipOn))}</strong>.
+        El dropshipper ya aprobó el pago de su cliente. Aparta estos productos
+        y espera la recolección de Alcéntimo.
       </p>
-      <h2 style="margin:20px 0 8px;font-size:16px;">Productos</h2>
+      <h2 style="margin:20px 0 8px;font-size:16px;">Productos a apartar</h2>
       <ul style="margin:0;padding-left:18px;">${productRows || "<li>—</li>"}</ul>
-      <h2 style="margin:20px 0 8px;font-size:16px;">Cliente final</h2>
-      <p style="margin:0 0 4px;"><strong>${escapeHtml(details.customerName)}</strong></p>
-      <p style="margin:0 0 4px;">Teléfono: ${escapeHtml(details.customerPhone?.trim() || "—")}</p>
-      <p style="margin:0;">Dirección: ${escapeHtml(details.customerAddress?.trim() || "—")}</p>
-      ${
-        details.shippingCarrier || details.shippingBranchName
-          ? `<p style="margin:12px 0 0;">Agencia: ${escapeHtml(details.shippingCarrier || "—")} · ${escapeHtml(details.shippingBranchName || "—")}</p>`
-          : ""
-      }
-      <div style="margin:20px 0 0;padding:14px 16px;border:1px solid #d4d4d8;border-radius:10px;background:#fafafa;">
-        <p style="margin:0 0 6px;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#71717a;">Etiqueta de despacho</p>
-        <p style="margin:0 0 4px;"><strong>Remitente:</strong> ${escapeHtml(details.senderName)}</p>
-        <p style="margin:0 0 8px;"><strong>Destinatario:</strong> ${escapeHtml(details.customerName)}</p>
-        <p style="margin:0;font-size:12px;color:#52525b;">
-          Usa el nombre de la tienda como remitente. No imprimas datos de tu empresa ni del mayorista en el paquete.
-        </p>
-      </div>
+      <p style="margin:16px 0 0;font-size:13px;color:#52525b;">
+        No incluye datos de pago del cliente final. No despaches tú el paquete:
+        Alcéntimo lo recogerá en el centro de acopio.
+      </p>
       ${dashboardLink}
     </div>
   `.trim();
@@ -97,8 +83,8 @@ async function resolveSupplierEmail(
 }
 
 /**
- * Avisa a cada mayorista la orden detallada (producto, cliente, dirección)
- * para despacho D+1. El fallo de un correo no revierte la liquidación.
+ * Avisa a cada proveedor los productos a apartar para recolección de Alcéntimo.
+ * El fallo de un correo no revierte el pedido.
  */
 export async function notifySuppliersOfDispatchOrders(
   payloads: SupplierDispatchNotifyPayload[],
@@ -176,7 +162,7 @@ export async function notifySuppliersOfDispatchOrders(
     if (email) {
       const sent = await sendEmail({
         to: email,
-        subject: `Orden de despacho D+1 #${details.orderCode} · ${payload.senderName}`,
+        subject: `Apartar stock #${details.orderCode} · Centro de acopio Alcéntimo`,
         html: buildDispatchHtml(details),
         text,
       });
