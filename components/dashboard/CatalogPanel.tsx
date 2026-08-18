@@ -6,7 +6,6 @@ import { AvailableProductsPanel } from "@/components/dashboard/AvailableProducts
 import { OnboardingExperience } from "@/components/onboarding/OnboardingExperience";
 import type { Store } from "@/lib/database.types";
 import type { StoreProductLimitContext } from "@/lib/plans/product-limit";
-import type { OnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import type { InventoryAiSuggestionRow } from "@/lib/inventory-ai/types";
 import { InventoryAiSuggestionCards } from "@/components/dashboard/InventoryAiSuggestionCards";
 import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
@@ -14,7 +13,6 @@ import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
 interface CatalogPanelProps {
   store: Store;
   productLimitContext?: StoreProductLimitContext | null;
-  setupStatus: OnboardingSetupStatus;
   showWelcomeFromUrl?: boolean;
   inventorySuggestions?: InventoryAiSuggestionRow[];
 }
@@ -26,7 +24,6 @@ interface CatalogPanelProps {
 export function CatalogPanel({
   store,
   productLimitContext = null,
-  setupStatus,
   showWelcomeFromUrl = false,
   inventorySuggestions = [],
 }: CatalogPanelProps) {
@@ -74,8 +71,6 @@ export function CatalogPanel({
 
   const trial = productLimitContext?.trial ?? null;
   const trialActive = trial?.active ?? false;
-  void setupStatus;
-  void store;
 
   return (
     <>

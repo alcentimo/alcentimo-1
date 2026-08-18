@@ -16,7 +16,6 @@ import type { DashboardStoreRole } from "@/lib/team/permissions";
 import { isDashboardStoreOwner } from "@/lib/team/permissions";
 import type { AccountSnapshot } from "@/lib/account/types";
 import type { SubscriptionStatus } from "@/lib/plans/plan-activation";
-import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 import type { ProTrialPhase } from "@/lib/plans/trial";
 import { ProTrialLifecycleBanner } from "@/components/dashboard/plans/ProTrialLifecycleBanner";
 import {
@@ -34,12 +33,9 @@ interface DashboardLayoutProps {
   planName?: string | null;
   subscriptionStatus?: SubscriptionStatus | null;
   trialActive?: boolean;
-  trialEligible?: boolean;
   trialPhase?: ProTrialPhase;
   trialEndsAt?: string | null;
   trialGraceEndsAt?: string | null;
-  proTrialSetup?: ProTrialSetupPick | null;
-  proTrialProductCount?: number;
   pendingOrdersCount?: number;
   exchangeRate?: number | null;
   exchangeRateUpdatedAt?: string | null;
@@ -66,12 +62,9 @@ function DashboardShell({
   planName = null,
   subscriptionStatus = "none",
   trialActive = false,
-  trialEligible = false,
   trialPhase = "none",
   trialEndsAt = null,
   trialGraceEndsAt = null,
-  proTrialSetup = null,
-  proTrialProductCount = 0,
   pendingOrdersCount = 0,
   exchangeRate = null,
   exchangeRateUpdatedAt = null,
@@ -181,10 +174,7 @@ function DashboardShell({
         planName={planName}
         subscriptionStatus={subscriptionStatus}
         trialActive={trialActive}
-        trialEligible={trialEligible}
         trialPhase={trialPhase}
-        proTrialSetup={proTrialSetup}
-        proTrialProductCount={proTrialProductCount}
         pendingOrdersCount={pendingOrdersCount}
         mobileOpen={sidebarOpen}
         immersiveHidden={false}

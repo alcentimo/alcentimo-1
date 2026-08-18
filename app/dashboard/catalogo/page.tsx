@@ -3,8 +3,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
 import { getOptionalAuthUser } from "@/lib/auth/optional-auth";
-import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
-import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
 import { createClient } from "@/lib/supabase/server";
 import { listPendingInventorySuggestions } from "@/lib/inventory-ai/run-scan";
@@ -76,16 +74,14 @@ export default async function CatalogoPage({
   let productLimitContext: Awaited<
     ReturnType<typeof getStoreProductLimitContext>
   >;
-  let storeSettings: Awaited<ReturnType<typeof getStoreSettingsConfig>>;
   let inventorySuggestions: Awaited<
     ReturnType<typeof listPendingInventorySuggestions>
   >;
 
   try {
-    [productLimitContext, storeSettings, inventorySuggestions] =
+    [productLimitContext, inventorySuggestions] =
       await Promise.all([
         getStoreProductLimitContext(store.id),
-        getStoreSettingsConfig(store.id),
         (async () => {
           try {
             const supabase = await createClient();
@@ -118,12 +114,6 @@ export default async function CatalogoPage({
     );
   }
 
-  const setupStatus = getOnboardingSetupStatus(
-    productLimitContext?.currentCount ?? 0,
-    storeSettings,
-    store.slug,
-  );
-
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <DashboardPageHeader
@@ -146,7 +136,6 @@ export default async function CatalogoPage({
         <CatalogPanel
           store={store}
           productLimitContext={productLimitContext}
-          setupStatus={setupStatus}
           showWelcomeFromUrl={showOnboardingSuccess}
           inventorySuggestions={inventorySuggestions}
         />

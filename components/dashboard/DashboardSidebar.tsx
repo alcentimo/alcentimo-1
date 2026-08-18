@@ -32,10 +32,8 @@ import {
   BRAND_LOGO_PATH,
   BRAND_LOGO_WIDTH,
 } from "@/lib/brand/assets";
-import { SidebarProTrialProgress } from "@/components/dashboard/plans/SidebarProTrialProgress";
-import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
-import type { ProTrialPhase } from "@/lib/plans/trial";
 import { formatPlanLabel } from "@/src/config/plans";
+import type { ProTrialPhase } from "@/lib/plans/trial";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "alcentimo-dashboard-sidebar-collapsed";
 const DASHBOARD_HOME_HREF = "/dashboard/catalogo";
@@ -46,10 +44,7 @@ interface DashboardSidebarProps {
   planName?: string | null;
   subscriptionStatus?: SubscriptionStatus | string | null;
   trialActive?: boolean;
-  trialEligible?: boolean;
   trialPhase?: ProTrialPhase;
-  proTrialSetup?: ProTrialSetupPick | null;
-  proTrialProductCount?: number;
   pendingOrdersCount?: number;
   mobileOpen: boolean;
   immersiveHidden: boolean;
@@ -259,10 +254,7 @@ export function DashboardSidebar({
   planName = null,
   subscriptionStatus = "none",
   trialActive = false,
-  trialEligible = false,
   trialPhase = "none",
-  proTrialSetup = null,
-  proTrialProductCount = 0,
   pendingOrdersCount = 0,
   mobileOpen,
   immersiveHidden,
@@ -490,26 +482,6 @@ export function DashboardSidebar({
               comfortable={mobileOpen && drawerExpanded}
             />
           </div>
-
-          {proTrialSetup ? (
-            <div
-              className={cn(
-                mobileOpen && drawerExpanded
-                  ? null
-                  : drawerExpanded
-                    ? "mb-2"
-                    : "mb-1",
-              )}
-            >
-              <SidebarProTrialProgress
-                setup={proTrialSetup}
-                productCount={proTrialProductCount}
-                trialEligible={trialEligible}
-                trialActive={trialActive}
-                expanded={drawerExpanded}
-              />
-            </div>
-          ) : null}
 
           <div
             className={cn(
