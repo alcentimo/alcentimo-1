@@ -13,6 +13,8 @@ import {
   mapPayoutRow,
   mapSettlementRecord,
 } from "@/lib/dropship/settlement-shared";
+import { groupSettlementShipments } from "@/lib/dropship/settlement-shipping";
+import { loadHydratedSettlementLines } from "@/lib/dropship/settlement-shipping-load";
 import type { DropshipDailySettlementSummary } from "@/lib/dropship/settlement-types";
 
 export async function getDropshipDailySettlementSummary(): Promise<{
@@ -59,33 +61,11 @@ export async function getDropshipDailySettlementSummary(): Promise<{
           "id, settlement_id, supplier_user_id, business_date, ship_on, amount_usd, order_count, line_count, status",
         )
         .eq("settlement_id", existing.id);
+      const lines = await loadHydratedSettlementLines(existing.id);
       existing.payouts = (
         (payoutRows as Record<string, unknown>[] | null) ?? []
       ).map(mapPayoutRow);
-
-      const { data: lineRows } = await client
-        .from("dropship_daily_settlement_lines")
-        .select(
-          "catalog_order_id, supplier_user_id, supplier_product_id, product_title, quantity, unit_cost_usd, platform_markup_usd, line_due_usd, supplier_payout_usd",
-        )
-        .eq("settlement_id", existing.id);
-
-      const lines = (
-        (lineRows as Record<string, unknown>[] | null) ?? []
-      ).map((row) => ({
-        catalogOrderId: String(row.catalog_order_id ?? ""),
-        supplierUserId: String(row.supplier_user_id ?? ""),
-        supplierProductId:
-          typeof row.supplier_product_id === "string"
-            ? row.supplier_product_id
-            : null,
-        productTitle: String(row.product_title ?? ""),
-        quantity: Number(row.quantity) || 0,
-        unitCostUsd: Number(row.unit_cost_usd) || 0,
-        platformMarkupUsd: Number(row.platform_markup_usd) || 0,
-        lineDueUsd: Number(row.line_due_usd) || 0,
-        supplierPayoutUsd: Number(row.supplier_payout_usd) || 0,
-      }));
+      existing.shipments = groupSettlementShipments(lines);
 
       const supplierMap = new Map<
         string,

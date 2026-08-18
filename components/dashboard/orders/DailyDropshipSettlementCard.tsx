@@ -25,8 +25,9 @@ import {
 } from "@/lib/supplier/payment-types";
 import { getPaymentMethod } from "@/src/config/payment-methods";
 import type { SubscriptionPaymentMethod } from "@/src/config/subscription-pago-movil";
-import { cn } from "@/lib/cn";
+import { SettlementCustomerShipments } from "@/components/dropship/SettlementCustomerShipments";
 import { useStoreOrdersRealtimeRefresh } from "@/components/dashboard/orders/use-store-orders-realtime-refresh";
+import { cn } from "@/lib/cn";
 
 interface DailyDropshipSettlementCardProps {
   summary: DropshipDailySettlementSummary;
@@ -176,48 +177,12 @@ export function DailyDropshipSettlementCard({
       </div>
 
       {summary.lines.length > 0 ? (
-        <div className={cn(isPage && "card-panel")}>
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            Ventas pendientes de liquidación
-          </p>
-          <p className="mt-0.5 text-xs text-zinc-500">
-            Pedidos con pago confirmado que incluyen productos del hub
-            mayorista.
-          </p>
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full min-w-[420px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-zinc-200 text-[11px] uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
-                  <th className="py-2 pr-3 font-semibold">Producto</th>
-                  <th className="py-2 pr-3 font-semibold">Pedido</th>
-                  <th className="py-2 pr-3 text-right font-semibold">Cant.</th>
-                  <th className="py-2 text-right font-semibold">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summary.lines.map((line, index) => (
-                  <tr
-                    key={`${line.catalogOrderId}-${line.supplierProductId ?? index}`}
-                    className="border-b border-zinc-100 last:border-0 dark:border-zinc-800/80"
-                  >
-                    <td className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-50">
-                      {line.productTitle}
-                    </td>
-                    <td className="py-2 pr-3 font-mono text-xs text-zinc-500">
-                      #{line.catalogOrderId.slice(0, 8).toUpperCase()}
-                    </td>
-                    <td className="py-2 pr-3 text-right tabular-nums">
-                      {line.quantity}
-                    </td>
-                    <td className="py-2 text-right font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
-                      {formatUsd(line.lineDueUsd)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <SettlementCustomerShipments
+          className={cn(isPage && "card-panel")}
+          lines={summary.lines}
+          shipments={existing?.shipments}
+          variant="merchant"
+        />
       ) : null}
 
       {existing?.status === "rejected" && existing.reviewNotes ? (

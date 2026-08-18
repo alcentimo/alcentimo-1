@@ -10,6 +10,7 @@ import {
   mapSettlementRecord,
 } from "@/lib/dropship/settlement-shared";
 import { listSettlementBalanceEntries } from "@/lib/dropship/settlement-ledger";
+import { loadShipmentsBySettlementIds } from "@/lib/dropship/settlement-shipping-load";
 import type { DropshipSettlementRecord } from "@/lib/dropship/settlement-types";
 
 type ActionResult<T extends object = object> = {
@@ -53,6 +54,7 @@ export async function listDropshipDailySettlements(options?: {
   const settlementIds = rows.map((row) => String(row.id));
   const payoutsBySettlement = new Map<string, ReturnType<typeof mapPayoutRow>[]>();
   const ledgerBySettlement = await listSettlementBalanceEntries(settlementIds);
+  const shipmentsBySettlement = await loadShipmentsBySettlementIds(settlementIds);
 
   if (settlementIds.length > 0) {
     const { data: payoutRows } = await client
@@ -76,6 +78,7 @@ export async function listDropshipDailySettlements(options?: {
         row,
         payoutsBySettlement.get(String(row.id)) ?? [],
         ledgerBySettlement.get(String(row.id)) ?? [],
+        shipmentsBySettlement.get(String(row.id)) ?? [],
       ),
     ),
   };
@@ -149,12 +152,16 @@ export async function approveDropshipDailySettlement(input: {
     .eq("settlement_id", settlementId);
 
   const ledgerBySettlement = await listSettlementBalanceEntries([settlementId]);
+  const shipmentsBySettlement = await loadShipmentsBySettlementIds([
+    settlementId,
+  ]);
 
   return {
     settlement: mapSettlementRecord(
       updated as Record<string, unknown>,
       ((payoutRows as Record<string, unknown>[] | null) ?? []).map(mapPayoutRow),
       ledgerBySettlement.get(settlementId) ?? [],
+      shipmentsBySettlement.get(settlementId) ?? [],
     ),
   };
 }
@@ -212,6 +219,12 @@ export async function rejectDropshipDailySettlement(input: {
   revalidatePath("/dashboard/liquidacion");
 
   return {
-    settlement: mapSettlementRecord(updated as Record<string, unknown>),
+    settlement: mapSettlementRecord(
+      updated as Record<string, unknown>,
+      [],
+      [],
+      (await loadShipmentsBySettlementIds([settlementId])).get(settlementId) ??
+        [],
+    ),
   };
 }

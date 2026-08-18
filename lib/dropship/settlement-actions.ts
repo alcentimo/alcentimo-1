@@ -14,6 +14,10 @@ import {
   listLockedCatalogOrderIds,
   mapSettlementRecord,
 } from "@/lib/dropship/settlement-shared";
+import {
+  groupSettlementShipments,
+  shippingToLineInsert,
+} from "@/lib/dropship/settlement-shipping";
 import type { DropshipSettlementRecord } from "@/lib/dropship/settlement-types";
 import { isSupplierB2bPaymentMethodKey } from "@/lib/supplier/payment-types";
 
@@ -168,22 +172,47 @@ export async function reportDropshipDailyPayment(formData: FormData): Promise<
       settlementId = String(created.id);
     }
 
-    const { error: linesError } = await client
+    const lineRows = built.lines.map((line) => ({
+      settlement_id: settlementId,
+      catalog_order_id: line.catalogOrderId,
+      supplier_user_id: line.supplierUserId,
+      supplier_product_id: line.supplierProductId,
+      product_title: line.productTitle,
+      quantity: line.quantity,
+      unit_cost_usd: line.unitCostUsd,
+      platform_markup_usd: line.platformMarkupUsd,
+      line_due_usd: line.lineDueUsd,
+      supplier_payout_usd: line.supplierPayoutUsd,
+      ...shippingToLineInsert(line.shipping),
+    }));
+
+    let { error: linesError } = await client
       .from("dropship_daily_settlement_lines")
-      .insert(
-        built.lines.map((line) => ({
-          settlement_id: settlementId,
-          catalog_order_id: line.catalogOrderId,
-          supplier_user_id: line.supplierUserId,
-          supplier_product_id: line.supplierProductId,
-          product_title: line.productTitle,
-          quantity: line.quantity,
-          unit_cost_usd: line.unitCostUsd,
-          platform_markup_usd: line.platformMarkupUsd,
-          line_due_usd: line.lineDueUsd,
-          supplier_payout_usd: line.supplierPayoutUsd,
-        })),
-      );
+      .insert(lineRows);
+    if (
+      linesError &&
+      /customer_name|shipping_method|column .* does not exist/i.test(
+        linesError.message,
+      )
+    ) {
+      const { error: legacyLinesError } = await client
+        .from("dropship_daily_settlement_lines")
+        .insert(
+          built.lines.map((line) => ({
+            settlement_id: settlementId,
+            catalog_order_id: line.catalogOrderId,
+            supplier_user_id: line.supplierUserId,
+            supplier_product_id: line.supplierProductId,
+            product_title: line.productTitle,
+            quantity: line.quantity,
+            unit_cost_usd: line.unitCostUsd,
+            platform_markup_usd: line.platformMarkupUsd,
+            line_due_usd: line.lineDueUsd,
+            supplier_payout_usd: line.supplierPayoutUsd,
+          })),
+        );
+      linesError = legacyLinesError;
+    }
     if (linesError) return { error: linesError.message };
 
     const { data: fresh, error: freshError } = await client
@@ -202,7 +231,12 @@ export async function reportDropshipDailyPayment(formData: FormData): Promise<
     revalidatePath("/admin/dashboard");
 
     return {
-      settlement: mapSettlementRecord(fresh as Record<string, unknown>),
+      settlement: mapSettlementRecord(
+        fresh as Record<string, unknown>,
+        [],
+        [],
+        groupSettlementShipments(built.lines),
+      ),
     };
   } catch (error) {
     return {

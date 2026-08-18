@@ -69,6 +69,19 @@ export function isSettlementEligibleOrderEstado(
   );
 }
 
+export interface DropshipSettlementShippingView {
+  customerName: string;
+  customerPhone: string | null;
+  fulfillmentType: string | null;
+  shippingMethod: string | null;
+  shippingMethodLabel: string | null;
+  shippingBranchName: string | null;
+  shippingBranchAddress: string | null;
+  deliveryAddress: string | null;
+  fulfillmentLabel: string | null;
+  destinationLabel: string;
+}
+
 export interface DropshipSettlementLineView {
   catalogOrderId: string;
   supplierUserId: string;
@@ -79,6 +92,15 @@ export interface DropshipSettlementLineView {
   platformMarkupUsd: number;
   lineDueUsd: number;
   supplierPayoutUsd: number;
+  shipping: DropshipSettlementShippingView | null;
+}
+
+export interface DropshipSettlementShipmentView {
+  catalogOrderId: string;
+  productTitles: string[];
+  quantity: number;
+  lineDueUsd: number;
+  shipping: DropshipSettlementShippingView | null;
 }
 
 export interface DropshipSettlementSupplierBreakdown {
@@ -139,6 +161,7 @@ export interface DropshipSettlementRecord {
   reviewNotes: string;
   payouts: SupplierPayoutObligationView[];
   ledger: SettlementBalanceEntryView[];
+  shipments: DropshipSettlementShipmentView[];
 }
 
 export interface SupplierPayoutObligationView {

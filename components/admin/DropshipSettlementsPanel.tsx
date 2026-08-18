@@ -17,6 +17,7 @@ import {
 } from "@/lib/dropship/settlement-types";
 import { formatUsd } from "@/lib/format";
 import { getPaymentMethod } from "@/src/config/payment-methods";
+import { SettlementCustomerShipments } from "@/components/dropship/SettlementCustomerShipments";
 import { cn } from "@/lib/cn";
 
 type SettlementFilter = "all" | "reported" | "approved" | "rejected";
@@ -136,10 +137,10 @@ export function DropshipSettlementsPanel({
     <div className="space-y-4">
       <p className="text-sm text-zinc-500 dark:text-zinc-400">
         Cada dropshipper reporta un pago único por el costo mayorista más el
-        markup operativo. Al aprobarlo, el sistema divide el monto en el saldo
-        de cada mayorista y la comisión de Alcéntimo, notifica a cada proveedor
-        la orden de despacho D+1 y etiqueta el paquete con el nombre de la
-        tienda del dropshipper.
+        markup operativo. Junto al comprobante verás el destinatario de cada
+        paquete (nombre, teléfono y sucursal/dirección) para armar la guía.
+        Al aprobarlo, el sistema divide el monto, notifica a cada proveedor y
+        etiqueta el paquete con el nombre de la tienda del dropshipper.
       </p>
 
       <div className="flex flex-wrap gap-2">
@@ -273,6 +274,12 @@ export function DropshipSettlementsPanel({
               ) : (
                 <p className="mt-3 text-xs text-amber-700">Sin comprobante adjunto.</p>
               )}
+
+              <SettlementCustomerShipments
+                className="mt-4"
+                shipments={settlement.shipments}
+                variant="admin"
+              />
 
               <div className="mt-3 rounded-xl bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-900/50">
                 <p className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -413,7 +420,7 @@ export function DropshipSettlementsPanel({
         title="Aprobar liquidación diaria"
         impact={
           approveTarget
-            ? `Vas a verificar el pago de ${approveTarget.storeName} por ${formatUsd(approveTarget.amountDueUsd)}. Se acreditará el costo a cada mayorista, la comisión a Alcéntimo, se enviará la orden de despacho a los proveedores y el remitente será el nombre de la tienda.`
+            ? `Vas a verificar el pago de ${approveTarget.storeName} por ${formatUsd(approveTarget.amountDueUsd)}. Revisa el comprobante y el destino de cada paquete (nombre, teléfono y sucursal/dirección) antes de aprobar. Se acreditará el costo a cada mayorista y se habilitará el despacho D+1.`
             : "Vas a aprobar este reporte diario."
         }
         confirmLabel="Aprobar y habilitar D+1"

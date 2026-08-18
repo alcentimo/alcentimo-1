@@ -8,16 +8,20 @@ import {
   isSupplierPayoutStatus,
   type DropshipSettlementLineView,
   type DropshipSettlementRecord,
+  type DropshipSettlementShipmentView,
+  type DropshipSettlementShippingView,
   type DropshipSettlementSupplierBreakdown,
   type SettlementBalanceEntryView,
   type SupplierPayoutObligationView,
 } from "@/lib/dropship/settlement-types";
+import { parseSettlementShipping } from "@/lib/dropship/settlement-shipping";
 import type { SupplierB2bPaymentMethodKey } from "@/lib/supplier/payment-types";
 
 export function mapSettlementRecord(
   row: Record<string, unknown>,
   payouts: SupplierPayoutObligationView[] = [],
   ledger: SettlementBalanceEntryView[] = [],
+  shipments: DropshipSettlementShipmentView[] = [],
 ): DropshipSettlementRecord {
   const statusRaw = String(row.status ?? "reported");
   return {
@@ -57,6 +61,7 @@ export function mapSettlementRecord(
     reviewNotes: String(row.review_notes ?? ""),
     payouts,
     ledger,
+    shipments,
   };
 }
 
@@ -182,7 +187,9 @@ export async function buildSettlementLinesForStore(input: {
 
   const { data: orders, error } = await client
     .from("orders")
-    .select("id, items, estado")
+    .select(
+      "id, items, estado, customer_name, customer_phone, fulfillment_type, shipping_method, shipping_branch_name, shipping_branch_address, delivery_address",
+    )
     .eq("store_id", input.storeId)
     .in("estado", [...SETTLEMENT_ELIGIBLE_ORDER_ESTADOS]);
 
@@ -193,6 +200,7 @@ export async function buildSettlementLinesForStore(input: {
   const locked = input.lockedOrderIds ?? new Set<string>();
   const candidateOrders: Array<{
     id: string;
+    shipping: DropshipSettlementShippingView | null;
     dropshipLines: ReturnType<typeof extractDropshipLinesFromOrderItems>;
   }> = [];
 
@@ -200,13 +208,24 @@ export async function buildSettlementLinesForStore(input: {
     id?: string;
     items?: unknown;
     estado?: unknown;
+    customer_name?: unknown;
+    customer_phone?: unknown;
+    fulfillment_type?: unknown;
+    shipping_method?: unknown;
+    shipping_branch_name?: unknown;
+    shipping_branch_address?: unknown;
+    delivery_address?: unknown;
   }> | null) ?? []) {
     const orderId = typeof row.id === "string" ? row.id : "";
     if (!orderId || locked.has(orderId)) continue;
     if (!isSettlementEligibleOrderEstado(row.estado)) continue;
     const dropshipLines = extractDropshipLinesFromOrderItems(row.items);
     if (dropshipLines.length === 0) continue;
-    candidateOrders.push({ id: orderId, dropshipLines });
+    candidateOrders.push({
+      id: orderId,
+      shipping: parseSettlementShipping(row as Record<string, unknown>),
+      dropshipLines,
+    });
   }
 
   if (candidateOrders.length === 0) {
@@ -336,6 +355,7 @@ export async function buildSettlementLinesForStore(input: {
         platformMarkupUsd: priced.platformMarkupUsd,
         lineDueUsd: priced.amountDueUsd,
         supplierPayoutUsd: priced.wholesaleCostUsd,
+        shipping: order.shipping,
       });
       ordersWithLines.add(order.id);
     }
