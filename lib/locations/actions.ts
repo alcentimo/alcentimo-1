@@ -12,7 +12,7 @@ import {
   getEffectivePlanIdForLimits,
   resolveProTrialStatus,
 } from "@/lib/plans/trial";
-import { resolvePlanId, DASHBOARD_PLANS_HREF } from "@/src/config/plans";
+import { resolvePlanId, MERCHANT_SUBSCRIPTION_BILLING_ENABLED } from "@/src/config/plans";
 
 export interface LocationActionResult {
   error?: string;
@@ -114,15 +114,8 @@ export async function createStoreLocationAction(input: {
 
   if (!limit.canAddMore) {
     const limitSummary = mapLocationLimitSummary(limit);
-    if (limit.planId !== "enterprise") {
-      return {
-        error: `Tu plan incluye ${limit.includedLocations} sucursal(es). Actualiza a Corporativo para multi-sede.`,
-        limit: limitSummary,
-      };
-    }
-    const nextIndex = existing.length + 1;
     return {
-      error: `Alcanzaste el máximo de ${limit.maxAllowed} sucursales autorizadas (${limit.includedLocations} incluidas + ${limit.extraAuthorized} extras). La sucursal #${nextIndex} requiere autorización con un cargo adicional de +$${limit.extraLocationMonthlyUsd} USD/mes por sede. Contacta soporte para activarla.`,
+      error: `Alcanzaste el máximo de ${limit.maxAllowed} sucursales.`,
       limit: limitSummary,
     };
   }
@@ -158,9 +151,10 @@ export async function createStoreLocationAction(input: {
     limit: mapLocationLimitSummary(
       await resolveStoreLocationLimit(auth.store.id, existing.length + 1),
     ),
-    extraBranchNotice: creatingExtraBranch
-      ? `Sucursal creada. Esta sede extra suma +$${limit.nextBranchMonthlyCostUsd} USD/mes a tu plan Corporativo.`
-      : undefined,
+    extraBranchNotice:
+      creatingExtraBranch && MERCHANT_SUBSCRIPTION_BILLING_ENABLED
+        ? `Sucursal creada. Esta sede extra suma +$${limit.nextBranchMonthlyCostUsd} USD/mes a tu plan Corporativo.`
+        : undefined,
   };
 }
 

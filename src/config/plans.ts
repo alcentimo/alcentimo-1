@@ -60,6 +60,12 @@ export const PLAN_LIST: PlanDefinition[] = [
   PLANS.enterprise,
 ];
 
+/**
+ * Cobro de suscripción a merchants desactivado: sin catálogo de planes,
+ * checkout ni límites comerciales por plan de pago.
+ */
+export const MERCHANT_SUBSCRIPTION_BILLING_ENABLED = false;
+
 /** Enlace a la sección de precios en la landing. */
 export const PRICING_SECTION_HREF = "/#precios";
 

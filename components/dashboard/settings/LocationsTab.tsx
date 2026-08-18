@@ -15,7 +15,7 @@ import {
   updateStoreLocationAction,
 } from "@/lib/locations/actions";
 import type { StoreLocation } from "@/lib/locations/types";
-import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
+import { DASHBOARD_PLANS_HREF, MERCHANT_SUBSCRIPTION_BILLING_ENABLED } from "@/src/config/plans";
 import { cn } from "@/lib/cn";
 
 export interface LocationLimitSummary {
@@ -53,7 +53,8 @@ export function LocationsTab({
 
   const maxAllowed = limit?.maxAllowed ?? 1;
   const canAdd = locations.length < maxAllowed;
-  const isEnterprise = limit?.planId === "enterprise";
+  const multiLocationUnlocked =
+    !MERCHANT_SUBSCRIPTION_BILLING_ENABLED || limit?.planId === "enterprise";
 
   function refreshMessage(next: string | null, err?: string) {
     setError(err ?? null);
@@ -158,12 +159,14 @@ export function LocationsTab({
         title="Sucursales"
         description={
           limit
-            ? `Usas ${locations.length} de ${limit.maxAllowed} sucursales autorizadas (${limit.includedLocations} incluidas en tu plan${limit.extraAuthorized > 0 ? ` + ${limit.extraAuthorized} extras` : ""}).`
+            ? MERCHANT_SUBSCRIPTION_BILLING_ENABLED
+              ? `Usas ${locations.length} de ${limit.maxAllowed} sucursales autorizadas (${limit.includedLocations} incluidas en tu plan${limit.extraAuthorized > 0 ? ` + ${limit.extraAuthorized} extras` : ""}).`
+              : `Usas ${locations.length} de ${limit.maxAllowed} sucursales.`
             : "Gestiona las ubicaciones de tu tienda. El stock de productos se controla por sede."
         }
         variant="payments"
       >
-        {!isEnterprise ? (
+        {!multiLocationUnlocked ? (
           <div className="mb-4 flex items-start gap-3 rounded-lg border border-teal-200/80 bg-teal-50/60 px-3 py-3 text-xs text-teal-900 dark:border-teal-900/40 dark:bg-teal-950/20 dark:text-teal-200">
             <Lock
               className="mt-0.5 h-4 w-4 shrink-0 text-teal-700 dark:text-teal-300"
@@ -189,7 +192,7 @@ export function LocationsTab({
             </div>
           </div>
         ) : null}
-        {isEnterprise && limit && (limit.billableExtraCount ?? 0) > 0 ? (
+        {multiLocationUnlocked && limit && (limit.billableExtraCount ?? 0) > 0 && MERCHANT_SUBSCRIPTION_BILLING_ENABLED ? (
           <div className="mb-4 rounded-lg border border-amber-200/80 bg-amber-50/70 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
             Tienes {limit.billableExtraCount} sucursal
             {limit.billableExtraCount === 1 ? "" : "es"} extra
@@ -216,15 +219,17 @@ export function LocationsTab({
       <SettingsSection
         title="Nueva sucursal"
         description={
-          !isEnterprise
+          !multiLocationUnlocked
             ? "Función exclusiva del plan Corporativo: agrega sedes con stock independiente."
             : canAdd
               ? "Agrega otra sede con su propia dirección y stock."
-              : `Has alcanzado el máximo autorizado (${maxAllowed}). Solicita sedes extras a soporte (+$${limit?.extraLocationMonthlyUsd ?? 6}/mes c/u).`
+              : MERCHANT_SUBSCRIPTION_BILLING_ENABLED
+                ? `Has alcanzado el máximo autorizado (${maxAllowed}). Solicita sedes extras a soporte (+$${limit?.extraLocationMonthlyUsd ?? 6}/mes c/u).`
+                : `Has alcanzado el máximo de ${maxAllowed} sucursales.`
         }
         variant="payments"
       >
-        {!isEnterprise ? (
+        {!multiLocationUnlocked ? (
           <EnterpriseLockedNewLocationCard
             extraLocationMonthlyUsd={limit?.extraLocationMonthlyUsd ?? 6}
           />

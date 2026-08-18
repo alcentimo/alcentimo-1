@@ -13,12 +13,10 @@ import { DashboardRouteVisitTracker } from "@/components/dashboard/DashboardRout
 import { AccountSettingsSheet } from "@/components/dashboard/account/AccountSettingsSheet";
 import { useOptionalLocale } from "@/components/providers/UiPreferencesProvider";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
-import { isDashboardStoreOwner } from "@/lib/team/permissions";
 import type { AccountSnapshot } from "@/lib/account/types";
 import type { SubscriptionStatus } from "@/lib/plans/plan-activation";
 import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 import type { ProTrialPhase } from "@/lib/plans/trial";
-import { ProTrialLifecycleBanner } from "@/components/dashboard/plans/ProTrialLifecycleBanner";
 import {
   BRAND_LOGO_HEIGHT,
   BRAND_LOGO_PATH,
@@ -63,21 +61,11 @@ export function isStandaloneAuthPath(pathname: string): boolean {
 function DashboardShell({
   children,
   storeName,
-  planName = null,
-  subscriptionStatus = "none",
-  trialActive = false,
-  trialEligible = false,
-  trialPhase = "none",
-  trialEndsAt = null,
-  trialGraceEndsAt = null,
-  proTrialSetup = null,
-  proTrialProductCount = 0,
   pendingOrdersCount = 0,
   exchangeRate = null,
   exchangeRateUpdatedAt = null,
   isSupportAdmin = false,
   storeRole = null,
-  canUpgradeToBusiness = false,
   accountSnapshot = null,
 }: DashboardLayoutProps) {
   const router = useRouter();
@@ -88,7 +76,6 @@ function DashboardShell({
   const [accountSheetTab, setAccountSheetTab] = useState<string | undefined>();
   const [accountPrefetchToken, setAccountPrefetchToken] = useState(0);
   const locale = useOptionalLocale();
-  const showOwnerBillingLinks = isDashboardStoreOwner(storeRole);
   const accountQueryParam = searchParams.get("account");
 
   function closeSidebar() {
@@ -178,13 +165,6 @@ function DashboardShell({
       <DashboardSidebar
         pathname={pathname}
         storeName={storeName}
-        planName={planName}
-        subscriptionStatus={subscriptionStatus}
-        trialActive={trialActive}
-        trialEligible={trialEligible}
-        trialPhase={trialPhase}
-        proTrialSetup={proTrialSetup}
-        proTrialProductCount={proTrialProductCount}
         pendingOrdersCount={pendingOrdersCount}
         mobileOpen={sidebarOpen}
         immersiveHidden={false}
@@ -243,11 +223,6 @@ function DashboardShell({
         </header>
 
         <main className="dashboard-main flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-hidden overflow-y-auto p-4 safe-area-inset sm:p-7 lg:p-9">
-          <ProTrialLifecycleBanner
-            phase={trialPhase}
-            endsAt={trialEndsAt}
-            graceEndsAt={trialGraceEndsAt}
-          />
           <DashboardRouteVisitTracker pathname={pathname} />
           <DashboardViewKeepAlive pathname={pathname}>{children}</DashboardViewKeepAlive>
         </main>
@@ -263,8 +238,8 @@ function DashboardShell({
           }
         }}
         initialTab={accountSheetTab}
-        showBillingTab={showOwnerBillingLinks}
-        canUpgradeToBusiness={canUpgradeToBusiness}
+        showBillingTab={false}
+        canUpgradeToBusiness={false}
         onTabChange={handleAccountTabChange}
         initialAccount={accountSnapshot}
         prefetchToken={accountPrefetchToken}

@@ -12,7 +12,6 @@ import { scrollToLandingHash } from "@/lib/landing/scroll-to-hash";
 const navLinks = [
   { href: "#experiencia", label: "¿Cómo funciona" },
   { href: "#para-quien", label: "Empezar" },
-  { href: "#precios", label: "Precios" },
   { href: SUPPLIER_ZONE_HREF, label: "Proveedores" },
 ] as const;
 
@@ -29,7 +28,7 @@ export function LandingNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  /** Al cargar `/#precios` (o tras navegación cliente), alinear con el header fijo. */
+  /** Al cargar un ancla (o tras navegación cliente), alinear con el header fijo. */
   useEffect(() => {
     const hash = window.location.hash;
     if (!hash.startsWith("#") || hash.length < 2) return;

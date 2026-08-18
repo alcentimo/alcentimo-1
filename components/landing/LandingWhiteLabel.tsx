@@ -1,5 +1,6 @@
 import { ArrowRight, Globe, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { MERCHANT_SIGNUP_HREF } from "@/lib/landing/merchant-signup-href";
 
 const benefits = [
   {
@@ -12,7 +13,7 @@ const benefits = [
     icon: Globe,
     title: "Tu enlace o dominio",
     description:
-      "Comparte un enlace fácil de recordar. En planes de pago puedes conectar tu dominio .com.",
+      "Comparte un enlace fácil de recordar. También puedes conectar tu dominio .com.",
   },
 ] as const;
 
@@ -154,10 +155,10 @@ export function LandingWhiteLabel() {
 
         <div className="mt-14 text-center">
           <a
-            href="#precios"
+            href={MERCHANT_SIGNUP_HREF}
             className="btn-brand-outline inline-flex gap-2 px-6 py-2.5 text-sm"
           >
-            Ver planes
+            Quiero vender
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </a>
         </div>

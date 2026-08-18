@@ -154,18 +154,18 @@ export function MercadoChatPanel({
             Chat de negociación
           </p>
           <p className="text-xs text-zinc-500">
-            Necesitas una suscripción activa de Alcéntimo para negociar.
+            Inicia sesión para usar el chat interno.
           </p>
         </div>
         <div className="flex flex-1 flex-col items-start justify-center gap-3 px-4 py-8">
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            Ya iniciaste sesión, pero el chat interno es solo para suscriptores.
+            Inicia sesión para negociar con el vendedor.
           </p>
           <Link
-            href="/dashboard/planes?mercado_denied=1"
+            href={`/dashboard/login?next=${loginNext}`}
             className="btn-brand !min-h-10 !text-sm"
           >
-            Ver planes
+            Iniciar sesión
           </Link>
         </div>
       </div>
