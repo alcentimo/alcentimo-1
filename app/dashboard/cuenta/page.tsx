@@ -13,6 +13,6 @@ export default async function CuentaPage({
 }) {
   const { tab } = await searchParams;
   const account =
-    tab === "seguridad" ? "seguridad" : tab === "planes" ? "planes" : "perfil";
+    tab === "seguridad" ? "seguridad" : "perfil";
   redirect(`/dashboard/catalogo?account=${account}`);
 }

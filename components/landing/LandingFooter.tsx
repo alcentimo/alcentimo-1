@@ -36,9 +36,6 @@ export function LandingFooter() {
             <Link href={SUPPLIER_DASHBOARD_PATH} className="link-brand">
               Acceso proveedores
             </Link>
-            <a href="#precios" className="link-brand">
-              Precios
-            </a>
             <Link href="/terms" className="link-brand">
               Términos y Condiciones
             </Link>

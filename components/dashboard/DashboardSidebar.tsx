@@ -22,18 +22,11 @@ import { useLocale } from "@/components/providers/UiPreferencesProvider";
 import { useDashboardRoutePrefetch } from "@/components/dashboard/use-dashboard-route-prefetch";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
 import {
-  formatSubscriptionStatusLabel,
-  resolveSubscriptionStatus,
-  type SubscriptionStatus,
-} from "@/lib/plans/plan-activation";
-import {
   BRAND_FAVICON_32_PATH,
   BRAND_LOGO_HEIGHT,
   BRAND_LOGO_PATH,
   BRAND_LOGO_WIDTH,
 } from "@/lib/brand/assets";
-import { formatPlanLabel } from "@/src/config/plans";
-import type { ProTrialPhase } from "@/lib/plans/trial";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "alcentimo-dashboard-sidebar-collapsed";
 const DASHBOARD_HOME_HREF = "/dashboard/catalogo";
@@ -41,10 +34,6 @@ const DASHBOARD_HOME_HREF = "/dashboard/catalogo";
 interface DashboardSidebarProps {
   pathname: string;
   storeName: string | null;
-  planName?: string | null;
-  subscriptionStatus?: SubscriptionStatus | string | null;
-  trialActive?: boolean;
-  trialPhase?: ProTrialPhase;
   pendingOrdersCount?: number;
   mobileOpen: boolean;
   immersiveHidden: boolean;
@@ -151,110 +140,9 @@ function SidebarNavLink({
   );
 }
 
-function SidebarPlanStatus({
-  planName,
-  subscriptionStatus,
-  trialActive,
-  trialPhase,
-  expanded,
-  comfortable = false,
-}: {
-  planName: string | null;
-  subscriptionStatus: SubscriptionStatus | string | null | undefined;
-  trialActive: boolean;
-  trialPhase: ProTrialPhase;
-  expanded: boolean;
-  /** Más padding interior (drawer móvil). */
-  comfortable?: boolean;
-}) {
-  const status = resolveSubscriptionStatus(subscriptionStatus);
-  const statusLabel = formatSubscriptionStatusLabel(subscriptionStatus, {
-    trialActive,
-    trialPhase,
-  });
-  const resolvedPlanName = planName?.trim()
-    ? formatPlanLabel(planName)
-    : null;
-  const summary = resolvedPlanName
-    ? `${resolvedPlanName} — ${statusLabel}`
-    : `Plan — ${statusLabel}`;
-
-  const statusBadgeClass =
-    status === "provisional"
-      ? "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-800/60"
-      : trialPhase === "grace"
-        ? "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-800/60"
-        : trialPhase === "review"
-          ? "bg-sky-50 text-sky-800 ring-1 ring-inset ring-sky-200/80 dark:bg-sky-950/50 dark:text-sky-300 dark:ring-sky-800/60"
-          : trialActive
-            ? "bg-teal-50 text-teal-800 ring-1 ring-inset ring-teal-200/80 dark:bg-teal-950/50 dark:text-teal-300 dark:ring-teal-800/60"
-            : "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-800/60";
-
-  if (!expanded) {
-    return (
-      <div
-        className="flex h-10 items-center justify-center"
-        title={summary}
-        aria-label={`Plan actual: ${summary}`}
-      >
-        <span
-          className={cn(
-            "h-2.5 w-2.5 rounded-full",
-            !resolvedPlanName
-              ? "bg-zinc-300 dark:bg-zinc-600"
-              : status === "provisional"
-                ? "bg-amber-500"
-                : trialPhase === "grace"
-                  ? "bg-amber-500"
-                  : trialPhase === "review"
-                    ? "bg-sky-500"
-                    : trialActive
-                      ? "bg-teal-500"
-                      : "bg-emerald-500",
-          )}
-          aria-hidden="true"
-        />
-      </div>
-    );
-  }
-
-      return (
-    <div
-      className={cn(
-        "rounded-lg border border-zinc-200/90 bg-zinc-50/80 dark:border-zinc-800 dark:bg-zinc-900/50",
-        comfortable ? "px-3 py-2" : "px-2.5 py-2",
-      )}
-      aria-label={`Plan actual: ${summary}`}
-    >
-      <p
-        className={cn(
-          "truncate font-semibold text-zinc-900 dark:text-zinc-50",
-          comfortable ? "text-[13px]" : "text-sm",
-        )}
-      >
-        {resolvedPlanName ?? "Cargando plan…"}
-      </p>
-      {resolvedPlanName ? (
-        <span
-          className={cn(
-            "mt-1 inline-flex w-fit max-w-full truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-            statusBadgeClass,
-          )}
-        >
-          {statusLabel}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
 export function DashboardSidebar({
   pathname,
   storeName: _storeName,
-  planName = null,
-  subscriptionStatus = "none",
-  trialActive = false,
-  trialPhase = "none",
   pendingOrdersCount = 0,
   mobileOpen,
   immersiveHidden,
@@ -464,25 +352,6 @@ export function DashboardSidebar({
                 : "px-2 py-3",
           )}
         >
-          <div
-            className={cn(
-              mobileOpen && drawerExpanded
-                ? null
-                : drawerExpanded
-                  ? "mb-2"
-                  : "mb-1",
-            )}
-          >
-            <SidebarPlanStatus
-              planName={planName}
-              subscriptionStatus={subscriptionStatus}
-              trialActive={trialActive}
-              trialPhase={trialPhase}
-              expanded={drawerExpanded}
-              comfortable={mobileOpen && drawerExpanded}
-            />
-          </div>
-
           <div
             className={cn(
               mobileOpen && drawerExpanded ? "space-y-0" : "space-y-1",

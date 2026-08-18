@@ -4,7 +4,10 @@ import Link from "next/link";
 import { Lock } from "lucide-react";
 import { CustomDomainSection } from "@/components/dashboard/settings/CustomDomainSection";
 import type { PlanId } from "@/src/config/plans";
-import { DASHBOARD_PLANS_HREF } from "@/src/config/plans";
+import {
+  DASHBOARD_PLANS_HREF,
+  MERCHANT_SUBSCRIPTION_BILLING_ENABLED,
+} from "@/src/config/plans";
 import { planIncludesCustomDomain } from "@/src/config/plan-pricing-ui";
 import { cn } from "@/lib/cn";
 
@@ -22,6 +25,7 @@ interface DomainsTabProps {
 }
 
 function hasCustomDomainPlan(planId: PlanId | undefined): boolean {
+  if (!MERCHANT_SUBSCRIPTION_BILLING_ENABLED) return true;
   return planId != null && planIncludesCustomDomain(planId);
 }
 

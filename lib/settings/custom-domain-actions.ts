@@ -22,7 +22,7 @@ import {
   getEffectivePlanIdForLimits,
   resolveProTrialStatus,
 } from "@/lib/plans/trial";
-import { DASHBOARD_PLANS_HREF, resolvePlanId } from "@/src/config/plans";
+import { DASHBOARD_PLANS_HREF, MERCHANT_SUBSCRIPTION_BILLING_ENABLED, resolvePlanId } from "@/src/config/plans";
 import { planIncludesCustomDomain } from "@/src/config/plan-pricing-ui";
 
 export type CustomDomainActionResult = {
@@ -159,6 +159,10 @@ async function verifyAccountPasswordForDestructiveAction(
 async function requireCustomDomainPlan(
   storeId: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!MERCHANT_SUBSCRIPTION_BILLING_ENABLED) {
+    return { ok: true };
+  }
+
   const owner = await getStoreOwnerPlanProfile(storeId);
   const planId = owner ? resolvePlanId(owner.plan) : resolvePlanId("free");
   const trial = resolveProTrialStatus(owner, planId);

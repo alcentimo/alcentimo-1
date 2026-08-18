@@ -13,8 +13,11 @@ import {
   type BillingPeriod,
   type PlanPricingTier,
 } from "@/src/config/plan-pricing-ui";
-import type { PlanId } from "@/src/config/plans";
-import { formatPlanName } from "@/src/config/plans";
+import {
+  formatPlanName,
+  MERCHANT_SUBSCRIPTION_BILLING_ENABLED,
+  type PlanId,
+} from "@/src/config/plans";
 
 export type PlanSettingsKey = "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE";
 
@@ -145,6 +148,7 @@ export function getProductLimitFromSettings(
   planId: PlanId,
   settings: PlanSettingsMap = DEFAULT_PLAN_SETTINGS,
 ): number | null {
+  if (!MERCHANT_SUBSCRIPTION_BILLING_ENABLED) return null;
   return settings[planIdToSettingsKey(planId)].productLimit;
 }
 
@@ -152,6 +156,7 @@ export function getPhotoLimitFromSettings(
   planId: PlanId,
   settings: PlanSettingsMap = DEFAULT_PLAN_SETTINGS,
 ): number | null {
+  if (!MERCHANT_SUBSCRIPTION_BILLING_ENABLED) return null;
   return settings[planIdToSettingsKey(planId)].photoLimit;
 }
 

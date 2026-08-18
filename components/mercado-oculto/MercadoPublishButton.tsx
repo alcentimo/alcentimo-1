@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Loader2, Plus } from "lucide-react";
@@ -44,11 +43,7 @@ export function MercadoPublishButton() {
         </p>
       ) : (
         <p className="text-[11px] text-zinc-500">
-          Requiere cuenta y suscripción. Integra productos de mayoristas
-          oficiales.{" "}
-          <Link href="/dashboard/planes" className="underline">
-            Ver planes
-          </Link>
+          Integra productos de mayoristas oficiales.
         </p>
       )}
     </div>

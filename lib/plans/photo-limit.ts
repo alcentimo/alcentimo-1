@@ -30,5 +30,5 @@ export async function resolveStorePhotoLimit(
 }
 
 export function getPhotoLimitErrorMessage(limit: number): string {
-  return `Máximo ${limit} fotos por producto en tu plan.`;
+  return `Máximo ${limit} fotos por producto.`;
 }

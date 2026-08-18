@@ -1,4 +1,4 @@
-import { formatPlanLabel, type PlanId } from "@/src/config/plans";
+import { formatPlanLabel, MERCHANT_SUBSCRIPTION_BILLING_ENABLED, type PlanId } from "@/src/config/plans";
 
 export type BillingPeriod = "monthly" | "annual";
 
@@ -47,6 +47,7 @@ export function isCustomDomainFeature(feature: string): boolean {
 }
 
 export function planIncludesCustomDomain(planId: PlanId): boolean {
+  if (!MERCHANT_SUBSCRIPTION_BILLING_ENABLED) return true;
   return (
     planId === "starter" ||
     planId === "growth" ||

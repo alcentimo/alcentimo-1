@@ -211,7 +211,7 @@ export function LandingAssistantChat() {
                 rows={1}
                 maxLength={500}
                 disabled={loading}
-                placeholder="Pregunta sobre planes, dropshipping o cómo empezar…"
+                placeholder="Pregunta sobre dropshipping o cómo empezar…"
                 className="landing-assistant-input"
                 aria-label="Mensaje para el asistente de Alcentimo"
               />

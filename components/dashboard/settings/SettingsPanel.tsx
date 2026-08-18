@@ -34,6 +34,7 @@ import type { Promotion } from "@/lib/promotions/types";
 import type { MarketingAiSuggestionRow } from "@/lib/marketing-ai/types";
 import type { GeneralTabStore } from "@/components/dashboard/settings/GeneralTab";
 import type { PlanId } from "@/src/config/plans";
+import { MERCHANT_SUBSCRIPTION_BILLING_ENABLED } from "@/src/config/plans";
 import { planIncludesCustomDomain } from "@/src/config/plan-pricing-ui";
 import type { StoreLocation } from "@/lib/locations/types";
 import type { LocationLimitSummary } from "@/components/dashboard/settings/LocationsTab";
@@ -217,7 +218,8 @@ export function SettingsPanel({
   /** En móvil: menú de lista vs sub-vista. Desktop ignora este estado. */
   const [mobileMenuOpen, setMobileMenuOpen] = useState(() => !explicitTab);
   const domainLocked =
-    planId == null || !planIncludesCustomDomain(planId);
+    MERCHANT_SUBSCRIPTION_BILLING_ENABLED &&
+    (planId == null || !planIncludesCustomDomain(planId));
 
   const mobileNavGroups = navGroups.map((group) => ({
     label: group.label,

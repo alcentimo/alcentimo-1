@@ -1,4 +1,4 @@
-import type { PlanId } from "@/src/config/plans";
+import { MERCHANT_SUBSCRIPTION_BILLING_ENABLED, type PlanId } from "@/src/config/plans";
 import type { PlanSettingsMap } from "@/lib/plans/plan-settings";
 import { DEFAULT_PLAN_SETTINGS, planIdToSettingsKey } from "@/lib/plans/plan-settings";
 
@@ -80,6 +80,26 @@ export function resolveLocationLimit(options: {
   currentCount: number;
   settings?: PlanSettingsMap;
 }): LocationLimitInfo {
+  if (!MERCHANT_SUBSCRIPTION_BILLING_ENABLED) {
+    const remainingSlots = Math.max(
+      0,
+      ABSOLUTE_MAX_STORE_LOCATIONS - options.currentCount,
+    );
+    return {
+      planId: options.planId,
+      includedLocations: ABSOLUTE_MAX_STORE_LOCATIONS,
+      extraAuthorized: 0,
+      maxAllowed: ABSOLUTE_MAX_STORE_LOCATIONS,
+      extraLocationMonthlyUsd: 0,
+      canAddMore: remainingSlots > 0,
+      remainingSlots,
+      billableExtraCount: 0,
+      monthlyExtraCostUsd: 0,
+      nextBranchRequiresExtra: false,
+      nextBranchMonthlyCostUsd: 0,
+    };
+  }
+
   const settings = options.settings ?? DEFAULT_PLAN_SETTINGS;
   const includedLocations = getIncludedLocationsForPlan(options.planId, settings);
   const extraAuthorized = Math.max(0, Math.floor(options.extraAuthorized ?? 0));
