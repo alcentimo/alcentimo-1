@@ -94,8 +94,7 @@ export function MercadoProductGallery({
       mode="card"
       className={className}
       imageClassName={
-        imageClassName ??
-        "object-cover transition duration-500 ease-out group-hover:scale-[1.05]"
+        imageClassName ?? "object-contain object-center"
       }
       fallbackClassName={fallbackClassName ?? "mercado-card-media-fallback"}
       sizes={

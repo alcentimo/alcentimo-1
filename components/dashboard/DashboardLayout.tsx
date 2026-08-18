@@ -165,7 +165,7 @@ function DashboardShell({
   }
 
   return (
-    <div className="dashboard-shell flex h-dvh overflow-hidden">
+    <div className="dashboard-shell flex h-dvh max-w-full overflow-hidden">
       {sidebarOpen && (
         <button
           type="button"
@@ -225,17 +225,11 @@ function DashboardShell({
               />
             </Link>
 
-            <div className="dashboard-header-actions flex shrink-0 items-center">
-              {/* Móvil: tema en header; tasa BCV en la franja inferior. */}
-              <div className="lg:hidden">
-                <DashboardQuickUtilities showExchangeRate={false} />
-              </div>
-              <div className="hidden lg:block">
-                <DashboardQuickUtilities
-                  exchangeRate={exchangeRate}
-                  exchangeRateUpdatedAt={exchangeRateUpdatedAt}
-                />
-              </div>
+            <div className="dashboard-header-actions hidden min-w-0 items-center lg:flex">
+              <DashboardQuickUtilities
+                exchangeRate={exchangeRate}
+                exchangeRateUpdatedAt={exchangeRateUpdatedAt}
+              />
             </div>
           </div>
 
@@ -248,7 +242,7 @@ function DashboardShell({
           </div>
         </header>
 
-        <main className="dashboard-main flex min-h-0 flex-1 flex-col overflow-y-auto p-4 safe-area-inset sm:p-7 lg:p-9">
+        <main className="dashboard-main flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-hidden overflow-y-auto p-4 safe-area-inset sm:p-7 lg:p-9">
           <ProTrialLifecycleBanner
             phase={trialPhase}
             endsAt={trialEndsAt}

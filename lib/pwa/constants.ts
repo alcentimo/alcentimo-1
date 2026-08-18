@@ -1,11 +1,11 @@
 /** Incrementar tras cambios de estrategia SW admin. */
-export const PWA_ADMIN_RESET_VERSION = "3";
+export const PWA_ADMIN_RESET_VERSION = "4";
 
 /** Incrementar tras cambios de estrategia SW catálogo cliente. */
 export const PWA_CATALOG_RESET_VERSION = "10";
 
 /** Identidad PWA admin (Alcentimo Admin). */
-export const PWA_ADMIN_IDENTITY_VERSION = "2";
+export const PWA_ADMIN_IDENTITY_VERSION = "3";
 
 /** Identidad base PWA tienda cliente. */
 export const PWA_STORE_IDENTITY_VERSION = "5";
@@ -15,11 +15,10 @@ export const PWA_SW_URL = "/sw.js";
 export const PWA_SW_SCOPE = "/";
 
 /**
- * Splash / chrome del PWA Admin: fondo oscuro oficial (slate-900)
- * para evitar el parpadeo blanco al abrir en móvil.
+ * Splash / chrome del PWA Admin: fondo claro fijo.
  */
-export const PWA_ADMIN_BACKGROUND_COLOR = "#0f172a";
-export const PWA_ADMIN_THEME_COLOR = "#0f172a";
+export const PWA_ADMIN_BACKGROUND_COLOR = "#fafaf9";
+export const PWA_ADMIN_THEME_COLOR = "#fafaf9";
 
 /**
  * Arranque PWA: ruta pública (sin gate de sesión en middleware) para que

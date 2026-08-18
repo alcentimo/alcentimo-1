@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ThemeProvider, useTheme } from "next-themes";
+import { ThemeProvider } from "next-themes";
 import {
   NAV_LABEL_KEYS,
   translate,
@@ -19,7 +19,6 @@ import {
   readStoredLocale,
   writeStoredLocale,
   type UiLocale,
-  type UiTheme,
 } from "@/lib/ui-preferences/storage";
 import type { InterfacePreferencesSettings } from "@/lib/store-settings/types";
 
@@ -87,16 +86,6 @@ export function useOptionalLocale(): LocaleContextValue | null {
   return useContext(LocaleContext);
 }
 
-export function useUiTheme() {
-  const { theme, setTheme, resolvedTheme, systemTheme } = useTheme();
-  return {
-    theme: (theme as UiTheme | undefined) ?? "system",
-    setTheme: (next: UiTheme) => setTheme(next),
-    resolvedTheme: (resolvedTheme as "light" | "dark" | undefined) ?? "light",
-    systemTheme,
-  };
-}
-
 interface UiPreferencesProviderProps {
   children: ReactNode;
   initialPreferences?: InterfacePreferencesSettings | null;
@@ -106,14 +95,14 @@ export function UiPreferencesProvider({
   children,
   initialPreferences = null,
 }: UiPreferencesProviderProps) {
-  const initialTheme = initialPreferences?.theme ?? "system";
   const initialLocale = initialPreferences?.locale ?? "es";
 
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme={initialTheme}
-      enableSystem
+      defaultTheme="light"
+      forcedTheme="light"
+      enableSystem={false}
       storageKey="alcentimo-ui-theme"
       disableTransitionOnChange
     >

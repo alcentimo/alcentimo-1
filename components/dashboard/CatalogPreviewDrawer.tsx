@@ -44,7 +44,7 @@ export function CatalogPreviewDrawer({
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
-          className="catalog-preview-drawer w-full max-w-[min(100vw,1120px)] border-l border-zinc-200 shadow-2xl dark:border-zinc-800"
+          className="catalog-preview-drawer w-full max-w-[min(100%,1120px)] border-l border-zinc-200 shadow-2xl dark:border-zinc-800"
           onClose={() => onOpenChange(false)}
         >
           <SheetHeader className="catalog-preview-drawer-header">

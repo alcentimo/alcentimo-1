@@ -46,7 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
     manifest: getAdminManifestPath(),
     appleWebApp: {
       capable: true,
-      statusBarStyle: "black-translucent",
+      statusBarStyle: "default",
       title: `${platformSettings.platformName} Admin`,
     },
     formatDetection: {
@@ -74,11 +74,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0f172a" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
-  ],
-  colorScheme: "dark light",
+  themeColor: "#fafaf9",
+  colorScheme: "light",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -95,12 +92,12 @@ export default async function RootLayout({
     <html
       lang="es"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${moricheDisplay.variable} ${moricheSans.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${moricheDisplay.variable} ${moricheSans.variable} light h-full antialiased`}
     >
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#0f172a" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="theme-color" content="#fafaf9" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="icon" type="image/png" href={BRAND_FAVICON_PNG_PATH} sizes="32x32" />
         <link rel="icon" type="image/png" href={BRAND_FAVICON_32_PATH} sizes="32x32" />
         <link rel="apple-touch-icon" href={BRAND_APPLE_TOUCH_ICON_PATH} sizes="180x180" />

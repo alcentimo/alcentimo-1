@@ -229,7 +229,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
     catalogAccess: defaultCatalogAccessSettings(),
     messageTemplates: defaultMessageTemplates(),
     interfacePreferences: {
-      theme: "system",
+      theme: "light",
       locale: "es",
     },
     checkout: {
@@ -506,12 +506,7 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
           : defaults.messageTemplates.enviado,
     },
     interfacePreferences: {
-      theme:
-        interfaceRaw.theme === "light" ||
-        interfaceRaw.theme === "dark" ||
-        interfaceRaw.theme === "system"
-          ? interfaceRaw.theme
-          : defaults.interfacePreferences.theme,
+      theme: "light",
       locale:
         interfaceRaw.locale === "es" || interfaceRaw.locale === "en"
           ? interfaceRaw.locale
