@@ -14,7 +14,6 @@ interface OnboardingExperienceProps {
 
 /**
  * Onboarding ligero del catálogo: limpia ?onboarded= y observa activación Pro.
- * El progreso de "Primeros pasos" vive en la sidebar (SidebarProTrialProgress).
  * También dispara CompleteRegistration (Meta Pixel) en el primer ingreso al panel.
  */
 export function OnboardingExperience({

@@ -6,13 +6,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { getUserStore } from "@/lib/stores";
 import { isEligiblePlanForProTrial } from "@/lib/plans/plan-activation";
-import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
-import { getStoreProductCount } from "@/lib/plans/product-limit";
-import {
-  getOnboardingSetupStatus,
-  isProTrialSetupComplete,
-  PRO_TRIAL_MIN_ACTIVE_PRODUCTS,
-} from "@/lib/onboarding/setup-status";
 import {
   isValidProTrialClaimCode,
   PRO_TRIAL_CLAIM_CODE,
@@ -36,7 +29,6 @@ export type TryActivateProTrialResult =
         | "not_eligible"
         | "already_active"
         | "already_used"
-        | "setup_incomplete"
         | "claim_required"
         | "no_store"
         | "store_already_claimed"
@@ -215,40 +207,12 @@ async function performProTrialActivation(
   return activation;
 }
 
-async function getTrialSetupForUser(userId: string) {
-  const supabase = await createClient();
-  const store = await getUserStore(supabase, userId);
-  if (!store) {
-    return {
-      store: null,
-      setupStatus: null,
-      setupComplete: false,
-    };
-  }
-
-  const [productCount, settings] = await Promise.all([
-    getStoreProductCount(store.id),
-    getStoreSettingsConfig(store.id),
-  ]);
-
-  const setupStatus = getOnboardingSetupStatus(
-    productCount,
-    settings,
-    store.slug,
-  );
-
-  return {
-    store,
-    setupStatus,
-    setupComplete: isProTrialSetupComplete(setupStatus),
-  };
-}
-
 /**
- * Activa la prueba Pro solo si el setup está completo y el usuario escribió
+ * Activa la prueba Pro si la cuenta es elegible y el usuario escribió
  * la palabra de reclamación ({@link PRO_TRIAL_CLAIM_CODE}).
+ * No exige completar onboarding (productos, pagos o envíos).
  */
-export async function tryActivateProTrialOnSetupComplete(options?: {
+export async function tryActivateProTrial(options?: {
   claimCode?: string;
 }): Promise<TryActivateProTrialResult> {
   const supabase = await createClient();
@@ -259,7 +223,7 @@ export async function tryActivateProTrialOnSetupComplete(options?: {
   }
 
   const userId = auth.authUser.id;
-  const { store, setupComplete } = await getTrialSetupForUser(userId);
+  const store = await getUserStore(supabase, userId);
 
   if (!store) {
     return { ok: true, activated: false, reason: "no_store" };
@@ -291,10 +255,6 @@ export async function tryActivateProTrialOnSetupComplete(options?: {
 
   if (!isEligiblePlanForProTrial(profile)) {
     return { ok: true, activated: false, reason: "not_eligible" };
-  }
-
-  if (!setupComplete) {
-    return { ok: true, activated: false, reason: "setup_incomplete" };
   }
 
   if (!isValidProTrialClaimCode(options?.claimCode ?? "")) {
@@ -347,7 +307,7 @@ export async function startProTrial(claimCode?: string): Promise<StartProTrialRe
     };
   }
 
-  const result = await tryActivateProTrialOnSetupComplete({ claimCode });
+  const result = await tryActivateProTrial({ claimCode });
 
   if (!result.ok) {
     return { ok: false, error: result.error };
@@ -355,13 +315,6 @@ export async function startProTrial(claimCode?: string): Promise<StartProTrialRe
 
   if (result.activated) {
     return { ok: true, endsAt: result.endsAt };
-  }
-
-  if (result.reason === "setup_incomplete") {
-    return {
-      ok: false,
-      error: `Publica al menos ${PRO_TRIAL_MIN_ACTIVE_PRODUCTS} productos activos y configura pagos y envíos para reclamar la prueba Pro.`,
-    };
   }
 
   if (result.reason === "claim_required") {

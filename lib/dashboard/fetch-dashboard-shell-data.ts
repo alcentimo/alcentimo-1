@@ -28,11 +28,6 @@ import type { InterfacePreferencesSettings } from "@/lib/store-settings/types";
 import type { DashboardStoreRole } from "@/lib/team/permissions";
 import type { Profile } from "@/lib/database.types";
 import type { UserWithPlan } from "@/lib/auth/get-user-profile";
-import { getStoreProductCount } from "@/lib/plans/product-limit";
-import {
-  getOnboardingSetupStatus,
-  type ProTrialSetupPick,
-} from "@/lib/onboarding/setup-status";
 import { scheduleStoreSubdomainProvision } from "@/lib/domains/provision-store-subdomain";
 import { getPendingOrdersCount } from "@/lib/orders/get-pending-orders-count";
 
@@ -47,13 +42,9 @@ export type DashboardShellData =
       planName: string | null;
       subscriptionStatus: SubscriptionStatus;
       trialActive: boolean;
-      trialEligible: boolean;
       trialPhase: "none" | "active" | "grace" | "review" | "closed";
       trialEndsAt: string | null;
       trialGraceEndsAt: string | null;
-      proTrialSetup: ProTrialSetupPick | null;
-      /** Productos activos (para contador N/10 en Primeros pasos). */
-      proTrialProductCount: number;
       /** Pedidos por verificar pago (por_pagar | pendiente). */
       pendingOrdersCount: number;
       exchangeRate: number | null;
@@ -138,7 +129,7 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
     const displayPlan = getDisplayPlanForProfile(authUser.profile);
     const trial = resolveProTrialStatus(authUser.profile, displayPlan.planId);
 
-    const [exchangeRateRow, settingsConfig, productCount, pendingOrdersCount] =
+    const [exchangeRateRow, settingsConfig, pendingOrdersCount] =
       await Promise.all([
       withTimeoutFallback(
         getCurrentExchangeRate(),
@@ -156,14 +147,6 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
         : Promise.resolve(defaultStoreSettingsConfig()),
       store
         ? withTimeoutFallback(
-            getStoreProductCount(store.id),
-            SHELL_QUERY_TIMEOUT_MS,
-            0,
-            "shell:getStoreProductCount",
-          )
-        : Promise.resolve(0),
-      store
-        ? withTimeoutFallback(
             getPendingOrdersCount(store.id),
             SHELL_QUERY_TIMEOUT_MS,
             0,
@@ -175,16 +158,6 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
     const exchangeRate = exchangeRateRow?.rate ?? null;
     const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
     const ownerFlag = store ? isStoreOwner(store, authUser.id) : false;
-    const setupStatus = store
-      ? getOnboardingSetupStatus(productCount, settingsConfig, store.slug)
-      : null;
-    const proTrialSetup: ProTrialSetupPick | null = setupStatus
-      ? {
-          hasMinProductsForProTrial: setupStatus.hasMinProductsForProTrial,
-          hasPaymentsConfigured: setupStatus.hasPaymentsConfigured,
-          hasShippingConfigured: setupStatus.hasShippingConfigured,
-        }
-      : null;
 
     return {
       ok: true,
@@ -196,12 +169,9 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
         authUser.profile?.subscription_status,
       ),
       trialActive: trial.benefitsActive,
-      trialEligible: trial.eligible,
       trialPhase: trial.phase,
       trialEndsAt: trial.endsAt,
       trialGraceEndsAt: trial.graceEndsAt,
-      proTrialSetup,
-      proTrialProductCount: store ? productCount : 0,
       pendingOrdersCount: store ? pendingOrdersCount : 0,
       exchangeRate,
       exchangeRateUpdatedAt,

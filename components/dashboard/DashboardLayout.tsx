@@ -15,7 +15,6 @@ import { useOptionalLocale } from "@/components/providers/UiPreferencesProvider"
 import type { DashboardStoreRole } from "@/lib/team/permissions";
 import type { AccountSnapshot } from "@/lib/account/types";
 import type { SubscriptionStatus } from "@/lib/plans/plan-activation";
-import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 import type { ProTrialPhase } from "@/lib/plans/trial";
 import {
   BRAND_LOGO_HEIGHT,
@@ -32,12 +31,9 @@ interface DashboardLayoutProps {
   planName?: string | null;
   subscriptionStatus?: SubscriptionStatus | null;
   trialActive?: boolean;
-  trialEligible?: boolean;
   trialPhase?: ProTrialPhase;
   trialEndsAt?: string | null;
   trialGraceEndsAt?: string | null;
-  proTrialSetup?: ProTrialSetupPick | null;
-  proTrialProductCount?: number;
   pendingOrdersCount?: number;
   exchangeRate?: number | null;
   exchangeRateUpdatedAt?: string | null;

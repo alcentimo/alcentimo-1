@@ -9,21 +9,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  formatProTrialSetupRemainingMessage,
-  isProTrialUnlockReady,
-} from "@/lib/plans/trial-unlock";
 import { getProTrialLimitLabel } from "@/lib/plans/trial";
-import type { ProTrialSetupPick } from "@/lib/onboarding/setup-status";
 
 interface TrialLimitDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   trialEligible: boolean;
-  setupStatus?: ProTrialSetupPick;
   /** Límite del Plan Profesional en prueba (p. ej. 150). */
   proProductLimit?: number | null;
-  /** Abre el modal de reclamación ALCENTIMO cuando los requisitos ya están listos. */
+  /** Abre el modal de reclamación ALCENTIMO. */
   onOpenClaimModal?: () => void;
 }
 
@@ -31,7 +25,6 @@ export function TrialLimitDialog({
   open,
   onOpenChange,
   trialEligible,
-  setupStatus,
   proProductLimit,
   onOpenClaimModal,
 }: TrialLimitDialogProps) {
@@ -42,72 +35,29 @@ export function TrialLimitDialog({
     onOpenChange(nextOpen);
   }
 
-  const unlockReady = setupStatus ? isProTrialUnlockReady(setupStatus) : false;
-  const setupIncomplete =
-    trialEligible && setupStatus != null && !unlockReady;
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Límite de productos alcanzado</DialogTitle>
           <DialogDescription>
-            {setupIncomplete ? (
+            {trialEligible ? (
               <>
-                {formatProTrialSetupRemainingMessage(setupStatus)} Después podrás
-                publicar hasta {proLimitLabel} con la prueba Pro.
-              </>
-            ) : trialEligible && unlockReady ? (
-              <>
-                Requisitos listos. Confirma con ALCENTIMO para reclamar tus 30
-                días gratis del Plan Profesional ({proLimitLabel}).
-              </>
-            ) : trialEligible ? (
-              <>
-                Completa la configuración inicial y escribe ALCENTIMO para
-                reclamar tus 30 días gratis del Plan Profesional ({proLimitLabel}).
+                Has alcanzado tu límite de productos en el plan Gratis. Reclama
+                30 días gratis del Plan Profesional ({proLimitLabel}) o elige un
+                plan de pago para seguir creciendo.
               </>
             ) : (
               <>
-                Has alcanzado tu límite de 10 productos en el plan Gratis. Elige
-                un plan de pago para seguir creciendo.
+                Has alcanzado tu límite de productos en el plan Gratis. Elige un
+                plan de pago para seguir creciendo.
               </>
             )}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          {setupIncomplete && setupStatus ? (
-            <>
-              {!setupStatus.hasMinProductsForProTrial ? (
-                <Link
-                  href="/dashboard/catalogo?vista=disponibles"
-                  className="btn-primary w-full text-center"
-                  onClick={() => handleClose(false)}
-                >
-                  Añadir productos
-                </Link>
-              ) : null}
-              {!setupStatus.hasPaymentsConfigured ? (
-                <Link
-                  href="/dashboard/ajustes?tab=payments"
-                  className="btn-primary w-full text-center"
-                  onClick={() => handleClose(false)}
-                >
-                  Configurar pagos
-                </Link>
-              ) : null}
-              {!setupStatus.hasShippingConfigured ? (
-                <Link
-                  href="/dashboard/ajustes?tab=shipping"
-                  className="btn-primary w-full text-center"
-                  onClick={() => handleClose(false)}
-                >
-                  Configurar envíos
-                </Link>
-              ) : null}
-            </>
-          ) : trialEligible && unlockReady && onOpenClaimModal ? (
+          {trialEligible && onOpenClaimModal ? (
             <button
               type="button"
               className="btn-primary w-full"
@@ -118,11 +68,17 @@ export function TrialLimitDialog({
             >
               Reclamar mes gratis
             </button>
-          ) : (
-            <Link href="/activar" className="btn-primary w-full text-center">
-              Ver planes
-            </Link>
-          )}
+          ) : null}
+          <Link
+            href="/activar"
+            className={
+              trialEligible && onOpenClaimModal
+                ? "btn-secondary w-full text-center"
+                : "btn-primary w-full text-center"
+            }
+          >
+            Ver planes
+          </Link>
           <button
             type="button"
             onClick={() => {
