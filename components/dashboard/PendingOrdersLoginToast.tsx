@@ -48,8 +48,8 @@ export function PendingOrdersLoginToast({
 
   const label =
     count === 1
-      ? "Tienes 1 pedido nuevo por atender"
-      : `Tienes ${count} pedidos nuevos por atender`;
+      ? "Tienes 1 pago por verificar"
+      : `Tienes ${count} pagos por verificar`;
 
   return (
     <div
@@ -67,7 +67,7 @@ export function PendingOrdersLoginToast({
               {label}
             </p>
             <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-              Revisa pagos o actualiza el estado en Órdenes.
+              Revisa los comprobantes de tus clientes en Órdenes.
             </p>
           </div>
           <button

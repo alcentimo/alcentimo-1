@@ -1,6 +1,6 @@
 import type { CatalogOrder } from "@/lib/orders/types";
 import {
-  isDispatchPendingEstado,
+  isVerifyPaymentEstado,
   sortOrdersByBusinessRules,
 } from "@/lib/orders/order-status";
 
@@ -61,7 +61,7 @@ export function computeOrdersKpis(orders: CatalogOrder[]): OrdersKpiSnapshot {
   let salesVolumeTodayUsd = 0;
 
   for (const order of orders) {
-    if (isDispatchPendingEstado(order.estado)) {
+    if (isVerifyPaymentEstado(order.estado)) {
       pendingDispatch += 1;
     }
 

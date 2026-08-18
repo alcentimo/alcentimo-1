@@ -143,7 +143,7 @@ export function CustomerOrderDetail({
         <h2 className="customer-order-section-title">Seguimiento</h2>
         <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
           {CUSTOMER_ORDER_ESTADO_HINTS[displayEstado]} Se actualiza en tiempo
-          real cuando la tienda cambia el estado.
+          real. Cuando Alcéntimo despache, verás aquí el número de guía.
         </p>
         <CustomerOrderStatusTimeline estado={displayEstado} />
 

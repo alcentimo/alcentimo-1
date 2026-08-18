@@ -52,7 +52,7 @@ export type DashboardShellData =
       proTrialSetup: ProTrialSetupPick | null;
       /** Productos activos (para contador N/10 en Primeros pasos). */
       proTrialProductCount: number;
-      /** Pedidos por atender (por_pagar | pendiente | procesando). */
+      /** Pedidos por verificar pago (por_pagar | pendiente). */
       pendingOrdersCount: number;
       exchangeRate: number | null;
       exchangeRateUpdatedAt: string | null;

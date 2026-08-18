@@ -18,6 +18,7 @@ import {
   isSupplierOrderPaymentStatus,
   type SupplierOrderPaymentStatus,
 } from "@/lib/supplier/payment-types";
+import { syncCatalogOrderFromSupplierHold } from "@/lib/dropship/sync-catalog-from-supplier";
 
 type ActionResult<T extends object = object> = {
   error?: string;
@@ -430,6 +431,21 @@ export async function updateSupplierOrderDispatch(input: {
 
   if (error) return { error: error.message };
   if (!orderRow) return { error: "Pedido no encontrado." };
+
+  const mappedRow = orderRow as Record<string, unknown>;
+  const catalogSync = await syncCatalogOrderFromSupplierHold({
+    sourceCatalogOrderId:
+      typeof mappedRow.source_catalog_order_id === "string"
+        ? mappedRow.source_catalog_order_id
+        : null,
+    supplierStatus: input.status,
+  });
+  if (catalogSync.error) {
+    console.error(
+      "[updateSupplierOrderDispatch] catalog sync",
+      catalogSync.error,
+    );
+  }
 
   const { data: itemRows, error: itemsError } = await admin
     .from("supplier_order_items")

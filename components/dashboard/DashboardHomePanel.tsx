@@ -32,12 +32,12 @@ export function DashboardHomePanel({
       emptyHint: summary.productCount === 0 ? "Publica tu primer producto" : undefined,
     },
     {
-      label: "Pedidos pendientes",
+      label: "Por verificar pago",
       value: String(summary.pendingCatalogOrders),
       href: "/dashboard/pedidos",
       icon: ShoppingBag,
       emptyHint:
-        summary.pendingCatalogOrders === 0 ? "Sin pedidos por atender" : undefined,
+        summary.pendingCatalogOrders === 0 ? "Sin pagos por verificar" : undefined,
     },
     {
       label: "Total ventas (mes)",

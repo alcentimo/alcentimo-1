@@ -66,6 +66,7 @@ export function resolveMessageTemplateKey(
     case "cancelado":
       return "nuevo";
     case "procesando":
+    case "preparacion_logistica":
       return "confirmado";
     case "enviado":
     case "entregado":

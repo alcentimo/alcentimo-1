@@ -24,6 +24,7 @@ import {
   type SupplierOrder,
   type SupplierOrderStatus,
 } from "@/lib/supplier/order-types";
+import { isHubCollectionSupplierOrder } from "@/lib/dropship/hub-collection";
 import { SUPPLIER_ORDER_PAYMENT_STATUS_LABELS } from "@/lib/supplier/payment-types";
 import { getPaymentMethod } from "@/src/config/payment-methods";
 
@@ -39,9 +40,9 @@ const FILTER_TABS: {
   label: string;
 }[] = [
   { id: "all", label: "Todos" },
-  { id: "pendiente", label: "Pendientes" },
-  { id: "preparando", label: "En despacho" },
-  { id: "despachado", label: "Despachados" },
+  { id: "pendiente", label: "Apartar stock" },
+  { id: "preparando", label: "Listos para recolección" },
+  { id: "despachado", label: "Recolectados" },
 ];
 
 function formatOrderDate(value: string): string {
@@ -75,18 +76,26 @@ function escapeCsvCell(value: string | number | null | undefined): string {
   return raw;
 }
 
+function summarizeProducts(order: SupplierOrder): string {
+  if (order.items.length === 0) return "Sin productos";
+  return order.items
+    .map((item) => `${item.quantity}× ${item.productTitle}`)
+    .join(", ");
+}
+
 function orderMatchesQuery(order: SupplierOrder, query: string): boolean {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return true;
 
   const code = formatOrderCode(order.id).toLowerCase();
+  const products = summarizeProducts(order).toLowerCase();
   const haystack = [
-    order.buyerName,
+    isHubCollectionSupplierOrder(order) ? "" : order.buyerName,
     order.senderName ?? "",
     order.id,
     code,
-    order.buyerPhone ?? "",
     order.trackingNumber ?? "",
+    products,
   ]
     .join(" ")
     .toLowerCase();
@@ -98,41 +107,28 @@ function buildOrdersCsv(orders: SupplierOrder[]): string {
   const headers = [
     "codigo",
     "id",
-    "remitente_tienda",
-    "destinatario",
-    "telefono",
-    "estado",
-    "pago",
-    "referencia_pago",
-    "total_usd",
-    "despacho_d1",
-    "agencia",
-    "guia",
-    "creado_en",
+    "tipo",
     "productos",
+    "estado",
+    "liquidacion_alcentimo",
+    "total_usd",
+    "creado_en",
   ];
 
   const lines = [headers.join(",")];
   for (const order of orders) {
-    const products = order.items
-      .map((item) => `${item.quantity}x ${item.productTitle}`)
-      .join("; ");
     lines.push(
       [
         formatOrderCode(order.id),
         order.id,
-        order.senderName ?? "",
-        order.buyerName,
-        order.buyerPhone ?? "",
+        isHubCollectionSupplierOrder(order)
+          ? "Acopio Alcéntimo"
+          : "Pedido propio",
+        summarizeProducts(order),
         SUPPLIER_ORDER_STATUS_LABELS[order.status],
         SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[order.paymentStatus],
-        order.paymentReference ?? "",
         order.totalUsd.toFixed(2),
-        order.shipOn ?? "",
-        supplierCarrierLabel(order.shippingCarrier),
-        order.trackingNumber ?? "",
         order.createdAt,
-        products,
       ]
         .map(escapeCsvCell)
         .join(","),
@@ -331,7 +327,7 @@ export function SupplierOrdersPanel({
           order.id === result.order!.id ? result.order! : order,
         ),
       );
-      setMessage("Despacho actualizado.");
+      setMessage("Estatus actualizado.");
     });
   }
 
@@ -340,10 +336,11 @@ export function SupplierOrdersPanel({
       <div className="supplier-hub-card-header">
         <div>
           <p className="supplier-hub-section-label">Operaciones</p>
-          <h1 className="supplier-hub-heading">Pedidos recibidos</h1>
+          <h1 className="supplier-hub-heading">Stock a apartar</h1>
           <p className="supplier-hub-subheading">
-            Gestiona despachos a comerciantes: datos de envío, estatus y número
-            de guía.
+            Solo ves los productos vendidos que te corresponden. Apártalos y
+            espera la recolección y el pago de Alcéntimo. No incluye datos de
+            pago del cliente final.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -585,8 +582,8 @@ export function SupplierOrdersPanel({
 
       {orders.length === 0 ? (
         <p className="supplier-hub-empty">
-          Aún no hay pedidos. Cuando un comerciante compre tus productos (o
-          registres uno manualmente), aparecerán aquí.
+          Aún no hay productos por apartar. Cuando un dropshipper apruebe el
+          pago de su cliente, te avisaremos para que reserves el stock.
         </p>
       ) : (
         <>
@@ -628,8 +625,8 @@ export function SupplierOrdersPanel({
                 type="search"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Buscar comerciante o código…"
-                aria-label="Buscar pedidos por comerciante o código"
+                placeholder="Buscar producto o código…"
+                aria-label="Buscar pedidos por producto o código"
                 className="supplier-hub-orders-search-input"
               />
             </label>
@@ -656,7 +653,9 @@ export function SupplierOrdersPanel({
                     >
                       <span className="flex min-w-0 items-center justify-between gap-2">
                         <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          {order.buyerName}
+                          {isHubCollectionSupplierOrder(order)
+                            ? summarizeProducts(order)
+                            : order.buyerName}
                         </span>
                         <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-zinc-400">
                           #{formatOrderCode(order.id)}
@@ -688,7 +687,7 @@ export function SupplierOrdersPanel({
                             }
                           </span>
                         ) : null}
-                        {order.shipOn ? (
+                        {order.shipOn && !isHubCollectionSupplierOrder(order) ? (
                           <span className="inline-flex w-fit rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-800 dark:bg-teal-950/40 dark:text-teal-200">
                             D+1 {formatBusinessDateEs(order.shipOn)}
                           </span>
@@ -704,7 +703,9 @@ export function SupplierOrdersPanel({
                   <div className="supplier-hub-card-header">
                     <div>
                       <h2 className="supplier-hub-heading text-base">
-                        {selected.buyerName}
+                        {isHubCollectionSupplierOrder(selected)
+                          ? "Apartar stock"
+                          : selected.buyerName}
                       </h2>
                       <p className="mt-1 text-xs text-zinc-500">
                         Pedido #{formatOrderCode(selected.id)} ·{" "}
@@ -721,21 +722,19 @@ export function SupplierOrdersPanel({
                     </span>
                   </div>
 
-                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                    {selected.senderName ? (
-                      <div className="supplier-hub-soft-panel">
-                        <p className="supplier-hub-section-label">
-                          Remitente (etiqueta)
-                        </p>
-                        <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          {selected.senderName}
-                        </p>
-                        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                          Imprime este nombre de tienda en el paquete. No uses
-                          datos de tu empresa ni del mayorista.
-                        </p>
-                      </div>
-                    ) : (
+                  {isHubCollectionSupplierOrder(selected) ? (
+                    <div className="supplier-hub-soft-panel mt-5">
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                        Aparta estos productos y espera a Alcéntimo.
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                        No despaches al cliente final ni revises su comprobante
+                        de pago. Alcéntimo recogerá el paquete en el centro de
+                        acopio y te pagará según la liquidación.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
                       <div className="supplier-hub-soft-panel">
                         <p className="supplier-hub-section-label">Comprador</p>
                         <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
@@ -748,24 +747,6 @@ export function SupplierOrdersPanel({
                           {selected.buyerAddress ?? "Sin dirección"}
                         </p>
                       </div>
-                    )}
-
-                    {selected.senderName ? (
-                      <div className="supplier-hub-soft-panel">
-                        <p className="supplier-hub-section-label">
-                          Destinatario (cliente final)
-                        </p>
-                        <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          {selected.buyerName}
-                        </p>
-                        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                          {selected.buyerPhone ?? "Sin teléfono"}
-                        </p>
-                        <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                          {selected.buyerAddress ?? "Sin dirección"}
-                        </p>
-                      </div>
-                    ) : (
                       <div className="supplier-hub-soft-panel">
                         <p className="supplier-hub-section-label">Envío</p>
                         <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
@@ -782,88 +763,13 @@ export function SupplierOrdersPanel({
                           {selected.shippingBranchAddress ?? "—"}
                         </p>
                       </div>
-                    )}
-                  </div>
-
-                  {selected.senderName ? (
-                    <div className="supplier-hub-soft-panel mt-4">
-                      <p className="supplier-hub-section-label">Envío</p>
-                      <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                        <Truck
-                          className="h-3.5 w-3.5 text-emerald-600"
-                          aria-hidden="true"
-                        />
-                        {supplierCarrierLabel(selected.shippingCarrier)}
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                        {selected.shippingBranchName ?? "Sin sucursal indicada"}
-                      </p>
-                      <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                        {selected.shippingBranchAddress ?? "—"}
-                      </p>
                     </div>
-                  ) : null}
-
-                  <div className="supplier-hub-soft-panel mt-4">
-                    <p className="supplier-hub-section-label">
-                      Liquidación Alcéntimo
-                    </p>
-                    <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                      {
-                        SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[
-                          selected.paymentStatus
-                        ]
-                      }
-                    </p>
-                    {selected.shipOn ? (
-                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                        Despacho D+1 a partir del{" "}
-                        {formatBusinessDateEs(selected.shipOn)}.
-                      </p>
-                    ) : null}
-                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                      Método:{" "}
-                      {selected.paymentMethod
-                        ? (getPaymentMethod(selected.paymentMethod as never)
-                            ?.label ?? selected.paymentMethod)
-                        : selected.settlementId
-                          ? "Pago único del dropshipper a Alcéntimo"
-                          : "—"}
-                    </p>
-                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                      Referencia: {selected.paymentReference ?? "—"}
-                    </p>
-                    {selected.paymentNotes.trim() ? (
-                      <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                        Notas: {selected.paymentNotes}
-                      </p>
-                    ) : null}
-                    {selected.dispatchNotifiedAt ? (
-                      <p className="mt-1 text-xs text-zinc-500">
-                        Te enviamos la orden detallada:{" "}
-                        {formatOrderDate(selected.dispatchNotifiedAt)}
-                      </p>
-                    ) : selected.paymentNotifiedAt ? (
-                      <p className="mt-1 text-xs text-zinc-500">
-                        Notificado por WhatsApp:{" "}
-                        {formatOrderDate(selected.paymentNotifiedAt)}
-                      </p>
-                    ) : null}
-                    {selected.sourceCatalogOrderId ? (
-                      <p className="mt-1 text-xs text-zinc-500">
-                        Vinculado a pedido de catálogo #
-                        {formatOrderCode(selected.sourceCatalogOrderId)}
-                      </p>
-                    ) : null}
-                    <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
-                      {selected.settlementId
-                        ? "Alcéntimo acreditó el costo de producto en tu saldo al aprobar el pago único del dropshipper. En la etiqueta usa el nombre de la tienda como remitente."
-                        : "Este pedido no viene de una liquidación diaria."}
-                    </p>
-                  </div>
+                  )}
 
                   <div className="mt-5">
-                    <p className="supplier-hub-section-label">Productos</p>
+                    <p className="supplier-hub-section-label">
+                      Productos a apartar
+                    </p>
                     <ul className="mt-2 divide-y divide-emerald-50 overflow-hidden rounded-xl border border-emerald-100 dark:divide-emerald-950/40 dark:border-emerald-900/40">
                       {selected.items.map((item) => (
                         <li
@@ -876,10 +782,6 @@ export function SupplierOrdersPanel({
                             </p>
                             <p className="text-xs text-zinc-500">
                               {formatUsd(item.unitPriceUsd)} c/u
-                              {item.unitCostUsd != null &&
-                              item.unitCostUsd !== item.unitPriceUsd
-                                ? ` · costo ${formatUsd(item.unitCostUsd)}`
-                                : ""}
                               {item.costLockedAt ? " · costo congelado" : ""}
                             </p>
                           </div>
@@ -894,6 +796,47 @@ export function SupplierOrdersPanel({
                     </p>
                   </div>
 
+                  <div className="supplier-hub-soft-panel mt-4">
+                    <p className="supplier-hub-section-label">
+                      Pago de Alcéntimo
+                    </p>
+                    <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      {
+                        SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[
+                          selected.paymentStatus
+                        ]
+                      }
+                    </p>
+                    {selected.shipOn ? (
+                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                        Recolección a partir del{" "}
+                        {formatBusinessDateEs(selected.shipOn)}.
+                      </p>
+                    ) : null}
+                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                      {selected.settlementId
+                        ? "El dropshipper liquidó a Alcéntimo. El pago a ti sale del centro de acopio."
+                        : selected.paymentMethod
+                          ? `Método: ${
+                              getPaymentMethod(
+                                selected.paymentMethod as never,
+                              )?.label ?? selected.paymentMethod
+                            }`
+                          : "Espera el pago de Alcéntimo al recoger."}
+                    </p>
+                    {selected.paymentReference ? (
+                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                        Referencia Alcéntimo: {selected.paymentReference}
+                      </p>
+                    ) : null}
+                    {selected.dispatchNotifiedAt ? (
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Aviso enviado:{" "}
+                        {formatOrderDate(selected.dispatchNotifiedAt)}
+                      </p>
+                    ) : null}
+                  </div>
+
                   {selected.notes.trim() ? (
                     <p className="supplier-hub-soft-panel mt-4 text-xs text-zinc-600 dark:text-zinc-300">
                       Notas: {selected.notes}
@@ -902,9 +845,18 @@ export function SupplierOrdersPanel({
 
                   <div className="mt-6 border-t border-emerald-100 pt-5 dark:border-emerald-900/40">
                     <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                      Estatus de despacho
+                      {isHubCollectionSupplierOrder(selected)
+                        ? "Estatus de acopio"
+                        : "Estatus de despacho"}
                     </p>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div
+                      className={cn(
+                        "mt-3 grid gap-3",
+                        isHubCollectionSupplierOrder(selected)
+                          ? "sm:grid-cols-1"
+                          : "sm:grid-cols-2",
+                      )}
+                    >
                       <div>
                         <label className="label-field" htmlFor="so-status">
                           Estatus
@@ -927,21 +879,23 @@ export function SupplierOrdersPanel({
                           ))}
                         </select>
                       </div>
-                      <div>
-                        <label className="label-field" htmlFor="so-tracking">
-                          Número de guía
-                        </label>
-                        <input
-                          id="so-tracking"
-                          className="input-field"
-                          value={editTracking}
-                          onChange={(event) =>
-                            setEditTracking(event.target.value)
-                          }
-                          placeholder="Ej: MRW-123456789"
-                          disabled={pending}
-                        />
-                      </div>
+                      {isHubCollectionSupplierOrder(selected) ? null : (
+                        <div>
+                          <label className="label-field" htmlFor="so-tracking">
+                            Número de guía
+                          </label>
+                          <input
+                            id="so-tracking"
+                            className="input-field"
+                            value={editTracking}
+                            onChange={(event) =>
+                              setEditTracking(event.target.value)
+                            }
+                            placeholder="Ej: MRW-123456789"
+                            disabled={pending}
+                          />
+                        </div>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -957,7 +911,9 @@ export function SupplierOrdersPanel({
                       ) : (
                         <Truck className="mr-2 h-4 w-4" aria-hidden="true" />
                       )}
-                      Guardar despacho
+                      {isHubCollectionSupplierOrder(selected)
+                        ? "Guardar estatus"
+                        : "Guardar despacho"}
                     </button>
                   </div>
                 </section>

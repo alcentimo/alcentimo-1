@@ -12,6 +12,11 @@ import {
   type SupplierOrderStatus,
 } from "@/lib/supplier/order-types";
 import {
+  HUB_COLLECTION_BUYER_NAME,
+  HUB_COLLECTION_CARRIER,
+  HUB_COLLECTION_NOTES,
+} from "@/lib/dropship/hub-collection";
+import {
   isSupplierB2bPaymentMethodKey,
   isSupplierOrderPaymentStatus,
   normalizeSupplierPaymentConfig,
@@ -309,17 +314,6 @@ export async function getDropshipSupplierPaymentContext(
     whatsappMessage = buildSupplierPaymentWhatsAppMessage({
       merchantStoreName: storeName,
       order: supplierOrder,
-      finalCustomerName: String(orderRow.customer_name ?? ""),
-      finalCustomerPhone:
-        typeof orderRow.customer_phone === "string"
-          ? orderRow.customer_phone
-          : null,
-      finalCustomerAddress:
-        typeof orderRow.delivery_address === "string"
-          ? orderRow.delivery_address
-          : typeof orderRow.shipping_branch_address === "string"
-            ? orderRow.shipping_branch_address
-            : null,
     });
     whatsappUrl = buildSupplierPaymentWhatsAppUrl({
       supplierWhatsAppPhone: paymentConfig.whatsappPhone,
@@ -513,28 +507,13 @@ export async function reportDropshipSupplierPayment(input: {
         merchant_user_id: user.id,
         merchant_store_id: store.id,
         source_catalog_order_id: input.catalogOrderId,
-        buyer_name: String(orderRow.customer_name ?? "Cliente").slice(0, 160),
-        buyer_phone:
-          typeof orderRow.customer_phone === "string"
-            ? orderRow.customer_phone.trim().slice(0, 40) || null
-            : null,
-        buyer_address:
-          typeof orderRow.delivery_address === "string"
-            ? orderRow.delivery_address.trim().slice(0, 500) || null
-            : null,
-        shipping_carrier:
-          typeof orderRow.shipping_method === "string"
-            ? orderRow.shipping_method.trim().slice(0, 60) || null
-            : null,
-        shipping_branch_name:
-          typeof orderRow.shipping_branch_name === "string"
-            ? orderRow.shipping_branch_name.trim().slice(0, 160) || null
-            : null,
-        shipping_branch_address:
-          typeof orderRow.shipping_branch_address === "string"
-            ? orderRow.shipping_branch_address.trim().slice(0, 320) || null
-            : null,
-        notes: "Pedido B2B generado desde venta del catálogo (dropshipping).",
+        buyer_name: HUB_COLLECTION_BUYER_NAME,
+        buyer_phone: null,
+        buyer_address: null,
+        shipping_carrier: HUB_COLLECTION_CARRIER,
+        shipping_branch_name: null,
+        shipping_branch_address: null,
+        notes: HUB_COLLECTION_NOTES,
         status: "pendiente",
         total_usd: totalUsd,
         ...paymentPatch,
@@ -591,17 +570,6 @@ export async function reportDropshipSupplierPayment(input: {
   const whatsappMessage = buildSupplierPaymentWhatsAppMessage({
     merchantStoreName: storeName,
     order: mapped,
-    finalCustomerName: String(orderRow.customer_name ?? ""),
-    finalCustomerPhone:
-      typeof orderRow.customer_phone === "string"
-        ? orderRow.customer_phone
-        : null,
-    finalCustomerAddress:
-      typeof orderRow.delivery_address === "string"
-        ? orderRow.delivery_address
-        : typeof orderRow.shipping_branch_address === "string"
-          ? orderRow.shipping_branch_address
-          : null,
   });
   const whatsappUrl = paymentConfig.whatsappPhone
     ? buildSupplierPaymentWhatsAppUrl({

@@ -8,6 +8,7 @@ import type { CatalogOrder } from "@/lib/orders/types";
 import {
   matchesOrderFilter,
   sortOrdersByBusinessRules,
+  isCompletedOrderEstado,
   type OrderEstado,
   type OrderFilterId,
 } from "@/lib/orders/order-status";
@@ -34,9 +35,11 @@ type OrderWhatsAppSession = {
 };
 
 const FILTER_TABS: { id: OrderFilterId; label: string }[] = [
-  { id: "pending", label: "Activos" },
   { id: "all", label: "Todos" },
-  { id: "completed", label: "Entregados" },
+  { id: "verify", label: "Por verificar pago" },
+  { id: "processing", label: "Procesando" },
+  { id: "logistics", label: "Logística" },
+  { id: "shipped", label: "Enviados" },
 ];
 
 function formatOrderDate(value: string): string {
@@ -297,7 +300,7 @@ export function OrdersPanel({
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadingFilter, setLoadingFilter] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const [filter, setFilter] = useState<OrderFilterId>("pending");
+  const [filter, setFilter] = useState<OrderFilterId>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const multiLocation = locations.filter((loc) => loc.is_active).length > 1;
   const tableColumnCount = multiLocation ? 7 : 6;
@@ -453,12 +456,12 @@ export function OrdersPanel({
   }, [orders, filter]);
 
   const activeOrderGroups = useMemo(() => {
-    if (filter !== "pending") return null;
+    if (filter !== "all" && filter !== "verify") return null;
     return groupActiveOrdersByDay(filteredOrders);
   }, [filter, filteredOrders]);
 
   const isOrderDimmed = useCallback(
-    (order: CatalogOrder) => order.estado === "entregado",
+    (order: CatalogOrder) => isCompletedOrderEstado(order.estado),
     [],
   );
 
@@ -567,13 +570,13 @@ export function OrdersPanel({
             </select>
           </label>
         ) : null}
-        {(filter === "today" || filter === "dispatch") && (
+        {(filter === "today") && (
           <button
             type="button"
-            onClick={() => setFilter("pending")}
+            onClick={() => setFilter("all")}
             className="text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
           >
-            Volver a activos
+            Ver todos
           </button>
         )}
         <span className="w-full text-xs text-zinc-500 sm:ml-auto sm:w-auto">
