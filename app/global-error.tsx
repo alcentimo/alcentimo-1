@@ -24,8 +24,8 @@ export default function GlobalError({
           justifyContent: "center",
           fontFamily:
             "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-          background: "#0f172a",
-          color: "#fafafa",
+          background: "#fafaf9",
+          color: "#18181b",
           padding: "1.5rem",
         }}
       >
@@ -34,13 +34,13 @@ export default function GlobalError({
             maxWidth: "22rem",
             width: "100%",
             textAlign: "center",
-            border: "1px solid #1e293b",
+            border: "1px solid #e4e4e7",
             borderRadius: "1rem",
             padding: "1.5rem",
-            background: "#111827",
+            background: "#ffffff",
           }}
         >
-          <p style={{ margin: 0, fontSize: "0.75rem", color: "#94a3b8" }}>
+          <p style={{ margin: 0, fontSize: "0.75rem", color: "#71717a" }}>
             Error crítico
           </p>
           <h1
@@ -52,7 +52,7 @@ export default function GlobalError({
           >
             No pudimos cargar la aplicación
           </h1>
-          <p style={{ margin: "0.75rem 0 0", fontSize: "0.875rem", color: "#a1a1aa" }}>
+          <p style={{ margin: "0.75rem 0 0", fontSize: "0.875rem", color: "#71717a" }}>
             Recarga para continuar. Si el problema persiste, vuelve a iniciar
             sesión.
           </p>
@@ -81,11 +81,11 @@ export default function GlobalError({
             style={{
               marginTop: "0.5rem",
               width: "100%",
-              border: "1px solid #334155",
+              border: "1px solid #e4e4e7",
               borderRadius: "0.75rem",
               padding: "0.75rem 1rem",
               background: "transparent",
-              color: "#fafafa",
+              color: "#18181b",
               fontWeight: 600,
               cursor: "pointer",
             }}

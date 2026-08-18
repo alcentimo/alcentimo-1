@@ -11,7 +11,7 @@ const MESSAGES = {
     "prefs.language": "Idioma",
     "prefs.sectionTitle": "Idioma y apariencia",
     "prefs.sectionDescription":
-      "Define el tema y el idioma del panel. El modo claro/oscuro también está en la barra superior.",
+      "Define el idioma del panel. El sitio usa siempre el diseño claro.",
     "prefs.save": "Guardar preferencias",
     "prefs.saved": "Preferencias guardadas.",
     "prefs.saving": "Guardando…",
@@ -48,7 +48,7 @@ const MESSAGES = {
     "prefs.language": "Language",
     "prefs.sectionTitle": "Language & appearance",
     "prefs.sectionDescription":
-      "Set the panel theme and language. Light/dark mode is also available in the top bar.",
+      "Set the panel language. The site always uses the light design.",
     "prefs.save": "Save preferences",
     "prefs.saved": "Preferences saved.",
     "prefs.saving": "Saving…",

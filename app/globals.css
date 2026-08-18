@@ -96,19 +96,20 @@
 }
 
 .dark {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --brand: #34d399;
-  --brand-hover: #6ee7b7;
-  --brand-muted: #064e3b;
-  --surface: #18181b;
-  --border: #27272a;
-  --muted: #a1a1aa;
-  --pc-fg-meta: #71717a;
-  --pc-media-bg: #27272a;
-  --pc-btn-mobile-bg: #fafafa;
-  --pc-btn-mobile-fg: #18181b;
-  --pc-btn-desktop-bg: #27272a;
+  /* El sitio fuerza modo claro: las variables oscuras quedan desactivadas. */
+  --background: #fafaf9;
+  --foreground: #18181b;
+  --brand: #059669;
+  --brand-hover: #047857;
+  --brand-muted: #ecfdf5;
+  --surface: #ffffff;
+  --border: #e4e4e7;
+  --muted: #71717a;
+  --pc-fg-meta: #a1a1aa;
+  --pc-media-bg: #f4f4f5;
+  --pc-btn-mobile-bg: #18181b;
+  --pc-btn-mobile-fg: #ffffff;
+  --pc-btn-desktop-bg: #ffffff;
 }
 
 body {
@@ -117,18 +118,23 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
   tap-highlight-color: transparent;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 html {
   -webkit-tap-highlight-color: transparent;
   tap-highlight-color: transparent;
+  color-scheme: light;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
-/* PWA instalada: fondo oscuro inmediato (antes de hidratar React). */
+/* PWA instalada: fondo claro inmediato (antes de hidratar React). */
 @media (display-mode: standalone), (display-mode: fullscreen) {
   html,
   body {
-    background-color: #0f172a;
+    background-color: #fafaf9;
   }
 }
 
@@ -2293,7 +2299,7 @@ html:has(.landing-shell) {
 /* ?? Dashboard tech-minimalist ?? */
 
 .dashboard-shell {
-  @apply bg-[#FAFAF9] dark:bg-zinc-950;
+  @apply max-w-full bg-[#FAFAF9];
 }
 
 .dashboard-nav-badge {
@@ -2301,17 +2307,17 @@ html:has(.landing-shell) {
 }
 
 .dashboard-header {
-  @apply border-b border-zinc-200/60 bg-white shadow-[0_1px_2px_rgba(24,24,27,0.03)] dark:border-zinc-800/60 dark:bg-zinc-950;
+  @apply min-w-0 border-b border-zinc-200/60 bg-white shadow-[0_1px_2px_rgba(24,24,27,0.03)];
 }
 
 .dashboard-header-brand {
-  @apply min-h-9;
+  @apply min-h-9 min-w-0 overflow-hidden;
 }
 
 .dashboard-header-brand-img {
-  /* ~164px a h-8: cabida completa del wordmark Alc?ntimo */
+  /* ~164px a h-8: cabida completa del wordmark Alcántimo */
   width: auto;
-  max-width: min(11.5rem, calc(100vw - 7.5rem));
+  max-width: min(11.5rem, calc(100% - 0.5rem));
 }
 
 .dashboard-header-actions {
@@ -2691,7 +2697,7 @@ html:has(.landing-shell) {
 }
 
 .store-product-grid {
-  @apply grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4;
+  @apply grid min-w-0 max-w-full grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4;
   gap: var(--pc-grid-gap);
 }
 
@@ -2771,13 +2777,13 @@ html:has(.landing-shell) {
 }
 
 .store-product-image {
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
-  @apply absolute inset-0 h-full w-full transition-transform duration-500 ease-out group-hover:scale-[1.03];
+  @apply absolute inset-0 h-full w-full;
 }
 
 .product-image-gallery {
-  @apply absolute inset-0 flex h-full w-full flex-col;
+  @apply absolute inset-0 flex h-full w-full max-w-full flex-col;
 }
 
 .product-image-gallery-stage {
@@ -2807,16 +2813,16 @@ html:has(.landing-shell) {
 }
 
 .product-image-gallery-detail {
-  @apply relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900;
+  @apply relative aspect-square w-full max-w-full overflow-hidden rounded-xl bg-zinc-100 sm:aspect-[4/5];
 }
 
 .product-image-gallery-detail .product-image-gallery-stage {
-  @apply bg-zinc-100 dark:bg-zinc-900;
+  @apply bg-zinc-100;
 }
 
 .product-image-gallery-detail .product-detail-gallery-image,
 .product-image-gallery-detail .store-product-image {
-  @apply static h-full w-full object-contain object-center;
+  @apply absolute inset-0 h-full w-full object-contain object-center;
 }
 
 .product-image-gallery-nav {
@@ -2917,7 +2923,7 @@ html:has(.landing-shell) {
 }
 
 .product-detail-overlay {
-  @apply fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4;
+  @apply fixed inset-0 z-[60] flex max-w-full items-end justify-center overflow-x-hidden sm:items-center sm:p-4;
 }
 
 .product-detail-backdrop {
@@ -2925,7 +2931,7 @@ html:has(.landing-shell) {
 }
 
 .product-detail-panel {
-  @apply relative z-10 flex max-h-[min(92dvh,900px)] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-w-2xl sm:rounded-2xl;
+  @apply relative z-10 flex max-h-[min(92dvh,900px)] w-full max-w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-w-2xl sm:rounded-2xl;
 }
 
 .product-detail-header {
@@ -2941,11 +2947,11 @@ html:has(.landing-shell) {
 }
 
 .product-detail-scroll {
-  @apply min-h-0 flex-1 overflow-y-auto;
+  @apply min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto;
 }
 
 .product-detail-media {
-  @apply bg-zinc-50 p-3 sm:p-4;
+  @apply max-w-full bg-zinc-50 p-3 sm:p-4;
 }
 
 .product-detail-media .mercado-mp-detail-gallery {
@@ -2961,7 +2967,7 @@ html:has(.landing-shell) {
 }
 
 .product-detail-gallery-image {
-  @apply h-full w-full !object-contain object-center;
+  @apply absolute inset-0 h-full w-full object-contain object-center;
 }
 
 .product-detail-gallery-fallback {
@@ -6974,7 +6980,7 @@ html:has(.landing-shell) {
 /* ?? Cat?logo transaccional p?blico (/c/[slug]) ?? */
 
 .txn-catalog-root {
-  @apply min-h-dvh w-full bg-neutral-50 text-neutral-900 antialiased;
+  @apply min-h-dvh w-full max-w-full overflow-x-clip bg-neutral-50 text-neutral-900 antialiased;
   --txn-primary: #059669;
   --txn-primary-hover: #047857;
   --txn-primary-fg: #ffffff;
@@ -7089,9 +7095,9 @@ html:has(.landing-shell) {
 
 .txn-catalog-root.txn-catalog--theme-fashion-nocturne,
 .txn-catalog-root:has(.txn-catalog--theme-fashion-nocturne) {
-  --txn-page-bg: #141414;
-  --txn-page-fg: #f5f5f4;
-  color-scheme: dark;
+  --txn-page-bg: #fafafa;
+  --txn-page-fg: #171717;
+  color-scheme: light;
 }
 
 .txn-catalog-root.txn-catalog--theme-fashion-editorial,
@@ -7658,7 +7664,7 @@ button.customer-promo-banner-link {
  * - PC (lg+): 4 columnas (el modo "list" aporta la opción de 2 cols en desktop)
  */
 .txn-product-grid {
-  @apply grid w-full min-w-0 grid-cols-2 items-stretch lg:grid-cols-4;
+  @apply grid w-full min-w-0 max-w-full grid-cols-2 items-stretch lg:grid-cols-4;
   gap: var(--pc-grid-gap);
 }
 
@@ -7740,7 +7746,7 @@ button.customer-promo-banner-link {
 }
 
 .txn-catalog .store-product-image {
-  @apply object-cover object-center;
+  @apply object-contain object-center;
 }
 
 .txn-catalog .store-product-media-fallback,
@@ -10857,7 +10863,7 @@ button.customer-promo-banner-link {
 }
 
 .txn-catalog .store-product-image {
-  @apply object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03];
+  @apply object-contain object-center;
 }
 
 .txn-catalog .store-product-action {
@@ -10906,6 +10912,9 @@ button.customer-promo-banner-link {
 /* Shell del catálogo público (vitrina Moriche: sin tab bar inferior) */
 .catalog-shell-content {
   min-height: 100dvh;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .catalog-shell-content--moriche {
@@ -12601,7 +12610,7 @@ button.catalog-profile-footer-link {
 }
 
 .dashboard-kpi-card {
-  @apply flex min-h-[7.25rem] w-full flex-col rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
+  @apply flex min-h-[7.25rem] w-full min-w-0 max-w-full flex-col rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm;
 }
 
 .dashboard-kpi-card-interactive {
@@ -12629,7 +12638,7 @@ button.catalog-profile-footer-link {
 }
 
 .dashboard-kpi-card-value {
-  @apply mt-3 text-2xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-50;
+  @apply mt-3 min-w-0 max-w-full break-words text-2xl font-semibold tabular-nums text-zinc-900;
 }
 
 .dashboard-kpi-card-value-muted {
@@ -13347,7 +13356,7 @@ button.catalog-profile-footer-link {
   --ml-muted: var(--mo-muted);
   --ml-border: var(--mo-border);
   --ml-page: var(--mo-page);
-  @apply min-h-dvh text-[var(--mo-ink)];
+  @apply min-h-dvh max-w-full overflow-x-clip text-[var(--mo-ink)];
   background:
     radial-gradient(ellipse 90% 50% at 50% -10%, rgba(20, 122, 85, 0.08), transparent 55%),
     var(--mo-page);
@@ -13383,7 +13392,7 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-main {
-  @apply mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8;
+  @apply mx-auto w-full min-w-0 max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8;
   font-family: var(--mo-sans);
 }
 
@@ -13512,16 +13521,16 @@ button.catalog-profile-footer-link {
 /* ——— Mercado Moriche · hero curatorial + vitrina ——— */
 
 .mercado-mp-header {
-  @apply sticky top-0 z-40 border-b border-white/8 bg-[color-mix(in_srgb,var(--mo-forest)_92%,transparent)] shadow-[0_10px_30px_rgba(3,24,18,0.18)];
+  @apply sticky top-0 z-40 max-w-full overflow-x-clip border-b border-white/8 bg-[color-mix(in_srgb,var(--mo-forest)_92%,transparent)] shadow-[0_10px_30px_rgba(3,24,18,0.18)];
   backdrop-filter: blur(14px);
 }
 
 .mercado-mp-header-top {
-  @apply mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8;
+  @apply mx-auto flex w-full min-w-0 max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 lg:px-8;
 }
 
 .mercado-mp-brand {
-  @apply flex shrink-0 items-center gap-3 no-underline text-[var(--mo-header-fg)];
+  @apply flex min-w-0 flex-1 items-center gap-2 no-underline text-[var(--mo-header-fg)] sm:gap-3 sm:flex-none;
 }
 
 .mercado-mp-brand-text {
@@ -13571,11 +13580,19 @@ button.mercado-mp-card-btn {
 .storefront-moriche-shell .mercado-mp-brand-text {
   display: flex !important;
   min-width: 0;
+  max-width: 100%;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .storefront-moriche-shell .mercado-nav-label {
-  display: inline !important;
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .storefront-moriche-shell .mercado-nav-label {
+    display: inline !important;
+  }
 }
 
 .storefront-moriche-shell .mercado-hero,
@@ -13637,7 +13654,7 @@ button.mercado-mp-card-btn {
 }
 
 .mercado-mp-nav {
-  @apply flex shrink-0 items-center justify-end gap-1;
+  @apply flex min-w-0 shrink items-center justify-end gap-0.5 sm:gap-1;
 }
 
 .mercado-mp-nav .mercado-nav-link {
@@ -13692,8 +13709,10 @@ button.mercado-mp-card-btn {
 }
 
 .mercado-hero-title {
-  @apply max-w-3xl font-[family-name:var(--mo-display)] text-[2.15rem] font-semibold leading-[1.08] tracking-[-0.02em] text-white sm:text-5xl lg:text-[3.35rem];
+  @apply max-w-full font-[family-name:var(--mo-display)] text-[2.15rem] font-semibold leading-[1.08] tracking-[-0.02em] text-white sm:text-5xl lg:text-[3.35rem];
   animation: mercado-hero-rise 0.65s ease-out 0.05s both;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .mercado-hero-title-accent {
@@ -13867,11 +13886,11 @@ button.mercado-mp-card-btn {
 }
 
 .mercado-mp-grid {
-  @apply grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 xl:grid-cols-4;
+  @apply grid w-full min-w-0 max-w-full grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 xl:grid-cols-4;
 }
 
 .mercado-mp-card {
-  @apply flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-[var(--mo-border)]/70 bg-[color-mix(in_srgb,var(--mo-surface)_88%,transparent)] shadow-[0_8px_28px_rgba(20,32,28,0.05)] backdrop-blur-sm transition duration-300 ease-out hover:-translate-y-1.5 hover:border-[color-mix(in_srgb,var(--mo-gold)_35%,var(--mo-border))] hover:shadow-[0_22px_44px_rgba(6,40,31,0.12)];
+  @apply flex h-full min-w-0 max-w-full flex-col overflow-hidden rounded-[1.35rem] border border-[var(--mo-border)]/70 bg-[color-mix(in_srgb,var(--mo-surface)_88%,transparent)] shadow-[0_8px_28px_rgba(20,32,28,0.05)] backdrop-blur-sm transition duration-300 ease-out hover:-translate-y-1.5 hover:border-[color-mix(in_srgb,var(--mo-gold)_35%,var(--mo-border))] hover:shadow-[0_22px_44px_rgba(6,40,31,0.12)];
 }
 
 .mercado-mp-card-media {
@@ -14010,7 +14029,7 @@ button.mercado-mp-card-btn {
 }
 
 .mercado-mp-detail-gallery {
-  @apply space-y-3 rounded-2xl border border-[var(--mo-border)] bg-white p-4 shadow-sm;
+  @apply w-full min-w-0 max-w-full space-y-3 overflow-hidden rounded-2xl border border-[var(--mo-border)] bg-white p-3 shadow-sm sm:p-4;
 }
 
 .mercado-mp-detail-hero {
