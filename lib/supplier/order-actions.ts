@@ -87,6 +87,10 @@ function mapOrder(
   return {
     id: String(row.id),
     buyerName: String(row.buyer_name ?? ""),
+    buyerDocumentId:
+      typeof row.buyer_document_id === "string" && row.buyer_document_id.trim()
+        ? row.buyer_document_id.trim()
+        : null,
     buyerPhone:
       typeof row.buyer_phone === "string" && row.buyer_phone.trim()
         ? row.buyer_phone.trim()
@@ -166,7 +170,22 @@ function mapOrder(
 }
 
 const SUPPLIER_ORDER_SELECT =
+  "id, buyer_name, buyer_document_id, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at, settlement_id, ship_on, sender_name, dispatch_notified_at";
+
+const SUPPLIER_ORDER_SELECT_LEGACY =
   "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at, settlement_id, ship_on, sender_name, dispatch_notified_at";
+
+async function selectSupplierOrdersWithFallback<T>(
+  query: (
+    select: string,
+  ) => PromiseLike<{ data: T | null; error: { message: string } | null }>,
+): Promise<{ data: T | null; error: { message: string } | null }> {
+  const full = await query(SUPPLIER_ORDER_SELECT);
+  if (full.error && /buyer_document_id/i.test(full.error.message)) {
+    return query(SUPPLIER_ORDER_SELECT_LEGACY);
+  }
+  return full;
+}
 
 export async function listSupplierOrders(): Promise<
   ActionResult<{ orders: SupplierOrder[] }>
@@ -175,15 +194,17 @@ export async function listSupplierOrders(): Promise<
   if (auth.error || !auth.user) {
     return { error: auth.error ?? "Sin sesión." };
   }
+  const supplierUserId = auth.user.id;
 
   const admin = createAdminClient();
-  const { data: orderRows, error } = await admin
-    .from("supplier_orders")
-    .select(
-      SUPPLIER_ORDER_SELECT,
-    )
-    .eq("supplier_user_id", auth.user.id)
-    .order("created_at", { ascending: false });
+  const { data: orderRows, error } = await selectSupplierOrdersWithFallback(
+    (select) =>
+      admin
+        .from("supplier_orders")
+        .select(select)
+        .eq("supplier_user_id", supplierUserId)
+        .order("created_at", { ascending: false }),
+  );
 
   if (error) {
     return { error: error.message };
@@ -314,7 +335,7 @@ export async function createSupplierOrder(input: {
 
   totalUsd = Math.round(totalUsd * 100) / 100;
 
-  const { data: orderRow, error: orderError } = await admin
+  const { data: created, error: orderError } = await admin
     .from("supplier_orders")
     .insert({
       supplier_user_id: auth.user.id,
@@ -332,16 +353,22 @@ export async function createSupplierOrder(input: {
       status: "pendiente",
       total_usd: totalUsd,
     })
-    .select(
-      SUPPLIER_ORDER_SELECT,
-    )
+    .select("id")
     .single();
 
-  if (orderError || !orderRow) {
+  if (orderError || !created?.id) {
     return { error: orderError?.message ?? "No se pudo crear el pedido." };
   }
 
-  const orderId = String((orderRow as Record<string, unknown>).id);
+  const orderId = String((created as Record<string, unknown>).id);
+  const { data: orderRow, error: fetchError } =
+    await selectSupplierOrdersWithFallback((select) =>
+      admin.from("supplier_orders").select(select).eq("id", orderId).single(),
+    );
+  if (fetchError || !orderRow) {
+    await admin.from("supplier_orders").delete().eq("id", orderId);
+    return { error: fetchError?.message ?? "No se pudo leer el pedido." };
+  }
 
   const { data: insertedItems, error: itemsError } = await admin
     .from("supplier_order_items")
@@ -405,6 +432,7 @@ export async function updateSupplierOrderDispatch(input: {
   if (auth.error || !auth.user) {
     return { error: auth.error ?? "Sin sesión." };
   }
+  const supplierUserId = auth.user.id;
 
   const orderId = input.orderId.trim();
   if (!orderId) return { error: "Pedido inválido." };
@@ -415,7 +443,7 @@ export async function updateSupplierOrderDispatch(input: {
   const tracking = (input.trackingNumber ?? "").trim().slice(0, 80);
 
   const admin = createAdminClient();
-  const { data: orderRow, error } = await admin
+  const { error: updateError } = await admin
     .from("supplier_orders")
     .update({
       status: input.status,
@@ -423,11 +451,19 @@ export async function updateSupplierOrderDispatch(input: {
       updated_at: new Date().toISOString(),
     })
     .eq("id", orderId)
-    .eq("supplier_user_id", auth.user.id)
-    .select(
-      SUPPLIER_ORDER_SELECT,
-    )
-    .maybeSingle();
+    .eq("supplier_user_id", supplierUserId);
+
+  if (updateError) return { error: updateError.message };
+
+  const { data: orderRow, error } = await selectSupplierOrdersWithFallback(
+    (select) =>
+      admin
+        .from("supplier_orders")
+        .select(select)
+        .eq("id", orderId)
+        .eq("supplier_user_id", supplierUserId)
+        .maybeSingle(),
+  );
 
   if (error) return { error: error.message };
   if (!orderRow) return { error: "Pedido no encontrado." };

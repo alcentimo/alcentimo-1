@@ -11,6 +11,9 @@ import type {
 } from "@/lib/dropship/settlement-types";
 
 export const SETTLEMENT_LINE_SELECT =
+  "settlement_id, catalog_order_id, supplier_user_id, supplier_product_id, product_title, quantity, unit_cost_usd, platform_markup_usd, line_due_usd, supplier_payout_usd, customer_name, customer_document_id, customer_phone, fulfillment_type, shipping_method, shipping_branch_name, shipping_branch_address, delivery_address";
+
+export const SETTLEMENT_LINE_SELECT_NO_DOCUMENT =
   "settlement_id, catalog_order_id, supplier_user_id, supplier_product_id, product_title, quantity, unit_cost_usd, platform_markup_usd, line_due_usd, supplier_payout_usd, customer_name, customer_phone, fulfillment_type, shipping_method, shipping_branch_name, shipping_branch_address, delivery_address";
 
 export const SETTLEMENT_LINE_SELECT_LEGACY =
@@ -26,6 +29,9 @@ export function parseSettlementShipping(
   row: Record<string, unknown>,
 ): DropshipSettlementShippingView | null {
   const customerName = optionalText(row.customer_name, 160) ?? "";
+  const customerDocumentId =
+    optionalText(row.customer_document_id, 32) ??
+    optionalText(row.document_id, 32);
   const customerPhone = optionalText(row.customer_phone, 40);
   const fulfillmentType = optionalText(row.fulfillment_type, 40);
   const shippingMethod = optionalText(row.shipping_method, 40);
@@ -35,6 +41,7 @@ export function parseSettlementShipping(
 
   if (
     !customerName &&
+    !customerDocumentId &&
     !customerPhone &&
     !fulfillmentType &&
     !shippingMethod &&
@@ -47,6 +54,7 @@ export function parseSettlementShipping(
 
   const shipping = {
     customerName: customerName || "Cliente",
+    customerDocumentId,
     customerPhone,
     fulfillmentType,
     shippingMethod,
@@ -109,6 +117,7 @@ export function shippingToLineInsert(
   shipping: DropshipSettlementShippingView | null,
 ): {
   customer_name: string;
+  customer_document_id: string | null;
   customer_phone: string | null;
   fulfillment_type: string | null;
   shipping_method: string | null;
@@ -118,6 +127,7 @@ export function shippingToLineInsert(
 } {
   return {
     customer_name: shipping?.customerName?.slice(0, 160) ?? "",
+    customer_document_id: shipping?.customerDocumentId?.slice(0, 32) ?? null,
     customer_phone: shipping?.customerPhone?.slice(0, 40) ?? null,
     fulfillment_type: shipping?.fulfillmentType?.slice(0, 40) ?? null,
     shipping_method: shipping?.shippingMethod?.slice(0, 40) ?? null,

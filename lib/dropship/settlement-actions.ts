@@ -189,6 +189,18 @@ export async function reportDropshipDailyPayment(formData: FormData): Promise<
     let { error: linesError } = await client
       .from("dropship_daily_settlement_lines")
       .insert(lineRows);
+    if (linesError && /customer_document_id/i.test(linesError.message)) {
+      const { error: withoutDocumentError } = await client
+        .from("dropship_daily_settlement_lines")
+        .insert(
+          lineRows.map((row) => {
+            const { customer_document_id, ...rest } = row;
+            void customer_document_id;
+            return rest;
+          }),
+        );
+      linesError = withoutDocumentError;
+    }
     if (
       linesError &&
       /customer_name|shipping_method|column .* does not exist/i.test(
@@ -236,6 +248,7 @@ export async function reportDropshipDailyPayment(formData: FormData): Promise<
         [],
         [],
         groupSettlementShipments(built.lines),
+        built.suppliers,
       ),
     };
   } catch (error) {

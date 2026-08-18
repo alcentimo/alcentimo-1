@@ -150,20 +150,31 @@ export function DailyDropshipSettlementCard({
         </div>
       )}
 
-      <div className={cn("grid gap-3 sm:grid-cols-2", !isPage && "mt-4")}>
+      <div className={cn("grid gap-3 sm:grid-cols-3", !isPage && "mt-4")}>
         <article className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 px-3 py-3 dark:border-zinc-800 dark:bg-zinc-900/40">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-            Ventas mayoristas
+            Costo mayorista
           </p>
           <p className="mt-1 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
-            {summary.orderCount}
+            {formatUsd(summary.wholesaleCostUsd)}
           </p>
           <p className="text-xs text-zinc-500">
-            {summary.lineCount} producto{summary.lineCount === 1 ? "" : "s"} por
-            liquidar
+            {summary.orderCount} venta{summary.orderCount === 1 ? "" : "s"} ·{" "}
+            {summary.lineCount} producto{summary.lineCount === 1 ? "" : "s"}
           </p>
         </article>
-        <article className="rounded-xl border border-teal-200 bg-teal-50/80 px-3 py-3 dark:border-teal-900/50 dark:bg-teal-950/30">
+        <article className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 px-3 py-3 dark:border-zinc-800 dark:bg-zinc-900/40">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+            Comisión Alcéntimo
+          </p>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+            {formatUsd(summary.platformMarkupUsd)}
+          </p>
+          <p className="text-xs text-zinc-500">
+            Markup {summary.markupPercent}%
+          </p>
+        </article>
+        <article className="rounded-xl border border-teal-200 bg-teal-50/80 px-3 py-3 dark:border-teal-900/50 dark:bg-teal-950/30 sm:col-span-1">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
             Total a pagar a Alcéntimo
           </p>
@@ -171,10 +182,38 @@ export function DailyDropshipSettlementCard({
             {formatUsd(summary.amountDueUsd)}
           </p>
           <p className="text-xs text-teal-800/80 dark:text-teal-200/80">
-            Pago único consolidado
+            Un comprobante, banco y referencia
           </p>
         </article>
       </div>
+
+      {summary.suppliers.length > 0 ? (
+        <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-950">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            Liquidación a cada mayorista
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {summary.suppliers.map((supplier) => (
+              <li
+                key={supplier.supplierUserId}
+                className="flex justify-between gap-3"
+              >
+                <span className="min-w-0 truncate text-zinc-700 dark:text-zinc-200">
+                  {supplier.supplierName ||
+                    `Mayorista ${supplier.supplierUserId.slice(0, 8).toUpperCase()}`}
+                  <span className="ml-1 text-xs text-zinc-400">
+                    · {supplier.orderCount} pedido
+                    {supplier.orderCount === 1 ? "" : "s"}
+                  </span>
+                </span>
+                <span className="shrink-0 tabular-nums font-medium text-zinc-900 dark:text-zinc-50">
+                  {formatUsd(supplier.wholesaleCostUsd)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {summary.lines.length > 0 ? (
         <SettlementCustomerShipments

@@ -18,6 +18,7 @@ export type SupplierDispatchNotifyPayload = {
   customerName: string;
   customerPhone: string | null;
   customerAddress: string | null;
+  customerDocumentId?: string | null;
   shippingCarrier: string | null;
   shippingBranchName: string | null;
   shippingBranchAddress: string | null;
@@ -36,6 +37,17 @@ function buildDispatchHtml(details: DispatchOrderDetails): string {
     )
     .join("");
 
+  const destinationRows = [
+    details.customerName,
+    details.customerDocumentId ? `Cédula ${details.customerDocumentId}` : null,
+    details.customerPhone,
+    details.customerAddress,
+    details.shippingBranchName,
+  ]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .map((value) => `<li style="margin:0 0 6px;">${escapeHtml(value)}</li>`)
+    .join("");
+
   const dashboardLink = details.dashboardUrl?.trim()
     ? `<p style="margin:20px 0 0;">
         <a href="${escapeHtml(details.dashboardUrl.trim())}" style="display:inline-block;background:#0d9488;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;">
@@ -49,11 +61,13 @@ function buildDispatchHtml(details: DispatchOrderDetails): string {
       <p style="margin:0 0 12px;font-size:14px;color:#52525b;">Alcéntimo · Centro de acopio</p>
       <h1 style="margin:0 0 12px;font-size:22px;">Apartar stock #${escapeHtml(details.orderCode)}</h1>
       <p style="margin:0 0 16px;">
-        El dropshipper ya aprobó el pago de su cliente. Aparta estos productos
-        y espera la recolección de Alcéntimo.
+        El dropshipper ya liquidó a Alcéntimo. Aparta estos productos y etiqueta
+        el paquete con el destino del comprador.
       </p>
       <h2 style="margin:20px 0 8px;font-size:16px;">Productos a apartar</h2>
       <ul style="margin:0;padding-left:18px;">${productRows || "<li>—</li>"}</ul>
+      <h2 style="margin:20px 0 8px;font-size:16px;">Destino del paquete</h2>
+      <ul style="margin:0;padding-left:18px;">${destinationRows || "<li>Sin destino registrado</li>"}</ul>
       <p style="margin:16px 0 0;font-size:13px;color:#52525b;">
         No incluye datos de pago del cliente final. No despaches tú el paquete:
         Alcéntimo lo recogerá en el centro de acopio.
@@ -145,6 +159,7 @@ export async function notifySuppliersOfDispatchOrders(
       customerName: payload.customerName,
       customerPhone: payload.customerPhone,
       customerAddress: payload.customerAddress,
+      customerDocumentId: payload.customerDocumentId,
       shippingCarrier: payload.shippingCarrier,
       shippingBranchName: payload.shippingBranchName,
       shippingBranchAddress: payload.shippingBranchAddress,

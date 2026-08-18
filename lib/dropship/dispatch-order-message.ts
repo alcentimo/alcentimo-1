@@ -10,6 +10,7 @@ export type DispatchOrderDetails = {
   customerName: string;
   customerPhone: string | null;
   customerAddress: string | null;
+  customerDocumentId?: string | null;
   shippingCarrier: string | null;
   shippingBranchName: string | null;
   shippingBranchAddress: string | null;
@@ -18,8 +19,8 @@ export type DispatchOrderDetails = {
 };
 
 /**
- * Aviso al proveedor del centro de acopio: solo productos a apartar.
- * Sin datos de pago ni PII del cliente final.
+ * Aviso al proveedor: productos a apartar y etiqueta de destino.
+ * Sin comprobante de pago del cliente final.
  */
 export function buildDispatchOrderText(details: DispatchOrderDetails): string {
   const productLines =
@@ -29,15 +30,28 @@ export function buildDispatchOrderText(details: DispatchOrderDetails): string {
         )
       : ["• (sin líneas)"];
 
+  const destinationBits = [
+    details.customerName,
+    details.customerDocumentId ? `CI ${details.customerDocumentId}` : null,
+    details.customerPhone,
+    details.customerAddress,
+    details.shippingBranchName,
+  ].filter(Boolean);
+
   const lines = [
     `Alcéntimo · Apartar stock #${details.orderCode}`,
-    "El dropshipper ya aprobó el pago de su cliente. Aparta estos productos y espera la recolección de Alcéntimo.",
+    "El dropshipper ya liquidó a Alcéntimo. Aparta estos productos y etiqueta el paquete con el destino del comprador.",
     "",
     "📦 Productos a apartar:",
     ...productLines,
     "",
-    "No hace falta despachar al cliente final ni revisar su comprobante de pago.",
-    "Alcéntimo recogerá el paquete en el centro de acopio y lo enviará.",
+    "🏷️ Destino del paquete:",
+    destinationBits.length > 0
+      ? destinationBits.map((bit) => `• ${bit}`).join("\n")
+      : "• Sin destino registrado",
+    "",
+    "No revises el comprobante de pago del cliente final.",
+    "Alcéntimo recogerá el paquete en el centro de acopio.",
   ];
 
   if (details.dashboardUrl?.trim()) {

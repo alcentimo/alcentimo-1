@@ -87,6 +87,10 @@ function mapOrder(
   return {
     id: String(row.id),
     buyerName: String(row.buyer_name ?? ""),
+    buyerDocumentId:
+      typeof row.buyer_document_id === "string" && row.buyer_document_id.trim()
+        ? row.buyer_document_id.trim()
+        : null,
     buyerPhone:
       typeof row.buyer_phone === "string" && row.buyer_phone.trim()
         ? row.buyer_phone.trim()
@@ -166,6 +170,9 @@ function mapOrder(
 }
 
 const ORDER_SELECT =
+  "id, buyer_name, buyer_document_id, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at, supplier_user_id, settlement_id, ship_on, sender_name, dispatch_notified_at";
+
+const ORDER_SELECT_LEGACY =
   "id, buyer_name, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at, supplier_user_id, settlement_id, ship_on, sender_name, dispatch_notified_at";
 
 export type DropshipSupplierPaymentContext = {
@@ -282,12 +289,20 @@ export async function getDropshipSupplierPaymentContext(
     (profile as { payment_config?: unknown } | null)?.payment_config,
   );
 
-  const { data: existingOrder } = await admin
+  let { data: existingOrder, error: existingError } = await admin
     .from("supplier_orders")
     .select(ORDER_SELECT)
     .eq("source_catalog_order_id", catalogOrderId)
     .eq("merchant_store_id", store.id)
     .maybeSingle();
+  if (existingError && /buyer_document_id/i.test(existingError.message)) {
+    ({ data: existingOrder, error: existingError } = await admin
+      .from("supplier_orders")
+      .select(ORDER_SELECT_LEGACY)
+      .eq("source_catalog_order_id", catalogOrderId)
+      .eq("merchant_store_id", store.id)
+      .maybeSingle());
+  }
 
   let supplierOrder: SupplierOrder | null = null;
   if (existingOrder) {
@@ -535,11 +550,18 @@ export async function reportDropshipSupplierPayment(input: {
     if (itemsError) return { error: itemsError.message };
   }
 
-  const { data: orderFresh, error: freshError } = await admin
+  let { data: orderFresh, error: freshError } = await admin
     .from("supplier_orders")
     .select(ORDER_SELECT)
     .eq("id", supplierOrderId)
     .single();
+  if (freshError && /buyer_document_id/i.test(freshError.message)) {
+    ({ data: orderFresh, error: freshError } = await admin
+      .from("supplier_orders")
+      .select(ORDER_SELECT_LEGACY)
+      .eq("id", supplierOrderId)
+      .single());
+  }
   if (freshError || !orderFresh) {
     return { error: freshError?.message ?? "No se pudo leer el pedido B2B." };
   }

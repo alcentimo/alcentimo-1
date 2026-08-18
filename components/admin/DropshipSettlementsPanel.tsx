@@ -81,6 +81,95 @@ export function DropshipSettlementsPanel({
     [settlements],
   );
 
+  const financials = useMemo(() => {
+    const active = settlements.filter(
+      (item) => item.status === "reported" || item.status === "approved",
+    );
+    const byDropshipper = new Map<
+      string,
+      {
+        storeName: string;
+        merchantEmail: string | null;
+        receivedUsd: number;
+        markupUsd: number;
+        wholesaleUsd: number;
+        orderCount: number;
+      }
+    >();
+    const bySupplier = new Map<
+      string,
+      { name: string; amountUsd: number; orderCount: number; lineCount: number }
+    >();
+
+    let receivedUsd = 0;
+    let markupUsd = 0;
+    let wholesaleUsd = 0;
+
+    for (const item of active) {
+      receivedUsd += item.amountDueUsd;
+      markupUsd += item.platformMarkupUsd;
+      wholesaleUsd += item.wholesaleCostUsd;
+
+      const storeKey = item.storeId || item.merchantUserId;
+      const current = byDropshipper.get(storeKey) ?? {
+        storeName: item.storeName || "Tienda",
+        merchantEmail: item.merchantEmail,
+        receivedUsd: 0,
+        markupUsd: 0,
+        wholesaleUsd: 0,
+        orderCount: 0,
+      };
+      current.receivedUsd += item.amountDueUsd;
+      current.markupUsd += item.platformMarkupUsd;
+      current.wholesaleUsd += item.wholesaleCostUsd;
+      current.orderCount += item.orderCount;
+      byDropshipper.set(storeKey, current);
+
+      const supplierRows =
+        item.suppliers.length > 0
+          ? item.suppliers.map((supplier) => ({
+              id: supplier.supplierUserId,
+              name: supplier.supplierName,
+              amountUsd: supplier.wholesaleCostUsd,
+              orderCount: supplier.orderCount,
+              lineCount: supplier.lineCount,
+            }))
+          : item.payouts.map((payout) => ({
+              id: payout.supplierUserId,
+              name: payout.supplierName,
+              amountUsd: payout.amountUsd,
+              orderCount: payout.orderCount,
+              lineCount: payout.lineCount,
+            }));
+
+      for (const row of supplierRows) {
+        const existing = bySupplier.get(row.id) ?? {
+          name:
+            row.name?.trim() ||
+            `Mayorista ${row.id.slice(0, 8).toUpperCase()}`,
+          amountUsd: 0,
+          orderCount: 0,
+          lineCount: 0,
+        };
+        if (row.name?.trim()) existing.name = row.name.trim();
+        existing.amountUsd += row.amountUsd;
+        existing.orderCount += row.orderCount;
+        existing.lineCount += row.lineCount;
+        bySupplier.set(row.id, existing);
+      }
+    }
+
+    return {
+      receivedUsd,
+      markupUsd,
+      wholesaleUsd,
+      dropshippers: Array.from(byDropshipper.values()),
+      suppliers: Array.from(bySupplier.values()).sort(
+        (a, b) => b.amountUsd - a.amountUsd,
+      ),
+    };
+  }, [settlements]);
+
   const approveTarget = settlements.find((item) => item.id === approveId);
 
   function replaceSettlement(next: DropshipSettlementRecord) {
@@ -136,12 +225,102 @@ export function DropshipSettlementsPanel({
   return (
     <div className="space-y-4">
       <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        Cada dropshipper reporta un pago único por el costo mayorista más el
-        markup operativo. Junto al comprobante verás el destinatario de cada
-        paquete (nombre, teléfono y sucursal/dirección) para armar la guía.
-        Al aprobarlo, el sistema divide el monto, notifica a cada proveedor y
-        etiqueta el paquete con el nombre de la tienda del dropshipper.
+        Cada dropshipper agrupa las ventas del día en un solo pago a Alcéntimo
+        (un comprobante, banco y referencia). Al aprobarlo verás el destino de
+        cada comprador para armar los paquetes, el monto recibido, la comisión
+        de Alcéntimo y lo que corresponde liquidar a cada mayorista.
       </p>
+
+      {financials.dropshippers.length > 0 ? (
+        <div className="space-y-3 rounded-2xl border border-teal-200 bg-teal-50/60 p-4 dark:border-teal-900/50 dark:bg-teal-950/20">
+          <p className="text-sm font-semibold text-teal-950 dark:text-teal-50">
+            Desglose financiero consolidado
+          </p>
+          <dl className="grid gap-2 text-sm sm:grid-cols-4">
+            <div>
+              <dt className="text-xs text-teal-800/80 dark:text-teal-200/80">
+                Recibido de dropshippers
+              </dt>
+              <dd className="font-semibold tabular-nums">
+                {formatUsd(financials.receivedUsd)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-teal-800/80 dark:text-teal-200/80">
+                Comisión Alcéntimo
+              </dt>
+              <dd className="font-semibold tabular-nums">
+                {formatUsd(financials.markupUsd)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-teal-800/80 dark:text-teal-200/80">
+                A liquidar a mayoristas
+              </dt>
+              <dd className="font-semibold tabular-nums">
+                {formatUsd(financials.wholesaleUsd)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-teal-800/80 dark:text-teal-200/80">
+                Dropshippers
+              </dt>
+              <dd className="font-semibold tabular-nums">
+                {financials.dropshippers.length}
+              </dd>
+            </div>
+          </dl>
+          <div className="grid gap-3 lg:grid-cols-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-teal-900 dark:text-teal-200">
+                Por dropshipper
+              </p>
+              <ul className="mt-1.5 space-y-1 text-xs">
+                {financials.dropshippers.map((item) => (
+                  <li
+                    key={`${item.storeName}-${item.merchantEmail ?? ""}`}
+                    className="flex justify-between gap-3"
+                  >
+                    <span className="min-w-0 truncate">
+                      {item.storeName}
+                      {item.merchantEmail ? ` · ${item.merchantEmail}` : ""}
+                    </span>
+                    <span className="shrink-0 tabular-nums font-medium">
+                      {formatUsd(item.receivedUsd)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {financials.suppliers.length > 0 ? (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-teal-900 dark:text-teal-200">
+                  Por mayorista
+                </p>
+                <ul className="mt-1.5 space-y-1 text-xs">
+                  {financials.suppliers.map((item) => (
+                    <li
+                      key={`${item.name}-${item.orderCount}`}
+                      className="flex justify-between gap-3"
+                    >
+                      <span className="min-w-0 truncate">
+                        {item.name}
+                        <span className="ml-1 text-teal-800/70 dark:text-teal-200/70">
+                          · {item.orderCount} pedido
+                          {item.orderCount === 1 ? "" : "s"}
+                        </span>
+                      </span>
+                      <span className="shrink-0 tabular-nums font-medium">
+                        {formatUsd(item.amountUsd)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((item) => (
@@ -210,20 +389,22 @@ export function DropshipSettlementsPanel({
 
               <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
                 <div>
-                  <dt className="text-xs text-zinc-500">Pedidos</dt>
-                  <dd className="font-medium tabular-nums">{settlement.orderCount}</dd>
+                  <dt className="text-xs text-zinc-500">Monto recibido</dt>
+                  <dd className="font-semibold tabular-nums text-teal-800 dark:text-teal-200">
+                    {formatUsd(settlement.amountDueUsd)}
+                  </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-zinc-500">Costo + markup</dt>
+                  <dt className="text-xs text-zinc-500">Comisión Alcéntimo</dt>
                   <dd className="font-medium tabular-nums">
-                    {formatUsd(settlement.wholesaleCostUsd)} +{" "}
                     {formatUsd(settlement.platformMarkupUsd)} ({settlement.markupPercent}%)
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-zinc-500">Total a Alcéntimo</dt>
-                  <dd className="font-semibold tabular-nums text-teal-800 dark:text-teal-200">
-                    {formatUsd(settlement.amountDueUsd)}
+                  <dt className="text-xs text-zinc-500">A mayoristas</dt>
+                  <dd className="font-medium tabular-nums">
+                    {formatUsd(settlement.wholesaleCostUsd)} · {settlement.orderCount}{" "}
+                    pedido{settlement.orderCount === 1 ? "" : "s"}
                   </dd>
                 </div>
               </dl>
@@ -287,9 +468,9 @@ export function DropshipSettlementsPanel({
                 </p>
                 <ul className="mt-1 space-y-1">
                   <li className="flex justify-between gap-3">
-                    <span>Costo a mayoristas</span>
+                    <span>Monto recibido del dropshipper</span>
                     <span className="tabular-nums font-medium">
-                      {formatUsd(settlement.wholesaleCostUsd)}
+                      {formatUsd(settlement.amountDueUsd)}
                     </span>
                   </li>
                   <li className="flex justify-between gap-3">
@@ -298,31 +479,73 @@ export function DropshipSettlementsPanel({
                       {formatUsd(settlement.platformMarkupUsd)}
                     </span>
                   </li>
+                  <li className="flex justify-between gap-3">
+                    <span>A liquidar a mayoristas</span>
+                    <span className="tabular-nums font-medium">
+                      {formatUsd(settlement.wholesaleCostUsd)}
+                    </span>
+                  </li>
                 </ul>
-                {settlement.payouts.length > 0 ? (
+                {(settlement.suppliers.length > 0
+                  ? settlement.suppliers
+                  : settlement.payouts
+                ).length > 0 ? (
                   <>
                     <p className="mt-2 font-semibold text-zinc-700 dark:text-zinc-200">
-                      Obligaciones a mayoristas
+                      A cada mayorista
                     </p>
                     <ul className="mt-1 space-y-1">
-                      {settlement.payouts.map((payout) => (
-                        <li
-                          key={payout.id}
-                          className="flex justify-between gap-3"
-                        >
-                          <span>
-                            {formatUsd(payout.amountUsd)} · {payout.orderCount}{" "}
-                            pedido
-                            {payout.orderCount === 1 ? "" : "s"} · despacho{" "}
-                            {formatBusinessDateEs(payout.shipOn)}
-                          </span>
-                          <span className="shrink-0 text-zinc-500">
-                            {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
-                          </span>
-                        </li>
-                      ))}
+                      {settlement.suppliers.length > 0
+                        ? settlement.suppliers.map((supplier) => (
+                            <li
+                              key={supplier.supplierUserId}
+                              className="flex justify-between gap-3"
+                            >
+                              <span className="min-w-0 truncate">
+                                {supplier.supplierName ||
+                                  `Mayorista ${supplier.supplierUserId.slice(0, 8).toUpperCase()}`}
+                                <span className="ml-1 text-zinc-500">
+                                  · {supplier.orderCount} pedido
+                                  {supplier.orderCount === 1 ? "" : "s"}
+                                </span>
+                              </span>
+                              <span className="shrink-0 tabular-nums font-medium">
+                                {formatUsd(supplier.wholesaleCostUsd)}
+                              </span>
+                            </li>
+                          ))
+                        : settlement.payouts.map((payout) => (
+                            <li
+                              key={payout.id}
+                              className="flex justify-between gap-3"
+                            >
+                              <span className="min-w-0 truncate">
+                                {payout.supplierName ||
+                                  `Mayorista ${payout.supplierUserId.slice(0, 8).toUpperCase()}`}
+                                <span className="ml-1 text-zinc-500">
+                                  · {payout.orderCount} pedido
+                                  {payout.orderCount === 1 ? "" : "s"} · D+1{" "}
+                                  {formatBusinessDateEs(payout.shipOn)}
+                                </span>
+                              </span>
+                              <span className="shrink-0 tabular-nums font-medium">
+                                {formatUsd(payout.amountUsd)}
+                              </span>
+                            </li>
+                          ))}
                     </ul>
                   </>
+                ) : null}
+                {settlement.payouts.length > 0 ? (
+                  <p className="mt-2 text-[11px] text-zinc-500">
+                    Obligaciones:{" "}
+                    {settlement.payouts
+                      .map(
+                        (payout) =>
+                          `${SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]} ${formatBusinessDateEs(payout.shipOn)}`,
+                      )
+                      .join(" · ")}
+                  </p>
                 ) : null}
                 {settlement.ledger.length > 0 ? (
                   <>
@@ -338,7 +561,9 @@ export function DropshipSettlementsPanel({
                           <span>
                             {entry.partyKind === "platform"
                               ? "Alcéntimo (comisión)"
-                              : "Mayorista (costo)"}
+                              : entry.partyName
+                                ? `${entry.partyName} (costo)`
+                                : "Mayorista (costo)"}
                           </span>
                           <span className="tabular-nums font-medium">
                             {formatUsd(entry.amountUsd)}
@@ -420,7 +645,7 @@ export function DropshipSettlementsPanel({
         title="Aprobar liquidación diaria"
         impact={
           approveTarget
-            ? `Vas a verificar el pago de ${approveTarget.storeName} por ${formatUsd(approveTarget.amountDueUsd)}. Revisa el comprobante y el destino de cada paquete (nombre, teléfono y sucursal/dirección) antes de aprobar. Se acreditará el costo a cada mayorista y se habilitará el despacho D+1.`
+            ? `Vas a verificar el pago de ${approveTarget.storeName} por ${formatUsd(approveTarget.amountDueUsd)}. Revisa el comprobante y el destino de cada paquete (nombre, cédula, teléfono y sucursal/dirección) antes de aprobar. Se acreditará el costo a cada mayorista y se habilitará el despacho D+1.`
             : "Vas a aprobar este reporte diario."
         }
         confirmLabel="Aprobar y habilitar D+1"

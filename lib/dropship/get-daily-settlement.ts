@@ -15,6 +15,7 @@ import {
 } from "@/lib/dropship/settlement-shared";
 import { groupSettlementShipments } from "@/lib/dropship/settlement-shipping";
 import { loadHydratedSettlementLines } from "@/lib/dropship/settlement-shipping-load";
+import { loadSupplierDisplayNames } from "@/lib/dropship/settlement-supplier-names";
 import type { DropshipDailySettlementSummary } from "@/lib/dropship/settlement-types";
 
 export async function getDropshipDailySettlementSummary(): Promise<{
@@ -69,10 +70,16 @@ export async function getDropshipDailySettlementSummary(): Promise<{
 
       const supplierMap = new Map<
         string,
-        { wholesaleCostUsd: number; lineCount: number; orders: Set<string> }
+        {
+          supplierName: string | null;
+          wholesaleCostUsd: number;
+          lineCount: number;
+          orders: Set<string>;
+        }
       >();
       for (const line of lines) {
         const current = supplierMap.get(line.supplierUserId) ?? {
+          supplierName: null,
           wholesaleCostUsd: 0,
           lineCount: 0,
           orders: new Set<string>(),
@@ -82,6 +89,9 @@ export async function getDropshipDailySettlementSummary(): Promise<{
         if (line.catalogOrderId) current.orders.add(line.catalogOrderId);
         supplierMap.set(line.supplierUserId, current);
       }
+      const supplierNames = await loadSupplierDisplayNames([
+        ...supplierMap.keys(),
+      ]);
 
       return {
         summary: {
@@ -98,6 +108,7 @@ export async function getDropshipDailySettlementSummary(): Promise<{
           suppliers: Array.from(supplierMap.entries()).map(
             ([supplierUserId, value]) => ({
               supplierUserId,
+              supplierName: supplierNames.get(supplierUserId) ?? null,
               wholesaleCostUsd: value.wholesaleCostUsd,
               lineCount: value.lineCount,
               orderCount: value.orders.size,
