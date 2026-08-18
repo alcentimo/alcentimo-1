@@ -36,7 +36,7 @@ async function SignupPageContent({
       description={
         isInvitationFlow
           ? "Regístrate o inicia sesión para aceptar tu invitación."
-          : "Completa tus datos de verificación y configura tu catálogo en minutos."
+          : "Crea tu cuenta con nombre, correo y contraseña. La tienda se configura después."
       }
     >
       <AuthPanel defaultMode="signup" />

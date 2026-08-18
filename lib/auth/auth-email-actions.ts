@@ -648,13 +648,6 @@ export async function signUpWithConfirmationEmailAction(input: {
   password: string;
   nextPath?: string | null;
   displayName?: string | null;
-  documentId?: string | null;
-  phone?: string | null;
-  businessName?: string | null;
-  city?: string | null;
-  state?: string | null;
-  socialUrl?: string | null;
-  requireVerificationFields?: boolean;
 }): Promise<AuthEmailActionResult> {
   const email = normalizeEmail(input.email);
   if (!isValidEmail(email)) {
@@ -664,48 +657,18 @@ export async function signUpWithConfirmationEmailAction(input: {
     return { ok: false, error: "La contraseña debe tener al menos 6 caracteres." };
   }
 
-  let userMetadata: Record<string, unknown> | undefined;
-  if (input.requireVerificationFields) {
-    const { validateCustomerPhoneInput, validateCustomerVerificationFields } =
-      await import("@/lib/customers/phone-auth");
-
-    const displayName = input.displayName?.trim() ?? "";
-    if (displayName.length < 2) {
-      return {
-        ok: false,
-        error: "Indica tu nombre y apellido (mínimo 2 caracteres).",
-      };
-    }
-
-    const phoneValidation = validateCustomerPhoneInput(input.phone ?? "");
-    if (!phoneValidation.ok) {
-      return { ok: false, error: phoneValidation.error };
-    }
-
-    const verification = validateCustomerVerificationFields({
-      documentId: input.documentId ?? "",
-      businessName: input.businessName ?? "",
-      city: input.city ?? "",
-      state: input.state ?? "",
-      socialUrl: input.socialUrl ?? "",
-    });
-    if (!verification.ok) {
-      return { ok: false, error: verification.error };
-    }
-
-    userMetadata = {
-      display_name: displayName.slice(0, 120),
-      full_name: displayName.slice(0, 120),
-      phone: phoneValidation.phone,
-      document_id: verification.documentId,
-      business_name: verification.businessName,
-      store_name: verification.businessName,
-      city: verification.city,
-      state: verification.state,
-      social_url: verification.socialUrl,
-      registration_verified: true,
+  const displayName = input.displayName?.trim() ?? "";
+  if (displayName.length < 2) {
+    return {
+      ok: false,
+      error: "Indica tu nombre y apellido (mínimo 2 caracteres).",
     };
   }
+
+  const userMetadata: Record<string, unknown> = {
+    display_name: displayName.slice(0, 120),
+    full_name: displayName.slice(0, 120),
+  };
 
   const postAuthPath = resolvePostAuthPath(input.nextPath);
   const redirectTo = buildRedirectUrl(postAuthPath);
