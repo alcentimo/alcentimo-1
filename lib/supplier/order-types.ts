@@ -59,6 +59,7 @@ export interface SupplierOrderItem {
 export interface SupplierOrder {
   id: string;
   buyerName: string;
+  buyerDocumentId: string | null;
   buyerPhone: string | null;
   buyerAddress: string | null;
   shippingCarrier: string | null;

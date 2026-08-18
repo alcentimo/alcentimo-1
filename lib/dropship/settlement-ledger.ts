@@ -23,6 +23,7 @@ export function mapBalanceEntryRow(
       typeof row.party_user_id === "string" && row.party_user_id
         ? row.party_user_id
         : null,
+    partyName: null,
     amountUsd: Number(row.amount_usd) || 0,
     description: String(row.description ?? ""),
     createdAt: String(row.created_at ?? ""),

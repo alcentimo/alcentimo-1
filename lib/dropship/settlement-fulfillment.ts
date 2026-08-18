@@ -6,6 +6,8 @@ import {
   notifySuppliersOfDispatchOrders,
   type SupplierDispatchNotifyPayload,
 } from "@/lib/dropship/notify-supplier-dispatch";
+import { parseSettlementShipping } from "@/lib/dropship/settlement-shipping";
+import type { DropshipSettlementShippingView } from "@/lib/dropship/settlement-types";
 import {
   HUB_COLLECTION_BUYER_NAME,
   HUB_COLLECTION_CARRIER,
@@ -21,6 +23,7 @@ type SettlementLineRow = {
   unit_cost_usd: number;
   supplier_payout_usd: number;
   platform_markup_usd: number;
+  shipping: DropshipSettlementShippingView | null;
 };
 
 function optionalText(value: unknown, max: number): string | null {
@@ -31,7 +34,7 @@ function optionalText(value: unknown, max: number): string | null {
 
 /**
  * Crea obligaciones de pago a mayoristas, registra saldos y avisa al proveedor
- * para apartar stock (recolección Alcéntimo). Sin datos del cliente final.
+ * para apartar stock. Copia el destino del cliente final a la etiqueta de acopio.
  */
 export async function fulfillApprovedDailySettlement(input: {
   settlementId: string;
@@ -53,12 +56,23 @@ export async function fulfillApprovedDailySettlement(input: {
   const senderName =
     optionalText(storeRow?.name, 160) ?? "Tienda Alcéntimo";
 
-  const { data: lineRows, error: linesError } = await client
+  let { data: lineRows, error: linesError } = await client
     .from("dropship_daily_settlement_lines")
     .select(
-      "catalog_order_id, supplier_user_id, supplier_product_id, product_title, quantity, unit_cost_usd, supplier_payout_usd, platform_markup_usd",
+      "catalog_order_id, supplier_user_id, supplier_product_id, product_title, quantity, unit_cost_usd, supplier_payout_usd, platform_markup_usd, customer_name, customer_document_id, customer_phone, fulfillment_type, shipping_method, shipping_branch_name, shipping_branch_address, delivery_address",
     )
     .eq("settlement_id", input.settlementId);
+
+  if (linesError) {
+    const fallback = await client
+      .from("dropship_daily_settlement_lines")
+      .select(
+        "catalog_order_id, supplier_user_id, supplier_product_id, product_title, quantity, unit_cost_usd, supplier_payout_usd, platform_markup_usd, customer_name, customer_phone, fulfillment_type, shipping_method, shipping_branch_name, shipping_branch_address, delivery_address",
+      )
+      .eq("settlement_id", input.settlementId);
+    lineRows = fallback.data;
+    linesError = fallback.error;
+  }
 
   if (linesError) return { error: linesError.message };
 
@@ -75,6 +89,7 @@ export async function fulfillApprovedDailySettlement(input: {
     unit_cost_usd: Number(row.unit_cost_usd) || 0,
     supplier_payout_usd: Number(row.supplier_payout_usd) || 0,
     platform_markup_usd: Number(row.platform_markup_usd) || 0,
+    shipping: parseSettlementShipping(row),
   }));
 
   const groups = new Map<
@@ -106,12 +121,20 @@ export async function fulfillApprovedDailySettlement(input: {
     const totalUsd = roundMoneyDisplay(
       group.lines.reduce((sum, line) => sum + line.supplier_payout_usd, 0),
     );
-    const customerName = HUB_COLLECTION_BUYER_NAME;
-    const customerPhone = null;
-    const customerAddress = null;
-    const shippingCarrier = HUB_COLLECTION_CARRIER;
-    const shippingBranchName = null;
-    const shippingBranchAddress = null;
+    const shipping = group.lines.find((line) => line.shipping)?.shipping ?? null;
+    const customerName =
+      shipping?.customerName?.trim() || HUB_COLLECTION_BUYER_NAME;
+    const customerPhone = shipping?.customerPhone ?? null;
+    const customerAddress =
+      shipping?.destinationLabel &&
+      shipping.destinationLabel !== "Sin destino registrado"
+        ? shipping.destinationLabel
+        : (shipping?.deliveryAddress ?? null);
+    const shippingCarrier =
+      shipping?.shippingMethod?.trim() || HUB_COLLECTION_CARRIER;
+    const shippingBranchName = shipping?.shippingBranchName ?? null;
+    const shippingBranchAddress = shipping?.shippingBranchAddress ?? null;
+    const buyerDocumentId = shipping?.customerDocumentId ?? null;
 
     const { data: existing } = await client
       .from("supplier_orders")
@@ -127,12 +150,13 @@ export async function fulfillApprovedDailySettlement(input: {
       total_usd: totalUsd,
       sender_name: senderName,
       buyer_name: customerName,
+      buyer_document_id: buyerDocumentId,
       buyer_phone: customerPhone,
       buyer_address: customerAddress,
       shipping_carrier: shippingCarrier,
       shipping_branch_name: shippingBranchName,
       shipping_branch_address: shippingBranchAddress,
-      notes: `${HUB_COLLECTION_NOTES} Liquidación ${input.businessDate}. Recolección a partir del ${shipOn}.`,
+      notes: `${HUB_COLLECTION_NOTES} Destino del paquete: ${customerName}${buyerDocumentId ? ` · CI ${buyerDocumentId}` : ""}${customerPhone ? ` · ${customerPhone}` : ""}${customerAddress ? ` · ${customerAddress}` : ""}. Liquidación ${input.businessDate}. Recolección a partir del ${shipOn}.`,
       updated_at: now,
     };
 
@@ -146,10 +170,18 @@ export async function fulfillApprovedDailySettlement(input: {
     if (existing?.id) {
       supplierOrderId = String(existing.id);
       alreadyNotified = Boolean(existing.dispatch_notified_at);
-      const { error: updateError } = await client
+      let { error: updateError } = await client
         .from("supplier_orders")
         .update(orderPatch)
         .eq("id", supplierOrderId);
+      if (updateError && /buyer_document_id/i.test(updateError.message)) {
+        const { buyer_document_id, ...withoutDocument } = orderPatch;
+        void buyer_document_id;
+        ({ error: updateError } = await client
+          .from("supplier_orders")
+          .update(withoutDocument)
+          .eq("id", supplierOrderId));
+      }
       if (updateError) return { error: updateError.message };
 
       const { data: existingItems } = await client
@@ -164,22 +196,34 @@ export async function fulfillApprovedDailySettlement(input: {
         }));
       }
     } else {
-      const { data: created, error: createError } = await client
+      const insertPayload = {
+        supplier_user_id: group.supplierUserId,
+        merchant_user_id: input.merchantUserId,
+        merchant_store_id: input.storeId,
+        source_catalog_order_id: group.catalogOrderId,
+        status: "pendiente",
+        ...orderPatch,
+      };
+      let { data: created, error: createError } = await client
         .from("supplier_orders")
-        .insert({
-          supplier_user_id: group.supplierUserId,
-          merchant_user_id: input.merchantUserId,
-          merchant_store_id: input.storeId,
-          source_catalog_order_id: group.catalogOrderId,
-          status: "pendiente",
-          ...orderPatch,
-        })
+        .insert(insertPayload)
         .select("id")
         .single();
+      if (createError && /buyer_document_id/i.test(createError.message)) {
+        const { buyer_document_id, ...withoutDocument } = insertPayload;
+        void buyer_document_id;
+        ({ data: created, error: createError } = await client
+          .from("supplier_orders")
+          .insert(withoutDocument)
+          .select("id")
+          .single());
+      }
 
       if (createError || !created?.id) {
         return {
-          error: createError?.message ?? "No se pudo crear el pedido del mayorista.",
+          error:
+            createError?.message ??
+            "No se pudo crear el pedido del mayorista.",
         };
       }
       supplierOrderId = String(created.id);
@@ -208,6 +252,7 @@ export async function fulfillApprovedDailySettlement(input: {
       customerName,
       customerPhone,
       customerAddress,
+      customerDocumentId: buyerDocumentId,
       shippingCarrier,
       shippingBranchName,
       shippingBranchAddress,

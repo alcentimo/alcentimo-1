@@ -1,4 +1,4 @@
-import { MapPin, Package, Phone, User } from "lucide-react";
+import { IdCard, MapPin, Package, Phone, User } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { groupSettlementShipments } from "@/lib/dropship/settlement-shipping";
@@ -49,7 +49,7 @@ export function SettlementCustomerShipments({
         </p>
         <p className="mt-0.5 text-xs text-zinc-500">
           {isAdmin
-            ? "Nombre, teléfono y destino (dirección o sucursal MRW/Zoom) de cada pedido incluido en este pago."
+            ? "Nombre, cédula, teléfono y destino (dirección o sucursal MRW/Zoom) de cada pedido incluido en este pago."
             : "Estos datos viajan con tu liquidación para que Alcéntimo arme la guía sin errores."}
         </p>
       </div>
@@ -87,6 +87,20 @@ export function SettlementCustomerShipments({
                     <dt className="sr-only">Nombre</dt>
                     <dd className="font-medium text-zinc-900 dark:text-zinc-50">
                       {shipping?.customerName || "Sin nombre"}
+                    </dd>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <IdCard
+                    className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400"
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <dt className="sr-only">Cédula</dt>
+                    <dd className="text-zinc-800 dark:text-zinc-200">
+                      {shipping?.customerDocumentId
+                        ? `Cédula ${shipping.customerDocumentId}`
+                        : "Sin cédula"}
                     </dd>
                   </div>
                 </div>

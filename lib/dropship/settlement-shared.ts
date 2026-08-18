@@ -15,6 +15,8 @@ import {
   type SupplierPayoutObligationView,
 } from "@/lib/dropship/settlement-types";
 import { parseSettlementShipping } from "@/lib/dropship/settlement-shipping";
+import { attachDocumentIdsToShipping } from "@/lib/dropship/settlement-shipping-load";
+import { loadSupplierDisplayNames } from "@/lib/dropship/settlement-supplier-names";
 import type { SupplierB2bPaymentMethodKey } from "@/lib/supplier/payment-types";
 
 export function mapSettlementRecord(
@@ -22,6 +24,7 @@ export function mapSettlementRecord(
   payouts: SupplierPayoutObligationView[] = [],
   ledger: SettlementBalanceEntryView[] = [],
   shipments: DropshipSettlementShipmentView[] = [],
+  suppliers: DropshipSettlementSupplierBreakdown[] = [],
 ): DropshipSettlementRecord {
   const statusRaw = String(row.status ?? "reported");
   return {
@@ -62,6 +65,7 @@ export function mapSettlementRecord(
     payouts,
     ledger,
     shipments,
+    suppliers,
   };
 }
 
@@ -73,6 +77,10 @@ export function mapPayoutRow(
     id: String(row.id),
     settlementId: String(row.settlement_id),
     supplierUserId: String(row.supplier_user_id),
+    supplierName:
+      typeof row.supplier_name === "string" && row.supplier_name.trim()
+        ? row.supplier_name.trim()
+        : null,
     businessDate: String(row.business_date ?? "").slice(0, 10),
     shipOn: String(row.ship_on ?? "").slice(0, 10),
     amountUsd: Number(row.amount_usd) || 0,
@@ -188,7 +196,7 @@ export async function buildSettlementLinesForStore(input: {
   const { data: orders, error } = await client
     .from("orders")
     .select(
-      "id, items, estado, customer_name, customer_phone, fulfillment_type, shipping_method, shipping_branch_name, shipping_branch_address, delivery_address",
+      "id, items, estado, customer_name, customer_phone, customer_user_id, fulfillment_type, shipping_method, shipping_branch_name, shipping_branch_address, delivery_address",
     )
     .eq("store_id", input.storeId)
     .in("estado", [...SETTLEMENT_ELIGIBLE_ORDER_ESTADOS]);
@@ -210,6 +218,7 @@ export async function buildSettlementLinesForStore(input: {
     estado?: unknown;
     customer_name?: unknown;
     customer_phone?: unknown;
+    customer_user_id?: unknown;
     fulfillment_type?: unknown;
     shipping_method?: unknown;
     shipping_branch_name?: unknown;
@@ -226,6 +235,15 @@ export async function buildSettlementLinesForStore(input: {
       shipping: parseSettlementShipping(row as Record<string, unknown>),
       dropshipLines,
     });
+  }
+
+  const shippingEntries = candidateOrders.map((order) => ({
+    orderId: order.id,
+    shipping: order.shipping,
+  }));
+  await attachDocumentIdsToShipping(input.storeId, shippingEntries);
+  for (let index = 0; index < candidateOrders.length; index++) {
+    candidateOrders[index].shipping = shippingEntries[index]?.shipping ?? null;
   }
 
   if (candidateOrders.length === 0) {
@@ -371,6 +389,7 @@ export async function buildSettlementLinesForStore(input: {
     platformMarkupUsd += line.platformMarkupUsd;
     const current = supplierMap.get(line.supplierUserId) ?? {
       supplierUserId: line.supplierUserId,
+      supplierName: null,
       wholesaleCostUsd: 0,
       lineCount: 0,
       orderCount: 0,
@@ -388,6 +407,14 @@ export async function buildSettlementLinesForStore(input: {
 
   for (const [supplierId, breakdown] of supplierMap) {
     breakdown.orderCount = supplierOrders.get(supplierId)?.size ?? 0;
+  }
+
+  const supplierNames = await loadSupplierDisplayNames([
+    ...supplierMap.keys(),
+  ]);
+  for (const breakdown of supplierMap.values()) {
+    breakdown.supplierName =
+      supplierNames.get(breakdown.supplierUserId) ?? null;
   }
 
   wholesaleCostUsd = roundMoneyDisplay(wholesaleCostUsd);

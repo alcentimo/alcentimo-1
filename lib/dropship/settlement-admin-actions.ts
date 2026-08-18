@@ -11,6 +11,13 @@ import {
 } from "@/lib/dropship/settlement-shared";
 import { listSettlementBalanceEntries } from "@/lib/dropship/settlement-ledger";
 import { loadShipmentsBySettlementIds } from "@/lib/dropship/settlement-shipping-load";
+import {
+  applySupplierNamesToPayouts,
+  loadSupplierBreakdownsBySettlementIds,
+  loadSupplierDisplayNames,
+  withLedgerPartyNames,
+  withNamedSuppliers,
+} from "@/lib/dropship/settlement-supplier-names";
 import type { DropshipSettlementRecord } from "@/lib/dropship/settlement-types";
 
 type ActionResult<T extends object = object> = {
@@ -55,6 +62,8 @@ export async function listDropshipDailySettlements(options?: {
   const payoutsBySettlement = new Map<string, ReturnType<typeof mapPayoutRow>[]>();
   const ledgerBySettlement = await listSettlementBalanceEntries(settlementIds);
   const shipmentsBySettlement = await loadShipmentsBySettlementIds(settlementIds);
+  const suppliersBySettlement =
+    await loadSupplierBreakdownsBySettlementIds(settlementIds);
 
   if (settlementIds.length > 0) {
     const { data: payoutRows } = await client
@@ -72,15 +81,39 @@ export async function listDropshipDailySettlements(options?: {
     }
   }
 
-  return {
-    settlements: rows.map((row) =>
-      mapSettlementRecord(
-        row,
-        payoutsBySettlement.get(String(row.id)) ?? [],
-        ledgerBySettlement.get(String(row.id)) ?? [],
-        shipmentsBySettlement.get(String(row.id)) ?? [],
-      ),
+  const supplierIds = [
+    ...new Set(
+      [
+        ...[...payoutsBySettlement.values()].flatMap((list) =>
+          list.map((item) => item.supplierUserId),
+        ),
+        ...[...ledgerBySettlement.values()].flatMap((list) =>
+          list
+            .map((entry) => entry.partyUserId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+        ...[...suppliersBySettlement.values()].flatMap((list) =>
+          list.map((item) => item.supplierUserId),
+        ),
+      ].filter(Boolean),
     ),
+  ];
+  const supplierNames = await loadSupplierDisplayNames(supplierIds);
+
+  return {
+    settlements: rows.map((row) => {
+      const id = String(row.id);
+      return mapSettlementRecord(
+        row,
+        applySupplierNamesToPayouts(
+          payoutsBySettlement.get(id) ?? [],
+          supplierNames,
+        ),
+        withLedgerPartyNames(ledgerBySettlement.get(id) ?? [], supplierNames),
+        shipmentsBySettlement.get(id) ?? [],
+        suppliersBySettlement.get(id) ?? [],
+      );
+    }),
   };
 }
 
@@ -155,13 +188,29 @@ export async function approveDropshipDailySettlement(input: {
   const shipmentsBySettlement = await loadShipmentsBySettlementIds([
     settlementId,
   ]);
+  const suppliersBySettlement = await loadSupplierBreakdownsBySettlementIds([
+    settlementId,
+  ]);
+  const payouts = ((payoutRows as Record<string, unknown>[] | null) ?? []).map(
+    mapPayoutRow,
+  );
+  const ledger = ledgerBySettlement.get(settlementId) ?? [];
+  const suppliers = suppliersBySettlement.get(settlementId) ?? [];
+  const supplierNames = await loadSupplierDisplayNames([
+    ...payouts.map((item) => item.supplierUserId),
+    ...suppliers.map((item) => item.supplierUserId),
+    ...ledger
+      .map((entry) => entry.partyUserId)
+      .filter((id): id is string => Boolean(id)),
+  ]);
 
   return {
     settlement: mapSettlementRecord(
       updated as Record<string, unknown>,
-      ((payoutRows as Record<string, unknown>[] | null) ?? []).map(mapPayoutRow),
-      ledgerBySettlement.get(settlementId) ?? [],
+      applySupplierNamesToPayouts(payouts, supplierNames),
+      withLedgerPartyNames(ledger, supplierNames),
       shipmentsBySettlement.get(settlementId) ?? [],
+      withNamedSuppliers(suppliers, supplierNames),
     ),
   };
 }
@@ -218,13 +267,24 @@ export async function rejectDropshipDailySettlement(input: {
   revalidatePath("/dashboard/pedidos");
   revalidatePath("/dashboard/liquidacion");
 
+  const shipmentsBySettlement = await loadShipmentsBySettlementIds([
+    settlementId,
+  ]);
+  const suppliersBySettlement = await loadSupplierBreakdownsBySettlementIds([
+    settlementId,
+  ]);
+  const suppliers = suppliersBySettlement.get(settlementId) ?? [];
+  const supplierNames = await loadSupplierDisplayNames(
+    suppliers.map((item) => item.supplierUserId),
+  );
+
   return {
     settlement: mapSettlementRecord(
       updated as Record<string, unknown>,
       [],
       [],
-      (await loadShipmentsBySettlementIds([settlementId])).get(settlementId) ??
-        [],
+      shipmentsBySettlement.get(settlementId) ?? [],
+      withNamedSuppliers(suppliers, supplierNames),
     ),
   };
 }

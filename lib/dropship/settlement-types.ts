@@ -71,6 +71,7 @@ export function isSettlementEligibleOrderEstado(
 
 export interface DropshipSettlementShippingView {
   customerName: string;
+  customerDocumentId: string | null;
   customerPhone: string | null;
   fulfillmentType: string | null;
   shippingMethod: string | null;
@@ -105,6 +106,7 @@ export interface DropshipSettlementShipmentView {
 
 export interface DropshipSettlementSupplierBreakdown {
   supplierUserId: string;
+  supplierName: string | null;
   wholesaleCostUsd: number;
   lineCount: number;
   orderCount: number;
@@ -133,6 +135,7 @@ export interface SettlementBalanceEntryView {
   accountKey: string;
   partyKind: SettlementLedgerPartyKind;
   partyUserId: string | null;
+  partyName: string | null;
   amountUsd: number;
   description: string;
   createdAt: string;
@@ -162,12 +165,14 @@ export interface DropshipSettlementRecord {
   payouts: SupplierPayoutObligationView[];
   ledger: SettlementBalanceEntryView[];
   shipments: DropshipSettlementShipmentView[];
+  suppliers: DropshipSettlementSupplierBreakdown[];
 }
 
 export interface SupplierPayoutObligationView {
   id: string;
   settlementId: string;
   supplierUserId: string;
+  supplierName: string | null;
   businessDate: string;
   shipOn: string;
   amountUsd: number;

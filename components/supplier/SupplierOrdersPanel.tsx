@@ -24,7 +24,7 @@ import {
   type SupplierOrder,
   type SupplierOrderStatus,
 } from "@/lib/supplier/order-types";
-import { isHubCollectionSupplierOrder } from "@/lib/dropship/hub-collection";
+import { isHubCollectionSupplierOrder, hubOrderHasPackingDestination, HUB_COLLECTION_BUYER_NAME } from "@/lib/dropship/hub-collection";
 import { SUPPLIER_ORDER_PAYMENT_STATUS_LABELS } from "@/lib/supplier/payment-types";
 import { getPaymentMethod } from "@/src/config/payment-methods";
 
@@ -90,7 +90,11 @@ function orderMatchesQuery(order: SupplierOrder, query: string): boolean {
   const code = formatOrderCode(order.id).toLowerCase();
   const products = summarizeProducts(order).toLowerCase();
   const haystack = [
-    isHubCollectionSupplierOrder(order) ? "" : order.buyerName,
+    isHubCollectionSupplierOrder(order)
+      ? order.buyerName && order.buyerName !== HUB_COLLECTION_BUYER_NAME
+        ? order.buyerName
+        : ""
+      : order.buyerName,
     order.senderName ?? "",
     order.id,
     code,
@@ -109,6 +113,10 @@ function buildOrdersCsv(orders: SupplierOrder[]): string {
     "id",
     "tipo",
     "productos",
+    "destinatario",
+    "cedula",
+    "telefono",
+    "destino",
     "estado",
     "liquidacion_alcentimo",
     "total_usd",
@@ -125,6 +133,16 @@ function buildOrdersCsv(orders: SupplierOrder[]): string {
           ? "Acopio Alcéntimo"
           : "Pedido propio",
         summarizeProducts(order),
+        order.buyerName,
+        order.buyerDocumentId ?? "",
+        order.buyerPhone ?? "",
+        [
+          order.buyerAddress,
+          order.shippingBranchName,
+          order.shippingBranchAddress,
+        ]
+          .filter(Boolean)
+          .join(" · "),
         SUPPLIER_ORDER_STATUS_LABELS[order.status],
         SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[order.paymentStatus],
         order.totalUsd.toFixed(2),
@@ -654,7 +672,9 @@ export function SupplierOrdersPanel({
                       <span className="flex min-w-0 items-center justify-between gap-2">
                         <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
                           {isHubCollectionSupplierOrder(order)
-                            ? summarizeProducts(order)
+                            ? hubOrderHasPackingDestination(order)
+                              ? order.buyerName
+                              : summarizeProducts(order)
                             : order.buyerName}
                         </span>
                         <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-zinc-400">
@@ -687,7 +707,7 @@ export function SupplierOrdersPanel({
                             }
                           </span>
                         ) : null}
-                        {order.shipOn && !isHubCollectionSupplierOrder(order) ? (
+                        {order.shipOn ? (
                           <span className="inline-flex w-fit rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-800 dark:bg-teal-950/40 dark:text-teal-200">
                             D+1 {formatBusinessDateEs(order.shipOn)}
                           </span>
@@ -704,7 +724,9 @@ export function SupplierOrdersPanel({
                     <div>
                       <h2 className="supplier-hub-heading text-base">
                         {isHubCollectionSupplierOrder(selected)
-                          ? "Apartar stock"
+                          ? hubOrderHasPackingDestination(selected)
+                            ? selected.buyerName
+                            : "Apartar stock"
                           : selected.buyerName}
                       </h2>
                       <p className="mt-1 text-xs text-zinc-500">
@@ -723,16 +745,75 @@ export function SupplierOrdersPanel({
                   </div>
 
                   {isHubCollectionSupplierOrder(selected) ? (
-                    <div className="supplier-hub-soft-panel mt-5">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                        Aparta estos productos y espera a Alcéntimo.
-                      </p>
-                      <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                        No despaches al cliente final ni revises su comprobante
-                        de pago. Alcéntimo recogerá el paquete en el centro de
-                        acopio y te pagará según la liquidación.
-                      </p>
-                    </div>
+                    <>
+                      <div className="supplier-hub-soft-panel mt-5">
+                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                          Aparta estos productos y etiqueta el paquete.
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                          No despaches al cliente final ni revises su
+                          comprobante de pago. Alcéntimo recogerá el paquete en
+                          el centro de acopio y te pagará según la liquidación.
+                        </p>
+                      </div>
+                      {hubOrderHasPackingDestination(selected) ? (
+                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                          <div className="supplier-hub-soft-panel">
+                            <p className="supplier-hub-section-label">
+                              Destino del comprador
+                            </p>
+                            <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                              {selected.buyerName}
+                            </p>
+                            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                              {selected.buyerDocumentId
+                                ? `Cédula ${selected.buyerDocumentId}`
+                                : "Sin cédula"}
+                            </p>
+                            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                              {selected.buyerPhone ?? "Sin teléfono"}
+                            </p>
+                          </div>
+                          <div className="supplier-hub-soft-panel">
+                            <p className="supplier-hub-section-label">
+                              Dirección / agencia
+                            </p>
+                            <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                              <Truck
+                                className="h-3.5 w-3.5 text-emerald-600"
+                                aria-hidden="true"
+                              />
+                              {supplierCarrierLabel(selected.shippingCarrier)}
+                            </p>
+                            <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                              {selected.buyerAddress ??
+                                selected.shippingBranchName ??
+                                "Sin destino registrado"}
+                            </p>
+                            {selected.shippingBranchName &&
+                            selected.buyerAddress &&
+                            !selected.buyerAddress.includes(
+                              selected.shippingBranchName,
+                            ) ? (
+                              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                                Sucursal: {selected.shippingBranchName}
+                              </p>
+                            ) : null}
+                            {selected.shippingBranchAddress ? (
+                              <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                                {selected.shippingBranchAddress}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="mt-4 text-xs text-zinc-500">
+                          El nombre, cédula, teléfono y destino del comprador
+                          aparecerán aquí cuando Alcéntimo apruebe la
+                          liquidación del dropshipper.
+                        </p>
+                      )}
+                    </>
                   ) : (
                     <div className="mt-5 grid gap-4 sm:grid-cols-2">
                       <div className="supplier-hub-soft-panel">
