@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getDashboardSession } from "@/lib/auth/get-user-profile";
+import { getOptionalAuthUser } from "@/lib/auth/optional-auth";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { getOnboardingSetupStatus } from "@/lib/onboarding/setup-status";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
@@ -11,7 +12,7 @@ import { CatalogPanel } from "@/components/dashboard/CatalogPanel";
 import { InventoryListSkeleton } from "@/components/dashboard/InventoryListSkeleton";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { CatalogPublicLinkMenu } from "@/components/dashboard/CatalogPublicLinkMenu";
-import { Button } from "@/components/ui/button";
+import { ensureDefaultMerchantStore } from "@/lib/stores/ensure-default-merchant-store";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -35,22 +36,37 @@ export default async function CatalogoPage({
     redirect("/dashboard/ajustes");
   }
 
-  const { store } = session;
   const showOnboardingSuccess = params.onboarded === "1";
+
+  let { store } = session;
+  if (!store) {
+    try {
+      const supabase = await createClient();
+      const user = await getOptionalAuthUser(supabase);
+      if (user) {
+        store = await ensureDefaultMerchantStore(supabase, user);
+      }
+    } catch (error) {
+      console.error("[dashboard/catalogo] default store", error);
+    }
+  }
 
   if (!store) {
     return (
-      <div className="mx-auto max-w-2xl">
-        <header className="page-header">
-          <p className="section-label">Catálogo</p>
-          <h1 className="page-header-title">Tu vitrina</h1>
-          <p className="page-header-desc">
-            Crea tu tienda para conectar productos del catálogo mayorista.
-          </p>
-        </header>
-        <div className="card-panel">
-          <Link href="/onboarding">
-            <Button className="btn-brand">Configurar mi tienda</Button>
+      <div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center px-4 py-12 text-center">
+        <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+          No pudimos abrir tu tienda
+        </h1>
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          Recarga la página. Si el problema continúa, entra de nuevo a tu
+          cuenta.
+        </p>
+        <div className="mt-6 flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
+          <Link href="/dashboard/catalogo" className="btn-primary">
+            Reintentar
+          </Link>
+          <Link href="/dashboard/login" className="btn-brand-outline">
+            Volver al acceso
           </Link>
         </div>
       </div>

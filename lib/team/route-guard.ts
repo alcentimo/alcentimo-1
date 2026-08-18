@@ -23,7 +23,7 @@ export async function requireDashboardRouteAccess(
 
   const storeRole = session.storeRole;
   if (!session.store) {
-    redirect("/onboarding");
+    redirect("/dashboard/catalogo");
   }
 
   if (!storeRole || !canAccessDashboardPath(storeRole, pathname)) {

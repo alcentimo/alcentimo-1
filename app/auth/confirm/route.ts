@@ -6,6 +6,8 @@ import {
   resolveAuthConfirmNext,
 } from "@/lib/auth/resolve-auth-confirm-next";
 import { logAuthEvent } from "@/lib/auth/auth-log";
+import { isInvitationNextPath } from "@/lib/auth/post-auth-redirect";
+import { ensureDefaultMerchantStore } from "@/lib/stores/ensure-default-merchant-store";
 import { requireSupabasePublicEnv } from "@/lib/supabase/config";
 import { getSupabaseCookieOptions } from "@/lib/supabase/cookie-options";
 import { getSiteUrl } from "@/lib/site-url";
@@ -26,7 +28,7 @@ export async function GET(request: NextRequest) {
   const safeNext = resolveAuthConfirmNext(type, nextParam);
   const errorPath = resolveAuthConfirmErrorPath(type);
 
-  let supabaseResponse = NextResponse.redirect(`${siteUrl}${safeNext}`);
+  const supabaseResponse = NextResponse.redirect(`${siteUrl}${safeNext}`);
 
   const { url, anonKey } = requireSupabasePublicEnv();
 
@@ -52,6 +54,14 @@ export async function GET(request: NextRequest) {
 
     if (!error) {
       logAuthEvent("confirm_otp_success", { type });
+      if (type !== "recovery" && !isInvitationNextPath(safeNext)) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          await ensureDefaultMerchantStore(supabase, user);
+        }
+      }
       return supabaseResponse;
     }
 
@@ -73,6 +83,14 @@ export async function GET(request: NextRequest) {
 
     if (!error) {
       logAuthEvent("confirm_code_success", { type });
+      if (type !== "recovery" && !isInvitationNextPath(safeNext)) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          await ensureDefaultMerchantStore(supabase, user);
+        }
+      }
       return supabaseResponse;
     }
 

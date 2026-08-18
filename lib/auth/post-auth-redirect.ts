@@ -27,8 +27,13 @@ export function applySafeInternalNextRedirect(
     queryIndex >= 0 ? trimmed.slice(0, queryIndex) || fallbackPath : trimmed;
   const search = queryIndex >= 0 ? trimmed.slice(queryIndex) : "";
 
-  // /dashboard solo redirige a catálogo; usar el fallback evita un hop extra.
-  if (pathnameOnly === "/dashboard" || pathnameOnly === "/dashboard/") {
+  // /dashboard y el antiguo /onboarding van al panel principal.
+  if (
+    pathnameOnly === "/dashboard" ||
+    pathnameOnly === "/dashboard/" ||
+    pathnameOnly === "/onboarding" ||
+    pathnameOnly === "/onboarding/"
+  ) {
     redirectUrl.pathname = fallbackPath;
     redirectUrl.search = search;
     return;
@@ -38,7 +43,7 @@ export function applySafeInternalNextRedirect(
   redirectUrl.search = search;
 }
 
-/** Destino por defecto tras login: catálogo (middleware manda a /onboarding si no hay tienda). */
+/** Destino por defecto tras login: catálogo (se crea una tienda genérica si aún no existe). */
 export const DEFAULT_POST_AUTH_PATH = "/dashboard/catalogo";
 
 /** Panel de carga de productos para mayoristas / proveedores. */
@@ -53,8 +58,13 @@ export function resolvePostAuthPath(next: string | null | undefined): string {
     !trimmed.startsWith("http://") &&
     !trimmed.startsWith("https://")
   ) {
-    // Evitar /dashboard → redirect extra a /dashboard/catalogo.
-    if (trimmed === "/dashboard" || trimmed === "/dashboard/") {
+    // Evitar /dashboard u /onboarding → extra hop; ir al panel.
+    if (
+      trimmed === "/dashboard" ||
+      trimmed === "/dashboard/" ||
+      trimmed === "/onboarding" ||
+      trimmed === "/onboarding/"
+    ) {
       return DEFAULT_POST_AUTH_PATH;
     }
     return trimmed;

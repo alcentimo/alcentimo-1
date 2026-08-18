@@ -20,9 +20,13 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getPasswordResetRedirectUrl } from "@/lib/site-url";
-import { resolvePostAuthPath } from "@/lib/auth/post-auth-redirect";
+import {
+  isInvitationNextPath,
+  resolvePostAuthPath,
+} from "@/lib/auth/post-auth-redirect";
 import { getSiteUrl } from "@/lib/site-url";
 import { formatAuthError } from "@/lib/auth/format-auth-error";
+import { ensureDefaultMerchantStore } from "@/lib/stores/ensure-default-merchant-store";
 import {
   assertVerificationResendAllowed,
   clearVerificationResendLimits,
@@ -55,7 +59,7 @@ function mapSignupError(message: string): string {
 function buildRedirectUrl(nextPath: string): string {
   const siteUrl = getSiteUrl().replace(/\/$/, "");
   const safeNext =
-    nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/onboarding";
+    nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/dashboard";
   return `${siteUrl}${safeNext}`;
 }
 
@@ -1221,6 +1225,7 @@ export async function correctSignupEmailAction(input: {
 export async function verifySignupOtpAction(input: {
   email: string;
   token: string;
+  nextPath?: string | null;
 }): Promise<AuthEmailActionResult> {
   const email = normalizeEmail(input.email);
   const token = input.token.trim();
@@ -1246,6 +1251,14 @@ export async function verifySignupOtpAction(input: {
       });
 
       if (!error) {
+        if (!isInvitationNextPath(input.nextPath)) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (user) {
+            await ensureDefaultMerchantStore(supabase, user);
+          }
+        }
         return { ok: true };
       }
 

@@ -2,7 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthUser } from "@/lib/auth/require-dashboard-auth";
+import { getOptionalAuthUser } from "@/lib/auth/optional-auth";
 import { getUserStore } from "@/lib/stores";
+import { ensureDefaultMerchantStore } from "@/lib/stores/ensure-default-merchant-store";
 import { getCurrentExchangeRate } from "@/lib/catalog";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { isStoreOwner } from "@/lib/stores/owner-access";
@@ -110,7 +112,10 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
       return { ok: false, error: auth.error };
     }
 
-    const store = await getUserStore(supabase, auth.authUser.id);
+    const rawUser = await getOptionalAuthUser(supabase);
+    const store =
+      (await getUserStore(supabase, auth.authUser.id)) ??
+      (rawUser ? await ensureDefaultMerchantStore(supabase, rawUser) : null);
     if (store?.id && store.slug) {
       // Idempotente: asegura CNAME + dominio Vercel (evita ERR_CONNECTION_CLOSED).
       scheduleStoreSubdomainProvision({ storeId: store.id, slug: store.slug });

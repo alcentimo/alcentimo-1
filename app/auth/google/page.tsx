@@ -19,7 +19,7 @@ export default async function GoogleAuthPage({ searchParams }: GoogleAuthPagePro
   const params = await searchParams;
   const storeSlug = params.store?.trim().toLowerCase() || undefined;
   const orderId = params.orderId?.trim() || undefined;
-  const nextPath = sanitizeAuthReturnUrl(params.next, storeSlug, "/onboarding");
+  const nextPath = sanitizeAuthReturnUrl(params.next, storeSlug, "/dashboard");
 
   let storeName: string | null = null;
   if (storeSlug) {

@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
+import { getOptionalAuthUser } from "@/lib/auth/optional-auth";
+import { ensureDefaultMerchantStore } from "@/lib/stores/ensure-default-merchant-store";
 
 function isDevBypassEnabled(): boolean {
   return (
@@ -77,6 +79,10 @@ export async function devSignUpAndSignIn(
     }
 
     await ensureUserProfile(supabase);
+    const user = await getOptionalAuthUser(supabase);
+    if (user) {
+      await ensureDefaultMerchantStore(supabase, user);
+    }
 
     return { ok: true };
   } catch (err) {

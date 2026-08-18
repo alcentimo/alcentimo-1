@@ -243,7 +243,7 @@ export async function middleware(request: NextRequest) {
       if (!confirmUrl.searchParams.has("next")) {
         confirmUrl.searchParams.set(
           "next",
-          isRecovery ? RESET_PASSWORD_PATH : ONBOARDING_PATH,
+          isRecovery ? RESET_PASSWORD_PATH : "/dashboard",
         );
       }
       return NextResponse.redirect(confirmUrl);
@@ -252,7 +252,7 @@ export async function middleware(request: NextRequest) {
     const callbackUrl = request.nextUrl.clone();
     callbackUrl.pathname = AUTH_CALLBACK_PATH;
     if (!callbackUrl.searchParams.has("next")) {
-      callbackUrl.searchParams.set("next", ONBOARDING_PATH);
+      callbackUrl.searchParams.set("next", "/dashboard");
     }
     return NextResponse.redirect(callbackUrl);
   }
@@ -313,9 +313,7 @@ export async function middleware(request: NextRequest) {
     }
     const nextTarget = isProveedorRoute
       ? SUPPLIER_POST_AUTH_PATH
-      : isOnboarding
-        ? ONBOARDING_PATH
-        : "/dashboard/catalogo";
+      : "/dashboard/catalogo";
     verifyUrl.searchParams.set("next", nextTarget);
     return NextResponse.redirect(verifyUrl);
   }
@@ -546,7 +544,7 @@ export async function middleware(request: NextRequest) {
     if (!authenticatedUser) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = DASHBOARD_LOGIN;
-      loginUrl.searchParams.set("next", ONBOARDING_PATH);
+      loginUrl.searchParams.set("next", "/dashboard");
       return NextResponse.redirect(loginUrl);
     }
 
@@ -583,7 +581,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(accountUrl);
     }
 
-    return supabaseResponse;
+    const dashboardUrl = request.nextUrl.clone();
+    dashboardUrl.pathname = "/dashboard/catalogo";
+    dashboardUrl.search = "";
+    return NextResponse.redirect(dashboardUrl);
   }
 
   if (isDashboard) {
@@ -629,10 +630,7 @@ export async function middleware(request: NextRequest) {
           return NextResponse.redirect(accountUrl);
         }
 
-        const onboardingUrl = request.nextUrl.clone();
-        onboardingUrl.pathname = ONBOARDING_PATH;
-        onboardingUrl.search = "";
-        return NextResponse.redirect(onboardingUrl);
+        // Sin tienda aún: el panel crea una genérica. No enviar a onboarding.
       }
 
       if (!isDashboardPublicAuthPath(pathname)) {
@@ -715,7 +713,7 @@ export async function middleware(request: NextRequest) {
       } else if (next?.startsWith(DASHBOARD_INVITATION_PATH)) {
         applySafeInternalNextRedirect(redirectUrl, next, DASHBOARD_INVITATION_PATH);
       } else {
-        // Proveedor puro (sin tienda) → hub; cliente → cuenta; resto → onboarding.
+        // Proveedor puro (sin tienda) → hub; cliente → cuenta; resto → panel.
         const supplierOnly = await shouldForceSupplierPostAuthRedirect({
           email: authEmail,
           userId: authenticatedUser.id,
@@ -735,7 +733,7 @@ export async function middleware(request: NextRequest) {
             );
             redirectUrl.search = "";
           } else {
-            redirectUrl.pathname = ONBOARDING_PATH;
+            redirectUrl.pathname = "/dashboard/catalogo";
             redirectUrl.search = "";
           }
         }
