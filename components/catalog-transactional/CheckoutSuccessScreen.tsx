@@ -11,6 +11,7 @@ import { useCustomerAccountMode } from "@/components/catalog-transactional/Custo
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
 import { CustomerOrderPaymentProofUpload } from "@/components/customers/CustomerOrderPaymentProofUpload";
 import { CUSTOMER_ORDER_ESTADO_LABELS } from "@/lib/orders/order-status";
+import { CheckoutQuickAuth } from "@/components/catalog-transactional/CheckoutQuickAuth";
 
 interface CheckoutSuccessScreenProps {
   storeSlug: string;
@@ -90,6 +91,7 @@ export function CheckoutSuccessScreen({
       whatsappLabel: "Escribir a la tienda por WhatsApp",
     };
   })();
+  const [quickAuthDone, setQuickAuthDone] = useState(false);
 
   return (
     <div className="txn-checkout-success">
@@ -160,12 +162,34 @@ export function CheckoutSuccessScreen({
       </button>
 
       {showAccountLink ? (
-        <Link
-          href={fullRegisterPath}
-          className="mt-4 text-xs text-zinc-500 underline hover:text-zinc-800 dark:hover:text-zinc-200"
-        >
-          Crear cuenta (opcional)
-        </Link>
+        <div className="mt-4 w-full rounded-xl border border-zinc-200/80 bg-white/70 p-3 dark:border-zinc-800 dark:bg-zinc-900/30">
+          {quickAuthDone ? (
+            <p className="text-center text-xs text-emerald-700 dark:text-emerald-300">
+              Cuenta creada. Ya puedes ver tus pedidos en esta tienda.
+            </p>
+          ) : (
+            <>
+              <CheckoutQuickAuth
+                storeSlug={storeSlug}
+                variant="postPurchase"
+                orderId={orderId}
+                initialDisplayName={customerSession?.displayName ?? ""}
+                initialEmail={customerSession?.contactEmail ?? ""}
+                onAuthenticated={(profile) => {
+                  customerSession?.setSessionFromRegistration(profile);
+                  void customerSession?.refreshSession();
+                  setQuickAuthDone(true);
+                }}
+              />
+              <Link
+                href={fullRegisterPath}
+                className="mt-3 block text-center text-xs text-zinc-500 underline hover:text-zinc-800 dark:hover:text-zinc-200"
+              >
+                Abrir registro completo
+              </Link>
+            </>
+          )}
+        </div>
       ) : null}
     </div>
   );

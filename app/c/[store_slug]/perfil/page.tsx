@@ -44,7 +44,9 @@ export default async function CustomerProfilePage({
     await Promise.all([
       supabase
         .from("customer_profiles")
-        .select("display_name, phone, delivery_address")
+        .select(
+          "display_name, phone, delivery_address, preferred_shipping_method, preferred_shipping_branch_name",
+        )
         .eq("user_id", user.id)
         .eq("store_id", store.id)
         .maybeSingle(),
@@ -88,6 +90,12 @@ export default async function CustomerProfilePage({
           displayName={profile?.display_name ?? null}
           phone={profile?.phone ?? null}
           deliveryAddress={(profile?.delivery_address as string | null) ?? null}
+          preferredShippingMethod={
+            (profile?.preferred_shipping_method as string | null) ?? null
+          }
+          preferredShippingBranchName={
+            (profile?.preferred_shipping_branch_name as string | null) ?? null
+          }
           whatsappPhone={whatsappPhone}
         />
       </div>

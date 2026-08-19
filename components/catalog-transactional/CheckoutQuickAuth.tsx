@@ -12,27 +12,28 @@ interface CheckoutQuickAuthProps {
   variant?: "checkout" | "postPurchase";
   orderId?: string | null;
   initialDisplayName?: string;
-  initialPhone?: string;
+  initialEmail?: string;
   onAuthenticated: (profile: {
     displayName: string;
-    phone: string;
+    phone?: string | null;
+    contactEmail?: string | null;
     deliveryAddress?: string | null;
     preferredShippingMethod?: string | null;
     preferredShippingBranchCode?: string | null;
   }) => void;
 }
 
-/** Registro opcional post-compra: teléfono + contraseña (sin SMS). */
+/** Registro opcional post-compra: nombre + correo + contraseña. */
 export function CheckoutQuickAuth({
   storeSlug,
   variant = "checkout",
   orderId = null,
   initialDisplayName = "",
-  initialPhone = "",
+  initialEmail = "",
   onAuthenticated,
 }: CheckoutQuickAuthProps) {
   const [displayName, setDisplayName] = useState(initialDisplayName);
-  const [phone, setPhone] = useState(initialPhone);
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -47,8 +48,8 @@ export function CheckoutQuickAuth({
     const result = await quickRegisterOrSignInCustomerInline({
       storeSlug,
       displayName,
-      method: "phone",
-      phone,
+      method: "email",
+      email,
       password,
       orderId,
     });
@@ -62,7 +63,8 @@ export function CheckoutQuickAuth({
 
     onAuthenticated({
       displayName: result.displayName,
-      phone: result.phone?.trim() || phone.trim() || "",
+      phone: result.phone?.trim() || null,
+      contactEmail: result.contactEmail?.trim() || email.trim() || null,
       deliveryAddress: result.deliveryAddress ?? null,
       preferredShippingMethod: result.preferredShippingMethod ?? null,
       preferredShippingBranchCode: result.preferredShippingBranchCode ?? null,
@@ -76,8 +78,8 @@ export function CheckoutQuickAuth({
       </p>
       <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
         {isPostPurchase
-          ? "Teléfono y una contraseña. Sin SMS ni códigos. Puedes saltarte este paso."
-          : "Teléfono y contraseña. Sin SMS."}
+          ? "Nombre y apellido, correo y contraseña. Puedes saltarte este paso."
+          : "Nombre y apellido, correo y contraseña."}
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-3">
@@ -95,17 +97,15 @@ export function CheckoutQuickAuth({
           />
         </label>
         <label className="txn-field">
-          <span>Teléfono</span>
+          <span>Correo electrónico</span>
           <input
-            type="tel"
+            type="email"
             required
-            minLength={10}
-            autoComplete="tel"
-            inputMode="tel"
-            value={phone}
-            onChange={(event) => setPhone(event.target.value)}
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             className="txn-input"
-            placeholder="0412… o 412…"
+            placeholder="tu@correo.com"
           />
         </label>
         <label className="txn-field">
