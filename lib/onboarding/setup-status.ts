@@ -1,5 +1,6 @@
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
 import { getTransactionalCatalogUrl } from "@/lib/stores";
+import { applyPlatformShippingToStoreConfig } from "@/lib/platform/dropship-shipping";
 
 export interface OnboardingSetupStatus {
   hasProducts: boolean;
@@ -18,11 +19,12 @@ export function getOnboardingSetupStatus(
     (method) => method.enabled,
   );
 
+  const overlayed = applyPlatformShippingToStoreConfig(settings);
   const hasShippingConfigured =
-    Object.values(settings.shipping.carriers).some(Boolean) ||
-    settings.shipping.deliveryZones.length > 0 ||
-    settings.shipping.pickupPoints.length > 0 ||
-    settings.shipping.deliveryDetails.trim().length > 0;
+    Object.values(overlayed.shipping.carriers).some(Boolean) ||
+    overlayed.shipping.deliveryZones.length > 0 ||
+    overlayed.shipping.pickupPoints.length > 0 ||
+    overlayed.shipping.deliveryDetails.trim().length > 0;
 
   return {
     hasProducts: productCount > 0,

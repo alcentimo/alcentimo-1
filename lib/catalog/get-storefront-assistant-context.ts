@@ -21,6 +21,7 @@ import type {
   StorefrontAssistantProductVariant,
 } from "@/lib/ai/storefront-assistant-types";
 import { getPublicStoreBySlug } from "@/lib/stores";
+import { fetchPublicPlatformSettings } from "@/lib/platform/get-platform-settings";
 
 const MAX_PRODUCTS = 25;
 const MAX_SEARCH_PRODUCTS = 15;
@@ -201,14 +202,19 @@ export async function getStorefrontAssistantContext(
   const selectedLocationId = options?.locationId?.trim() || null;
   const searchQuery = options?.searchQuery?.trim() || null;
 
-  const [settingsConfig, locations, locationStocks, catalogProducts] = await Promise.all([
-    fetchStoreSettingsConfig(store.id),
-    getPublicStoreLocations(store.id),
-    getVariantLocationStocksForStore(store.id),
-    fetchAssistantCatalogProducts(store.slug, searchQuery),
-  ]);
+  const [settingsConfig, platformSettings, locations, locationStocks, catalogProducts] =
+    await Promise.all([
+      fetchStoreSettingsConfig(store.id),
+      fetchPublicPlatformSettings(),
+      getPublicStoreLocations(store.id),
+      getVariantLocationStocksForStore(store.id),
+      fetchAssistantCatalogProducts(store.slug, searchQuery),
+    ]);
 
-  const purchaseInfo = buildPublicPurchaseInfo(settingsConfig);
+  const purchaseInfo = buildPublicPurchaseInfo(
+    settingsConfig,
+    platformSettings.dropshipShipping,
+  );
   const openStatus = getStoreOpenStatus(purchaseInfo.locationHours);
   const locationStockIndex = buildLocationStockIndex(locationStocks, locations);
 

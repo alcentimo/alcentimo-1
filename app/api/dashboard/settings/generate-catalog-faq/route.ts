@@ -5,13 +5,13 @@ import { generateCatalogFaq } from "@/lib/ai/generate-catalog-faq";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { getPublicStoreCategories } from "@/lib/catalog/get-public-store-categories";
 import { getPaymentMethod } from "@/src/config/payment-methods";
-import { getShippingMethod } from "@/src/config/shipping-methods";
 import {
   getRubroLabel,
   normalizeStoreRubro,
 } from "@/src/config/categories";
+import { fetchPublicPlatformSettings } from "@/lib/platform/get-platform-settings";
+import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
-import type { ShippingCarrierKey } from "@/lib/store-settings/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,18 +24,20 @@ export async function POST() {
   }
 
   try {
-    const [settings, productsResult, storeCategories] = await Promise.all([
-      getStoreSettingsConfig(auth.store.id),
-      supabase
-        .from("products")
-        .select("name")
-        .eq("store_id", auth.store.id)
-        .eq("is_active", true)
-        .eq("is_deleted", false)
-        .order("updated_at", { ascending: false })
-        .limit(12),
-      getPublicStoreCategories(auth.store.id),
-    ]);
+    const [settings, platformSettings, productsResult, storeCategories] =
+      await Promise.all([
+        getStoreSettingsConfig(auth.store.id),
+        fetchPublicPlatformSettings(),
+        supabase
+          .from("products")
+          .select("name")
+          .eq("store_id", auth.store.id)
+          .eq("is_active", true)
+          .eq("is_deleted", false)
+          .order("updated_at", { ascending: false })
+          .limit(12),
+        getPublicStoreCategories(auth.store.id),
+      ]);
 
     if (productsResult.error) {
       throw new Error(productsResult.error.message);
@@ -57,14 +59,11 @@ export async function POST() {
       })
       .filter((label): label is string => Boolean(label));
 
-    const shippingLabels = (
-      Object.entries(settings.shipping.carriers) as Array<
-        [ShippingCarrierKey, boolean]
-      >
-    )
-      .filter(([, enabled]) => enabled)
-      .map(([key]) => getShippingMethod(key)?.label ?? null)
-      .filter((label): label is string => Boolean(label));
+    const purchaseInfo = buildPublicPurchaseInfo(
+      settings,
+      platformSettings.dropshipShipping,
+    );
+    const shippingLabels = purchaseInfo.shipping.map((option) => option.label);
 
     const categoryLabels = storeCategories
       .map((row) => row.name.trim())

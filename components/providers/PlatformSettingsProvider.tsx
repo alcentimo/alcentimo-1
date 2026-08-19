@@ -39,6 +39,8 @@ export function PlatformSettingsProvider({
       dropshipPlatformMarkupPercent:
         settings.dropshipPlatformMarkupPercent ??
         DEFAULT_PLATFORM_SETTINGS.dropshipPlatformMarkupPercent,
+      dropshipShipping:
+        settings.dropshipShipping ?? DEFAULT_PLATFORM_SETTINGS.dropshipShipping,
     }),
     [settings],
   );

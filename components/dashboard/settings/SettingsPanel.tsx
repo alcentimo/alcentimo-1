@@ -125,7 +125,7 @@ function buildSettingsNavGroups(): {
         {
           id: "shipping",
           label: "Envíos",
-          description: "Cómo llega el pedido a tu cliente",
+          description: "Entrega local opcional; las agencias las define Alcéntimo",
           icon: Truck,
         },
         {

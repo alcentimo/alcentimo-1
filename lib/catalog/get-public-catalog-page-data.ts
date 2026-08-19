@@ -12,6 +12,7 @@ import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogPageData } from "@/lib/catalog";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
+import { fetchPublicPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { getPublicStoreBySlug } from "@/lib/stores";
 
 import { getPublicStoreLocations, getVariantLocationStocksForStore } from "@/lib/locations/get-store-locations";
@@ -50,11 +51,13 @@ async function loadPublicCatalogPageDataUncached(
 
   const [
     settingsConfig,
+    platformSettings,
     storeCategories,
     locations,
     locationStocks,
   ] = await Promise.all([
     getPublicStoreSettingsConfig(store.id),
+    fetchPublicPlatformSettings(),
     getPublicStoreCategories(store.id),
     getPublicStoreLocations(store.id).catch(() => []),
     getVariantLocationStocksForStore(store.id).catch(() => []),
@@ -84,7 +87,10 @@ async function loadPublicCatalogPageDataUncached(
     categorySlug: selectedCategorySlug ?? undefined,
   });
 
-  const purchaseInfo = buildPublicPurchaseInfo(settingsConfig);
+  const purchaseInfo = buildPublicPurchaseInfo(
+    settingsConfig,
+    platformSettings.dropshipShipping,
+  );
   const catalogDesign = resolveCatalogDesign(
     settingsConfig.catalogDesign,
     rubro,
@@ -116,7 +122,7 @@ export async function getPublicCatalogPageData(
   const categoryFilter = Boolean(options?.categoryFilter);
 
   return withPublicCatalogCache(
-    ["public-catalog-page-v1", slug, categorySlug, String(categoryFilter)],
+    ["public-catalog-page-v2", slug, categorySlug, String(categoryFilter)],
     { slug, storeId: store.id },
     () =>
       loadPublicCatalogPageDataUncached(slug, {
@@ -138,10 +144,16 @@ export async function getCatalogPreviewSettings(
 ): Promise<CatalogPreviewSettings> {
   noStore();
 
-  const settingsConfig = await getStoreSettingsConfig(store.id);
+  const [settingsConfig, platformSettings] = await Promise.all([
+    getStoreSettingsConfig(store.id),
+    fetchPublicPlatformSettings(),
+  ]);
 
   return {
-    purchaseInfo: buildPublicPurchaseInfo(settingsConfig),
+    purchaseInfo: buildPublicPurchaseInfo(
+      settingsConfig,
+      platformSettings.dropshipShipping,
+    ),
     catalogDesign: resolveCatalogDesign(
       settingsConfig.catalogDesign,
       store.rubro_tienda,

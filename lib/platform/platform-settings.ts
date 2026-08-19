@@ -1,5 +1,9 @@
 import { roundExchangeRate } from "@/lib/format";
 import { normalizeMarkupPercent } from "@/lib/dropship/settlement-math";
+import {
+  normalizePlatformDropshipShipping,
+  type PlatformDropshipShippingSettings,
+} from "@/lib/platform/dropship-shipping";
 
 export const PLATFORM_SETTINGS_ID = "default" as const;
 
@@ -20,6 +24,8 @@ export interface PlatformSettings {
   manualBcvRate: number | null;
   /** Markup operativo (%) sobre el costo mayorista en el cierre diario dropship. */
   dropshipPlatformMarkupPercent: number;
+  /** Agencias nacionales, cobro a destino y envío gratis para todas las vitrinas. */
+  dropshipShipping: PlatformDropshipShippingSettings;
 }
 
 export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
@@ -33,6 +39,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   bcvRateMode: "automatic",
   manualBcvRate: null,
   dropshipPlatformMarkupPercent: 5,
+  dropshipShipping: normalizePlatformDropshipShipping(null),
 };
 
 export interface PlatformSettingsRow {
@@ -47,6 +54,7 @@ export interface PlatformSettingsRow {
   bcv_rate_mode?: string | null;
   manual_bcv_rate?: number | string | null;
   dropship_platform_markup_percent?: number | string | null;
+  dropship_shipping?: unknown;
   updated_at: string;
   updated_by: string | null;
 }
@@ -84,5 +92,6 @@ export function parsePlatformSettingsRow(
     dropshipPlatformMarkupPercent: parseMarkupPercent(
       row.dropship_platform_markup_percent,
     ),
+    dropshipShipping: normalizePlatformDropshipShipping(row.dropship_shipping),
   };
 }
