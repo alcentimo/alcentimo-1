@@ -182,4 +182,4 @@ export interface SupplierPayoutObligationView {
 }
 
 export const DROPSHIP_CENTRAL_PAYMENT_NOTICE =
-  "El dropshipper liquida a Alcéntimo el costo mayorista. El proveedor solo aparta el stock y espera la recolección de Alcéntimo; no ve el pago del cliente final.";
+  "Liquida a Alcéntimo el consolidado del día con un solo pago. El proveedor aparta el stock y espera la recolección; no ve el pago del cliente final.";

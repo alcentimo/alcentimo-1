@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { DailyDropshipSettlementCard } from "@/components/dashboard/orders/DailyDropshipSettlementCard";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getDropshipDailySettlementSummary } from "@/lib/dropship/get-daily-settlement";
 import { fetchActiveSubscriptionPaymentMethods } from "@/lib/plans/get-subscription-pago-movil";
 import { requireDashboardRouteAccess } from "@/lib/team/route-guard";
@@ -32,9 +33,10 @@ export default async function LiquidacionPage() {
     );
   }
 
-  const [settlementResult, paymentMethods] = await Promise.all([
+  const [settlementResult, paymentMethods, exchangeRate] = await Promise.all([
     getDropshipDailySettlementSummary(),
     fetchActiveSubscriptionPaymentMethods(),
+    getCurrentExchangeRate(),
   ]);
 
   return (
@@ -44,8 +46,8 @@ export default async function LiquidacionPage() {
         title="Reportar Pago"
         description={
           <>
-            Revisa las ventas mayoristas pendientes, transfiere el consolidado a
-            Alcéntimo y adjunta un solo comprobante.
+            Revisa los pedidos del día, transfiere el monto a Alcéntimo (USD y
+            bolívares a tasa BCV) y adjunta un solo comprobante.
           </>
         }
       />
@@ -61,6 +63,7 @@ export default async function LiquidacionPage() {
         <DailyDropshipSettlementCard
           summary={settlementResult.summary}
           paymentMethods={paymentMethods}
+          exchangeRate={exchangeRate?.rate ?? null}
           variant="page"
         />
       ) : (
