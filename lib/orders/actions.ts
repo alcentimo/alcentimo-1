@@ -10,6 +10,7 @@ import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { buildOrderSharePublicUrl } from "@/lib/orders/order-share";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
+import { fetchPublicPlatformSettings } from "@/lib/platform/get-platform-settings";
 import { resolveShippingQuote } from "@/lib/store-settings/shipping-pricing";
 import { getDisplayableUsdExchangeRate } from "@/lib/exchange-rate/get-tasa-cambio";
 import {
@@ -169,8 +170,14 @@ export async function submitTransactionalOrder(
 
   // Sucursal de agencia nacional: opcional (se puede acordar después por WhatsApp).
 
-  const settings = await getPublicStoreSettingsConfig(store.id);
-  const purchaseInfo = buildPublicPurchaseInfo(settings);
+  const [settings, platformSettings] = await Promise.all([
+    getPublicStoreSettingsConfig(store.id),
+    fetchPublicPlatformSettings(),
+  ]);
+  const purchaseInfo = buildPublicPurchaseInfo(
+    settings,
+    platformSettings.dropshipShipping,
+  );
 
   if (purchaseInfo.checkoutType === "direct_whatsapp") {
     return {

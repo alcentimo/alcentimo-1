@@ -276,18 +276,12 @@ export async function saveShippingSettings(
   shipping: ShippingSettings,
 ): Promise<SettingsActionResult> {
   const normalized = normalizeStoreSettingsConfig({ shipping });
-  const next = {
-    ...normalized.shipping,
-    pricingMode: "cod" as const,
-  };
-
-  if (next.freeShippingEnabled && next.freeShippingMinUsd <= 0) {
-    return {
-      error: "Indica un monto mínimo mayor a $0 para el envío gratis.",
-    };
-  }
-
-  return persistSettingsPatch({ shipping: next });
+  return persistSettingsPatch({
+    shipping: {
+      ...normalized.shipping,
+      pricingMode: "cod" as const,
+    },
+  });
 }
 
 export type SavePaymentsOptions = {

@@ -17,6 +17,11 @@ import {
 import { normalizeMarkupPercent } from "@/lib/dropship/settlement-math";
 import { revalidateAllPublicCatalogCaches } from "@/lib/catalog/public-catalog-cache";
 import {
+  normalizePlatformDropshipShipping,
+  validatePlatformDropshipShipping,
+  type PlatformDropshipShippingSettings,
+} from "@/lib/platform/dropship-shipping";
+import {
   removePlatformLogoAsset,
   uploadPlatformLogoImage,
 } from "@/lib/storage";
@@ -28,6 +33,9 @@ export type UpdatePlatformSettingsResult = {
 };
 
 const PLATFORM_SETTINGS_SELECT =
+  "id, platform_name, tagline, logo_url, pwa_icon_192_url, pwa_icon_512_url, support_email, plans_coupon_box_enabled, bcv_rate_mode, manual_bcv_rate, dropship_platform_markup_percent, dropship_shipping, updated_at, updated_by";
+
+const PLATFORM_SETTINGS_SELECT_MARKUP =
   "id, platform_name, tagline, logo_url, pwa_icon_192_url, pwa_icon_512_url, support_email, plans_coupon_box_enabled, bcv_rate_mode, manual_bcv_rate, dropship_platform_markup_percent, updated_at, updated_by";
 
 const PLATFORM_SETTINGS_SELECT_BCV =
@@ -89,6 +97,16 @@ async function loadPlatformSettingsRow(
     return data as PlatformSettingsRow;
   }
 
+  const { data: markupOnly, error: markupError } = await admin
+    .from("platform_settings")
+    .select(PLATFORM_SETTINGS_SELECT_MARKUP)
+    .eq("id", PLATFORM_SETTINGS_ID)
+    .maybeSingle();
+
+  if (!markupError && markupOnly) {
+    return markupOnly as PlatformSettingsRow;
+  }
+
   const { data: bcvOnly, error: bcvError } = await admin
     .from("platform_settings")
     .select(PLATFORM_SETTINGS_SELECT_BCV)
@@ -127,9 +145,42 @@ function toUpsertPayload(
     bcv_rate_mode: settings.bcvRateMode,
     manual_bcv_rate: settings.manualBcvRate,
     dropship_platform_markup_percent: settings.dropshipPlatformMarkupPercent,
+    dropship_shipping: settings.dropshipShipping,
     updated_at: updatedAt,
     updated_by: updatedBy,
   };
+}
+
+async function upsertPlatformSettingsRow(
+  admin: ReturnType<typeof createAdminClient>,
+  payload: ReturnType<typeof toUpsertPayload>,
+): Promise<string | null> {
+  const { error } = await admin
+    .from("platform_settings")
+    .upsert(payload, { onConflict: "id" });
+
+  if (!error) return null;
+
+  if (
+    error.message.includes("dropship_shipping") ||
+    error.code === "42703"
+  ) {
+    const { dropship_shipping: _ignored, ...withoutShipping } = payload;
+    const retry = await admin
+      .from("platform_settings")
+      .upsert(withoutShipping, { onConflict: "id" });
+    if (!retry.error) return null;
+    return retry.error.message;
+  }
+
+  return error.message;
+}
+
+function revalidateDropshipShippingSurfaces() {
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/c", "layout");
+  revalidatePath("/tienda", "layout");
+  revalidateAllPublicCatalogCaches();
 }
 
 export async function updatePlatformSettings(
@@ -180,12 +231,13 @@ export async function updatePlatformSettings(
     dropshipPlatformMarkupPercent,
   };
 
-  const { error } = await admin
-    .from("platform_settings")
-    .upsert(toUpsertPayload(next, auth.user.id, now), { onConflict: "id" });
+  const upsertError = await upsertPlatformSettingsRow(
+    admin,
+    toUpsertPayload(next, auth.user.id, now),
+  );
 
-  if (error) {
-    return { error: error.message };
+  if (upsertError) {
+    return { error: upsertError };
   }
 
   revalidatePlatformBranding();
@@ -210,12 +262,13 @@ export async function updatePlansCouponBoxEnabled(
     plansCouponBoxEnabled: enabled,
   };
 
-  const { error } = await admin
-    .from("platform_settings")
-    .upsert(toUpsertPayload(next, auth.user.id, now), { onConflict: "id" });
+  const upsertError = await upsertPlatformSettingsRow(
+    admin,
+    toUpsertPayload(next, auth.user.id, now),
+  );
 
-  if (error) {
-    return { error: error.message };
+  if (upsertError) {
+    return { error: upsertError };
   }
 
   revalidatePlatformBranding();
@@ -278,12 +331,13 @@ export async function updateBcvRateSettings(input: {
     manualBcvRate,
   };
 
-  const { error } = await admin
-    .from("platform_settings")
-    .upsert(toUpsertPayload(next, auth.user.id, now), { onConflict: "id" });
+  const upsertError = await upsertPlatformSettingsRow(
+    admin,
+    toUpsertPayload(next, auth.user.id, now),
+  );
 
-  if (error) {
-    return { error: error.message };
+  if (upsertError) {
+    return { error: upsertError };
   }
 
   revalidateExchangeRateSurfaces();
@@ -320,12 +374,13 @@ export async function uploadPlatformLogo(
     pwaIcon512Url: upload.pwaIcon512Url ?? null,
   };
 
-  const { error: updateError } = await admin
-    .from("platform_settings")
-    .upsert(toUpsertPayload(next, auth.user.id, now), { onConflict: "id" });
+  const upsertError = await upsertPlatformSettingsRow(
+    admin,
+    toUpsertPayload(next, auth.user.id, now),
+  );
 
-  if (updateError) {
-    return { error: updateError.message };
+  if (upsertError) {
+    return { error: upsertError };
   }
 
   revalidatePlatformBranding();
@@ -357,15 +412,61 @@ export async function clearPlatformLogo(): Promise<UpdatePlatformSettingsResult>
     pwaIcon512Url: null,
   };
 
+  const upsertError = await upsertPlatformSettingsRow(
+    admin,
+    toUpsertPayload(next, auth.user.id, now),
+  );
+
+  if (upsertError) {
+    return { error: upsertError };
+  }
+
+  revalidatePlatformBranding();
+
+  return {
+    success: true,
+    settings: next,
+  };
+}
+
+export async function updateDropshipShippingSettings(
+  input: PlatformDropshipShippingSettings,
+): Promise<UpdatePlatformSettingsResult> {
+  const auth = await requirePlatformAdmin();
+  if ("error" in auth) return auth;
+
+  const nextShipping = normalizePlatformDropshipShipping({
+    ...input,
+    pricingMode: "cod",
+  });
+  const validationError = validatePlatformDropshipShipping(nextShipping);
+  if (validationError) {
+    return { error: validationError };
+  }
+
+  const admin = createAdminClient();
+  const now = new Date().toISOString();
+  const existing = await loadPlatformSettingsRow(admin);
+  const next: PlatformSettings = {
+    ...parsePlatformSettingsRow(existing),
+    dropshipShipping: nextShipping,
+  };
+
   const { error } = await admin
     .from("platform_settings")
     .upsert(toUpsertPayload(next, auth.user.id, now), { onConflict: "id" });
 
   if (error) {
+    if (error.message.includes("dropship_shipping") || error.code === "42703") {
+      return {
+        error:
+          "No se pudo guardar: falta aplicar la migración de envíos globales.",
+      };
+    }
     return { error: error.message };
   }
 
-  revalidatePlatformBranding();
+  revalidateDropshipShippingSurfaces();
 
   return {
     success: true,

@@ -8,12 +8,14 @@ const SUB_TABS: Array<{ id: AdminPlansSubTab; label: string }> = [
   { id: "planes", label: "Planes y límites" },
   { id: "pagos-config", label: "Métodos de pago" },
   { id: "plataforma", label: "Marca y plataforma" },
+  { id: "envios", label: "Envíos dropship" },
 ];
 
 interface AdminPlansHubPanelProps {
   planesPanel: React.ReactNode;
   pagosConfigPanel: React.ReactNode;
   plataformaPanel: React.ReactNode;
+  enviosPanel: React.ReactNode;
   initialSubTab?: AdminPlansSubTab;
 }
 
@@ -21,6 +23,7 @@ export function AdminPlansHubPanel({
   planesPanel,
   pagosConfigPanel,
   plataformaPanel,
+  enviosPanel,
   initialSubTab = "planes",
 }: AdminPlansHubPanelProps) {
   const [subTab, setSubTab] = useState<AdminPlansSubTab>(initialSubTab);
@@ -62,6 +65,7 @@ export function AdminPlansHubPanel({
       {subTab === "planes" ? planesPanel : null}
       {subTab === "pagos-config" ? pagosConfigPanel : null}
       {subTab === "plataforma" ? plataformaPanel : null}
+      {subTab === "envios" ? enviosPanel : null}
     </div>
   );
 }

@@ -323,6 +323,8 @@ export interface PlatformSetting {
   manual_bcv_rate: number | null;
   /** Markup operativo (%) sobre el costo mayorista en el cierre diario dropship. */
   dropship_platform_markup_percent?: number | null;
+  /** Agencias nacionales y reglas de envío gratis para vitrinas dropship. */
+  dropship_shipping?: Record<string, unknown> | null;
   updated_at: string;
   updated_by: string | null;
 }

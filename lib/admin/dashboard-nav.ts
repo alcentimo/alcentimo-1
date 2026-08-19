@@ -28,6 +28,8 @@ const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
   sucursales: "tiendas",
   configuracion: "planes",
   plataforma: "planes",
+  envios: "planes",
+  shipping: "planes",
 };
 
 export function resolveAdminDashboardTab(
@@ -37,7 +39,11 @@ export function resolveAdminDashboardTab(
   return LEGACY_TAB_MAP[value] ?? "resumen";
 }
 
-export type AdminPlansSubTab = "planes" | "pagos-config" | "plataforma";
+export type AdminPlansSubTab =
+  | "planes"
+  | "pagos-config"
+  | "plataforma"
+  | "envios";
 
 export function resolveAdminPlansSubTab(
   value: string | null | undefined,
@@ -45,6 +51,9 @@ export function resolveAdminPlansSubTab(
   if (value === "pagos-config" || value === "pagos") return "pagos-config";
   if (value === "plataforma" || value === "marca" || value === "brand") {
     return "plataforma";
+  }
+  if (value === "envios" || value === "shipping" || value === "envíos") {
+    return "envios";
   }
   return "planes";
 }

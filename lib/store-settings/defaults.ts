@@ -39,6 +39,7 @@ import {
   defaultCatalogAccessSettings,
   normalizeCatalogAccessSettings,
 } from "@/lib/catalog-access/types";
+import { lockPlatformOwnedShippingFields } from "@/lib/platform/dropship-shipping";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "mrw",
@@ -534,18 +535,21 @@ export function mergeStoreSettingsConfig(
 ): StoreSettingsConfig {
   return {
     shipping: patch.shipping
-      ? {
-          ...base.shipping,
-          ...patch.shipping,
-          carriers: {
-            ...base.shipping.carriers,
-            ...patch.shipping.carriers,
+      ? lockPlatformOwnedShippingFields(
+          {
+            ...base.shipping,
+            ...patch.shipping,
+            carriers: {
+              ...base.shipping.carriers,
+              ...patch.shipping.carriers,
+            },
+            deliveryZones:
+              patch.shipping.deliveryZones ?? base.shipping.deliveryZones,
+            pickupPoints:
+              patch.shipping.pickupPoints ?? base.shipping.pickupPoints,
           },
-          deliveryZones:
-            patch.shipping.deliveryZones ?? base.shipping.deliveryZones,
-          pickupPoints:
-            patch.shipping.pickupPoints ?? base.shipping.pickupPoints,
-        }
+          base.shipping,
+        )
       : base.shipping,
     payments: patch.payments
       ? {

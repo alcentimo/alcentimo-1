@@ -6,6 +6,11 @@ import {
 import { getPaymentMethod, PAYMENT_METHODS } from "@/src/config/payment-methods";
 import { normalizeWhatsAppChatWelcome } from "@/lib/catalog/whatsapp-quick-chat";
 import {
+  applyPlatformShippingToStoreConfig,
+  DEFAULT_PLATFORM_DROPSHIP_SHIPPING,
+  type PlatformDropshipShippingSettings,
+} from "@/lib/platform/dropship-shipping";
+import {
   toShippingPricingPublicConfig,
   type ShippingPricingPublicConfig,
 } from "@/lib/store-settings/shipping-pricing";
@@ -79,15 +84,17 @@ function buildShippingOption(
 
 export function buildPublicPurchaseInfo(
   config: StoreSettingsConfig,
+  platformShipping: PlatformDropshipShippingSettings = DEFAULT_PLATFORM_DROPSHIP_SHIPPING,
 ): PublicPurchaseInfo {
+  const resolved = applyPlatformShippingToStoreConfig(config, platformShipping);
   const carrierKeys = [
     ...NATIONAL_CARRIER_METHODS.map((m) => m.key),
     ...LOCAL_SHIPPING_METHODS.map((m) => m.key),
   ] as ShippingCarrierKey[];
 
   const shipping = carrierKeys
-    .filter((key) => config.shipping.carriers[key])
-    .map((key) => buildShippingOption(key, config));
+    .filter((key) => resolved.shipping.carriers[key])
+    .map((key) => buildShippingOption(key, resolved));
 
   const payments = PAYMENT_METHOD_KEYS.filter(
     (key) => config.payments.methods[key].enabled,
@@ -103,7 +110,7 @@ export function buildPublicPurchaseInfo(
 
   return {
     shipping,
-    shippingPricing: toShippingPricingPublicConfig(config.shipping),
+    shippingPricing: toShippingPricingPublicConfig(resolved.shipping),
     payments,
     installments,
     whatsappPhone: config.contact.whatsappPhone.trim(),

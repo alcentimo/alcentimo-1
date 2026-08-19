@@ -95,6 +95,20 @@ const PlatformSettingsConfigPanel = dynamic(
   },
 );
 
+const DropshipShippingConfigPanel = dynamic(
+  () =>
+    import("@/components/admin/DropshipShippingConfigPanel").then((m) => ({
+      default: m.DropshipShippingConfigPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Cargando envíos dropship…
+      </p>
+    ),
+  },
+);
+
 const PlanSettingsConfigPanel = dynamic(
   () =>
     import("@/components/admin/PlanSettingsConfigPanel").then((m) => ({
@@ -348,6 +362,9 @@ export function AdminDashboardTabs({
               initialSettings={platformSettings}
               automaticRateHint={automaticBcvRateHint}
             />
+          }
+          enviosPanel={
+            <DropshipShippingConfigPanel initialSettings={platformSettings} />
           }
         />
       ) : null}

@@ -223,12 +223,6 @@ export function OnboardingChecklist({
                       >
                         Configurar pagos
                       </Link>
-                      <Link
-                        href="/dashboard/ajustes?tab=shipping"
-                        className="onboarding-checklist-link"
-                      >
-                        Configurar envíos
-                      </Link>
                     </div>
                   ) : null}
 
