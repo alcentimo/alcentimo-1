@@ -40,6 +40,7 @@ import {
 } from "@/lib/supplier/product-images";
 import { syncDefaultLocationStockFromVariant } from "@/lib/locations/sync-stock";
 import { mirrorSupplierStockToLinkedStores } from "@/lib/dropship/supplier-stock";
+import { fetchAllPagedRows } from "@/lib/supabase/fetch-all-rows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type ActionResult<T extends object = object> = {
@@ -261,10 +262,16 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
     from += pageSize;
   }
 
-  const { data: links } = await admin
-    .from("store_dropship_links")
-    .select("supplier_product_id, product_id")
-    .eq("store_id", auth.store.id);
+  const linksResult = await fetchAllPagedRows((from, to) =>
+    admin
+      .from("store_dropship_links")
+      .select("supplier_product_id, product_id")
+      .eq("store_id", auth.store.id)
+      .order("supplier_product_id", { ascending: true })
+      .range(from, to),
+  );
+  if (linksResult.error) return { error: linksResult.error };
+  const links = linksResult.rows;
 
   const linkedBySupplier = new Map<string, string>();
   for (const row of (links as Record<string, unknown>[] | null) ?? []) {

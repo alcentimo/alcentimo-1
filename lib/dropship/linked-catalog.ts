@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchAllPagedRows } from "@/lib/supabase/fetch-all-rows";
 import {
   normalizeSupplierProductCategory,
   type SupplierProductCategory,
@@ -67,20 +68,21 @@ export async function listDropshipLinkedCatalogEntriesForStoreId(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = admin as any;
 
-    const { data: linkRows, error: linkError } = await client
-      .from("store_dropship_links")
-      .select("product_id, supplier_product_id")
-      .eq("store_id", id);
+    const linksResult = await fetchAllPagedRows((from, to) =>
+      client
+        .from("store_dropship_links")
+        .select("product_id, supplier_product_id")
+        .eq("store_id", id)
+        .order("supplier_product_id", { ascending: true })
+        .range(from, to),
+    );
 
-    if (linkError) {
-      console.warn("[dropship-linked-entries]", linkError.message);
+    if (linksResult.error) {
+      console.warn("[dropship-linked-entries]", linksResult.error);
       return [];
     }
 
-    const links = ((linkRows as Array<{
-      product_id?: string;
-      supplier_product_id?: string;
-    }> | null) ?? []).filter(
+    const links = linksResult.rows.filter(
       (row) =>
         typeof row.product_id === "string" &&
         row.product_id &&
