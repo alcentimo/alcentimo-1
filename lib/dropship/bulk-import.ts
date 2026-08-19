@@ -42,6 +42,7 @@ import {
   supplierImageUrls,
 } from "@/lib/supplier/product-images";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAllPagedRows } from "@/lib/supabase/fetch-all-rows";
 
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 const SUPPLIER_PAGE_SIZE = 500;
@@ -301,19 +302,24 @@ export async function importSupplierProductsBulkToStore(input?: {
     }
     const dropship = priced.dropship;
 
-    const [{ rows: supplierRows, error: catalogError }, { data: linkRows }] =
-      await Promise.all([
-        fetchAllActiveSupplierProducts(admin),
+    const [catalogResult, linksResult] = await Promise.all([
+      fetchAllActiveSupplierProducts(admin),
+      fetchAllPagedRows((from, to) =>
         admin
           .from("store_dropship_links")
           .select("supplier_product_id")
-          .eq("store_id", auth.store.id),
-      ]);
+          .eq("store_id", auth.store.id)
+          .order("supplier_product_id", { ascending: true })
+          .range(from, to),
+      ),
+    ]);
 
-    if (catalogError) return { error: catalogError };
+    if (catalogResult.error) return { error: catalogResult.error };
+    if (linksResult.error) return { error: linksResult.error };
 
+    const supplierRows = catalogResult.rows;
     const alreadyLinked = new Set<string>();
-    for (const row of (linkRows as Record<string, unknown>[] | null) ?? []) {
+    for (const row of linksResult.rows) {
       const id = String(row.supplier_product_id ?? "");
       if (id) alreadyLinked.add(id);
     }
@@ -362,34 +368,45 @@ export async function importSupplierProductsBulkToStore(input?: {
     const toImport = eligible.slice(0, remaining);
     const skippedLimit = eligible.length - toImport.length;
 
-    const [{ data: slugRows }, { data: sortRow }, { data: storeCategories }] =
-      await Promise.all([
+    const [slugResult, { data: sortRow }, categoriesResult] = await Promise.all([
+      fetchAllPagedRows((from, to) =>
         admin
           .from("products")
           .select("slug")
-          .eq("store_id", auth.store.id),
-        admin
-          .from("products")
-          .select("sort_order")
           .eq("store_id", auth.store.id)
-          .eq("is_deleted", false)
-          .order("sort_order", { ascending: true })
-          .limit(1)
-          .maybeSingle(),
+          .order("slug", { ascending: true })
+          .range(from, to),
+      ),
+      admin
+        .from("products")
+        .select("sort_order")
+        .eq("store_id", auth.store.id)
+        .eq("is_deleted", false)
+        .order("sort_order", { ascending: true })
+        .limit(1)
+        .maybeSingle(),
+      fetchAllPagedRows((from, to) =>
         admin
           .from("categories")
           .select("id, name, slug")
-          .eq("store_id", auth.store.id),
-      ]);
+          .eq("store_id", auth.store.id)
+          .order("slug", { ascending: true })
+          .range(from, to),
+      ),
+    ]);
+
+    if (slugResult.error) return { error: slugResult.error };
+    if (categoriesResult.error) return { error: categoriesResult.error };
 
     const usedSlugs = new Set<string>();
-    for (const row of (slugRows as Array<{ slug?: string }> | null) ?? []) {
-      if (row.slug) usedSlugs.add(row.slug);
+    for (const row of slugResult.rows) {
+      const slug = String(row.slug ?? "");
+      if (slug) usedSlugs.add(slug);
     }
 
     let nextSort = (Number(sortRow?.sort_order) || 0) - 1;
     const categoryCache: ImportCategoryCache = buildImportCategoryCache(
-      (storeCategories ?? []) as { id: string; name: string; slug: string }[],
+      categoriesResult.rows as { id: string; name: string; slug: string }[],
     );
     const defaultLocationId = await getDefaultLocationId(admin, auth.store.id);
     const emptyMetadata = buildProductMetadata(null, {}, []);
@@ -397,6 +414,7 @@ export async function importSupplierProductsBulkToStore(input?: {
 
     const importedSupplierIds: string[] = [];
     let failed = 0;
+    let lastError: string | null = null;
 
     for (let offset = 0; offset < toImport.length; offset += INSERT_CHUNK_SIZE) {
       const chunk = toImport.slice(offset, offset + INSERT_CHUNK_SIZE);
@@ -464,6 +482,8 @@ export async function importSupplierProductsBulkToStore(input?: {
       );
 
       if (productsError) {
+        lastError = productsError.message;
+        console.error("[dropship-bulk-import] products", productsError.message);
         failed += prepared.length;
         continue;
       }
@@ -482,6 +502,8 @@ export async function importSupplierProductsBulkToStore(input?: {
       );
 
       if (variantsError) {
+        lastError = variantsError.message;
+        console.error("[dropship-bulk-import] variants", variantsError.message);
         await softDeleteProducts(admin, auth.store.id, productIds);
         failed += prepared.length;
         continue;
@@ -495,26 +517,33 @@ export async function importSupplierProductsBulkToStore(input?: {
       );
 
       if (pricesError) {
+        lastError = pricesError.message;
+        console.error("[dropship-bulk-import] prices", pricesError.message);
         await softDeleteProducts(admin, auth.store.id, productIds);
         failed += prepared.length;
         continue;
       }
 
+      // Al insertar variantes, el trigger `trg_ensure_variant_location_stock`
+      // (y el espejo a la sede default) ya crea las filas. Un INSERT plano
+      // choca con UNIQUE (variant_id, location_id) y abortaba todo el lote.
       if (defaultLocationId) {
         const { error: stockError } = await admin
           .from("variant_location_stock")
-          .insert(
+          .upsert(
             prepared.map((item) => ({
               variant_id: item.variantId,
               location_id: defaultLocationId,
               stock_quantity: item.supplier.stock,
               reserved_quantity: 0,
             })),
+            { onConflict: "variant_id,location_id" },
           );
         if (stockError) {
-          await softDeleteProducts(admin, auth.store.id, productIds);
-          failed += prepared.length;
-          continue;
+          console.error(
+            "[dropship-bulk-import] stock sede",
+            stockError.message,
+          );
         }
       }
 
@@ -555,6 +584,8 @@ export async function importSupplierProductsBulkToStore(input?: {
       );
 
       if (linksError) {
+        lastError = linksError.message;
+        console.error("[dropship-bulk-import] links", linksError.message);
         await softDeleteProducts(admin, auth.store.id, productIds);
         failed += prepared.length;
         continue;
@@ -613,7 +644,9 @@ export async function importSupplierProductsBulkToStore(input?: {
 
     if (result.imported === 0 && result.failed > 0) {
       return {
-        error: "No se pudieron cargar los productos. Intenta de nuevo.",
+        error: lastError
+          ? `No se pudieron cargar los productos (${lastError}). Intenta de nuevo.`
+          : "No se pudieron cargar los productos. Intenta de nuevo.",
         ...result,
       };
     }
