@@ -30,7 +30,21 @@ interface CustomerProfilePanelProps {
   displayName: string | null;
   phone: string | null;
   deliveryAddress: string | null;
+  preferredShippingMethod?: string | null;
+  preferredShippingBranchName?: string | null;
   whatsappPhone: string | null;
+}
+
+function formatPreferredShippingMethodLabel(method: string | null): string | null {
+  if (!method) return null;
+  const normalized = method.trim().toLowerCase();
+  if (normalized === "delivery") return "Entrega a domicilio";
+  if (normalized === "pickup") return "Retiro en tienda";
+  if (normalized === "mrw") return "MRW";
+  if (normalized === "zoomenvios") return "Zoom";
+  if (normalized === "tealca") return "Tealca";
+  if (normalized === "domesa") return "Domesa";
+  return method;
 }
 
 export function CustomerProfilePanel({
@@ -43,6 +57,8 @@ export function CustomerProfilePanel({
   displayName,
   phone,
   deliveryAddress,
+  preferredShippingMethod = null,
+  preferredShippingBranchName = null,
   whatsappPhone,
 }: CustomerProfilePanelProps) {
   const router = useRouter();
@@ -60,6 +76,8 @@ export function CustomerProfilePanel({
   const [passwordPending, setPasswordPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const preferredShippingMethodLabel =
+    formatPreferredShippingMethodLabel(preferredShippingMethod);
 
   useEffect(() => {
     setName(displayName ?? "");
@@ -308,6 +326,40 @@ export function CustomerProfilePanel({
           {savePending ? "Guardando…" : "Guardar cambios"}
         </button>
       </form>
+
+      {(preferredShippingMethodLabel || preferredShippingBranchName) && (
+        <section className="card-panel space-y-2">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            Preferencias de envío guardadas
+          </h2>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Estas preferencias se completan automáticamente al comprar en esta
+            tienda.
+          </p>
+          <dl className="grid gap-2 text-sm">
+            {preferredShippingMethodLabel ? (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                  Método
+                </dt>
+                <dd className="font-medium text-zinc-800 dark:text-zinc-100">
+                  {preferredShippingMethodLabel}
+                </dd>
+              </div>
+            ) : null}
+            {preferredShippingBranchName ? (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                  Agencia preferida
+                </dt>
+                <dd className="font-medium text-zinc-800 dark:text-zinc-100">
+                  {preferredShippingBranchName}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        </section>
+      )}
 
       <section className="card-panel space-y-3">
         <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
