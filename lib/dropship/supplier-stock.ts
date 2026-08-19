@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { OrderLineItem } from "@/lib/orders/types";
 import { syncDefaultLocationStockFromVariant } from "@/lib/locations/sync-stock";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 
 type AdjustStockRpc = {
   ok?: boolean;
@@ -75,10 +76,13 @@ export async function mirrorSupplierStockToLinkedStores(
 
   if (linksError) return { error: linksError.message };
 
+  const linkedStoreIds = new Set<string>();
+
   for (const link of (links as Record<string, unknown>[] | null) ?? []) {
     const productId = String(link.product_id ?? "");
     const storeId = String(link.store_id ?? "");
     if (!productId || !storeId) continue;
+    linkedStoreIds.add(storeId);
 
     const { data: variant, error: variantError } = await admin
       .from("product_variants")
@@ -113,6 +117,19 @@ export async function mirrorSupplierStockToLinkedStores(
       nextStock,
     );
     if (locationSync.error) return { error: locationSync.error };
+  }
+
+  if (linkedStoreIds.size > 0) {
+    const { data: stores } = await admin
+      .from("stores")
+      .select("id, slug")
+      .in("id", [...linkedStoreIds]);
+    for (const store of (stores as Array<{ id?: string; slug?: string }> | null) ?? []) {
+      revalidatePublicCatalogCache({
+        slug: typeof store.slug === "string" ? store.slug : null,
+        storeId: typeof store.id === "string" ? store.id : null,
+      });
+    }
   }
 
   return {};

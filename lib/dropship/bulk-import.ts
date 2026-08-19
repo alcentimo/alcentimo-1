@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   defaultDropshipPricingSettings,
   normalizeDropshipPricingSettings,
@@ -625,6 +626,10 @@ export async function importSupplierProductsBulkToStore(input?: {
     revalidatePath("/dashboard/inventario");
     revalidatePath("/dashboard");
     revalidatePath(`/c/${auth.store.slug}`);
+    revalidatePublicCatalogCache({
+      slug: auth.store.slug,
+      storeId: auth.store.id,
+    });
 
     const result: BulkImportSupplierProductsResult = {
       imported: importedSupplierIds.length,

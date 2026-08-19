@@ -6,6 +6,7 @@ import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import { createCoupon } from "@/lib/coupons/actions";
 import { createPromotion } from "@/lib/promotions/actions";
 import { endDateFromDaysValid } from "@/lib/marketing-ai/generate-recommendations";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   listPendingMarketingSuggestions,
   runMarketingAiScanForStore,
@@ -187,6 +188,10 @@ export async function applyMarketingSuggestionAction(
   revalidatePath("/dashboard/asistente");
   revalidatePath("/dashboard/ajustes");
   revalidatePath(`/c/${auth.store.slug}`);
+  revalidatePublicCatalogCache({
+    slug: auth.store.slug,
+    storeId: auth.store.id,
+  });
 
   return { success: true };
 }

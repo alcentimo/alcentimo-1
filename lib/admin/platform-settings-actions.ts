@@ -15,6 +15,7 @@ import {
   type PlatformSettingsRow,
 } from "@/lib/platform/platform-settings";
 import { normalizeMarkupPercent } from "@/lib/dropship/settlement-math";
+import { revalidateAllPublicCatalogCaches } from "@/lib/catalog/public-catalog-cache";
 import {
   removePlatformLogoAsset,
   uploadPlatformLogoImage,
@@ -49,6 +50,7 @@ function revalidateExchangeRateSurfaces() {
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/c", "layout");
   revalidatePath("/tienda", "layout");
+  revalidateAllPublicCatalogCaches();
 }
 
 async function requirePlatformAdmin() {

@@ -10,6 +10,7 @@ import { sortCatalogProducts } from "@/lib/catalog/catalog-browse";
 import { parseCatalogGalleryImages } from "@/lib/products/product-gallery-types";
 import { listDropshipLinkedCatalogEntriesForStoreSlug } from "@/lib/dropship/linked-catalog";
 import { applySupplierCategoriesToCatalogItems } from "@/lib/catalog/apply-supplier-categories";
+import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   applySupplierGalleryToCatalogItems,
   resolveSupplierGalleryForProductIds,
@@ -187,8 +188,23 @@ export const getCurrentExchangeRate = cache(
   },
 );
 
-/** Catálogo filtrado: solo productos importados del hub mayorista (dropshipping puro). */
-export async function getCatalogProducts(
+function catalogProductsCacheKey(options: GetCatalogOptions): string[] {
+  const productIds = options.productIds?.length
+    ? [...options.productIds].sort().join(",")
+    : "";
+  return [
+    options.storeSlug.trim().toLowerCase(),
+    String(options.limit ?? ""),
+    String(options.offset ?? 0),
+    options.categorySlug?.trim().toLowerCase() ?? "",
+    (options.search ?? "").trim().toLowerCase(),
+    options.minPriceUsd == null ? "" : String(options.minPriceUsd),
+    options.maxPriceUsd == null ? "" : String(options.maxPriceUsd),
+    productIds,
+  ];
+}
+
+async function loadCatalogProductsUncached(
   options: GetCatalogOptions,
 ): Promise<CatalogPageData> {
   const {
@@ -318,4 +334,24 @@ export async function getCatalogProducts(
     totalCount,
     hasMore: paginated ? offset + products.length < totalCount : false,
   };
+}
+
+/**
+ * Catálogo filtrado: solo productos importados del hub mayorista (dropshipping puro).
+ * Listados públicos usan Data Cache (~60s + tag). Hidratar por IDs (carrito)
+ * va en vivo para no vender stock ya reservado.
+ */
+export async function getCatalogProducts(
+  options: GetCatalogOptions,
+): Promise<CatalogPageData> {
+  if (options.productIds?.length) {
+    return loadCatalogProductsUncached(options);
+  }
+
+  const normalizedSlug = options.storeSlug.trim().toLowerCase();
+  return withPublicCatalogCache(
+    ["public-catalog-products-v1", ...catalogProductsCacheKey(options)],
+    { slug: normalizedSlug },
+    () => loadCatalogProductsUncached({ ...options, storeSlug: normalizedSlug }),
+  );
 }

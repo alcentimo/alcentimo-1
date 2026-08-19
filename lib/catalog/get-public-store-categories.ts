@@ -1,16 +1,13 @@
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { listDropshipLinkedCatalogEntriesForStoreId } from "@/lib/dropship/linked-catalog";
+import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   SUPPLIER_PRODUCT_CATEGORIES,
   normalizeSupplierProductCategory,
   supplierCategoryLabel,
 } from "@/lib/supplier/categories";
 
-/**
- * Categorías del catálogo público: se generan solas a partir de los productos
- * mayoristas (Mercado Oculto) que el dropshipper tiene en su inventario.
- */
-export async function getPublicStoreCategories(
+async function loadPublicStoreCategoriesUncached(
   storeId: string,
 ): Promise<CatalogCategoryOption[]> {
   const entries = await listDropshipLinkedCatalogEntriesForStoreId(storeId, {
@@ -27,6 +24,22 @@ export async function getPublicStoreCategories(
       name: supplierCategoryLabel(item.value),
       sortOrder: index,
     }),
+  );
+}
+
+/**
+ * Categorías del catálogo público: se generan solas a partir de los productos
+ * mayoristas (Mercado Oculto) que el dropshipper tiene en su inventario.
+ */
+export async function getPublicStoreCategories(
+  storeId: string,
+): Promise<CatalogCategoryOption[]> {
+  const id = storeId.trim();
+  if (!id) return [];
+  return withPublicCatalogCache(
+    ["public-store-categories-v1", id],
+    { storeId: id },
+    () => loadPublicStoreCategoriesUncached(id),
   );
 }
 

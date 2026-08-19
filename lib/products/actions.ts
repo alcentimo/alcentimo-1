@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore, requireAuthUser } from "@/lib/auth/require-dashboard-auth";
 import { getStoreCatalogUrl, getUserStore } from "@/lib/stores";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   allocateUniqueProductSlug,
   isProductSlugUniqueViolation,
@@ -474,6 +475,7 @@ export async function createStore(
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
   revalidatePath(`/c/${slug}`);
+  revalidatePublicCatalogCache({ slug, storeId: store.id });
 
   return { success: true };
 }
@@ -526,7 +528,7 @@ export async function deleteProduct(productId: string): Promise<DeleteProductSta
 
   if (error) return { error: error.message };
 
-  revalidateInventoryPaths(store.slug);
+  revalidateInventoryPaths(store.slug, store.id);
   return { success: true };
 }
 
@@ -615,7 +617,7 @@ export async function reorderProducts(
   const failed = results.find((result) => result.error);
   if (failed?.error) return { error: failed.error.message };
 
-  revalidateInventoryPaths(auth.store.slug);
+  revalidateInventoryPaths(auth.store.slug, auth.store.id);
   return { success: true };
 }
 
@@ -657,18 +659,19 @@ async function assertStoreProductVariant(
   return { ok: true };
 }
 
-function revalidatePublicCatalogPaths(storeSlug: string) {
+function revalidatePublicCatalogPaths(storeSlug: string, storeId?: string) {
+  revalidatePublicCatalogCache({ slug: storeSlug, storeId });
   revalidatePath(`/tienda/${storeSlug}`);
   revalidatePath(`/tienda/${storeSlug}/armar-pc`);
   revalidatePath(`/c/${storeSlug}`);
   revalidatePath(`/c/${storeSlug}/armar-pc`);
 }
 
-function revalidateInventoryPaths(storeSlug: string) {
+function revalidateInventoryPaths(storeSlug: string, storeId?: string) {
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
   revalidatePath("/dashboard");
-  revalidatePublicCatalogPaths(storeSlug);
+  revalidatePublicCatalogPaths(storeSlug, storeId);
   revalidatePath("/dashboard/productos/nuevo");
 }
 
@@ -741,7 +744,7 @@ export async function updateProductPriceUsd(
 
   if (error) return { error: error.message };
 
-  revalidateInventoryPaths(store.slug);
+  revalidateInventoryPaths(store.slug, store.id);
   return { success: true };
 }
 
@@ -894,6 +897,6 @@ export async function duplicateProduct(
     );
   }
 
-  revalidateInventoryPaths(store.slug);
+  revalidateInventoryPaths(store.slug, store.id);
   return { success: true };
 }

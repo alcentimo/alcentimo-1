@@ -5,8 +5,8 @@ import { TransactionalCatalog } from "@/components/catalog-transactional/Transac
 import { CatalogProductGridSkeleton } from "@/components/catalog/CatalogProductGridSkeleton";
 import { getPublicStoreBySlug } from "@/lib/stores";
 
+// HTML dinámico (sesión/carrito). Los productos van al Data Cache (~60s + tags).
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 interface CatalogPageProps {
   params: Promise<{ store_slug: string }>;

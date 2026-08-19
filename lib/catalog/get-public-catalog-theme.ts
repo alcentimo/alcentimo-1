@@ -4,12 +4,8 @@ import {
   getCatalogThemeStyle,
   resolveCatalogDesign,
 } from "@/lib/store-settings/catalog-theme";
-import {
-  defaultStoreSettingsConfig,
-  normalizeStoreSettingsConfig,
-} from "@/lib/store-settings/defaults";
 import type { CatalogDesignSettings } from "@/lib/store-settings/types";
-import { getPublicServerClient } from "@/lib/supabase/public-server";
+import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { getPublicStoreBySlug } from "@/lib/stores";
 
 export interface PublicCatalogThemeContext {
@@ -25,16 +21,7 @@ export async function getPublicCatalogThemeContext(
   const store = await getPublicStoreBySlug(storeSlug);
   if (!store) return null;
 
-  const client = getPublicServerClient();
-  const { data } = await client
-    .from("store_settings")
-    .select("config")
-    .eq("store_id", store.id)
-    .maybeSingle();
-
-  const config = data?.config
-    ? normalizeStoreSettingsConfig(data.config)
-    : defaultStoreSettingsConfig();
+  const config = await getPublicStoreSettingsConfig(store.id);
 
   const catalogDesign = resolveCatalogDesign(
     config.catalogDesign,

@@ -11,6 +11,7 @@ import {
 } from "@/src/config/sales-payment-methods";
 import type { CreateSaleFormState } from "@/lib/sales/types";
 import { formatUsd } from "@/lib/format";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 
 function parsePositiveInt(value: FormDataEntryValue | null): number | null {
   if (typeof value !== "string") return null;
@@ -168,6 +169,7 @@ export async function createSale(
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
   revalidatePath(`/tienda/${store.slug}`);
+  revalidatePublicCatalogCache({ slug: store.slug, storeId: store.id });
 
   return {
     success: `Venta registrada: ${product.name} × ${cantidad} por ${formatUsd(monto)}.`,

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
+import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   availableFromLocationStock,
   mapStoreLocationRow,
@@ -31,7 +32,7 @@ export async function getStoreLocations(
   return (data ?? []).map((row) => mapStoreLocationRow(row as Record<string, unknown>));
 }
 
-export async function getPublicStoreLocations(
+async function loadPublicStoreLocationsUncached(
   storeId: string,
 ): Promise<StoreLocation[]> {
   const client = getPublicServerClient();
@@ -47,7 +48,19 @@ export async function getPublicStoreLocations(
   return (data ?? []).map((row) => mapStoreLocationRow(row as Record<string, unknown>));
 }
 
-export async function getVariantLocationStocksForStore(
+export async function getPublicStoreLocations(
+  storeId: string,
+): Promise<StoreLocation[]> {
+  const id = storeId.trim();
+  if (!id) return [];
+  return withPublicCatalogCache(
+    ["public-store-locations-v1", id],
+    { storeId: id },
+    () => loadPublicStoreLocationsUncached(id),
+  );
+}
+
+async function loadVariantLocationStocksUncached(
   storeId: string,
 ): Promise<VariantLocationStock[]> {
   const locations = await getPublicStoreLocations(storeId);
@@ -76,6 +89,18 @@ export async function getVariantLocationStocksForStore(
       }),
     };
   });
+}
+
+export async function getVariantLocationStocksForStore(
+  storeId: string,
+): Promise<VariantLocationStock[]> {
+  const id = storeId.trim();
+  if (!id) return [];
+  return withPublicCatalogCache(
+    ["public-variant-location-stocks-v1", id],
+    { storeId: id },
+    () => loadVariantLocationStocksUncached(id),
+  );
 }
 
 export async function getProductLocationStocks(
