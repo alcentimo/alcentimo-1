@@ -1,7 +1,10 @@
 "use server";
 
 import { getCatalogProducts } from "@/lib/catalog";
-import { CATALOG_PAGE_SIZE } from "@/lib/catalog/catalog-browse";
+import {
+  CATALOG_PAGE_SIZE,
+  parseCatalogPriceBound,
+} from "@/lib/catalog/catalog-browse";
 import type { CatalogListItem } from "@/lib/database.types";
 
 export interface FetchPublicCatalogProductsInput {
@@ -10,6 +13,8 @@ export interface FetchPublicCatalogProductsInput {
   limit?: number;
   categorySlug?: string | null;
   search?: string;
+  minPrice?: string | number | null;
+  maxPrice?: string | number | null;
 }
 
 export interface FetchPublicCatalogProductsResult {
@@ -31,6 +36,8 @@ export async function fetchPublicCatalogProducts(
       offset: input.offset,
       categorySlug: input.categorySlug?.trim() || undefined,
       search: input.search?.trim() || undefined,
+      minPriceUsd: parseCatalogPriceBound(input.minPrice),
+      maxPriceUsd: parseCatalogPriceBound(input.maxPrice),
     });
 
     return {

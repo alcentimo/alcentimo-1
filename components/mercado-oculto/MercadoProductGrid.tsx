@@ -18,6 +18,10 @@ interface MercadoProductGridProps {
    */
   onProductActivate?: (product: MercadoProductCard) => void;
   priceLabel?: string;
+  /** Texto al lado del precio (p. ej. tasa de referencia BCV). */
+  priceHint?: string | null;
+  /** Conversión o referencia bajo el precio base. */
+  formatPriceSecondary?: (product: MercadoProductCard) => string | null;
   ctaLabel?: string;
   emptyTitle?: string;
   emptyDescription?: string;
@@ -34,6 +38,8 @@ export function MercadoProductGrid({
   getProductHref = defaultProductHref,
   onProductActivate,
   priceLabel = "Mayorista",
+  priceHint = null,
+  formatPriceSecondary,
   ctaLabel = "Ver ficha",
   emptyTitle = "Nada en esta curaduría",
   emptyDescription = "Probá otra colección o limpiá la búsqueda. La vitrina se actualiza con nuevos mayoristas.",
@@ -70,6 +76,7 @@ export function MercadoProductGrid({
         const activate = onProductActivate
           ? () => onProductActivate(product)
           : () => router.push(href);
+        const priceSecondary = formatPriceSecondary?.(product) ?? null;
 
         return (
           <li key={product.product_id}>
@@ -107,7 +114,17 @@ export function MercadoProductGrid({
                       {priceLabel}
                     </span>
                     {formatUsd(product.price_usd)}
+                    {priceHint ? (
+                      <span className="mercado-mp-card-price-hint">
+                        {priceHint}
+                      </span>
+                    ) : null}
                   </p>
+                  {priceSecondary ? (
+                    <p className="mercado-mp-card-price-secondary">
+                      {priceSecondary}
+                    </p>
+                  ) : null}
                 </div>
 
                 {showFreeShipping ? (

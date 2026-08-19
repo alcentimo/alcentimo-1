@@ -57,11 +57,52 @@ export function matchesCatalogSearch(
   return haystack.includes(normalized);
 }
 
+export function parseCatalogPriceBound(
+  value: string | number | null | undefined,
+): number | null {
+  if (value == null || value === "") return null;
+  const parsed =
+    typeof value === "number"
+      ? value
+      : Number(String(value).trim().replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return parsed;
+}
+
+export function normalizeCatalogPriceRange(
+  minPrice: string | number | null | undefined,
+  maxPrice: string | number | null | undefined,
+): { min: number | null; max: number | null } {
+  let min = parseCatalogPriceBound(minPrice);
+  let max = parseCatalogPriceBound(maxPrice);
+  if (min != null && max != null && min > max) {
+    const swapped = min;
+    min = max;
+    max = swapped;
+  }
+  return { min, max };
+}
+
+export function matchesCatalogPrice(
+  product: CatalogListItem,
+  minPrice: string,
+  maxPrice: string,
+): boolean {
+  const { min, max } = normalizeCatalogPriceRange(minPrice, maxPrice);
+  if (min == null && max == null) return true;
+  const price = product.price_usd ?? 0;
+  if (min != null && price < min) return false;
+  if (max != null && price > max) return false;
+  return true;
+}
+
 export function filterCatalogProducts(
   products: CatalogListItem[],
   options: {
     searchQuery: string;
     categorySlug: string | null;
+    minPrice?: string;
+    maxPrice?: string;
   },
 ): CatalogListItem[] {
   return products.filter((product) => {
@@ -69,6 +110,10 @@ export function filterCatalogProducts(
       options.categorySlug &&
       product.category_slug !== options.categorySlug
     ) {
+      return false;
+    }
+
+    if (!matchesCatalogPrice(product, options.minPrice ?? "", options.maxPrice ?? "")) {
       return false;
     }
 
@@ -134,11 +179,15 @@ export function browseCatalogProducts(
     categorySlug: string | null;
     sortKey: CatalogSortKey;
     visibleCount: number;
+    minPrice?: string;
+    maxPrice?: string;
   },
 ) {
   const filtered = filterCatalogProducts(products, {
     searchQuery: options.searchQuery,
     categorySlug: options.categorySlug,
+    minPrice: options.minPrice,
+    maxPrice: options.maxPrice,
   });
   const sorted = sortCatalogProducts(filtered, options.sortKey);
 
@@ -153,9 +202,14 @@ export function browseCatalogProducts(
 export function hasActiveCatalogContentFilters(
   searchQuery: string,
   categorySlug: string | null,
+  minPrice = "",
+  maxPrice = "",
 ): boolean {
   return (
-    normalizeCatalogSearchText(searchQuery).length > 0 || categorySlug != null
+    normalizeCatalogSearchText(searchQuery).length > 0 ||
+    categorySlug != null ||
+    parseCatalogPriceBound(minPrice) != null ||
+    parseCatalogPriceBound(maxPrice) != null
   );
 }
 
@@ -163,6 +217,15 @@ export function hasActiveCatalogBrowseFilters(
   searchQuery: string,
   categorySlug: string | null,
   sortKey: CatalogSortKey,
+  minPrice = "",
+  maxPrice = "",
 ): boolean {
-  return hasActiveCatalogContentFilters(searchQuery, categorySlug) || sortKey !== "featured";
+  return (
+    hasActiveCatalogContentFilters(
+      searchQuery,
+      categorySlug,
+      minPrice,
+      maxPrice,
+    ) || sortKey !== "featured"
+  );
 }

@@ -13531,6 +13531,10 @@ button.catalog-profile-footer-link {
   @apply mx-auto flex w-full min-w-0 max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 lg:px-8;
 }
 
+.mercado-mp-header-top--search {
+  @apply flex-wrap gap-y-2;
+}
+
 .mercado-mp-brand {
   @apply flex min-w-0 flex-1 items-center gap-2 no-underline text-[var(--mo-header-fg)] sm:gap-3 sm:flex-none;
 }
@@ -13579,6 +13583,146 @@ button.mercado-mp-card-btn {
   @apply h-36 w-full rounded-2xl object-cover shadow-[0_12px_32px_rgba(6,40,31,0.12)] sm:h-48;
 }
 
+/* ——— Vitrina marketplace (dropshippers) ——— */
+
+.storefront-mp-shell .mercado-mp-brand {
+  order: 1;
+  flex: 0 0 auto;
+}
+
+.storefront-mp-shell .mercado-mp-nav {
+  order: 2;
+  margin-left: auto;
+}
+
+.storefront-mp-search {
+  @apply flex min-w-0 items-center gap-1 rounded-lg bg-white p-1 shadow-[0_10px_28px_rgba(0,0,0,0.16)];
+  order: 3;
+  width: 100%;
+}
+
+.storefront-mp-search-icon {
+  @apply flex h-10 w-10 shrink-0 items-center justify-center text-zinc-400;
+}
+
+.storefront-mp-search-input {
+  @apply min-w-0 flex-1 border-0 bg-transparent py-2 text-[15px] text-zinc-900 outline-none placeholder:text-zinc-400;
+}
+
+.storefront-mp-search-btn {
+  @apply inline-flex h-10 shrink-0 items-center justify-center rounded-md bg-[var(--mo-emerald)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--mo-emerald-hover)] disabled:opacity-60;
+}
+
+@media (min-width: 768px) {
+  .storefront-mp-search {
+    order: 2;
+    width: auto;
+    flex: 1 1 0%;
+    max-width: 46rem;
+  }
+
+  .storefront-mp-shell .mercado-mp-nav {
+    order: 3;
+    margin-left: 0;
+  }
+}
+
+.storefront-mp-lead {
+  @apply mx-auto max-w-7xl px-4 pt-3 text-sm leading-relaxed text-[var(--mo-muted)] sm:px-6 lg:px-8;
+}
+
+.storefront-cat-rail {
+  @apply mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8;
+}
+
+.storefront-cat-rail-head {
+  @apply mb-3;
+}
+
+.storefront-cat-rail-head h2 {
+  @apply m-0 text-base font-semibold tracking-tight text-[var(--mo-ink)];
+}
+
+.storefront-cat-rail-head p {
+  @apply m-0 mt-0.5 text-xs text-[var(--mo-muted)];
+}
+
+.storefront-cat-rail-track {
+  @apply m-0 flex list-none gap-3 overflow-x-auto pb-1 pt-1 [scrollbar-width:none];
+}
+
+.storefront-cat-rail-track::-webkit-scrollbar {
+  display: none;
+}
+
+.storefront-cat-rail-track > li {
+  @apply shrink-0;
+}
+
+.storefront-cat-card {
+  @apply flex h-full w-[5.75rem] cursor-pointer flex-col items-center gap-2 rounded-2xl border border-[var(--mo-border)] bg-white px-2 py-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--mo-emerald)] hover:shadow-md sm:w-24;
+}
+
+.storefront-cat-card.is-active {
+  @apply border-[var(--mo-emerald)] bg-[var(--mo-emerald-soft)] shadow-[0_8px_20px_color-mix(in_srgb,var(--mo-emerald)_18%,transparent)];
+}
+
+.storefront-cat-card-icon {
+  @apply flex h-11 w-11 items-center justify-center rounded-full bg-[var(--mo-emerald-soft)] text-[var(--mo-emerald)];
+}
+
+.storefront-cat-card.is-active .storefront-cat-card-icon {
+  @apply bg-[var(--mo-emerald)] text-white;
+}
+
+.storefront-cat-card-label {
+  @apply line-clamp-2 text-[11px] font-semibold leading-tight text-[var(--mo-ink)];
+}
+
+.storefront-mp-listing {
+  scroll-margin-top: 5.5rem;
+}
+
+.storefront-mp-filters-mobile {
+  @apply rounded-[1.5rem] border border-white/70 bg-[color-mix(in_srgb,var(--mo-surface)_82%,transparent)] shadow-sm;
+}
+
+.storefront-mp-filters-toggle {
+  @apply cursor-pointer list-none px-4 py-3 text-sm font-semibold text-[var(--mo-ink)];
+}
+
+.storefront-mp-filters-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.storefront-mp-filters-mobile .mercado-mp-filters {
+  @apply border-0 bg-transparent p-4 pt-0 shadow-none;
+}
+
+.storefront-mp-shell .mercado-mp-card-media {
+  aspect-ratio: 1 / 1;
+}
+
+.storefront-mp-shell .mercado-mp-card-price {
+  @apply flex flex-wrap items-baseline gap-x-2;
+}
+
+.storefront-mp-shell .mercado-mp-card-price-hint {
+  @apply ml-0;
+}
+
+.mercado-mp-card-price-hint {
+  @apply ml-2 align-middle text-[11px] font-medium text-[var(--mo-muted)];
+}
+
+.mercado-mp-card-price-secondary {
+  @apply m-0 text-xs font-medium text-[var(--mo-muted)];
+}
+
+.txn-catalog--hide-prices .mercado-mp-card-pricing {
+  display: none;
+}
+
 .storefront-moriche-shell .mercado-mp-brand-text {
   display: flex !important;
   min-width: 0;
@@ -13591,7 +13735,7 @@ button.mercado-mp-card-btn {
   display: none;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .storefront-moriche-shell .mercado-nav-label {
     display: inline !important;
   }
@@ -13634,12 +13778,16 @@ button.mercado-mp-card-btn {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }
 
-.design-studio-phone--moriche .mercado-hero-search {
-  @apply flex-col items-stretch;
+.design-studio-phone--moriche .storefront-mp-search {
+  @apply w-full max-w-none;
 }
 
-.design-studio-phone--moriche .mercado-hero-search-btn {
-  @apply w-full justify-center;
+.design-studio-phone--moriche .mercado-mp-header-top--search {
+  @apply flex-wrap;
+}
+
+.design-studio-phone--moriche .storefront-cat-rail-track {
+  @apply gap-2;
 }
 
 .design-studio-preview-frame--moriche .design-reference-badge,

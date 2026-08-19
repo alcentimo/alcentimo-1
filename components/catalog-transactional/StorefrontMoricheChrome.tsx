@@ -3,11 +3,12 @@
 import type { CSSProperties, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { MercadoBrandHeader } from "@/components/mercado-oculto/MercadoBrandHeader";
-import { MercadoBrowseHero } from "@/components/mercado-oculto/MercadoBrowseHero";
-import type { MercadoHeroCategory } from "@/components/mercado-oculto/MercadoBrowseHero";
 import { StorefrontMoricheNav } from "@/components/catalog-transactional/StorefrontMoricheNav";
+import { StorefrontMarketplaceSearch } from "@/components/catalog-transactional/StorefrontMarketplaceSearch";
+import { StorefrontCategoryRail } from "@/components/catalog-transactional/StorefrontCategoryRail";
 import { buildMercadoBrandCssVars } from "@/lib/mercado-oculto/brand-css-vars";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
+import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { cn } from "@/lib/cn";
 
 export interface StorefrontMoricheChromeProps {
@@ -19,11 +20,11 @@ export interface StorefrontMoricheChromeProps {
   eyebrow?: string;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
-  categories: MercadoHeroCategory[];
+  categories: CatalogCategoryOption[];
   activeCategoryId: string | null;
   onSelectCategory: (id: string | null) => void;
   pending?: boolean;
-  /** Banner / promo debajo del hero (personalización de tienda). */
+  /** Banner / promo debajo de la cabecera (personalización de tienda). */
   banner?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -31,8 +32,9 @@ export interface StorefrontMoricheChromeProps {
 }
 
 /**
- * Shell visual Moriche del catálogo público:
- * cabecera (Pedidos / Carrito / Cuenta) + hero Explorar + pills + main.
+ * Shell marketplace de la vitrina pública:
+ * cabecera fija (logo + buscador + Carrito / Pedidos / Cuenta),
+ * banner, categorías visuales y listado.
  */
 export function StorefrontMoricheChrome({
   storeSlug,
@@ -55,12 +57,15 @@ export function StorefrontMoricheChrome({
   const pathname = usePathname();
   const brandHref = getStoreCatalogBasePath(storeSlug, { pathname });
   const brandVars = buildMercadoBrandCssVars(primaryColor);
-  const lead = storeDescription?.trim() || null;
   const markText = storeName.trim().slice(0, 1) || "T";
+  const lead = storeDescription?.trim() || null;
 
   return (
     <div
-      className={cn("mercado-shell storefront-moriche-shell", className)}
+      className={cn(
+        "mercado-shell storefront-moriche-shell storefront-mp-shell",
+        className,
+      )}
       style={{ ...brandVars, ...style }}
     >
       <MercadoBrandHeader
@@ -69,35 +74,28 @@ export function StorefrontMoricheChrome({
         brandKicker={eyebrow}
         brandMarkText={markText}
         logoUrl={logoUrl}
+        search={
+          <StorefrontMarketplaceSearch
+            storeName={storeName}
+            value={searchQuery}
+            onChange={onSearchQueryChange}
+            pending={pending}
+          />
+        }
         nav={<StorefrontMoricheNav storeSlug={storeSlug} />}
       />
 
-      <MercadoBrowseHero
-        kicker={eyebrow}
-        title={
-          <>
-            La vitrina de{" "}
-            <span className="mercado-hero-title-accent">{storeName}</span>
-          </>
-        }
-        titleId={`store-hero-${storeSlug}`}
-        lead={lead}
-        searchQuery={searchQuery}
-        onSearchQueryChange={onSearchQueryChange}
-        onSearchSubmit={() => {
-          document
-            .getElementById("mercado-colecciones")
-            ?.scrollIntoView({ behavior: "smooth", block: "start" });
-        }}
-        searchAriaLabel={`Buscar en ${storeName}`}
-        pending={pending}
+      {banner}
+
+      {lead ? (
+        <p className="storefront-mp-lead">{lead}</p>
+      ) : null}
+
+      <StorefrontCategoryRail
         categories={categories}
         activeCategoryId={activeCategoryId}
         onSelectCategory={onSelectCategory}
-        allLabel="Toda la vitrina"
       />
-
-      {banner}
 
       <main className="mercado-main mercado-mp-main">{children}</main>
     </div>

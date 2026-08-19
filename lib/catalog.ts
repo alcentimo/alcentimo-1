@@ -29,6 +29,10 @@ export interface GetCatalogOptions {
   categorySlug?: string;
   /** Búsqueda por nombre, SKU o slug (server-side). */
   search?: string;
+  /** Precio mínimo en USD (moneda base). */
+  minPriceUsd?: number | null;
+  /** Precio máximo en USD (moneda base). */
+  maxPriceUsd?: number | null;
   /** Restringe a IDs concretos (p. ej. hidratar carrito). */
   productIds?: string[];
 }
@@ -76,6 +80,8 @@ interface CatalogProductsQueryOptions {
   limit: number;
   productIds?: string[];
   searchOr: string | null;
+  minPriceUsd?: number | null;
+  maxPriceUsd?: number | null;
   mode: CatalogProductsQueryMode;
 }
 
@@ -91,6 +97,8 @@ function buildCatalogProductsQuery(
     limit,
     productIds,
     searchOr,
+    minPriceUsd,
+    maxPriceUsd,
     mode,
   } = options;
 
@@ -110,6 +118,14 @@ function buildCatalogProductsQuery(
 
   if (searchOr) {
     query = query.or(searchOr);
+  }
+
+  if (minPriceUsd != null) {
+    query = query.gte("price_usd", minPriceUsd);
+  }
+
+  if (maxPriceUsd != null) {
+    query = query.lte("price_usd", maxPriceUsd);
   }
 
   if (paginated) {
@@ -181,6 +197,8 @@ export async function getCatalogProducts(
     offset = 0,
     categorySlug,
     search,
+    minPriceUsd,
+    maxPriceUsd,
     productIds,
   } = options;
   const normalizedSlug = storeSlug.trim().toLowerCase();
@@ -229,6 +247,8 @@ export async function getCatalogProducts(
       limit,
       productIds: allowedProductIds,
       searchOr,
+      minPriceUsd: minPriceUsd ?? null,
+      maxPriceUsd: maxPriceUsd ?? null,
     };
   let queryMode: CatalogProductsQueryMode = "ranked";
   let selectColumns = PUBLIC_CATALOG_LIST_SELECT;

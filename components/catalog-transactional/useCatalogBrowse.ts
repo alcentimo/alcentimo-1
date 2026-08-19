@@ -83,6 +83,8 @@ export function useCatalogBrowse(
   const [categorySlug, setCategorySlug] = useState<string | null>(
     options?.initialCategorySlug ?? null,
   );
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
   const [sortKey, setSortKey] = useState<CatalogSortKey>("featured");
   const [visibleCount, setVisibleCount] = useState(pageSize);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -98,6 +100,8 @@ export function useCatalogBrowse(
   const hasServerContentFilters = hasActiveCatalogContentFilters(
     searchQuery,
     categorySlug,
+    minPrice,
+    maxPrice,
   );
 
   useEffect(() => {
@@ -125,7 +129,7 @@ export function useCatalogBrowse(
 
   useEffect(() => {
     setVisibleCount(pageSize);
-  }, [searchQuery, categorySlug, sortKey, pageSize]);
+  }, [searchQuery, categorySlug, minPrice, maxPrice, sortKey, pageSize]);
 
   useEffect(() => {
     if (!serverPaginationEnabled || hasServerContentFilters) return;
@@ -159,6 +163,8 @@ export function useCatalogBrowse(
           limit: CATALOG_INITIAL_FETCH,
           categorySlug,
           search: searchQuery,
+          minPrice,
+          maxPrice,
         });
 
         if (requestId !== fetchRequestId.current) return;
@@ -185,6 +191,8 @@ export function useCatalogBrowse(
     categorySlug,
     filterRetryNonce,
     hasServerContentFilters,
+    maxPrice,
+    minPrice,
     searchQuery,
     serverPaginationEnabled,
     serverStoreSlug,
@@ -197,6 +205,10 @@ export function useCatalogBrowse(
           serverPaginationEnabled && hasServerContentFilters ? "" : searchQuery,
         categorySlug:
           serverPaginationEnabled && hasServerContentFilters ? null : categorySlug,
+        minPrice:
+          serverPaginationEnabled && hasServerContentFilters ? "" : minPrice,
+        maxPrice:
+          serverPaginationEnabled && hasServerContentFilters ? "" : maxPrice,
         sortKey,
         visibleCount,
       }),
@@ -204,6 +216,8 @@ export function useCatalogBrowse(
       allProducts,
       categorySlug,
       hasServerContentFilters,
+      maxPrice,
+      minPrice,
       searchQuery,
       serverPaginationEnabled,
       sortKey,
@@ -215,6 +229,8 @@ export function useCatalogBrowse(
     searchQuery,
     categorySlug,
     sortKey,
+    minPrice,
+    maxPrice,
   );
 
   const fetchMoreFromServer = useCallback(async () => {
@@ -240,6 +256,8 @@ export function useCatalogBrowse(
         limit: pageSize,
         categorySlug: hasServerContentFilters ? categorySlug : undefined,
         search: hasServerContentFilters ? searchQuery : undefined,
+        minPrice: hasServerContentFilters ? minPrice : undefined,
+        maxPrice: hasServerContentFilters ? maxPrice : undefined,
       });
 
       if (result.error) {
@@ -261,6 +279,8 @@ export function useCatalogBrowse(
     hasServerContentFilters,
     loadingFilter,
     loadingMore,
+    maxPrice,
+    minPrice,
     pageSize,
     searchQuery,
     serverPaginationEnabled,
@@ -304,6 +324,8 @@ export function useCatalogBrowse(
   function clearFilters() {
     setSearchQuery("");
     setCategorySlug(null);
+    setMinPrice("");
+    setMaxPrice("");
     setSortKey("featured");
     setFetchError(null);
     setFetchErrorSource(null);
@@ -317,6 +339,10 @@ export function useCatalogBrowse(
     setSearchQuery,
     categorySlug,
     setCategorySlug,
+    minPrice,
+    setMinPrice,
+    maxPrice,
+    setMaxPrice,
     sortKey,
     setSortKey,
     visibleCount,
