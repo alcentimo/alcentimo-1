@@ -17,7 +17,7 @@ import {
   DROPSHIP_SETTLEMENT_STATUS_LABELS,
   type DropshipDailySettlementSummary,
 } from "@/lib/dropship/settlement-types";
-import { formatUsd } from "@/lib/format";
+import { formatExchangeRate, formatUsd, formatVes } from "@/lib/format";
 import {
   SUPPLIER_B2B_PAYMENT_METHOD_KEYS,
   isSupplierB2bPaymentMethodKey,
@@ -32,6 +32,8 @@ import { cn } from "@/lib/cn";
 interface DailyDropshipSettlementCardProps {
   summary: DropshipDailySettlementSummary;
   paymentMethods: SubscriptionPaymentMethod[];
+  /** Tasa BCV oficial vigente (USD → VES). */
+  exchangeRate?: number | null;
   variant?: "card" | "page";
 }
 
@@ -45,9 +47,25 @@ function statusClass(status: string): string {
   return "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/50";
 }
 
+function vesEquivalent(
+  amountUsd: number,
+  exchangeRate: number | null | undefined,
+): number | null {
+  if (
+    !Number.isFinite(amountUsd) ||
+    exchangeRate == null ||
+    !Number.isFinite(exchangeRate) ||
+    exchangeRate <= 0
+  ) {
+    return null;
+  }
+  return amountUsd * exchangeRate;
+}
+
 export function DailyDropshipSettlementCard({
   summary,
   paymentMethods,
+  exchangeRate = null,
   variant = "card",
 }: DailyDropshipSettlementCardProps) {
   const router = useRouter();
@@ -80,6 +98,11 @@ export function DailyDropshipSettlementCard({
     () => formatBusinessDateEs(summary.businessDate),
     [summary.businessDate],
   );
+  const amountDueVes = vesEquivalent(summary.amountDueUsd, exchangeRate);
+  const amountDueLabel =
+    amountDueVes != null
+      ? `${formatUsd(summary.amountDueUsd)} / ${formatVes(amountDueVes)}`
+      : formatUsd(summary.amountDueUsd);
 
   function handleSubmit() {
     setError(null);
@@ -150,70 +173,36 @@ export function DailyDropshipSettlementCard({
         </div>
       )}
 
-      <div className={cn("grid gap-3 sm:grid-cols-3", !isPage && "mt-4")}>
-        <article className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 px-3 py-3 dark:border-zinc-800 dark:bg-zinc-900/40">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-            Costo mayorista
+      <div
+        className={cn(
+          "rounded-xl border border-teal-200 bg-teal-50/80 px-4 py-4 dark:border-teal-900/50 dark:bg-teal-950/30",
+          !isPage && "mt-4",
+        )}
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+          Total a pagar a Alcéntimo
+        </p>
+        <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-teal-950 dark:text-teal-50">
+          {formatUsd(summary.amountDueUsd)}
+        </p>
+        {amountDueVes != null ? (
+          <p className="mt-0.5 text-lg font-semibold tabular-nums text-teal-800 dark:text-teal-200">
+            {formatVes(amountDueVes)}
           </p>
-          <p className="mt-1 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
-            {formatUsd(summary.wholesaleCostUsd)}
+        ) : (
+          <p className="mt-0.5 text-sm text-amber-800 dark:text-amber-200">
+            No hay tasa BCV disponible. Usa el equivalente oficial del día
+            antes de transferir.
           </p>
-          <p className="text-xs text-zinc-500">
-            {summary.orderCount} venta{summary.orderCount === 1 ? "" : "s"} ·{" "}
-            {summary.lineCount} producto{summary.lineCount === 1 ? "" : "s"}
-          </p>
-        </article>
-        <article className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 px-3 py-3 dark:border-zinc-800 dark:bg-zinc-900/40">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-            Comisión Alcéntimo
-          </p>
-          <p className="mt-1 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
-            {formatUsd(summary.platformMarkupUsd)}
-          </p>
-          <p className="text-xs text-zinc-500">
-            Markup {summary.markupPercent}%
-          </p>
-        </article>
-        <article className="rounded-xl border border-teal-200 bg-teal-50/80 px-3 py-3 dark:border-teal-900/50 dark:bg-teal-950/30 sm:col-span-1">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
-            Total a pagar a Alcéntimo
-          </p>
-          <p className="mt-1 text-lg font-bold tabular-nums text-teal-950 dark:text-teal-50">
-            {formatUsd(summary.amountDueUsd)}
-          </p>
-          <p className="text-xs text-teal-800/80 dark:text-teal-200/80">
-            Un comprobante, banco y referencia
-          </p>
-        </article>
+        )}
+        <p className="mt-2 text-xs text-teal-800/90 dark:text-teal-200/80">
+          {summary.orderCount} pedido{summary.orderCount === 1 ? "" : "s"} ·{" "}
+          {summary.lineCount} producto{summary.lineCount === 1 ? "" : "s"}
+          {exchangeRate != null && exchangeRate > 0
+            ? ` · Tasa BCV Bs. ${formatExchangeRate(exchangeRate)} / USD`
+            : ""}
+        </p>
       </div>
-
-      {summary.suppliers.length > 0 ? (
-        <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-950">
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            Liquidación a cada mayorista
-          </p>
-          <ul className="mt-2 space-y-1.5">
-            {summary.suppliers.map((supplier) => (
-              <li
-                key={supplier.supplierUserId}
-                className="flex justify-between gap-3"
-              >
-                <span className="min-w-0 truncate text-zinc-700 dark:text-zinc-200">
-                  {supplier.supplierName ||
-                    `Mayorista ${supplier.supplierUserId.slice(0, 8).toUpperCase()}`}
-                  <span className="ml-1 text-xs text-zinc-400">
-                    · {supplier.orderCount} pedido
-                    {supplier.orderCount === 1 ? "" : "s"}
-                  </span>
-                </span>
-                <span className="shrink-0 tabular-nums font-medium text-zinc-900 dark:text-zinc-50">
-                  {formatUsd(supplier.wholesaleCostUsd)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
 
       {summary.lines.length > 0 ? (
         <SettlementCustomerShipments
@@ -280,8 +269,8 @@ export function DailyDropshipSettlementCard({
               Reportar el pago consolidado
             </h2>
             <p className="mt-1 text-sm text-zinc-500">
-              Transfiere {formatUsd(summary.amountDueUsd)} a las cuentas de
-              Alcéntimo e ingresa los datos de tu pago único.
+              Transfiere {amountDueLabel} a las cuentas de Alcéntimo e ingresa
+              los datos de tu pago único.
             </p>
           </div>
 
@@ -298,8 +287,12 @@ export function DailyDropshipSettlementCard({
 
           <SubscriptionPaymentDetails
             paymentMethods={paymentMethods}
-            hint="Usa estos datos para la transferencia unificada y reporta una sola referencia."
-            transferAmount={formatUsd(summary.amountDueUsd)}
+            hint={
+              amountDueVes != null
+                ? `Transfiere exactamente ${amountDueLabel} (tasa BCV del día) por Pago Móvil o transferencia y reporta una sola referencia.`
+                : "Usa estos datos para la transferencia unificada y reporta una sola referencia."
+            }
+            transferAmount={amountDueLabel}
           />
 
           <div className="grid gap-3 sm:grid-cols-2">

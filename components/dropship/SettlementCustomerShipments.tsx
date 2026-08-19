@@ -67,14 +67,21 @@ export function SettlementCustomerShipments({
                   : "border-zinc-200 bg-zinc-50/80 dark:border-zinc-800 dark:bg-zinc-900/40",
               )}
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
+              <div
+                className={cn(
+                  "flex flex-wrap items-start gap-2",
+                  isAdmin && "justify-between",
+                )}
+              >
                 <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                   <Package className="h-3.5 w-3.5" aria-hidden="true" />
                   Pedido {shortOrderId(shipment.catalogOrderId)}
                 </p>
-                <p className="text-xs tabular-nums text-zinc-500">
-                  {formatUsd(shipment.lineDueUsd)}
-                </p>
+                {isAdmin ? (
+                  <p className="text-xs tabular-nums text-zinc-500">
+                    {formatUsd(shipment.lineDueUsd)}
+                  </p>
+                ) : null}
               </div>
 
               <dl className="mt-2 space-y-1.5 text-sm">
