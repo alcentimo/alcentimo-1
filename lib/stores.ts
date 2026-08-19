@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
 import { getOptionalAuthUser } from "@/lib/auth/optional-auth";
+import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   getStoreCatalogPublicUrl,
   isStoreSubdomainCatalogEnabled,
@@ -23,10 +24,15 @@ export async function getStoreBySlug(slug: string): Promise<Store | null> {
   return data;
 }
 
-/** Tienda pública sin caché — logo, nombre y rubro siempre actualizados. */
+/** Tienda pública cacheada (~60s + tag al guardar ajustes). */
 export async function getPublicStoreBySlug(slug: string): Promise<Store | null> {
-  noStore();
-  return getStoreBySlug(slug);
+  const normalizedSlug = slug.trim().toLowerCase();
+  if (!normalizedSlug) return null;
+  return withPublicCatalogCache(
+    ["public-store-by-slug-v1", normalizedSlug],
+    { slug: normalizedSlug },
+    () => getStoreBySlug(normalizedSlug),
+  );
 }
 
 /** Tienda del usuario autenticado (dueño o miembro). */

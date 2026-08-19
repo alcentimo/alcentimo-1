@@ -12,6 +12,7 @@ import {
 import type { OrderLineItem } from "@/lib/orders/types";
 import { restoreDropshipStockForOrderLines } from "@/lib/dropship/supplier-stock";
 import { ensureHubHoldOrdersForCatalogOrder } from "@/lib/dropship/ensure-hub-hold-orders";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 
 export interface UpdateOrderEstadoOptions {
   /** Número de guía de encomienda (opcional al marcar Enviado). */
@@ -24,7 +25,12 @@ export interface UpdateOrderEstadoResult {
   trackingNumber?: string | null;
 }
 
-function revalidateOrderPaths(storeSlug: string, orderId: string) {
+function revalidateOrderPaths(
+  storeSlug: string,
+  orderId: string,
+  storeId?: string,
+) {
+  revalidatePublicCatalogCache({ slug: storeSlug, storeId });
   revalidatePath("/dashboard/pedidos");
   revalidatePath("/dashboard/liquidacion");
   revalidatePath("/dashboard/analiticas");
@@ -133,7 +139,7 @@ export async function updateOrderEstado(
     trackingNumber = nextTracking;
   }
 
-  revalidateOrderPaths(auth.store.slug, trimmedId);
+  revalidateOrderPaths(auth.store.slug, trimmedId, auth.store.id);
 
   return { success: true, trackingNumber };
 }

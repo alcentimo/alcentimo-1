@@ -14,6 +14,7 @@ import { normalizeCatalogFaqDraft } from "@/lib/store-settings/catalog-faq";
 import { sanitizeCatalogHeaderForStorage } from "@/lib/store-settings/catalog-header";
 import { sanitizeAssistantAvatarForStorage } from "@/lib/store-settings/assistant-avatar";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import { uploadCatalogBannerAssetImage, uploadStoreAssetImage, uploadStoreLogoImage, removeStoreLogoAssets } from "@/lib/storage";
 import type { BannerImageVariant } from "@/lib/banner-image";
 import {
@@ -84,7 +85,7 @@ async function persistSettingsPatch(
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/asistente");
   revalidatePath("/dashboard/pedidos");
-  revalidatePublicStorePaths(store.slug);
+  revalidatePublicStorePaths(store.slug, store.id);
 
   return { success: true };
 }
@@ -181,7 +182,7 @@ export async function saveCatalogDesignSettings(
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/pedidos");
-  revalidatePublicStorePaths(auth.store.slug);
+  revalidatePublicStorePaths(auth.store.slug, auth.store.id);
 
   return { success: true };
 }
@@ -536,7 +537,7 @@ export async function uploadStoreLogo(
     return { error: updateError.message };
   }
 
-  revalidatePublicStorePaths(auth.store.slug);
+  revalidatePublicStorePaths(auth.store.slug, auth.store.id);
 
   return {
     url: upload.url,
@@ -571,11 +572,12 @@ export async function clearStoreLogo(): Promise<SettingsActionResult> {
     return { error: error.message };
   }
 
-  revalidatePublicStorePaths(auth.store.slug);
+  revalidatePublicStorePaths(auth.store.slug, auth.store.id);
   return { success: true };
 }
 
-function revalidatePublicStorePaths(slug: string) {
+function revalidatePublicStorePaths(slug: string, storeId?: string) {
+  revalidatePublicCatalogCache({ slug, storeId });
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/catalogo");
   revalidatePath(`/c/${slug}`);
@@ -687,9 +689,9 @@ export async function saveGeneralStoreSettings(
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/inventario");
   revalidatePath("/dashboard/productos/nuevo");
-  revalidatePublicStorePaths(slug);
+  revalidatePublicStorePaths(slug, store.id);
   if (previousSlug !== slug) {
-    revalidatePublicStorePaths(previousSlug);
+    revalidatePublicStorePaths(previousSlug, store.id);
   }
 
   return {

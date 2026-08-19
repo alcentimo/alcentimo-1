@@ -5,8 +5,8 @@ import { getCatalogProducts } from "@/lib/catalog";
 import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
 import { storeHasPCBuilder } from "@/lib/rubros/modules/tecnologia/pc-builder";
 
+// HTML dinámico (sesión/carrito). Los productos van al Data Cache (~60s + tags).
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 interface PCBuilderPageProps {
   params: Promise<{ store_slug: string }>;

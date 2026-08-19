@@ -4,6 +4,7 @@ import {
   pickGalleryImages,
   resolveSupplierGalleryForProductId,
 } from "@/lib/catalog/resolve-supplier-gallery";
+import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import { getSupabaseAnonClient } from "@/lib/supabase";
 import type { CatalogProductGalleryImage } from "@/lib/products/product-gallery-types";
 
@@ -41,17 +42,10 @@ function parseCatalogDetailImages(raw: unknown): CatalogProductGalleryImage[] {
     });
 }
 
-export async function fetchCatalogProductDetail(
-  storeSlug: string,
-  productSlug: string,
+async function loadCatalogProductDetailUncached(
+  normalizedStore: string,
+  normalizedProduct: string,
 ): Promise<{ detail?: CatalogProductDetailExtra; error?: string }> {
-  const normalizedStore = storeSlug.trim().toLowerCase();
-  const normalizedProduct = productSlug.trim().toLowerCase();
-
-  if (!normalizedStore || !normalizedProduct) {
-    return { error: "Producto no válido." };
-  }
-
   const supabase = getSupabaseAnonClient();
   const { data, error } = await supabase
     .from("catalog_product_detail_view")
@@ -83,4 +77,22 @@ export async function fetchCatalogProductDetail(
       images,
     },
   };
+}
+
+export async function fetchCatalogProductDetail(
+  storeSlug: string,
+  productSlug: string,
+): Promise<{ detail?: CatalogProductDetailExtra; error?: string }> {
+  const normalizedStore = storeSlug.trim().toLowerCase();
+  const normalizedProduct = productSlug.trim().toLowerCase();
+
+  if (!normalizedStore || !normalizedProduct) {
+    return { error: "Producto no válido." };
+  }
+
+  return withPublicCatalogCache(
+    ["public-catalog-product-detail-v1", normalizedStore, normalizedProduct],
+    { slug: normalizedStore },
+    () => loadCatalogProductDetailUncached(normalizedStore, normalizedProduct),
+  );
 }

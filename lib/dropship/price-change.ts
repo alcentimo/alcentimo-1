@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   normalizeDropshipPricingSettings,
   suggestRetailFromWholesaleCost,
@@ -48,8 +49,11 @@ export async function recordSupplierPriceChangeAndNotify(input: {
 
   if (!links || links.length === 0) return;
 
+  const linkedStoreIds = new Set<string>();
+
   for (const link of links) {
     const storeId = String(link.store_id);
+    linkedStoreIds.add(storeId);
     const productId =
       typeof link.product_id === "string" && link.product_id
         ? link.product_id
@@ -105,6 +109,19 @@ export async function recordSupplierPriceChangeAndNotify(input: {
     revalidatePath("/dashboard/catalogo");
     revalidatePath("/dashboard/inventario");
     revalidatePath("/dashboard/ajustes");
+  }
+
+  if (linkedStoreIds.size > 0) {
+    const { data: stores } = await admin
+      .from("stores")
+      .select("id, slug")
+      .in("id", [...linkedStoreIds]);
+    for (const store of (stores as Array<{ id?: string; slug?: string }> | null) ?? []) {
+      revalidatePublicCatalogCache({
+        slug: typeof store.slug === "string" ? store.slug : null,
+        storeId: typeof store.id === "string" ? store.id : null,
+      });
+    }
   }
 }
 

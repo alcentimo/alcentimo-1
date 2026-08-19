@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import { slugify } from "@/lib/slugify";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   allocateUniqueProductSlug,
   isProductSlugUniqueViolation,
@@ -35,7 +36,8 @@ import { normalizeStoreRubro } from "@/src/config/categories";
 
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
-function revalidateAfterImport(storeSlug: string) {
+function revalidateAfterImport(storeSlug: string, storeId?: string) {
+  revalidatePublicCatalogCache({ slug: storeSlug, storeId });
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
@@ -289,7 +291,7 @@ export async function importProductsBulk(
   }
 
   if (created > 0 || updated > 0) {
-    revalidateAfterImport(store.slug);
+    revalidateAfterImport(store.slug, store.id);
   }
 
   const importedCount = created + updated;

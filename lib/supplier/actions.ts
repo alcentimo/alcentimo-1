@@ -25,10 +25,12 @@ import {
   type SupplierProductVariants,
 } from "@/lib/supplier/variants";
 import { MERCADO_CATALOG_CACHE_TAG } from "@/lib/mercado-oculto/catalog-cache";
+import { revalidateAllPublicCatalogCaches } from "@/lib/catalog/public-catalog-cache";
 
 function bustMercadoCatalogCache() {
   revalidateTag(MERCADO_CATALOG_CACHE_TAG, "max");
   revalidatePath("/mercado-oculto");
+  revalidateAllPublicCatalogCaches();
 }
 
 export interface SupplierProduct {

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveOrderCustomerDetails } from "@/lib/customers/get-customer-checkout-context";
 import { getStoreBySlug } from "@/lib/stores";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import { buildTransactionalOrderWhatsAppMessage, buildOrderTotalBsLabel } from "@/lib/whatsapp-formatter";
 import { buildWhatsAppOrderUrl } from "@/lib/catalog/whatsapp-order";
 import { buildOrderSharePublicUrl } from "@/lib/orders/order-share";
@@ -553,6 +554,7 @@ export async function submitTransactionalOrder(
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
   revalidatePath(`/pedidos/${orderId}`);
+  revalidatePublicCatalogCache({ slug: storeSlug, storeId: store.id });
 
   return {
     orderId,

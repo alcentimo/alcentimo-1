@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import { mapStoreLocationRow, type StoreLocation } from "@/lib/locations/types";
 import { getStoreLocations } from "@/lib/locations/get-store-locations";
 import { resolveLocationLimit } from "@/lib/locations/limits";
@@ -145,6 +146,10 @@ export async function createStoreLocationAction(input: {
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/catalogo");
   revalidatePath(`/c/${auth.store.slug}`);
+  revalidatePublicCatalogCache({
+    slug: auth.store.slug,
+    storeId: auth.store.id,
+  });
 
   return {
     location: mapStoreLocationRow(data as Record<string, unknown>),
@@ -207,6 +212,10 @@ export async function updateStoreLocationAction(input: {
 
   revalidatePath("/dashboard/ajustes");
   revalidatePath(`/c/${auth.store.slug}`);
+  revalidatePublicCatalogCache({
+    slug: auth.store.slug,
+    storeId: auth.store.id,
+  });
 
   return { location: mapStoreLocationRow(data as Record<string, unknown>) };
 }
@@ -277,6 +286,10 @@ export async function deleteStoreLocationAction(
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/catalogo");
   revalidatePath(`/c/${auth.store.slug}`);
+  revalidatePublicCatalogCache({
+    slug: auth.store.slug,
+    storeId: auth.store.id,
+  });
 
   return {};
 }
@@ -330,5 +343,9 @@ export async function setVariantLocationStockAction(input: {
 
   revalidatePath("/dashboard/catalogo");
   revalidatePath(`/c/${auth.store.slug}`);
+  revalidatePublicCatalogCache({
+    slug: auth.store.slug,
+    storeId: auth.store.id,
+  });
   return {};
 }

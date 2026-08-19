@@ -1,16 +1,14 @@
-import { unstable_noStore as noStore } from "next/cache";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
+import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   defaultStoreSettingsConfig,
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
 
-export async function getPublicStoreSettingsConfig(
+async function loadPublicStoreSettingsConfigUncached(
   storeId: string,
 ): Promise<StoreSettingsConfig> {
-  noStore();
-
   const client = getPublicServerClient();
   const { data, error } = await client
     .from("store_settings")
@@ -29,4 +27,17 @@ export async function getPublicStoreSettingsConfig(
   }
 
   return normalizeStoreSettingsConfig(row.config);
+}
+
+export async function getPublicStoreSettingsConfig(
+  storeId: string,
+): Promise<StoreSettingsConfig> {
+  const id = storeId.trim();
+  if (!id) return defaultStoreSettingsConfig();
+
+  return withPublicCatalogCache(
+    ["public-store-settings-v1", id],
+    { storeId: id },
+    () => loadPublicStoreSettingsConfigUncached(id),
+  );
 }

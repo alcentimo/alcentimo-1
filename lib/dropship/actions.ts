@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   applyRetailPriceToProduct,
 } from "@/lib/dropship/price-change";
@@ -638,6 +639,10 @@ export async function importSupplierProductToStoreCatalog(
     revalidatePath("/dashboard/inventario");
     revalidatePath("/dashboard");
     revalidatePath(`/c/${auth.store.slug}`);
+    revalidatePublicCatalogCache({
+      slug: auth.store.slug,
+      storeId: auth.store.id,
+    });
 
     return {
       ok: true as const,
@@ -713,6 +718,10 @@ export async function linkStoreDropshipProduct(input: {
 
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/catalogo");
+  revalidatePublicCatalogCache({
+    slug: auth.store.slug,
+    storeId: auth.store.id,
+  });
   return { linkId: String(data.id) };
 }
 
@@ -760,6 +769,10 @@ export async function unlinkStoreDropshipProduct(
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/catalogo");
   revalidatePath(`/c/${auth.store.slug}`);
+  revalidatePublicCatalogCache({
+    slug: auth.store.slug,
+    storeId: auth.store.id,
+  });
   return {};
 }
 
@@ -927,5 +940,9 @@ export async function applySuggestedPriceFromAlert(
 
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
+  revalidatePublicCatalogCache({
+    slug: auth.store.slug,
+    storeId: auth.store.id,
+  });
   return {};
 }

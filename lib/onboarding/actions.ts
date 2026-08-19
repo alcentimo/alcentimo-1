@@ -25,6 +25,7 @@ import { scheduleStoreSubdomainProvision } from "@/lib/domains/provision-store-s
 import type { OnboardingSampleProductDraft } from "@/lib/ai/onboarding-assistant-types";
 import { sampleProductsToImportRows } from "@/lib/onboarding/sample-product-import";
 import { importProductsBulk } from "@/lib/products/import-actions";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import { syncStoreProductCategories } from "@/lib/products/rubro-categories";
 
 export type OnboardingFormState = {
@@ -229,5 +230,6 @@ export async function completeOnboarding(
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/onboarding");
   revalidatePath(`/c/${slug}`);
+  revalidatePublicCatalogCache({ slug, storeId: store.id });
   redirect("/dashboard/catalogo?onboarded=1");
 }

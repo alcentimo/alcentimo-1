@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   normalizeCustomDomain,
   validateCustomDomainInput,
@@ -247,6 +248,10 @@ export async function saveStoreCustomDomainRequest(
 
   revalidatePath("/dashboard/ajustes");
   revalidatePath(`/c/${auth.store.slug}`);
+  revalidatePublicCatalogCache({
+    slug: auth.store.slug,
+    storeId: auth.store.id,
+  });
 
   return {
     success: true,
@@ -302,6 +307,10 @@ export async function clearStoreCustomDomainRequest(
 
   revalidatePath("/dashboard/ajustes");
   revalidatePath(`/c/${auth.store.slug}`);
+  revalidatePublicCatalogCache({
+    slug: auth.store.slug,
+    storeId: auth.store.id,
+  });
 
   return {
     success: true,
@@ -415,6 +424,10 @@ export async function verifyStoreCustomDomainRequest(
 
   revalidatePath("/dashboard/ajustes");
   revalidatePath(`/c/${auth.store.slug}`);
+  revalidatePublicCatalogCache({
+    slug: auth.store.slug,
+    storeId: auth.store.id,
+  });
 
   return {
     success: true,

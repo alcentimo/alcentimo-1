@@ -2,10 +2,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import type { Store } from "@/lib/database.types";
 import { getCatalogProducts } from "@/lib/catalog";
 import { CATALOG_INITIAL_FETCH } from "@/lib/catalog/catalog-browse";
-import {
-  defaultStoreSettingsConfig,
-  normalizeStoreSettingsConfig,
-} from "@/lib/store-settings/defaults";
+import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
@@ -13,7 +10,9 @@ import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { getPublicStoreCategories } from "@/lib/catalog/get-public-store-categories";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogPageData } from "@/lib/catalog";
-import { getPublicServerClient } from "@/lib/supabase/public-server";
+import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
+import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
+import { getPublicStoreBySlug } from "@/lib/stores";
 
 import { getPublicStoreLocations, getVariantLocationStocksForStore } from "@/lib/locations/get-store-locations";
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
@@ -34,57 +33,17 @@ function normalizeStoreSlug(slug: string): string {
   return slug.trim().toLowerCase();
 }
 
-async function fetchActiveStoreBySlug(slug: string): Promise<Store | null> {
-  const normalizedSlug = normalizeStoreSlug(slug);
-  const client = getPublicServerClient();
-
-  const { data, error } = await client
-    .from("stores")
-    .select("*")
-    .eq("slug", normalizedSlug)
-    .eq("is_active", true)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`No se pudo cargar la tienda pública: ${error.message}`);
-  }
-
-  return data;
-}
-
-async function fetchStoreSettingsConfig(storeId: string) {
-  const client = getPublicServerClient();
-
-  const { data, error } = await client
-    .from("store_settings")
-    .select("config")
-    .eq("store_id", storeId)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`No se pudo cargar la configuración pública: ${error.message}`);
-  }
-
-  if (!data?.config) {
-    return defaultStoreSettingsConfig();
-  }
-
-  return normalizeStoreSettingsConfig(data.config);
-}
-
 export interface GetPublicCatalogPageOptions {
   /** Filtra productos por slug de categoría (página Categorías). */
   categorySlug?: string | null;
   categoryFilter?: boolean;
 }
 
-export async function getPublicCatalogPageData(
+async function loadPublicCatalogPageDataUncached(
   storeSlug: string,
   options?: GetPublicCatalogPageOptions,
 ): Promise<PublicCatalogPageData | null> {
-  noStore();
-
-  const store = await fetchActiveStoreBySlug(storeSlug);
+  const store = await getPublicStoreBySlug(storeSlug);
   if (!store) return null;
 
   const rubro = normalizeStoreRubro(store.rubro_tienda);
@@ -95,7 +54,7 @@ export async function getPublicCatalogPageData(
     locations,
     locationStocks,
   ] = await Promise.all([
-    fetchStoreSettingsConfig(store.id),
+    getPublicStoreSettingsConfig(store.id),
     getPublicStoreCategories(store.id),
     getPublicStoreLocations(store.id).catch(() => []),
     getVariantLocationStocksForStore(store.id).catch(() => []),
@@ -144,6 +103,29 @@ export async function getPublicCatalogPageData(
   };
 }
 
+/** Snapshot de la vitrina pública: Data Cache ~60s + invalidación por tag. */
+export async function getPublicCatalogPageData(
+  storeSlug: string,
+  options?: GetPublicCatalogPageOptions,
+): Promise<PublicCatalogPageData | null> {
+  const slug = normalizeStoreSlug(storeSlug);
+  const store = await getPublicStoreBySlug(slug);
+  if (!store) return null;
+
+  const categorySlug = options?.categorySlug?.trim().toLowerCase() ?? "";
+  const categoryFilter = Boolean(options?.categoryFilter);
+
+  return withPublicCatalogCache(
+    ["public-catalog-page-v1", slug, categorySlug, String(categoryFilter)],
+    { slug, storeId: store.id },
+    () =>
+      loadPublicCatalogPageDataUncached(slug, {
+        categorySlug: categorySlug || null,
+        categoryFilter,
+      }),
+  );
+}
+
 export interface CatalogPreviewSettings {
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
@@ -156,7 +138,7 @@ export async function getCatalogPreviewSettings(
 ): Promise<CatalogPreviewSettings> {
   noStore();
 
-  const settingsConfig = await fetchStoreSettingsConfig(store.id);
+  const settingsConfig = await getStoreSettingsConfig(store.id);
 
   return {
     purchaseInfo: buildPublicPurchaseInfo(settingsConfig),

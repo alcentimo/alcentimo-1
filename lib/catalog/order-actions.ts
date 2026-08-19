@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getSupabaseAnonClient } from "@/lib/supabase";
+import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 
 export type ProcessOrderResult = {
   error?: string;
@@ -52,6 +53,7 @@ export async function processCatalogOrder(
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
   revalidatePath("/dashboard");
+  revalidatePublicCatalogCache({ slug: storeSlug });
 
   return { success: true };
 }
