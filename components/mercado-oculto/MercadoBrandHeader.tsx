@@ -12,6 +12,8 @@ export interface MercadoBrandHeaderProps {
   brandMarkText?: string;
   logoUrl?: string | null;
   nav?: ReactNode;
+  /** Buscador central (vitrina marketplace). */
+  search?: ReactNode;
   className?: string;
 }
 
@@ -25,11 +27,17 @@ export function MercadoBrandHeader({
   brandMarkText = "M",
   logoUrl = null,
   nav,
+  search = null,
   className,
 }: MercadoBrandHeaderProps) {
   return (
     <header className={cn("mercado-mp-header", className)}>
-      <div className="mercado-mp-header-top">
+      <div
+        className={cn(
+          "mercado-mp-header-top",
+          search ? "mercado-mp-header-top--search" : undefined,
+        )}
+      >
         <Link href={brandHref} className="mercado-mp-brand" prefetch>
           {logoUrl ? (
             <span className="mercado-brand-mark mercado-brand-mark--logo">
@@ -48,6 +56,8 @@ export function MercadoBrandHeader({
             <span className="mercado-title">{brandTitle}</span>
           </span>
         </Link>
+
+        {search}
 
         {nav ? (
           <nav className="mercado-mp-nav" aria-label="Navegación de tienda">

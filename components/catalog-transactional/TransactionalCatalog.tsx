@@ -24,8 +24,6 @@ import {
   useCatalogShellNavigationOptional,
   useRegisterCatalogCartController,
 } from "@/components/catalog-transactional/CatalogShellNavigation";
-import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
-import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
 import { useCatalogBrowse } from "@/components/catalog-transactional/useCatalogBrowse";
 import {
   CatalogFulfillmentProvider,
@@ -33,10 +31,10 @@ import {
 } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
 import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
+import { StorefrontCatalogListing } from "@/components/catalog-transactional/StorefrontCatalogListing";
 import { StorefrontMoricheChrome } from "@/components/catalog-transactional/StorefrontMoricheChrome";
 import { CatalogFaqSection } from "@/components/catalog-transactional/CatalogFaqSection";
 import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
-import { MercadoProductGrid } from "@/components/mercado-oculto/MercadoProductGrid";
 import { mapCatalogListItemToMercadoCard } from "@/lib/catalog/map-catalog-to-mercado-card";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
@@ -311,15 +309,6 @@ function TransactionalCatalogContent({
           ? "Papelería"
           : "Catálogo";
 
-  const heroCategories = useMemo(
-    () =>
-      categoryOptions.map((category) => ({
-        id: category.slug,
-        label: category.name,
-      })),
-    [categoryOptions],
-  );
-
   const mercadoCards = useMemo(
     () =>
       browse.visibleProducts.map((product) =>
@@ -351,12 +340,6 @@ function TransactionalCatalogContent({
     ? header.coverImageUrl
     : null;
 
-  const resultsTitle = browse.searchQuery.trim()
-    ? `Resultados para “${browse.searchQuery.trim()}”`
-    : browse.categorySlug
-      ? "Selección filtrada"
-      : "Piezas destacadas";
-
   return (
     <div
       className={cn(
@@ -376,7 +359,7 @@ function TransactionalCatalogContent({
         eyebrow={identityEyebrow}
         searchQuery={browse.searchQuery}
         onSearchQueryChange={browse.setSearchQuery}
-        categories={heroCategories}
+        categories={categoryOptions}
         activeCategoryId={browse.categorySlug}
         onSelectCategory={browse.setCategorySlug}
         pending={browse.loadingFilter}
@@ -398,88 +381,27 @@ function TransactionalCatalogContent({
           </>
         }
       >
-        <div className="mercado-mp-results">
-          <div className="mercado-mp-results-head">
-            <div>
-              <p className="mercado-section-label">Colección activa</p>
-              <h2 className="mercado-heading text-xl sm:text-2xl">
-                {resultsTitle}
-              </h2>
-              <p className="mercado-subheading mt-1">
-                {showOfficialRate && exchangeRate?.rate
-                  ? `Tasa de referencia · ${exchangeRate.rate.toLocaleString("es-VE")}`
-                  : "Catálogo listo · Compra protegida"}
-              </p>
-            </div>
-            <p className="mercado-mp-results-count" aria-live="polite">
-              <strong>{browse.totalCount}</strong>
-              <span>
-                {" "}
-                producto{browse.totalCount === 1 ? "" : "s"}
-              </span>
-            </p>
-          </div>
-
-          {products.length === 0 ? (
-            <MercadoProductGrid
-              products={[]}
-              emptyTitle="No hay productos disponibles"
-              emptyDescription="Vuelve pronto para ver el catálogo actualizado."
-            />
-          ) : browse.totalCount === 0 && !browse.loadingFilter ? (
-            <MercadoProductGrid
-              products={[]}
-              emptyTitle="No encontramos productos con esos filtros"
-              emptyDescription="Prueba otra búsqueda o limpia los filtros."
-            />
-          ) : (
-            <>
-              <CatalogBrowseStatus
-                loading={browse.loadingFilter}
-                error={
-                  browse.fetchErrorSource === "filter"
-                    ? browse.fetchError
-                    : null
-                }
-                onRetry={browse.retryFetch}
-              />
-              <div
-                className={cn(
-                  browse.loadingFilter && "catalog-product-grid-updating",
-                )}
-              >
-                <MercadoProductGrid
-                  products={mercadoCards}
-                  onProductActivate={handleActivateProduct}
-                  priceLabel="Precio"
-                  ctaLabel="Ver producto"
-                  metaInStock="Listo para pedir"
-                  metaOutOfStock="Sin stock por ahora"
-                  emptyTitle="Nada en esta vitrina"
-                  emptyDescription="Probá otra colección o limpiá la búsqueda."
-                />
-                {previewMode && referenceMode && showReferenceCta ? (
-                  <div className="mt-4">
-                    <CatalogUploadCtaCard />
-                  </div>
-                ) : null}
+        <StorefrontCatalogListing
+          browse={browse}
+          catalogProducts={catalogProducts}
+          categoryOptions={categoryOptions}
+          mercadoCards={mercadoCards}
+          onActivateProduct={handleActivateProduct}
+          exchangeRate={exchangeRate}
+          showOfficialRate={showOfficialRate}
+          showBsConversion={showBsConversion}
+          emptyTitle="No hay productos disponibles"
+          emptyDescription="Vuelve pronto para ver el catálogo actualizado."
+          noResultsTitle="No encontramos productos con esos filtros"
+          noResultsDescription="Prueba otra búsqueda o limpia los filtros."
+          extraAfterGrid={
+            previewMode && referenceMode && showReferenceCta ? (
+              <div className="mt-4">
+                <CatalogUploadCtaCard />
               </div>
-              <CatalogBrowseLoadMore
-                visibleCount={browse.visibleCount}
-                totalCount={browse.totalCount}
-                hasMore={browse.hasMore}
-                loading={browse.loadingMore}
-                error={
-                  browse.fetchErrorSource === "more"
-                    ? browse.fetchError
-                    : null
-                }
-                onLoadMore={browse.loadMore}
-                onRetry={browse.retryFetch}
-              />
-            </>
-          )}
-        </div>
+            ) : null
+          }
+        />
 
         <CatalogFaqSection
           faq={effectiveDesign.faq ?? catalogDesign.faq}

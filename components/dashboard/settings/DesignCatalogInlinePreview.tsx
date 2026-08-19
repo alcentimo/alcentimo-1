@@ -83,7 +83,7 @@ export function DesignCatalogInlinePreview({
       <div className="design-studio-preview-meta">
         <p className="design-studio-preview-eyebrow">Vista previa</p>
         <p className="design-studio-preview-caption">
-          Misma vitrina Moriche que tu tienda pública
+          Misma vitrina marketplace que tu tienda pública
           {usingRealProducts
             ? ` · ${previewProducts.length} producto${previewProducts.length === 1 ? "" : "s"}`
             : ` · demo ${referenceCatalog.rubroLabel}`}
