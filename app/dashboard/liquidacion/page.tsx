@@ -44,12 +44,7 @@ export default async function LiquidacionPage() {
       <DashboardPageHeader
         sectionLabel="Liquidación diaria"
         title="Reportar Pago"
-        description={
-          <>
-            Revisa los pedidos del día, transfiere el monto a Alcéntimo (USD y
-            bolívares a tasa BCV) y adjunta un solo comprobante.
-          </>
-        }
+        description="Transfiere el total del día a Alcéntimo y adjunta un comprobante."
       />
 
       {settlementResult.error ? (
