@@ -42,9 +42,9 @@ import { cn } from "@/lib/cn";
 type StatusFilter = "all" | "draft" | "published";
 
 const STATUS_FILTERS: Array<{ id: StatusFilter; label: string }> = [
+  { id: "all", label: "Todos" },
   { id: "draft", label: "Borradores" },
   { id: "published", label: "Publicados" },
-  { id: "all", label: "Todos" },
 ];
 
 type PriceDraft = {
@@ -125,7 +125,7 @@ export function AdminSupplierCatalogPanel() {
   const [products, setProducts] = useState<AdminSupplierCatalogProduct[]>([]);
   const [suppliers, setSuppliers] = useState<AdminSupplierMarginOption[]>([]);
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("draft");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [supplierFilter, setSupplierFilter] = useState("all");
   const [priceDrafts, setPriceDrafts] = useState<Record<string, PriceDraft>>({});
   const [error, setError] = useState<string | null>(null);
@@ -192,10 +192,18 @@ export function AdminSupplierCatalogPanel() {
     });
   }, [products, query, statusFilter, supplierFilter]);
 
-  const ruleTarget = useMemo(
-    () => suppliers.find((item) => item.id === ruleSupplierId) ?? null,
-    [suppliers, ruleSupplierId],
-  );
+  const ruleTarget = useMemo((): AdminSupplierMarginOption | null => {
+    if (ruleSupplierId === "all") {
+      return {
+        id: "all",
+        name: "Todos los productos",
+        productCount: products.length,
+        draftCount,
+        globalMarginPercent: null,
+      };
+    }
+    return suppliers.find((item) => item.id === ruleSupplierId) ?? null;
+  }, [draftCount, products.length, ruleSupplierId, suppliers]);
   const parsedRulePercent = parsePercentAmount(rulePercent, { min: 0, max: 1000 });
   const rulePreviewMayorista =
     parsedRulePercent == null
@@ -324,19 +332,36 @@ export function AdminSupplierCatalogPanel() {
 
   function openRuleModal(supplierId?: string) {
     const nextId =
-      supplierId ||
-      (supplierFilter !== "all" ? supplierFilter : (suppliers[0]?.id ?? ""));
-    const option = suppliers.find((item) => item.id === nextId);
+      supplierId || (supplierFilter !== "all" ? supplierFilter : "all");
+    const option =
+      nextId === "all"
+        ? null
+        : suppliers.find((item) => item.id === nextId);
+    const sharedPercent =
+      nextId === "all" &&
+      suppliers.length > 0 &&
+      suppliers.every(
+        (item) =>
+          item.globalMarginPercent != null &&
+          item.globalMarginPercent === suppliers[0]?.globalMarginPercent,
+      )
+        ? suppliers[0]?.globalMarginPercent
+        : null;
     setRuleSupplierId(nextId);
     setRulePercent(
-      option?.globalMarginPercent != null ? String(option.globalMarginPercent) : "",
+      option?.globalMarginPercent != null
+        ? String(option.globalMarginPercent)
+        : sharedPercent != null
+          ? String(sharedPercent)
+          : "",
     );
+    setError(null);
     setRuleOpen(true);
   }
 
   function handleSaveRuleOnly() {
     if (!ruleSupplierId || parsedRulePercent == null) {
-      setError("Indica proveedor y un margen global válido.");
+      setError("Indica el porcentaje de ganancia de Alcéntimo.");
       return;
     }
     setBulkBusy(true);
@@ -353,20 +378,27 @@ export function AdminSupplierCatalogPanel() {
         return;
       }
       setSuppliers((current) =>
-        current.map((item) =>
-          item.id === result.supplier!.id ? result.supplier! : item,
-        ),
+        result.supplier!.id === "all"
+          ? current.map((item) => ({
+              ...item,
+              globalMarginPercent: parsedRulePercent,
+            }))
+          : current.map((item) =>
+              item.id === result.supplier!.id ? result.supplier! : item,
+            ),
       );
       setRuleOpen(false);
       setMessage(
-        `Margen global de ${result.supplier.globalMarginPercent}% guardado para ${result.supplier.name}. Los productos no se modificaron.`,
+        result.supplier.id === "all"
+          ? `Margen de Alcéntimo de ${parsedRulePercent}% guardado. Los productos no se modificaron.`
+          : `Margen de Alcéntimo de ${result.supplier.globalMarginPercent}% guardado para ${result.supplier.name}. Los productos no se modificaron.`,
       );
     });
   }
 
   function requestApplyRule() {
     if (!ruleTarget || parsedRulePercent == null) {
-      setError("Indica proveedor y un margen global válido.");
+      setError("Indica el porcentaje de ganancia de Alcéntimo.");
       return;
     }
     setConfirmJob({
@@ -379,10 +411,9 @@ export function AdminSupplierCatalogPanel() {
   }
 
   function requestRecalculate() {
-    const withRules = suppliers.filter((item) => item.globalMarginPercent != null);
     if (selectedSupplier) {
       if (selectedSupplier.globalMarginPercent == null) {
-        setError("Este proveedor no tiene margen global. Configúralo primero.");
+        openRuleModal(selectedSupplier.id);
         return;
       }
       setConfirmJob({
@@ -394,8 +425,9 @@ export function AdminSupplierCatalogPanel() {
       });
       return;
     }
-    if (withRules.length === 0) {
-      setError("No hay márgenes globales configurados para recalcular.");
+    const withRules = suppliers.filter((item) => item.globalMarginPercent != null);
+    if (withRules.length === 0 || withRules.length !== suppliers.length) {
+      openRuleModal("all");
       return;
     }
     setConfirmJob({
@@ -426,7 +458,7 @@ export function AdminSupplierCatalogPanel() {
           hydrate(result.products, result.suppliers);
         }
         setMessage(
-          `Regla de ${result.marginPercent}% aplicada a ${confirmJob.supplierName}: ${result.updated ?? 0} producto(s) actualizado(s).`,
+          `Margen de Alcéntimo de ${result.marginPercent}% aplicado a ${confirmJob.supplierName}: ${result.updated ?? 0} producto(s) actualizado(s).`,
         );
         return;
       }
@@ -457,8 +489,10 @@ export function AdminSupplierCatalogPanel() {
             Productos de proveedores
           </h3>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Edita el precio mayorista a mano (en $ o %) o aplica un margen global
-            por proveedor. El dropshipper nunca ve el costo interno.
+            El proveedor solo sube el costo. Aquí aparecen todos sus productos
+            de inmediato: tú pones el precio mayorista a mano (en $ o %) o
+            aplicas el margen de Alcéntimo. El dropshipper nunca ve el costo
+            interno.
           </p>
         </div>
 
@@ -501,17 +535,17 @@ export function AdminSupplierCatalogPanel() {
             type="button"
             variant="outline"
             size="sm"
-            disabled={busy || suppliers.length === 0}
+            disabled={busy || products.length === 0}
             onClick={() => openRuleModal()}
           >
             <Settings2 className="h-3.5 w-3.5" />
-            Configurar margen global
+            Margen global
           </Button>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            disabled={busy || suppliers.length === 0}
+            disabled={busy || products.length === 0}
             onClick={requestRecalculate}
           >
             {bulkBusy ? (
@@ -519,11 +553,16 @@ export function AdminSupplierCatalogPanel() {
             ) : (
               <RefreshCw className="h-3.5 w-3.5" />
             )}
-            Recalcular todo
+            Recalcular
           </Button>
           {selectedSupplier?.globalMarginPercent != null ? (
             <span className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-200">
-              Regla: {selectedSupplier.globalMarginPercent}% sobre costo
+              Nuestro margen: {selectedSupplier.globalMarginPercent}% sobre
+              costo
+            </span>
+          ) : selectedSupplier ? (
+            <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+              Sin margen nuestro · edita cada producto o usa Margen global
             </span>
           ) : null}
         </div>
@@ -567,13 +606,20 @@ export function AdminSupplierCatalogPanel() {
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           Cargando productos de proveedores…
         </p>
+      ) : products.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center dark:border-zinc-800">
+          <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            No hay productos de proveedores todavía.
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            En cuanto un proveedor suba un producto con su costo, aparece aquí
+            para que definas el precio mayorista. No hace falta ningún margen
+            previo.
+          </p>
+        </div>
       ) : filtered.length === 0 ? (
         <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800">
-          {query.trim() || supplierFilter !== "all"
-            ? "No hay coincidencias con este filtro."
-            : statusFilter === "draft"
-              ? "No hay productos pendientes de precio mayorista."
-              : "No hay productos en este filtro."}
+          No hay coincidencias con este filtro.
         </p>
       ) : (
         <div className="admin-stores-table-shell">
@@ -734,16 +780,17 @@ export function AdminSupplierCatalogPanel() {
       <Dialog open={ruleOpen} onOpenChange={setRuleOpen} dismissible={!bulkBusy}>
         <DialogContent onClose={bulkBusy ? undefined : () => setRuleOpen(false)}>
           <DialogHeader>
-            <DialogTitle>Configurar margen global</DialogTitle>
+            <DialogTitle>Margen de Alcéntimo</DialogTitle>
             <DialogDescription>
-              Precio mayorista = costo proveedor + margen %. Se puede guardar la
-              regla o aplicarla a todos los productos de ese proveedor.
+              Este porcentaje lo definimos nosotros, no el proveedor. Precio
+              mayorista = costo × (1 + %). Puedes guardarlo o aplicarlo ya a
+              todos los productos del alcance elegido.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
             <div>
-              <Label htmlFor="rule-supplier">Proveedor</Label>
+              <Label htmlFor="rule-supplier">Alcance</Label>
               <select
                 id="rule-supplier"
                 value={ruleSupplierId}
@@ -751,16 +798,29 @@ export function AdminSupplierCatalogPanel() {
                   const nextId = event.target.value;
                   const option = suppliers.find((item) => item.id === nextId);
                   setRuleSupplierId(nextId);
+                  const sharedPercent =
+                    nextId === "all" &&
+                    suppliers.length > 0 &&
+                    suppliers.every(
+                      (item) =>
+                        item.globalMarginPercent != null &&
+                        item.globalMarginPercent ===
+                          suppliers[0]?.globalMarginPercent,
+                    )
+                      ? suppliers[0]?.globalMarginPercent
+                      : null;
                   setRulePercent(
                     option?.globalMarginPercent != null
                       ? String(option.globalMarginPercent)
-                      : "",
+                      : sharedPercent != null
+                        ? String(sharedPercent)
+                        : "",
                   );
                 }}
                 className="input-field mt-1.5"
                 disabled={bulkBusy}
               >
-                <option value="">Selecciona un proveedor</option>
+                <option value="all">Todos los productos</option>
                 {suppliers.map((supplier) => (
                   <option key={supplier.id} value={supplier.id}>
                     {supplier.name} ({supplier.productCount} productos)
@@ -769,7 +829,7 @@ export function AdminSupplierCatalogPanel() {
               </select>
             </div>
             <div>
-              <Label htmlFor="rule-percent">Margen global (%)</Label>
+              <Label htmlFor="rule-percent">Nuestro margen (%)</Label>
               <div className="relative mt-1.5">
                 <Input
                   id="rule-percent"
@@ -794,7 +854,10 @@ export function AdminSupplierCatalogPanel() {
                 Ejemplo: costo {formatUsd(10)} → precio mayorista{" "}
                 <strong>{formatUsd(rulePreviewMayorista)}</strong>
                 . Se aplicaría a {ruleTarget.productCount} producto
-                {ruleTarget.productCount === 1 ? "" : "s"} de {ruleTarget.name}.
+                {ruleTarget.productCount === 1 ? "" : "s"}
+                {ruleTarget.id === "all"
+                  ? "."
+                  : ` de ${ruleTarget.name}.`}
               </p>
             ) : null}
           </div>
@@ -834,14 +897,14 @@ export function AdminSupplierCatalogPanel() {
         }}
         title={
           confirmJob?.kind === "recalculate-all"
-            ? "Recalcular todos los precios mayoristas"
-            : "Aplicar margen global al proveedor"
+            ? "Recalcular precios mayoristas"
+            : "Aplicar margen de Alcéntimo"
         }
         impact={
           confirmJob?.kind === "recalculate-all"
-            ? `Se recalculará precio_mayorista = costo × (1 + margen %) en todos los productos de ${confirmJob.supplierCount} proveedor(es) con regla global. Los productos publicados notificarán el nuevo precio a dropshippers vinculados.`
+            ? `Se recalculará precio mayorista = costo × (1 + nuestro %) en los productos de ${confirmJob.supplierCount} proveedor(es) con un margen de Alcéntimo ya guardado. Los productos publicados notificarán el nuevo precio a dropshippers vinculados.`
             : confirmJob
-              ? `Se actualizará el precio mayorista de ${confirmJob.productCount} producto(s) de ${confirmJob.supplierName} con un margen de ${confirmJob.percent}%. Fórmula: costo proveedor + ${confirmJob.percent}%.`
+              ? `Se actualizará el precio mayorista de ${confirmJob.productCount} producto(s) de ${confirmJob.supplierName} con nuestro margen de ${confirmJob.percent}%. El proveedor no interviene: fórmula costo × (1 + ${confirmJob.percent}%).`
               : ""
         }
         confirmLabel="Aplicar recálculo"
