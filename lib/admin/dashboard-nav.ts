@@ -1,17 +1,13 @@
 export type AdminDashboardTab =
-  | "resumen"
-  | "pagos"
   | "dropship"
   | "proveedor"
   | "tiendas"
-  | "cupones"
-  | "planes"
   | "soporte"
   | "ia";
 
+const DEFAULT_TAB: AdminDashboardTab = "tiendas";
+
 const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
-  resumen: "resumen",
-  pagos: "pagos",
   dropship: "dropship",
   liquidaciones: "dropship",
   "liquidaciones-dropship": "dropship",
@@ -21,47 +17,31 @@ const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
   catalogo: "proveedor",
   "catalogo-mayorista": "proveedor",
   tiendas: "tiendas",
-  cupones: "cupones",
-  promociones: "cupones",
-  planes: "planes",
+  crecimiento: "tiendas",
+  dominios: "tiendas",
+  sucursales: "tiendas",
   soporte: "soporte",
   ia: "ia",
   asistente: "ia",
   "ia-gerencial": "ia",
-  metricas: "resumen",
-  crecimiento: "tiendas",
-  dominios: "tiendas",
-  sucursales: "tiendas",
-  configuracion: "planes",
-  plataforma: "planes",
-  envios: "planes",
-  shipping: "planes",
+  // Secciones retiradas del panel: redirigen a Tiendas y usuarios.
+  resumen: "tiendas",
+  pagos: "tiendas",
+  cupones: "tiendas",
+  promociones: "tiendas",
+  planes: "tiendas",
+  metricas: "tiendas",
+  configuracion: "tiendas",
+  plataforma: "tiendas",
+  envios: "tiendas",
+  shipping: "tiendas",
 };
 
 export function resolveAdminDashboardTab(
   value: string | null | undefined,
 ): AdminDashboardTab {
-  if (!value) return "resumen";
-  return LEGACY_TAB_MAP[value] ?? "resumen";
-}
-
-export type AdminPlansSubTab =
-  | "planes"
-  | "pagos-config"
-  | "plataforma"
-  | "envios";
-
-export function resolveAdminPlansSubTab(
-  value: string | null | undefined,
-): AdminPlansSubTab {
-  if (value === "pagos-config" || value === "pagos") return "pagos-config";
-  if (value === "plataforma" || value === "marca" || value === "brand") {
-    return "plataforma";
-  }
-  if (value === "envios" || value === "shipping" || value === "envíos") {
-    return "envios";
-  }
-  return "planes";
+  if (!value) return DEFAULT_TAB;
+  return LEGACY_TAB_MAP[value] ?? DEFAULT_TAB;
 }
 
 export type AdminStoresSubTab = "usuarios" | "dominios" | "sucursales";

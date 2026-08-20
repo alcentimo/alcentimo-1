@@ -2,60 +2,22 @@
 
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import { ManualPaymentsPanel } from "@/components/admin/ManualPaymentsPanel";
 import { AdminDashboardShell } from "@/components/admin/AdminDashboardShell";
 import { AdminStoresPanel } from "@/components/admin/AdminStoresPanel";
-import { AdminPlansHubPanel } from "@/components/admin/AdminPlansHubPanel";
 import { AdminAiAssistantPanel } from "@/components/admin/AdminAiAssistantPanel";
 import { SupportMessagesPanel } from "@/components/dashboard/SupportMessagesPanel";
-import type { ManualPaymentWithEmail } from "@/lib/plans/get-manual-payments";
-import type { AdminPlanMetrics } from "@/lib/admin/get-admin-metrics";
 import type { AdminUserRow } from "@/lib/admin/get-admin-users";
 import type { GrowthAuditEntry } from "@/lib/admin/growth-audit";
-import type {
-  SupportMessage,
-  SubscriptionCampaign,
-  SubscriptionCoupon,
-} from "@/lib/database.types";
-import type { SubscriptionPaymentMethod } from "@/src/config/subscription-pago-movil";
-import type { PlanSettingsMap } from "@/lib/plans/plan-settings";
-import type { PlatformSettings } from "@/lib/platform/platform-settings";
+import type { SupportMessage } from "@/lib/database.types";
 import type { AdminStoreDomainRow } from "@/lib/admin/custom-domain-actions";
 import type { DropshipSettlementRecord } from "@/lib/dropship/settlement-types";
 import {
   resolveAdminDashboardTab,
-  resolveAdminPlansSubTab,
   resolveAdminStoresSubTab,
   type AdminDashboardTab,
 } from "@/lib/admin/dashboard-nav";
 
 export type { AdminDashboardTab };
-
-const AdminOverviewPanel = dynamic(
-  () =>
-    import("@/components/admin/AdminOverviewPanel").then((m) => ({
-      default: m.AdminOverviewPanel,
-    })),
-  {
-    loading: () => (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando resumen…</p>
-    ),
-  },
-);
-
-const AdminCouponsPanel = dynamic(
-  () =>
-    import("@/components/admin/AdminCouponsPanel").then((m) => ({
-      default: m.AdminCouponsPanel,
-    })),
-  {
-    loading: () => (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        Cargando cupones y ofertas…
-      </p>
-    ),
-  },
-);
 
 const AdminGrowthPanel = dynamic(
   () =>
@@ -67,56 +29,6 @@ const AdminGrowthPanel = dynamic(
       <p className="text-sm text-zinc-500 dark:text-zinc-400">
         Cargando tiendas y usuarios…
       </p>
-    ),
-  },
-);
-
-const PaymentMethodsConfigPanel = dynamic(
-  () =>
-    import("@/components/admin/PaymentMethodsConfigPanel").then((m) => ({
-      default: m.PaymentMethodsConfigPanel,
-    })),
-  {
-    loading: () => (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando métodos de pago…</p>
-    ),
-  },
-);
-
-const PlatformSettingsConfigPanel = dynamic(
-  () =>
-    import("@/components/admin/PlatformSettingsConfigPanel").then((m) => ({
-      default: m.PlatformSettingsConfigPanel,
-    })),
-  {
-    loading: () => (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando plataforma…</p>
-    ),
-  },
-);
-
-const DropshipShippingConfigPanel = dynamic(
-  () =>
-    import("@/components/admin/DropshipShippingConfigPanel").then((m) => ({
-      default: m.DropshipShippingConfigPanel,
-    })),
-  {
-    loading: () => (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        Cargando envíos dropship…
-      </p>
-    ),
-  },
-);
-
-const PlanSettingsConfigPanel = dynamic(
-  () =>
-    import("@/components/admin/PlanSettingsConfigPanel").then((m) => ({
-      default: m.PlanSettingsConfigPanel,
-    })),
-  {
-    loading: () => (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando planes…</p>
     ),
   },
 );
@@ -174,23 +86,12 @@ const DropshipSettlementsPanel = dynamic(
 );
 
 interface AdminDashboardTabsProps {
-  payments: ManualPaymentWithEmail[];
   messages: SupportMessage[];
-  metrics: AdminPlanMetrics | null;
-  paymentMethods: SubscriptionPaymentMethod[];
-  planSettings: PlanSettingsMap;
-  platformSettings: PlatformSettings;
-  /** Última tasa BCV sincronizada (sin override manual), solo referencia en admin. */
-  automaticBcvRateHint?: number | null;
   growthUsers: AdminUserRow[];
-  growthCoupons: SubscriptionCoupon[];
-  growthCampaigns: SubscriptionCampaign[];
   growthAuditLog: GrowthAuditEntry[];
   growthPlanFilter?: "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE" | "all";
   growthMinProducts?: number;
-  paymentsError?: string | null;
   messagesError?: string | null;
-  metricsError?: string | null;
   growthError?: string | null;
   storeDomains?: AdminStoreDomainRow[];
   storeDomainsError?: string | null;
@@ -200,7 +101,6 @@ interface AdminDashboardTabsProps {
   pendingSupplierDrafts?: number;
   initialTab?: AdminDashboardTab | string;
   legacyTabParam?: string | null;
-  initialPlansSubTab?: string | null;
 }
 
 function ErrorBanner({ message }: { message: string }) {
@@ -212,22 +112,12 @@ function ErrorBanner({ message }: { message: string }) {
 }
 
 export function AdminDashboardTabs({
-  payments,
   messages,
-  metrics,
-  paymentMethods,
-  planSettings,
-  platformSettings,
-  automaticBcvRateHint = null,
   growthUsers,
-  growthCoupons,
-  growthCampaigns,
   growthAuditLog,
   growthPlanFilter = "all",
   growthMinProducts,
-  paymentsError = null,
   messagesError = null,
-  metricsError = null,
   growthError = null,
   storeDomains = [],
   storeDomainsError = null,
@@ -235,9 +125,8 @@ export function AdminDashboardTabs({
   dropshipSettlements = [],
   dropshipSettlementsError = null,
   pendingSupplierDrafts = 0,
-  initialTab = "resumen",
+  initialTab = "tiendas",
   legacyTabParam = null,
-  initialPlansSubTab = null,
 }: AdminDashboardTabsProps) {
   const [activeTab, setActiveTab] = useState<AdminDashboardTab>(() =>
     resolveAdminDashboardTab(
@@ -251,14 +140,6 @@ export function AdminDashboardTabs({
       ) === "proveedor",
   );
 
-  const pendingPayments = useMemo(
-    () =>
-      payments.filter(
-        (item) =>
-          item.status === "pending" || item.status === "needs_correction",
-      ).length,
-    [payments],
-  );
   const pendingMessages = useMemo(
     () => messages.filter((item) => item.status === "pendiente").length,
     [messages],
@@ -270,7 +151,6 @@ export function AdminDashboardTabs({
   );
 
   const badgeCounts = {
-    pagos: pendingPayments,
     dropship: pendingSettlements,
     proveedor: pendingSupplierDrafts,
     soporte: pendingMessages,
@@ -290,9 +170,6 @@ export function AdminDashboardTabs({
   }
 
   const storesInitialSubTab = resolveAdminStoresSubTab(legacyTabParam);
-  const plansInitialSubTab = resolveAdminPlansSubTab(
-    initialPlansSubTab ?? legacyTabParam,
-  );
 
   return (
     <AdminDashboardShell
@@ -300,32 +177,6 @@ export function AdminDashboardTabs({
       onTabChange={setTab}
       badgeCounts={badgeCounts}
     >
-      {activeTab === "resumen" ? (
-        metricsError ? (
-          <ErrorBanner message={metricsError} />
-        ) : metrics ? (
-          <AdminOverviewPanel
-            metrics={metrics}
-            pendingMessages={pendingMessages}
-            pendingDropshipSettlements={pendingSettlements}
-            pendingSupplierDrafts={pendingSupplierDrafts}
-            assistantEnabled={assistantEnabled}
-          />
-        ) : (
-          <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-            No hay métricas disponibles.
-          </p>
-        )
-      ) : null}
-
-      {activeTab === "pagos" ? (
-        paymentsError ? (
-          <ErrorBanner message={paymentsError} />
-        ) : (
-          <ManualPaymentsPanel initialPayments={payments} />
-        )
-      ) : null}
-
       {activeTab === "dropship" ? (
         dropshipSettlementsError ? (
           <ErrorBanner message={dropshipSettlementsError} />
@@ -349,12 +200,9 @@ export function AdminDashboardTabs({
             usuariosPanel={
               <AdminGrowthPanel
                 initialUsers={growthUsers}
-                initialCoupons={growthCoupons}
-                initialCampaigns={growthCampaigns}
                 initialAuditLog={growthAuditLog}
                 initialPlanFilter={growthPlanFilter}
                 initialMinProducts={growthMinProducts}
-                mode="usuarios"
               />
             }
             dominiosPanel={
@@ -367,37 +215,6 @@ export function AdminDashboardTabs({
             sucursalesPanel={<AdminStoreLocationsPanel />}
           />
         )
-      ) : null}
-
-      {activeTab === "cupones" ? (
-        growthError ? (
-          <ErrorBanner message={growthError} />
-        ) : (
-          <AdminCouponsPanel
-            initialCoupons={growthCoupons}
-            initialCampaigns={growthCampaigns}
-            initialPlansCouponBoxEnabled={platformSettings.plansCouponBoxEnabled}
-          />
-        )
-      ) : null}
-
-      {activeTab === "planes" ? (
-        <AdminPlansHubPanel
-          initialSubTab={plansInitialSubTab}
-          planesPanel={<PlanSettingsConfigPanel initialSettings={planSettings} />}
-          pagosConfigPanel={
-            <PaymentMethodsConfigPanel initialMethods={paymentMethods} />
-          }
-          plataformaPanel={
-            <PlatformSettingsConfigPanel
-              initialSettings={platformSettings}
-              automaticRateHint={automaticBcvRateHint}
-            />
-          }
-          enviosPanel={
-            <DropshipShippingConfigPanel initialSettings={platformSettings} />
-          }
-        />
       ) : null}
 
       {activeTab === "soporte" ? (
