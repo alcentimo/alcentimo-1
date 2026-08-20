@@ -48,7 +48,7 @@ export async function handleSupportAccessCheckGET() {
         debug.reason === "empty_allowlist"
           ? "Configura SUPPORT_ADMIN_EMAILS en Vercel (Production) y redeploy."
           : debug.reason === "not_listed"
-            ? "Tu correo resuelto no está en SUPPORT_ADMIN_EMAILS."
+            ? "Tu correo resuelto no está en la lista de Super Admin."
             : debug.reason === "missing_email"
               ? "Supabase no devolvió email en la sesión."
               : null,
