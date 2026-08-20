@@ -243,6 +243,23 @@ export async function countAdminSupplierDraftProducts(): Promise<number> {
   return count ?? 0;
 }
 
+function mapCatalogDbError(message: string): string {
+  const text = message.toLowerCase();
+  if (
+    text.includes("precio_mayorista") &&
+    (text.includes("does not exist") || text.includes("schema cache"))
+  ) {
+    return "Falta aplicar la migración de precio mayorista en la base de datos.";
+  }
+  if (
+    text.includes("publication_status") &&
+    (text.includes("does not exist") || text.includes("schema cache"))
+  ) {
+    return "Falta aplicar la migración de publicación mayorista en la base de datos.";
+  }
+  return message;
+}
+
 export async function setAdminSupplierWholesalePrice(input: {
   productId: string;
   precioMayoristaUsd: number | string;
@@ -251,6 +268,61 @@ export async function setAdminSupplierWholesalePrice(input: {
   const auth = await requireSupportAdmin();
   if (!auth.ok) return { error: auth.error };
 
+  const persisted = await persistAdminWholesalePrice({
+    admin: createAdminClient(),
+    changedBy: auth.user.id,
+    productId: input.productId,
+    precioMayoristaUsd: input.precioMayoristaUsd,
+    publish: input.publish,
+  });
+  if (persisted.error || !persisted.product) {
+    return { error: persisted.error ?? "No se pudo actualizar el producto." };
+  }
+  bustPublishedCatalogCaches();
+  return { product: persisted.product };
+}
+
+export async function saveAdminSupplierWholesalePrices(
+  items: Array<{ productId: string; precioMayoristaUsd: number | string }>,
+): Promise<
+  ActionResult<{ saved: number; products: AdminSupplierCatalogProduct[] }>
+> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+  if (items.length === 0) {
+    return { error: "No hay cambios de precio para guardar." };
+  }
+
+  const admin = createAdminClient();
+  const products: AdminSupplierCatalogProduct[] = [];
+  for (const item of items) {
+    const persisted = await persistAdminWholesalePrice({
+      admin,
+      changedBy: auth.user.id,
+      productId: item.productId,
+      precioMayoristaUsd: item.precioMayoristaUsd,
+    });
+    if (persisted.error || !persisted.product) {
+      return {
+        error: persisted.error ?? "No se pudo guardar uno de los precios.",
+        saved: products.length,
+        products,
+      };
+    }
+    products.push(persisted.product);
+  }
+
+  bustPublishedCatalogCaches();
+  return { saved: products.length, products };
+}
+
+async function persistAdminWholesalePrice(input: {
+  admin: ReturnType<typeof createAdminClient>;
+  changedBy: string;
+  productId: string;
+  precioMayoristaUsd: number | string;
+  publish?: boolean;
+}): Promise<ActionResult<{ product: AdminSupplierCatalogProduct }>> {
   const productId = input.productId.trim();
   if (!productId) return { error: "Producto inválido." };
 
@@ -259,15 +331,14 @@ export async function setAdminSupplierWholesalePrice(input: {
     return { error: "Indica un precio mayorista válido en USD." };
   }
 
-  const admin = createAdminClient();
-  const { data: existing, error: existingError } = await admin
+  const { data: existing, error: existingError } = await input.admin
     .from("supplier_products")
     .select(PRODUCT_SELECT)
     .eq("id", productId)
     .eq("is_active", true)
     .maybeSingle();
 
-  if (existingError) return { error: existingError.message };
+  if (existingError) return { error: mapCatalogDbError(existingError.message) };
   if (!existing) return { error: "Producto no encontrado." };
 
   const current = existing as Record<string, unknown>;
@@ -281,7 +352,7 @@ export async function setAdminSupplierWholesalePrice(input: {
     return { error: "El precio mayorista debe ser mayor o igual a 0." };
   }
 
-  const { data, error } = await admin
+  const { data, error } = await input.admin
     .from("supplier_products")
     .update({
       precio_mayorista: precioMayoristaUsd,
@@ -293,7 +364,7 @@ export async function setAdminSupplierWholesalePrice(input: {
     .select(PRODUCT_SELECT)
     .maybeSingle();
 
-  if (error) return { error: error.message };
+  if (error) return { error: mapCatalogDbError(error.message) };
   if (!data) return { error: "No se pudo actualizar el producto." };
 
   const updated = data as Record<string, unknown>;
@@ -303,28 +374,27 @@ export async function setAdminSupplierWholesalePrice(input: {
     previousMayorista !== precioMayoristaUsd
   ) {
     await recordSupplierPriceChangeAndNotify({
-      admin,
+      admin: input.admin,
       supplierProductId: productId,
       productTitle: String(updated.title ?? current.title ?? "Producto"),
       oldPriceUsd: previousMayorista,
       newPriceUsd: precioMayoristaUsd,
-      changedBy: auth.user.id,
+      changedBy: input.changedBy,
       note: "Actualización de precio mayorista por administrador.",
     });
   } else if (previousMayorista !== precioMayoristaUsd) {
-    await admin.from("supplier_product_price_history").insert({
+    await input.admin.from("supplier_product_price_history").insert({
       supplier_product_id: productId,
       old_price_usd: previousMayorista,
       new_price_usd: precioMayoristaUsd,
-      changed_by: auth.user.id,
+      changed_by: input.changedBy,
       note: "Precio mayorista definido por administrador (borrador).",
     });
   }
 
-  const names = await loadSupplierNames(admin, [
+  const names = await loadSupplierNames(input.admin, [
     String(updated.created_by ?? ""),
   ]);
-  bustPublishedCatalogCaches();
   return { product: mapAdminProduct(updated, names) };
 }
 
@@ -345,7 +415,7 @@ export async function publishAdminSupplierProduct(
     .eq("is_active", true)
     .maybeSingle();
 
-  if (existingError) return { error: existingError.message };
+  if (existingError) return { error: mapCatalogDbError(existingError.message) };
   if (!existing) return { error: "Producto no encontrado." };
 
   const current = existing as Record<string, unknown>;
@@ -367,7 +437,7 @@ export async function publishAdminSupplierProduct(
     .select(PRODUCT_SELECT)
     .maybeSingle();
 
-  if (error) return { error: error.message };
+  if (error) return { error: mapCatalogDbError(error.message) };
   if (!data) return { error: "No se pudo publicar el producto." };
 
   const updated = data as Record<string, unknown>;
@@ -399,7 +469,7 @@ export async function unpublishAdminSupplierProduct(
     .select(PRODUCT_SELECT)
     .maybeSingle();
 
-  if (error) return { error: error.message };
+  if (error) return { error: mapCatalogDbError(error.message) };
   if (!data) return { error: "Producto no encontrado." };
 
   const updated = data as Record<string, unknown>;

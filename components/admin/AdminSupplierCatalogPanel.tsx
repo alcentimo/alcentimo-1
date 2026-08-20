@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Loader2, RefreshCw, Search, Settings2, Upload } from "lucide-react";
+import { Loader2, RefreshCw, Save, Search, Settings2, Upload } from "lucide-react";
 import {
   applySupplierGlobalMargin,
   listAdminSupplierCatalogProducts,
   publishAdminSupplierProduct,
   recalculateAllSupplierGlobalMargins,
+  saveAdminSupplierWholesalePrices,
   setAdminSupplierWholesalePrice,
   setSupplierGlobalMarginRule,
   unpublishAdminSupplierProduct,
@@ -78,6 +79,10 @@ function draftsFromProduct(product: AdminSupplierCatalogProduct): PriceDraft {
         ? ""
         : formatSupplierAmountInput(marginPercentFromPrices(costo, mayorista)),
   };
+}
+
+function isPriceDirty(product: AdminSupplierCatalogProduct, draft: PriceDraft): boolean {
+  return parseUsdAmount(draft.mayorista) !== product.precioMayoristaUsd;
 }
 
 function MoneyInput({
@@ -192,6 +197,24 @@ export function AdminSupplierCatalogPanel() {
     });
   }, [products, query, statusFilter, supplierFilter]);
 
+  const dirtyProducts = useMemo(
+    () =>
+      products.filter((product) =>
+        isPriceDirty(product, priceDrafts[product.id] ?? draftsFromProduct(product)),
+      ),
+    [priceDrafts, products],
+  );
+
+  useEffect(() => {
+    if (dirtyProducts.length === 0) return;
+    function onBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirtyProducts.length]);
+
   const ruleTarget = useMemo((): AdminSupplierMarginOption | null => {
     if (ruleSupplierId === "all") {
       return {
@@ -273,18 +296,17 @@ export function AdminSupplierCatalogPanel() {
     });
   }
 
-  function handleSave(product: AdminSupplierCatalogProduct, publish: boolean) {
+  async function handleSave(product: AdminSupplierCatalogProduct, publish: boolean) {
     const raw = priceDrafts[product.id]?.mayorista ?? "";
     setBusyId(product.id);
     setError(null);
     setMessage(null);
-    startTransition(async () => {
+    try {
       const result = await setAdminSupplierWholesalePrice({
         productId: product.id,
         precioMayoristaUsd: raw,
         publish,
       });
-      setBusyId(null);
       if (result.error || !result.product) {
         setError(result.error ?? "No se pudo guardar el precio mayorista.");
         return;
@@ -293,41 +315,115 @@ export function AdminSupplierCatalogPanel() {
       setMessage(
         publish
           ? `“${result.product.title}” publicado en el catálogo de dropshippers.`
-          : `Precio mayorista actualizado para “${result.product.title}”.`,
+          : `Precio mayorista guardado para “${result.product.title}”.`,
       );
-    });
+    } finally {
+      setBusyId(null);
+    }
   }
 
-  function handlePublish(product: AdminSupplierCatalogProduct) {
+  async function handleSaveAll() {
+    if (dirtyProducts.length === 0) return;
+    setBulkBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await saveAdminSupplierWholesalePrices(
+        dirtyProducts.map((product) => ({
+          productId: product.id,
+          precioMayoristaUsd: priceDrafts[product.id]?.mayorista ?? "",
+        })),
+      );
+      if (result.products) {
+        setProducts((current) => {
+          const byId = new Map(result.products!.map((item) => [item.id, item]));
+          return current.map((item) => byId.get(item.id) ?? item);
+        });
+        setPriceDrafts((current) => {
+          const next = { ...current };
+          for (const product of result.products ?? []) {
+            next[product.id] = draftsFromProduct(product);
+          }
+          return next;
+        });
+      }
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setMessage(
+        `${result.saved ?? 0} precio(s) mayorista(s) guardado(s) en la base de datos.`,
+      );
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  async function handlePublish(product: AdminSupplierCatalogProduct) {
+    const draft = priceDrafts[product.id] ?? draftsFromProduct(product);
+    if (isPriceDirty(product, draft) || product.precioMayoristaUsd == null) {
+      await handleSave(product, true);
+      return;
+    }
     setBusyId(product.id);
     setError(null);
     setMessage(null);
-    startTransition(async () => {
+    try {
       const result = await publishAdminSupplierProduct(product.id);
-      setBusyId(null);
       if (result.error || !result.product) {
         setError(result.error ?? "No se pudo publicar el producto.");
         return;
       }
       replaceProduct(result.product);
       setMessage(`“${result.product.title}” ya es visible para dropshippers.`);
-    });
+    } finally {
+      setBusyId(null);
+    }
   }
 
-  function handleUnpublish(product: AdminSupplierCatalogProduct) {
+  async function handleUnpublish(product: AdminSupplierCatalogProduct) {
+    const draft = priceDrafts[product.id] ?? draftsFromProduct(product);
+    if (isPriceDirty(product, draft) && parseUsdAmount(draft.mayorista) != null) {
+      setBusyId(product.id);
+      setError(null);
+      setMessage(null);
+      try {
+        const saved = await setAdminSupplierWholesalePrice({
+          productId: product.id,
+          precioMayoristaUsd: draft.mayorista,
+          publish: false,
+        });
+        if (saved.error || !saved.product) {
+          setError(saved.error ?? "No se pudo guardar el precio mayorista.");
+          return;
+        }
+        replaceProduct(saved.product);
+        const result = await unpublishAdminSupplierProduct(product.id);
+        if (result.error || !result.product) {
+          setError(result.error ?? "No se pudo pasar a borrador.");
+          return;
+        }
+        replaceProduct(result.product);
+        setMessage(`“${result.product.title}” volvió a borrador. El precio quedó guardado.`);
+      } finally {
+        setBusyId(null);
+      }
+      return;
+    }
     setBusyId(product.id);
     setError(null);
     setMessage(null);
-    startTransition(async () => {
+    try {
       const result = await unpublishAdminSupplierProduct(product.id);
-      setBusyId(null);
       if (result.error || !result.product) {
         setError(result.error ?? "No se pudo pasar a borrador.");
         return;
       }
       replaceProduct(result.product);
-      setMessage(`“${result.product.title}” volvió a borrador.`);
-    });
+      setMessage(`“${result.product.title}” volvió a borrador y ya no es visible para dropshippers.`);
+    } finally {
+      setBusyId(null);
+    }
   }
 
   function openRuleModal(supplierId?: string) {
@@ -490,9 +586,10 @@ export function AdminSupplierCatalogPanel() {
           </h3>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             El proveedor solo sube el costo. Aquí aparecen todos sus productos
-            de inmediato: tú pones el precio mayorista a mano (en $ o %) o
-            aplicas el margen de Alcéntimo. El dropshipper nunca ve el costo
-            interno.
+            de inmediato: tú pones el precio mayorista, pulsas{" "}
+            <strong>Guardar</strong> y decides si queda en{" "}
+            <strong>Borrador</strong> o <strong>Publicado</strong>. Solo los
+            publicados se ven en el catálogo de dropshippers; el costo nunca.
           </p>
         </div>
 
@@ -554,6 +651,20 @@ export function AdminSupplierCatalogPanel() {
               <RefreshCw className="h-3.5 w-3.5" />
             )}
             Recalcular
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            disabled={busy || dirtyProducts.length === 0}
+            onClick={() => void handleSaveAll()}
+          >
+            {bulkBusy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
+            Guardar cambios
+            {dirtyProducts.length > 0 ? ` (${dirtyProducts.length})` : ""}
           </Button>
           {selectedSupplier?.globalMarginPercent != null ? (
             <span className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-200">
@@ -633,21 +744,30 @@ export function AdminSupplierCatalogPanel() {
                   <th className="admin-stores-th">Precio mayorista</th>
                   <th className="admin-stores-th">Margen ($)</th>
                   <th className="admin-stores-th">Margen (%)</th>
-                  <th className="admin-stores-th">Estado</th>
-                  <th className="admin-stores-th">Acciones</th>
+                  <th className="admin-stores-th sticky right-0 z-[1] min-w-[16.5rem] max-w-none bg-zinc-50/95 shadow-[-12px_0_12px_-12px_rgba(24,24,27,0.18)] dark:bg-zinc-900/95">
+                    Guardar y publicar
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((product) => {
                   const rowBusy = busyId === product.id || bulkBusy;
                   const draft = priceDrafts[product.id] ?? draftsFromProduct(product);
+                  const dirty = isPriceDirty(product, draft);
                   const liveMayorista = parseUsdAmount(draft.mayorista);
                   const liveMargin =
                     liveMayorista == null
                       ? product.marginUsd
                       : marginUsdFromPrices(product.costoProveedorUsd, liveMayorista);
+                  const published = product.publicationStatus === "published";
                   return (
-                    <tr key={product.id} className="border-b border-zinc-100 dark:border-zinc-800">
+                    <tr
+                      key={product.id}
+                      className={cn(
+                        "border-b border-zinc-100 dark:border-zinc-800",
+                        dirty && "bg-amber-50/60 dark:bg-amber-950/20",
+                      )}
+                    >
                       <td className="admin-stores-td">
                         <div className="flex min-w-[220px] items-center gap-3">
                           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900">
@@ -707,65 +827,74 @@ export function AdminSupplierCatalogPanel() {
                           onChange={(value) => onMarginPercentChange(product, value)}
                         />
                       </td>
-                      <td className="admin-stores-td">
-                        {product.publicationStatus === "published" ? (
-                          <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200">
-                            Publicado
-                          </span>
-                        ) : (
-                          <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
-                            Borrador
-                          </span>
+                      <td
+                        className={cn(
+                          "admin-stores-td sticky right-0 z-[1] !max-w-none shadow-[-12px_0_12px_-12px_rgba(24,24,27,0.18)]",
+                          dirty
+                            ? "bg-amber-50 dark:bg-amber-950/40"
+                            : "bg-white dark:bg-zinc-950",
                         )}
-                      </td>
-                      <td className="admin-stores-td">
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={rowBusy}
-                            onClick={() => handleSave(product, false)}
-                          >
-                            {busyId === product.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      >
+                        <div className="flex min-w-[15.5rem] flex-col gap-2 py-0.5">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {published ? (
+                              <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200">
+                                Publicado
+                              </span>
                             ) : (
-                              "Guardar"
+                              <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+                                Borrador
+                              </span>
                             )}
-                          </Button>
-                          {product.publicationStatus === "published" ? (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disabled={rowBusy}
-                              onClick={() => handleUnpublish(product)}
-                            >
-                              Borrador
-                            </Button>
-                          ) : (
+                            {dirty ? (
+                              <span className="text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                                Sin guardar
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               type="button"
                               size="sm"
-                              disabled={rowBusy}
-                              onClick={() =>
-                                product.precioMayoristaUsd != null &&
-                                draft.mayorista ===
-                                  formatSupplierAmountInput(product.precioMayoristaUsd)
-                                  ? handlePublish(product)
-                                  : handleSave(product, true)
-                              }
+                              variant={dirty ? "default" : "outline"}
+                              disabled={rowBusy || !dirty}
+                              onClick={() => void handleSave(product, false)}
                             >
                               {busyId === product.id ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               ) : (
-                                <>
-                                  <Upload className="mr-1 h-3.5 w-3.5" />
-                                  Aprobar y publicar
-                                </>
+                                <Save className="h-3.5 w-3.5" />
                               )}
+                              {product.precioMayoristaUsd == null
+                                ? "Guardar"
+                                : "Actualizar"}
                             </Button>
-                          )}
+                            {published ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={rowBusy}
+                                onClick={() => void handleUnpublish(product)}
+                              >
+                                Pasar a borrador
+                              </Button>
+                            ) : (
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={rowBusy || liveMayorista == null}
+                                onClick={() => void handlePublish(product)}
+                              >
+                                {busyId === product.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Upload className="h-3.5 w-3.5" />
+                                )}
+                                Publicar
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>

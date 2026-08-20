@@ -244,6 +244,12 @@ export function AdminDashboardTabs({
       typeof initialTab === "string" ? initialTab : initialTab,
     ),
   );
+  const [supplierPanelMounted, setSupplierPanelMounted] = useState(
+    () =>
+      resolveAdminDashboardTab(
+        typeof initialTab === "string" ? initialTab : initialTab,
+      ) === "proveedor",
+  );
 
   const pendingPayments = useMemo(
     () =>
@@ -272,6 +278,7 @@ export function AdminDashboardTabs({
 
   function setTab(tab: AdminDashboardTab) {
     setActiveTab(tab);
+    if (tab === "proveedor") setSupplierPanelMounted(true);
     const params = new URLSearchParams(window.location.search);
     params.set("tab", tab);
     params.delete("section");
@@ -327,7 +334,11 @@ export function AdminDashboardTabs({
         )
       ) : null}
 
-      {activeTab === "proveedor" ? <AdminSupplierCatalogPanel /> : null}
+      {supplierPanelMounted ? (
+        <div hidden={activeTab !== "proveedor"}>
+          <AdminSupplierCatalogPanel />
+        </div>
+      ) : null}
 
       {activeTab === "tiendas" ? (
         growthError ? (
