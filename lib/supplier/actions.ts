@@ -24,6 +24,10 @@ import {
   parseSupplierVariantsFromForm,
   type SupplierProductVariants,
 } from "@/lib/supplier/variants";
+import {
+  normalizePublicationStatus,
+  type SupplierPublicationStatus,
+} from "@/lib/supplier/wholesale-price";
 import { MERCADO_CATALOG_CACHE_TAG } from "@/lib/mercado-oculto/catalog-cache";
 import { revalidateAllPublicCatalogCaches } from "@/lib/catalog/public-catalog-cache";
 
@@ -41,6 +45,7 @@ export interface SupplierProduct {
   variants: SupplierProductVariants;
   stock: number;
   basePriceUsd: number;
+  publicationStatus: SupplierPublicationStatus;
   imageUrl: string | null;
   gallery: SupplierProductImage[];
   createdAt: string;
@@ -79,7 +84,7 @@ async function requireSupplierUser(): Promise<{
 }
 
 const PRODUCT_SELECT =
-  "id, title, description, category, variants, stock, base_price_usd, image_url, created_at, updated_at";
+  "id, title, description, category, variants, stock, base_price_usd, publication_status, image_url, created_at, updated_at";
 
 function mapRow(
   row: Record<string, unknown>,
@@ -99,6 +104,7 @@ function mapRow(
     variants: normalizeSupplierProductVariants(row.variants),
     stock: Number(row.stock) || 0,
     basePriceUsd: Number(row.base_price_usd) || 0,
+    publicationStatus: normalizePublicationStatus(row.publication_status),
     imageUrl: urls[0] ?? null,
     gallery,
     createdAt: String(row.created_at ?? ""),
@@ -153,7 +159,7 @@ function parseProductFields(formData: FormData): {
 
   const basePriceUsd = Number(priceRaw.replace(",", "."));
   if (!Number.isFinite(basePriceUsd) || basePriceUsd < 0) {
-    return { error: "Indica un precio base válido en USD." };
+    return { error: "Indica un costo de proveedor válido en USD." };
   }
 
   for (const option of variants.options) {
@@ -221,6 +227,8 @@ export async function createSupplierProduct(
       variants: parsed.variants ?? normalizeSupplierProductVariants(null),
       stock: parsed.stock,
       base_price_usd: parsed.basePriceUsd,
+      precio_mayorista: null,
+      publication_status: "draft",
       image_url: null,
       is_active: true,
     })
@@ -256,7 +264,7 @@ export async function createSupplierProduct(
     old_price_usd: null,
     new_price_usd: created.basePriceUsd,
     changed_by: auth.user.id,
-    note: "Precio inicial al crear el producto.",
+    note: "Costo inicial del proveedor al crear el producto.",
   });
 
   revalidatePath("/proveedor/dashboard");
@@ -336,6 +344,8 @@ export async function updateSupplierProduct(
     oldPriceUsd: previousPrice,
     newPriceUsd: updated.basePriceUsd,
     changedBy: auth.user.id,
+    note: "Actualización de costo del proveedor (interno).",
+    notifyMerchants: false,
   });
 
   await mirrorSupplierStockToLinkedStores(admin, updated.id, updated.stock);

@@ -19,11 +19,12 @@ import {
   type MercadoProductCard,
   type MercadoSupplierFacet,
 } from "@/lib/mercado-oculto/types";
+import { isPublishedForDropship } from "@/lib/supplier/wholesale-price";
 
 export const MERCADO_CATALOG_CACHE_TAG = "mercado-catalog";
 
 const SUPPLIER_PRODUCT_SELECT =
-  "id, title, description, category, variants, stock, base_price_usd, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active";
+  "id, title, description, category, variants, stock, precio_mayorista, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status";
 
 export type MercadoCatalogSnapshot = {
   products: MercadoProductCard[];
@@ -114,7 +115,7 @@ function buildFacets(
       supplierCounts.set(creator, (supplierCounts.get(creator) ?? 0) + 1);
     }
 
-    const price = Number(row.base_price_usd) || 0;
+    const price = Number(row.precio_mayorista) || 0;
     if (price < priceMin) priceMin = price;
     if (price > priceMax) priceMax = price;
     if (row.free_shipping) freeShippingCount += 1;
@@ -172,6 +173,8 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
     .from("supplier_products")
     .select(SUPPLIER_PRODUCT_SELECT)
     .eq("is_active", true)
+    .eq("publication_status", "published")
+    .not("precio_mayorista", "is", null)
     .in("created_by", creatorIds)
     .order("created_at", { ascending: false })
     .limit(160);
@@ -180,7 +183,9 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
     throw new Error(error.message);
   }
 
-  const rows = (data as Record<string, unknown>[] | null) ?? [];
+  const rows = ((data as Record<string, unknown>[] | null) ?? []).filter(
+    isPublishedForDropship,
+  );
   const creatorSet = [
     ...new Set(rows.map((row) => String(row.created_by ?? "")).filter(Boolean)),
   ];
@@ -210,7 +215,7 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
 /** Catálogo completo cacheado (~60s) para navegación SPA sin pegarle a la DB. */
 export const getCachedMercadoCatalog = unstable_cache(
   async () => loadMercadoCatalogUncached(),
-  ["mercado-oculto-catalog-v4"],
+  ["mercado-oculto-catalog-v5"],
   { revalidate: 60, tags: [MERCADO_CATALOG_CACHE_TAG] },
 );
 

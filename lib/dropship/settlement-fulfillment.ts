@@ -229,16 +229,22 @@ export async function fulfillApprovedDailySettlement(input: {
       supplierOrderId = String(created.id);
 
       const { error: itemsError } = await client.from("supplier_order_items").insert(
-        group.lines.map((line) => ({
-          order_id: supplierOrderId,
-          product_id: line.supplier_product_id,
-          product_title: line.product_title,
-          quantity: line.quantity,
-          unit_price_usd: line.unit_cost_usd,
-          unit_cost_usd: line.unit_cost_usd,
-          cost_locked_at: now,
-          line_total_usd: line.supplier_payout_usd,
-        })),
+        group.lines.map((line) => {
+          const qty = Math.max(1, Number(line.quantity) || 1);
+          const supplierUnit = roundMoneyDisplay(
+            Number(line.supplier_payout_usd) / qty,
+          );
+          return {
+            order_id: supplierOrderId,
+            product_id: line.supplier_product_id,
+            product_title: line.product_title,
+            quantity: line.quantity,
+            unit_price_usd: supplierUnit,
+            unit_cost_usd: supplierUnit,
+            cost_locked_at: now,
+            line_total_usd: line.supplier_payout_usd,
+          };
+        }),
       );
       if (itemsError) return { error: itemsError.message };
     }

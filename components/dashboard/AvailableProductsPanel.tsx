@@ -441,17 +441,19 @@ export function AvailableProductsPanel({
                     ) : null}
                   </div>
 
-                  <div className="mt-auto">
+                  <div className="mt-auto space-y-0.5">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                      {formatUsd(product.wholesalePriceUsd)}
+                      <span className="ml-1 text-xs font-normal text-zinc-500">
+                        precio mayorista
+                      </span>
+                    </p>
                     {product.suggestedRetailUsd != null ? (
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                        {formatUsd(product.suggestedRetailUsd)}
-                        <span className="ml-1 text-xs font-normal text-zinc-500">
-                          precio en tu tienda
-                        </span>
+                      <p className="text-xs text-zinc-500">
+                        {formatUsd(product.suggestedRetailUsd)} precio en tu
+                        tienda
                       </p>
-                    ) : (
-                      <p className="text-sm text-zinc-500">Precio al añadir</p>
-                    )}
+                    ) : null}
                   </div>
 
                   {product.alreadyImported ? (

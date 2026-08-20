@@ -15,6 +15,8 @@ const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
   liquidaciones: "dropship",
   "liquidaciones-dropship": "dropship",
   tiendas: "tiendas",
+  catalogo: "tiendas",
+  "catalogo-mayorista": "tiendas",
   cupones: "cupones",
   promociones: "cupones",
   planes: "planes",
@@ -58,11 +60,16 @@ export function resolveAdminPlansSubTab(
   return "planes";
 }
 
-export type AdminStoresSubTab = "usuarios" | "dominios" | "sucursales";
+export type AdminStoresSubTab =
+  | "usuarios"
+  | "catalogo"
+  | "dominios"
+  | "sucursales";
 
 export function resolveAdminStoresSubTab(
   legacyTab: string | null | undefined,
 ): AdminStoresSubTab {
+  if (legacyTab === "catalogo" || legacyTab === "catálogo") return "catalogo";
   if (legacyTab === "dominios") return "dominios";
   if (legacyTab === "sucursales") return "sucursales";
   return "usuarios";

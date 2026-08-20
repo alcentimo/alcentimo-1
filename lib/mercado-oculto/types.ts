@@ -6,6 +6,7 @@ import {
 import type { SupplierProductVariants } from "@/lib/supplier/variants";
 import { normalizeSupplierProductVariants } from "@/lib/supplier/variants";
 import { MORICHE_BRAND_LABEL } from "@/lib/mercado-oculto/access";
+import { resolvePrecioMayoristaUsd } from "@/lib/supplier/wholesale-price";
 
 /** Tarjeta / detalle de la vitrina mayorista B2B. */
 export interface MercadoProductCard {
@@ -55,7 +56,7 @@ export function mapSupplierRowToMercadoCard(
   galleryUrls?: string[],
 ): MercadoProductCard {
   const category = normalizeSupplierProductCategory(row.category);
-  const priceUsd = Number(row.base_price_usd) || 0;
+  const priceUsd = resolvePrecioMayoristaUsd(row) ?? 0;
   const compareRaw = row.compare_at_usd;
   const compareAtUsd =
     compareRaw == null || compareRaw === ""

@@ -43,6 +43,11 @@ import { syncDefaultLocationStockFromVariant } from "@/lib/locations/sync-stock"
 import { mirrorSupplierStockToLinkedStores } from "@/lib/dropship/supplier-stock";
 import { fetchAllPagedRows } from "@/lib/supabase/fetch-all-rows";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  DROPSHIP_SUPPLIER_PRODUCT_SELECT,
+  isPublishedForDropship,
+  resolvePrecioMayoristaUsd,
+} from "@/lib/supplier/wholesale-price";
 
 type ActionResult<T extends object = object> = {
   error?: string;
@@ -181,7 +186,7 @@ export async function listStoreDropshipLinks(): Promise<
   const { data, error } = await admin
     .from("store_dropship_links")
     .select(
-      "id, product_id, supplier_product_id, auto_reprice, last_cost_usd, products(name), supplier_products(title, base_price_usd)",
+      "id, product_id, supplier_product_id, auto_reprice, last_cost_usd, products(name), supplier_products(title, precio_mayorista, publication_status, is_active)",
     )
     .eq("store_id", auth.store.id)
     .order("created_at", { ascending: false });
@@ -193,9 +198,11 @@ export async function listStoreDropshipLinks(): Promise<
       const product = row.products as { name?: string } | null;
       const supplier = row.supplier_products as {
         title?: string;
-        base_price_usd?: number;
+        precio_mayorista?: number | null;
+        publication_status?: string;
+        is_active?: boolean;
       } | null;
-      const cost = Number(supplier?.base_price_usd) || 0;
+      const cost = resolvePrecioMayoristaUsd(supplier ?? {}) ?? 0;
       return {
         id: String(row.id),
         productId: String(row.product_id),
@@ -218,7 +225,7 @@ export type MerchantSupplierCatalogProduct = {
   id: string;
   title: string;
   description: string;
-  basePriceUsd: number;
+  wholesalePriceUsd: number;
   suggestedRetailUsd: number | null;
   stock: number;
   category: string;
@@ -250,10 +257,10 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   for (;;) {
     const { data, error } = await admin
       .from("supplier_products")
-      .select(
-        "id, title, description, base_price_usd, stock, category, image_url, variants",
-      )
+      .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT)
       .eq("is_active", true)
+      .eq("publication_status", "published")
+      .not("precio_mayorista", "is", null)
       .order("id", { ascending: true })
       .range(from, from + pageSize - 1);
     if (error) return { error: error.message };
@@ -288,42 +295,43 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
     catalogRows.map((row) => String(row.id)),
   );
 
-  return {
-    products: catalogRows
-      .map((row) => {
-        const id = String(row.id);
-        const cost = Number(row.base_price_usd) || 0;
-        const variants = normalizeSupplierProductVariants(row.variants);
-        const linkedProductId = linkedBySupplier.get(id) ?? null;
-        const coverUrl =
-          typeof row.image_url === "string" && row.image_url.trim()
-            ? row.image_url.trim()
-            : null;
-        const imageUrls = supplierImageUrls(
-          galleryByProduct.get(id) ?? [],
-          coverUrl,
-        );
+  const products: MerchantSupplierCatalogProduct[] = [];
+  for (const row of catalogRows) {
+    const id = String(row.id);
+    const cost = resolvePrecioMayoristaUsd(row);
+    if (cost == null) continue;
+    const variants = normalizeSupplierProductVariants(row.variants);
+    const linkedProductId = linkedBySupplier.get(id) ?? null;
+    const coverUrl =
+      typeof row.image_url === "string" && row.image_url.trim()
+        ? row.image_url.trim()
+        : null;
+    const imageUrls = supplierImageUrls(
+      galleryByProduct.get(id) ?? [],
+      coverUrl,
+    );
 
-        return {
-          id,
-          title: String(row.title ?? ""),
-          description: String(row.description ?? ""),
-          basePriceUsd: cost,
-          suggestedRetailUsd: suggestRetailFromWholesaleCost(
-            cost,
-            pricingForSuggest,
-          ),
-          stock: Number(row.stock) || 0,
-          category: normalizeSupplierProductCategory(row.category),
-          imageUrl: imageUrls[0] ?? null,
-          imageUrls,
-          variantCount: variants.options.length,
-          alreadyImported: linkedProductId != null,
-          linkedProductId,
-        };
-      })
-      .sort((a, b) => a.title.localeCompare(b.title, "es")),
-  };
+    products.push({
+      id,
+      title: String(row.title ?? ""),
+      description: String(row.description ?? ""),
+      wholesalePriceUsd: cost,
+      suggestedRetailUsd: suggestRetailFromWholesaleCost(
+        cost,
+        pricingForSuggest,
+      ),
+      stock: Number(row.stock) || 0,
+      category: normalizeSupplierProductCategory(row.category),
+      imageUrl: imageUrls[0] ?? null,
+      imageUrls,
+      variantCount: variants.options.length,
+      alreadyImported: linkedProductId != null,
+      linkedProductId,
+    });
+  }
+
+  products.sort((a, b) => a.title.localeCompare(b.title, "es"));
+  return { products };
 }
 
 /**
@@ -391,21 +399,22 @@ export async function importSupplierProductToStoreCatalog(
 
     const { data: supplierRow, error: supplierError } = await admin
       .from("supplier_products")
-      .select(
-        "id, title, description, base_price_usd, stock, category, image_url, variants, is_active",
-      )
+      .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT)
       .eq("id", supplierId)
       .maybeSingle();
 
     if (supplierError) return { error: supplierError.message };
-    if (!supplierRow || supplierRow.is_active === false) {
+    if (!supplierRow || !isPublishedForDropship(supplierRow as Record<string, unknown>)) {
       return { error: "Producto mayorista no disponible." };
     }
 
     const title = String(supplierRow.title ?? "").trim();
     if (!title) return { error: "El producto mayorista no tiene nombre." };
 
-    const cost = Number(supplierRow.base_price_usd) || 0;
+    const cost = resolvePrecioMayoristaUsd(supplierRow as Record<string, unknown>);
+    if (cost == null) {
+      return { error: "Producto mayorista no disponible." };
+    }
     const retailUsd = suggestRetailFromWholesaleCost(cost, dropship);
     if (retailUsd == null || retailUsd < 0) {
       return {
@@ -687,13 +696,16 @@ export async function linkStoreDropshipProduct(input: {
 
   const { data: supplier } = await admin
     .from("supplier_products")
-    .select("id, base_price_usd, stock")
+    .select("id, precio_mayorista, stock, is_active, publication_status")
     .eq("id", supplierProductId)
     .eq("is_active", true)
     .maybeSingle();
-  if (!supplier) return { error: "Producto mayorista no disponible." };
+  if (!supplier || !isPublishedForDropship(supplier as Record<string, unknown>)) {
+    return { error: "Producto mayorista no disponible." };
+  }
 
-  const cost = Number(supplier.base_price_usd) || 0;
+  const cost = resolvePrecioMayoristaUsd(supplier as Record<string, unknown>);
+  if (cost == null) return { error: "Producto mayorista no disponible." };
   const supplierStock = Math.max(0, Math.floor(Number(supplier.stock) || 0));
 
   const { data, error } = await admin

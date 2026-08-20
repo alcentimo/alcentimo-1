@@ -50,7 +50,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     id: "tiendas",
     label: "Tiendas y usuarios",
-    description: "Listado de tiendas, dominios y sucursales.",
+    description: "Listado de tiendas, catálogo mayorista, dominios y sucursales.",
     icon: Store,
   },
   {

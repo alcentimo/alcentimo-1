@@ -20,6 +20,8 @@ export async function recordSupplierPriceChangeAndNotify(input: {
   oldPriceUsd: number;
   newPriceUsd: number;
   changedBy: string | null;
+  note?: string;
+  notifyMerchants?: boolean;
 }): Promise<void> {
   const {
     admin,
@@ -28,6 +30,8 @@ export async function recordSupplierPriceChangeAndNotify(input: {
     oldPriceUsd,
     newPriceUsd,
     changedBy,
+    note = "Actualización de precio mayorista.",
+    notifyMerchants = true,
   } = input;
 
   const oldRounded = Math.round(oldPriceUsd * 100) / 100;
@@ -39,8 +43,10 @@ export async function recordSupplierPriceChangeAndNotify(input: {
     old_price_usd: oldRounded,
     new_price_usd: newRounded,
     changed_by: changedBy,
-    note: "Actualización de precio base en hub de proveedores.",
+    note,
   });
+
+  if (!notifyMerchants) return;
 
   const { data: links } = await admin
     .from("store_dropship_links")

@@ -13,6 +13,7 @@ import {
   listSupplierProductImages,
   supplierImageUrls,
 } from "@/lib/supplier/product-images";
+import { isPublishedForDropship } from "@/lib/supplier/wholesale-price";
 
 type ActionResult<T extends object = object> = {
   error?: string;
@@ -110,10 +111,13 @@ export async function getMercadoProduct(
     .select(SUPPLIER_PRODUCT_SELECT)
     .eq("id", productId)
     .eq("is_active", true)
+    .eq("publication_status", "published")
     .maybeSingle();
 
   if (error) return { error: error.message };
-  if (!data) return { error: "Producto no encontrado o inactivo." };
+  if (!data || !isPublishedForDropship(data as Record<string, unknown>)) {
+    return { error: "Producto no encontrado o inactivo." };
+  }
 
   const row = data as Record<string, unknown>;
   const createdBy = String(row.created_by ?? "");
