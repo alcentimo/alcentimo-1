@@ -27,7 +27,7 @@ import {
 export const MERCADO_CATALOG_CACHE_TAG = "mercado-catalog";
 
 const SUPPLIER_PRODUCT_SELECT =
-  "id, title, description, category, variants, stock, precio_mayorista, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status, catalog_visible";
+  "id, title, description, category, variants, stock, precio_mayorista, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status, catalog_visible, is_visible";
 
 export type MercadoCatalogSnapshot = {
   products: MercadoProductCard[];
@@ -215,7 +215,7 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
 /** Catálogo completo cacheado (~60s) para navegación SPA sin pegarle a la DB. */
 export const getCachedMercadoCatalog = unstable_cache(
   async () => loadMercadoCatalogUncached(),
-  ["mercado-oculto-catalog-v6"],
+  ["mercado-oculto-catalog-v7"],
   { revalidate: 60, tags: [MERCADO_CATALOG_CACHE_TAG] },
 );
 

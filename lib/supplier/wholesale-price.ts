@@ -114,11 +114,13 @@ export function resolvePrecioMayoristaUsd(row: {
 export function isPublishedForDropship(row: {
   is_active?: unknown;
   catalog_visible?: unknown;
+  is_visible?: unknown;
   publication_status?: unknown;
   precio_mayorista?: unknown;
 }): boolean {
   if (row.is_active === false) return false;
   if (row.catalog_visible === false) return false;
+  if (row.is_visible === false) return false;
   if (normalizePublicationStatus(row.publication_status) !== "published") {
     return false;
   }
@@ -127,7 +129,7 @@ export function isPublishedForDropship(row: {
 
 /**
  * Filtro obligatorio de listados dropshipper / catálogo público.
- * Requiere producto activo, catálogo del proveedor visible y publicado.
+ * Requiere producto activo, catálogo del proveedor visible, SKU visible y publicado.
  */
 export function applyDropshipVisibleProductFilter<T>(query: T): T {
   // PostgREST builders are recursively generic; loosen the chain here.
@@ -135,6 +137,7 @@ export function applyDropshipVisibleProductFilter<T>(query: T): T {
   let next: any = query;
   next = next.eq("is_active", true);
   next = next.eq("catalog_visible", true);
+  next = next.eq("is_visible", true);
   next = next.eq("publication_status", "published");
   next = next.not("precio_mayorista", "is", null);
   return next as T;
@@ -145,4 +148,4 @@ export function applyDropshipVisibleProductFilter<T>(query: T): T {
  * Nunca incluir base_price_usd (costo_proveedor).
  */
 export const DROPSHIP_SUPPLIER_PRODUCT_SELECT =
-  "id, title, description, category, variants, stock, precio_mayorista, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status, catalog_visible";
+  "id, title, description, category, variants, stock, precio_mayorista, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status, catalog_visible, is_visible";

@@ -7,6 +7,7 @@ import {
   applySupplierGlobalMargin,
   listAdminSupplierCatalogProducts,
   saveAdminSupplierWholesalePrices,
+  setAdminSupplierProductVisibility,
   setAdminSupplierWholesalePrice,
   setSupplierCatalogPublication,
   type AdminSupplierCatalogProduct,
@@ -164,14 +165,12 @@ export function AdminSupplierCatalogPanel() {
         const rows = filtered.filter(
           (product) => product.supplierUserId === supplier.id,
         );
-        const publishedCount = rows.filter(
-          (product) => product.publicationStatus === "published",
-        ).length;
+        const listedCount = rows.filter((product) => product.isVisible).length;
         const catalogOn = supplier.catalogVisible;
         return {
           supplier,
           rows,
-          publishedCount,
+          listedCount,
           catalogOn,
         };
       })
@@ -305,6 +304,37 @@ export function AdminSupplierCatalogPanel() {
           );
     patchDraft(product, { marginPercent: raw, mayorista });
     queueAutosave(product.id);
+  }
+
+  async function handleProductVisibility(
+    product: AdminSupplierCatalogProduct,
+    visible: boolean,
+  ) {
+    setSavingIds((current) => ({ ...current, [product.id]: true }));
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await setAdminSupplierProductVisibility({
+        productId: product.id,
+        visible,
+      });
+      if (result.error || !result.product) {
+        setError(result.error ?? "No se pudo actualizar la visibilidad.");
+        return;
+      }
+      replaceProduct(result.product);
+      setMessage(
+        visible
+          ? `“${result.product.title}” visible para dropshippers.`
+          : `“${result.product.title}” oculto para dropshippers.`,
+      );
+    } finally {
+      setSavingIds((current) => {
+        const next = { ...current };
+        delete next[product.id];
+        return next;
+      });
+    }
   }
 
   async function handleSaveAll() {
@@ -485,7 +515,7 @@ export function AdminSupplierCatalogPanel() {
           No hay coincidencias.
         </p>
       ) : (
-        groups.map(({ supplier, rows, publishedCount, catalogOn }) => {
+        groups.map(({ supplier, rows, listedCount, catalogOn }) => {
           const supplierBusy = busySupplierId === supplier.id;
           return (
             <section
@@ -499,9 +529,9 @@ export function AdminSupplierCatalogPanel() {
                   </h3>
                   <p className="text-xs text-zinc-500">
                     {rows.length} producto{rows.length === 1 ? "" : "s"}
-                    {publishedCount > 0
-                      ? ` · ${publishedCount} en catálogo`
-                      : " · catálogo oculto"}
+                    {listedCount > 0
+                      ? ` · ${listedCount} visibles`
+                      : " · todos ocultos"}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -565,9 +595,11 @@ export function AdminSupplierCatalogPanel() {
                   <thead>
                     <tr>
                       <th className="admin-stores-th">Producto</th>
+                      <th className="admin-stores-th">Stock</th>
                       <th className="admin-stores-th">Costo</th>
                       <th className="admin-stores-th">Precio mayorista</th>
                       <th className="admin-stores-th">Ganancia %</th>
+                      <th className="admin-stores-th">Visible</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -579,7 +611,10 @@ export function AdminSupplierCatalogPanel() {
                       return (
                         <tr
                           key={product.id}
-                          className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-800"
+                          className={cn(
+                            "border-b border-zinc-100 last:border-b-0 dark:border-zinc-800",
+                            !product.isVisible && "opacity-70",
+                          )}
                         >
                           <td className="admin-stores-td">
                             <div className="flex min-w-[200px] items-center gap-3">
@@ -603,6 +638,18 @@ export function AdminSupplierCatalogPanel() {
                                 </p>
                               </div>
                             </div>
+                          </td>
+                          <td className="admin-stores-td">
+                            <span
+                              className={cn(
+                                "tabular-nums text-sm font-medium",
+                                product.stock <= 0
+                                  ? "text-red-600 dark:text-red-400"
+                                  : "text-zinc-900 dark:text-zinc-50",
+                              )}
+                            >
+                              {product.stock}
+                            </span>
                           </td>
                           <td className="admin-stores-td font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
                             {formatUsd(product.costoProveedorUsd)}
@@ -641,6 +688,34 @@ export function AdminSupplierCatalogPanel() {
                               }
                               onBlur={() => void persistPrice(product.id)}
                             />
+                          </td>
+                          <td className="admin-stores-td">
+                            <div className="flex items-center gap-2">
+                              <SettingsSwitch
+                                id={`product-visible-${product.id}`}
+                                size="sm"
+                                checked={product.isVisible}
+                                disabled={saving || busy}
+                                label={
+                                  product.isVisible
+                                    ? `Ocultar ${product.title}`
+                                    : `Mostrar ${product.title}`
+                                }
+                                onChange={(checked) =>
+                                  void handleProductVisibility(product, checked)
+                                }
+                              />
+                              <span
+                                className={cn(
+                                  "text-[11px] font-medium",
+                                  product.isVisible
+                                    ? "text-emerald-700 dark:text-emerald-300"
+                                    : "text-zinc-400",
+                                )}
+                              >
+                                {product.isVisible ? "Visible" : "Oculto"}
+                              </span>
+                            </div>
                           </td>
                         </tr>
                       );
