@@ -151,11 +151,11 @@ export function AdminSupplierCatalogPanel() {
       <div className="admin-stores-toolbar">
         <div>
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            Catálogo mayorista
+            Productos de proveedores
           </h3>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Revisa el costo del proveedor, define el precio mayorista y publica
-            para que el producto aparezca en el catálogo de los dropshippers.
+            Revisa el costo del proveedor, ingresa el precio mayorista y aprueba
+            el producto para que aparezca en el catálogo de los dropshippers.
             Ellos nunca ven el costo interno.
           </p>
         </div>
@@ -225,7 +225,7 @@ export function AdminSupplierCatalogPanel() {
                 <tr>
                   <th className="admin-stores-th">Producto</th>
                   <th className="admin-stores-th">Proveedor</th>
-                  <th className="admin-stores-th">Costo</th>
+                  <th className="admin-stores-th">Costo proveedor</th>
                   <th className="admin-stores-th">Precio mayorista</th>
                   <th className="admin-stores-th">Margen</th>
                   <th className="admin-stores-th">Estado</th>
@@ -366,7 +366,7 @@ export function AdminSupplierCatalogPanel() {
                               ) : (
                                 <>
                                   <Upload className="mr-1 h-3.5 w-3.5" />
-                                  Publicar
+                                  Aprobar y publicar
                                 </>
                               )}
                             </Button>

@@ -197,6 +197,7 @@ interface AdminDashboardTabsProps {
   assistantEnabled?: boolean;
   dropshipSettlements?: DropshipSettlementRecord[];
   dropshipSettlementsError?: string | null;
+  pendingSupplierDrafts?: number;
   initialTab?: AdminDashboardTab | string;
   legacyTabParam?: string | null;
   initialPlansSubTab?: string | null;
@@ -233,6 +234,7 @@ export function AdminDashboardTabs({
   assistantEnabled = false,
   dropshipSettlements = [],
   dropshipSettlementsError = null,
+  pendingSupplierDrafts = 0,
   initialTab = "resumen",
   legacyTabParam = null,
   initialPlansSubTab = null,
@@ -264,6 +266,7 @@ export function AdminDashboardTabs({
   const badgeCounts = {
     pagos: pendingPayments,
     dropship: pendingSettlements,
+    proveedor: pendingSupplierDrafts,
     soporte: pendingMessages,
   };
 
@@ -298,6 +301,7 @@ export function AdminDashboardTabs({
             metrics={metrics}
             pendingMessages={pendingMessages}
             pendingDropshipSettlements={pendingSettlements}
+            pendingSupplierDrafts={pendingSupplierDrafts}
             assistantEnabled={assistantEnabled}
           />
         ) : (
@@ -323,6 +327,8 @@ export function AdminDashboardTabs({
         )
       ) : null}
 
+      {activeTab === "proveedor" ? <AdminSupplierCatalogPanel /> : null}
+
       {activeTab === "tiendas" ? (
         growthError ? (
           <ErrorBanner message={growthError} />
@@ -340,7 +346,6 @@ export function AdminDashboardTabs({
                 mode="usuarios"
               />
             }
-            catalogoPanel={<AdminSupplierCatalogPanel />}
             dominiosPanel={
               storeDomainsError ? (
                 <ErrorBanner message={storeDomainsError} />

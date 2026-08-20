@@ -10,6 +10,7 @@ import {
   Store,
   Tag,
   Truck,
+  Warehouse,
 } from "lucide-react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
@@ -48,9 +49,17 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     showBadge: true,
   },
   {
+    id: "proveedor",
+    label: "Proveedor / Mayorista",
+    description:
+      "Productos enviados por proveedores: costo interno, precio mayorista y publicación al catálogo dropshipper.",
+    icon: Warehouse,
+    showBadge: true,
+  },
+  {
     id: "tiendas",
     label: "Tiendas y usuarios",
-    description: "Listado de tiendas, catálogo mayorista, dominios y sucursales.",
+    description: "Listado de tiendas, dominios y sucursales.",
     icon: Store,
   },
   {
