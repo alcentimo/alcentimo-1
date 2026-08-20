@@ -26,6 +26,7 @@ import {
 } from "@/lib/admin/subscription-promo-actions";
 import { getOpenAiApiKey } from "@/lib/env/server";
 import { listDropshipDailySettlements } from "@/lib/dropship/settlement-admin-actions";
+import { countAdminSupplierDraftProducts } from "@/lib/admin/supplier-catalog-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -116,6 +117,7 @@ export default async function AdminDashboardPage({
     platformSettingsResult,
     automaticBcvRateResult,
     dropshipSettlementsResult,
+    supplierDraftsResult,
   ] = await Promise.all([
     safeLoad(
       () => getManualPayments({ status: "all", limit: 200 }),
@@ -172,6 +174,10 @@ export default async function AdminDashboardPage({
         }),
       "No se pudieron cargar las liquidaciones dropship.",
     ),
+    safeLoad(
+      () => countAdminSupplierDraftProducts(),
+      "No se pudieron contar los productos mayoristas pendientes.",
+    ),
   ]);
 
   const payments = paymentsResult.ok ? paymentsResult.data : [];
@@ -205,6 +211,9 @@ export default async function AdminDashboardPage({
   const dropshipSettlementsError = dropshipSettlementsResult.ok
     ? null
     : dropshipSettlementsResult.error;
+  const pendingSupplierDrafts = supplierDraftsResult.ok
+    ? supplierDraftsResult.data
+    : 0;
 
   const pendingPayments = metrics?.pendingPayments ??
     payments.filter(
@@ -239,6 +248,10 @@ export default async function AdminDashboardPage({
           <div className="admin-dashboard-quick-stat">
             <span className="admin-dashboard-quick-stat-label">Dropship</span>
             <strong>{pendingDropshipSettlements}</strong>
+          </div>
+          <div className="admin-dashboard-quick-stat">
+            <span className="admin-dashboard-quick-stat-label">Mayorista</span>
+            <strong>{pendingSupplierDrafts}</strong>
           </div>
           {metrics ? (
             <>
@@ -285,6 +298,7 @@ export default async function AdminDashboardPage({
           assistantEnabled={Boolean(getOpenAiApiKey())}
           dropshipSettlements={dropshipSettlements}
           dropshipSettlementsError={dropshipSettlementsError}
+          pendingSupplierDrafts={pendingSupplierDrafts}
           initialTab={initialTab}
           legacyTabParam={legacyTabParam}
           initialPlansSubTab={initialPlansSubTab}

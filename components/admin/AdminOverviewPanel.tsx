@@ -23,6 +23,7 @@ interface AdminOverviewPanelProps {
   metrics: AdminPlanMetrics;
   pendingMessages: number;
   pendingDropshipSettlements?: number;
+  pendingSupplierDrafts?: number;
   assistantEnabled?: boolean;
 }
 
@@ -30,6 +31,7 @@ export function AdminOverviewPanel({
   metrics,
   pendingMessages,
   pendingDropshipSettlements = 0,
+  pendingSupplierDrafts = 0,
   assistantEnabled = false,
 }: AdminOverviewPanelProps) {
   const alerts = [
@@ -44,6 +46,13 @@ export function AdminOverviewPanel({
       ? {
           label: `${pendingDropshipSettlements} liquidación(es) dropship por verificar`,
           href: "/admin/dashboard?tab=dropship",
+          tone: "amber" as const,
+        }
+      : null,
+    pendingSupplierDrafts > 0
+      ? {
+          label: `${pendingSupplierDrafts} producto(s) de proveedor pendientes de precio mayorista`,
+          href: "/admin/dashboard?tab=proveedor",
           tone: "amber" as const,
         }
       : null,

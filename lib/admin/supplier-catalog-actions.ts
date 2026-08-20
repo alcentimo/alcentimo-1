@@ -155,6 +155,21 @@ export async function listAdminSupplierCatalogProducts(): Promise<
   };
 }
 
+export async function countAdminSupplierDraftProducts(): Promise<number> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return 0;
+
+  const admin = createAdminClient();
+  const { count, error } = await admin
+    .from("supplier_products")
+    .select("id", { count: "exact", head: true })
+    .eq("is_active", true)
+    .eq("publication_status", "draft");
+
+  if (error) return 0;
+  return count ?? 0;
+}
+
 export async function setAdminSupplierWholesalePrice(input: {
   productId: string;
   precioMayoristaUsd: number | string;
