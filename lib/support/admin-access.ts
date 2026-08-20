@@ -17,6 +17,15 @@ function stripQuotes(value: string): string {
   return value.replace(/^["']+|["']+$/g, "").trim();
 }
 
+/**
+ * Super Admins permanentes de Alcéntimo.
+ * Tienen el mismo acceso al Panel Admin que SUPPORT_ADMIN_EMAILS (Vercel).
+ */
+export const BUILTIN_SUPPORT_ADMIN_EMAILS = [
+  "alcentimo.app@gmail.com",
+  "marocolmenares2014@gmail.com",
+] as const;
+
 /** Parsea SUPPORT_ADMIN_EMAILS (coma o punto y coma, sin sensibilidad a mayúsculas). */
 export function parseSupportAdminEmails(
   raw: string | undefined | null,
@@ -30,7 +39,11 @@ export function parseSupportAdminEmails(
 }
 
 export function getSupportAdminAllowlist(): string[] {
-  return parseSupportAdminEmails(process.env.SUPPORT_ADMIN_EMAILS);
+  const fromEnv = parseSupportAdminEmails(process.env.SUPPORT_ADMIN_EMAILS);
+  const builtin = BUILTIN_SUPPORT_ADMIN_EMAILS.map((email) =>
+    email.trim().toLowerCase(),
+  );
+  return [...new Set([...builtin, ...fromEnv])];
 }
 
 export function normalizeSupportEmail(
