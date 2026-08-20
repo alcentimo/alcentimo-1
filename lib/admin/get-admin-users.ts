@@ -1,42 +1,19 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeDbPlan } from "@/lib/plans/plan-activation";
 import type { ProfilePlanDb } from "@/lib/database.types";
-import { getStoreCatalogPublicUrl } from "@/lib/store-host";
 import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
-import { getStoreVisitMonthTotalsByStoreIds } from "@/lib/analytics/get-page-visit-stats";
 
 export interface AdminUserRow {
-  /** Owner user id (para acciones de plan). */
   id: string;
-  /** Clave estable de fila (storeId o user-…). */
   rowKey: string;
   email: string | null;
   plan: ProfilePlanDb;
   subscriptionStatus: string;
-  productCount: number;
-  storeCount: number;
-  periodEndsAt: string | null;
-  /**
-   * Fecha de registro: `auth.users.created_at`, con fallback a
-   * `stores.created_at` (TIMESTAMPTZ NOT NULL en public.stores).
-   */
   createdAt: string | null;
   storeId: string | null;
   storeName: string;
-  storeSlug: string | null;
-  catalogUrl: string | null;
   whatsappPhone: string | null;
   whatsappUrl: string | null;
-  /** Visitas únicas del mes actual al catálogo. */
-  catalogVisitsMonth: number;
-}
-
-export interface AdminUserFilters {
-  plan?: ProfilePlanDb | "all";
-  minProducts?: number;
-  maxProducts?: number;
-  search?: string;
-  limit?: number;
 }
 
 function extractWhatsAppFromConfig(config: unknown): string | null {
@@ -68,16 +45,16 @@ function buildWhatsAppLink(phoneRaw: string | null): {
   return { phone: normalized, url: `https://wa.me/${normalized}` };
 }
 
-/** Lista tiendas/clientes con plan del dueño, WhatsApp y enlace al catálogo. */
+/** Lista dropshippers/tiendas para el directorio admin. */
 export async function getAdminUsers(
-  filters: AdminUserFilters = {},
+  options: { limit?: number } = {},
 ): Promise<AdminUserRow[]> {
   const admin = createAdminClient();
-  const limit = Math.min(Math.max(filters.limit ?? 500, 1), 1000);
+  const limit = Math.min(Math.max(options.limit ?? 500, 1), 1000);
 
   const { data: profiles, error } = await admin
     .from("profiles")
-    .select("id, plan, subscription_status, subscription_period_ends_at")
+    .select("id, plan, subscription_status")
     .limit(3000);
 
   if (error) throw new Error(error.message);
@@ -89,53 +66,13 @@ export async function getAdminUsers(
 
   const { data: stores, error: storesError } = await admin
     .from("stores")
-    .select(
-      "id, owner_id, name, slug, custom_domain, custom_domain_verified, created_at",
-    )
+    .select("id, owner_id, name, created_at")
     .in("owner_id", profileIds)
     .order("created_at", { ascending: false });
 
   if (storesError) throw new Error(storesError.message);
 
   const storeIds = (stores ?? []).map((s) => s.id);
-  const ownerByStore = new Map(
-    (stores ?? []).map((s) => [s.id, s.owner_id] as const),
-  );
-  const storeCountByOwner = new Map<string, number>();
-  for (const store of stores ?? []) {
-    storeCountByOwner.set(
-      store.owner_id,
-      (storeCountByOwner.get(store.owner_id) ?? 0) + 1,
-    );
-  }
-
-  const productCountByStore = new Map<string, number>();
-  const productCountByOwner = new Map<string, number>();
-
-  if (storeIds.length > 0) {
-    const { data: products, error: productsError } = await admin
-      .from("products")
-      .select("store_id")
-      .in("store_id", storeIds)
-      .eq("is_active", true)
-      .eq("is_deleted", false);
-
-    if (productsError) throw new Error(productsError.message);
-
-    for (const product of products ?? []) {
-      productCountByStore.set(
-        product.store_id,
-        (productCountByStore.get(product.store_id) ?? 0) + 1,
-      );
-      const ownerId = ownerByStore.get(product.store_id);
-      if (!ownerId) continue;
-      productCountByOwner.set(
-        ownerId,
-        (productCountByOwner.get(ownerId) ?? 0) + 1,
-      );
-    }
-  }
-
   const whatsappByStore = new Map<string, string | null>();
   if (storeIds.length > 0) {
     const { data: settingsRows, error: settingsError } = await admin
@@ -151,7 +88,6 @@ export async function getAdminUsers(
   }
 
   const emailById = new Map<string, string | null>();
-  /** auth.users.created_at — fecha real de alta de la cuenta. */
   const registeredAtById = new Map<string, string | null>();
   for (let i = 0; i < profileIds.length; i += 40) {
     const chunk = profileIds.slice(i, i + 40);
@@ -169,17 +105,6 @@ export async function getAdminUsers(
     );
   }
 
-  const visitTotalsByStore = await getStoreVisitMonthTotalsByStoreIds(
-    admin,
-    storeIds,
-  );
-
-  const planFilter =
-    filters.plan && filters.plan !== "all" ? filters.plan : null;
-  const search = filters.search?.trim().toLowerCase() ?? "";
-  const minProducts = filters.minProducts;
-  const maxProducts = filters.maxProducts;
-
   const ownersWithStore = new Set((stores ?? []).map((s) => s.owner_id));
   const supplierOnlyIds = new Set<string>();
   {
@@ -192,101 +117,54 @@ export async function getAdminUsers(
       if (id && !ownersWithStore.has(id)) supplierOnlyIds.add(id);
     }
   }
+
   const rows: AdminUserRow[] = [];
 
   for (const store of stores ?? []) {
     const profile = profileById.get(store.owner_id);
     if (!profile) continue;
 
-    const plan = normalizeDbPlan(profile.plan);
-    const productCount = productCountByStore.get(store.id) ?? 0;
-    const email = emailById.get(store.owner_id) ?? null;
     const whatsappRaw = whatsappByStore.get(store.id) ?? null;
     const { phone: whatsappPhone, url: whatsappUrl } =
       buildWhatsAppLink(whatsappRaw);
 
-    if (planFilter && plan !== planFilter) continue;
-    if (minProducts != null && productCount < minProducts) continue;
-    if (maxProducts != null && productCount > maxProducts) continue;
-    if (search) {
-      const hay = [
-        email ?? "",
-        store.name,
-        store.slug,
-        whatsappPhone ?? "",
-        whatsappRaw ?? "",
-        store.owner_id,
-      ]
-        .join(" ")
-        .toLowerCase();
-      if (!hay.includes(search)) continue;
-    }
-
     rows.push({
       id: store.owner_id,
       rowKey: store.id,
-      email,
-      plan,
+      email: emailById.get(store.owner_id) ?? null,
+      plan: normalizeDbPlan(profile.plan),
       subscriptionStatus: profile.subscription_status ?? "none",
-      productCount,
-      storeCount: storeCountByOwner.get(store.owner_id) ?? 0,
-      periodEndsAt: profile.subscription_period_ends_at ?? null,
       createdAt:
         registeredAtById.get(store.owner_id) ?? store.created_at ?? null,
       storeId: store.id,
       storeName: store.name,
-      storeSlug: store.slug,
-      catalogUrl: getStoreCatalogPublicUrl(store.slug, "/", {
-        customDomain: store.custom_domain ?? null,
-        customDomainVerified: Boolean(store.custom_domain_verified),
-      }),
       whatsappPhone,
       whatsappUrl,
-      catalogVisitsMonth: visitTotalsByStore.get(store.id) ?? 0,
     });
   }
 
-  // Dueños sin tienda: siguen visibles para acciones de plan.
-  // Los proveedores sin tienda viven en la pestaña Proveedores, no aquí.
   for (const profile of profiles ?? []) {
     if (ownersWithStore.has(profile.id)) continue;
     if (supplierOnlyIds.has(profile.id)) continue;
 
-    const plan = normalizeDbPlan(profile.plan);
-    const productCount = productCountByOwner.get(profile.id) ?? 0;
-    const email = emailById.get(profile.id) ?? null;
-
-    if (planFilter && plan !== planFilter) continue;
-    if (minProducts != null && productCount < minProducts) continue;
-    if (maxProducts != null && productCount > maxProducts) continue;
-    if (search) {
-      const hay = `${email ?? ""} ${profile.id}`.toLowerCase();
-      if (!hay.includes(search)) continue;
-    }
-
     rows.push({
       id: profile.id,
       rowKey: `user-${profile.id}`,
-      email,
-      plan,
+      email: emailById.get(profile.id) ?? null,
+      plan: normalizeDbPlan(profile.plan),
       subscriptionStatus: profile.subscription_status ?? "none",
-      productCount,
-      storeCount: 0,
-      periodEndsAt: profile.subscription_period_ends_at ?? null,
       createdAt: registeredAtById.get(profile.id) ?? null,
       storeId: null,
       storeName: "Sin tienda",
-      storeSlug: null,
-      catalogUrl: null,
       whatsappPhone: null,
       whatsappUrl: null,
-      catalogVisitsMonth: 0,
     });
   }
 
   rows.sort((a, b) => {
-    const visitsCmp = (b.catalogVisitsMonth ?? 0) - (a.catalogVisitsMonth ?? 0);
-    if (visitsCmp !== 0) return visitsCmp;
+    const aTime = a.createdAt ? Date.parse(a.createdAt) : 0;
+    const bTime = b.createdAt ? Date.parse(b.createdAt) : 0;
+    if (aTime !== bTime) return bTime - aTime;
     return a.storeName.localeCompare(b.storeName, "es");
   });
 
