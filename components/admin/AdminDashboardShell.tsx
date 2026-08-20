@@ -4,7 +4,7 @@ import {
   BarChart3,
   Bot,
   MessageSquare,
-  Store,
+  Users,
   Truck,
   Warehouse,
 } from "lucide-react";
@@ -41,9 +41,10 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   },
   {
     id: "tiendas",
-    label: "Tiendas y usuarios",
-    description: "Listado de tiendas, dominios y sucursales.",
-    icon: Store,
+    label: "Comunidad",
+    description:
+      "Directorio de dropshippers y proveedores, más dominios y sucursales.",
+    icon: Users,
   },
   {
     id: "soporte",

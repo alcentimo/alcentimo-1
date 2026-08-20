@@ -181,6 +181,17 @@ export async function getAdminUsers(
   const maxProducts = filters.maxProducts;
 
   const ownersWithStore = new Set((stores ?? []).map((s) => s.owner_id));
+  const supplierOnlyIds = new Set<string>();
+  {
+    const { data: supplierProfiles, error: supplierProfilesError } = await admin
+      .from("supplier_profiles")
+      .select("user_id");
+    if (supplierProfilesError) throw new Error(supplierProfilesError.message);
+    for (const row of supplierProfiles ?? []) {
+      const id = String(row.user_id ?? "");
+      if (id && !ownersWithStore.has(id)) supplierOnlyIds.add(id);
+    }
+  }
   const rows: AdminUserRow[] = [];
 
   for (const store of stores ?? []) {
@@ -236,8 +247,10 @@ export async function getAdminUsers(
   }
 
   // Dueños sin tienda: siguen visibles para acciones de plan.
+  // Los proveedores sin tienda viven en la pestaña Proveedores, no aquí.
   for (const profile of profiles ?? []) {
     if (ownersWithStore.has(profile.id)) continue;
+    if (supplierOnlyIds.has(profile.id)) continue;
 
     const plan = normalizeDbPlan(profile.plan);
     const productCount = productCountByOwner.get(profile.id) ?? 0;

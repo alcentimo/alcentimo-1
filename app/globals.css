@@ -666,7 +666,11 @@ select,
   @apply border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900;
 }
 
-/* —— Tiendas y usuarios: tabla SaaS —— */
+.admin-subnav-divider {
+  @apply hidden h-5 w-px self-center bg-zinc-200 sm:block dark:bg-zinc-700;
+}
+
+/* —— Comunidad: tablas de dropshippers y proveedores —— */
 .admin-stores-toolbar {
   @apply space-y-3 rounded-xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(24,24,27,0.04)] dark:border-zinc-800 dark:bg-zinc-950;
 }
