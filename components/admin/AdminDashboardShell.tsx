@@ -3,12 +3,8 @@
 import {
   BarChart3,
   Bot,
-  CreditCard,
-  LayoutDashboard,
   MessageSquare,
-  Settings2,
   Store,
-  Tag,
   Truck,
   Warehouse,
 } from "lucide-react";
@@ -29,19 +25,6 @@ interface AdminNavItem {
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
-    id: "resumen",
-    label: "Resumen",
-    description: "Métricas clave, planes e ingresos del SaaS.",
-    icon: LayoutDashboard,
-  },
-  {
-    id: "pagos",
-    label: "Pagos y activaciones",
-    description: "Comprobantes pendientes, aprobados y rechazados.",
-    icon: CreditCard,
-    showBadge: true,
-  },
-  {
     id: "dropship",
     label: "Liquidaciones dropship",
     description: "Cierres diarios, verificación de pago único y despacho D+1.",
@@ -61,18 +44,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Tiendas y usuarios",
     description: "Listado de tiendas, dominios y sucursales.",
     icon: Store,
-  },
-  {
-    id: "cupones",
-    label: "Cupones y Ofertas",
-    description: "Códigos promocionales y ofertas temporales del SaaS.",
-    icon: Tag,
-  },
-  {
-    id: "planes",
-    label: "Planes y precios",
-    description: "Límites, costos y configuración de la plataforma.",
-    icon: Settings2,
   },
   {
     id: "soporte",

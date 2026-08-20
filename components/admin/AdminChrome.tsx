@@ -29,7 +29,7 @@ export function AdminChrome({ email, children }: AdminChromeProps) {
               href="/admin/dashboard"
               className="font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
             >
-              Resumen
+              Panel
             </Link>
             <Link
               href="/mercado-oculto"
