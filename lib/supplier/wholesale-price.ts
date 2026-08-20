@@ -18,7 +18,30 @@ export function roundSupplierUsd(value: number): number {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
 
-export function parseUsdAmount(raw: unknown): number | null {
+export function parseUsdAmount(
+  raw: unknown,
+  options?: { min?: number; max?: number },
+): number | null {
+  const min = options?.min ?? 0;
+  const max = options?.max ?? Number.POSITIVE_INFINITY;
+  const text =
+    typeof raw === "number"
+      ? String(raw)
+      : String(raw ?? "")
+          .trim()
+          .replace(",", ".");
+  if (!text || text === "-" || text === "." || text === "-.") return null;
+  const amount = Number(text);
+  if (!Number.isFinite(amount) || amount < min || amount > max) return null;
+  return roundSupplierUsd(amount);
+}
+
+export function parsePercentAmount(
+  raw: unknown,
+  options?: { min?: number; max?: number },
+): number | null {
+  const min = options?.min ?? -99.99;
+  const max = options?.max ?? 1000;
   const text =
     typeof raw === "number"
       ? String(raw)
@@ -27,8 +50,46 @@ export function parseUsdAmount(raw: unknown): number | null {
           .replace(",", ".");
   if (!text) return null;
   const amount = Number(text);
-  if (!Number.isFinite(amount) || amount < 0) return null;
-  return roundSupplierUsd(amount);
+  if (!Number.isFinite(amount) || amount < min || amount > max) return null;
+  return Math.round(amount * 100) / 100;
+}
+
+export function marginUsdFromPrices(
+  costoUsd: number,
+  mayoristaUsd: number,
+): number {
+  return roundSupplierUsd(mayoristaUsd - costoUsd);
+}
+
+/** Null si el costo es 0 (el % no es representable). */
+export function marginPercentFromPrices(
+  costoUsd: number,
+  mayoristaUsd: number,
+): number | null {
+  const costo = roundSupplierUsd(costoUsd);
+  if (costo <= 0) return null;
+  return Math.round(((mayoristaUsd - costo) / costo) * 10000) / 100;
+}
+
+export function mayoristaFromMarginUsd(
+  costoUsd: number,
+  marginUsd: number,
+): number {
+  return roundSupplierUsd(Math.max(0, costoUsd + marginUsd));
+}
+
+export function mayoristaFromMarginPercent(
+  costoUsd: number,
+  percent: number,
+): number {
+  const costo = Math.max(0, roundSupplierUsd(costoUsd));
+  const pct = Number(percent) || 0;
+  return roundSupplierUsd(costo * (1 + pct / 100));
+}
+
+export function formatSupplierAmountInput(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "";
+  return String(roundSupplierUsd(value));
 }
 
 /** Costo interno del proveedor. No usar en DTOs de dropshipper. */
