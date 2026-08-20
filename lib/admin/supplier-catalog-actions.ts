@@ -480,6 +480,83 @@ export async function unpublishAdminSupplierProduct(
   return { product: mapAdminProduct(updated, names) };
 }
 
+export async function setSupplierCatalogPublication(input: {
+  supplierUserId: string;
+  published: boolean;
+}): Promise<
+  ActionResult<{
+    updated: number;
+    skippedWithoutPrice: number;
+    products: AdminSupplierCatalogProduct[];
+    suppliers: AdminSupplierMarginOption[];
+  }>
+> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const supplierUserId = input.supplierUserId.trim();
+  if (!supplierUserId) return { error: "Selecciona un proveedor." };
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("supplier_products")
+    .select(PRODUCT_SELECT)
+    .eq("created_by", supplierUserId)
+    .eq("is_active", true);
+
+  if (error) return { error: mapCatalogDbError(error.message) };
+
+  const rows = (data as Record<string, unknown>[] | null) ?? [];
+  const now = new Date().toISOString();
+  const nextStatus = input.published ? "published" : "draft";
+  const targetIds = input.published
+    ? rows
+        .filter((row) => resolvePrecioMayoristaUsd(row) != null)
+        .map((row) => String(row.id ?? ""))
+        .filter(Boolean)
+    : rows.map((row) => String(row.id ?? "")).filter(Boolean);
+
+  if (input.published && targetIds.length === 0) {
+    return {
+      error:
+        "Ningún producto de este proveedor tiene precio mayorista todavía.",
+      updated: 0,
+      skippedWithoutPrice: rows.length,
+    };
+  }
+
+  if (targetIds.length > 0) {
+    const { error: updateError } = await admin
+      .from("supplier_products")
+      .update({
+        publication_status: nextStatus,
+        updated_at: now,
+      })
+      .in("id", targetIds)
+      .eq("is_active", true);
+    if (updateError) return { error: mapCatalogDbError(updateError.message) };
+  }
+
+  bustPublishedCatalogCaches();
+  const listed = await listAdminSupplierCatalogProducts();
+  const skippedWithoutPrice = input.published
+    ? Math.max(0, rows.length - targetIds.length)
+    : 0;
+  if (listed.error) {
+    return {
+      updated: targetIds.length,
+      skippedWithoutPrice,
+    };
+  }
+
+  return {
+    updated: targetIds.length,
+    skippedWithoutPrice,
+    products: listed.products ?? [],
+    suppliers: listed.suppliers ?? [],
+  };
+}
+
 async function listActiveSupplierUserIds(
   admin: ReturnType<typeof createAdminClient>,
 ): Promise<{ ids: string[]; error?: string }> {
