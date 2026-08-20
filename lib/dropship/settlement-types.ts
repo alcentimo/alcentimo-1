@@ -86,6 +86,7 @@ export interface DropshipSettlementShippingView {
 export interface DropshipSettlementLineView {
   catalogOrderId: string;
   supplierUserId: string;
+  supplierName?: string | null;
   supplierProductId: string | null;
   productTitle: string;
   quantity: number;
@@ -96,9 +97,17 @@ export interface DropshipSettlementLineView {
   shipping: DropshipSettlementShippingView | null;
 }
 
+export interface DropshipSettlementShipmentProduct {
+  title: string;
+  quantity: number;
+  supplierUserId: string;
+  supplierName: string | null;
+}
+
 export interface DropshipSettlementShipmentView {
   catalogOrderId: string;
   productTitles: string[];
+  products: DropshipSettlementShipmentProduct[];
   quantity: number;
   lineDueUsd: number;
   shipping: DropshipSettlementShippingView | null;
