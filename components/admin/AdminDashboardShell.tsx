@@ -41,9 +41,8 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   },
   {
     id: "tiendas",
-    label: "Comunidad",
-    description:
-      "Directorio de dropshippers y proveedores, más dominios y sucursales.",
+    label: "Gestión de usuarios",
+    description: "Directorio de proveedores y dropshippers.",
     icon: Users,
   },
   {

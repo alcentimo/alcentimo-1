@@ -22,13 +22,13 @@ const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
   crecimiento: "tiendas",
   dropshippers: "tiendas",
   proveedores: "tiendas",
+  usuarios: "tiendas",
   dominios: "tiendas",
   sucursales: "tiendas",
   soporte: "soporte",
   ia: "ia",
   asistente: "ia",
   "ia-gerencial": "ia",
-  // Secciones retiradas del panel: redirigen al directorio.
   resumen: "tiendas",
   pagos: "tiendas",
   cupones: "tiendas",
@@ -48,19 +48,13 @@ export function resolveAdminDashboardTab(
   return LEGACY_TAB_MAP[value] ?? DEFAULT_TAB;
 }
 
-export type AdminStoresSubTab =
-  | "dropshippers"
-  | "proveedores"
-  | "dominios"
-  | "sucursales";
+export type AdminStoresSubTab = "proveedores" | "dropshippers";
 
 export function resolveAdminStoresSubTab(
   legacyTab: string | null | undefined,
   section?: string | null,
 ): AdminStoresSubTab {
   const value = section || legacyTab;
-  if (value === "proveedores") return "proveedores";
-  if (value === "dominios") return "dominios";
-  if (value === "sucursales") return "sucursales";
-  return "dropshippers";
+  if (value === "dropshippers" || value === "usuarios") return "dropshippers";
+  return "proveedores";
 }

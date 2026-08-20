@@ -2,35 +2,42 @@
 
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
-import type { AdminSupplierDirectoryRow } from "@/lib/admin/get-admin-suppliers";
+import type { AdminUserRow } from "@/lib/admin/get-admin-users";
+import { formatPlanName } from "@/src/config/plans";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 import {
   DIRECTORY_PAGE_SIZE,
   buildPageItems,
+  formatDirectoryDate,
   formatDirectoryPhone,
   matchesDirectorySearch,
 } from "@/components/admin/admin-directory";
 
-interface AdminSuppliersDirectoryPanelProps {
-  initialSuppliers: AdminSupplierDirectoryRow[];
+function dropshipperStatus(user: AdminUserRow): string {
+  if (user.subscriptionStatus === "provisional") return "Prueba";
+  if (user.subscriptionStatus === "active") {
+    return formatPlanName(user.plan);
+  }
+  if (!user.storeId) return "Sin tienda";
+  return formatPlanName(user.plan);
 }
 
-export function AdminSuppliersDirectoryPanel({
-  initialSuppliers,
-}: AdminSuppliersDirectoryPanelProps) {
+interface AdminDropshippersDirectoryPanelProps {
+  initialUsers: AdminUserRow[];
+}
+
+export function AdminDropshippersDirectoryPanel({
+  initialUsers,
+}: AdminDropshippersDirectoryPanelProps) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
-    return initialSuppliers.filter((row) =>
-      matchesDirectorySearch(search, [
-        row.companyName,
-        row.contactName,
-        row.email,
-      ]),
+    return initialUsers.filter((row) =>
+      matchesDirectorySearch(search, [row.storeName, row.email]),
     );
-  }, [initialSuppliers, search]);
+  }, [initialUsers, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / DIRECTORY_PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -43,7 +50,7 @@ export function AdminSuppliersDirectoryPanel({
       <div className="admin-stores-search">
         <Search className="admin-stores-search-icon" aria-hidden="true" />
         <Input
-          id="admin-suppliers-search"
+          id="admin-dropshippers-search"
           className="admin-stores-search-input"
           value={search}
           onChange={(event) => {
@@ -51,7 +58,7 @@ export function AdminSuppliersDirectoryPanel({
             setPage(1);
           }}
           placeholder="Buscar por nombre o correo…"
-          aria-label="Buscar proveedores"
+          aria-label="Buscar dropshippers"
         />
       </div>
 
@@ -60,25 +67,25 @@ export function AdminSuppliersDirectoryPanel({
           <table className="admin-stores-table">
             <thead>
               <tr>
-                <th className="admin-stores-th">Nombre</th>
+                <th className="admin-stores-th">Nombre / Tienda</th>
                 <th className="admin-stores-th">Correo</th>
                 <th className="admin-stores-th">Teléfono</th>
-                <th className="admin-stores-th">Ubicación</th>
-                <th className="admin-stores-th admin-stores-th-num">Productos</th>
+                <th className="admin-stores-th">Registro</th>
+                <th className="admin-stores-th">Estado</th>
               </tr>
             </thead>
             <tbody>
               {paged.map((row) => (
-                <tr key={row.userId} className="admin-stores-row">
+                <tr key={row.rowKey} className="admin-stores-row">
                   <td className="admin-stores-td">
-                    <div className="admin-stores-store-name">{row.companyName}</div>
-                    {row.contactName && row.contactName !== "—" ? (
-                      <div className="admin-stores-store-slug">{row.contactName}</div>
-                    ) : null}
+                    <div className="admin-stores-store-name">{row.storeName}</div>
                   </td>
                   <td className="admin-stores-td">
-                    <span className="admin-stores-email" title={row.email || undefined}>
-                      {row.email || "—"}
+                    <span
+                      className="admin-stores-email"
+                      title={row.email ?? undefined}
+                    >
+                      {row.email ?? "—"}
                     </span>
                   </td>
                   <td className="admin-stores-td">
@@ -89,26 +96,28 @@ export function AdminSuppliersDirectoryPanel({
                         rel="noopener noreferrer"
                         className="admin-stores-link"
                       >
-                        {formatDirectoryPhone(row.phone)}
+                        {formatDirectoryPhone(row.whatsappPhone)}
                       </a>
                     ) : (
                       <span className="admin-stores-td-muted">
-                        {formatDirectoryPhone(row.phone)}
+                        {formatDirectoryPhone(row.whatsappPhone)}
                       </span>
                     )}
                   </td>
-                  <td className="admin-stores-td admin-stores-td-muted">
-                    {row.location || "—"}
+                  <td className="admin-stores-td admin-stores-td-muted whitespace-nowrap">
+                    {formatDirectoryDate(row.createdAt)}
                   </td>
-                  <td className="admin-stores-td admin-stores-td-num">
-                    {row.activeProductCount.toLocaleString("es-VE")}
+                  <td className="admin-stores-td">
+                    <span className="admin-stores-plan-name">
+                      {dropshipperStatus(row)}
+                    </span>
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="admin-stores-empty-state">
-                    No hay proveedores con esa búsqueda.
+                    No hay dropshippers con esa búsqueda.
                   </td>
                 </tr>
               ) : null}
@@ -119,7 +128,7 @@ export function AdminSuppliersDirectoryPanel({
         {filtered.length > DIRECTORY_PAGE_SIZE ? (
           <div className="admin-stores-pagination">
             <p className="admin-stores-page-range">
-              {filtered.length.toLocaleString("es-VE")} proveedores
+              {filtered.length.toLocaleString("es-VE")} dropshippers
             </p>
             <div className="admin-stores-page-controls">
               <button
