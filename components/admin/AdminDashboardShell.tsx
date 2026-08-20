@@ -52,7 +52,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     id: "proveedor",
     label: "Proveedor / Mayorista",
     description:
-      "Productos de proveedores listos para precio mayorista: el proveedor solo carga el costo; Alcéntimo define el margen.",
+      "Producto, costo y precio mayorista. Publica o oculta el catálogo entero de cada proveedor.",
     icon: Warehouse,
     showBadge: true,
   },
