@@ -44,6 +44,11 @@ import {
 } from "@/lib/supplier/product-images";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAllPagedRows } from "@/lib/supabase/fetch-all-rows";
+import {
+  DROPSHIP_SUPPLIER_PRODUCT_SELECT,
+  isPublishedForDropship,
+  resolvePrecioMayoristaUsd,
+} from "@/lib/supplier/wholesale-price";
 
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 const SUPPLIER_PAGE_SIZE = 500;
@@ -67,7 +72,7 @@ type SupplierCatalogRow = {
   id: string;
   title: string;
   description: string | null;
-  basePriceUsd: number;
+  wholesalePriceUsd: number;
   stock: number;
   category: SupplierProductCategory;
   imageUrl: string | null;
@@ -141,10 +146,10 @@ async function fetchAllActiveSupplierProducts(
   for (;;) {
     const { data, error } = await admin
       .from("supplier_products")
-      .select(
-        "id, title, description, base_price_usd, stock, category, image_url, variants, is_active",
-      )
+      .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT)
       .eq("is_active", true)
+      .eq("publication_status", "published")
+      .not("precio_mayorista", "is", null)
       .order("id", { ascending: true })
       .range(from, from + SUPPLIER_PAGE_SIZE - 1);
 
@@ -154,6 +159,9 @@ async function fetchAllActiveSupplierProducts(
     for (const row of chunk) {
       const title = String(row.title ?? "").trim();
       if (!title) continue;
+      if (!isPublishedForDropship(row)) continue;
+      const wholesalePriceUsd = resolvePrecioMayoristaUsd(row);
+      if (wholesalePriceUsd == null) continue;
       const imageUrl =
         typeof row.image_url === "string" && row.image_url.trim()
           ? row.image_url.trim()
@@ -165,7 +173,7 @@ async function fetchAllActiveSupplierProducts(
           typeof row.description === "string"
             ? row.description.trim().slice(0, 2000) || null
             : null,
-        basePriceUsd: Number(row.base_price_usd) || 0,
+        wholesalePriceUsd,
         stock: Math.max(0, Math.floor(Number(row.stock) || 0)),
         category: normalizeSupplierProductCategory(row.category),
         imageUrl,
@@ -431,7 +439,7 @@ export async function importSupplierProductsBulkToStore(input?: {
 
       for (const supplier of chunk) {
         const retailUsd = suggestRetailFromWholesaleCost(
-          supplier.basePriceUsd,
+          supplier.wholesalePriceUsd,
           dropship,
         );
         if (retailUsd == null || retailUsd < 0) {
@@ -579,7 +587,7 @@ export async function importSupplierProductsBulkToStore(input?: {
           product_id: item.productId,
           supplier_product_id: item.supplier.id,
           auto_reprice: dropship.autoApplyOnCostChange,
-          last_cost_usd: item.supplier.basePriceUsd,
+          last_cost_usd: item.supplier.wholesalePriceUsd,
           updated_at: now,
         })),
       );

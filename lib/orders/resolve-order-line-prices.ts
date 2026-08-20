@@ -8,6 +8,7 @@ import {
   validateSubmitOrderLineInput,
   type ProductVariantRow,
 } from "@/lib/orders/resolve-inventory-variant-id";
+import { resolvePrecioMayoristaUsd } from "@/lib/supplier/wholesale-price";
 
 export async function resolveOrderLinesWithPricing(
   admin: SupabaseClient,
@@ -112,7 +113,7 @@ export async function resolveOrderLinesWithPricing(
   const { data: dropshipLinks } = await admin
     .from("store_dropship_links")
     .select(
-      "product_id, supplier_product_id, supplier_products(base_price_usd, stock, title)",
+      "product_id, supplier_product_id, supplier_products(precio_mayorista, publication_status, is_active, stock, title)",
     )
     .eq("store_id", storeId)
     .in("product_id", productIds);
@@ -129,14 +130,18 @@ export async function resolveOrderLinesWithPricing(
     const productId = String(row.product_id ?? "");
     const supplierProductId = String(row.supplier_product_id ?? "");
     const supplier = row.supplier_products as {
-      base_price_usd?: number;
+      precio_mayorista?: number | null;
+      publication_status?: string;
+      is_active?: boolean;
       stock?: number;
       title?: string;
     } | null;
     if (!productId || !supplierProductId) continue;
+    const costUsd = resolvePrecioMayoristaUsd(supplier ?? {});
+    if (costUsd == null) continue;
     dropshipCostByProduct.set(productId, {
       supplierProductId,
-      costUsd: Number(supplier?.base_price_usd) || 0,
+      costUsd,
       stock: Math.max(0, Math.floor(Number(supplier?.stock) || 0)),
       title: String(supplier?.title ?? "Mayorista"),
     });

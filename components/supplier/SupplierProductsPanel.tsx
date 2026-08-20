@@ -223,8 +223,12 @@ function ProductFields({
           </div>
           <div>
             <label htmlFor={`${idPrefix}-price`} className="label-field">
-              Precio base (USD)
+              Tu costo (USD)
             </label>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Costo interno para Alcéntimo. El precio del catálogo dropshipper lo
+              define un administrador.
+            </p>
             <div className="relative mt-1.5">
               <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-zinc-400">
                 $
@@ -337,7 +341,9 @@ export function SupplierProductsPanel({
         return;
       }
       setProducts((current) => [result.product!, ...current]);
-      setCreateMessage("Producto cargado.");
+      setCreateMessage(
+        "Producto guardado como borrador. Será visible para dropshippers cuando Alcéntimo asigne el precio mayorista y lo publique.",
+      );
       resetCreateForm();
     });
   }
@@ -572,6 +578,15 @@ export function SupplierProductsPanel({
                       <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
                         {supplierCategoryLabel(product.category)}
                       </span>
+                      {product.publicationStatus === "published" ? (
+                        <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-800 dark:bg-teal-950/50 dark:text-teal-200">
+                          En catálogo
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+                          Borrador
+                        </span>
+                      )}
                       {variantCount > 0 ? (
                         <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                           {supplierVariantAttributeLabel(product.variants)} ·{" "}

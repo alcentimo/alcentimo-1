@@ -3,16 +3,22 @@
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 
-export type AdminStoresSubTab = "usuarios" | "dominios" | "sucursales";
+export type AdminStoresSubTab =
+  | "usuarios"
+  | "catalogo"
+  | "dominios"
+  | "sucursales";
 
 const SUB_TABS: Array<{ id: AdminStoresSubTab; label: string }> = [
   { id: "usuarios", label: "Usuarios y tiendas" },
+  { id: "catalogo", label: "Catálogo" },
   { id: "dominios", label: "Dominios" },
   { id: "sucursales", label: "Sucursales" },
 ];
 
 interface AdminStoresPanelProps {
   usuariosPanel: React.ReactNode;
+  catalogoPanel: React.ReactNode;
   dominiosPanel: React.ReactNode;
   sucursalesPanel: React.ReactNode;
   initialSubTab?: AdminStoresSubTab;
@@ -20,6 +26,7 @@ interface AdminStoresPanelProps {
 
 export function AdminStoresPanel({
   usuariosPanel,
+  catalogoPanel,
   dominiosPanel,
   sucursalesPanel,
   initialSubTab = "usuarios",
@@ -45,6 +52,7 @@ export function AdminStoresPanel({
       </div>
 
       {subTab === "usuarios" ? usuariosPanel : null}
+      {subTab === "catalogo" ? catalogoPanel : null}
       {subTab === "dominios" ? dominiosPanel : null}
       {subTab === "sucursales" ? sucursalesPanel : null}
     </div>

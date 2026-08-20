@@ -45,7 +45,7 @@ export async function ensureHubHoldOrdersForCatalogOrder(input: {
 
   const { data: products, error: productsError } = await client
     .from("supplier_products")
-    .select("id, created_by, title, base_price_usd")
+    .select("id, created_by, title, base_price_usd, precio_mayorista")
     .in("id", supplierProductIds);
 
   if (productsError) return { error: productsError.message, created: 0, notified: 0 };
@@ -85,10 +85,7 @@ export async function ensureHubHoldOrdersForCatalogOrder(input: {
       1,
       Math.floor(Number(item.stock_units ?? item.quantity) || 1),
     );
-    const unitCostUsd =
-      item.unit_cost_usd != null && Number.isFinite(Number(item.unit_cost_usd))
-        ? Number(item.unit_cost_usd)
-        : product.base_price_usd;
+    const unitCostUsd = product.base_price_usd;
     const group = groups.get(product.created_by) ?? {
       supplierUserId: product.created_by,
       lines: [],

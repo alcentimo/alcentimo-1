@@ -323,7 +323,7 @@ export async function buildSettlementLinesForStore(input: {
 
   const { data: products, error: productsError } = await client
     .from("supplier_products")
-    .select("id, created_by, title, base_price_usd")
+    .select("id, created_by, title, base_price_usd, precio_mayorista")
     .in("id", supplierProductIds);
 
   if (productsError) {
@@ -332,21 +332,32 @@ export async function buildSettlementLinesForStore(input: {
 
   const productById = new Map<
     string,
-    { created_by: string; title: string; base_price_usd: number }
+    {
+      created_by: string;
+      title: string;
+      base_price_usd: number;
+      precio_mayorista: number | null;
+    }
   >();
   for (const row of (products as Array<{
     id?: string;
     created_by?: string;
     title?: string;
     base_price_usd?: unknown;
+    precio_mayorista?: unknown;
   }> | null) ?? []) {
     if (typeof row.id !== "string" || typeof row.created_by !== "string") {
       continue;
     }
+    const mayoristaRaw = row.precio_mayorista;
     productById.set(row.id, {
       created_by: row.created_by,
       title: String(row.title ?? "Producto"),
       base_price_usd: Number(row.base_price_usd) || 0,
+      precio_mayorista:
+        mayoristaRaw == null || mayoristaRaw === ""
+          ? null
+          : Number(mayoristaRaw) || 0,
     });
   }
 
@@ -359,9 +370,14 @@ export async function buildSettlementLinesForStore(input: {
       const product = productById.get(raw.supplierProductId);
       if (!product) continue;
       const unitCost = roundMoneyDisplay(
-        raw.unitCostUsd != null ? raw.unitCostUsd : product.base_price_usd,
+        raw.unitCostUsd != null
+          ? raw.unitCostUsd
+          : product.precio_mayorista ?? product.base_price_usd,
       );
       const wholesaleLine = roundMoneyDisplay(unitCost * raw.quantity);
+      const supplierPayoutUsd = roundMoneyDisplay(
+        product.base_price_usd * raw.quantity,
+      );
       const priced = computeAmountDueUsd(wholesaleLine, input.markupPercent);
       lines.push({
         catalogOrderId: order.id,
@@ -372,7 +388,7 @@ export async function buildSettlementLinesForStore(input: {
         unitCostUsd: unitCost,
         platformMarkupUsd: priced.platformMarkupUsd,
         lineDueUsd: priced.amountDueUsd,
-        supplierPayoutUsd: priced.wholesaleCostUsd,
+        supplierPayoutUsd,
         shipping: order.shipping,
       });
       ordersWithLines.add(order.id);

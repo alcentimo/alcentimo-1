@@ -52,8 +52,6 @@ async function requireMerchantDropshipStore() {
 
 function mapItem(row: Record<string, unknown>): SupplierOrderItem {
   const unitPrice = Number(row.unit_price_usd) || 0;
-  const unitCost =
-    row.unit_cost_usd != null ? Number(row.unit_cost_usd) || 0 : unitPrice;
   return {
     id: String(row.id),
     productId:
@@ -63,7 +61,8 @@ function mapItem(row: Record<string, unknown>): SupplierOrderItem {
     productTitle: String(row.product_title ?? ""),
     quantity: Number(row.quantity) || 0,
     unitPriceUsd: unitPrice,
-    unitCostUsd: unitCost,
+    // El dropshipper no debe ver el costo_proveedor.
+    unitCostUsd: unitPrice,
     costLockedAt:
       typeof row.cost_locked_at === "string" ? row.cost_locked_at : null,
     lineTotalUsd: Number(row.line_total_usd) || 0,
@@ -228,7 +227,7 @@ export async function getDropshipSupplierPaymentContext(
 
   const { data: supplierProducts, error: productsError } = await admin
     .from("supplier_products")
-    .select("id, created_by, title, base_price_usd")
+    .select("id, created_by, title, precio_mayorista")
     .in("id", supplierProductIds);
 
   if (productsError) return { error: productsError.message };
@@ -273,7 +272,7 @@ export async function getDropshipSupplierPaymentContext(
     const unitCost =
       line.unit_cost_usd != null
         ? Number(line.unit_cost_usd) || 0
-        : Number(product.base_price_usd) || 0;
+        : Number(product.precio_mayorista) || 0;
     costTotalUsd += Math.round(unitCost * qty * 100) / 100;
     lineCount += 1;
   }
@@ -410,7 +409,7 @@ export async function reportDropshipSupplierPayment(input: {
 
   const { data: supplierProducts, error: productsError } = await admin
     .from("supplier_products")
-    .select("id, created_by, title, base_price_usd")
+    .select("id, created_by, title, precio_mayorista")
     .in("id", supplierProductIds);
 
   if (productsError) return { error: productsError.message };
@@ -466,7 +465,7 @@ export async function reportDropshipSupplierPayment(input: {
     const unitCost =
       line.unit_cost_usd != null
         ? Number(line.unit_cost_usd) || 0
-        : Number(product.base_price_usd) || 0;
+        : Number(product.precio_mayorista) || 0;
     const rounded = Math.round(unitCost * 100) / 100;
     const lineTotal = Math.round(rounded * qty * 100) / 100;
     totalUsd += lineTotal;

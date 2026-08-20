@@ -83,7 +83,7 @@ export function CatalogCurrencyTab({
     <SettingsTabShell error={error} hideSaveBar>
       <SettingsSection
         title="Tu ganancia"
-        description="Cuando añades un producto del catálogo, usamos el costo del proveedor más esta ganancia para calcular el precio en tu tienda."
+        description="Cuando añades un producto del catálogo, usamos el precio mayorista más esta ganancia para calcular el precio en tu tienda."
         variant="payments"
       >
         <SettingsOptionCard
@@ -146,7 +146,7 @@ export function CatalogCurrencyTab({
 
             <SettingsOptionCard
               id="dropship-auto-apply"
-              label="Actualizar el precio si cambia el costo del proveedor"
+              label="Actualizar el precio si cambia el precio mayorista"
               description="Si lo dejas apagado, solo te avisamos con un precio sugerido."
               checked={dropship.autoApplyOnCostChange}
               onChange={(checked) =>
@@ -164,7 +164,7 @@ export function CatalogCurrencyTab({
               {previewRetail != null ? (
                 <>
                   {" "}
-                  · Ejemplo: costo {formatUsd(10)} → tu precio{" "}
+                  · Ejemplo: mayorista {formatUsd(10)} → tu precio{" "}
                   {formatUsd(previewRetail)}
                 </>
               ) : null}

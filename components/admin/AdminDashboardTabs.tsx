@@ -133,6 +133,20 @@ const AdminCustomDomainsPanel = dynamic(
   },
 );
 
+const AdminSupplierCatalogPanel = dynamic(
+  () =>
+    import("@/components/admin/AdminSupplierCatalogPanel").then((m) => ({
+      default: m.AdminSupplierCatalogPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Cargando catálogo mayorista…
+      </p>
+    ),
+  },
+);
+
 const AdminStoreLocationsPanel = dynamic(
   () =>
     import("@/components/admin/AdminStoreLocationsPanel").then((m) => ({
@@ -326,6 +340,7 @@ export function AdminDashboardTabs({
                 mode="usuarios"
               />
             }
+            catalogoPanel={<AdminSupplierCatalogPanel />}
             dominiosPanel={
               storeDomainsError ? (
                 <ErrorBanner message={storeDomainsError} />
