@@ -102,7 +102,7 @@ export async function listDropshipLinkedCatalogEntriesForStoreId(
       const { data: supplierRows, error: supplierError } = await client
         .from("supplier_products")
         .select(
-          "id, category, is_active, publication_status, catalog_visible, precio_mayorista",
+          "id, category, is_active, publication_status, catalog_visible, is_visible, precio_mayorista",
         )
         .in("id", chunk);
 
@@ -117,6 +117,7 @@ export async function listDropshipLinkedCatalogEntriesForStoreId(
         is_active?: unknown;
         publication_status?: unknown;
         catalog_visible?: unknown;
+        is_visible?: unknown;
         precio_mayorista?: unknown;
       }> | null) ?? []) {
         if (typeof row.id !== "string" || !row.id) continue;

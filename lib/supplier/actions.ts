@@ -230,6 +230,7 @@ export async function createSupplierProduct(
       precio_mayorista: null,
       publication_status: "draft",
       catalog_visible: false,
+      is_visible: true,
       image_url: null,
       is_active: true,
     })

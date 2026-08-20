@@ -187,7 +187,7 @@ export async function listStoreDropshipLinks(): Promise<
   const { data, error } = await admin
     .from("store_dropship_links")
     .select(
-      "id, product_id, supplier_product_id, auto_reprice, last_cost_usd, products(name), supplier_products(title, precio_mayorista, publication_status, catalog_visible, is_active)",
+      "id, product_id, supplier_product_id, auto_reprice, last_cost_usd, products(name), supplier_products(title, precio_mayorista, publication_status, catalog_visible, is_visible, is_active)",
     )
     .eq("store_id", auth.store.id)
     .order("created_at", { ascending: false });
@@ -699,7 +699,7 @@ export async function linkStoreDropshipProduct(input: {
   const { data: supplier } = await applyDropshipVisibleProductFilter(
     admin
       .from("supplier_products")
-      .select("id, precio_mayorista, stock, is_active, publication_status, catalog_visible")
+      .select("id, precio_mayorista, stock, is_active, publication_status, catalog_visible, is_visible")
       .eq("id", supplierProductId),
   )
     .maybeSingle();

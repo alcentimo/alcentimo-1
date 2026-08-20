@@ -38,6 +38,8 @@ export type AdminSupplierCatalogProduct = {
   marginUsd: number | null;
   marginPercent: number | null;
   publicationStatus: SupplierPublicationStatus;
+  catalogVisible: boolean;
+  isVisible: boolean;
   imageUrl: string | null;
   supplierUserId: string;
   supplierName: string;
@@ -55,7 +57,7 @@ export type AdminSupplierMarginOption = {
 };
 
 const PRODUCT_SELECT =
-  "id, title, description, category, stock, base_price_usd, precio_mayorista, publication_status, catalog_visible, image_url, created_by, created_at, updated_at, is_active";
+  "id, title, description, category, stock, base_price_usd, precio_mayorista, publication_status, catalog_visible, is_visible, image_url, created_by, created_at, updated_at, is_active";
 
 async function requireSupportAdmin() {
   const supabase = await createClient();
@@ -95,6 +97,8 @@ function mapAdminProduct(
     marginPercent:
       mayorista == null ? null : marginPercentFromPrices(costo, mayorista),
     publicationStatus: normalizePublicationStatus(row.publication_status),
+    catalogVisible: row.catalog_visible === true,
+    isVisible: row.is_visible !== false,
     imageUrl:
       typeof row.image_url === "string" && row.image_url.trim()
         ? row.image_url.trim()
@@ -294,6 +298,12 @@ function mapCatalogDbError(message: string): string {
     (text.includes("does not exist") || text.includes("schema cache"))
   ) {
     return "Falta aplicar la migración de visibilidad de catálogo mayorista.";
+  }
+  if (
+    text.includes("is_visible") &&
+    (text.includes("does not exist") || text.includes("schema cache"))
+  ) {
+    return "Falta aplicar la migración de visibilidad por producto.";
   }
   return message;
 }
@@ -523,6 +533,40 @@ export async function unpublishAdminSupplierProduct(
     String(updated.created_by ?? ""),
   ]);
   bustPublishedCatalogCaches();
+  return { product: mapAdminProduct(updated, names) };
+}
+
+export async function setAdminSupplierProductVisibility(input: {
+  productId: string;
+  visible: boolean;
+}): Promise<ActionResult<{ product: AdminSupplierCatalogProduct }>> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const productId = input.productId.trim();
+  if (!productId) return { error: "Producto inválido." };
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("supplier_products")
+    .update({
+      is_visible: input.visible,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", productId)
+    .eq("is_active", true)
+    .select(PRODUCT_SELECT)
+    .maybeSingle();
+
+  if (error) return { error: mapCatalogDbError(error.message) };
+  if (!data) return { error: "Producto no encontrado." };
+
+  const updated = data as Record<string, unknown>;
+  const names = await loadSupplierNames(admin, [
+    String(updated.created_by ?? ""),
+  ]);
+  bustPublishedCatalogCaches();
+  revalidatePath("/dashboard/inventario");
   return { product: mapAdminProduct(updated, names) };
 }
 
