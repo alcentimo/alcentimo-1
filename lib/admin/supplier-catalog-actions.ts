@@ -12,7 +12,11 @@ import {
   type SupplierProductCategory,
 } from "@/lib/supplier/categories";
 import {
+  mayoristaFromMarginPercent,
+  marginPercentFromPrices,
+  marginUsdFromPrices,
   normalizePublicationStatus,
+  parsePercentAmount,
   parseUsdAmount,
   resolveCostoProveedorUsd,
   resolvePrecioMayoristaUsd,
@@ -32,12 +36,21 @@ export type AdminSupplierCatalogProduct = {
   costoProveedorUsd: number;
   precioMayoristaUsd: number | null;
   marginUsd: number | null;
+  marginPercent: number | null;
   publicationStatus: SupplierPublicationStatus;
   imageUrl: string | null;
   supplierUserId: string;
   supplierName: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AdminSupplierMarginOption = {
+  id: string;
+  name: string;
+  productCount: number;
+  draftCount: number;
+  globalMarginPercent: number | null;
 };
 
 const PRODUCT_SELECT =
@@ -62,14 +75,6 @@ function bustPublishedCatalogCaches() {
   revalidateAllPublicCatalogCaches();
 }
 
-function marginUsd(
-  costo: number,
-  mayorista: number | null,
-): number | null {
-  if (mayorista == null) return null;
-  return Math.round((mayorista - costo) * 100) / 100;
-}
-
 function mapAdminProduct(
   row: Record<string, unknown>,
   supplierNameById: Map<string, string>,
@@ -85,7 +90,9 @@ function mapAdminProduct(
     stock: Number(row.stock) || 0,
     costoProveedorUsd: costo,
     precioMayoristaUsd: mayorista,
-    marginUsd: marginUsd(costo, mayorista),
+    marginUsd: mayorista == null ? null : marginUsdFromPrices(costo, mayorista),
+    marginPercent:
+      mayorista == null ? null : marginPercentFromPrices(costo, mayorista),
     publicationStatus: normalizePublicationStatus(row.publication_status),
     imageUrl:
       typeof row.image_url === "string" && row.image_url.trim()
@@ -126,8 +133,68 @@ async function loadSupplierNames(
   return labels;
 }
 
+async function loadMarginRules(
+  admin: ReturnType<typeof createAdminClient>,
+  userIds: string[],
+): Promise<Map<string, number>> {
+  const rules = new Map<string, number>();
+  const ids = [...new Set(userIds.filter(Boolean))];
+  if (ids.length === 0) return rules;
+
+  const { data } = await admin
+    .from("supplier_wholesale_margin_rules")
+    .select("supplier_user_id, margin_percent")
+    .in("supplier_user_id", ids);
+
+  for (const row of (data as Array<{
+    supplier_user_id?: string;
+    margin_percent?: unknown;
+  }> | null) ?? []) {
+    const id = typeof row.supplier_user_id === "string" ? row.supplier_user_id : "";
+    const percent = parsePercentAmount(row.margin_percent, { min: 0, max: 1000 });
+    if (!id || percent == null) continue;
+    rules.set(id, percent);
+  }
+
+  return rules;
+}
+
+function buildSupplierOptions(
+  products: AdminSupplierCatalogProduct[],
+  marginBySupplier: Map<string, number>,
+): AdminSupplierMarginOption[] {
+  const grouped = new Map<
+    string,
+    { name: string; productCount: number; draftCount: number }
+  >();
+  for (const product of products) {
+    const current = grouped.get(product.supplierUserId) ?? {
+      name: product.supplierName,
+      productCount: 0,
+      draftCount: 0,
+    };
+    current.productCount += 1;
+    if (product.publicationStatus === "draft") current.draftCount += 1;
+    grouped.set(product.supplierUserId, current);
+  }
+
+  return [...grouped.entries()]
+    .map(([id, value]) => ({
+      id,
+      name: value.name,
+      productCount: value.productCount,
+      draftCount: value.draftCount,
+      globalMarginPercent: marginBySupplier.get(id) ?? null,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "es"));
+}
+
 export async function listAdminSupplierCatalogProducts(): Promise<
-  ActionResult<{ products: AdminSupplierCatalogProduct[]; draftCount: number }>
+  ActionResult<{
+    products: AdminSupplierCatalogProduct[];
+    draftCount: number;
+    suppliers: AdminSupplierMarginOption[];
+  }>
 > {
   const auth = await requireSupportAdmin();
   if (!auth.ok) return { error: auth.error };
@@ -143,15 +210,17 @@ export async function listAdminSupplierCatalogProducts(): Promise<
   if (error) return { error: error.message };
 
   const rows = (data as Record<string, unknown>[] | null) ?? [];
-  const names = await loadSupplierNames(
-    admin,
-    rows.map((row) => String(row.created_by ?? "")),
-  );
+  const creatorIds = rows.map((row) => String(row.created_by ?? ""));
+  const [names, marginBySupplier] = await Promise.all([
+    loadSupplierNames(admin, creatorIds),
+    loadMarginRules(admin, creatorIds),
+  ]);
   const products = rows.map((row) => mapAdminProduct(row, names));
   return {
     products,
     draftCount: products.filter((item) => item.publicationStatus === "draft")
       .length,
+    suppliers: buildSupplierOptions(products, marginBySupplier),
   };
 }
 
@@ -335,4 +404,267 @@ export async function unpublishAdminSupplierProduct(
   ]);
   bustPublishedCatalogCaches();
   return { product: mapAdminProduct(updated, names) };
+}
+
+export async function setSupplierGlobalMarginRule(input: {
+  supplierUserId: string;
+  marginPercent: number | string;
+}): Promise<ActionResult<{ supplier: AdminSupplierMarginOption }>> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const supplierUserId = input.supplierUserId.trim();
+  if (!supplierUserId) return { error: "Selecciona un proveedor." };
+
+  const marginPercent = parsePercentAmount(input.marginPercent, {
+    min: 0,
+    max: 1000,
+  });
+  if (marginPercent == null) {
+    return { error: "Indica un margen global entre 0% y 1000%." };
+  }
+
+  const admin = createAdminClient();
+  const now = new Date().toISOString();
+  const { error } = await admin.from("supplier_wholesale_margin_rules").upsert(
+    {
+      supplier_user_id: supplierUserId,
+      margin_percent: marginPercent,
+      updated_by: auth.user.id,
+      updated_at: now,
+    },
+    { onConflict: "supplier_user_id" },
+  );
+
+  if (error) return { error: error.message };
+
+  const names = await loadSupplierNames(admin, [supplierUserId]);
+  const { count } = await admin
+    .from("supplier_products")
+    .select("id", { count: "exact", head: true })
+    .eq("created_by", supplierUserId)
+    .eq("is_active", true);
+  const { count: draftCount } = await admin
+    .from("supplier_products")
+    .select("id", { count: "exact", head: true })
+    .eq("created_by", supplierUserId)
+    .eq("is_active", true)
+    .eq("publication_status", "draft");
+
+  revalidatePath("/admin/dashboard");
+  return {
+    supplier: {
+      id: supplierUserId,
+      name: names.get(supplierUserId) ?? "Proveedor",
+      productCount: count ?? 0,
+      draftCount: draftCount ?? 0,
+      globalMarginPercent: marginPercent,
+    },
+  };
+}
+
+async function applyGlobalMarginToSupplierProducts(input: {
+  admin: ReturnType<typeof createAdminClient>;
+  changedBy: string;
+  supplierUserId: string;
+  marginPercent: number;
+}): Promise<{ updated: number; publishedUpdated: number; error?: string }> {
+  const { admin, changedBy, supplierUserId, marginPercent } = input;
+  const { data, error } = await admin
+    .from("supplier_products")
+    .select(PRODUCT_SELECT)
+    .eq("created_by", supplierUserId)
+    .eq("is_active", true);
+
+  if (error) return { updated: 0, publishedUpdated: 0, error: error.message };
+
+  const rows = (data as Record<string, unknown>[] | null) ?? [];
+  let updated = 0;
+  let publishedUpdated = 0;
+  const now = new Date().toISOString();
+  const note = `Recálculo por margen global del proveedor (${marginPercent}%).`;
+
+  for (const row of rows) {
+    const id = String(row.id ?? "");
+    if (!id) continue;
+    const costo = resolveCostoProveedorUsd(row);
+    const nextPrice = mayoristaFromMarginPercent(costo, marginPercent);
+    const previous = resolvePrecioMayoristaUsd(row);
+    if (previous === nextPrice) continue;
+
+    const { error: updateError } = await admin
+      .from("supplier_products")
+      .update({
+        precio_mayorista: nextPrice,
+        updated_at: now,
+      })
+      .eq("id", id)
+      .eq("is_active", true);
+
+    if (updateError) {
+      return { updated, publishedUpdated, error: updateError.message };
+    }
+
+    updated += 1;
+    const isPublished =
+      normalizePublicationStatus(row.publication_status) === "published";
+    if (isPublished && previous != null) {
+      await recordSupplierPriceChangeAndNotify({
+        admin,
+        supplierProductId: id,
+        productTitle: String(row.title ?? "Producto"),
+        oldPriceUsd: previous,
+        newPriceUsd: nextPrice,
+        changedBy,
+        note,
+      });
+      publishedUpdated += 1;
+    } else {
+      await admin.from("supplier_product_price_history").insert({
+        supplier_product_id: id,
+        old_price_usd: previous,
+        new_price_usd: nextPrice,
+        changed_by: changedBy,
+        note,
+      });
+    }
+  }
+
+  return { updated, publishedUpdated };
+}
+
+export async function applySupplierGlobalMargin(input: {
+  supplierUserId: string;
+  marginPercent?: number | string;
+}): Promise<
+  ActionResult<{
+    updated: number;
+    publishedUpdated: number;
+    marginPercent: number;
+    products: AdminSupplierCatalogProduct[];
+    suppliers: AdminSupplierMarginOption[];
+  }>
+> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const supplierUserId = input.supplierUserId.trim();
+  if (!supplierUserId) return { error: "Selecciona un proveedor." };
+
+  const admin = createAdminClient();
+  let marginPercent = parsePercentAmount(input.marginPercent, {
+    min: 0,
+    max: 1000,
+  });
+
+  if (marginPercent == null) {
+    const rules = await loadMarginRules(admin, [supplierUserId]);
+    marginPercent = rules.get(supplierUserId) ?? null;
+  }
+  if (marginPercent == null) {
+    return {
+      error: "Define un margen global para este proveedor antes de recalcular.",
+    };
+  }
+
+  const persist = await setSupplierGlobalMarginRule({
+    supplierUserId,
+    marginPercent,
+  });
+  if (persist.error) return { error: persist.error };
+
+  const applied = await applyGlobalMarginToSupplierProducts({
+    admin,
+    changedBy: auth.user.id,
+    supplierUserId,
+    marginPercent,
+  });
+  if (applied.error) return { error: applied.error };
+
+  bustPublishedCatalogCaches();
+  const listed = await listAdminSupplierCatalogProducts();
+  if (listed.error) {
+    return {
+      updated: applied.updated,
+      publishedUpdated: applied.publishedUpdated,
+      marginPercent,
+    };
+  }
+
+  return {
+    updated: applied.updated,
+    publishedUpdated: applied.publishedUpdated,
+    marginPercent,
+    products: listed.products ?? [],
+    suppliers: listed.suppliers ?? [],
+  };
+}
+
+export async function recalculateAllSupplierGlobalMargins(): Promise<
+  ActionResult<{
+    supplierCount: number;
+    updated: number;
+    publishedUpdated: number;
+    products: AdminSupplierCatalogProduct[];
+    suppliers: AdminSupplierMarginOption[];
+  }>
+> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("supplier_wholesale_margin_rules")
+    .select("supplier_user_id, margin_percent");
+
+  if (error) return { error: error.message };
+
+  const rules =
+    (data as Array<{
+      supplier_user_id?: string;
+      margin_percent?: unknown;
+    }> | null) ?? [];
+  if (rules.length === 0) {
+    return {
+      error: "No hay márgenes globales configurados para recalcular.",
+    };
+  }
+
+  let updated = 0;
+  let publishedUpdated = 0;
+  let supplierCount = 0;
+
+  for (const row of rules) {
+    const supplierUserId =
+      typeof row.supplier_user_id === "string" ? row.supplier_user_id : "";
+    const marginPercent = parsePercentAmount(row.margin_percent, {
+      min: 0,
+      max: 1000,
+    });
+    if (!supplierUserId || marginPercent == null) continue;
+    supplierCount += 1;
+    const applied = await applyGlobalMarginToSupplierProducts({
+      admin,
+      changedBy: auth.user.id,
+      supplierUserId,
+      marginPercent,
+    });
+    if (applied.error) return { error: applied.error };
+    updated += applied.updated;
+    publishedUpdated += applied.publishedUpdated;
+  }
+
+  bustPublishedCatalogCaches();
+  const listed = await listAdminSupplierCatalogProducts();
+  if (listed.error) {
+    return { supplierCount, updated, publishedUpdated };
+  }
+
+  return {
+    supplierCount,
+    updated,
+    publishedUpdated,
+    products: listed.products ?? [],
+    suppliers: listed.suppliers ?? [],
+  };
 }

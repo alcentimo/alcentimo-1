@@ -25,7 +25,9 @@ import {
   type SupplierProductVariants,
 } from "@/lib/supplier/variants";
 import {
+  mayoristaFromMarginPercent,
   normalizePublicationStatus,
+  parsePercentAmount,
   type SupplierPublicationStatus,
 } from "@/lib/supplier/wholesale-price";
 import { MERCADO_CATALOG_CACHE_TAG } from "@/lib/mercado-oculto/catalog-cache";
@@ -216,6 +218,22 @@ export async function createSupplierProduct(
   }
 
   const admin = createAdminClient();
+  let precioMayorista: number | null = null;
+  const { data: marginRule } = await admin
+    .from("supplier_wholesale_margin_rules")
+    .select("margin_percent")
+    .eq("supplier_user_id", auth.user.id)
+    .maybeSingle();
+  const globalPercent = parsePercentAmount(
+    (marginRule as { margin_percent?: unknown } | null)?.margin_percent,
+    { min: 0, max: 1000 },
+  );
+  if (globalPercent != null) {
+    precioMayorista = mayoristaFromMarginPercent(
+      parsed.basePriceUsd,
+      globalPercent,
+    );
+  }
 
   const { data, error } = await admin
     .from("supplier_products")
@@ -227,7 +245,7 @@ export async function createSupplierProduct(
       variants: parsed.variants ?? normalizeSupplierProductVariants(null),
       stock: parsed.stock,
       base_price_usd: parsed.basePriceUsd,
-      precio_mayorista: null,
+      precio_mayorista: precioMayorista,
       publication_status: "draft",
       image_url: null,
       is_active: true,
