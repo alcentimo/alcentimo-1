@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
-import { ExternalLink } from "lucide-react";
+import { ChevronDown, ExternalLink } from "lucide-react";
 import { AdminCriticalConfirmDialog } from "@/components/admin/AdminCriticalConfirmDialog";
 import {
   approveDropshipDailySettlement,
@@ -38,6 +38,27 @@ const STATUS_CLASS: Record<DropshipSettlementStatus, string> = {
     "bg-red-50 text-red-800 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-900/50",
 };
 
+function shipmentSummary(settlement: DropshipSettlementRecord): string {
+  const shipments = settlement.shipments ?? [];
+  if (shipments.length === 0) {
+    return `${settlement.orderCount} pedido${settlement.orderCount === 1 ? "" : "s"}`;
+  }
+  const agencies = [
+    ...new Set(
+      shipments
+        .map((item) => item.shipping?.shippingMethodLabel)
+        .filter((label): label is string => Boolean(label)),
+    ),
+  ];
+  const products = shipments.reduce((sum, item) => sum + item.quantity, 0);
+  const parts = [
+    `${shipments.length} pedido${shipments.length === 1 ? "" : "s"}`,
+    `${products} producto${products === 1 ? "" : "s"}`,
+  ];
+  if (agencies.length > 0) parts.push(agencies.join(", "));
+  return parts.join(" · ");
+}
+
 function formatReportedAt(iso: string): string {
   if (!iso) return "—";
   return new Intl.DateTimeFormat("es-VE", {
@@ -62,6 +83,23 @@ export function DropshipSettlementsPanel({
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState("");
   const [approveId, setApproveId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(
+    () =>
+      new Set(
+        initialSettlements
+          .filter((item) => item.status === "reported")
+          .map((item) => item.id),
+      ),
+  );
+
+  function toggleExpanded(id: string) {
+    setExpandedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const filtered = useMemo(
     () =>
@@ -226,9 +264,9 @@ export function DropshipSettlementsPanel({
     <div className="space-y-4">
       <p className="text-sm text-zinc-500 dark:text-zinc-400">
         Cada dropshipper agrupa las ventas del día en un solo pago a Alcéntimo
-        (un comprobante, banco y referencia). Al aprobarlo verás el destino de
-        cada comprador para armar los paquetes, el monto recibido, la comisión
-        de Alcéntimo y lo que corresponde liquidar a cada mayorista.
+        (un comprobante, banco y referencia). Expande el detalle para ver los
+        pedidos de sus clientes finales —nombre, teléfono, dirección, agencia
+        (MRW/Zoom) y productos— y coordinar el empaque con el mayorista.
       </p>
 
       {financials.dropshippers.length > 0 ? (
@@ -456,11 +494,38 @@ export function DropshipSettlementsPanel({
                 <p className="mt-3 text-xs text-amber-700">Sin comprobante adjunto.</p>
               )}
 
-              <SettlementCustomerShipments
-                className="mt-4"
-                shipments={settlement.shipments}
-                variant="admin"
-              />
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => toggleExpanded(settlement.id)}
+                  aria-expanded={expandedIds.has(settlement.id)}
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50/50 px-3 py-2.5 text-left transition hover:border-teal-300 dark:border-teal-900/50 dark:bg-teal-950/20 dark:hover:border-teal-800"
+                >
+                  <span>
+                    <span className="block text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                      Pedidos de clientes finales
+                    </span>
+                    <span className="mt-0.5 block text-xs text-zinc-500">
+                      {shipmentSummary(settlement)}
+                    </span>
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 shrink-0 text-zinc-500 transition",
+                      expandedIds.has(settlement.id) && "rotate-180",
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+                {expandedIds.has(settlement.id) ? (
+                  <SettlementCustomerShipments
+                    className="mt-3"
+                    shipments={settlement.shipments}
+                    variant="admin"
+                    emptyLabel="Este reporte no tiene pedidos de clientes sincronizados. Revisa que las ventas dropship estén en el cierre del día."
+                  />
+                ) : null}
+              </div>
 
               <div className="mt-3 rounded-xl bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-900/50">
                 <p className="font-semibold text-zinc-700 dark:text-zinc-200">

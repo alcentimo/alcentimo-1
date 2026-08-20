@@ -1,7 +1,8 @@
-import { IdCard, MapPin, Package, Phone, User } from "lucide-react";
+import { IdCard, MapPin, Package, Phone, Truck, User } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { groupSettlementShipments } from "@/lib/dropship/settlement-shipping";
+import { isNationalCarrierKey } from "@/src/config/shipping-methods";
 import type {
   DropshipSettlementLineView,
   DropshipSettlementShipmentView,
@@ -12,11 +13,18 @@ function shortOrderId(orderId: string): string {
   return `#${orderId.slice(0, 8).toUpperCase()}`;
 }
 
+function digitsPhoneHref(phone: string): string | null {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 10) return null;
+  return `tel:+${digits.startsWith("58") ? digits : `58${digits.replace(/^0/, "")}`}`;
+}
+
 interface SettlementCustomerShipmentsProps {
   shipments?: DropshipSettlementShipmentView[];
   lines?: DropshipSettlementLineView[];
   variant?: "merchant" | "admin";
   className?: string;
+  emptyLabel?: string;
 }
 
 export function SettlementCustomerShipments({
@@ -24,32 +32,40 @@ export function SettlementCustomerShipments({
   lines,
   variant = "merchant",
   className,
+  emptyLabel,
 }: SettlementCustomerShipmentsProps) {
   const items =
     shipments && shipments.length > 0
       ? shipments
       : groupSettlementShipments(lines ?? []);
 
-  if (items.length === 0) return null;
-
   const isAdmin = variant === "admin";
+
+  if (items.length === 0) {
+    if (!emptyLabel) return null;
+    return (
+      <p
+        className={cn(
+          "rounded-xl border border-dashed border-zinc-200 px-3 py-3 text-xs text-zinc-500 dark:border-zinc-800",
+          className,
+        )}
+      >
+        {emptyLabel}
+      </p>
+    );
+  }
 
   return (
     <div className={cn("space-y-3", className)}>
       <div>
-        <p
-          className={cn(
-            "font-semibold text-zinc-900 dark:text-zinc-50",
-            isAdmin ? "text-sm" : "text-sm",
-          )}
-        >
+        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
           {isAdmin
-            ? "Destino para la guía de despacho"
+            ? "Pedidos de clientes finales"
             : "Datos de envío del cliente final"}
         </p>
         <p className="mt-0.5 text-xs text-zinc-500">
           {isAdmin
-            ? "Nombre, cédula, teléfono y destino (dirección o sucursal MRW/Zoom) de cada pedido incluido en este pago."
+            ? "Misma ficha que el pedido del catálogo: comprador, teléfono, dirección, agencia (MRW/Zoom) y productos para armar el paquete con el mayorista."
             : "Estos datos viajan con tu liquidación para que Alcéntimo arme la guía sin errores."}
         </p>
       </div>
@@ -57,6 +73,21 @@ export function SettlementCustomerShipments({
       <ul className="space-y-3">
         {items.map((shipment) => {
           const shipping = shipment.shipping;
+          const agencyLabel = shipping?.shippingMethodLabel ?? null;
+          const isAgency = isNationalCarrierKey(shipping?.shippingMethod);
+          const products =
+            shipment.products && shipment.products.length > 0
+              ? shipment.products
+              : shipment.productTitles.map((title) => ({
+                  title,
+                  quantity: shipment.quantity,
+                  supplierUserId: "",
+                  supplierName: null as string | null,
+                }));
+          const phoneHref = shipping?.customerPhone
+            ? digitsPhoneHref(shipping.customerPhone)
+            : null;
+
           return (
             <li
               key={shipment.catalogOrderId || shipment.productTitles.join("-")}
@@ -91,74 +122,131 @@ export function SettlementCustomerShipments({
                     aria-hidden="true"
                   />
                   <div>
-                    <dt className="sr-only">Nombre</dt>
+                    <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                      Nombre del comprador
+                    </dt>
                     <dd className="font-medium text-zinc-900 dark:text-zinc-50">
                       {shipping?.customerName || "Sin nombre"}
                     </dd>
                   </div>
                 </div>
-                <div className="flex items-start gap-2">
-                  <IdCard
-                    className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400"
-                    aria-hidden="true"
-                  />
-                  <div>
-                    <dt className="sr-only">Cédula</dt>
-                    <dd className="text-zinc-800 dark:text-zinc-200">
-                      {shipping?.customerDocumentId
-                        ? `Cédula ${shipping.customerDocumentId}`
-                        : "Sin cédula"}
-                    </dd>
+
+                {shipping?.customerDocumentId ? (
+                  <div className="flex items-start gap-2">
+                    <IdCard
+                      className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400"
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                        Cédula
+                      </dt>
+                      <dd className="text-zinc-800 dark:text-zinc-200">
+                        {shipping.customerDocumentId}
+                      </dd>
+                    </div>
                   </div>
-                </div>
+                ) : null}
+
                 <div className="flex items-start gap-2">
                   <Phone
                     className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400"
                     aria-hidden="true"
                   />
                   <div>
-                    <dt className="sr-only">Teléfono</dt>
+                    <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                      Teléfono
+                    </dt>
                     <dd className="text-zinc-800 dark:text-zinc-200">
-                      {shipping?.customerPhone || "Sin teléfono"}
+                      {shipping?.customerPhone ? (
+                        phoneHref ? (
+                          <a
+                            href={phoneHref}
+                            className="font-medium text-teal-800 underline-offset-2 hover:underline dark:text-teal-200"
+                          >
+                            {shipping.customerPhone}
+                          </a>
+                        ) : (
+                          shipping.customerPhone
+                        )
+                      ) : (
+                        "Sin teléfono"
+                      )}
                     </dd>
                   </div>
                 </div>
+
+                <div className="flex items-start gap-2">
+                  <Truck
+                    className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400"
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                      {isAgency ? "Agencia de encomienda" : "Método de envío"}
+                    </dt>
+                    <dd className="font-medium text-zinc-900 dark:text-zinc-50">
+                      {agencyLabel ||
+                        shipping?.fulfillmentLabel ||
+                        "Sin agencia registrada"}
+                    </dd>
+                    {isAgency && shipping?.shippingBranchName ? (
+                      <p className="mt-0.5 text-xs text-zinc-600 dark:text-zinc-300">
+                        Sucursal: {shipping.shippingBranchName}
+                      </p>
+                    ) : null}
+                    {isAgency && shipping?.shippingBranchAddress ? (
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        {shipping.shippingBranchAddress}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
                 <div className="flex items-start gap-2">
                   <MapPin
                     className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400"
                     aria-hidden="true"
                   />
                   <div>
-                    <dt className="sr-only">Destino</dt>
+                    <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                      Dirección
+                    </dt>
                     <dd className="font-medium text-zinc-900 dark:text-zinc-50">
-                      {shipping?.destinationLabel || "Sin destino registrado"}
+                      {shipping?.deliveryAddress ||
+                        shipping?.shippingBranchAddress ||
+                        shipping?.destinationLabel ||
+                        "Sin dirección registrada"}
                     </dd>
-                    {shipping?.fulfillmentLabel ? (
-                      <p className="mt-0.5 text-xs text-zinc-500">
-                        {shipping.fulfillmentLabel}
-                        {shipping.shippingMethodLabel &&
-                        shipping.fulfillmentLabel !==
-                          shipping.shippingMethodLabel
-                          ? ` · ${shipping.shippingMethodLabel}`
-                          : ""}
-                      </p>
-                    ) : null}
-                    {shipping?.shippingBranchName &&
-                    shipping.destinationLabel &&
-                    !shipping.destinationLabel.includes(
-                      shipping.shippingBranchName,
-                    ) ? (
-                      <p className="mt-0.5 text-xs text-zinc-500">
-                        Sucursal: {shipping.shippingBranchName}
-                      </p>
-                    ) : null}
                   </div>
                 </div>
               </dl>
 
-              <p className="mt-2 text-xs text-zinc-500">
-                {shipment.quantity} ud. · {shipment.productTitles.join(", ")}
-              </p>
+              <div className="mt-3 border-t border-zinc-200/80 pt-2 dark:border-zinc-800">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                  Productos vendidos
+                </p>
+                <ul className="mt-1.5 space-y-1 text-sm text-zinc-800 dark:text-zinc-200">
+                  {products.map((product) => (
+                    <li
+                      key={`${product.supplierUserId}-${product.title}`}
+                      className="flex justify-between gap-3"
+                    >
+                      <span className="min-w-0">
+                        <span className="font-medium">{product.title}</span>
+                        {isAdmin && product.supplierName ? (
+                          <span className="ml-1 text-xs text-zinc-500">
+                            · {product.supplierName}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="shrink-0 tabular-nums text-zinc-500">
+                        ×{product.quantity}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </li>
           );
         })}

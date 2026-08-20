@@ -6,6 +6,7 @@ import {
 import { isNationalCarrierKey } from "@/src/config/shipping-methods";
 import type {
   DropshipSettlementLineView,
+  DropshipSettlementShipmentProduct,
   DropshipSettlementShipmentView,
   DropshipSettlementShippingView,
 } from "@/lib/dropship/settlement-types";
@@ -158,6 +159,72 @@ export function mapSettlementLineRow(
   };
 }
 
+function preferText(
+  live: string | null | undefined,
+  snapshot: string | null | undefined,
+): string | null {
+  const liveValue = live?.trim() || null;
+  const snapshotValue = snapshot?.trim() || null;
+  if (liveValue && liveValue !== "Cliente") return liveValue;
+  if (snapshotValue && snapshotValue !== "Cliente") return snapshotValue;
+  return liveValue ?? snapshotValue;
+}
+
+/** Combina snapshot de liquidación con el pedido vivo (el pedido gana si trae dato). */
+export function mergeSettlementShipping(
+  snapshot: DropshipSettlementShippingView | null,
+  live: DropshipSettlementShippingView | null,
+): DropshipSettlementShippingView | null {
+  if (!snapshot && !live) return null;
+  return (
+    parseSettlementShipping({
+      customer_name: preferText(live?.customerName, snapshot?.customerName) ?? "",
+      customer_document_id: preferText(
+        live?.customerDocumentId,
+        snapshot?.customerDocumentId,
+      ),
+      customer_phone: preferText(live?.customerPhone, snapshot?.customerPhone),
+      fulfillment_type: preferText(live?.fulfillmentType, snapshot?.fulfillmentType),
+      shipping_method: preferText(live?.shippingMethod, snapshot?.shippingMethod),
+      shipping_branch_name: preferText(
+        live?.shippingBranchName,
+        snapshot?.shippingBranchName,
+      ),
+      shipping_branch_address: preferText(
+        live?.shippingBranchAddress,
+        snapshot?.shippingBranchAddress,
+      ),
+      delivery_address: preferText(live?.deliveryAddress, snapshot?.deliveryAddress),
+    }) ??
+    live ??
+    snapshot
+  );
+}
+
+function upsertShipmentProduct(
+  products: DropshipSettlementShipmentProduct[],
+  line: DropshipSettlementLineView,
+) {
+  const existing = products.find(
+    (product) =>
+      product.title === line.productTitle &&
+      product.supplierUserId === line.supplierUserId,
+  );
+  if (existing) {
+    existing.quantity += line.quantity;
+    if (!existing.supplierName && line.supplierName) {
+      existing.supplierName = line.supplierName;
+    }
+    return;
+  }
+  products.push({
+    title: line.productTitle,
+    quantity: line.quantity,
+    supplierUserId: line.supplierUserId,
+    supplierName: line.supplierName ?? null,
+  });
+}
+
 export function groupSettlementShipments(
   lines: DropshipSettlementLineView[],
 ): DropshipSettlementShipmentView[] {
@@ -171,18 +238,20 @@ export function groupSettlementShipments(
       current.lineDueUsd = roundMoneyDisplay(
         current.lineDueUsd + line.lineDueUsd,
       );
+      upsertShipmentProduct(current.products, line);
       if (!current.productTitles.includes(line.productTitle)) {
         current.productTitles.push(line.productTitle);
       }
-      if (!current.shipping && line.shipping) {
-        current.shipping = line.shipping;
-      }
+      current.shipping = mergeSettlementShipping(current.shipping, line.shipping);
       continue;
     }
 
+    const products: DropshipSettlementShipmentProduct[] = [];
+    upsertShipmentProduct(products, line);
     byOrder.set(orderId, {
       catalogOrderId: line.catalogOrderId,
       productTitles: [line.productTitle],
+      products,
       quantity: line.quantity,
       lineDueUsd: line.lineDueUsd,
       shipping: line.shipping,

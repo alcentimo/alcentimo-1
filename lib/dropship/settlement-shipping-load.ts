@@ -7,11 +7,13 @@ import type {
 import {
   groupSettlementShipments,
   mapSettlementLineRow,
+  mergeSettlementShipping,
   parseSettlementShipping,
   SETTLEMENT_LINE_SELECT,
   SETTLEMENT_LINE_SELECT_LEGACY,
   SETTLEMENT_LINE_SELECT_NO_DOCUMENT,
 } from "@/lib/dropship/settlement-shipping";
+import { loadSupplierDisplayNames } from "@/lib/dropship/settlement-supplier-names";
 
 const ORDER_SHIPPING_SELECT =
   "id, store_id, customer_user_id, customer_name, customer_phone, fulfillment_type, shipping_method, shipping_branch_name, shipping_branch_address, delivery_address";
@@ -109,26 +111,22 @@ export async function attachDocumentIdsToShipping(
   }
 }
 
-export async function hydrateMissingSettlementShipping(
+export async function hydrateSettlementShippingFromOrders(
   lines: DropshipSettlementLineView[],
 ): Promise<DropshipSettlementLineView[]> {
-  const missingIds = [
-    ...new Set(
-      lines
-        .filter((line) => !line.shipping && line.catalogOrderId)
-        .map((line) => line.catalogOrderId),
-    ),
+  const orderIds = [
+    ...new Set(lines.map((line) => line.catalogOrderId).filter(Boolean)),
   ];
 
   let next = lines;
-  if (missingIds.length > 0) {
+  if (orderIds.length > 0) {
     const admin = createAdminClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = admin as any;
     const { data, error } = await client
       .from("orders")
       .select(ORDER_SHIPPING_SELECT)
-      .in("id", missingIds);
+      .in("id", orderIds);
 
     if (!error && data) {
       const byId = new Map<string, DropshipSettlementShippingView>();
@@ -140,9 +138,14 @@ export async function hydrateMissingSettlementShipping(
       }
 
       next = lines.map((line) => {
-        if (line.shipping || !line.catalogOrderId) return line;
-        const shipping = byId.get(line.catalogOrderId) ?? null;
-        return shipping ? { ...line, shipping } : line;
+        if (!line.catalogOrderId) return line;
+        return {
+          ...line,
+          shipping: mergeSettlementShipping(
+            line.shipping,
+            byId.get(line.catalogOrderId) ?? null,
+          ),
+        };
       });
     }
   }
@@ -156,6 +159,13 @@ export async function hydrateMissingSettlementShipping(
     ...line,
     shipping: shippingEntries[index]?.shipping ?? line.shipping,
   }));
+}
+
+/** @deprecated Usa hydrateSettlementShippingFromOrders (sincroniza todos los pedidos). */
+export async function hydrateMissingSettlementShipping(
+  lines: DropshipSettlementLineView[],
+): Promise<DropshipSettlementLineView[]> {
+  return hydrateSettlementShippingFromOrders(lines);
 }
 
 async function selectSettlementLineRows(
@@ -196,7 +206,16 @@ export async function loadHydratedSettlementLines(
   settlementId: string,
 ): Promise<DropshipSettlementLineView[]> {
   const rows = await selectSettlementLineRows([settlementId]);
-  return hydrateMissingSettlementShipping(rows.map(mapSettlementLineRow));
+  const lines = await hydrateSettlementShippingFromOrders(
+    rows.map(mapSettlementLineRow),
+  );
+  const names = await loadSupplierDisplayNames(
+    lines.map((line) => line.supplierUserId),
+  );
+  return lines.map((line) => ({
+    ...line,
+    supplierName: names.get(line.supplierUserId) ?? line.supplierName ?? null,
+  }));
 }
 
 export async function loadShipmentsBySettlementIds(
@@ -206,18 +225,32 @@ export async function loadShipmentsBySettlementIds(
   if (settlementIds.length === 0) return result;
 
   const rows = await selectSettlementLineRows(settlementIds);
+  const entries = rows.map((row) => ({
+    settlementId: String(row.settlement_id ?? ""),
+    line: mapSettlementLineRow(row),
+  }));
+  const hydrated = await hydrateSettlementShippingFromOrders(
+    entries.map((entry) => entry.line),
+  );
+  const names = await loadSupplierDisplayNames(
+    hydrated.map((line) => line.supplierUserId),
+  );
   const linesBySettlement = new Map<string, DropshipSettlementLineView[]>();
-  for (const row of rows) {
-    const settlementId = String(row.settlement_id ?? "");
-    if (!settlementId) continue;
-    const list = linesBySettlement.get(settlementId) ?? [];
-    list.push(mapSettlementLineRow(row));
-    linesBySettlement.set(settlementId, list);
-  }
+
+  entries.forEach((entry, index) => {
+    if (!entry.settlementId) return;
+    const line = hydrated[index];
+    if (!line) return;
+    const list = linesBySettlement.get(entry.settlementId) ?? [];
+    list.push({
+      ...line,
+      supplierName: names.get(line.supplierUserId) ?? line.supplierName ?? null,
+    });
+    linesBySettlement.set(entry.settlementId, list);
+  });
 
   for (const [settlementId, lines] of linesBySettlement) {
-    const hydrated = await hydrateMissingSettlementShipping(lines);
-    result.set(settlementId, groupSettlementShipments(hydrated));
+    result.set(settlementId, groupSettlementShipments(lines));
   }
 
   return result;
