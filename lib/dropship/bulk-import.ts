@@ -46,6 +46,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAllPagedRows } from "@/lib/supabase/fetch-all-rows";
 import {
   DROPSHIP_SUPPLIER_PRODUCT_SELECT,
+  applyDropshipVisibleProductFilter,
   isPublishedForDropship,
   resolvePrecioMayoristaUsd,
 } from "@/lib/supplier/wholesale-price";
@@ -144,12 +145,11 @@ async function fetchAllActiveSupplierProducts(
   let from = 0;
 
   for (;;) {
-    const { data, error } = await admin
-      .from("supplier_products")
-      .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT)
-      .eq("is_active", true)
-      .eq("publication_status", "published")
-      .not("precio_mayorista", "is", null)
+    const { data, error } = await applyDropshipVisibleProductFilter(
+      admin
+        .from("supplier_products")
+        .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT),
+    )
       .order("id", { ascending: true })
       .range(from, from + SUPPLIER_PAGE_SIZE - 1);
 

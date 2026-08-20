@@ -4,6 +4,7 @@ import {
   normalizeSupplierProductCategory,
   type SupplierProductCategory,
 } from "@/lib/supplier/categories";
+import { isPublishedForDropship } from "@/lib/supplier/wholesale-price";
 
 export type DropshipLinkedCatalogEntry = {
   productId: string;
@@ -100,7 +101,9 @@ export async function listDropshipLinkedCatalogEntriesForStoreId(
     for (const chunk of chunkIds(supplierIds)) {
       const { data: supplierRows, error: supplierError } = await client
         .from("supplier_products")
-        .select("id, category")
+        .select(
+          "id, category, is_active, publication_status, catalog_visible, precio_mayorista",
+        )
         .in("id", chunk);
 
       if (supplierError) {
@@ -111,8 +114,13 @@ export async function listDropshipLinkedCatalogEntriesForStoreId(
       for (const row of (supplierRows as Array<{
         id?: string;
         category?: unknown;
+        is_active?: unknown;
+        publication_status?: unknown;
+        catalog_visible?: unknown;
+        precio_mayorista?: unknown;
       }> | null) ?? []) {
         if (typeof row.id !== "string" || !row.id) continue;
+        if (!isPublishedForDropship(row)) continue;
         categoryBySupplierId.set(
           row.id,
           normalizeSupplierProductCategory(row.category),
@@ -149,12 +157,12 @@ export async function listDropshipLinkedCatalogEntriesForStoreId(
     const entries: DropshipLinkedCatalogEntry[] = [];
     for (const link of links) {
       const productId = link.product_id as string;
+      const supplierProductId = link.supplier_product_id as string;
+      if (!categoryBySupplierId.has(supplierProductId)) continue;
       if (activeProductIds && !activeProductIds.has(productId)) continue;
       entries.push({
         productId,
-        supplierCategory: categoryBySupplierId.get(
-          link.supplier_product_id as string,
-        ) ?? "otros",
+        supplierCategory: categoryBySupplierId.get(supplierProductId) ?? "otros",
       });
     }
 
