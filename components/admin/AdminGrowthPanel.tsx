@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useEffect,
   useMemo,
   useState,
   useTransition,
@@ -48,7 +47,7 @@ type UsersQuickFilter =
 const USERS_PAGE_SIZES = [10, 25, 50] as const;
 
 const USERS_QUICK_FILTERS: Array<{ id: UsersQuickFilter; label: string }> = [
-  { id: "all", label: "Todas" },
+  { id: "all", label: "Todos" },
   { id: "with_store", label: "Con tienda" },
   { id: "without_store", label: "Sin tienda" },
   { id: "plan_free", label: "Plan Gratis" },
@@ -251,6 +250,7 @@ export function AdminGrowthPanel({
 
   function toggleTableSort(key: UsersTableSortKey) {
     setTableSort((prev) => cycleUsersTableSort(prev, key));
+    setPage(1);
   }
 
   const filteredUsers = useMemo(() => {
@@ -321,14 +321,6 @@ export function AdminGrowthPanel({
   const rangeFrom =
     filteredUsers.length === 0 ? 0 : pageStart + 1;
   const rangeTo = Math.min(pageStart + pageSize, filteredUsers.length);
-
-  useEffect(() => {
-    setPage(1);
-  }, [quickFilter, minProducts, search, pageSize, tableSort]);
-
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
 
   function markUsersAsPro(ids: string[]) {
     const idSet = new Set(ids);
@@ -660,7 +652,7 @@ export function AdminGrowthPanel({
     : null;
 
   const growthTabs = [
-    ["usuarios", "Usuarios"],
+    ["usuarios", "Listado"],
     ["historial", "Historial"],
   ] as const;
 
@@ -707,9 +699,12 @@ export function AdminGrowthPanel({
                 id="admin-stores-search"
                 className="admin-stores-search-input"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
                 placeholder="Buscar por tienda, correo, slug o teléfono…"
-                aria-label="Buscar tiendas y usuarios"
+                aria-label="Buscar dropshippers"
               />
             </div>
             <div
@@ -721,7 +716,10 @@ export function AdminGrowthPanel({
                 <button
                   key={filter.id}
                   type="button"
-                  onClick={() => setQuickFilter(filter.id)}
+                  onClick={() => {
+                    setQuickFilter(filter.id);
+                    setPage(1);
+                  }}
                   className={cn(
                     "admin-stores-chip",
                     quickFilter === filter.id && "admin-stores-chip-active",
@@ -738,7 +736,10 @@ export function AdminGrowthPanel({
                   type="number"
                   min={0}
                   value={minProducts}
-                  onChange={(e) => setMinProducts(e.target.value)}
+                  onChange={(e) => {
+                    setMinProducts(e.target.value);
+                    setPage(1);
+                  }}
                   placeholder="0"
                   className="admin-stores-min-products-input"
                 />
@@ -1072,7 +1073,7 @@ export function AdminGrowthPanel({
                   {filteredUsers.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="admin-stores-empty-state">
-                        No hay tiendas o usuarios con ese filtro.
+                        No hay dropshippers con ese filtro.
                       </td>
                     </tr>
                   ) : null}
@@ -1085,13 +1086,14 @@ export function AdminGrowthPanel({
                 <span>Filas por página</span>
                 <select
                   value={pageSize}
-                  onChange={(event) =>
+                  onChange={(event) => {
                     setPageSize(
                       Number(
                         event.target.value,
                       ) as (typeof USERS_PAGE_SIZES)[number],
-                    )
-                  }
+                    );
+                    setPage(1);
+                  }}
                 >
                   {USERS_PAGE_SIZES.map((size) => (
                     <option key={size} value={size}>
