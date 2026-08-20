@@ -19,12 +19,15 @@ import {
   type MercadoProductCard,
   type MercadoSupplierFacet,
 } from "@/lib/mercado-oculto/types";
-import { isPublishedForDropship } from "@/lib/supplier/wholesale-price";
+import {
+  applyDropshipVisibleProductFilter,
+  isPublishedForDropship,
+} from "@/lib/supplier/wholesale-price";
 
 export const MERCADO_CATALOG_CACHE_TAG = "mercado-catalog";
 
 const SUPPLIER_PRODUCT_SELECT =
-  "id, title, description, category, variants, stock, precio_mayorista, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status";
+  "id, title, description, category, variants, stock, precio_mayorista, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status, catalog_visible";
 
 export type MercadoCatalogSnapshot = {
   products: MercadoProductCard[];
@@ -169,12 +172,9 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
   if (creatorIds.length === 0) return empty;
 
   const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("supplier_products")
-    .select(SUPPLIER_PRODUCT_SELECT)
-    .eq("is_active", true)
-    .eq("publication_status", "published")
-    .not("precio_mayorista", "is", null)
+  const { data, error } = await applyDropshipVisibleProductFilter(
+    admin.from("supplier_products").select(SUPPLIER_PRODUCT_SELECT),
+  )
     .in("created_by", creatorIds)
     .order("created_at", { ascending: false })
     .limit(160);
@@ -215,7 +215,7 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
 /** Catálogo completo cacheado (~60s) para navegación SPA sin pegarle a la DB. */
 export const getCachedMercadoCatalog = unstable_cache(
   async () => loadMercadoCatalogUncached(),
-  ["mercado-oculto-catalog-v5"],
+  ["mercado-oculto-catalog-v6"],
   { revalidate: 60, tags: [MERCADO_CATALOG_CACHE_TAG] },
 );
 

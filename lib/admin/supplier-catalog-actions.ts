@@ -51,10 +51,11 @@ export type AdminSupplierMarginOption = {
   productCount: number;
   draftCount: number;
   globalMarginPercent: number | null;
+  catalogVisible: boolean;
 };
 
 const PRODUCT_SELECT =
-  "id, title, description, category, stock, base_price_usd, precio_mayorista, publication_status, image_url, created_by, created_at, updated_at, is_active";
+  "id, title, description, category, stock, base_price_usd, precio_mayorista, publication_status, catalog_visible, image_url, created_by, created_at, updated_at, is_active";
 
 async function requireSupportAdmin() {
   const supabase = await createClient();
@@ -159,9 +160,34 @@ async function loadMarginRules(
   return rules;
 }
 
+async function loadCatalogVisibility(
+  admin: ReturnType<typeof createAdminClient>,
+  userIds: string[],
+): Promise<Map<string, boolean>> {
+  const visibility = new Map<string, boolean>();
+  const ids = [...new Set(userIds.filter(Boolean))];
+  if (ids.length === 0) return visibility;
+
+  const { data } = await admin
+    .from("supplier_catalog_visibility")
+    .select("supplier_user_id, catalog_visible")
+    .in("supplier_user_id", ids);
+
+  for (const row of (data as Array<{
+    supplier_user_id?: string;
+    catalog_visible?: unknown;
+  }> | null) ?? []) {
+    const id = typeof row.supplier_user_id === "string" ? row.supplier_user_id : "";
+    if (!id) continue;
+    visibility.set(id, row.catalog_visible === true);
+  }
+  return visibility;
+}
+
 function buildSupplierOptions(
   products: AdminSupplierCatalogProduct[],
   marginBySupplier: Map<string, number>,
+  visibilityBySupplier: Map<string, boolean>,
 ): AdminSupplierMarginOption[] {
   const grouped = new Map<
     string,
@@ -185,6 +211,7 @@ function buildSupplierOptions(
       productCount: value.productCount,
       draftCount: value.draftCount,
       globalMarginPercent: marginBySupplier.get(id) ?? null,
+      catalogVisible: visibilityBySupplier.get(id) === true,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "es"));
 }
@@ -215,16 +242,21 @@ export async function listAdminSupplierCatalogProducts(): Promise<
     if (batch.length < pageSize) break;
   }
   const creatorIds = rows.map((row) => String(row.created_by ?? ""));
-  const [names, marginBySupplier] = await Promise.all([
+  const [names, marginBySupplier, visibilityBySupplier] = await Promise.all([
     loadSupplierNames(admin, creatorIds),
     loadMarginRules(admin, creatorIds),
+    loadCatalogVisibility(admin, creatorIds),
   ]);
   const products = rows.map((row) => mapAdminProduct(row, names));
   return {
     products,
     draftCount: products.filter((item) => item.publicationStatus === "draft")
       .length,
-    suppliers: buildSupplierOptions(products, marginBySupplier),
+    suppliers: buildSupplierOptions(
+      products,
+      marginBySupplier,
+      visibilityBySupplier,
+    ),
   };
 }
 
@@ -256,6 +288,12 @@ function mapCatalogDbError(message: string): string {
     (text.includes("does not exist") || text.includes("schema cache"))
   ) {
     return "Falta aplicar la migración de publicación mayorista en la base de datos.";
+  }
+  if (
+    text.includes("catalog_visible") &&
+    (text.includes("does not exist") || text.includes("schema cache"))
+  ) {
+    return "Falta aplicar la migración de visibilidad de catálogo mayorista.";
   }
   return message;
 }
@@ -344,9 +382,14 @@ async function persistAdminWholesalePrice(input: {
   const current = existing as Record<string, unknown>;
   const previousMayorista = resolvePrecioMayoristaUsd(current);
   const previousStatus = normalizePublicationStatus(current.publication_status);
-  const nextStatus: SupplierPublicationStatus = input.publish
-    ? "published"
-    : previousStatus;
+  const creatorId = String(current.created_by ?? "");
+  const supplierVisibility = creatorId
+    ? await loadCatalogVisibility(input.admin, [creatorId])
+    : new Map<string, boolean>();
+  const supplierCatalogOn = supplierVisibility.get(creatorId) === true;
+  const nextStatus: SupplierPublicationStatus =
+    input.publish || supplierCatalogOn ? "published" : previousStatus;
+  const nextVisible = supplierCatalogOn || nextStatus === "published";
 
   if (nextStatus === "published" && precioMayoristaUsd < 0) {
     return { error: "El precio mayorista debe ser mayor o igual a 0." };
@@ -357,6 +400,7 @@ async function persistAdminWholesalePrice(input: {
     .update({
       precio_mayorista: precioMayoristaUsd,
       publication_status: nextStatus,
+      catalog_visible: nextVisible,
       updated_at: new Date().toISOString(),
     })
     .eq("id", productId)
@@ -430,6 +474,7 @@ export async function publishAdminSupplierProduct(
     .from("supplier_products")
     .update({
       publication_status: "published",
+      catalog_visible: true,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
@@ -462,6 +507,7 @@ export async function unpublishAdminSupplierProduct(
     .from("supplier_products")
     .update({
       publication_status: "draft",
+      catalog_visible: false,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
@@ -498,25 +544,35 @@ export async function setSupplierCatalogPublication(input: {
   if (!supplierUserId) return { error: "Selecciona un proveedor." };
 
   const admin = createAdminClient();
+  const now = new Date().toISOString();
+
+  const { error: visibilityError } = await admin
+    .from("supplier_catalog_visibility")
+    .upsert(
+      {
+        supplier_user_id: supplierUserId,
+        catalog_visible: input.published,
+        updated_by: auth.user.id,
+        updated_at: now,
+      },
+      { onConflict: "supplier_user_id" },
+    );
+  if (visibilityError) return { error: mapCatalogDbError(visibilityError.message) };
+
   const { data, error } = await admin
     .from("supplier_products")
-    .select(PRODUCT_SELECT)
+    .select("id, precio_mayorista")
     .eq("created_by", supplierUserId)
     .eq("is_active", true);
 
   if (error) return { error: mapCatalogDbError(error.message) };
 
   const rows = (data as Record<string, unknown>[] | null) ?? [];
-  const now = new Date().toISOString();
-  const nextStatus = input.published ? "published" : "draft";
-  const targetIds = input.published
-    ? rows
-        .filter((row) => resolvePrecioMayoristaUsd(row) != null)
-        .map((row) => String(row.id ?? ""))
-        .filter(Boolean)
-    : rows.map((row) => String(row.id ?? "")).filter(Boolean);
+  const pricedCount = rows.filter(
+    (row) => resolvePrecioMayoristaUsd(row) != null,
+  ).length;
 
-  if (input.published && targetIds.length === 0) {
+  if (input.published && pricedCount === 0) {
     return {
       error:
         "Ningún producto de este proveedor tiene precio mayorista todavía.",
@@ -525,32 +581,43 @@ export async function setSupplierCatalogPublication(input: {
     };
   }
 
-  if (targetIds.length > 0) {
-    const { error: updateError } = await admin
-      .from("supplier_products")
-      .update({
-        publication_status: nextStatus,
+  const patch = input.published
+    ? {
+        catalog_visible: true,
+        publication_status: "published",
         updated_at: now,
-      })
-      .in("id", targetIds)
-      .eq("is_active", true);
-    if (updateError) return { error: mapCatalogDbError(updateError.message) };
+      }
+    : {
+        catalog_visible: false,
+        publication_status: "draft",
+        updated_at: now,
+      };
+
+  let query = admin
+    .from("supplier_products")
+    .update(patch)
+    .eq("created_by", supplierUserId)
+    .eq("is_active", true);
+  if (input.published) {
+    query = query.not("precio_mayorista", "is", null);
   }
+  const { error: updateError } = await query;
+  if (updateError) return { error: mapCatalogDbError(updateError.message) };
+
+  const updated = input.published ? pricedCount : rows.length;
+  const skippedWithoutPrice = input.published
+    ? Math.max(0, rows.length - pricedCount)
+    : 0;
 
   bustPublishedCatalogCaches();
+  revalidatePath("/dashboard/inventario");
   const listed = await listAdminSupplierCatalogProducts();
-  const skippedWithoutPrice = input.published
-    ? Math.max(0, rows.length - targetIds.length)
-    : 0;
   if (listed.error) {
-    return {
-      updated: targetIds.length,
-      skippedWithoutPrice,
-    };
+    return { updated, skippedWithoutPrice };
   }
 
   return {
-    updated: targetIds.length,
+    updated,
     skippedWithoutPrice,
     products: listed.products ?? [],
     suppliers: listed.suppliers ?? [],
@@ -646,11 +713,13 @@ export async function setSupplierGlobalMarginRule(input: {
         productCount,
         draftCount,
         globalMarginPercent: marginPercent,
+        catalogVisible: false,
       },
     };
   }
 
   const names = await loadSupplierNames(admin, [supplierUserId]);
+  const visibility = await loadCatalogVisibility(admin, [supplierUserId]);
   const { count } = await admin
     .from("supplier_products")
     .select("id", { count: "exact", head: true })
@@ -671,6 +740,7 @@ export async function setSupplierGlobalMarginRule(input: {
       productCount: count ?? 0,
       draftCount: draftCount ?? 0,
       globalMarginPercent: marginPercent,
+      catalogVisible: visibility.get(supplierUserId) === true,
     },
   };
 }
@@ -682,6 +752,8 @@ async function applyGlobalMarginToSupplierProducts(input: {
   marginPercent: number;
 }): Promise<{ updated: number; publishedUpdated: number; error?: string }> {
   const { admin, changedBy, supplierUserId, marginPercent } = input;
+  const visibility = await loadCatalogVisibility(admin, [supplierUserId]);
+  const catalogOn = visibility.get(supplierUserId) === true;
   const { data, error } = await admin
     .from("supplier_products")
     .select(PRODUCT_SELECT)
@@ -702,12 +774,18 @@ async function applyGlobalMarginToSupplierProducts(input: {
     const costo = resolveCostoProveedorUsd(row);
     const nextPrice = mayoristaFromMarginPercent(costo, marginPercent);
     const previous = resolvePrecioMayoristaUsd(row);
-    if (previous === nextPrice) continue;
+    const wasPublished =
+      normalizePublicationStatus(row.publication_status) === "published" &&
+      row.catalog_visible === true;
+    if (previous === nextPrice && (!catalogOn || wasPublished)) continue;
 
     const { error: updateError } = await admin
       .from("supplier_products")
       .update({
         precio_mayorista: nextPrice,
+        ...(catalogOn
+          ? { publication_status: "published", catalog_visible: true }
+          : {}),
         updated_at: now,
       })
       .eq("id", id)

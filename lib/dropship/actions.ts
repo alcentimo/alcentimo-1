@@ -45,6 +45,7 @@ import { fetchAllPagedRows } from "@/lib/supabase/fetch-all-rows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   DROPSHIP_SUPPLIER_PRODUCT_SELECT,
+  applyDropshipVisibleProductFilter,
   isPublishedForDropship,
   resolvePrecioMayoristaUsd,
 } from "@/lib/supplier/wholesale-price";
@@ -186,7 +187,7 @@ export async function listStoreDropshipLinks(): Promise<
   const { data, error } = await admin
     .from("store_dropship_links")
     .select(
-      "id, product_id, supplier_product_id, auto_reprice, last_cost_usd, products(name), supplier_products(title, precio_mayorista, publication_status, is_active)",
+      "id, product_id, supplier_product_id, auto_reprice, last_cost_usd, products(name), supplier_products(title, precio_mayorista, publication_status, catalog_visible, is_active)",
     )
     .eq("store_id", auth.store.id)
     .order("created_at", { ascending: false });
@@ -255,12 +256,11 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   const catalogRows: Record<string, unknown>[] = [];
   let from = 0;
   for (;;) {
-    const { data, error } = await admin
-      .from("supplier_products")
-      .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT)
-      .eq("is_active", true)
-      .eq("publication_status", "published")
-      .not("precio_mayorista", "is", null)
+    const { data, error } = await applyDropshipVisibleProductFilter(
+      admin
+        .from("supplier_products")
+        .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT),
+    )
       .order("id", { ascending: true })
       .range(from, from + pageSize - 1);
     if (error) return { error: error.message };
@@ -397,10 +397,12 @@ export async function importSupplierProductToStoreCatalog(
       return { error: "Este producto mayorista ya está en tu catálogo." };
     }
 
-    const { data: supplierRow, error: supplierError } = await admin
-      .from("supplier_products")
-      .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT)
-      .eq("id", supplierId)
+    const { data: supplierRow, error: supplierError } = await applyDropshipVisibleProductFilter(
+      admin
+        .from("supplier_products")
+        .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT)
+        .eq("id", supplierId),
+    )
       .maybeSingle();
 
     if (supplierError) return { error: supplierError.message };
@@ -694,11 +696,12 @@ export async function linkStoreDropshipProduct(input: {
     .maybeSingle();
   if (!product) return { error: "Producto de tienda no encontrado." };
 
-  const { data: supplier } = await admin
-    .from("supplier_products")
-    .select("id, precio_mayorista, stock, is_active, publication_status")
-    .eq("id", supplierProductId)
-    .eq("is_active", true)
+  const { data: supplier } = await applyDropshipVisibleProductFilter(
+    admin
+      .from("supplier_products")
+      .select("id, precio_mayorista, stock, is_active, publication_status, catalog_visible")
+      .eq("id", supplierProductId),
+  )
     .maybeSingle();
   if (!supplier || !isPublishedForDropship(supplier as Record<string, unknown>)) {
     return { error: "Producto mayorista no disponible." };

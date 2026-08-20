@@ -8,7 +8,10 @@ import {
   validateSubmitOrderLineInput,
   type ProductVariantRow,
 } from "@/lib/orders/resolve-inventory-variant-id";
-import { resolvePrecioMayoristaUsd } from "@/lib/supplier/wholesale-price";
+import {
+  isPublishedForDropship,
+  resolvePrecioMayoristaUsd,
+} from "@/lib/supplier/wholesale-price";
 
 export async function resolveOrderLinesWithPricing(
   admin: SupabaseClient,
@@ -113,7 +116,7 @@ export async function resolveOrderLinesWithPricing(
   const { data: dropshipLinks } = await admin
     .from("store_dropship_links")
     .select(
-      "product_id, supplier_product_id, supplier_products(precio_mayorista, publication_status, is_active, stock, title)",
+      "product_id, supplier_product_id, supplier_products(precio_mayorista, publication_status, catalog_visible, is_active, stock, title)",
     )
     .eq("store_id", storeId)
     .in("product_id", productIds);
@@ -132,11 +135,13 @@ export async function resolveOrderLinesWithPricing(
     const supplier = row.supplier_products as {
       precio_mayorista?: number | null;
       publication_status?: string;
+      catalog_visible?: boolean;
       is_active?: boolean;
       stock?: number;
       title?: string;
     } | null;
     if (!productId || !supplierProductId) continue;
+    if (!isPublishedForDropship(supplier ?? {})) continue;
     const costUsd = resolvePrecioMayoristaUsd(supplier ?? {});
     if (costUsd == null) continue;
     dropshipCostByProduct.set(productId, {

@@ -164,15 +164,10 @@ export function AdminSupplierCatalogPanel() {
         const rows = filtered.filter(
           (product) => product.supplierUserId === supplier.id,
         );
-        const priced = rows.filter(
-          (product) => product.precioMayoristaUsd != null,
-        );
         const publishedCount = rows.filter(
           (product) => product.publicationStatus === "published",
         ).length;
-        const catalogOn =
-          priced.length > 0 &&
-          priced.every((product) => product.publicationStatus === "published");
+        const catalogOn = supplier.catalogVisible;
         return {
           supplier,
           rows,

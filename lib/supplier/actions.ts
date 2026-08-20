@@ -229,6 +229,7 @@ export async function createSupplierProduct(
       base_price_usd: parsed.basePriceUsd,
       precio_mayorista: null,
       publication_status: "draft",
+      catalog_visible: false,
       image_url: null,
       is_active: true,
     })

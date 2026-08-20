@@ -13,7 +13,10 @@ import {
   listSupplierProductImages,
   supplierImageUrls,
 } from "@/lib/supplier/product-images";
-import { isPublishedForDropship } from "@/lib/supplier/wholesale-price";
+import {
+  applyDropshipVisibleProductFilter,
+  isPublishedForDropship,
+} from "@/lib/supplier/wholesale-price";
 
 type ActionResult<T extends object = object> = {
   error?: string;
@@ -106,12 +109,10 @@ export async function getMercadoProduct(
   }
 
   const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("supplier_products")
-    .select(SUPPLIER_PRODUCT_SELECT)
+  const { data, error } = await applyDropshipVisibleProductFilter(
+    admin.from("supplier_products").select(SUPPLIER_PRODUCT_SELECT),
+  )
     .eq("id", productId)
-    .eq("is_active", true)
-    .eq("publication_status", "published")
     .maybeSingle();
 
   if (error) return { error: error.message };
